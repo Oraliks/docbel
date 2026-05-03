@@ -1,0 +1,259 @@
+{
+  "metadata": {
+    "source": "SPF Emploi - Travail et Concertation sociale",
+    "lastUpdated": "2026-04-26",
+    "note": "Tables officielles du gouvernement belge pour le calcul des délais de préavis"
+  },
+  "cdi_licenciement_post_2014": {
+    "description": "CDI — licenciement par l'employeur — contrat commencé à partir du 01/01/2014",
+    "unit": "semaines",
+    "table": [
+      { "anMin": 0, "anMax": 0.25, "semaines": 1, "label": "0 à moins de 3 mois" },
+      { "anMin": 0.25, "anMax": 0.333, "semaines": 3, "label": "3 mois à moins de 4 mois" },
+      { "anMin": 0.333, "anMax": 0.417, "semaines": 4, "label": "4 mois à moins de 5 mois" },
+      { "anMin": 0.417, "anMax": 0.5, "semaines": 5, "label": "5 mois à moins de 6 mois" },
+      { "anMin": 0.5, "anMax": 0.75, "semaines": 6, "label": "6 mois à moins de 9 mois" },
+      { "anMin": 0.75, "anMax": 1, "semaines": 7, "label": "9 mois à moins de 12 mois" },
+      { "anMin": 1, "anMax": 1.25, "semaines": 8, "label": "12 mois à moins de 15 mois" },
+      { "anMin": 1.25, "anMax": 1.5, "semaines": 9, "label": "15 mois à moins de 18 mois" },
+      { "anMin": 1.5, "anMax": 1.75, "semaines": 10, "label": "18 mois à moins de 21 mois" },
+      { "anMin": 1.75, "anMax": 2, "semaines": 11, "label": "21 mois à moins de 24 mois" },
+      { "anMin": 2, "anMax": 3, "semaines": 12, "label": "2 ans à moins de 3 ans" },
+      { "anMin": 3, "anMax": 4, "semaines": 13, "label": "3 ans à moins de 4 ans" },
+      { "anMin": 4, "anMax": 5, "semaines": 15, "label": "4 ans à moins de 5 ans" },
+      { "anMin": 5, "anMax": 6, "semaines": 18, "label": "5 ans à moins de 6 ans" },
+      { "anMin": 6, "anMax": 7, "semaines": 21, "label": "6 ans à moins de 7 ans" },
+      { "anMin": 7, "anMax": 8, "semaines": 24, "label": "7 ans à moins de 8 ans" },
+      { "anMin": 8, "anMax": 9, "semaines": 27, "label": "8 ans à moins de 9 ans" },
+      { "anMin": 9, "anMax": 10, "semaines": 30, "label": "9 ans à moins de 10 ans" },
+      { "anMin": 10, "anMax": 11, "semaines": 33, "label": "10 ans à moins de 11 ans" },
+      { "anMin": 11, "anMax": 12, "semaines": 36, "label": "11 ans à moins de 12 ans" },
+      { "anMin": 12, "anMax": 13, "semaines": 39, "label": "12 ans à moins de 13 ans" },
+      { "anMin": 13, "anMax": 14, "semaines": 42, "label": "13 ans à moins de 14 ans" },
+      { "anMin": 14, "anMax": 15, "semaines": 45, "label": "14 ans à moins de 15 ans" },
+      { "anMin": 15, "anMax": 16, "semaines": 48, "label": "15 ans à moins de 16 ans" },
+      { "anMin": 16, "anMax": 17, "semaines": 51, "label": "16 ans à moins de 17 ans" },
+      { "anMin": 17, "anMax": 18, "semaines": 54, "label": "17 ans à moins de 18 ans" },
+      { "anMin": 18, "anMax": 19, "semaines": 57, "label": "18 ans à moins de 19 ans" },
+      { "anMin": 19, "anMax": 20, "semaines": 60, "label": "19 ans à moins de 20 ans" },
+      { "anMin": 20, "anMax": 21, "semaines": 62, "label": "20 ans à moins de 21 ans" },
+      { "anMin": 21, "anMax": 22, "semaines": 63, "label": "21 ans à moins de 22 ans" },
+      { "anMin": 22, "anMax": 23, "semaines": 64, "label": "22 ans à moins de 23 ans" },
+      { "anMin": 23, "anMax": 24, "semaines": 65, "label": "23 ans à moins de 24 ans" },
+      { "anMin": 24, "anMax": null, "semaines": "formula", "formula": "65 + (years - 24)", "label": "À partir de 24 ans: +1 semaine par année supplémentaire" }
+    ]
+  },
+  "cdi_demission_post_2014": {
+    "description": "CDI — démission par le travailleur — à partir du 01/01/2014",
+    "unit": "semaines",
+    "table": [
+      { "anMin": 0, "anMax": 0.25, "semaines": 1, "label": "0 à moins de 3 mois" },
+      { "anMin": 0.25, "anMax": 0.5, "semaines": 2, "label": "3 mois à moins de 6 mois" },
+      { "anMin": 0.5, "anMax": 1, "semaines": 3, "label": "6 mois à moins de 12 mois" },
+      { "anMin": 1, "anMax": 1.5, "semaines": 4, "label": "12 mois à moins de 18 mois" },
+      { "anMin": 1.5, "anMax": 2, "semaines": 5, "label": "18 mois à moins de 24 mois" },
+      { "anMin": 2, "anMax": 4, "semaines": 6, "label": "2 ans à moins de 4 ans" },
+      { "anMin": 4, "anMax": 5, "semaines": 7, "label": "4 ans à moins de 5 ans" },
+      { "anMin": 5, "anMax": 6, "semaines": 9, "label": "5 ans à moins de 6 ans" },
+      { "anMin": 6, "anMax": 7, "semaines": 10, "label": "6 ans à moins de 7 ans" },
+      { "anMin": 7, "anMax": 8, "semaines": 12, "label": "7 ans à moins de 8 ans" },
+      { "anMin": 8, "anMax": null, "semaines": 13, "label": "À partir de 8 ans" }
+    ]
+  },
+  "cdi_contre_preavis": {
+    "description": "CDI — contre-préavis donné par le travailleur",
+    "unit": "semaines",
+    "table": [
+      { "anMin": 0, "anMax": 0.25, "semaines": 1, "label": "0 à moins de 3 mois" },
+      { "anMin": 0.25, "anMax": 0.5, "semaines": 2, "label": "3 mois à moins de 6 mois" },
+      { "anMin": 0.5, "anMax": 1, "semaines": 3, "label": "6 mois à moins de 12 mois" },
+      { "anMin": 1, "anMax": null, "semaines": 4, "label": "À partir de 1 an" }
+    ]
+  },
+  "cdi_pension_legal": {
+    "description": "CDI — licenciement en vue de la pension légale",
+    "note": "Le préavis normal s'applique, plafonné à 26 semaines maximum si dépassé"
+  },
+  "cdi_pre_2014_employe": {
+    "description": "CDI — contrat commencé avant le 01/01/2014 — employé licencié",
+    "partie_1": {
+      "label": "Partie I — ancienneté acquise jusqu'au 31/12/2013",
+      "unit": "mois",
+      "note": "Basé sur salaire annuel brut et périodes d'ancienneté entamée",
+      "rules": [
+        {
+          "statut": "employé inférieur",
+          "salairAnnuelMax": 32254,
+          "rule": "3 mois par période de 5 années d'ancienneté entamée",
+          "minimum": 0,
+          "example": "3 ans → 3 mois; 5.5 ans → 6 mois"
+        },
+        {
+          "statut": "employé supérieur",
+          "salairAnnuelMin": 32254.01,
+          "rule": "1 mois par année d'ancienneté entamée",
+          "minimum": 3,
+          "example": "2 ans → 3 mois; 5 ans → 5 mois; 6 ans → 6 mois"
+        }
+      ]
+    },
+    "partie_2": {
+      "label": "Partie II — ancienneté à partir du 01/01/2014",
+      "note": "Applique le tableau normal du licenciement employeur post-2014, comme si l'entrée était le 01/01/2014. Le délai total est la somme Partie I + Partie II"
+    }
+  },
+  "cdi_pre_2014_ouvrier": {
+    "description": "CDI — contrat commencé avant le 01/01/2014 — ouvrier licencié",
+    "cct_75": {
+      "label": "Ouvrier secteur privé — contrat commencé avant le 01/01/2012 — CCT n°75 (convention collective)",
+      "unit": "jours",
+      "note": "A défaut d'arrêté royal sectoriel ou de CCT intersectorielle applicable. Le SPF précise qu'il faut vérifier les règles sectorielles applicables d'abord.",
+      "table": [
+        { "anMin": 0, "anMax": 0.5, "jours": 28, "label": "0 à moins de 6 mois" },
+        { "anMin": 0.5, "anMax": 5, "jours": 35, "label": "6 mois à moins de 5 ans" },
+        { "anMin": 5, "anMax": 10, "jours": 42, "label": "5 ans à moins de 10 ans" },
+        { "anMin": 10, "anMax": 15, "jours": 56, "label": "10 ans à moins de 15 ans" },
+        { "anMin": 15, "anMax": 20, "jours": 84, "label": "15 ans à moins de 20 ans" },
+        { "anMin": 20, "anMax": null, "jours": 112, "label": "20 ans et plus" }
+      ]
+    },
+    "loi_generale": {
+      "label": "Ouvrier secteur privé — contrat commencé avant le 01/01/2012 — Loi générale (pas de CCT n°75)",
+      "unit": "jours",
+      "note": "A défaut de CCT n°75 applicable",
+      "table": [
+        { "anMin": 0, "anMax": 20, "jours": 28, "label": "0 à moins de 20 ans" },
+        { "anMin": 20, "anMax": null, "jours": 56, "label": "20 ans et plus" }
+      ]
+    },
+    "post_2012_pre_2014": {
+      "label": "Ouvrier secteur privé — contrat commencé à partir du 01/01/2012 et avant le 01/01/2014 — Loi",
+      "unit": "jours",
+      "note": "A défaut d'arrêté royal sectoriel",
+      "table": [
+        { "anMin": 0, "anMax": 0.5, "jours": 28, "label": "0 à moins de 6 mois" },
+        { "anMin": 0.5, "anMax": 5, "jours": 40, "label": "6 mois à moins de 5 ans" },
+        { "anMin": 5, "anMax": 10, "jours": 48, "label": "5 ans à moins de 10 ans" },
+        { "anMin": 10, "anMax": 15, "jours": 64, "label": "10 ans à moins de 15 ans" },
+        { "anMin": 15, "anMax": 20, "jours": 97, "label": "15 ans à moins de 20 ans" },
+        { "anMin": 20, "anMax": null, "jours": 129, "label": "20 ans et plus" }
+      ]
+    },
+    "secteur_public_pre_2012": {
+      "label": "Ouvrier secteur public — contrat commencé avant le 01/01/2012",
+      "unit": "jours",
+      "table": [
+        { "anMin": 0, "anMax": 0.5, "jours": 28, "label": "0 à moins de 6 mois" },
+        { "anMin": 0.5, "anMax": 5, "jours": 35, "label": "6 mois à moins de 5 ans" },
+        { "anMin": 5, "anMax": 10, "jours": 42, "label": "5 ans à moins de 10 ans" },
+        { "anMin": 10, "anMax": 15, "jours": 56, "label": "10 ans à moins de 15 ans" },
+        { "anMin": 15, "anMax": 20, "jours": 84, "label": "15 ans à moins de 20 ans" },
+        { "anMin": 20, "anMax": null, "jours": 112, "label": "20 ans et plus" }
+      ]
+    }
+  },
+  "cdd_rupture_post_2014": {
+    "description": "CDD — rupture à partir du 01/01/2014",
+    "note": "Le SPF distingue deux périodes de rupture possibles",
+    "regles": [
+      {
+        "periode": "Première moitié du contrat (max 6 mois)",
+        "rupture": "Possible avec préavis selon les règles du CDI licenciement post-2014"
+      },
+      {
+        "periode": "Après cette première période",
+        "rupture": "Plus de rupture avec préavis; indemnité compensatrice due"
+      },
+      {
+        "situation": "CDD successifs",
+        "rupture": "Préavis uniquement pour le premier contrat de la chaîne"
+      }
+    ],
+    "indemnite_deuxieme_periode": {
+      "description": "Indemnité due en cas de rupture après la première période",
+      "regles": [
+        {
+          "cas": "Rupture par employeur",
+          "indemnite": "Rémunération due jusqu'au terme du contrat",
+          "plafond": "Double du préavis employeur CDI applicable"
+        },
+        {
+          "cas": "Rupture par travailleur",
+          "indemnite": "Rémunération due jusqu'au terme du contrat",
+          "plafond": "Double du préavis démission CDI applicable"
+        }
+      ]
+    }
+  },
+  "cdd_maladie_accident": {
+    "description": "CDD — rupture en cas de maladie ou d'accident",
+    "table": [
+      {
+        "condition": "CDD < 3 mois + incapacité > 7 jours",
+        "rupture": "L'employeur peut rompre sans indemnité après la période où le préavis est autorisé"
+      },
+      {
+        "condition": "CDD ≥ 3 mois + incapacité > 6 mois",
+        "rupture": "L'employeur peut rompre avec indemnité = rémunération jusqu'au terme, plafonnée à 3 mois"
+      },
+      {
+        "note": "Salaire garanti peut être déduit dans certains cas"
+      }
+    ]
+  },
+  "icl_indemnite": {
+    "description": "Indemnité compensatoire de préavis (ICL) / Indemnité en compensation du licenciement",
+    "note": "Pas de table séparée — on utilise le délai de préavis applicable, puis on le convertit en indemnité",
+    "regles": [
+      {
+        "element": "Délai à indemniser",
+        "valeur": "Préavis dû ou solde du préavis restant"
+      },
+      {
+        "element": "Base",
+        "valeur": "Rémunération en cours + avantages contractuels"
+      },
+      {
+        "element": "Variable",
+        "valeur": "Moyenne des 12 mois précédant le congé"
+      },
+      {
+        "element": "Conversion mensuel → semaine",
+        "formula": "Salaire mensuel × 3 / 13"
+      },
+      {
+        "element": "ICL brute",
+        "formula": "Rémunération hebdomadaire × nombre de semaines de préavis"
+      }
+    ]
+  },
+  "cas_particuliers": {
+    "description": "Cas particuliers sans tables longues",
+    "table": [
+      {
+        "situation": "Programme de remise au travail (ex. ACS/PFI)",
+        "regle": "Démission avec préavis réduit à 7 jours"
+      },
+      {
+        "situation": "Chômage temporaire économique",
+        "regle": "Le travailleur peut résilier sans préavis ni indemnité"
+      },
+      {
+        "situation": "Ouvrier en chômage intempéries > 1 mois",
+        "regle": "Résiliation sans préavis ni indemnité"
+      },
+      {
+        "situation": "RCC en entreprise en difficulté ou restructuration",
+        "regle": "Préavis pouvant être réduit à minimum 26 semaines"
+      },
+      {
+        "situation": "Article 17 — animation socio-culturelle/sportive, CDI",
+        "regle": "14 jours si < 6 mois ancienneté; 1 mois si ≥ 6 mois"
+      },
+      {
+        "situation": "Article 17 — CDD",
+        "regle": "14 jours si contrat < 6 mois; 1 mois si contrat ≥ 6 mois"
+      }
+    ]
+  }
+}

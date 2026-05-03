@@ -1,0 +1,464 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Eye, Save, Send, ChevronDown, Check } from 'lucide-react';
+import { toast } from 'sonner';
+import { NewsEditor } from '@/components/admin/news/news-editor';
+import { PublishDialog } from '@/components/admin/news/publish-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+
+interface NewsArticle {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string;
+  category: string;
+  emoji: string;
+  color: string;
+  image: string | null;
+  status: string;
+  featured: boolean;
+  readingTime: number;
+  views: number;
+  publishedAt: string | null;
+  scheduledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const generateSlug = (title: string) =>
+  title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+
+const calculateReadingTime = (content: string) => {
+  const text = content.replace(/<[^>]+>/g, '').trim();
+  const words = text.length > 0 ? text.split(/\s+/).length : 0;
+  return Math.max(1, Math.ceil(words / 200));
+};
+
+// Validation function that returns field-specific errors
+const validateForm = (form: any): Record<string, string> => {
+  const newErrors: Record<string, string> = {};
+
+  if (!form.title?.trim()) {
+    newErrors.title = 'Le titre est obligatoire';
+  }
+  if (!form.excerpt?.trim()) {
+    newErrors.excerpt = 'La description courte est obligatoire';
+  }
+  if (!form.content?.trim()) {
+    newErrors.content = 'Le contenu est obligatoire';
+  }
+  if (!form.category?.trim()) {
+    newErrors.category = 'La catégorie est obligatoire';
+  }
+
+  return newErrors;
+};
+
+export default function NewsEditorPage() {
+  const params = useParams();
+  const router = useRouter();
+  const newsId = params.newsId as string;
+  const isNew = newsId === 'new';
+
+  const [isLoading, setIsLoading] = useState(!isNew);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [currentId, setCurrentId] = useState<string | null>(isNew ? null : newsId);
+
+  const [form, setForm] = useState({
+    title: '',
+    slug: '',
+    excerpt: '',
+    content: '',
+    category: '',
+    emoji: '📰',
+    color: '#C8102E',
+    image: '',
+    status: 'draft',
+    featured: false,
+    readingTime: 0
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Fetch existing article
+  useEffect(() => {
+    if (isNew) return;
+    const fetchArticle = async () => {
+      try {
+        const res = await fetch(`/api/news/${newsId}`);
+        if (!res.ok) throw new Error('Article not found');
+        const data: NewsArticle = await res.json();
+        setForm({
+          title: data.title || '',
+          slug: data.slug || '',
+          excerpt: data.excerpt || '',
+          content: data.content || '',
+          category: data.category || '',
+          emoji: data.emoji || '📰',
+          color: data.color || '#C8102E',
+          image: data.image || '',
+          status: data.status || 'draft',
+          featured: data.featured || false,
+          readingTime: data.readingTime || 0
+        });
+        setCurrentId(data.id);
+      } catch (error) {
+        console.error('Error fetching article:', error);
+        toast.error('Erreur lors du chargement de l\'article');
+        router.push('/admin/news');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchArticle();
+  }, [newsId, isNew, router]);
+
+  const handleFieldChange = useCallback((field: string, value: any) => {
+    setForm((prev) => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'title' && !currentId) {
+        updated.slug = generateSlug(value);
+      }
+      if (field === 'content') {
+        updated.readingTime = calculateReadingTime(value);
+      }
+      return updated;
+    });
+    // Clear error for this field when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+    setUnsavedChanges(true);
+  }, [currentId, errors]);
+
+  // Save (create or update)
+  const handleSave = useCallback(async (): Promise<NewsArticle | null> => {
+    const newErrors = validateForm(form);
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return null;
+    }
+
+    setErrors({});
+
+    setIsSaving(true);
+    const loadingToast = toast.loading('Enregistrement de l\'article...');
+    try {
+      const url = currentId ? `/api/news/${currentId}` : '/api/news';
+      const method = currentId ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Impossible d\'enregistrer l\'article');
+      }
+
+      const saved: NewsArticle = await res.json();
+      setUnsavedChanges(false);
+      setLastSavedAt(new Date());
+
+      toast.dismiss(loadingToast);
+      toast.success(currentId ? '✅ Article sauvegardé' : '✅ Article créé avec succès');
+
+      if (!currentId) {
+        // First save: navigate to the new article URL
+        setCurrentId(saved.id);
+        window.history.replaceState({}, '', `/admin/news/${saved.id}`);
+      }
+      // Sync state with backend response
+      setForm((prev) => ({
+        ...prev,
+        status: saved.status,
+        slug: saved.slug,
+        readingTime: saved.readingTime
+      }));
+      return saved;
+    } catch (error: any) {
+      console.error('Error saving article:', error);
+      toast.dismiss(loadingToast);
+      toast.error(`❌ Erreur: ${error.message || 'Impossible d\'enregistrer l\'article'}`);
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [form, currentId]);
+
+  // Actually publish (called from PublishDialog)
+  const publishArticle = useCallback(async () => {
+    if (!currentId) {
+      toast.error('❌ Impossible de publier: article non sauvegardé');
+      return;
+    }
+    const loadingToast = toast.loading('Publication de l\'article...');
+    try {
+      const res = await fetch(`/api/news/${currentId}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) throw new Error('Impossible de publier l\'article');
+      const data = await res.json();
+      setForm((prev) => ({ ...prev, status: 'published' }));
+      setLastSavedAt(new Date());
+      toast.dismiss(loadingToast);
+      toast.success('✅ Article publié avec succès');
+      setShowPublishDialog(false);
+    } catch (error) {
+      console.error('Error publishing:', error);
+      toast.dismiss(loadingToast);
+      toast.error('❌ Erreur lors de la publication');
+      throw error;
+    }
+  }, [currentId]);
+
+  // Publish now (directly without dialog)
+  const handlePublishNow = useCallback(async () => {
+    const newErrors = validateForm(form);
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
+    // Always save before publishing to ensure latest content is used
+    if (unsavedChanges || !currentId) {
+      const saved = await handleSave();
+      if (!saved) return;
+    }
+    await publishArticle();
+  }, [form, unsavedChanges, currentId, handleSave, publishArticle]);
+
+  // Open schedule dialog
+  const handleOpenSchedule = useCallback(async () => {
+    const newErrors = validateForm(form);
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
+    // Always save before scheduling to ensure latest content is used
+    if (unsavedChanges || !currentId) {
+      const saved = await handleSave();
+      if (!saved) return;
+    }
+    setShowPublishDialog(true);
+  }, [form, unsavedChanges, currentId, handleSave]);
+
+  // Schedule (called from PublishDialog) — uses dedicated /schedule endpoint
+  const scheduleArticle = useCallback(async (date: string, time: string) => {
+    if (!currentId) {
+      toast.error('❌ Impossible de planifier: article non sauvegardé');
+      return;
+    }
+    const loadingToast = toast.loading('Planification de l\'article...');
+    try {
+      const scheduledAt = new Date(`${date}T${time}`).toISOString();
+      const res = await fetch(`/api/news/${currentId}/schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scheduledAt }),
+      });
+      if (!res.ok) throw new Error('Impossible de planifier l\'article');
+      const updated: NewsArticle = await res.json();
+      setForm((prev) => ({ ...prev, status: updated.status }));
+      setLastSavedAt(new Date());
+      toast.dismiss(loadingToast);
+      toast.success(`✅ Article planifié pour ${new Date(scheduledAt).toLocaleString('fr-FR')}`);
+      setShowPublishDialog(false);
+    } catch (error) {
+      console.error('Error scheduling:', error);
+      toast.dismiss(loadingToast);
+      toast.error('❌ Erreur lors de la planification');
+      throw error;
+    }
+  }, [currentId]);
+
+  // Unpublish (revert to draft) — uses dedicated /unpublish endpoint
+  const handleUnpublish = useCallback(async () => {
+    if (!currentId) return;
+    const loadingToast = toast.loading('Remise en brouillon...');
+    try {
+      const res = await fetch(`/api/news/${currentId}/unpublish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) throw new Error('Impossible de retirer la publication');
+      setForm((prev) => ({ ...prev, status: 'draft' }));
+      toast.dismiss(loadingToast);
+      toast.success('✅ Article remis en brouillon');
+    } catch (error) {
+      console.error('Error unpublishing:', error);
+      toast.dismiss(loadingToast);
+      toast.error('❌ Erreur lors de la dépublication');
+    }
+  }, [currentId]);
+
+  const handlePreview = useCallback(() => {
+    if (!currentId) {
+      toast.error('Sauvegardez l\'article avant de le prévisualiser');
+      return;
+    }
+    try {
+      window.open(`/actualites/${currentId}`, '_blank');
+      toast.success('Ouverture de l\'aperçu...');
+    } catch (error) {
+      toast.error('Erreur lors de l\'ouverture de l\'aperçu');
+    }
+  }, [currentId]);
+
+  // Format last saved time
+  const lastSavedLabel = lastSavedAt
+    ? `Sauvegardé à ${lastSavedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+    : null;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-gray-500">Chargement...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-40 bg-white border-b">
+        <div className="px-8 py-4 flex items-center justify-between">
+          {/* Left: Back + Title */}
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (unsavedChanges && !confirm('Vous avez des modifications non sauvegardées. Quitter quand même ?')) {
+                  return;
+                }
+                router.push('/admin/news');
+              }}
+              className="gap-2 h-9"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Retour
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold leading-tight">
+                {isNew && !currentId ? 'Nouvel article' : 'Éditer l\'article'}
+              </h1>
+              <p className="text-sm text-gray-500 mt-0.5 flex items-center gap-2">
+                {form.title || (isNew ? 'Créez un nouvel article' : 'Article')}
+                {unsavedChanges && (
+                  <span className="text-orange-600 font-medium">• Modifications non enregistrées</span>
+                )}
+                {!unsavedChanges && lastSavedLabel && (
+                  <span className="text-green-600 font-medium flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    {lastSavedLabel}
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* Right: Action Buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 h-9"
+              onClick={handlePreview}
+            >
+              <Eye className="w-4 h-4" />
+              Prévisualiser
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 h-9"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              <Save className="w-4 h-4" />
+              {isSaving ? 'Enregistrement...' : 'Enregistrer le brouillon'}
+            </Button>
+            <div className="flex">
+              <Button
+                size="sm"
+                className="gap-2 h-9 bg-red-600 hover:bg-red-700 rounded-r-none border-r border-red-700"
+                onClick={handlePublishNow}
+                disabled={isSaving}
+              >
+                <Send className="w-4 h-4" />
+                Publier
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="h-9 px-2 bg-red-600 hover:bg-red-700 rounded-r-md inline-flex items-center justify-center text-white transition-colors">
+                  <ChevronDown className="w-4 h-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={handleOpenSchedule}>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Planifier la publication
+                  </DropdownMenuItem>
+                  {form.status === 'published' && (
+                    <DropdownMenuItem onClick={handleUnpublish}>
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Remettre en brouillon
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="px-8 py-6">
+        <NewsEditor
+          form={form}
+          onFieldChange={handleFieldChange}
+          errors={errors}
+        />
+      </div>
+
+      {/* Schedule Dialog */}
+      <PublishDialog
+        open={showPublishDialog}
+        onOpenChange={setShowPublishDialog}
+        title={form.title}
+        category={form.category}
+        isPublished={form.status === 'published'}
+        onPublish={publishArticle}
+        onSchedule={scheduleArticle}
+      />
+    </div>
+  );
+}

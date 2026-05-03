@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     await logActivity(
       auth.user?.email || 'unknown',
       'created',
-      'baremes',
+      'file',
       file.name,
       baremeFile.id,
       `Uploaded ${parsed.sheets.length} sheets, ${totalCells} cells`

@@ -2,13 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { ActualitesPage } from "@/components/docbel/actualites-page";
+import { NewsItem } from "@/lib/docbel-data";
 
 export default function ActualitesRoute() {
   const router = useRouter();
 
-  const accent = "#C8102E";
-
-  const handleArticleClick = (article: any) => {
+  const handleArticleClick = (article: NewsItem) => {
     router.push(`/actualites/${article.id}`);
   };
 

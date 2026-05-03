@@ -87,7 +87,7 @@ export default function Home() {
   if (isLoading) {
     return (
       <div style={{ padding: "32px 36px 40px" }}>
-        <LoadingView colors={colors} accent={accent} tool={loadingTool} />
+        <LoadingView accent={accent} tool={loadingTool} />
       </div>
     );
   }
@@ -98,7 +98,6 @@ export default function Home() {
         news={newsToUse}
         newsIdx={newsIdx}
         setNewsIdx={setNewsIdx}
-        colors={colors}
         accent={accent}
         heroStyle="gradient"
         onArticleClick={handleArticleClick}
@@ -113,7 +112,6 @@ export default function Home() {
         setCat={setToolsCat}
         layout={toolsLayout}
         setLayout={setToolsLayout}
-        colors={colors}
         accent={accent}
         setOpenTool={handleToolClick}
       />

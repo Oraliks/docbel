@@ -39,7 +39,7 @@ export async function DELETE(
     await logActivity(
       auth.user?.email || 'unknown',
       'deleted',
-      'baremes',
+      'file',
       file.name,
       id
     )

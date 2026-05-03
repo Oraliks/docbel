@@ -3,15 +3,13 @@
 import { useRouter, useParams } from "next/navigation";
 import { ToolPage } from "@/components/docbel/tool-page";
 import { getToolBySlug } from "@/lib/docbel-data";
-import { DARK_COLORS, LIGHT_COLORS } from "@/lib/colors";
-import { useAppState } from "@/lib/app-state-context";
+import { LIGHT_COLORS } from "@/lib/colors";
 
 export default function ToolRoute() {
   const router = useRouter();
   const params = useParams();
-  const { dark } = useAppState();
 
-  const colors = dark ? DARK_COLORS : LIGHT_COLORS;
+  const colors = LIGHT_COLORS;
   const accent = "#C8102E";
 
   const tool = getToolBySlug(params.slug as string);
@@ -27,7 +25,7 @@ export default function ToolRoute() {
 
   return (
     <div style={{ padding: "32px 36px 40px" }}>
-      <ToolPage tool={tool} colors={colors} accent={accent} onBack={() => router.back()} lang="FR" />
+      <ToolPage tool={tool} accent={accent} onBack={() => router.back()} lang="FR" />
     </div>
   );
 }

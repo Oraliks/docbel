@@ -168,8 +168,6 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                 <RichTextEditor
                   value={form.content}
                   onChange={(html) => onFieldChange('content', html)}
-                  colors={LIGHT_COLORS}
-                  accent="#C8102E"
                   placeholder="Commencez à taper ou tapez / pour les commandes..."
                   showVersionHistory={false}
                 />

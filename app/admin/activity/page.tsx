@@ -28,7 +28,15 @@ export default function ActivityPage() {
         if (response.ok) {
           const data = await response.json();
           // Convert createdAt to timestamp string for ActivityItem interface
-          const formattedData: ActivityItem[] = data.map((activity: any) => ({
+          const formattedData: ActivityItem[] = data.map((activity: {
+            id: string;
+            user: string;
+            action: string;
+            resource: string;
+            resourceName: string;
+            createdAt: string;
+            details: string;
+          }) => ({
             id: activity.id,
             user: activity.user,
             action: activity.action,

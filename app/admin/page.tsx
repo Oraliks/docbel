@@ -54,12 +54,12 @@ export default async function AdminPage() {
     id: s.id,
     name: s.name,
     description: s.description,
-    icon: s.icon,
+    icon: s.icon ?? undefined,
     order: s.order,
-    tools: s.tools,
+    tools: s.tools as any,
     createdAt: s.createdAt.toISOString(),
     updatedAt: s.updatedAt.toISOString(),
-  }))
+  })) as any
 
   return (
     <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">

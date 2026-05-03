@@ -47,11 +47,6 @@ export default function BaremesPage() {
   const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // Charger la liste des fichiers
-  useEffect(() => {
-    fetchFiles()
-  }, [])
-
   const fetchFiles = async () => {
     try {
       const res = await fetch('/api/baremes')
@@ -65,6 +60,11 @@ export default function BaremesPage() {
       console.error(error)
     }
   }
+
+  // Charger la liste des fichiers
+  useEffect(() => {
+    fetchFiles()
+  }, [])
 
   const loadFile = async (fileId: string) => {
     setLoading(true)
@@ -172,7 +172,7 @@ export default function BaremesPage() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between">
             <span>Fichiers ({files.length})</span>
-            <label>
+            <label className="cursor-pointer">
               <input
                 type="file"
                 accept=".xlsx"
@@ -180,11 +180,9 @@ export default function BaremesPage() {
                 className="hidden"
                 disabled={uploading}
               />
-              <Button asChild disabled={uploading}>
-                <span className="cursor-pointer">
-                  <Upload className="w-4 h-4 mr-2" />
-                  {uploading ? 'Upload...' : 'Uploader'}
-                </span>
+              <Button disabled={uploading} type="button">
+                <Upload className="w-4 h-4 mr-2" />
+                {uploading ? 'Upload...' : 'Uploader'}
               </Button>
             </label>
           </CardTitle>

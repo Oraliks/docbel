@@ -1,29 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { logActivity } from '@/lib/activity-logger';
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { logActivity } from "@/lib/activity-logger"
+import { requireAdminAuth } from "@/lib/auth-check"
 
 export async function POST(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
+
   try {
-    const { id } = await params;
+    const { id } = await params
     const article = await prisma.news.update({
       where: { id },
       data: {
-        status: 'published',
+        status: "published",
         publishedAt: new Date(),
-        scheduledAt: null
-      }
-    });
+        scheduledAt: null,
+      },
+    })
 
-    await logActivity('Admin', 'published', 'news', article.title, article.id, `Article publié: ${article.title}`);
+    await logActivity("Admin", "published", "news", article.title, article.id, `Article publie: ${article.title}`)
 
     return NextResponse.json(article, {
-      headers: { 'Content-Type': 'application/json; charset=utf-8' }
-    });
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    })
   } catch (error) {
-    console.error('Error publishing article:', error);
-    return NextResponse.json({ error: 'Failed to publish article' }, { status: 500 });
+    console.error("Error publishing article:", error)
+    return NextResponse.json({ error: "Failed to publish article" }, { status: 500 })
   }
 }

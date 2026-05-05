@@ -13,13 +13,13 @@ interface PageBuilderStore {
   setIsSaving: (saving: boolean) => void
   addBlock: (block: BlockProps) => void
   removeBlock: (id: string) => void
-  updateBlock: (id: string, props: any) => void
+  updateBlock: (id: string, props: Record<string, unknown>) => void
   duplicateBlock: (id: string) => void
   moveBlock: (id: string, direction: 'up' | 'down') => void
   reset: () => void
 }
 
-export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
+export const usePageBuilderStore = create<PageBuilderStore>((set) => ({
   page: null,
   blocks: [],
   selectedBlockId: null,
@@ -39,7 +39,7 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
     selectedBlockId: state.selectedBlockId === id ? null : state.selectedBlockId
   })),
 
-  updateBlock: (id, props) => set((state) => ({
+  updateBlock: (id: string, props: Record<string, unknown>) => set((state) => ({
     blocks: state.blocks.map((b) =>
       b.id === id ? { ...b, props: { ...b.props, ...props } } : b
     )

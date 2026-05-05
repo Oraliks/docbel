@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Mail, MessageCircle, Clock, CheckCircle2 } from "lucide-react";
 
 interface ContactPageProps {
@@ -27,12 +26,7 @@ export function ContactPage({ accent }: ContactPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
-
-  // Decode email on client-side only
-  useEffect(() => {
-    setContactEmail(getContactEmail());
-  }, []);
+  const [contactEmail] = useState(() => getContactEmail());
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -168,7 +162,7 @@ export function ContactPage({ accent }: ContactPageProps) {
                     className="mt-1 cursor-pointer accent-red-600"
                   />
                   <label htmlFor="acceptData" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
-                    J'accepte que mes données soient utilisées pour traiter ma demande conformément à notre
+                    J&apos;accepte que mes données soient utilisées pour traiter ma demande conformément à notre
                     politique de confidentialité.
                   </label>
                 </div>

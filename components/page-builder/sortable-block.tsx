@@ -3,33 +3,51 @@
 import React from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { BlockProps } from '@/lib/page-builder/types'
+import {
+  BlockProps,
+  CtaProps,
+  FeaturesProps,
+  HeroProps,
+  ImageProps,
+  SectionProps,
+} from '@/lib/page-builder/types'
 import { BLOCK_REGISTRY } from '@/lib/page-builder/block-registry'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Copy, Trash2, GripVertical, ChevronUp, ChevronDown } from 'lucide-react'
+import {
+  Box,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  FileText,
+  GripVertical,
+  MousePointer,
+  Trash2,
+  Zap,
+} from 'lucide-react'
 
 const getBlockIcon = (iconName: string) => {
   const icons: Record<string, React.ReactNode> = {
-    'zap': '⚡',
-    'file-text': '📝',
-    'mouse-pointer': '🖱️',
+    zap: <Zap className="h-4 w-4" />,
+    'file-text': <FileText className="h-4 w-4" />,
+    'mouse-pointer': <MousePointer className="h-4 w-4" />,
   }
-  return icons[iconName] || '📦'
+
+  return icons[iconName] || <Box className="h-4 w-4" />
 }
 
 const getPreview = (block: BlockProps): string => {
   switch (block.type) {
     case 'hero':
-      return block.props.title || '(sans titre)'
+      return (block.props as unknown as HeroProps).title || '(sans titre)'
     case 'cta':
-      return block.props.text || '(sans texte)'
+      return (block.props as unknown as CtaProps).text || '(sans texte)'
     case 'image':
-      return block.props.url ? '(image chargée)' : '(image non configurée)'
+      return (block.props as unknown as ImageProps).url ? '(image chargee)' : '(image non configuree)'
     case 'features':
-      return `${block.props.items?.length || 0} fonctionnalités`
+      return `${(block.props as unknown as FeaturesProps).items?.length || 0} fonctionnalites`
     case 'section':
-      return block.props.title || '(sans titre)'
+      return (block.props as unknown as SectionProps).title || '(sans titre)'
     default:
       return '?'
   }
@@ -69,6 +87,8 @@ export const SortableBlock: React.FC<SortableBlockProps> = ({
     opacity: isDragging ? 0.5 : 1,
   }
 
+  const registryEntry = BLOCK_REGISTRY[block.type as keyof typeof BLOCK_REGISTRY]
+
   return (
     <Card
       ref={setNodeRef}
@@ -79,28 +99,26 @@ export const SortableBlock: React.FC<SortableBlockProps> = ({
       onClick={onSelect}
     >
       <div className="flex items-center justify-between gap-2">
-        {/* Drag Handle */}
         <div
           {...attributes}
           {...listeners}
           className="cursor-grab active:cursor-grabbing flex-shrink-0 group/drag relative"
-          title="Glissez pour réordonner"
+          title="Glissez pour reordonner"
         >
           <GripVertical className="h-4 w-4 text-gray-400 hover:text-gray-600" />
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/drag:block bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-            Glissez pour réordonner
+            Glissez pour reordonner
           </div>
         </div>
 
-        {/* Block Icon with Tooltip */}
-        {BLOCK_REGISTRY[block.type as keyof typeof BLOCK_REGISTRY] ? (
+        {registryEntry ? (
           <span
             className="text-lg flex-shrink-0 cursor-help group/icon relative"
-            title={BLOCK_REGISTRY[block.type as keyof typeof BLOCK_REGISTRY].name}
+            title={registryEntry.name}
           >
-            {getBlockIcon(BLOCK_REGISTRY[block.type as keyof typeof BLOCK_REGISTRY].iconName)}
+            {getBlockIcon(registryEntry.iconName)}
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/icon:block bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-              {BLOCK_REGISTRY[block.type as keyof typeof BLOCK_REGISTRY].name}
+              {registryEntry.name}
             </div>
           </span>
         ) : (
@@ -108,33 +126,65 @@ export const SortableBlock: React.FC<SortableBlockProps> = ({
             className="text-lg flex-shrink-0 cursor-help group/icon relative text-gray-400"
             title="Type de bloc inconnu"
           >
-            ❓
+            <Box className="h-4 w-4" />
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/icon:block bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
               Type inconnu: {block.type}
             </div>
           </span>
         )}
 
-        {/* Actions */}
         <div className="flex gap-1 flex-shrink-0 ml-auto">
           {onMoveUp && (
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={(e) => { e.stopPropagation(); onMoveUp() }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={(event) => {
+                event.stopPropagation()
+                onMoveUp()
+              }}
+            >
               <ChevronUp className="h-3 w-3" />
             </Button>
           )}
           {onMoveDown && (
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={(e) => { e.stopPropagation(); onMoveDown() }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={(event) => {
+                event.stopPropagation()
+                onMoveDown()
+              }}
+            >
               <ChevronDown className="h-3 w-3" />
             </Button>
           )}
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={(e) => { e.stopPropagation(); onDuplicate() }}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={(event) => {
+              event.stopPropagation()
+              onDuplicate()
+            }}
+          >
             <Copy className="h-3 w-3" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-600" onClick={(e) => { e.stopPropagation(); onDelete() }}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 text-red-600"
+            onClick={(event) => {
+              event.stopPropagation()
+              onDelete()
+            }}
+          >
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       </div>
+      <p className="mt-2 text-xs text-muted-foreground">{getPreview(block)}</p>
     </Card>
   )
 }

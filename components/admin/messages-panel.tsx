@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MessageDetailView } from "./message-detail";
-import { Eye, EyeOff, Archive, Trash2, Mail, ChevronRight, CheckCircle, Circle } from "lucide-react";
+import { Archive, Trash2, Mail, ChevronRight, CheckCircle, Circle } from "lucide-react";
 
 interface ContactMessage {
   id: string;
@@ -69,12 +69,6 @@ export function MessagesPanel({ initialMessages = [] }: MessagesPanelProps) {
   const [filter, setFilter] = useState<"ALL" | "NEW" | "READ" | "REPLIED" | "ARCHIVED">("ALL");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!initialMessages.length) {
-      fetchMessages();
-    }
-  }, [initialMessages.length]);
-
   async function fetchMessages() {
     try {
       const response = await fetch("/api/contact-messages");
@@ -88,6 +82,13 @@ export function MessagesPanel({ initialMessages = [] }: MessagesPanelProps) {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!initialMessages.length) {
+      async function load() { await fetchMessages() }
+      void load()
+    }
+  }, [initialMessages.length]);
 
   async function updateMessageStatus(id: string, newStatus: string) {
     setActionLoading(id);
@@ -187,7 +188,7 @@ export function MessagesPanel({ initialMessages = [] }: MessagesPanelProps) {
         {["ALL", "NEW", "READ", "REPLIED", "ARCHIVED"].map((status) => (
           <button
             key={status}
-            onClick={() => setFilter(status as any)}
+            onClick={() => setFilter(status as "ALL" | "NEW" | "READ" | "REPLIED" | "ARCHIVED")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               filter === status
                 ? "bg-blue-600 text-white"

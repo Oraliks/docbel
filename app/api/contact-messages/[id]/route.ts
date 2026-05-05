@@ -4,9 +4,12 @@ import { logActivity } from "@/lib/activity-logger"
 import { requireAdminAuth } from "@/lib/auth-check"
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
+
   try {
     const { id } = await params
     const message = await prisma.contactMessage.findUnique({
@@ -20,7 +23,6 @@ export async function GET(
       )
     }
 
-    // Update status to READ if it's NEW
     if (message.status === "NEW") {
       await prisma.contactMessage.update({
         where: { id },
@@ -42,6 +44,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
+
   try {
     const { id } = await params
     const body = await request.json()
@@ -65,8 +70,7 @@ export async function PUT(
       )
     }
 
-    // Update message
-    const updateData: any = {}
+    const updateData: { status?: string; adminReply?: string } = {}
     if (status) updateData.status = status
     if (adminReply) {
       updateData.adminReply = adminReply
@@ -78,7 +82,6 @@ export async function PUT(
       data: updateData,
     })
 
-    // Log activity
     await logActivity(
       "Admin",
       "updated",
@@ -99,7 +102,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const authCheck = await requireAdminAuth()
@@ -126,12 +129,10 @@ export async function DELETE(
       )
     }
 
-    // Delete message
     await prisma.contactMessage.delete({
       where: { id },
     })
 
-    // Log activity
     await logActivity(
       "Admin",
       "deleted",

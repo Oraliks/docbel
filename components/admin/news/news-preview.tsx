@@ -24,10 +24,10 @@ export function NewsPreview({
   return (
     <div className="space-y-6">
       <div className="text-sm font-semibold text-gray-500 uppercase">{category}</div>
-      <h1 className="text-4xl font-bold text-gray-900">{title || 'Titre de l\'article'}</h1>
+      <h1 className="text-4xl font-bold text-gray-900">{title || "Titre de l'article"}</h1>
 
       <div className="flex gap-6 text-sm text-gray-600">
-        <span>📅 Aujourd'hui</span>
+        <span>📅 Aujourd&apos;hui</span>
         {readingTime && <span>⏱️ {readingTime} min de lecture</span>}
       </div>
 

@@ -10,13 +10,13 @@ import { Textarea } from '@/components/ui/textarea'
 
 interface PropertiesPanelProps {
   block: BlockProps
-  onChange: (props: any) => void
+  onChange: (props: Record<string, unknown>) => void
 }
 
 export function PropertiesPanel({ block, onChange }: PropertiesPanelProps) {
   const config = BLOCK_REGISTRY[block.type]
 
-  const handleChange = (key: string, value: any) => {
+  const handleChange = (key: string, value: unknown) => {
     onChange({ [key]: value })
   }
 

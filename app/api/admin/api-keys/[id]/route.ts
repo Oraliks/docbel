@@ -1,36 +1,36 @@
 import { NextRequest, NextResponse } from "next/server"
-
-// Reference to the same mock store as the GET/POST endpoint
-// In production, this would be a proper database
-const mockApiKeyIds = new Set<string>()
+import { prisma } from "@/lib/prisma"
+import { requireAdminAuth } from "@/lib/auth-check"
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
+
   try {
-    const authCookie = req.headers.get("cookie")
-    if (!authCookie?.includes("next-auth.session-token")) {
+    const { id } = await params
+    const apiKey = await prisma.apiKey.findUnique({
+      where: { id },
+      select: { id: true },
+    })
+
+    if (!apiKey) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized - please login first" },
-        { status: 401 }
+        { success: false, error: "API key not found" },
+        { status: 404 }
       )
     }
 
-    const { id } = await params
+    await prisma.apiKey.delete({
+      where: { id },
+    })
 
-    if (mockApiKeyIds.has(id)) {
-      mockApiKeyIds.delete(id)
-      return NextResponse.json({
-        success: true,
-        message: "API key deleted"
-      })
-    }
-
-    return NextResponse.json(
-      { success: false, error: "API key not found" },
-      { status: 404 }
-    )
+    return NextResponse.json({
+      success: true,
+      message: "API key deleted",
+    })
   } catch (error) {
     console.error("DELETE /api/admin/api-keys/[id] error:", error)
     return NextResponse.json(

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -47,25 +47,6 @@ export default function BaremesPage() {
   const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const fetchFiles = async () => {
-    try {
-      const res = await fetch('/api/baremes')
-      const data = await res.json()
-      setFiles(data.files || [])
-      // Auto-sélectionner le premier fichier
-      if (data.files?.[0] && !selectedFileData) {
-        loadFile(data.files[0].id)
-      }
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
-  // Charger la liste des fichiers
-  useEffect(() => {
-    fetchFiles()
-  }, [])
-
   const loadFile = async (fileId: string) => {
     setLoading(true)
     try {
@@ -82,6 +63,27 @@ export default function BaremesPage() {
       setLoading(false)
     }
   }
+
+  const fetchFiles = async () => {
+    try {
+      const res = await fetch('/api/baremes')
+      const data = await res.json()
+      setFiles(data.files || [])
+      // Auto-sélectionner le premier fichier
+      if (data.files?.[0] && !selectedFileData) {
+        loadFile(data.files[0].id)
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // Charger la liste des fichiers
+  useEffect(() => {
+    async function load() { await fetchFiles() }
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleUpload = async (e: React.DragEvent | React.ChangeEvent<HTMLInputElement>) => {
     let file: File | null = null
@@ -138,13 +140,15 @@ export default function BaremesPage() {
         setSelectedFileData(null)
       }
       await fetchFiles()
-    } catch (error) {
+    } catch {
       toast.error('Delete failed')
     }
   }
 
   const handleExportSheet = (sheetId: string, sheetName: string) => {
-    window.location.href = `/api/baremes/export?sheetId=${sheetId}`
+    const a = document.createElement('a')
+    a.href = `/api/baremes/export?sheetId=${sheetId}`
+    a.click()
     toast.success(`Téléchargement: ${sheetName}.csv`)
   }
 
@@ -153,10 +157,6 @@ export default function BaremesPage() {
       window.open(selectedFileData.file.filePath, '_blank')
     }
   }
-
-  const activeSheet = useMemo(() => {
-    return selectedFileData?.sheets.find((s) => s.id === activeSheetId) || null
-  }, [selectedFileData, activeSheetId])
 
   return (
     <div className="space-y-6 p-6">

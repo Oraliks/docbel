@@ -29,7 +29,8 @@ export function ActualitesPage({ onArticleClick }: ActualitesPageProps) {
         if (response.ok) {
           const data = await response.json();
           const apiArticles = data.articles || [];
-          const mappedArticles: NewsItem[] = apiArticles.map((article: any) => ({
+          type RawArticle = { id: string; category: string; title: string; excerpt: string; publishedAt: string | null; color?: string; readingTime?: number; featured?: boolean; image?: string | null; content?: string };
+          const mappedArticles: NewsItem[] = apiArticles.map((article: RawArticle) => ({
             id: article.id,
             tag: article.category,
             title: article.title,
@@ -95,9 +96,6 @@ export function ActualitesPage({ onArticleClick }: ActualitesPageProps) {
   const totalPages = Math.ceil(mainArticles.length / PER_PAGE);
   const visible = mainArticles.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
-  useEffect(() => {
-    setPage(0);
-  }, [selectedCategory, sortBy]);
 
   // Component for article cards (reused for featured and main grid)
   const ArticleCard = ({
@@ -137,6 +135,8 @@ export function ActualitesPage({ onArticleClick }: ActualitesPageProps) {
           }}
         >
           {hasImage ? (
+            // Article thumbnails are dynamic content and not constrained to next/image-compatible sources.
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={item.image}
               alt={item.title}
@@ -215,7 +215,7 @@ export function ActualitesPage({ onArticleClick }: ActualitesPageProps) {
           {categories.map((cat) => (
             <button
               key={cat}
-              onClick={() => setSelectedCategory(cat)}
+              onClick={() => { setSelectedCategory(cat); setPage(0); }}
               className={`px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-all duration-200 cubic-bezier(0.34, 1.56, 0.64, 1) ${
                 selectedCategory === cat
                   ? "bg-accent border-accent text-white"
@@ -244,7 +244,7 @@ export function ActualitesPage({ onArticleClick }: ActualitesPageProps) {
           {/* Sort Dropdown */}
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as "recent" | "popular")}
+            onChange={(e) => { setSortBy(e.target.value as "recent" | "popular"); setPage(0); }}
             className="px-3 py-2 rounded-lg border border-border bg-surface text-foreground text-sm font-semibold cursor-pointer"
           >
             <option value="recent">Les plus récents</option>

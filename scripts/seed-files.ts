@@ -8,7 +8,7 @@ async function seedFiles() {
   await prisma.file.deleteMany();
 
   // Create root public folders
-  const publicDocs = await prisma.file.create({
+  await prisma.file.create({
     data: {
       name: "Documents publics",
       type: "folder",
@@ -17,7 +17,7 @@ async function seedFiles() {
     },
   });
 
-  const publicResources = await prisma.file.create({
+  await prisma.file.create({
     data: {
       name: "Ressources",
       type: "folder",
@@ -27,7 +27,7 @@ async function seedFiles() {
   });
 
   // Create root private folders
-  const privateDocs = await prisma.file.create({
+  await prisma.file.create({
     data: {
       name: "Documents privés",
       type: "folder",
@@ -36,7 +36,7 @@ async function seedFiles() {
     },
   });
 
-  const privateBackup = await prisma.file.create({
+  await prisma.file.create({
     data: {
       name: "Sauvegardes",
       type: "folder",

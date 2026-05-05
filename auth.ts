@@ -3,6 +3,12 @@ import Credentials from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import * as bcrypt from "bcryptjs"
 
+const nextAuthSecret = process.env.NEXTAUTH_SECRET
+
+if (!nextAuthSecret) {
+  throw new Error("NEXTAUTH_SECRET is required")
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
@@ -20,7 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         })
 
         if (!user) {
-          throw new Error("Utilisateur non trouvé")
+          throw new Error("Email ou mot de passe incorrect")
         }
 
         const passwordMatch = await bcrypt.compare(
@@ -29,7 +35,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         )
 
         if (!passwordMatch) {
-          throw new Error("Mot de passe incorrect")
+          throw new Error("Email ou mot de passe incorrect")
         }
 
         return {
@@ -49,7 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id
         token.name = user.name
-        token.role = (user as any).role
+        token.role = (user as { role?: string }).role
       }
       return token
     },
@@ -57,7 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string
         session.user.name = token.name as string
-        ;(session.user as any).role = token.role
+        ;(session.user as { role?: unknown }).role = token.role
       }
       return session
     },
@@ -65,5 +71,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET || "dev-secret-key-change-in-production",
+  secret: nextAuthSecret,
 })

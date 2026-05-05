@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Build filter
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (status !== 'all') {
       where.status = status;
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Build sort - support: title, status, createdAt, views, publishedAt
-    const orderBy: any = {};
+    const orderBy: Record<string, string> = {};
     const validSortFields = ['title', 'status', 'createdAt', 'views', 'publishedAt'];
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
     const order = sortOrder === 'asc' ? 'asc' : 'desc';
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Fetch image fields via raw SQL (Prisma client may predate the migration)
-    let imageMap: Record<string, string | null> = {};
+    const imageMap: Record<string, string | null> = {};
     if (articles.length > 0) {
       const ids = articles.map(a => a.id);
       const placeholders = ids.map(() => '?').join(',');

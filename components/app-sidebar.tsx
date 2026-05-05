@@ -16,7 +16,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon, KeyIcon, NewspaperIcon, TagsIcon, MailIcon, Wrench } from "lucide-react"
+import { LayoutDashboardIcon, FolderIcon, UsersIcon, CommandIcon, KeyIcon, NewspaperIcon, MailIcon, Wrench } from "lucide-react"
+import Link from "next/link"
 
 const defaultData = {
   user: {
@@ -113,7 +114,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         const response = await fetch("/api/contact-messages")
         if (response.ok) {
           const messages = await response.json()
-          const unread = messages.filter((msg: any) => msg.status === "NEW").length
+          const unread = messages.filter((msg: { status: string }) => msg.status === "NEW").length
           setUnreadCount(unread)
         }
       } catch (error) {
@@ -137,7 +138,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               className="data-[slot=sidebar-menu-button]:p-1.5!"
-              render={<a href="/admin" />}
+              render={<Link href="/admin" />}
             >
               <CommandIcon className="size-5!" />
               <span className="text-base font-semibold">Docbel</span>

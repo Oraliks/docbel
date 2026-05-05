@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChangelogEntry, ColorPalette } from "@/lib/docbel-data";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChangelogEntry } from "@/lib/docbel-data";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -284,6 +284,8 @@ export function ChangelogManager() {
                     {formData.media.map((m, idx) => (
                       <div key={idx} className="relative rounded-lg overflow-hidden border">
                         {m.type === "image" ? (
+                          // Media previews are uploaded as data URLs and are not compatible with next/image optimization.
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img src={m.url} alt="media" className="w-full h-24 object-cover" />
                         ) : (
                           <video src={m.url} className="w-full h-24 object-cover" />

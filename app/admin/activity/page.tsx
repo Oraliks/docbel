@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ActivityLog, ActivityItem } from "@/components/admin/activity-log";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,6 @@ import { Clock, Filter, Activity } from "lucide-react";
 
 export default function ActivityPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [filteredActivities, setFilteredActivities] = useState<ActivityItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [actionFilter, setActionFilter] = useState<string>("all");
   const [resourceFilter, setResourceFilter] = useState<string>("all");
@@ -57,7 +56,7 @@ export default function ActivityPage() {
     fetchActivities();
   }, []);
 
-  useEffect(() => {
+  const filteredActivities = useMemo(() => {
     let filtered = activities;
 
     if (searchTerm) {
@@ -77,7 +76,7 @@ export default function ActivityPage() {
       filtered = filtered.filter((activity) => activity.resource === resourceFilter);
     }
 
-    setFilteredActivities(filtered);
+    return filtered;
   }, [activities, searchTerm, actionFilter, resourceFilter]);
 
   const stats = {
@@ -98,7 +97,7 @@ export default function ActivityPage() {
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <Clock className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold tracking-tight">Journal d'activité</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Journal d&apos;activité</h1>
         </div>
         <p className="text-muted-foreground">Suivi complet de tous les changements effectués</p>
       </div>
@@ -108,7 +107,7 @@ export default function ActivityPage() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription className="text-xs">Total d'activités</CardDescription>
+              <CardDescription className="text-xs">Total d&apos;activités</CardDescription>
               <CardTitle className="text-3xl font-bold">{stats.total}</CardTitle>
             </CardHeader>
           </Card>
@@ -120,7 +119,7 @@ export default function ActivityPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription className="text-xs">Aujourd'hui</CardDescription>
+              <CardDescription className="text-xs">Aujourd&apos;hui</CardDescription>
               <CardTitle className="text-3xl font-bold">{stats.today}</CardTitle>
             </CardHeader>
           </Card>
@@ -151,7 +150,7 @@ export default function ActivityPage() {
 
             <div className="space-y-2">
               <label htmlFor="action-filter" className="text-sm font-medium">
-                Type d'action
+                Type d&apos;action
               </label>
               <Select value={actionFilter} onValueChange={(value) => setActionFilter(value || "all")}>
                 <SelectTrigger id="action-filter" className="w-full">

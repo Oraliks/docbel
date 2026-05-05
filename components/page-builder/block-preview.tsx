@@ -1,7 +1,14 @@
 'use client'
 
 import React from 'react'
-import { BlockProps } from '@/lib/page-builder/types'
+import {
+  BlockProps,
+  CtaProps,
+  FeaturesProps,
+  HeroProps,
+  ImageProps,
+  SectionProps,
+} from '@/lib/page-builder/types'
 import { HeroBlock } from '@/components/page-blocks/hero-block'
 import { CtaBlock } from '@/components/page-blocks/cta-block'
 import { ImageBlock } from '@/components/page-blocks/image-block'
@@ -13,31 +20,56 @@ interface BlockPreviewProps {
   block: BlockProps
 }
 
-export function BlockPreview({ block }: BlockPreviewProps) {
-  try {
-    switch (block.type) {
-      case 'hero':
-        return <HeroBlock key={block.id} {...(block.props as any)} />
-      case 'cta':
-        return <CtaBlock key={block.id} {...(block.props as any)} />
-      case 'image':
-        return <ImageBlock key={block.id} {...(block.props as any)} />
-      case 'features':
-        return <FeaturesBlock key={block.id} {...(block.props as any)} />
-      case 'section':
-        return <SectionBlock key={block.id} {...(block.props as any)} />
-      default:
-        return (
-          <Card className="p-4 text-center text-muted-foreground">
-            Type inconnu: {block.type}
-          </Card>
-        )
-    }
-  } catch (error) {
-    return (
-      <Card className="p-4 text-center text-red-600">
-        Erreur rendu: {String(error)}
-      </Card>
-    )
+function BlockContent({ block }: BlockPreviewProps) {
+  switch (block.type) {
+    case 'hero':
+      return <HeroBlock key={block.id} {...(block.props as unknown as HeroProps)} />
+    case 'cta':
+      return <CtaBlock key={block.id} {...(block.props as unknown as CtaProps)} />
+    case 'image':
+      return <ImageBlock key={block.id} {...(block.props as unknown as ImageProps)} />
+    case 'features':
+      return <FeaturesBlock key={block.id} {...(block.props as unknown as FeaturesProps)} />
+    case 'section':
+      return <SectionBlock key={block.id} {...(block.props as unknown as SectionProps)} />
+    default:
+      return (
+        <Card className="p-4 text-center text-muted-foreground">
+          Type inconnu: {block.type}
+        </Card>
+      )
   }
+}
+
+class BlockErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false, error: '' }
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: String(error) }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Card className="p-4 text-center text-red-600">
+          Erreur rendu: {this.state.error}
+        </Card>
+      )
+    }
+    return this.props.children
+  }
+}
+
+export function BlockPreview({ block }: BlockPreviewProps) {
+  return (
+    <BlockErrorBoundary>
+      <BlockContent block={block} />
+    </BlockErrorBoundary>
+  )
 }

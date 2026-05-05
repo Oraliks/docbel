@@ -188,7 +188,7 @@ export function ActivityLog({ activities, limit, showViewAll = false, compact = 
         <div>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-muted-foreground" />
-            Journal d'activité
+            Journal d&apos;activité
           </CardTitle>
           <CardDescription>Suivi complet de tous les changements</CardDescription>
         </div>

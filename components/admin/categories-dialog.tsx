@@ -51,8 +51,8 @@ export function CategoriesDialog({ open, onOpenChange, onCategoriesUpdated }: Ca
       toast.success('Catégorie créée');
       onCategoriesUpdated?.();
       onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.message || 'Erreur');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur');
     } finally {
       setLoading(false);
     }

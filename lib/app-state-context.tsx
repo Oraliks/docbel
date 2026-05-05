@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext } from "react";
 import { useTheme } from "next-themes";
 
 interface AppStateContextType {

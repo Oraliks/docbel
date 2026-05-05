@@ -59,7 +59,7 @@ export const SectionSettings: React.FC<SectionSettingsProps> = ({ value, onChang
 
       <div>
         <Label className="text-sm font-medium">Espacement</Label>
-        <Select value={value.padding || 'large'} onValueChange={(p) => onChange({ ...value, padding: p as any })}>
+        <Select value={value.padding || 'large'} onValueChange={(p) => onChange({ ...value, padding: p as 'small' | 'medium' | 'large' })}>
           <SelectTrigger className="mt-1">
             <SelectValue />
           </SelectTrigger>

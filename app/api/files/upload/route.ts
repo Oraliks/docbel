@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { buildStoredFilePath, getUploadDirectory } from "@/lib/file-storage";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
@@ -26,18 +27,17 @@ export async function POST(req: NextRequest) {
     const fileType = getFileType(fileExt);
 
     // Déterminer le chemin de sauvegarde
-    const uploadDir = isPrivate ? "private/uploads" : "public/uploads";
-    const fullDir = join(process.cwd(), uploadDir);
+    const { relativeDir, absoluteDir } = getUploadDirectory(isPrivate);
 
     // Créer le dossier s'il n'existe pas
-    if (!existsSync(fullDir)) {
-      await mkdir(fullDir, { recursive: true });
+    if (!existsSync(absoluteDir)) {
+      await mkdir(absoluteDir, { recursive: true });
     }
 
     // Générer un nom de fichier unique
     const uniqueName = `${Date.now()}-${fileName}`;
-    const filePath = join(uploadDir, uniqueName);
-    const fullPath = join(process.cwd(), filePath);
+    const filePath = buildStoredFilePath(relativeDir, uniqueName);
+    const fullPath = join(absoluteDir, uniqueName);
 
     // Écrire le fichier
     await writeFile(fullPath, Buffer.from(buffer));
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
         size: fileSize,
         parentId: parentId || null,
         isPrivate,
-        filePath: filePath.replace(/\\/g, "/"),
+        filePath,
         createdBy: auth.user?.email || "unknown",
       },
     });

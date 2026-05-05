@@ -50,10 +50,6 @@ export default function PagesListPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('blank')
   const [isCreating, setIsCreating] = useState(false)
 
-  useEffect(() => {
-    fetchPages()
-  }, [])
-
   const fetchPages = async () => {
     try {
       const res = await fetch('/api/pages')
@@ -65,6 +61,11 @@ export default function PagesListPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    async function load() { await fetchPages() }
+    void load()
+  }, [])
 
   const handlePublishToggle = async (id: string) => {
     try {
@@ -344,7 +345,7 @@ export default function PagesListPage() {
           <DialogHeader>
             <DialogTitle>Créer une nouvelle page</DialogTitle>
             <DialogDescription>
-              Entrez le titre de la page et choisissez un modèle. Vous pourrez l'éditer après la création.
+              Entrez le titre de la page et choisissez un modèle. Vous pourrez l&apos;éditer après la création.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

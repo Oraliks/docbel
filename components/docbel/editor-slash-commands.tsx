@@ -91,7 +91,12 @@ const commands = [
     action: (editor: Editor) => {
       const url = prompt("Enter image URL:");
       if (url) {
-        editor.chain().focus().deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from }).setImage({ src: url }).run();
+        editor
+          .chain()
+          .focus()
+          .deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from })
+          .insertContent({ type: "image", attrs: { src: url, alt: "", width: null, align: "center" } })
+          .run();
       }
     },
   },

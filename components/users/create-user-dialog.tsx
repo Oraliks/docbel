@@ -24,7 +24,7 @@ import { Loader2 } from "lucide-react"
 interface CreateUserDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onUserCreated: (user: any) => void
+  onUserCreated: (user: { id: string; name: string; email: string; role: string; createdAt: string; updatedAt: string }) => void
 }
 
 export function CreateUserDialog({
@@ -225,7 +225,7 @@ export function CreateUserDialog({
             </Button>
             <Button type="submit" disabled={loading} className="gap-2">
               {loading && <Loader2 className="size-4 animate-spin" />}
-              Créer l'utilisateur
+              Créer l&apos;utilisateur
             </Button>
           </div>
         </form>

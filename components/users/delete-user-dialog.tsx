@@ -50,7 +50,7 @@ export function DeleteUserDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Supprimer l'utilisateur ?</AlertDialogTitle>
+          <AlertDialogTitle>Supprimer l&apos;utilisateur ?</AlertDialogTitle>
           <AlertDialogDescription>
             Êtes-vous sûr de vouloir supprimer <strong>{user?.name}</strong> ({user?.email}) ? Cette action est irréversible.
           </AlertDialogDescription>

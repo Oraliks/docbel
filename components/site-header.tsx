@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { signOut } from "next-auth/react"
 import { useTheme } from "next-themes"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { HomeIcon, MoonIcon, SunIcon } from "lucide-react"
 import {
@@ -17,11 +18,7 @@ import {
 export function SiteHeader() {
   const { data: session } = useSession()
   const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const [mounted] = useState(() => typeof window !== 'undefined')
 
   const isDark = mounted && resolvedTheme === "dark"
 
@@ -57,10 +54,10 @@ export function SiteHeader() {
             {session && (
               <>
                 <Tooltip>
-                  <TooltipTrigger render={<a href="/" />} className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+                  <TooltipTrigger render={<Link href="/" />} className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                     <HomeIcon className="size-4" />
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">Aller à l'accueil</TooltipContent>
+                  <TooltipContent side="bottom">Aller à l&apos;accueil</TooltipContent>
                 </Tooltip>
                 <Button
                   variant="outline"

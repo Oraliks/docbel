@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ClockIcon } from "./icons";
 import { Tool } from "@/lib/docbel-data";
 import {
   CalcPreavis,

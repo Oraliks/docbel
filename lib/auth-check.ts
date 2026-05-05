@@ -14,7 +14,7 @@ export async function requireAdminAuth() {
     };
   }
 
-  const user = session.user as any;
+  const user = session.user as { role?: string; id?: string; name?: string | null; email?: string | null };
   if (user.role !== "admin") {
     return {
       error: NextResponse.json(

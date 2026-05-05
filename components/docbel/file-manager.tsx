@@ -17,11 +17,8 @@ import {
   Trash2,
   Edit,
   ChevronRight,
-  Search,
   Grid,
   List as ListIcon,
-  MoreVertical,
-  ChevronLeft,
   Plus,
   Upload,
   Lock,
@@ -41,7 +38,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -51,6 +48,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
+
+const colors = {
+  surface: "var(--surface)",
+  textMuted: "var(--text-muted)",
+};
 
 interface FileItem {
   id: string;
@@ -88,10 +90,9 @@ export function FileManager() {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [usageWarning, setUsageWarning] = useState<{
     fileId: string;
-    usage: any[];
+    usage: { id: string; title?: string }[];
   } | null>(null);
   const [newFolderIsPrivate, setNewFolderIsPrivate] = useState(false);
-  const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [previewFileId, setPreviewFileId] = useState<string | null>(null);
   const [privacyWarning, setPrivacyWarning] = useState<{
     fileId: string;
@@ -114,15 +115,9 @@ export function FileManager() {
     newPrivacy: boolean;
   } | null>(null);
   const [draggedFileIds, setDraggedFileIds] = useState<Set<string>>(new Set());
-  const [dropZoneFolderId, setDropZoneFolderId] = useState<string | null>(null);
   const [isMoving, setIsMoving] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [movingToFolder, setMovingToFolder] = useState<string | null>(null);
-
-  // Load files
-  useEffect(() => {
-    fetchFiles();
-  }, [currentFolderId, viewMode]);
 
   const fetchFiles = async () => {
     try {
@@ -145,6 +140,13 @@ export function FileManager() {
       setLoading(false);
     }
   };
+
+  // Load files
+  useEffect(() => {
+    async function load() { await fetchFiles() }
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentFolderId, viewMode]);
 
   const handleNavigate = (file: FileItem) => {
     if (file.type === "folder") {
@@ -402,9 +404,7 @@ export function FileManager() {
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (draggedFileIds.size > 0) {
-      setDropZoneFolderId(currentFolderId);
-    } else {
+    if (draggedFileIds.size === 0) {
       setDragOver(true);
     }
   };
@@ -413,7 +413,6 @@ export function FileManager() {
     e.preventDefault();
     e.stopPropagation();
     setDragOver(false);
-    setDropZoneFolderId(null);
   };
 
   const handleFileDragStart = (fileId: string, e: React.DragEvent<HTMLDivElement>) => {
@@ -430,7 +429,6 @@ export function FileManager() {
     e.preventDefault();
     e.stopPropagation();
     setDragOver(false);
-    setDropZoneFolderId(null);
 
     if (draggedFileIds.size > 0) {
       await handleMoveFiles(Array.from(draggedFileIds), currentFolderId || "root");
@@ -477,17 +475,6 @@ export function FileManager() {
     }
   };
 
-  const toggleFileSelection = (fileId: string, e: React.MouseEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    const newSelection = new Set(selectedFiles);
-    if (newSelection.has(fileId)) {
-      newSelection.delete(fileId);
-    } else {
-      newSelection.add(fileId);
-    }
-    setSelectedFiles(newSelection);
-  };
-
   const toggleSelectAll = () => {
     if (selectedFiles.size === filteredFiles.length) {
       setSelectedFiles(new Set());
@@ -524,7 +511,7 @@ export function FileManager() {
           } else {
             failureCount++;
           }
-        } catch (error) {
+        } catch {
           failureCount++;
         }
       }
@@ -595,7 +582,7 @@ export function FileManager() {
           } else {
             failureCount++;
           }
-        } catch (error) {
+        } catch {
           failureCount++;
         }
       }
@@ -645,7 +632,7 @@ export function FileManager() {
     try {
       setIsMoving(true);
       let successCount = 0;
-      let renamedFiles: string[] = [];
+      const renamedFiles: string[] = [];
 
       for (const fileId of fileIds) {
         try {
@@ -683,7 +670,6 @@ export function FileManager() {
 
       setSelectedFiles(new Set());
       setDraggedFileIds(new Set());
-      setDropZoneFolderId(null);
       fetchFiles();
     } catch (error) {
       console.error("Error moving files:", error);
@@ -990,8 +976,6 @@ export function FileManager() {
                     onClick={() => {
                       if (file.type === "folder") {
                         handleNavigate(file);
-                      } else {
-                        setSelectedFileId(file.id);
                       }
                     }}
                   >
@@ -1079,7 +1063,7 @@ export function FileManager() {
                       </ContextMenuItem>
                       <ContextMenuItem onClick={() => handleCopyUrl(file)}>
                         🔗
-                        Copier l'URL
+                        Copier l&apos;URL
                       </ContextMenuItem>
                     </>
                   )}
@@ -1174,8 +1158,6 @@ export function FileManager() {
                     onClick={() => {
                       if (file.type === "folder") {
                         handleNavigate(file);
-                      } else {
-                        setSelectedFileId(file.id);
                       }
                     }}
                   >
@@ -1220,7 +1202,7 @@ export function FileManager() {
                                 </ContextMenuItem>
                                 <ContextMenuItem onClick={() => handleCopyUrl(file)}>
                                   🔗
-                                  Copier l'URL
+                                  Copier l&apos;URL
                                 </ContextMenuItem>
                               </>
                             )}
@@ -1350,14 +1332,14 @@ export function FileManager() {
       <Dialog open={!!usageWarning} onOpenChange={() => setUsageWarning(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Fichier en cours d'utilisation</DialogTitle>
+            <DialogTitle>Fichier en cours d&apos;utilisation</DialogTitle>
           </DialogHeader>
           <div>
             <p style={{ marginBottom: "12px" }}>
               Ce fichier est utilisé sur les pages suivantes:
             </p>
             <ul style={{ listStyle: "none", padding: 0 }}>
-              {usageWarning?.usage?.map((u: any) => (
+              {usageWarning?.usage?.map((u: { id: string; pageSlug?: string; context?: string; title?: string }) => (
                 <li key={u.id} style={{ padding: "8px 0", fontSize: "14px" }}>
                   <strong>{u.pageSlug}</strong>
                   {u.context && (
@@ -1454,7 +1436,9 @@ export function FileManager() {
 
                 switch (file.fileType) {
                   case "image":
-                    return <img src={url} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />;
+                    // This preview URL is served by the file API and not suitable for next/image optimization.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    return <img src={url} alt={file.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />;
                   case "pdf":
                     return (
                       <iframe
@@ -1577,7 +1561,7 @@ export function FileManager() {
               Êtes-vous sûr de vouloir supprimer{" "}
               <strong>
                 {deleteConfirmation?.type === "folder" ? "le dossier" : "le fichier"}{" "}
-                "{deleteConfirmation?.fileName}"
+                &quot;{deleteConfirmation?.fileName}&quot;
               </strong>
               ?
             </p>

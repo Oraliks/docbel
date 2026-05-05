@@ -11,6 +11,45 @@ import {
   Type,
 } from "lucide-react";
 
+function FloatButton({
+  icon: Icon,
+  title,
+  onClick,
+  isActive,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  onClick: () => void;
+  isActive?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      style={{
+        padding: "6px 8px",
+        background: isActive ? "color-mix(in srgb, var(--color-accent) 40%, transparent)" : "transparent",
+        border: "1px solid var(--color-border)",
+        borderRadius: 4,
+        color: isActive ? "var(--color-accent)" : "var(--color-text)",
+        cursor: "pointer",
+        fontSize: 14,
+        transition: "all 150ms",
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.background = "color-mix(in srgb, var(--color-accent) 20%, transparent)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLButtonElement).style.background = isActive
+          ? "color-mix(in srgb, var(--color-accent) 40%, transparent)"
+          : "transparent";
+      }}
+    >
+      {Icon}
+    </button>
+  );
+}
+
 interface FloatingToolbarProps {
   editor: Editor | null;
   onFontClick?: () => void;
@@ -77,43 +116,6 @@ export function FloatingToolbar({
       adjustedLeft = Math.max(0, window.innerWidth - 210);
     }
   }
-
-  const FloatButton = ({
-    icon: Icon,
-    title,
-    onClick,
-    isActive,
-  }: {
-    icon: React.ReactNode;
-    title: string;
-    onClick: () => void;
-    isActive?: boolean;
-  }) => (
-    <button
-      onClick={onClick}
-      title={title}
-      style={{
-        padding: "6px 8px",
-        background: isActive ? "color-mix(in srgb, var(--color-accent) 40%, transparent)" : "transparent",
-        border: "1px solid var(--color-border)",
-        borderRadius: 4,
-        color: isActive ? "var(--color-accent)" : "var(--color-text)",
-        cursor: "pointer",
-        fontSize: 14,
-        transition: "all 150ms",
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.background = "color-mix(in srgb, var(--color-accent) 20%, transparent)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.background = isActive
-          ? "color-mix(in srgb, var(--color-accent) 40%, transparent)"
-          : "transparent";
-      }}
-    >
-      {Icon}
-    </button>
-  );
 
   return (
     <div

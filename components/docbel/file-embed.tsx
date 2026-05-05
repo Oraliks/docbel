@@ -3,6 +3,12 @@
 import React, { useState } from "react";
 import { Download, X, Eye, Loader } from "lucide-react";
 
+const accent = "var(--color-accent)";
+const colors = {
+  border: "var(--color-border)",
+  surface: "var(--color-surface)",
+};
+
 interface FileEmbedProps {
   file: {
     id: string;
@@ -19,7 +25,7 @@ export function FileEmbed({
   onRemove,
 }: FileEmbedProps) {
   const [showPreview, setShowPreview] = useState(false);
-  const [excelData, setExcelData] = useState<any[][]>([]);
+  const [excelData, setExcelData] = useState<string[][]>([]);
   const [loading, setLoading] = useState(false);
 
   const handleDownload = () => {
@@ -43,7 +49,7 @@ export function FileEmbed({
       });
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-      setExcelData(data as any[][]);
+      setExcelData(data as string[][]);
       setShowPreview(true);
     } catch (error) {
       console.error("Failed to parse Excel:", error);
@@ -60,6 +66,8 @@ export function FileEmbed({
           margin: "12px 0",
         }}
       >
+        {/* Embedded image data is user-provided content and is rendered directly on purpose. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={file.data}
           alt={file.name}

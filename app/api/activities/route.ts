@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const resource = searchParams.get("resource");
 
     // Build where clause for filtering
-    const where: any = {};
+    const where: { action?: string; resource?: string } = {};
     if (action && action !== "all") {
       where.action = action;
     }

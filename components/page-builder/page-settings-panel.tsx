@@ -139,6 +139,8 @@ export function PageSettingsPanel({
           </p>
           {ogImage && (
             <div className="mt-4 rounded border bg-muted p-4 flex items-center justify-center">
+              {/* OG previews accept arbitrary remote URLs from editors, so next/image remotePatterns are not appropriate here. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={ogImage}
                 alt="Preview"

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, BarChart3, Eye, FileText, Calendar } from 'lucide-react';
+import { TrendingUp, Eye, FileText, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface NewsStats {
@@ -46,34 +46,40 @@ export default function NewsStatsPage() {
   const [stats, setStats] = useState<NewsStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  type ArticleItem = { status: string; views: number; category: string; createdAt: string; id: string; title: string; emoji: string };
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const res = await fetch('/api/news');
       if (res.ok) {
         const data = await res.json();
-        const articles = data.articles || [];
+        const articles: ArticleItem[] = (data.articles || []).map((article: Partial<ArticleItem>) => ({
+          id: article.id || "",
+          title: article.title || "",
+          status: article.status || "draft",
+          views: article.views ?? 0,
+          category: article.category || "",
+          createdAt: article.createdAt || new Date().toISOString(),
+          emoji: article.emoji || "📰",
+        }));
 
         // Calculer les stats
-        const published = articles.filter((a: any) => a.status === 'published');
-        const draft = articles.filter((a: any) => a.status === 'draft');
-        const scheduled = articles.filter((a: any) => a.status === 'scheduled');
-        const archived = articles.filter((a: any) => a.status === 'archived');
+        const published = articles.filter((a) => a.status === 'published');
+        const draft = articles.filter((a) => a.status === 'draft');
+        const scheduled = articles.filter((a) => a.status === 'scheduled');
+        const archived = articles.filter((a) => a.status === 'archived');
 
-        const totalViews = articles.reduce((sum: number, a: any) => sum + (a.views || 0), 0);
+        const totalViews = articles.reduce((sum: number, a) => sum + (a.views || 0), 0);
         const avgViews = articles.length > 0 ? Math.round(totalViews / articles.length) : 0;
 
-        const mostViewed = articles.reduce((max: any, a: any) =>
+        const mostViewed = articles.reduce((max: ArticleItem | null, a) =>
           (a.views || 0) > (max?.views || 0) ? a : max, null);
-        const leastViewed = published.length > 0 ? published.reduce((min: any, a: any) =>
-          (a.views || 0) < (min?.views || Infinity) ? a : min, null) : null;
+        const leastViewed = published.length > 0 ? published.reduce((min: ArticleItem | null, a) =>
+          (a.views || 0) < (min?.views ?? Infinity) ? a : min, null) : null;
 
         // Grouper par catégorie
         const byCategory: { [key: string]: { count: number; views: number } } = {};
-        articles.forEach((a: any) => {
+        articles.forEach((a) => {
           if (!byCategory[a.category]) {
             byCategory[a.category] = { count: 0, views: 0 };
           }
@@ -81,15 +87,15 @@ export default function NewsStatsPage() {
           byCategory[a.category].views += a.views || 0;
         });
 
-        const byCategoryArray = Object.entries(byCategory).map(([category, data]) => ({
+        const byCategoryArray = Object.entries(byCategory).map(([category, catData]) => ({
           category,
-          count: data.count,
-          views: data.views,
+          count: catData.count,
+          views: catData.views,
         })).sort((a, b) => b.views - a.views);
 
         // Articles récents
-        const recentArticles = articles
-          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        const recentArticles = [...articles]
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .slice(0, 5);
 
         setStats({
@@ -112,7 +118,12 @@ export default function NewsStatsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    async function load() { await fetchStats() }
+    void load()
+  }, [fetchStats]);
 
   if (loading) {
     return <div className="flex-1 space-y-6 p-6"><div className="text-center py-12 text-gray-500">Chargement...</div></div>;
@@ -127,7 +138,7 @@ export default function NewsStatsPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Statistiques des articles</h1>
-        <p className="text-gray-500 mt-1">Vue d'ensemble de vos articles et performances</p>
+        <p className="text-gray-500 mt-1">Vue d&apos;ensemble de vos articles et performances</p>
       </div>
 
       {/* KPI Cards */}

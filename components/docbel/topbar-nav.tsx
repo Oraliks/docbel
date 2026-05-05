@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { signOut } from "next-auth/react";
 import {
   HomeIcon,
@@ -195,12 +196,12 @@ export function TopBarNav({
             {userMenuOpen && (
               <div className="absolute top-[calc(100%_+_6px)] right-0 bg-surface border border-border rounded-xl p-1 shadow-lg z-100 min-w-[180px]">
                 {userRole === "admin" && (
-                  <a
+                  <Link
                     href="/admin"
                     className="flex items-center gap-2.5 px-3.5 py-2.5 text-foreground text-sm font-medium rounded-lg no-underline hover:bg-surface-2 transition-colors"
                   >
                     <span>📊</span> Admin
-                  </a>
+                  </Link>
                 )}
                 <button
                   onClick={() => {

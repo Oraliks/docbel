@@ -1,7 +1,14 @@
 'use client'
 
 import React from 'react'
-import { BlockProps } from '@/lib/page-builder/types'
+import {
+  BlockProps,
+  CtaProps,
+  FeaturesProps,
+  HeroProps,
+  ImageProps,
+  SectionProps,
+} from '@/lib/page-builder/types'
 import { EditablePreviewBlock } from './editable-preview-block'
 import { EditableHeroBlock } from '@/components/page-blocks/editable-hero-block'
 import { EditableCtaBlock } from '@/components/page-blocks/editable-cta-block'
@@ -13,7 +20,7 @@ interface EditablePageRendererProps {
   blocks: BlockProps[]
   selectedBlockId: string | null
   onSelectBlock: (id: string) => void
-  onUpdateBlock: (id: string, props: any) => void
+  onUpdateBlock: (id: string, props: Record<string, unknown>) => void
   onDuplicateBlock: (id: string) => void
   onDeleteBlock: (id: string) => void
   onMoveBlockUp: (id: string) => void
@@ -39,58 +46,49 @@ export const EditablePageRenderer: React.FC<EditablePageRendererProps> = ({
 
         let blockComponent: React.ReactNode
         switch (block.type) {
-          case 'hero':
+          case 'hero': {
+            const heroProps = block.props as unknown as HeroProps
             blockComponent = (
               <EditableHeroBlock
-                title={block.props.title}
-                description={block.props.description}
-                bgColor={block.props.bgColor}
-                image={block.props.image}
+                {...heroProps}
                 isSelected={isSelected}
-                onEdit={(props) => onUpdateBlock(block.id, props)}
+                onEdit={(props) => onUpdateBlock(block.id, props as unknown as Record<string, unknown>)}
               />
             )
             break
-          case 'cta':
+          }
+          case 'cta': {
+            const ctaProps = block.props as unknown as CtaProps
             blockComponent = (
               <EditableCtaBlock
-                text={block.props.text}
-                link={block.props.link}
-                variant={block.props.variant}
+                {...ctaProps}
                 isSelected={isSelected}
-                onEdit={(props) => onUpdateBlock(block.id, props)}
+                onEdit={(props) => onUpdateBlock(block.id, props as unknown as Record<string, unknown>)}
               />
             )
             break
-          case 'image':
+          }
+          case 'image': {
+            const imageProps = block.props as unknown as ImageProps
             blockComponent = (
-              <ImageBlock
-                url={block.props.url}
-                alt={block.props.alt}
-                caption={block.props.caption}
-                width={block.props.width}
-                height={block.props.height}
-              />
+              <ImageBlock {...imageProps} />
             )
             break
-          case 'features':
+          }
+          case 'features': {
+            const featuresProps = block.props as unknown as FeaturesProps
             blockComponent = (
-              <FeaturesBlock
-                title={block.props.title}
-                items={block.props.items}
-              />
+              <FeaturesBlock {...featuresProps} />
             )
             break
-          case 'section':
+          }
+          case 'section': {
+            const sectionProps = block.props as unknown as SectionProps
             blockComponent = (
-              <SectionBlock
-                title={block.props.title}
-                description={block.props.description}
-                bgColor={block.props.bgColor}
-                padding={block.props.padding}
-              />
+              <SectionBlock {...sectionProps} />
             )
             break
+          }
           default:
             blockComponent = null
         }

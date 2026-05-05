@@ -2,14 +2,13 @@
 
 import React, { useState } from 'react'
 import { BlockProps } from '@/lib/page-builder/types'
-import { BLOCK_REGISTRY } from '@/lib/page-builder/block-registry'
 import { Copy, Trash2, Plus, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface EditablePreviewBlockProps {
   block: BlockProps
   isSelected: boolean
   onSelect: () => void
-  onEdit: (props: any) => void
+  onEdit: (props: Record<string, unknown>) => void
   onDuplicate: () => void
   onDelete: () => void
   onMoveUp?: () => void
@@ -19,10 +18,8 @@ interface EditablePreviewBlockProps {
 }
 
 export const EditablePreviewBlock: React.FC<EditablePreviewBlockProps> = ({
-  block,
   isSelected,
   onSelect,
-  onEdit,
   onDuplicate,
   onDelete,
   onMoveUp,

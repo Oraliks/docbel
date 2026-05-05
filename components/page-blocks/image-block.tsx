@@ -12,6 +12,8 @@ export const ImageBlock: React.FC<ImageProps> = ({ url, alt, caption, width = '1
 
   return (
     <figure className="my-8">
+      {/* Builder image blocks render arbitrary URLs and intentionally bypass next/image restrictions. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={url}
         alt={alt}

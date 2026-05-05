@@ -49,7 +49,7 @@ const calculateReadingTime = (content: string) => {
 };
 
 // Validation function that returns field-specific errors
-const validateForm = (form: any): Record<string, string> => {
+const validateForm = (form: { title: string; excerpt: string; content: string; category: string }): Record<string, string> => {
   const newErrors: Record<string, string> = {};
 
   if (!form.title?.trim()) {
@@ -129,14 +129,14 @@ export default function NewsEditorPage() {
     fetchArticle();
   }, [newsId, isNew, router]);
 
-  const handleFieldChange = useCallback((field: string, value: any) => {
+  const handleFieldChange = useCallback((field: string, value: unknown) => {
     setForm((prev) => {
       const updated = { ...prev, [field]: value };
       if (field === 'title' && !currentId) {
-        updated.slug = generateSlug(value);
+        updated.slug = generateSlug(typeof value === 'string' ? value : '');
       }
       if (field === 'content') {
-        updated.readingTime = calculateReadingTime(value);
+        updated.readingTime = calculateReadingTime(typeof value === 'string' ? value : '');
       }
       return updated;
     });
@@ -199,10 +199,10 @@ export default function NewsEditorPage() {
         readingTime: saved.readingTime
       }));
       return saved;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving article:', error);
       toast.dismiss(loadingToast);
-      toast.error(`❌ Erreur: ${error.message || 'Impossible d\'enregistrer l\'article'}`);
+      toast.error(`❌ Erreur: ${error instanceof Error ? error.message : 'Impossible d\'enregistrer l\'article'}`);
       return null;
     } finally {
       setIsSaving(false);
@@ -222,7 +222,7 @@ export default function NewsEditorPage() {
         headers: { 'Content-Type': 'application/json' },
       });
       if (!res.ok) throw new Error('Impossible de publier l\'article');
-      const data = await res.json();
+      await res.json();
       setForm((prev) => ({ ...prev, status: 'published' }));
       setLastSavedAt(new Date());
       toast.dismiss(loadingToast);
@@ -329,7 +329,7 @@ export default function NewsEditorPage() {
     try {
       window.open(`/actualites/${currentId}`, '_blank');
       toast.success('Ouverture de l\'aperçu...');
-    } catch (error) {
+    } catch {
       toast.error('Erreur lors de l\'ouverture de l\'aperçu');
     }
   }, [currentId]);

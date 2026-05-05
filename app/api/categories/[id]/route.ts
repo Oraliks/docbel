@@ -1,65 +1,72 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { logActivity } from '@/lib/activity-logger';
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { logActivity } from "@/lib/activity-logger"
+import { requireAdminAuth } from "@/lib/auth-check"
 
-// PATCH update category
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
+
   try {
-    const { id } = await params;
-    const body = await req.json();
-    const { name, color } = body;
+    const { id } = await params
+    const body = await req.json()
+    const name = typeof body.name === "string" ? body.name.trim() : body.name
+    const color = typeof body.color === "string" ? body.color.trim() : body.color
 
     const category = await prisma.category.update({
       where: { id },
       data: {
         ...(name !== undefined && { name }),
-        ...(color !== undefined && { color })
-      }
-    });
+        ...(color !== undefined && { color }),
+      },
+    })
 
-    await logActivity('Admin', 'updated', 'category', category.name, category.id, `Catégorie mise à jour: ${category.name}`);
+    await logActivity("Admin", "updated", "category", category.name, category.id, `Categorie mise a jour: ${category.name}`)
 
     return NextResponse.json(category, {
-      headers: { 'Content-Type': 'application/json; charset=utf-8' }
-    });
-  } catch (error: any) {
-    console.error('Error updating category:', error);
-    if (error.code === 'P2002') {
-      return NextResponse.json({ error: 'Cette catégorie existe déjà' }, { status: 400 });
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    })
+  } catch (error) {
+    console.error("Error updating category:", error)
+    if ((error as { code?: string }).code === "P2002") {
+      return NextResponse.json({ error: "Cette categorie existe deja" }, { status: 400 })
     }
-    return NextResponse.json({ error: 'Failed to update category' }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update category" }, { status: 500 })
   }
 }
 
-// DELETE category
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
+
   try {
-    const { id } = await params;
+    const { id } = await params
     const category = await prisma.category.findUnique({
-      where: { id }
-    });
+      where: { id },
+    })
 
     if (!category) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+      return NextResponse.json({ error: "Category not found" }, { status: 404 })
     }
 
     await prisma.category.delete({
-      where: { id }
-    });
+      where: { id },
+    })
 
-    await logActivity('Admin', 'deleted', 'category', category.name, category.id, `Catégorie supprimée: ${category.name}`);
+    await logActivity("Admin", "deleted", "category", category.name, category.id, `Categorie supprimee: ${category.name}`)
 
-    return NextResponse.json({ success: true }, {
-      headers: { 'Content-Type': 'application/json; charset=utf-8' }
-    });
+    return NextResponse.json(
+      { success: true },
+      { headers: { "Content-Type": "application/json; charset=utf-8" } }
+    )
   } catch (error) {
-    console.error('Error deleting category:', error);
-    return NextResponse.json({ error: 'Failed to delete category' }, { status: 500 });
+    console.error("Error deleting category:", error)
+    return NextResponse.json({ error: "Failed to delete category" }, { status: 500 })
   }
 }

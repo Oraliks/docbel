@@ -6,12 +6,11 @@ import { HeroSection } from "@/components/docbel/hero";
 import { ToolsSection } from "@/components/docbel/tools";
 import { LoadingView } from "@/components/docbel/loading-view";
 import { TOOLS_DATA, Tool, NewsItem, getToolSlug } from "@/lib/docbel-data";
-import { DARK_COLORS, LIGHT_COLORS } from "@/lib/colors";
 import { useAppState } from "@/lib/app-state-context";
 
 export default function Home() {
   const router = useRouter();
-  const { dark, toolsCat, setToolsCat } = useAppState();
+  const { toolsCat, setToolsCat } = useAppState();
   const [newsIdx, setNewsIdx] = useState(0);
   const [apiNews, setApiNews] = useState<NewsItem[]>([]);
   const [toolsSearch, setToolsSearch] = useState("");
@@ -28,8 +27,8 @@ export default function Home() {
         if (response.ok) {
           const data = await response.json();
           const mappedNews = (data.articles || [])
-            .filter((article: any) => article.featured === true)
-            .map((article: any) => ({
+            .filter((article: { featured: boolean }) => article.featured === true)
+            .map((article: { id: string; category: string; title: string; excerpt: string; publishedAt: string; color: string; readingTime: number; featured: boolean; image: string | null }) => ({
               id: article.id,
               tag: article.category,
               title: article.title,
@@ -59,8 +58,6 @@ export default function Home() {
     const t = setInterval(() => setNewsIdx((i) => (i + 1) % newsToUse.length), 8000);
     return () => clearInterval(t);
   }, [newsToUse.length]);
-
-  const colors = dark ? DARK_COLORS : LIGHT_COLORS;
 
   const filteredTools = TOOLS_DATA.filter((t) => {
     const matchCat = toolsCat === "Tous" || t.cat === toolsCat;

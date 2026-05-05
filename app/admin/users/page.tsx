@@ -32,10 +32,6 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
-
   const fetchUsers = async () => {
     try {
       const response = await fetch("/api/users")
@@ -49,6 +45,11 @@ export default function UsersPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    async function load() { await fetchUsers() }
+    void load()
+  }, [])
 
   const handleUserCreated = (newUser: User) => {
     setUsers([newUser, ...users])

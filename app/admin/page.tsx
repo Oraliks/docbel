@@ -10,7 +10,7 @@ export default async function AdminPage() {
     notFound()
   }
 
-  const userRole = (session.user as any)?.role
+  const userRole = (session.user as { role?: string })?.role
   if (userRole !== "admin") {
     notFound()
   }
@@ -56,10 +56,20 @@ export default async function AdminPage() {
     description: s.description,
     icon: s.icon ?? undefined,
     order: s.order,
-    tools: s.tools as any,
+    tools: s.tools.map((tool) => ({
+      id: tool.id,
+      name: tool.name,
+      slug: tool.slug,
+      description: tool.description,
+      type: tool.type,
+      icon: tool.icon ?? undefined,
+      popular: tool.popular,
+      timeMin: tool.timeMin ?? undefined,
+      order: tool.order,
+    })),
     createdAt: s.createdAt.toISOString(),
     updatedAt: s.updatedAt.toISOString(),
-  })) as any
+  }))
 
   return (
     <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">

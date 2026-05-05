@@ -7,8 +7,8 @@ export const FontFamily = Mark.create({
     return {
       fontFamily: {
         default: null,
-        parseHTML: (element: any) => element.style.fontFamily,
-        renderHTML: (attributes: any) => {
+        parseHTML: (element: HTMLElement) => element.style.fontFamily,
+        renderHTML: (attributes: Record<string, string | null>) => {
           if (!attributes.fontFamily) {
             return {};
           }
@@ -28,7 +28,7 @@ export const FontFamily = Mark.create({
     ];
   },
 
-  renderHTML({ HTMLAttributes }: any) {
+  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, unknown> }) {
     return ["span", HTMLAttributes, 0];
   },
 
@@ -36,12 +36,12 @@ export const FontFamily = Mark.create({
     return {
       setFontFamily:
         (fontFamily: string) =>
-        ({ commands }: any) => {
-          return commands.setMark(this.name, { fontFamily });
+        ({ commands }: { commands: { setMark: (name: string, attrs: Record<string, unknown>) => boolean } }) => {
+          return commands.setMark("fontFamily", { fontFamily });
         },
-      unsetFontFamily: () => ({ commands }: any) => {
-        return commands.unsetMark(this.name);
+      unsetFontFamily: () => ({ commands }: { commands: { unsetMark: (name: string) => boolean } }) => {
+        return commands.unsetMark("fontFamily");
       },
-    } as any;
+    } as Record<string, unknown>;
   },
-} as any);
+} as Record<string, unknown>);

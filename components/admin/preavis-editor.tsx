@@ -136,7 +136,7 @@ function formatAnMax(value: number | null): string {
 
 export function PreavisEditor({ initialData }: { initialData: PreavisData }) {
   const [activeTab, setActiveTab] = useState<EditableTablePath>(TABLE_DEFS[0].path);
-  const [expandedTables, setExpandedTables] = useState<Record<EditableTablePath, boolean>>({});
+  const [expandedTables, setExpandedTables] = useState<Record<EditableTablePath, boolean>>({} as Record<EditableTablePath, boolean>);
   const [showMetadata, setShowMetadata] = useState(false);
 
 

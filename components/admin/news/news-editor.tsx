@@ -12,7 +12,6 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { RichTextEditor } from '@/components/docbel/rich-text-editor';
-import { LIGHT_COLORS } from '@/lib/colors';
 import { Folder, CheckCircle2, ImagePlus, X, Loader2 } from 'lucide-react';
 
 interface CategoryData {
@@ -51,7 +50,7 @@ export interface NewsEditorForm {
 
 interface NewsEditorProps {
   form: NewsEditorForm;
-  onFieldChange: (field: string, value: any) => void;
+  onFieldChange: (field: string, value: unknown) => void;
   errors?: Record<string, string>;
 }
 
@@ -84,8 +83,8 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
       }
       const { url } = await res.json();
       onFieldChange('image', url);
-    } catch (e: any) {
-      alert(e.message || 'Erreur lors du téléchargement');
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erreur lors du téléchargement');
     } finally {
       setImageUploading(false);
     }
@@ -290,6 +289,8 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
               />
               {form.image ? (
                 <div className="relative rounded-lg overflow-hidden border border-gray-200">
+                  {/* The preview may point to any uploaded or external URL and is intentionally rendered without next/image. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={form.image}
                     alt="Image de présentation"
@@ -373,7 +374,7 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                 className="h-10 font-mono text-sm"
               />
               <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                URL conviviale de l'article. Utilisée des liens minuscules, chiffres et tirets.
+                URL conviviale de l&apos;article. Utilisée des liens minuscules, chiffres et tirets.
               </p>
             </div>
           </div>

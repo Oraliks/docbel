@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { useRouter } from 'next/navigation';
 import {
@@ -63,6 +63,30 @@ interface News {
   slug: string;
 }
 
+function SortHeader({ label, field, sortable = true, sortBy, sortOrder, onSort }: {
+  label: string;
+  field?: string;
+  sortable?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
+}) {
+  if (!sortable) return <TableHead>{label}</TableHead>;
+  const isActive = sortBy === field;
+  const isAsc = sortOrder === 'asc';
+  return (
+    <TableHead
+      onClick={() => onSort?.(field!)}
+      className="cursor-pointer hover:bg-gray-100 transition-colors"
+    >
+      <div className="flex items-center gap-2">
+        {label}
+        {isActive && (isAsc ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />)}
+      </div>
+    </TableHead>
+  );
+}
+
 interface NewsListProps {
   articles: News[];
   isLoading: boolean;
@@ -98,7 +122,12 @@ export function NewsList({
   const [isBulkActioning, setIsBulkActioning] = useState(false);
   const [statusEditId, setStatusEditId] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const [orderedArticles, setOrderedArticles] = useState<News[]>([]);
+  const [prevArticles, setPrevArticles] = useState(articles);
+  const [orderedArticles, setOrderedArticles] = useState<News[]>(articles);
+  if (prevArticles !== articles) {
+    setPrevArticles(articles);
+    setOrderedArticles(articles);
+  }
 
   // DnD Kit sensors
   const sensors = useSensors(
@@ -112,10 +141,6 @@ export function NewsList({
     })
   );
 
-  // Update ordered articles when articles change
-  useEffect(() => {
-    setOrderedArticles(articles);
-  }, [articles]);
 
   // Handle drag end
   const handleDragEnd = (event: DragEndEvent) => {
@@ -281,25 +306,6 @@ export function NewsList({
     });
   };
 
-  const SortHeader = ({ label, field, sortable = true }: { label: string; field?: string; sortable?: boolean }) => {
-    if (!sortable) return <TableHead>{label}</TableHead>;
-
-    const isActive = sortBy === field;
-    const isAsc = sortOrder === 'asc';
-
-    return (
-      <TableHead
-        onClick={() => onSort?.(field!)}
-        className="cursor-pointer hover:bg-gray-100 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          {label}
-          {isActive && (isAsc ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />)}
-        </div>
-      </TableHead>
-    );
-  };
-
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   // Keyboard shortcuts
@@ -355,11 +361,11 @@ export function NewsList({
                       />
                     </TableHead>
                     <TableHead className="w-12">Vedette</TableHead>
-                    <SortHeader label="Titre" field="title" />
+                    <SortHeader label="Titre" field="title" sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
                     <TableHead>Catégorie</TableHead>
-                    <SortHeader label="Publié" field="publishedAt" />
+                    <SortHeader label="Publié" field="publishedAt" sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
                     <TableHead className="text-right w-16">Temps</TableHead>
-                    <SortHeader label="Vues" field="views" />
+                    <SortHeader label="Vues" field="views" sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -379,7 +385,6 @@ export function NewsList({
                           isSelected={selectedIds.includes(article.id)}
                           onToggleSelection={() => toggleSelection(article.id)}
                           onToggleFeatured={(featured) => handleToggleFeatured(article.id, featured)}
-                          onSetPreviewId={() => setPreviewId(article.id)}
                           onEdit={() => handleEdit(article.id)}
                           onPreview={() => handlePreview(article.slug)}
                           onDuplicate={() => handleDuplicate(article.id, article.title)}
@@ -528,9 +533,9 @@ export function NewsList({
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
-          <AlertDialogTitle>Supprimer l'article?</AlertDialogTitle>
+          <AlertDialogTitle>Supprimer l&apos;article?</AlertDialogTitle>
           <AlertDialogDescription>
-            Cette action ne peut pas être annulée. L'article sera supprimé définitivement.
+            Cette action ne peut pas être annulée. L&apos;article sera supprimé définitivement.
           </AlertDialogDescription>
           <div className="flex gap-3 justify-end">
             <AlertDialogCancel>Annuler</AlertDialogCancel>
@@ -626,14 +631,14 @@ export function NewsList({
               Fermer
             </Button>
             <Button onClick={() => {
-              previewId && handleEdit(previewId);
+              if (previewId) handleEdit(previewId);
               setPreviewId(null);
             }}>
               Éditer cet article
             </Button>
             {previewId && (
               <Button variant="outline" onClick={() => {
-                previewId && handlePreview(articles.find(a => a.id === previewId)?.slug || '');
+                handlePreview(articles.find(a => a.id === previewId)?.slug || '');
                 setPreviewId(null);
               }}>
                 Voir le rendu
@@ -692,7 +697,6 @@ function SortableTableRow({
   isSelected,
   onToggleSelection,
   onToggleFeatured,
-  onSetPreviewId,
   onEdit,
   onPreview,
   onDuplicate,
@@ -703,7 +707,6 @@ function SortableTableRow({
   isSelected: boolean;
   onToggleSelection: () => void;
   onToggleFeatured: (featured: boolean) => void;
-  onSetPreviewId: () => void;
   onEdit: () => void;
   onPreview: () => void;
   onDuplicate: () => void;

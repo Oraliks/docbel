@@ -35,22 +35,21 @@ export default function NewsletterAdminPage() {
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<"all" | "active" | "unsubscribed">("all")
 
-  async function fetchSubscribers() {
-    try {
-      const res = await fetch("/api/newsletter")
-      if (res.ok) {
-        const data = await res.json()
-        setSubscribers(data)
-      }
-    } catch {
-      toast.error("Erreur lors du chargement des abonnés")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchSubscribers()
+    async function load() {
+      try {
+        const res = await fetch("/api/newsletter")
+        if (res.ok) {
+          const data = await res.json()
+          setSubscribers(data)
+        }
+      } catch {
+        toast.error("Erreur lors du chargement des abonnés")
+      } finally {
+        setLoading(false)
+      }
+    }
+    void load()
   }, [])
 
   async function handleStatusChange(id: string, status: "active" | "unsubscribed") {

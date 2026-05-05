@@ -11,13 +11,13 @@ import {
   NOTICE_PERIODS_OUVRIER_PRE_2014_CCT75,
   getNoticeDaysFromTable,
   getNoticeWeeksFromTable,
-  findNoticeEntry,
 } from "@/lib/notice-periods-spf";
 import { parseDate, formatDate, calculateSeniority, addDaysToDate, isBeforeThreshold, isValidDate } from "@/lib/date-utils";
 import { getCommissionsParitaires, searchCommissions, CommissionParitaire } from "@/lib/data-client";
 
 interface ViewProps {
   accent: string;
+  colors?: Record<string, string>;
 }
 
 interface ToolViewProps extends ViewProps {
@@ -46,7 +46,6 @@ export function CalcPreavis({ accent }: ViewProps) {
   const [showCommissionDropdown, setShowCommissionDropdown] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [allCommissions, setAllCommissions] = useState<CommissionParitaire[]>([]);
-  const [loadingCommissions, setLoadingCommissions] = useState(true);
 
   // Load commissions on mount
   useEffect(() => {
@@ -56,8 +55,6 @@ export function CalcPreavis({ accent }: ViewProps) {
         setAllCommissions(commissions);
       } catch (err) {
         console.error("Error loading commissions:", err);
-      } finally {
-        setLoadingCommissions(false);
       }
     };
     loadData();
@@ -145,7 +142,7 @@ export function CalcPreavis({ accent }: ViewProps) {
 
       // Calculate notice for period after 2014 (unified regime)
       const tableAfter = quiRompt === "employeur" ? NOTICE_PERIODS_POST_2014 : NOTICE_PERIODS_DEMISSION_POST_2014;
-      let semaines = getNoticeWeeksFromTable(seniorityAfter2014, tableAfter) || 13;
+      const semaines = getNoticeWeeksFromTable(seniorityAfter2014, tableAfter) || 13;
 
       joursAfter2014 = semaines * 7;
       detailsAfter = `${semaines} semaines (après 2014, ${quiRompt === "employeur" ? "licenciement" : "démission"})`;
@@ -511,7 +508,7 @@ export function CalcPreavis({ accent }: ViewProps) {
         {/* Type d'emploi */}
         <div>
           <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--foreground)", marginBottom: 8 }}>
-            Type d'emploi *
+            Type d&apos;emploi *
           </label>
           <div style={{ display: "flex", gap: 8 }}>
             {(["fullTime", "partTime"] as const).map((v) => (
@@ -637,7 +634,7 @@ export function CalcPreavis({ accent }: ViewProps) {
         </div>
         <div>
           <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--foreground)", marginBottom: 8 }}>
-            Date d'entrée * <span style={{ fontSize: 11, color: "var(--text-muted)" }}>DD/MM/YYYY</span>
+            Date d&apos;entrée * <span style={{ fontSize: 11, color: "var(--text-muted)" }}>DD/MM/YYYY</span>
           </label>
           <div style={{ position: "relative" }}>
             <div style={{
@@ -1105,7 +1102,7 @@ export function CalcPreavis({ accent }: ViewProps) {
   );
 }
 
-export function CalcAGR({ colors, accent }: ViewProps) {
+export function CalcAGR({ accent }: ViewProps) {
   const [salaire, setSalaire] = useState("");
   const [heuresSemaine, setHeuresSemaine] = useState("");
   const [heuresSecteur, setHeuresSecteur] = useState("38");
@@ -1245,7 +1242,7 @@ const CP_DATA = [
   { cp: "CP 330", nom: "Établissements et services de santé", smg: "1.980,00 €" },
 ];
 
-export function CalcCP({ colors, accent }: ViewProps) {
+export function CalcCP({ accent }: ViewProps) {
   const [search, setSearch] = useState("");
   const filtered = CP_DATA.filter(
     (c) => c.cp.toLowerCase().includes(search.toLowerCase()) || c.nom.toLowerCase().includes(search.toLowerCase())
@@ -1320,7 +1317,7 @@ export function CalcCP({ colors, accent }: ViewProps) {
   );
 }
 
-export function Locator({ tool, colors, accent }: ToolViewProps) {
+export function Locator({ tool, accent }: ToolViewProps) {
   const [cp, setCp] = useState("");
   const isOnem = tool.title.includes("ONEM");
 
@@ -1387,7 +1384,7 @@ export function Locator({ tool, colors, accent }: ToolViewProps) {
   );
 }
 
-export function Tutorial({ tool, colors, accent }: ToolViewProps) {
+export function Tutorial({ tool, accent }: ToolViewProps) {
   const [activeStep, setActiveStep] = useState(0);
 
   const steps = tool.title.includes("carte")
@@ -1520,7 +1517,7 @@ export function Tutorial({ tool, colors, accent }: ToolViewProps) {
   );
 }
 
-export function InfoPanel({ tool, colors }: ToolViewProps) {
+export function InfoPanel({ tool }: ToolViewProps) {
   const isALE = tool.title.includes("ALE");
 
   const content = isALE
@@ -1589,7 +1586,7 @@ export function InfoPanel({ tool, colors }: ToolViewProps) {
   );
 }
 
-export function LinkPanel({ tool, colors, accent }: ToolViewProps) {
+export function LinkPanel({ tool, accent }: ToolViewProps) {
   const info: Record<string, { url: string; tel: string; desc: string }> = {
     Actiris: {
       url: "actiris.brussels",
@@ -1655,7 +1652,7 @@ export function LinkPanel({ tool, colors, accent }: ToolViewProps) {
   );
 }
 
-export function FormFlow({ tool, colors, accent, lang }: ToolViewProps & { lang: string }) {
+export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string }) {
   const [step, setStep] = useState(0);
   const labels: Record<string, string[]> = {
     FR: ["Formulaire", "Prévisualisation", "Téléchargement"],

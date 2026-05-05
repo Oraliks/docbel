@@ -29,7 +29,7 @@ export async function DELETE(
     try {
       const fullPath = path.join(process.cwd(), 'public', file.filePath)
       await unlink(fullPath)
-    } catch (e) {
+    } catch {
       // Continuer même si le fichier physique n'existe plus
     }
 

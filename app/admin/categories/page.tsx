@@ -11,7 +11,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CategoriesDialog } from '@/components/admin/categories-dialog';
@@ -29,10 +28,6 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
   const fetchCategories = async () => {
     try {
       const res = await fetch('/api/categories');
@@ -47,6 +42,11 @@ export default function CategoriesPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    async function load() { await fetchCategories() }
+    void load()
+  }, []);
 
   const handleDeleteCategory = async (id: string, name: string) => {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${name}" ?`)) {
@@ -77,7 +77,7 @@ export default function CategoriesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Catégories d'articles</h1>
+          <h1 className="text-3xl font-bold">Catégories d&apos;articles</h1>
           <p className="text-gray-500 mt-1">Gérez les catégories et leurs couleurs</p>
         </div>
         <Button onClick={() => setShowDialog(true)} className="gap-2">

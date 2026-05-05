@@ -39,6 +39,16 @@ export function ToolsSection({
   const [sortOpen, setSortOpen] = useState(false);
   const PER_PAGE = 6;
 
+  const [prevCat, setPrevCat] = useState(cat);
+  const [prevSearch, setPrevSearch] = useState(search);
+  const [prevSort, setPrevSort] = useState(sort);
+  if (prevCat !== cat || prevSearch !== search || prevSort !== sort) {
+    setPrevCat(cat);
+    setPrevSearch(search);
+    setPrevSort(sort);
+    setPage(0);
+  }
+
   const sorted = [...tools].sort((a, b) => {
     if (sort === "popularity") return Number(b.popular) - Number(a.popular);
     if (sort === "name") return a.title.localeCompare(b.title);
@@ -50,14 +60,12 @@ export function ToolsSection({
   const totalPages = needsPagination ? Math.ceil(sorted.length / PER_PAGE) : 1;
   const visible = needsPagination ? sorted.slice(page * PER_PAGE, (page + 1) * PER_PAGE) : sorted.slice(0, PER_PAGE);
 
-  React.useEffect(() => { setPage(0); }, [cat, search, sort]);
-
   return (
     <section>
       {/* Header */}
       <div className="flex items-center justify-between mb-4.5 flex-wrap gap-3">
         <h2 className="text-2xl font-black text-foreground" style={{ letterSpacing: "-0.5px" }}>
-          Catalogue d'outils
+          Catalogue d&apos;outils
         </h2>
         <div className="flex items-center gap-3">
           <span className="text-xs text-text-muted font-medium">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { NewsItem } from "@/lib/docbel-data";
 import { ArrowIcon } from "./icons";
 
@@ -171,6 +171,8 @@ Les interruptions de carrière (congé parental, sabbatique autorisé, congé th
         style={{ background: `${article.color}15`, border: `1px solid ${article.color}25` }}
       >
         {article.image ? (
+          // Article hero images are editor-provided URLs and intentionally bypass next/image constraints.
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={article.image}
             alt={article.title}

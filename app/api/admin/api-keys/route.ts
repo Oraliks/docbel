@@ -1,60 +1,40 @@
 import { NextRequest, NextResponse } from "next/server"
 import { randomBytes } from "crypto"
+import { prisma } from "@/lib/prisma"
+import { requireAdminAuth } from "@/lib/auth-check"
 
-// Mock in-memory API keys store (replace with database later)
-interface ApiKeyRecord {
-  id: string
-  key: string
-  name: string
-  active: boolean
-  lastUsedAt: string | null
-  createdAt: string
-  createdBy: string
+function maskApiKey(key: string) {
+  if (key.length <= 12) return key
+  return `${key.slice(0, 8)}...${key.slice(-4)}`
 }
 
-const mockApiKeys: Map<string, ApiKeyRecord> = new Map([
-  ["api_792cfd4f6905bc06d6ef47821476e6fcba1639697bd2482644399eeb913e36db", {
-    id: "test-key-1",
-    key: "api_792cfd4f6905bc06d6ef47821476e6fcba1639697bd2482644399eeb913e36db",
-    name: "Test Key",
-    active: true,
-    lastUsedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    createdBy: "test-user"
-  }]
-])
+export async function GET() {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
 
-// Simple session validation (in production, use proper NextAuth)
-function checkAuth(req: NextRequest): boolean {
-  // Check if user has admin session via cookie or header
-  // For now, accept any authenticated request
-  const authCookie = req.headers.get("cookie")?.includes("next-auth.session-token")
-  return authCookie ? true : false
-}
-
-export async function GET(req: NextRequest) {
   try {
-    // Simple auth check - in production use proper NextAuth
-    const authCookie = req.headers.get("cookie")
-    if (!authCookie?.includes("next-auth.session-token")) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized - please login first" },
-        { status: 401 }
-      )
-    }
-
-    const apiKeys = Array.from(mockApiKeys.values()).map(key => ({
-      id: key.id,
-      key: key.key,
-      name: key.name,
-      active: key.active,
-      lastUsedAt: key.lastUsedAt,
-      createdAt: key.createdAt
-    }))
+    const apiKeys = await prisma.apiKey.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        key: true,
+        name: true,
+        active: true,
+        lastUsedAt: true,
+        createdAt: true,
+      },
+    })
 
     return NextResponse.json({
       success: true,
-      data: apiKeys
+      data: apiKeys.map((apiKey) => ({
+        id: apiKey.id,
+        name: apiKey.name,
+        active: apiKey.active,
+        lastUsedAt: apiKey.lastUsedAt,
+        createdAt: apiKey.createdAt,
+        keyPreview: maskApiKey(apiKey.key),
+      })),
     })
   } catch (error) {
     console.error("GET /api/admin/api-keys error:", error)
@@ -66,46 +46,45 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    // Simple auth check
-    const authCookie = req.headers.get("cookie")
-    if (!authCookie?.includes("next-auth.session-token")) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized - please login first" },
-        { status: 401 }
-      )
-    }
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
 
+  try {
     const { name } = await req.json()
-    if (!name || typeof name !== "string" || name.length === 0) {
+
+    if (!name || typeof name !== "string" || name.trim().length === 0) {
       return NextResponse.json(
         { success: false, error: "API key name is required" },
         { status: 400 }
       )
     }
 
-    const apiKey = `api_${randomBytes(32).toString("hex")}`
-    const newKey: ApiKeyRecord = {
-      id: randomBytes(16).toString("hex"),
-      key: apiKey,
-      name,
-      active: true,
-      lastUsedAt: null,
-      createdAt: new Date().toISOString(),
-      createdBy: "current-user"
+    if (!authCheck.user?.id) {
+      return NextResponse.json(
+        { success: false, error: "Authenticated user id is missing" },
+        { status: 500 }
+      )
     }
 
-    mockApiKeys.set(apiKey, newKey)
+    const key = `api_${randomBytes(32).toString("hex")}`
+    const newKey = await prisma.apiKey.create({
+      data: {
+        key,
+        name: name.trim(),
+        createdBy: authCheck.user.id,
+      },
+      select: {
+        id: true,
+        key: true,
+        name: true,
+        createdAt: true,
+      },
+    })
 
     return NextResponse.json(
       {
         success: true,
-        data: {
-          id: newKey.id,
-          key: newKey.key,
-          name: newKey.name,
-          createdAt: newKey.createdAt
-        }
+        data: newKey,
       },
       { status: 201 }
     )

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -44,16 +44,20 @@ export function EditUserDialog({
   onUserUpdated,
 }: EditUserDialogProps) {
   const [loading, setLoading] = useState(false)
+  const [syncedUser, setSyncedUser] = useState<User | null>(user)
+  const [syncedOpen, setSyncedOpen] = useState(open)
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+    name: user?.name ?? "",
+    email: user?.email ?? "",
     password: "",
     confirmPassword: "",
-    role: "user",
+    role: user?.role ?? "user",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  useEffect(() => {
+  if (syncedUser !== user || syncedOpen !== open) {
+    setSyncedUser(user)
+    setSyncedOpen(open)
     if (user) {
       setFormData({
         name: user.name,
@@ -64,7 +68,7 @@ export function EditUserDialog({
       })
       setErrors({})
     }
-  }, [user, open])
+  }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -102,7 +106,7 @@ export function EditUserDialog({
 
     setLoading(true)
     try {
-      const updateData: any = {
+      const updateData: { name: string; email: string; role: string; password?: string } = {
         name: formData.name,
         email: formData.email,
         role: formData.role,
@@ -140,9 +144,9 @@ export function EditUserDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Modifier l'utilisateur</DialogTitle>
+          <DialogTitle>Modifier l&apos;utilisateur</DialogTitle>
           <DialogDescription>
-            Mettez à jour les informations de l'utilisateur
+            Mettez à jour les informations de l&apos;utilisateur
           </DialogDescription>
         </DialogHeader>
 

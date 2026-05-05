@@ -21,7 +21,6 @@ interface PageEditorProps {
 export const PageEditor: React.FC<PageEditorProps> = ({
   initialBlocks,
   onSave,
-  onQuit,
 }) => {
   const { blocks, setBlocks, selectedBlockId, selectBlock, addBlock, removeBlock, updateBlock, duplicateBlock, moveBlock } = usePageBuilderStore()
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
@@ -30,7 +29,7 @@ export const PageEditor: React.FC<PageEditorProps> = ({
   useEffect(() => {
     onSaveRef.current = onSave
     setBlocks(initialBlocks)
-  }, [initialBlocks, setBlocks])
+  }, [initialBlocks, onSave, setBlocks])
 
   const selectedBlock = blocks.find((b) => b.id === selectedBlockId) || null
 
@@ -66,7 +65,7 @@ export const PageEditor: React.FC<PageEditorProps> = ({
     }, 1000)
   }
 
-  const handleUpdateBlock = (props: any) => {
+  const handleUpdateBlock = (props: Record<string, unknown>) => {
     if (!selectedBlockId) return
     updateBlock(selectedBlockId, props)
     autoSave(blocks.map((b) => b.id === selectedBlockId ? { ...b, props: { ...b.props, ...props } } : b))

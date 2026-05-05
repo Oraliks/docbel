@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { requireAdminAuth } from "@/lib/auth-check"
 import * as bcrypt from "bcryptjs"
 
 export async function GET(
-  _: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
+
   try {
     const { id } = await params
     const user = await prisma.user.findUnique({
@@ -25,7 +29,7 @@ export async function GET(
     }
 
     return NextResponse.json(user)
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch user" },
       { status: 500 }
@@ -37,10 +41,16 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
+
   try {
     const { id } = await params
     const body = await request.json()
-    const { name, email, password, role } = body
+    const name = typeof body.name === "string" ? body.name.trim() : undefined
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : undefined
+    const password = typeof body.password === "string" ? body.password : undefined
+    const role = typeof body.role === "string" ? body.role : undefined
 
     const user = await prisma.user.findUnique({
       where: { id },
@@ -50,21 +60,34 @@ export async function PUT(
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    const emailExists = await prisma.user.findFirst({
-      where: {
-        email,
-        NOT: { id },
-      },
-    })
+    if (email) {
+      const emailExists = await prisma.user.findFirst({
+        where: {
+          email,
+          NOT: { id },
+        },
+      })
 
-    if (emailExists) {
+      if (emailExists) {
+        return NextResponse.json(
+          { error: "Email is already taken" },
+          { status: 409 }
+        )
+      }
+    }
+
+    if (role && !["user", "moderator", "admin"].includes(role)) {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 })
+    }
+
+    if (password && password.length < 6) {
       return NextResponse.json(
-        { error: "Email is already taken" },
-        { status: 409 }
+        { error: "Password must contain at least 6 characters" },
+        { status: 400 }
       )
     }
 
-    const updateData: any = {
+    const updateData: { name: string; email: string; role: string; password?: string } = {
       name: name || user.name,
       email: email || user.email,
       role: role || user.role,
@@ -98,9 +121,12 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
+
   try {
     const { id } = await params
     const user = await prisma.user.findUnique({

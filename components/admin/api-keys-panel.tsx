@@ -1,18 +1,18 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Copy, Trash2, Plus } from "lucide-react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 
 interface ApiKey {
   id: string
-  key: string
+  key?: string
+  keyPreview?: string
   name: string
   active: boolean
   lastUsedAt: string | null
@@ -24,7 +24,7 @@ function formatRelativeTime(dateString: string): string {
   const now = new Date()
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-  if (seconds < 60) return "à l'instant"
+  if (seconds < 60) return "a l'instant"
   if (seconds < 3600) return `il y a ${Math.floor(seconds / 60)}m`
   if (seconds < 86400) return `il y a ${Math.floor(seconds / 3600)}h`
   if (seconds < 604800) return `il y a ${Math.floor(seconds / 86400)}j`
@@ -65,7 +65,7 @@ export function ApiKeysPanel() {
       const res = await fetch("/api/admin/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newKeyName })
+        body: JSON.stringify({ name: newKeyName }),
       })
 
       if (res.ok) {
@@ -85,7 +85,7 @@ export function ApiKeysPanel() {
     setDeleting(true)
     try {
       const res = await fetch(`/api/admin/api-keys/${id}`, {
-        method: "DELETE"
+        method: "DELETE",
       })
 
       if (res.ok) {
@@ -105,9 +105,8 @@ export function ApiKeysPanel() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  function maskKey(key: string) {
-    if (key.length <= 8) return key
-    return key.slice(0, 8) + "..." + key.slice(-4)
+  function getKeyLabel(key: ApiKey) {
+    return key.keyPreview || key.key || "Masquee"
   }
 
   return (
@@ -115,13 +114,13 @@ export function ApiKeysPanel() {
       {newKey && (
         <Card className="border-green-200 bg-green-50">
           <CardHeader>
-            <CardTitle className="text-green-900">Clé API créée ✓</CardTitle>
+            <CardTitle className="text-green-900">Cle API creee</CardTitle>
             <CardDescription className="text-green-800">
-              Copiez cette clé maintenant. Vous ne pourrez plus la voir après.
+              Copiez cette cle maintenant. Vous ne pourrez plus la voir ensuite.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="p-3 bg-white border border-green-200 rounded font-mono text-sm">
+            <div className="rounded border border-green-200 bg-white p-3 font-mono text-sm">
               {newKey.key}
             </div>
             <Button
@@ -129,8 +128,8 @@ export function ApiKeysPanel() {
               className="w-full"
               variant="default"
             >
-              <Copy className="h-4 w-4 mr-2" />
-              {copied ? "Copié !" : "Copier la clé"}
+              <Copy className="mr-2 h-4 w-4" />
+              {copied ? "Copiee" : "Copier la cle"}
             </Button>
             <Button
               onClick={() => setNewKey(null)}
@@ -147,19 +146,19 @@ export function ApiKeysPanel() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Clés API</CardTitle>
-              <CardDescription>Gérez vos clés d'accès aux APIs publiques</CardDescription>
+              <CardTitle>Cles API</CardTitle>
+              <CardDescription>Gerez vos cles d&apos;acces aux APIs publiques</CardDescription>
             </div>
             <Dialog>
-              <DialogTrigger className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors">
+              <DialogTrigger className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700">
                 <Plus className="h-4 w-4" />
-                Nouvelle clé
+                Nouvelle cle
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Créer une nouvelle clé API</DialogTitle>
+                  <DialogTitle>Creer une nouvelle cle API</DialogTitle>
                   <DialogDescription>
-                    Donnez un nom à votre clé pour l'identifier facilement
+                    Donnez un nom a votre cle pour l&apos;identifier facilement
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -173,7 +172,7 @@ export function ApiKeysPanel() {
                     disabled={loading || !newKeyName.trim()}
                     className="w-full"
                   >
-                    {loading ? "Création..." : "Créer"}
+                    {loading ? "Creation..." : "Creer"}
                   </Button>
                 </div>
               </DialogContent>
@@ -186,8 +185,8 @@ export function ApiKeysPanel() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nom</TableHead>
-                  <TableHead>Clé</TableHead>
-                  <TableHead>Créée</TableHead>
+                  <TableHead>Cle</TableHead>
+                  <TableHead>Creee</TableHead>
                   <TableHead>Dernier usage</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -196,7 +195,7 @@ export function ApiKeysPanel() {
                 {apiKeys.map((key) => (
                   <TableRow key={key.id}>
                     <TableCell className="font-medium">{key.name}</TableCell>
-                    <TableCell className="font-mono text-sm">{maskKey(key.key)}</TableCell>
+                    <TableCell className="font-mono text-sm">{getKeyLabel(key)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatRelativeTime(key.createdAt)}
                     </TableCell>
@@ -209,19 +208,19 @@ export function ApiKeysPanel() {
                           variant="ghost"
                           size="sm"
                           onClick={() => setDeleteId(key.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Supprimer la clé API ?</AlertDialogTitle>
+                            <AlertDialogTitle>Supprimer la cle API ?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              La clé "{key.name}" sera supprimée définitivement. Les applications
-                              l'utilisant ne pourront plus accéder aux APIs.
+                              La cle &quot;{key.name}&quot; sera supprimee definitivement. Les applications
+                              l&apos;utilisant ne pourront plus acceder aux APIs.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
-                          <div className="flex gap-2 justify-end">
+                          <div className="flex justify-end gap-2">
                             <AlertDialogCancel>Annuler</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDeleteKey(key.id)}
@@ -239,8 +238,8 @@ export function ApiKeysPanel() {
               </TableBody>
             </Table>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              Aucune clé API créée pour le moment
+            <div className="py-8 text-center text-muted-foreground">
+              Aucune cle API creee pour le moment
             </div>
           )}
         </CardContent>
@@ -252,16 +251,16 @@ export function ApiKeysPanel() {
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div>
-            <p className="font-mono bg-muted p-2 rounded">
+            <p className="rounded bg-muted p-2 font-mono">
               Authorization: Bearer &lt;YOUR_API_KEY&gt;
             </p>
           </div>
           <div>
-            <p className="font-medium mb-1">Exemple :</p>
-            <p className="font-mono bg-muted p-2 rounded text-xs overflow-auto">
-              curl -H "Authorization: Bearer api_..." \
+            <p className="mb-1 font-medium">Exemple :</p>
+            <p className="overflow-auto rounded bg-muted p-2 font-mono text-xs">
+              curl -H &quot;Authorization: Bearer api_...&quot; \
             </p>
-            <p className="font-mono bg-muted p-2 rounded text-xs">
+            <p className="rounded bg-muted p-2 font-mono text-xs">
               https://your-domain.com/api/public/commissions
             </p>
           </div>

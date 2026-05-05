@@ -12,7 +12,7 @@ export default async function ChangelogPage() {
   }
 
   // Vérifier si l'utilisateur a le rôle admin
-  const userRole = (session.user as any)?.role
+  const userRole = (session.user as { role?: string })?.role
   if (userRole !== "admin") {
     notFound()
   }

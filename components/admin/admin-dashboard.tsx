@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -93,7 +93,7 @@ export function AdminDashboard({ pages, users, sections }: AdminDashboardProps) 
         const response = await fetch("/api/activities?limit=20");
         if (response.ok) {
           const data = await response.json();
-          const formattedData: ActivityItem[] = data.map((activity: any) => ({
+          const formattedData: ActivityItem[] = data.map((activity: { id: string; user: string; action: string; resource: string; resourceName: string; createdAt: string; details: string }) => ({
             id: activity.id,
             user: activity.user,
             action: activity.action,

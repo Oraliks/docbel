@@ -12,7 +12,7 @@ export const ImageSettings: React.FC<ImageSettingsProps> = ({ value, onChange })
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-sm font-medium">URL de l'image</Label>
+        <Label className="text-sm font-medium">URL de l&apos;image</Label>
         <Input
           value={value.url || ''}
           onChange={(e) => onChange({ ...value, url: e.target.value })}

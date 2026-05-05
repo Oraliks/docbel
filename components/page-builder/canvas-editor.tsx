@@ -5,7 +5,6 @@ import { BlockProps } from '@/lib/page-builder/types'
 import { SortableBlock } from './sortable-block'
 import { BlockPreview } from './block-preview'
 import { Card } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 
 interface CanvasEditorProps {
   blocks: BlockProps[]

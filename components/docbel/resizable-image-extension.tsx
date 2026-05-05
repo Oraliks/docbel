@@ -83,9 +83,9 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
         let dropTiptapPos: number | null = null;
         try {
           const range =
-            (document as any).caretRangeFromPoint?.(ev.clientX, ev.clientY) ??
+            (document as Document & { caretRangeFromPoint?: (x: number, y: number) => Range | null }).caretRangeFromPoint?.(ev.clientX, ev.clientY) ??
             (() => {
-              const cp = (document as any).caretPositionFromPoint?.(ev.clientX, ev.clientY);
+              const cp = (document as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null }).caretPositionFromPoint?.(ev.clientX, ev.clientY);
               if (!cp) return null;
               const r = document.createRange();
               r.setStart(cp.offsetNode, cp.offset);
@@ -124,8 +124,6 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
       : align === "right"
       ? { float: "right", margin: "2px 0 6px 14px" }
       : { margin: "2px 4px" };
-
-  const showControls = selected || hovered;
 
   return (
     <NodeViewWrapper
@@ -216,6 +214,8 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
         )}
 
         {/* Image */}
+        {/* Editor image nodes use arbitrary document sources and are intentionally rendered without next/image. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           ref={imgRef}
           src={src}

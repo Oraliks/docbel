@@ -1,9 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -13,7 +11,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
-  SidebarMenuAction,
 } from "@/components/ui/sidebar"
 import { FolderIcon, Mail, Activity, ScrollIcon, ChevronRight } from "lucide-react"
 
@@ -88,7 +85,6 @@ export function NavMain({
   items: NavItem[]
   unreadCount?: number
 }) {
-  const router = useRouter()
   const [openItems, setOpenItems] = useState<string[]>([])
 
   const toggleItem = (title: string) => {

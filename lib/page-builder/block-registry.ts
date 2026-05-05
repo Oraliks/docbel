@@ -13,7 +13,7 @@ export const BLOCK_REGISTRY: Record<
   {
     name: string
     description: string
-    defaultProps: Record<string, any>
+    defaultProps: Record<string, unknown>
     iconName: string
     category: BlockCategory
   }

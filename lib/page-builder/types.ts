@@ -3,7 +3,7 @@ export type BlockType = 'hero' | 'cta' | 'image' | 'features' | 'section'
 export interface BlockProps {
   id: string
   type: BlockType
-  props: Record<string, any>
+  props: Record<string, unknown>
 }
 
 export interface PageData {

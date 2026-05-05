@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { resolveStoredFilePath } from "@/lib/file-storage";
 import { unlink } from "fs/promises";
-import { join } from "path";
 import { existsSync } from "fs";
 
 export async function PATCH(
@@ -17,7 +17,7 @@ export async function PATCH(
     const body = await req.json();
     const { name, isPrivate, parentId } = body;
 
-    const updateData: any = {};
+    const updateData: { name?: string; isPrivate?: boolean; parentId?: string | null } = {};
     if (name) updateData.name = name;
     if (isPrivate !== undefined) updateData.isPrivate = isPrivate;
 
@@ -152,9 +152,9 @@ export async function DELETE(
 
     // Supprimer le fichier du disque si c'est un fichier
     if (file.type === "file" && file.filePath) {
-      const fullPath = join(process.cwd(), file.filePath);
+      const fullPath = resolveStoredFilePath(file.filePath);
       try {
-        if (existsSync(fullPath)) {
+        if (fullPath && existsSync(fullPath)) {
           await unlink(fullPath);
         }
       } catch (fsError) {

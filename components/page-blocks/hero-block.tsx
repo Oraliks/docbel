@@ -14,6 +14,8 @@ export const HeroBlock: React.FC<HeroProps> = ({
     >
       <div className="max-w-2xl text-center text-white">
         {image && (
+          // Builder hero images may use arbitrary editor-defined URLs.
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={image}
             alt="Hero"

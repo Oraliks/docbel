@@ -95,7 +95,7 @@ export function ToolsListView({ tools }: ToolsListViewProps) {
 
           {/* Type Filter */}
           <div className="space-y-2">
-            <Label htmlFor="type">Type d'outil</Label>
+            <Label htmlFor="type">Type d&apos;outil</Label>
             <select
               id="type"
               value={selectedType}

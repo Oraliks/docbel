@@ -178,7 +178,7 @@ export function Sidebar({
           <span style={{ color: accent, display: "flex" }}>
             <HelpIcon size={16} />
           </span>
-          <span className="text-sm font-bold text-foreground">Besoin d'aide ?</span>
+          <span className="text-sm font-bold text-foreground">Besoin d&apos;aide ?</span>
         </div>
         <p className="text-xs text-text-muted leading-relaxed m-0">
           Consultez nos guides ou contactez notre équipe.

@@ -20,7 +20,7 @@ import { ResizableImage } from "./resizable-image-extension";
 
 interface RichTextEditorProps {
   value?: string;
-  onChange?: (content: string, json: any) => void;
+  onChange?: (content: string, json: Record<string, unknown>) => void;
   placeholder?: string;
   readOnly?: boolean;
   showVersionHistory?: boolean;
@@ -43,7 +43,13 @@ export function RichTextEditor({
   const [slashMenuPos, setSlashMenuPos] = useState({ top: 0, left: 0 });
   const [showFontPicker, setShowFontPicker] = useState(false);
   const [fontPickerPos, setFontPickerPos] = useState({ top: 0, left: 0 });
-  const [embedFiles, setEmbedFiles] = useState<any[]>([]);
+  const [embedFiles, setEmbedFiles] = useState<{
+    id: string;
+    type: "pdf" | "image" | "document" | "excel";
+    name: string;
+    data: string;
+    mimeType: string;
+  }[]>([]);
 
   const editor = useEditor({
     extensions: [
@@ -106,7 +112,7 @@ export function RichTextEditor({
   });
 
   const saveVersion = useCallback(
-    (json: any) => {
+    (json: Record<string, unknown>) => {
       const newVersion: EditorVersion = {
         id: Date.now().toString(),
         content: json,
@@ -119,7 +125,7 @@ export function RichTextEditor({
         return updated.slice(-10); // Keep only last 10 versions
       });
     },
-    [versions.length, showVersionHistory]
+    [versions.length]
   );
 
   const restoreVersion = (version: EditorVersion) => {

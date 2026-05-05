@@ -35,7 +35,7 @@ export function FontPicker({
       return;
     }
 
-    (editor.chain().focus() as any)
+    (editor.chain().focus() as unknown as { setFontFamily: (f: string) => { run: () => void } })
       .setFontFamily(fontFamily)
       .run();
 

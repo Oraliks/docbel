@@ -61,7 +61,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const toggleTheme = () => setTheme(dark ? "light" : "dark");
 
   return (
-    <AppStateContext.Provider value={{ toolsCat, setToolsCat }}>
+    <AppStateContext.Provider value={{ dark, setDark: (value) => setTheme(value ? "dark" : "light"), toolsCat, setToolsCat }}>
     <div
       className="flex flex-col h-screen bg-background text-foreground overflow-hidden"
       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -75,7 +75,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
         userLoggedIn={userLoggedIn}
         setShowLoginModal={setShowLoginModal}
         userName={session?.user?.name || null}
-        userRole={(session?.user as any)?.role || null}
+        userRole={(session?.user as { role?: string })?.role || null}
         notificationCount={0}
       />
 
@@ -111,7 +111,6 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
       {showLoginModal && (
         <LoginModal
           accent={accent}
-          dark={dark}
           onClose={() => setShowLoginModal(false)}
           onLogin={() => setShowLoginModal(false)}
         />

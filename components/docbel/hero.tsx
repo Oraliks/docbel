@@ -73,6 +73,8 @@ export function HeroSection({
           {main.image ? (
             /* Real article image as full background */
             <>
+              {/* Hero media comes from dynamic article content and is intentionally rendered as-is. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={main.image}
                 alt={main.title}
@@ -134,7 +136,7 @@ export function HeroSection({
                 </h3>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>{main.date}</span>
-                  <span style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>Lire l'article complet →</span>
+                  <span style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>Lire l&apos;article complet →</span>
                 </div>
               </div>
             </>
@@ -228,7 +230,7 @@ export function HeroSection({
                 }}
               >
                 <span style={{ fontSize: 12, color: "#6B7280", fontWeight: 500 }}>{main.date}</span>
-                <span style={{ fontSize: 13, color: accent, fontWeight: 600 }}>Lire l'article complet →</span>
+                <span style={{ fontSize: 13, color: accent, fontWeight: 600 }}>Lire l&apos;article complet →</span>
               </div>
             </div>
           )}

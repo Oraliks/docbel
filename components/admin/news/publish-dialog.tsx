@@ -28,8 +28,6 @@ export function PublishDialog({
   onOpenChange,
   title,
   category,
-  isPublished,
-  onPublish,
   onSchedule
 }: PublishDialogProps) {
   const [scheduledDate, setScheduledDate] = useState('');
@@ -59,7 +57,7 @@ export function PublishDialog({
         <DialogHeader>
           <DialogTitle>Planifier la publication</DialogTitle>
           <DialogDescription>
-            Choisissez la date et l'heure de publication de l'article
+            Choisissez la date et l&apos;heure de publication de l&apos;article
           </DialogDescription>
         </DialogHeader>
 

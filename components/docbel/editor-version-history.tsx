@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import { RotateCcw, X } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 
 export interface EditorVersion {
   id: string;
-  content: any; // JSON content from TipTap
+  content: Record<string, unknown>; // JSON content from TipTap
   timestamp: Date;
   label: string;
 }
@@ -108,7 +108,7 @@ export function EditorVersionHistory({
               No versions saved yet
             </div>
           ) : (
-            [...versions].reverse().map((version, idx) => (
+            [...versions].reverse().map((version) => (
               <div
                 key={version.id}
                 style={{

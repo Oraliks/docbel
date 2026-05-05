@@ -261,7 +261,7 @@ export function MessageDetailView({
       {/* Admin reply section */}
       <Card>
         <CardHeader>
-          <CardTitle>Réponse de l'admin</CardTitle>
+          <CardTitle>Réponse de l&apos;admin</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {message.adminReply && (

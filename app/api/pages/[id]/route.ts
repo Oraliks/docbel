@@ -1,11 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { UpdatePageSchema } from '@/lib/page-builder/validation'
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { UpdatePageSchema } from "@/lib/page-builder/validation"
+import { requireAdminAuth } from "@/lib/auth-check"
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
+
   try {
     const { id } = await params
     const page = await prisma.page.findUnique({
@@ -13,7 +17,7 @@ export async function GET(
     })
 
     if (!page) {
-      return NextResponse.json({ error: 'Page not found' }, { status: 404 })
+      return NextResponse.json({ error: "Page not found" }, { status: 404 })
     }
 
     return NextResponse.json({
@@ -21,8 +25,8 @@ export async function GET(
       blocks: JSON.parse(page.content),
     })
   } catch (error) {
-    console.error('GET /api/pages/[id] error:', error)
-    return NextResponse.json({ error: 'Failed to fetch page' }, { status: 500 })
+    console.error("GET /api/pages/[id] error:", error)
+    return NextResponse.json({ error: "Failed to fetch page" }, { status: 500 })
   }
 }
 
@@ -30,25 +34,27 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
+
   try {
     const { id } = await params
     const body = await req.json()
     const validated = UpdatePageSchema.parse(body)
 
-    // Check slug uniqueness if slug is being changed
     if (validated.slug) {
       const existing = await prisma.page.findUnique({
         where: { slug: validated.slug },
       })
       if (existing && existing.id !== id) {
         return NextResponse.json(
-          { error: 'Ce slug est déjà utilisé' },
+          { error: "Ce slug est deja utilise" },
           { status: 400 }
         )
       }
     }
 
-    const updateData: any = {}
+    const updateData: Record<string, unknown> = {}
     if (validated.title) updateData.title = validated.title
     if (validated.slug) updateData.slug = validated.slug
     if (validated.status) updateData.status = validated.status
@@ -70,9 +76,9 @@ export async function PATCH(
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error('PATCH /api/pages/[id] error:', errorMessage)
-    console.error('Error details:', error)
-    if (error instanceof Error && error.message.includes('validation')) {
+    console.error("PATCH /api/pages/[id] error:", errorMessage)
+    console.error("Error details:", error)
+    if (error instanceof Error && error.message.includes("validation")) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
     return NextResponse.json({ error: errorMessage }, { status: 500 })
@@ -80,9 +86,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth()
+  if (!authCheck.isAuthorized) return authCheck.error
+
   try {
     const { id } = await params
     await prisma.page.delete({
@@ -91,7 +100,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('DELETE /api/pages/[id] error:', error)
-    return NextResponse.json({ error: 'Failed to delete page' }, { status: 500 })
+    console.error("DELETE /api/pages/[id] error:", error)
+    return NextResponse.json({ error: "Failed to delete page" }, { status: 500 })
   }
 }

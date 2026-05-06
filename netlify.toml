@@ -1,0 +1,12 @@
+[build]
+  command = "pnpm build"
+  publish = ".next"
+
+[build.environment]
+  # Force Netlify to use pnpm, not npm
+  NPM_FLAGS = "--version"
+
+# Le plugin officiel Netlify pour Next.js gère App Router, API routes,
+# images, ISR, et server components. Auto-installé par Netlify si absent.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

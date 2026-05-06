@@ -24,7 +24,16 @@ import { Loader2 } from "lucide-react"
 interface CreateUserDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onUserCreated: (user: { id: string; name: string; email: string; role: string; createdAt: string; updatedAt: string }) => void
+  onUserCreated: (user: {
+    id: string
+    name: string
+    email: string
+    role: string
+    status: string
+    lastLoginAt: string | null
+    createdAt: string
+    updatedAt: string
+  }) => void
 }
 
 export function CreateUserDialog({
@@ -39,6 +48,7 @@ export function CreateUserDialog({
     password: "",
     confirmPassword: "",
     role: "user",
+    status: "active",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -57,8 +67,10 @@ export function CreateUserDialog({
 
     if (!formData.password) {
       newErrors.password = "Le mot de passe est requis"
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Le mot de passe doit contenir au moins 6 caractères"
+    } else if (formData.password.length < 10) {
+      newErrors.password = "Le mot de passe doit contenir au moins 10 caractères"
+    } else if (!/[a-z]/.test(formData.password) || !/[A-Z]/.test(formData.password) || !/\d/.test(formData.password)) {
+      newErrors.password = "Le mot de passe doit contenir une minuscule, une majuscule et un chiffre"
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -86,6 +98,7 @@ export function CreateUserDialog({
           email: formData.email,
           password: formData.password,
           role: formData.role,
+          status: formData.status,
         }),
       })
 
@@ -102,6 +115,7 @@ export function CreateUserDialog({
         password: "",
         confirmPassword: "",
         role: "user",
+        status: "active",
       })
       setErrors({})
     } catch (error) {
@@ -210,6 +224,27 @@ export function CreateUserDialog({
                 <SelectItem value="user">Utilisateur</SelectItem>
                 <SelectItem value="moderator">Modérateur</SelectItem>
                 <SelectItem value="admin">Administrateur</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Statut</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value: string | null) =>
+                value && setFormData({ ...formData, status: value })
+              }
+              disabled={loading}
+            >
+              <SelectTrigger id="status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Actif</SelectItem>
+                <SelectItem value="pending">En attente</SelectItem>
+                <SelectItem value="disabled">Désactivé</SelectItem>
+                <SelectItem value="locked">Verrouillé</SelectItem>
               </SelectContent>
             </Select>
           </div>

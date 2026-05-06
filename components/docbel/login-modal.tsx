@@ -1,23 +1,55 @@
 "use client";
 
-import React, { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
+import { AlertCircleIcon, LoaderCircleIcon, LogInIcon } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 
 interface LoginModalProps {
   accent: string;
   onClose: () => void;
-  onLogin: () => void;
 }
 
-export function LoginModal({ accent, onClose, onLogin }: LoginModalProps) {
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  CredentialsSignin: "Email ou mot de passe incorrect.",
+  invalid_credentials: "Email ou mot de passe incorrect.",
+  account_inactive: "Ce compte est inactif. Contactez un administrateur.",
+  account_locked: "Compte temporairement verrouillé après plusieurs tentatives.",
+}
+
+function getAuthErrorMessage(result: { error?: string | null; code?: string | null } | undefined) {
+  const key = result?.code || result?.error || ""
+  return AUTH_ERROR_MESSAGES[key] || "Connexion impossible. Vérifiez vos identifiants."
+}
+
+export function LoginModal({ onClose }: LoginModalProps) {
+  const router = useRouter();
+  const { update } = useSession();
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setLoading(true);
     setError("");
 
@@ -29,95 +61,92 @@ export function LoginModal({ accent, onClose, onLogin }: LoginModalProps) {
       });
 
       if (!result?.ok) {
-        setError(result?.error || "Erreur d'authentification");
-        toast.error(result?.error || "Erreur d'authentification");
-      } else {
-        toast.success("Connexion réussie!");
-        onLogin();
-        onClose();
+        const errorMessage = getAuthErrorMessage(result);
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return;
       }
+
+      const session = await update();
+      if (!session?.user) {
+        const errorMessage = "Session non confirmée. Réessayez la connexion.";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return;
+      }
+
+      router.refresh();
+      toast.success("Connexion réussie");
+      onClose();
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Erreur inconnue";
-      setError(errorMsg);
-      toast.error(errorMsg);
+      const errorMessage = err instanceof Error ? err.message : "Erreur inconnue";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/45 backdrop-blur-sm flex items-center justify-center z-[1000]"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="bg-surface rounded-3xl p-9 w-96 shadow-2xl border border-border"
-        style={{ "--accent": accent } as React.CSSProperties}
-      >
-        <div className="text-center mb-7">
-          <div
-            className="w-12 h-12 rounded-xl bg-[var(--accent)] flex items-center justify-center mx-auto mb-3.5"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-black text-foreground -tracking-0.3">Connexion</h2>
-          <p className="text-sm text-muted-foreground mt-1">Accédez à vos documents sauvegardés</p>
-        </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Connexion</DialogTitle>
+          <DialogDescription>
+            Connectez-vous pour retrouver vos documents et acceder a l&apos;administration.
+          </DialogDescription>
+        </DialogHeader>
 
-        {error && (
-          <div className="mb-3.5 p-2.5 rounded-lg bg-red-100 text-red-600 text-sm font-semibold">
-            {error}
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircleIcon />
+              <AlertTitle>Connexion impossible</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-        <form onSubmit={handleSubmit}>
-          {([
-            ["Email", "email", email, setEmail, "user@example.com"],
-            ["Mot de passe", "password", pwd, setPwd, "••••••••"],
-          ] as const).map(([label, type, val, setter, ph]) => (
-            <div key={label} className="mb-3.5">
-              <label className="block text-xs font-semibold text-foreground mb-1.5">
-                {label}
-              </label>
-              <input
-                type={type}
-                value={val}
-                onChange={(e) => setter(e.target.value)}
-                placeholder={ph}
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="login-email">Adresse e-mail</FieldLabel>
+              <Input
+                id="login-email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="nom@exemple.be"
                 disabled={loading}
-                className="w-full px-3.5 py-2.5 rounded-lg border-[1.5px] border-border bg-input text-foreground text-sm outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:border-[var(--accent)]"
-                style={{ "--accent": accent } as React.CSSProperties}
+                autoComplete="email"
               />
-            </div>
-          ))}
+              <FieldDescription>Utilisez l&apos;adresse associee a votre compte.</FieldDescription>
+            </Field>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 rounded-lg border-none bg-[var(--accent)] text-white font-bold text-sm mt-1.5 cursor-pointer disabled:opacity-70 transition-opacity"
-            style={{ "--accent": accent } as React.CSSProperties}
-          >
-            {loading ? "Connexion…" : "Se connecter"}
-          </button>
+            <Field>
+              <FieldLabel htmlFor="login-password">Mot de passe</FieldLabel>
+              <Input
+                id="login-password"
+                type="password"
+                value={pwd}
+                onChange={(event) => setPwd(event.target.value)}
+                placeholder="Votre mot de passe"
+                disabled={loading}
+                autoComplete="current-password"
+              />
+              <FieldError>{error ? "Verifiez vos identifiants puis reessayez." : undefined}</FieldError>
+            </Field>
+          </FieldGroup>
+
+          <div className="flex items-center justify-between gap-3">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={loading || !email || !pwd}>
+              {loading ? <LoaderCircleIcon className="animate-spin" data-icon="inline-start" /> : <LogInIcon data-icon="inline-start" />}
+              {loading ? "Connexion..." : "Se connecter"}
+            </Button>
+          </div>
         </form>
-
-        <div className="text-center mt-4">
-          <a href="#" className="text-xs text-[var(--accent)] font-semibold no-underline hover:underline" style={{ "--accent": accent } as React.CSSProperties}>
-            Mot de passe oublié ?
-          </a>
-        </div>
-
-        <div className="text-center mt-5 pt-5 border-t border-border">
-          <span className="text-xs text-muted-foreground">Pas encore de compte ? </span>
-          <a href="#" className="text-xs text-[var(--accent)] font-bold no-underline hover:underline" style={{ "--accent": accent } as React.CSSProperties}>
-            S&apos;inscrire
-          </a>
-        </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

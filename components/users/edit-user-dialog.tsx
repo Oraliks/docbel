@@ -26,6 +26,8 @@ interface User {
   name: string
   email: string
   role: string
+  status: string
+  lastLoginAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -52,6 +54,7 @@ export function EditUserDialog({
     password: "",
     confirmPassword: "",
     role: user?.role ?? "user",
+    status: user?.status ?? "active",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -65,6 +68,7 @@ export function EditUserDialog({
         password: "",
         confirmPassword: "",
         role: user.role,
+        status: user.status,
       })
       setErrors({})
     }
@@ -83,8 +87,13 @@ export function EditUserDialog({
       newErrors.email = "Email invalide"
     }
 
-    if (formData.password && formData.password.length < 6) {
-      newErrors.password = "Le mot de passe doit contenir au moins 6 caractères"
+    if (formData.password && formData.password.length < 10) {
+      newErrors.password = "Le mot de passe doit contenir au moins 10 caractères"
+    } else if (
+      formData.password &&
+      (!/[a-z]/.test(formData.password) || !/[A-Z]/.test(formData.password) || !/\d/.test(formData.password))
+    ) {
+      newErrors.password = "Le mot de passe doit contenir une minuscule, une majuscule et un chiffre"
     }
 
     if (formData.password || formData.confirmPassword) {
@@ -106,10 +115,11 @@ export function EditUserDialog({
 
     setLoading(true)
     try {
-      const updateData: { name: string; email: string; role: string; password?: string } = {
+      const updateData: { name: string; email: string; role: string; status: string; password?: string } = {
         name: formData.name,
         email: formData.email,
         role: formData.role,
+        status: formData.status,
       }
 
       if (formData.password) {
@@ -240,6 +250,27 @@ export function EditUserDialog({
                 <SelectItem value="user">Utilisateur</SelectItem>
                 <SelectItem value="moderator">Modérateur</SelectItem>
                 <SelectItem value="admin">Administrateur</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Statut</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value: string | null) =>
+                value && setFormData({ ...formData, status: value })
+              }
+              disabled={loading}
+            >
+              <SelectTrigger id="status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Actif</SelectItem>
+                <SelectItem value="pending">En attente</SelectItem>
+                <SelectItem value="disabled">Désactivé</SelectItem>
+                <SelectItem value="locked">Verrouillé</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -1,55 +1,100 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { NewsItem } from "@/lib/docbel-data";
-import { SearchIcon } from "./icons";
+import { useEffect, useState } from "react";
+import { NewspaperIcon, SearchIcon } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { NewsItem } from "@/lib/docbel-data";
 
 interface ActualitesPageProps {
   onArticleClick?: (article: NewsItem) => void;
 }
 
+type SortOrder = "recent" | "popular";
+
 export function ActualitesPage({ onArticleClick }: ActualitesPageProps) {
   const [articles, setArticles] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("Tous");
-  const [sortBy, setSortBy] = useState<"recent" | "popular">("recent");
+  const [sortBy, setSortBy] = useState<SortOrder>("recent");
   const [page, setPage] = useState(0);
   const [email, setEmail] = useState("");
   const [newsletterLoading, setNewsletterLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
-  const PER_PAGE = 3; // 3 articles per page in main grid
+  const perPage = 6;
 
-  // Fetch published articles from API
   useEffect(() => {
     const fetchArticles = async () => {
       try {
         const response = await fetch("/api/news?status=published");
-        if (response.ok) {
-          const data = await response.json();
-          const apiArticles = data.articles || [];
-          type RawArticle = { id: string; category: string; title: string; excerpt: string; publishedAt: string | null; color?: string; readingTime?: number; featured?: boolean; image?: string | null; content?: string };
-          const mappedArticles: NewsItem[] = apiArticles.map((article: RawArticle) => ({
+        if (!response.ok) {
+          setArticles([]);
+          return;
+        }
+
+        const data = await response.json();
+        const mappedArticles = (data.articles || []).map(
+          (article: {
+            id: string;
+            category: string;
+            title: string;
+            excerpt: string;
+            publishedAt: string | null;
+            color?: string;
+            readingTime?: number;
+            featured?: boolean;
+            image?: string | null;
+            content?: string;
+          }) => ({
             id: article.id,
             tag: article.category,
             title: article.title,
             desc: article.excerpt,
             date: article.publishedAt
               ? new Date(article.publishedAt).toLocaleDateString("fr-FR", {
-                  year: "numeric", month: "short", day: "numeric"
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
                 })
               : "",
             color: article.color || "#C8102E",
             readingTime: article.readingTime,
             popular: article.featured || false,
-            image: article.image,
+            image: article.image || undefined,
             content: article.content,
-          }));
-          setArticles(mappedArticles);
-        } else {
-          setArticles([]);
-        }
+          })
+        );
+
+        setArticles(mappedArticles);
       } catch (error) {
         console.error("Error fetching articles:", error);
         setArticles([]);
@@ -58,337 +103,300 @@ export function ActualitesPage({ onArticleClick }: ActualitesPageProps) {
       }
     };
 
-    fetchArticles();
+    void fetchArticles();
   }, []);
-
-  const getEmoji = (tag: string): string => {
-    if (tag === "Mise à jour") return "📋";
-    if (tag === "Annonce ONEM") return "🏛️";
-    if (tag === "CPAS") return "✍️";
-    if (tag === "Réforme") return "⚖️";
-    return "🔔";
-  };
 
   const categories = ["Tous", ...Array.from(new Set(articles.map((item) => item.tag)))];
 
-  const filtered = articles.filter((item) => {
-    // Filter by category
-    const categoryMatch = selectedCategory === "Tous" || item.tag === selectedCategory;
-    // Filter by search query
-    const searchMatch = searchQuery === "" ||
+  const filteredArticles = articles.filter((item) => {
+    const matchesCategory = selectedCategory === "Tous" || item.tag === selectedCategory;
+    const matchesSearch =
+      !searchQuery ||
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.desc.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return categoryMatch && searchMatch;
+    return matchesCategory && matchesSearch;
   });
 
-  const sorted = [...filtered].sort((a, b) => {
+  const sortedArticles = [...filteredArticles].sort((left, right) => {
     if (sortBy === "popular") {
-      return (b.popular ? 1 : 0) - (a.popular ? 1 : 0);
+      return Number(right.popular) - Number(left.popular);
     }
+
     return 0;
   });
 
-  // Featured articles are those with popular (featured) flag enabled
-  const featuredArticles = sorted.filter(a => a.popular === true).slice(0, 5);
-  // Main articles are articles excluding featured (paginated)
-  const mainArticles = sorted.filter(a => a.popular !== true);
-  const totalPages = Math.ceil(mainArticles.length / PER_PAGE);
-  const visible = mainArticles.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
+  const featuredArticles = sortedArticles.filter((item) => item.popular).slice(0, 3);
+  const regularArticles = sortedArticles.filter((item) => !item.popular);
+  const totalPages = Math.max(1, Math.ceil(regularArticles.length / perPage));
+  const currentPage = Math.min(page, totalPages - 1);
+  const visibleArticles = regularArticles.slice(currentPage * perPage, (currentPage + 1) * perPage);
 
+  const handleSubscribe = async () => {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Veuillez entrer une adresse email valide.");
+      return;
+    }
 
-  // Component for article cards (reused for featured and main grid)
-  const ArticleCard = ({
-    item,
-    featured = false,
-  }: {
-    item: NewsItem,
-    featured?: boolean,
-  }) => {
-    const imageHeight = featured ? 220 : 180;
-    const hasImage = item.image;
+    setNewsletterLoading(true);
+    try {
+      const response = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
 
-    return (
-      <div
-        onClick={() => onArticleClick?.(item)}
-        className="bg-surface border border-border rounded-xl overflow-hidden transition-all duration-400 cubic-bezier(0.34, 1.56, 0.64, 1) flex flex-col cursor-pointer hover:shadow-xl hover:-translate-y-2"
-      >
-        {/* Image or fallback emoji */}
-        <div
-          className="w-full flex items-center justify-center overflow-hidden flex-shrink-0"
-          style={{
-            height: `${imageHeight}px`,
-            background: hasImage ? undefined : `${item.color}15`,
-            border: hasImage ? undefined : `1px solid ${item.color}25`,
-          }}
-          onMouseEnter={(e) => {
-            const img = (e.currentTarget as HTMLDivElement).querySelector("img");
-            if (img) {
-              img.style.transform = "scale(1.05)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            const img = (e.currentTarget as HTMLDivElement).querySelector("img");
-            if (img) {
-              img.style.transform = "scale(1)";
-            }
-          }}
-        >
-          {hasImage ? (
-            // Article thumbnails are dynamic content and not constrained to next/image-compatible sources.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={item.image}
-              alt={item.title}
-              className="w-full h-full object-cover transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1)"
-              onError={(e) => {
-                // Fallback to emoji if image fails to load
-                const div = (e.target as HTMLImageElement).parentElement;
-                if (div) {
-                  div.style.background = `${item.color}15`;
-                  div.style.border = `1px solid ${item.color}25`;
-                  div.innerHTML = `<div style="font-size: ${featured ? 64 : 48}px">${getEmoji(item.tag)}</div>`;
-                }
-              }}
-            />
-          ) : (
-            <div style={{ fontSize: featured ? 64 : 48 }}>
-              {getEmoji(item.tag)}
-            </div>
-          )}
-        </div>
+      if (!response.ok) {
+        toast.error(data.error || "Une erreur est survenue.");
+        return;
+      }
 
-        {/* Content */}
-        <div className={`flex flex-col gap-3 flex-1 ${featured ? "p-5" : "p-4"}`}>
-          {/* Category Badge */}
-          <div
-            className="inline-block text-xs font-bold tracking-widest uppercase w-fit rounded-sm px-2.5 py-1.5 border"
-            style={{
-              color: item.color,
-              background: `${item.color}18`,
-              borderColor: `${item.color}40`,
-            }}
-          >
-            {item.tag}
-          </div>
-
-          {/* Title */}
-          <h3
-            className={`font-bold text-foreground leading-tight margin-0 ${featured ? "text-base" : "text-sm"}`}
-          >
-            {item.title}
-          </h3>
-
-          {/* Description (featured only) */}
-          {featured && (
-            <p className="text-sm text-text-muted leading-relaxed margin-0 flex-1">
-              {item.desc}
-            </p>
-          )}
-
-          {/* Footer - Date & Reading Time */}
-          <div className={`text-xs text-text-faint flex gap-3 items-center mt-auto ${featured ? "pt-3 border-t border-border" : ""}`}>
-            <span>{item.date}</span>
-            {item.readingTime && <span>⏱️ {item.readingTime} min</span>}
-          </div>
-
-        </div>
-      </div>
-    );
+      setEmail("");
+      toast.success("Inscription confirmee. Vous recevrez les prochaines actualites.");
+    } catch {
+      toast.error("Une erreur est survenue. Veuillez reessayer.");
+    } finally {
+      setNewsletterLoading(false);
+    }
   };
 
   return (
-    <div className="pb-10">
-      {/* Header */}
-      <div className="px-10 py-10 mb-4">
-        <h1 className="text-3xl font-black text-foreground -tracking-wider m-0">
-          Actualités
-        </h1>
-      </div>
+    <div className="flex flex-col gap-6">
+      <Card>
+        <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="text-3xl">Actualites</CardTitle>
+            <CardDescription>
+              Suivez les informations utiles, les reformes et les changements administratifs.
+            </CardDescription>
+          </div>
+          <Badge variant="secondary">{filteredArticles.length} article(s)</Badge>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-5">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+            <div className="relative">
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value);
+                  setPage(0);
+                }}
+                placeholder="Rechercher un article..."
+                className="pl-9"
+              />
+            </div>
 
-      {/* Filters + Sort + Search */}
-      <div
-        className="flex items-center justify-between mb-5 flex-wrap gap-4 px-10"
-      >
-        {/* Category Filters */}
-        <div className="flex gap-2 flex-wrap">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => { setSelectedCategory(cat); setPage(0); }}
-              className={`px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-all duration-200 cubic-bezier(0.34, 1.56, 0.64, 1) ${
-                selectedCategory === cat
-                  ? "bg-accent border-accent text-white"
-                  : "border-border bg-transparent text-accent hover:border-accent hover:bg-accent/10"
-              }`}
+            <Select
+              value={sortBy}
+              onValueChange={(value) => {
+                if (!value) return;
+                setSortBy(value as SortOrder);
+                setPage(0);
+              }}
             >
-              {cat}
-            </button>
-          ))}
-        </div>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Trier par" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="recent">Les plus recents</SelectItem>
+                  <SelectItem value="popular">Les plus populaires</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* Right side: Search + Sort */}
-        <div className="flex gap-3 items-center">
-          {/* Search Button */}
-          <button
-            onClick={() => setShowSearch(!showSearch)}
-            className={`w-10 h-10 rounded-lg border flex items-center justify-center transition-all duration-300 ${
-              showSearch
-                ? "bg-accent border-accent text-white"
-                : "border-border bg-transparent text-accent hover:border-accent hover:bg-accent/15"
-            }`}
+          <ToggleGroup
+            value={[selectedCategory]}
+            onValueChange={(value) => {
+              const nextValue = value[0];
+              if (!nextValue) return;
+              setSelectedCategory(nextValue);
+              setPage(0);
+            }}
+            variant="outline"
+            size="sm"
+            className="flex-wrap"
+            spacing={1}
           >
-            <SearchIcon size={18} />
-          </button>
+            {categories.map((category) => (
+              <ToggleGroupItem key={category} value={category}>
+                {category}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </CardContent>
+      </Card>
 
-          {/* Sort Dropdown */}
-          <select
-            value={sortBy}
-            onChange={(e) => { setSortBy(e.target.value as "recent" | "popular"); setPage(0); }}
-            className="px-3 py-2 rounded-lg border border-border bg-surface text-foreground text-sm font-semibold cursor-pointer"
-          >
-            <option value="recent">Les plus récents</option>
-            <option value="popular">Les plus populaires</option>
-          </select>
-        </div>
-      </div>
+      {!loading && filteredArticles.length === 0 ? (
+        <Empty className="border">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <NewspaperIcon />
+            </EmptyMedia>
+            <EmptyTitle>Aucun article trouve</EmptyTitle>
+            <EmptyDescription>
+              Essayez une autre categorie ou changez votre recherche.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <>
+          {featuredArticles.length > 0 && (
+            <section className="flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-xl font-semibold tracking-tight">Articles mis en avant</h2>
+                <Badge variant="secondary">{featuredArticles.length}</Badge>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-3">
+                {featuredArticles.map((article) => (
+                  <ArticleCard key={article.id} article={article} featured onOpen={onArticleClick} />
+                ))}
+              </div>
+            </section>
+          )}
 
-      {/* Search Input (shown when search button is clicked) */}
-      {showSearch && (
-        <div className="px-10 mb-6 overflow-hidden">
-          <input
-            type="text"
-            placeholder="Rechercher un article..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            autoFocus
-            className="w-full px-4 py-3 rounded-lg border border-border bg-surface text-foreground text-sm font-normal focus:border-accent focus:ring-3 focus:ring-accent/20 outline-none transition-all duration-300"
-          />
-        </div>
+          {visibleArticles.length > 0 && (
+            <section className="flex flex-col gap-4">
+              <h2 className="text-xl font-semibold tracking-tight">Derniers articles</h2>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {visibleArticles.map((article) => (
+                  <ArticleCard key={article.id} article={article} onOpen={onArticleClick} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {totalPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    text="Precedent"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setPage(Math.max(0, currentPage - 1));
+                    }}
+                  />
+                </PaginationItem>
+
+                {Array.from({ length: totalPages }, (_, index) => (
+                  <PaginationItem key={index}>
+                    <PaginationLink
+                      href="#"
+                      isActive={index === currentPage}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setPage(index);
+                      }}
+                    >
+                      {index + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    text="Suivant"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setPage(Math.min(totalPages - 1, currentPage + 1));
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </>
       )}
 
-      {/* Main Content */}
-      <div className="px-10">
-        {/* Empty state */}
-        {!loading && articles.length === 0 && (
-          <div className="text-center py-20 text-text-muted">
-            <div className="text-6xl mb-4">📰</div>
-            <p className="text-base font-semibold text-foreground mb-2">
-              Aucun article publié pour le moment
-            </p>
-            <p className="text-sm">Revenez bientôt pour les dernières actualités.</p>
-          </div>
-        )}
-
-        {/* Featured Articles Grid (2 columns) */}
-        {featuredArticles.length > 0 && (
-          <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 mb-10"
-          >
-            {featuredArticles.map((item) => (
-              <ArticleCard
-                key={item.id}
-                item={item}
-                featured={true}
+      <Card>
+        <CardHeader>
+          <CardTitle>Restez informe</CardTitle>
+          <CardDescription>
+            Recevez les prochains articles et rappels utiles directement dans votre boite mail.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="newsletter-email">Adresse e-mail</FieldLabel>
+              <Input
+                id="newsletter-email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="vous@exemple.be"
               />
-            ))}
-          </div>
-        )}
-
-        {/* Main Articles Grid (3 columns) */}
-        {visible.length > 0 && (
-          <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 mb-8"
-          >
-            {visible.map((item) => (
-              <ArticleCard
-                key={item.id}
-                item={item}
-                featured={false}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div
-            className="flex justify-center gap-2 flex-wrap mb-8"
-          >
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => setPage(i)}
-                className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all duration-150 ${
-                  page === i
-                    ? "bg-accent border-accent text-white border"
-                    : "border border-border bg-transparent text-foreground hover:border-accent hover:bg-accent/15 hover:text-accent"
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Newsletter Section */}
-      <div
-        className="bg-surface border border-border rounded-xl px-10 py-10 mx-10 mb-10 text-center"
-      >
-        <h2
-          className="text-xl font-black text-foreground m-0 mb-3 -tracking-wider"
-        >
-          Restez informé
-        </h2>
-        <p
-          className="text-sm text-text-muted m-0 mb-5 leading-relaxed"
-        >
-          Recevez nos derniers articles et conseils directement dans votre boîte mail.
-        </p>
-        <div
-          className="flex gap-3 max-w-sm mx-auto"
-        >
-          <input
-            type="email"
-            placeholder="votre@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="flex-1 px-3.5 py-2.5 rounded-lg border border-border bg-surface text-foreground text-sm font-normal focus:border-accent focus:ring-3 focus:ring-accent/20 outline-none transition-all"
-          />
-          <button
-            disabled={newsletterLoading}
-            onClick={async () => {
-              if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                toast.error("Veuillez entrer une adresse email valide.");
-                return;
-              }
-              setNewsletterLoading(true);
-              try {
-                const res = await fetch("/api/newsletter", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ email }),
-                });
-                const data = await res.json();
-                if (res.ok || res.status === 200) {
-                  setEmail("");
-                  toast.success("Inscription confirmée ! Vous recevrez nos prochaines actualités.");
-                } else {
-                  toast.error(data.error || "Une erreur est survenue.");
-                }
-              } catch {
-                toast.error("Une erreur est survenue. Veuillez réessayer.");
-              } finally {
-                setNewsletterLoading(false);
-              }
-            }}
-            className="px-5 py-2.5 rounded-lg bg-accent text-white text-sm font-semibold cursor-pointer transition-opacity whitespace-nowrap disabled:opacity-70 hover:opacity-90"
-          >
+            </Field>
+          </FieldGroup>
+        </CardContent>
+        <CardFooter className="flex items-center justify-between gap-3">
+          <span className="text-sm text-muted-foreground">
+            Pas de spam. Seulement les nouvelles importantes.
+          </span>
+          <Button onClick={handleSubscribe} disabled={newsletterLoading}>
             {newsletterLoading ? "Inscription..." : "S'abonner"}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
+  );
+}
+
+function ArticleCard({
+  article,
+  featured = false,
+  onOpen,
+}: {
+  article: NewsItem;
+  featured?: boolean;
+  onOpen?: (article: NewsItem) => void;
+}) {
+  return (
+    <Card
+      role="button"
+      tabIndex={0}
+      className="overflow-hidden transition-colors hover:border-primary/40"
+      onClick={() => onOpen?.(article)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen?.(article);
+        }
+      }}
+    >
+      <div className={`relative bg-muted ${featured ? "aspect-[16/9]" : "aspect-[4/3]"}`}>
+        {article.image ? (
+          // Editorial images are dynamic content and intentionally bypass next/image remote constraints.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={article.image} alt={article.title} className="size-full object-cover" />
+        ) : (
+          <div className="flex size-full items-center justify-center bg-muted">
+            <NewspaperIcon className="size-10 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+
+      <CardHeader className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge>{article.tag}</Badge>
+          {article.popular && <Badge variant="secondary">Mis en avant</Badge>}
+        </div>
+        <CardTitle className={featured ? "text-xl" : "text-base"}>{article.title}</CardTitle>
+        <CardDescription className={featured ? "line-clamp-3" : "line-clamp-2"}>
+          {article.desc}
+        </CardDescription>
+      </CardHeader>
+
+      <CardFooter className="flex items-center justify-between gap-3">
+        <span className="text-sm text-muted-foreground">{article.date}</span>
+        <Button variant="ghost">Lire</Button>
+      </CardFooter>
+    </Card>
   );
 }

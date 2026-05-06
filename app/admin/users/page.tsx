@@ -21,6 +21,8 @@ interface User {
   name: string
   email: string
   role: string
+  status: string
+  lastLoginAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -102,6 +104,36 @@ export default function UsersPage() {
     }
   }
 
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-green-100 text-green-800"
+      case "pending":
+        return "bg-yellow-100 text-yellow-800"
+      case "locked":
+        return "bg-orange-100 text-orange-800"
+      case "disabled":
+        return "bg-gray-200 text-gray-700"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "active":
+        return "Actif"
+      case "pending":
+        return "En attente"
+      case "locked":
+        return "Verrouillé"
+      case "disabled":
+        return "Désactivé"
+      default:
+        return status
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6 py-6 px-4 md:px-6">
       <div className="flex items-center justify-between">
@@ -154,6 +186,8 @@ export default function UsersPage() {
                 <TableHead className="font-semibold">Nom</TableHead>
                 <TableHead className="font-semibold">Email</TableHead>
                 <TableHead className="font-semibold">Rôle</TableHead>
+                <TableHead className="font-semibold">Statut</TableHead>
+                <TableHead className="font-semibold">Dernière connexion</TableHead>
                 <TableHead className="font-semibold">Créé le</TableHead>
                 <TableHead className="font-semibold text-right">Actions</TableHead>
               </TableRow>
@@ -171,6 +205,18 @@ export default function UsersPage() {
                     >
                       {user.role}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(
+                        user.status
+                      )}`}
+                    >
+                      {getStatusLabel(user.status)}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-gray-600 text-sm">
+                    {user.lastLoginAt ? formatDate(user.lastLoginAt) : "Jamais"}
                   </TableCell>
                   <TableCell className="text-gray-600 text-sm">
                     {formatDate(user.createdAt)}

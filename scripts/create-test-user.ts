@@ -3,33 +3,35 @@ import * as bcrypt from "bcryptjs"
 
 async function main() {
   try {
-    // Check if test user exists
-    const existing = await prisma.user.findUnique({
-      where: { email: "test@example.com" },
-    })
+    const email = process.env.DOCBEL_MEMBER_EMAIL?.trim().toLowerCase() || "member@docbel.local"
+    const password = process.env.DOCBEL_MEMBER_PASSWORD || "Member123456!"
+    const passwordHash = await bcrypt.hash(password, 10)
 
-    if (existing) {
-      console.log("Test user already exists")
-      return
-    }
-
-    // Create test user
-    const hashedPassword = await bcrypt.hash("password123", 10)
-    const user = await prisma.user.create({
-      data: {
-        name: "Test User",
-        email: "test@example.com",
-        password: hashedPassword,
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {
+        name: "Membre Docbel",
+        password: passwordHash,
         role: "user",
+        status: "active",
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+      },
+      create: {
+        name: "Membre Docbel",
+        email,
+        password: passwordHash,
+        role: "user",
+        status: "active",
       },
     })
 
-    console.log("Test user created successfully:")
-    console.log(`Email: ${user.email}`)
-    console.log(`Password: password123`)
+    console.log("Member user ready")
+    console.log(`Email: ${email}`)
+    console.log(`Password: ${password}`)
     console.log(`Role: ${user.role}`)
   } catch (error) {
-    console.error("Error creating test user:", error)
+    console.error("Error creating member user:", error)
     process.exit(1)
   } finally {
     await prisma.$disconnect()

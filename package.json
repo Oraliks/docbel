@@ -2,15 +2,31 @@
   "name": "docbel-nextjs",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.33.2",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "db:push": "prisma db push",
+    "db:setup": "prisma db push && pnpm seed && tsx scripts/setup-local-auth.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "canvas",
+      "core-js",
+      "esbuild",
+      "msw",
+      "prisma",
+      "sharp",
+      "unrs-resolver"
+    ]
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

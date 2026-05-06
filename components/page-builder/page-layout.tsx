@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/docbel/sidebar'
 import { Footer } from '@/components/docbel/footer'
 import { PageRenderer } from './page-renderer'
 import { BlockProps } from '@/lib/page-builder/types'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
 interface PageLayoutProps {
   blocks: BlockProps[]
@@ -20,10 +21,15 @@ export function PageLayout({ blocks, title }: PageLayoutProps) {
   const accent = '#C8102E'
 
   return (
-    <div
-      className="flex bg-background text-foreground min-h-screen"
+    <SidebarProvider
+      defaultOpen
+      style={
+        {
+          '--sidebar-width': '18rem',
+          '--sidebar-width-mobile': '20rem',
+        } as React.CSSProperties
+      }
     >
-      {/* Sidebar */}
       <Sidebar
         accent={accent}
         dark={dark}
@@ -41,27 +47,23 @@ export function PageLayout({ blocks, title }: PageLayoutProps) {
         setToolsCat={() => {}}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Page Header */}
-        <div className="px-8 py-6 border-b border-border bg-surface">
-          <h1 className="text-2xl font-bold text-foreground m-0">
-            {title}
-          </h1>
-        </div>
+      <SidebarInset className="min-h-screen">
+        <div className="flex flex-1 flex-col">
+          <div className="border-b bg-background px-8 py-6">
+            <h1 className="m-0 text-2xl font-bold text-foreground">
+              {title}
+            </h1>
+          </div>
 
-        {/* Page Content */}
-        <main className="flex-1">
-          <div className="bg-surface">
-            <div className="max-w-7xl mx-auto py-12 px-4">
+          <main className="flex-1 bg-background">
+            <div className="mx-auto max-w-7xl px-4 py-12">
               <PageRenderer blocks={blocks} />
             </div>
-          </div>
-        </main>
+          </main>
 
-        {/* Footer */}
-        <Footer accent={accent} />
-      </div>
-    </div>
+          <Footer />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

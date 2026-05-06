@@ -6,53 +6,103 @@ import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
 
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
+
+const ALLOWED_EXTENSIONS = new Set([
+  "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+  "jpg", "jpeg", "png", "gif", "webp", "svg",
+  "zip", "rar", "7z",
+  "mp4", "mov", "avi", "webm",
+  "txt", "csv",
+]);
+
+const ALLOWED_MIME_PREFIXES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument",
+  "application/msword",
+  "application/vnd.ms-excel",
+  "application/vnd.ms-powerpoint",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/x-rar-compressed",
+  "application/x-7z-compressed",
+  "image/",
+  "video/",
+  "text/plain",
+  "text/csv",
+];
+
+function isAllowedMime(mime: string) {
+  if (!mime) return false;
+  return ALLOWED_MIME_PREFIXES.some((p) => mime.startsWith(p));
+}
+
+function sanitizeFileName(name: string) {
+  return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200);
+}
+
 export async function POST(req: NextRequest) {
-  const auth = await requireAdminAuth();
-  if (!auth.isAuthorized) return auth.error;
+  const authCheck = await requireAdminAuth();
+  if (!authCheck.isAuthorized) return authCheck.error;
 
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File;
+    const file = formData.get("file") as File | null;
     const parentId = formData.get("parentId") as string | null;
     const isPrivate = formData.get("isPrivate") === "true";
 
-    if (!file) {
+    if (!file || typeof file === "string") {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: `File too large (max ${MAX_FILE_SIZE / 1024 / 1024} MB)` },
+        { status: 413 }
+      );
+    }
+
+    const fileExt = file.name.split(".").pop()?.toLowerCase() || "";
+    if (!ALLOWED_EXTENSIONS.has(fileExt)) {
+      return NextResponse.json(
+        { error: `File extension .${fileExt} is not allowed` },
+        { status: 415 }
+      );
+    }
+
+    if (!isAllowedMime(file.type)) {
+      return NextResponse.json(
+        { error: `MIME type ${file.type || "unknown"} is not allowed` },
+        { status: 415 }
+      );
+    }
+
     const buffer = await file.arrayBuffer();
-    const fileName = file.name;
-    const fileSize = buffer.byteLength;
-    const fileExt = fileName.split(".").pop()?.toLowerCase() || "";
+    const safeName = sanitizeFileName(file.name);
     const fileType = getFileType(fileExt);
 
-    // Déterminer le chemin de sauvegarde
     const { relativeDir, absoluteDir } = getUploadDirectory(isPrivate);
 
-    // Créer le dossier s'il n'existe pas
     if (!existsSync(absoluteDir)) {
       await mkdir(absoluteDir, { recursive: true });
     }
 
-    // Générer un nom de fichier unique
-    const uniqueName = `${Date.now()}-${fileName}`;
+    const uniqueName = `${Date.now()}-${safeName}`;
     const filePath = buildStoredFilePath(relativeDir, uniqueName);
     const fullPath = join(absoluteDir, uniqueName);
 
-    // Écrire le fichier
     await writeFile(fullPath, Buffer.from(buffer));
 
-    // Créer l'enregistrement en DB
     const dbFile = await prisma.file.create({
       data: {
-        name: fileName,
+        name: file.name,
         type: "file",
         fileType,
-        size: fileSize,
+        size: buffer.byteLength,
         parentId: parentId || null,
         isPrivate,
         filePath,
-        createdBy: auth.user?.email || "unknown",
+        createdBy: authCheck.user?.id || "unknown",
       },
     });
 
@@ -79,17 +129,17 @@ function getFileType(ext: string): string {
     jpeg: "image",
     png: "image",
     gif: "image",
+    webp: "image",
+    svg: "image",
     zip: "archive",
     rar: "archive",
     "7z": "archive",
     mp4: "video",
-    avi: "video",
     mov: "video",
-    ts: "code",
-    js: "code",
-    tsx: "code",
-    jsx: "code",
-    py: "code",
+    avi: "video",
+    webm: "video",
+    txt: "text",
+    csv: "text",
   };
   return typeMap[ext] || "file";
 }

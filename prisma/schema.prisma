@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -10,136 +10,158 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum UserRole {
+  user
+  moderator
+  admin
+}
+
+enum UserStatus {
+  active
+  pending
+  disabled
+  locked
+}
+
 model User {
-  id            String   @id @default(cuid())
-  name          String
-  email         String   @unique
-  password      String
-  role          String   @default("user")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  apiKeys       ApiKey[]
+  id                  String     @id @default(cuid())
+  name                String
+  email               String     @unique
+  password            String
+  role                UserRole   @default(user)
+  status              UserStatus @default(active)
+  emailVerifiedAt     DateTime?
+  lastLoginAt         DateTime?
+  passwordChangedAt   DateTime   @default(now())
+  failedLoginAttempts Int        @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  apiKeys             ApiKey[]
+
+  @@index([role])
+  @@index([status])
 }
 
 model Page {
-  id            String   @id @default(cuid())
-  title         String
-  slug          String   @unique
-  content       String   @default("[]")
-  status        String   @default("draft")
-  metaTitle     String?
-  metaDesc      String?
-  ogImage       String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  content   String   @default("[]")
+  status    String   @default("draft")
+  metaTitle String?
+  metaDesc  String?
+  ogImage   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Activity {
-  id            String   @id @default(cuid())
-  user          String
-  action        String   // created, updated, deleted, published, unpublished, error
-  resource      String   // page, user, comment, setting
-  resourceName  String
-  resourceId    String?
-  details       String?
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  user         String
+  action       String // created, updated, deleted, published, unpublished, error
+  resource     String // page, user, comment, setting
+  resourceName String
+  resourceId   String?
+  details      String?
+  createdAt    DateTime @default(now())
 }
 
 model File {
-  id            String   @id @default(cuid())
-  name          String
-  type          String   // "file" or "folder"
-  fileType      String?  // pdf, docx, xlsx, jpg, etc
-  size          Int?     // bytes
-  parentId      String?
-  parent        File?    @relation("FileHierarchy", fields: [parentId], references: [id])
-  children      File[]   @relation("FileHierarchy")
-  isPrivate     Boolean  @default(false)
-  filePath      String?  // relative path on disk
-  createdBy     String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  usage         FileUsage[]
+  id        String      @id @default(cuid())
+  name      String
+  type      String // "file" or "folder"
+  fileType  String? // pdf, docx, xlsx, jpg, etc
+  size      Int? // bytes
+  parentId  String?
+  parent    File?       @relation("FileHierarchy", fields: [parentId], references: [id])
+  children  File[]      @relation("FileHierarchy")
+  isPrivate Boolean     @default(false)
+  filePath  String? // relative path on disk
+  createdBy String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  usage     FileUsage[]
 }
 
 model FileUsage {
-  id            String   @id @default(cuid())
-  fileId        String
-  file          File     @relation(fields: [fileId], references: [id])
-  pageSlug      String   // slug de la page qui utilise le fichier
-  context       String?  // description du lieu d'utilisation
-  createdAt     DateTime @default(now())
+  id        String   @id @default(cuid())
+  fileId    String
+  file      File     @relation(fields: [fileId], references: [id])
+  pageSlug  String // slug de la page qui utilise le fichier
+  context   String? // description du lieu d'utilisation
+  createdAt DateTime @default(now())
 }
 
 model ApiKey {
-  id            String   @id @default(cuid())
-  key           String   @unique
-  name          String
-  createdBy     String
-  user          User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
-  active        Boolean  @default(true)
-  lastUsedAt    DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id         String    @id @default(cuid())
+  key        String    @unique
+  name       String
+  createdBy  String
+  user       User      @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  active     Boolean   @default(true)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model Category {
-  id            String   @id @default(cuid())
-  name          String   @unique
-  color         String   @default("#C8102E")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String   @default("#C8102E")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ToolSection {
-  id            String   @id @default(cuid())
-  name          String   @unique        // "Chômage", "Emploi", etc.
-  description   String?
-  order         Int      @default(0)
-  icon          String?
-  tools         Tool[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String   @unique // "Chômage", "Emploi", etc.
+  description String?
+  order       Int      @default(0)
+  icon        String?
+  tools       Tool[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Tool {
-  id            String   @id @default(cuid())
-  sectionId     String
-  section       ToolSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  name          String
-  slug          String   @unique        // "preavis", "agr", etc.
-  description   String
-  type          String                  // "calc_preavis", "calc_agr", "locator", etc.
-  icon          String?
-  popular       Boolean  @default(false)
-  timeMin       Int?
-  order         Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String      @id @default(cuid())
+  sectionId   String
+  section     ToolSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String      @unique // "preavis", "agr", etc.
+  description String
+  type        String // "calc_preavis", "calc_agr", "locator", etc.
+  icon        String?
+  popular     Boolean     @default(false)
+  timeMin     Int?
+  order       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   @@index([sectionId])
   @@index([slug])
 }
 
 model News {
-  id            String   @id @default(cuid())
-  title         String
-  slug          String   @unique
-  content       String   @default("")
-  excerpt       String
-  category      String
-  color         String   @default("#C8102E")
-  emoji         String   @default("📰")
-  status        String   @default("draft")
-  featured      Boolean  @default(false)
-  image         String?
-  readingTime   Int?
-  views         Int      @default(0)
-  publishedAt   DateTime?
-  scheduledAt   DateTime?
-  createdBy     String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  content     String    @default("")
+  excerpt     String
+  category    String
+  color       String    @default("#C8102E")
+  emoji       String    @default("📰")
+  status      String    @default("draft")
+  featured    Boolean   @default(false)
+  image       String?
+  readingTime Int?
+  views       Int       @default(0)
+  publishedAt DateTime?
+  scheduledAt DateTime?
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([status])
   @@index([category])
@@ -147,41 +169,41 @@ model News {
 }
 
 model NewsletterSubscriber {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  status      String   @default("active")  // active, unsubscribed
-  source      String   @default("actualites")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  email     String   @unique
+  status    String   @default("active") // active, unsubscribed
+  source    String   @default("actualites")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ContactMessage {
-  id            String   @id @default(cuid())
-  name          String
-  email         String
-  subject       String
-  message       String
-  status        String   @default("NEW")  // NEW, READ, REPLIED, ARCHIVED
-  adminReply    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String
+  email      String
+  subject    String
+  message    String
+  status     String   @default("NEW") // NEW, READ, REPLIED, ARCHIVED
+  adminReply String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model BaremeFile {
-  id              String    @id @default(cuid())
-  name            String
-  filePath        String
-  effectiveDate   String
-  uploadedAt      DateTime  @default(now())
-  description     String?
-  fileType        String    @default("onem-rates")
-  multiplicateur  Float?
-  status          String    @default("active")
+  id             String   @id @default(cuid())
+  name           String
+  filePath       String
+  effectiveDate  String
+  uploadedAt     DateTime @default(now())
+  description    String?
+  fileType       String   @default("onem-rates")
+  multiplicateur Float?
+  status         String   @default("active")
 
-  sheets          BareSheet[]
-  createdBy       String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  sheets    BareSheet[]
+  createdBy String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   @@index([effectiveDate])
   @@index([status])
@@ -189,24 +211,24 @@ model BaremeFile {
 }
 
 model BareSheet {
-  id              String    @id @default(cuid())
-  fileId          String
-  file            BaremeFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  id     String     @id @default(cuid())
+  fileId String
+  file   BaremeFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
-  name            String
-  description     String?
-  category        String
-  rowCount        Int
-  colCount        Int       @default(0)
+  name        String
+  description String?
+  category    String
+  rowCount    Int
+  colCount    Int     @default(0)
 
   // Données de la grille en JSON: [[cell1, cell2, ...], [cell1, ...], ...]
-  cellData        String    @default("[]")
+  cellData   String @default("[]")
   // Texte concaténé pour recherche full-text
-  searchText      String    @default("")
+  searchText String @default("")
   // Position dans le workbook
-  sheetIndex      Int       @default(0)
+  sheetIndex Int    @default(0)
 
-  createdAt       DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([fileId, name])
   @@index([fileId])

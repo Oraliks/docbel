@@ -11,9 +11,5 @@ export default function ActualitesRoute() {
     router.push(`/actualites/${article.id}`);
   };
 
-  return (
-    <div style={{ padding: "32px 36px 40px" }}>
-      <ActualitesPage onArticleClick={handleArticleClick} />
-    </div>
-  );
+  return <ActualitesPage onArticleClick={handleArticleClick} />;
 }

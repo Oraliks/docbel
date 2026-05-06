@@ -34,8 +34,8 @@ pnpm-debug.log*
 tsconfig.tsbuildinfo
 
 # Database
-prisma/dev.db
-prisma/dev.db-journal
+prisma/**/*.db
+prisma/**/*.db-journal
 
 # Uploads (not versioned)
 public/uploads/*
@@ -49,4 +49,5 @@ tempzip/
 # Development tools
 .claude/
 .agents/
+.codex/
 skills-lock.json

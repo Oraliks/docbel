@@ -1,20 +1,32 @@
 "use client";
 
-import React from "react";
 import {
-  DocIcon,
-  CalcIcon,
-  GroupIcon,
-  HeartIcon,
-  ScalesIcon,
-  BookIcon,
-  GridSquaresIcon,
-  NewsIcon,
-  HelpIcon,
+  BookOpenIcon,
+  CalculatorIcon,
+  FileTextIcon,
+  GraduationCapIcon,
+  HeartHandshakeIcon,
+  HomeIcon,
+  LandmarkIcon,
   MoonIcon,
+  NewspaperIcon,
   SunIcon,
-} from "./icons";
-import { TOOLS_DATA } from "@/lib/docbel-data";
+  MailIcon,
+} from "lucide-react";
+import {
+  Sidebar as AppSidebarShell,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarSeparator,
+} from "@/components/ui/sidebar";
 
 interface SidebarProps {
   accent: string;
@@ -36,169 +48,140 @@ interface SidebarProps {
   setNewsFilter?: (f: string) => void;
 }
 
-const CATS = [
-  { id: "Tous", label: "Les plus utilisés", Icon: GridSquaresIcon, color: "#7E3AF2" },
-  { id: "Documents", label: "Documents", Icon: DocIcon, color: "#1A56DB" },
-  { id: "Calculs", label: "Calculs", Icon: CalcIcon, color: "#F97316" },
-  { id: "Organismes", label: "Organismes", Icon: GroupIcon, color: "#0E9F6E" },
-  { id: "CPAS", label: "CPAS", Icon: HeartIcon, color: "#E11D48" },
-  { id: "Juridique", label: "Juridique", Icon: ScalesIcon, color: "#6366F1" },
-  { id: "Tutoriels", label: "Tutoriels", Icon: BookIcon, color: "#0891B2" },
+const NAV_ITEMS = [
+  { id: "accueil", label: "Accueil", icon: HomeIcon },
+  { id: "actualites", label: "Actualites", icon: NewspaperIcon },
+  { id: "contact", label: "Contact", icon: MailIcon },
 ];
 
-const NEWS_FILTERS = [
-  { id: "all", label: "Toutes les actualités", Icon: NewsIcon },
-  { id: "updates", label: "Mes mises à jour", Icon: NewsIcon, badge: 2 },
+const CATEGORY_ITEMS = [
+  { id: "Tous", label: "Tous les outils", icon: FileTextIcon },
+  { id: "Documents", label: "Documents", icon: FileTextIcon },
+  { id: "Calculs", label: "Calculs", icon: CalculatorIcon },
+  { id: "Organismes", label: "Organismes", icon: LandmarkIcon },
+  { id: "CPAS", label: "CPAS", icon: HeartHandshakeIcon },
+  { id: "Tutoriels", label: "Tutoriels", icon: GraduationCapIcon },
 ];
-
 
 export function Sidebar({
-  accent,
   dark,
   setDark,
-  width,
+  activePage,
+  setActivePage,
   toolsCat,
   setToolsCat,
-  newsFilter = "all",
-  setNewsFilter,
-  setActivePage,
 }: SidebarProps) {
-  const counts: Record<string, number> = { Tous: TOOLS_DATA.length };
-  TOOLS_DATA.forEach((t) => {
-    counts[t.cat] = (counts[t.cat] || 0) + 1;
-  });
+  const counts: Record<string, number> = {
+    Tous: 10,
+    Documents: 3,
+    Calculs: 3,
+    Organismes: 2,
+    CPAS: 1,
+    Tutoriels: 1,
+  };
 
   return (
-    <nav
-      style={{
-        width,
-        minWidth: width,
-        display: "flex",
-        flexDirection: "column",
-        overflowY: "auto",
-        flexShrink: 0,
-        padding: "20px 16px 16px",
-        gap: 18,
-      }}
-      className="bg-nav-bg border-r border-nav-border"
-    >
-      {/* News section */}
-      <div>
-        <div className="text-text-faint text-xs font-bold uppercase tracking-widest px-1 mb-2">Actualités</div>
-        {NEWS_FILTERS.map((f) => {
-          const active = newsFilter === f.id;
-          return (
-            <button
-              key={f.id}
-              onClick={() => {
-                setNewsFilter?.(f.id);
-                setActivePage("actualites");
-              }}
-              className={`flex items-center gap-2.5 w-full px-3 py-2.25 rounded-lg border-none text-sm transition-all ${
-                active
-                  ? "font-semibold"
-                  : "font-medium text-text-muted hover:bg-surface-2 hover:text-foreground"
-              }`}
-              style={{
-                background: active ? `${accent}12` : undefined,
-                color: active ? accent : undefined,
-                marginBottom: 2,
-              }}
+    <AppSidebarShell variant="inset" collapsible="offcanvas">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={activePage === "accueil"}
+              onClick={() => setActivePage("accueil")}
+              className="h-auto items-start px-3 py-3"
             >
-              <f.Icon size={15} />
-              <span style={{ flex: 1 }}>{f.label}</span>
-              {f.badge ? (
-                <span className="text-xs font-bold px-1.75 py-0.5 rounded-full bg-surface-2 text-text-muted min-w-[20px] text-center">
-                  {f.badge}
+              <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <FileTextIcon />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
+                <span className="truncate text-sm font-semibold">Docbel</span>
+                <span className="text-xs text-muted-foreground">
+                  Portail documents et demarches
                 </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Categories */}
-      <div>
-        <div className="text-text-faint text-xs font-bold uppercase tracking-widest px-1 mb-2">Catégories</div>
-        {CATS.map((c) => {
-          const active = toolsCat === c.id;
-          const count = counts[c.id] || 0;
-          return (
-            <button
-              key={c.id}
-              onClick={() => {
-                setToolsCat(c.id);
-                setActivePage("outils");
-              }}
-              className={`flex items-center gap-2.5 w-full px-3 py-2.25 rounded-lg border-none text-sm transition-all ${
-                active
-                  ? "font-semibold"
-                  : "font-medium text-text-muted hover:bg-surface-2 hover:text-foreground"
-              }`}
-              style={{
-                background: active ? `${accent}12` : undefined,
-                color: active ? accent : undefined,
-                marginBottom: 2,
-              }}
-            >
-              <span style={{ color: active ? accent : c.color, display: "flex" }}>
-                <c.Icon size={15} />
               </span>
-              <span style={{ flex: 1 }}>{c.label}</span>
-              <span
-                className={`text-xs font-bold px-1.75 py-0.5 rounded-full min-w-[20px] text-center ${
-                  active ? "text-accent" : "text-text-faint bg-surface-2"
-                }`}
-                style={{
-                  background: active ? `${accent}20` : undefined,
-                }}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
 
-      <div style={{ flex: 1 }} />
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {NAV_ITEMS.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    isActive={activePage === item.id}
+                    onClick={() => setActivePage(item.id)}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-      {/* Help card */}
-      <div
-        style={{
-          background: `linear-gradient(135deg, ${accent}10 0%, #7E3AF210 100%)`,
-          border: `1px solid ${accent}25`,
-          borderRadius: 12,
-          padding: "16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <span style={{ color: accent, display: "flex" }}>
-            <HelpIcon size={16} />
-          </span>
-          <span className="text-sm font-bold text-foreground">Besoin d&apos;aide ?</span>
-        </div>
-        <p className="text-xs text-text-muted leading-relaxed m-0">
-          Consultez nos guides ou contactez notre équipe.
-        </p>
-        <button
-          onClick={() => setActivePage("tutoriels")}
-          className="mt-1 px-3 py-1.75 rounded border border-border bg-surface text-foreground text-xs font-semibold hover:opacity-80 transition-opacity text-center"
-        >
-          Voir les tutoriels
-        </button>
-      </div>
+        <SidebarSeparator />
 
-      {/* Theme toggle */}
-      <button
-        onClick={() => setDark((d) => !d)}
-        className="px-2 py-2 rounded-lg border border-border bg-transparent text-text-muted flex items-center justify-center gap-1.5 text-xs font-medium hover:bg-surface-2 transition-colors"
-      >
-        {dark ? <SunIcon size={14} /> : <MoonIcon size={14} />}
-        <span>{dark ? "Mode clair" : "Mode sombre"}</span>
-      </button>
-    </nav>
+        <SidebarGroup>
+          <SidebarGroupLabel>Outils</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {CATEGORY_ITEMS.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    isActive={toolsCat === item.id}
+                    onClick={() => {
+                      setToolsCat(item.id);
+                      setActivePage("outils");
+                    }}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                  <SidebarMenuBadge>{counts[item.id] ?? 0}</SidebarMenuBadge>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Ressources</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActivePage("actualites")}>
+                  <NewspaperIcon />
+                  <span>Mises a jour recentes</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActivePage("tutoriels")}>
+                  <BookOpenIcon />
+                  <span>Guides pratiques</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => setDark((value) => !value)}>
+              {dark ? <SunIcon /> : <MoonIcon />}
+              <span>{dark ? "Passer au mode clair" : "Passer au mode sombre"}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </AppSidebarShell>
   );
 }

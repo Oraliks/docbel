@@ -1,9 +1,12 @@
 "use client";
 
-import { useRouter, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeftIcon, NewspaperIcon } from "lucide-react";
 import { ArticlePage } from "@/components/docbel/article-page";
 import { NewsItem } from "@/lib/docbel-data";
-import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 
 export default function ArticleRoute() {
   const router = useRouter();
@@ -11,37 +14,34 @@ export default function ArticleRoute() {
   const [article, setArticle] = useState<NewsItem | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const accent = "#C8102E";
-
   const articleId = params.id as string;
 
   useEffect(() => {
     const fetchArticle = async () => {
-      // Fetch from the database API
       try {
         const response = await fetch(`/api/news/${articleId}`);
-        if (response.ok) {
-          const data = await response.json();
-          const mappedArticle: NewsItem = {
-            id: data.id,
-            tag: data.category,
-            title: data.title,
-            desc: data.excerpt,
-            date: new Date(data.publishedAt || data.createdAt).toLocaleDateString("fr-FR", {
-              year: "numeric",
-              month: "short",
-              day: "numeric"
-            }),
-            color: data.color || "#C8102E",
-            readingTime: data.readingTime,
-            popular: data.featured,
-            image: data.image,
-            content: data.content,
-          };
-          setArticle(mappedArticle);
-        } else {
+        if (!response.ok) {
           setArticle(null);
+          return;
         }
+
+        const data = await response.json();
+        setArticle({
+          id: data.id,
+          tag: data.category,
+          title: data.title,
+          desc: data.excerpt,
+          date: new Date(data.publishedAt || data.createdAt).toLocaleDateString("fr-FR", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          }),
+          color: data.color || "#C8102E",
+          readingTime: data.readingTime,
+          popular: data.featured,
+          image: data.image || undefined,
+          content: data.content,
+        });
       } catch (error) {
         console.error("Error fetching article:", error);
         setArticle(null);
@@ -50,44 +50,41 @@ export default function ArticleRoute() {
       }
     };
 
-    fetchArticle();
+    void fetchArticle();
   }, [articleId]);
 
   if (loading) {
     return (
-      <div style={{ padding: "40px", textAlign: "center" }}>
-        <div className="text-muted-foreground">Chargement...</div>
-      </div>
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <NewspaperIcon />
+          </EmptyMedia>
+          <EmptyTitle>Chargement de l&apos;article...</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
     );
   }
 
   if (!article) {
     return (
-      <div style={{ padding: "40px", textAlign: "center" }}>
-        <h1 className="text-foreground">Article non trouvé</h1>
-        <button
-          onClick={() => router.push("/actualites")}
-          style={{
-            marginTop: 16,
-            padding: "10px 20px",
-            borderRadius: 8,
-            border: "none",
-            background: accent,
-            color: "white",
-            cursor: "pointer",
-            fontSize: 14,
-            fontWeight: 600,
-          }}
-        >
-          Retour aux actualités
-        </button>
-      </div>
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <NewspaperIcon />
+          </EmptyMedia>
+          <EmptyTitle>Article non trouve</EmptyTitle>
+          <EmptyDescription>
+            L&apos;article demande n&apos;est pas disponible ou n&apos;existe plus.
+          </EmptyDescription>
+        </EmptyHeader>
+        <Button onClick={() => router.push("/actualites")}>
+          <ArrowLeftIcon data-icon="inline-start" />
+          Retour aux actualites
+        </Button>
+      </Empty>
     );
   }
 
-  return (
-    <div style={{ padding: "32px 36px 40px" }}>
-      <ArticlePage article={article} accent={accent} onBack={() => router.push("/actualites")} />
-    </div>
-  );
+  return <ArticlePage article={article} accent="#C8102E" onBack={() => router.push("/actualites")} />;
 }

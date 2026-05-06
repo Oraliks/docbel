@@ -18,7 +18,16 @@ export default async function AdminPage() {
   const [rawPages, rawUsers, rawSections] = await Promise.all([
     prisma.page.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.user.findMany({
-      select: { id: true, name: true, email: true, role: true, createdAt: true, updatedAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
       orderBy: { createdAt: "desc" },
     }),
     prisma.toolSection.findMany({
@@ -46,6 +55,8 @@ export default async function AdminPage() {
     name: u.name ?? "",
     email: u.email,
     role: u.role,
+    status: u.status,
+    lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
     createdAt: u.createdAt.toISOString(),
     updatedAt: u.updatedAt.toISOString(),
   }))

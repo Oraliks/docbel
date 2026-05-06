@@ -1,87 +1,80 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 import { Sidebar } from "./sidebar";
 import { TopBarNav } from "./topbar-nav";
 import { Footer } from "./footer";
 import { LoginModal } from "./login-modal";
 import { AppStateContext } from "@/lib/app-state-context";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
-const TWEAKS = {
-  accentColor: "#C8102E",
-  sidebarWidth: 248,
-};
+const PUBLIC_LAYOUT_STYLE = {
+  "--sidebar-width": "18rem",
+  "--sidebar-width-mobile": "20rem",
+} as React.CSSProperties;
 
 export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [lang, setLang] = useState("FR");
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [toolsCat, setToolsCat] = useState("Tous");
 
-  // status === "loading" pendant l'hydratation → on n'affiche pas encore l'état connecté/déconnecté
   const userLoggedIn = status === "authenticated";
-  const accent = TWEAKS.accentColor;
-  const dark = theme === "dark";
+  const dark = resolvedTheme === "dark";
 
-  // Si on est dans /admin, on retourne juste les enfants sans le layout public
   if (pathname.startsWith("/admin")) {
     return <>{children}</>;
   }
 
-  // Determine active page from pathname
   let activePage = "accueil";
   if (pathname.startsWith("/actualites")) activePage = "actualites";
-  else if (pathname.startsWith("/contact")) activePage = "contact";
+  if (pathname.startsWith("/contact")) activePage = "contact";
 
   const handleNavigate = (page: string) => {
-    if (page === "actualites") router.push("/actualites");
-    else if (page === "contact") router.push("/contact");
-    else if (page in { autres: 1, calculs: 1, organismes: 1, cpas: 1, juridique: 1, tutoriels: 1 }) {
-      const catMap: Record<string, string> = {
-        autres: "Documents",
-        calculs: "Calculs",
-        organismes: "Organismes",
-        cpas: "CPAS",
-        juridique: "Juridique",
-        tutoriels: "Tutoriels",
-      };
-      setToolsCat(catMap[page]);
-      router.push("/");
-    } else {
-      router.push("/");
+    if (page === "actualites") {
+      router.push("/actualites");
+      return;
     }
+
+    if (page === "contact") {
+      router.push("/contact");
+      return;
+    }
+
+    if (page === "tutoriels") {
+      setToolsCat("Tutoriels");
+      router.push("/");
+      return;
+    }
+
+    if (page === "outils") {
+      router.push("/");
+      return;
+    }
+
+    router.push("/");
   };
 
   const toggleTheme = () => setTheme(dark ? "light" : "dark");
 
   return (
-    <AppStateContext.Provider value={{ dark, setDark: (value) => setTheme(value ? "dark" : "light"), toolsCat, setToolsCat }}>
-    <div
-      className="flex flex-col h-screen bg-background text-foreground overflow-hidden"
-      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    <AppStateContext.Provider
+      value={{
+        dark,
+        setDark: (value) => setTheme(value ? "dark" : "light"),
+        toolsCat,
+        setToolsCat,
+      }}
     >
-      <TopBarNav
-        accent={accent}
-        dark={dark}
-        setDark={toggleTheme}
-        activePage={activePage}
-        setActivePage={handleNavigate}
-        userLoggedIn={userLoggedIn}
-        setShowLoginModal={setShowLoginModal}
-        userName={session?.user?.name || null}
-        userRole={(session?.user as { role?: string })?.role || null}
-        notificationCount={0}
-      />
-
-      <div className="flex flex-1 overflow-hidden">
+      <SidebarProvider defaultOpen style={PUBLIC_LAYOUT_STYLE}>
         <Sidebar
-          accent={accent}
+          accent="#C8102E"
           dark={dark}
           setDark={toggleTheme}
           lang={lang}
@@ -92,7 +85,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
           setShowLoginModal={setShowLoginModal}
           outilsOpen={false}
           setOutilsOpen={() => {}}
-          width={TWEAKS.sidebarWidth}
+          width={288}
           userName={session?.user?.name || null}
           toolsCat={toolsCat}
           setToolsCat={setToolsCat}
@@ -100,22 +93,33 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
           setNewsFilter={() => {}}
         />
 
-        <main className="flex-1 overflow-y-auto flex flex-col">
-          <div className="flex-1">{children}</div>
-          <div className="flex-shrink-0">
-            <Footer accent={accent} />
-          </div>
-        </main>
-      </div>
+        <SidebarInset className="min-h-svh">
+          <TopBarNav
+            accent="#C8102E"
+            dark={dark}
+            setDark={toggleTheme}
+            activePage={activePage}
+            setActivePage={handleNavigate}
+            userLoggedIn={userLoggedIn}
+            setShowLoginModal={setShowLoginModal}
+            userName={session?.user?.name || null}
+            userRole={(session?.user as { role?: string })?.role || null}
+            notificationCount={0}
+          />
 
-      {showLoginModal && (
-        <LoginModal
-          accent={accent}
-          onClose={() => setShowLoginModal(false)}
-          onLogin={() => setShowLoginModal(false)}
-        />
-      )}
-    </div>
+          <div className="relative flex flex-1 flex-col">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-linear-to-b from-violet-100/35 via-white/0 to-transparent dark:from-violet-500/8" />
+            <main className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-5 lg:px-5 lg:py-5">
+              {children}
+            </main>
+            <Footer />
+          </div>
+        </SidebarInset>
+
+        {showLoginModal && (
+          <LoginModal onClose={() => setShowLoginModal(false)} accent="#C8102E" />
+        )}
+      </SidebarProvider>
     </AppStateContext.Provider>
   );
 }

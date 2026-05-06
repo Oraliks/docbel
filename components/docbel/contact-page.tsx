@@ -1,21 +1,32 @@
 "use client";
 
-import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { CheckCircle2Icon, ClockIcon, MailIcon, MessageCircleIcon, ShieldCheckIcon } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, MessageCircle, Clock, CheckCircle2 } from "lucide-react";
 
 interface ContactPageProps {
   accent: string;
 }
 
-// Email obfuscation: stored as array to prevent bot scraping
 const CONTACT_EMAIL_PARTS = ["contact", "docbel", "be"];
 const getContactEmail = () => CONTACT_EMAIL_PARTS.join("@").replace("@be", ".be");
 
-export function ContactPage({ accent }: ContactPageProps) {
+export function ContactPage(_: ContactPageProps) {
+  void _;
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -28,16 +39,13 @@ export function ContactPage({ accent }: ContactPageProps) {
   const [error, setError] = useState("");
   const [contactEmail] = useState(() => getContactEmail());
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
+  const handleInputChange = (name: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setIsLoading(true);
     setError("");
 
@@ -47,12 +55,7 @@ export function ContactPage({ accent }: ContactPageProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          subject: formData.subject,
-          message: formData.message,
-        }),
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
@@ -63,10 +66,10 @@ export function ContactPage({ accent }: ContactPageProps) {
       setFormData({ name: "", email: "", subject: "", message: "" });
       setAcceptData(false);
 
-      setTimeout(() => setSubmitted(false), 4000);
+      window.setTimeout(() => setSubmitted(false), 4000);
     } catch (err) {
-      setError("Une erreur est survenue. Veuillez réessayer.");
       console.error("Error submitting form:", err);
+      setError("Une erreur est survenue. Veuillez reessayer.");
     } finally {
       setIsLoading(false);
     }
@@ -76,193 +79,171 @@ export function ContactPage({ accent }: ContactPageProps) {
     formData.name && formData.email && formData.subject && formData.message && acceptData;
 
   return (
-    <div className="space-y-8 pb-10">
-      {/* Header */}
-      <div className="space-y-3">
-        <h1 className="text-4xl font-bold tracking-tight">Nous contacter</h1>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-4xl font-semibold tracking-tight">Nous contacter</h1>
+        <p className="max-w-2xl text-muted-foreground">
+          Une question sur un document, une demarche ou un contenu public ? Ecrivez-nous.
+        </p>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Left: Contact Form */}
-        <div className="lg:col-span-2">
-          <Card className="border">
-            <CardHeader>
-              <CardTitle>Envoyer un message</CardTitle>
-              <CardDescription>Remplissez le formulaire ci-dessous et nous vous contactrons sous 48 heures</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Full Name */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold">Nom complet</label>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_360px]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Envoyer un message</CardTitle>
+            <CardDescription>
+              Remplissez le formulaire ci-dessous. Nous revenons vers vous sous 48 heures ouvrees.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+              {error && (
+                <Alert variant="destructive">
+                  <MessageCircleIcon />
+                  <AlertTitle>Envoi impossible</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {submitted && (
+                <Alert>
+                  <CheckCircle2Icon />
+                  <AlertTitle>Message envoye</AlertTitle>
+                  <AlertDescription>
+                    Merci. Votre demande a bien ete enregistree.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="contact-name">Nom complet</FieldLabel>
                   <Input
-                    type="text"
-                    name="name"
+                    id="contact-name"
                     value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Votre nom et prénom"
+                    onChange={(event) => handleInputChange("name", event.target.value)}
+                    placeholder="Votre nom et prenom"
                     required
-                    className="h-10"
                   />
-                </div>
+                </Field>
 
-                {/* Email */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold">Adresse e-mail</label>
+                <Field>
+                  <FieldLabel htmlFor="contact-email">Adresse e-mail</FieldLabel>
                   <Input
+                    id="contact-email"
                     type="email"
-                    name="email"
                     value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="exemple@email.com"
+                    onChange={(event) => handleInputChange("email", event.target.value)}
+                    placeholder="vous@exemple.be"
                     required
-                    className="h-10"
                   />
-                </div>
+                </Field>
 
-                {/* Subject */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold">Sujet</label>
-                  <select
-                    name="subject"
+                <Field>
+                  <FieldLabel>Sujet</FieldLabel>
+                  <Select
                     value={formData.subject}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    onValueChange={(value) => handleInputChange("subject", value ?? "")}
                   >
-                    <option value="">Sélectionnez un sujet</option>
-                    <option value="question">Question générale</option>
-                    <option value="technique">Problème technique</option>
-                    <option value="feedback">Suggestion ou feedback</option>
-                    <option value="autre">Autre</option>
-                  </select>
-                </div>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selectionnez un sujet" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="question">Question generale</SelectItem>
+                        <SelectItem value="technique">Probleme technique</SelectItem>
+                        <SelectItem value="feedback">Suggestion ou retour</SelectItem>
+                        <SelectItem value="autre">Autre sujet</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </Field>
 
-                {/* Message */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold">Votre message</label>
+                <Field>
+                  <FieldLabel htmlFor="contact-message">Votre message</FieldLabel>
                   <Textarea
-                    name="message"
+                    id="contact-message"
                     value={formData.message}
-                    onChange={handleInputChange}
-                    placeholder="Décrivez votre demande en détail..."
-                    rows={6}
+                    onChange={(event) => handleInputChange("message", event.target.value)}
+                    placeholder="Decrivez votre demande..."
+                    rows={7}
                     required
                   />
-                </div>
+                </Field>
 
-                {/* Checkbox */}
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id="acceptData"
+                <Field orientation="horizontal">
+                  <Checkbox
                     checked={acceptData}
-                    onChange={(e) => setAcceptData(e.target.checked)}
-                    className="mt-1 cursor-pointer accent-red-600"
+                    onCheckedChange={(value) => setAcceptData(Boolean(value))}
+                    aria-label="Accepter la politique de confidentialite"
                   />
-                  <label htmlFor="acceptData" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
-                    J&apos;accepte que mes données soient utilisées pour traiter ma demande conformément à notre
-                    politique de confidentialité.
-                  </label>
-                </div>
-
-                {/* Error Message */}
-                {error && (
-                  <div className="p-3 rounded-md bg-red-50 border border-red-200 text-red-600 text-sm flex gap-2 items-start">
-                    <span className="mt-0.5">⚠️</span>
-                    <span>{error}</span>
+                  <div className="flex flex-col gap-1">
+                    <FieldLabel>J&apos;accepte le traitement de mes donnees</FieldLabel>
+                    <FieldDescription>
+                      Elles seront utilisees uniquement pour repondre a votre message.
+                    </FieldDescription>
                   </div>
-                )}
+                </Field>
+              </FieldGroup>
 
-                {/* Success Message */}
-                {submitted && (
-                  <div className="p-3 rounded-md bg-green-50 border border-green-200 text-green-600 text-sm flex gap-2 items-start">
-                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <span>Merci ! Votre message a été envoyé avec succès.</span>
-                  </div>
-                )}
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  disabled={!isFormValid || isLoading || submitted}
-                  className="w-full h-10"
-                  style={{
-                    backgroundColor: isFormValid && !isLoading ? accent : undefined,
-                    opacity: submitted ? 0.8 : 1,
-                  }}
-                >
-                  {isLoading && <span className="animate-spin mr-2">⟳</span>}
-                  {isLoading ? "Envoi en cours..." : submitted ? "Message envoyé ✓" : "Envoyer le message"}
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                  <ClockIcon className="size-4" />
+                  Reponse en 48h ouvrees
+                </span>
+                <Button type="submit" disabled={!isFormValid || isLoading || submitted}>
+                  {isLoading ? "Envoi en cours..." : "Envoyer le message"}
                 </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
-                {/* Info */}
-                <div className="flex gap-2 text-xs text-muted-foreground pt-2">
-                  <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <span>Nous nous engageons à vous répondre sous 48h ouvrées.</span>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right: Contact Info Cards */}
-        <div className="space-y-4">
-          {/* Email Card */}
-          <Card className="border">
+        <div className="flex flex-col gap-4">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Mail className="w-5 h-5 text-red-600" />
+              <CardTitle className="inline-flex items-center gap-2">
+                <MailIcon className="size-5 text-primary" />
                 E-mail
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">Écrivez-nous directement :</p>
-              {contactEmail && (
-                <a
-                  href={`mailto:${contactEmail}`}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-red-50 border border-red-200 hover:bg-red-100 transition-colors"
-                >
-                  <span className="text-sm font-semibold text-red-600">{contactEmail}</span>
-                </a>
-              )}
+            <CardContent className="flex flex-col gap-3">
+              <p className="text-sm text-muted-foreground">Contact direct pour vos demandes generales.</p>
+              <Button variant="outline" render={<a href={`mailto:${contactEmail}`} />}>
+                {contactEmail}
+              </Button>
             </CardContent>
           </Card>
 
-          {/* Response Time Card */}
-          <Card className="border">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-red-600" />
-                Délai de réponse
+              <CardTitle className="inline-flex items-center gap-2">
+                <MessageCircleIcon className="size-5 text-primary" />
+                Delai de reponse
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Nous traitons votre demande <span className="font-semibold">sous 48 heures ouvrées</span>.
+                Notre equipe traite les demandes sous <span className="font-medium text-foreground">48 heures ouvrees</span>.
               </p>
             </CardContent>
           </Card>
 
-          {/* Privacy Info */}
-          <Card className="border bg-slate-50 dark:bg-slate-900/30">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <span>🔒</span>
-                Vos données
+              <CardTitle className="inline-flex items-center gap-2">
+                <ShieldCheckIcon className="size-5 text-primary" />
+                Confidentialite
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Vos données sont traitées avec confidentialité et conformément à notre politique de
-                protection des données. Nous ne les partagerons jamais avec des tiers.
+              <p className="text-sm text-muted-foreground">
+                Vos donnees restent confidentielles et ne sont jamais revendues ni diffusees.
               </p>
             </CardContent>
           </Card>
         </div>
       </div>
-
     </div>
   );
 }

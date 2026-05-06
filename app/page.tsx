@@ -18,17 +18,27 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingTool, setLoadingTool] = useState<Tool | null>(null);
 
-  const accent = "#C8102E";
-
   useEffect(() => {
     const fetchNews = async () => {
       try {
         const response = await fetch("/api/news?status=published&featured=true");
-        if (response.ok) {
-          const data = await response.json();
-          const mappedNews = (data.articles || [])
-            .filter((article: { featured: boolean }) => article.featured === true)
-            .map((article: { id: string; category: string; title: string; excerpt: string; publishedAt: string; color: string; readingTime: number; featured: boolean; image: string | null }) => ({
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const mappedNews = (data.articles || [])
+          .filter((article: { featured: boolean }) => article.featured === true)
+          .map(
+            (article: {
+              id: string;
+              category: string;
+              title: string;
+              excerpt: string;
+              publishedAt: string;
+              color: string;
+              readingTime: number;
+              featured: boolean;
+              image: string | null;
+            }) => ({
               id: article.id,
               tag: article.category,
               title: article.title,
@@ -41,38 +51,44 @@ export default function Home() {
               color: article.color,
               readingTime: article.readingTime,
               popular: article.featured,
-              image: article.image,
-            }));
-          setApiNews(mappedNews);
-        }
+              image: article.image || undefined,
+            })
+          );
+
+        setApiNews(mappedNews);
       } catch (error) {
         console.error("Error fetching news:", error);
       }
     };
-    fetchNews();
+
+    void fetchNews();
   }, []);
 
-  const newsToUse = apiNews;
-
   useEffect(() => {
-    const t = setInterval(() => setNewsIdx((i) => (i + 1) % newsToUse.length), 8000);
-    return () => clearInterval(t);
-  }, [newsToUse.length]);
+    if (!apiNews.length) return;
 
-  const filteredTools = TOOLS_DATA.filter((t) => {
-    const matchCat = toolsCat === "Tous" || t.cat === toolsCat;
-    const matchSearch =
-      t.title.toLowerCase().includes(toolsSearch.toLowerCase()) ||
-      t.desc.toLowerCase().includes(toolsSearch.toLowerCase());
-    return matchCat && matchSearch;
+    const timer = setInterval(() => {
+      setNewsIdx((value) => (value + 1) % apiNews.length);
+    }, 8000);
+
+    return () => clearInterval(timer);
+  }, [apiNews.length]);
+
+  const filteredTools = TOOLS_DATA.filter((tool) => {
+    const matchesCategory = toolsCat === "Tous" || tool.cat === toolsCat;
+    const matchesSearch =
+      tool.title.toLowerCase().includes(toolsSearch.toLowerCase()) ||
+      tool.desc.toLowerCase().includes(toolsSearch.toLowerCase());
+    return matchesCategory && matchesSearch;
   });
 
-  const heroTools = TOOLS_DATA.filter((t) => t.id === 6 || t.id === 2);
+  const featuredTools = TOOLS_DATA.filter((tool) => tool.id === 6 || tool.id === 2);
 
   const handleToolClick = (tool: Tool) => {
     setIsLoading(true);
     setLoadingTool(tool);
-    setTimeout(() => {
+
+    window.setTimeout(() => {
       router.push(`/outils/${getToolSlug(tool)}`);
     }, 900);
   };
@@ -83,24 +99,25 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div style={{ padding: "32px 36px 40px" }}>
-        <LoadingView accent={accent} tool={loadingTool} />
+      <div className="flex flex-1 items-center justify-center py-16">
+        <LoadingView accent="#C8102E" tool={loadingTool} />
       </div>
     );
   }
 
   return (
-    <div style={{ padding: "32px 36px 40px", flex: 1, overflowY: "auto" }}>
+    <div className="flex flex-col gap-5 lg:gap-6">
       <HeroSection
-        news={newsToUse}
+        news={apiNews}
         newsIdx={newsIdx}
         setNewsIdx={setNewsIdx}
-        accent={accent}
+        accent="#C8102E"
         heroStyle="gradient"
         onArticleClick={handleArticleClick}
-        featuredTools={heroTools}
+        featuredTools={featuredTools}
         onToolClick={handleToolClick}
       />
+
       <ToolsSection
         tools={filteredTools}
         search={toolsSearch}
@@ -109,7 +126,7 @@ export default function Home() {
         setCat={setToolsCat}
         layout={toolsLayout}
         setLayout={setToolsLayout}
-        accent={accent}
+        accent="#C8102E"
         setOpenTool={handleToolClick}
       />
     </div>

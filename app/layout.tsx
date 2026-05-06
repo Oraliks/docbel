@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
-import { ThemeProvider } from "next-themes";
+import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayoutClient } from "@/components/docbel/app-layout-client";
 import "./globals.css";
 
@@ -29,8 +29,8 @@ export default function RootLayout({
           <SessionProvider>
             <AppLayoutClient>{children}</AppLayoutClient>
           </SessionProvider>
+          <Toaster richColors position="bottom-right" duration={3500} closeButton />
         </ThemeProvider>
-        <Toaster richColors position="bottom-right" duration={3500} closeButton />
       </body>
     </html>
   );

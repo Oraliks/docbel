@@ -1,27 +1,209 @@
 "use client";
 
-import React, { useState } from "react";
-import { SearchIcon, GridIcon, ListIcon, ClockIcon, ArrowIcon, ChevronIcon } from "./icons";
+import { useState } from "react";
+import {
+  ArrowRightIcon,
+  Building2Icon,
+  CalculatorIcon,
+  FileTextIcon,
+  Grid2x2Icon,
+  ListIcon,
+  PauseIcon,
+  RocketIcon,
+  SearchIcon,
+  TimerIcon,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CATEGORIES, Tool } from "@/lib/docbel-data";
 
 interface ToolsSectionProps {
   tools: Tool[];
   search: string;
-  setSearch: (s: string) => void;
+  setSearch: (search: string) => void;
   cat: string;
-  setCat: (c: string) => void;
+  setCat: (category: string) => void;
   layout: "grid" | "list";
-  setLayout: (l: "grid" | "list") => void;
+  setLayout: (layout: "grid" | "list") => void;
   accent: string;
-  setOpenTool: (t: Tool) => void;
+  setOpenTool: (tool: Tool) => void;
 }
 
 type SortKey = "popularity" | "name" | "time";
-const SORT_LABELS: Record<SortKey, string> = {
-  popularity: "Popularité",
-  name: "Nom (A → Z)",
-  time: "Temps estimé",
-};
+
+const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
+  { value: "popularity", label: "Popularite" },
+  { value: "name", label: "Nom" },
+  { value: "time", label: "Temps estime" },
+];
+
+function getToolVisual(tool: Tool) {
+  const title = tool.title.toLowerCase();
+
+  if (title.includes("c4") || title.includes("c1")) {
+    return {
+      icon: FileTextIcon,
+      tileClassName:
+        "bg-linear-to-br from-violet-100 via-fuchsia-50 to-white text-violet-500 dark:from-violet-500/20 dark:via-violet-400/10 dark:to-transparent dark:text-violet-200",
+    };
+  }
+
+  if (title.includes("chômage") || title.includes("chomage")) {
+    return {
+      icon: PauseIcon,
+      tileClassName:
+        "bg-linear-to-br from-sky-100 via-cyan-50 to-white text-sky-500 dark:from-sky-500/20 dark:via-sky-400/10 dark:to-transparent dark:text-sky-200",
+    };
+  }
+
+  if (title.includes("préavis") || title.includes("preavis") || title.includes("calcul")) {
+    return {
+      icon: CalculatorIcon,
+      tileClassName:
+        "bg-linear-to-br from-emerald-100 via-lime-50 to-white text-emerald-500 dark:from-emerald-500/20 dark:via-emerald-400/10 dark:to-transparent dark:text-emerald-200",
+    };
+  }
+
+  if (title.includes("bureau") || title.includes("organisme")) {
+    return {
+      icon: Building2Icon,
+      tileClassName:
+        "bg-linear-to-br from-amber-100 via-orange-50 to-white text-amber-500 dark:from-amber-500/20 dark:via-amber-400/10 dark:to-transparent dark:text-amber-200",
+    };
+  }
+
+  return {
+    icon: RocketIcon,
+    tileClassName:
+      "bg-linear-to-br from-rose-100 via-pink-50 to-white text-rose-500 dark:from-rose-500/20 dark:via-rose-400/10 dark:to-transparent dark:text-rose-200",
+  };
+}
+
+function ToolCard({ tool, onOpen }: { tool: Tool; onOpen: (tool: Tool) => void }) {
+  const visual = getToolVisual(tool);
+  const Icon = visual.icon;
+
+  return (
+    <Card
+      role="button"
+      tabIndex={0}
+      className="rounded-[20px] border-white/70 bg-white/88 shadow-[0_20px_70px_-52px_rgba(21,20,46,0.26)] transition-transform duration-200 hover:-translate-y-0.5 dark:border-white/10 dark:bg-card"
+      onClick={() => onOpen(tool)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(tool);
+        }
+      }}
+    >
+      <CardContent className="flex h-full flex-col gap-3 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div
+            className={`flex size-11 items-center justify-center rounded-xl shadow-inner ${visual.tileClassName}`}
+          >
+            <Icon className="size-5.5" />
+          </div>
+          {tool.popular ? (
+            <Badge className="rounded-full border-0 bg-rose-50 px-2.5 py-0.5 text-[0.64rem] font-semibold text-rose-500 dark:bg-rose-500/15 dark:text-rose-200">
+              Populaire
+            </Badge>
+          ) : null}
+        </div>
+
+        <div className="space-y-1.5">
+          <h3 className="text-base font-semibold leading-tight text-balance">{tool.title}</h3>
+          <p className="min-h-12 text-[13px] leading-5 text-muted-foreground">{tool.desc}</p>
+        </div>
+
+        <div className="mt-auto flex items-center justify-between gap-3 text-[13px]">
+          <span className="inline-flex items-center gap-2 text-muted-foreground">
+            <TimerIcon className="size-4" />
+            {tool.time}
+          </span>
+          <span className="inline-flex items-center gap-2 font-semibold text-primary">
+            Utiliser
+            <ArrowRightIcon className="size-4" />
+          </span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ToolListRow({ tool, onOpen }: { tool: Tool; onOpen: (tool: Tool) => void }) {
+  const visual = getToolVisual(tool);
+  const Icon = visual.icon;
+
+  return (
+    <Card
+      role="button"
+      tabIndex={0}
+      className="rounded-[18px] border-white/70 bg-white/88 shadow-[0_20px_70px_-52px_rgba(21,20,46,0.26)] transition-transform duration-200 hover:-translate-y-0.5 dark:border-white/10 dark:bg-card"
+      onClick={() => onOpen(tool)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(tool);
+        }
+      }}
+    >
+      <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <div
+            className={`flex size-11 shrink-0 items-center justify-center rounded-xl shadow-inner ${visual.tileClassName}`}
+          >
+            <Icon className="size-5.5" />
+          </div>
+          <div className="min-w-0 space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-semibold">{tool.title}</h3>
+              {tool.popular ? (
+                <Badge className="rounded-full border-0 bg-rose-50 px-2.5 py-0.5 text-[0.64rem] font-semibold text-rose-500 dark:bg-rose-500/15 dark:text-rose-200">
+                  Populaire
+                </Badge>
+              ) : null}
+            </div>
+            <p className="text-[13px] leading-5 text-muted-foreground">{tool.desc}</p>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center justify-between gap-4 md:justify-end">
+          <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[12px] font-medium">
+            {tool.cat}
+          </Badge>
+          <span className="inline-flex items-center gap-2 text-[13px] text-muted-foreground">
+            <TimerIcon className="size-4" />
+            {tool.time}
+          </span>
+          <Button variant="ghost" className="font-semibold text-primary">
+            Utiliser
+            <ArrowRightIcon data-icon="inline-end" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function ToolsSection({
   tools,
@@ -31,329 +213,200 @@ export function ToolsSection({
   setCat,
   layout,
   setLayout,
-  accent,
   setOpenTool,
 }: ToolsSectionProps) {
   const [page, setPage] = useState(0);
   const [sort, setSort] = useState<SortKey>("popularity");
-  const [sortOpen, setSortOpen] = useState(false);
-  const PER_PAGE = 6;
+  const perPage = layout === "grid" ? 6 : 4;
 
-  const [prevCat, setPrevCat] = useState(cat);
-  const [prevSearch, setPrevSearch] = useState(search);
-  const [prevSort, setPrevSort] = useState(sort);
-  if (prevCat !== cat || prevSearch !== search || prevSort !== sort) {
-    setPrevCat(cat);
-    setPrevSearch(search);
-    setPrevSort(sort);
-    setPage(0);
-  }
+  const sortedTools = [...tools].sort((left, right) => {
+    if (sort === "popularity") {
+      return Number(right.popular) - Number(left.popular);
+    }
 
-  const sorted = [...tools].sort((a, b) => {
-    if (sort === "popularity") return Number(b.popular) - Number(a.popular);
-    if (sort === "name") return a.title.localeCompare(b.title);
-    if (sort === "time") return parseInt(a.time) - parseInt(b.time);
-    return 0;
+    if (sort === "name") {
+      return left.title.localeCompare(right.title, "fr");
+    }
+
+    return parseInt(left.time, 10) - parseInt(right.time, 10);
   });
 
-  const needsPagination = sorted.length > PER_PAGE;
-  const totalPages = needsPagination ? Math.ceil(sorted.length / PER_PAGE) : 1;
-  const visible = needsPagination ? sorted.slice(page * PER_PAGE, (page + 1) * PER_PAGE) : sorted.slice(0, PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(sortedTools.length / perPage));
+  const currentPage = Math.min(page, totalPages - 1);
+  const visibleTools = sortedTools.slice(currentPage * perPage, (currentPage + 1) * perPage);
 
   return (
-    <section>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4.5 flex-wrap gap-3">
-        <h2 className="text-2xl font-black text-foreground" style={{ letterSpacing: "-0.5px" }}>
-          Catalogue d&apos;outils
-        </h2>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-text-muted font-medium">
-            {tools.length} résultats
-          </span>
-          <div className="flex border border-border rounded-lg overflow-hidden">
-            {([["grid", GridIcon], ["list", ListIcon]] as const).map(([val, Icon]) => (
-              <button
-                key={val}
-                onClick={() => setLayout(val)}
-                className="px-3 py-1.75 border-none cursor-pointer flex items-center transition-all text-xs"
-                style={{
-                  background: layout === val ? accent : "transparent",
-                  color: layout === val ? "white" : "var(--color-text-muted)",
+    <section className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-3.5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-muted-foreground">Services</p>
+            <h2 className="text-2xl font-semibold tracking-tight lg:text-[2rem]">Catalogue d&apos;outils</h2>
+          </div>
+
+          <div className="flex items-center gap-3 self-start md:self-auto">
+            <span className="text-[13px] font-medium text-muted-foreground">
+              {tools.length} resultat{tools.length > 1 ? "s" : ""}
+            </span>
+            <div className="flex items-center gap-1 rounded-full border border-border/70 bg-white/80 p-1 shadow-sm dark:bg-card">
+              <ToggleGroup
+                value={[layout]}
+                onValueChange={(value) => {
+                  const nextValue = value[0];
+                  if (nextValue === "grid" || nextValue === "list") {
+                    setLayout(nextValue);
+                    setPage(0);
+                  }
                 }}
+                variant="default"
+                size="sm"
+                spacing={1}
               >
-                <Icon size={15} />
-              </button>
-            ))}
+                <ToggleGroupItem value="grid" aria-label="Vue grille" className="rounded-full">
+                  <Grid2x2Icon />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="list" aria-label="Vue liste" className="rounded-full">
+                  <ListIcon />
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Filter bar: search | pills | sort */}
-      <div className="flex items-center gap-3 mb-5.5 flex-wrap">
-        <div className="relative w-[260px] shrink-0">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-faint pointer-events-none">
-            <SearchIcon size={14} />
-          </span>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un outil..."
-            className="w-full px-3 py-2.25 pl-8.5 rounded-lg border border-border bg-input text-foreground text-sm outline-none transition-colors placeholder:text-text-muted focus:border-[var(--accent)]"
-            style={{
-              borderColor: undefined,
-            }}
-            onFocus={(e) => (e.currentTarget.style.borderColor = accent)}
-            onBlur={(e) => (e.currentTarget.style.borderColor = "var(--color-border)")}
-          />
-        </div>
-
-        <div className="flex gap-1.5 flex-1 flex-wrap">
-          {CATEGORIES.map((c) => {
-            const active = cat === c;
-            const label = c === "Tous" ? "Tous les outils" : c;
-            return (
-              <button
-                key={c}
-                onClick={() => setCat(c)}
-                className={`px-3.5 py-2 rounded-lg text-xs transition-all ${
-                  active ? "font-semibold" : "font-medium text-text-muted"
-                }`}
-                style={{
-                  border: `1px solid ${active ? accent : "var(--color-border)"}`,
-                  background: active ? `${accent}12` : "transparent",
-                  color: active ? accent : undefined,
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_190px]">
+          <div className="flex flex-col gap-3">
+            <div className="relative max-w-md">
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(0);
                 }}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="relative shrink-0">
-          <button
-            onClick={() => setSortOpen((o) => !o)}
-            className="flex items-center gap-2 px-3.5 py-2.25 rounded-lg border border-border bg-surface text-foreground cursor-pointer text-xs font-medium transition-all"
-          >
-            <span className="text-text-muted">Trier par :</span>
-            <span className="font-semibold">{SORT_LABELS[sort]}</span>
-            <ChevronIcon size={12} down={!sortOpen} />
-          </button>
-          {sortOpen && (
-            <div className="absolute top-[calc(100%_+_6px)] right-0 bg-surface border border-border rounded-xl p-1 shadow-lg z-50 min-w-[180px]">
-              {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
-                <button
-                  key={k}
-                  onClick={() => {
-                    setSort(k);
-                    setSortOpen(false);
-                  }}
-                  className={`block w-full px-3 py-2.25 text-left text-xs rounded-lg transition-all ${
-                    sort === k ? "font-semibold" : "font-medium text-foreground"
-                  }`}
-                  style={{
-                    background: sort === k ? `${accent}12` : "transparent",
-                    color: sort === k ? accent : undefined,
-                  }}
-                >
-                  {SORT_LABELS[k]}
-                </button>
-              ))}
+                placeholder="Rechercher un outil..."
+                className="h-10 rounded-xl border-white/70 bg-white/88 pl-10 text-[13px] shadow-[0_18px_60px_-52px_rgba(21,20,46,0.35)] dark:border-white/10 dark:bg-card"
+              />
             </div>
-          )}
+
+            <div className="flex flex-wrap gap-1.5">
+              {CATEGORIES.map((category) => {
+                const active = category === cat;
+
+                return (
+                  <Button
+                    key={category}
+                    type="button"
+                    variant={active ? "secondary" : "outline"}
+                    size="sm"
+                    className={`rounded-xl px-3 text-[12px] ${
+                      active
+                        ? "border-rose-100 bg-rose-50 text-primary hover:bg-rose-100 dark:border-rose-500/20 dark:bg-rose-500/15 dark:text-rose-100"
+                        : "border-white/70 bg-white/80 hover:bg-white dark:border-white/10 dark:bg-card"
+                    }`}
+                    onClick={() => {
+                      setCat(category);
+                      setPage(0);
+                    }}
+                  >
+                    {category === "Tous" ? "Tous les outils" : category}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+
+          <Select
+            value={sort}
+            onValueChange={(value) => {
+              if (!value) return;
+              setSort(value as SortKey);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="h-10 rounded-xl border-white/70 bg-white/88 text-[13px] shadow-[0_18px_60px_-52px_rgba(21,20,46,0.35)] dark:border-white/10 dark:bg-card">
+              <SelectValue placeholder="Trier par" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {SORT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Results */}
-      {layout === "grid" ? (
-        <div className="grid grid-cols-3 gap-4.5">
-          {visible.map((tool) => (
-            <ToolCard key={tool.id} tool={tool} accent={accent} onClick={() => setOpenTool(tool)} />
+      {visibleTools.length === 0 ? (
+        <Empty className="rounded-[24px] border-white/70 bg-white/88 shadow-[0_20px_70px_-52px_rgba(21,20,46,0.26)] dark:border-white/10 dark:bg-card">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <SearchIcon />
+            </EmptyMedia>
+            <EmptyTitle>Aucun outil ne correspond a votre recherche</EmptyTitle>
+            <EmptyDescription>
+              Essayez une autre categorie ou un mot-cle plus court.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : layout === "grid" ? (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {visibleTools.map((tool) => (
+            <ToolCard key={tool.id} tool={tool} onOpen={setOpenTool} />
           ))}
         </div>
       ) : (
-        <div className="flex flex-col gap-2.5">
-          {visible.map((tool) => (
-            <ToolRow key={tool.id} tool={tool} accent={accent} onClick={() => setOpenTool(tool)} />
+        <div className="flex flex-col gap-3">
+          {visibleTools.map((tool) => (
+            <ToolListRow key={tool.id} tool={tool} onOpen={setOpenTool} />
           ))}
         </div>
       )}
 
-      {needsPagination && (
-        <div className="flex items-center justify-center gap-2 mt-7">
-          <button
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            disabled={page === 0}
-            className="w-9 h-9 rounded-lg border border-border bg-transparent text-text-muted cursor-pointer flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-default"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => setPage(i)}
-              className={`w-9 h-9 rounded-lg border flex items-center justify-center text-xs font-semibold transition-all ${
-                i === page
-                  ? "text-white cursor-pointer"
-                  : "border-border bg-transparent text-text-muted cursor-pointer"
-              }`}
-              style={{
-                borderColor: i === page ? accent : undefined,
-                background: i === page ? accent : undefined,
-              }}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={page === totalPages - 1}
-            className="w-9 h-9 rounded-lg border border-border bg-transparent text-text-muted cursor-pointer flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-default"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-          <span className="text-xs text-text-faint ml-2">
-            {page * PER_PAGE + 1}–{Math.min((page + 1) * PER_PAGE, sorted.length)} sur {sorted.length}
-          </span>
-        </div>
-      )}
+      {totalPages > 1 ? (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                text="Précédent"
+                onClick={(event) => {
+                  event.preventDefault();
+                  setPage(Math.max(0, currentPage - 1));
+                }}
+              />
+            </PaginationItem>
 
-      {tools.length === 0 && (
-        <div className="text-center py-15 px-5 text-text-muted">
-          <div className="text-4xl mb-3">🔍</div>
-          <div className="text-base font-semibold">Aucun outil trouvé</div>
-          <div className="text-sm mt-1">Essayez un autre terme de recherche</div>
-        </div>
-      )}
+            {Array.from({ length: totalPages }, (_, index) => (
+              <PaginationItem key={index}>
+                <PaginationLink
+                  href="#"
+                  isActive={index === currentPage}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setPage(index);
+                  }}
+                >
+                  {index + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
 
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                text="Suivant"
+                onClick={(event) => {
+                  event.preventDefault();
+                  setPage(Math.min(totalPages - 1, currentPage + 1));
+                }}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      ) : null}
     </section>
-  );
-}
-
-interface ToolItemProps {
-  tool: Tool;
-  accent: string;
-  onClick: () => void;
-}
-
-function ToolCard({ tool, accent, onClick }: ToolItemProps) {
-  const [hov, setHov] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      className="bg-surface border rounded-xl px-5.5 py-4.5 cursor-pointer text-left transition-all flex flex-col gap-3"
-      style={{
-        border: `1px solid ${hov ? accent + "50" : "var(--color-border)"}`,
-        transform: hov ? "translateY(-2px)" : "none",
-        boxShadow: hov ? `0 8px 24px ${accent}15` : "0 1px 4px rgba(0,0,0,0.04)",
-      }}
-    >
-      <div className="flex justify-between items-start">
-        <div
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: 10,
-            background: `${accent}10`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 24,
-          }}
-        >
-          {tool.icon}
-        </div>
-        {tool.popular && (
-          <span
-            className="text-xs font-bold px-2.25 py-0.75 rounded-full"
-            style={{
-              background: `${accent}15`,
-              color: accent,
-              letterSpacing: "0.04em",
-            }}
-          >
-            Populaire
-          </span>
-        )}
-      </div>
-      <div>
-        <div className="text-sm font-bold text-foreground mb-1.5 leading-tight">
-          {tool.title}
-        </div>
-        <div className="text-xs text-text-muted leading-tight">{tool.desc}</div>
-      </div>
-      <div className="flex items-center justify-between mt-1">
-        <span className="flex items-center gap-1 text-xs text-text-faint font-medium">
-          <ClockIcon size={11} /> {tool.time}
-        </span>
-        <span style={{ color: accent }} className="text-xs font-semibold flex items-center gap-1">
-          Utiliser <ArrowIcon size={11} />
-        </span>
-      </div>
-    </button>
-  );
-}
-
-function ToolRow({ tool, accent, onClick }: ToolItemProps) {
-  const [hov, setHov] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      className="bg-surface border rounded-xl px-5 py-4 cursor-pointer text-left flex items-center gap-4 transition-all"
-      style={{
-        border: `1px solid ${hov ? accent + "50" : "var(--color-border)"}`,
-        boxShadow: hov ? `0 4px 12px ${accent}12` : "none",
-      }}
-    >
-      <div
-        style={{
-          width: 42,
-          height: 42,
-          borderRadius: 10,
-          background: `${accent}10`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 22,
-          flexShrink: 0,
-        }}
-      >
-        {tool.icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-bold text-foreground">{tool.title}</div>
-        <div className="text-xs text-text-muted mt-0.5 truncate">
-          {tool.desc}
-        </div>
-      </div>
-      <div className="flex items-center gap-4 shrink-0">
-        <span className="text-xs text-text-faint font-medium flex items-center gap-1">
-          <ClockIcon size={11} /> {tool.time}
-        </span>
-        {tool.popular && (
-          <span
-            className="text-xs font-bold px-2 py-0.5 rounded-full"
-            style={{
-              background: `${accent}12`,
-              color: accent,
-            }}
-          >
-            Populaire
-          </span>
-        )}
-        <span className="text-sm text-text-muted">
-          <ArrowIcon size={15} />
-        </span>
-      </div>
-    </button>
   );
 }

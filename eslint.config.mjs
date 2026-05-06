@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Project-specific ignores:
+    ".claude/**",
+    ".codex/**",
+    "node_modules/**",
+    "prisma/migrations/**",
+    "components/ui/**", // shadcn auto-generated, edit at your own risk
+    "scripts/seed-files.ts",
   ]),
 ]);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 
 interface AppStateContextType {
   dark: boolean;

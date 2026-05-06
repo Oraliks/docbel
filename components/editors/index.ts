@@ -1,1 +1,0 @@
-// Rich text editors removed

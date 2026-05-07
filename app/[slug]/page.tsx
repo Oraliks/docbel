@@ -9,11 +9,21 @@ export const dynamicParams = true
 export const revalidate = 60
 
 export async function generateStaticParams() {
-  const pages = await prisma.page.findMany({
-    where: { status: 'published', deletedAt: null },
-    select: { slug: true },
-  })
-  return pages.map((page) => ({ slug: page.slug }))
+  try {
+    const pages = await Promise.race([
+      prisma.page.findMany({
+        where: { status: 'published', deletedAt: null },
+        select: { slug: true },
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('generateStaticParams timeout')), 10_000)
+      ),
+    ])
+    return pages.map((page) => ({ slug: page.slug }))
+  } catch (error) {
+    console.warn('generateStaticParams: DB unreachable at build time, falling back to on-demand rendering', error)
+    return []
+  }
 }
 
 export async function generateMetadata({

@@ -1265,12 +1265,6 @@ export function KenBurnsBlock({ image, caption, duration = 20 }: KenBurnsProps) 
         />
       </div>
       {caption && <figcaption className="mt-2 text-sm text-muted-foreground text-center">{caption}</figcaption>}
-      <style jsx>{`
-        @keyframes kenburns {
-          from { transform: scale(1) translate(0, 0); }
-          to { transform: scale(1.15) translate(-2%, -2%); }
-        }
-      `}</style>
     </figure>
   )
 }
@@ -1305,18 +1299,16 @@ export function ParticlesBlock({ count = 40, color = '#C8102E', speed = 'normal'
           }}
         />
       ))}
-      <style jsx>{`
-        ${particles
-          .map(
-            (p, i) => `
-          @keyframes float-${i} {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(${p.tx}px, ${p.ty}px); }
-          }
-        `
-          )
-          .join('')}
-      `}</style>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: particles
+            .map(
+              (p, i) =>
+                `@keyframes float-${i}{0%,100%{transform:translate(0,0)}50%{transform:translate(${p.tx}px,${p.ty}px)}}`
+            )
+            .join(''),
+        }}
+      />
     </div>
   )
 }
@@ -1348,12 +1340,6 @@ export function NewsTickerBlock({ items, speed = 'normal' }: NewsTickerProps) {
           </span>
         ))}
       </div>
-      <style jsx>{`
-        @keyframes ticker {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-      `}</style>
     </div>
   )
 }
@@ -1561,16 +1547,6 @@ export function A11yToolbarBlock({
           </button>
         )}
       </div>
-      <style jsx global>{`
-        .high-contrast {
-          filter: contrast(1.4);
-        }
-        .dyslexia-font * {
-          font-family: 'Atkinson Hyperlegible', 'Open Dyslexic', system-ui, sans-serif !important;
-          letter-spacing: 0.04em;
-          line-height: 1.7;
-        }
-      `}</style>
     </>
   )
 }

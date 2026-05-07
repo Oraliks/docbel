@@ -6,9 +6,6 @@ const nextConfig: NextConfig = {
       fullUrl: false,
     },
   },
-  experimental: {
-    optimizePackageImports: ["lucide-react", "recharts"],
-  },
 };
 
 export default nextConfig;

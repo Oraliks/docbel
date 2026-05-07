@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { getCurrentUser, actorLabel } from "@/lib/news/session";
-import { newsCreateSchema, newsListQuerySchema, NEWS_STATUSES } from "@/lib/news/validation";
+import { newsCreateSchema, newsListQuerySchema } from "@/lib/news/validation";
 import { slugify } from "@/lib/news/slug";
 
 const PUBLIC_LIST_FIELDS = {
@@ -200,6 +200,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to create news" }, { status: 500, headers: jsonHeaders });
   }
 }
-
-// Re-export status list to keep it discoverable in dev tools.
-export const NEWS_STATUS_VALUES = NEWS_STATUSES;

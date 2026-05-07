@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Plus, MapPin, X as XIcon } from 'lucide-react'
+import { MapPin, X as XIcon } from 'lucide-react'
 import type {
   HtmlRawProps,
   CustomCssProps,
@@ -155,12 +155,6 @@ export function MarqueeBlock({ text, speed = 'normal', reverse, color }: Marquee
       >
         {segments}
       </div>
-      <style jsx>{`
-        @keyframes marquee {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-      `}</style>
     </div>
   )
 }
@@ -282,5 +276,3 @@ export function ImageHotspotsBlock({ image, alt, hotspots }: ImageHotspotsProps)
     </figure>
   )
 }
-
-export { Plus }

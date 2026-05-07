@@ -39,6 +39,11 @@ export function PublishDialog({
       alert('Veuillez sélectionner une date');
       return;
     }
+    const target = new Date(`${scheduledDate}T${scheduledTime}`);
+    if (Number.isNaN(target.getTime()) || target.getTime() <= Date.now()) {
+      alert('La date et l\'heure de publication doivent être dans le futur');
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -62,9 +67,9 @@ export function PublishDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="p-3 bg-gray-50 rounded-lg">
+          <div className="p-3 bg-muted/50 rounded-lg">
             <p className="font-medium text-sm">{title}</p>
-            <p className="text-xs text-gray-500 mt-1">{category}</p>
+            <p className="text-xs text-muted-foreground mt-1">{category}</p>
           </div>
 
           <div className="space-y-3">

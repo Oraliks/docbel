@@ -150,5 +150,5 @@ export function getTemplateBlocks(id: string): BlockProps[] {
     ...block,
     id: nanoid(),
     props: { ...block.props },
-  }))
+  })) as BlockProps[]
 }

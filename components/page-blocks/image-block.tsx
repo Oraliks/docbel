@@ -1,10 +1,19 @@
 import React from 'react'
 import { ImageProps } from '@/lib/page-builder/types'
+import { sanitizeUrl } from '@/lib/page-builder/url-utils'
 
-export const ImageBlock: React.FC<ImageProps> = ({ url, alt, caption, width = '100%', height = 'auto' }) => {
-  if (!url) {
+export const ImageBlock: React.FC<ImageProps> = ({
+  url,
+  alt,
+  caption,
+  width = '100%',
+  height = 'auto',
+}) => {
+  const safeUrl = sanitizeUrl(url)
+
+  if (!safeUrl) {
     return (
-      <div className="bg-gray-100 rounded-lg p-12 text-center text-gray-500">
+      <div className="bg-muted rounded-lg p-12 text-center text-muted-foreground">
         <p className="text-sm">Image non configurée</p>
       </div>
     )
@@ -12,10 +21,9 @@ export const ImageBlock: React.FC<ImageProps> = ({ url, alt, caption, width = '1
 
   return (
     <figure className="my-8">
-      {/* Builder image blocks render arbitrary URLs and intentionally bypass next/image restrictions. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={url}
+        src={safeUrl}
         alt={alt}
         style={{
           width: typeof width === 'string' && width.includes('%') ? width : 'auto',
@@ -25,7 +33,7 @@ export const ImageBlock: React.FC<ImageProps> = ({ url, alt, caption, width = '1
         }}
         className="shadow-sm"
       />
-      {caption && <figcaption className="text-sm text-gray-600 text-center mt-3">{caption}</figcaption>}
+      {caption && <figcaption className="text-sm text-muted-foreground text-center mt-3">{caption}</figcaption>}
     </figure>
   )
 }

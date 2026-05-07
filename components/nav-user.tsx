@@ -1,6 +1,7 @@
 "use client"
 
-import { signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { authClient } from "@/lib/auth-client"
 import {
   Avatar,
   AvatarFallback,
@@ -41,8 +42,14 @@ export function NavUser({
     avatar: string
   }
 }) {
+  const router = useRouter()
   const { isMobile } = useSidebar()
   const initials = getInitials(user.name)
+  const handleSignOut = async () => {
+    await authClient.signOut()
+    router.push("/")
+    router.refresh()
+  }
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -105,7 +112,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
+            <DropdownMenuItem onClick={handleSignOut}>
               <LogOutIcon
               />
               Déconnexion

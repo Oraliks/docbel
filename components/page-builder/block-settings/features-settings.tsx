@@ -27,7 +27,7 @@ export const FeaturesSettings: React.FC<FeaturesSettingsProps> = ({ value, onCha
         <Label className="text-sm font-medium block mb-3">Fonctionnalités</Label>
         <div className="space-y-3">
           {(value.items || []).map((item, idx) => (
-            <div key={idx} className="p-3 bg-gray-50 rounded border space-y-2">
+            <div key={idx} className="p-3 bg-muted/50 rounded border space-y-2">
               <Input
                 value={item.icon || ''}
                 onChange={(e) => {

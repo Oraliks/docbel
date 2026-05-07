@@ -217,7 +217,7 @@ export default function NewsletterAdminPage() {
                     <TableCell>
                       <Badge
                         variant={subscriber.status === "active" ? "default" : "secondary"}
-                        className={subscriber.status === "active" ? "bg-green-100 text-green-800 border-green-200" : ""}
+                        className={subscriber.status === "active" ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-200 dark:border-green-900" : ""}
                       >
                         {subscriber.status === "active" ? "Actif" : "Désabonné"}
                       </Badge>
@@ -230,7 +230,7 @@ export default function NewsletterAdminPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
-                        <DropdownMenuTrigger className="h-8 w-8 p-0 hover:bg-gray-100 rounded-md transition-colors inline-flex items-center justify-center">
+                        <DropdownMenuTrigger className="h-8 w-8 p-0 hover:bg-muted rounded-md transition-colors inline-flex items-center justify-center">
                           <MoreHorizontal className="w-4 h-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">

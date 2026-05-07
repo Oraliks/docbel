@@ -1,21 +1,5 @@
 export type BlockType = 'hero' | 'cta' | 'image' | 'features' | 'section'
 
-export interface BlockProps {
-  id: string
-  type: BlockType
-  props: Record<string, unknown>
-}
-
-export interface PageData {
-  id: string
-  title: string
-  slug: string
-  status: string
-  blocks: BlockProps[]
-  createdAt: Date
-  updatedAt: Date
-}
-
 export interface HeroProps {
   title: string
   description: string
@@ -37,13 +21,15 @@ export interface ImageProps {
   height?: string
 }
 
+export interface FeaturesItem {
+  icon?: string
+  title: string
+  description: string
+}
+
 export interface FeaturesProps {
   title?: string
-  items: Array<{
-    icon?: string
-    title: string
-    description: string
-  }>
+  items: FeaturesItem[]
 }
 
 export interface SectionProps {
@@ -51,4 +37,31 @@ export interface SectionProps {
   description?: string
   bgColor?: string
   padding?: 'small' | 'medium' | 'large'
+}
+
+export type BlockPropsMap = {
+  hero: HeroProps
+  cta: CtaProps
+  image: ImageProps
+  features: FeaturesProps
+  section: SectionProps
+}
+
+export type Block<T extends BlockType = BlockType> = {
+  [K in BlockType]: { id: string; type: K; props: BlockPropsMap[K] }
+}[T]
+
+export type BlockProps = Block
+
+export interface PageData {
+  id: string
+  title: string
+  slug: string
+  status: string
+  blocks?: BlockProps[]
+  metaTitle?: string | null
+  metaDesc?: string | null
+  ogImage?: string | null
+  createdAt: Date
+  updatedAt: Date
 }

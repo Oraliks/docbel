@@ -30,6 +30,7 @@ export default function Home() {
           .map(
             (article: {
               id: string;
+              slug: string;
               category: string;
               title: string;
               excerpt: string;
@@ -40,6 +41,7 @@ export default function Home() {
               image: string | null;
             }) => ({
               id: article.id,
+              slug: article.slug,
               tag: article.category,
               title: article.title,
               desc: article.excerpt,
@@ -94,7 +96,7 @@ export default function Home() {
   };
 
   const handleArticleClick = (article: NewsItem) => {
-    router.push(`/actualites/${article.id}`);
+    router.push(`/actualites/${article.slug ?? article.id}`);
   };
 
   if (isLoading) {

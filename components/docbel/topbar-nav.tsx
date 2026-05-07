@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import {
   BellIcon,
   ContactIcon,
@@ -65,6 +65,11 @@ export function TopBarNav({
   notificationCount = 0,
 }: TopBarNavProps) {
   const router = useRouter();
+  const handleSignOut = async () => {
+    await authClient.signOut();
+    router.push("/");
+    router.refresh();
+  };
   const initials = (userName || "DB")
     .split(" ")
     .map((value) => value[0])
@@ -74,7 +79,7 @@ export function TopBarNav({
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b bg-background/95 text-foreground backdrop-blur">
       <div className="flex h-16 items-center gap-3 px-4 lg:px-6">
         <SidebarTrigger className="md:hidden" />
 
@@ -136,7 +141,7 @@ export function TopBarNav({
                     Administration
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
+                <DropdownMenuItem onClick={handleSignOut}>
                   <LogInIcon />
                   Deconnexion
                 </DropdownMenuItem>

@@ -4,9 +4,12 @@ import { prisma } from '@/lib/prisma'
 import { PageLayout } from '@/components/page-builder/page-layout'
 import { BlockProps } from '@/lib/page-builder/types'
 
+export const dynamicParams = true
+export const revalidate = 60
+
 export async function generateStaticParams() {
   const pages = await prisma.page.findMany({
-    where: { status: 'published' },
+    where: { status: 'published', deletedAt: null },
     select: { slug: true },
   })
   return pages.map((page) => ({ slug: page.slug }))
@@ -19,7 +22,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const page = await prisma.page.findFirst({
-    where: { slug, status: 'published' },
+    where: { slug, status: 'published', deletedAt: null },
   })
 
   if (!page) return {}
@@ -41,28 +44,16 @@ export default async function PublicPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  console.log('🔍 Cherchant page avec slug:', slug)
 
   const page = await prisma.page.findFirst({
-    where: {
-      slug,
-      status: 'published',
-    },
+    where: { slug, status: 'published', deletedAt: null },
   })
 
-  console.log('✅ Page trouvée:', page?.slug || 'AUCUNE')
+  if (!page) notFound()
 
-  if (!page) {
-    console.log('❌ Page non trouvée, affichage 404')
-    notFound()
-  }
-
-  let blocks: BlockProps[] = []
-  try {
-    blocks = JSON.parse(page.content)
-  } catch {
-    blocks = []
-  }
+  const blocks: BlockProps[] = Array.isArray(page.content)
+    ? (page.content as unknown as BlockProps[])
+    : []
 
   return <PageLayout blocks={blocks} title={page.title} />
 }

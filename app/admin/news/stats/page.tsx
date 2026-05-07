@@ -46,72 +46,12 @@ export default function NewsStatsPage() {
   const [stats, setStats] = useState<NewsStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  type ArticleItem = { status: string; views: number; category: string; createdAt: string; id: string; title: string; emoji: string };
-
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch('/api/news');
-      if (res.ok) {
-        const data = await res.json();
-        const articles: ArticleItem[] = (data.articles || []).map((article: Partial<ArticleItem>) => ({
-          id: article.id || "",
-          title: article.title || "",
-          status: article.status || "draft",
-          views: article.views ?? 0,
-          category: article.category || "",
-          createdAt: article.createdAt || new Date().toISOString(),
-          emoji: article.emoji || "📰",
-        }));
-
-        // Calculer les stats
-        const published = articles.filter((a) => a.status === 'published');
-        const draft = articles.filter((a) => a.status === 'draft');
-        const scheduled = articles.filter((a) => a.status === 'scheduled');
-        const archived = articles.filter((a) => a.status === 'archived');
-
-        const totalViews = articles.reduce((sum: number, a) => sum + (a.views || 0), 0);
-        const avgViews = articles.length > 0 ? Math.round(totalViews / articles.length) : 0;
-
-        const mostViewed = articles.reduce((max: ArticleItem | null, a) =>
-          (a.views || 0) > (max?.views || 0) ? a : max, null);
-        const leastViewed = published.length > 0 ? published.reduce((min: ArticleItem | null, a) =>
-          (a.views || 0) < (min?.views ?? Infinity) ? a : min, null) : null;
-
-        // Grouper par catégorie
-        const byCategory: { [key: string]: { count: number; views: number } } = {};
-        articles.forEach((a) => {
-          if (!byCategory[a.category]) {
-            byCategory[a.category] = { count: 0, views: 0 };
-          }
-          byCategory[a.category].count++;
-          byCategory[a.category].views += a.views || 0;
-        });
-
-        const byCategoryArray = Object.entries(byCategory).map(([category, catData]) => ({
-          category,
-          count: catData.count,
-          views: catData.views,
-        })).sort((a, b) => b.views - a.views);
-
-        // Articles récents
-        const recentArticles = [...articles]
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 5);
-
-        setStats({
-          total: articles.length,
-          published: published.length,
-          draft: draft.length,
-          scheduled: scheduled.length,
-          archived: archived.length,
-          totalViews,
-          avgViews,
-          mostViewed: mostViewed || null,
-          leastViewed,
-          byCategory: byCategoryArray,
-          recentArticles,
-        });
-      }
+      const res = await fetch('/api/news/stats');
+      if (!res.ok) throw new Error('Failed to load stats');
+      const data: NewsStats = await res.json();
+      setStats(data);
     } catch (error) {
       console.error('Error fetching stats:', error);
       toast.error('Erreur lors du chargement des statistiques');
@@ -126,11 +66,11 @@ export default function NewsStatsPage() {
   }, [fetchStats]);
 
   if (loading) {
-    return <div className="flex-1 space-y-6 p-6"><div className="text-center py-12 text-gray-500">Chargement...</div></div>;
+    return <div className="flex-1 space-y-6 p-6"><div className="text-center py-12 text-muted-foreground">Chargement...</div></div>;
   }
 
   if (!stats) {
-    return <div className="flex-1 space-y-6 p-6"><div className="text-center py-12 text-gray-500">Erreur au chargement</div></div>;
+    return <div className="flex-1 space-y-6 p-6"><div className="text-center py-12 text-muted-foreground">Erreur au chargement</div></div>;
   }
 
   return (
@@ -138,7 +78,7 @@ export default function NewsStatsPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Statistiques des articles</h1>
-        <p className="text-gray-500 mt-1">Vue d&apos;ensemble de vos articles et performances</p>
+        <p className="text-muted-foreground mt-1">Vue d&apos;ensemble de vos articles et performances</p>
       </div>
 
       {/* KPI Cards */}
@@ -147,7 +87,7 @@ export default function NewsStatsPage() {
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-gray-500">Total</p>
+                <p className="text-sm text-muted-foreground">Total</p>
                 <p className="text-2xl font-bold mt-1">{stats.total}</p>
               </div>
               <FileText className="w-5 h-5 text-blue-500" />
@@ -159,7 +99,7 @@ export default function NewsStatsPage() {
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-gray-500">Publiés</p>
+                <p className="text-sm text-muted-foreground">Publiés</p>
                 <p className="text-2xl font-bold mt-1 text-green-600">{stats.published}</p>
               </div>
               <TrendingUp className="w-5 h-5 text-green-500" />
@@ -171,10 +111,10 @@ export default function NewsStatsPage() {
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-gray-500">Brouillons</p>
+                <p className="text-sm text-muted-foreground">Brouillons</p>
                 <p className="text-2xl font-bold mt-1">{stats.draft}</p>
               </div>
-              <FileText className="w-5 h-5 text-gray-400" />
+              <FileText className="w-5 h-5 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -183,7 +123,7 @@ export default function NewsStatsPage() {
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-gray-500">Planifiés</p>
+                <p className="text-sm text-muted-foreground">Planifiés</p>
                 <p className="text-2xl font-bold mt-1 text-blue-600">{stats.scheduled}</p>
               </div>
               <Calendar className="w-5 h-5 text-blue-500" />
@@ -195,7 +135,7 @@ export default function NewsStatsPage() {
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-gray-500">Vues totales</p>
+                <p className="text-sm text-muted-foreground">Vues totales</p>
                 <p className="text-2xl font-bold mt-1">{stats.totalViews}</p>
               </div>
               <Eye className="w-5 h-5 text-purple-500" />
@@ -216,12 +156,12 @@ export default function NewsStatsPage() {
                 <span className="text-2xl">{stats.mostViewed.emoji}</span>
                 <div>
                   <p className="font-medium">{stats.mostViewed.title}</p>
-                  <p className="text-sm text-gray-500">{stats.mostViewed.category}</p>
+                  <p className="text-sm text-muted-foreground">{stats.mostViewed.category}</p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-green-600">{stats.mostViewed.views}</p>
-                <p className="text-xs text-gray-500">vues</p>
+                <p className="text-xs text-muted-foreground">vues</p>
               </div>
             </div>
           </CardContent>
@@ -240,11 +180,11 @@ export default function NewsStatsPage() {
               <div key={cat.category} className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="font-medium text-sm">{cat.category}</p>
-                  <p className="text-xs text-gray-500">{cat.count} article(s)</p>
+                  <p className="text-xs text-muted-foreground">{cat.count} article(s)</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold">{cat.views}</p>
-                  <p className="text-xs text-gray-500">vues</p>
+                  <p className="text-xs text-muted-foreground">vues</p>
                 </div>
               </div>
             ))}
@@ -264,7 +204,7 @@ export default function NewsStatsPage() {
               <div key={article.id} className="flex items-center justify-between pb-3 border-b last:border-b-0 last:pb-0">
                 <div className="flex-1">
                   <p className="font-medium text-sm">{article.title}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {new Date(article.createdAt).toLocaleDateString('fr-FR')}
                   </p>
                 </div>
@@ -274,7 +214,7 @@ export default function NewsStatsPage() {
                      article.status === 'draft' ? 'Brouillon' :
                      article.status === 'scheduled' ? 'Planifié' : 'Archivé'}
                   </Badge>
-                  <span className="text-sm text-gray-500 min-w-[40px] text-right">{article.views}</span>
+                  <span className="text-sm text-muted-foreground min-w-[40px] text-right">{article.views}</span>
                 </div>
               </div>
             ))}
@@ -290,19 +230,19 @@ export default function NewsStatsPage() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
-              <p className="text-gray-500">Moyenne de vues</p>
+              <p className="text-muted-foreground">Moyenne de vues</p>
               <p className="text-xl font-bold mt-1">{stats.avgViews}</p>
             </div>
             <div>
-              <p className="text-gray-500">Taux publication</p>
+              <p className="text-muted-foreground">Taux publication</p>
               <p className="text-xl font-bold mt-1">{stats.total > 0 ? Math.round((stats.published / stats.total) * 100) : 0}%</p>
             </div>
             <div>
-              <p className="text-gray-500">Catégories</p>
+              <p className="text-muted-foreground">Catégories</p>
               <p className="text-xl font-bold mt-1">{stats.byCategory.length}</p>
             </div>
             <div>
-              <p className="text-gray-500">Archivés</p>
+              <p className="text-muted-foreground">Archivés</p>
               <p className="text-xl font-bold mt-1">{stats.archived}</p>
             </div>
           </div>

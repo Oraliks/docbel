@@ -20,7 +20,6 @@ interface Page {
   status: string;
   createdAt: string;
   updatedAt: string;
-  content: string;
 }
 
 interface User {

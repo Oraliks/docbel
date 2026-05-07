@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { slugify } from '@/lib/news/slug';
 
 interface NewsArticle {
   id: string;
@@ -34,13 +35,7 @@ interface NewsArticle {
   updatedAt: string;
 }
 
-const generateSlug = (title: string) =>
-  title
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
+const generateSlug = (title: string) => slugify(title);
 
 const calculateReadingTime = (content: string) => {
   const text = content.replace(/<[^>]+>/g, '').trim();
@@ -176,7 +171,10 @@ export default function NewsEditorPage() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Impossible d\'enregistrer l\'article');
+        const issueDetail = Array.isArray(errData.issues) && errData.issues.length > 0
+          ? ` (${errData.issues.map((i: { path?: (string | number)[]; message?: string }) => `${i.path?.join('.') ?? ''}: ${i.message ?? ''}`).join('; ')})`
+          : '';
+        throw new Error(`${errData.error || 'Impossible d\'enregistrer l\'article'}${issueDetail}`);
       }
 
       const saved: NewsArticle = await res.json();
@@ -184,7 +182,7 @@ export default function NewsEditorPage() {
       setLastSavedAt(new Date());
 
       toast.dismiss(loadingToast);
-      toast.success(currentId ? '✅ Article sauvegardé' : '✅ Article créé avec succès');
+      toast.success(currentId ? 'Article sauvegardé' : 'Article créé avec succès');
 
       if (!currentId) {
         // First save: navigate to the new article URL
@@ -202,7 +200,7 @@ export default function NewsEditorPage() {
     } catch (error) {
       console.error('Error saving article:', error);
       toast.dismiss(loadingToast);
-      toast.error(`❌ Erreur: ${error instanceof Error ? error.message : 'Impossible d\'enregistrer l\'article'}`);
+      toast.error(error instanceof Error ? error.message : 'Impossible d\'enregistrer l\'article');
       return null;
     } finally {
       setIsSaving(false);
@@ -210,14 +208,15 @@ export default function NewsEditorPage() {
   }, [form, currentId]);
 
   // Actually publish (called from PublishDialog)
-  const publishArticle = useCallback(async () => {
-    if (!currentId) {
-      toast.error('❌ Impossible de publier: article non sauvegardé');
+  const publishArticle = useCallback(async (idOverride?: string) => {
+    const articleId = idOverride ?? currentId;
+    if (!articleId) {
+      toast.error('Impossible de publier : article non sauvegardé');
       return;
     }
     const loadingToast = toast.loading('Publication de l\'article...');
     try {
-      const res = await fetch(`/api/news/${currentId}/publish`, {
+      const res = await fetch(`/api/news/${articleId}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -226,12 +225,12 @@ export default function NewsEditorPage() {
       setForm((prev) => ({ ...prev, status: 'published' }));
       setLastSavedAt(new Date());
       toast.dismiss(loadingToast);
-      toast.success('✅ Article publié avec succès');
+      toast.success('Article publié avec succès');
       setShowPublishDialog(false);
     } catch (error) {
       console.error('Error publishing:', error);
       toast.dismiss(loadingToast);
-      toast.error('❌ Erreur lors de la publication');
+      toast.error('Erreur lors de la publication');
       throw error;
     }
   }, [currentId]);
@@ -247,11 +246,13 @@ export default function NewsEditorPage() {
 
     setErrors({});
     // Always save before publishing to ensure latest content is used
+    let articleId = currentId;
     if (unsavedChanges || !currentId) {
       const saved = await handleSave();
       if (!saved) return;
+      articleId = saved.id;
     }
-    await publishArticle();
+    await publishArticle(articleId ?? undefined);
   }, [form, unsavedChanges, currentId, handleSave, publishArticle]);
 
   // Open schedule dialog
@@ -275,7 +276,7 @@ export default function NewsEditorPage() {
   // Schedule (called from PublishDialog) — uses dedicated /schedule endpoint
   const scheduleArticle = useCallback(async (date: string, time: string) => {
     if (!currentId) {
-      toast.error('❌ Impossible de planifier: article non sauvegardé');
+      toast.error('Impossible de planifier : article non sauvegardé');
       return;
     }
     const loadingToast = toast.loading('Planification de l\'article...');
@@ -291,12 +292,12 @@ export default function NewsEditorPage() {
       setForm((prev) => ({ ...prev, status: updated.status }));
       setLastSavedAt(new Date());
       toast.dismiss(loadingToast);
-      toast.success(`✅ Article planifié pour ${new Date(scheduledAt).toLocaleString('fr-FR')}`);
+      toast.success(`Article planifié pour ${new Date(scheduledAt).toLocaleString('fr-FR')}`);
       setShowPublishDialog(false);
     } catch (error) {
       console.error('Error scheduling:', error);
       toast.dismiss(loadingToast);
-      toast.error('❌ Erreur lors de la planification');
+      toast.error('Erreur lors de la planification');
       throw error;
     }
   }, [currentId]);
@@ -313,26 +314,26 @@ export default function NewsEditorPage() {
       if (!res.ok) throw new Error('Impossible de retirer la publication');
       setForm((prev) => ({ ...prev, status: 'draft' }));
       toast.dismiss(loadingToast);
-      toast.success('✅ Article remis en brouillon');
+      toast.success('Article remis en brouillon');
     } catch (error) {
       console.error('Error unpublishing:', error);
       toast.dismiss(loadingToast);
-      toast.error('❌ Erreur lors de la dépublication');
+      toast.error('Erreur lors de la dépublication');
     }
   }, [currentId]);
 
   const handlePreview = useCallback(() => {
-    if (!currentId) {
+    if (!currentId || !form.slug) {
       toast.error('Sauvegardez l\'article avant de le prévisualiser');
       return;
     }
     try {
-      window.open(`/actualites/${currentId}`, '_blank');
+      window.open(`/actualites/${form.slug}`, '_blank');
       toast.success('Ouverture de l\'aperçu...');
     } catch {
       toast.error('Erreur lors de l\'ouverture de l\'aperçu');
     }
-  }, [currentId]);
+  }, [currentId, form.slug]);
 
   // Format last saved time
   const lastSavedLabel = lastSavedAt
@@ -342,15 +343,15 @@ export default function NewsEditorPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-gray-500">Chargement...</div>
+        <div className="text-muted-foreground">Chargement...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-40 bg-white border-b">
+      <div className="sticky top-0 z-40 bg-card border-b">
         <div className="px-8 py-4 flex items-center justify-between">
           {/* Left: Back + Title */}
           <div className="flex items-center gap-4">
@@ -372,7 +373,7 @@ export default function NewsEditorPage() {
               <h1 className="text-2xl font-bold leading-tight">
                 {isNew && !currentId ? 'Nouvel article' : 'Éditer l\'article'}
               </h1>
-              <p className="text-sm text-gray-500 mt-0.5 flex items-center gap-2">
+              <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
                 {form.title || (isNew ? 'Créez un nouvel article' : 'Article')}
                 {unsavedChanges && (
                   <span className="text-orange-600 font-medium">• Modifications non enregistrées</span>

@@ -14,25 +14,25 @@ export function StatusBadge({ status, onClick }: StatusBadgeProps) {
         return {
           label: 'Publié',
           variant: 'default' as const,
-          className: 'bg-green-100 text-green-800 hover:bg-green-200'
+          className: 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-200 dark:hover:bg-green-900/60'
         };
       case 'draft':
         return {
           label: 'Brouillon',
           variant: 'outline' as const,
-          className: 'bg-gray-100 text-gray-800'
+          className: 'bg-muted text-muted-foreground'
         };
       case 'scheduled':
         return {
           label: 'Planifié',
           variant: 'secondary' as const,
-          className: 'bg-blue-100 text-blue-800'
+          className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200'
         };
       case 'archived':
         return {
           label: 'Archivé',
           variant: 'destructive' as const,
-          className: 'bg-red-100 text-red-800'
+          className: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200'
         };
       default:
         return {

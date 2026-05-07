@@ -47,7 +47,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 const colors = {
   surface: "var(--surface)",
@@ -71,7 +71,6 @@ interface FileItem {
 }
 
 export function FileManager() {
-  const { toast } = useToast();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<
@@ -184,10 +183,7 @@ export function FileManager() {
     if (url) {
       const fullUrl = `${window.location.origin}${url}`;
       await navigator.clipboard.writeText(fullUrl);
-      toast({
-        title: "Succès",
-        description: "URL copiée dans le presse-papiers",
-      });
+      toast.success("URL copiée dans le presse-papiers");
     }
   };
 
@@ -203,18 +199,11 @@ export function FileManager() {
 
       if (!res.ok) throw new Error("Failed to rename");
       setRenaming(null);
-      toast({
-        title: "Succès",
-        description: `${file.name} renommé en ${renamingName}`,
-      });
+      toast.success(`${file.name} renommé en ${renamingName}`);
       fetchFiles();
     } catch (error) {
       console.error("Error renaming:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de renommer le fichier",
-      });
+      toast.error("Impossible de renommer le fichier");
     }
   };
 
@@ -241,9 +230,7 @@ export function FileManager() {
           fileId: deleteConfirmation.fileId,
           usage: data.usage,
         });
-        toast({
-          variant: "destructive",
-          title: "Fichier en cours d'utilisation",
+        toast.error("Fichier en cours d'utilisation", {
           description: `${deleteConfirmation.fileName} est utilisé sur ${data.usage?.length || 1} page(s)`,
         });
         setDeleteConfirmation(null);
@@ -257,17 +244,14 @@ export function FileManager() {
 
       const typeText =
         deleteConfirmation.type === "folder" ? "le dossier" : "le fichier";
-      toast({
-        title: "Suppression réussie",
+      toast.success("Suppression réussie", {
         description: `${typeText} "${deleteConfirmation.fileName}" a été supprimé avec succès`,
       });
       setDeleteConfirmation(null);
       fetchFiles();
     } catch (error) {
       console.error("Error deleting:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur de suppression",
+      toast.error("Erreur de suppression", {
         description:
           error instanceof Error
             ? error.message
@@ -317,11 +301,7 @@ export function FileManager() {
 
       if (!res.ok) {
         const error = await res.json();
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: error.message || "Impossible de changer la visibilité",
-        });
+        toast.error(error.message || "Impossible de changer la visibilité");
         throw new Error(error.message || "Failed to toggle privacy");
       }
 
@@ -334,9 +314,7 @@ export function FileManager() {
         });
         if (!updateChildrenRes.ok) {
           console.error("Failed to update children");
-          toast({
-            variant: "destructive",
-            title: "Avertissement",
+          toast.warning("Avertissement", {
             description: "Le dossier a été mis à jour mais pas tous les fichiers enfants",
           });
         }
@@ -345,10 +323,7 @@ export function FileManager() {
       // Basculer vers le bon tab
       setViewMode(newIsPrivate ? "private" : "public");
 
-      toast({
-        title: "Succès",
-        description: `${fileName} est maintenant ${newIsPrivate ? "privé" : "public"}`,
-      });
+      toast.success(`${fileName} est maintenant ${newIsPrivate ? "privé" : "public"}`);
 
       fetchFiles();
     } catch (error) {
@@ -379,10 +354,7 @@ export function FileManager() {
         fileNames.push(file.name);
       }
 
-      toast({
-        title: "Succès",
-        description: `${fileNames.length} fichier(s) uploadé(s) avec succès`,
-      });
+      toast.success(`${fileNames.length} fichier(s) uploadé(s) avec succès`);
 
       // Reset file input
       const fileInput = document.getElementById("file-upload") as HTMLInputElement;
@@ -391,11 +363,7 @@ export function FileManager() {
       fetchFiles();
     } catch (error) {
       console.error("Error uploading:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible d'uploader les fichiers",
-      });
+      toast.error("Impossible d'uploader les fichiers");
     } finally {
       setUploading(false);
     }
@@ -457,19 +425,12 @@ export function FileManager() {
         fileNames.push(file.name);
       }
 
-      toast({
-        title: "Succès",
-        description: `${fileNames.length} fichier(s) uploadé(s) avec succès`,
-      });
+      toast.success(`${fileNames.length} fichier(s) uploadé(s) avec succès`);
 
       fetchFiles();
     } catch (error) {
       console.error("Error uploading:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible d'uploader les fichiers",
-      });
+      toast.error("Impossible d'uploader les fichiers");
     } finally {
       setUploading(false);
     }
@@ -517,18 +478,13 @@ export function FileManager() {
       }
 
       if (successCount > 0) {
-        toast({
-          title: "Suppression réussie",
+        toast.success("Suppression réussie", {
           description: `${successCount} fichier(s) supprimé(s) avec succès`,
         });
       }
 
       if (failureCount > 0) {
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: `${failureCount} fichier(s) n'ont pas pu être supprimés`,
-        });
+        toast.error(`${failureCount} fichier(s) n'ont pas pu être supprimés`);
       }
 
       setSelectedFiles(new Set());
@@ -536,11 +492,7 @@ export function FileManager() {
       fetchFiles();
     } catch (error) {
       console.error("Error batch deleting:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de supprimer les fichiers",
-      });
+      toast.error("Impossible de supprimer les fichiers");
     } finally {
       setBatchDeleting(false);
     }
@@ -588,18 +540,11 @@ export function FileManager() {
       }
 
       if (successCount > 0) {
-        toast({
-          title: "Succès",
-          description: `${successCount} fichier(s) mis à jour`,
-        });
+        toast.success(`${successCount} fichier(s) mis à jour`);
       }
 
       if (failureCount > 0) {
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: `${failureCount} fichier(s) n'ont pas pu être mis à jour`,
-        });
+        toast.error(`${failureCount} fichier(s) n'ont pas pu être mis à jour`);
       }
 
       setViewMode(batchPrivacyWarning.newPrivacy ? "private" : "public");
@@ -608,11 +553,7 @@ export function FileManager() {
       fetchFiles();
     } catch (error) {
       console.error("Error batch updating privacy:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de mettre à jour les fichiers",
-      });
+      toast.error("Impossible de mettre à jour les fichiers");
     }
   };
 
@@ -621,11 +562,7 @@ export function FileManager() {
 
     const sourceFolder = currentFolderId;
     if (sourceFolder === targetFolderId) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Le fichier est déjà dans ce dossier",
-      });
+      toast.error("Le fichier est déjà dans ce dossier");
       return;
     }
 
@@ -658,14 +595,10 @@ export function FileManager() {
       }
 
       if (successCount > 0) {
-        let description = `${successCount} fichier(s) déplacé(s)`;
-        if (renamedFiles.length > 0) {
-          description += ` (renommage: ${renamedFiles.join(", ")})`;
-        }
-        toast({
-          title: "Succès",
-          description,
-        });
+        const description = `${successCount} fichier(s) déplacé(s)${
+          renamedFiles.length > 0 ? ` (renommage: ${renamedFiles.join(", ")})` : ""
+        }`;
+        toast.success(description);
       }
 
       setSelectedFiles(new Set());
@@ -673,11 +606,7 @@ export function FileManager() {
       fetchFiles();
     } catch (error) {
       console.error("Error moving files:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de déplacer les fichiers",
-      });
+      toast.error("Impossible de déplacer les fichiers");
     } finally {
       setIsMoving(false);
     }
@@ -699,10 +628,7 @@ export function FileManager() {
 
       if (!res.ok) throw new Error("Failed to create folder");
 
-      toast({
-        title: "Succès",
-        description: `Le dossier "${newFolderName}" a été créé`,
-      });
+      toast.success(`Le dossier "${newFolderName}" a été créé`);
 
       setNewFolderName("");
       setShowNewFolder(false);
@@ -710,11 +636,7 @@ export function FileManager() {
       fetchFiles();
     } catch (error) {
       console.error("Error creating folder:", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de créer le dossier",
-      });
+      toast.error("Impossible de créer le dossier");
     }
   };
 
@@ -740,7 +662,7 @@ export function FileManager() {
       case "code":
         return <FileCode className={`${iconClass} text-orange-500`} />;
       default:
-        return <File className={`${iconClass} text-gray-500`} />;
+        return <File className={`${iconClass} text-muted-foreground`} />;
     }
   };
 

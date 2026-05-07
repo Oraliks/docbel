@@ -77,7 +77,7 @@ function SortHeader({ label, field, sortable = true, sortBy, sortOrder, onSort }
   return (
     <TableHead
       onClick={() => onSort?.(field!)}
-      className="cursor-pointer hover:bg-gray-100 transition-colors"
+      className="cursor-pointer hover:bg-muted transition-colors"
     >
       <div className="flex items-center gap-2">
         {label}
@@ -372,7 +372,7 @@ export function NewsList({
                 <TableBody>
                   {orderedArticles.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         {isLoading ? 'Chargement...' : 'Aucun article trouvé'}
                       </TableCell>
                     </TableRow>
@@ -402,7 +402,7 @@ export function NewsList({
           // GRID VIEW
           <div>
             {articles.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-muted-foreground">
                 {isLoading ? 'Chargement...' : 'Aucun article trouvé'}
               </div>
             ) : (
@@ -432,7 +432,7 @@ export function NewsList({
                           {article.featured ? (
                             <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                           ) : (
-                            <Star className="w-5 h-5 text-gray-300" />
+                            <Star className="w-5 h-5 text-muted-foreground/50" />
                           )}
                         </button>
                       </div>
@@ -452,17 +452,17 @@ export function NewsList({
                           <StatusBadge status={article.status} />
                         </button>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-xs text-gray-500">
+                      <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
                         <div>
-                          <p className="font-medium text-gray-700">{article.views}</p>
+                          <p className="font-medium text-foreground">{article.views}</p>
                           <p>Vues</p>
                         </div>
                         <div>
-                          <p className="font-medium text-gray-700">{article.readingTime ? `${article.readingTime} min` : '-'}</p>
+                          <p className="font-medium text-foreground">{article.readingTime ? `${article.readingTime} min` : '-'}</p>
                           <p>Lecture</p>
                         </div>
                         <div>
-                          <p className="font-medium text-gray-700 truncate">{formatDate(article.publishedAt)}</p>
+                          <p className="font-medium text-foreground truncate">{formatDate(article.publishedAt)}</p>
                           <p>Publié</p>
                         </div>
                       </div>
@@ -472,7 +472,7 @@ export function NewsList({
                           Modifier
                         </Button>
                         <DropdownMenu>
-                          <DropdownMenuTrigger className="h-9 w-9 p-0 hover:bg-gray-100 rounded-md transition-colors inline-flex items-center justify-center border">
+                          <DropdownMenuTrigger className="h-9 w-9 p-0 hover:bg-muted rounded-md transition-colors inline-flex items-center justify-center border">
                             <MoreHorizontal className="w-4 h-4" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -506,7 +506,7 @@ export function NewsList({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between text-sm">
-          <span className="text-gray-600">
+          <span className="text-muted-foreground">
             Page {currentPage} sur {totalPages} • {totalItems} articles total
           </span>
           <div className="flex gap-2">
@@ -591,34 +591,34 @@ export function NewsList({
                 <div className="flex items-center gap-3">
                   <span className="text-4xl">{article.emoji}</span>
                   <div>
-                    <p className="text-sm text-gray-500">{article.category}</p>
+                    <p className="text-sm text-muted-foreground">{article.category}</p>
                     <p className="text-lg font-semibold">{article.title}</p>
                   </div>
                 </div>
                 <div className="border-t pt-4">
                   <div className="grid grid-cols-3 gap-4 text-sm mb-4">
                     <div>
-                      <p className="text-gray-600">Statut</p>
+                      <p className="text-muted-foreground">Statut</p>
                       <div className="mt-1">
                         <StatusBadge status={article.status} />
                       </div>
                     </div>
                     <div>
-                      <p className="text-gray-600">Lecture</p>
+                      <p className="text-muted-foreground">Lecture</p>
                       <p className="font-medium">{article.readingTime ? `${article.readingTime} min` : '-'}</p>
                     </div>
                     <div>
-                      <p className="text-gray-600">Vues</p>
+                      <p className="text-muted-foreground">Vues</p>
                       <p className="font-medium">{article.views}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-600">Créé le</p>
+                      <p className="text-muted-foreground">Créé le</p>
                       <p className="font-medium">{formatDate(article.createdAt)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-600">Publié le</p>
+                      <p className="text-muted-foreground">Publié le</p>
                       <p className="font-medium">{formatDate(article.publishedAt)}</p>
                     </div>
                   </div>
@@ -732,16 +732,16 @@ function SortableTableRow({
     <TableRow
       ref={setNodeRef}
       style={style}
-      className={`hover:bg-gray-50 ${isDragging ? 'bg-blue-50' : ''}`}
+      className={`hover:bg-muted/50 ${isDragging ? 'bg-primary/10' : ''}`}
     >
       <TableCell className="w-8">
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded transition-colors"
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded transition-colors"
           title="Faites glisser pour réorganiser"
         >
-          <GripVertical className="w-4 h-4 text-gray-400" />
+          <GripVertical className="w-4 h-4 text-muted-foreground" />
         </button>
       </TableCell>
       <TableCell>
@@ -761,7 +761,7 @@ function SortableTableRow({
           {article.featured ? (
             <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
           ) : (
-            <Star className="w-4 h-4 text-gray-300" />
+            <Star className="w-4 h-4 text-muted-foreground/50" />
           )}
         </button>
       </TableCell>
@@ -772,7 +772,7 @@ function SortableTableRow({
             <p className="font-medium cursor-pointer hover:underline" onClick={onEdit}>
               {article.title}
             </p>
-            <p className="text-sm text-gray-500">{formatDate(article.createdAt)}</p>
+            <p className="text-sm text-muted-foreground">{formatDate(article.createdAt)}</p>
           </div>
         </div>
       </TableCell>
@@ -787,13 +787,13 @@ function SortableTableRow({
         </Badge>
       </TableCell>
       <TableCell>{formatDate(article.publishedAt)}</TableCell>
-      <TableCell className="text-right text-sm text-gray-500">
+      <TableCell className="text-right text-sm text-muted-foreground">
         {article.readingTime ? `${article.readingTime} min` : '-'}
       </TableCell>
       <TableCell className="text-right">{article.views}</TableCell>
       <TableCell className="text-right">
         <DropdownMenu>
-          <DropdownMenuTrigger className="h-8 w-8 p-0 hover:bg-gray-100 rounded-md transition-colors inline-flex items-center justify-center">
+          <DropdownMenuTrigger className="h-8 w-8 p-0 hover:bg-muted rounded-md transition-colors inline-flex items-center justify-center">
             <MoreHorizontal className="w-4 h-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

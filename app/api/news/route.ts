@@ -1,82 +1,106 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { getCurrentUser, actorLabel } from "@/lib/news/session";
+import { newsCreateSchema, newsListQuerySchema, NEWS_STATUSES } from "@/lib/news/validation";
+import { slugify } from "@/lib/news/slug";
+
+const PUBLIC_LIST_FIELDS = {
+  id: true,
+  title: true,
+  slug: true,
+  excerpt: true,
+  category: true,
+  color: true,
+  emoji: true,
+  status: true,
+  featured: true,
+  image: true,
+  readingTime: true,
+  views: true,
+  publishedAt: true,
+  scheduledAt: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+const ADMIN_LIST_FIELDS = {
+  ...PUBLIC_LIST_FIELDS,
+  content: true,
+  createdBy: true,
+  updatedBy: true,
+} as const;
+
+const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get("status") || "all";
-    const category = searchParams.get("category") || "all";
-    const featured = searchParams.get("featured");
-    const search = searchParams.get("search") || "";
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const sortBy = searchParams.get("sortBy") || "createdAt";
-    const sortOrder = searchParams.get("sortOrder") || "desc";
-
-    const skip = (page - 1) * limit;
-    const where: Record<string, unknown> = {};
-
-    if (status !== "all") {
-      where.status = status;
+    const parsed = newsListQuerySchema.safeParse(Object.fromEntries(searchParams));
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid query parameters", issues: parsed.error.issues },
+        { status: 400, headers: jsonHeaders }
+      );
     }
 
-    if (category !== "all") {
-      where.category = category;
+    const { status, category, featured, search, page, limit, sortBy, sortOrder } = parsed.data;
+    const currentUser = await getCurrentUser();
+    const isAdmin = currentUser?.isAdmin === true;
+
+    const where: Prisma.NewsWhereInput = {};
+
+    if (isAdmin) {
+      if (status !== "all") where.status = status;
+    } else {
+      // Public: only published. The status filter is ignored for non-admin clients.
+      where.status = "published";
     }
 
-    if (featured === "true") {
-      where.featured = true;
-    }
+    if (category !== "all") where.category = category;
+    if (featured === "true") where.featured = true;
 
     if (search) {
       where.OR = [
-        { title: { contains: search } },
-        { excerpt: { contains: search } },
-        { content: { contains: search } },
+        { title: { contains: search, mode: "insensitive" } },
+        { excerpt: { contains: search, mode: "insensitive" } },
+        { content: { contains: search, mode: "insensitive" } },
       ];
     }
 
-    const validSortFields = ["title", "status", "createdAt", "views", "publishedAt"];
-    const sortField = validSortFields.includes(sortBy) ? sortBy : "createdAt";
-    const orderBy: Record<string, "asc" | "desc"> = {
-      [sortField]: sortOrder === "asc" ? "asc" : "desc",
-    };
+    const orderBy: Prisma.NewsOrderByWithRelationInput = { [sortBy]: sortOrder };
+    const skip = (page - 1) * limit;
+    const select = isAdmin ? ADMIN_LIST_FIELDS : PUBLIC_LIST_FIELDS;
 
-    const whereWithoutStatus = { ...where };
-    delete whereWithoutStatus.status;
+    // Status counts only meaningful for admins.
+    const whereForCounts: Prisma.NewsWhereInput = { ...where };
+    delete whereForCounts.status;
 
     const [articles, total, categories, statusGroups] = await Promise.all([
-      prisma.news.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-      }),
+      prisma.news.findMany({ where, orderBy, skip, take: limit, select }),
       prisma.news.count({ where }),
-      prisma.category.findMany(),
-      prisma.news.groupBy({
-        by: ["status"],
-        where: whereWithoutStatus,
-        _count: { status: true },
-      }),
+      prisma.category.findMany({ select: { name: true, color: true } }),
+      isAdmin
+        ? prisma.news.groupBy({
+            by: ["status"],
+            where: whereForCounts,
+            _count: { status: true },
+          })
+        : Promise.resolve([] as { status: string; _count: { status: number } }[]),
     ]);
 
     const statusCounts: Record<string, number> = { all: 0 };
-    statusGroups.forEach((group) => {
+    for (const group of statusGroups) {
       statusCounts[group.status] = group._count.status;
       statusCounts.all += group._count.status;
-    });
+    }
 
-    const categoryColorMap: Record<string, string> = {};
-    categories.forEach((cat) => {
-      categoryColorMap[cat.name] = cat.color;
-    });
-
+    const colorMap = new Map(categories.map((c) => [c.name, c.color]));
     const articlesWithCategoryColor = articles.map((article) => ({
       ...article,
-      categoryColor: categoryColorMap[article.category] || "#C8102E",
+      categoryColor: colorMap.get(article.category) ?? "#C8102E",
     }));
 
     return NextResponse.json(
@@ -88,15 +112,11 @@ export async function GET(req: NextRequest) {
         totalPages: Math.ceil(total / limit),
         statusCounts,
       },
-      {
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-        },
-      }
+      { headers: jsonHeaders }
     );
   } catch (error) {
     console.error("Error fetching news:", error);
-    return NextResponse.json({ error: "Failed to fetch news" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch news" }, { status: 500, headers: jsonHeaders });
   }
 }
 
@@ -105,59 +125,81 @@ export async function POST(req: NextRequest) {
   if (!authCheck.isAuthorized) return authCheck.error;
 
   try {
-    const body = await req.json();
-    const {
-      title,
-      slug,
-      excerpt,
-      content,
-      category,
-      color,
-      emoji,
-      image,
-      status,
-      featured,
-      scheduledAt,
-      readingTime,
-    } = body;
-
-    if (!title || !slug || !excerpt || !content || !category) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const json = await req.json();
+    const parsed = newsCreateSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid payload", issues: parsed.error.issues },
+        { status: 400, headers: jsonHeaders }
+      );
+    }
+    const data = parsed.data;
+    const slug = slugify(data.slug) || slugify(data.title);
+    if (!slug) {
+      return NextResponse.json({ error: "Slug invalide" }, { status: 400, headers: jsonHeaders });
     }
 
-    const calcReadingTime =
-      readingTime ||
-      Math.max(1, Math.ceil(content.replace(/<[^>]+>/g, "").trim().split(/\s+/).length / 200));
+    const slugConflict = await prisma.news.findUnique({ where: { slug }, select: { id: true } });
+    if (slugConflict) {
+      return NextResponse.json(
+        { error: "Un article avec ce slug existe déjà" },
+        { status: 409, headers: jsonHeaders }
+      );
+    }
+
+    if (data.status === "scheduled") {
+      if (!data.scheduledAt || new Date(data.scheduledAt).getTime() <= Date.now()) {
+        return NextResponse.json(
+          { error: "scheduledAt doit être dans le futur" },
+          { status: 400, headers: jsonHeaders }
+        );
+      }
+    }
+
+    const plainText = data.content.replace(/<[^>]+>/g, "").trim();
+    const wordCount = plainText.length > 0 ? plainText.split(/\s+/).length : 0;
+    const calcReadingTime = data.readingTime || Math.max(1, Math.ceil(wordCount / 200));
 
     const article = await prisma.news.create({
       data: {
-        title,
+        title: data.title,
         slug,
-        excerpt,
-        content,
-        category,
-        color: color || "#C8102E",
-        emoji: emoji || "📰",
-        status: status || "draft",
-        featured: featured || false,
-        image: image || null,
+        excerpt: data.excerpt,
+        content: data.content,
+        category: data.category,
+        color: data.color || "#C8102E",
+        emoji: data.emoji || "📰",
+        status: data.status || "draft",
+        featured: data.featured ?? false,
+        image: data.image || null,
         readingTime: calcReadingTime,
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
         createdBy: authCheck.user?.id || "unknown",
+        updatedBy: authCheck.user?.id || null,
       },
     });
 
-    const actorName = authCheck.user?.name || authCheck.user?.email || "Admin";
-    await logActivity(actorName, "created", "news", title, article.id, `Article cree: ${title}`);
+    await logActivity(
+      actorLabel(authCheck.user),
+      "created",
+      "news",
+      article.title,
+      article.id,
+      `Article créé: ${article.title}`
+    );
 
-    return NextResponse.json(article, {
-      status: 201,
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-      },
-    });
+    return NextResponse.json(article, { status: 201, headers: jsonHeaders });
   } catch (error) {
     console.error("Error creating news:", error);
-    return NextResponse.json({ error: "Failed to create news" }, { status: 500 });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json(
+        { error: "Un article avec ce slug existe déjà" },
+        { status: 409, headers: jsonHeaders }
+      );
+    }
+    return NextResponse.json({ error: "Failed to create news" }, { status: 500, headers: jsonHeaders });
   }
 }
+
+// Re-export status list to keep it discoverable in dev tools.
+export const NEWS_STATUS_VALUES = NEWS_STATUSES;

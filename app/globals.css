@@ -160,8 +160,12 @@ body,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: var(--border);
   border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
 }
 
 /* ── Rich-text article content ───────────────────────────────────────────── */
@@ -192,8 +196,8 @@ body,
 
 .article-content hr { border: none; border-top: 1px solid currentColor; opacity: 0.15; margin: 1.75rem 0; }
 
-.article-content code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.875em; background: rgba(0,0,0,0.06); padding: 0.15em 0.4em; border-radius: 4px; }
-.article-content pre { background: rgba(0,0,0,0.06); border-radius: 8px; padding: 1rem 1.25rem; overflow-x: auto; margin: 1rem 0; }
+.article-content code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.875em; background: var(--muted); padding: 0.15em 0.4em; border-radius: 4px; }
+.article-content pre { background: var(--muted); border-radius: 8px; padding: 1rem 1.25rem; overflow-x: auto; margin: 1rem 0; }
 .article-content pre code { background: none; padding: 0; }
 
 .article-content a { text-decoration: underline; text-underline-offset: 2px; }
@@ -213,8 +217,8 @@ body,
 
 .article-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
 .article-content th,
-.article-content td { border: 1px solid rgba(0,0,0,0.15); padding: 0.5rem 0.75rem; text-align: left; }
-.article-content th { font-weight: 600; background: rgba(0,0,0,0.04); }
+.article-content td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
+.article-content th { font-weight: 600; background: var(--muted); }
 
 @keyframes docbel-spin {
   from {

@@ -1,5 +1,6 @@
 export interface NewsItem {
   id: number | string;
+  slug?: string;
   tag: string;
   title: string;
   desc: string;

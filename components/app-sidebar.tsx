@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useSession } from "next-auth/react"
+import { authClient } from "@/lib/auth-client"
 import { useState, useEffect } from "react"
 
 import { NavMain } from "@/components/nav-main"
@@ -105,7 +105,7 @@ const defaultData = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { data: session } = useSession()
+  const { data: session } = authClient.useSession()
   const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {

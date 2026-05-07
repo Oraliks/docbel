@@ -40,15 +40,15 @@ function formatDate(dateString: string): string {
 function getStatusBadgeColor(status: string): string {
   switch (status) {
     case "NEW":
-      return "bg-blue-100 text-blue-800";
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200";
     case "READ":
-      return "bg-gray-100 text-gray-800";
+      return "bg-muted text-muted-foreground";
     case "REPLIED":
-      return "bg-green-100 text-green-800";
+      return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200";
     case "ARCHIVED":
-      return "bg-slate-100 text-slate-600";
+      return "bg-muted text-muted-foreground";
     default:
-      return "bg-gray-100 text-gray-800";
+      return "bg-muted text-muted-foreground";
   }
 }
 
@@ -167,15 +167,15 @@ export function MessagesPanel({ initialMessages = [] }: MessagesPanelProps) {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { status: "ALL", label: "Total", count: messages.length, color: "bg-blue-50 border-blue-200" },
-          { status: "NEW", label: "Nouveau", count: stats.NEW, color: "bg-blue-50 border-blue-200" },
-          { status: "READ", label: "Lu", count: stats.READ, color: "bg-gray-50 border-gray-200" },
-          { status: "REPLIED", label: "Répondu", count: stats.REPLIED, color: "bg-green-50 border-green-200" },
+          { status: "ALL", label: "Total", count: messages.length, color: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-900" },
+          { status: "NEW", label: "Nouveau", count: stats.NEW, color: "bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-900" },
+          { status: "READ", label: "Lu", count: stats.READ, color: "bg-muted/50 border-border" },
+          { status: "REPLIED", label: "Répondu", count: stats.REPLIED, color: "bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-900" },
         ].map((item) => (
           <Card key={item.status} className={`border ${item.color}`}>
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-1">{item.label}</p>
+                <p className="text-sm text-muted-foreground mb-1">{item.label}</p>
                 <p className="text-3xl font-bold">{item.count}</p>
               </div>
             </CardContent>
@@ -191,8 +191,8 @@ export function MessagesPanel({ initialMessages = [] }: MessagesPanelProps) {
             onClick={() => setFilter(status as "ALL" | "NEW" | "READ" | "REPLIED" | "ARCHIVED")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               filter === status
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-foreground hover:bg-muted/70"
             }`}
           >
             {status === "ALL" ? "Tous" : getStatusLabel(status)}
@@ -210,16 +210,16 @@ export function MessagesPanel({ initialMessages = [] }: MessagesPanelProps) {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Chargement des messages...</div>
+            <div className="text-center py-8 text-muted-foreground">Chargement des messages...</div>
           ) : filteredMessages.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               {filter === "ALL" ? "Aucun message" : "Aucun message avec ce statut"}
             </div>
           ) : (
             <div className="border rounded-lg overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50 hover:bg-gray-50">
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableHead className="font-semibold">De</TableHead>
                     <TableHead className="font-semibold">Sujet</TableHead>
                     <TableHead className="font-semibold">Statut</TableHead>
@@ -229,15 +229,15 @@ export function MessagesPanel({ initialMessages = [] }: MessagesPanelProps) {
                 </TableHeader>
                 <TableBody>
                   {filteredMessages.map((message) => (
-                    <TableRow key={message.id} className="hover:bg-gray-50 transition-colors">
+                    <TableRow key={message.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell>
                         <div className="cursor-pointer" onClick={() => setSelectedMessage(message)}>
-                          <div className="font-medium hover:text-blue-600">{message.name}</div>
-                          <div className="text-sm text-gray-600">{message.email}</div>
+                          <div className="font-medium hover:text-primary">{message.name}</div>
+                          <div className="text-sm text-muted-foreground">{message.email}</div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="max-w-xs cursor-pointer truncate hover:text-blue-600 hover:underline" onClick={() => setSelectedMessage(message)}>
+                        <div className="max-w-xs cursor-pointer truncate hover:text-primary hover:underline" onClick={() => setSelectedMessage(message)}>
                           {message.subject}
                         </div>
                       </TableCell>
@@ -246,7 +246,7 @@ export function MessagesPanel({ initialMessages = [] }: MessagesPanelProps) {
                           {getStatusLabel(message.status)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">{formatDate(message.createdAt)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{formatDate(message.createdAt)}</TableCell>
                       <TableCell>
                         <div className="flex gap-1 justify-end">
                           {/* View/Detail button */}
@@ -299,7 +299,7 @@ export function MessagesPanel({ initialMessages = [] }: MessagesPanelProps) {
                             variant="ghost"
                             size="sm"
                             title="Supprimer"
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30"
                           >
                             <Trash2 size={16} />
                           </Button>

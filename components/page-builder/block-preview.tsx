@@ -23,19 +23,19 @@ interface BlockPreviewProps {
 function BlockContent({ block }: BlockPreviewProps) {
   switch (block.type) {
     case 'hero':
-      return <HeroBlock key={block.id} {...(block.props as unknown as HeroProps)} />
+      return <HeroBlock {...(block.props as HeroProps)} />
     case 'cta':
-      return <CtaBlock key={block.id} {...(block.props as unknown as CtaProps)} />
+      return <CtaBlock {...(block.props as CtaProps)} />
     case 'image':
-      return <ImageBlock key={block.id} {...(block.props as unknown as ImageProps)} />
+      return <ImageBlock {...(block.props as ImageProps)} />
     case 'features':
-      return <FeaturesBlock key={block.id} {...(block.props as unknown as FeaturesProps)} />
+      return <FeaturesBlock {...(block.props as FeaturesProps)} />
     case 'section':
-      return <SectionBlock key={block.id} {...(block.props as unknown as SectionProps)} />
+      return <SectionBlock {...(block.props as SectionProps)} />
     default:
       return (
         <Card className="p-4 text-center text-muted-foreground">
-          Type inconnu: {block.type}
+          Type inconnu
         </Card>
       )
   }
@@ -58,7 +58,7 @@ class BlockErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <Card className="p-4 text-center text-red-600">
-          Erreur rendu: {this.state.error}
+          Erreur rendu : {this.state.error}
         </Card>
       )
     }
@@ -66,10 +66,10 @@ class BlockErrorBoundary extends React.Component<
   }
 }
 
-export function BlockPreview({ block }: BlockPreviewProps) {
+export const BlockPreview = React.memo(function BlockPreview({ block }: BlockPreviewProps) {
   return (
     <BlockErrorBoundary>
       <BlockContent block={block} />
     </BlockErrorBoundary>
   )
-}
+})

@@ -20,15 +20,15 @@ interface PageRendererProps {
 function BlockItem({ block }: { block: BlockProps }) {
   switch (block.type) {
     case 'hero':
-      return <HeroBlock key={block.id} {...(block.props as unknown as HeroProps)} />
+      return <HeroBlock {...(block.props as HeroProps)} />
     case 'cta':
-      return <CtaBlock key={block.id} {...(block.props as unknown as CtaProps)} />
+      return <CtaBlock {...(block.props as CtaProps)} />
     case 'image':
-      return <ImageBlock key={block.id} {...(block.props as unknown as ImageProps)} />
+      return <ImageBlock {...(block.props as ImageProps)} />
     case 'features':
-      return <FeaturesBlock key={block.id} {...(block.props as unknown as FeaturesProps)} />
+      return <FeaturesBlock {...(block.props as FeaturesProps)} />
     case 'section':
-      return <SectionBlock key={block.id} {...(block.props as unknown as SectionProps)} />
+      return <SectionBlock {...(block.props as SectionProps)} />
     default:
       return null
   }
@@ -59,7 +59,7 @@ class BlockItemErrorBoundary extends React.Component<
 
 export const PageRenderer: React.FC<PageRendererProps> = ({ blocks }) => {
   if (!blocks || blocks.length === 0) {
-    return <div className="text-center text-gray-500 py-12">Pas de contenu</div>
+    return <div className="text-center text-muted-foreground py-12">Pas de contenu</div>
   }
 
   return (

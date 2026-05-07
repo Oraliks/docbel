@@ -32,22 +32,21 @@ const getBlockIcon = (iconName: string) => {
     'file-text': <FileText className="h-4 w-4" />,
     'mouse-pointer': <MousePointer className="h-4 w-4" />,
   }
-
   return icons[iconName] || <Box className="h-4 w-4" />
 }
 
 const getPreview = (block: BlockProps): string => {
   switch (block.type) {
     case 'hero':
-      return (block.props as unknown as HeroProps).title || '(sans titre)'
+      return (block.props as HeroProps).title || '(sans titre)'
     case 'cta':
-      return (block.props as unknown as CtaProps).text || '(sans texte)'
+      return (block.props as CtaProps).text || '(sans texte)'
     case 'image':
-      return (block.props as unknown as ImageProps).url ? '(image chargee)' : '(image non configuree)'
+      return (block.props as ImageProps).url ? '(image chargée)' : '(image non configurée)'
     case 'features':
-      return `${(block.props as unknown as FeaturesProps).items?.length || 0} fonctionnalites`
+      return `${(block.props as FeaturesProps).items?.length || 0} fonctionnalités`
     case 'section':
-      return (block.props as unknown as SectionProps).title || '(sans titre)'
+      return (block.props as SectionProps).title || '(sans titre)'
     default:
       return '?'
   }
@@ -63,7 +62,7 @@ interface SortableBlockProps {
   onMoveDown?: () => void
 }
 
-export const SortableBlock: React.FC<SortableBlockProps> = ({
+const SortableBlockInner: React.FC<SortableBlockProps> = ({
   block,
   isSelected,
   onSelect,
@@ -81,7 +80,7 @@ export const SortableBlock: React.FC<SortableBlockProps> = ({
     isDragging,
   } = useSortable({ id: block.id })
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
@@ -89,49 +88,44 @@ export const SortableBlock: React.FC<SortableBlockProps> = ({
 
   const registryEntry = BLOCK_REGISTRY[block.type as keyof typeof BLOCK_REGISTRY]
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isSelected) return
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      const target = e.target as HTMLElement
+      const tag = target.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return
+      e.preventDefault()
+      onDelete()
+    }
+  }
+
   return (
     <Card
       ref={setNodeRef}
       style={style}
-      className={`p-2 cursor-pointer transition ${
-        isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+      tabIndex={0}
+      className={`p-2 cursor-pointer transition outline-none ${
+        isSelected ? 'ring-2 ring-primary bg-primary/10' : 'hover:bg-muted/50'
       } ${isDragging ? 'shadow-lg z-50' : ''}`}
       onClick={onSelect}
+      onKeyDown={handleKeyDown}
     >
       <div className="flex items-center justify-between gap-2">
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing flex-shrink-0 group/drag relative"
-          title="Glissez pour reordonner"
+          className="cursor-grab active:cursor-grabbing flex-shrink-0"
+          title="Glisser pour réordonner"
         >
-          <GripVertical className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/drag:block bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-            Glissez pour reordonner
-          </div>
+          <GripVertical className="h-4 w-4 text-muted-foreground hover:text-foreground" />
         </div>
 
-        {registryEntry ? (
-          <span
-            className="text-lg flex-shrink-0 cursor-help group/icon relative"
-            title={registryEntry.name}
-          >
-            {getBlockIcon(registryEntry.iconName)}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/icon:block bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-              {registryEntry.name}
-            </div>
-          </span>
-        ) : (
-          <span
-            className="text-lg flex-shrink-0 cursor-help group/icon relative text-gray-400"
-            title="Type de bloc inconnu"
-          >
-            <Box className="h-4 w-4" />
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/icon:block bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-              Type inconnu: {block.type}
-            </div>
-          </span>
-        )}
+        <span
+          className="text-lg flex-shrink-0"
+          title={registryEntry?.name || `Type inconnu: ${block.type}`}
+        >
+          {registryEntry ? getBlockIcon(registryEntry.iconName) : <Box className="h-4 w-4 text-muted-foreground" />}
+        </span>
 
         <div className="flex gap-1 flex-shrink-0 ml-auto">
           {onMoveUp && (
@@ -143,6 +137,7 @@ export const SortableBlock: React.FC<SortableBlockProps> = ({
                 event.stopPropagation()
                 onMoveUp()
               }}
+              title="Monter"
             >
               <ChevronUp className="h-3 w-3" />
             </Button>
@@ -156,6 +151,7 @@ export const SortableBlock: React.FC<SortableBlockProps> = ({
                 event.stopPropagation()
                 onMoveDown()
               }}
+              title="Descendre"
             >
               <ChevronDown className="h-3 w-3" />
             </Button>
@@ -168,6 +164,7 @@ export const SortableBlock: React.FC<SortableBlockProps> = ({
               event.stopPropagation()
               onDuplicate()
             }}
+            title="Dupliquer"
           >
             <Copy className="h-3 w-3" />
           </Button>
@@ -179,6 +176,7 @@ export const SortableBlock: React.FC<SortableBlockProps> = ({
               event.stopPropagation()
               onDelete()
             }}
+            title="Supprimer"
           >
             <Trash2 className="h-3 w-3" />
           </Button>
@@ -188,3 +186,12 @@ export const SortableBlock: React.FC<SortableBlockProps> = ({
     </Card>
   )
 }
+
+export const SortableBlock = React.memo(SortableBlockInner, (prev, next) => {
+  return (
+    prev.block === next.block &&
+    prev.isSelected === next.isSelected &&
+    prev.onMoveUp === next.onMoveUp &&
+    prev.onMoveDown === next.onMoveDown
+  )
+})

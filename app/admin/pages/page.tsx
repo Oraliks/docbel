@@ -52,9 +52,10 @@ export default function PagesListPage() {
 
   const fetchPages = async () => {
     try {
-      const res = await fetch('/api/pages')
+      const res = await fetch('/api/pages?limit=200&includeContent=1')
       const data = await res.json()
-      setPages(data)
+      const items: PageData[] = Array.isArray(data) ? data : data.items || []
+      setPages(items)
     } catch (error) {
       console.error('Failed to fetch pages:', error)
     } finally {
@@ -154,21 +155,22 @@ export default function PagesListPage() {
     if (!pageToDuplicate) return
 
     try {
+      // Fetch full content (the list endpoint returns metadata only)
+      const fullRes = await fetch(`/api/pages/${id}`)
+      if (!fullRes.ok) throw new Error('Failed to load source page')
+      const full = await fullRes.json()
+
       const res = await fetch('/api/pages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: `${pageToDuplicate.title} (Copie)` }),
+        body: JSON.stringify({
+          title: `${pageToDuplicate.title} (Copie)`,
+          content: full.blocks ?? [],
+        }),
       })
-      const newPage = await res.json()
+      if (!res.ok) throw new Error('Failed to duplicate')
 
-      // Copy blocks content
-      await fetch(`/api/pages/${newPage.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: pageToDuplicate.blocks }),
-      })
-
-      fetchPages()
+      await fetchPages()
       toast.success('Page dupliquée')
     } catch (error) {
       console.error('Failed to duplicate page:', error)
@@ -191,12 +193,12 @@ export default function PagesListPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Pages</h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             {pages.length} page{pages.length !== 1 ? 's' : ''}
           </p>
         </div>
         <Button
-          className="bg-blue-600 hover:bg-blue-700"
+          className=""
           onClick={() => setShowCreateDialog(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -207,9 +209,9 @@ export default function PagesListPage() {
       {/* Table */}
       {pages.length === 0 ? (
         <div className="text-center py-12 border rounded-lg">
-          <p className="text-gray-600 mb-4">Aucune page créée</p>
+          <p className="text-muted-foreground mb-4">Aucune page créée</p>
           <Button
-            className="bg-blue-600 hover:bg-blue-700"
+            className=""
             onClick={() => setShowCreateDialog(true)}
           >
             Créer la première page
@@ -220,7 +222,7 @@ export default function PagesListPage() {
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50">
+                <TableRow className="bg-muted/50">
                   <TableHead className="w-1/3">Titre</TableHead>
                   <TableHead>Slug</TableHead>
                   <TableHead className="text-center">Blocs</TableHead>
@@ -230,10 +232,10 @@ export default function PagesListPage() {
               </TableHeader>
               <TableBody>
                 {paginatedPages.map((page) => (
-                  <TableRow key={page.id} className="hover:bg-gray-50">
+                  <TableRow key={page.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">{page.title}</TableCell>
                     <TableCell>
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm">
+                      <code className="bg-muted px-2 py-1 rounded text-sm">
                         {page.slug}
                       </code>
                     </TableCell>
@@ -296,7 +298,7 @@ export default function PagesListPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30"
                           onClick={() => setDeleteId(page.id)}
                           title="Supprimer"
                         >
@@ -313,7 +315,7 @@ export default function PagesListPage() {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex justify-between items-center pt-4">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 Page {currentPage} sur {totalPages} • {pages.length} pages
               </div>
               <div className="flex gap-2">
@@ -390,7 +392,7 @@ export default function PagesListPage() {
             <Button
               onClick={handleCreatePage}
               disabled={isCreating || !newPageTitle.trim()}
-              className="bg-blue-600 hover:bg-blue-700"
+              className=""
             >
               {isCreating ? 'Création...' : 'Créer'}
             </Button>
@@ -417,16 +419,16 @@ export default function PagesListPage() {
                 }}
                 className={`p-4 border rounded-lg text-left transition-all ${
                   selectedTemplate === template.id
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-400'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:border-muted-foreground'
                 }`}
               >
                 <h3 className="font-semibold text-sm">{template.name}</h3>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {template.description}
                 </p>
                 {template.blocks.length > 0 && (
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     {template.blocks.length} bloc(s)
                   </p>
                 )}

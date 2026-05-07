@@ -162,7 +162,7 @@ export default function BaremesPage() {
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold">Barèmes ONEM</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Upload et consultation des barèmes officiels
         </p>
       </div>
@@ -194,9 +194,9 @@ export default function BaremesPage() {
               onDrop={handleUpload}
               className="border-2 border-dashed rounded-lg p-12 text-center hover:border-blue-500 transition"
             >
-              <FileSpreadsheet className="mx-auto w-12 h-12 text-gray-400 mb-3" />
+              <FileSpreadsheet className="mx-auto w-12 h-12 text-muted-foreground mb-3" />
               <p className="font-medium mb-1">Aucun fichier uploadé</p>
-              <p className="text-sm text-gray-500">Glissez un fichier .xlsx ici</p>
+              <p className="text-sm text-muted-foreground">Glissez un fichier .xlsx ici</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -206,8 +206,8 @@ export default function BaremesPage() {
                   onClick={() => loadFile(f.id)}
                   className={`p-3 border rounded-lg cursor-pointer transition ${
                     selectedFileData?.file.id === f.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'hover:border-gray-400'
+                      ? 'border-primary bg-primary/10'
+                      : 'hover:border-muted-foreground'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -215,7 +215,7 @@ export default function BaremesPage() {
                       <p className="font-medium text-sm truncate" title={f.name}>
                         {f.name}
                       </p>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                         <Calendar className="w-3 h-3" />
                         {f.effectiveDate}
                       </div>
@@ -249,7 +249,7 @@ export default function BaremesPage() {
       </Card>
 
       {/* Visualisation du fichier */}
-      {loading && <p className="text-center py-8 text-gray-500">Chargement...</p>}
+      {loading && <p className="text-center py-8 text-muted-foreground">Chargement...</p>}
 
       {selectedFileData && !loading && (
         <Card>
@@ -257,7 +257,7 @@ export default function BaremesPage() {
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <CardTitle>{selectedFileData.file.name}</CardTitle>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   En vigueur depuis le {selectedFileData.file.effectiveDate}
                   {selectedFileData.file.multiplicateur &&
                     ` • Multiplicateur: ${selectedFileData.file.multiplicateur}`}
@@ -265,7 +265,7 @@ export default function BaremesPage() {
               </div>
               <div className="flex gap-2">
                 <div className="relative">
-                  <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-2 top-2.5 w-4 h-4 text-muted-foreground" />
                   <Input
                     placeholder="Rechercher dans le tableau..."
                     value={searchTerm}
@@ -297,7 +297,7 @@ export default function BaremesPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h3 className="font-semibold">{sheet.category}</h3>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {sheet.rowCount} lignes × {sheet.colCount} colonnes
                       </p>
                     </div>
@@ -341,7 +341,7 @@ function ExcelGrid({
     return (
       <>
         {val.slice(0, idx)}
-        <mark className="bg-yellow-200 px-0.5">{val.slice(idx, idx + search.length)}</mark>
+        <mark className="bg-yellow-200 dark:bg-yellow-700/60 dark:text-yellow-50 px-0.5">{val.slice(idx, idx + search.length)}</mark>
         {val.slice(idx + search.length)}
       </>
     )
@@ -354,7 +354,7 @@ function ExcelGrid({
   }
 
   if (!cellData || cellData.length === 0) {
-    return <p className="text-center py-8 text-gray-500">Pas de données</p>
+    return <p className="text-center py-8 text-muted-foreground">Pas de données</p>
   }
 
   return (
@@ -368,9 +368,9 @@ function ExcelGrid({
                 key={rIdx}
                 className={`${
                   search && !matches ? 'opacity-30' : ''
-                } ${rIdx === 0 ? 'bg-gray-100 font-semibold' : 'hover:bg-blue-50'}`}
+                } ${rIdx === 0 ? 'bg-muted font-semibold' : 'hover:bg-primary/5'}`}
               >
-                <td className="border border-gray-200 px-2 py-1 text-xs text-gray-400 sticky left-0 bg-gray-50 font-mono">
+                <td className="border border-border px-2 py-1 text-xs text-muted-foreground sticky left-0 bg-muted/50 font-mono">
                   {rIdx + 1}
                 </td>
                 {row.map((cell, cIdx) => {
@@ -378,7 +378,7 @@ function ExcelGrid({
                   return (
                     <td
                       key={cIdx}
-                      className={`border border-gray-200 px-2 py-1 whitespace-nowrap ${
+                      className={`border border-border px-2 py-1 whitespace-nowrap ${
                         isError ? 'text-red-400 italic text-xs' : ''
                       }`}
                     >

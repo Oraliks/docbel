@@ -11,7 +11,8 @@
     "postinstall": "prisma generate",
     "seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push",
-    "db:setup": "prisma db push && pnpm seed && tsx scripts/setup-local-auth.ts"
+    "db:setup": "prisma db push && pnpm seed && tsx scripts/setup-local-auth.ts",
+    "auth:backfill": "tsx scripts/backfill-better-auth-accounts.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -49,13 +50,13 @@
     "@tiptap/react": "^2.6.6",
     "@tiptap/starter-kit": "^2.6.6",
     "bcryptjs": "^3.0.3",
+    "better-auth": "^1.6.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.11.0",
     "nanoid": "^5.1.9",
     "next": "16.2.4",
-    "next-auth": "^5.0.0-beta.31",
     "next-themes": "^0.4.6",
     "pdfjs-dist": "^4.0.379",
     "react": "19.2.4",

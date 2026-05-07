@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/auth"
+import { headers } from "next/headers"
+import { auth } from "@/lib/auth"
 import { resolveStoredFilePath } from "@/lib/file-storage"
 import { prisma } from "@/lib/prisma"
 import { readFile } from "fs/promises"
@@ -20,7 +21,7 @@ export async function GET(
     }
 
     if (file.isPrivate) {
-      const session = await auth()
+      const session = await auth.api.getSession({ headers: await headers() })
       const role = (session?.user as { role?: string } | undefined)?.role
 
       if (!session) {

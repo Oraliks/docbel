@@ -38,15 +38,15 @@ function formatDate(dateString: string): string {
 function getStatusBadgeColor(status: string): string {
   switch (status) {
     case "NEW":
-      return "bg-blue-100 text-blue-800";
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200";
     case "READ":
-      return "bg-gray-100 text-gray-800";
+      return "bg-muted text-muted-foreground";
     case "REPLIED":
-      return "bg-green-100 text-green-800";
+      return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200";
     case "ARCHIVED":
-      return "bg-slate-100 text-slate-600";
+      return "bg-muted text-muted-foreground";
     default:
-      return "bg-gray-100 text-gray-800";
+      return "bg-muted text-muted-foreground";
   }
 }
 
@@ -155,14 +155,14 @@ export function MessageDetailView({
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-muted hover:bg-muted/70 rounded-lg transition-colors"
           >
             <ArrowLeft size={16} />
             Retour
           </button>
           <div>
             <h2 className="text-2xl font-bold">{message.subject}</h2>
-            <p className="text-sm text-gray-500">{message.name} • {message.email}</p>
+            <p className="text-sm text-muted-foreground">{message.name} • {message.email}</p>
           </div>
         </div>
         <Badge className={getStatusBadgeColor(message.status)}>
@@ -234,24 +234,24 @@ export function MessageDetailView({
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-600">De</label>
+              <label className="text-sm font-medium text-muted-foreground">De</label>
               <p className="font-semibold">{message.name}</p>
-              <p className="text-sm text-gray-600">{message.email}</p>
+              <p className="text-sm text-muted-foreground">{message.email}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Date</label>
+              <label className="text-sm font-medium text-muted-foreground">Date</label>
               <p className="text-sm">{formatDate(message.createdAt)}</p>
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-600">Sujet</label>
+            <label className="text-sm font-medium text-muted-foreground">Sujet</label>
             <p className="font-semibold">{message.subject}</p>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-600 block mb-2">Message</label>
-            <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap text-sm border border-gray-200">
+            <label className="text-sm font-medium text-muted-foreground block mb-2">Message</label>
+            <div className="bg-muted/50 p-4 rounded-lg whitespace-pre-wrap text-sm border border-border">
               {message.message}
             </div>
           </div>
@@ -266,25 +266,25 @@ export function MessageDetailView({
         <CardContent className="space-y-4">
           {message.adminReply && (
             <div>
-              <label className="text-sm font-medium text-gray-600 block mb-2">Réponse actuelle</label>
-              <div className="bg-green-50 p-4 rounded-lg whitespace-pre-wrap text-sm border border-green-200">
+              <label className="text-sm font-medium text-muted-foreground block mb-2">Réponse actuelle</label>
+              <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg whitespace-pre-wrap text-sm border border-green-200 dark:border-green-900">
                 {message.adminReply}
               </div>
             </div>
           )}
 
           <div>
-            <label className="text-sm font-medium text-gray-600 block mb-2">
+            <label className="text-sm font-medium text-muted-foreground block mb-2">
               {message.adminReply ? "Modifier la réponse" : "Ajouter une réponse"}
             </label>
             <textarea
               value={reply}
               onChange={(e) => setReply(e.target.value)}
               placeholder="Écrivez votre réponse ici..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+              className="w-full px-4 py-3 border border-input bg-background rounded-lg text-sm focus:ring-2 focus:ring-ring focus:border-transparent resize-vertical"
               rows={6}
             />
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
               {reply.length} caractères
             </p>
           </div>

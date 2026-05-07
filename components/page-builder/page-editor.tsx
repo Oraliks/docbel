@@ -1,10 +1,22 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { nanoid } from 'nanoid'
-import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { BlockProps, BlockType } from '@/lib/page-builder/types'
+import {
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { BlockProps, BlockType, BlockPropsMap } from '@/lib/page-builder/types'
 import { BLOCK_REGISTRY } from '@/lib/page-builder/block-registry'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
 import { SidebarBlocks } from './sidebar-blocks'
@@ -14,31 +26,40 @@ import { toast } from 'sonner'
 
 interface PageEditorProps {
   initialBlocks: BlockProps[]
-  onSave: (blocks: BlockProps[]) => Promise<void>
-  onQuit?: () => void
 }
 
-export const PageEditor: React.FC<PageEditorProps> = ({
-  initialBlocks,
-  onSave,
-}) => {
-  const { blocks, setBlocks, selectedBlockId, selectBlock, addBlock, removeBlock, updateBlock, duplicateBlock, moveBlock } = usePageBuilderStore()
-  const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const onSaveRef = useRef(onSave)
+export const PageEditor: React.FC<PageEditorProps> = ({ initialBlocks }) => {
+  const blocks = usePageBuilderStore((s) => s.blocks)
+  const selectedBlockId = usePageBuilderStore((s) => s.selectedBlockId)
+  const setBlocks = usePageBuilderStore((s) => s.setBlocks)
+  const selectBlock = usePageBuilderStore((s) => s.selectBlock)
+  const addBlock = usePageBuilderStore((s) => s.addBlock)
+  const removeBlock = usePageBuilderStore((s) => s.removeBlock)
+  const updateBlock = usePageBuilderStore((s) => s.updateBlock)
+  const duplicateBlock = usePageBuilderStore((s) => s.duplicateBlock)
+  const moveBlock = usePageBuilderStore((s) => s.moveBlock)
+  const reorderBlocks = usePageBuilderStore((s) => s.reorderBlocks)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
 
   useEffect(() => {
-    onSaveRef.current = onSave
-    setBlocks(initialBlocks)
-  }, [initialBlocks, onSave, setBlocks])
+    setBlocks(initialBlocks, { skipHistory: true })
+  }, [initialBlocks, setBlocks])
 
-  const selectedBlock = blocks.find((b) => b.id === selectedBlockId) || null
+  const selectedBlock = useMemo(
+    () => blocks.find((b) => b.id === selectedBlockId) ?? null,
+    [blocks, selectedBlockId]
+  )
 
   const handleAddBlock = (type: BlockType) => {
-    const newBlock: BlockProps = {
+    const newBlock = {
       id: nanoid(),
       type,
-      props: BLOCK_REGISTRY[type].defaultProps,
-    }
+      props: { ...BLOCK_REGISTRY[type].defaultProps } as BlockPropsMap[typeof type],
+    } as BlockProps
     addBlock(newBlock)
     selectBlock(newBlock.id)
     toast.success(`${BLOCK_REGISTRY[type].name} ajouté`)
@@ -47,33 +68,16 @@ export const PageEditor: React.FC<PageEditorProps> = ({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
-
-    const oldIndex = blocks.findIndex((b) => b.id === active.id)
-    const newIndex = blocks.findIndex((b) => b.id === over.id)
-    if (oldIndex === -1 || newIndex === -1) return
-
-    const newBlocks = [...blocks]
-    ;[newBlocks[oldIndex], newBlocks[newIndex]] = [newBlocks[newIndex], newBlocks[oldIndex]]
-    setBlocks(newBlocks)
-    autoSave(newBlocks)
-  }
-
-  const autoSave = (blocksToSave: BlockProps[]) => {
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    saveTimeoutRef.current = setTimeout(() => {
-      onSaveRef.current(blocksToSave).catch(() => toast.error('Erreur de sauvegarde'))
-    }, 1000)
+    reorderBlocks(String(active.id), String(over.id))
   }
 
   const handleUpdateBlock = (props: Record<string, unknown>) => {
     if (!selectedBlockId) return
     updateBlock(selectedBlockId, props)
-    autoSave(blocks.map((b) => b.id === selectedBlockId ? { ...b, props: { ...b.props, ...props } } : b))
   }
 
   const handleDeleteBlock = (id: string) => {
     removeBlock(id)
-    autoSave(blocks.filter((b) => b.id !== id))
     toast.success('Bloc supprimé')
   }
 
@@ -82,8 +86,15 @@ export const PageEditor: React.FC<PageEditorProps> = ({
       <SidebarBlocks onAddBlock={handleAddBlock} />
 
       <div className="flex-1 overflow-auto">
-        <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
-          <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+        <DndContext
+          sensors={sensors}
+          onDragEnd={handleDragEnd}
+          collisionDetection={closestCenter}
+        >
+          <SortableContext
+            items={blocks.map((b) => b.id)}
+            strategy={verticalListSortingStrategy}
+          >
             <CanvasEditor
               blocks={blocks}
               selectedBlockId={selectedBlockId}

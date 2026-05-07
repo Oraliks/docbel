@@ -23,10 +23,10 @@ export function NewsPreview({
 }: NewsPreviewProps) {
   return (
     <div className="space-y-6">
-      <div className="text-sm font-semibold text-gray-500 uppercase">{category}</div>
-      <h1 className="text-4xl font-bold text-gray-900">{title || "Titre de l'article"}</h1>
+      <div className="text-sm font-semibold text-muted-foreground uppercase">{category}</div>
+      <h1 className="text-4xl font-bold text-foreground">{title || "Titre de l'article"}</h1>
 
-      <div className="flex gap-6 text-sm text-gray-600">
+      <div className="flex gap-6 text-sm text-muted-foreground">
         <span>📅 Aujourd&apos;hui</span>
         {readingTime && <span>⏱️ {readingTime} min de lecture</span>}
       </div>
@@ -41,10 +41,10 @@ export function NewsPreview({
       </div>
 
       <div className="prose prose-sm max-w-none">
-        <p className="text-gray-700 leading-relaxed">{excerpt || 'Votre description courte apparaîtra ici'}</p>
+        <p className="text-foreground leading-relaxed">{excerpt || 'Votre description courte apparaîtra ici'}</p>
 
         {content && (
-          <div className="mt-8 text-gray-800 whitespace-pre-wrap">
+          <div className="mt-8 text-foreground whitespace-pre-wrap">
             {content.split('\n').map((paragraph, idx) => (
               <p key={idx} className="mb-4">
                 {paragraph}
@@ -58,7 +58,7 @@ export function NewsPreview({
         <CardHeader className="text-center">
           <h3 className="font-semibold">Trouvez cette information utile?</h3>
         </CardHeader>
-        <CardContent className="text-center text-sm text-gray-600">
+        <CardContent className="text-center text-sm text-muted-foreground">
           Partagez cet article avec votre réseau ou contactez-nous pour plus de précisions.
         </CardContent>
       </Card>

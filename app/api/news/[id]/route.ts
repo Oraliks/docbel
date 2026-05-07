@@ -1,28 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { actorLabel } from "@/lib/news/session";
+import { newsUpdateSchema } from "@/lib/news/validation";
+import { slugify } from "@/lib/news/slug";
 
+const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
+
+// Admin-only endpoint. Public pages read articles directly via Prisma in Server Components.
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requireAdminAuth();
+  if (!authCheck.isAuthorized) return authCheck.error;
+
   try {
     const { id } = await params;
-    const article = await prisma.news.findUnique({
-      where: { id },
-    });
-
+    const article = await prisma.news.findUnique({ where: { id } });
     if (!article) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+      return NextResponse.json({ error: "Article not found" }, { status: 404, headers: jsonHeaders });
     }
-
-    return NextResponse.json(article, {
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    return NextResponse.json(article, { headers: jsonHeaders });
   } catch (error) {
     console.error("Error fetching article:", error);
-    return NextResponse.json({ error: "Failed to fetch article" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch article" }, { status: 500, headers: jsonHeaders });
   }
 }
 
@@ -35,55 +39,91 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const body = await req.json();
-    const {
-      title,
-      slug,
-      excerpt,
-      content,
-      category,
-      color,
-      emoji,
-      image,
-      status,
-      featured,
-      scheduledAt,
-      publishedAt,
-      readingTime,
-    } = body;
+    const json = await req.json();
+    const parsed = newsUpdateSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid payload", issues: parsed.error.issues },
+        { status: 400, headers: jsonHeaders }
+      );
+    }
+    const body = parsed.data;
 
-    const article = await prisma.news.update({
-      where: { id },
-      data: {
-        ...(title !== undefined && { title }),
-        ...(slug !== undefined && { slug }),
-        ...(excerpt !== undefined && { excerpt }),
-        ...(content !== undefined && { content }),
-        ...(category !== undefined && { category }),
-        ...(color !== undefined && { color }),
-        ...(emoji !== undefined && { emoji }),
-        ...(image !== undefined && { image: image || null }),
-        ...(status !== undefined && { status }),
-        ...(featured !== undefined && { featured }),
-        ...(readingTime !== undefined && { readingTime }),
-        ...(scheduledAt !== undefined && {
-          scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-        }),
-        ...(publishedAt !== undefined && {
-          publishedAt: publishedAt ? new Date(publishedAt) : null,
-        }),
-      },
-    });
+    let nextSlug: string | undefined;
+    if (body.slug !== undefined) {
+      nextSlug = slugify(body.slug);
+      if (!nextSlug) {
+        return NextResponse.json({ error: "Slug invalide" }, { status: 400, headers: jsonHeaders });
+      }
+      const conflict = await prisma.news.findFirst({
+        where: { slug: nextSlug, NOT: { id } },
+        select: { id: true },
+      });
+      if (conflict) {
+        return NextResponse.json(
+          { error: "Un article avec ce slug existe déjà" },
+          { status: 409, headers: jsonHeaders }
+        );
+      }
+    }
 
-    const actorName = authCheck.user?.name || authCheck.user?.email || "Admin";
-    await logActivity(actorName, "updated", "news", article.title, article.id, `Article mis a jour: ${article.title}`);
+    if (body.status === "scheduled") {
+      const when = body.scheduledAt;
+      if (!when || new Date(when).getTime() <= Date.now()) {
+        return NextResponse.json(
+          { error: "scheduledAt doit être dans le futur" },
+          { status: 400, headers: jsonHeaders }
+        );
+      }
+    }
 
-    return NextResponse.json(article, {
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    const data: Prisma.NewsUpdateInput = {
+      ...(body.title !== undefined && { title: body.title }),
+      ...(nextSlug !== undefined && { slug: nextSlug }),
+      ...(body.excerpt !== undefined && { excerpt: body.excerpt }),
+      ...(body.content !== undefined && { content: body.content }),
+      ...(body.category !== undefined && { category: body.category }),
+      ...(body.color !== undefined && { color: body.color }),
+      ...(body.emoji !== undefined && { emoji: body.emoji }),
+      ...(body.image !== undefined && { image: body.image || null }),
+      ...(body.status !== undefined && { status: body.status }),
+      ...(body.featured !== undefined && { featured: body.featured }),
+      ...(body.readingTime !== undefined && { readingTime: body.readingTime }),
+      ...(body.scheduledAt !== undefined && {
+        scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : null,
+      }),
+      ...(body.publishedAt !== undefined && {
+        publishedAt: body.publishedAt ? new Date(body.publishedAt) : null,
+      }),
+      updatedBy: authCheck.user?.id ?? null,
+    };
+
+    const article = await prisma.news.update({ where: { id }, data });
+
+    await logActivity(
+      actorLabel(authCheck.user),
+      "updated",
+      "news",
+      article.title,
+      article.id,
+      `Article mis à jour: ${article.title}`
+    );
+
+    return NextResponse.json(article, { headers: jsonHeaders });
   } catch (error) {
     console.error("Error updating article:", error);
-    return NextResponse.json({ error: "Failed to update article" }, { status: 500 });
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return NextResponse.json(
+          { error: "Un article avec ce slug existe déjà" },
+          { status: 409, headers: jsonHeaders }
+        );
+      }
+      if (error.code === "P2025") {
+        return NextResponse.json({ error: "Article not found" }, { status: 404, headers: jsonHeaders });
+      }
+    }
+    return NextResponse.json({ error: "Failed to update article" }, { status: 500, headers: jsonHeaders });
   }
 }
 
@@ -96,24 +136,25 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const article = await prisma.news.findUnique({
-      where: { id },
-    });
-
+    const article = await prisma.news.findUnique({ where: { id } });
     if (!article) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+      return NextResponse.json({ error: "Article not found" }, { status: 404, headers: jsonHeaders });
     }
 
-    await prisma.news.delete({
-      where: { id },
-    });
+    await prisma.news.delete({ where: { id } });
 
-    const actorName = authCheck.user?.name || authCheck.user?.email || "Admin";
-    await logActivity(actorName, "deleted", "news", article.title, article.id, `Article supprime: ${article.title}`);
+    await logActivity(
+      actorLabel(authCheck.user),
+      "deleted",
+      "news",
+      article.title,
+      article.id,
+      `Article supprimé: ${article.title}`
+    );
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { headers: jsonHeaders });
   } catch (error) {
     console.error("Error deleting article:", error);
-    return NextResponse.json({ error: "Failed to delete article" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete article" }, { status: 500, headers: jsonHeaders });
   }
 }

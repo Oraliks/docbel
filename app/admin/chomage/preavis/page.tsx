@@ -1,11 +1,12 @@
-import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { promises as fs } from "fs";
 import path from "path";
+import { auth } from "@/lib/auth";
 import { PreavisEditor } from "@/components/admin/preavis-editor";
 
 export default async function PreavisAdminPage() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
   const role = (session?.user as { role?: string } | undefined)?.role;
   if (!session || role !== "admin") {
     notFound();

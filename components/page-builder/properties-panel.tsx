@@ -1,27 +1,77 @@
 'use client'
 
 import React from 'react'
-import { BlockProps } from '@/lib/page-builder/types'
+import {
+  BlockProps,
+  CtaProps,
+  FeaturesProps,
+  HeroProps,
+  ImageProps,
+  SectionProps,
+} from '@/lib/page-builder/types'
 import { BLOCK_REGISTRY } from '@/lib/page-builder/block-registry'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { HeroSettings } from './block-settings/hero-settings'
+import { CtaSettings } from './block-settings/cta-settings'
+import { ImageSettings } from './block-settings/image-settings'
+import { FeaturesSettings } from './block-settings/features-settings'
+import { SectionSettings } from './block-settings/section-settings'
 
 interface PropertiesPanelProps {
   block: BlockProps
   onChange: (props: Record<string, unknown>) => void
 }
 
-export function PropertiesPanel({ block, onChange }: PropertiesPanelProps) {
+function BlockSettings({ block, onChange }: PropertiesPanelProps) {
+  switch (block.type) {
+    case 'hero':
+      return (
+        <HeroSettings
+          value={block.props}
+          onChange={(v: HeroProps) => onChange(v as unknown as Record<string, unknown>)}
+        />
+      )
+    case 'cta':
+      return (
+        <CtaSettings
+          value={block.props}
+          onChange={(v: CtaProps) => onChange(v as unknown as Record<string, unknown>)}
+        />
+      )
+    case 'image':
+      return (
+        <ImageSettings
+          value={block.props}
+          onChange={(v: ImageProps) => onChange(v as unknown as Record<string, unknown>)}
+        />
+      )
+    case 'features':
+      return (
+        <FeaturesSettings
+          value={block.props}
+          onChange={(v: FeaturesProps) => onChange(v as unknown as Record<string, unknown>)}
+        />
+      )
+    case 'section':
+      return (
+        <SectionSettings
+          value={block.props}
+          onChange={(v: SectionProps) => onChange(v as unknown as Record<string, unknown>)}
+        />
+      )
+    default:
+      return null
+  }
+}
+
+export const PropertiesPanel = React.memo(function PropertiesPanel({
+  block,
+  onChange,
+}: PropertiesPanelProps) {
   const config = BLOCK_REGISTRY[block.type]
 
-  const handleChange = (key: string, value: unknown) => {
-    onChange({ [key]: value })
-  }
-
   return (
-    <div className="w-72 border-l bg-card overflow-y-auto p-4 space-y-4">
+    <div className="w-80 border-l bg-card overflow-y-auto p-4 space-y-4">
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">{config.name}</CardTitle>
@@ -31,51 +81,7 @@ export function PropertiesPanel({ block, onChange }: PropertiesPanelProps) {
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
-        {Object.entries(block.props).map(([key, value]) => (
-          <div key={key} className="space-y-2">
-            <Label className="text-xs font-medium capitalize">{key}</Label>
-            {typeof value === 'string' && key.includes('http') ? (
-              <Input
-                type="url"
-                value={value}
-                onChange={(e) => handleChange(key, e.target.value)}
-                className="h-8 text-xs"
-              />
-            ) : typeof value === 'string' && (key === 'content' || key === 'description') ? (
-              <Textarea
-                value={value}
-                onChange={(e) => handleChange(key, e.target.value)}
-                className="h-20 text-xs"
-              />
-            ) : typeof value === 'string' ? (
-              <Input
-                value={value}
-                onChange={(e) => handleChange(key, e.target.value)}
-                className="h-8 text-xs"
-              />
-            ) : typeof value === 'number' ? (
-              <Input
-                type="number"
-                value={value}
-                onChange={(e) => handleChange(key, Number(e.target.value))}
-                className="h-8 text-xs"
-              />
-            ) : typeof value === 'boolean' ? (
-              <input
-                type="checkbox"
-                checked={value}
-                onChange={(e) => handleChange(key, e.target.checked)}
-                className="h-4 w-4"
-              />
-            ) : Array.isArray(value) ? (
-              <div className="text-xs text-muted-foreground">Array ({value.length} items)</div>
-            ) : (
-              <div className="text-xs text-muted-foreground">Object</div>
-            )}
-          </div>
-        ))}
-      </div>
+      <BlockSettings block={block} onChange={onChange} />
     </div>
   )
-}
+})

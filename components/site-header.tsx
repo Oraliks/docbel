@@ -2,7 +2,8 @@
 
 import { useSyncExternalStore } from "react"
 import Link from "next/link"
-import { signOut, useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { authClient } from "@/lib/auth-client"
 import { useTheme } from "@/components/theme-provider"
 import { HomeIcon, MoonIcon, ShieldCheckIcon, SunIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -18,11 +19,17 @@ import {
 const emptySubscribe = () => () => {}
 
 export function SiteHeader() {
-  const { data: session } = useSession()
+  const router = useRouter()
+  const { data: session } = authClient.useSession()
   const { resolvedTheme, setTheme } = useTheme()
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false)
 
   const isDark = mounted && resolvedTheme === "dark"
+  const handleSignOut = async () => {
+    await authClient.signOut()
+    router.push("/")
+    router.refresh()
+  }
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center border-b bg-background/95 backdrop-blur transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
@@ -61,7 +68,7 @@ export function SiteHeader() {
               <>
                 <Tooltip>
                   <TooltipTrigger
-                    render={<Link href="/" />}
+                    render={(props) => <Link href="/" {...props} />}
                     className="inline-flex size-7 items-center justify-center rounded-[min(var(--radius-md),12px)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
                     <HomeIcon />
@@ -70,7 +77,7 @@ export function SiteHeader() {
                   <TooltipContent side="bottom">Aller a l&apos;accueil</TooltipContent>
                 </Tooltip>
 
-                <Button variant="outline" size="sm" onClick={() => signOut({ callbackUrl: "/" })}>
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
                   Deconnexion
                 </Button>
               </>

@@ -45,7 +45,10 @@ export async function POST(
 
   const generated = await prisma.generatedDocument.findUnique({
     where: { id },
-    include: { outputFile: true, template: true },
+    include: {
+      outputFile: true,
+      template: { include: { tool: { select: { name: true } } } },
+    },
   });
   if (!generated) {
     return NextResponse.json({ error: "Document introuvable" }, { status: 404 });
@@ -85,10 +88,10 @@ export async function POST(
   try {
     await sendDocumentEmail({
       to,
-      subject: `Votre document : ${generated.outputFile.name}`,
-      text: `Bonjour,\n\nVeuillez trouver en pièce jointe le document généré via beldoc.\n\nCe lien expire le ${generated.expiresAt.toLocaleString("fr-BE")}.\n\nCordialement,\nbeldoc`,
       filename: generated.outputFile.name,
       attachment: content,
+      expiresAt: generated.expiresAt,
+      templateName: generated.template.tool.name,
     });
   } catch (err) {
     console.error("sendDocumentEmail error:", err);

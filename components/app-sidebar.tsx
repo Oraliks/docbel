@@ -98,6 +98,28 @@ const defaultData = {
       icon: (
         <FileTextIcon className="size-4" />
       ),
+      items: [
+        {
+          title: "Modèles",
+          url: "/admin/documents",
+        },
+        {
+          title: "Documents générés",
+          url: "/admin/documents/generated",
+        },
+        {
+          title: "Statistiques",
+          url: "/admin/documents/stats",
+        },
+        {
+          title: "Email",
+          url: "/admin/documents/email",
+        },
+        {
+          title: "RGPD",
+          url: "/admin/documents/rgpd",
+        },
+      ],
     },
     {
       title: "Newsletter",

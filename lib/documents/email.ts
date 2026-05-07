@@ -1,11 +1,19 @@
 import { Resend } from "resend";
+import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
 
 export interface SendDocumentEmailInput {
   to: string;
-  subject: string;
-  text: string;
   filename: string;
   attachment: Buffer;
+  expiresAt: Date;
+  templateName: string;
+}
+
+function applyTemplate(
+  template: string,
+  vars: Record<string, string>
+): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
 }
 
 export async function sendDocumentEmail(
@@ -16,12 +24,26 @@ export async function sendDocumentEmail(
   if (!apiKey) throw new Error("RESEND_API_KEY non configurée");
   if (!from) throw new Error("EMAIL_FROM non configurée");
 
+  const [subjectTpl, bodyTpl] = await Promise.all([
+    getSetting(SETTING_KEYS.EMAIL_SUBJECT),
+    getSetting(SETTING_KEYS.EMAIL_BODY),
+  ]);
+
+  const vars = {
+    filename: input.filename,
+    expiresAt: input.expiresAt.toLocaleString("fr-BE"),
+    templateName: input.templateName,
+  };
+
+  const subject = applyTemplate(subjectTpl, vars);
+  const text = applyTemplate(bodyTpl, vars);
+
   const resend = new Resend(apiKey);
   const result = await resend.emails.send({
     from,
     to: input.to,
-    subject: input.subject,
-    text: input.text,
+    subject,
+    text,
     attachments: [
       {
         filename: input.filename,

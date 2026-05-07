@@ -358,6 +358,13 @@ model DocumentTemplateRevision {
   @@index([createdAt])
 }
 
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
 model GeneratedDocument {
   id           String           @id @default(cuid())
   templateId   String

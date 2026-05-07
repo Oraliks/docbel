@@ -66,16 +66,14 @@ export function SiteHeader() {
 
             {session && (
               <>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={(props) => <Link href="/" {...props} />}
-                    className="inline-flex size-7 items-center justify-center rounded-[min(var(--radius-md),12px)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    <HomeIcon />
-                    <span className="sr-only">Aller a l&apos;accueil</span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Aller a l&apos;accueil</TooltipContent>
-                </Tooltip>
+                <Link
+                  href="/"
+                  title="Aller à l'accueil"
+                  className="inline-flex size-7 items-center justify-center rounded-[min(var(--radius-md),12px)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <HomeIcon />
+                  <span className="sr-only">Aller à l&apos;accueil</span>
+                </Link>
 
                 <Button variant="outline" size="sm" onClick={handleSignOut}>
                   Deconnexion

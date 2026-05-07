@@ -98,7 +98,7 @@ export function TemplateList({ templates }: TemplateListProps) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {templates.map((t) => {
             const status = statusLabel[t.status] || { label: t.status, variant: "outline" as const };
             return (

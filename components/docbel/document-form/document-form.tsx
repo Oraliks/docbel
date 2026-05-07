@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { authClient } from "@/lib/auth-client";
 import { DocumentField, GenerationPayload, Lang, getFieldLabel } from "@/lib/documents/types";
 import { isFieldVisible } from "@/lib/documents/schema-zod";
+import { IconDisplay } from "@/components/admin/documents/icon-picker";
 import { RgpdConsent } from "./rgpd-consent";
 import { DynamicField } from "./dynamic-field";
 import { ConditionalWrapper } from "./conditional-wrapper";
@@ -350,8 +351,8 @@ export function DocumentForm({ slug }: DocumentFormProps) {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <span className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-2xl">
-              {data.tool.icon || "📄"}
+            <span className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <IconDisplay value={data.tool.icon || "FileText"} className="w-6 h-6" />
             </span>
             <div>
               <CardTitle className="text-2xl">{data.tool.name}</CardTitle>

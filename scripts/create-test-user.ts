@@ -26,6 +26,20 @@ async function main() {
       },
     })
 
+    await prisma.account.upsert({
+      where: {
+        providerId_accountId: { providerId: "credential", accountId: user.id },
+      },
+      update: { password: passwordHash },
+      create: {
+        id: `acc_${user.id}_credential`,
+        accountId: user.id,
+        providerId: "credential",
+        userId: user.id,
+        password: passwordHash,
+      },
+    })
+
     console.log("Member user ready")
     console.log(`Email: ${email}`)
     console.log(`Password: ${password}`)

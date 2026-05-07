@@ -1,18 +1,16 @@
-import { auth } from "@/auth"
+import { headers } from "next/headers"
 import { notFound } from "next/navigation"
+import { auth } from "@/lib/auth"
 import { ChangelogManager } from "@/components/admin/changelog-manager"
 
 export default async function ChangelogPage() {
-  // Vérifier si l'utilisateur est authentifié
-  const session = await auth()
+  const session = await auth.api.getSession({ headers: await headers() })
 
-  // Si pas authentifié, afficher 404
   if (!session) {
     notFound()
   }
 
-  // Vérifier si l'utilisateur a le rôle admin
-  const userRole = (session.user as { role?: string })?.role
+  const userRole = (session.user as { role?: string }).role
   if (userRole !== "admin") {
     notFound()
   }

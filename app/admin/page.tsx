@@ -1,16 +1,17 @@
-import { auth } from "@/auth"
+import { headers } from "next/headers"
 import { notFound } from "next/navigation"
+import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AdminDashboard } from "@/components/admin/admin-dashboard"
 
 export default async function AdminPage() {
-  const session = await auth()
+  const session = await auth.api.getSession({ headers: await headers() })
 
   if (!session) {
     notFound()
   }
 
-  const userRole = (session.user as { role?: string })?.role
+  const userRole = (session.user as { role?: string }).role
   if (userRole !== "admin") {
     notFound()
   }
@@ -45,7 +46,6 @@ export default async function AdminPage() {
     title: p.title,
     slug: p.slug,
     status: p.status,
-    content: p.content,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   }))

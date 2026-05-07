@@ -96,26 +96,26 @@ export default function UsersPage() {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case "admin":
-        return "bg-red-100 text-red-800"
+        return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200"
       case "moderator":
-        return "bg-blue-100 text-blue-800"
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-muted text-muted-foreground"
     }
   }
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200"
       case "pending":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200"
       case "locked":
-        return "bg-orange-100 text-orange-800"
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200"
       case "disabled":
-        return "bg-gray-200 text-gray-700"
+        return "bg-muted text-muted-foreground"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-muted text-muted-foreground"
     }
   }
 
@@ -139,7 +139,7 @@ export default function UsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Utilisateurs</h1>
-          <p className="text-gray-500 mt-1">Gérez les utilisateurs du système</p>
+          <p className="text-muted-foreground mt-1">Gérez les utilisateurs du système</p>
         </div>
         <Button
           onClick={() => setShowCreateDialog(true)}
@@ -170,19 +170,19 @@ export default function UsersPage() {
         onConfirm={handleUserDeleted}
       />
 
-      <div className="rounded-lg border bg-white overflow-hidden">
+      <div className="rounded-lg border bg-card overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="size-8 animate-spin text-gray-400" />
+            <Loader2 className="size-8 animate-spin text-muted-foreground" />
           </div>
         ) : users.length === 0 ? (
-          <div className="flex items-center justify-center h-64 text-gray-500">
+          <div className="flex items-center justify-center h-64 text-muted-foreground">
             <p>Aucun utilisateur trouvé</p>
           </div>
         ) : (
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50">
+              <TableRow className="bg-muted/50">
                 <TableHead className="font-semibold">Nom</TableHead>
                 <TableHead className="font-semibold">Email</TableHead>
                 <TableHead className="font-semibold">Rôle</TableHead>
@@ -194,9 +194,9 @@ export default function UsersPage() {
             </TableHeader>
             <TableBody>
               {users.map((user) => (
-                <TableRow key={user.id} className="hover:bg-gray-50">
+                <TableRow key={user.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell className="text-gray-600">{user.email}</TableCell>
+                  <TableCell className="text-muted-foreground">{user.email}</TableCell>
                   <TableCell>
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(
@@ -215,10 +215,10 @@ export default function UsersPage() {
                       {getStatusLabel(user.status)}
                     </span>
                   </TableCell>
-                  <TableCell className="text-gray-600 text-sm">
+                  <TableCell className="text-muted-foreground text-sm">
                     {user.lastLoginAt ? formatDate(user.lastLoginAt) : "Jamais"}
                   </TableCell>
-                  <TableCell className="text-gray-600 text-sm">
+                  <TableCell className="text-muted-foreground text-sm">
                     {formatDate(user.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">

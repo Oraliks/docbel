@@ -1,12 +1,16 @@
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
-import { PageLayout } from '@/components/page-builder/page-layout'
+import { PublicRenderer } from '@/components/page-builder/public-renderer'
 import { BlockProps } from '@/lib/page-builder/types'
+import { buildPageJsonLd } from '@/lib/page-builder/schema-org'
+
+export const dynamicParams = true
+export const revalidate = 60
 
 export async function generateStaticParams() {
   const pages = await prisma.page.findMany({
-    where: { status: 'published' },
+    where: { status: 'published', deletedAt: null },
     select: { slug: true },
   })
   return pages.map((page) => ({ slug: page.slug }))
@@ -19,7 +23,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const page = await prisma.page.findFirst({
-    where: { slug, status: 'published' },
+    where: { slug, status: 'published', deletedAt: null },
   })
 
   if (!page) return {}
@@ -41,28 +45,46 @@ export default async function PublicPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  console.log('🔍 Cherchant page avec slug:', slug)
 
   const page = await prisma.page.findFirst({
-    where: {
-      slug,
-      status: 'published',
-    },
+    where: { slug, status: 'published', deletedAt: null },
   })
 
-  console.log('✅ Page trouvée:', page?.slug || 'AUCUNE')
+  if (!page) notFound()
 
-  if (!page) {
-    console.log('❌ Page non trouvée, affichage 404')
-    notFound()
-  }
+  const blocks: BlockProps[] = Array.isArray(page.content)
+    ? (page.content as unknown as BlockProps[])
+    : []
 
-  let blocks: BlockProps[] = []
-  try {
-    blocks = JSON.parse(page.content)
-  } catch {
-    blocks = []
-  }
+  const jsonLd = buildPageJsonLd(blocks, {
+    title: page.title,
+    metaTitle: page.metaTitle,
+    metaDesc: page.metaDesc,
+    ogImage: page.ogImage,
+    slug: page.slug,
+    updatedAt: page.updatedAt,
+  })
 
-  return <PageLayout blocks={blocks} title={page.title} />
+  return (
+    <>
+      {jsonLd.map((data, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+        />
+      ))}
+      <PublicRenderer
+        blocks={blocks}
+        context={{
+          site: { name: 'Docbel' },
+          page: {
+            title: page.title,
+            slug: page.slug,
+            description: page.metaDesc ?? undefined,
+          },
+        }}
+      />
+    </>
+  )
 }

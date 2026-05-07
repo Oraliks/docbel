@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useSession } from "next-auth/react"
+import { authClient } from "@/lib/auth-client"
 import { useState, useEffect } from "react"
 
 import { NavMain } from "@/components/nav-main"
@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, FolderIcon, UsersIcon, CommandIcon, KeyIcon, NewspaperIcon, MailIcon, Wrench } from "lucide-react"
+import { LayoutDashboardIcon, FolderIcon, UsersIcon, CommandIcon, KeyIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultData = {
@@ -93,6 +93,35 @@ const defaultData = {
       ],
     },
     {
+      title: "Documents",
+      url: "/admin/documents",
+      icon: (
+        <FileTextIcon className="size-4" />
+      ),
+      items: [
+        {
+          title: "Modèles",
+          url: "/admin/documents",
+        },
+        {
+          title: "Documents générés",
+          url: "/admin/documents/generated",
+        },
+        {
+          title: "Statistiques",
+          url: "/admin/documents/stats",
+        },
+        {
+          title: "Email",
+          url: "/admin/documents/email",
+        },
+        {
+          title: "RGPD",
+          url: "/admin/documents/rgpd",
+        },
+      ],
+    },
+    {
       title: "Newsletter",
       url: "/admin/newsletter",
       icon: (
@@ -105,7 +134,7 @@ const defaultData = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { data: session } = useSession()
+  const { data: session } = authClient.useSession()
   const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {

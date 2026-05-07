@@ -21,7 +21,7 @@ interface CategoryData {
 }
 
 const STATUS_DOTS: Record<string, string> = {
-  draft: 'bg-gray-400',
+  draft: 'bg-muted-foreground',
   published: 'bg-green-500',
   scheduled: 'bg-blue-500',
   archived: 'bg-red-500'
@@ -124,15 +124,15 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
   return (
     <div className="space-y-6">
       {/* Custom Tabs */}
-      <div className="flex border-b border-gray-200 gap-8">
+      <div className="flex border-b border-border gap-8">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`pb-3 pt-0 text-sm font-medium border-b-2 transition-colors -mb-px ${
               activeTab === tab.id
-                ? 'border-red-600 text-black'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
             {tab.label}
@@ -145,7 +145,7 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
           {/* MAIN COLUMN */}
           <div className="lg:col-span-2 space-y-5">
             {/* Title */}
-            <Card className={`border bg-white p-5 shadow-none gap-0 ${errors.title ? 'border-red-500' : ''}`}>
+            <Card className={`border bg-card p-5 shadow-none gap-0 ${errors.title ? 'border-red-500' : ''}`}>
               <label className="block text-sm font-semibold mb-3">
                 Titre <span className="text-red-600">*</span>
               </label>
@@ -159,11 +159,11 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
             </Card>
 
             {/* Content */}
-            <Card className={`border bg-white p-5 shadow-none gap-0 ${errors.content ? 'border-red-500' : ''}`}>
+            <Card className={`border bg-card p-5 shadow-none gap-0 ${errors.content ? 'border-red-500' : ''}`}>
               <label className="block text-sm font-semibold mb-3">
                 Contenu <span className="text-red-600">*</span>
               </label>
-              <div className={`rounded-md overflow-hidden border ${errors.content ? 'border-red-500' : 'border-gray-200'}`}>
+              <div className={`rounded-md overflow-hidden border ${errors.content ? 'border-red-500' : 'border-border'}`}>
                 <RichTextEditor
                   value={form.content}
                   onChange={(html) => onFieldChange('content', html)}
@@ -172,7 +172,7 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                 />
               </div>
               {errors.content && <p className="text-red-600 text-sm mt-2">⚠️ {errors.content}</p>}
-              <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
+              <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
                 <span>Temps de lecture : ~ {form.readingTime} min</span>
                 <div className="flex items-center gap-2">
                   <span>{wordCount.toLocaleString('fr-FR')} mots • {charCount.toLocaleString('fr-FR')} caractères</span>
@@ -182,7 +182,7 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
             </Card>
 
             {/* Excerpt */}
-            <Card className={`border bg-white p-5 shadow-none gap-0 ${errors.excerpt ? 'border-red-500' : ''}`}>
+            <Card className={`border bg-card p-5 shadow-none gap-0 ${errors.excerpt ? 'border-red-500' : ''}`}>
               <label className="block text-sm font-semibold mb-3">
                 Description courte <span className="text-red-600">*</span>
               </label>
@@ -195,7 +195,7 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                 className={`resize-y ${errors.excerpt ? 'border-red-500 focus:border-red-500' : ''}`}
               />
               {errors.excerpt && <p className="text-red-600 text-sm mt-2">⚠️ {errors.excerpt}</p>}
-              <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+              <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                 <span>Courte description utilisée dans les listes et les aperçus (recommandé : 120-160 caractères).</span>
                 <span className="ml-4 whitespace-nowrap">{form.excerpt.length} / 160</span>
               </div>
@@ -205,7 +205,7 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
           {/* SIDEBAR COLUMN */}
           <div className="space-y-5">
             {/* Status */}
-            <Card className="border bg-white p-5 shadow-none gap-0">
+            <Card className="border bg-card p-5 shadow-none gap-0">
               <label className="block text-sm font-semibold mb-3">Statut</label>
               <Select value={form.status} onValueChange={(v) => onFieldChange('status', v)}>
                 <SelectTrigger className="h-10 w-full">
@@ -228,7 +228,7 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
             </Card>
 
             {/* Category */}
-            <Card className={`border bg-white p-5 shadow-none gap-0 ${errors.category ? 'border-red-500' : ''}`}>
+            <Card className={`border bg-card p-5 shadow-none gap-0 ${errors.category ? 'border-red-500' : ''}`}>
               <label className="block text-sm font-semibold mb-3">
                 Catégorie <span className="text-red-600">*</span>
               </label>
@@ -248,13 +248,13 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                         style={{ backgroundColor: selectedCategoryColor }}
                       />
                     )}
-                    <Folder className="w-4 h-4 text-gray-500" />
+                    <Folder className="w-4 h-4 text-muted-foreground" />
                     <SelectValue placeholder="Sélectionner une catégorie" />
                   </div>
                 </SelectTrigger>
                 <SelectContent>
                   {categoriesLoading ? (
-                    <div className="p-2 text-sm text-gray-500">Chargement...</div>
+                    <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
                   ) : (
                     categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.name}>
@@ -274,7 +274,7 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
             </Card>
 
             {/* Image de présentation */}
-            <Card className="border bg-white p-5 shadow-none gap-0">
+            <Card className="border bg-card p-5 shadow-none gap-0">
               <label className="block text-sm font-semibold mb-3">Image de présentation</label>
               <input
                 ref={fileInputRef}
@@ -288,7 +288,7 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                 }}
               />
               {form.image ? (
-                <div className="relative rounded-lg overflow-hidden border border-gray-200">
+                <div className="relative rounded-lg overflow-hidden border border-border">
                   {/* The preview may point to any uploaded or external URL and is intentionally rendered without next/image. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -299,10 +299,10 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                   <button
                     type="button"
                     onClick={() => onFieldChange('image', '')}
-                    className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-red-50 transition-colors"
+                    className="absolute top-2 right-2 bg-card rounded-full p-1 shadow-md hover:bg-destructive/10 transition-colors"
                     title="Supprimer l'image"
                   >
-                    <X className="w-4 h-4 text-gray-600" />
+                    <X className="w-4 h-4 text-muted-foreground" />
                   </button>
                 </div>
               ) : (
@@ -320,36 +320,36 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                   }}
                   className={`w-full border-2 border-dashed rounded-lg p-6 flex flex-col items-center gap-2 transition-colors cursor-pointer ${
                     imageDragging
-                      ? 'border-red-400 bg-red-50'
-                      : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                      ? 'border-primary/60 bg-primary/5'
+                      : 'border-input hover:border-muted-foreground hover:bg-muted/50'
                   }`}
                 >
                   {imageUploading ? (
-                    <Loader2 className="w-7 h-7 text-gray-400 animate-spin" />
+                    <Loader2 className="w-7 h-7 text-muted-foreground animate-spin" />
                   ) : (
-                    <ImagePlus className="w-7 h-7 text-gray-400" />
+                    <ImagePlus className="w-7 h-7 text-muted-foreground" />
                   )}
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-muted-foreground">
                     {imageUploading ? 'Téléchargement...' : 'Cliquer ou glisser une image'}
                   </span>
-                  <span className="text-xs text-gray-400">JPG, PNG, WebP, GIF · max 5 Mo</span>
+                  <span className="text-xs text-muted-foreground/70">JPG, PNG, WebP, GIF · max 5 Mo</span>
                 </button>
               )}
             </Card>
 
             {/* Options */}
-            <Card className="border bg-white p-5 shadow-none gap-0">
+            <Card className="border bg-card p-5 shadow-none gap-0">
               <label className="block text-sm font-semibold mb-3">Options</label>
               <label className="flex items-start gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={form.featured}
                   onChange={(e) => onFieldChange('featured', e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-gray-300"
+                  className="mt-0.5 w-4 h-4 rounded border-input"
                 />
                 <span className="text-sm">Mettre en avant</span>
               </label>
-              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                 Les articles mis en avant seront affichés en priorité dans les listes.
               </p>
             </Card>
@@ -358,7 +358,7 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
       )}
 
       {activeTab === 'seo' && (
-        <Card className="border bg-white p-8 shadow-none">
+        <Card className="border bg-card p-8 shadow-none">
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold mb-4">SEO</h2>
@@ -373,7 +373,7 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                 placeholder="slug-article"
                 className="h-10 font-mono text-sm"
               />
-              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                 URL conviviale de l&apos;article. Utilisée des liens minuscules, chiffres et tirets.
               </p>
             </div>

@@ -17,28 +17,32 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    // Récursivement mettre à jour tous les enfants
-    async function updateChildren(folderId: string, newIsPrivate: boolean) {
-      const children = await prisma.file.findMany({
-        where: { parentId: folderId },
+    let frontier: string[] = [parentId];
+    let totalUpdated = 0;
+    const seen = new Set<string>([parentId]);
+
+    while (frontier.length > 0) {
+      const result = await prisma.file.updateMany({
+        where: { parentId: { in: frontier } },
+        data: { isPrivate },
+      });
+      totalUpdated += result.count;
+
+      const childFolders = await prisma.file.findMany({
+        where: { parentId: { in: frontier }, type: "folder" },
+        select: { id: true },
       });
 
-      for (const child of children) {
-        await prisma.file.update({
-          where: { id: child.id },
-          data: { isPrivate: newIsPrivate },
+      frontier = childFolders
+        .map((f) => f.id)
+        .filter((id) => {
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
         });
-
-        // Si c'est un dossier, mettre à jour ses enfants aussi
-        if (child.type === "folder") {
-          await updateChildren(child.id, newIsPrivate);
-        }
-      }
     }
 
-    await updateChildren(parentId, isPrivate);
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, updated: totalUpdated });
   } catch (error) {
     console.error("PATCH /api/files/bulk-update error:", error);
     return NextResponse.json(

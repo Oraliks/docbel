@@ -2,7 +2,8 @@
 
 import { useSyncExternalStore } from "react"
 import Link from "next/link"
-import { signOut, useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { authClient } from "@/lib/auth-client"
 import { useTheme } from "@/components/theme-provider"
 import { HomeIcon, MoonIcon, ShieldCheckIcon, SunIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -18,11 +19,17 @@ import {
 const emptySubscribe = () => () => {}
 
 export function SiteHeader() {
-  const { data: session } = useSession()
+  const router = useRouter()
+  const { data: session } = authClient.useSession()
   const { resolvedTheme, setTheme } = useTheme()
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false)
 
   const isDark = mounted && resolvedTheme === "dark"
+  const handleSignOut = async () => {
+    await authClient.signOut()
+    router.push("/")
+    router.refresh()
+  }
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center border-b bg-background/95 backdrop-blur transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
@@ -59,18 +66,16 @@ export function SiteHeader() {
 
             {session && (
               <>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={<Link href="/" />}
-                    className="inline-flex size-7 items-center justify-center rounded-[min(var(--radius-md),12px)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    <HomeIcon />
-                    <span className="sr-only">Aller a l&apos;accueil</span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Aller a l&apos;accueil</TooltipContent>
-                </Tooltip>
+                <Link
+                  href="/"
+                  title="Aller à l'accueil"
+                  className="inline-flex size-7 items-center justify-center rounded-[min(var(--radius-md),12px)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <HomeIcon />
+                  <span className="sr-only">Aller à l&apos;accueil</span>
+                </Link>
 
-                <Button variant="outline" size="sm" onClick={() => signOut({ callbackUrl: "/" })}>
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
                   Deconnexion
                 </Button>
               </>

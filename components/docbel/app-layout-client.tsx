@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { Sidebar } from "./sidebar";
@@ -19,13 +19,13 @@ const PUBLIC_LAYOUT_STYLE = {
 export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = authClient.useSession();
   const { resolvedTheme, setTheme } = useTheme();
   const [lang, setLang] = useState("FR");
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [toolsCat, setToolsCat] = useState("Tous");
 
-  const userLoggedIn = status === "authenticated";
+  const userLoggedIn = !isPending && Boolean(session?.user);
   const dark = resolvedTheme === "dark";
 
   if (pathname.startsWith("/admin")) {
@@ -93,7 +93,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
           setNewsFilter={() => {}}
         />
 
-        <SidebarInset className="min-h-svh">
+        <SidebarInset className="min-h-svh text-foreground">
           <TopBarNav
             accent="#C8102E"
             dark={dark}

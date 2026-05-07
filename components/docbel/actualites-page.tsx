@@ -37,13 +37,14 @@ import { NewsItem } from "@/lib/docbel-data";
 
 interface ActualitesPageProps {
   onArticleClick?: (article: NewsItem) => void;
+  initialArticles?: NewsItem[];
 }
 
 type SortOrder = "recent" | "popular";
 
-export function ActualitesPage({ onArticleClick }: ActualitesPageProps) {
-  const [articles, setArticles] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export function ActualitesPage({ onArticleClick, initialArticles }: ActualitesPageProps) {
+  const [articles, setArticles] = useState<NewsItem[]>(initialArticles ?? []);
+  const [loading, setLoading] = useState(initialArticles === undefined);
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [sortBy, setSortBy] = useState<SortOrder>("recent");
   const [page, setPage] = useState(0);
@@ -53,9 +54,10 @@ export function ActualitesPage({ onArticleClick }: ActualitesPageProps) {
   const perPage = 6;
 
   useEffect(() => {
+    if (initialArticles !== undefined) return;
     const fetchArticles = async () => {
       try {
-        const response = await fetch("/api/news?status=published");
+        const response = await fetch("/api/news?status=published&limit=100");
         if (!response.ok) {
           setArticles([]);
           return;
@@ -104,7 +106,7 @@ export function ActualitesPage({ onArticleClick }: ActualitesPageProps) {
     };
 
     void fetchArticles();
-  }, []);
+  }, [initialArticles]);
 
   const categories = ["Tous", ...Array.from(new Set(articles.map((item) => item.tag)))];
 

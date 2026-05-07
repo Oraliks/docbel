@@ -11,7 +11,7 @@ type BootstrapUser = {
 async function upsertUser(user: BootstrapUser) {
   const passwordHash = await bcrypt.hash(user.password, 10)
 
-  return prisma.user.upsert({
+  const saved = await prisma.user.upsert({
     where: { email: user.email },
     update: {
       name: user.name,
@@ -29,6 +29,22 @@ async function upsertUser(user: BootstrapUser) {
       status: "active",
     },
   })
+
+  await prisma.account.upsert({
+    where: {
+      providerId_accountId: { providerId: "credential", accountId: saved.id },
+    },
+    update: { password: passwordHash },
+    create: {
+      id: `acc_${saved.id}_credential`,
+      accountId: saved.id,
+      providerId: "credential",
+      userId: saved.id,
+      password: passwordHash,
+    },
+  })
+
+  return saved
 }
 
 async function main() {

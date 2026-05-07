@@ -78,7 +78,7 @@ export default function CategoriesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Catégories d&apos;articles</h1>
-          <p className="text-gray-500 mt-1">Gérez les catégories et leurs couleurs</p>
+          <p className="text-muted-foreground mt-1">Gérez les catégories et leurs couleurs</p>
         </div>
         <Button onClick={() => setShowDialog(true)} className="gap-2">
           <Plus className="w-4 h-4" />
@@ -96,10 +96,10 @@ export default function CategoriesPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Chargement...</div>
+            <div className="text-center py-8 text-muted-foreground">Chargement...</div>
           ) : categories.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">Aucune catégorie pour le moment</p>
+              <p className="text-muted-foreground mb-4">Aucune catégorie pour le moment</p>
               <Button onClick={() => setShowDialog(true)} variant="outline" size="sm">
                 Créer la première
               </Button>
@@ -124,11 +124,11 @@ export default function CategoriesPage() {
                           style={{ backgroundColor: category.color }}
                           title={category.color}
                         />
-                        <code className="text-xs text-gray-500">{category.color}</code>
+                        <code className="text-xs text-muted-foreground">{category.color}</code>
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell className="text-sm text-gray-500">
+                    <TableCell className="text-sm text-muted-foreground">
                       {new Date(category.createdAt).toLocaleDateString('fr-FR')}
                     </TableCell>
                     <TableCell className="text-right">

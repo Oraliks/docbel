@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { AlertCircleIcon, LoaderCircleIcon, LogInIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -29,20 +29,21 @@ interface LoginModalProps {
 }
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  CredentialsSignin: "Email ou mot de passe incorrect.",
   invalid_credentials: "Email ou mot de passe incorrect.",
+  INVALID_EMAIL_OR_PASSWORD: "Email ou mot de passe incorrect.",
   account_inactive: "Ce compte est inactif. Contactez un administrateur.",
   account_locked: "Compte temporairement verrouillé après plusieurs tentatives.",
 }
 
-function getAuthErrorMessage(result: { error?: string | null; code?: string | null } | undefined) {
-  const key = result?.code || result?.error || ""
-  return AUTH_ERROR_MESSAGES[key] || "Connexion impossible. Vérifiez vos identifiants."
+function getAuthErrorMessage(error: { code?: string | null; message?: string | null } | null | undefined) {
+  const key = error?.code || ""
+  if (key && AUTH_ERROR_MESSAGES[key]) return AUTH_ERROR_MESSAGES[key]
+  if (error?.message) return error.message
+  return "Connexion impossible. Vérifiez vos identifiants."
 }
 
 export function LoginModal({ onClose }: LoginModalProps) {
   const router = useRouter();
-  const { update } = useSession();
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,22 +55,13 @@ export function LoginModal({ onClose }: LoginModalProps) {
     setError("");
 
     try {
-      const result = await signIn("credentials", {
+      const { data, error: signInError } = await authClient.signIn.email({
         email,
         password: pwd,
-        redirect: false,
       });
 
-      if (!result?.ok) {
-        const errorMessage = getAuthErrorMessage(result);
-        setError(errorMessage);
-        toast.error(errorMessage);
-        return;
-      }
-
-      const session = await update();
-      if (!session?.user) {
-        const errorMessage = "Session non confirmée. Réessayez la connexion.";
+      if (signInError || !data?.user) {
+        const errorMessage = getAuthErrorMessage(signInError);
         setError(errorMessage);
         toast.error(errorMessage);
         return;

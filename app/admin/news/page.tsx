@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,94 +41,104 @@ interface NewsResponse {
 }
 
 const CATEGORIES = ['Mise à jour', 'Annonce ONEM', 'CPAS', 'Réforme'];
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export default function NewsPage() {
   const router = useRouter();
   const [articles, setArticles] = useState<News[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('published');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [totalItems, setTotalItems] = useState(0);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [showCsvDialog, setShowCsvDialog] = useState(false);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({ all: 0 });
 
-  const buildQueryString = useCallback(() => {
+  // Debounce search to avoid spamming the API. Resetting the page lives here too.
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setDebouncedSearch((prev) => {
+        const next = search.trim();
+        if (prev !== next) setCurrentPage(1);
+        return next;
+      });
+    }, 300);
+    return () => window.clearTimeout(handle);
+  }, [search]);
+
+  const updateStatusFilter = useCallback((value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  }, []);
+
+  const updateCategoryFilter = useCallback((value: string) => {
+    setCategoryFilter(value);
+    setCurrentPage(1);
+  }, []);
+
+  const updateItemsPerPage = useCallback((value: number) => {
+    setItemsPerPage(value);
+    setCurrentPage(1);
+  }, []);
+
+  const queryString = useMemo(() => {
     const params = new URLSearchParams();
     if (statusFilter !== 'all') params.append('status', statusFilter);
     if (categoryFilter !== 'all') params.append('category', categoryFilter);
-    if (search) params.append('search', search);
+    if (debouncedSearch) params.append('search', debouncedSearch);
     params.append('sortBy', sortBy);
     params.append('sortOrder', sortOrder);
     params.append('page', currentPage.toString());
     params.append('limit', itemsPerPage.toString());
     return params.toString();
-  }, [categoryFilter, currentPage, itemsPerPage, search, sortBy, sortOrder, statusFilter]);
+  }, [categoryFilter, currentPage, debouncedSearch, itemsPerPage, sortBy, sortOrder, statusFilter]);
 
-  const loadArticles = useCallback(async () => {
-    const res = await fetch(`/api/news?${buildQueryString()}`);
-    return (await res.json()) as NewsResponse;
-  }, [buildQueryString]);
-
-  const fetchArticles = useCallback(async () => {
-    try {
-      const data = await loadArticles();
-      setArticles(data.articles || []);
-      setTotalItems(data.total || 0);
-      if (data.statusCounts) setStatusCounts(data.statusCounts);
-    } catch (error) {
-      console.error('Error fetching articles:', error);
-      toast.error('Erreur lors du chargement des articles');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [loadArticles]);
+  const [refreshTick, setRefreshTick] = useState(0);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
-    let isCancelled = false;
+    let cancelled = false;
+    const requestId = ++requestIdRef.current;
 
-    const syncArticles = async () => {
+    (async () => {
+      setIsLoading(true);
       try {
-        const data = await loadArticles();
-        if (isCancelled) return;
+        const res = await fetch(`/api/news?${queryString}`);
+        if (!res.ok) throw new Error('Failed');
+        const data = (await res.json()) as NewsResponse;
+        if (cancelled || requestId !== requestIdRef.current) return;
         setArticles(data.articles || []);
         setTotalItems(data.total || 0);
         if (data.statusCounts) setStatusCounts(data.statusCounts);
       } catch (error) {
-        if (!isCancelled) {
-          console.error('Error fetching articles:', error);
-          toast.error('Erreur lors du chargement des articles');
-        }
+        if (cancelled) return;
+        console.error('Error fetching articles:', error);
+        toast.error('Erreur lors du chargement des articles');
       } finally {
-        if (!isCancelled) {
+        if (!cancelled && requestId === requestIdRef.current) {
           setIsLoading(false);
         }
       }
-    };
-
-    void syncArticles();
+    })();
 
     return () => {
-      isCancelled = true;
+      cancelled = true;
     };
-  }, [loadArticles]);
+  }, [queryString, refreshTick]);
 
-  const handleCreateNew = () => {
-    router.push('/admin/news/new');
-  };
+  const handleRefresh = useCallback(() => {
+    setRefreshTick((tick) => tick + 1);
+  }, []);
 
-  const handleRefresh = () => {
-    setIsLoading(true);
-    void fetchArticles();
-  };
+  const handleCreateNew = () => router.push('/admin/news/new');
 
   const handleSort = (field: string) => {
-    setIsLoading(true);
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -138,7 +148,6 @@ export default function NewsPage() {
   };
 
   const handlePageChange = (page: number) => {
-    setIsLoading(true);
     setCurrentPage(page);
   };
 
@@ -147,10 +156,10 @@ export default function NewsPage() {
 
   const statCards = useMemo(
     () => [
-      { label: 'Tous', value: totalCount, tone: 'bg-slate-50 border-slate-200' },
-      { label: 'Publiés', value: statusCounts.published ?? 0, tone: 'bg-emerald-50 border-emerald-200' },
-      { label: 'Brouillons', value: statusCounts.draft ?? 0, tone: 'bg-amber-50 border-amber-200' },
-      { label: 'Planifiés', value: statusCounts.scheduled ?? 0, tone: 'bg-sky-50 border-sky-200' },
+      { label: 'Tous', value: totalCount, tone: 'bg-muted/50 border-border' },
+      { label: 'Publiés', value: statusCounts.published ?? 0, tone: 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900' },
+      { label: 'Brouillons', value: statusCounts.draft ?? 0, tone: 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-900' },
+      { label: 'Planifiés', value: statusCounts.scheduled ?? 0, tone: 'bg-sky-50 border-sky-200 dark:bg-sky-950/30 dark:border-sky-900' },
     ],
     [statusCounts, totalCount]
   );
@@ -161,18 +170,19 @@ export default function NewsPage() {
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tight">Articles & Blog</h1>
-            <p className="max-w-2xl text-sm text-gray-500">
+            <p className="max-w-2xl text-sm text-muted-foreground">
               Gérez vos actualités, leur état de publication et leur diffusion depuis une seule vue.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex gap-1 rounded-lg border bg-gray-50 p-1">
+            <div className="flex gap-1 rounded-lg border bg-muted/50 p-1">
               <Button
                 onClick={() => setViewMode('table')}
                 variant={viewMode === 'table' ? 'default' : 'ghost'}
                 size="sm"
-                className={viewMode === 'table' ? 'bg-gray-900 hover:bg-gray-800' : 'hover:bg-gray-200'}
+                className={viewMode === 'table' ? '' : 'hover:bg-muted'}
+                aria-label="Vue tableau"
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -180,18 +190,19 @@ export default function NewsPage() {
                 onClick={() => setViewMode('grid')}
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
                 size="sm"
-                className={viewMode === 'grid' ? 'bg-gray-900 hover:bg-gray-800' : 'hover:bg-gray-200'}
+                className={viewMode === 'grid' ? '' : 'hover:bg-muted'}
+                aria-label="Vue grille"
               >
                 <Grid3x3 className="h-4 w-4" />
               </Button>
             </div>
 
-            <Button onClick={() => setShowCsvDialog(true)} variant="outline" className="hover:bg-gray-100">
+            <Button onClick={() => setShowCsvDialog(true)} variant="outline" className="hover:bg-muted">
               <Download className="mr-2 h-4 w-4" />
               Exporter CSV
             </Button>
 
-            <Button onClick={handleCreateNew} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleCreateNew} className="bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-600">
               <Plus className="mr-2 h-4 w-4" />
               Créer un article
             </Button>
@@ -201,21 +212,14 @@ export default function NewsPage() {
         <div className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
           {statCards.map((card) => (
             <div key={card.label} className={`rounded-xl border px-4 py-3 ${card.tone}`}>
-              <p className="text-sm font-medium text-gray-600">{card.label}</p>
+              <p className="text-sm font-medium text-foreground/80">{card.label}</p>
               <p className="mt-1 text-2xl font-bold tracking-tight">{card.value}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <Tabs
-        value={statusFilter}
-        onValueChange={(value) => {
-          setIsLoading(true);
-          setStatusFilter(value);
-          setCurrentPage(1);
-        }}
-      >
+      <Tabs value={statusFilter} onValueChange={updateStatusFilter}>
         <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl p-1">
           {[
             { value: 'all', label: 'Tous' },
@@ -243,28 +247,18 @@ export default function NewsPage() {
         <CardContent className="pt-4">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
             <div className="flex-1">
-              <label className="mb-2 block text-sm font-medium">Rechercher</label>
+              <label className="mb-2 block text-sm font-medium" htmlFor="news-search">Rechercher</label>
               <Input
+                id="news-search"
                 placeholder="Titre, description..."
                 value={search}
-                onChange={(e) => {
-                  setIsLoading(true);
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
             <div className="w-full xl:w-56">
               <label className="mb-2 block text-sm font-medium">Catégorie</label>
-              <Select
-                value={categoryFilter}
-                onValueChange={(value) => {
-                  setIsLoading(true);
-                  setCategoryFilter(value ?? 'all');
-                  setCurrentPage(1);
-                }}
-              >
+              <Select value={categoryFilter} onValueChange={(value) => updateCategoryFilter(value ?? 'all')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -279,17 +273,31 @@ export default function NewsPage() {
               </Select>
             </div>
 
+            <div className="w-full xl:w-40">
+              <label className="mb-2 block text-sm font-medium">Par page</label>
+              <Select value={itemsPerPage.toString()} onValueChange={(value) => updateItemsPerPage(Number(value))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <SelectItem key={size} value={size.toString()}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex flex-wrap items-center gap-2 xl:ml-auto">
               {hasActiveFilters && (
                 <Button
                   type="button"
                   variant="ghost"
-                  className="text-gray-600 hover:text-gray-900"
+                  className="text-muted-foreground hover:text-foreground"
                   onClick={() => {
-                    setIsLoading(true);
                     setSearch('');
-                    setCategoryFilter('all');
-                    setCurrentPage(1);
+                    updateCategoryFilter('all');
                   }}
                 >
                   <RotateCcw className="mr-2 h-4 w-4" />
@@ -297,7 +305,7 @@ export default function NewsPage() {
                 </Button>
               )}
 
-              <div className="rounded-lg border bg-slate-50 px-3 py-2 text-sm text-gray-600">
+              <div className="rounded-lg border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
                 {totalItems} résultat{totalItems > 1 ? 's' : ''} affiché{totalItems > 1 ? 's' : ''}
               </div>
             </div>

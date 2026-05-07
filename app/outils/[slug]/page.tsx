@@ -1,36 +1,31 @@
-"use client";
-
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeftIcon, WrenchIcon } from "lucide-react";
-import { ToolPage } from "@/components/docbel/tool-page";
+import { prisma } from "@/lib/prisma";
 import { getToolBySlug } from "@/lib/docbel-data";
-import { Button } from "@/components/ui/button";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { DocumentForm } from "@/components/docbel/document-form/document-form";
+import { LegacyToolView } from "./legacy-tool-view";
 
-export default function ToolRoute() {
-  const router = useRouter();
-  const params = useParams();
-  const tool = getToolBySlug(params.slug as string);
+export const dynamic = "force-dynamic";
 
-  if (!tool) {
-    return (
-      <Empty className="border">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <WrenchIcon />
-          </EmptyMedia>
-          <EmptyTitle>Outil non trouve</EmptyTitle>
-          <EmptyDescription>
-            L&apos;outil demande n&apos;est pas disponible dans le catalogue public.
-          </EmptyDescription>
-        </EmptyHeader>
-        <Button onClick={() => router.push("/")}>
-          <ArrowLeftIcon data-icon="inline-start" />
-          Retour a l&apos;accueil
-        </Button>
-      </Empty>
-    );
+export default async function ToolRoute({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
+  // 1) Cherche un Tool dynamique en base avec un template publié
+  const dbTool = await prisma.tool.findUnique({
+    where: { slug },
+    include: { documentTemplate: { select: { status: true } } },
+  });
+
+  if (
+    dbTool?.type === "doc_generator" &&
+    dbTool.documentTemplate?.status === "published"
+  ) {
+    return <DocumentForm slug={slug} />;
   }
 
-  return <ToolPage tool={tool} accent="#C8102E" onBack={() => router.back()} lang="FR" />;
+  // 2) Fallback : catalogue statique (TOOLS_DATA)
+  const staticTool = getToolBySlug(slug);
+  return <LegacyToolView tool={staticTool || null} />;
 }

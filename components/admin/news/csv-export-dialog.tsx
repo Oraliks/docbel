@@ -237,9 +237,9 @@ export function CsvExportDialog({
           </Card>
 
           {/* Preview */}
-          <div className="rounded-lg border p-4 bg-blue-50">
-            <p className="text-sm text-gray-600">
-              <span className="font-semibold text-gray-700">{filteredArticles.length}</span> article{filteredArticles.length !== 1 ? 's' : ''} seront exporté{filteredArticles.length !== 1 ? 's' : ''} avec {selectedColumns.length} colonne{selectedColumns.length !== 1 ? 's' : ''}
+          <div className="rounded-lg border p-4 bg-primary/10">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">{filteredArticles.length}</span> article{filteredArticles.length !== 1 ? 's' : ''} seront exporté{filteredArticles.length !== 1 ? 's' : ''} avec {selectedColumns.length} colonne{selectedColumns.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>

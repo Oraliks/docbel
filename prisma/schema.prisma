@@ -27,7 +27,9 @@ model User {
   id                  String     @id @default(cuid())
   name                String
   email               String     @unique
-  password            String
+  emailVerified       Boolean    @default(false)
+  image               String?
+  password            String     @default("")
   role                UserRole   @default(user)
   status              UserStatus @default(active)
   emailVerifiedAt     DateTime?
@@ -38,22 +40,94 @@ model User {
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
   apiKeys             ApiKey[]
+  sessions            Session[]
+  accounts            Account[]
 
   @@index([role])
   @@index([status])
 }
 
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@index([expiresAt])
+}
+
 model Page {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   title     String
-  slug      String   @unique
-  content   String   @default("[]")
-  status    String   @default("draft")
+  slug      String    @unique
+  content   Json      @default("[]")
+  status    String    @default("draft")
   metaTitle String?
   metaDesc  String?
   ogImage   String?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  revisions PageRevision[]
+
+  @@index([status])
+  @@index([deletedAt])
+  @@index([status, slug])
+}
+
+model PageRevision {
+  id        String   @id @default(cuid())
+  pageId    String
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  title     String
+  content   Json     @default("[]")
+  metaTitle String?
+  metaDesc  String?
+  ogImage   String?
+  createdBy String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@index([pageId])
+  @@index([createdAt])
 }
 
 model Activity {
@@ -82,6 +156,9 @@ model File {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   usage     FileUsage[]
+
+  docTemplateSources    DocumentTemplate[]  @relation("DocTemplateSource")
+  docGeneratedOutputs   GeneratedDocument[] @relation("DocGeneratedOutput")
 }
 
 model FileUsage {
@@ -131,13 +208,15 @@ model Tool {
   name        String
   slug        String      @unique // "preavis", "agr", etc.
   description String
-  type        String // "calc_preavis", "calc_agr", "locator", etc.
+  type        String // "calc_preavis", "calc_agr", "locator", "doc_generator", etc.
   icon        String?
   popular     Boolean     @default(false)
   timeMin     Int?
   order       Int         @default(0)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+
+  documentTemplate DocumentTemplate?
 
   @@index([sectionId])
   @@index([slug])
@@ -160,12 +239,16 @@ model News {
   publishedAt DateTime?
   scheduledAt DateTime?
   createdBy   String
+  updatedBy   String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@index([status])
   @@index([category])
   @@index([publishedAt])
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([status, category])
+  @@index([featured, status])
 }
 
 model NewsletterSubscriber {
@@ -233,4 +316,82 @@ model BareSheet {
   @@unique([fileId, name])
   @@index([fileId])
   @@index([category])
+}
+
+model DocumentTemplate {
+  id                String   @id @default(cuid())
+  toolId            String   @unique
+  tool              Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  sourceFileId      String
+  sourceFile        File     @relation("DocTemplateSource", fields: [sourceFileId], references: [id])
+  sourceType        String // "pdf_acroform" | "pdf_flat" | "docx"
+  schema            Json // DocumentField[] — voir lib/documents/types.ts
+  outputFilenameTpl String   @default("document-{{date}}.pdf")
+  rgpdNotice        String?
+  retentionDays     Int      @default(30)
+  status            String   @default("draft") // draft | published | archived
+  version           Int      @default(1)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  generated GeneratedDocument[]
+  drafts    DocumentDraft[]
+  revisions DocumentTemplateRevision[]
+
+  @@index([status])
+}
+
+model DocumentTemplateRevision {
+  id                String           @id @default(cuid())
+  templateId        String
+  template          DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  version           Int
+  schema            Json
+  sourceType        String
+  rgpdNotice        String?
+  retentionDays     Int
+  outputFilenameTpl String
+  createdBy         String?
+  createdAt         DateTime         @default(now())
+
+  @@index([templateId])
+  @@index([createdAt])
+}
+
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
+model GeneratedDocument {
+  id           String           @id @default(cuid())
+  templateId   String
+  template     DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  userId       String?
+  outputFileId String?
+  outputFile   File?            @relation("DocGeneratedOutput", fields: [outputFileId], references: [id])
+  payloadHash  String
+  emailSentTo  String?
+  ipHash       String?
+  createdAt    DateTime         @default(now())
+  expiresAt    DateTime
+
+  @@index([templateId])
+  @@index([expiresAt])
+  @@index([userId])
+}
+
+model DocumentDraft {
+  id         String           @id @default(cuid())
+  templateId String
+  template   DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  userId     String
+  payload    Json
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([templateId, userId])
+  @@index([userId])
 }

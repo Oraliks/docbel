@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
         type: "folder",
         parentId: parentId || null,
         isPrivate: isPrivate || false,
-        createdBy: auth.user?.email || "unknown",
+        createdBy: auth.user?.id || "unknown",
       },
     });
 

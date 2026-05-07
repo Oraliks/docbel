@@ -1,73 +1,91 @@
-import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { logActivity, type ActivityAction } from "@/lib/activity-logger"
-import { requireAdminAuth } from "@/lib/auth-check"
+import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { logActivity, type ActivityAction } from "@/lib/activity-logger";
+import { requireAdminAuth } from "@/lib/auth-check";
+import { actorLabel } from "@/lib/news/session";
+import { bulkActionSchema } from "@/lib/news/validation";
+
+const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
+
+const ACTION_DETAILS: Record<
+  "publish" | "unpublish" | "archive" | "delete",
+  { activity: ActivityAction; label: string; data?: Prisma.NewsUpdateManyMutationInput }
+> = {
+  publish: {
+    activity: "published",
+    label: "publiés",
+    data: { status: "published", publishedAt: new Date(), scheduledAt: null },
+  },
+  unpublish: {
+    activity: "unpublished",
+    label: "dépubliés",
+    data: { status: "draft", publishedAt: null, scheduledAt: null },
+  },
+  archive: {
+    activity: "updated",
+    label: "archivés",
+    data: { status: "archived" },
+  },
+  delete: {
+    activity: "deleted",
+    label: "supprimés",
+  },
+};
 
 export async function POST(req: NextRequest) {
-  const authCheck = await requireAdminAuth()
-  if (!authCheck.isAuthorized) return authCheck.error
+  const authCheck = await requireAdminAuth();
+  if (!authCheck.isAuthorized) return authCheck.error;
 
   try {
-    const body = await req.json()
-    const { action, ids } = body
-
-    if (!action || !ids || !Array.isArray(ids) || ids.length === 0) {
+    const json = await req.json();
+    const parsed = bulkActionSchema.safeParse(json);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "action and ids array are required" },
-        { status: 400 }
-      )
+        { error: "Invalid payload", issues: parsed.error.issues },
+        { status: 400, headers: jsonHeaders }
+      );
     }
+    const { action, ids } = parsed.data;
+    const config = ACTION_DETAILS[action];
+    const actor = actorLabel(authCheck.user);
 
-    let updateData: Record<string, unknown> = {}
-    let activityAction: ActivityAction = "updated"
-    let activityDetails = `${ids.length} articles`
-
-    switch (action) {
-      case "publish":
-        updateData = { status: "published", publishedAt: new Date() }
-        activityAction = "published"
-        activityDetails = `${ids.length} articles publies`
-        break
-      case "unpublish":
-        updateData = { status: "draft", publishedAt: null, scheduledAt: null }
-        activityAction = "unpublished"
-        activityDetails = `${ids.length} articles depublies`
-        break
-      case "archive":
-        updateData = { status: "archived" }
-        activityDetails = `${ids.length} articles archives`
-        break
-      case "delete":
-        await prisma.news.deleteMany({
+    const count = await prisma.$transaction(async (tx) => {
+      let affected: number;
+      if (action === "delete") {
+        const result = await tx.news.deleteMany({ where: { id: { in: ids } } });
+        affected = result.count;
+      } else {
+        const result = await tx.news.updateMany({
           where: { id: { in: ids } },
-        })
+          data: { ...(config.data ?? {}), updatedBy: authCheck.user?.id ?? null },
+        });
+        affected = result.count;
+      }
 
-        await logActivity("Admin", "deleted", "news", `${ids.length} articles`, "", `${ids.length} articles supprimes`)
+      await tx.activity.create({
+        data: {
+          user: actor,
+          action: config.activity,
+          resource: "news",
+          resourceName: `${affected} articles`,
+          resourceId: null,
+          details: `${affected} articles ${config.label}`,
+        },
+      });
 
-        return NextResponse.json(
-          { success: true, count: ids.length },
-          { headers: { "Content-Type": "application/json; charset=utf-8" } }
-        )
-      default:
-        return NextResponse.json({ error: "Invalid action" }, { status: 400 })
-    }
+      return affected;
+    });
 
-    const result = await prisma.news.updateMany({
-      where: { id: { in: ids } },
-      data: updateData,
-    })
-
-    await logActivity("Admin", activityAction, "news", `${result.count} articles`, "", activityDetails)
-
-    return NextResponse.json(
-      { success: true, count: result.count },
-      { headers: { "Content-Type": "application/json; charset=utf-8" } }
-    )
+    return NextResponse.json({ success: true, count }, { headers: jsonHeaders });
   } catch (error) {
-    console.error("Error performing bulk action:", error)
-    return NextResponse.json(
-      { error: "Failed to perform bulk action" },
-      { status: 500 }
-    )
+    console.error("Error performing bulk action:", error);
+    // Surface a degraded log entry if the transaction failed.
+    try {
+      await logActivity(actorLabel(authCheck.user), "error", "news", "bulk-action", undefined, "Bulk action failed");
+    } catch {
+      /* noop */
+    }
+    return NextResponse.json({ error: "Failed to perform bulk action" }, { status: 500, headers: jsonHeaders });
   }
 }

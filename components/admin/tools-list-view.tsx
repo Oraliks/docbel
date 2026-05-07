@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, Plus, Edit2, Trash2 } from "lucide-react";
+import { IconDisplay } from "@/components/admin/documents/icon-picker";
 
 interface Tool {
   id: string;
@@ -37,6 +38,7 @@ const typeLabels: Record<string, string> = {
   info: "FAQ",
   links: "Liens",
   form: "Formulaire",
+  doc_generator: "Générateur de document",
 };
 
 export function ToolsListView({ tools }: ToolsListViewProps) {
@@ -130,7 +132,11 @@ export function ToolsListView({ tools }: ToolsListViewProps) {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
-                      {tool.icon && <span className="text-2xl">{tool.icon}</span>}
+                      {tool.icon && (
+                        <span className="flex size-7 items-center justify-center rounded bg-primary/10 text-primary">
+                          <IconDisplay value={tool.icon} className="w-4 h-4" />
+                        </span>
+                      )}
                       <CardTitle className="text-base">{tool.name}</CardTitle>
                     </div>
                     <CardDescription className="text-xs font-mono">{tool.slug}</CardDescription>

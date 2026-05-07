@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tool } from "@/lib/docbel-data";
+import { IconDisplay } from "@/components/admin/documents/icon-picker";
 import {
   CalcAGR,
   CalcCP,
@@ -66,8 +67,8 @@ export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
       <Card>
         <CardHeader className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-2xl">
-              {tool.icon}
+            <span className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <IconDisplay value={tool.icon} className="w-6 h-6" />
             </span>
             <div className="flex flex-col gap-1">
               <CardTitle className="text-2xl">{tool.title}</CardTitle>

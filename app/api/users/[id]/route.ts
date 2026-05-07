@@ -120,8 +120,10 @@ export async function PUT(
       status: status || user.status,
     }
 
+    let newPasswordHash: string | undefined
     if (password) {
-      updateData.password = await bcrypt.hash(password, 10)
+      newPasswordHash = await bcrypt.hash(password, 10)
+      updateData.password = newPasswordHash
       updateData.passwordChangedAt = new Date()
     }
 
@@ -130,10 +132,30 @@ export async function PUT(
       updateData.lockedUntil = null
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: updateData,
-      select: SAFE_USER_SELECT,
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const result = await tx.user.update({
+        where: { id },
+        data: updateData,
+        select: SAFE_USER_SELECT,
+      })
+
+      if (newPasswordHash) {
+        await tx.account.upsert({
+          where: {
+            providerId_accountId: { providerId: "credential", accountId: id },
+          },
+          update: { password: newPasswordHash },
+          create: {
+            id: `acc_${id}_credential`,
+            accountId: id,
+            providerId: "credential",
+            userId: id,
+            password: newPasswordHash,
+          },
+        })
+      }
+
+      return result
     })
 
     return NextResponse.json(serializeUser(updatedUser), { headers: jsonHeaders })

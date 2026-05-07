@@ -1,0 +1,86 @@
+import React from 'react'
+import type { BlockProps } from '@/lib/page-builder/types'
+import { BlockRenderer } from './block-renderer'
+import type { InterpolationContext } from '@/lib/page-builder/interpolate'
+
+interface PublicRendererProps {
+  blocks: BlockProps[]
+  /** Optional context — page metadata + site name + user — for {{...}} interpolation. */
+  context?: InterpolationContext
+}
+
+function childrenOf(blocks: BlockProps[], parentId: string, slotIndex?: number) {
+  return blocks.filter((b) => {
+    if (b.parentId !== parentId) return false
+    if (slotIndex == null) return true
+    return (b.slotIndex ?? 0) === slotIndex
+  })
+}
+
+function RenderBlock({
+  block,
+  allBlocks,
+  context,
+}: {
+  block: BlockProps
+  allBlocks: BlockProps[]
+  context?: InterpolationContext
+}) {
+  if (block.type === 'section' || block.type === 'container') {
+    const children = childrenOf(allBlocks, block.id)
+    return (
+      <BlockRenderer
+        block={block}
+        interpolationContext={context}
+        slot={
+          children.length > 0 ? (
+            <>
+              {children.map((c) => (
+                <RenderBlock key={c.id} block={c} allBlocks={allBlocks} context={context} />
+              ))}
+            </>
+          ) : null
+        }
+      />
+    )
+  }
+
+  if (block.type === 'columns') {
+    return (
+      <BlockRenderer
+        block={block}
+        interpolationContext={context}
+        slotByIndex={(idx) => {
+          const children = childrenOf(allBlocks, block.id, idx)
+          return children.length > 0 ? (
+            <div className="space-y-4">
+              {children.map((c) => (
+                <RenderBlock key={c.id} block={c} allBlocks={allBlocks} context={context} />
+              ))}
+            </div>
+          ) : null
+        }}
+      />
+    )
+  }
+
+  return <BlockRenderer block={block} interpolationContext={context} />
+}
+
+export function PublicRenderer({ blocks, context }: PublicRendererProps) {
+  if (!blocks || blocks.length === 0) {
+    return (
+      <div className="text-center text-muted-foreground py-16">
+        Cette page n’a pas encore de contenu.
+      </div>
+    )
+  }
+  const rootBlocks = blocks.filter((b) => !b.parentId)
+  return (
+    <div className="page-content">
+      {rootBlocks.map((block) => (
+        <RenderBlock key={block.id} block={block} allBlocks={blocks} context={context} />
+      ))}
+    </div>
+  )
+}

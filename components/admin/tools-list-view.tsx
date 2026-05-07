@@ -37,6 +37,7 @@ const typeLabels: Record<string, string> = {
   info: "FAQ",
   links: "Liens",
   form: "Formulaire",
+  doc_generator: "Générateur de document",
 };
 
 export function ToolsListView({ tools }: ToolsListViewProps) {

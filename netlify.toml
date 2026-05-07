@@ -10,3 +10,10 @@
 # images, ISR, et server components. Auto-installé par Netlify si absent.
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Purge quotidienne des documents générés expirés.
+# Le scheduler Netlify appelle la route avec un x-cron-secret égal à CRON_PURGE_SECRET (défini dans les env vars Netlify).
+# Note: Netlify Scheduled Functions n'ajoutent pas de header custom — utiliser les Netlify Edge Functions ou un cron externe (cron-job.org)
+# avec le header `x-cron-secret`.
+[functions."api/documents/cron/purge"]
+  schedule = "@daily"

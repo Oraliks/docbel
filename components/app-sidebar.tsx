@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, FolderIcon, UsersIcon, CommandIcon, KeyIcon, NewspaperIcon, MailIcon, Wrench } from "lucide-react"
+import { LayoutDashboardIcon, FolderIcon, UsersIcon, CommandIcon, KeyIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultData = {
@@ -91,6 +91,13 @@ const defaultData = {
           url: "/admin/chomage/preavis",
         },
       ],
+    },
+    {
+      title: "Documents",
+      url: "/admin/documents",
+      icon: (
+        <FileTextIcon className="size-4" />
+      ),
     },
     {
       title: "Newsletter",

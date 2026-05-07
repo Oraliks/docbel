@@ -2,8 +2,48 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { resolveStoredFilePath } from "@/lib/file-storage";
+import { isBlobsPath, deleteBlob } from "@/lib/documents/blob-storage";
 import { unlink } from "fs/promises";
 import { existsSync } from "fs";
+
+async function isDescendantOf(
+  candidateId: string,
+  ancestorId: string
+): Promise<boolean> {
+  let cursor: string | null = candidateId;
+  const seen = new Set<string>();
+  while (cursor) {
+    if (seen.has(cursor)) return false;
+    seen.add(cursor);
+    if (cursor === ancestorId) return true;
+    const parent: { parentId: string | null } | null =
+      await prisma.file.findUnique({
+        where: { id: cursor },
+        select: { parentId: true },
+      });
+    cursor = parent?.parentId ?? null;
+  }
+  return false;
+}
+
+async function deleteStoredContent(filePath: string | null) {
+  if (!filePath) return;
+  if (isBlobsPath(filePath)) {
+    try {
+      await deleteBlob(filePath);
+    } catch (error) {
+      console.error("Error deleting blob:", error);
+    }
+    return;
+  }
+  const fullPath = resolveStoredFilePath(filePath);
+  if (!fullPath) return;
+  try {
+    if (existsSync(fullPath)) await unlink(fullPath);
+  } catch (error) {
+    console.error("Error deleting file from disk:", error);
+  }
+}
 
 export async function PATCH(
   req: NextRequest,
@@ -40,14 +80,20 @@ export async function PATCH(
         );
       }
 
-      if (file.type === "folder") {
-        const targetParent = await prisma.file.findUnique({
+      if (file.type === "folder" && parentId) {
+        const targetExists = await prisma.file.findUnique({
           where: { id: parentId },
+          select: { id: true },
         });
-
-        if (targetParent && targetParent.parentId === id) {
+        if (!targetExists) {
           return NextResponse.json(
-            { error: "Cannot move folder into its own children" },
+            { error: "Target folder not found" },
+            { status: 404 }
+          );
+        }
+        if (await isDescendantOf(parentId, id)) {
+          return NextResponse.json(
+            { error: "Cannot move folder into its own descendant" },
             { status: 400 }
           );
         }
@@ -55,26 +101,20 @@ export async function PATCH(
 
       const existingFiles = await prisma.file.findMany({
         where: { parentId },
+        select: { name: true },
       });
 
-      const existingNames = existingFiles.map(f => f.name);
+      const existingNames = new Set(existingFiles.map((f) => f.name));
       let finalName = file.name;
 
-      if (existingNames.includes(file.name)) {
+      if (existingNames.has(file.name)) {
         const lastDotIndex = file.name.lastIndexOf(".");
-        let nameWithoutExt: string;
-        let ext: string;
-
-        if (lastDotIndex > 0) {
-          nameWithoutExt = file.name.substring(0, lastDotIndex);
-          ext = file.name.substring(lastDotIndex);
-        } else {
-          nameWithoutExt = file.name;
-          ext = "";
-        }
+        const nameWithoutExt =
+          lastDotIndex > 0 ? file.name.substring(0, lastDotIndex) : file.name;
+        const ext = lastDotIndex > 0 ? file.name.substring(lastDotIndex) : "";
 
         let counter = 1;
-        while (existingNames.includes(`${nameWithoutExt} (${counter})${ext}`)) {
+        while (existingNames.has(`${nameWithoutExt} (${counter})${ext}`)) {
           counter++;
         }
         finalName = `${nameWithoutExt} (${counter})${ext}`;
@@ -93,14 +133,10 @@ export async function PATCH(
       );
     }
 
-    console.log("Updating file:", id, "with data:", updateData);
-
     const file = await prisma.file.update({
       where: { id },
       data: updateData,
     });
-
-    console.log("File updated successfully:", file);
 
     return NextResponse.json(file);
   } catch (error) {
@@ -123,14 +159,13 @@ export async function DELETE(
     const { id } = await params;
     const file = await prisma.file.findUnique({
       where: { id },
-      include: { usage: true, children: true },
+      include: { usage: true, children: { select: { id: true } } },
     });
 
     if (!file) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    // Vérifier si le fichier est utilisé
     if (file.usage.length > 0) {
       return NextResponse.json(
         {
@@ -142,27 +177,20 @@ export async function DELETE(
       );
     }
 
-    // Si c'est un dossier avec des enfants, empêcher la suppression
     if (file.type === "folder" && file.children.length > 0) {
       return NextResponse.json(
-        { error: "Folder is not empty" },
+        {
+          error: "Folder is not empty",
+          message: "Le dossier doit être vide avant suppression",
+        },
         { status: 409 }
       );
     }
 
-    // Supprimer le fichier du disque si c'est un fichier
-    if (file.type === "file" && file.filePath) {
-      const fullPath = resolveStoredFilePath(file.filePath);
-      try {
-        if (fullPath && existsSync(fullPath)) {
-          await unlink(fullPath);
-        }
-      } catch (fsError) {
-        console.error("Error deleting file from disk:", fsError);
-      }
+    if (file.type === "file") {
+      await deleteStoredContent(file.filePath);
     }
 
-    // Supprimer de la DB
     await prisma.file.delete({
       where: { id },
     });

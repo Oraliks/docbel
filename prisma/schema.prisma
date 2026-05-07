@@ -156,6 +156,9 @@ model File {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   usage     FileUsage[]
+
+  docTemplateSources    DocumentTemplate[]  @relation("DocTemplateSource")
+  docGeneratedOutputs   GeneratedDocument[] @relation("DocGeneratedOutput")
 }
 
 model FileUsage {
@@ -205,13 +208,15 @@ model Tool {
   name        String
   slug        String      @unique // "preavis", "agr", etc.
   description String
-  type        String // "calc_preavis", "calc_agr", "locator", etc.
+  type        String // "calc_preavis", "calc_agr", "locator", "doc_generator", etc.
   icon        String?
   popular     Boolean     @default(false)
   timeMin     Int?
   order       Int         @default(0)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+
+  documentTemplate DocumentTemplate?
 
   @@index([sectionId])
   @@index([slug])
@@ -311,4 +316,75 @@ model BareSheet {
   @@unique([fileId, name])
   @@index([fileId])
   @@index([category])
+}
+
+model DocumentTemplate {
+  id                String   @id @default(cuid())
+  toolId            String   @unique
+  tool              Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  sourceFileId      String
+  sourceFile        File     @relation("DocTemplateSource", fields: [sourceFileId], references: [id])
+  sourceType        String // "pdf_acroform" | "pdf_flat" | "docx"
+  schema            Json // DocumentField[] — voir lib/documents/types.ts
+  outputFilenameTpl String   @default("document-{{date}}.pdf")
+  rgpdNotice        String?
+  retentionDays     Int      @default(30)
+  status            String   @default("draft") // draft | published | archived
+  version           Int      @default(1)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  generated GeneratedDocument[]
+  drafts    DocumentDraft[]
+  revisions DocumentTemplateRevision[]
+
+  @@index([status])
+}
+
+model DocumentTemplateRevision {
+  id                String           @id @default(cuid())
+  templateId        String
+  template          DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  version           Int
+  schema            Json
+  sourceType        String
+  rgpdNotice        String?
+  retentionDays     Int
+  outputFilenameTpl String
+  createdBy         String?
+  createdAt         DateTime         @default(now())
+
+  @@index([templateId])
+  @@index([createdAt])
+}
+
+model GeneratedDocument {
+  id           String           @id @default(cuid())
+  templateId   String
+  template     DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  userId       String?
+  outputFileId String?
+  outputFile   File?            @relation("DocGeneratedOutput", fields: [outputFileId], references: [id])
+  payloadHash  String
+  emailSentTo  String?
+  ipHash       String?
+  createdAt    DateTime         @default(now())
+  expiresAt    DateTime
+
+  @@index([templateId])
+  @@index([expiresAt])
+  @@index([userId])
+}
+
+model DocumentDraft {
+  id         String           @id @default(cuid())
+  templateId String
+  template   DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  userId     String
+  payload    Json
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([templateId, userId])
+  @@index([userId])
 }

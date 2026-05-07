@@ -2,11 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { buildStoredFilePath, getUploadDirectory } from "@/lib/file-storage";
+import { isBlobsEnabled, saveBlob } from "@/lib/documents/blob-storage";
+import { matchesSignature } from "@/lib/file-signatures";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
+import { nanoid } from "nanoid";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
+const DEFAULT_USER_QUOTA_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB
+
+function getUserQuotaBytes(): number {
+  const fromEnv = process.env.MAX_USER_STORAGE_BYTES;
+  if (!fromEnv) return DEFAULT_USER_QUOTA_BYTES;
+  const parsed = Number(fromEnv);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_USER_QUOTA_BYTES;
+}
 
 const ALLOWED_EXTENSIONS = new Set([
   "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
@@ -25,6 +36,7 @@ const ALLOWED_MIME_PREFIXES = [
   "application/zip",
   "application/x-zip-compressed",
   "application/x-rar-compressed",
+  "application/vnd.rar",
   "application/x-7z-compressed",
   "image/",
   "video/",
@@ -39,6 +51,15 @@ function isAllowedMime(mime: string) {
 
 function sanitizeFileName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200);
+}
+
+const SVG_DANGEROUS = /<script\b|on\w+\s*=|javascript:/i;
+
+function svgLooksSafe(buffer: Buffer): boolean {
+  // The download route serves SVG as attachment, but adding a content check
+  // catches the most obvious payloads at intake time.
+  const text = buffer.toString("utf8", 0, Math.min(buffer.length, 64 * 1024));
+  return !SVG_DANGEROUS.test(text);
 }
 
 export async function POST(req: NextRequest) {
@@ -77,32 +98,74 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const userId = authCheck.user.id;
+    const usage = await prisma.file.aggregate({
+      where: { createdBy: userId, type: "file" },
+      _sum: { size: true },
+    });
+    const currentBytes = usage._sum.size ?? 0;
+    const quota = getUserQuotaBytes();
+    if (currentBytes + file.size > quota) {
+      return NextResponse.json(
+        {
+          error: "Storage quota exceeded",
+          used: currentBytes,
+          quota,
+        },
+        { status: 413 }
+      );
+    }
+
     const buffer = await file.arrayBuffer();
+    const nodeBuffer = Buffer.from(buffer);
+
+    if (!matchesSignature(nodeBuffer, fileExt)) {
+      return NextResponse.json(
+        { error: `File content does not match extension .${fileExt}` },
+        { status: 415 }
+      );
+    }
+
+    if (fileExt === "svg" && !svgLooksSafe(nodeBuffer)) {
+      return NextResponse.json(
+        { error: "SVG content appears to contain active code" },
+        { status: 415 }
+      );
+    }
+
     const safeName = sanitizeFileName(file.name);
     const fileType = getFileType(fileExt);
 
-    const { relativeDir, absoluteDir } = getUploadDirectory(isPrivate);
+    let filePath: string;
 
-    if (!existsSync(absoluteDir)) {
-      await mkdir(absoluteDir, { recursive: true });
+    if (isBlobsEnabled()) {
+      const folder = isPrivate ? "private" : "public";
+      const key = `${folder}/${nanoid()}-${safeName}`;
+      filePath = await saveBlob(nodeBuffer, key);
+    } else {
+      const { relativeDir, absoluteDir } = getUploadDirectory(isPrivate);
+
+      if (!existsSync(absoluteDir)) {
+        await mkdir(absoluteDir, { recursive: true });
+      }
+
+      const uniqueName = `${Date.now()}-${safeName}`;
+      filePath = buildStoredFilePath(relativeDir, uniqueName);
+      const fullPath = join(absoluteDir, uniqueName);
+
+      await writeFile(fullPath, nodeBuffer);
     }
-
-    const uniqueName = `${Date.now()}-${safeName}`;
-    const filePath = buildStoredFilePath(relativeDir, uniqueName);
-    const fullPath = join(absoluteDir, uniqueName);
-
-    await writeFile(fullPath, Buffer.from(buffer));
 
     const dbFile = await prisma.file.create({
       data: {
         name: file.name,
         type: "file",
         fileType,
-        size: buffer.byteLength,
+        size: nodeBuffer.byteLength,
         parentId: parentId || null,
         isPrivate,
         filePath,
-        createdBy: authCheck.user?.id || "unknown",
+        createdBy: userId,
       },
     });
 

@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
-import { PageLayout } from '@/components/page-builder/page-layout'
+import { PublicRenderer } from '@/components/page-builder/public-renderer'
 import { BlockProps } from '@/lib/page-builder/types'
+import { buildPageJsonLd } from '@/lib/page-builder/schema-org'
 
 export const dynamicParams = true
 export const revalidate = 60
@@ -55,5 +56,35 @@ export default async function PublicPage({
     ? (page.content as unknown as BlockProps[])
     : []
 
-  return <PageLayout blocks={blocks} title={page.title} />
+  const jsonLd = buildPageJsonLd(blocks, {
+    title: page.title,
+    metaTitle: page.metaTitle,
+    metaDesc: page.metaDesc,
+    ogImage: page.ogImage,
+    slug: page.slug,
+    updatedAt: page.updatedAt,
+  })
+
+  return (
+    <>
+      {jsonLd.map((data, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+        />
+      ))}
+      <PublicRenderer
+        blocks={blocks}
+        context={{
+          site: { name: 'Docbel' },
+          page: {
+            title: page.title,
+            slug: page.slug,
+            description: page.metaDesc ?? undefined,
+          },
+        }}
+      />
+    </>
+  )
 }

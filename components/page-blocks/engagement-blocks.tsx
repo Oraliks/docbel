@@ -158,21 +158,35 @@ export function PollBlock({ question, options }: PollProps) {
 
 // ─────────────────────────── Calculator ───────────────────────────
 
+const ALLOWED_MATH_FNS = [
+  'Math.max',
+  'Math.min',
+  'Math.floor',
+  'Math.ceil',
+  'Math.round',
+  'Math.sqrt',
+  'Math.abs',
+  'Math.pow',
+] as const
+
 function safeEval(expression: string, vars: Record<string, number | string>): number | null {
   try {
-    // Replace variable names with their values
     let safe = expression
     for (const [k, v] of Object.entries(vars)) {
-      const regex = new RegExp(`\\b${k}\\b`, 'g')
+      const escapedKey = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const regex = new RegExp(`\\b${escapedKey}\\b`, 'g')
       safe = safe.replace(regex, String(v))
     }
-    // Whitelist: digits, operators, parentheses, decimals, common math fns
-    if (!/^[\d\s+\-*/().,Math.maxminflorceilrouqs]+$/i.test(safe)) {
-      // be permissive but no letters except Math.X
+    let stripped = safe
+    for (const fn of ALLOWED_MATH_FNS) {
+      stripped = stripped.split(fn).join('')
     }
-    const fn = new Function('Math', `return (${safe})`)
+    if (!/^[\d\s+\-*/().,]*$/.test(stripped)) {
+      return null
+    }
+    const fn = new Function('Math', `"use strict"; return (${safe})`)
     const result = fn(Math)
-    return typeof result === 'number' && !Number.isNaN(result) ? result : null
+    return typeof result === 'number' && Number.isFinite(result) ? result : null
   } catch {
     return null
   }

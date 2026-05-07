@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Plus, MapPin, X as XIcon } from 'lucide-react'
+import { MapPin, X as XIcon } from 'lucide-react'
 import type {
   HtmlRawProps,
   CustomCssProps,
@@ -282,5 +282,3 @@ export function ImageHotspotsBlock({ image, alt, hotspots }: ImageHotspotsProps)
     </figure>
   )
 }
-
-export { Plus }

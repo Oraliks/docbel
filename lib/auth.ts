@@ -6,10 +6,10 @@ import * as bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { UserStatus } from "@prisma/client"
 
-const authSecret = process.env.BETTER_AUTH_SECRET || process.env.NEXTAUTH_SECRET
+const authSecret = process.env.BETTER_AUTH_SECRET
 
 if (!authSecret) {
-  throw new Error("BETTER_AUTH_SECRET (or legacy NEXTAUTH_SECRET) is required")
+  throw new Error("BETTER_AUTH_SECRET is required")
 }
 
 const MAX_FAILED_LOGIN_ATTEMPTS = 5
@@ -67,7 +67,7 @@ async function recordSuccessfulSignIn(userId: string, currentStatus: UserStatus)
 
 export const auth = betterAuth({
   appName: "Docbel",
-  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXTAUTH_URL,
+  baseURL: process.env.BETTER_AUTH_URL,
   secret: authSecret,
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   trustedOrigins:

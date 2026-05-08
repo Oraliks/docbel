@@ -1,0 +1,218 @@
+'use client'
+
+import { z } from 'zod'
+import { ArrowRight } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
+import { defineBlock } from '@/lib/page-builder/block-definition'
+import { cn } from '@/lib/utils'
+
+const schema = z.object({
+  title: z.string().max(500).optional(),
+  description: z.string().max(2000).optional(),
+  text: z.string().max(120).default(''),
+  link: z.string().max(4096).default(''),
+  secondaryText: z.string().max(120).optional(),
+  secondaryLink: z.string().max(4096).optional(),
+  variant: z.enum(['inline', 'banner', 'card']).optional(),
+  buttonStyle: z.enum(['primary', 'secondary', 'outline', 'ghost']).optional(),
+  buttonSize: z.enum(['sm', 'md', 'lg']).optional(),
+})
+
+type Props = z.infer<typeof schema>
+
+const BTN_SIZE: Record<NonNullable<Props['buttonSize']>, string> = {
+  sm: 'px-4 py-2 text-sm',
+  md: 'px-5 py-2.5 text-sm',
+  lg: 'px-6 py-3 text-base',
+}
+
+const BTN_STYLE: Record<NonNullable<Props['buttonStyle']>, string> = {
+  primary: 'bg-primary text-primary-foreground hover:opacity-90',
+  secondary: 'bg-foreground text-background hover:opacity-90',
+  outline: 'border border-current bg-transparent hover:bg-foreground/5',
+  ghost: 'bg-transparent hover:bg-foreground/5',
+}
+
+export const cta = defineBlock({
+  type: 'cta',
+  schema,
+  defaults: {
+    title: 'Prêt à commencer ?',
+    description: 'Rejoignez-nous dès aujourd’hui.',
+    text: 'Commencer',
+    link: '#',
+    secondaryText: '',
+    secondaryLink: '',
+    variant: 'banner',
+    buttonStyle: 'primary',
+    buttonSize: 'md',
+  },
+  meta: {
+    name: 'Appel à l’action',
+    description: 'Bouton ou bannière CTA',
+    category: 'marketing',
+    icon: 'mouse-pointer-click',
+    shortcuts: ['cta', 'bouton', 'button'],
+    variants: [
+      { id: 'inline', name: 'Bouton seul' },
+      { id: 'banner', name: 'Bannière' },
+      { id: 'card', name: 'Carte' },
+    ],
+  },
+  Render: ({ props }) => {
+    const {
+      title,
+      description,
+      text,
+      link,
+      secondaryText,
+      secondaryLink,
+      variant = 'banner',
+      buttonStyle = 'primary',
+      buttonSize = 'md',
+    } = props
+    const buttonClass = cn(
+      'inline-flex items-center gap-2 rounded-lg font-medium transition',
+      BTN_SIZE[buttonSize],
+      BTN_STYLE[buttonStyle]
+    )
+
+    if (variant === 'inline') {
+      return (
+        <div className="flex flex-wrap items-center gap-3">
+          <a href={link || '#'} className={buttonClass}>
+            {text} <ArrowRight className="size-4" />
+          </a>
+          {secondaryText && (
+            <a href={secondaryLink || '#'} className="text-sm font-medium hover:underline">
+              {secondaryText}
+            </a>
+          )}
+        </div>
+      )
+    }
+
+    if (variant === 'card') {
+      return (
+        <div className="rounded-2xl border bg-card p-8 text-center shadow-sm">
+          {title && <h3 className="text-2xl font-bold tracking-tight">{title}</h3>}
+          {description && (
+            <p className="mt-2 text-muted-foreground max-w-md mx-auto">{description}</p>
+          )}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <a href={link || '#'} className={buttonClass}>
+              {text} <ArrowRight className="size-4" />
+            </a>
+            {secondaryText && (
+              <a href={secondaryLink || '#'} className="text-sm font-medium hover:underline">
+                {secondaryText}
+              </a>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="rounded-2xl bg-primary text-primary-foreground p-8 md:p-12">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="max-w-2xl">
+            {title && <h3 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h3>}
+            {description && <p className="mt-2 opacity-90">{description}</p>}
+          </div>
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <a
+              href={link || '#'}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-lg font-medium transition bg-primary-foreground text-primary hover:opacity-90',
+                BTN_SIZE[buttonSize]
+              )}
+            >
+              {text} <ArrowRight className="size-4" />
+            </a>
+            {secondaryText && (
+              <a
+                href={secondaryLink || '#'}
+                className="text-sm font-medium underline-offset-4 hover:underline"
+              >
+                {secondaryText}
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  },
+  Fields: ({ props, onChange }) => (
+    <>
+      <Group title="Contenu" defaultOpen>
+        {(props.variant === 'banner' || props.variant === 'card') && (
+          <>
+            <Field label="Titre">
+              <Input
+                value={props.title ?? ''}
+                onChange={(e) => onChange({ title: e.target.value })}
+              />
+            </Field>
+            <Field label="Description">
+              <Textarea
+                value={props.description ?? ''}
+                onChange={(e) => onChange({ description: e.target.value })}
+                rows={2}
+              />
+            </Field>
+          </>
+        )}
+        <Field label="Bouton — texte">
+          <Input value={props.text} onChange={(e) => onChange({ text: e.target.value })} />
+        </Field>
+        <Field label="Bouton — lien">
+          <Input
+            value={props.link}
+            onChange={(e) => onChange({ link: e.target.value })}
+            placeholder="/cible ou https://…"
+          />
+        </Field>
+        <Field label="Lien secondaire — texte">
+          <Input
+            value={props.secondaryText ?? ''}
+            onChange={(e) => onChange({ secondaryText: e.target.value })}
+          />
+        </Field>
+        <Field label="Lien secondaire — URL">
+          <Input
+            value={props.secondaryLink ?? ''}
+            onChange={(e) => onChange({ secondaryLink: e.target.value })}
+          />
+        </Field>
+      </Group>
+      <Group title="Apparence">
+        <Field label="Style du bouton">
+          <Pills
+            value={props.buttonStyle ?? 'primary'}
+            onChange={(v) => onChange({ buttonStyle: v as Props['buttonStyle'] })}
+            options={[
+              { value: 'primary', label: 'Primary' },
+              { value: 'secondary', label: 'Sec.' },
+              { value: 'outline', label: 'Outline' },
+              { value: 'ghost', label: 'Ghost' },
+            ]}
+          />
+        </Field>
+        <Field label="Taille">
+          <Pills
+            value={props.buttonSize ?? 'md'}
+            onChange={(v) => onChange({ buttonSize: v as Props['buttonSize'] })}
+            options={[
+              { value: 'sm', label: 'Sm' },
+              { value: 'md', label: 'Md' },
+              { value: 'lg', label: 'Lg' },
+            ]}
+          />
+        </Field>
+      </Group>
+    </>
+  ),
+})

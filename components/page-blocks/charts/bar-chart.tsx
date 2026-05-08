@@ -1,0 +1,139 @@
+'use client'
+
+import { z } from 'zod'
+import {
+  BarChart as RBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from 'recharts'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
+import {
+  ColorControl,
+  Field,
+  Group,
+  SliderControl,
+} from '@/components/page-builder/inspector/controls'
+import { defineBlock } from '@/lib/page-builder/block-definition'
+import { ChartDataEditor } from './_chart-data-editor'
+
+const dataPointSchema = z.object({
+  label: z.string(),
+  value: z.number(),
+})
+
+const schema = z.object({
+  title: z.string().max(500).optional(),
+  data: z.array(dataPointSchema).max(100),
+  color: z.string().optional(),
+  horizontal: z.boolean().optional(),
+  height: z.number().min(50).max(2000).optional(),
+})
+
+export const barChart = defineBlock({
+  type: 'barChart',
+  schema,
+  defaults: {
+    title: '',
+    data: [
+      { label: 'Jan', value: 420 },
+      { label: 'Fév', value: 580 },
+      { label: 'Mar', value: 650 },
+      { label: 'Avr', value: 720 },
+    ],
+    color: '#C8102E',
+    horizontal: false,
+    height: 300,
+  },
+  meta: {
+    name: 'Graphique en barres',
+    description: 'Bar chart',
+    category: 'charts',
+    icon: 'bar-chart-3',
+    shortcuts: ['bar', 'chart'],
+  },
+  Render: ({ props }) => {
+    const { title, data, color = '#C8102E', horizontal, height = 300 } = props
+    return (
+      <div className="w-full my-2">
+        {title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}
+        <div style={{ height }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <RBarChart
+              data={data}
+              layout={horizontal ? 'vertical' : 'horizontal'}
+              margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              {horizontal ? (
+                <>
+                  <XAxis type="number" stroke="var(--muted-foreground)" fontSize={12} />
+                  <YAxis
+                    dataKey="label"
+                    type="category"
+                    stroke="var(--muted-foreground)"
+                    fontSize={12}
+                  />
+                </>
+              ) : (
+                <>
+                  <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={12} />
+                  <YAxis stroke="var(--muted-foreground)" fontSize={12} />
+                </>
+              )}
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+              />
+              <Bar dataKey="value" fill={color} radius={[6, 6, 0, 0]} />
+            </RBarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    )
+  },
+  Fields: ({ props, onChange }) => (
+    <>
+      <Group title="Apparence" defaultOpen>
+        <Field label="Titre">
+          <Input
+            value={props.title ?? ''}
+            onChange={(e) => onChange({ title: e.target.value })}
+          />
+        </Field>
+        <Field label="Couleur">
+          <ColorControl value={props.color} onChange={(v) => onChange({ color: v })} />
+        </Field>
+        <Field label="Hauteur">
+          <SliderControl
+            value={props.height ?? 300}
+            onChange={(v) => onChange({ height: v })}
+            min={150}
+            max={600}
+            suffix="px"
+          />
+        </Field>
+        <div className="flex items-center justify-between gap-4 py-1">
+          <Field label="Barres horizontales" className="flex-1">
+            <span className="sr-only">horizontal</span>
+          </Field>
+          <Switch
+            checked={props.horizontal ?? false}
+            onCheckedChange={(v) => onChange({ horizontal: v })}
+          />
+        </div>
+      </Group>
+      <Group title={`Données (${props.data.length})`} defaultOpen>
+        <ChartDataEditor data={props.data} onChange={(data) => onChange({ data })} />
+      </Group>
+    </>
+  ),
+})

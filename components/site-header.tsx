@@ -64,7 +64,7 @@ export function SiteHeader() {
               </TooltipContent>
             </Tooltip>
 
-            {session && (
+            {mounted && session && (
               <>
                 <Link
                   href="/"

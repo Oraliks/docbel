@@ -20,7 +20,7 @@ import {
   Group,
 } from 'lucide-react'
 import type { BlockProps } from '@/lib/page-builder/types'
-import { BLOCK_REGISTRY } from '@/lib/page-builder/block-registry'
+import { BLOCK_REGISTRY } from '@/lib/page-builder/registry'
 import { BlockRenderer } from './block-renderer'
 import { Button } from '@/components/ui/button'
 import {

@@ -3,6 +3,7 @@
 import React from 'react'
 import {
   ArrowLeft,
+  ExternalLink,
   Eye,
   Globe,
   History,
@@ -174,6 +175,27 @@ export function Topbar({
           >
             <Eye className="size-4" />
           </Button>
+
+          {slug ? (
+            <a href={`/${slug}`} target="_blank" rel="noopener noreferrer">
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                title="Voir sur le site (nouvel onglet)"
+              >
+                <ExternalLink className="size-4" />
+              </Button>
+            </a>
+          ) : (
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              disabled
+              title="Voir sur le site (nouvel onglet)"
+            >
+              <ExternalLink className="size-4" />
+            </Button>
+          )}
 
           <Button
             size="icon-sm"

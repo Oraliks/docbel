@@ -18,7 +18,7 @@ import type {
   ResponsiveOverride,
   ThemeTokens,
 } from './types'
-import { BLOCK_REGISTRY } from './block-registry'
+import { getBlockDef } from './registry'
 
 const HISTORY_LIMIT = 80
 
@@ -143,11 +143,12 @@ function pushHistory(state: PageBuilderStore, next: BlockProps[]): Partial<PageB
 }
 
 function makeBlock(type: BlockType): BlockProps {
-  const entry = BLOCK_REGISTRY[type]
+  const def = getBlockDef(type)
+  if (!def) throw new Error(`Unknown block type: ${type}`)
   return {
     id: nanoid(),
     type,
-    props: structuredClone(entry.defaultProps),
+    props: structuredClone(def.defaults),
   } as BlockProps
 }
 
@@ -497,12 +498,13 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
       const targets = state.blocks.filter((b) => ids.includes(b.id) && !b.parentId)
       if (targets.length === 0) return state
 
-      const sectionEntry = BLOCK_REGISTRY.section
+      const sectionDef = getBlockDef('section')
+      if (!sectionDef) return state
       const section: BlockProps = {
         id: nanoid(),
         type: 'section',
-        props: structuredClone(sectionEntry.defaultProps),
-      }
+        props: structuredClone(sectionDef.defaults),
+      } as BlockProps
 
       // First target's index becomes the section's position
       const firstIdx = state.blocks.findIndex((b) => b.id === targets[0].id)

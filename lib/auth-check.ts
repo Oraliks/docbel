@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
 import { UserStatus } from "@prisma/client";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
@@ -19,7 +19,10 @@ export type AdminAuthResult =
   | { isAuthorized: false; error: NextResponse; user?: undefined };
 
 export async function requireAdminAuth(): Promise<AdminAuthResult> {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const headerList = await headers();
+  const session = await withDbRetry(() =>
+    auth.api.getSession({ headers: headerList })
+  ).catch(() => null);
 
   if (!session?.user?.id) {
     return {
@@ -31,10 +34,12 @@ export async function requireAdminAuth(): Promise<AdminAuthResult> {
     };
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { id: true, name: true, email: true, role: true, status: true },
-  });
+  const dbUser = await withDbRetry(() =>
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, name: true, email: true, role: true, status: true },
+    })
+  ).catch(() => null);
 
   if (!dbUser || dbUser.status !== UserStatus.active) {
     return {

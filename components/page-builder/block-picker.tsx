@@ -34,7 +34,7 @@ import {
   BLOCKS_BY_CATEGORY,
   BLOCK_CATEGORY_LABELS,
   type AnyBlockRegistryEntry,
-} from '@/lib/page-builder/block-registry'
+} from '@/lib/page-builder/registry'
 import type { BlockType, BlockCategory } from '@/lib/page-builder/types'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
 import { cn } from '@/lib/utils'

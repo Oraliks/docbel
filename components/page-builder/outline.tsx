@@ -49,7 +49,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
-import { BLOCK_REGISTRY } from '@/lib/page-builder/block-registry'
+import { BLOCK_REGISTRY } from '@/lib/page-builder/registry'
 import type {
   BlockProps,
   HeadingProps,

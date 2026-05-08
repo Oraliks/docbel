@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
 import { revalidatePath } from "next/cache"
-import { prisma } from "@/lib/prisma"
+import { prisma, withDbRetry } from "@/lib/prisma"
 import { UpdatePageSchema } from "@/lib/page-builder/validation"
 import { requireAdminAuth } from "@/lib/auth-check"
 import { logActivity } from "@/lib/activity-logger"
@@ -15,9 +15,11 @@ export async function GET(
 
   try {
     const { id } = await params
-    const page = await prisma.page.findFirst({
-      where: { id, deletedAt: null },
-    })
+    const page = await withDbRetry(() =>
+      prisma.page.findFirst({
+        where: { id, deletedAt: null },
+      })
+    )
 
     if (!page) {
       return NextResponse.json({ error: "Page not found" }, { status: 404 })

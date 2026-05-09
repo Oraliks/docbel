@@ -76,6 +76,17 @@ function ThemePersistence({
 
 const AUTOSAVE_DELAY_MS = 1500
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 export default function PageEditorClient({ params }: PageEditorPageProps) {
   const router = useRouter()
 
@@ -294,7 +305,11 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
 
   const handleSaveSettings = async () => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    const cleanSlug = slug.startsWith('/') ? slug.slice(1) : slug
+    const cleanSlug = slugify(slug.startsWith('/') ? slug.slice(1) : slug)
+    if (!cleanSlug) {
+      toast.error('Slug invalide')
+      return
+    }
     const result = await persist({
       title,
       slug: cleanSlug,
@@ -398,7 +413,12 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
                 placeholder="mon-slug"
                 className="font-mono"
               />
-              <p className="text-xs text-muted-foreground">URL : /{slug || '…'}</p>
+              <p className="text-xs text-muted-foreground">
+                URL : /{slugify(slug) || '…'}
+                {slug && slugify(slug) !== slug && (
+                  <span className="ml-2 italic">(normalisé à la sauvegarde)</span>
+                )}
+              </p>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Meta title (SEO)</label>

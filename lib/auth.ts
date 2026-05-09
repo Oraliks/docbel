@@ -1,8 +1,10 @@
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { nextCookies } from "better-auth/next-js"
+import { magicLink } from "better-auth/plugins/magic-link"
 import { createAuthMiddleware, APIError } from "better-auth/api"
 import * as bcrypt from "bcryptjs"
+import { Resend } from "resend"
 import { prisma } from "@/lib/prisma"
 import { UserStatus } from "@prisma/client"
 
@@ -65,6 +67,10 @@ async function recordSuccessfulSignIn(userId: string, currentStatus: UserStatus)
   })
 }
 
+const googleClientId = process.env.GOOGLE_CLIENT_ID
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
+const googleEnabled = Boolean(googleClientId && googleClientSecret)
+
 export const auth = betterAuth({
   appName: "Docbel",
   baseURL: process.env.BETTER_AUTH_URL,
@@ -84,6 +90,64 @@ export const auth = betterAuth({
       verify: async ({ password, hash }) => bcrypt.compare(password, hash),
     },
   },
+  socialProviders: googleEnabled
+    ? {
+        google: {
+          clientId: googleClientId!,
+          clientSecret: googleClientSecret!,
+          mapProfileToUser: async (profile) => {
+            const email = profile.email?.trim().toLowerCase()
+            if (!email) {
+              throw new APIError("BAD_REQUEST", {
+                message: "Adresse email manquante",
+                code: "missing_email",
+              })
+            }
+
+            const existing = await prisma.user.findUnique({
+              where: { email },
+              select: { id: true, role: true, partnerOrganization: true },
+            })
+
+            if (existing) {
+              if (existing.role !== "partner") {
+                throw new APIError("FORBIDDEN", {
+                  message:
+                    "Ce compte n'est pas un compte partenaire. Connectez-vous avec votre mot de passe.",
+                  code: "not_partner_account",
+                })
+              }
+              return {
+                name: profile.name ?? email,
+                email,
+              }
+            }
+
+            const at = email.lastIndexOf("@")
+            const domain = at > 0 ? email.slice(at + 1) : ""
+            const allowed = await prisma.partnerDomain.findFirst({
+              where: { domain, isActive: true },
+              select: { organizationName: true },
+            })
+            if (!allowed) {
+              throw new APIError("FORBIDDEN", {
+                message:
+                  "Ce domaine email n'est pas autorisé pour l'inscription partenaire. Contactez DocBel.",
+                code: "domain_not_authorized",
+              })
+            }
+
+            return {
+              name: profile.name ?? email,
+              email,
+              role: "partner",
+              status: UserStatus.active,
+              partnerOrganization: allowed.organizationName,
+            } as Record<string, unknown>
+          },
+        },
+      }
+    : undefined,
   user: {
     additionalFields: {
       role: { type: "string", input: false, defaultValue: "user" },
@@ -155,7 +219,59 @@ export const auth = betterAuth({
       }
     }),
   },
-  plugins: [nextCookies()],
+  plugins: [
+    magicLink({
+      expiresIn: 60 * 15,
+      sendMagicLink: async ({ email, url }) => {
+        const apiKey = process.env.RESEND_API_KEY
+        const from = process.env.EMAIL_FROM
+        if (!apiKey || !from) {
+          throw new Error(
+            "RESEND_API_KEY ou EMAIL_FROM non configurés — magic link impossible",
+          )
+        }
+
+        const user = await prisma.user.findUnique({
+          where: { email: email.trim().toLowerCase() },
+          select: { role: true, status: true },
+        })
+        if (!user || user.role !== "partner") {
+          throw new APIError("FORBIDDEN", {
+            message: "Magic link réservé aux comptes partenaires actifs",
+            code: "magic_link_not_allowed",
+          })
+        }
+        if (user.status !== UserStatus.active) {
+          throw new APIError("FORBIDDEN", {
+            message: "Compte inactif — confirmez votre email d'abord",
+            code: "account_inactive",
+          })
+        }
+
+        const resend = new Resend(apiKey)
+        const result = await resend.emails.send({
+          from,
+          to: email,
+          subject: "Votre lien de connexion DocBel",
+          text: [
+            "Bonjour,",
+            "",
+            "Cliquez sur le lien ci-dessous pour vous connecter à DocBel (valide 15 minutes) :",
+            "",
+            url,
+            "",
+            "Si vous n'avez pas demandé ce lien, ignorez cet email.",
+            "",
+            "L'équipe DocBel",
+          ].join("\n"),
+        })
+        if (result.error) {
+          throw new Error(result.error.message || "Échec d'envoi du magic link")
+        }
+      },
+    }),
+    nextCookies(),
+  ],
 })
 
 export type Auth = typeof auth

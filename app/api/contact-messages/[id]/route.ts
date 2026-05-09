@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { logActivity } from "@/lib/activity-logger"
 import { requireAdminAuth } from "@/lib/auth-check"
+import { sendContactReply } from "@/lib/inbox/send"
 
 export async function GET(
   _request: NextRequest,
@@ -72,7 +73,25 @@ export async function PUT(
 
     const updateData: { status?: string; adminReply?: string } = {}
     if (status) updateData.status = status
+
     if (adminReply) {
+      // Send the reply via Resend before persisting — if delivery fails we
+      // don't want to mark the message as REPLIED.
+      try {
+        await sendContactReply({
+          to: message.email,
+          toName: message.name,
+          subject: `Re: ${message.subject}`,
+          text: adminReply,
+        })
+      } catch (sendErr) {
+        console.error("[contact-messages/reply] send failed:", sendErr)
+        const sendMessage = sendErr instanceof Error ? sendErr.message : "Send failed"
+        return NextResponse.json(
+          { error: `Échec d'envoi : ${sendMessage}` },
+          { status: 502 }
+        )
+      }
       updateData.adminReply = adminReply
       updateData.status = "REPLIED"
     }
@@ -84,7 +103,7 @@ export async function PUT(
 
     await logActivity(
       "Admin",
-      "updated",
+      adminReply ? "replied" : "updated",
       "message",
       message.name,
       id,

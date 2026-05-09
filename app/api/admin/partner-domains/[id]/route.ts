@@ -28,16 +28,38 @@ export async function PATCH(
   }
 
   const input = body as {
+    domain?: string;
     organizationName?: string;
     notes?: string | null;
     isTest?: boolean;
     isActive?: boolean;
   };
 
+  if (input.domain !== undefined) {
+    const DOMAIN_REGEX = /^(?!-)[a-z0-9-]+(\.[a-z0-9-]+)+$/;
+    const normalized = input.domain.trim().toLowerCase().replace(/^@/, "");
+    if (!normalized || !DOMAIN_REGEX.test(normalized)) {
+      return NextResponse.json(
+        { error: "Domaine invalide (ex: cpas.brussels)" },
+        { status: 400, headers: jsonHeaders },
+      );
+    }
+    input.domain = normalized;
+  }
+
   try {
     const updated = await updatePartnerDomain(id, input);
     return NextResponse.json({ item: updated }, { headers: jsonHeaders });
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "Ce domaine est déjà enregistré" },
+        { status: 409, headers: jsonHeaders },
+      );
+    }
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2025"

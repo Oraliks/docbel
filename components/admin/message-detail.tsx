@@ -69,6 +69,7 @@ export function MessageDetailView({
   const [reply, setReply] = useState(message.adminReply || "");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   async function updateMessageStatus(newStatus: string) {
     setIsLoading(true);
@@ -97,8 +98,10 @@ export function MessageDetailView({
 
   async function handleSaveReply() {
     if (!reply.trim()) return;
+    if (!confirm(`Envoyer cette réponse par email à ${message.email} ?`)) return;
 
     setIsSaving(true);
+    setSendError(null);
     try {
       const response = await fetch(`/api/contact-messages/${message.id}`, {
         method: "PUT",
@@ -114,9 +117,13 @@ export function MessageDetailView({
         const updatedMessage = await response.json();
         setMessage(updatedMessage);
         onMessageUpdated(updatedMessage);
+      } else {
+        const err = await response.json().catch(() => ({}));
+        setSendError(err.error || "Échec d'envoi");
       }
     } catch (error) {
       console.error("Error saving reply:", error);
+      setSendError("Erreur réseau");
     } finally {
       setIsSaving(false);
     }
@@ -275,7 +282,7 @@ export function MessageDetailView({
 
           <div>
             <label className="text-sm font-medium text-muted-foreground block mb-2">
-              {message.adminReply ? "Modifier la réponse" : "Ajouter une réponse"}
+              {message.adminReply ? "Renvoyer une réponse" : "Écrire une réponse"}
             </label>
             <textarea
               value={reply}
@@ -285,9 +292,13 @@ export function MessageDetailView({
               rows={6}
             />
             <p className="text-xs text-muted-foreground mt-2">
-              {reply.length} caractères
+              {reply.length} caractères · sera envoyé depuis contact@docbel.be à {message.email}
             </p>
           </div>
+
+          {sendError && (
+            <p className="text-sm text-red-600 dark:text-red-400">{sendError}</p>
+          )}
 
           <div className="flex gap-2">
             <Button
@@ -296,7 +307,7 @@ export function MessageDetailView({
               className="gap-2"
             >
               <Mail size={16} />
-              {isSaving ? "Enregistrement..." : "Enregistrer la réponse"}
+              {isSaving ? "Envoi en cours..." : "Envoyer la réponse"}
             </Button>
           </div>
         </CardContent>

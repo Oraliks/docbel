@@ -277,6 +277,41 @@ model ContactMessage {
   updatedAt  DateTime @updatedAt
 }
 
+model InboxEmail {
+  id          String   @id @default(cuid())
+  // IMAP UID — unique per mailbox + uidValidity. We use a composite key with mailbox.
+  mailbox     String   @default("INBOX")
+  uid         Int
+  uidValidity String?
+  // Headers
+  messageId   String?
+  inReplyTo   String?
+  fromAddress String
+  fromName    String?
+  toAddresses String   @default("") // JSON array of addresses
+  ccAddresses String   @default("") // JSON array of addresses
+  subject     String   @default("")
+  // Body (parsed)
+  textBody    String   @default("")
+  htmlBody    String?
+  // Attachments metadata (we don't store file contents — just a list)
+  attachments Json     @default("[]") // [{filename, contentType, size}]
+  // Status
+  isRead      Boolean  @default(false)
+  isArchived  Boolean  @default(false)
+  isReplied   Boolean  @default(false)
+  // Timestamps
+  receivedAt  DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([mailbox, uid])
+  @@index([isRead])
+  @@index([isArchived])
+  @@index([receivedAt])
+  @@index([fromAddress])
+}
+
 model BaremeFile {
   id             String   @id @default(cuid())
   name           String

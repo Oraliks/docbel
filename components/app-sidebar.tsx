@@ -134,6 +134,10 @@ const defaultData = {
           url: "/admin/partenaires",
         },
         {
+          title: "Statistiques",
+          url: "/admin/partenaires/stats",
+        },
+        {
           title: "Email d'invitation",
           url: "/admin/partenaires/email",
         },

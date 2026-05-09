@@ -166,6 +166,7 @@ export async function createPartnerDomain(input: {
 export async function updatePartnerDomain(
   id: string,
   input: {
+    domain?: string;
     organizationName?: string;
     notes?: string | null;
     isTest?: boolean;
@@ -175,6 +176,8 @@ export async function updatePartnerDomain(
   return prisma.partnerDomain.update({
     where: { id },
     data: {
+      domain:
+        input.domain === undefined ? undefined : normalizeDomain(input.domain),
       organizationName: input.organizationName?.trim(),
       notes:
         input.notes === undefined

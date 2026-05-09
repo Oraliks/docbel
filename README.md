@@ -92,7 +92,7 @@ qui vérifie en base que l'utilisateur est encore actif.
 
 ## Déploiement
 
-Variables d'environnement requises côté provider (Vercel, Netlify…) :
+Variables d'environnement requises côté Vercel :
 
 | Clé | Description |
 |-----|-------------|

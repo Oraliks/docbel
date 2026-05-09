@@ -1,12 +1,13 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowRight, CheckCircle2, FileText, Package } from "lucide-react";
+import { headers, cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/auth";
+import { BundleRunner } from "@/components/docbel/bundle-runner";
+import { DocumentField } from "@/lib/documents/types";
 
 export const dynamic = "force-dynamic";
+
+const BUNDLE_COOKIE = "beldoc-bundle-session";
 
 export default async function BundleRoute({
   params,
@@ -32,97 +33,75 @@ export default async function BundleRoute({
     },
   });
 
-  if (!bundle || !bundle.active) {
-    notFound();
+  if (!bundle || !bundle.active) notFound();
+
+  // Récupérer ou créer le BundleRun pour cet utilisateur
+  const session = await auth.api.getSession({ headers: await headers() });
+  const userId = session?.user?.id || null;
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get(BUNDLE_COOKIE)?.value || null;
+
+  let run = null;
+  if (userId || sessionId) {
+    const where = userId
+      ? { bundleId: bundle.id, userId, status: "in_progress" }
+      : { bundleId: bundle.id, sessionId: sessionId!, status: "in_progress" };
+    run = await prisma.bundleRun.findFirst({ where, orderBy: { startedAt: "desc" } });
   }
 
-  const totalSteps = bundle.items.length;
+  // Construire le mapping templateId → labels des champs (pour describeCondition)
+  const fieldLabels: Record<string, string> = {};
+  const templateNames: Record<string, string> = {};
+  const templateFields: Record<string, { id: string; label: string; type: string; options?: { value: string; label: string }[] }[]> = {};
+  for (const item of bundle.items) {
+    templateNames[item.template.id] = item.template.tool.name;
+    const schema = (item.template.schema as unknown as DocumentField[]) || [];
+    templateFields[item.template.id] = schema.map((f) => ({
+      id: f.id,
+      label: f.label,
+      type: f.type,
+      options: f.options,
+    }));
+    for (const f of schema) {
+      fieldLabels[`${item.template.id}::${f.id}`] = f.label;
+    }
+  }
+
+  const serializedBundle = {
+    id: bundle.id,
+    slug: bundle.slug,
+    name: bundle.name,
+    description: bundle.description,
+    color: bundle.color,
+    items: bundle.items.map((it) => ({
+      id: it.id,
+      templateId: it.templateId,
+      order: it.order,
+      required: it.required,
+      condition: it.condition as
+        | { sourceTemplateId: string; fieldId: string; op: string; value?: unknown }[]
+        | null,
+      template: {
+        id: it.template.id,
+        toolName: it.template.tool.name,
+        toolSlug: it.template.tool.slug,
+        toolDescription: it.template.tool.description,
+        organisme: it.template.organisme,
+        requiresSignature: it.template.requiresSignature,
+      },
+    })),
+  };
 
   return (
-    <div className="container max-w-3xl mx-auto py-6 px-4 space-y-6">
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-10 h-10 rounded-md flex items-center justify-center text-white"
-            style={{ backgroundColor: bundle.color }}
-          >
-            <Package className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">{bundle.name}</h1>
-            <p className="text-sm text-muted-foreground">
-              {totalSteps} document{totalSteps !== 1 ? "s" : ""} à compléter
-            </p>
-          </div>
-        </div>
-        {bundle.description && (
-          <p className="text-sm text-muted-foreground">{bundle.description}</p>
-        )}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Documents du parcours</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {bundle.items.map((item, idx) => (
-            <div
-              key={item.id}
-              className="flex items-center gap-3 p-3 border rounded-md hover:bg-muted/40 transition-colors"
-            >
-              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-medium text-sm flex-shrink-0">
-                {idx + 1}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium">{item.template.tool.name}</span>
-                  {item.template.organisme && (
-                    <Badge
-                      variant="outline"
-                      className="text-xs"
-                      style={{
-                        borderColor: item.template.organisme.color,
-                        color: item.template.organisme.color,
-                      }}
-                    >
-                      {item.template.organisme.shortName}
-                    </Badge>
-                  )}
-                  {!item.required && (
-                    <Badge variant="secondary" className="text-xs">
-                      Optionnel
-                    </Badge>
-                  )}
-                </div>
-                {item.template.tool.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-1">
-                    {item.template.tool.description}
-                  </p>
-                )}
-              </div>
-              <Button
-                render={<Link href={`/outils/${item.template.tool.slug}`} />}
-                size="sm"
-                variant="outline"
-              >
-                <FileText className="w-4 h-4 mr-1" />
-                Compléter
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card className="bg-muted/30 border-dashed">
-        <CardContent className="py-4 flex items-start gap-3">
-          <CheckCircle2 className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-muted-foreground">
-            Vous pouvez compléter les documents dans n&apos;importe quel ordre. Vos données saisies
-            sont sauvegardées automatiquement si vous êtes connecté.
-          </div>
-        </CardContent>
-      </Card>
+    <div className="container max-w-3xl mx-auto py-6 px-4">
+      <BundleRunner
+        bundle={serializedBundle}
+        runId={run?.id ?? null}
+        completedTemplateIds={(run?.completedTemplateIds as string[]) || []}
+        payloads={(run?.payloads as Record<string, Record<string, unknown>>) || {}}
+        templateNames={templateNames}
+        fieldLabels={fieldLabels}
+      />
     </div>
   );
 }

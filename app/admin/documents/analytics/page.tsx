@@ -1,17 +1,8 @@
 import Link from "next/link";
-import { ArrowLeft, BarChart3, AlertTriangle, CheckCircle2, XCircle, Eye } from "lucide-react";
+import { ArrowLeft, BarChart3, Download } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { AnalyticsTabs } from "@/components/admin/documents/analytics-tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -29,34 +20,29 @@ interface TemplateFunnel {
 }
 
 export default async function AnalyticsPage() {
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
+  // === Funnel events (Phase 14) ===
   const events = await prisma.formAnalyticsEvent.findMany({
     where: { createdAt: { gte: since } },
-    select: {
-      templateId: true,
-      sessionId: true,
-      eventType: true,
-      contextKey: true,
-    },
+    select: { templateId: true, sessionId: true, eventType: true, contextKey: true },
   });
 
-  const templateIds = Array.from(new Set(events.map((e) => e.templateId)));
-  const templates = await prisma.documentTemplate.findMany({
-    where: { id: { in: templateIds } },
+  const evtTemplateIds = Array.from(new Set(events.map((e) => e.templateId)));
+  const evtTemplates = await prisma.documentTemplate.findMany({
+    where: { id: { in: evtTemplateIds } },
     include: { tool: { select: { name: true, slug: true } } },
   });
-  const tplMap = new Map(templates.map((t) => [t.id, t]));
+  const evtTplMap = new Map(evtTemplates.map((t) => [t.id, t]));
 
-  // Agréger par template
   const byTemplate = new Map<string, TemplateFunnel>();
   const sessionsByTemplate = new Map<string, Set<string>>();
   const fieldErrorsByTemplate = new Map<string, Map<string, number>>();
 
   for (const e of events) {
-    const tpl = tplMap.get(e.templateId);
+    const tpl = evtTplMap.get(e.templateId);
     if (!tpl) continue;
-
     let funnel = byTemplate.get(e.templateId);
     if (!funnel) {
       funnel = {
@@ -75,25 +61,13 @@ export default async function AnalyticsPage() {
       sessionsByTemplate.set(e.templateId, new Set());
       fieldErrorsByTemplate.set(e.templateId, new Map());
     }
-
     sessionsByTemplate.get(e.templateId)!.add(e.sessionId);
-
     switch (e.eventType) {
-      case "started":
-        funnel.started++;
-        break;
-      case "preview":
-        funnel.preview++;
-        break;
-      case "signature_started":
-        funnel.signatureStarted++;
-        break;
-      case "submitted":
-        funnel.submitted++;
-        break;
-      case "abandoned":
-        funnel.abandoned++;
-        break;
+      case "started": funnel.started++; break;
+      case "preview": funnel.preview++; break;
+      case "signature_started": funnel.signatureStarted++; break;
+      case "submitted": funnel.submitted++; break;
+      case "abandoned": funnel.abandoned++; break;
       case "field_error":
         if (e.contextKey) {
           const map = fieldErrorsByTemplate.get(e.templateId)!;
@@ -102,8 +76,6 @@ export default async function AnalyticsPage() {
         break;
     }
   }
-
-  // Finaliser les funnels
   const funnels = Array.from(byTemplate.values()).map((f) => {
     f.uniqueSessions = sessionsByTemplate.get(f.templateId)?.size ?? 0;
     const errMap = fieldErrorsByTemplate.get(f.templateId);
@@ -115,22 +87,55 @@ export default async function AnalyticsPage() {
     }
     return f;
   });
-
   funnels.sort((a, b) => b.started - a.started);
 
-  // Totaux globaux
-  const totals = funnels.reduce(
-    (acc, f) => {
-      acc.started += f.started;
-      acc.submitted += f.submitted;
-      acc.abandoned += f.abandoned;
-      acc.sessions += f.uniqueSessions;
-      return acc;
-    },
-    { started: 0, submitted: 0, abandoned: 0, sessions: 0 }
-  );
-  const conversionRate = totals.started > 0 ? (totals.submitted / totals.started) * 100 : 0;
-  const abandonRate = totals.started > 0 ? (totals.abandoned / totals.started) * 100 : 0;
+  // === Stats générations (ancien stats page) ===
+  const recent = await prisma.generatedDocument.findMany({
+    where: { createdAt: { gte: since } },
+    select: { id: true, templateId: true, userId: true, createdAt: true, emailSentTo: true },
+  });
+  const genTemplateIds = Array.from(new Set(recent.map((r) => r.templateId)));
+  const genTemplates = await prisma.documentTemplate.findMany({
+    where: { id: { in: genTemplateIds } },
+    include: { tool: { select: { name: true, slug: true } } },
+  });
+  const genTplMap = new Map(genTemplates.map((t) => [t.id, t]));
+
+  const genByTemplate = new Map<string, { total: number; loggedIn: number; emailed: number; name: string; slug: string }>();
+  for (const r of recent) {
+    const t = genTplMap.get(r.templateId);
+    if (!t) continue;
+    const cur = genByTemplate.get(r.templateId) || {
+      total: 0, loggedIn: 0, emailed: 0, name: t.tool.name, slug: t.tool.slug,
+    };
+    cur.total++;
+    if (r.userId) cur.loggedIn++;
+    if (r.emailSentTo) cur.emailed++;
+    genByTemplate.set(r.templateId, cur);
+  }
+  const perTemplate = Array.from(genByTemplate.values()).sort((a, b) => b.total - a.total);
+
+  const byDay = new Map<string, number>();
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    byDay.set(d.toISOString().slice(0, 10), 0);
+  }
+  for (const r of recent) {
+    const k = r.createdAt.toISOString().slice(0, 10);
+    if (byDay.has(k)) byDay.set(k, (byDay.get(k) || 0) + 1);
+  }
+  const perDay = Array.from(byDay.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, count]) => ({ date, count }));
+
+  const genTotals = {
+    last30Days: recent.length,
+    loggedIn: recent.filter((r) => r.userId).length,
+    anonymous: recent.filter((r) => !r.userId).length,
+    emailed: recent.filter((r) => r.emailSentTo).length,
+    activeTemplates: perTemplate.length,
+  };
+  const allTime = await prisma.generatedDocument.count();
 
   return (
     <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
@@ -142,145 +147,31 @@ export default async function AnalyticsPage() {
         <div className="flex-1">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <BarChart3 className="w-7 h-7" />
-            Analytics formulaires
+            Analytics & statistiques
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Funnel et abandon sur les 30 derniers jours
+            Funnel, abandon, générations sur les 30 derniers jours
           </p>
         </div>
+        <Button
+          render={
+            <a href="/api/documents/analytics/export?days=30" download>
+              <Download className="w-4 h-4 mr-2" />
+              Exporter CSV
+            </a>
+          }
+          variant="outline"
+          size="sm"
+        />
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <Eye className="w-3.5 h-3.5" /> Sessions uniques
-            </div>
-            <div className="text-2xl font-bold">{totals.sessions}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-xs text-muted-foreground">Démarrés</div>
-            <div className="text-2xl font-bold">{totals.started}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-              Conversion
-            </div>
-            <div className="text-2xl font-bold text-green-600">
-              {conversionRate.toFixed(1)}%
-            </div>
-            <div className="text-xs text-muted-foreground">{totals.submitted} générés</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <XCircle className="w-3.5 h-3.5 text-amber-600" />
-              Abandon
-            </div>
-            <div className="text-2xl font-bold text-amber-600">{abandonRate.toFixed(1)}%</div>
-            <div className="text-xs text-muted-foreground">{totals.abandoned} abandons</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {funnels.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-16 text-center text-muted-foreground">
-            <BarChart3 className="w-10 h-10 mx-auto mb-3" />
-            <p>Aucune donnée analytics encore.</p>
-            <p className="text-xs mt-1">
-              Les événements sont enregistrés dès qu&apos;un utilisateur ouvre un formulaire publié.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Funnel par document</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/40">
-                  <TableHead>Document</TableHead>
-                  <TableHead className="text-right">Démarrés</TableHead>
-                  <TableHead className="text-right">Aperçu</TableHead>
-                  <TableHead className="text-right">Soumis</TableHead>
-                  <TableHead className="text-right">Abandonnés</TableHead>
-                  <TableHead className="text-right">Conversion</TableHead>
-                  <TableHead>Top erreurs</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {funnels.map((f) => {
-                  const conv = f.started > 0 ? (f.submitted / f.started) * 100 : 0;
-                  return (
-                    <TableRow key={f.templateId}>
-                      <TableCell>
-                        <div className="space-y-0.5">
-                          <Link
-                            href={`/outils/${f.templateSlug}`}
-                            target="_blank"
-                            className="font-medium hover:underline"
-                          >
-                            {f.templateName}
-                          </Link>
-                          <code className="text-xs text-muted-foreground block">/{f.templateSlug}</code>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">{f.started}</TableCell>
-                      <TableCell className="text-right">{f.preview}</TableCell>
-                      <TableCell className="text-right text-green-600 font-medium">
-                        {f.submitted}
-                      </TableCell>
-                      <TableCell className="text-right text-amber-600">{f.abandoned}</TableCell>
-                      <TableCell className="text-right">
-                        <Badge
-                          variant="outline"
-                          className={
-                            conv >= 60
-                              ? "bg-green-50 text-green-700 border-green-300"
-                              : conv >= 30
-                                ? "bg-amber-50 text-amber-700 border-amber-300"
-                                : "bg-red-50 text-red-700 border-red-300"
-                          }
-                        >
-                          {conv.toFixed(0)}%
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {f.fieldErrors.length === 0 ? (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        ) : (
-                          <div className="flex flex-wrap gap-1">
-                            {f.fieldErrors.slice(0, 3).map((e) => (
-                              <Badge
-                                key={e.fieldId}
-                                variant="outline"
-                                className="text-[10px] gap-1 bg-red-50 text-red-700 border-red-300"
-                              >
-                                <AlertTriangle className="w-2.5 h-2.5" />
-                                <code>{e.fieldId}</code> ({e.count})
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+      <AnalyticsTabs
+        funnels={funnels}
+        genTotals={genTotals}
+        allTime={allTime}
+        perTemplate={perTemplate}
+        perDay={perDay}
+      />
     </div>
   );
 }

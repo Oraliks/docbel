@@ -47,13 +47,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  BundleConditionEditor,
+  type ConditionRule,
+} from "./bundle-condition-editor";
 
 interface BundleItem {
   id?: string;
   templateId: string;
   order: number;
   required: boolean;
-  condition: { fieldId: string; equals: unknown } | null;
+  condition: ConditionRule[] | null;
   template: {
     id: string;
     toolId: string;
@@ -61,6 +65,13 @@ interface BundleItem {
     toolSlug: string;
     organisme: { id: string; shortName: string | null; color: string } | null;
   };
+}
+
+interface SchemaField {
+  id: string;
+  label: string;
+  type: string;
+  options?: { value: string; label: string }[];
 }
 
 interface Bundle {
@@ -88,9 +99,10 @@ interface AvailableTemplate {
 interface Props {
   initialBundles: Bundle[];
   availableTemplates: AvailableTemplate[];
+  templateSchemas: Record<string, SchemaField[]>;
 }
 
-export function BundlesAdmin({ initialBundles, availableTemplates }: Props) {
+export function BundlesAdmin({ initialBundles, availableTemplates, templateSchemas }: Props) {
   const router = useRouter();
   const [bundles, setBundles] = useState(initialBundles);
   const [editing, setEditing] = useState<Bundle | null>(null);
@@ -434,7 +446,7 @@ export function BundlesAdmin({ initialBundles, availableTemplates }: Props) {
             <div className="space-y-2 border-t pt-3">
               <Label className="text-sm font-medium">Documents inclus</Label>
               <Select value="" onValueChange={(v) => v && addItem(v)}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="+ Ajouter un document" />
                 </SelectTrigger>
                 <SelectContent>
@@ -449,62 +461,86 @@ export function BundlesAdmin({ initialBundles, availableTemplates }: Props) {
                 </SelectContent>
               </Select>
               {formItems.length > 0 && (
-                <div className="space-y-1.5 border rounded-md p-2 bg-muted/20">
-                  {formItems.map((it, idx) => (
-                    <div
-                      key={it.templateId}
-                      className="flex items-center gap-2 p-2 bg-background rounded border"
-                    >
-                      <div className="flex flex-col">
-                        <button
-                          type="button"
-                          onClick={() => moveItem(idx, -1)}
-                          disabled={idx === 0}
-                          className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs leading-none"
-                          title="Monter"
-                        >
-                          ▲
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moveItem(idx, 1)}
-                          disabled={idx === formItems.length - 1}
-                          className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs leading-none"
-                          title="Descendre"
-                        >
-                          ▼
-                        </button>
-                      </div>
-                      <GripVertical className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm flex-1 truncate">
-                        {idx + 1}. {it.template.toolName}
-                      </span>
-                      <label className="flex items-center gap-1 text-xs">
-                        <input
-                          type="checkbox"
-                          checked={it.required}
-                          onChange={(e) =>
-                            setFormItems((prev) =>
-                              prev.map((x) =>
-                                x.templateId === it.templateId
-                                  ? { ...x, required: e.target.checked }
-                                  : x
-                              )
-                            )
-                          }
-                        />
-                        Obligatoire
-                      </label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeItem(it.templateId)}
+                <div className="space-y-2 border rounded-md p-2 bg-muted/20">
+                  {formItems.map((it, idx) => {
+                    // Sources possibles pour les conditions = autres items du bundle
+                    const availableSources = formItems
+                      .filter((x) => x.templateId !== it.templateId)
+                      .map((x) => ({ id: x.templateId, name: x.template.toolName }));
+                    return (
+                      <div
+                        key={it.templateId}
+                        className="bg-background rounded border p-2 space-y-2"
                       >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col">
+                            <button
+                              type="button"
+                              onClick={() => moveItem(idx, -1)}
+                              disabled={idx === 0}
+                              className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs leading-none"
+                              title="Monter"
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveItem(idx, 1)}
+                              disabled={idx === formItems.length - 1}
+                              className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs leading-none"
+                              title="Descendre"
+                            >
+                              ▼
+                            </button>
+                          </div>
+                          <GripVertical className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm flex-1 truncate font-medium">
+                            {idx + 1}. {it.template.toolName}
+                          </span>
+                          <label className="flex items-center gap-1 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={it.required}
+                              onChange={(e) =>
+                                setFormItems((prev) =>
+                                  prev.map((x) =>
+                                    x.templateId === it.templateId
+                                      ? { ...x, required: e.target.checked }
+                                      : x
+                                  )
+                                )
+                              }
+                            />
+                            Obligatoire
+                          </label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeItem(it.templateId)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="pl-7">
+                          <BundleConditionEditor
+                            value={it.condition}
+                            onChange={(next) =>
+                              setFormItems((prev) =>
+                                prev.map((x) =>
+                                  x.templateId === it.templateId
+                                    ? { ...x, condition: next }
+                                    : x
+                                )
+                              )
+                            }
+                            availableSources={availableSources}
+                            templateSchemas={templateSchemas}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               {formItems.length === 0 && (

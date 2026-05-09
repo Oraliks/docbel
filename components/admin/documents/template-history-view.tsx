@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { DocumentField } from "@/lib/documents/types";
 
 interface DiffSummary {
@@ -68,17 +69,18 @@ function truncate(value: unknown, max = 60): string {
 
 export function TemplateHistoryView({ data }: { data: Data }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
 
   async function restore(rev: Revision) {
-    if (
-      !confirm(
-        `Restaurer la version ${rev.version} ? La version actuelle sera archivée comme nouvelle révision.`
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: `Restaurer la version ${rev.version} ?`,
+      description:
+        "La version actuelle sera automatiquement archivée comme nouvelle révision avant la restauration. Aucune donnée n'est perdue.",
+      confirmText: "Restaurer",
+    });
+    if (!ok) return;
     setBusyId(rev.id);
     try {
       const res = await fetch(

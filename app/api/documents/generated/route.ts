@@ -30,6 +30,15 @@ export async function GET(req: NextRequest) {
       include: {
         template: { include: { tool: { select: { name: true, slug: true } } } },
         outputFile: { select: { id: true, name: true, size: true, filePath: true } },
+        signature: {
+          select: {
+            id: true,
+            signerName: true,
+            signerEmail: true,
+            signatureMethod: true,
+            signedAt: true,
+          },
+        },
       },
     }),
   ]);
@@ -48,6 +57,14 @@ export async function GET(req: NextRequest) {
     expiresAt: g.expiresAt.toISOString(),
     isExpired: g.expiresAt < new Date(),
     fileExists: !!g.outputFile,
+    signature: g.signature
+      ? {
+          signerName: g.signature.signerName,
+          signerEmail: g.signature.signerEmail,
+          method: g.signature.signatureMethod,
+          signedAt: g.signature.signedAt.toISOString(),
+        }
+      : null,
     fileSize: g.outputFile?.size || null,
     fileName: g.outputFile?.name || null,
   }));

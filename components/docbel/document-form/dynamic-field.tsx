@@ -33,6 +33,9 @@ interface DynamicFieldProps {
   lang: Lang;
   templateName?: string;
   organisme?: string | null;
+  /// Activer le bouton ✨ d'aide IA. Désactivé par défaut pour le grand public ;
+  /// peut être activé globalement via /admin/documents/settings.
+  aiHelpEnabled?: boolean;
 }
 
 /// Mappe un résultat BCE vers les IDs de champs à remplir, par convention de nommage.
@@ -68,6 +71,7 @@ export function DynamicField({
   lang,
   templateName = "",
   organisme = null,
+  aiHelpEnabled = false,
 }: DynamicFieldProps) {
   const { register, setValue, watch, formState } = useFormContext();
   const value = watch(field.id);
@@ -150,14 +154,16 @@ export function DynamicField({
             <HelpCircle className="w-3.5 h-3.5" />
           </a>
         )}
-        <AIHelpPopover
-          templateName={templateName}
-          organisme={organisme}
-          fieldId={field.id}
-          fieldLabel={label}
-          fieldHelp={helpText}
-          lang={lang}
-        />
+        {aiHelpEnabled && (
+          <AIHelpPopover
+            templateName={templateName}
+            organisme={organisme}
+            fieldId={field.id}
+            fieldLabel={label}
+            fieldHelp={helpText}
+            lang={lang}
+          />
+        )}
       </Label>
 
       {field.type === "textarea" && (
@@ -193,6 +199,7 @@ export function DynamicField({
         >
           <SelectTrigger
             id={inputId}
+            className="w-full"
             aria-required={required || undefined}
             aria-invalid={!!error || undefined}
             aria-describedby={error ? `${inputId}-error` : undefined}

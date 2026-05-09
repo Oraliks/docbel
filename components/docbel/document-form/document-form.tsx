@@ -41,6 +41,9 @@ interface ApiResponse {
     requiresSignature?: boolean;
     officialRef?: string | null;
   };
+  settings?: {
+    aiHelpEnabled?: boolean;
+  };
 }
 
 type Step = "loading" | "draft-prompt" | "rgpd" | "filling" | "preview" | "signature" | "done";
@@ -88,6 +91,13 @@ export function DocumentForm({ slug }: DocumentFormProps) {
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const isLoggedIn = !!session?.user?.id;
+
+  // Si l'utilisateur arrive via un bundle, l'URL contient ?bundleRun=<id>&bundleSlug=<slug>
+  // Lecture simple via window (évite import useSearchParams qui force suspense boundary)
+  const urlParams =
+    typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const bundleRunId = urlParams?.get("bundleRun") || null;
+  const bundleSlug = urlParams?.get("bundleSlug") || null;
 
   const [step, setStep] = useState<Step>("loading");
   const [error, setError] = useState<string | null>(null);
@@ -349,6 +359,9 @@ export function DocumentForm({ slug }: DocumentFormProps) {
     try {
       const payload = methods.getValues();
       const body: Record<string, unknown> = { payload, consent: true, lang };
+      if (bundleRunId) {
+        body.bundleRunId = bundleRunId;
+      }
       if (signature) {
         body.signature = {
           dataUrl: signature.dataUrl,
@@ -576,6 +589,7 @@ export function DocumentForm({ slug }: DocumentFormProps) {
                       lang={lang}
                       templateName={data?.tool.name || ""}
                       organisme={data?.tool.sectionName || null}
+                      aiHelpEnabled={data?.settings?.aiHelpEnabled === true}
                     />
                   </ConditionalWrapper>
                 ))}
@@ -679,13 +693,38 @@ export function DocumentForm({ slug }: DocumentFormProps) {
       )}
 
       {step === "done" && generated && (
-        <DownloadActions
-          generatedId={generated.id}
-          filename={generated.filename}
-          downloadUrl={generated.downloadUrl}
-          expiresAt={generated.expiresAt}
-          onRestart={restart}
-        />
+        <>
+          <DownloadActions
+            generatedId={generated.id}
+            filename={generated.filename}
+            downloadUrl={generated.downloadUrl}
+            expiresAt={generated.expiresAt}
+            onRestart={restart}
+          />
+          {bundleRunId && (
+            <Card>
+              <CardContent className="py-4 flex items-center justify-between gap-3 flex-wrap">
+                <p className="text-sm text-muted-foreground">
+                  {lang === "nl"
+                    ? "Dit document maakt deel uit van een traject. Wilt u terug naar de andere documenten?"
+                    : "Ce document fait partie d'un parcours. Retourner aux autres documents ?"}
+                </p>
+                <Button
+                  onClick={() => {
+                    if (bundleSlug) {
+                      window.location.href = `/outils/bundles/${bundleSlug}`;
+                    } else {
+                      window.history.back();
+                    }
+                  }}
+                  size="sm"
+                >
+                  {lang === "nl" ? "Terug naar het traject" : "Retour au parcours"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       {!isLoggedIn && step !== "done" && (

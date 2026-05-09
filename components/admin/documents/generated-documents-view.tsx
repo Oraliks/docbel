@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -16,6 +17,7 @@ import {
   Clock,
   FileX,
   Search,
+  PenTool,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,6 +56,12 @@ interface GeneratedItem {
   fileExists: boolean;
   fileSize: number | null;
   fileName: string | null;
+  signature: {
+    signerName: string;
+    signerEmail: string | null;
+    method: string;
+    signedAt: string;
+  } | null;
 }
 
 interface ApiResponse {
@@ -87,6 +95,7 @@ function formatRelative(iso: string): string {
 }
 
 export function GeneratedDocumentsView() {
+  const confirmDialog = useConfirm();
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -123,9 +132,14 @@ export function GeneratedDocumentsView() {
   }, [templateId, userFilter, emailedOnly]);
 
   async function deleteOne(id: string) {
-    if (!confirm("Supprimer définitivement ce document généré ? Cette action est irréversible.")) {
-      return;
-    }
+    const ok = await confirmDialog({
+      title: "Supprimer ce document ?",
+      description:
+        "Le fichier sera supprimé du stockage et l'enregistrement de génération sera effacé. Si le document a été signé, l'audit signature sera également perdu. Cette action est irréversible.",
+      confirmText: "Supprimer",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusyId(id);
     try {
       const res = await fetch(`/api/documents/generated/${id}`, { method: "DELETE" });
@@ -272,6 +286,15 @@ export function GeneratedDocumentsView() {
                           {i.templateName}
                         </Link>
                         <div className="text-xs text-muted-foreground font-mono">{i.id.slice(0, 8)}</div>
+                        {i.signature && (
+                          <div
+                            className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1"
+                            title={`Signé par ${i.signature.signerName}${i.signature.signerEmail ? ` (${i.signature.signerEmail})` : ""} le ${new Date(i.signature.signedAt).toLocaleString("fr-BE")} — méthode : ${i.signature.method}`}
+                          >
+                            <PenTool className="w-3 h-3" />
+                            Signé · {i.signature.signerName}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         {i.isAnonymous ? (

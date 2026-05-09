@@ -137,7 +137,7 @@ export function FieldEditorRow({ field, allFields, presets = [], onChange, onRem
             className="h-9"
           />
           <Select value={field.type} onValueChange={(v) => v && update("type", v as DocumentFieldType)}>
-            <SelectTrigger className="h-9">
+            <SelectTrigger className="h-9 w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -311,7 +311,7 @@ export function FieldEditorRow({ field, allFields, presets = [], onChange, onRem
                 update("prefillFrom", v === "__none__" || !v ? undefined : (v as PrefillSource))
               }
             >
-              <SelectTrigger className="h-9">
+              <SelectTrigger className="h-9 w-full">
                 <SelectValue placeholder="Pas de pré-remplissage" />
               </SelectTrigger>
               <SelectContent>
@@ -435,7 +435,7 @@ export function FieldEditorRow({ field, allFields, presets = [], onChange, onRem
                   )
                 }
               >
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-9 w-full">
                   <SelectValue placeholder="Champ déclencheur" />
                 </SelectTrigger>
                 <SelectContent>
@@ -464,6 +464,26 @@ export function FieldEditorRow({ field, allFields, presets = [], onChange, onRem
               )}
             </div>
           </SubSection>
+
+          {field.position && (
+            <SubSection icon={<HelpCircle className="w-4 h-4 text-muted-foreground" />} title="Rendu PDF">
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={field.eraseUnderlay !== false}
+                  onCheckedChange={(c) => update("eraseUnderlay", c === true)}
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="font-medium">Effacer le filler du PDF original</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Dessine un rectangle blanc sous le texte pour masquer les pointillés (
+                    <code>....</code>) ou underscores (<code>____</code>) du document. Désactive si
+                    tu veux garder l&apos;apparence originale.
+                  </span>
+                </span>
+              </label>
+            </SubSection>
+          )}
 
           {field.position && (
             <SubSection icon={<HelpCircle className="w-4 h-4 text-muted-foreground" />} title="Position sur le PDF (mode visuel)">

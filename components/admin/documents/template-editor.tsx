@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   History,
   FlaskConical,
+  Files,
 } from "lucide-react";
 import { nanoid } from "nanoid";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FieldEditorRow } from "./field-editor-row";
 import { VisualPdfEditor } from "./visual-pdf-editor";
-import { DocumentPreviewPane } from "./document-preview-pane";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { DocumentField, DocumentSourceType } from "@/lib/documents/types";
 
 interface OrganismeOption {
@@ -101,6 +102,7 @@ type Tab = "fields" | "visual" | "settings";
 
 export function TemplateEditor({ initial, organismes, presets }: TemplateEditorProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [schema, setSchema] = useState<DocumentField[]>(initial.schema);
   const [sourceType, setSourceType] = useState<DocumentSourceType>(
     initial.sourceType as DocumentSourceType
@@ -112,7 +114,8 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
   const [saving, setSaving] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("fields");
+  const isPdfFlat = initial.sourceFile.fileType === "pdf" && initial.sourceType === "pdf_flat";
+  const [activeTab, setActiveTab] = useState<Tab>(isPdfFlat ? "visual" : "fields");
 
   // Nouveaux champs Phase 1+
   const [organismeId, setOrganismeId] = useState<string | null>(initial.organismeId);
@@ -162,13 +165,13 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
   }, []);
 
   async function handleParse() {
-    if (
-      !confirm(
-        "Re-détecter les champs depuis le fichier source ? Vos configurations existantes seront conservées."
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Re-détecter les champs ?",
+      description:
+        "Les champs seront extraits à nouveau depuis le fichier source. Vos configurations existantes (label, type, validation) seront conservées pour les champs déjà présents.",
+      confirmText: "Re-détecter",
+    });
+    if (!ok) return;
     setParsing(true);
     try {
       const res = await fetch(`/api/documents/templates/${initial.id}/parse`, {
@@ -189,12 +192,29 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
     }
   }
 
-  function requestSave(opts?: { newStatus?: string }) {
+  async function requestSave(opts?: { newStatus?: string }) {
     if (schemaChanged) {
-      setPendingPublish(opts?.newStatus);
-      setPendingChangeNotes("");
-      setPendingChangeType("minor");
-      setShowChangeNotesModal(true);
+      const actionLabel =
+        opts?.newStatus === "published"
+          ? "Publication"
+          : opts?.newStatus === "draft"
+            ? "Dépublication"
+            : "Sauvegarde";
+      const wantsNote = await confirm({
+        title: "Documenter ce changement ?",
+        description: `Vous avez modifié les champs du formulaire (v${initial.version + 1} sera créée). Voulez-vous laisser une note pour expliquer ce qui a changé ? Vous pouvez aussi continuer directement.`,
+        confirmText: "Oui, ajouter une note",
+        cancelText: `Non, ${actionLabel.toLowerCase()} sans note`,
+      });
+      if (wantsNote) {
+        setPendingPublish(opts?.newStatus);
+        setPendingChangeNotes("");
+        setPendingChangeType("minor");
+        setShowChangeNotesModal(true);
+      } else {
+        // Pas de note : on enregistre directement avec changeType=minor par défaut
+        void doSave({ ...opts, changeType: "minor" });
+      }
       return;
     }
     void doSave(opts);
@@ -251,8 +271,8 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
   const duplicateIds = fieldIds.filter((id, i) => fieldIds.indexOf(id) !== i);
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; show: boolean }[] = [
-    { id: "fields", label: `Champs (${schema.length})`, icon: <ListChecks className="w-4 h-4" />, show: true },
     { id: "visual", label: "Éditeur visuel", icon: <LayoutGrid className="w-4 h-4" />, show: isPdf && sourceType === "pdf_flat" },
+    { id: "fields", label: `Champs (${schema.length})`, icon: <ListChecks className="w-4 h-4" />, show: true },
     { id: "settings", label: "Paramètres", icon: <Settings className="w-4 h-4" />, show: true },
   ];
 
@@ -287,6 +307,17 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
             <History className="w-4 h-4 mr-1" />
             Historique
           </Button>
+          {isPdf && (
+            <Button
+              render={<Link href={`/admin/documents/${initial.tool.id}/compare-source`} />}
+              variant="ghost"
+              size="sm"
+              title="Compare avec une autre version PDF"
+            >
+              <Files className="w-4 h-4 mr-1" />
+              Comparer
+            </Button>
+          )}
           {status === "published" && (
             <Button
               render={<Link href={`/outils/${initial.tool.slug}`} target="_blank" />}
@@ -305,7 +336,9 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
                 const res = await fetch(`/api/documents/templates/${initial.id}/test-generate`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({}),
+                  // Envoie le schema EN MÉMOIRE (peut être différent du sauvegardé)
+                  // pour permettre de tester avant de sauvegarder.
+                  body: JSON.stringify({ schema }),
                 });
                 if (!res.ok) {
                   const j = await res.json().catch(() => ({}));
@@ -318,13 +351,17 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
                 a.download = `test-${initial.tool.slug}.pdf`;
                 a.click();
                 URL.revokeObjectURL(url);
-                toast.success("PDF de test généré");
+                toast.success(
+                  dirty
+                    ? "PDF de test généré (sur ton brouillon en cours, non sauvegardé)"
+                    : "PDF de test généré"
+                );
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "Erreur");
               }
             }}
             disabled={saving || schema.length === 0}
-            title="Génère un PDF avec des données fictives pour tester le rendu"
+            title="Génère un PDF avec des données fictives pour tester le rendu (utilise le schema en cours, sauvegardé ou non)"
           >
             <FlaskConical className="w-4 h-4 mr-1" />
             Tester
@@ -375,23 +412,12 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
         </Alert>
       )}
 
-      {/* Layout 2 colonnes : Preview à gauche, édition à droite */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] gap-6 items-start">
-        {/* Preview pane */}
-        <div className="lg:max-h-[calc(100vh-160px)] lg:overflow-auto">
-          <DocumentPreviewPane
-            templateId={initial.id}
-            sourceFileId={initial.sourceFile.id}
-            sourceFile={initial.sourceFile}
-          />
-        </div>
-
-        {/* Edition pane */}
-        <div className="space-y-4 min-w-0">
-          {/* Tabs custom horizontal */}
-          <div className="flex flex-wrap gap-1 border-b">
-            {tabs
-              .filter((t) => t.show)
+      {/* Layout pleine largeur — l'éditeur visuel sert déjà de preview */}
+      <div className="space-y-4 min-w-0">
+        {/* Tabs custom horizontal */}
+        <div className="flex flex-wrap gap-1 border-b">
+          {tabs
+            .filter((t) => t.show)
               .map((t) => (
                 <button
                   key={t.id}
@@ -501,7 +527,7 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
                       setDirty(true);
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -567,8 +593,15 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
                       setOrganismeId(v === "__none__" ? null : v);
                       setDirty(true);
                     }}
+                    items={[
+                      { value: "__none__", label: "— Aucun —" },
+                      ...organismes.map((o) => ({
+                        value: o.id,
+                        label: o.shortName ? `${o.shortName} — ${o.name}` : o.name,
+                      })),
+                    ]}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Aucun organisme" />
                     </SelectTrigger>
                     <SelectContent>
@@ -645,7 +678,6 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
               </CardContent>
             </Card>
           )}
-        </div>
       </div>
 
       {/* Modal note de changement (si schema modifié) */}
@@ -653,10 +685,27 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <Card className="max-w-lg w-full">
             <CardHeader>
-              <CardTitle>Note de changement (v{initial.version + 1})</CardTitle>
+              <CardTitle className="flex items-center gap-2 flex-wrap">
+                <span>Note de changement (v{initial.version + 1})</span>
+                {pendingPublish === "published" && (
+                  <Badge variant="default" className="text-xs gap-1">
+                    <Globe className="w-3 h-3" />
+                    Sera publié
+                  </Badge>
+                )}
+                {pendingPublish === "draft" && (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <EyeOff className="w-3 h-3" />
+                    Sera dépublié
+                  </Badge>
+                )}
+              </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Vous avez modifié les champs du formulaire. Décrivez ce qui a changé pour faciliter
-                le suivi des versions.
+                {pendingPublish === "published"
+                  ? "Vous avez modifié les champs ET demandé la publication. Décrivez le changement, puis confirmez pour enregistrer + publier."
+                  : pendingPublish === "draft"
+                    ? "Vous avez modifié les champs ET demandé le retour en brouillon. Décrivez le changement avant de continuer."
+                    : "Vous avez modifié les champs du formulaire. Décrivez ce qui a changé pour faciliter le suivi des versions."}
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -666,7 +715,7 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
                   value={pendingChangeType}
                   onValueChange={(v) => v && setPendingChangeType(v as "minor" | "major" | "hotfix")}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -707,7 +756,15 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
                   }
                   disabled={saving}
                 >
-                  {saving ? "Enregistrement…" : "Enregistrer"}
+                  {saving
+                    ? pendingPublish === "published"
+                      ? "Publication…"
+                      : "Enregistrement…"
+                    : pendingPublish === "published"
+                      ? "Enregistrer et publier"
+                      : pendingPublish === "draft"
+                        ? "Enregistrer et dépublier"
+                        : "Enregistrer"}
                 </Button>
               </div>
             </CardContent>

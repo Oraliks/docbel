@@ -10,6 +10,9 @@ export const SETTING_KEYS = {
   PARTNER_INVITE_SUBJECT: "partner_invite_subject",
   PARTNER_INVITE_BODY: "partner_invite_body",
   CONTACT_SIGNATURE: "contact_signature",
+  /// Toggle "true" / "false". Quand true, le bouton Aide IA apparaît à côté
+  /// de chaque champ du formulaire public (nécessite ANTHROPIC_API_KEY côté serveur).
+  AI_HELP_ENABLED: "ai_help_enabled",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
@@ -61,6 +64,7 @@ Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.
 Cordialement,
 L'équipe DocBel`,
   contact_signature: "",
+  ai_help_enabled: "false",
 };
 
 export async function getSetting(key: SettingKey): Promise<string> {

@@ -89,22 +89,24 @@ const defaultData = {
         {
           title: "Modèles",
           url: "/admin/documents",
+          children: [
+            { title: "Sections", url: "/admin/documents/sections" },
+            { title: "Organismes", url: "/admin/documents/organismes" },
+            { title: "Presets validation", url: "/admin/documents/presets" },
+            { title: "Bundles", url: "/admin/documents/bundles" },
+          ],
         },
         {
           title: "Documents générés",
           url: "/admin/documents/generated",
         },
         {
-          title: "Statistiques",
-          url: "/admin/documents/stats",
+          title: "Analytics",
+          url: "/admin/documents/analytics",
         },
         {
-          title: "Email",
-          url: "/admin/documents/email",
-        },
-        {
-          title: "RGPD",
-          url: "/admin/documents/rgpd",
+          title: "Paramètres système",
+          url: "/admin/documents/settings",
         },
       ],
     },

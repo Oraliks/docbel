@@ -22,14 +22,18 @@ import {
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
+interface NavSubItem {
+  title: string
+  url: string
+  /// Sous-éléments imbriqués (3e niveau, optionnel).
+  children?: { title: string; url: string }[]
+}
+
 interface NavItem {
   title: string
   url: string
   icon?: React.ReactNode
-  items?: {
-    title: string
-    url: string
-  }[]
+  items?: NavSubItem[]
 }
 
 const QUICK_LINKS = [
@@ -154,13 +158,68 @@ export function NavMain({
 
                     {openItems.includes(item.title) && (
                       <SidebarMenuSub>
-                        {item.items.map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton render={<Link href={subItem.url} />} isActive={false}>
-                              {subItem.title}
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
+                        {item.items.map((subItem) => {
+                          const subKey = `${item.title}::${subItem.title}`;
+                          const hasChildren = subItem.children && subItem.children.length > 0;
+                          return (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              {hasChildren ? (
+                                <>
+                                  {/* Le label est cliquable pour naviguer, le chevron pour expand */}
+                                  <div className="flex items-stretch gap-0.5">
+                                    <SidebarMenuSubButton
+                                      render={<Link href={subItem.url} />}
+                                      isActive={false}
+                                      className="flex-1"
+                                    >
+                                      {subItem.title}
+                                    </SidebarMenuSubButton>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        toggleItem(subKey);
+                                      }}
+                                      aria-label={
+                                        openItems.includes(subKey)
+                                          ? `Réduire ${subItem.title}`
+                                          : `Développer ${subItem.title}`
+                                      }
+                                      className="px-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                      <ChevronRightIcon
+                                        className={`size-3 transition-transform ${openItems.includes(subKey) ? "rotate-90" : ""}`}
+                                      />
+                                    </button>
+                                  </div>
+                                  {openItems.includes(subKey) && (
+                                    <ul className="ml-3 mt-0.5 space-y-0.5 border-l border-border/50 pl-2">
+                                      {subItem.children!.map((leaf) => (
+                                        <li key={leaf.title}>
+                                          <SidebarMenuSubButton
+                                            render={<Link href={leaf.url} />}
+                                            isActive={false}
+                                            className="text-xs"
+                                          >
+                                            {leaf.title}
+                                          </SidebarMenuSubButton>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </>
+                              ) : (
+                                <SidebarMenuSubButton
+                                  render={<Link href={subItem.url} />}
+                                  isActive={false}
+                                >
+                                  {subItem.title}
+                                </SidebarMenuSubButton>
+                              )}
+                            </SidebarMenuSubItem>
+                          );
+                        })}
                       </SidebarMenuSub>
                     )}
                   </>

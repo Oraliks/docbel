@@ -268,7 +268,11 @@ export function NewTemplateForm({ sections }: NewTemplateFormProps) {
               <Label>
                 Section <span className="text-destructive">*</span>
               </Label>
-              <Select value={sectionId} onValueChange={(v) => setSectionId(v ?? "")}>
+              <Select
+                value={sectionId}
+                onValueChange={(v) => setSectionId(v ?? "")}
+                items={sections.map((s) => ({ value: s.id, label: s.name }))}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Choisir une section" />
                 </SelectTrigger>

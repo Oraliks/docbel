@@ -203,7 +203,7 @@ export function ProfilePage({ initial, userName, userEmail }: ProfilePageProps) 
               value={form.gender || "__none__"}
               onValueChange={(v) => update("gender", v === "__none__" ? "" : v)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -220,7 +220,7 @@ export function ProfilePage({ initial, userName, userEmail }: ProfilePageProps) 
               value={form.maritalStatus || "__none__"}
               onValueChange={(v) => update("maritalStatus", v === "__none__" ? "" : v)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -344,7 +344,7 @@ export function ProfilePage({ initial, userName, userEmail }: ProfilePageProps) 
               value={form.contractType || "__none__"}
               onValueChange={(v) => update("contractType", v === "__none__" ? "" : v)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

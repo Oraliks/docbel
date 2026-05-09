@@ -29,14 +29,17 @@ export async function POST(
   }
 
   // Optionnel : payload fourni par l'admin, sinon génération automatique
-  let body: { payload?: Record<string, unknown> } = {};
+  // Optionnel : schema override (utile pour tester un schema en cours d'édition non sauvegardé)
+  let body: { payload?: Record<string, unknown>; schema?: DocumentField[] } = {};
   try {
     body = await req.json();
   } catch {
-    // Pas de body : on génère
+    // Pas de body : on prend tout depuis la BDD
   }
 
-  const fields = (template.schema as unknown as DocumentField[]) || [];
+  const fields: DocumentField[] = Array.isArray(body.schema) && body.schema.length > 0
+    ? body.schema.filter((f) => f && f.id && f.label && f.type)
+    : ((template.schema as unknown as DocumentField[]) || []);
   const rawPayload = body.payload || generateSeedPayload(fields);
 
   const sanitized: GenerationPayload = {};

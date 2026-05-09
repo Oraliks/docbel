@@ -54,6 +54,7 @@ export async function PUT(
   const data: Record<string, unknown> = {};
   let createRevision = false;
   let diffSummary: ReturnType<typeof computeSchemaDiff> | null = null;
+  let presetCountDeltas: Record<string, number> = {};
 
   if (Array.isArray(body.schema)) {
     const cleanSchema = (body.schema as DocumentField[]).filter((f) => f && f.id && f.label && f.type);
@@ -64,6 +65,10 @@ export async function PUT(
       data.version = existing.version + 1;
       createRevision = true;
       diffSummary = computeSchemaDiff(oldSchema, cleanSchema);
+      // Calculer les deltas d'usage de presets
+      const oldCounts = countPresetUsage(oldSchema);
+      const newCounts = countPresetUsage(cleanSchema);
+      presetCountDeltas = computePresetDeltas(oldCounts, newCounts);
     }
   }
   if (typeof body.rgpdNotice === "string" || body.rgpdNotice === null) {
@@ -131,20 +136,129 @@ export async function PUT(
     where: { id },
     data,
   });
+
+  // Mettre à jour usageCount des presets impactés (best-effort)
+  for (const [presetId, delta] of Object.entries(presetCountDeltas)) {
+    if (delta === 0) continue;
+    try {
+      await prisma.fieldValidationPreset.update({
+        where: { id: presetId },
+        data: { usageCount: { increment: delta } },
+      });
+    } catch {
+      // Preset peut avoir été supprimé entre temps, on ignore
+    }
+  }
+
   return NextResponse.json(updated);
 }
 
+function countPresetUsage(schema: DocumentField[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const f of schema) {
+    if (f.presetId) counts[f.presetId] = (counts[f.presetId] || 0) + 1;
+  }
+  return counts;
+}
+
+function computePresetDeltas(
+  oldCounts: Record<string, number>,
+  newCounts: Record<string, number>
+): Record<string, number> {
+  const deltas: Record<string, number> = {};
+  const allIds = new Set([...Object.keys(oldCounts), ...Object.keys(newCounts)]);
+  for (const id of allIds) {
+    const delta = (newCounts[id] || 0) - (oldCounts[id] || 0);
+    if (delta !== 0) deltas[id] = delta;
+  }
+  return deltas;
+}
+
+/// DELETE par défaut = archive (status="archived"), réversible.
+/// DELETE avec ?hard=true&confirmSlug=<slug> = suppression DÉFINITIVE.
+/// La suppression définitive cascade sur :
+///   - DocumentTemplateRevision (historique des versions)
+///   - GeneratedDocument (documents générés par les utilisateurs)
+///   - DocumentDraft (brouillons en cours)
+///   - DocumentBundleItem (présence dans des bundles)
+///   - SignatureRecord (audit signature) via cascade GeneratedDocument
+/// Le Tool parent et le File source ne sont PAS supprimés.
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
 
   const { id } = await params;
-  await prisma.documentTemplate.update({
+  const url = new URL(req.url);
+  const hard = url.searchParams.get("hard") === "true";
+  const confirmSlug = url.searchParams.get("confirmSlug");
+
+  if (!hard) {
+    // Soft-delete : archive
+    await prisma.documentTemplate.update({
+      where: { id },
+      data: { status: "archived" },
+    });
+    return NextResponse.json({ ok: true, archived: true });
+  }
+
+  // Hard delete : on exige le slug pour éviter les accidents
+  const template = await prisma.documentTemplate.findUnique({
     where: { id },
-    data: { status: "archived" },
+    include: {
+      tool: { select: { id: true, slug: true, name: true } },
+      _count: {
+        select: {
+          generated: true,
+          revisions: true,
+          drafts: true,
+          bundleItems: true,
+        },
+      },
+    },
   });
-  return NextResponse.json({ ok: true });
+
+  if (!template) {
+    return NextResponse.json({ error: "Template introuvable" }, { status: 404 });
+  }
+
+  if (confirmSlug !== template.tool.slug) {
+    return NextResponse.json(
+      {
+        error: "Confirmation invalide",
+        expectedSlug: template.tool.slug,
+        related: template._count,
+      },
+      { status: 422 }
+    );
+  }
+
+  // Décrémenter les usageCount des presets utilisés avant suppression
+  type FieldWithPreset = { presetId?: string };
+  const fields = (template.schema as unknown as FieldWithPreset[]) || [];
+  const presetCounts: Record<string, number> = {};
+  for (const f of fields) {
+    if (f.presetId) presetCounts[f.presetId] = (presetCounts[f.presetId] || 0) + 1;
+  }
+  for (const [presetId, count] of Object.entries(presetCounts)) {
+    try {
+      await prisma.fieldValidationPreset.update({
+        where: { id: presetId },
+        data: { usageCount: { decrement: count } },
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  // Suppression cascade (les FK ont onDelete: Cascade dans le schema)
+  await prisma.documentTemplate.delete({ where: { id } });
+
+  return NextResponse.json({
+    ok: true,
+    hardDeleted: true,
+    affected: template._count,
+  });
 }

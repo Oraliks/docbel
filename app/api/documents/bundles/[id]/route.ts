@@ -86,12 +86,34 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
   const { id } = await params;
-  await prisma.documentBundle.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+
+  // Soft-delete par défaut (préserve l'historique). Hard-delete si ?hard=true.
+  const url = new URL(req.url);
+  const hard = url.searchParams.get("hard") === "true";
+
+  if (hard) {
+    await prisma.documentBundle.delete({ where: { id } });
+    return NextResponse.json({ ok: true, hardDeleted: true });
+  }
+
+  // Vérifier s'il y a des runs en cours (auquel cas on force le soft-delete)
+  const runCount = await prisma.bundleRun.count({ where: { bundleId: id } });
+  await prisma.documentBundle.update({
+    where: { id },
+    data: { active: false },
+  });
+  return NextResponse.json({
+    ok: true,
+    softDeleted: true,
+    runCount,
+    message: runCount > 0
+      ? `Bundle désactivé (${runCount} run(s) historique préservé(s)).`
+      : "Bundle désactivé.",
+  });
 }

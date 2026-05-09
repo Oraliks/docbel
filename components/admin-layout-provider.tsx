@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { authClient } from "@/lib/auth-client"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -28,6 +29,7 @@ export function AdminLayoutProvider({ children }: { children: React.ReactNode })
     return (
       <TooltipProvider>
         {children}
+        <ConfirmDialog />
       </TooltipProvider>
     )
   }
@@ -52,6 +54,7 @@ export function AdminLayoutProvider({ children }: { children: React.ReactNode })
           </div>
         </SidebarInset>
       </SidebarProvider>
+      <ConfirmDialog />
     </TooltipProvider>
   )
 }

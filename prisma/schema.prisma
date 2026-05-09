@@ -648,6 +648,7 @@ model DocumentBundle {
   updatedAt   DateTime @updatedAt
 
   items DocumentBundleItem[]
+  runs  BundleRun[]
 
   @@index([active])
 }
@@ -660,11 +661,39 @@ model DocumentBundleItem {
   template   DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
   order      Int              @default(0)
   required   Boolean          @default(true)
-  // Condition d'inclusion: { fieldId: "...", equals: "..." } basée sur les valeurs déjà saisies
-  condition  Json?
+  // Condition d'inclusion : tableau de règles ANDées
+  // [{ sourceTemplateId, fieldId, op: "equals"|"notEquals"|"in"|"contains", value }]
+  // Si sourceTemplateId === templateId courant : auto-référence (pas utile)
+  // Si sourceTemplateId === null : champ d'un autre item du bundle (recherché par fieldId)
+  condition Json?
 
   @@unique([bundleId, templateId])
   @@index([bundleId])
+}
+
+/// Run d'un bundle = progression d'un utilisateur (anonyme via sessionId, ou userId).
+/// Stocke les payloads validés des documents complétés.
+/// Permet d'évaluer les conditions des items à compléter.
+model BundleRun {
+  id        String         @id @default(cuid())
+  bundleId  String
+  bundle    DocumentBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  // Identification utilisateur (l'un des deux)
+  userId    String?
+  sessionId String? // cookie côté client
+  // Payloads collectés : { [templateId]: { ...validated payload } }
+  payloads  Json           @default("{}")
+  // Liste des templateIds complétés (ordre d'achèvement)
+  completedTemplateIds Json @default("[]")
+  status    String         @default("in_progress") // in_progress | completed | abandoned
+  startedAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  completedAt DateTime?
+
+  @@index([bundleId])
+  @@index([userId])
+  @@index([sessionId])
+  @@index([status])
 }
 
 /// Profil utilisateur enrichi pour pré-remplissage des formulaires (Phase 8).

@@ -10,6 +10,7 @@ export default async function DocumentsAdminPage() {
         tool: { select: { id: true, name: true, slug: true } },
         sourceFile: { select: { id: true, name: true, fileType: true } },
         organisme: { select: { id: true, code: true, name: true, shortName: true, color: true, type: true } },
+        _count: { select: { generated: true, revisions: true, drafts: true, bundleItems: true } },
       },
       orderBy: { updatedAt: "desc" },
     }),
@@ -34,6 +35,7 @@ export default async function DocumentsAdminPage() {
     tool: t.tool,
     sourceFile: t.sourceFile,
     organisme: t.organisme,
+    counts: t._count,
   }));
 
   return (

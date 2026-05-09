@@ -59,6 +59,7 @@ export async function POST(
   const consent = body?.consent === true;
   const lang: Lang = body?.lang === "nl" ? "nl" : "fr";
   const signatureInput: SignaturePayload | null = body?.signature || null;
+  const bundleRunId: string | null = typeof body?.bundleRunId === "string" ? body.bundleRunId : null;
 
   if (!consent) {
     return NextResponse.json(
@@ -212,10 +213,36 @@ export async function POST(
       outputFileId: saved.id,
       payloadHash,
       ipHash,
+      bundleRunId: bundleRunId || null,
       expiresAt,
     },
     include: { template: { include: { tool: { select: { name: true, slug: true } } } } },
   });
+
+  // Si dans le cadre d'un bundle : persister le payload validé
+  if (bundleRunId) {
+    try {
+      const run = await prisma.bundleRun.findUnique({ where: { id: bundleRunId } });
+      if (run && run.status === "in_progress") {
+        const currentPayloads = (run.payloads as Record<string, unknown>) || {};
+        const currentCompleted = (run.completedTemplateIds as string[]) || [];
+        const newPayloads = { ...currentPayloads, [template.id]: validated };
+        const newCompleted = currentCompleted.includes(template.id)
+          ? currentCompleted
+          : [...currentCompleted, template.id];
+        await prisma.bundleRun.update({
+          where: { id: bundleRunId },
+          data: {
+            payloads: newPayloads,
+            completedTemplateIds: newCompleted,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("BundleRun update failed:", err);
+      // Ne fait pas échouer la génération
+    }
+  }
 
   // Si signé, créer le SignatureRecord
   if (signatureInput && signatureBuffer && template.requiresSignature) {

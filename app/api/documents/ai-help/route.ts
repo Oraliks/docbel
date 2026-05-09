@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
+import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
 
 /// Endpoint d'assistance contextuelle alimenté par Claude Haiku.
 /// Aide les utilisateurs à comprendre un champ ou un document officiel belge.
@@ -39,6 +40,15 @@ Strikte regels:
 Formaat: gewone tekst, geen zware markdown. **Vetgedrukt** mag voor sleutelwoorden.`;
 
 export async function POST(req: NextRequest) {
+  // Vérifier que l'aide IA est activée globalement (admin toggle)
+  const enabled = await getSetting(SETTING_KEYS.AI_HELP_ENABLED);
+  if (enabled !== "true") {
+    return NextResponse.json(
+      { error: "Aide IA désactivée par l'administrateur" },
+      { status: 403 }
+    );
+  }
+
   const ip = getClientIp(req);
   const rl = checkRateLimit(`ai-help:${ip}`, { windowMs: 60_000, max: 10 });
   if (!rl.ok) {

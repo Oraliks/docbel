@@ -90,6 +90,16 @@ export interface DocumentField {
 
   // Spécifique au type "signature"
   signatureRequired?: boolean; // si true → bloque la génération sans signature
+
+  // Rendu PDF
+  /// Si true (défaut), un rectangle blanc est dessine sous le texte pour masquer
+  /// les fillers visuels du PDF original (lignes pointillées, underscores, etc.).
+  /// Mettre à false pour conserver l'apparence originale (overlay seul).
+  eraseUnderlay?: boolean;
+  /// Padding (en points PDF) ajoute autour du rectangle d'effacement.
+  /// Utile pour masquer entièrement une ligne pointillée qui dépasse légèrement.
+  /// Défaut : 2pt en haut/bas, 1pt à gauche/droite.
+  erasePadding?: { top?: number; right?: number; bottom?: number; left?: number };
 }
 
 export type DocumentSchema = DocumentField[];

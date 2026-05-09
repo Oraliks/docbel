@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { BundlesAdmin } from "@/components/admin/documents/bundles-admin";
+import { DocumentField } from "@/lib/documents/types";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,18 @@ export default async function BundlesAdminPage() {
     }),
   ]);
 
+  // Extraire les schemas pour le sélecteur de champs dans l'éditeur de condition
+  const templateSchemas: Record<string, { id: string; label: string; type: string; options?: { value: string; label: string }[] }[]> = {};
+  for (const t of templates) {
+    const fields = (t.schema as unknown as DocumentField[]) || [];
+    templateSchemas[t.id] = fields.map((f) => ({
+      id: f.id,
+      label: f.label,
+      type: f.type,
+      options: f.options,
+    }));
+  }
+
   const serializedBundles = bundles.map((b) => ({
     id: b.id,
     slug: b.slug,
@@ -45,7 +58,9 @@ export default async function BundlesAdminPage() {
       templateId: it.templateId,
       order: it.order,
       required: it.required,
-      condition: it.condition as { fieldId: string; equals: unknown } | null,
+      condition: it.condition as
+        | { sourceTemplateId: string; fieldId: string; op: string; value?: unknown }[]
+        | null,
       template: {
         id: it.template.id,
         toolId: it.template.tool.id,
@@ -68,7 +83,11 @@ export default async function BundlesAdminPage() {
 
   return (
     <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
-      <BundlesAdmin initialBundles={serializedBundles} availableTemplates={serializedTemplates} />
+      <BundlesAdmin
+        initialBundles={serializedBundles}
+        availableTemplates={serializedTemplates}
+        templateSchemas={templateSchemas}
+      />
     </div>
   );
 }

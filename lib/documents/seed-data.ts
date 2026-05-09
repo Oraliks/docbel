@@ -153,11 +153,26 @@ export function generateSeedPayload(fields: DocumentField[]): GenerationPayload 
         else if (id.includes("date")) v = genDate();
         else if (id.includes("amount") || id.includes("montant") || id.includes("salaire"))
           v = String(1500 + Math.floor(Math.random() * 4500));
-        else v = `Test ${f.label}`;
+        else v = `Test ${cleanLabel(f.label)}`;
     }
 
     payload[f.id] = v;
   }
 
   return payload;
+}
+
+/// Le label d'un champ peut contenir des caractères exotiques (PUA, etc.)
+/// extraits d'un PDF avec polices custom. On nettoie pour ne pas casser le rendu.
+function cleanLabel(label: string): string {
+  return (
+    label
+      .replace(/[-]/g, "") // PUA (Wingdings/Symbol)
+      .replace(/[‘’]/g, "'")
+      .replace(/[“”]/g, '"')
+      .replace(/[–—]/g, "-")
+      .replace(/[^ -ÿ]/g, "")
+      .trim()
+      .slice(0, 30) || "Champ"
+  );
 }

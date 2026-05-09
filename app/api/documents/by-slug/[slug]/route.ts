@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
 
 export async function GET(
   _req: NextRequest,
@@ -7,13 +8,16 @@ export async function GET(
 ) {
   const { slug } = await params;
 
-  const tool = await prisma.tool.findUnique({
-    where: { slug },
-    include: {
-      documentTemplate: true,
-      section: { select: { id: true, name: true } },
-    },
-  });
+  const [tool, aiHelpEnabled] = await Promise.all([
+    prisma.tool.findUnique({
+      where: { slug },
+      include: {
+        documentTemplate: true,
+        section: { select: { id: true, name: true } },
+      },
+    }),
+    getSetting(SETTING_KEYS.AI_HELP_ENABLED),
+  ]);
 
   if (!tool || tool.type !== "doc_generator" || !tool.documentTemplate) {
     return NextResponse.json({ error: "Outil introuvable" }, { status: 404 });
@@ -44,6 +48,9 @@ export async function GET(
       version: tool.documentTemplate.version,
       requiresSignature: tool.documentTemplate.requiresSignature,
       officialRef: tool.documentTemplate.officialRef,
+    },
+    settings: {
+      aiHelpEnabled: aiHelpEnabled === "true",
     },
   });
 }

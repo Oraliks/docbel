@@ -431,7 +431,7 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
                   value={form.type}
                   onValueChange={(v) => v && setForm({ ...form, type: v })}
                 >
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-9 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

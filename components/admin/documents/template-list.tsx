@@ -20,10 +20,13 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  MoreHorizontal,
   Building2,
   Library,
   Package,
+  Copy,
+  Trash2,
+  FolderTree,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,14 +46,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { DeleteTemplateDialog } from "./delete-template-dialog";
 
 interface Template {
   id: string;
@@ -73,6 +71,12 @@ interface Template {
     color: string;
     type: string;
   } | null;
+  counts: {
+    generated: number;
+    revisions: number;
+    drafts: number;
+    bundleItems: number;
+  };
 }
 
 interface OrganismeOption {
@@ -122,7 +126,12 @@ function isExpiringSoon(iso: string | null, daysThreshold = 30): boolean {
 
 export function TemplateList({ templates, organismes }: TemplateListProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    template: Template;
+    related: { generated: number; revisions: number; drafts: number; bundleItems: number };
+  } | null>(null);
 
   // Filtres
   const [search, setSearch] = useState("");
@@ -208,6 +217,10 @@ export function TemplateList({ templates, organismes }: TemplateListProps) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button render={<Link href="/admin/documents/sections" />} variant="outline" size="sm">
+            <FolderTree className="w-4 h-4 mr-2" />
+            Sections
+          </Button>
           <Button render={<Link href="/admin/documents/organismes" />} variant="outline" size="sm">
             <Building2 className="w-4 h-4 mr-2" />
             Organismes
@@ -227,6 +240,10 @@ export function TemplateList({ templates, organismes }: TemplateListProps) {
           <Button render={<Link href="/admin/documents/analytics" />} variant="outline" size="sm">
             <BarChart3 className="w-4 h-4 mr-2" />
             Analytics
+          </Button>
+          <Button render={<Link href="/admin/documents/settings" />} variant="outline" size="sm">
+            <SettingsIcon className="w-4 h-4 mr-2" />
+            Paramètres
           </Button>
           <Button render={<Link href="/admin/documents/new" />} size="sm">
             <Plus className="w-4 h-4 mr-2" />
@@ -453,70 +470,208 @@ export function TemplateList({ templates, organismes }: TemplateListProps) {
                     </TableCell>
 
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          render={<Link href={`/admin/documents/${t.toolId}`} />}
-                          variant="ghost"
-                          size="sm"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                          <span className="sr-only">Éditer</span>
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            disabled={busy === t.id}
-                            className="h-8 w-8 p-0 hover:bg-muted rounded-md transition-colors inline-flex items-center justify-center disabled:opacity-50"
-                          >
-                            <MoreHorizontal className="w-4 h-4" />
-                            <span className="sr-only">Actions</span>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem render={<Link href={`/admin/documents/${t.toolId}`} />}>
-                              <Edit2 className="w-4 h-4 mr-2" />
-                              Éditer
-                            </DropdownMenuItem>
-                            <DropdownMenuItem render={<Link href={`/admin/documents/${t.toolId}/history`} />}>
-                              <History className="w-4 h-4 mr-2" />
-                              Historique
-                            </DropdownMenuItem>
-                            {t.status === "published" && (
-                              <DropdownMenuItem
-                                render={<Link href={`/outils/${t.tool.slug}`} target="_blank" />}
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                render={<Link href={`/admin/documents/${t.toolId}`} />}
+                                variant="ghost"
+                                size="sm"
                               >
-                                <Globe className="w-4 h-4 mr-2" />
-                                Voir public
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            {t.status === "draft" && (
-                              <DropdownMenuItem onClick={() => changeStatus(t.id, "published")}>
-                                <Globe className="w-4 h-4 mr-2" />
-                                Publier
-                              </DropdownMenuItem>
-                            )}
-                            {t.status === "published" && (
-                              <DropdownMenuItem onClick={() => changeStatus(t.id, "draft")}>
-                                <RefreshCw className="w-4 h-4 mr-2" />
-                                Dépublier
-                              </DropdownMenuItem>
-                            )}
-                            {t.status !== "archived" && (
-                              <DropdownMenuItem
-                                onClick={() => changeStatus(t.id, "archived")}
-                                className="text-destructive"
+                                <Edit2 className="w-4 h-4" />
+                                <span className="sr-only">Éditer</span>
+                              </Button>
+                            }
+                          />
+                          <TooltipContent>Éditer</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                render={<Link href={`/admin/documents/${t.toolId}/history`} />}
+                                variant="ghost"
+                                size="sm"
                               >
-                                <Archive className="w-4 h-4 mr-2" />
-                                Archiver
-                              </DropdownMenuItem>
-                            )}
-                            {t.status === "archived" && (
-                              <DropdownMenuItem onClick={() => changeStatus(t.id, "draft")}>
-                                <RefreshCw className="w-4 h-4 mr-2" />
-                                Désarchiver
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                                <History className="w-4 h-4" />
+                                <span className="sr-only">Historique</span>
+                              </Button>
+                            }
+                          />
+                          <TooltipContent>Historique des versions</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={busy === t.id}
+                                onClick={async () => {
+                                  const ok = await confirm({
+                                    title: `Dupliquer "${t.tool.name}" ?`,
+                                    description:
+                                      "Une copie en brouillon sera créée avec un nouveau slug. Vous serez redirigé vers son éditeur.",
+                                    confirmText: "Dupliquer",
+                                  });
+                                  if (!ok) return;
+                                  setBusy(t.id);
+                                  try {
+                                    const res = await fetch(
+                                      `/api/documents/templates/${t.id}/duplicate`,
+                                      {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: "{}",
+                                      }
+                                    );
+                                    if (!res.ok) {
+                                      const j = await res.json().catch(() => ({}));
+                                      throw new Error(j.error || "Échec");
+                                    }
+                                    const dup = await res.json();
+                                    toast.success(`Dupliqué : ${dup.name}`);
+                                    router.push(`/admin/documents/${dup.toolId}`);
+                                  } catch (e) {
+                                    toast.error(e instanceof Error ? e.message : "Erreur");
+                                  } finally {
+                                    setBusy(null);
+                                  }
+                                }}
+                              >
+                                <Copy className="w-4 h-4" />
+                                <span className="sr-only">Dupliquer</span>
+                              </Button>
+                            }
+                          />
+                          <TooltipContent>Dupliquer</TooltipContent>
+                        </Tooltip>
+
+                        {t.status === "published" && (
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <Button
+                                  render={
+                                    <Link
+                                      href={`/outils/${t.tool.slug}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    />
+                                  }
+                                  variant="ghost"
+                                  size="sm"
+                                >
+                                  <Globe className="w-4 h-4" />
+                                  <span className="sr-only">Voir public</span>
+                                </Button>
+                              }
+                            />
+                            <TooltipContent>Voir la page publique</TooltipContent>
+                          </Tooltip>
+                        )}
+
+                        {/* Séparateur visuel */}
+                        <span className="mx-1 h-6 w-px bg-border" aria-hidden />
+
+                        {t.status === "draft" && (
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={busy === t.id}
+                                  onClick={() => changeStatus(t.id, "published")}
+                                  className="text-green-700 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950"
+                                >
+                                  <Globe className="w-4 h-4" />
+                                  <span className="sr-only">Publier</span>
+                                </Button>
+                              }
+                            />
+                            <TooltipContent>Publier</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {t.status === "published" && (
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={busy === t.id}
+                                  onClick={() => changeStatus(t.id, "draft")}
+                                >
+                                  <RefreshCw className="w-4 h-4" />
+                                  <span className="sr-only">Dépublier</span>
+                                </Button>
+                              }
+                            />
+                            <TooltipContent>Dépublier (repasser en brouillon)</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {t.status !== "archived" ? (
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={busy === t.id}
+                                  onClick={() => changeStatus(t.id, "archived")}
+                                  className="text-amber-700 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950"
+                                >
+                                  <Archive className="w-4 h-4" />
+                                  <span className="sr-only">Archiver</span>
+                                </Button>
+                              }
+                            />
+                            <TooltipContent>Archiver (réversible)</TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={busy === t.id}
+                                  onClick={() => changeStatus(t.id, "draft")}
+                                >
+                                  <RefreshCw className="w-4 h-4" />
+                                  <span className="sr-only">Désarchiver</span>
+                                </Button>
+                              }
+                            />
+                            <TooltipContent>Désarchiver</TooltipContent>
+                          </Tooltip>
+                        )}
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={busy === t.id}
+                                onClick={() =>
+                                  setDeleteTarget({
+                                    template: t,
+                                    related: t.counts,
+                                  })
+                                }
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                <span className="sr-only">Supprimer définitivement</span>
+                              </Button>
+                            }
+                          />
+                          <TooltipContent>Supprimer définitivement</TooltipContent>
+                        </Tooltip>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -580,6 +735,33 @@ export function TemplateList({ templates, organismes }: TemplateListProps) {
             </div>
           )}
         </div>
+      )}
+
+      {deleteTarget && (
+        <DeleteTemplateDialog
+          open={!!deleteTarget}
+          onOpenChange={(v) => !v && setDeleteTarget(null)}
+          templateName={deleteTarget.template.tool.name}
+          templateSlug={deleteTarget.template.tool.slug}
+          related={deleteTarget.related}
+          onConfirm={async () => {
+            try {
+              const res = await fetch(
+                `/api/documents/templates/${deleteTarget.template.id}?hard=true&confirmSlug=${encodeURIComponent(deleteTarget.template.tool.slug)}`,
+                { method: "DELETE" }
+              );
+              if (!res.ok) {
+                const j = await res.json().catch(() => ({}));
+                throw new Error(j.error || "Échec");
+              }
+              toast.success(`"${deleteTarget.template.tool.name}" supprimé définitivement`);
+              setDeleteTarget(null);
+              router.refresh();
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "Erreur");
+            }
+          }}
+        />
       )}
     </div>
   );

@@ -17,10 +17,13 @@ export interface EmailListItem {
   subject: string;
   textBody: string;
   isRead: boolean;
+  isFlagged: boolean;
   receivedAt: string;
   attachments: AttachmentMeta[];
   messageId: string | null;
+  inReplyTo?: string | null;
   isReplied: boolean;
+  threadSize?: number;
 }
 
 export interface EmailFull extends EmailListItem {
@@ -36,6 +39,7 @@ export interface ThreadEmail {
   folder: Folder;
   fromAddress: string;
   fromName: string | null;
+  toAddresses: string;
   subject: string;
   textBody: string;
   htmlBody: string | null;
@@ -44,6 +48,7 @@ export interface ThreadEmail {
   messageId: string | null;
   inReplyTo: string | null;
   isRead: boolean;
+  isFlagged: boolean;
 }
 
 export interface FolderStats {

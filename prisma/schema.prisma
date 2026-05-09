@@ -287,8 +287,9 @@ model InboxEmail {
   htmlBody    String?
   // Attachments metadata (we don't store file contents — just a list)
   attachments Json     @default("[]") // [{filename, contentType, size}]
-  // Status — mirrored from IMAP \Seen flag (server is authoritative)
-  isRead Boolean @default(false)
+  // Status — mirrored from IMAP \Seen and \Flagged flags (server is authoritative)
+  isRead    Boolean @default(false)
+  isFlagged Boolean @default(false)
   // Timestamps
   receivedAt DateTime
   createdAt  DateTime @default(now())

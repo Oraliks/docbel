@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useState } from "react"
-import { ActivityIcon, FolderIcon, MailIcon, ScrollTextIcon, ChevronRightIcon } from "lucide-react"
+import { ActivityIcon, FolderIcon, MailIcon, ScrollTextIcon, ChevronRightIcon, LayoutDashboardIcon, UsersIcon } from "lucide-react"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -33,6 +33,8 @@ interface NavItem {
 }
 
 const QUICK_LINKS = [
+  { label: "Dashboard", url: "/admin", icon: LayoutDashboardIcon },
+  { label: "Utilisateurs", url: "/admin/users", icon: UsersIcon },
   { label: "Fichiers", url: "/admin?view=filemanager", icon: FolderIcon },
   { label: "Messagerie", url: "/admin/messagerie", icon: MailIcon },
   { label: "Activité", url: "/admin/activity", icon: ActivityIcon },
@@ -52,6 +54,12 @@ function useIsQuickLinkActive() {
         if (searchParams?.get(key) !== value) return false
       }
       return true
+    }
+    // /admin matches every admin route via startsWith — so for the dashboard
+    // tile specifically, require an exact match AND no `view` query (which
+    // would mean the Files tile is active instead).
+    if (basePath === "/admin") {
+      return pathname === basePath && !searchParams?.get("view")
     }
     return pathname === basePath || pathname?.startsWith(`${basePath}/`)
   }
@@ -107,12 +115,14 @@ export function NavMain({
                     ) : null}
                     <item.icon className="size-4" />
                     {showBadge ? (
-                      <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
-                        {unreadCount > 9 ? "9+" : unreadCount}
+                      <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground tabular-nums">
+                        {unreadCount > 99 ? "99+" : unreadCount}
                       </span>
                     ) : null}
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">{item.label}</TooltipContent>
+                  <TooltipContent side="bottom">
+                    {showBadge ? `${item.label} · ${unreadCount} non lu${unreadCount > 1 ? "s" : ""}` : item.label}
+                  </TooltipContent>
                 </Tooltip>
               )
             })}

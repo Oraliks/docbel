@@ -196,6 +196,7 @@ export async function POST(
   const body = await request.json();
   const subject = typeof body.subject === "string" ? body.subject.trim() : "";
   const text = typeof body.text === "string" ? body.text : "";
+  const html = typeof body.html === "string" && body.html.trim() ? body.html : undefined;
 
   if (!subject || !text.trim()) {
     return NextResponse.json(
@@ -220,6 +221,7 @@ export async function POST(
       toName: recipientName,
       subject,
       text,
+      html,
       inReplyTo: email.messageId,
       references: email.messageId,
     });

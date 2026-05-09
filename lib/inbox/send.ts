@@ -6,14 +6,14 @@ export interface SendReplyInput {
   to: string;
   toName?: string | null;
   subject: string;
+  /** Plain-text version (always required, used as text/plain alternative) */
   text: string;
+  /** Optional HTML version. When provided, the email is sent multipart/alternative. */
+  html?: string;
   inReplyTo?: string | null;
   references?: string | null;
-  /** Override the From address (defaults to CONTACT_EMAIL_FROM) */
   fromAddress?: string;
-  /** Override the From display name */
   fromName?: string | null;
-  /** Override Reply-To (defaults to From) */
   replyTo?: string;
 }
 
@@ -22,10 +22,6 @@ export interface SendReplyResult {
   imapAppended: boolean;
 }
 
-/**
- * Encode a header value containing non-ASCII characters using RFC 2047
- * encoded-word syntax with Base64. Pure-ASCII values are returned unchanged.
- */
 function encodeHeader(value: string): string {
   if (/^[\x20-\x7E]*$/.test(value)) return value;
   return `=?UTF-8?B?${Buffer.from(value, "utf-8").toString("base64")}?=`;
@@ -36,11 +32,11 @@ function buildAddressHeader(address: string, name: string | null | undefined): s
   return `${encodeHeader(name)} <${address}>`;
 }
 
-/**
- * Build a minimal RFC 5322 message suitable for IMAP APPEND.
- * Plain text body only — base64-encoded so any UTF-8 content is safe.
- */
-function buildRfc822(opts: {
+function base64Wrapped(content: string): string {
+  return Buffer.from(content, "utf-8").toString("base64").match(/.{1,76}/g)?.join("\r\n") || "";
+}
+
+interface BuildMessageOpts {
   fromAddress: string;
   fromName?: string | null;
   toAddress: string;
@@ -48,15 +44,21 @@ function buildRfc822(opts: {
   replyTo?: string;
   subject: string;
   text: string;
+  html?: string;
   inReplyTo?: string | null;
   references?: string | null;
-}): { rfc822: string; messageId: string } {
+}
+
+/**
+ * Build an RFC 5322 message. If html is provided, structure as
+ * multipart/alternative so receiving clients can display the best version.
+ * Otherwise, single-part text/plain.
+ */
+function buildRfc822(opts: BuildMessageOpts): { rfc822: string; messageId: string } {
   const messageId = `<${nanoid(24)}@docbel.be>`;
   const date = new Date().toUTCString().replace("GMT", "+0000");
-  const bodyB64 = Buffer.from(opts.text, "utf-8").toString("base64");
-  const wrappedBody = bodyB64.match(/.{1,76}/g)?.join("\r\n") || "";
 
-  const lines: string[] = [
+  const headerLines: string[] = [
     `From: ${buildAddressHeader(opts.fromAddress, opts.fromName)}`,
     `To: ${buildAddressHeader(opts.toAddress, opts.toName)}`,
     opts.replyTo ? `Reply-To: ${opts.replyTo}` : null,
@@ -66,20 +68,49 @@ function buildRfc822(opts: {
     opts.inReplyTo ? `In-Reply-To: ${opts.inReplyTo}` : null,
     opts.references ? `References: ${opts.references}` : null,
     `MIME-Version: 1.0`,
+  ].filter((l): l is string => l !== null);
+
+  if (opts.html) {
+    const boundary = `alt-${nanoid(16)}`;
+    const body = [
+      `--${boundary}`,
+      `Content-Type: text/plain; charset=utf-8`,
+      `Content-Transfer-Encoding: base64`,
+      "",
+      base64Wrapped(opts.text),
+      `--${boundary}`,
+      `Content-Type: text/html; charset=utf-8`,
+      `Content-Transfer-Encoding: base64`,
+      "",
+      base64Wrapped(opts.html),
+      `--${boundary}--`,
+    ].join("\r\n");
+
+    const rfc822 = [
+      ...headerLines,
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      "",
+      body,
+    ].join("\r\n");
+    return { rfc822, messageId };
+  }
+
+  // Plain text only
+  const rfc822 = [
+    ...headerLines,
     `Content-Type: text/plain; charset=utf-8`,
     `Content-Transfer-Encoding: base64`,
     "",
-    wrappedBody,
-  ].filter((l): l is string => l !== null);
-
-  return { rfc822: lines.join("\r\n"), messageId };
+    base64Wrapped(opts.text),
+  ].join("\r\n");
+  return { rfc822, messageId };
 }
 
 /**
- * Send a reply through Resend AND append a copy to the OVH IMAP Sent folder
- * so that the message appears in both /admin/messagerie SENT tab and OVH webmail.
+ * Send via Resend (multipart if html is given) AND append a copy to the
+ * OVH IMAP Sent folder so the message appears in OVH webmail too.
  *
- * IMAP APPEND failure does not fail the send — Resend already delivered the email.
+ * IMAP APPEND failure does not fail the send — Resend already delivered.
  */
 export async function sendContactReply(input: SendReplyInput): Promise<SendReplyResult> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -97,20 +128,29 @@ export async function sendContactReply(input: SendReplyInput): Promise<SendReply
   if (input.replyTo) headers["Reply-To"] = input.replyTo;
 
   const resend = new Resend(apiKey);
-  const result = await resend.emails.send({
+  const sendPayload: {
+    from: string;
+    to: string;
+    subject: string;
+    text: string;
+    html?: string;
+    headers?: Record<string, string>;
+  } = {
     from: fromHeader,
     to: input.toName ? `${input.toName} <${input.to}>` : input.to,
     subject: input.subject,
     text: input.text,
-    headers: Object.keys(headers).length > 0 ? headers : undefined,
-  });
+  };
+  if (input.html) sendPayload.html = input.html;
+  if (Object.keys(headers).length > 0) sendPayload.headers = headers;
+
+  const result = await resend.emails.send(sendPayload);
 
   if (result.error) {
     throw new Error(result.error.message || "Échec d'envoi de l'email");
   }
   const resendId = result.data?.id || "";
 
-  // Best-effort: copy to IMAP Sent so the email appears in OVH webmail too.
   let imapAppended = false;
   try {
     const { rfc822 } = buildRfc822({
@@ -121,6 +161,7 @@ export async function sendContactReply(input: SendReplyInput): Promise<SendReply
       replyTo: input.replyTo,
       subject: input.subject,
       text: input.text,
+      html: input.html,
       inReplyTo: input.inReplyTo,
       references: input.references,
     });

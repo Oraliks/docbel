@@ -189,7 +189,7 @@ async function syncFolder(
     // 1. Server state — metadata only (cheap). If this loop fails partway,
     // we MUST NOT proceed to the deletion phase, or we'd wipe valid cached
     // emails because of a transient connection blip.
-    const serverMeta = new Map<number, { isSeen: boolean }>();
+    const serverMeta = new Map<number, { isSeen: boolean; isFlagged: boolean }>();
     let metadataComplete = false;
     try {
       if (exists > 0) {
@@ -199,7 +199,8 @@ async function syncFolder(
           { uid: false }
         )) {
           const isSeen = msg.flags?.has("\\Seen") || false;
-          serverMeta.set(msg.uid, { isSeen });
+          const isFlagged = msg.flags?.has("\\Flagged") || false;
+          serverMeta.set(msg.uid, { isSeen, isFlagged });
         }
       }
       metadataComplete = true;
@@ -219,7 +220,7 @@ async function syncFolder(
     // 2. DB state
     const dbRows = await prisma.inboxEmail.findMany({
       where: { folder: dbFolder },
-      select: { id: true, uid: true, isRead: true },
+      select: { id: true, uid: true, isRead: true, isFlagged: true },
     });
     const dbByUid = new Map(dbRows.map((r) => [r.uid, r]));
 
@@ -232,14 +233,15 @@ async function syncFolder(
       }
     }
 
-    // 4. Reconcile read flags for emails present on both sides
+    // 4. Reconcile read + flagged flags for emails present on both sides
     for (const [uid, srv] of serverMeta) {
       const db = dbByUid.get(uid);
-      if (db && db.isRead !== srv.isSeen) {
-        await prisma.inboxEmail.update({
-          where: { id: db.id },
-          data: { isRead: srv.isSeen },
-        });
+      if (!db) continue;
+      const patch: { isRead?: boolean; isFlagged?: boolean } = {};
+      if (db.isRead !== srv.isSeen) patch.isRead = srv.isSeen;
+      if (db.isFlagged !== srv.isFlagged) patch.isFlagged = srv.isFlagged;
+      if (Object.keys(patch).length > 0) {
+        await prisma.inboxEmail.update({ where: { id: db.id }, data: patch });
         result.updated++;
       }
     }
@@ -264,6 +266,7 @@ async function syncFolder(
             const cc = flattenAddressList(parsed.cc);
             const attachments = extractAttachmentMeta(parsed);
             const isSeen = msg.flags?.has("\\Seen") || false;
+            const isFlagged = msg.flags?.has("\\Flagged") || false;
 
             await prisma.inboxEmail.create({
               data: {
@@ -284,6 +287,7 @@ async function syncFolder(
                 attachments: attachments as unknown as Prisma.InputJsonValue,
                 receivedAt: parsed.date || msg.internalDate || new Date(),
                 isRead: isSeen,
+                isFlagged,
               },
             });
             result.imported++;
@@ -377,6 +381,120 @@ export async function setReadFlag(folder: Folder, uid: number, isRead: boolean):
       } else {
         await client.messageFlagsRemove({ uid: String(uid) }, ["\\Seen"], { uid: true });
       }
+    } finally {
+      lock.release();
+    }
+  } finally {
+    await client.logout().catch(() => {});
+  }
+}
+
+export async function setFlaggedFlag(folder: Folder, uid: number, isFlagged: boolean): Promise<void> {
+  const cfg = readImapConfig();
+  if (!cfg) throw new Error("IMAP non configuré");
+  const client = newClient(cfg);
+  await client.connect();
+  try {
+    const folders = await resolveFolders(client);
+    const path = folders[folder];
+    if (!path) throw new Error(`Dossier ${folder} introuvable`);
+    const lock = await client.getMailboxLock(path);
+    try {
+      if (isFlagged) {
+        await client.messageFlagsAdd({ uid: String(uid) }, ["\\Flagged"], { uid: true });
+      } else {
+        await client.messageFlagsRemove({ uid: String(uid) }, ["\\Flagged"], { uid: true });
+      }
+    } finally {
+      lock.release();
+    }
+  } finally {
+    await client.logout().catch(() => {});
+  }
+}
+
+/**
+ * Bulk action: mark every unread message in a folder as \Seen on the server.
+ * Returns the number of messages affected (best-effort count).
+ */
+export async function markFolderAllRead(folder: Folder): Promise<number> {
+  const cfg = readImapConfig();
+  if (!cfg) throw new Error("IMAP non configuré");
+  const client = newClient(cfg);
+  await client.connect();
+  try {
+    const folders = await resolveFolders(client);
+    const path = folders[folder];
+    if (!path) throw new Error(`Dossier ${folder} introuvable`);
+    const lock = await client.getMailboxLock(path);
+    try {
+      const unseenUids = await client.search({ seen: false }, { uid: true });
+      if (!unseenUids || unseenUids.length === 0) return 0;
+      await client.messageFlagsAdd(unseenUids, ["\\Seen"], { uid: true });
+      return unseenUids.length;
+    } finally {
+      lock.release();
+    }
+  } finally {
+    await client.logout().catch(() => {});
+  }
+}
+
+/**
+ * Bulk version of setReadFlag and friends. UIDs all in the same folder.
+ */
+export async function bulkSetFlags(
+  folder: Folder,
+  uids: number[],
+  flags: { add?: string[]; remove?: string[] }
+): Promise<void> {
+  if (uids.length === 0) return;
+  const cfg = readImapConfig();
+  if (!cfg) throw new Error("IMAP non configuré");
+  const client = newClient(cfg);
+  await client.connect();
+  try {
+    const folders = await resolveFolders(client);
+    const path = folders[folder];
+    if (!path) throw new Error(`Dossier ${folder} introuvable`);
+    const lock = await client.getMailboxLock(path);
+    try {
+      if (flags.add && flags.add.length > 0) {
+        await client.messageFlagsAdd(uids, flags.add, { uid: true });
+      }
+      if (flags.remove && flags.remove.length > 0) {
+        await client.messageFlagsRemove(uids, flags.remove, { uid: true });
+      }
+    } finally {
+      lock.release();
+    }
+  } finally {
+    await client.logout().catch(() => {});
+  }
+}
+
+export async function bulkMoveMessages(
+  fromFolder: Folder,
+  uids: number[],
+  toFolder: Folder
+): Promise<void> {
+  if (uids.length === 0) return;
+  const cfg = readImapConfig();
+  if (!cfg) throw new Error("IMAP non configuré");
+  const client = newClient(cfg);
+  await client.connect();
+  try {
+    const folders = await resolveFolders(client);
+    const fromPath = folders[fromFolder];
+    if (!fromPath) throw new Error(`Dossier source ${fromFolder} introuvable`);
+    let toPath = folders[toFolder];
+    if (!toPath && toFolder === "ARCHIVE") {
+      toPath = await ensureArchiveFolder(client, folders);
+    }
+    if (!toPath) throw new Error(`Dossier destination ${toFolder} introuvable`);
+    const lock = await client.getMailboxLock(fromPath);
+    try {
+      await client.messageMove(uids, toPath, { uid: true });
     } finally {
       lock.release();
     }

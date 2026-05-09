@@ -9,6 +9,7 @@ export const SETTING_KEYS = {
   U1_INSTITUTIONS_LAST_UPDATED: "u1_institutions_last_updated",
   PARTNER_INVITE_SUBJECT: "partner_invite_subject",
   PARTNER_INVITE_BODY: "partner_invite_body",
+  CONTACT_SIGNATURE: "contact_signature",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
@@ -59,6 +60,7 @@ Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.
 
 Cordialement,
 L'équipe DocBel`,
+  contact_signature: "",
 };
 
 export async function getSetting(key: SettingKey): Promise<string> {

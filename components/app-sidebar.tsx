@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, FolderIcon, UsersIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon, HandshakeIcon } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon, HandshakeIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultData = {
@@ -26,13 +26,6 @@ const defaultData = {
     avatar: "",
   },
   navMain: [
-    {
-      title: "Dashboard",
-      url: "/admin",
-      icon: (
-        <LayoutDashboardIcon className="size-4" />
-      ),
-    },
     {
       title: "Actualités",
       url: "/admin/news",
@@ -59,13 +52,6 @@ const defaultData = {
       url: "/admin/pages",
       icon: (
         <FolderIcon className="size-4" />
-      ),
-    },
-    {
-      title: "Utilisateurs",
-      url: "/admin/users",
-      icon: (
-        <UsersIcon className="size-4" />
       ),
     },
     {
@@ -160,9 +146,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
+    let cancelled = false
     async function fetchUnreadCount() {
       try {
         const response = await fetch("/api/inbox/stats")
+        if (cancelled) return
         if (response.ok) {
           const data = await response.json()
           setUnreadCount(data.unreadInbox || 0)
@@ -172,7 +160,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       }
     }
 
-    fetchUnreadCount()
+    void fetchUnreadCount()
+
+    // Refresh every 30s while the tab is visible
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") void fetchUnreadCount()
+    }, 30_000)
+
+    // Refresh when the tab regains focus
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void fetchUnreadCount()
+    }
+    document.addEventListener("visibilitychange", onVisibility)
+
+    // Refresh on demand — the messagerie panel dispatches this when state changes,
+    // so the badge updates instantly without waiting for the polling interval.
+    const onStatsChanged = () => void fetchUnreadCount()
+    window.addEventListener("inbox:stats-changed", onStatsChanged)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+      document.removeEventListener("visibilitychange", onVisibility)
+      window.removeEventListener("inbox:stats-changed", onStatsChanged)
+    }
   }, [])
 
   const userData = {

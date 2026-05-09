@@ -162,11 +162,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   useEffect(() => {
     async function fetchUnreadCount() {
       try {
-        const response = await fetch("/api/contact-messages")
+        const response = await fetch("/api/inbox/stats")
         if (response.ok) {
-          const messages = await response.json()
-          const unread = messages.filter((msg: { status: string }) => msg.status === "NEW").length
-          setUnreadCount(unread)
+          const data = await response.json()
+          setUnreadCount(data.unreadInbox || 0)
         }
       } catch (error) {
         console.error("Failed to fetch unread messages:", error)

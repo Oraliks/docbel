@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ActivityLog, ActivityItem } from "@/components/admin/activity-log";
 import { AdminDashboardOverview } from "@/components/admin/admin-dashboard-overview";
 import { FileManager } from "@/components/docbel/file-manager";
-import { MessagesPanel } from "@/components/admin/messages-panel";
 import { ChangelogManager } from "@/components/admin/changelog-manager";
 import { ToolsManager } from "@/components/admin/tools-manager";
 
@@ -109,10 +108,6 @@ export function AdminDashboard({ pages, users, sections }: AdminDashboardProps) 
   // Afficher les vues alternatives
   if (view === "filemanager") {
     return <FileManager />
-  }
-
-  if (view === "messages") {
-    return <MessagesPanel />
   }
 
   if (view === "activity") {

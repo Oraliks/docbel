@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { syncInbox } from "@/lib/inbox/imap";
+import { syncAllFolders } from "@/lib/inbox/imap";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { logActivity } from "@/lib/activity-logger";
 
 /**
- * Cron-triggered or admin-triggered IMAP sync.
+ * Cron-triggered or admin-triggered IMAP sync (all folders).
  *
  * Auth: either
  *   - Vercel cron header (Authorization: Bearer <CRON_SECRET>) — for daily run
- *   - admin session — for on-demand sync from /admin/inbox
+ *   - admin session — for on-demand sync from /admin/messagerie
  */
 async function handleSync(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -23,15 +23,15 @@ async function handleSync(req: NextRequest) {
   }
 
   try {
-    const result = await syncInbox();
-    if (result.imported > 0) {
+    const result = await syncAllFolders();
+    if (result.imported > 0 || result.deleted > 0 || result.updated > 0) {
       await logActivity(
         triggeredBy,
         "synced",
         "inbox",
-        "INBOX",
+        "all",
         undefined,
-        `Imported ${result.imported}, errors ${result.errors}`
+        `Imported ${result.imported}, updated ${result.updated}, deleted ${result.deleted}, errors ${result.errors}`
       );
     }
     return NextResponse.json(result);
@@ -42,7 +42,6 @@ async function handleSync(req: NextRequest) {
   }
 }
 
-// Vercel cron sends GET; admin UI sends POST. Both delegate to the same handler.
 export async function GET(req: NextRequest) {
   return handleSync(req);
 }

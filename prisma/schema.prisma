@@ -265,51 +265,41 @@ model NewsletterSubscriber {
   updatedAt DateTime @updatedAt
 }
 
-model ContactMessage {
-  id         String   @id @default(cuid())
-  name       String
-  email      String
-  subject    String
-  message    String
-  status     String   @default("NEW") // NEW, READ, REPLIED, ARCHIVED
-  adminReply String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-
 model InboxEmail {
   id          String   @id @default(cuid())
-  // IMAP UID — unique per mailbox + uidValidity. We use a composite key with mailbox.
-  mailbox     String   @default("INBOX")
+  // Folder = logical inbox category. Mirrors IMAP folders detected via SPECIAL-USE.
+  // Values: "INBOX" | "SENT" | "SPAM" | "ARCHIVE" | "TRASH"
+  folder      String   @default("INBOX")
   uid         Int
   uidValidity String?
   // Headers
-  messageId   String?
-  inReplyTo   String?
-  fromAddress String
-  fromName    String?
-  toAddresses String   @default("") // JSON array of addresses
-  ccAddresses String   @default("") // JSON array of addresses
-  subject     String   @default("")
+  messageId      String?
+  inReplyTo      String?
+  fromAddress    String
+  fromName       String?
+  replyToAddress String?
+  replyToName    String?
+  toAddresses    String  @default("") // JSON array of addresses
+  ccAddresses    String  @default("") // JSON array of addresses
+  subject        String  @default("")
   // Body (parsed)
   textBody    String   @default("")
   htmlBody    String?
   // Attachments metadata (we don't store file contents — just a list)
   attachments Json     @default("[]") // [{filename, contentType, size}]
-  // Status
-  isRead      Boolean  @default(false)
-  isArchived  Boolean  @default(false)
-  isReplied   Boolean  @default(false)
+  // Status — mirrored from IMAP \Seen flag (server is authoritative)
+  isRead Boolean @default(false)
   // Timestamps
-  receivedAt  DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  receivedAt DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  @@unique([mailbox, uid])
+  @@unique([folder, uid])
+  @@index([folder, receivedAt(sort: Desc)])
   @@index([isRead])
-  @@index([isArchived])
-  @@index([receivedAt])
   @@index([fromAddress])
+  @@index([messageId])
+  @@index([inReplyTo])
 }
 
 model BaremeFile {

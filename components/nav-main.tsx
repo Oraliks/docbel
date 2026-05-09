@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useState } from "react"
-import { ActivityIcon, FolderIcon, MailIcon, InboxIcon, ScrollTextIcon, ChevronRightIcon } from "lucide-react"
+import { ActivityIcon, FolderIcon, MailIcon, ScrollTextIcon, ChevronRightIcon } from "lucide-react"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -34,8 +34,7 @@ interface NavItem {
 
 const QUICK_LINKS = [
   { label: "Fichiers", url: "/admin?view=filemanager", icon: FolderIcon },
-  { label: "Messages", url: "/admin/messages", icon: MailIcon },
-  { label: "Inbox", url: "/admin/inbox", icon: InboxIcon },
+  { label: "Messagerie", url: "/admin/messagerie", icon: MailIcon },
   { label: "Activité", url: "/admin/activity", icon: ActivityIcon },
   { label: "Changelog", url: "/admin/changelog", icon: ScrollTextIcon },
 ]
@@ -84,7 +83,7 @@ export function NavMain({
           <div className="flex items-center gap-1.5 px-1">
             {QUICK_LINKS.map((item) => {
               const active = isActive(item.url)
-              const showBadge = item.label === "Messages" && unreadCount > 0
+              const showBadge = item.label === "Messagerie" && unreadCount > 0
               return (
                 <Tooltip key={item.label}>
                   <TooltipTrigger

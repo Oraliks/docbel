@@ -152,31 +152,3 @@ export async function syncInbox(): Promise<SyncResult> {
   return result;
 }
 
-/**
- * Fetch the full source of one email by UID — used when displaying detail view
- * if we need attachments or original HTML beyond what's cached in DB.
- * For v1 we serve everything from DB cache, so this is unused. Kept for future use.
- */
-export async function fetchOriginalSource(uid: number): Promise<Buffer | null> {
-  const cfg = readImapConfig();
-  if (!cfg) return null;
-  const client = new ImapFlow({
-    host: cfg.host,
-    port: cfg.port,
-    secure: true,
-    auth: { user: cfg.user, pass: cfg.password },
-    logger: false,
-  });
-  await client.connect();
-  try {
-    const lock = await client.getMailboxLock("INBOX");
-    try {
-      const msg = await client.fetchOne(String(uid), { source: true }, { uid: true });
-      return msg?.source ? (msg.source as Buffer) : null;
-    } finally {
-      lock.release();
-    }
-  } finally {
-    await client.logout().catch(() => {});
-  }
-}

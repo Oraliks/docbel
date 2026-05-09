@@ -43,6 +43,14 @@ export default async function TemplateHistoryPage({
       rgpdNotice: r.rgpdNotice,
       retentionDays: r.retentionDays,
       outputFilenameTpl: r.outputFilenameTpl,
+      changeNotes: r.changeNotes,
+      changeType: r.changeType,
+      diffSummary: r.diffSummary as {
+        added: { id: string; label: string; type: string }[];
+        removed: { id: string; label: string; type: string }[];
+        modified: { id: string; label: string; changes: { key: string; from: unknown; to: unknown }[] }[];
+        summary: string;
+      } | null,
       createdBy: r.createdBy,
       createdAt: r.createdAt.toISOString(),
     })),

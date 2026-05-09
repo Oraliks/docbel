@@ -50,6 +50,9 @@ function msg(field: DocumentField, lang: Lang, fallbackKey: keyof typeof FALLBAC
 
 function fieldToZod(field: DocumentField, lang: Lang): ZodTypeAny {
   switch (field.type) {
+    case "signature":
+      // La signature n'est pas dans le payload (envoyée séparément). Accept anything.
+      return z.any().optional();
     case "checkbox":
       return z.coerce.boolean();
     case "number":
@@ -123,6 +126,8 @@ export function buildPayloadValidator(schema: DocumentSchema, lang: Lang = "fr")
   return z.object(shape).superRefine((data, ctx) => {
     for (const f of schema) {
       if (!f.required) continue;
+      // La signature est validée séparément (template.requiresSignature côté route)
+      if (f.type === "signature") continue;
       if (!isFieldVisible(f, data as GenerationPayload)) continue;
       const v = (data as GenerationPayload)[f.id];
       const isEmpty =

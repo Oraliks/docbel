@@ -42,6 +42,8 @@ export async function GET(
       rgpdNotice: tool.documentTemplate.rgpdNotice,
       outputFilenameTpl: tool.documentTemplate.outputFilenameTpl,
       version: tool.documentTemplate.version,
+      requiresSignature: tool.documentTemplate.requiresSignature,
+      officialRef: tool.documentTemplate.officialRef,
     },
   });
 }

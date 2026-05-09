@@ -16,6 +16,7 @@ import {
   ListChecks,
   LayoutGrid,
   History,
+  FlaskConical,
 } from "lucide-react";
 import { nanoid } from "nanoid";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,38 @@ import { VisualPdfEditor } from "./visual-pdf-editor";
 import { DocumentPreviewPane } from "./document-preview-pane";
 import { DocumentField, DocumentSourceType } from "@/lib/documents/types";
 
+interface OrganismeOption {
+  id: string;
+  code: string;
+  name: string;
+  shortName: string | null;
+  color: string;
+  type: string;
+}
+
+export interface PresetOption {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  fieldType: string;
+  regex: string | null;
+  regexFlags: string | null;
+  minLength: number | null;
+  maxLength: number | null;
+  minValue: number | null;
+  maxValue: number | null;
+  minDate: string | null;
+  maxDate: string | null;
+  belgianType: string | null;
+  errorMsg: string;
+  errorMsgNl: string | null;
+  helpText: string | null;
+  helpTextNl: string | null;
+  placeholder: string | null;
+  placeholderNl: string | null;
+}
+
 interface TemplateInitial {
   id: string;
   toolId: string;
@@ -47,17 +80,26 @@ interface TemplateInitial {
   outputFilenameTpl: string;
   status: string;
   version: number;
+  organismeId: string | null;
+  effectiveDate: string | null; // YYYY-MM-DD
+  expiresAt: string | null; // YYYY-MM-DD
+  officialRef: string | null;
+  requiresSignature: boolean;
+  signaturePosition: { page: number; x: number; y: number; w: number; h: number } | null;
   sourceFile: { id: string; name: string; fileType: string | null };
+  organisme: { id: string; code: string; name: string; shortName: string | null; color: string } | null;
   tool: { id: string; name: string; slug: string; sectionName: string };
 }
 
 interface TemplateEditorProps {
   initial: TemplateInitial;
+  organismes: OrganismeOption[];
+  presets: PresetOption[];
 }
 
 type Tab = "fields" | "visual" | "settings";
 
-export function TemplateEditor({ initial }: TemplateEditorProps) {
+export function TemplateEditor({ initial, organismes, presets }: TemplateEditorProps) {
   const router = useRouter();
   const [schema, setSchema] = useState<DocumentField[]>(initial.schema);
   const [sourceType, setSourceType] = useState<DocumentSourceType>(
@@ -71,6 +113,23 @@ export function TemplateEditor({ initial }: TemplateEditorProps) {
   const [parsing, setParsing] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("fields");
+
+  // Nouveaux champs Phase 1+
+  const [organismeId, setOrganismeId] = useState<string | null>(initial.organismeId);
+  const [effectiveDate, setEffectiveDate] = useState(initial.effectiveDate || "");
+  const [expiresAt, setExpiresAt] = useState(initial.expiresAt || "");
+  const [officialRef, setOfficialRef] = useState(initial.officialRef || "");
+  const [requiresSignature, setRequiresSignature] = useState(initial.requiresSignature);
+
+  // Modal note de changement
+  const [showChangeNotesModal, setShowChangeNotesModal] = useState(false);
+  const [pendingChangeNotes, setPendingChangeNotes] = useState("");
+  const [pendingChangeType, setPendingChangeType] = useState<"minor" | "major" | "hotfix">("minor");
+  const [pendingPublish, setPendingPublish] = useState<string | undefined>(undefined);
+
+  // Détection de changement de schema (pour proposer note de changement au save)
+  const initialSchemaJson = JSON.stringify(initial.schema);
+  const schemaChanged = JSON.stringify(schema) !== initialSchemaJson;
 
   const isPdf = initial.sourceFile.fileType === "pdf";
   const isDocx = initial.sourceFile.fileType === "docx";
@@ -130,7 +189,18 @@ export function TemplateEditor({ initial }: TemplateEditorProps) {
     }
   }
 
-  async function handleSave(opts?: { newStatus?: string }) {
+  function requestSave(opts?: { newStatus?: string }) {
+    if (schemaChanged) {
+      setPendingPublish(opts?.newStatus);
+      setPendingChangeNotes("");
+      setPendingChangeType("minor");
+      setShowChangeNotesModal(true);
+      return;
+    }
+    void doSave(opts);
+  }
+
+  async function doSave(opts?: { newStatus?: string; changeNotes?: string; changeType?: string }) {
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
@@ -139,8 +209,15 @@ export function TemplateEditor({ initial }: TemplateEditorProps) {
         retentionDays,
         outputFilenameTpl,
         sourceType,
+        organismeId: organismeId || null,
+        effectiveDate: effectiveDate || null,
+        expiresAt: expiresAt || null,
+        officialRef: officialRef || null,
+        requiresSignature,
       };
       if (opts?.newStatus) body.status = opts.newStatus;
+      if (opts?.changeNotes !== undefined) body.changeNotes = opts.changeNotes;
+      if (opts?.changeType) body.changeType = opts.changeType;
 
       const res = await fetch(`/api/documents/templates/${initial.id}`, {
         method: "PUT",
@@ -161,6 +238,7 @@ export function TemplateEditor({ initial }: TemplateEditorProps) {
           ? "Modèle dépublié"
           : "Sauvegardé"
       );
+      setShowChangeNotesModal(false);
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur");
@@ -220,7 +298,39 @@ export function TemplateEditor({ initial }: TemplateEditorProps) {
             </Button>
           )}
           <Button
-            onClick={() => handleSave()}
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              try {
+                const res = await fetch(`/api/documents/templates/${initial.id}/test-generate`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({}),
+                });
+                if (!res.ok) {
+                  const j = await res.json().catch(() => ({}));
+                  throw new Error(j.error || "Échec");
+                }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `test-${initial.tool.slug}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success("PDF de test généré");
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Erreur");
+              }
+            }}
+            disabled={saving || schema.length === 0}
+            title="Génère un PDF avec des données fictives pour tester le rendu"
+          >
+            <FlaskConical className="w-4 h-4 mr-1" />
+            Tester
+          </Button>
+          <Button
+            onClick={() => requestSave()}
             disabled={saving || duplicateIds.length > 0}
             size="sm"
           >
@@ -229,7 +339,7 @@ export function TemplateEditor({ initial }: TemplateEditorProps) {
           </Button>
           {status !== "published" ? (
             <Button
-              onClick={() => handleSave({ newStatus: "published" })}
+              onClick={() => requestSave({ newStatus: "published" })}
               disabled={saving || duplicateIds.length > 0 || schema.length === 0}
               size="sm"
             >
@@ -238,7 +348,7 @@ export function TemplateEditor({ initial }: TemplateEditorProps) {
             </Button>
           ) : (
             <Button
-              onClick={() => handleSave({ newStatus: "draft" })}
+              onClick={() => requestSave({ newStatus: "draft" })}
               disabled={saving}
               size="sm"
               variant="outline"
@@ -353,6 +463,7 @@ export function TemplateEditor({ initial }: TemplateEditorProps) {
                       key={f.id + idx}
                       field={f}
                       allFields={schema}
+                      presets={presets}
                       onChange={(updated) => updateField(idx, updated)}
                       onRemove={() => removeField(idx)}
                     />
@@ -446,11 +557,163 @@ export function TemplateEditor({ initial }: TemplateEditorProps) {
                     </p>
                   </div>
                 </div>
+
+                {/* Organisme */}
+                <div className="space-y-2 max-w-md">
+                  <Label>Organisme émetteur</Label>
+                  <Select
+                    value={organismeId || "__none__"}
+                    onValueChange={(v) => {
+                      setOrganismeId(v === "__none__" ? null : v);
+                      setDirty(true);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Aucun organisme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Aucun —</SelectItem>
+                      {organismes.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o.shortName ? `${o.shortName} — ${o.name}` : o.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Organisme à qui ce document est destiné ou qui l&apos;a émis.
+                  </p>
+                </div>
+
+                {/* Référence officielle + dates */}
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>Référence officielle</Label>
+                    <Input
+                      value={officialRef}
+                      onChange={(e) => {
+                        setOfficialRef(e.target.value);
+                        setDirty(true);
+                      }}
+                      placeholder="Formulaire C1, Annexe 4-bis, …"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>En vigueur depuis</Label>
+                    <Input
+                      type="date"
+                      value={effectiveDate}
+                      onChange={(e) => {
+                        setEffectiveDate(e.target.value);
+                        setDirty(true);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Expire le (optionnel)</Label>
+                    <Input
+                      type="date"
+                      value={expiresAt}
+                      onChange={(e) => {
+                        setExpiresAt(e.target.value);
+                        setDirty(true);
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Signature */}
+                <div className="space-y-2 border-t pt-4">
+                  <label className="flex items-center gap-2 text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      checked={requiresSignature}
+                      onChange={(e) => {
+                        setRequiresSignature(e.target.checked);
+                        setDirty(true);
+                      }}
+                      className="w-4 h-4 rounded border-input"
+                    />
+                    Ce document nécessite une signature électronique
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Si activé, l&apos;utilisateur devra signer (canvas tactile/souris) avant la génération.
+                    La position de la signature se définit dans l&apos;onglet visuel via un champ de type{" "}
+                    <code>signature</code>.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           )}
         </div>
       </div>
+
+      {/* Modal note de changement (si schema modifié) */}
+      {showChangeNotesModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <Card className="max-w-lg w-full">
+            <CardHeader>
+              <CardTitle>Note de changement (v{initial.version + 1})</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Vous avez modifié les champs du formulaire. Décrivez ce qui a changé pour faciliter
+                le suivi des versions.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Type de changement</Label>
+                <Select
+                  value={pendingChangeType}
+                  onValueChange={(v) => v && setPendingChangeType(v as "minor" | "major" | "hotfix")}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="minor">
+                      Mineur — clarification, ajout d&apos;un champ optionnel
+                    </SelectItem>
+                    <SelectItem value="major">
+                      Majeur — refonte, ajout de champs obligatoires
+                    </SelectItem>
+                    <SelectItem value="hotfix">Correctif — bug, faute de frappe</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Notes (visibles dans l&apos;historique)</Label>
+                <Textarea
+                  value={pendingChangeNotes}
+                  onChange={(e) => setPendingChangeNotes(e.target.value)}
+                  rows={4}
+                  placeholder="Ajout du champ « numéro de compte ». Suppression de la case « marié » remplacée par un select."
+                />
+              </div>
+              <div className="flex gap-2 justify-end pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowChangeNotesModal(false)}
+                  disabled={saving}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={() =>
+                    doSave({
+                      newStatus: pendingPublish,
+                      changeNotes: pendingChangeNotes || undefined,
+                      changeType: pendingChangeType,
+                    })
+                  }
+                  disabled={saving}
+                >
+                  {saving ? "Enregistrement…" : "Enregistrer"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

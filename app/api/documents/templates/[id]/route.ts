@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { DocumentField } from "@/lib/documents/types";
+import { computeSchemaDiff } from "@/lib/documents/diff";
 
 export async function GET(
   _req: NextRequest,
@@ -13,6 +14,7 @@ export async function GET(
     include: {
       tool: { select: { id: true, name: true, slug: true, description: true, icon: true } },
       sourceFile: { select: { id: true, name: true, fileType: true } },
+      organisme: { select: { id: true, code: true, name: true, shortName: true, color: true } },
     },
   });
   if (!template) {
@@ -51,14 +53,17 @@ export async function PUT(
 
   const data: Record<string, unknown> = {};
   let createRevision = false;
+  let diffSummary: ReturnType<typeof computeSchemaDiff> | null = null;
+
   if (Array.isArray(body.schema)) {
     const cleanSchema = (body.schema as DocumentField[]).filter((f) => f && f.id && f.label && f.type);
-    const schemaChanged =
-      JSON.stringify(existing.schema) !== JSON.stringify(cleanSchema);
+    const oldSchema = (existing.schema as unknown as DocumentField[]) || [];
+    const schemaChanged = JSON.stringify(oldSchema) !== JSON.stringify(cleanSchema);
     data.schema = cleanSchema as object;
     if (schemaChanged) {
       data.version = existing.version + 1;
       createRevision = true;
+      diffSummary = computeSchemaDiff(oldSchema, cleanSchema);
     }
   }
   if (typeof body.rgpdNotice === "string" || body.rgpdNotice === null) {
@@ -77,8 +82,34 @@ export async function PUT(
     data.sourceType = body.sourceType;
   }
 
+  // Nouveaux champs (Phase 1+)
+  if (body.organismeId !== undefined) {
+    data.organismeId = body.organismeId || null;
+  }
+  if (body.effectiveDate !== undefined) {
+    data.effectiveDate = body.effectiveDate ? new Date(body.effectiveDate) : null;
+  }
+  if (body.expiresAt !== undefined) {
+    data.expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
+  }
+  if (body.officialRef !== undefined) {
+    data.officialRef = body.officialRef || null;
+  }
+  if (body.requiresSignature !== undefined) {
+    data.requiresSignature = !!body.requiresSignature;
+  }
+  if (body.signaturePosition !== undefined) {
+    data.signaturePosition = body.signaturePosition || null;
+  }
+
   // Si le schema change, on archive l'ancien dans une révision avant l'update
   if (createRevision) {
+    const changeNotes = typeof body.changeNotes === "string" ? body.changeNotes : null;
+    const changeType =
+      body.changeType === "major" || body.changeType === "hotfix" || body.changeType === "source_update"
+        ? body.changeType
+        : "minor";
+
     await prisma.documentTemplateRevision.create({
       data: {
         templateId: existing.id,
@@ -88,6 +119,9 @@ export async function PUT(
         rgpdNotice: existing.rgpdNotice,
         retentionDays: existing.retentionDays,
         outputFilenameTpl: existing.outputFilenameTpl,
+        changeNotes,
+        changeType,
+        diffSummary: diffSummary as object,
         createdBy: auth.user?.id || null,
       },
     });

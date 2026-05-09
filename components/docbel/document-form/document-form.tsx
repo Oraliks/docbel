@@ -19,6 +19,8 @@ import { ConditionalWrapper } from "./conditional-wrapper";
 import { DocumentPreview } from "./document-preview";
 import { DownloadActions } from "./download-actions";
 import { DraftResumeBanner } from "./draft-resume-banner";
+import { SignatureStep } from "./signature-step";
+import { trackFormEvent } from "@/lib/documents/analytics-client";
 
 interface ApiResponse {
   tool: {
@@ -36,10 +38,19 @@ interface ApiResponse {
     rgpdNotice: string | null;
     outputFilenameTpl: string;
     version: number;
+    requiresSignature?: boolean;
+    officialRef?: string | null;
   };
 }
 
-type Step = "loading" | "draft-prompt" | "rgpd" | "filling" | "preview" | "done";
+type Step = "loading" | "draft-prompt" | "rgpd" | "filling" | "preview" | "signature" | "done";
+
+interface SignatureState {
+  dataUrl: string;
+  method: "drawn" | "typed" | "uploaded";
+  signerName: string;
+  signerEmail: string;
+}
 
 interface GeneratedInfo {
   id: string;
@@ -88,6 +99,7 @@ export function DocumentForm({ slug }: DocumentFormProps) {
   const [savingDraft, setSavingDraft] = useState(false);
   const [lang, setLang] = useState<Lang>("fr");
   const [currentSectionIdx, setCurrentSectionIdx] = useState(0);
+  const [signature, setSignature] = useState<SignatureState | null>(null);
 
   const methods = useForm<GenerationPayload>({ mode: "onSubmit", defaultValues: {} });
 
@@ -160,26 +172,106 @@ export function DocumentForm({ slug }: DocumentFormProps) {
   }, [data, isLoggedIn]);
 
   // 3) Pré-remplissage utilisateur connecté quand on entre dans "filling"
+  // Combine session.user (basic) + profil enrichi (Phase 8) si dispo
   useEffect(() => {
     if (step !== "filling" || !data || !isLoggedIn || !session?.user) return;
     const user = session.user;
-    const current = methods.getValues();
-    let didUpdate = false;
-    for (const f of data.template.schema) {
-      if (!f.prefillFrom) continue;
-      const existing = current[f.id];
-      if (existing && existing !== "") continue; // ne pas écraser
-      if (f.prefillFrom === "user.name" && user.name) {
-        methods.setValue(f.id, user.name);
-        didUpdate = true;
-      } else if (f.prefillFrom === "user.email" && user.email) {
-        methods.setValue(f.id, user.email);
-        didUpdate = true;
+    let cancelled = false;
+
+    async function applyPrefill() {
+      const current = methods.getValues();
+      let profile: Record<string, unknown> | null = null;
+      try {
+        const res = await fetch("/api/user/profile");
+        if (res.ok) profile = await res.json();
+      } catch {
+        // ignore — pas de profil
       }
+      if (cancelled) return;
+
+      let didUpdate = false;
+      for (const f of data!.template.schema) {
+        if (!f.prefillFrom) continue;
+        const existing = current[f.id];
+        if (existing && existing !== "") continue; // ne pas écraser
+
+        let v: unknown = null;
+        if (f.prefillFrom === "user.name") v = user.name;
+        else if (f.prefillFrom === "user.email") v = user.email;
+        else if (f.prefillFrom.startsWith("profile.") && profile) {
+          const key = f.prefillFrom.slice("profile.".length);
+          v = profile[key];
+          // Format des dates ISO → YYYY-MM-DD pour input type=date
+          if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v)) {
+            v = v.slice(0, 10);
+          }
+        }
+
+        if (v !== null && v !== undefined && v !== "") {
+          methods.setValue(f.id, v as string);
+          didUpdate = true;
+        }
+      }
+      if (didUpdate) toast.success(lang === "nl" ? "Velden vooraf ingevuld" : "Champs pré-remplis");
     }
-    if (didUpdate) toast.success(lang === "nl" ? "Velden vooraf ingevuld" : "Champs pré-remplis");
+
+    void applyPrefill();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, data, isLoggedIn]);
+
+  // Tracking : événement "started" quand on entre en filling pour la première fois
+  useEffect(() => {
+    if (step === "filling" && data) {
+      trackFormEvent(data.template.id, "started");
+    } else if (step === "preview" && data) {
+      trackFormEvent(data.template.id, "preview");
+    } else if (step === "signature" && data) {
+      trackFormEvent(data.template.id, "signature_started");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  // Tracking : abandon si l'utilisateur quitte avant submit
+  useEffect(() => {
+    if (!data) return;
+    function handleUnload() {
+      if (step === "filling" || step === "preview" || step === "signature") {
+        trackFormEvent(data!.template.id, "abandoned", {
+          contextKey: step,
+          metadata: { sectionIdx: currentSectionIdx },
+        });
+      }
+    }
+    window.addEventListener("beforeunload", handleUnload);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  }, [step, data, currentSectionIdx]);
+
+  // Tracking : section_completed quand on avance dans le wizard
+  useEffect(() => {
+    if (!data || !isWizard || step !== "filling") return;
+    if (currentSectionIdx > 0) {
+      const prevSection = sections[currentSectionIdx - 1];
+      trackFormEvent(data.template.id, "section_completed", {
+        contextKey: prevSection?.name || `section_${currentSectionIdx - 1}`,
+      });
+    }
+
+    // a11y : focus le premier champ de la nouvelle section pour les lecteurs d'écran
+    if (currentSection) {
+      const firstField = currentSection.fields[0];
+      if (firstField) {
+        const el = document.getElementById(`field_${firstField.id}`);
+        if (el && "focus" in el) {
+          // Délai pour laisser le rendu se terminer
+          setTimeout(() => (el as HTMLElement).focus(), 100);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSectionIdx]);
 
   function resumeDraft() {
     if (draft) methods.reset(draft.payload);
@@ -237,16 +329,38 @@ export function DocumentForm({ slug }: DocumentFormProps) {
     methods.handleSubmit(() => setStep("preview"))();
   }
 
+  function goToSignatureOrGenerate() {
+    if (data?.template.requiresSignature) {
+      setStep("signature");
+      return;
+    }
+    void generate();
+  }
+
   async function generate() {
     if (!data) return;
+    // Si le doc requiert signature, on doit avoir une signature
+    if (data.template.requiresSignature && !signature) {
+      setStep("signature");
+      return;
+    }
     setGenerating(true);
     setServerErrors({});
     try {
       const payload = methods.getValues();
+      const body: Record<string, unknown> = { payload, consent: true, lang };
+      if (signature) {
+        body.signature = {
+          dataUrl: signature.dataUrl,
+          method: signature.method,
+          signerName: signature.signerName,
+          signerEmail: signature.signerEmail || undefined,
+        };
+      }
       const res = await fetch(`/api/documents/${data.template.id}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payload, consent: true, lang }),
+        body: JSON.stringify(body),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -255,6 +369,13 @@ export function DocumentForm({ slug }: DocumentFormProps) {
           for (const i of json.issues) errs[String(i.field)] = i.message;
           setServerErrors(errs);
           setStep("filling");
+          // Tracking : champ(s) en erreur
+          for (const issue of json.issues) {
+            trackFormEvent(data.template.id, "field_error", {
+              contextKey: String(issue.field),
+              metadata: { errorMsg: issue.message },
+            });
+          }
           // Aller à la section qui contient le premier champ en erreur
           if (isWizard) {
             const firstErrorField = json.issues[0]?.field;
@@ -271,6 +392,9 @@ export function DocumentForm({ slug }: DocumentFormProps) {
         filename: json.filename,
         downloadUrl: json.downloadUrl,
         expiresAt: json.expiresAt,
+      });
+      trackFormEvent(data.template.id, "submitted", {
+        metadata: { signed: !!signature, isLoggedIn },
       });
       if (isLoggedIn) {
         await fetch(`/api/documents/${data.template.id}/draft`, { method: "DELETE" }).catch(() => {});
@@ -445,10 +569,21 @@ export function DocumentForm({ slug }: DocumentFormProps) {
               >
                 {(isWizard && currentSection ? currentSection.fields : fields).map((f) => (
                   <ConditionalWrapper key={f.id} field={f}>
-                    <DynamicField field={f} serverError={serverErrors[f.id]} lang={lang} />
+                    <DynamicField
+                      field={f}
+                      allFields={fields}
+                      serverError={serverErrors[f.id]}
+                      lang={lang}
+                      templateName={data?.tool.name || ""}
+                      organisme={data?.tool.sectionName || null}
+                    />
                   </ConditionalWrapper>
                 ))}
-                <div className="flex justify-between gap-2 pt-2">
+                {/* Espace en bas pour ne pas être caché par la barre sticky mobile */}
+                <div className="h-16 md:h-0" />
+
+                {/* Action bar : flottante sur mobile, inline sur desktop */}
+                <div className="hidden md:flex justify-between gap-2 pt-2">
                   {isWizard && currentSectionIdx > 0 ? (
                     <Button type="button" variant="outline" onClick={prevSection}>
                       <ChevronLeft className="w-4 h-4 mr-1" />
@@ -473,6 +608,40 @@ export function DocumentForm({ slug }: DocumentFormProps) {
               </form>
             </CardContent>
           </Card>
+
+          {/* Sticky bar mobile uniquement */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur border-t p-3 flex gap-2 shadow-lg">
+            {isWizard && currentSectionIdx > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={prevSection}
+                className="flex-1"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                {lang === "nl" ? "Vorige" : "Précédent"}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              onClick={() => {
+                if (isWizard) nextSection();
+                else goToPreview();
+              }}
+              className="flex-1"
+            >
+              {isWizard && currentSectionIdx < sections.length - 1 ? (
+                <>
+                  {lang === "nl" ? "Volgende" : "Suivant"}
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </>
+              ) : lang === "nl" ? (
+                "Voorvertoning"
+              ) : (
+                "Aperçu"
+              )}
+            </Button>
+          </div>
         </FormProvider>
       )}
 
@@ -488,11 +657,25 @@ export function DocumentForm({ slug }: DocumentFormProps) {
               ) as GenerationPayload
             }
             onBack={() => setStep("filling")}
-            onConfirm={generate}
+            onConfirm={goToSignatureOrGenerate}
             generating={generating}
             lang={lang}
           />
         </FormProvider>
+      )}
+
+      {step === "signature" && data && (
+        <SignatureStep
+          requiresSignature={!!data.template.requiresSignature}
+          initialName={session?.user?.name || ""}
+          initialEmail={session?.user?.email || ""}
+          signature={signature}
+          onSignatureChange={setSignature}
+          onBack={() => setStep("preview")}
+          onConfirm={generate}
+          generating={generating}
+          lang={lang}
+        />
       )}
 
       {step === "done" && generated && (

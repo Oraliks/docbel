@@ -12,7 +12,15 @@ import { renderFilename } from "@/lib/documents/filename";
 import { sha256Hex, signDownloadToken } from "@/lib/documents/token";
 import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
 import { notifyAdminOfGeneration } from "@/lib/documents/email";
+import { dataUrlToBuffer, isValidSignatureDataUrl, sha256 } from "@/lib/documents/signature";
 import { DocumentField, GenerationPayload, Lang } from "@/lib/documents/types";
+
+interface SignaturePayload {
+  dataUrl: string;
+  method?: "drawn" | "typed" | "uploaded";
+  signerName?: string;
+  signerEmail?: string;
+}
 
 export async function POST(
   req: NextRequest,
@@ -50,11 +58,35 @@ export async function POST(
   const rawPayload = (body?.payload || {}) as Record<string, unknown>;
   const consent = body?.consent === true;
   const lang: Lang = body?.lang === "nl" ? "nl" : "fr";
+  const signatureInput: SignaturePayload | null = body?.signature || null;
+
   if (!consent) {
     return NextResponse.json(
       { error: "Consentement RGPD requis" },
       { status: 400 }
     );
+  }
+
+  // Validation signature si requise
+  if (template.requiresSignature) {
+    if (!signatureInput || !signatureInput.dataUrl) {
+      return NextResponse.json(
+        { error: "Signature requise pour ce document" },
+        { status: 422 }
+      );
+    }
+    if (!isValidSignatureDataUrl(signatureInput.dataUrl)) {
+      return NextResponse.json(
+        { error: "Format de signature invalide ou trop volumineux" },
+        { status: 422 }
+      );
+    }
+    if (!signatureInput.signerName || signatureInput.signerName.trim().length < 2) {
+      return NextResponse.json(
+        { error: "Nom du signataire requis" },
+        { status: 422 }
+      );
+    }
   }
 
   const fields = (template.schema as unknown as DocumentField[]) || [];
@@ -89,20 +121,51 @@ export async function POST(
     );
   }
 
+  // Préparer signature (data URL → Buffer)
+  const signatureBuffer = signatureInput?.dataUrl
+    ? dataUrlToBuffer(signatureInput.dataUrl)
+    : null;
+  const signaturePosition = template.signaturePosition as
+    | { page: number; x: number; y: number; w: number; h: number }
+    | null;
+
   let outputBuffer: Buffer;
+  let pdfHashBefore: string | null = null;
   let outFileType: string;
   let extension: string;
 
   try {
     if (template.sourceType === "pdf_acroform") {
-      outputBuffer = await fillAcroForm(sourceBuffer, fields, validated);
+      // AcroForm : on remplit puis si signature, on overlay
+      const filled = await fillAcroForm(sourceBuffer, fields, validated);
+      pdfHashBefore = sha256(filled);
+      if (signatureBuffer && template.requiresSignature) {
+        // Re-overlay la signature par-dessus le PDF AcroForm rempli
+        outputBuffer = await overlayPdfFlat(filled, fields, validated, {
+          signature: { buffer: signatureBuffer },
+          signaturePosition,
+        });
+      } else {
+        outputBuffer = filled;
+      }
       outFileType = "pdf";
       extension = ".pdf";
     } else if (template.sourceType === "pdf_flat") {
-      outputBuffer = await overlayPdfFlat(sourceBuffer, fields, validated);
+      pdfHashBefore = sha256(sourceBuffer);
+      outputBuffer = await overlayPdfFlat(sourceBuffer, fields, validated, {
+        signature: signatureBuffer ? { buffer: signatureBuffer } : null,
+        signaturePosition,
+      });
       outFileType = "pdf";
       extension = ".pdf";
     } else if (template.sourceType === "docx") {
+      // DOCX : pas de signature image (limitation actuelle, à faire en Phase 7+)
+      if (template.requiresSignature) {
+        return NextResponse.json(
+          { error: "La signature n'est pas supportée pour les documents DOCX (uniquement PDF pour l'instant)" },
+          { status: 415 }
+        );
+      }
       outputBuffer = fillDocxTemplate(sourceBuffer, fields, validated);
       outFileType = "docx";
       extension = ".docx";
@@ -154,7 +217,30 @@ export async function POST(
     include: { template: { include: { tool: { select: { name: true, slug: true } } } } },
   });
 
-  // Notification admin (silencieuse si non configurée)
+  // Si signé, créer le SignatureRecord
+  if (signatureInput && signatureBuffer && template.requiresSignature) {
+    try {
+      await prisma.signatureRecord.create({
+        data: {
+          generatedDocumentId: generated.id,
+          signerName: signatureInput.signerName!.trim(),
+          signerEmail: signatureInput.signerEmail || session?.user?.email || null,
+          signerUserId: userId,
+          signatureImageData: signatureInput.dataUrl,
+          signatureMethod: signatureInput.method || "drawn",
+          ipAddress: ip,
+          userAgent: req.headers.get("user-agent") || null,
+          pdfHashBefore: pdfHashBefore || sha256(outputBuffer),
+          pdfHashAfter: sha256(outputBuffer),
+          payloadHash,
+        },
+      });
+    } catch (err) {
+      console.error("Échec création SignatureRecord:", err);
+      // On ne fait pas échouer la génération pour autant
+    }
+  }
+
   notifyAdminOfGeneration({
     templateName: generated.template.tool.name,
     toolSlug: generated.template.tool.slug,
@@ -170,5 +256,6 @@ export async function POST(
     filename,
     downloadUrl: `/api/documents/generated/${generated.id}/download?token=${encodeURIComponent(token)}`,
     expiresAt: expiresAt.toISOString(),
+    signed: !!signatureInput && template.requiresSignature,
   });
 }

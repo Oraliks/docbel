@@ -25,6 +25,15 @@ enum UserStatus {
   locked
 }
 
+enum OrganismeType {
+  federal // ONEM, ONP, BCSS, INASTI
+  regional // Forem, Actiris, VDAB, ADG
+  local // Commune, CPAS
+  social // Mutuelle, Caisse de chômage (CAPAC, CSC, CGSLB, FGTB)
+  professional // Secrétariat social, fiduciaire
+  other
+}
+
 model User {
   id                  String     @id @default(cuid())
   name                String
@@ -162,8 +171,8 @@ model File {
   updatedAt DateTime    @updatedAt
   usage     FileUsage[]
 
-  docTemplateSources    DocumentTemplate[]  @relation("DocTemplateSource")
-  docGeneratedOutputs   GeneratedDocument[] @relation("DocGeneratedOutput")
+  docTemplateSources  DocumentTemplate[]  @relation("DocTemplateSource")
+  docGeneratedOutputs GeneratedDocument[] @relation("DocGeneratedOutput")
 
   @@index([parentId])
   @@index([parentId, type])
@@ -266,12 +275,12 @@ model NewsletterSubscriber {
 }
 
 model InboxEmail {
-  id          String   @id @default(cuid())
+  id             String   @id @default(cuid())
   // Folder = logical inbox category. Mirrors IMAP folders detected via SPECIAL-USE.
   // Values: "INBOX" | "SENT" | "SPAM" | "ARCHIVE" | "TRASH"
-  folder      String   @default("INBOX")
-  uid         Int
-  uidValidity String?
+  folder         String   @default("INBOX")
+  uid            Int
+  uidValidity    String?
   // Headers
   messageId      String?
   inReplyTo      String?
@@ -279,21 +288,21 @@ model InboxEmail {
   fromName       String?
   replyToAddress String?
   replyToName    String?
-  toAddresses    String  @default("") // JSON array of addresses
-  ccAddresses    String  @default("") // JSON array of addresses
-  subject        String  @default("")
+  toAddresses    String   @default("") // JSON array of addresses
+  ccAddresses    String   @default("") // JSON array of addresses
+  subject        String   @default("")
   // Body (parsed)
-  textBody    String   @default("")
-  htmlBody    String?
+  textBody       String   @default("")
+  htmlBody       String?
   // Attachments metadata (we don't store file contents — just a list)
-  attachments Json     @default("[]") // [{filename, contentType, size}]
+  attachments    Json     @default("[]") // [{filename, contentType, size}]
   // Status — mirrored from IMAP \Seen and \Flagged flags (server is authoritative)
-  isRead    Boolean @default(false)
-  isFlagged Boolean @default(false)
+  isRead         Boolean  @default(false)
+  isFlagged      Boolean  @default(false)
   // Timestamps
-  receivedAt DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  receivedAt     DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([folder, uid])
   @@index([folder, receivedAt(sort: Desc)])
@@ -350,26 +359,45 @@ model BareSheet {
 }
 
 model DocumentTemplate {
-  id                String   @id @default(cuid())
-  toolId            String   @unique
-  tool              Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  toolId            String  @unique
+  tool              Tool    @relation(fields: [toolId], references: [id], onDelete: Cascade)
   sourceFileId      String
-  sourceFile        File     @relation("DocTemplateSource", fields: [sourceFileId], references: [id])
+  sourceFile        File    @relation("DocTemplateSource", fields: [sourceFileId], references: [id])
   sourceType        String // "pdf_acroform" | "pdf_flat" | "docx"
   schema            Json // DocumentField[] — voir lib/documents/types.ts
-  outputFilenameTpl String   @default("document-{{date}}.pdf")
+  outputFilenameTpl String  @default("document-{{date}}.pdf")
   rgpdNotice        String?
-  retentionDays     Int      @default(30)
-  status            String   @default("draft") // draft | published | archived
-  version           Int      @default(1)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  retentionDays     Int     @default(30)
+  status            String  @default("draft") // draft | published | archived
+  version           Int     @default(1)
 
-  generated GeneratedDocument[]
-  drafts    DocumentDraft[]
-  revisions DocumentTemplateRevision[]
+  // Organisme émetteur (ONEM, CPAS, etc.)
+  organismeId String?
+  organisme   Organisme? @relation(fields: [organismeId], references: [id])
+
+  // Validité officielle du document
+  effectiveDate DateTime? // Date à partir de laquelle ce document officiel est en vigueur
+  expiresAt     DateTime? // Date connue de fin de validité (null = pas de date connue)
+  officialRef   String? // Référence officielle ("Formulaire C1", "Annexe 4-bis", etc.)
+
+  // Signature électronique
+  requiresSignature Boolean @default(false)
+  signaturePosition Json? // { page, x, y, w, h } — position de la signature sur le PDF
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  generated   GeneratedDocument[]
+  drafts      DocumentDraft[]
+  revisions   DocumentTemplateRevision[]
+  bundleItems     DocumentBundleItem[]
+  analyticsEvents FormAnalyticsEvent[]
 
   @@index([status])
+  @@index([organismeId])
+  @@index([effectiveDate])
+  @@index([expiresAt])
 }
 
 model DocumentTemplateRevision {
@@ -382,11 +410,18 @@ model DocumentTemplateRevision {
   rgpdNotice        String?
   retentionDays     Int
   outputFilenameTpl String
-  createdBy         String?
-  createdAt         DateTime         @default(now())
+
+  // Notes de changement entre versions
+  changeNotes String? // Description libre des changements
+  changeType  String  @default("minor") // minor | major | hotfix | source_update (= nouveau PDF officiel)
+  diffSummary Json? // { added: [], removed: [], modified: [] } — calculé à la création
+
+  createdBy String?
+  createdAt DateTime @default(now())
 
   @@index([templateId])
   @@index([createdAt])
+  @@index([changeType])
 }
 
 model AppSetting {
@@ -406,12 +441,16 @@ model GeneratedDocument {
   payloadHash  String
   emailSentTo  String?
   ipHash       String?
+  bundleRunId  String? // si généré dans le cadre d'un bundle
   createdAt    DateTime         @default(now())
   expiresAt    DateTime
+
+  signature SignatureRecord?
 
   @@index([templateId])
   @@index([expiresAt])
   @@index([userId])
+  @@index([bundleRunId])
 }
 
 model DocumentDraft {
@@ -428,19 +467,19 @@ model DocumentDraft {
 }
 
 model CommissionParitaire {
-  id              String   @id @default(cuid())
-  code            String   @unique
-  numero          String
-  numeroOfficiel  String
-  codeOfficiel5   String
-  suffixeInterne  String
-  type            String
-  nom             String
-  label           String
-  searchText      String
-  updatedBy       String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  code           String   @unique
+  numero         String
+  numeroOfficiel String
+  codeOfficiel5  String
+  suffixeInterne String
+  type           String
+  nom            String
+  label          String
+  searchText     String
+  updatedBy      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([type])
   @@index([numeroOfficiel])
@@ -480,4 +519,211 @@ model U1Institution {
   updatedAt     DateTime @updatedAt
 
   @@index([country])
+}
+
+// =====================================================================
+// Documents — extension organismes / presets / signatures / bundles
+// =====================================================================
+
+/// Organisme émetteur d'un document (ONEM, CPAS, mutuelle, etc.).
+/// Utilisé pour grouper et filtrer les modèles dans l'admin.
+model Organisme {
+  id          String        @id @default(cuid())
+  code        String        @unique // "onem", "cpas", "capac", "csc", etc.
+  name        String // "Office National de l'Emploi"
+  shortName   String? // "ONEM"
+  type        OrganismeType @default(other)
+  color       String        @default("#7C3AED")
+  logoUrl     String?
+  website     String?
+  description String?
+  active      Boolean       @default(true)
+  order       Int           @default(0)
+  createdBy   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  templates DocumentTemplate[]
+
+  @@index([type])
+  @@index([active])
+  @@index([order])
+}
+
+/// Preset de validation réutilisable pour les champs de formulaire.
+/// Permet de définir une fois "Nom de famille" et de l'appliquer à tous les docs.
+/// Les presets builtin sont seedés et non supprimables.
+model FieldValidationPreset {
+  id          String  @id @default(cuid())
+  name        String  @unique // "Nom de famille", "Date passée", "Salaire mensuel"
+  description String?
+  category    String  @default("custom") // identity | contact | financial | date | belgian | custom
+  fieldType   String // text | textarea | number | date | select | checkbox | etc.
+
+  // Validation rules (toutes optionnelles, combinées en AND)
+  regex      String?
+  regexFlags String? // ex: "i" pour case insensitive
+  minLength  Int?
+  maxLength  Int?
+  minValue   Float? // pour number
+  maxValue   Float?
+  minDate    String? // "today" | "1900-01-01" | "@field_id" pour cross-field
+  maxDate    String? // "today" | "@field_id"
+
+  // Validateurs natifs belges (logique prédéfinie dans lib/documents/validators.ts)
+  belgianType String? // "niss" | "iban" | "tva" | "bce" | "postal" | "phone"
+
+  // Cross-field rule simple
+  // { type: "after" | "before" | "equals" | "notEquals" | "greaterThan" | "lessThan", fieldId: string }
+  crossFieldRule Json?
+
+  // UX
+  errorMsg      String
+  errorMsgNl    String?
+  helpText      String?
+  helpTextNl    String?
+  placeholder   String?
+  placeholderNl String?
+
+  // Meta
+  builtin    Boolean  @default(false) // ne peut pas être supprimé via UI
+  icon       String? // nom d'icône lucide
+  color      String?
+  usageCount Int      @default(0) // analytics: combien de champs l'utilisent
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([category])
+  @@index([fieldType])
+  @@index([builtin])
+}
+
+/// Trace d'audit pour une signature électronique apposée sur un document généré.
+/// Stocke la signature elle-même + métadonnées prouvant qui a signé quoi et quand.
+model SignatureRecord {
+  id                  String            @id @default(cuid())
+  generatedDocumentId String            @unique
+  generatedDocument   GeneratedDocument @relation(fields: [generatedDocumentId], references: [id], onDelete: Cascade)
+
+  // Signataire
+  signerName   String
+  signerEmail  String?
+  signerUserId String?
+
+  // Données signature (image dessinée ou tapée)
+  signatureImageData String? // data URL base64 (PNG)
+  signatureMethod    String  @default("drawn") // drawn | uploaded | typed
+
+  // Audit trail
+  ipAddress String?
+  userAgent String?
+
+  // Intégrité du document
+  pdfHashBefore String // SHA256 du PDF avant signature
+  pdfHashAfter  String // SHA256 du PDF signé
+  payloadHash   String // SHA256 du payload du formulaire
+
+  // Horodatage signé optionnel (PAdES) — null si signature simple
+  certThumbprint String?
+  signedAt       DateTime @default(now())
+
+  @@index([signerUserId])
+  @@index([signedAt])
+}
+
+/// Bundle = groupe de documents générés en cascade pour un parcours utilisateur.
+/// Ex: "Demande de chômage complète" = C1 + C4 + Annexe 27.
+model DocumentBundle {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  icon        String?
+  color       String   @default("#7C3AED")
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items DocumentBundleItem[]
+
+  @@index([active])
+}
+
+model DocumentBundleItem {
+  id         String           @id @default(cuid())
+  bundleId   String
+  bundle     DocumentBundle   @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  templateId String
+  template   DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  order      Int              @default(0)
+  required   Boolean          @default(true)
+  // Condition d'inclusion: { fieldId: "...", equals: "..." } basée sur les valeurs déjà saisies
+  condition  Json?
+
+  @@unique([bundleId, templateId])
+  @@index([bundleId])
+}
+
+/// Profil utilisateur enrichi pour pré-remplissage des formulaires (Phase 8).
+/// Données stockées séparément du modèle User pour pouvoir être null/optionnelles.
+model UserProfile {
+  userId        String    @id
+  // Identité
+  firstName     String?
+  lastName      String?
+  niss          String?
+  birthDate     DateTime?
+  birthPlace    String?
+  nationality   String?
+  gender        String?
+  // Adresse
+  street        String?
+  streetNum     String?
+  postalCode    String?
+  city          String?
+  country       String    @default("BE")
+  // Contact
+  phone         String?
+  mobilePhone   String?
+  // Bancaire
+  iban          String?
+  bic           String?
+  // Civil
+  maritalStatus String? // single | married | cohabiting | divorced | widowed
+  // Pro
+  employer      String?
+  employerBce   String?
+  jobTitle      String?
+  contractType  String? // CDI | CDD | interim | independant
+  contractStart DateTime?
+  // Méta
+  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime  @default(now())
+}
+
+/// Événements d'analytics côté formulaire utilisateur (Phase 14).
+/// Permet de mesurer abandon, temps par section, erreurs de validation fréquentes.
+/// Aucune donnée personnelle stockée — seulement l'ID du template et l'événement.
+model FormAnalyticsEvent {
+  id         String           @id @default(cuid())
+  templateId String
+  template   DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  // ID anonyme de session (cookie côté client) pour reconstituer un parcours
+  sessionId  String
+  userId     String? // si connecté
+  // started | section_completed | field_error | preview | abandoned | submitted | signature_started
+  eventType  String
+  // Pour event=field_error → id du champ. Pour section_completed → nom section.
+  contextKey String?
+  // Métadonnées libres : { sectionIdx, errorMsg, durationMs, etc. }
+  metadata   Json?
+  createdAt  DateTime         @default(now())
+
+  @@index([templateId, createdAt])
+  @@index([sessionId])
+  @@index([eventType])
+  @@index([templateId, eventType, createdAt])
 }

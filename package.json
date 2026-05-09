@@ -9,8 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "seed": "tsx prisma/seed.ts",
-    "db:push": "prisma db push",
+    "seed": "dotenv -e .env.local -- tsx prisma/seed.ts",
+    "db:push": "dotenv -e .env.local -- prisma db push",
     "db:setup": "prisma db push && pnpm seed && tsx scripts/setup-local-auth.ts",
     "auth:backfill": "tsx scripts/backfill-better-auth-accounts.ts"
   },
@@ -93,6 +93,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "prisma": "^5.22.0",

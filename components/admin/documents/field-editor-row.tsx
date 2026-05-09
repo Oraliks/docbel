@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Trash2, Plus, Languages, HelpCircle, UserCircle, FoldVertical } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2, Plus, Languages, HelpCircle, UserCircle, FoldVertical, Library, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,10 +16,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DocumentField, DocumentFieldOption, DocumentFieldType, PrefillSource } from "@/lib/documents/types";
+import type { PresetOption } from "./template-editor";
 
 interface FieldEditorRowProps {
   field: DocumentField;
   allFields: DocumentField[];
+  presets?: PresetOption[];
   onChange: (field: DocumentField) => void;
   onRemove: () => void;
 }
@@ -37,6 +39,7 @@ const TYPE_OPTIONS: { value: DocumentFieldType; label: string }[] = [
   { value: "tva_be", label: "TVA belge" },
   { value: "bce", label: "BCE / N° entreprise" },
   { value: "phone_be", label: "Téléphone belge" },
+  { value: "signature", label: "Signature électronique" },
 ];
 
 function SubSection({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
@@ -51,12 +54,58 @@ function SubSection({ icon, title, children }: { icon: React.ReactNode; title: s
   );
 }
 
-export function FieldEditorRow({ field, allFields, onChange, onRemove }: FieldEditorRowProps) {
+export function FieldEditorRow({ field, allFields, presets = [], onChange, onRemove }: FieldEditorRowProps) {
   const [expanded, setExpanded] = useState(false);
+  const currentPreset = presets.find((p) => p.id === field.presetId);
 
   function update<K extends keyof DocumentField>(key: K, value: DocumentField[K]) {
     onChange({ ...field, [key]: value });
   }
+
+  function applyPreset(presetId: string | null) {
+    if (!presetId) {
+      onChange({ ...field, presetId: undefined });
+      return;
+    }
+    const preset = presets.find((p) => p.id === presetId);
+    if (!preset) return;
+    // Synchronise les champs du preset → champ (l'utilisateur peut ensuite les surcharger)
+    onChange({
+      ...field,
+      presetId,
+      type: preset.fieldType as DocumentFieldType,
+      regex: preset.regex || undefined,
+      errorMsg: preset.errorMsg,
+      errorMsgNl: preset.errorMsgNl || field.errorMsgNl,
+      helpText: preset.helpText || field.helpText,
+      helpTextNl: preset.helpTextNl || field.helpTextNl,
+      placeholder: preset.placeholder || field.placeholder,
+      placeholderNl: preset.placeholderNl || field.placeholderNl,
+      maxLength: preset.maxLength ?? field.maxLength,
+      minLength: preset.minLength ?? field.minLength,
+      minValue: preset.minValue ?? field.minValue,
+      maxValue: preset.maxValue ?? field.maxValue,
+    });
+  }
+
+  // Filtrer les presets compatibles avec le type courant (souple : on autorise text→textarea, etc.)
+  const compatiblePresets = presets.filter((p) => {
+    if (p.fieldType === field.type) return true;
+    // Souplesse : presets text appliquables sur textarea et vice-versa
+    if (
+      (p.fieldType === "text" && field.type === "textarea") ||
+      (p.fieldType === "textarea" && field.type === "text")
+    )
+      return true;
+    return false;
+  });
+
+  // Grouper presets par catégorie pour l'affichage
+  const presetsByCategory = compatiblePresets.reduce((acc, p) => {
+    if (!acc[p.category]) acc[p.category] = [];
+    acc[p.category].push(p);
+    return acc;
+  }, {} as Record<string, PresetOption[]>);
 
   function addOption() {
     const opts = [...(field.options || []), { value: "", label: "" }];
@@ -107,6 +156,12 @@ export function FieldEditorRow({ field, allFields, onChange, onRemove }: FieldEd
               />
               Obligatoire
             </label>
+            {currentPreset && (
+              <Badge variant="default" className="text-xs gap-1 truncate" title={currentPreset.description ?? undefined}>
+                <Library className="w-3 h-3" />
+                {currentPreset.name}
+              </Badge>
+            )}
             {field.section && (
               <Badge variant="secondary" className="text-xs truncate">
                 {field.section}
@@ -126,6 +181,57 @@ export function FieldEditorRow({ field, allFields, onChange, onRemove }: FieldEd
 
       {expanded && (
         <div className="border-t p-4 space-y-3 bg-muted/30">
+          <SubSection icon={<Library className="w-4 h-4 text-muted-foreground" />} title="Preset de validation">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Select
+                  value={field.presetId || "__none__"}
+                  onValueChange={(v) => applyPreset(v === "__none__" ? null : v)}
+                >
+                  <SelectTrigger className="h-9 flex-1">
+                    <SelectValue placeholder="Choisir un preset…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Aucun preset —</SelectItem>
+                    {Object.entries(presetsByCategory).map(([cat, list]) => (
+                      <div key={cat}>
+                        <div className="px-2 py-1 text-[10px] font-medium uppercase text-muted-foreground">
+                          {cat}
+                        </div>
+                        {list.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {field.presetId && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyPreset(null)}
+                    title="Retirer le preset"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+              {currentPreset && currentPreset.description && (
+                <p className="text-xs text-muted-foreground">{currentPreset.description}</p>
+              )}
+              {compatiblePresets.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Aucun preset disponible pour le type <code>{field.type}</code>.
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Le preset pré-remplit les règles ci-dessous. Vous pouvez ensuite les surcharger.
+              </p>
+            </div>
+          </SubSection>
+
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-xs">Identifiant interne</Label>

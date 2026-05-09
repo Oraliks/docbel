@@ -2,6 +2,8 @@ import { PrismaClient, Prisma } from "@prisma/client";
 import commissionsData from "../lib/data/commissions-paritaires-belgique.json";
 import u1Data from "../lib/data/u1-institutions-eu.json";
 import { COUNTRY_CODE_MAP } from "../lib/u1-institutions";
+import { seedOrganismes } from "./seeds/organismes";
+import { seedFieldValidationPresets } from "./seeds/field-validation-presets";
 
 const prisma = new PrismaClient();
 
@@ -463,6 +465,12 @@ async function main() {
     else u1Created++;
   }
   console.log(`   ✓ ${u1Created} created, ${u1Updated} updated (total ${u1Items.length})`);
+
+  console.log("🌱 Seeding organismes (ONEM, CPAS, mutuelles, etc.)...");
+  await seedOrganismes(prisma);
+
+  console.log("🌱 Seeding field validation presets...");
+  await seedFieldValidationPresets(prisma);
 }
 
 main()

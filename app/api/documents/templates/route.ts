@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { getFileBuffer } from "@/lib/documents/storage";
 import { parseAcroForm } from "@/lib/documents/pdf-acroform-parser";
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
       toolId: actualToolId,
       sourceFileId,
       sourceType,
-      schema: schema as object,
+      schema: schema as unknown as Prisma.InputJsonValue,
       rgpdNotice: rgpdNotice ?? null,
       retentionDays: typeof retentionDays === "number" ? retentionDays : 30,
       outputFilenameTpl: outputFilenameTpl || "document-{{date}}.pdf",

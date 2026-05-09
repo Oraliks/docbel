@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { getFileBuffer, saveGeneratedDocument } from "@/lib/documents/storage";
 import { fillAcroForm } from "@/lib/documents/pdf-acroform-filler";
@@ -233,8 +234,8 @@ export async function POST(
         await prisma.bundleRun.update({
           where: { id: bundleRunId },
           data: {
-            payloads: newPayloads,
-            completedTemplateIds: newCompleted,
+            payloads: newPayloads as Prisma.InputJsonValue,
+            completedTemplateIds: newCompleted as Prisma.InputJsonValue,
           },
         });
       }

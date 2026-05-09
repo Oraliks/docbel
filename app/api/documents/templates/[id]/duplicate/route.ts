@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { requireAdminAuth } from "@/lib/auth-check";
 
 /// Duplique un template (avec son outil parent) sous un nouveau slug.
@@ -59,7 +60,7 @@ export async function POST(
       toolId: newTool.id,
       sourceFileId: original.sourceFileId,
       sourceType: original.sourceType,
-      schema: original.schema as object,
+      schema: original.schema as Prisma.InputJsonValue,
       outputFilenameTpl: original.outputFilenameTpl,
       rgpdNotice: original.rgpdNotice,
       retentionDays: original.retentionDays,
@@ -68,7 +69,7 @@ export async function POST(
       expiresAt: original.expiresAt,
       officialRef: original.officialRef ? `${original.officialRef} (copie)` : null,
       requiresSignature: original.requiresSignature,
-      signaturePosition: original.signaturePosition || undefined,
+      signaturePosition: (original.signaturePosition ?? Prisma.JsonNull) as Prisma.InputJsonValue,
       status: "draft", // toujours brouillon
     },
   });

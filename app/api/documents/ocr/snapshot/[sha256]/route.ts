@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { requireAdminAuth } from "@/lib/auth-check";
 
 /// GET → retourne le snapshot OCR pour ce hash, ou 404.
@@ -61,17 +62,18 @@ export async function POST(
   }
 
   const lower = sha256.toLowerCase();
+  const detectedFields = body.detectedFields as Prisma.InputJsonValue;
   const saved = await prisma.ocrSnapshot.upsert({
     where: { sha256: lower },
     create: {
       sha256: lower,
       fileId: body.fileId || null,
-      detectedFields: body.detectedFields,
+      detectedFields,
       pageCount: body.pageCount,
       templateId: body.templateId || null,
     },
     update: {
-      detectedFields: body.detectedFields,
+      detectedFields,
       pageCount: body.pageCount,
       fileId: body.fileId || null,
       templateId: body.templateId || null,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { DocumentField } from "@/lib/documents/types";
 import { computeSchemaDiff } from "@/lib/documents/diff";
@@ -60,7 +61,7 @@ export async function PUT(
     const cleanSchema = (body.schema as DocumentField[]).filter((f) => f && f.id && f.label && f.type);
     const oldSchema = (existing.schema as unknown as DocumentField[]) || [];
     const schemaChanged = JSON.stringify(oldSchema) !== JSON.stringify(cleanSchema);
-    data.schema = cleanSchema as object;
+    data.schema = cleanSchema as unknown as Prisma.InputJsonValue;
     if (schemaChanged) {
       data.version = existing.version + 1;
       createRevision = true;
@@ -119,14 +120,14 @@ export async function PUT(
       data: {
         templateId: existing.id,
         version: existing.version,
-        schema: existing.schema as object,
+        schema: existing.schema as Prisma.InputJsonValue,
         sourceType: existing.sourceType,
         rgpdNotice: existing.rgpdNotice,
         retentionDays: existing.retentionDays,
         outputFilenameTpl: existing.outputFilenameTpl,
         changeNotes,
         changeType,
-        diffSummary: diffSummary as object,
+        diffSummary: (diffSummary ?? Prisma.JsonNull) as Prisma.InputJsonValue,
         createdBy: auth.user?.id || null,
       },
     });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { requireAdminAuth } from "@/lib/auth-check";
 
 const VALID_CATEGORIES = ["identity", "contact", "financial", "date", "belgian", "address", "custom"];
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
       minDate: body.minDate || null,
       maxDate: body.maxDate || null,
       belgianType: body.belgianType || null,
-      crossFieldRule: body.crossFieldRule || null,
+      crossFieldRule: (body.crossFieldRule ?? Prisma.JsonNull) as Prisma.InputJsonValue,
       errorMsg,
       errorMsgNl: body.errorMsgNl || null,
       helpText: body.helpText || null,

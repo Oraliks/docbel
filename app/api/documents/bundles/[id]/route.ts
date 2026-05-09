@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { requireAdminAuth } from "@/lib/auth-check";
 
 export async function GET(
@@ -66,7 +67,7 @@ export async function PUT(
           templateId: it.templateId,
           order: typeof it.order === "number" ? it.order : idx,
           required: it.required !== false,
-          condition: it.condition ?? undefined,
+          condition: (it.condition ?? Prisma.JsonNull) as Prisma.InputJsonValue,
         })),
       });
     }

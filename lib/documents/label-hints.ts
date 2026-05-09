@@ -59,8 +59,8 @@ export const LABEL_HINTS: LabelHint[] = [
 export function inferFromLabel(rawLabel: string): { type: DocumentFieldType; presetName?: string } | null {
   if (!rawLabel) return null;
   const cleaned = rawLabel
-    .replace(/\([^)]*\)/g, "") // (1), (3), etc.
-    .replace(/[¹-³⁰-⁹]/g, "") // ¹²³ exposants
+    .replace(/(([^)]*))/g, "") // (1), (3), etc.
+    .replace(/[²³¹⁰-⁹]/g, "") // exposants superscript
     .trim();
   for (const hint of LABEL_HINTS) {
     if (hint.pattern.test(cleaned)) {

@@ -21,6 +21,8 @@ export interface ChangelogEntry {
   changes: string[];
 }
 
+import type { AudienceId } from "@/lib/audience";
+
 export interface Tool {
   id: number;
   cat: string;
@@ -30,20 +32,25 @@ export interface Tool {
   popular: boolean;
   time: string;
   type: string;
+  audiences: AudienceId[];
 }
 
 export const TOOLS_DATA: Tool[] = [
-  { id: 1, cat: "Documents", icon: "📄", title: "Formulaire C4", desc: "Générez votre certificat de chômage C4 (attestation de fin de contrat délivrée par l'employeur).", popular: true, time: "5 min", type: "form" },
-  { id: 2, cat: "Documents", icon: "📝", title: "Formulaire C1", desc: "Demande d'allocations de chômage à introduire auprès de votre organisme de paiement.", popular: true, time: "8 min", type: "form" },
-  { id: 3, cat: "Documents", icon: "⏸️", title: "Chômage temporaire", desc: "Déclaration de chômage temporaire pour force majeure ou raisons économiques (formulaire C3.2).", popular: false, time: "4 min", type: "form" },
-  { id: 6, cat: "Calculs", icon: "🧮", title: "Calculateur de préavis", desc: "Calculez votre délai de préavis légal en fonction de votre ancienneté, statut et date d'entrée en service.", popular: true, time: "2 min", type: "calc_preavis" },
-  { id: 7, cat: "Calculs", icon: "💶", title: "Calcul AGR", desc: "Estimez votre Allocation de Garantie de Revenu (AGR) pour les travailleurs à temps partiel involontaire.", popular: true, time: "3 min", type: "calc_agr" },
-  { id: 8, cat: "Calculs", icon: "💼", title: "Salaire minimum par CP", desc: "Consultez le salaire minimum garanti par commission paritaire (CP) pour votre secteur d'activité.", popular: false, time: "1 min", type: "calc_cp" },
-  { id: 12, cat: "Organismes", icon: "🏛️", title: "Trouver un bureau ONEM", desc: "Localisez le bureau régional ONEM compétent pour votre commune et consultez ses coordonnées.", popular: true, time: "1 min", type: "locator" },
-  { id: 13, cat: "Organismes", icon: "🏦", title: "Organisme de paiement", desc: "Trouvez les coordonnées de votre caisse (CAPAC, CSC/ACV, CGSLB/ACLVB, FGTB/ABVV) selon votre profil.", popular: true, time: "1 min", type: "locator" },
-  { id: 19, cat: "CPAS", icon: "🏠", title: "Demande d'aide sociale", desc: "Formulaire de demande d'aide sociale (revenu d'intégration sociale) auprès du CPAS de votre commune.", popular: true, time: "10 min", type: "form" },
-  { id: 23, cat: "Tutoriels", icon: "🃏", title: "Envoyer sa carte électronique C", desc: "Guide pas à pas pour envoyer votre carte de contrôle C via MyONEM ou chez votre organisme de paiement.", popular: true, time: "3 min", type: "tutorial" },
+  { id: 1, cat: "Documents", icon: "📄", title: "Formulaire C4", desc: "Générez votre certificat de chômage C4 (attestation de fin de contrat délivrée par l'employeur).", popular: true, time: "5 min", type: "form", audiences: ["citoyen", "employeur"] },
+  { id: 2, cat: "Documents", icon: "📝", title: "Formulaire C1", desc: "Demande d'allocations de chômage à introduire auprès de votre organisme de paiement.", popular: true, time: "8 min", type: "form", audiences: ["citoyen"] },
+  { id: 3, cat: "Documents", icon: "⏸️", title: "Chômage temporaire", desc: "Déclaration de chômage temporaire pour force majeure ou raisons économiques (formulaire C3.2).", popular: false, time: "4 min", type: "form", audiences: ["citoyen", "employeur"] },
+  { id: 6, cat: "Calculs", icon: "🧮", title: "Calculateur de préavis", desc: "Calculez votre délai de préavis légal en fonction de votre ancienneté, statut et date d'entrée en service.", popular: true, time: "2 min", type: "calc_preavis", audiences: ["citoyen", "employeur"] },
+  { id: 7, cat: "Calculs", icon: "💶", title: "Calcul AGR", desc: "Estimez votre Allocation de Garantie de Revenu (AGR) pour les travailleurs à temps partiel involontaire.", popular: true, time: "3 min", type: "calc_agr", audiences: ["citoyen"] },
+  { id: 8, cat: "Calculs", icon: "💼", title: "Salaire minimum par CP", desc: "Consultez le salaire minimum garanti par commission paritaire (CP) pour votre secteur d'activité.", popular: false, time: "1 min", type: "calc_cp", audiences: ["citoyen", "employeur", "partenaire"] },
+  { id: 12, cat: "Organismes", icon: "🏛️", title: "Trouver un bureau ONEM", desc: "Localisez le bureau régional ONEM compétent pour votre commune et consultez ses coordonnées.", popular: true, time: "1 min", type: "locator", audiences: ["citoyen", "partenaire"] },
+  { id: 13, cat: "Organismes", icon: "🏦", title: "Organisme de paiement", desc: "Trouvez les coordonnées de votre caisse (CAPAC, CSC/ACV, CGSLB/ACLVB, FGTB/ABVV) selon votre profil.", popular: true, time: "1 min", type: "locator", audiences: ["citoyen", "partenaire"] },
+  { id: 19, cat: "CPAS", icon: "🏠", title: "Demande d'aide sociale", desc: "Formulaire de demande d'aide sociale (revenu d'intégration sociale) auprès du CPAS de votre commune.", popular: true, time: "10 min", type: "form", audiences: ["citoyen", "partenaire"] },
+  { id: 23, cat: "Tutoriels", icon: "🃏", title: "Envoyer sa carte électronique C", desc: "Guide pas à pas pour envoyer votre carte de contrôle C via MyONEM ou chez votre organisme de paiement.", popular: true, time: "3 min", type: "tutorial", audiences: ["citoyen"] },
 ];
+
+export function getToolsByAudience(audience: AudienceId): Tool[] {
+  return TOOLS_DATA.filter((tool) => tool.audiences.includes(audience));
+}
 
 export const CATEGORIES = ["Tous", "Documents", "Calculs", "Organismes", "CPAS", "Tutoriels"];
 

@@ -7,6 +7,8 @@ export const SETTING_KEYS = {
   EMAIL_BODY: "email_body",
   COMMISSIONS_LAST_UPDATED: "commissions_last_updated",
   U1_INSTITUTIONS_LAST_UPDATED: "u1_institutions_last_updated",
+  PARTNER_INVITE_SUBJECT: "partner_invite_subject",
+  PARTNER_INVITE_BODY: "partner_invite_body",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
@@ -44,6 +46,19 @@ Ce document est aussi accessible via le lien de téléchargement reçu lors de l
 
 Cordialement,
 L'équipe beldoc`,
+  partner_invite_subject: "Confirmez votre inscription partenaire DocBel",
+  partner_invite_body: `Bonjour {{name}},
+
+Merci de votre demande d'inscription à l'espace partenaire DocBel pour {{organizationName}}.
+
+Pour activer votre compte, cliquez sur le lien ci-dessous (valide 24 heures) :
+
+{{confirmationLink}}
+
+Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.
+
+Cordialement,
+L'équipe DocBel`,
 };
 
 export async function getSetting(key: SettingKey): Promise<string> {

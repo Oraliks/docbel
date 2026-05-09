@@ -13,6 +13,7 @@ generator client {
 
 enum UserRole {
   user
+  partner
   moderator
   admin
 }
@@ -38,6 +39,7 @@ model User {
   passwordChangedAt   DateTime   @default(now())
   failedLoginAttempts Int        @default(0)
   lockedUntil         DateTime?
+  partnerOrganization String?
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
   sessions            Session[]
@@ -45,6 +47,7 @@ model User {
 
   @@index([role])
   @@index([status])
+  @@index([partnerOrganization])
 }
 
 model Session {
@@ -416,6 +419,20 @@ model CommissionParitaire {
   @@index([type])
   @@index([numeroOfficiel])
   @@index([code])
+}
+
+model PartnerDomain {
+  id               String   @id @default(cuid())
+  domain           String   @unique // ex: "cpas.brussels" (sans le @)
+  organizationName String
+  notes            String?
+  isTest           Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  createdBy        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([isActive])
 }
 
 model U1Institution {

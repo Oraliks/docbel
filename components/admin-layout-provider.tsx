@@ -1,6 +1,8 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { useEffect } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { authClient } from "@/lib/auth-client"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
@@ -8,7 +10,19 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 export function AdminLayoutProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { data: session, isPending } = authClient.useSession()
   const isBuilder = /^\/admin\/pages\/[^/]+$/.test(pathname ?? '')
+
+  useEffect(() => {
+    if (!isPending && !session) {
+      router.replace('/')
+    }
+  }, [session, isPending, router])
+
+  if (!isPending && !session) {
+    return null
+  }
 
   if (isBuilder) {
     return (

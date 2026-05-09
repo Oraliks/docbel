@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, FolderIcon, UsersIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon } from "lucide-react"
+import { LayoutDashboardIcon, FolderIcon, UsersIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon, HandshakeIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultData = {
@@ -119,6 +119,23 @@ const defaultData = {
         {
           title: "RGPD",
           url: "/admin/documents/rgpd",
+        },
+      ],
+    },
+    {
+      title: "Partenaires",
+      url: "/admin/partenaires",
+      icon: (
+        <HandshakeIcon className="size-4" />
+      ),
+      items: [
+        {
+          title: "Domaines autorisés",
+          url: "/admin/partenaires",
+        },
+        {
+          title: "Email d'invitation",
+          url: "/admin/partenaires/email",
         },
       ],
     },

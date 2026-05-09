@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { HeroSection } from "@/components/docbel/hero";
 import { ToolsSection } from "@/components/docbel/tools";
 import { LoadingView } from "@/components/docbel/loading-view";
-import { TOOLS_DATA, Tool, NewsItem, getToolSlug } from "@/lib/docbel-data";
+import { Tool, NewsItem, getToolSlug, getToolsByAudience } from "@/lib/docbel-data";
 import { useAppState } from "@/lib/app-state-context";
 
 export default function Home() {
@@ -76,7 +76,8 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [apiNews.length]);
 
-  const filteredTools = TOOLS_DATA.filter((tool) => {
+  const citoyenTools = getToolsByAudience("citoyen");
+  const filteredTools = citoyenTools.filter((tool) => {
     const matchesCategory = toolsCat === "Tous" || tool.cat === toolsCat;
     const matchesSearch =
       tool.title.toLowerCase().includes(toolsSearch.toLowerCase()) ||
@@ -84,7 +85,7 @@ export default function Home() {
     return matchesCategory && matchesSearch;
   });
 
-  const featuredTools = TOOLS_DATA.filter((tool) => tool.id === 6 || tool.id === 2);
+  const featuredTools = citoyenTools.filter((tool) => tool.id === 6 || tool.id === 2);
 
   const handleToolClick = (tool: Tool) => {
     setIsLoading(true);

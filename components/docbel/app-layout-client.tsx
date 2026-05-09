@@ -9,6 +9,7 @@ import { TopBarNav } from "./topbar-nav";
 import { Footer } from "./footer";
 import { LoginModal } from "./login-modal";
 import { AppStateContext } from "@/lib/app-state-context";
+import { getAudience, getAudienceFromPath } from "@/lib/audience";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 const PUBLIC_LAYOUT_STYLE = {
@@ -31,6 +32,8 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   if (pathname.startsWith("/admin")) {
     return <>{children}</>;
   }
+
+  const audience = getAudienceFromPath(pathname);
 
   let activePage = "accueil";
   if (pathname.startsWith("/actualites")) activePage = "actualites";
@@ -58,7 +61,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    router.push("/");
+    router.push(getAudience(audience).path);
   };
 
   const toggleTheme = () => setTheme(dark ? "light" : "dark");
@@ -91,6 +94,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
           setToolsCat={setToolsCat}
           newsFilter="all"
           setNewsFilter={() => {}}
+          audience={audience}
         />
 
         <SidebarInset className="min-h-svh text-foreground">

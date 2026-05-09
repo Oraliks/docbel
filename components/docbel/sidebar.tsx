@@ -1,8 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   BookOpenIcon,
   CalculatorIcon,
+  CheckIcon,
+  ChevronsUpDownIcon,
   FileTextIcon,
   GraduationCapIcon,
   HeartHandshakeIcon,
@@ -13,6 +16,16 @@ import {
   SunIcon,
   MailIcon,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { AUDIENCES, getAudience, type AudienceId } from "@/lib/audience";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sidebar as AppSidebarShell,
   SidebarContent,
@@ -46,6 +59,7 @@ interface SidebarProps {
   setToolsCat: (c: string) => void;
   newsFilter?: string;
   setNewsFilter?: (f: string) => void;
+  audience: AudienceId;
 }
 
 const NAV_ITEMS = [
@@ -70,7 +84,9 @@ export function Sidebar({
   setActivePage,
   toolsCat,
   setToolsCat,
+  audience,
 }: SidebarProps) {
+  const router = useRouter();
   const counts: Record<string, number> = {
     Tous: 10,
     Documents: 3,
@@ -80,26 +96,80 @@ export function Sidebar({
     Tutoriels: 1,
   };
 
+  const currentAudience = getAudience(audience);
+  const showCategories = audience === "citoyen";
+
   return (
     <AppSidebarShell variant="inset" collapsible="offcanvas">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              isActive={activePage === "accueil"}
-              onClick={() => setActivePage("accueil")}
-              className="h-auto items-start px-3 py-3"
-            >
-              <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <FileTextIcon />
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
-                <span className="truncate text-sm font-semibold">Docbel</span>
-                <span className="text-xs text-muted-foreground">
-                  Portail documents et demarches
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <SidebarMenuButton className="h-auto items-center px-3 py-3 aria-expanded:bg-sidebar-accent" />
+                }
+              >
+                <span
+                  className={cn(
+                    "flex size-9 items-center justify-center rounded-lg transition-colors",
+                    currentAudience.logoMarkClass,
+                  )}
+                >
+                  <FileTextIcon />
                 </span>
-              </span>
-            </SidebarMenuButton>
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
+                  <span className="truncate text-sm font-semibold">Docbel</span>
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span
+                      className={cn(
+                        "size-1.5 shrink-0 rounded-full",
+                        currentAudience.dotClass,
+                      )}
+                    />
+                    <span className="truncate">{currentAudience.label}</span>
+                  </span>
+                </span>
+                <ChevronsUpDownIcon className="size-4 shrink-0 text-muted-foreground" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                side="bottom"
+                sideOffset={6}
+                className="min-w-72"
+              >
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                    Changer d&apos;espace
+                  </DropdownMenuLabel>
+                  {AUDIENCES.map((aud) => (
+                    <DropdownMenuItem
+                      key={aud.id}
+                      onClick={() => router.push(aud.path)}
+                      className="gap-2.5"
+                    >
+                      <span
+                        className={cn(
+                          "flex size-7 items-center justify-center rounded-md",
+                          aud.iconBgClass,
+                        )}
+                      >
+                        <aud.Icon className="size-3.5" />
+                      </span>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span className="text-sm font-medium">{aud.label}</span>
+                        <span className="truncate text-xs text-muted-foreground">
+                          {aud.description}
+                        </span>
+                      </div>
+                      {audience === aud.id && (
+                        <CheckIcon className="size-4 shrink-0 text-primary" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -124,30 +194,34 @@ export function Sidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator />
+        {showCategories && (
+          <>
+            <SidebarSeparator />
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Outils</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {CATEGORY_ITEMS.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    isActive={toolsCat === item.id}
-                    onClick={() => {
-                      setToolsCat(item.id);
-                      setActivePage("outils");
-                    }}
-                  >
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                  <SidebarMenuBadge>{counts[item.id] ?? 0}</SidebarMenuBadge>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel>Outils</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {CATEGORY_ITEMS.map((item) => (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        isActive={toolsCat === item.id}
+                        onClick={() => {
+                          setToolsCat(item.id);
+                          setActivePage("outils");
+                        }}
+                      >
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                      <SidebarMenuBadge>{counts[item.id] ?? 0}</SidebarMenuBadge>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
 
         <SidebarSeparator />
 

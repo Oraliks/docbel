@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUpIcon, TrendingDownIcon, FileIcon, UsersIcon, ActivityIcon } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ActivityLog, ActivityItem } from "@/components/admin/activity-log";
+import { AdminDashboardOverview } from "@/components/admin/admin-dashboard-overview";
 import { FileManager } from "@/components/docbel/file-manager";
 import { ApiKeysPanel } from "@/components/admin/api-keys-panel";
 import { MessagesPanel } from "@/components/admin/messages-panel";
@@ -27,6 +27,8 @@ interface User {
   name: string;
   email: string;
   role: string;
+  status?: string;
+  lastLoginAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -78,13 +80,7 @@ export function AdminDashboard({ pages, users, sections }: AdminDashboardProps) 
   const view = searchParams.get("view") || "dashboard";
   const [activities, setActivities] = useState<ActivityItem[]>([]);
 
-  const totalPages = pages.length;
-  const publishedPages = pages.filter((p) => p.status === "published").length;
-  const draftPages = pages.filter((p) => p.status === "draft").length;
   const totalUsers = users.length;
-
-  const recentPages = pages.slice(0, 5);
-  const recentUsers = users.slice(0, 5);
 
   useEffect(() => {
     async function fetchActivities() {
@@ -110,37 +106,6 @@ export function AdminDashboard({ pages, users, sections }: AdminDashboardProps) 
 
     fetchActivities();
   }, []);
-
-  const stats = [
-    {
-      label: "Total Pages",
-      value: totalPages,
-      trend: publishedPages > draftPages ? "+12%" : "-5%",
-      icon: FileIcon,
-      up: publishedPages > draftPages,
-    },
-    {
-      label: "Published",
-      value: publishedPages,
-      trend: "+8%",
-      icon: ActivityIcon,
-      up: true,
-    },
-    {
-      label: "Total Users",
-      value: totalUsers,
-      trend: "+5%",
-      icon: UsersIcon,
-      up: true,
-    },
-    {
-      label: "Draft Pages",
-      value: draftPages,
-      trend: `-${Math.round((draftPages / totalPages) * 100)}%`,
-      icon: FileIcon,
-      up: false,
-    },
-  ];
 
   // Afficher les vues alternatives
   if (view === "filemanager") {
@@ -220,117 +185,11 @@ export function AdminDashboard({ pages, users, sections }: AdminDashboardProps) 
 
   // Vue par défaut: Dashboard
   return (
-    <div className="space-y-6">
-      {/* Stats Cards */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={stat.label}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <CardDescription className="text-sm">{stat.label}</CardDescription>
-                      <CardTitle className="text-2xl font-bold">{stat.value}</CardTitle>
-                    </div>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Badge variant={stat.up ? "default" : "secondary"} className="text-xs">
-                    {stat.up ? (
-                      <TrendingUpIcon className="h-3 w-3 mr-1" />
-                    ) : (
-                      <TrendingDownIcon className="h-3 w-3 mr-1" />
-                    )}
-                    {stat.trend}
-                  </Badge>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Recent Pages */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Pages Récentes</CardTitle>
-            <CardDescription>Vos {totalPages} pages, dernières modifications en haut</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {recentPages.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Titre</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Modifiée</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentPages.map((page) => (
-                    <TableRow key={page.id}>
-                      <TableCell className="font-medium">{page.title}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{page.slug}</TableCell>
-                      <TableCell>
-                        <Badge variant={page.status === "published" ? "default" : "secondary"}>
-                          {page.status === "published" ? "Publiée" : "Brouillon"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatRelativeTime(page.updatedAt)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">Aucune page trouvée</div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent Users */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Utilisateurs Récents</CardTitle>
-            <CardDescription>Vos {totalUsers} utilisateurs, inscriptions récentes en haut</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {recentUsers.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Rôle</TableHead>
-                    <TableHead>Inscrit le</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{user.role}</Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatRelativeTime(user.createdAt)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">Aucun utilisateur trouvé</div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Activity Log */}
-        <ActivityLog activities={activities} limit={5} showViewAll={true} compact={true} />
-    </div>
+    <AdminDashboardOverview
+      pages={pages}
+      users={users}
+      sections={sections}
+      activities={activities}
+    />
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayoutClient } from "@/components/docbel/app-layout-client";
@@ -27,6 +28,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
           <AppLayoutClient>{children}</AppLayoutClient>
           <Toaster richColors position="bottom-right" duration={3500} />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>

@@ -28,6 +28,22 @@ export interface EmailFull extends EmailListItem {
   inReplyTo: string | null;
   replyToName: string | null;
   ccAddresses: string;
+  thread?: ThreadEmail[];
+}
+
+export interface ThreadEmail {
+  id: string;
+  folder: Folder;
+  fromAddress: string;
+  fromName: string | null;
+  subject: string;
+  textBody: string;
+  htmlBody: string | null;
+  receivedAt: string;
+  attachments: AttachmentMeta[];
+  messageId: string | null;
+  inReplyTo: string | null;
+  isRead: boolean;
 }
 
 export interface FolderStats {

@@ -166,22 +166,54 @@ async function syncFolder(
       mailbox && typeof mailbox === "object" && "uidValidity" in mailbox
         ? String(mailbox.uidValidity)
         : null;
-
-    // 1. Server state — metadata only (cheap)
-    const serverMeta = new Map<number, { isSeen: boolean }>();
     const exists =
       mailbox && typeof mailbox === "object" && "exists" in mailbox && typeof mailbox.exists === "number"
         ? mailbox.exists
         : 0;
-    if (exists > 0) {
-      for await (const msg of client.fetch(
-        "1:*",
-        { uid: true, flags: true },
-        { uid: false }
-      )) {
-        const isSeen = msg.flags?.has("\\Seen") || false;
-        serverMeta.set(msg.uid, { isSeen });
+
+    // 0. UIDVALIDITY check — if it changed, every cached UID is invalid.
+    // Wipe DB cache for this folder; the rest of the sync will repopulate it.
+    if (uidValidity) {
+      const sample = await prisma.inboxEmail.findFirst({
+        where: { folder: dbFolder },
+        select: { uidValidity: true },
+      });
+      if (sample?.uidValidity && sample.uidValidity !== uidValidity) {
+        console.warn(
+          `[inbox] ${dbFolder} UIDVALIDITY changed (${sample.uidValidity} → ${uidValidity}); wiping cache`
+        );
+        await prisma.inboxEmail.deleteMany({ where: { folder: dbFolder } });
       }
+    }
+
+    // 1. Server state — metadata only (cheap). If this loop fails partway,
+    // we MUST NOT proceed to the deletion phase, or we'd wipe valid cached
+    // emails because of a transient connection blip.
+    const serverMeta = new Map<number, { isSeen: boolean }>();
+    let metadataComplete = false;
+    try {
+      if (exists > 0) {
+        for await (const msg of client.fetch(
+          "1:*",
+          { uid: true, flags: true },
+          { uid: false }
+        )) {
+          const isSeen = msg.flags?.has("\\Seen") || false;
+          serverMeta.set(msg.uid, { isSeen });
+        }
+      }
+      metadataComplete = true;
+    } catch (err) {
+      console.error(`[inbox] ${dbFolder} metadata fetch failed:`, err);
+      result.errors++;
+    }
+
+    // Sanity check: if mailbox claims N messages but we got 0, treat as failure.
+    if (exists > 0 && serverMeta.size === 0) {
+      console.warn(
+        `[inbox] ${dbFolder} reports exists=${exists} but fetched 0 messages — skipping deletion phase`
+      );
+      metadataComplete = false;
     }
 
     // 2. DB state
@@ -191,11 +223,13 @@ async function syncFolder(
     });
     const dbByUid = new Map(dbRows.map((r) => [r.uid, r]));
 
-    // 3. Deletions: DB rows whose UID is no longer on server
-    const toDelete = dbRows.filter((r) => !serverMeta.has(r.uid)).map((r) => r.id);
-    if (toDelete.length > 0) {
-      const del = await prisma.inboxEmail.deleteMany({ where: { id: { in: toDelete } } });
-      result.deleted = del.count;
+    // 3. Deletions — only when metadata fetch is trustworthy.
+    if (metadataComplete) {
+      const toDelete = dbRows.filter((r) => !serverMeta.has(r.uid)).map((r) => r.id);
+      if (toDelete.length > 0) {
+        const del = await prisma.inboxEmail.deleteMany({ where: { id: { in: toDelete } } });
+        result.deleted = del.count;
+      }
     }
 
     // 4. Reconcile read flags for emails present on both sides

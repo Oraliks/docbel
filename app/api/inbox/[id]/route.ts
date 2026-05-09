@@ -10,6 +10,62 @@ function asFolder(s: string): Folder {
   throw new Error(`Invalid folder: ${s}`);
 }
 
+/**
+ * BFS through Message-ID / In-Reply-To links to gather every email that
+ * belongs to the same conversation as `target`. Returns them ordered by date.
+ */
+async function loadThread(targetId: string): Promise<Array<Awaited<ReturnType<typeof prisma.inboxEmail.findUnique>>>> {
+  const target = await prisma.inboxEmail.findUnique({ where: { id: targetId } });
+  if (!target) return [];
+
+  const visited = new Set<string>();
+  const queue: string[] = [];
+  if (target.messageId) {
+    visited.add(target.messageId);
+    queue.push(target.messageId);
+  }
+  if (target.inReplyTo) {
+    visited.add(target.inReplyTo);
+    queue.push(target.inReplyTo);
+  }
+
+  // Cap iterations to avoid pathological cases
+  for (let depth = 0; depth < 8 && queue.length > 0; depth++) {
+    const batch = queue.splice(0, queue.length);
+    const found = await prisma.inboxEmail.findMany({
+      where: {
+        OR: [{ messageId: { in: batch } }, { inReplyTo: { in: batch } }],
+      },
+      select: { messageId: true, inReplyTo: true },
+    });
+    for (const f of found) {
+      if (f.messageId && !visited.has(f.messageId)) {
+        visited.add(f.messageId);
+        queue.push(f.messageId);
+      }
+      if (f.inReplyTo && !visited.has(f.inReplyTo)) {
+        visited.add(f.inReplyTo);
+        queue.push(f.inReplyTo);
+      }
+    }
+  }
+
+  const ids = [...visited];
+  if (ids.length === 0) return [target];
+
+  const thread = await prisma.inboxEmail.findMany({
+    where: {
+      OR: [{ messageId: { in: ids } }, { inReplyTo: { in: ids } }],
+    },
+    orderBy: { receivedAt: "asc" },
+  });
+  // Always include the target itself in case its messageId is null
+  if (!thread.find((e) => e.id === target.id)) thread.push(target);
+  return thread.sort((a, b) =>
+    a && b ? new Date(a.receivedAt).getTime() - new Date(b.receivedAt).getTime() : 0
+  );
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -34,7 +90,8 @@ export async function GET(
     }
   }
 
-  return NextResponse.json(email);
+  const thread = await loadThread(id);
+  return NextResponse.json({ ...email, thread });
 }
 
 /**

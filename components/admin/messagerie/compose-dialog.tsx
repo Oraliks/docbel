@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,19 +26,16 @@ export function ComposeDialog({ onSent }: ComposeDialogProps) {
   const [subject, setSubject] = useState("");
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   function reset() {
     setTo("");
     setSubject("");
     setText("");
-    setError(null);
   }
 
   async function handleSend() {
     if (!to.trim() || !subject.trim() || !text.trim()) return;
     setSending(true);
-    setError(null);
     try {
       const response = await fetch("/api/inbox/compose", {
         method: "POST",
@@ -45,16 +43,17 @@ export function ComposeDialog({ onSent }: ComposeDialogProps) {
         body: JSON.stringify({ to: to.trim(), subject: subject.trim(), text }),
       });
       if (response.ok) {
+        toast.success("Email envoyé", { description: `À ${to.trim()}` });
         reset();
         setOpen(false);
         onSent?.();
       } else {
         const err = await response.json().catch(() => ({}));
-        setError(err.error || "Envoi échoué");
+        toast.error(err.error || "Envoi échoué");
       }
     } catch (err) {
       console.error(err);
-      setError("Erreur réseau");
+      toast.error("Erreur réseau");
     } finally {
       setSending(false);
     }
@@ -108,7 +107,6 @@ export function ComposeDialog({ onSent }: ComposeDialogProps) {
               className="resize-y"
             />
           </div>
-          {error && <div className="text-sm text-destructive">{error}</div>}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={sending}>

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,11 +29,13 @@ export function MessageriePanel() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [stats, setStats] = useState<FolderStats>({
     counts: { INBOX: 0, SENT: 0, SPAM: 0, ARCHIVE: 0, TRASH: 0 },
     unreadInbox: 0,
   });
+  // Concurrency guard: a ref-backed flag we can check synchronously to prevent
+  // overlapping syncs (the React state update is async).
+  const syncInFlight = useRef(false);
 
   const fetchEmails = useCallback(async (targetFolder: Folder) => {
     setLoading(true);
@@ -63,8 +66,15 @@ export function MessageriePanel() {
 
   const sync = useCallback(
     async (silent = false) => {
+      // Concurrency guard — drop overlapping calls instead of running 2 IMAP
+      // sessions in parallel (OVH has tight session limits and they fight
+      // over mailbox locks).
+      if (syncInFlight.current) {
+        if (!silent) toast.info("Synchronisation déjà en cours");
+        return;
+      }
+      syncInFlight.current = true;
       setSyncing(true);
-      if (!silent) setSyncMessage(null);
       try {
         const response = await fetch("/api/inbox/sync", { method: "POST" });
         if (response.ok) {
@@ -75,18 +85,27 @@ export function MessageriePanel() {
               r.updated ? `${r.updated} mis à jour` : null,
               r.deleted ? `${r.deleted} supprimé(s)` : null,
             ].filter(Boolean);
-            setSyncMessage(parts.length > 0 ? parts.join(" · ") : "À jour");
-            window.setTimeout(() => setSyncMessage(null), 4000);
+            if (r.errors > 0) {
+              toast.warning(
+                parts.length > 0 ? `Synchronisé · ${parts.join(" · ")}` : "Synchronisé",
+                { description: `${r.errors} erreur(s) — voir les logs` }
+              );
+            } else if (parts.length > 0) {
+              toast.success("Synchronisé", { description: parts.join(" · ") });
+            } else {
+              toast.success("À jour");
+            }
           }
           await Promise.all([fetchEmails(folder), fetchStats()]);
         } else {
           const err = await response.json().catch(() => ({}));
-          setSyncMessage(`Erreur : ${err.error || "sync"}`);
+          if (!silent) toast.error(err.error || "Synchronisation échouée");
         }
       } catch (err) {
         console.error("Sync failed:", err);
-        setSyncMessage("Erreur réseau");
+        if (!silent) toast.error("Erreur réseau pendant la synchronisation");
       } finally {
+        syncInFlight.current = false;
         setSyncing(false);
       }
     },
@@ -139,9 +158,6 @@ export function MessageriePanel() {
           <p className="text-xs text-muted-foreground">contact@docbel.be · synchronisé avec OVH</p>
         </div>
         <div className="flex items-center gap-3">
-          {syncMessage && (
-            <span className="text-xs text-muted-foreground">{syncMessage}</span>
-          )}
           <ComposeDialog onSent={() => sync(true)} />
           <Button
             onClick={() => sync(false)}

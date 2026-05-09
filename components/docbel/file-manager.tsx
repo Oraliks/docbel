@@ -11,12 +11,13 @@ import {
   FileText,
   FileImage,
   FileVideo,
-  FileCode,
   Archive,
   Download,
   Trash2,
   Edit,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   Grid,
   List as ListIcon,
   Plus,
@@ -48,6 +49,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { OfficePreview } from "./office-preview";
 
 interface FileItem {
   id: string;
@@ -85,7 +87,22 @@ export function FileManager() {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [usageWarning, setUsageWarning] = useState<{
     fileId: string;
-    usage: { id: string; pageSlug: string; context?: string | null }[];
+    fileName: string;
+    fileType?: string;
+    usage: {
+      id: string;
+      pageId?: string | null;
+      pageSlug: string;
+      context?: string | null;
+      page?: {
+        id: string;
+        title: string;
+        slug: string;
+        status: string;
+        deleted: boolean;
+        ogImage?: string | null;
+      } | null;
+    }[];
   } | null>(null);
   const [allFolders, setAllFolders] = useState<FileItem[]>([]);
   const [loadingFolders, setLoadingFolders] = useState(false);
@@ -115,6 +132,9 @@ export function FileManager() {
   const [isMoving, setIsMoving] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [movingToFolder, setMovingToFolder] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"name" | "size" | "createdAt" | "updatedAt" | "type">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [quota, setQuota] = useState<{ used: number; quota: number } | null>(null);
 
   const searchMode = debouncedSearch.length >= 2;
 
@@ -173,6 +193,21 @@ export function FileManager() {
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentFolderId, viewMode, debouncedSearch]);
+
+  // Quota indicator. Refreshed on view-change so the bar reflects recent uploads.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/files/quota")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d) return;
+        setQuota({ used: d.used, quota: d.quota });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [files]);
 
   const handleNavigate = (file: FileItem) => {
     if (file.type !== "folder") return;
@@ -280,8 +315,11 @@ export function FileManager() {
       if (res.status === 409) {
         const data = await res.json();
         if (data.usage) {
+          const fileMeta = files.find((f) => f.id === deleteConfirmation.fileId);
           setUsageWarning({
             fileId: deleteConfirmation.fileId,
+            fileName: deleteConfirmation.fileName,
+            fileType: fileMeta?.fileType,
             usage: data.usage,
           });
           toast.error("Fichier en cours d'utilisation", {
@@ -559,25 +597,28 @@ export function FileManager() {
     setBatchDeleting(true);
     try {
       const ids = Array.from(selectedFiles);
-      const results = await Promise.allSettled(
-        ids.map((fileId) =>
-          fetch(`/api/files/${fileId}`, { method: "DELETE" }).then((res) => {
-            if (!res.ok) throw new Error(`Failed to delete ${fileId}`);
-            return fileId;
-          })
-        )
-      );
+      const res = await fetch("/api/files/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json().catch(() => ({}));
 
-      const successCount = results.filter((r) => r.status === "fulfilled").length;
-      const failureCount = results.length - successCount;
+      const deleted: number = data?.deleted ?? 0;
+      const blocked: { name: string; reason: string }[] = data?.blocked ?? [];
 
-      if (successCount > 0) {
+      if (deleted > 0) {
         toast.success("Suppression réussie", {
-          description: `${successCount} fichier(s) supprimé(s) avec succès`,
+          description: `${deleted} fichier(s) supprimé(s)`,
         });
       }
-      if (failureCount > 0) {
-        toast.error(`${failureCount} fichier(s) n'ont pas pu être supprimés`);
+      if (blocked.length > 0) {
+        toast.error(`${blocked.length} non supprimé(s)`, {
+          description: blocked
+            .slice(0, 3)
+            .map((b) => `${b.name}: ${b.reason}`)
+            .join(" · "),
+        });
       }
 
       setSelectedFiles(new Set());
@@ -599,47 +640,45 @@ export function FileManager() {
   const confirmBatchPrivacy = async () => {
     if (!batchPrivacyWarning) return;
     const { fileIds, newPrivacy } = batchPrivacyWarning;
-
     const filesById = new Map(files.map((f) => [f.id, f]));
 
-    const results = await Promise.allSettled(
-      fileIds.map(async (fileId) => {
-        const res = await fetch(`/api/files/${fileId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isPrivate: newPrivacy }),
-        });
-        if (!res.ok) throw new Error(`Failed for ${fileId}`);
-        const file = filesById.get(fileId);
-        if (file?.type === "folder") {
-          await fetch(`/api/files/bulk-update`, {
+    try {
+      const res = await fetch("/api/files/bulk-privacy", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: fileIds, isPrivate: newPrivacy }),
+      });
+      if (!res.ok) {
+        toast.error("Impossible de mettre à jour les visibilités");
+        return;
+      }
+
+      // Folders selected: also recurse into their content.
+      const folderIds = fileIds.filter(
+        (id) => filesById.get(id)?.type === "folder"
+      );
+      await Promise.all(
+        folderIds.map((fid) =>
+          fetch("/api/files/bulk-update", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ parentId: fileId, isPrivate: newPrivacy }),
-          });
-        }
-      })
-    );
+            body: JSON.stringify({ parentId: fid, isPrivate: newPrivacy }),
+          })
+        )
+      );
 
-    const successCount = results.filter((r) => r.status === "fulfilled").length;
-    const failureCount = results.length - successCount;
-
-    if (successCount > 0) {
       const targetView = newPrivacy ? "private" : "public";
-      toast.success(`${successCount} fichier(s) mis à jour`, {
+      toast.success(`${fileIds.length} fichier(s) mis à jour`, {
         action: {
           label: targetView === "private" ? "Voir privés" : "Voir publics",
           onClick: () => setViewMode(targetView),
         },
       });
+    } finally {
+      setSelectedFiles(new Set());
+      setBatchPrivacyWarning(null);
+      await fetchFiles();
     }
-    if (failureCount > 0) {
-      toast.error(`${failureCount} fichier(s) n'ont pas pu être mis à jour`);
-    }
-
-    setSelectedFiles(new Set());
-    setBatchPrivacyWarning(null);
-    await fetchFiles();
   };
 
   const handleMoveFiles = async (fileIds: string[], targetFolderId: string | null) => {
@@ -741,11 +780,56 @@ export function FileManager() {
     }
   };
 
-  const filteredFiles = searchMode
-    ? files
-    : files.filter((f) =>
-        f.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  const filteredFiles = (() => {
+    const base = searchMode
+      ? files
+      : files.filter((f) =>
+          f.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    return [...base].sort((a, b) => {
+      // Folders always come before files in either direction — matches the
+      // server-side default ordering and avoids confusing mixed lists.
+      if (a.type !== b.type) return a.type === "folder" ? -1 : 1;
+      let cmp = 0;
+      switch (sortBy) {
+        case "size":
+          cmp = (a.size ?? 0) - (b.size ?? 0);
+          break;
+        case "createdAt":
+          cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+        case "updatedAt":
+          cmp = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+          break;
+        case "type":
+          cmp = (a.fileType ?? "").localeCompare(b.fileType ?? "");
+          break;
+        default:
+          cmp = a.name.localeCompare(b.name);
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  })();
+
+  const toggleSort = (col: typeof sortBy) => {
+    if (sortBy === col) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(col);
+      setSortDir("asc");
+    }
+  };
+
+  const sortIcon = (col: typeof sortBy) =>
+    sortBy === col ? (
+      sortDir === "asc" ? (
+        <ChevronUp className="ml-1 w-4 h-4" />
+      ) : (
+        <ChevronDown className="ml-1 w-4 h-4" />
+      )
+    ) : (
+      <ChevronDown className="ml-1 w-4 h-4 opacity-30" />
+    );
 
   const folderPathById = (() => {
     const byId = new Map(allFolders.map((f) => [f.id, f]));
@@ -778,8 +862,6 @@ export function FileManager() {
         return <FileVideo className={`${iconClass} text-pink-500`} />;
       case "archive":
         return <Archive className={`${iconClass} text-yellow-500`} />;
-      case "code":
-        return <FileCode className={`${iconClass} text-orange-500`} />;
       default:
         return <File className={`${iconClass} text-muted-foreground`} />;
     }
@@ -880,6 +962,28 @@ export function FileManager() {
               <Grid className="w-4 h-4" />
             )}
           </Button>
+
+          {quota && (
+            <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+              <span>
+                {formatFileSize(quota.used)} / {formatFileSize(quota.quota)}
+              </span>
+              <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all ${
+                    quota.used / quota.quota > 0.9
+                      ? "bg-red-500"
+                      : quota.used / quota.quota > 0.7
+                      ? "bg-orange-500"
+                      : "bg-emerald-500"
+                  }`}
+                  style={{
+                    width: `${Math.min(100, (quota.used / quota.quota) * 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </Tabs>
 
@@ -1130,39 +1234,59 @@ export function FileManager() {
                     />
                   </TableHead>
                   <TableHead className="flex-1">
-                    <Button variant="ghost" size="sm" className="h-auto py-1 px-0 hover:bg-transparent">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleSort("name")}
+                      className="h-auto py-1 px-0 hover:bg-transparent"
+                    >
                       Nom
-                      <ChevronRight className="ml-1 w-4 h-4 opacity-50" />
+                      {sortIcon("name")}
                     </Button>
                   </TableHead>
+                  <TableHead>Visibilité</TableHead>
                   <TableHead>
-                    <Button variant="ghost" size="sm" className="h-auto py-1 px-0 hover:bg-transparent">
-                      Visibilité
-                      <ChevronRight className="ml-1 w-4 h-4 opacity-50" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" size="sm" className="h-auto py-1 px-0 hover:bg-transparent">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleSort("type")}
+                      className="h-auto py-1 px-0 hover:bg-transparent"
+                    >
                       Type
-                      <ChevronRight className="ml-1 w-4 h-4 opacity-50" />
+                      {sortIcon("type")}
                     </Button>
                   </TableHead>
                   <TableHead>
-                    <Button variant="ghost" size="sm" className="h-auto py-1 px-0 hover:bg-transparent">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleSort("size")}
+                      className="h-auto py-1 px-0 hover:bg-transparent"
+                    >
                       Taille
-                      <ChevronRight className="ml-1 w-4 h-4 opacity-50" />
+                      {sortIcon("size")}
                     </Button>
                   </TableHead>
                   <TableHead>
-                    <Button variant="ghost" size="sm" className="h-auto py-1 px-0 hover:bg-transparent">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleSort("createdAt")}
+                      className="h-auto py-1 px-0 hover:bg-transparent"
+                    >
                       Créé
-                      <ChevronRight className="ml-1 w-4 h-4 opacity-50" />
+                      {sortIcon("createdAt")}
                     </Button>
                   </TableHead>
                   <TableHead>
-                    <Button variant="ghost" size="sm" className="h-auto py-1 px-0 hover:bg-transparent">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleSort("updatedAt")}
+                      className="h-auto py-1 px-0 hover:bg-transparent"
+                    >
                       Modifié
-                      <ChevronRight className="ml-1 w-4 h-4 opacity-50" />
+                      {sortIcon("updatedAt")}
                     </Button>
                   </TableHead>
                 </TableRow>
@@ -1376,26 +1500,118 @@ export function FileManager() {
       </Dialog>
 
       <Dialog open={!!usageWarning} onOpenChange={() => setUsageWarning(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-[640px]">
           <DialogHeader>
             <DialogTitle>Fichier en cours d&apos;utilisation</DialogTitle>
           </DialogHeader>
-          <div>
-            <p className="mb-3">
-              Ce fichier est utilisé sur les pages suivantes:
-            </p>
-            <ul className="list-none p-0">
-              {usageWarning?.usage?.map((u) => (
-                <li key={u.id} className="py-2 text-sm">
-                  <strong>{u.pageSlug}</strong>
-                  {u.context && (
-                    <p className="text-xs text-muted-foreground">{u.context}</p>
+          <div className="flex flex-col gap-3">
+            {/* File preview header */}
+            {usageWarning && (
+              <div className="flex items-center gap-3 p-3 rounded-md border border-border bg-muted/40">
+                <div className="w-16 h-16 rounded overflow-hidden bg-card border border-border flex items-center justify-center flex-shrink-0">
+                  {usageWarning.fileType === "image" ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/api/files/${usageWarning.fileId}/download`}
+                      alt={usageWarning.fileName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : usageWarning.fileType === "pdf" ? (
+                    <FileText className="w-7 h-7 text-red-500" />
+                  ) : (
+                    getFileIcon(usageWarning.fileType)
                   )}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Vous devez mettre à jour ces pages avant de supprimer ce fichier.
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{usageWarning.fileName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Utilisé sur {usageWarning.usage.length} page
+                    {usageWarning.usage.length > 1 ? "s" : ""}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2 max-h-[320px] overflow-auto">
+              {usageWarning?.usage.map((u) => {
+                const page = u.page;
+                const title = page?.title ?? u.pageSlug;
+                const slug = page?.slug ?? u.pageSlug;
+                const status = page?.status ?? "unknown";
+                const deleted = page?.deleted ?? false;
+                const statusLabel = deleted
+                  ? "Supprimée"
+                  : status === "published"
+                  ? "Publié"
+                  : status === "draft"
+                  ? "Brouillon"
+                  : status;
+                const statusClass = deleted
+                  ? "bg-red-500/15 text-red-500"
+                  : status === "published"
+                  ? "bg-emerald-500/15 text-emerald-600"
+                  : "bg-orange-500/15 text-orange-600";
+                return (
+                  <div
+                    key={u.id}
+                    className="flex items-start gap-3 p-3 rounded-md border border-border bg-card"
+                  >
+                    {/* Page thumbnail (ogImage) or icon fallback */}
+                    {page?.ogImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={page.ogImage}
+                        alt=""
+                        className="w-12 h-12 rounded object-cover border border-border flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded bg-muted border border-border flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm truncate">{title}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusClass}`}>
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <code className="text-[11px] text-muted-foreground block truncate">
+                        /{slug}
+                      </code>
+                      {u.context && (
+                        <p className="text-xs text-muted-foreground mt-1">{u.context}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1 flex-shrink-0">
+                      {page?.id && !deleted && (
+                        <a
+                          href={`/admin/pages/${page.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs px-2 py-1 rounded border border-border hover:bg-muted text-center"
+                        >
+                          Éditer
+                        </a>
+                      )}
+                      {page?.status === "published" && !deleted && (
+                        <a
+                          href={`/${slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs px-2 py-1 rounded border border-border hover:bg-muted text-center"
+                        >
+                          Voir
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Retire le fichier de ces pages, sauvegarde-les, puis réessaie la suppression.
             </p>
           </div>
           <DialogFooter>
@@ -1527,12 +1743,16 @@ export function FileManager() {
                         className="max-w-full max-h-full object-contain"
                       />
                     );
-                  case "code":
+                  case "docx":
+                    return <OfficePreview url={url} mode="docx" />;
+                  case "xlsx":
+                    return <OfficePreview url={url} mode="xlsx" />;
+                  case "text":
                     return (
                       <iframe
                         src={url}
-                        className="w-full h-[600px] border-0"
-                        title="Code Preview"
+                        className="w-full h-[600px] border-0 bg-card"
+                        title="Text preview"
                       />
                     );
                   default:

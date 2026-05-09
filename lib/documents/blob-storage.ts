@@ -39,3 +39,25 @@ export async function deleteBlob(filePath: string): Promise<void> {
   const store = getStore(STORE_NAME);
   await store.delete(blobsKey(filePath));
 }
+
+export async function moveBlob(
+  filePath: string,
+  targetIsPrivate: boolean
+): Promise<string> {
+  if (!isBlobsPath(filePath)) return filePath;
+  const key = blobsKey(filePath);
+  const slash = key.indexOf("/");
+  const currentFolder = slash >= 0 ? key.slice(0, slash) : "";
+  const remainder = slash >= 0 ? key.slice(slash + 1) : key;
+  const targetFolder = targetIsPrivate ? "private" : "public";
+  if (currentFolder === targetFolder) return filePath;
+
+  const store = getStore(STORE_NAME);
+  const data = await store.get(key, { type: "arrayBuffer" });
+  if (!data) return filePath;
+
+  const newKey = `${targetFolder}/${remainder}`;
+  await store.set(newKey, data);
+  await store.delete(key);
+  return `blobs:${newKey}`;
+}

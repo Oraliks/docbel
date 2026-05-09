@@ -40,6 +40,8 @@ prisma/**/*.db-journal
 # Uploads (not versioned)
 public/uploads/*
 !public/uploads/.gitkeep
+private/uploads/*
+!private/uploads/.gitkeep
 
 # Temporary files
 tempzip/

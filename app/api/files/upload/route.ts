@@ -7,6 +7,7 @@ import { matchesSignature } from "@/lib/file-signatures";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
+import { createHash } from "crypto";
 import { nanoid } from "nanoid";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const parentId = formData.get("parentId") as string | null;
-    const isPrivate = formData.get("isPrivate") === "true";
+    const requestedPrivate = formData.get("isPrivate") === "true";
 
     if (!file || typeof file === "string") {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -133,12 +134,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // SVG always lives behind the API: any active payload bypassed by the static
+    // text scan would otherwise execute when served from /public/uploads.
+    const isPrivate = fileExt === "svg" ? true : requestedPrivate;
+
+    const sha256 = createHash("sha256").update(nodeBuffer).digest("hex");
+
+    // Dedup: when the same content is re-uploaded by the same user, point to the
+    // existing blob instead of writing a second physical copy. We still create a
+    // distinct DB row so each file-tree entry has its own id/parent/name.
+    const dedupSource = await prisma.file.findFirst({
+      where: { sha256, type: "file", createdBy: userId, isPrivate },
+      select: { filePath: true, mimeType: true },
+    });
+
     const safeName = sanitizeFileName(file.name);
     const fileType = getFileType(fileExt);
 
     let filePath: string;
 
-    if (isBlobsEnabled()) {
+    if (dedupSource?.filePath) {
+      filePath = dedupSource.filePath;
+    } else if (isBlobsEnabled()) {
       const folder = isPrivate ? "private" : "public";
       const key = `${folder}/${nanoid()}-${safeName}`;
       filePath = await saveBlob(nodeBuffer, key);
@@ -149,7 +166,7 @@ export async function POST(req: NextRequest) {
         await mkdir(absoluteDir, { recursive: true });
       }
 
-      const uniqueName = `${Date.now()}-${safeName}`;
+      const uniqueName = `${nanoid(12)}-${safeName}`;
       filePath = buildStoredFilePath(relativeDir, uniqueName);
       const fullPath = join(absoluteDir, uniqueName);
 
@@ -161,7 +178,9 @@ export async function POST(req: NextRequest) {
         name: file.name,
         type: "file",
         fileType,
+        mimeType: file.type || null,
         size: nodeBuffer.byteLength,
+        sha256,
         parentId: parentId || null,
         isPrivate,
         filePath,

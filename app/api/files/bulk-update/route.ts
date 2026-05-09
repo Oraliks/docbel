@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { isLocalStoredPath, moveStoredFile } from "@/lib/file-storage";
+import { isBlobsPath, moveBlob } from "@/lib/documents/blob-storage";
 
 export async function PATCH(req: NextRequest) {
   const auth = await requireAdminAuth();
@@ -17,24 +19,23 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    // Walk the subtree once with a BFS to collect every descendant id, then
+    // update flags + physical asset locations together.
+    const descendants: { id: string; type: string; filePath: string | null; isPrivate: boolean }[] = [];
     let frontier: string[] = [parentId];
-    let totalUpdated = 0;
     const seen = new Set<string>([parentId]);
 
     while (frontier.length > 0) {
-      const result = await prisma.file.updateMany({
+      const children = await prisma.file.findMany({
         where: { parentId: { in: frontier } },
-        data: { isPrivate },
+        select: { id: true, type: true, filePath: true, isPrivate: true },
       });
-      totalUpdated += result.count;
-
-      const childFolders = await prisma.file.findMany({
-        where: { parentId: { in: frontier }, type: "folder" },
-        select: { id: true },
-      });
-
-      frontier = childFolders
-        .map((f) => f.id)
+      for (const c of children) {
+        descendants.push(c);
+      }
+      frontier = children
+        .filter((c) => c.type === "folder")
+        .map((c) => c.id)
         .filter((id) => {
           if (seen.has(id)) return false;
           seen.add(id);
@@ -42,7 +43,51 @@ export async function PATCH(req: NextRequest) {
         });
     }
 
-    return NextResponse.json({ success: true, updated: totalUpdated });
+    // Move physical files first; if anything fails we abort before mutating DB.
+    type Move = { id: string; oldPath: string; newPath: string };
+    const moves: Move[] = [];
+    for (const node of descendants) {
+      if (node.type !== "file" || !node.filePath) continue;
+      if (node.isPrivate === isPrivate) continue;
+      try {
+        let newPath = node.filePath;
+        if (isBlobsPath(node.filePath)) {
+          newPath = await moveBlob(node.filePath, isPrivate);
+        } else if (isLocalStoredPath(node.filePath)) {
+          newPath = await moveStoredFile(node.filePath, isPrivate);
+        }
+        if (newPath !== node.filePath) {
+          moves.push({ id: node.id, oldPath: node.filePath, newPath });
+        }
+      } catch (error) {
+        console.error("bulk-update: failed to move file", node.id, error);
+        return NextResponse.json(
+          { error: "Failed to move some files" },
+          { status: 500 }
+        );
+      }
+    }
+
+    const allIds = descendants.map((d) => d.id);
+
+    const result = await prisma.$transaction([
+      prisma.file.updateMany({
+        where: { id: { in: allIds } },
+        data: { isPrivate },
+      }),
+      ...moves.map((m) =>
+        prisma.file.update({
+          where: { id: m.id },
+          data: { filePath: m.newPath },
+        })
+      ),
+    ]);
+
+    return NextResponse.json({
+      success: true,
+      updated: result[0].count,
+      moved: moves.length,
+    });
   } catch (error) {
     console.error("PATCH /api/files/bulk-update error:", error);
     return NextResponse.json(

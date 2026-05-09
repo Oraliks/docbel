@@ -42,7 +42,12 @@ function getExtension(name: string): string {
 
 function buildContentDisposition(name: string, mode: "inline" | "attachment"): string {
   const fallback = name.replace(/[\r\n"\\]/g, "_")
-  const encoded = encodeURIComponent(name).replace(/['()]/g, escape)
+  // RFC 5987: encode non-ASCII as UTF-8 percent-encoding. encodeURIComponent
+  // already covers everything we need without the deprecated escape().
+  const encoded = encodeURIComponent(name)
+    .replace(/'/g, "%27")
+    .replace(/\(/g, "%28")
+    .replace(/\)/g, "%29")
   return `${mode}; filename="${fallback}"; filename*=UTF-8''${encoded}`
 }
 
@@ -115,7 +120,8 @@ export async function GET(
     }
 
     const ext = getExtension(file.name)
-    const contentType = MIME_BY_EXT[ext] || "application/octet-stream"
+    const contentType =
+      file.mimeType || MIME_BY_EXT[ext] || "application/octet-stream"
 
     const downloadParam = req.nextUrl.searchParams.get("download")
     const wantsDownload = downloadParam === "1" || downloadParam === "true"

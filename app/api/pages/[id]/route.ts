@@ -5,6 +5,7 @@ import { prisma, withDbRetry } from "@/lib/prisma"
 import { UpdatePageSchema } from "@/lib/page-builder/validation"
 import { requireAdminAuth } from "@/lib/auth-check"
 import { logActivity } from "@/lib/activity-logger"
+import { extractFileIds } from "@/lib/page-builder/file-usage"
 
 export async function GET(
   _req: NextRequest,
@@ -76,6 +77,10 @@ export async function PATCH(
 
     const actor = authCheck.user.email || authCheck.user.name || 'Admin'
 
+    const fileIds =
+      validated.content !== undefined ? extractFileIds(validated.content) : null
+    const finalSlug = validated.slug ?? existing.slug
+
     const [page] = await prisma.$transaction([
       prisma.page.update({ where: { id }, data: updateData }),
       // Snapshot a revision when content actually changes
@@ -99,6 +104,24 @@ export async function PATCH(
                 createdBy: authCheck.user.id,
               },
             }),
+          ]
+        : []),
+      // Re-sync FileUsage rows for this page whenever content is edited.
+      ...(fileIds !== null
+        ? [
+            prisma.fileUsage.deleteMany({ where: { pageId: id } }),
+            ...(fileIds.length > 0
+              ? [
+                  prisma.fileUsage.createMany({
+                    data: fileIds.map((fileId) => ({
+                      fileId,
+                      pageId: id,
+                      pageSlug: finalSlug,
+                    })),
+                    skipDuplicates: true,
+                  }),
+                ]
+              : []),
           ]
         : []),
     ])
@@ -154,10 +177,16 @@ export async function DELETE(
       return NextResponse.json({ error: "Page not found" }, { status: 404 })
     }
 
-    const page = await prisma.page.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    })
+    const [page] = await prisma.$transaction([
+      prisma.page.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      }),
+      // Drop file references owned by this page so deleted pages don't keep
+      // their attached assets pinned (otherwise admins can't ever clean them
+      // up because the editor refuses deletedAt pages).
+      prisma.fileUsage.deleteMany({ where: { pageId: id } }),
+    ])
 
     const actor = authCheck.user.email || authCheck.user.name || 'Admin'
     await logActivity(actor, 'deleted', 'page', page.title, page.id, 'Page supprimée (soft)')

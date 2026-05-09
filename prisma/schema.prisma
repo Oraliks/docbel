@@ -146,7 +146,9 @@ model File {
   name      String
   type      String // "file" or "folder"
   fileType  String? // pdf, docx, xlsx, jpg, etc
+  mimeType  String?
   size      Int? // bytes
+  sha256    String?
   parentId  String?
   parent    File?       @relation("FileHierarchy", fields: [parentId], references: [id])
   children  File[]      @relation("FileHierarchy")
@@ -159,15 +161,27 @@ model File {
 
   docTemplateSources    DocumentTemplate[]  @relation("DocTemplateSource")
   docGeneratedOutputs   GeneratedDocument[] @relation("DocGeneratedOutput")
+
+  @@index([parentId])
+  @@index([parentId, type])
+  @@index([type])
+  @@index([isPrivate])
+  @@index([createdBy])
+  @@index([sha256])
 }
 
 model FileUsage {
   id        String   @id @default(cuid())
   fileId    String
-  file      File     @relation(fields: [fileId], references: [id])
+  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  pageId    String?
   pageSlug  String // slug de la page qui utilise le fichier
   context   String? // description du lieu d'utilisation
   createdAt DateTime @default(now())
+
+  @@index([fileId])
+  @@index([pageId])
+  @@index([pageSlug])
 }
 
 model ApiKey {

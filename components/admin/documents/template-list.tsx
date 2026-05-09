@@ -135,7 +135,7 @@ export function TemplateList({ templates, organismes }: TemplateListProps) {
 
   // Filtres
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("published");
   const [organismeFilter, setOrganismeFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [page, setPage] = useState(0);
@@ -192,11 +192,35 @@ export function TemplateList({ templates, organismes }: TemplateListProps) {
 
   function resetFilters() {
     setSearch("");
-    setStatusFilter("all");
+    setStatusFilter("published");
     setOrganismeFilter("all");
     setSourceFilter("all");
     setPage(0);
   }
+
+  // Compteurs par statut (filtres autres appliqués pour cohérence)
+  const statusCounts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const matched = templates.filter((t) => {
+      if (q) {
+        const hay = `${t.tool.name} ${t.tool.slug} ${t.sourceFile.name} ${t.officialRef ?? ""} ${t.organisme?.name ?? ""} ${t.organisme?.shortName ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (organismeFilter !== "all") {
+        if (organismeFilter === "none") {
+          if (t.organisme) return false;
+        } else if (t.organisme?.id !== organismeFilter) return false;
+      }
+      if (sourceFilter !== "all" && t.sourceType !== sourceFilter) return false;
+      return true;
+    });
+    return {
+      all: matched.length,
+      published: matched.filter((t) => t.status === "published").length,
+      draft: matched.filter((t) => t.status === "draft").length,
+      archived: matched.filter((t) => t.status === "archived").length,
+    };
+  }, [templates, search, organismeFilter, sourceFilter]);
 
   return (
     <div className="space-y-6">
@@ -296,23 +320,6 @@ export function TemplateList({ templates, organismes }: TemplateListProps) {
           </SelectContent>
         </Select>
 
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => {
-            setStatusFilter(v || "all");
-            setPage(0);
-          }}
-        >
-          <SelectTrigger className="w-auto min-w-[130px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous statuts</SelectItem>
-            <SelectItem value="draft">Brouillon</SelectItem>
-            <SelectItem value="published">Publié</SelectItem>
-            <SelectItem value="archived">Archivé</SelectItem>
-          </SelectContent>
-        </Select>
 
         <Select
           value={sourceFilter}
@@ -331,6 +338,38 @@ export function TemplateList({ templates, organismes }: TemplateListProps) {
             <SelectItem value="docx">Word DOCX</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Tabs status */}
+      <div className="flex flex-wrap gap-1 border-b">
+        {[
+          { id: "published", label: "Publiés", count: statusCounts.published },
+          { id: "draft", label: "Brouillons", count: statusCounts.draft },
+          { id: "archived", label: "Archivés", count: statusCounts.archived },
+          { id: "all", label: "Tous", count: statusCounts.all },
+        ].map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => {
+              setStatusFilter(t.id);
+              setPage(0);
+            }}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              statusFilter === t.id
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span>{t.label}</span>
+            <Badge
+              variant={statusFilter === t.id ? "default" : "secondary"}
+              className="text-[10px] px-1.5 py-0 h-5 min-w-[20px] justify-center"
+            >
+              {t.count}
+            </Badge>
+          </button>
+        ))}
       </div>
 
       {/* Table */}

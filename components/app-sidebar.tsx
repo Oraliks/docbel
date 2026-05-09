@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, FolderIcon, UsersIcon, CommandIcon, KeyIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon } from "lucide-react"
+import { LayoutDashboardIcon, FolderIcon, UsersIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultData = {
@@ -66,13 +66,6 @@ const defaultData = {
       url: "/admin/users",
       icon: (
         <UsersIcon className="size-4" />
-      ),
-    },
-    {
-      title: "API Keys",
-      url: "/admin?view=api-keys",
-      icon: (
-        <KeyIcon className="size-4" />
       ),
     },
     {

@@ -38,9 +38,6 @@ des fonctions HTTP (`GET`, `POST`, `PATCH`, `PUT`, `DELETE`).
   début de toute route qui modifie des données ou expose du privé.
   Cette helper revérifie en base que l'utilisateur est encore actif et
   admin (le JWT seul ne suffit pas).
-- **API key** : `verifyApiKey(authHeader)` dans
-  [`lib/api-auth.ts`](lib/api-auth.ts) pour les endpoints consommés
-  programmiquement (`/api/public/commissions`, etc.).
 - **Réponses JSON** : passer
   `headers: { "Content-Type": "application/json; charset=utf-8" }`
   pour préserver les accents.

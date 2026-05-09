@@ -1,5 +1,6 @@
 import { ImapFlow, FetchMessageObject } from "imapflow";
 import { simpleParser, ParsedMail, AddressObject } from "mailparser";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export interface ImapConfig {
@@ -130,7 +131,7 @@ export async function syncInbox(): Promise<SyncResult> {
               subject: parsed.subject || "",
               textBody: parsed.text || "",
               htmlBody: typeof parsed.html === "string" ? parsed.html : null,
-              attachments,
+              attachments: attachments as unknown as Prisma.InputJsonValue,
               receivedAt: parsed.date || msg.internalDate || new Date(),
               isRead: false,
             },

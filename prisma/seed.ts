@@ -1,6 +1,39 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
+import commissionsData from "../lib/data/commissions-paritaires-belgique.json";
+import u1Data from "../lib/data/u1-institutions-eu.json";
+import { COUNTRY_CODE_MAP } from "../lib/u1-institutions";
 
 const prisma = new PrismaClient();
+
+interface CommissionSeed {
+  code: string;
+  numero: string;
+  numeroOfficiel: string;
+  codeOfficiel5: string;
+  suffixeInterne: string;
+  type: string;
+  nom: string;
+  label: string;
+  searchText: string;
+}
+
+interface U1Seed {
+  country: string;
+  organization: string;
+  department?: string;
+  alternate_name?: string;
+  address?: string[];
+  postal_address?: string;
+  phone?: string;
+  fax?: string;
+  website?: string | null;
+  email?: string | string[];
+  contacts?: Record<string, unknown>;
+  visitor_address?: string[];
+  regional_services_u1?: string;
+  additional_services?: unknown[];
+  additional_info?: Record<string, unknown>;
+}
 
 // Plain-text → HTML converter (handles **bold**, - bullets, 1. numbered lists)
 function toHtml(text: string): string {
@@ -344,6 +377,92 @@ async function main() {
   }
 
   console.log(`\nDone. ${created} articles created, ${skipped} skipped, ${toolsCreated} tools created.`);
+
+  console.log("🌱 Seeding commissions paritaires...");
+  const items = (commissionsData.items ?? []) as CommissionSeed[];
+  let cpCreated = 0;
+  let cpUpdated = 0;
+  for (const item of items) {
+    const existing = await prisma.commissionParitaire.findUnique({
+      where: { code: item.code },
+      select: { id: true },
+    });
+    await prisma.commissionParitaire.upsert({
+      where: { code: item.code },
+      update: {
+        numero: item.numero,
+        numeroOfficiel: item.numeroOfficiel,
+        codeOfficiel5: item.codeOfficiel5,
+        suffixeInterne: item.suffixeInterne,
+        type: item.type,
+        nom: item.nom,
+        label: item.label,
+        searchText: item.searchText,
+      },
+      create: {
+        code: item.code,
+        numero: item.numero,
+        numeroOfficiel: item.numeroOfficiel,
+        codeOfficiel5: item.codeOfficiel5,
+        suffixeInterne: item.suffixeInterne,
+        type: item.type,
+        nom: item.nom,
+        label: item.label,
+        searchText: item.searchText,
+        updatedBy: "seed",
+      },
+    });
+    if (existing) cpUpdated++;
+    else cpCreated++;
+  }
+  console.log(`   ✓ ${cpCreated} created, ${cpUpdated} updated (total ${items.length})`);
+
+  console.log("🌱 Seeding U1 institutions...");
+  const u1Items = (u1Data.items ?? []) as U1Seed[];
+  let u1Created = 0;
+  let u1Updated = 0;
+  for (const item of u1Items) {
+    const emails = Array.isArray(item.email)
+      ? item.email
+      : item.email
+        ? [item.email]
+        : [];
+
+    const extra: Record<string, unknown> = {};
+    if (item.contacts) extra.contacts = item.contacts;
+    if (item.visitor_address) extra.visitorAddress = item.visitor_address;
+    if (item.regional_services_u1) extra.regionalServicesU1 = item.regional_services_u1;
+    if (item.additional_services) extra.additionalServices = item.additional_services;
+    if (item.additional_info) extra.additionalInfo = item.additional_info;
+
+    const data = {
+      country: item.country,
+      countryCode: COUNTRY_CODE_MAP[item.country] ?? null,
+      organization: item.organization,
+      department: item.department ?? null,
+      alternateName: item.alternate_name ?? null,
+      addressLines: (item.address ?? []) as Prisma.InputJsonValue,
+      postalAddress: item.postal_address ?? null,
+      phone: item.phone ?? null,
+      fax: item.fax ?? null,
+      website: item.website ?? null,
+      emails: emails as Prisma.InputJsonValue,
+      extra: (Object.keys(extra).length > 0 ? extra : Prisma.JsonNull) as Prisma.InputJsonValue,
+    };
+
+    const existing = await prisma.u1Institution.findUnique({
+      where: { country: item.country },
+      select: { id: true },
+    });
+    await prisma.u1Institution.upsert({
+      where: { country: item.country },
+      update: data,
+      create: { ...data, updatedBy: "seed" },
+    });
+    if (existing) u1Updated++;
+    else u1Created++;
+  }
+  console.log(`   ✓ ${u1Created} created, ${u1Updated} updated (total ${u1Items.length})`);
 }
 
 main()

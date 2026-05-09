@@ -90,6 +90,14 @@ const defaultData = {
           title: "Préavis",
           url: "/admin/chomage/preavis",
         },
+        {
+          title: "Commissions paritaires",
+          url: "/admin/commissions",
+        },
+        {
+          title: "Institutions U1 (EEE)",
+          url: "/admin/u1-institutions",
+        },
       ],
     },
     {

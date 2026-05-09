@@ -5,11 +5,15 @@ export const SETTING_KEYS = {
   RGPD_GENERAL: "rgpd_general",
   EMAIL_SUBJECT: "email_subject",
   EMAIL_BODY: "email_body",
+  COMMISSIONS_LAST_UPDATED: "commissions_last_updated",
+  U1_INSTITUTIONS_LAST_UPDATED: "u1_institutions_last_updated",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
 
 const DEFAULTS: Record<SettingKey, string> = {
+  commissions_last_updated: "2026-04-26",
+  u1_institutions_last_updated: "2026-04-26",
   rgpd_general: `Conditions générales d'utilisation et politique de confidentialité
 
 En utilisant ce service, vous acceptez les conditions suivantes :

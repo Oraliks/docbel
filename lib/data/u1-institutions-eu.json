@@ -1,0 +1,335 @@
+{
+  "source": "https://www.onem.be/page/attestations-europeennes---adresses-des-services-competents-en-matiere-de-chomage-dans-les-pays-de-l-eee-et-en-suisse",
+  "generatedAt": "2026-04-26",
+  "note": "Adresses des services compétents en matière de chômage dans les pays de l'EEE et en Suisse, pour la délivrance des attestations U1 (ex-E301).",
+  "count": 33,
+  "items": [
+    {
+      "country": "Allemagne",
+      "organization": "Bundesagentur für Arbeit",
+      "address": ["Regensburger Strasse 104", "90478 NURNBERG"],
+      "phone": "00 49 911 17 90",
+      "fax": "00 49 911 179 34 36",
+      "website": "https://www.arbeitsagentur.de",
+      "email": "webmaster@arbeitsagentur.de"
+    },
+    {
+      "country": "Autriche",
+      "organization": "Arbeitsmarktservice Österreich",
+      "address": ["Treustrasse 35 - 43", "A – 1200 WIEN"],
+      "phone": "00 43 1 33178",
+      "fax": "00 43 1 33178 120",
+      "website": "https://www.ams.at",
+      "email": "ams.oesterreich@ams.at"
+    },
+    {
+      "country": "Bulgarie",
+      "organization": "National Social Security Institute",
+      "department": "Directorate for European Integration and International Treaties",
+      "address": ["62-64 Alexander Stambiliiski bld", "SOFIA 1303", "BULGARIA"],
+      "contacts": { "eu_affairs": true },
+      "phone": "00 359 2 926 16 19",
+      "fax": "00 359 2 926 14 40",
+      "website": "https://www.noi.bg",
+      "email": "noi@nssi.bg"
+    },
+    {
+      "country": "Croatie",
+      "organization": "Hrvatski zavod za zaposljavanje",
+      "address": ["RADNIČKA CESTA 1", "ZAGREB 10000", "Kroatië"],
+      "phone": "00 385 1 6126000",
+      "fax": "00 385 1 6126038",
+      "website": "https://www.hzz.hr",
+      "email": "hzz@hzz.hr"
+    },
+    {
+      "country": "Chypre",
+      "organization": "Ministry of Labour and Social Insurance",
+      "department": "Social Insurance Services",
+      "address": ["Vyronos Avenue 7", "1465 NICOSIA", "CYPRUS"],
+      "phone": "00 357 22401638",
+      "fax": "00 357 22672984",
+      "website": "https://www.mlsi.gov.cy",
+      "email": "interrel@sid.mlsi.gov.cy"
+    },
+    {
+      "country": "Danemark",
+      "organization": "Danish Agency for Labour Retention and International Recruitment",
+      "address": ["Njalsgade 72 C", "2300 KØBENHAVN S"],
+      "phone": "00 45 33 96 36 46",
+      "website": "https://www.star.dk",
+      "email": "star@star.dk"
+    },
+    {
+      "country": "Espagne",
+      "organization": "Servicio Público de Empleo Estatal",
+      "department": "Instituto Nacional de Empleo (INEM)",
+      "address": ["Condensa de Venadito 9", "28027 S/N MADRID"],
+      "phone": "00 34 91 585 28 39",
+      "fax": "00 34 91 585 28 25",
+      "website": "https://www.sepe.es",
+      "email": "sg.prestaciones@sepe.es"
+    },
+    {
+      "country": "Estonie",
+      "organization": "Estonian Unemployment Insurance Fund",
+      "alternate_name": "Eesti Töötukassa",
+      "address": ["Lasnamäe 2", "EE-11412 TALLINN", "ESTONIA"],
+      "phone": "00 372 6 679 700",
+      "fax": "00 372 6 679 701",
+      "website": "https://www.tootukassa.ee",
+      "email": "info@tootukassa.ee"
+    },
+    {
+      "country": "Finlande",
+      "organization": "KELA",
+      "department": "International Affairs Office",
+      "address": ["P.O.Box 78", "00381 HELSINKI"],
+      "phone": "00 358 20 634 11",
+      "fax": "00 358 20 634 3340",
+      "website": "https://www.kela.fi",
+      "email": "inter.helsinki@kela.fi"
+    },
+    {
+      "country": "France",
+      "organization": "Pôle Emploi Services",
+      "department": "Service des missions nationales",
+      "address": ["TSA 10107", "92891 NANTERRE CEDEX 9"],
+      "phone": "00 33 146 52 97 00",
+      "fax": "00 33 146 52 26 23",
+      "website": "https://www.pole-emploi.fr",
+      "email": "europe.exchange@pole-emploi.fr"
+    },
+    {
+      "country": "Grèce",
+      "organization": "O.A.E.D.",
+      "address": ["Ethnikis Antistaseos 8", "GR - 16610 GLYFADA – ATHENES"],
+      "phone": "00 30 210 9989158",
+      "fax": "00 30 210 9989042",
+      "website": "https://www.oaed.gr",
+      "email": "lampraki@oaed.gr"
+    },
+    {
+      "country": "Grande-Bretagne",
+      "organization": "The Pension Service",
+      "address": ["Tyneview Park", "JBES", "Newcastle upon Tyne", "NE98 1BA ENGLAND"],
+      "phone": "00 44 191 21 87652",
+      "fax": "00 44 191 21 87147",
+      "website": "https://www.thepensionservice.gov.uk",
+      "email": "tvp.internationalqueries@dwp.gov.uk",
+      "additional_services": [
+        {
+          "name": "E301/U1",
+          "organization": "HM Revenue & Customs",
+          "department": "International Caseworker",
+          "address": ["Benton Park View", "Newcastle upon Tyne", "NE98 1ZZ", "United Kingdom"],
+          "email": "non-residents@hmrc.gov.uk"
+        }
+      ]
+    },
+    {
+      "country": "Gibraltar",
+      "organization": "Department of Social Security",
+      "address": ["Governor's Parade 14", "GIBRALTAR"],
+      "phone": "00 350 20048478",
+      "fax": "00 350 20042509",
+      "website": "https://www.gibraltar.gov.gi",
+      "email": "dss@gibraltar.gov.gi"
+    },
+    {
+      "country": "Hongrie",
+      "organization": "Pénzügyminisztérium",
+      "alternate_name": "Ministry of Finance",
+      "address": ["1051 Budapest", "József nádor tér 2-4", "HUNGARY"],
+      "website": "https://www.pm.gov.hu",
+      "regional_services_u1": "https://illetekes.munka.hu/"
+    },
+    {
+      "country": "Irlande",
+      "organization": "International Records Section",
+      "department": "Department of Social and Family Affairs",
+      "address": ["Inner Relief Road", "Ardarvan, Buncrana", "CO Donegal"],
+      "phone": "00 353 1 4715898",
+      "fax": "00 353 749364540",
+      "website": "https://www.welfare.ie",
+      "email": "info@welfare.ie"
+    },
+    {
+      "country": "Irlande du nord",
+      "organization": "Department for Social Development",
+      "address": ["5th Floor Royston House", "34, Upper Queen Street", "BELFAST BT1 6FX"],
+      "phone": "00 44 28 90 547 455",
+      "fax": "00 44 28 90 547 349",
+      "website": "https://www.nidirect.gov.uk",
+      "email": "BELFASTROYSTONHOUSE.OVERSEASBRANCHNI@NISSA.GSI.GOV.UK"
+    },
+    {
+      "country": "Islande",
+      "organization": "Vinnumála Stofnun",
+      "department": "Directorate of Labour",
+      "address": ["Hafnarhúsinu v/Tryggvagötu", "IS - 150 REYKJAVIK"],
+      "phone": "00 35 451 548 00",
+      "fax": "00 35 451 125 20",
+      "website": "https://www.vmst.is",
+      "email": "postur@vmst.is"
+    },
+    {
+      "country": "Italie",
+      "organization": "Istituto Nazionale Previdenza Sociale",
+      "department": "Servizio Rapporti e Convenzioni Internazionali",
+      "address": ["Via Ciro il Grande 21", "00144 ROMA"],
+      "phone": "00 39 396 59051",
+      "website": "https://www.inps.it"
+    },
+    {
+      "country": "Lettonie",
+      "organization": "State Social Insurance Agency",
+      "department": "International Services Division",
+      "address": ["Citadeles Street 7/69", "LV - 1010 RIGA"],
+      "phone": "00 37 1 709 5100",
+      "fax": "00 37 1 702 7808",
+      "website": "https://www.vsaa.lv",
+      "email": "vsaa@vsaa.lv"
+    },
+    {
+      "country": "Liechtenstein",
+      "organization": "Liechtensteinische Arbeitslosenversicherung",
+      "address": ["Gerberweg 2", "FL – 9490 VADUZ"],
+      "phone": "00 41 75 236 68 71",
+      "fax": "00 41 75 236 68 89",
+      "website": "https://www.avw.llv.li",
+      "email": "info@avw.llv.li"
+    },
+    {
+      "country": "Lithuanie",
+      "organization": "Lithuanian Labour Exchange",
+      "department": "Unemployment",
+      "address": ["Gelezinio Vilko 3 A", "LT – 03131 VILNIUS"],
+      "phone": "00 37 05 236 0770",
+      "fax": "00 37 05 236 0788",
+      "website": "https://www.ldb.lt",
+      "email": "info@ldb.lt"
+    },
+    {
+      "country": "Luxemburg",
+      "organization": "Agence pour le développement de l'emploi",
+      "postal_address": "BP 289, 4003 Esch-sur-Alzette",
+      "address": ["1, bd Porte de France", "4360 Esch-sur-Alzette"],
+      "phone": "00 352 247 75400",
+      "fax": "00 352 54 10 58",
+      "website": "https://www.adem.public.lu",
+      "email": "info@adem.public.lu"
+    },
+    {
+      "country": "Malte",
+      "organization": "International Relations Unit",
+      "department": "Department of Social Security",
+      "address": ["38, Ordnance Street", "VALLETTA – CMR 02", "MALTA"],
+      "phone": "00 356 2590 3420",
+      "fax": "00 356 2590 3282",
+      "website": "https://www.welfare.gov.mt",
+      "email": "iru.dss@gov.mt"
+    },
+    {
+      "country": "Norvège",
+      "organization": "Arbeids- og velferdsdirektoratet",
+      "alternate_name": "Directorate of Labour and Welfare",
+      "address": ["Postboks 5 St. Olavs Plass", "N – 0130 OSLO", "NORWAY"],
+      "phone": "00 47 21 07 00 00",
+      "fax": "00 47 21 07 00 01",
+      "website": "https://www.nav.no",
+      "email": ["eos@nav.no", "post@nav.no"]
+    },
+    {
+      "country": "Pays-Bas",
+      "organization": "UWV Hengelo",
+      "department": "Afdeling WW, Groep Verdragen",
+      "address": ["Postbus 124", "NL – 7550 AC Hengelo"],
+      "phone": "00 31 88 898 20 01",
+      "fax": "00 31 74 750 30 08",
+      "website": "https://www.uwv.nl",
+      "email": "uwv.verdragen@uwv.nl"
+    },
+    {
+      "country": "Pologne",
+      "organization": "Ministry of the Economy, Labour and Social Policy",
+      "department": "Department of Coordination of Social Security Schemes",
+      "address": ["Nowogrodzka 1/3/5", "00 – 513 WARSZAWA", "POLAND"],
+      "phone": "00 48 22 661 15 11",
+      "fax": "00 48 22 661 15 32",
+      "website": "https://www.mpips.gov.pl",
+      "email": "info@mrips.gov.pl"
+    },
+    {
+      "country": "Portugal",
+      "organization": "Instituto da Segurança Social",
+      "department": "Unidade de Coordenação Internacional",
+      "address": ["Avenida da Republica, 4 - 6", "1069-062 Lisboa", "Portugal"],
+      "website": "https://www.seg-social.pt",
+      "email": "ISS-IInternacionais@seg-social.pt"
+    },
+    {
+      "country": "Roumanie",
+      "organization": "Agenţia Naţională pentru Ocuparea Forţei de Muncă",
+      "department": "Directia Relatii Internationale",
+      "address": ["Strada Avalansei nr. 20 - 22, sector 4", "040303 BUCURESTI", "ROMANIA"],
+      "phone": "00 40 21 303 98 31",
+      "fax": "00 40 21 303 98 38",
+      "website": "https://www.anofm.ro",
+      "email": "anofm@anofm.ro"
+    },
+    {
+      "country": "Slovénie",
+      "organization": "ZAVOD REPUBLIKE SLOVENIJE ZA ZAPOSLOVANJE",
+      "address": ["Rožna Dolina, Cesta IX/6", "1000 LJUBLJANA", "SLOVENIA"],
+      "phone": "00 386 479 09 00",
+      "fax": "00 386 479 02 62",
+      "website": "https://www.ess.gov.si",
+      "email": "info@ess.gov.si"
+    },
+    {
+      "country": "Slovaquie",
+      "organization": "Social Insurance Agency",
+      "department": "Unemployment Benefits",
+      "address": ["Ulica 29, augusta 8", "813 63 BRATISLAVA 1", "SLOVAKIA"],
+      "phone": "00 421 2 5020 4507",
+      "fax": "00 421 2 5020 4508",
+      "website": "https://www.socpoist.sk",
+      "email": "martina.kollarova@socpoist.sk"
+    },
+    {
+      "country": "République Tchèque",
+      "organization": "Úřad práce ČR - generálni ředitelstvi",
+      "address": ["Dobrovského 1278/25", "170 00 PRAHA 7", "CZECH REPUBLIC"],
+      "phone": "00 420 950 180 706",
+      "website": null,
+      "email": ["posta@uradprace.cz", "Lucie.pertlova@uradprace.cz"]
+    },
+    {
+      "country": "Suède",
+      "organization": "The Swedish Unemployment Insurance Board",
+      "address": ["Box 210", "S – 64122 Katrineholm", "SWEDEN"],
+      "visitor_address": ["Hantverkaregatan 3", "Katrineholm"],
+      "phone": "00 46 150 48 70 00",
+      "fax": "00 46 150 48 70 02",
+      "website": "https://www.iaf.se",
+      "email": "iaf@iaf.se"
+    },
+    {
+      "country": "Suisse",
+      "organization": "SECO",
+      "alternate_name": "Secrétariat d'Etat à l'économie – Staatssekretariat für Wirtschaft",
+      "address": ["Holzikofenweg 36", "CH – 3003 BERN"],
+      "phone": "00 41 58 462 56 56",
+      "fax": "00 41 31 300 71 92",
+      "website": "https://www.seco.admin.ch",
+      "email": "bilaterale.fcpm@seco.admin.ch",
+      "additional_info": {
+        "ui_requests": "Arbeitslosenkasse - Caisse de chômage",
+        "address_lookup": "https://www.espace-emploi.ch",
+        "documents": ["U001", "U003"],
+        "via": "SECO"
+      }
+    }
+  ]
+}

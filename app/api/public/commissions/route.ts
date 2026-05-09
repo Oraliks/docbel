@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { COMMISSIONS_PARITAIRES } from "@/lib/docbel-data"
+import { prisma, withDbRetry } from "@/lib/prisma"
 import { verifyApiKey } from "@/lib/api-auth"
+import { serializeCommission } from "@/lib/commissions"
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,20 +10,28 @@ export async function GET(req: NextRequest) {
     const q = req.nextUrl.searchParams.get("q")
     const code = req.nextUrl.searchParams.get("code")
 
-    let filtered = COMMISSIONS_PARITAIRES
-
-    if (code) {
-      filtered = filtered.filter((commission) => commission.code === parseInt(code, 10))
-    } else if (q) {
-      filtered = filtered.filter((commission) =>
-        commission.label.toLowerCase().includes(q.toLowerCase())
-      )
-    }
+    const items = await withDbRetry(() =>
+      prisma.commissionParitaire.findMany({
+        where: code
+          ? { code }
+          : q
+          ? {
+              OR: [
+                { code: { contains: q, mode: "insensitive" } },
+                { numero: { contains: q, mode: "insensitive" } },
+                { nom: { contains: q, mode: "insensitive" } },
+                { searchText: { contains: q.toLowerCase() } },
+              ],
+            }
+          : undefined,
+        orderBy: [{ code: "asc" }],
+      })
+    )
 
     return NextResponse.json({
       success: true,
-      data: filtered,
-      count: filtered.length,
+      data: items.map(serializeCommission),
+      count: items.length,
     })
   } catch (error) {
     return NextResponse.json(

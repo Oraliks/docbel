@@ -409,3 +409,44 @@ model DocumentDraft {
   @@unique([templateId, userId])
   @@index([userId])
 }
+
+model CommissionParitaire {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  numero          String
+  numeroOfficiel  String
+  codeOfficiel5   String
+  suffixeInterne  String
+  type            String
+  nom             String
+  label           String
+  searchText      String
+  updatedBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([type])
+  @@index([numeroOfficiel])
+  @@index([code])
+}
+
+model U1Institution {
+  id            String   @id @default(cuid())
+  country       String   @unique
+  countryCode   String?
+  organization  String
+  department    String?
+  alternateName String?
+  addressLines  Json     @default("[]")
+  postalAddress String?
+  phone         String?
+  fax           String?
+  website       String?
+  emails        Json     @default("[]")
+  extra         Json?
+  updatedBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([country])
+}

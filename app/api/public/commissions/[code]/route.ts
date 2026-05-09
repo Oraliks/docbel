@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { COMMISSIONS_PARITAIRES } from "@/lib/docbel-data"
+import { prisma, withDbRetry } from "@/lib/prisma"
 import { verifyApiKey } from "@/lib/api-auth"
+import { serializeCommission } from "@/lib/commissions"
 
 export async function GET(
   req: NextRequest,
@@ -9,17 +10,17 @@ export async function GET(
   try {
     await verifyApiKey(req.headers.get("authorization"))
 
-    const { code: codeParam } = await params
-    const code = parseInt(codeParam, 10)
-
-    if (isNaN(code)) {
+    const { code } = await params
+    if (!/^\d{1,7}$/.test(code)) {
       return NextResponse.json(
         { success: false, error: "Invalid commission code" },
         { status: 400 }
       )
     }
 
-    const commission = COMMISSIONS_PARITAIRES.find((item) => item.code === code)
+    const commission = await withDbRetry(() =>
+      prisma.commissionParitaire.findUnique({ where: { code } })
+    )
     if (!commission) {
       return NextResponse.json(
         { success: false, error: "Commission not found" },
@@ -29,7 +30,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: commission,
+      data: serializeCommission(commission),
     })
   } catch (error) {
     return NextResponse.json(

@@ -80,64 +80,6 @@ export interface ColorPalette {
   inputBg: string;
 }
 
-// Commission Paritaire Data
-export interface Commission {
-  code: number;
-  label: string;
-}
-
-export const COMMISSIONS_PARITAIRES: Commission[] = [
-  { code: 100, label: "Agriculture" },
-  { code: 111, label: "Élevage" },
-  { code: 120, label: "Horticulture" },
-  { code: 130, label: "Pêche" },
-  { code: 200, label: "Horeca" },
-  { code: 210, label: "Restauration rapide" },
-  { code: 220, label: "Débits de boissons" },
-  { code: 300, label: "Commerce de détail" },
-  { code: 310, label: "Commerce en gros" },
-  { code: 320, label: "Commerce automobile" },
-  { code: 400, label: "Construction" },
-  { code: 410, label: "Bâtiment — Industrie & Énergie" },
-  { code: 420, label: "Charpente" },
-  { code: 430, label: "Couverture" },
-  { code: 500, label: "Textile" },
-  { code: 510, label: "Vêtement" },
-  { code: 520, label: "Chaussures" },
-  { code: 600, label: "Industrie chimique" },
-  { code: 610, label: "Raffinage pétrole" },
-  { code: 620, label: "Plasturgie" },
-  { code: 700, label: "Métallurgie" },
-  { code: 710, label: "Sidérurgie" },
-  { code: 720, label: "Mécanique" },
-  { code: 730, label: "Électricité" },
-  { code: 740, label: "Électronique" },
-  { code: 800, label: "Transport aérien" },
-  { code: 810, label: "Transport routier" },
-  { code: 820, label: "Transport ferroviaire" },
-  { code: 830, label: "Transport maritime" },
-  { code: 840, label: "Poste" },
-  { code: 900, label: "Santé" },
-  { code: 910, label: "Hôpitaux" },
-  { code: 920, label: "Soins infirmiers" },
-  { code: 1000, label: "Éducation" },
-  { code: 1010, label: "Enseignement supérieur" },
-  { code: 1100, label: "Finance" },
-  { code: 1110, label: "Assurances" },
-  { code: 1120, label: "Banques" },
-  { code: 1200, label: "Services généraux" },
-  { code: 1210, label: "Nettoyage" },
-  { code: 1220, label: "Gardiennage" },
-  { code: 1300, label: "Graphisme & Imprimerie" },
-  { code: 1310, label: "Imprimerie" },
-  { code: 1320, label: "Reliure" },
-  { code: 1400, label: "Gaz, Électricité, Eau" },
-  { code: 1410, label: "Secteur public" },
-  { code: 1500, label: "Secteur sans but lucratif" },
-  { code: 1510, label: "Aide à la jeunesse" },
-  { code: 1520, label: "Services sociaux" },
-];
-
 // Notice Period Regimes
 export const REGIMES = {
   APRES_2014: "après2014",

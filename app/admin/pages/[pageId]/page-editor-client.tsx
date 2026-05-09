@@ -295,13 +295,14 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   const handleSaveSettings = async () => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     const cleanSlug = slug.startsWith('/') ? slug.slice(1) : slug
-    await persist({
+    const result = await persist({
       title,
       slug: cleanSlug,
       metaTitle: metaTitle || null,
       metaDesc: metaDesc || null,
       ogImage: ogImage || null,
     })
+    if (!result) return
     setSlug(cleanSlug)
     toast.success('Paramètres sauvegardés')
     setShowSettingsDialog(false)

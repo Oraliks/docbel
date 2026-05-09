@@ -733,6 +733,41 @@ model UserProfile {
   createdAt     DateTime  @default(now())
 }
 
+/// Mémoire des corrections OCR : apprend des modifications admin pour
+/// proposer la même correction sur les détections futures (fuzzy match du label).
+model OcrCorrectionMemory {
+  id          String   @id @default(cuid())
+  templateId  String? // null = correction globale (cross-templates)
+  rawLabel    String // label détecté à l'origine par l'OCR
+  cleanLabel  String // version corrigée par l'admin
+  fieldType   String? // type éventuellement remplacé (text → niss, etc.)
+  presetId    String? // preset éventuellement appliqué
+  occurrences Int      @default(1)
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([templateId, rawLabel])
+  @@index([rawLabel])
+}
+
+/// Snapshot d'une détection OCR pour un PDF donné (clé : SHA256 du fichier).
+/// Permet de restaurer instantanément le schema sans relancer l'OCR
+/// quand le même PDF est ré-uploadé ou réutilisé sur un autre template.
+model OcrSnapshot {
+  id             String   @id @default(cuid())
+  sha256         String   @unique
+  fileId         String?
+  detectedFields Json // DetectedField[] avec inférences appliquées
+  pageCount      Int
+  templateId     String? // template source (informatif)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([sha256])
+  @@index([fileId])
+}
+
 /// Événements d'analytics côté formulaire utilisateur (Phase 14).
 /// Permet de mesurer abandon, temps par section, erreurs de validation fréquentes.
 /// Aucune donnée personnelle stockée — seulement l'ID du template et l'événement.

@@ -1,14 +1,13 @@
-/// Détection client-side de zones de saisie sur un PDF via OCR (tesseract.js).
+/// Détection client-side de zones de saisie sur un PDF via OCR (tesseract.js)
+/// ou extraction texte natif via pdfjs.
 ///
-/// Stratégie : on rend la page PDF à haute résolution dans un canvas, on lance
-/// l'OCR tesseract.js, puis on applique des heuristiques sur le texte détecté
-/// pour proposer des positions de champs.
-///
-/// Heuristiques :
-/// - Séquences de underscores `_____` → champ texte (label = mot précédent)
-/// - "Label :" ou "Label:" suivi d'espace → champ texte
-/// - Patterns date `__/__/____` → champ date
-/// - Petits carrés isolés `□` ou `[ ]` → checkbox
+/// Stratégie :
+/// 1. Pour chaque page, extraire les "words" avec position
+/// 2. Heuristiques pattern-based pour identifier les zones de saisie (fillers, dates, cases)
+/// 3. Inférence du type via le label (NISS, IBAN, date, email, etc.)
+/// 4. Suggestion d'un preset de validation correspondant
+
+import { inferFromLabel } from "./label-hints";
 
 export interface OCRWord {
   text: string;
@@ -22,10 +21,12 @@ export interface OCRWord {
 }
 
 export interface DetectedField {
-  /// Type proposé pour le champ
-  type: "text" | "date" | "checkbox" | "number";
+  /// Type proposé pour le champ (peut être affiné par inférence du label)
+  type: "text" | "date" | "checkbox" | "number" | "niss" | "iban" | "bce" | "tva_be" | "postal_be" | "phone_be" | "textarea" | "signature" | "select";
   /// Label détecté (texte avant la zone de saisie)
   label: string;
+  /// Nom du preset suggéré (à matcher avec FieldValidationPreset.name)
+  suggestedPresetName?: string;
   /// Position en points PDF
   x: number;
   y: number;
@@ -35,6 +36,75 @@ export interface DetectedField {
   confidence: number;
   /// Page sur laquelle se trouve le champ
   page: number;
+}
+
+/// Représente une zone de saisie détectée dans les opérations de dessin du PDF
+/// (lignes pointillées, rectangles vides) — souvent invisible en extraction texte.
+export interface GraphicShape {
+  type: "line" | "rectangle";
+  /// En points PDF (origine bas-gauche)
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/// Convertit des shapes graphiques en DetectedField "candidat", à enrichir avec
+/// les labels de texte voisins.
+export function shapesToDetections(
+  shapes: GraphicShape[],
+  textWords: OCRWord[],
+  pageIdx: number
+): DetectedField[] {
+  const detections: DetectedField[] = [];
+  for (const s of shapes) {
+    // Skip lignes trop courtes (probable séparateur de section, pas une ligne de saisie)
+    if (s.type === "line" && s.w < 30) continue;
+    // Skip rectangles trop petits (probable décoration)
+    if (s.type === "rectangle" && (s.w < 8 || s.h < 8)) continue;
+
+    // Trouver le label : texte juste à gauche sur la même ligne, ou au-dessus
+    const label = findLabelNearShape(s, textWords);
+    if (!label) continue; // pas de label trouvé → on ignore
+
+    const isSmallSquare = s.type === "rectangle" && s.w < 25 && s.h < 25;
+    detections.push({
+      type: isSmallSquare ? "checkbox" : "text",
+      label,
+      x: s.x,
+      y: s.y,
+      w: Math.max(s.w, 30),
+      h: Math.max(s.h, 14),
+      confidence: 80,
+      page: pageIdx,
+    });
+  }
+  return detections;
+}
+
+function findLabelNearShape(shape: GraphicShape, words: OCRWord[]): string {
+  const target = { x: shape.x, y: shape.y };
+  // 1. Chercher sur la même ligne, à gauche
+  const sameLineLeft = words
+    .filter((w) => Math.abs(w.y - target.y) < 6 && w.x < target.x && w.x + w.w >= target.x - 200)
+    .sort((a, b) => a.x - b.x);
+  if (sameLineLeft.length > 0) {
+    const text = sameLineLeft.map((w) => w.text).join(" ").trim();
+    const colonIdx = text.lastIndexOf(":");
+    return (colonIdx >= 0 ? text.slice(0, colonIdx) : text)
+      .replace(/[._]+\s*$/, "")
+      .trim()
+      .slice(0, 60);
+  }
+  // 2. Chercher au-dessus (ligne précédente)
+  const above = words.find(
+    (w) =>
+      w.y > target.y + 5 &&
+      w.y - target.y < 25 &&
+      Math.abs(w.x - target.x) < 100
+  );
+  if (above) return above.text.trim().slice(0, 60);
+  return "";
 }
 
 /// Convertit les words OCR (en pixels canvas) vers le système de coordonnées PDF.
@@ -136,7 +206,103 @@ export function detectFields(words: OCRWord[], pageIdx: number): DetectedField[]
   }
 
   // Déduplication : si deux champs détectés se chevauchent fortement, on garde le 1er
-  return deduplicate(fields);
+  const deduplicated = deduplicate(fields);
+
+  // Regroupement : cases alignées (NISS box-array, oui/non, etc.)
+  const grouped = groupAlignedFields(deduplicated, pageIdx);
+
+  // Inférence du type + preset depuis le label
+  return grouped.map((f) => {
+    const inferred = inferFromLabel(f.label);
+    if (!inferred) return f;
+    // On garde le type "checkbox" tel quel s'il vient du visuel (case détectée)
+    // mais on applique inférence sinon
+    const preserveDetectedType = f.type === "checkbox" && inferred.type !== "select";
+    return {
+      ...f,
+      type: preserveDetectedType ? f.type : inferred.type,
+      suggestedPresetName: inferred.presetName,
+    };
+  });
+}
+
+/// Regroupe les champs alignés horizontalement avec espacement régulier.
+/// Patterns détectés :
+///   - 2-3 checkboxes côte à côte avec labels "oui/non" → fusionne en select binaire
+///   - 8-15 petites cases vides identiques alignées → champ "char_array" (NISS, code postal)
+///   - 4-12 mini-rectangles de saisie (date __/__/____) → date
+function groupAlignedFields(fields: DetectedField[], pageIdx: number): DetectedField[] {
+  if (fields.length < 2) return fields;
+
+  // Trier par y (lignes) puis x
+  const sorted = [...fields].sort((a, b) => {
+    if (Math.abs(a.y - b.y) > 5) return b.y - a.y;
+    return a.x - b.x;
+  });
+
+  const used = new Set<number>();
+  const result: DetectedField[] = [];
+
+  for (let i = 0; i < sorted.length; i++) {
+    if (used.has(i)) continue;
+    const seed = sorted[i];
+
+    // Chercher les voisins de droite alignés sur la même ligne avec espacement régulier
+    const group: number[] = [i];
+    const candidateIndexes: number[] = [];
+    for (let j = 0; j < sorted.length; j++) {
+      if (j === i || used.has(j)) continue;
+      const w = sorted[j];
+      if (Math.abs(w.y - seed.y) > 4) continue; // même ligne
+      if (w.x < seed.x - 2) continue; // à droite uniquement
+      // Tolérance type : on regroupe checkboxes ensemble, ou char_arrays ensemble
+      if (w.type !== seed.type) continue;
+      // Tolérance taille : dimensions similaires
+      if (Math.abs(w.w - seed.w) / Math.max(w.w, seed.w) > 0.4) continue;
+      if (Math.abs(w.h - seed.h) / Math.max(w.h, seed.h) > 0.4) continue;
+      candidateIndexes.push(j);
+    }
+
+    candidateIndexes.sort((a, b) => sorted[a].x - sorted[b].x);
+    let lastX = seed.x + seed.w;
+    for (const ci of candidateIndexes) {
+      const w = sorted[ci];
+      const gap = w.x - lastX;
+      if (gap < -2 || gap > 30) break; // si trop espacé, arrête le groupe
+      group.push(ci);
+      lastX = w.x + w.w;
+    }
+
+    if (group.length >= 3 && seed.type === "checkbox") {
+      // 3+ cases alignées avec dim similaires → probable char-array (NISS/CP)
+      group.forEach((g) => used.add(g));
+      const first = sorted[group[0]];
+      const last = sorted[group[group.length - 1]];
+      const totalW = last.x + last.w - first.x;
+      // Label = ce qui est à gauche du 1er ou au-dessus
+      const label = first.label || "Champ groupé";
+      result.push({
+        type: "text", // sera affiné par inférence label (NISS/CP/etc.)
+        label,
+        x: first.x,
+        y: first.y,
+        w: totalW,
+        h: Math.max(first.h, 14),
+        confidence: first.confidence,
+        page: pageIdx,
+      });
+    } else if (group.length === 2 && seed.type === "checkbox") {
+      // 2 cases côte à côte (oui/non, M/F) → on garde séparé pour l'instant
+      // (pourrait être un select mais on a besoin des labels précis)
+      group.forEach((g) => used.add(g));
+      group.forEach((g) => result.push(sorted[g]));
+    } else {
+      used.add(i);
+      result.push(seed);
+    }
+  }
+
+  return result;
 }
 
 /// Fragment de filler : peut être 1 char ou plus, fait uniquement de _ ou .

@@ -15,12 +15,22 @@ import {
   Wand2,
   Loader2,
   Layers,
+  Database,
+  Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DocumentField, DocumentFieldType } from "@/lib/documents/types";
-import { ocrWordsToPdfCoords, detectFields, type DetectedField, type OCRWord } from "@/lib/documents/ocr-detector";
+import {
+  ocrWordsToPdfCoords,
+  detectFields,
+  shapesToDetections,
+  type DetectedField,
+  type OCRWord,
+  type GraphicShape,
+} from "@/lib/documents/ocr-detector";
+import { findBestCorrection, type StoredCorrection } from "@/lib/documents/ocr-corrections";
 
 const PDFDocument = dynamic(() => import("react-pdf").then((m) => m.Document), {
   ssr: false,
@@ -29,11 +39,18 @@ const PDFPage = dynamic(() => import("react-pdf").then((m) => m.Page), {
   ssr: false,
 });
 
+interface PresetLite {
+  id: string;
+  name: string;
+}
+
 interface VisualPdfEditorProps {
   templateId: string;
   sourceFileId: string;
+  sourceFileSha256?: string | null;
   schema: DocumentField[];
   onSchemaChange: (next: DocumentField[]) => void;
+  presets?: PresetLite[];
 }
 
 interface PageDims {
@@ -42,9 +59,12 @@ interface PageDims {
 }
 
 export function VisualPdfEditor({
+  templateId,
   sourceFileId,
+  sourceFileSha256,
   schema,
   onSchemaChange,
+  presets = [],
 }: VisualPdfEditorProps) {
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
@@ -56,6 +76,13 @@ export function VisualPdfEditor({
   const [ocrProgress, setOcrProgress] = useState(0);
   const [ocrPageStatus, setOcrPageStatus] = useState<string>("");
   const [pendingDetections, setPendingDetections] = useState<DetectedField[] | null>(null);
+  /// Snapshot connu pour ce PDF (par hash), proposé en restauration rapide.
+  const [knownSnapshot, setKnownSnapshot] = useState<{
+    detectedFields: DetectedField[];
+    pageCount: number;
+    createdAt: string;
+  } | null>(null);
+  const [snapshotChecked, setSnapshotChecked] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -69,6 +96,37 @@ export function VisualPdfEditor({
       cancelled = true;
     };
   }, []);
+
+  /// Au mount : si on connaît le sha256 du PDF, vérifier s'il existe un snapshot OCR.
+  /// Ne propose le snapshot que si le schema courant n'a pas de champs déjà placés.
+  useEffect(() => {
+    if (!sourceFileSha256 || snapshotChecked) return;
+    if (schema.some((f) => f.position)) {
+      // Schema déjà rempli, pas besoin de proposer une restauration
+      setSnapshotChecked(true);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/documents/ocr/snapshot/${sourceFileSha256}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data || data.found !== true) {
+          setSnapshotChecked(true);
+          return;
+        }
+        setKnownSnapshot({
+          detectedFields: data.detectedFields as DetectedField[],
+          pageCount: data.pageCount,
+          createdAt: data.createdAt,
+        });
+        setSnapshotChecked(true);
+      })
+      .catch(() => setSnapshotChecked(true));
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceFileSha256]);
 
   const fieldsOnPage = schema.filter((f) => f.position && f.position.page === currentPage);
   const dims = pageDims[currentPage];
@@ -130,7 +188,84 @@ export function VisualPdfEditor({
     if (selectedFieldId === id) setSelectedFieldId(null);
   }
 
+  /// Extrait les shapes (rectangles, lignes) dessinés dans le PDF via la liste
+  /// d'opérations pdfjs. Utile pour les PDFs avec des zones de saisie dessinées
+  /// vectoriellement plutôt qu'écrites en underscores texte.
+  async function extractGraphicShapes(page: {
+    getOperatorList: () => Promise<{ fnArray: number[]; argsArray: unknown[][] }>;
+    getViewport: (opts: { scale: number }) => { width: number; height: number; height2?: number };
+  }): Promise<GraphicShape[]> {
+    try {
+      const opList = await page.getOperatorList();
+      const pageHeight = page.getViewport({ scale: 1 }).height;
+      const shapes: GraphicShape[] = [];
+      // OPS de pdfjs : 91 = constructPath. Les args contiennent des sous-ops :
+      // 19 = re (rectangle), 13 = m (moveTo), 14 = l (lineTo)
+      // pdfjs.OPS values can vary; on utilise les valeurs numériques connues v4.
+      const OP_CONSTRUCT_PATH = 91;
+      const SUB_OP_RECT = 19;
+      const SUB_OP_MOVE = 13;
+      const SUB_OP_LINE = 14;
+
+      for (let i = 0; i < opList.fnArray.length; i++) {
+        if (opList.fnArray[i] !== OP_CONSTRUCT_PATH) continue;
+        const args = opList.argsArray[i] as [number[], number[], unknown];
+        if (!Array.isArray(args) || args.length < 2) continue;
+        const subOps = args[0];
+        const subArgs = args[1];
+        if (!Array.isArray(subOps) || !Array.isArray(subArgs)) continue;
+
+        // Parcourir les sous-ops pour extraire rectangles et lignes
+        let argIdx = 0;
+        let lineStart: { x: number; y: number } | null = null;
+        for (const sub of subOps) {
+          if (sub === SUB_OP_RECT) {
+            // re : x, y, w, h
+            const [x, y, w, h] = subArgs.slice(argIdx, argIdx + 4) as number[];
+            argIdx += 4;
+            // Convertir en coords PDF (y bas-gauche)
+            shapes.push({
+              type: "rectangle",
+              x,
+              y: pageHeight - y - h,
+              w,
+              h,
+            });
+          } else if (sub === SUB_OP_MOVE) {
+            const [x, y] = subArgs.slice(argIdx, argIdx + 2) as number[];
+            argIdx += 2;
+            lineStart = { x, y: pageHeight - y };
+          } else if (sub === SUB_OP_LINE) {
+            const [x, y] = subArgs.slice(argIdx, argIdx + 2) as number[];
+            argIdx += 2;
+            if (lineStart) {
+              const yEnd = pageHeight - y;
+              const isHorizontal = Math.abs(yEnd - lineStart.y) < 1;
+              if (isHorizontal) {
+                const xMin = Math.min(lineStart.x, x);
+                const w = Math.abs(x - lineStart.x);
+                shapes.push({
+                  type: "line",
+                  x: xMin,
+                  y: yEnd - 1,
+                  w,
+                  h: 2,
+                });
+              }
+              lineStart = { x, y: yEnd };
+            }
+          }
+        }
+      }
+      return shapes;
+    } catch (err) {
+      console.warn("Extraction graphic shapes échouée:", err);
+      return [];
+    }
+  }
+
   /// Analyse une page : extraction texte natif si possible, sinon OCR fallback.
+  /// PLUS extraction des shapes graphiques (lignes/rectangles dessinés vectoriellement).
   async function detectOnePage(
     pdfDoc: { getPage: (n: number) => Promise<unknown> },
     pageIdx: number,
@@ -140,6 +275,7 @@ export function VisualPdfEditor({
       getTextContent: () => Promise<{ items: { str: string; transform: number[]; width: number; height: number }[] }>;
       getViewport: (opts: { scale: number }) => { width: number; height: number };
       render: (opts: { canvasContext: CanvasRenderingContext2D; viewport: unknown; canvas: HTMLCanvasElement }) => { promise: Promise<void> };
+      getOperatorList: () => Promise<{ fnArray: number[]; argsArray: unknown[][] }>;
     };
     const page = (await pdfDoc.getPage(pageIdx + 1)) as PdfPage;
     const pageHeight = page.getViewport({ scale: 1 }).height;
@@ -206,7 +342,24 @@ export function VisualPdfEditor({
       method = "OCR";
     }
 
-    return { detections: detectFields(words, pageIdx), method };
+    // Extraction des shapes graphiques (rectangles vides / lignes pointillées vectorielles)
+    const shapes = await extractGraphicShapes(page);
+    const shapeDetections = shapes.length > 0 ? shapesToDetections(shapes, words, pageIdx) : [];
+
+    // Fusion : on garde les détections texte + on ajoute les shapes qui ne chevauchent pas
+    const textDetections = detectFields(words, pageIdx);
+    const all = [...textDetections];
+    for (const sd of shapeDetections) {
+      const overlaps = all.some(
+        (td) =>
+          Math.abs(td.x - sd.x) < 15 &&
+          Math.abs(td.y - sd.y) < 8
+      );
+      if (!overlaps) all.push(sd);
+    }
+
+    const methodNote = shapeDetections.length > 0 ? `${method}+shapes` : method;
+    return { detections: all, method: methodNote };
   }
 
   /// Mode mono-page (currentPage) ou multi-pages (toutes les pages du PDF).
@@ -225,6 +378,15 @@ export function VisualPdfEditor({
       const pagesToProcess = allPages
         ? Array.from({ length: numPages }, (_, i) => i)
         : [currentPage];
+
+      // Fetch les corrections OCR connues pour ce template + globales
+      let knownCorrections: StoredCorrection[] = [];
+      try {
+        const cRes = await fetch(`/api/documents/ocr/corrections?templateId=${templateId}`);
+        if (cRes.ok) knownCorrections = await cRes.json();
+      } catch {
+        // tant pis, on continue sans corrections
+      }
 
       const rawDetections: DetectedField[] = [];
       const methods = new Set<string>();
@@ -246,8 +408,42 @@ export function VisualPdfEditor({
       // Filtrer les détections qui chevauchent un champ déjà placé.
       // Évite les doublons quand l'admin relance Auto-détecter après avoir
       // déjà appliqué une première vague.
-      const allDetections = rawDetections.filter((d) => !overlapsExistingField(d, schema));
-      const skipped = rawDetections.length - allDetections.length;
+      const filtered = rawDetections.filter((d) => !overlapsExistingField(d, schema));
+      const skipped = rawDetections.length - filtered.length;
+
+      // Appliquer les corrections OCR mémorisées (fuzzy match du label)
+      let correctionsApplied = 0;
+      const allDetections = filtered.map((d) => {
+        const match = findBestCorrection(d.label, knownCorrections);
+        if (!match) return d;
+        correctionsApplied++;
+        return {
+          ...d,
+          label: match.cleanLabel,
+          type: (match.fieldType as DetectedField["type"]) || d.type,
+          // suggestedPresetName écrasé si une correction préfère un preset
+          // (on stocke ID, qu'on résoudra dans applyDetections)
+          suggestedPresetName: undefined,
+          // Marqueur transitoire pour applyDetections (préférence preset par ID)
+          ...(match.presetId ? { _correctionPresetId: match.presetId } : {}),
+        } as DetectedField;
+      });
+
+      // Persister snapshot pour ce PDF (si on connaît son hash)
+      if (sourceFileSha256 && allDetections.length > 0) {
+        fetch(`/api/documents/ocr/snapshot/${sourceFileSha256}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            detectedFields: allDetections,
+            pageCount: numPages,
+            fileId: sourceFileId,
+            templateId,
+          }),
+        }).catch(() => {
+          // best-effort
+        });
+      }
 
       const methodStr = methods.size === 1 ? Array.from(methods)[0] : "mixte";
       const scope = allPages ? `${pagesToProcess.length} pages` : `page ${currentPage + 1}`;
@@ -261,9 +457,12 @@ export function VisualPdfEditor({
           toast.info(`Aucun champ détecté via ${methodStr} sur ${scope}.`);
         }
       } else {
-        const skippedNote = skipped > 0 ? ` (${skipped} doublon${skipped > 1 ? "s" : ""} ignoré${skipped > 1 ? "s" : ""})` : "";
+        const notes: string[] = [];
+        if (skipped > 0) notes.push(`${skipped} doublon${skipped > 1 ? "s" : ""} ignoré${skipped > 1 ? "s" : ""}`);
+        if (correctionsApplied > 0) notes.push(`${correctionsApplied} correction${correctionsApplied > 1 ? "s" : ""} mémorisée${correctionsApplied > 1 ? "s" : ""} appliquée${correctionsApplied > 1 ? "s" : ""}`);
+        const noteStr = notes.length > 0 ? ` (${notes.join(", ")})` : "";
         toast.success(
-          `${allDetections.length} nouveau(x) champ(s) détecté(s) sur ${scope} via ${methodStr}${skippedNote}.`
+          `${allDetections.length} nouveau(x) champ(s) détecté(s) sur ${scope} via ${methodStr}${noteStr}.`
         );
         setPendingDetections(allDetections);
       }
@@ -313,24 +512,92 @@ export function VisualPdfEditor({
     return false;
   }
 
+  /// Restaure les détections du snapshot précédent (sans relancer l'OCR).
+  function restoreSnapshot() {
+    if (!knownSnapshot) return;
+    setPendingDetections(knownSnapshot.detectedFields);
+    setKnownSnapshot(null);
+    toast.success(
+      `${knownSnapshot.detectedFields.length} champ(s) restauré(s) du snapshot précédent.`
+    );
+  }
+
+  /// Sauvegarde toutes les modifications de label/type/preset comme corrections OCR
+  /// pour les futures détections sur des PDFs similaires.
+  async function learnCorrections() {
+    // On compare les champs actuels (avec position) à leur état de détection initial.
+    // Sans tracking explicite, on assume que tous les champs avec position sont
+    // candidats à mémoriser (label utilisateur considéré comme "correct").
+    const candidates = schema.filter((f) => f.position && f.label && f.label.trim().length > 0);
+    if (candidates.length === 0) {
+      toast.info("Aucun champ à mémoriser (placez d'abord des champs).");
+      return;
+    }
+    let saved = 0;
+    let errors = 0;
+    for (const f of candidates) {
+      try {
+        const res = await fetch("/api/documents/ocr/corrections", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            templateId,
+            rawLabel: f.label, // ici on suppose label = correction (l'admin a déjà édité)
+            cleanLabel: f.label,
+            fieldType: f.type,
+            presetId: f.presetId,
+          }),
+        });
+        if (res.ok) saved++;
+        else errors++;
+      } catch {
+        errors++;
+      }
+    }
+    if (saved > 0) {
+      toast.success(`${saved} correction(s) mémorisée(s) pour les futures détections.`);
+    }
+    if (errors > 0) {
+      toast.warning(`${errors} erreur(s) lors de la mémorisation.`);
+    }
+  }
+
   function applyDetections() {
     if (!pendingDetections) return;
-    const newFields: DocumentField[] = pendingDetections.map((d) => ({
-      id: `field_${nanoid(6)}`,
-      label: d.label || "Champ détecté",
-      type: d.type as DocumentFieldType,
-      required: false,
-      position: {
-        page: d.page,
-        x: d.x,
-        y: d.y,
-        w: d.w,
-        h: d.h,
-        fontSize: 11,
-      },
-    }));
+    // Index des presets par nom (case-insensitive) pour lookup rapide
+    const presetByName = new Map(presets.map((p) => [p.name.toLowerCase(), p.id]));
+    const presetIds = new Set(presets.map((p) => p.id));
+    let presetMatched = 0;
+    const newFields: DocumentField[] = pendingDetections.map((d) => {
+      // Priorité au preset venant d'une correction mémorisée (ID direct), sinon match par nom
+      const correctionPresetId = (d as DetectedField & { _correctionPresetId?: string })
+        ._correctionPresetId;
+      let presetId: string | undefined;
+      if (correctionPresetId && presetIds.has(correctionPresetId)) {
+        presetId = correctionPresetId;
+      } else if (d.suggestedPresetName) {
+        presetId = presetByName.get(d.suggestedPresetName.toLowerCase());
+      }
+      if (presetId) presetMatched++;
+      return {
+        id: `field_${nanoid(6)}`,
+        label: d.label || "Champ détecté",
+        type: d.type as DocumentFieldType,
+        required: false,
+        presetId: presetId || undefined,
+        position: {
+          page: d.page,
+          x: d.x,
+          y: d.y,
+          w: d.w,
+          h: d.h,
+          fontSize: 11,
+        },
+      };
+    });
     onSchemaChange([...schema, ...newFields]);
-    toast.success(`${newFields.length} champ(s) ajouté(s)`);
+    const presetNote = presetMatched > 0 ? ` (${presetMatched} avec preset auto)` : "";
+    toast.success(`${newFields.length} champ(s) ajouté(s)${presetNote}`);
     setPendingDetections(null);
   }
 
@@ -354,6 +621,29 @@ export function VisualPdfEditor({
           scanné). Glissez et redimensionnez les rectangles bleus pour les positionner.
         </AlertDescription>
       </Alert>
+
+      {/* Bandeau snapshot connu (PDF déjà OCRisé auparavant) */}
+      {knownSnapshot && (
+        <Alert className="bg-blue-50 border-blue-300 dark:bg-blue-950 dark:border-blue-800">
+          <Database className="w-4 h-4" />
+          <AlertDescription className="text-sm flex items-center justify-between gap-3 flex-wrap">
+            <span className="text-blue-800 dark:text-blue-300">
+              <b>Détection précédente trouvée</b> pour ce PDF (
+              {knownSnapshot.detectedFields.length} champs sur {knownSnapshot.pageCount} pages,{" "}
+              {new Date(knownSnapshot.createdAt).toLocaleDateString("fr-BE")}). Restaurer sans
+              relancer l&apos;OCR ?
+            </span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setKnownSnapshot(null)}>
+                Ignorer
+              </Button>
+              <Button size="sm" onClick={restoreSnapshot}>
+                Restaurer
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {pendingDetections && pendingDetections.length > 0 && (
         <Alert className="bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-800">
@@ -449,6 +739,16 @@ export function VisualPdfEditor({
                   Toutes les pages
                 </>
               )}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={learnCorrections}
+              disabled={!dims || schema.filter((f) => f.position).length === 0}
+              title="Mémorise vos labels/types/presets actuels pour les futures détections sur PDFs similaires"
+            >
+              <Brain className="w-4 h-4 mr-1" />
+              Apprendre
             </Button>
             <Button size="sm" onClick={addZone} disabled={!dims}>
               <Plus className="w-4 h-4 mr-1" />

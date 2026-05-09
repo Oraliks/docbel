@@ -87,7 +87,7 @@ interface TemplateInitial {
   officialRef: string | null;
   requiresSignature: boolean;
   signaturePosition: { page: number; x: number; y: number; w: number; h: number } | null;
-  sourceFile: { id: string; name: string; fileType: string | null };
+  sourceFile: { id: string; name: string; fileType: string | null; sha256: string | null };
   organisme: { id: string; code: string; name: string; shortName: string | null; color: string } | null;
   tool: { id: string; name: string; slug: string; sectionName: string };
 }
@@ -503,7 +503,9 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
             <VisualPdfEditor
               templateId={initial.id}
               sourceFileId={initial.sourceFile.id}
+              sourceFileSha256={initial.sourceFile.sha256}
               schema={schema}
+              presets={presets}
               onSchemaChange={(s) => {
                 setSchema(s);
                 setDirty(true);

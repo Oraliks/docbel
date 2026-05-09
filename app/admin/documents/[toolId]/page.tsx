@@ -18,7 +18,7 @@ export default async function EditDocumentTemplatePage({
       include: {
         documentTemplate: {
           include: {
-            sourceFile: { select: { id: true, name: true, fileType: true } },
+            sourceFile: { select: { id: true, name: true, fileType: true, sha256: true } },
             organisme: { select: { id: true, code: true, name: true, shortName: true, color: true } },
           },
         },

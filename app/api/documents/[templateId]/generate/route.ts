@@ -234,8 +234,8 @@ export async function POST(
         await prisma.bundleRun.update({
           where: { id: bundleRunId },
           data: {
-            payloads: newPayloads as Prisma.InputJsonValue,
-            completedTemplateIds: newCompleted as Prisma.InputJsonValue,
+            payloads: newPayloads as unknown as Prisma.InputJsonValue,
+            completedTemplateIds: newCompleted as unknown as Prisma.InputJsonValue,
           },
         });
       }

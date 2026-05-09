@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       minDate: body.minDate || null,
       maxDate: body.maxDate || null,
       belgianType: body.belgianType || null,
-      crossFieldRule: (body.crossFieldRule ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+      crossFieldRule: (body.crossFieldRule ?? Prisma.JsonNull) as unknown as Prisma.InputJsonValue,
       errorMsg,
       errorMsgNl: body.errorMsgNl || null,
       helpText: body.helpText || null,

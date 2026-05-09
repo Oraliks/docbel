@@ -69,7 +69,7 @@ export async function POST(
       expiresAt: original.expiresAt,
       officialRef: original.officialRef ? `${original.officialRef} (copie)` : null,
       requiresSignature: original.requiresSignature,
-      signaturePosition: (original.signaturePosition ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+      signaturePosition: (original.signaturePosition ?? Prisma.JsonNull) as unknown as Prisma.InputJsonValue,
       status: "draft", // toujours brouillon
     },
   });

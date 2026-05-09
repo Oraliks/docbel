@@ -67,7 +67,7 @@ export async function PUT(
           templateId: it.templateId,
           order: typeof it.order === "number" ? it.order : idx,
           required: it.required !== false,
-          condition: (it.condition ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+          condition: (it.condition ?? Prisma.JsonNull) as unknown as Prisma.InputJsonValue,
         })),
       });
     }

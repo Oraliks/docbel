@@ -127,7 +127,7 @@ export async function PUT(
         outputFilenameTpl: existing.outputFilenameTpl,
         changeNotes,
         changeType,
-        diffSummary: (diffSummary ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+        diffSummary: (diffSummary ?? Prisma.JsonNull) as unknown as Prisma.InputJsonValue,
         createdBy: auth.user?.id || null,
       },
     });

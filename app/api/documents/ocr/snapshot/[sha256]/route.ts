@@ -62,7 +62,7 @@ export async function POST(
   }
 
   const lower = sha256.toLowerCase();
-  const detectedFields = body.detectedFields as Prisma.InputJsonValue;
+  const detectedFields = body.detectedFields as unknown as Prisma.InputJsonValue;
   const saved = await prisma.ocrSnapshot.upsert({
     where: { sha256: lower },
     create: {

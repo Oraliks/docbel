@@ -3,15 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { deleteStoredFile } from "@/lib/documents/storage";
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.CRON_PURGE_SECRET;
+  const secret = process.env.CRON_SECRET || process.env.CRON_PURGE_SECRET;
   if (!secret) {
     return NextResponse.json(
-      { error: "CRON_PURGE_SECRET non configuré" },
+      { error: "CRON_SECRET non configuré" },
       { status: 500 }
     );
   }
-  const auth = req.headers.get("x-cron-secret");
-  if (auth !== secret) {
+  const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const customSecret = req.headers.get("x-cron-secret");
+  if (bearer !== secret && customSecret !== secret) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
   });
 }
 
-// Permet aussi un appel GET pour les CRON Netlify
+// Vercel Cron envoie des requêtes GET, on délègue à POST.
 export async function GET(req: NextRequest) {
   return POST(req);
 }

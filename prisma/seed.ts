@@ -66,7 +66,7 @@ const articles = [
     excerpt:
       "Depuis le 1er avril 2026, les allocations de chômage complet sont revalorisées de 2,1 % suite à l'indexation automatique. Les organismes de paiement (CAPAC, CSC, CGSLB, FGTB) mettront à jour les paiements automatiquement.",
     category: "Mise à jour",
-    color: "#C8102E",
+    color: "#7C3AED",
     emoji: "📋",
     readingTime: 5,
     featured: true,
@@ -211,7 +211,7 @@ Les interruptions de carrière (congé parental, sabbatique autorisé, congé th
 ];
 
 const categories = [
-  { name: "Mise à jour", color: "#C8102E" },
+  { name: "Mise à jour", color: "#7C3AED" },
   { name: "Annonce ONEM", color: "#1A56DB" },
   { name: "CPAS", color: "#0E9F6E" },
   { name: "Réforme", color: "#7E3AF2" },

@@ -12,7 +12,7 @@ import {
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { ChartDataEditor } from './_chart-data-editor'
 
-const COLORS = ['#C8102E', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']
+const COLORS = ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']
 
 const dataPointSchema = z.object({
   label: z.string(),

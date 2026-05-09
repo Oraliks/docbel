@@ -33,7 +33,7 @@ export const marquee = defineBlock({
     text: '✨ Annonce importante · Nouveauté · Ne manquez pas ça · ',
     speed: 'normal',
     reverse: false,
-    color: '#C8102E',
+    color: '#7C3AED',
   },
   meta: {
     name: 'Texte défilant',

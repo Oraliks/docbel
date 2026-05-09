@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
     const colorMap = new Map(categories.map((c) => [c.name, c.color]));
     const articlesWithCategoryColor = articles.map((article) => ({
       ...article,
-      categoryColor: colorMap.get(article.category) ?? "#C8102E",
+      categoryColor: colorMap.get(article.category) ?? "#7C3AED",
     }));
 
     return NextResponse.json(
@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
         excerpt: data.excerpt,
         content: data.content,
         category: data.category,
-        color: data.color || "#C8102E",
+        color: data.color || "#7C3AED",
         emoji: data.emoji || "📰",
         status: data.status || "draft",
         featured: data.featured ?? false,

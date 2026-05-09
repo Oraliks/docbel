@@ -18,7 +18,7 @@ export const sparkline = defineBlock({
   schema,
   defaults: {
     data: [10, 14, 12, 18, 22, 28, 35, 32, 40, 45, 50, 58],
-    color: '#C8102E',
+    color: '#7C3AED',
     label: 'Croissance',
     value: '+23%',
   },
@@ -30,7 +30,7 @@ export const sparkline = defineBlock({
     shortcuts: ['sparkline'],
   },
   Render: ({ props }) => {
-    const { data, color = '#C8102E', label, value } = props
+    const { data, color = '#7C3AED', label, value } = props
     const chartData = data.map((v, i) => ({ i, v }))
     return (
       <div className="rounded-2xl border bg-card p-4 my-2">

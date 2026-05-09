@@ -32,7 +32,7 @@ const PATHS: Record<Props['variant'], string> = {
 export const sectionDivider = defineBlock({
   type: 'sectionDivider',
   schema,
-  defaults: { variant: 'wave', color: '#C8102E', flip: false, height: 80 },
+  defaults: { variant: 'wave', color: '#7C3AED', flip: false, height: 80 },
   meta: {
     name: 'Séparateur SVG',
     description: 'Vague, courbe, montagne…',

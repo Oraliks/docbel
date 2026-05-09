@@ -17,7 +17,7 @@ export const gradientMesh = defineBlock({
   type: 'gradientMesh',
   schema,
   defaults: {
-    colors: ['#C8102E', '#3B82F6', '#10B981', '#F59E0B'],
+    colors: ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B'],
     height: 300,
     animated: true,
   },

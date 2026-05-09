@@ -45,7 +45,7 @@ export const barChart = defineBlock({
       { label: 'Mar', value: 650 },
       { label: 'Avr', value: 720 },
     ],
-    color: '#C8102E',
+    color: '#7C3AED',
     horizontal: false,
     height: 300,
   },
@@ -57,7 +57,7 @@ export const barChart = defineBlock({
     shortcuts: ['bar', 'chart'],
   },
   Render: ({ props }) => {
-    const { title, data, color = '#C8102E', horizontal, height = 300 } = props
+    const { title, data, color = '#7C3AED', horizontal, height = 300 } = props
     return (
       <div className="w-full my-2">
         {title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}

@@ -442,7 +442,7 @@ export function NewsList({
                         <Badge
                           className="text-xs"
                           style={{
-                            backgroundColor: article.categoryColor || '#C8102E',
+                            backgroundColor: article.categoryColor || '#7C3AED',
                             color: '#fff'
                           }}
                         >
@@ -779,7 +779,7 @@ function SortableTableRow({
       <TableCell>
         <Badge
           style={{
-            backgroundColor: article.categoryColor || '#C8102E',
+            backgroundColor: article.categoryColor || '#7C3AED',
             color: '#fff'
           }}
         >

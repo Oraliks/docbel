@@ -108,7 +108,7 @@ export function NumberControl({
 
 const SWATCHES = [
   '#000000', '#1A1A24', '#374151', '#6B7280', '#9CA3AF', '#FFFFFF',
-  '#C8102E', '#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6',
+  '#7C3AED', '#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6',
   '#EC4899', '#F9F9F7', '#FEF3C7', '#DBEAFE', '#D1FAE5', '#FCE7F3',
 ]
 

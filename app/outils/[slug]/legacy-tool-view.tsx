@@ -40,5 +40,5 @@ export function LegacyToolView({ tool }: LegacyToolViewProps) {
     );
   }
 
-  return <ToolPage tool={tool} accent="#C8102E" onBack={() => router.back()} lang="FR" />;
+  return <ToolPage tool={tool} accent="#7C3AED" onBack={() => router.back()} lang="FR" />;
 }

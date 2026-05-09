@@ -46,7 +46,7 @@ export const lineChart = defineBlock({
       { label: 'Avr', value: 720 },
       { label: 'Mai', value: 880 },
     ],
-    color: '#C8102E',
+    color: '#7C3AED',
     smooth: true,
     height: 300,
   },
@@ -58,7 +58,7 @@ export const lineChart = defineBlock({
     shortcuts: ['line'],
   },
   Render: ({ props }) => {
-    const { title, data, color = '#C8102E', smooth = true, height = 300 } = props
+    const { title, data, color = '#7C3AED', smooth = true, height = 300 } = props
     return (
       <div className="w-full my-2">
         {title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}

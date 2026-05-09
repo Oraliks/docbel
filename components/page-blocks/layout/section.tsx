@@ -81,7 +81,7 @@ export const section = defineBlock({
         </Field>
       )}
       {props.bgType === 'gradient' && (
-        <Field label="Dégradé CSS" hint="Ex: linear-gradient(135deg, #C8102E, #1A1A24)">
+        <Field label="Dégradé CSS" hint="Ex: linear-gradient(135deg, #7C3AED, #1A1A24)">
           <Input
             value={props.bgGradient ?? ''}
             onChange={(e) => onChange({ bgGradient: e.target.value })}

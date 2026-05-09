@@ -22,7 +22,7 @@ const schema = z.object({
 export const gauge = defineBlock({
   type: 'gauge',
   schema,
-  defaults: { label: 'Score', value: 75, color: '#C8102E', showValue: true },
+  defaults: { label: 'Score', value: 75, color: '#7C3AED', showValue: true },
   meta: {
     name: 'Jauge',
     description: 'Indicateur en arc de cercle',
@@ -31,7 +31,7 @@ export const gauge = defineBlock({
     shortcuts: ['gauge', 'jauge'],
   },
   Render: ({ props }) => {
-    const { label, value, color = '#C8102E', showValue = true } = props
+    const { label, value, color = '#7C3AED', showValue = true } = props
     const v = Math.max(0, Math.min(100, value))
     const data = [{ name: 'value', value: v, fill: color }]
     return (

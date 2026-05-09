@@ -26,7 +26,7 @@ export const progress = defineBlock({
     label: 'Progression',
     value: 60,
     showValue: true,
-    color: '#C8102E',
+    color: '#7C3AED',
     variant: 'default',
   },
   meta: {

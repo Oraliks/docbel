@@ -34,7 +34,7 @@ export const heatmap = defineBlock({
   defaults: {
     title: 'Activité',
     data: generateSampleHeatmap(),
-    color: '#C8102E',
+    color: '#7C3AED',
   },
   meta: {
     name: 'Heatmap calendrier',
@@ -44,7 +44,7 @@ export const heatmap = defineBlock({
     shortcuts: ['heatmap'],
   },
   Render: ({ props }) => {
-    const { title, data, color = '#C8102E' } = props
+    const { title, data, color = '#7C3AED' } = props
     const grid = useMemo(() => {
       const dayMap = new Map<string, number>()
       let max = 0

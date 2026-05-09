@@ -11,19 +11,19 @@
   --card-foreground: #1A1A24;
   --popover: #FFFFFF;
   --popover-foreground: #1A1A24;
-  --primary: #C8102E;
+  --primary: #7C3AED;
   --primary-foreground: #FFFFFF;
   --secondary: #F9F9F7;
   --secondary-foreground: #1A1A24;
   --muted: #F9F9F7;
   --muted-foreground: #6B6B7B;
-  --accent: #C8102E;
+  --accent: #7C3AED;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
   --border: #D9D9D2;
   --input: #CFCFC7;
-  --ring: #C8102E;
+  --ring: #7C3AED;
   --chart-1: #F59E0B;
   --chart-2: #3B82F6;
   --chart-3: #10B981;
@@ -32,12 +32,12 @@
   --radius: 0.625rem;
   --sidebar: #FFFFFF;
   --sidebar-foreground: #1A1A24;
-  --sidebar-primary: #C8102E;
+  --sidebar-primary: #7C3AED;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #F9F9F7;
   --sidebar-accent-foreground: #1A1A24;
   --sidebar-border: #EBEBEA;
-  --sidebar-ring: #C8102E;
+  --sidebar-ring: #7C3AED;
   /* Custom DocBel vars */
   --surface: #FFFFFF;
   --surface-2: #F9F9F7;
@@ -45,6 +45,9 @@
   --text-faint: #A8A8B3;
   --nav-bg: #FFFFFF;
   --nav-border: #EBEBEA;
+  /* Brand gradient (dark mauve → light mauve) */
+  --brand-gradient: linear-gradient(135deg, #5B21B6 0%, #A78BFA 100%);
+  --brand-gradient-soft: linear-gradient(135deg, #7C3AED 0%, #C4B5FD 100%);
 }
 
 .dark {
@@ -55,19 +58,19 @@
   --card-foreground: #F0F2F7;
   --popover: #1C1F26;
   --popover-foreground: #F0F2F7;
-  --primary: #C8102E;
+  --primary: #8B5CF6;
   --primary-foreground: #FFFFFF;
   --secondary: #252830;
   --secondary-foreground: #F0F2F7;
   --muted: #252830;
   --muted-foreground: #8B92A5;
-  --accent: #C8102E;
+  --accent: #8B5CF6;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
   --border: #3A3F4C;
   --input: #424857;
-  --ring: #C8102E;
+  --ring: #8B5CF6;
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -75,12 +78,12 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: #161920;
   --sidebar-foreground: #F0F2F7;
-  --sidebar-primary: #C8102E;
+  --sidebar-primary: #8B5CF6;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #252830;
   --sidebar-accent-foreground: #F0F2F7;
   --sidebar-border: #252830;
-  --sidebar-ring: #C8102E;
+  --sidebar-ring: #8B5CF6;
   /* Custom DocBel vars */
   --surface: #1C1F26;
   --surface-2: #252830;
@@ -88,6 +91,9 @@
   --text-faint: #555C70;
   --nav-bg: #161920;
   --nav-border: #252830;
+  /* Brand gradient (dark mauve → light mauve) */
+  --brand-gradient: linear-gradient(135deg, #6D28D9 0%, #C4B5FD 100%);
+  --brand-gradient-soft: linear-gradient(135deg, #8B5CF6 0%, #DDD6FE 100%);
 }
 
 @theme inline {
@@ -129,6 +135,8 @@
   --color-text-faint: var(--text-faint);
   --color-nav-bg: var(--nav-bg);
   --color-nav-border: var(--nav-border);
+  --background-image-brand-gradient: var(--brand-gradient);
+  --background-image-brand-gradient-soft: var(--brand-gradient-soft);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -192,7 +200,7 @@ body,
 .article-content li > ul,
 .article-content li > ol { margin-top: 0.25rem; margin-bottom: 0.25rem; }
 
-.article-content blockquote { border-left: 3px solid #C8102E; padding-left: 1rem; margin: 1rem 0; font-style: italic; opacity: 0.85; }
+.article-content blockquote { border-left: 3px solid var(--primary); padding-left: 1rem; margin: 1rem 0; font-style: italic; opacity: 0.85; }
 
 .article-content hr { border: none; border-top: 1px solid currentColor; opacity: 0.15; margin: 1.75rem 0; }
 

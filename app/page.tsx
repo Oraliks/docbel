@@ -102,7 +102,7 @@ export default function Home() {
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center py-16">
-        <LoadingView accent="#C8102E" tool={loadingTool} />
+        <LoadingView accent="#7C3AED" tool={loadingTool} />
       </div>
     );
   }
@@ -113,7 +113,7 @@ export default function Home() {
         news={apiNews}
         newsIdx={newsIdx}
         setNewsIdx={setNewsIdx}
-        accent="#C8102E"
+        accent="#7C3AED"
         heroStyle="gradient"
         onArticleClick={handleArticleClick}
         featuredTools={featuredTools}
@@ -128,7 +128,7 @@ export default function Home() {
         setCat={setToolsCat}
         layout={toolsLayout}
         setLayout={setToolsLayout}
-        accent="#C8102E"
+        accent="#7C3AED"
         setOpenTool={handleToolClick}
       />
     </div>

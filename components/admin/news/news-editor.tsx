@@ -114,7 +114,7 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
   const charCount = plainText.length;
 
   // Get selected category color
-  const selectedCategoryColor = categories.find(c => c.name === form.category)?.color || '#C8102E';
+  const selectedCategoryColor = categories.find(c => c.name === form.category)?.color || '#7C3AED';
 
   const tabs = [
     { id: 'content', label: 'Contenu' },

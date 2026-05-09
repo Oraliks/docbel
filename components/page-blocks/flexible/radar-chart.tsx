@@ -46,7 +46,7 @@ export const radarChart = defineBlock({
       { label: 'Vitesse', value: 85 },
       { label: 'Accessibilité', value: 75 },
     ],
-    color: '#C8102E',
+    color: '#7C3AED',
     height: 300,
   },
   meta: {
@@ -57,7 +57,7 @@ export const radarChart = defineBlock({
     shortcuts: ['radar', 'spider'],
   },
   Render: ({ props }) => {
-    const { title, data, color = '#C8102E', height = 300 } = props
+    const { title, data, color = '#7C3AED', height = 300 } = props
     const chartData = data.map((d) => ({ subject: d.label, value: d.value, max: d.max ?? 100 }))
     return (
       <div className="my-2">

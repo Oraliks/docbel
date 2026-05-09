@@ -74,7 +74,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
     >
       <SidebarProvider defaultOpen style={PUBLIC_LAYOUT_STYLE}>
         <Sidebar
-          accent="#C8102E"
+          accent="#7C3AED"
           dark={dark}
           setDark={toggleTheme}
           lang={lang}
@@ -95,7 +95,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
 
         <SidebarInset className="min-h-svh text-foreground">
           <TopBarNav
-            accent="#C8102E"
+            accent="#7C3AED"
             dark={dark}
             setDark={toggleTheme}
             activePage={activePage}
@@ -117,7 +117,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
         </SidebarInset>
 
         {showLoginModal && (
-          <LoginModal onClose={() => setShowLoginModal(false)} accent="#C8102E" />
+          <LoginModal onClose={() => setShowLoginModal(false)} accent="#7C3AED" />
         )}
       </SidebarProvider>
     </AppStateContext.Provider>

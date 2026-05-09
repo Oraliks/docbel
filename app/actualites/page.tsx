@@ -43,7 +43,7 @@ export default async function ActualitesRoute() {
           day: "numeric",
         })
       : "",
-    color: article.color || "#C8102E",
+    color: article.color || "#7C3AED",
     readingTime: article.readingTime ?? undefined,
     popular: article.featured,
     image: article.image ?? undefined,

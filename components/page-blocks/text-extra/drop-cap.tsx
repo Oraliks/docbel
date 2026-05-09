@@ -15,7 +15,7 @@ export const dropCap = defineBlock({
   schema,
   defaults: {
     html: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec eget mauris sed lectus dapibus tincidunt.',
-    capColor: '#C8102E',
+    capColor: '#7C3AED',
   },
   meta: {
     name: 'Lettrine',

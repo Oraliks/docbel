@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { ActivityIcon, FolderIcon, MailIcon, ScrollTextIcon, ChevronRightIcon } from "lucide-react"
 import {
@@ -8,13 +9,18 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
 
 interface NavItem {
   title: string
@@ -29,9 +35,27 @@ interface NavItem {
 const QUICK_LINKS = [
   { label: "Fichiers", url: "/admin?view=filemanager", icon: FolderIcon },
   { label: "Messages", url: "/admin/messages", icon: MailIcon },
-  { label: "Activite", url: "/admin/activity", icon: ActivityIcon },
+  { label: "Activité", url: "/admin/activity", icon: ActivityIcon },
   { label: "Changelog", url: "/admin/changelog", icon: ScrollTextIcon },
 ]
+
+function useIsQuickLinkActive() {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  return (url: string) => {
+    const [basePath, queryString] = url.split("?")
+    if (queryString) {
+      if (pathname !== basePath) return false
+      const params = new URLSearchParams(queryString)
+      for (const [key, value] of params.entries()) {
+        if (searchParams?.get(key) !== value) return false
+      }
+      return true
+    }
+    return pathname === basePath || pathname?.startsWith(`${basePath}/`)
+  }
+}
 
 export function NavMain({
   items,
@@ -41,6 +65,7 @@ export function NavMain({
   unreadCount?: number
 }) {
   const [openItems, setOpenItems] = useState<string[]>([])
+  const isActive = useIsQuickLinkActive()
 
   const toggleItem = (title: string) => {
     setOpenItems((previous) =>
@@ -53,21 +78,45 @@ export function NavMain({
   return (
     <div className="flex flex-col gap-2">
       <SidebarGroup>
-        <SidebarGroupLabel>Acces rapides</SidebarGroupLabel>
+        <SidebarGroupLabel>Accès rapides</SidebarGroupLabel>
         <SidebarGroupContent>
-          <SidebarMenu>
-            {QUICK_LINKS.map((item) => (
-              <SidebarMenuItem key={item.label}>
-                <SidebarMenuButton render={<Link href={item.url} />} tooltip={item.label}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </SidebarMenuButton>
-                {item.label === "Messages" && unreadCount > 0 ? (
-                  <SidebarMenuBadge>{unreadCount > 9 ? "9+" : unreadCount}</SidebarMenuBadge>
-                ) : null}
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
+          <div className="flex items-center gap-1.5 px-1">
+            {QUICK_LINKS.map((item) => {
+              const active = isActive(item.url)
+              const showBadge = item.label === "Messages" && unreadCount > 0
+              return (
+                <Tooltip key={item.label}>
+                  <TooltipTrigger
+                    render={
+                      <Link
+                        href={item.url}
+                        aria-label={item.label}
+                        className={cn(
+                          "relative flex h-9 w-9 items-center justify-center rounded-md text-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                          active &&
+                            "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+                        )}
+                      />
+                    }
+                  >
+                    {active ? (
+                      <span
+                        aria-hidden
+                        className="absolute -left-1 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary"
+                      />
+                    ) : null}
+                    <item.icon className="size-4" />
+                    {showBadge ? (
+                      <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    ) : null}
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{item.label}</TooltipContent>
+                </Tooltip>
+              )
+            })}
+          </div>
         </SidebarGroupContent>
       </SidebarGroup>
 

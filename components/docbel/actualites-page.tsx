@@ -88,7 +88,7 @@ export function ActualitesPage({ onArticleClick, initialArticles }: ActualitesPa
                   day: "numeric",
                 })
               : "",
-            color: article.color || "#C8102E",
+            color: article.color || "#7C3AED",
             readingTime: article.readingTime,
             popular: article.featured || false,
             image: article.image || undefined,

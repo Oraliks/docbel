@@ -31,7 +31,7 @@ export const funnelChart = defineBlock({
       { label: 'Actifs', value: 1200 },
       { label: 'Payants', value: 350 },
     ],
-    color: '#C8102E',
+    color: '#7C3AED',
   },
   meta: {
     name: 'Funnel',
@@ -41,7 +41,7 @@ export const funnelChart = defineBlock({
     shortcuts: ['funnel', 'entonnoir'],
   },
   Render: ({ props }) => {
-    const { title, stages, color = '#C8102E' } = props
+    const { title, stages, color = '#7C3AED' } = props
     const max = Math.max(...stages.map((s) => s.value), 1)
     return (
       <div className="my-2">

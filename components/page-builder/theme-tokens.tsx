@@ -35,8 +35,8 @@ export function ThemeProvider({
 /** Pre-built theme presets that can be applied with a click. */
 export const THEME_PRESETS: { name: string; tokens: ThemeTokens }[] = [
   {
-    name: 'Docbel rouge',
-    tokens: { primary: '#C8102E', accent: '#C8102E' },
+    name: 'Docbel mauve',
+    tokens: { primary: '#7C3AED', accent: '#7C3AED' },
   },
   {
     name: 'Sombre élégant',

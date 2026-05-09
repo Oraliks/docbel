@@ -63,12 +63,12 @@ export default async function ArticleRoute({ params }: RouteParams) {
       month: "short",
       day: "numeric",
     }),
-    color: article.color || "#C8102E",
+    color: article.color || "#7C3AED",
     readingTime: article.readingTime ?? undefined,
     popular: article.featured,
     image: article.image ?? undefined,
     content: article.content,
   };
 
-  return <ArticleView article={newsItem} accent="#C8102E" />;
+  return <ArticleView article={newsItem} accent="#7C3AED" />;
 }

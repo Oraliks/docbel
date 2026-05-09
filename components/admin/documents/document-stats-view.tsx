@@ -127,7 +127,7 @@ export function DocumentStatsView({ totals, allTime, perTemplate, perDay }: Prop
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#C8102E" strokeWidth={2} />
+                <Line type="monotone" dataKey="count" stroke="#7C3AED" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -153,7 +153,7 @@ export function DocumentStatsView({ totals, allTime, perTemplate, perDay }: Prop
                     <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
                     <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11 }} />
                     <Tooltip />
-                    <Bar dataKey="total" fill="#C8102E" />
+                    <Bar dataKey="total" fill="#7C3AED" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

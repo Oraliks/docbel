@@ -38,7 +38,7 @@ export const glassCard = defineBlock({
         style={{
           backgroundImage: bgImage
             ? `url(${bgImage})`
-            : 'linear-gradient(135deg, #C8102E 0%, #3B82F6 100%)',
+            : 'linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}

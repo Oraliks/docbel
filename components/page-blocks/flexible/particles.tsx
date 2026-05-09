@@ -22,7 +22,7 @@ type Props = z.infer<typeof schema>
 export const particles = defineBlock({
   type: 'particles',
   schema,
-  defaults: { count: 40, color: '#C8102E', speed: 'normal' },
+  defaults: { count: 40, color: '#7C3AED', speed: 'normal' },
   meta: {
     name: 'Particules',
     description: 'Fond animé de particules',
@@ -31,7 +31,7 @@ export const particles = defineBlock({
     shortcuts: ['particles'],
   },
   Render: ({ props }) => {
-    const { count = 40, color = '#C8102E', speed = 'normal' } = props
+    const { count = 40, color = '#7C3AED', speed = 'normal' } = props
     const [list] = useState(() =>
       Array.from({ length: count }, () => ({
         x: Math.random() * 100,

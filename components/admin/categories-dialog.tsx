@@ -24,7 +24,7 @@ interface CategoriesDialogProps {
 export function CategoriesDialog({ open, onOpenChange, onCategoriesUpdated }: CategoriesDialogProps) {
   const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState('');
-  const [newColor, setNewColor] = useState('#C8102E');
+  const [newColor, setNewColor] = useState('#7C3AED');
 
   const handleAddCategory = async () => {
     if (!newName.trim()) {
@@ -47,7 +47,7 @@ export function CategoriesDialog({ open, onOpenChange, onCategoriesUpdated }: Ca
 
       await res.json();
       setNewName('');
-      setNewColor('#C8102E');
+      setNewColor('#7C3AED');
       toast.success('Catégorie créée');
       onCategoriesUpdated?.();
       onOpenChange(false);

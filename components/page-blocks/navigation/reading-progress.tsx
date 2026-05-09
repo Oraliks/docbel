@@ -18,7 +18,7 @@ const schema = z.object({
 export const readingProgress = defineBlock({
   type: 'readingProgress',
   schema,
-  defaults: { color: '#C8102E', height: 3 },
+  defaults: { color: '#7C3AED', height: 3 },
   meta: {
     name: 'Barre de lecture',
     description: 'Progression de lecture sticky',
@@ -27,7 +27,7 @@ export const readingProgress = defineBlock({
     shortcuts: ['progress', 'reading'],
   },
   Render: ({ props }) => {
-    const { color = '#C8102E', height = 3 } = props
+    const { color = '#7C3AED', height = 3 } = props
     const [pct, setPct] = useState(0)
     useEffect(() => {
       const onScroll = () => {

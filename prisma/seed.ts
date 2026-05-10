@@ -4,6 +4,7 @@ import u1Data from "../lib/data/u1-institutions-eu.json";
 import { COUNTRY_CODE_MAP } from "../lib/u1-institutions";
 import { seedOrganismes } from "./seeds/organismes";
 import { seedFieldValidationPresets } from "./seeds/field-validation-presets";
+import { seedBureaus } from "./seeds/bureaus";
 
 const prisma = new PrismaClient();
 
@@ -471,6 +472,9 @@ async function main() {
 
   console.log("🌱 Seeding field validation presets...");
   await seedFieldValidationPresets(prisma);
+
+  console.log("🌱 Seeding bureaus (communes, CPAS, ONEM)...");
+  await seedBureaus(prisma);
 }
 
 main()

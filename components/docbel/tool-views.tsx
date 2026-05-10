@@ -14,6 +14,8 @@ import {
 } from "@/lib/notice-periods-spf";
 import { parseDate, formatDate, calculateSeniority, addDaysToDate, isBeforeThreshold, isValidDate } from "@/lib/date-utils";
 import { getCommissionsParitaires, searchCommissions, CommissionParitaire } from "@/lib/data-client";
+import { BureauLocator } from "./bureau-locator";
+import { BureauCallout } from "./bureau-callout";
 
 interface ViewProps {
   accent: string;
@@ -1318,70 +1320,13 @@ export function CalcCP({ accent }: ViewProps) {
 }
 
 export function Locator({ tool, accent }: ToolViewProps) {
-  const [cp, setCp] = useState("");
-  const isOnem = tool.title.includes("ONEM");
-
-  const bureaux = isOnem
-    ? [
-        { nom: "ONEM Bruxelles", addr: "Bd de l'Impératrice 13, 1000 Bruxelles", tel: "02 515 43 11" },
-        { nom: "ONEM Liège", addr: "Place du Général Leman 32, 4020 Liège", tel: "04 340 51 11" },
-        { nom: "ONEM Charleroi", addr: "Rue de Montigny 101, 6000 Charleroi", tel: "071 20 52 11" },
-        { nom: "ONEM Namur", addr: "Rue de Vie 28, 5100 Namur", tel: "081 32 60 11" },
-        { nom: "ONEM Gand", addr: "Jubileumlaan 1, 9000 Gent", tel: "09 265 74 11" },
-        { nom: "ONEM Anvers", addr: "Britselei 25, 2000 Antwerpen", tel: "03 213 60 11" },
-      ]
-    : [
-        { nom: "CAPAC (Caisse Auxiliaire)", addr: "Rue de Trêves 70, 1040 Bruxelles", tel: "02 209 01 11", web: "capac.be" },
-        { nom: "CSC/ACV", addr: "Rue des Archives 33, 1000 Bruxelles", tel: "02 246 31 11", web: "csc-en-ligne.be" },
-        { nom: "CGSLB/ACLVB", addr: "Rue Haute 42, 1000 Bruxelles", tel: "0800 12 111", web: "cgslb.be" },
-        { nom: "FGTB/ABVV", addr: "Rue Haute 42, 1000 Bruxelles", tel: "02 506 82 11", web: "fgtb.be" },
-      ];
-
-  return (
-    <div>
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "var(--foreground)", marginBottom: 6 }}>
-          Votre code postal
-        </label>
-        <input
-          value={cp}
-          onChange={(e) => setCp(e.target.value)}
-          placeholder="ex : 1000"
-          style={{
-            width: "100%",
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1.5px solid var(--border)",
-            background: "var(--input)",
-            color: "var(--foreground)",
-            fontSize: 14,
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            outline: "none",
-          }}
-          onFocus={(e) => (e.target.style.borderColor = accent)}
-          onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-        />
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {bureaux.map((b) => (
-          <div
-            key={b.nom}
-            style={{
-              padding: "14px 16px",
-              borderRadius: 12,
-              background: "var(--surface-2)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--foreground)", marginBottom: 4 }}>{b.nom}</div>
-            <div style={{ fontSize: 12.5, color: "var(--text-muted)", marginBottom: 2 }}>📍 {b.addr}</div>
-            <div style={{ fontSize: 12.5, color: "var(--text-muted)" }}>📞 {b.tel}</div>
-            {"web" in b && b.web && <div style={{ fontSize: 12, color: accent, marginTop: 4 }}>🌐 {b.web}</div>}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  // Le titre détermine le type de bureau initialement mis en avant.
+  const initialType: "ONEM" | "SYNDICAT" | "ALL" = tool.title.includes("ONEM")
+    ? "ONEM"
+    : tool.title.toLowerCase().includes("paiement") || tool.title.toLowerCase().includes("syndicat")
+    ? "SYNDICAT"
+    : "ALL";
+  return <BureauLocator initialFocus={initialType} accent={accent} />;
 }
 
 export function Tutorial({ tool, accent }: ToolViewProps) {
@@ -1880,46 +1825,62 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
       )}
 
       {step === 2 && (
-        <div style={{ textAlign: "center", padding: "20px 0" }}>
-          <div style={{ fontSize: 52, marginBottom: 16 }}>✅</div>
-          <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--foreground)", marginBottom: 8 }}>Document prêt !</h3>
-          <p style={{ fontSize: 13.5, color: "var(--text-muted)", marginBottom: 28 }}>
-            Votre {tool.title.toLowerCase()} a été généré avec succès.
-          </p>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <button
-              style={{
-                padding: "10px 22px",
-                borderRadius: 10,
-                border: `1.5px solid ${accent}`,
-                background: "transparent",
-                color: accent,
-                fontWeight: 700,
-                fontSize: 13.5,
-                cursor: "pointer",
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-              }}
-            >
-              Aperçu PDF
-            </button>
-            <button
-              style={{
-                padding: "10px 22px",
-                borderRadius: 10,
-                border: "none",
-                background: accent,
-                color: "white",
-                fontWeight: 700,
-                fontSize: 13.5,
-                cursor: "pointer",
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-              }}
-            >
-              ↓ Télécharger
-            </button>
+        <div>
+          <div style={{ textAlign: "center", padding: "20px 0" }}>
+            <div style={{ fontSize: 52, marginBottom: 16 }}>✅</div>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--foreground)", marginBottom: 8 }}>Document prêt !</h3>
+            <p style={{ fontSize: 13.5, color: "var(--text-muted)", marginBottom: 28 }}>
+              Votre {tool.title.toLowerCase()} a été généré avec succès.
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+              <button
+                style={{
+                  padding: "10px 22px",
+                  borderRadius: 10,
+                  border: `1.5px solid ${accent}`,
+                  background: "transparent",
+                  color: accent,
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  cursor: "pointer",
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                }}
+              >
+                Aperçu PDF
+              </button>
+              <button
+                style={{
+                  padding: "10px 22px",
+                  borderRadius: 10,
+                  border: "none",
+                  background: accent,
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  cursor: "pointer",
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                }}
+              >
+                ↓ Télécharger
+              </button>
+            </div>
           </div>
+          <BureauCallout organismeCode={inferOrganismeFromTool(tool)} accent={accent} />
         </div>
       )}
     </div>
   );
+}
+
+/** Heuristique pour déduire l'organisme cible d'un outil (FormFlow démo). */
+function inferOrganismeFromTool(tool: Tool): string | null {
+  const t = `${tool.title} ${tool.desc}`.toLowerCase();
+  if (t.includes("cpas") || t.includes("ris") || t.includes("aide sociale") || t.includes("intégration sociale"))
+    return "cpas";
+  if (t.includes("commune") || t.includes("hôtel de ville") || t.includes("état civil"))
+    return "commune";
+  if (t.includes("c4") || t.includes("c1") || t.includes("chômage") || t.includes("onem"))
+    return "onem";
+  if (t.includes("syndicat") || t.includes("paiement") || t.includes("capac")) return "capac";
+  return null;
 }

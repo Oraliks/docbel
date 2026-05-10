@@ -34,6 +34,22 @@ enum OrganismeType {
   other
 }
 
+enum BureauType {
+  CPAS
+  COMMUNE
+  ONEM
+  SYNDICAT
+  PERMANENCE
+  AUTRE
+}
+
+enum BelgianRegion {
+  wallonia
+  flanders
+  brussels
+  germanophone
+}
+
 model User {
   id                  String     @id @default(cuid())
   name                String
@@ -544,6 +560,7 @@ model Organisme {
   updatedAt   DateTime      @updatedAt
 
   templates DocumentTemplate[]
+  bureaus   Bureau[]
 
   @@index([type])
   @@index([active])
@@ -790,4 +807,162 @@ model FormAnalyticsEvent {
   @@index([sessionId])
   @@index([eventType])
   @@index([templateId, eventType, createdAt])
+}
+
+// =====================================================================
+// Bureaux — annuaire des bureaux CPAS / Commune / ONEM / Syndicats
+// =====================================================================
+
+/// Commune belge (fusion 2025) avec son code INS officiel.
+/// Identifiant pivot pour la résolution code postal → bureau attitré.
+model Commune {
+  id        String        @id @default(cuid())
+  insCode   String        @unique // "21001" Anderlecht, "11001" Aartselaar...
+  nameFr    String
+  nameNl    String?
+  nameDe    String?
+  region    BelgianRegion
+  province  String? // "liege", "hainaut", "namur", "luxembourg", "brabant-wallon", "antwerpen"...
+  // Centroïde de la commune pour fallback géoloc et calcul distance par CP
+  lat       Float?
+  lng       Float?
+  // Si fusion ultérieure : redirige vers la nouvelle commune
+  mergedIntoId String?
+  mergedInto   Commune?  @relation("CommuneFusion", fields: [mergedIntoId], references: [id])
+  fusedFrom    Commune[] @relation("CommuneFusion")
+
+  postalCodes PostalCode[]
+  bureaus     Bureau[]              @relation("BureauCommune")
+  assignments BureauAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([region])
+  @@index([nameFr])
+}
+
+/// Code postal belge → commune principale.
+/// Note : un CP partagé entre plusieurs communes pointe sur la commune dominante.
+model PostalCode {
+  code      String  @id // "1000", "4020", etc.
+  communeId String
+  commune   Commune @relation(fields: [communeId], references: [id], onDelete: Cascade)
+
+  @@index([communeId])
+}
+
+/// Bureau physique (CPAS, Maison communale, ONEM, antenne syndicale, permanence).
+/// Pour CPAS/Commune : 1 bureau ↔ 1 commune (communeId rempli).
+/// Pour ONEM : assignment via BureauAssignment (1 bureau dessert N communes).
+/// Pour Syndicat/Permanence : libre choix géographique, communeId optionnel.
+model Bureau {
+  id          String     @id @default(cuid())
+  organismeId String
+  organisme   Organisme  @relation(fields: [organismeId], references: [id])
+  type        BureauType
+  name        String // "CPAS de Saint-Gilles"
+  // Localisation
+  street      String
+  streetNum   String?
+  postalCode  String
+  city        String
+  lat         Float?
+  lng         Float?
+  // Compétence territoriale (pour CPAS/COMMUNE = obligatoire)
+  communeId   String?
+  commune     Commune?   @relation("BureauCommune", fields: [communeId], references: [id])
+  // Contact
+  phone          String?
+  email          String?
+  website        String?
+  appointmentUrl String?
+  // Horaires structurés : [{day: 1, slots: [{open: "09:00", close: "12:00"}, ...]}]
+  // day: 0=dimanche, 1=lundi, ... 6=samedi
+  hours      Json    @default("[]")
+  hoursNotes String?
+  // Services rendus ici (codes libres : "RIS", "aide_juridique", "domiciliation", ...)
+  services   Json    @default("[]")
+  // Méta
+  active     Boolean @default(true)
+  notes      String?
+  // Vérification : pour signaler que les coordonnées sont à jour.
+  verified       Boolean   @default(false)
+  lastVerifiedAt DateTime?
+  verifiedBy     String?
+  // i18n labels optionnels
+  nameNl     String?
+  nameDe     String?
+  updatedBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  assignments BureauAssignment[]
+  revisions   BureauRevision[]
+  reports     BureauReport[]
+
+  @@index([organismeId, type])
+  @@index([type])
+  @@index([communeId])
+  @@index([postalCode])
+  @@index([active])
+  @@index([verified])
+  @@index([lastVerifiedAt])
+}
+
+/// Snapshot d'un bureau avant modification — permet rollback / audit.
+model BureauRevision {
+  id            String   @id @default(cuid())
+  bureauId      String
+  bureau        Bureau   @relation(fields: [bureauId], references: [id], onDelete: Cascade)
+  // Snapshot complet (JSON) du bureau avant la modification
+  snapshot      Json
+  // Diff calculé : { changed: ["phone", "hours"], previous: {...}, current: {...} }
+  diff          Json?
+  changeNotes   String?
+  changedBy     String?
+  createdAt     DateTime @default(now())
+
+  @@index([bureauId, createdAt(sort: Desc)])
+  @@index([changedBy])
+}
+
+/// Signalement public d'erreur sur un bureau (horaires obsolètes, adresse fausse, etc.).
+model BureauReport {
+  id          String   @id @default(cuid())
+  bureauId    String
+  bureau      Bureau   @relation(fields: [bureauId], references: [id], onDelete: Cascade)
+  // Type d'erreur signalée
+  category    String // "hours" | "address" | "phone" | "closed" | "other"
+  message     String
+  // Contact optionnel pour follow-up
+  reporterEmail String?
+  // Métadonnées (pas de PII)
+  ipHash      String?
+  userAgent   String?
+  // Workflow admin
+  status      String   @default("pending") // pending | resolved | dismissed
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  adminNotes  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([bureauId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+}
+
+/// Lie un bureau ONEM à toutes les communes qu'il dessert (compétence territoriale).
+/// serviceType permet d'ajouter d'autres services à l'avenir (ex: "famille").
+model BureauAssignment {
+  bureauId    String
+  communeId   String
+  serviceType String  @default("chomage")
+  bureau      Bureau  @relation(fields: [bureauId], references: [id], onDelete: Cascade)
+  commune     Commune @relation(fields: [communeId], references: [id], onDelete: Cascade)
+
+  @@id([bureauId, communeId, serviceType])
+  @@index([communeId, serviceType])
+  @@index([bureauId])
 }

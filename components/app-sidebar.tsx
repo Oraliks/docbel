@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon, HandshakeIcon } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon, HandshakeIcon, MapPinIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultData = {
@@ -128,6 +128,27 @@ const defaultData = {
         {
           title: "Email d'invitation",
           url: "/admin/partenaires/email",
+        },
+      ],
+    },
+    {
+      title: "Bureaux",
+      url: "/admin/bureaus",
+      icon: (
+        <MapPinIcon className="size-4" />
+      ),
+      items: [
+        {
+          title: "Tous les bureaux",
+          url: "/admin/bureaus",
+        },
+        {
+          title: "Compétences ONEM",
+          url: "/admin/bureaus/onem-assignments",
+        },
+        {
+          title: "Signalements",
+          url: "/admin/bureaus/reports",
         },
       ],
     },

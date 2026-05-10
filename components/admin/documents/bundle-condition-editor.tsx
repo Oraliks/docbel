@@ -126,7 +126,7 @@ export function BundleConditionEditor({
                     value={rule.sourceTemplateId || "__none__"}
                     onValueChange={(v) =>
                       updateRule(idx, {
-                        sourceTemplateId: v === "__none__" ? "" : v,
+                        sourceTemplateId: !v || v === "__none__" ? "" : v,
                         fieldId: "",
                       })
                     }
@@ -145,7 +145,7 @@ export function BundleConditionEditor({
                   <Select
                     value={rule.fieldId || "__none__"}
                     onValueChange={(v) =>
-                      updateRule(idx, { fieldId: v === "__none__" ? "" : v })
+                      updateRule(idx, { fieldId: !v || v === "__none__" ? "" : v })
                     }
                   >
                     <SelectTrigger className="h-8 text-xs w-full">
@@ -200,7 +200,7 @@ export function BundleConditionEditor({
                         <Select
                           value={String(rule.value ?? "__empty__")}
                           onValueChange={(v) =>
-                            updateRule(idx, { value: v === "__empty__" ? "" : v })
+                            updateRule(idx, { value: !v || v === "__empty__" ? "" : v })
                           }
                         >
                           <SelectTrigger className="h-8 text-xs w-full">

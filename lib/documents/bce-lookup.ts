@@ -52,8 +52,14 @@ export async function lookupBCE(rawNumber: string): Promise<BCELookupResult> {
   // 1. KBO public scraping (fragile — accepte que ça échoue silencieusement)
   try {
     const result = await scrapeKboPublic(digits);
-    if (result) {
-      return { ...result, bce: formatted, rawNumber: digits, source: "kbopub" };
+    if (result && result.name) {
+      return {
+        ...result,
+        name: result.name,
+        bce: formatted,
+        rawNumber: digits,
+        source: "kbopub",
+      };
     }
   } catch {
     // Silencieux : on tombe sur le fallback

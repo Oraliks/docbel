@@ -201,7 +201,7 @@ export function ProfilePage({ initial, userName, userEmail }: ProfilePageProps) 
             <Label className="text-xs">Sexe</Label>
             <Select
               value={form.gender || "__none__"}
-              onValueChange={(v) => update("gender", v === "__none__" ? "" : v)}
+              onValueChange={(v) => update("gender", !v || v === "__none__" ? "" : v)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -218,7 +218,7 @@ export function ProfilePage({ initial, userName, userEmail }: ProfilePageProps) 
             <Label className="text-xs">État civil</Label>
             <Select
               value={form.maritalStatus || "__none__"}
-              onValueChange={(v) => update("maritalStatus", v === "__none__" ? "" : v)}
+              onValueChange={(v) => update("maritalStatus", !v || v === "__none__" ? "" : v)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -342,7 +342,7 @@ export function ProfilePage({ initial, userName, userEmail }: ProfilePageProps) 
             <Label className="text-xs">Type de contrat</Label>
             <Select
               value={form.contractType || "__none__"}
-              onValueChange={(v) => update("contractType", v === "__none__" ? "" : v)}
+              onValueChange={(v) => update("contractType", !v || v === "__none__" ? "" : v)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />

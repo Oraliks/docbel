@@ -350,7 +350,7 @@ export function PresetForm({ presetId, initial, builtin = false, usageCount = 0 
                   <Label className="text-xs">Validateur natif belge</Label>
                   <Select
                     value={form.belgianType || "__none__"}
-                    onValueChange={(v) => update("belgianType", v === "__none__" ? "" : v)}
+                    onValueChange={(v) => update("belgianType", !v || v === "__none__" ? "" : v)}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue />
@@ -468,7 +468,7 @@ export function PresetForm({ presetId, initial, builtin = false, usageCount = 0 
                   <Select
                     value={form.crossFieldRuleType || "__none__"}
                     onValueChange={(v) =>
-                      update("crossFieldRuleType", v === "__none__" ? "" : v)
+                      update("crossFieldRuleType", !v || v === "__none__" ? "" : v)
                     }
                   >
                     <SelectTrigger className="w-full">

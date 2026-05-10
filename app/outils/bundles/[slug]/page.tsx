@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { BundleRunner } from "@/components/docbel/bundle-runner";
 import { DocumentField } from "@/lib/documents/types";
+import type { BundleConditionRule } from "@/lib/documents/bundle-conditions";
 
 export const dynamic = "force-dynamic";
 
@@ -78,9 +79,7 @@ export default async function BundleRoute({
       templateId: it.templateId,
       order: it.order,
       required: it.required,
-      condition: it.condition as
-        | { sourceTemplateId: string; fieldId: string; op: string; value?: unknown }[]
-        | null,
+      condition: (it.condition as unknown as BundleConditionRule[] | null) ?? null,
       template: {
         id: it.template.id,
         toolName: it.template.tool.name,

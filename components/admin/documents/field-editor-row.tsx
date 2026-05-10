@@ -186,7 +186,7 @@ export function FieldEditorRow({ field, allFields, presets = [], onChange, onRem
               <div className="flex gap-2">
                 <Select
                   value={field.presetId || "__none__"}
-                  onValueChange={(v) => applyPreset(v === "__none__" ? null : v)}
+                  onValueChange={(v) => applyPreset(!v || v === "__none__" ? null : v)}
                 >
                   <SelectTrigger className="h-9 flex-1">
                     <SelectValue placeholder="Choisir un preset…" />

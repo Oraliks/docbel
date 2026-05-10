@@ -158,7 +158,7 @@ export function CompareSourceView({ toolId, toolName, currentFile, otherPdfs }: 
       {/* Sélecteur du PDF de comparaison */}
       <div className="flex items-center gap-3 flex-wrap">
         <span className="text-sm font-medium">Comparer avec :</span>
-        <Select value={comparisonId || "__none__"} onValueChange={(v) => setComparisonId(v === "__none__" ? null : v)}>
+        <Select value={comparisonId || "__none__"} onValueChange={(v) => setComparisonId(!v || v === "__none__" ? null : v)}>
           <SelectTrigger className="w-auto min-w-[280px]">
             <SelectValue placeholder="Choisir un PDF…" />
           </SelectTrigger>

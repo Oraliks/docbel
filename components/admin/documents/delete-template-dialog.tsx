@@ -73,14 +73,9 @@ export function DeleteTemplateDialog({
             <AlertTriangle className="w-5 h-5" />
             Suppression définitive
           </AlertDialogTitle>
-          <AlertDialogDescription asChild>
-            <div className="space-y-2">
-              <p>
-                Vous êtes sur le point de supprimer définitivement le template{" "}
-                <b>{templateName}</b>.
-              </p>
-              <p className="text-xs">Cette action est <b>irréversible</b>.</p>
-            </div>
+          <AlertDialogDescription>
+            Vous êtes sur le point de supprimer définitivement le template{" "}
+            <b>{templateName}</b>. Cette action est <b>irréversible</b>.
           </AlertDialogDescription>
         </AlertDialogHeader>
 

@@ -37,24 +37,33 @@ export function ChangelogExpandable({
   accent = "var(--glass-accent-deep)",
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
-  // On démarre PESSIMISTE : tant que le client n'a pas mesuré, on suppose
-  // que le contenu déborde — ça évite le FOUC où le serveur rend la card
-  // dépliée puis le client la replie après hydratation. Pour les entrées
-  // courtes, la mesure JS désactive ensuite le pli (et masque le bouton).
-  const [overflow, setOverflow] = useState(true);
+  // Trois états — séparer la mesure du résultat permet de :
+  //   1) Couper par défaut (pas de FOUC qui déplie tout sur les longues)
+  //   2) Ne PAS afficher le bouton avant d'avoir confirmé le débordement
+  //      (sinon les cards courtes voient un bouton apparaître/disparaître)
+  const [measured, setMeasured] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const measure = () => setOverflow(el.scrollHeight > collapsedHeight + 8);
+    const measure = () => {
+      setHasOverflow(el.scrollHeight > collapsedHeight + 8);
+      setMeasured(true);
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
   }, [children, collapsedHeight]);
 
-  const isClipped = overflow && !expanded;
+  // - Avant mesure : on coupe (safe default, évite le flash sur les longues).
+  // - Après mesure : on ne coupe que si le contenu déborde réellement,
+  //   sauf si l'utilisateur a explicitement déplié.
+  const isClipped = (!measured || hasOverflow) && !expanded;
+  // Bouton montré uniquement quand la mesure confirme le débordement.
+  const showButton = measured && hasOverflow;
 
   return (
     <div className="relative">
@@ -85,7 +94,7 @@ export function ChangelogExpandable({
       </div>
 
       {/* Bouton plein-largeur, edge-to-edge avec la card */}
-      {overflow && (
+      {showButton && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}

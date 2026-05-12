@@ -678,3 +678,43 @@ body,
   height: 0;
   pointer-events: none;
 }
+
+/* ============================================================
+   .acronym-tip — glossaire des sigles administratifs
+   ------------------------------------------------------------
+   Produit par `enrichHtmlWithAcronyms` (lib/acronyms-html.ts)
+   sur le contenu rich-text des actualités et des blocs de page.
+   Le <abbr> garde son `title` natif → tooltip navigateur de
+   secours si jamais le JS plante. On le décore d'un soulignement
+   pointillé violet pour signaler la possibilité d'interaction.
+   ============================================================ */
+.acronym-tip {
+  font-style: inherit; /* Chrome/Firefox italicise <abbr> par défaut. */
+  font-variant: inherit;
+  cursor: help;
+  text-decoration: underline dotted 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklab, var(--glass-accent-deep) 55%, transparent);
+  outline: none;
+  border-radius: 2px;
+  transition: text-decoration-color 120ms ease, background-color 120ms ease;
+}
+
+.acronym-tip:hover,
+.acronym-tip:focus-visible {
+  text-decoration-color: var(--glass-accent-deep);
+  text-decoration-thickness: 2px;
+  background-color: color-mix(in oklab, var(--glass-accent-deep) 8%, transparent);
+}
+
+/* Quand on est en dehors d'un .glass-root (admin par exemple), on
+   retombe sur les tokens shadcn pour ne pas peindre du violet sur
+   une UI grise. */
+:not(.glass-root) .acronym-tip {
+  text-decoration-color: color-mix(in oklab, var(--primary) 50%, transparent);
+}
+:not(.glass-root) .acronym-tip:hover,
+:not(.glass-root) .acronym-tip:focus-visible {
+  text-decoration-color: var(--primary);
+  background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+}

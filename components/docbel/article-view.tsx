@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { ArrowLeftIcon, CalendarIcon, ClockIcon } from "lucide-react";
 import type { NewsItem } from "@/lib/docbel-data";
+import { enrichHtmlWithAcronyms } from "@/lib/acronyms-html";
 
 interface ArticleViewProps {
   article: NewsItem;
@@ -13,6 +15,13 @@ interface ArticleViewProps {
 
 export function ArticleView({ article }: ArticleViewProps) {
   const router = useRouter();
+  // Enrichit l'HTML rich-text avec les <abbr> du glossaire. Mémoïsé
+  // pour ne pas re-tokeniser à chaque re-render (le contenu d'un
+  // article ne change pas pendant la vie de la page).
+  const enrichedContent = useMemo(
+    () => (article.content ? enrichHtmlWithAcronyms(article.content) : ""),
+    [article.content],
+  );
 
   return (
     <article className="flex flex-col gap-6">
@@ -78,7 +87,7 @@ export function ArticleView({ article }: ArticleViewProps) {
           <div
             className="prose prose-neutral max-w-3xl text-[15.5px] leading-[1.7] [&_a]:font-semibold [&_a]:text-[color:var(--glass-accent-deep)] [&_h2]:glass-display [&_h2]:mt-8 [&_h2]:text-[26px] [&_h2]:font-semibold [&_h3]:glass-display [&_h3]:mt-6 [&_h3]:text-[20px] [&_h3]:font-semibold [&_p]:mt-4 [&_strong]:text-[color:var(--glass-ink)] dark:prose-invert"
             style={{ color: "var(--glass-ink)" }}
-            dangerouslySetInnerHTML={{ __html: article.content }}
+            dangerouslySetInnerHTML={{ __html: enrichedContent }}
           />
         </div>
       ) : (

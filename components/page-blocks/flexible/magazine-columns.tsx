@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { enrichHtmlWithAcronyms } from '@/lib/acronyms-html'
 import { cn } from '@/lib/utils'
 
 const schema = z.object({
@@ -49,7 +50,7 @@ export const magazineColumns = defineBlock({
           COLS[columns],
           GAP[gap]
         )}
-        dangerouslySetInnerHTML={{ __html: html }}
+        dangerouslySetInnerHTML={{ __html: enrichHtmlWithAcronyms(html) }}
       />
     )
   },

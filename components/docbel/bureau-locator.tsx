@@ -15,9 +15,10 @@ import {
 } from "lucide-react";
 import type { SerializedBureau } from "@/lib/bureaus/types";
 import type { ResolveResult } from "@/lib/bureaus/resolve";
+import type { AddressSuggestion } from "@/app/api/geocode/suggest/route";
 import { cn } from "@/lib/utils";
 import { BureauCard, BureauCardSkeleton } from "./bureau-card";
-import { WizardDialog } from "./bureau-wizard";
+import { WizardPanel } from "./bureau-wizard";
 
 const BureauMap = dynamic(() => import("./bureau-map").then((m) => m.BureauMap), {
   ssr: false,
@@ -40,6 +41,14 @@ type UserPrefs = {
   mutuelleCode: string | null;
 };
 
+// Détecte si une chaîne ressemble à une adresse (a un chiffre OU un mot-clé voirie)
+const ADDRESS_KEYWORDS = /\b(rue|avenue|chauss[ée]e|boulevard|place|chemin|impasse|allée|square|quai|drève|straat|laan|weg|plein|steenweg)\b/i;
+function looksLikeAddress(s: string): boolean {
+  if (s.length < 4) return false;
+  if (/^\d{4}$/.test(s)) return false; // CP pur → on ne géocode pas
+  return /\d/.test(s) || ADDRESS_KEYWORDS.test(s);
+}
+
 export function BureauLocator({ accent }: Props) {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -52,6 +61,9 @@ export function BureauLocator({ accent }: Props) {
   const [geoBusy, setGeoBusy] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
+  const [addrSuggestions, setAddrSuggestions] = useState<AddressSuggestion[]>([]);
+  const [addrLoading, setAddrLoading] = useState(false);
+  const [addrFocused, setAddrFocused] = useState(false);
   const [prefs, setPrefs] = useState<UserPrefs>({
     postalCode: null,
     organismePaiement: null,
@@ -60,6 +72,7 @@ export function BureauLocator({ accent }: Props) {
   });
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsBoxRef = useRef<HTMLDivElement>(null);
 
   // Détection : 4 chiffres → CP, sinon texte
   const isPostalCode = /^\d{4}$/.test(debouncedQuery.trim());
@@ -134,7 +147,7 @@ export function BureauLocator({ accent }: Props) {
     }
   }, [debouncedQuery, isPostalCode, fetchResolve, prefs]);
 
-  // Recherche libre par texte
+  // Recherche libre par texte (sur les bureaux)
   useEffect(() => {
     let cancelled = false;
     if (!textQuery) {
@@ -157,7 +170,50 @@ export function BureauLocator({ accent }: Props) {
     };
   }, [textQuery]);
 
-  // Retire une préférence (UI + persist au profil)
+  // Suggestions d'adresses BE — seulement si la query ressemble à une adresse
+  useEffect(() => {
+    let cancelled = false;
+    const q = debouncedQuery.trim();
+    if (!looksLikeAddress(q)) {
+      setAddrSuggestions([]);
+      return;
+    }
+    setAddrLoading(true);
+    fetch(`/api/geocode/suggest?q=${encodeURIComponent(q)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled || !j) return;
+        setAddrSuggestions(Array.isArray(j.items) ? j.items : []);
+      })
+      .catch(() => {
+        if (!cancelled) setAddrSuggestions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setAddrLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedQuery]);
+
+  // Fermer la liste si on clique en dehors
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      const target = e.target as Node;
+      if (
+        suggestionsBoxRef.current &&
+        !suggestionsBoxRef.current.contains(target) &&
+        inputRef.current &&
+        !inputRef.current.contains(target)
+      ) {
+        setAddrFocused(false);
+      }
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  // Retire une préférence
   const clearPref = useCallback((key: keyof UserPrefs) => {
     setPrefs((p) => ({ ...p, [key]: null }));
     fetch("/api/user/profile", {
@@ -203,6 +259,16 @@ export function BureauLocator({ accent }: Props) {
     );
   }, []);
 
+  const pickSuggestion = useCallback((s: AddressSuggestion) => {
+    if (s.postcode && /^\d{4}$/.test(s.postcode)) {
+      setQuery(s.postcode);
+      setDebouncedQuery(s.postcode);
+      setAddrSuggestions([]);
+      setAddrFocused(false);
+      inputRef.current?.blur();
+    }
+  }, []);
+
   // Liste agrégée pour la carte
   const allBureaus = useMemo(() => {
     if (isPostalCode && data) {
@@ -216,7 +282,6 @@ export function BureauLocator({ accent }: Props) {
       res.push(...data.proximite.syndicats);
       res.push(...data.proximite.permanences);
       res.push(...data.proximite.autres);
-      // dédupe
       return Array.from(new Map(res.map((b) => [b.id, b])).values());
     }
     return textResults;
@@ -224,6 +289,22 @@ export function BureauLocator({ accent }: Props) {
 
   const hasResults = (isPostalCode && data) || textResults.length > 0;
   const isInitial = !debouncedQuery && !loading && !textLoading;
+  const showSuggestions = addrFocused && (addrSuggestions.length > 0 || addrLoading);
+
+  // Si wizard ouvert → on l'affiche seul (full focus). Pas de hero, pas de search, pas de results.
+  if (wizardOpen) {
+    return (
+      <div className="flex flex-col gap-4">
+        <WizardPanel
+          accent={accent}
+          initialPostalCode={prefs.postalCode ?? (isPostalCode ? debouncedQuery : "")}
+          initialOrganismePaiement={prefs.organismePaiement}
+          initialCommissionCode={prefs.commissionParitaireCode}
+          onClose={() => setWizardOpen(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -234,13 +315,12 @@ export function BureauLocator({ accent }: Props) {
           onWizard={() => setWizardOpen(true)}
           onExpandSearch={() => {
             setSearchExpanded(true);
-            // Focus l'input après expansion
             setTimeout(() => inputRef.current?.focus(), 50);
           }}
         />
       )}
 
-      {/* Header : input unifié + wizard CTA + géoloc (mode actif) */}
+      {/* Header : input unifié + wizard CTA + géoloc */}
       <div
         className={cn(
           "flex flex-col gap-2",
@@ -257,13 +337,18 @@ export function BureauLocator({ accent }: Props) {
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Code postal (ex : 1000) ou nom de bureau (ex : FGTB Mons)"
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = accent;
+                setAddrFocused(true);
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = "var(--border)";
+              }}
+              placeholder="Adresse, code postal, ou nom de bureau"
               className="w-full pl-10 pr-9 py-3 rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--input)] text-[var(--foreground)] text-sm outline-none transition-colors"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = accent)}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
             />
-            {query && !loading && !textLoading && (
+            {query && !loading && !textLoading && !addrLoading && (
               <button
                 type="button"
                 onClick={() => {
@@ -271,17 +356,64 @@ export function BureauLocator({ accent }: Props) {
                   setDebouncedQuery("");
                   setData(null);
                   setTextResults([]);
+                  setAddrSuggestions([]);
                 }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--foreground)]"
               >
                 <X size={14} />
               </button>
             )}
-            {(loading || textLoading) && (
+            {(loading || textLoading || addrLoading) && (
               <Loader2
                 size={16}
                 className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[var(--text-muted)]"
               />
+            )}
+
+            {/* Dropdown suggestions d'adresses BE */}
+            {showSuggestions && (
+              <div
+                ref={suggestionsBoxRef}
+                className="absolute z-30 top-full left-0 right-0 mt-1.5 rounded-xl border border-[var(--border)] bg-[var(--popover)] text-[var(--popover-foreground)] shadow-lg ring-1 ring-foreground/5 overflow-hidden"
+              >
+                <div className="px-3 py-2 text-[11px] uppercase tracking-wide font-bold text-[var(--text-muted)] border-b border-[var(--border)]/60 flex items-center gap-1.5">
+                  <MapPin size={11} style={{ color: accent }} />
+                  Adresses en Belgique
+                </div>
+                {addrLoading && addrSuggestions.length === 0 && (
+                  <div className="px-3 py-3 text-xs text-[var(--text-muted)] flex items-center gap-2">
+                    <Loader2 size={12} className="animate-spin" /> Recherche…
+                  </div>
+                )}
+                {addrSuggestions.map((s, i) => (
+                  <button
+                    key={`${s.lat}-${s.lng}-${i}`}
+                    type="button"
+                    onMouseDown={(e) => {
+                      // Empêche le blur de l'input avant le clic
+                      e.preventDefault();
+                    }}
+                    onClick={() => pickSuggestion(s)}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] transition-colors flex items-center gap-2 border-b border-[var(--border)]/40 last:border-b-0"
+                  >
+                    <MapPin size={13} className="text-[var(--text-muted)] shrink-0" />
+                    <span className="flex-1 min-w-0 truncate">{s.label}</span>
+                    {s.postcode && (
+                      <span
+                        className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0"
+                        style={{ background: `${accent}18`, color: accent }}
+                      >
+                        CP {s.postcode}
+                      </span>
+                    )}
+                  </button>
+                ))}
+                {!addrLoading && addrSuggestions.length === 0 && (
+                  <div className="px-3 py-3 text-xs text-[var(--text-muted)]">
+                    Aucune adresse trouvée en Belgique.
+                  </div>
+                )}
+              </div>
             )}
           </div>
           <button
@@ -328,7 +460,7 @@ export function BureauLocator({ accent }: Props) {
           </button>
         </div>
 
-        {/* Strip de contexte : commune (auto) + prefs (chips clearable) */}
+        {/* Strip de contexte : commune + prefs */}
         {(data?.commune ||
           prefs.organismePaiement ||
           prefs.commissionParitaireCode ||
@@ -537,8 +669,6 @@ export function BureauLocator({ accent }: Props) {
               )}
             </>
           )}
-
-          {/* État initial déjà géré en haut par <HeroInitial /> quand le hero est visible */}
         </div>
 
         {/* Colonne carte (desktop) */}
@@ -583,15 +713,6 @@ export function BureauLocator({ accent }: Props) {
           )}
         </div>
       )}
-
-      <WizardDialog
-        open={wizardOpen}
-        onOpenChange={setWizardOpen}
-        accent={accent}
-        initialPostalCode={prefs.postalCode ?? ""}
-        initialOrganismePaiement={prefs.organismePaiement}
-        initialCommissionCode={prefs.commissionParitaireCode}
-      />
     </div>
   );
 }
@@ -652,7 +773,8 @@ function NoResultEmpty() {
       <div className="text-4xl mb-2">🔍</div>
       <div className="font-semibold text-[var(--foreground)] mb-1">Aucun bureau trouvé</div>
       <div className="text-xs text-[var(--text-muted)]">
-        Essayez un autre code postal ou un nom de bureau (ex : <em>CPAS Liège</em>, <em>FGTB Mons</em>).
+        Essayez un autre code postal, votre adresse, ou un nom de bureau (ex : <em>CPAS Liège</em>,{" "}
+        <em>FGTB Mons</em>).
       </div>
     </div>
   );
@@ -702,7 +824,7 @@ function HeroInitial({
           className="text-xs text-[var(--text-muted)] hover:text-[var(--foreground)] underline-offset-2 hover:underline inline-flex items-center gap-1"
         >
           <Search size={11} />
-          Ou je préfère chercher directement (CP, nom de bureau…)
+          Ou je préfère chercher directement (adresse, CP, nom de bureau…)
         </button>
       </div>
     </div>

@@ -33,6 +33,12 @@ export interface Tool {
   time: string;
   type: string;
   audiences: AudienceId[];
+  /**
+   * URL slug optionnel. Si absent, slug auto-dérivé depuis `title`
+   * (cf. `toolSlug`). À utiliser pour fixer une URL stable, ex :
+   * `/outils/bureaux` plutôt que `/outils/trouver-un-bureau-onem`.
+   */
+  slug?: string;
 }
 
 export const TOOLS_DATA: Tool[] = [
@@ -42,8 +48,7 @@ export const TOOLS_DATA: Tool[] = [
   { id: 6, cat: "Calculs", icon: "🧮", title: "Calculateur de préavis", desc: "Calculez votre délai de préavis légal en fonction de votre ancienneté, statut et date d'entrée en service.", popular: true, time: "2 min", type: "calc_preavis", audiences: ["citoyen", "employeur"] },
   { id: 7, cat: "Calculs", icon: "💶", title: "Calcul AGR", desc: "Estimez votre Allocation de Garantie de Revenu (AGR) pour les travailleurs à temps partiel involontaire.", popular: true, time: "3 min", type: "calc_agr", audiences: ["citoyen"] },
   { id: 8, cat: "Calculs", icon: "💼", title: "Salaire minimum par CP", desc: "Consultez le salaire minimum garanti par commission paritaire (CP) pour votre secteur d'activité.", popular: false, time: "1 min", type: "calc_cp", audiences: ["citoyen", "employeur", "partenaire"] },
-  { id: 12, cat: "Organismes", icon: "🏛️", title: "Trouver un bureau ONEM", desc: "Localisez le bureau régional ONEM compétent pour votre commune et consultez ses coordonnées.", popular: true, time: "1 min", type: "locator", audiences: ["citoyen", "partenaire"] },
-  { id: 13, cat: "Organismes", icon: "🏦", title: "Organisme de paiement", desc: "Trouvez les coordonnées de votre caisse (CAPAC, CSC/ACV, CGSLB/ACLVB, FGTB/ABVV) selon votre profil.", popular: true, time: "1 min", type: "locator", audiences: ["citoyen", "partenaire"] },
+  { id: 12, cat: "Organismes", icon: "🗺️", title: "Trouver un bureau", desc: "CPAS, Commune, ONEM, organismes de paiement, syndicats : trouvez d'un coup le bureau compétent pour votre situation, partout en Belgique.", popular: true, time: "1 min", type: "locator", slug: "bureaux", audiences: ["citoyen", "employeur", "partenaire"] },
   { id: 19, cat: "CPAS", icon: "🏠", title: "Demande d'aide sociale", desc: "Formulaire de demande d'aide sociale (revenu d'intégration sociale) auprès du CPAS de votre commune.", popular: true, time: "10 min", type: "form", audiences: ["citoyen", "partenaire"] },
   { id: 23, cat: "Tutoriels", icon: "🃏", title: "Envoyer sa carte électronique C", desc: "Guide pas à pas pour envoyer votre carte de contrôle C via MyONEM ou chez votre organisme de paiement.", popular: true, time: "3 min", type: "tutorial", audiences: ["citoyen"] },
 ];
@@ -65,11 +70,11 @@ export function toolSlug(title: string): string {
 }
 
 export function getToolBySlug(slug: string): Tool | undefined {
-  return TOOLS_DATA.find((t) => toolSlug(t.title) === slug);
+  return TOOLS_DATA.find((t) => (t.slug ?? toolSlug(t.title)) === slug);
 }
 
 export function getToolSlug(tool: Tool): string {
-  return toolSlug(tool.title);
+  return tool.slug ?? toolSlug(tool.title);
 }
 
 export const LANGS = ["FR", "NL", "DE", "EN"];

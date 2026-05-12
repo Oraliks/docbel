@@ -314,12 +314,13 @@ async function main() {
     },
     {
       sectionId: chomageSection.id,
-      name: "Localiser une antenne ONEM",
-      slug: "localiser-onem",
-      description: "Trouvez l'adresse de l'antenne ONEM la plus proche",
+      name: "Trouver un bureau",
+      slug: "bureaux",
+      description:
+        "CPAS, Commune, ONEM, organismes de paiement, syndicats : un seul outil pour tout trouver, partout en Belgique.",
       type: "locator",
       icon: "🗺️",
-      popular: false,
+      popular: true,
       timeMin: 2,
       order: 4,
     },

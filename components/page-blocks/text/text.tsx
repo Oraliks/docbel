@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RichTextInput } from '@/components/page-builder/inspector/rich-text-input'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { enrichHtmlWithAcronyms } from '@/lib/acronyms-html'
 import { cn } from '@/lib/utils'
 
 const schema = z.object({
@@ -38,7 +39,7 @@ export const text = defineBlock({
   Render: ({ props }) => (
     <div
       className={cn('prose-tight max-w-none', VARIANT_CLASS[props.variant ?? 'default'])}
-      dangerouslySetInnerHTML={{ __html: props.html }}
+      dangerouslySetInnerHTML={{ __html: enrichHtmlWithAcronyms(props.html) }}
     />
   ),
   Fields: ({ props, onChange }) => (

@@ -7,6 +7,7 @@ import { useVersionCheck } from "@/hooks/useVersionCheck";
 export function VersionWatcher() {
   const handleNewVersion = useCallback(() => {
     toast.info("Nouvelle version disponible", {
+      id: "app-version-update",
       description: "Rechargez la page pour profiter des dernières améliorations.",
       duration: Infinity,
       action: {

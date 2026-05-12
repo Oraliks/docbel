@@ -88,7 +88,6 @@ export function ThemeProvider({
     }
 
     root.style.colorScheme = theme
-    window.localStorage.setItem(STORAGE_KEY, theme)
 
     if (killSwitch) {
       // Force a reflow so the style change above is committed before we

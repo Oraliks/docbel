@@ -9,7 +9,8 @@ export function VersionWatcher() {
     toast.info("Nouvelle version disponible", {
       id: "app-version-update",
       description: "Rechargez la page pour profiter des dernières améliorations.",
-      duration: Infinity,
+      duration: 1000 * 60 * 60 * 24,
+      dismissible: true,
       action: {
         label: "Recharger",
         onClick: () => window.location.reload(),

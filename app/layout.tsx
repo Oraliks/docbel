@@ -49,6 +49,13 @@ export default function RootLayout({
       className={`${plusJakarta.variable} ${fraunces.variable} ${manrope.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('docbel-theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}else{document.documentElement.style.colorScheme='light';}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full bg-background text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
           <AppLayoutClient>{children}</AppLayoutClient>

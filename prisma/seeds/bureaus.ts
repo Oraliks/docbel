@@ -2,6 +2,7 @@ import { PrismaClient, Prisma, BelgianRegion, BureauType } from "@prisma/client"
 import { COMMUNES_SEED } from "../../lib/data/communes-belges";
 import { ALL_BUREAU_SEEDS } from "../../lib/data/bureaus-seed";
 import { SYNDICATS_SEED, PERMANENCES_SEED } from "../../lib/data/bureaus-seed-syndicats";
+import { ALL_EXTENDED_SEEDS } from "../../lib/data/bureaus-seed-extended";
 
 export async function seedBureaus(prisma: PrismaClient) {
   let communesCreated = 0;
@@ -79,7 +80,12 @@ export async function seedBureaus(prisma: PrismaClient) {
   const orgs = await prisma.organisme.findMany();
   const orgByCode = new Map(orgs.map((o) => [o.code, o]));
 
-  const allSeeds = [...ALL_BUREAU_SEEDS, ...SYNDICATS_SEED, ...PERMANENCES_SEED];
+  const allSeeds = [
+    ...ALL_BUREAU_SEEDS,
+    ...SYNDICATS_SEED,
+    ...PERMANENCES_SEED,
+    ...ALL_EXTENDED_SEEDS,
+  ];
 
   // Index existant pour idempotence
   const existing = await prisma.bureau.findMany({

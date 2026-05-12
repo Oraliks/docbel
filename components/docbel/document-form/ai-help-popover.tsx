@@ -1,11 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Send, Loader2, X } from "lucide-react";
+import {
+  Loader2Icon,
+  SendIcon,
+  SparklesIcon,
+  XIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Lang } from "@/lib/documents/types";
+import { GLASS_INPUT, GLASS_PRIMARY_STYLE } from "@/lib/glass-classes";
 
 interface AIHelpPopoverProps {
   templateName: string;
@@ -74,43 +84,48 @@ export function AIHelpPopover({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex items-center justify-center w-5 h-5 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-          title={lang === "nl" ? "AI-hulp" : "Aide IA"}
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-        </button>
+      <PopoverTrigger
+        className="inline-flex size-5 items-center justify-center rounded-full text-[color:var(--glass-ink-faint)] transition-colors hover:bg-[color:var(--glass-surface)] hover:text-[color:var(--glass-accent-deep)]"
+        title={lang === "nl" ? "AI-hulp" : "Aide IA"}
+      >
+        <SparklesIcon className="size-3.5" />
       </PopoverTrigger>
       <PopoverContent className="w-96 p-0" align="end" sideOffset={4}>
-        <div className="border-b p-3 flex items-center justify-between">
+        <div
+          className="flex items-center justify-between border-b p-3"
+          style={{ borderBottomColor: "var(--glass-ink-line)" }}
+        >
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">
+            <SparklesIcon
+              className="size-4"
+              style={{ color: "var(--glass-accent-deep)" }}
+            />
+            <span className="text-[13px] font-bold text-[color:var(--glass-ink)]">
               {lang === "nl" ? "AI-hulp" : "Aide IA"}
             </span>
           </div>
-          {conversation.length > 0 && (
+          {conversation.length > 0 ? (
             <button
               onClick={reset}
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="text-[11.5px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
             >
               {lang === "nl" ? "Wissen" : "Effacer"}
             </button>
-          )}
+          ) : null}
         </div>
 
-        <div className="p-3 space-y-3 max-h-[60vh] overflow-y-auto">
-          {fieldLabel && (
-            <div className="text-xs text-muted-foreground">
+        <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto p-3">
+          {fieldLabel ? (
+            <div className="text-[11.5px] text-[color:var(--glass-ink-soft)]">
               {lang === "nl" ? "Vraag over " : "Question sur "}
-              <span className="font-medium text-foreground">« {fieldLabel} »</span>
+              <span className="font-semibold text-[color:var(--glass-ink)]">
+                « {fieldLabel} »
+              </span>
             </div>
-          )}
+          ) : null}
 
-          {conversation.length === 0 && (
-            <div className="text-xs text-muted-foreground space-y-1.5">
+          {conversation.length === 0 ? (
+            <div className="flex flex-col gap-1.5 text-[12px] text-[color:var(--glass-ink-soft)]">
               <p>
                 {lang === "nl"
                   ? "Stel een vraag over dit veld of dit document."
@@ -122,18 +137,22 @@ export function AIHelpPopover({
                   : "Ex : « Quelle différence entre brut et net ? »"}
               </p>
             </div>
-          )}
+          ) : null}
 
           {conversation.map((turn, idx) => (
             <div
               key={idx}
-              className={`text-sm ${
-                turn.role === "user"
-                  ? "bg-primary/10 ml-6 p-2 rounded-md"
-                  : "bg-muted mr-6 p-2 rounded-md"
-              }`}
+              className="rounded-2xl p-3 text-[13px]"
+              style={{
+                background:
+                  turn.role === "user"
+                    ? "rgba(159, 124, 255, 0.14)"
+                    : "var(--glass-surface)",
+                marginLeft: turn.role === "user" ? "1.5rem" : 0,
+                marginRight: turn.role === "user" ? 0 : "1.5rem",
+              }}
             >
-              <div className="text-[10px] uppercase font-medium text-muted-foreground mb-1">
+              <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.05em] text-[color:var(--glass-ink-faint)]">
                 {turn.role === "user"
                   ? lang === "nl"
                     ? "U"
@@ -141,7 +160,7 @@ export function AIHelpPopover({
                   : "IA"}
               </div>
               <div
-                className="whitespace-pre-wrap"
+                className="whitespace-pre-wrap text-[color:var(--glass-ink)]"
                 dangerouslySetInnerHTML={{
                   __html: turn.text
                     .replace(/&/g, "&amp;")
@@ -153,28 +172,39 @@ export function AIHelpPopover({
             </div>
           ))}
 
-          {loading && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" />
+          {loading ? (
+            <div className="flex items-center gap-2 text-[13px] text-[color:var(--glass-ink-soft)]">
+              <Loader2Icon className="size-4 animate-spin" />
               {lang === "nl" ? "Aan het denken…" : "Réflexion…"}
             </div>
-          )}
+          ) : null}
 
-          {error && (
-            <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+          {error ? (
+            <div
+              className="rounded-2xl p-2 text-[12px]"
+              style={{
+                background: "rgba(220, 80, 100, 0.12)",
+                color: "#b8324a",
+              }}
+            >
               {error}
             </div>
-          )}
+          ) : null}
         </div>
 
-        <div className="border-t p-2 flex gap-2">
+        <div
+          className="flex gap-2 border-t p-2"
+          style={{ borderTopColor: "var(--glass-ink-line)" }}
+        >
           <Textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder={lang === "nl" ? "Stel uw vraag…" : "Posez votre question…"}
+            placeholder={
+              lang === "nl" ? "Stel uw vraag…" : "Posez votre question…"
+            }
             rows={2}
             maxLength={500}
-            className="text-sm min-h-0"
+            className={`${GLASS_INPUT} min-h-0 text-[13px]`}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -189,21 +219,24 @@ export function AIHelpPopover({
               size="sm"
               onClick={ask}
               disabled={loading || !question.trim()}
+              className="rounded-full"
+              style={GLASS_PRIMARY_STYLE}
             >
-              <Send className="w-4 h-4" />
+              <SendIcon className="size-4" />
             </Button>
             <Button
               type="button"
               size="sm"
               variant="ghost"
               onClick={() => setOpen(false)}
+              className="rounded-full text-[color:var(--glass-ink-soft)] hover:bg-[color:var(--glass-surface)]"
             >
-              <X className="w-4 h-4" />
+              <XIcon className="size-4" />
             </Button>
           </div>
         </div>
 
-        <div className="px-3 pb-2 text-[10px] text-muted-foreground">
+        <div className="px-3 pb-2 text-[10px] text-[color:var(--glass-ink-faint)]">
           {lang === "nl"
             ? "AI kan fouten maken. Controleer belangrijke informatie."
             : "L'IA peut se tromper. Vérifiez les informations importantes."}

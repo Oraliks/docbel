@@ -5,12 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { ArrowLeftIcon, Save, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  SaveIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { authClient } from "@/lib/auth-client";
 import { DocumentField, GenerationPayload, Lang, getFieldLabel } from "@/lib/documents/types";
+import { GLASS_CARD, GLASS_PRIMARY_STYLE } from "@/lib/glass-classes";
 import { isFieldVisible } from "@/lib/documents/schema-zod";
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
 import { RgpdConsent } from "./rgpd-consent";
@@ -430,10 +435,19 @@ export function DocumentForm({ slug }: DocumentFormProps) {
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <p className="text-destructive">{error}</p>
-          <Button render={<Link href="/" />} className="mt-4" variant="outline">
+      <Card className={GLASS_CARD}>
+        <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+          <p
+            className="font-semibold"
+            style={{ color: "#b8324a" }}
+          >
+            {error}
+          </p>
+          <Button
+            render={<Link href="/" />}
+            className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-white/55"
+            variant="outline"
+          >
             Retour
           </Button>
         </CardContent>
@@ -443,8 +457,8 @@ export function DocumentForm({ slug }: DocumentFormProps) {
 
   if (step === "loading" || !data) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center text-muted-foreground">
+      <Card className={GLASS_CARD}>
+        <CardContent className="py-12 text-center text-[color:var(--glass-ink-soft)]">
           {lang === "nl" ? "Laden…" : "Chargement…"}
         </CardContent>
       </Card>
@@ -453,47 +467,78 @@ export function DocumentForm({ slug }: DocumentFormProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3 justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => router.back()}>
+          <Button
+            variant="outline"
+            onClick={() => router.back()}
+            className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-white/55"
+          >
             <ArrowLeftIcon className="w-4 h-4 mr-1" />
             {lang === "nl" ? "Terug" : "Retour"}
           </Button>
-          <Badge variant="secondary">{data.tool.sectionName}</Badge>
+          <span
+            className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]"
+            style={{ background: "var(--glass-surface)" }}
+          >
+            {data.tool.sectionName}
+          </span>
         </div>
 
         {/* Toggle langue */}
-        <div className="inline-flex rounded-md border bg-background p-0.5">
+        <div
+          className="inline-flex rounded-full border border-[color:var(--glass-border)] p-1"
+          style={{ background: "var(--glass-surface)" }}
+        >
           <button
             type="button"
             onClick={() => setLang("fr")}
-            className={`px-3 py-1 text-xs font-medium rounded ${
-              lang === "fr" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
+            className="rounded-full px-3 py-1 text-[11.5px] font-bold transition"
+            style={
+              lang === "fr"
+                ? GLASS_PRIMARY_STYLE
+                : { color: "var(--glass-ink-soft)" }
+            }
           >
             FR
           </button>
           <button
             type="button"
             onClick={() => setLang("nl")}
-            className={`px-3 py-1 text-xs font-medium rounded ${
-              lang === "nl" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
+            className="rounded-full px-3 py-1 text-[11.5px] font-bold transition"
+            style={
+              lang === "nl"
+                ? GLASS_PRIMARY_STYLE
+                : { color: "var(--glass-ink-soft)" }
+            }
           >
             NL
           </button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <span className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <IconDisplay value={data.tool.icon || "FileText"} className="w-6 h-6" />
+      <Card className={GLASS_CARD}>
+        <CardHeader className="px-7 pt-7 pb-3">
+          <div className="flex items-center gap-4">
+            <span
+              className="flex size-14 items-center justify-center rounded-2xl text-white"
+              style={{
+                backgroundImage:
+                  "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
+              }}
+            >
+              <IconDisplay
+                value={data.tool.icon || "FileText"}
+                className="w-7 h-7"
+              />
             </span>
-            <div>
-              <CardTitle className="text-2xl">{data.tool.name}</CardTitle>
-              <p className="text-sm text-muted-foreground">{data.tool.description}</p>
+            <div className="flex flex-col gap-1">
+              <CardTitle className="glass-display text-[24px] font-semibold sm:text-[28px]">
+                {data.tool.name}
+              </CardTitle>
+              <p className="text-[13.5px] text-[color:var(--glass-ink-soft)]">
+                {data.tool.description}
+              </p>
             </div>
           </div>
         </CardHeader>
@@ -520,67 +565,95 @@ export function DocumentForm({ slug }: DocumentFormProps) {
       {step === "filling" && (
         <FormProvider {...methods}>
           {/* Wizard breadcrumb */}
-          {isWizard && sections.length > 1 && (
+          {isWizard && sections.length > 1 ? (
             <div className="flex flex-wrap items-center gap-2 text-sm">
-              {sections.map((s, idx) => (
-                <span key={idx} className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => idx <= currentSectionIdx && setCurrentSectionIdx(idx)}
-                    className={`px-3 py-1 rounded-full border transition-colors ${
-                      idx === currentSectionIdx
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : idx < currentSectionIdx
-                        ? "bg-muted border-border text-muted-foreground hover:text-foreground cursor-pointer"
-                        : "border-dashed text-muted-foreground"
-                    }`}
-                    disabled={idx > currentSectionIdx}
-                  >
-                    {idx + 1}. {s.name || (lang === "nl" ? "Algemeen" : "Général")}
-                  </button>
-                  {idx < sections.length - 1 && <span className="text-muted-foreground">›</span>}
-                </span>
-              ))}
+              {sections.map((s, idx) => {
+                const isCurrent = idx === currentSectionIdx;
+                const isDone = idx < currentSectionIdx;
+                return (
+                  <span key={idx} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        idx <= currentSectionIdx && setCurrentSectionIdx(idx)
+                      }
+                      className="rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition-colors"
+                      style={
+                        isCurrent
+                          ? {
+                              ...GLASS_PRIMARY_STYLE,
+                              borderColor: "transparent",
+                            }
+                          : isDone
+                            ? {
+                                background: "var(--glass-surface)",
+                                color: "var(--glass-ink-soft)",
+                                borderColor: "var(--glass-border)",
+                              }
+                            : {
+                                borderColor: "var(--glass-ink-line)",
+                                borderStyle: "dashed",
+                                color: "var(--glass-ink-faint)",
+                              }
+                      }
+                      disabled={idx > currentSectionIdx}
+                    >
+                      {idx + 1}.{" "}
+                      {s.name || (lang === "nl" ? "Algemeen" : "Général")}
+                    </button>
+                    {idx < sections.length - 1 ? (
+                      <span className="text-[color:var(--glass-ink-faint)]">
+                        ›
+                      </span>
+                    ) : null}
+                  </span>
+                );
+              })}
             </div>
-          )}
+          ) : null}
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>
+          <Card className={GLASS_CARD}>
+            <CardHeader className="flex flex-row items-center justify-between px-7 pt-7 pb-3">
+              <CardTitle className="glass-display text-[22px] font-semibold">
                 {isWizard && currentSection
-                  ? currentSection.name || (lang === "nl" ? "Algemeen" : "Général")
+                  ? currentSection.name ||
+                    (lang === "nl" ? "Algemeen" : "Général")
                   : lang === "nl"
-                  ? "Vul het formulier in"
-                  : "Remplissez le formulaire"}
+                    ? "Vul het formulier in"
+                    : "Remplissez le formulaire"}
               </CardTitle>
-              {isLoggedIn && (
+              {isLoggedIn ? (
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={saveDraft}
                   disabled={savingDraft}
+                  className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-white/55"
                 >
-                  <Save className="w-4 h-4 mr-1" />
+                  <SaveIcon className="w-4 h-4 mr-1" />
                   {savingDraft
                     ? lang === "nl"
                       ? "Opslaan…"
                       : "Sauvegarde…"
                     : lang === "nl"
-                    ? "Concept opslaan"
-                    : "Sauvegarder le brouillon"}
+                      ? "Concept opslaan"
+                      : "Sauvegarder le brouillon"}
                 </Button>
-              )}
+              ) : null}
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-7 pb-7">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   isWizard ? nextSection() : goToPreview();
                 }}
-                className="space-y-4"
+                className="flex flex-col gap-4"
               >
-                {(isWizard && currentSection ? currentSection.fields : fields).map((f) => (
+                {(isWizard && currentSection
+                  ? currentSection.fields
+                  : fields
+                ).map((f) => (
                   <ConditionalWrapper key={f.id} field={f}>
                     <DynamicField
                       field={f}
@@ -597,20 +670,29 @@ export function DocumentForm({ slug }: DocumentFormProps) {
                 <div className="h-16 md:h-0" />
 
                 {/* Action bar : flottante sur mobile, inline sur desktop */}
-                <div className="hidden md:flex justify-between gap-2 pt-2">
+                <div className="hidden justify-between gap-2 pt-2 md:flex">
                   {isWizard && currentSectionIdx > 0 ? (
-                    <Button type="button" variant="outline" onClick={prevSection}>
-                      <ChevronLeft className="w-4 h-4 mr-1" />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={prevSection}
+                      className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-white/55"
+                    >
+                      <ChevronLeftIcon className="w-4 h-4 mr-1" />
                       {lang === "nl" ? "Vorige" : "Précédent"}
                     </Button>
                   ) : (
                     <span />
                   )}
-                  <Button type="submit">
+                  <Button
+                    type="submit"
+                    className="rounded-full font-bold"
+                    style={GLASS_PRIMARY_STYLE}
+                  >
                     {isWizard && currentSectionIdx < sections.length - 1 ? (
                       <>
                         {lang === "nl" ? "Volgende" : "Suivant"}
-                        <ChevronRight className="w-4 h-4 ml-1" />
+                        <ChevronRightIcon className="w-4 h-4 ml-1" />
                       </>
                     ) : lang === "nl" ? (
                       "Voorvertoning"
@@ -624,15 +706,17 @@ export function DocumentForm({ slug }: DocumentFormProps) {
           </Card>
 
           {/* Sticky bar mobile uniquement */}
-          <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur border-t p-3 flex gap-2 shadow-lg">
+          <div
+            className="glass-surface fixed right-3 bottom-3 left-3 z-40 flex gap-2 !rounded-2xl p-3 md:hidden"
+          >
             {isWizard && currentSectionIdx > 0 ? (
               <Button
                 type="button"
                 variant="outline"
                 onClick={prevSection}
-                className="flex-1"
+                className="flex-1 rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-white/55"
               >
-                <ChevronLeft className="w-4 h-4 mr-1" />
+                <ChevronLeftIcon className="w-4 h-4 mr-1" />
                 {lang === "nl" ? "Vorige" : "Précédent"}
               </Button>
             ) : null}
@@ -642,12 +726,13 @@ export function DocumentForm({ slug }: DocumentFormProps) {
                 if (isWizard) nextSection();
                 else goToPreview();
               }}
-              className="flex-1"
+              className="flex-1 rounded-full font-bold"
+              style={GLASS_PRIMARY_STYLE}
             >
               {isWizard && currentSectionIdx < sections.length - 1 ? (
                 <>
                   {lang === "nl" ? "Volgende" : "Suivant"}
-                  <ChevronRight className="w-4 h-4 ml-1" />
+                  <ChevronRightIcon className="w-4 h-4 ml-1" />
                 </>
               ) : lang === "nl" ? (
                 "Voorvertoning"
@@ -701,10 +786,10 @@ export function DocumentForm({ slug }: DocumentFormProps) {
             expiresAt={generated.expiresAt}
             onRestart={restart}
           />
-          {bundleRunId && (
-            <Card>
-              <CardContent className="py-4 flex items-center justify-between gap-3 flex-wrap">
-                <p className="text-sm text-muted-foreground">
+          {bundleRunId ? (
+            <Card className={GLASS_CARD}>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 px-7 py-5">
+                <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
                   {lang === "nl"
                     ? "Dit document maakt deel uit van een traject. Wilt u terug naar de andere documenten?"
                     : "Ce document fait partie d'un parcours. Retourner aux autres documents ?"}
@@ -718,21 +803,28 @@ export function DocumentForm({ slug }: DocumentFormProps) {
                     }
                   }}
                   size="sm"
+                  className="rounded-full font-bold"
+                  style={GLASS_PRIMARY_STYLE}
                 >
-                  {lang === "nl" ? "Terug naar het traject" : "Retour au parcours"}
+                  {lang === "nl"
+                    ? "Terug naar het traject"
+                    : "Retour au parcours"}
                 </Button>
               </CardContent>
             </Card>
-          )}
+          ) : null}
         </>
       )}
 
-      {!isLoggedIn && step !== "done" && (
-        <p className="text-xs text-muted-foreground text-center">
+      {!isLoggedIn && step !== "done" ? (
+        <p className="text-center text-[12.5px] text-[color:var(--glass-ink-soft)]">
           {lang === "nl" ? (
             <>
               Tip:{" "}
-              <Link href="/login" className="underline">
+              <Link
+                href="/login"
+                className="font-semibold text-[color:var(--glass-accent-deep)] hover:underline"
+              >
                 log in
               </Link>{" "}
               om uw formulier op te slaan en later te hervatten.
@@ -740,14 +832,18 @@ export function DocumentForm({ slug }: DocumentFormProps) {
           ) : (
             <>
               Astuce :{" "}
-              <Link href="/login" className="underline">
+              <Link
+                href="/login"
+                className="font-semibold text-[color:var(--glass-accent-deep)] hover:underline"
+              >
                 connectez-vous
               </Link>{" "}
-              pour pouvoir sauvegarder votre formulaire et le reprendre plus tard.
+              pour pouvoir sauvegarder votre formulaire et le reprendre plus
+              tard.
             </>
           )}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

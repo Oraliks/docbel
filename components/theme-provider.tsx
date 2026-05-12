@@ -29,6 +29,7 @@ export function ThemeProvider({
   children,
   defaultTheme = "light",
   attribute = "class",
+  disableTransitionOnChange = false,
 }: ThemeProviderProps) {
   const fallbackTheme = defaultTheme === "system" ? "light" : defaultTheme
   const getThemeSnapshot = React.useCallback((): Theme => {
@@ -58,8 +59,27 @@ export function ThemeProvider({
 
   const theme = React.useSyncExternalStore(subscribe, getThemeSnapshot, () => fallbackTheme)
 
+  // Skip transition suppression on the very first paint — only the actual
+  // user-driven toggle creates the flicker we're fighting.
+  const firstApply = React.useRef(true)
+
   React.useEffect(() => {
     const root = document.documentElement
+
+    // Per the standard next-themes trick: while we flip the class, inject a
+    // global `* { transition: none }` rule so no element animates its
+    // background/color from the old token to the new one. The style node is
+    // removed one frame later, restoring normal transitions for hover etc.
+    let killSwitch: HTMLStyleElement | null = null
+    if (disableTransitionOnChange && !firstApply.current) {
+      killSwitch = document.createElement("style")
+      killSwitch.appendChild(
+        document.createTextNode(
+          "*,*::before,*::after{transition:none!important;animation:none!important}"
+        )
+      )
+      document.head.appendChild(killSwitch)
+    }
 
     if (attribute === "class") {
       root.classList.toggle("dark", theme === "dark")
@@ -69,7 +89,18 @@ export function ThemeProvider({
 
     root.style.colorScheme = theme
     window.localStorage.setItem(STORAGE_KEY, theme)
-  }, [attribute, theme])
+
+    if (killSwitch) {
+      // Force a reflow so the style change above is committed before we
+      // remove the no-transition rule.
+      void window.getComputedStyle(root).opacity
+      window.requestAnimationFrame(() => {
+        killSwitch?.remove()
+      })
+    }
+
+    firstApply.current = false
+  }, [attribute, theme, disableTransitionOnChange])
 
   const setTheme = React.useCallback((value: Theme) => {
     window.localStorage.setItem(STORAGE_KEY, value)

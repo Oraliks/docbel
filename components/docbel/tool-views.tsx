@@ -406,10 +406,10 @@ export function CalcPreavis({ accent }: ViewProps) {
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
           <div>
-            <h2 style={{ fontSize: 24, fontWeight: 700, color: "var(--foreground)", margin: 0, marginBottom: 4 }}>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: "var(--glass-ink)", margin: 0, marginBottom: 4 }}>
               Calcul du délai de préavis
             </h2>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 13, color: "var(--glass-ink-soft)", margin: 0, lineHeight: 1.6 }}>
               Renseignez les informations du contrat. Le régime applicable est détecté automatiquement selon les dates.
             </p>
           </div>
@@ -436,7 +436,7 @@ export function CalcPreavis({ accent }: ViewProps) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
         {/* Statut */}
         <div>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--foreground)", marginBottom: 8 }}>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--glass-ink)", marginBottom: 8 }}>
             Statut *
           </label>
           <div style={{ display: "flex", gap: 8 }}>
@@ -451,13 +451,13 @@ export function CalcPreavis({ accent }: ViewProps) {
                   flex: 1,
                   padding: "10px 12px",
                   borderRadius: 8,
-                  border: `1.5px solid ${statut === v ? accent : "var(--border)"}`,
+                  border: `1.5px solid ${statut === v ? accent : "var(--glass-border)"}`,
                   background: "transparent",
-                  color: statut === v ? accent : "var(--text-muted)",
+                  color: statut === v ? accent : "var(--glass-ink-soft)",
                   fontWeight: 500,
                   fontSize: 13,
                   cursor: "pointer",
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontFamily: "'Manrope', sans-serif",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -474,7 +474,7 @@ export function CalcPreavis({ accent }: ViewProps) {
 
         {/* Rupture par */}
         <div>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--foreground)", marginBottom: 8 }}>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--glass-ink)", marginBottom: 8 }}>
             Rupture par *
           </label>
           <div style={{ display: "flex", gap: 8 }}>
@@ -486,13 +486,13 @@ export function CalcPreavis({ accent }: ViewProps) {
                   flex: 1,
                   padding: "10px 12px",
                   borderRadius: 8,
-                  border: `1.5px solid ${quiRompt === v ? accent : "var(--border)"}`,
+                  border: `1.5px solid ${quiRompt === v ? accent : "var(--glass-border)"}`,
                   background: "transparent",
-                  color: quiRompt === v ? accent : "var(--text-muted)",
+                  color: quiRompt === v ? accent : "var(--glass-ink-soft)",
                   fontWeight: 500,
                   fontSize: 13,
                   cursor: "pointer",
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontFamily: "'Manrope', sans-serif",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -509,7 +509,7 @@ export function CalcPreavis({ accent }: ViewProps) {
 
         {/* Type d'emploi */}
         <div>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--foreground)", marginBottom: 8 }}>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--glass-ink)", marginBottom: 8 }}>
             Type d&apos;emploi *
           </label>
           <div style={{ display: "flex", gap: 8 }}>
@@ -521,13 +521,13 @@ export function CalcPreavis({ accent }: ViewProps) {
                   flex: 1,
                   padding: "10px 12px",
                   borderRadius: 8,
-                  border: `1.5px solid ${emploiType === v ? accent : "var(--border)"}`,
+                  border: `1.5px solid ${emploiType === v ? accent : "var(--glass-border)"}`,
                   background: "transparent",
-                  color: emploiType === v ? accent : "var(--text-muted)",
+                  color: emploiType === v ? accent : "var(--glass-ink-soft)",
                   fontWeight: 500,
                   fontSize: 13,
                   cursor: "pointer",
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontFamily: "'Manrope', sans-serif",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -547,7 +547,7 @@ export function CalcPreavis({ accent }: ViewProps) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
         {/* Commission Paritaire */}
         <div>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--foreground)", marginBottom: 8 }}>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--glass-ink)", marginBottom: 8 }}>
             Commission paritaire *
           </label>
           <div style={{ position: "relative" }}>
@@ -555,7 +555,7 @@ export function CalcPreavis({ accent }: ViewProps) {
               position: "absolute",
               left: 12,
               top: 12,
-              color: "var(--text-muted)",
+              color: "var(--glass-ink-soft)",
               pointerEvents: "none",
               display: "flex",
               alignItems: "center",
@@ -575,11 +575,11 @@ export function CalcPreavis({ accent }: ViewProps) {
                 width: "100%",
                 padding: "10px 12px 10px 36px",
                 borderRadius: 8,
-                border: "1.5px solid var(--border)",
-                background: "var(--input)",
-                color: "var(--foreground)",
+                border: "1.5px solid var(--glass-border)",
+                background: "var(--glass-surface)",
+                color: "var(--glass-ink)",
                 fontSize: 13,
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontFamily: "'Manrope', sans-serif",
                 outline: "none",
               }}
             />
@@ -592,8 +592,8 @@ export function CalcPreavis({ accent }: ViewProps) {
                   right: 0,
                   marginTop: 4,
                   borderRadius: 8,
-                  border: "1.5px solid var(--border)",
-                  background: "var(--surface)",
+                  border: "1.5px solid var(--glass-border)",
+                  background: "var(--glass-surface)",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                   zIndex: 10,
                   maxHeight: 200,
@@ -616,18 +616,18 @@ export function CalcPreavis({ accent }: ViewProps) {
                       padding: "10px 12px",
                       border: "none",
                       background: "transparent",
-                      color: "var(--foreground)",
+                      color: "var(--glass-ink)",
                       cursor: "pointer",
                       fontSize: 13,
                       textAlign: "left",
-                      borderBottom: "1px solid var(--border)",
-                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      borderBottom: "1px solid var(--glass-border)",
+                      fontFamily: "'Manrope', sans-serif",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-2)")}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--glass-surface)")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
                     <span style={{ fontWeight: 600 }}>{c.numero}</span>
-                    <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{c.nom}</span>
+                    <span style={{ fontSize: 12, color: "var(--glass-ink-soft)" }}>{c.nom}</span>
                   </button>
                 ))}
               </div>
@@ -635,15 +635,15 @@ export function CalcPreavis({ accent }: ViewProps) {
           </div>
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--foreground)", marginBottom: 8 }}>
-            Date d&apos;entrée * <span style={{ fontSize: 11, color: "var(--text-muted)" }}>DD/MM/YYYY</span>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--glass-ink)", marginBottom: 8 }}>
+            Date d&apos;entrée * <span style={{ fontSize: 11, color: "var(--glass-ink-soft)" }}>DD/MM/YYYY</span>
           </label>
           <div style={{ position: "relative" }}>
             <div style={{
               position: "absolute",
               right: 12,
               top: 11,
-              color: "var(--text-muted)",
+              color: "var(--glass-ink-soft)",
               pointerEvents: "none",
               display: "flex",
               alignItems: "center",
@@ -659,11 +659,11 @@ export function CalcPreavis({ accent }: ViewProps) {
                 width: "100%",
                 padding: "10px 36px 10px 12px",
                 borderRadius: 8,
-                border: "1.5px solid var(--border)",
-                background: "var(--input)",
-                color: "var(--foreground)",
+                border: "1.5px solid var(--glass-border)",
+                background: "var(--glass-surface)",
+                color: "var(--glass-ink)",
                 fontSize: 13,
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontFamily: "'Manrope', sans-serif",
                 outline: "none",
               }}
             />
@@ -671,15 +671,15 @@ export function CalcPreavis({ accent }: ViewProps) {
         </div>
 
         <div>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--foreground)", marginBottom: 8 }}>
-            Date de licenciement * <span style={{ fontSize: 11, color: "var(--text-muted)" }}>DD/MM/YYYY</span>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--glass-ink)", marginBottom: 8 }}>
+            Date de licenciement * <span style={{ fontSize: 11, color: "var(--glass-ink-soft)" }}>DD/MM/YYYY</span>
           </label>
           <div style={{ position: "relative" }}>
             <div style={{
               position: "absolute",
               right: 12,
               top: 11,
-              color: "var(--text-muted)",
+              color: "var(--glass-ink-soft)",
               pointerEvents: "none",
               display: "flex",
               alignItems: "center",
@@ -695,11 +695,11 @@ export function CalcPreavis({ accent }: ViewProps) {
                 width: "100%",
                 padding: "10px 36px 10px 12px",
                 borderRadius: 8,
-                border: "1.5px solid var(--border)",
-                background: "var(--input)",
-                color: "var(--foreground)",
+                border: "1.5px solid var(--glass-border)",
+                background: "var(--glass-surface)",
+                color: "var(--glass-ink)",
                 fontSize: 13,
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontFamily: "'Manrope', sans-serif",
                 outline: "none",
               }}
             />
@@ -713,15 +713,15 @@ export function CalcPreavis({ accent }: ViewProps) {
           marginBottom: 20,
           padding: 14,
           borderRadius: 8,
-          border: "1.5px solid var(--border)",
-          background: "var(--surface-2)",
+          border: "1.5px solid var(--glass-border)",
+          background: "var(--glass-surface)",
         }}>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--foreground)", marginBottom: 12 }}>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--glass-ink)", marginBottom: 12 }}>
             Détails du temps partiel
           </label>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--foreground)", marginBottom: 6 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--glass-ink)", marginBottom: 6 }}>
                 Heures/semaine prestées *
               </label>
               <div style={{ position: "relative" }}>
@@ -729,7 +729,7 @@ export function CalcPreavis({ accent }: ViewProps) {
                   position: "absolute",
                   right: 10,
                   top: 8,
-                  color: "var(--text-muted)",
+                  color: "var(--glass-ink-soft)",
                   display: "flex",
                   alignItems: "center",
                   pointerEvents: "none",
@@ -744,17 +744,17 @@ export function CalcPreavis({ accent }: ViewProps) {
                     width: "100%",
                     padding: "8px 32px 8px 10px",
                     borderRadius: 6,
-                    border: "1px solid var(--border)",
-                    background: "var(--input)",
-                    color: "var(--foreground)",
+                    border: "1px solid var(--glass-border)",
+                    background: "var(--glass-surface)",
+                    color: "var(--glass-ink)",
                     fontSize: 12,
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontFamily: "'Manrope', sans-serif",
                   }}
                 />
               </div>
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--foreground)", marginBottom: 6 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--glass-ink)", marginBottom: 6 }}>
                 Temps plein de référence *
               </label>
               <div style={{ position: "relative" }}>
@@ -762,7 +762,7 @@ export function CalcPreavis({ accent }: ViewProps) {
                   position: "absolute",
                   right: 10,
                   top: 8,
-                  color: "var(--text-muted)",
+                  color: "var(--glass-ink-soft)",
                   display: "flex",
                   alignItems: "center",
                   pointerEvents: "none",
@@ -777,17 +777,17 @@ export function CalcPreavis({ accent }: ViewProps) {
                     width: "100%",
                     padding: "8px 32px 8px 10px",
                     borderRadius: 6,
-                    border: "1px solid var(--border)",
-                    background: "var(--input)",
-                    color: "var(--foreground)",
+                    border: "1px solid var(--glass-border)",
+                    background: "var(--glass-surface)",
+                    color: "var(--glass-ink)",
                     fontSize: 12,
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontFamily: "'Manrope', sans-serif",
                   }}
                 />
               </div>
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--foreground)", marginBottom: 6 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--glass-ink)", marginBottom: 6 }}>
                 Régime
               </label>
               <input
@@ -799,17 +799,17 @@ export function CalcPreavis({ accent }: ViewProps) {
                   width: "100%",
                   padding: "8px 10px",
                   borderRadius: 6,
-                  border: "1px solid var(--border)",
-                  background: "var(--surface)",
-                  color: "var(--text-muted)",
+                  border: "1px solid var(--glass-border)",
+                  background: "var(--glass-surface)",
+                  color: "var(--glass-ink-soft)",
                   fontSize: 12,
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontFamily: "'Manrope', sans-serif",
                   cursor: "not-allowed",
                 }}
               />
             </div>
           </div>
-          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, marginBottom: 0 }}>
+          <p style={{ fontSize: 11, color: "var(--glass-ink-soft)", marginTop: 8, marginBottom: 0 }}>
             Utilisé pour déterminer le régime de travail.
           </p>
         </div>
@@ -818,8 +818,8 @@ export function CalcPreavis({ accent }: ViewProps) {
       {/* Salaire pour employés avant 2014 */}
       {statut === "employe" && dateEntree && isBeforeThreshold(parseDate(dateEntree) || new Date()) && (
         <div style={{ marginBottom: 20 }}>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--foreground)", marginBottom: 8 }}>
-            Salaire annuel € <span style={{ fontSize: 11, color: "var(--text-muted)" }}>avant 2014</span>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--glass-ink)", marginBottom: 8 }}>
+            Salaire annuel € <span style={{ fontSize: 11, color: "var(--glass-ink-soft)" }}>avant 2014</span>
           </label>
           <input
             type="number"
@@ -830,11 +830,11 @@ export function CalcPreavis({ accent }: ViewProps) {
               width: "100%",
               padding: "10px 12px",
               borderRadius: 8,
-              border: "1.5px solid var(--border)",
-              background: "var(--input)",
-              color: "var(--foreground)",
+              border: "1.5px solid var(--glass-border)",
+              background: "var(--glass-surface)",
+              color: "var(--glass-ink)",
               fontSize: 13,
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontFamily: "'Manrope', sans-serif",
               outline: "none",
             }}
           />
@@ -872,7 +872,7 @@ export function CalcPreavis({ accent }: ViewProps) {
             fontWeight: 700,
             fontSize: 13,
             cursor: "pointer",
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontFamily: "'Manrope', sans-serif",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -901,7 +901,7 @@ export function CalcPreavis({ accent }: ViewProps) {
             fontWeight: 700,
             fontSize: 13,
             cursor: result ? "pointer" : "not-allowed",
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontFamily: "'Manrope', sans-serif",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -925,17 +925,17 @@ export function CalcPreavis({ accent }: ViewProps) {
         marginBottom: 0,
         padding: "12px 14px",
         borderRadius: 8,
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
+        background: "var(--glass-surface)",
+        border: "1px solid var(--glass-border)",
         fontSize: 11,
-        color: "var(--text-muted)",
+        color: "var(--glass-ink-soft)",
         lineHeight: 1.6,
         display: "flex",
         gap: 8,
       }}>
         <Info size={16} style={{ flexShrink: 0, marginTop: 2 }} />
         <div>
-          <strong style={{ color: "var(--foreground)" }}>Simulation</strong> fournie à titre informatif. Le résultat dépend des informations encodées et ne remplace pas un avis juridique. Les données sont utilisées uniquement pour ce calcul.
+          <strong style={{ color: "var(--glass-ink)" }}>Simulation</strong> fournie à titre informatif. Le résultat dépend des informations encodées et ne remplace pas un avis juridique. Les données sont utilisées uniquement pour ce calcul.
         </div>
       </div>
 
@@ -962,10 +962,10 @@ export function CalcPreavis({ accent }: ViewProps) {
           >
             Résultat — Régime {result.regime === "avant2014" ? "Avant 2014" : "Après 2014"}
           </div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: "var(--foreground)", letterSpacing: "-1px" }}>
+          <div style={{ fontSize: 32, fontWeight: 800, color: "var(--glass-ink)", letterSpacing: "-1px" }}>
             {result.delaiSemaines} <span style={{ fontSize: 16, fontWeight: 600 }}>semaines</span>
           </div>
-          <div style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 4, display: "flex", gap: 12, justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 12.5, color: "var(--glass-ink-soft)", marginTop: 4, display: "flex", gap: 12, justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <span>soit {result.delaiJours} jours</span>
             </div>
@@ -981,7 +981,7 @@ export function CalcPreavis({ accent }: ViewProps) {
                 fontWeight: 600,
                 fontSize: 12,
                 cursor: "pointer",
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontFamily: "'Manrope', sans-serif",
                 transition: "all 0.2s ease",
                 whiteSpace: "nowrap",
               }}
@@ -1005,7 +1005,7 @@ export function CalcPreavis({ accent }: ViewProps) {
                 background: `${accent}18`,
                 borderLeft: `3px solid ${accent}`,
                 fontSize: 12,
-                color: "var(--foreground)",
+                color: "var(--glass-ink)",
                 lineHeight: 1.5,
                 display: "flex",
                 gap: 10,
@@ -1014,7 +1014,7 @@ export function CalcPreavis({ accent }: ViewProps) {
               <Lightbulb size={18} style={{ flexShrink: 0, marginTop: 2 }} />
               <div>
                 <strong>Attention ICL :</strong> Différence de {result.icl.jours} jours
-                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{result.icl.raison}</div>
+                <div style={{ fontSize: 11, color: "var(--glass-ink-soft)", marginTop: 4 }}>{result.icl.raison}</div>
               </div>
             </div>
           )}
@@ -1024,9 +1024,9 @@ export function CalcPreavis({ accent }: ViewProps) {
               marginTop: 12,
               padding: "10px 12px",
               borderRadius: 8,
-              background: "var(--surface-2)",
+              background: "var(--glass-surface)",
               fontSize: 12,
-              color: "var(--foreground)",
+              color: "var(--glass-ink)",
               display: "flex",
               alignItems: "center",
               gap: 8,
@@ -1041,13 +1041,13 @@ export function CalcPreavis({ accent }: ViewProps) {
               marginTop: 12,
               padding: "10px 12px",
               borderRadius: 8,
-              background: "var(--surface-2)",
+              background: "var(--glass-surface)",
               fontSize: 12,
-              color: "var(--text-muted)",
+              color: "var(--glass-ink-soft)",
               lineHeight: 1.6,
             }}
           >
-            <strong style={{ color: "var(--foreground)" }}>Détail du calcul :</strong> {result.details}
+            <strong style={{ color: "var(--glass-ink)" }}>Détail du calcul :</strong> {result.details}
           </div>
 
           <div
@@ -1055,11 +1055,11 @@ export function CalcPreavis({ accent }: ViewProps) {
               marginTop: 14,
               padding: "12px 14px",
               borderRadius: 10,
-              background: "var(--surface)",
+              background: "var(--glass-surface)",
               fontSize: 11,
-              color: "var(--foreground)",
+              color: "var(--glass-ink)",
               lineHeight: 1.6,
-              borderLeft: "3px solid var(--text-muted)",
+              borderLeft: "3px solid var(--glass-ink-soft)",
               display: "flex",
               gap: 10,
             }}
@@ -1067,7 +1067,7 @@ export function CalcPreavis({ accent }: ViewProps) {
             <Info size={16} style={{ flexShrink: 0, marginTop: 2 }} />
             <div>
               <strong style={{ display: "block", marginBottom: 8 }}>À savoir</strong>
-              <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
+              <div style={{ fontSize: 11, color: "var(--glass-ink-soft)", lineHeight: 1.6 }}>
                 <div style={{ marginBottom: 8 }}>
                   • <strong>Début du préavis :</strong> Le délai commence le <strong>premier lundi</strong> après la notification écrite de la rupture.
                 </div>
@@ -1083,9 +1083,9 @@ export function CalcPreavis({ accent }: ViewProps) {
               marginTop: 14,
               padding: "12px 14px",
               borderRadius: 10,
-              background: "var(--surface)",
+              background: "var(--glass-surface)",
               fontSize: 11,
-              color: "var(--text-muted)",
+              color: "var(--glass-ink-soft)",
               lineHeight: 1.6,
               display: "flex",
               gap: 10,
@@ -1131,13 +1131,13 @@ export function CalcAGR({ accent }: ViewProps) {
 
   return (
     <div>
-      <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
+      <p style={{ fontSize: 13, color: "var(--glass-ink-soft)", marginBottom: 20, lineHeight: 1.6 }}>
         L&apos;<strong>Allocation de Garantie de Revenu (AGR)</strong> complète le salaire des travailleurs à temps
         partiel involontaire inscrits comme demandeurs d&apos;emploi.
       </p>
       {fields.map(([label, val, setter, ph]) => (
         <div key={label} style={{ marginBottom: 14 }}>
-          <label style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "var(--foreground)", marginBottom: 6 }}>
+          <label style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "var(--glass-ink)", marginBottom: 6 }}>
             {label}
           </label>
           <input
@@ -1150,15 +1150,15 @@ export function CalcAGR({ accent }: ViewProps) {
               width: "100%",
               padding: "10px 14px",
               borderRadius: 10,
-              border: "1.5px solid var(--border)",
-              background: "var(--input)",
-              color: "var(--foreground)",
+              border: "1.5px solid var(--glass-border)",
+              background: "var(--glass-surface)",
+              color: "var(--glass-ink)",
               fontSize: 14,
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontFamily: "'Manrope', sans-serif",
               outline: "none",
             }}
             onFocus={(e) => (e.target.style.borderColor = accent)}
-            onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+            onBlur={(e) => (e.target.style.borderColor = "var(--glass-border)")}
           />
         </div>
       ))}
@@ -1175,7 +1175,7 @@ export function CalcAGR({ accent }: ViewProps) {
           fontSize: 14,
           cursor: "pointer",
           marginTop: 4,
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          fontFamily: "'Manrope', sans-serif",
         }}
       >
         Calculer l&apos;AGR estimée
@@ -1202,10 +1202,10 @@ export function CalcAGR({ accent }: ViewProps) {
           >
             Résultat estimatif
           </div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: "var(--foreground)", letterSpacing: "-1px" }}>
+          <div style={{ fontSize: 32, fontWeight: 800, color: "var(--glass-ink)", letterSpacing: "-1px" }}>
             ± {result.agr} <span style={{ fontSize: 16, fontWeight: 600 }}>€/mois</span>
           </div>
-          <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: "var(--glass-ink-soft)", marginTop: 4 }}>
             Pour un régime à {result.tauxTP}% temps partiel
           </div>
           <div
@@ -1213,9 +1213,9 @@ export function CalcAGR({ accent }: ViewProps) {
               marginTop: 14,
               padding: "12px 14px",
               borderRadius: 10,
-              background: "var(--surface)",
+              background: "var(--glass-surface)",
               fontSize: 12,
-              color: "var(--text-muted)",
+              color: "var(--glass-ink-soft)",
               lineHeight: 1.6,
             }}
           >
@@ -1251,7 +1251,7 @@ export function CalcCP({ accent }: ViewProps) {
   );
   return (
     <div>
-      <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
+      <p style={{ fontSize: 13, color: "var(--glass-ink-soft)", marginBottom: 16, lineHeight: 1.6 }}>
         Salaires minimums garantis par commission paritaire — données indicatives 2026. Consultez toujours la CCT
         sectorielle officielle.
       </p>
@@ -1262,7 +1262,7 @@ export function CalcCP({ accent }: ViewProps) {
             left: 12,
             top: "50%",
             transform: "translateY(-50%)",
-            color: "var(--text-faint)",
+            color: "var(--glass-ink-faint)",
           }}
         >
           <SearchIcon size={15} />
@@ -1275,15 +1275,15 @@ export function CalcCP({ accent }: ViewProps) {
             width: "100%",
             padding: "9px 12px 9px 36px",
             borderRadius: 10,
-            border: "1.5px solid var(--border)",
-            background: "var(--input)",
-            color: "var(--foreground)",
+            border: "1.5px solid var(--glass-border)",
+            background: "var(--glass-surface)",
+            color: "var(--glass-ink)",
             fontSize: 13,
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontFamily: "'Manrope', sans-serif",
             outline: "none",
           }}
           onFocus={(e) => (e.target.style.borderColor = accent)}
-          onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+          onBlur={(e) => (e.target.style.borderColor = "var(--glass-border)")}
         />
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -1296,21 +1296,21 @@ export function CalcCP({ accent }: ViewProps) {
               justifyContent: "space-between",
               padding: "12px 14px",
               borderRadius: 10,
-              background: "var(--surface-2)",
-              border: "1px solid var(--border)",
+              background: "var(--glass-surface)",
+              border: "1px solid var(--glass-border)",
             }}
           >
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: accent }}>{c.cp}</div>
-              <div style={{ fontSize: 12.5, color: "var(--foreground)", marginTop: 2 }}>{c.nom}</div>
+              <div style={{ fontSize: 12.5, color: "var(--glass-ink)", marginTop: 2 }}>{c.nom}</div>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "var(--foreground)", flexShrink: 0, marginLeft: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "var(--glass-ink)", flexShrink: 0, marginLeft: 12 }}>
               {c.smg}
             </div>
           </div>
         ))}
         {filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: 24, color: "var(--text-muted)", fontSize: 13 }}>
+          <div style={{ textAlign: "center", padding: 24, color: "var(--glass-ink-soft)", fontSize: 13 }}>
             Aucun secteur trouvé
           </div>
         )}
@@ -1397,7 +1397,7 @@ export function Tutorial({ tool, accent }: ToolViewProps) {
               height: 4,
               borderRadius: 2,
               cursor: "pointer",
-              background: i <= activeStep ? accent : "var(--border)",
+              background: i <= activeStep ? accent : "var(--glass-border)",
               transition: "background 0.2s",
             }}
           />
@@ -1415,10 +1415,10 @@ export function Tutorial({ tool, accent }: ToolViewProps) {
       >
         Étape {activeStep + 1} / {steps.length}
       </div>
-      <h4 style={{ fontSize: 16, fontWeight: 800, color: "var(--foreground)", marginBottom: 12, letterSpacing: "-0.2px" }}>
+      <h4 style={{ fontSize: 16, fontWeight: 800, color: "var(--glass-ink)", marginBottom: 12, letterSpacing: "-0.2px" }}>
         {steps[activeStep].title}
       </h4>
-      <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.7 }}>{steps[activeStep].body}</p>
+      <p style={{ fontSize: 13.5, color: "var(--glass-ink-soft)", lineHeight: 1.7 }}>{steps[activeStep].body}</p>
       <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
         <button
           onClick={() => setActiveStep((s) => Math.max(0, s - 1))}
@@ -1426,14 +1426,14 @@ export function Tutorial({ tool, accent }: ToolViewProps) {
           style={{
             padding: "9px 18px",
             borderRadius: 9,
-            border: "1px solid var(--border)",
+            border: "1px solid var(--glass-border)",
             background: "transparent",
-            color: "var(--text-muted)",
+            color: "var(--glass-ink-soft)",
             fontWeight: 600,
             fontSize: 13,
             cursor: activeStep === 0 ? "default" : "pointer",
             opacity: activeStep === 0 ? 0.4 : 1,
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontFamily: "'Manrope', sans-serif",
           }}
         >
           ← Précédent
@@ -1452,7 +1452,7 @@ export function Tutorial({ tool, accent }: ToolViewProps) {
             fontSize: 13,
             cursor: activeStep === steps.length - 1 ? "default" : "pointer",
             opacity: activeStep === steps.length - 1 ? 0.5 : 1,
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontFamily: "'Manrope', sans-serif",
           }}
         >
           Suivant →
@@ -1510,7 +1510,7 @@ export function InfoPanel({ tool }: ToolViewProps) {
 
   return (
     <div>
-      <p style={{ fontSize: 13.5, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.65 }}>{content.intro}</p>
+      <p style={{ fontSize: 13.5, color: "var(--glass-ink-soft)", marginBottom: 20, lineHeight: 1.65 }}>{content.intro}</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {content.items.map(([title, body]) => (
           <div
@@ -1518,12 +1518,12 @@ export function InfoPanel({ tool }: ToolViewProps) {
             style={{
               padding: "14px 16px",
               borderRadius: 12,
-              background: "var(--surface-2)",
-              border: "1px solid var(--border)",
+              background: "var(--glass-surface)",
+              border: "1px solid var(--glass-border)",
             }}
           >
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--foreground)", marginBottom: 5 }}>{title}</div>
-            <div style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6 }}>{body}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--glass-ink)", marginBottom: 5 }}>{title}</div>
+            <div style={{ fontSize: 12.5, color: "var(--glass-ink-soft)", lineHeight: 1.6 }}>{body}</div>
           </div>
         ))}
       </div>
@@ -1562,17 +1562,17 @@ export function LinkPanel({ tool, accent }: ToolViewProps) {
         style={{
           padding: "20px",
           borderRadius: 14,
-          background: "var(--surface-2)",
-          border: "1px solid var(--border)",
+          background: "var(--glass-surface)",
+          border: "1px solid var(--glass-border)",
           marginBottom: 16,
         }}
       >
-        <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.65, marginBottom: 16 }}>{d.desc}</p>
+        <p style={{ fontSize: 13.5, color: "var(--glass-ink-soft)", lineHeight: 1.65, marginBottom: 16 }}>{d.desc}</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ fontSize: 13, color: "var(--foreground)" }}>
+          <div style={{ fontSize: 13, color: "var(--glass-ink)" }}>
             <strong>🌐 Site web :</strong> <span style={{ color: accent }}>{d.url}</span>
           </div>
-          <div style={{ fontSize: 13, color: "var(--foreground)" }}>
+          <div style={{ fontSize: 13, color: "var(--glass-ink)" }}>
             <strong>📞 Tél. :</strong> {d.tel}
           </div>
         </div>
@@ -1588,7 +1588,7 @@ export function LinkPanel({ tool, accent }: ToolViewProps) {
           fontWeight: 700,
           fontSize: 14,
           cursor: "pointer",
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          fontFamily: "'Manrope', sans-serif",
         }}
       >
         Visiter le site officiel →
@@ -1648,10 +1648,10 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
               border: "none",
               background: "none",
               cursor: i <= step ? "pointer" : "default",
-              color: i === step ? accent : i < step ? "var(--text-muted)" : "var(--text-faint)",
+              color: i === step ? accent : i < step ? "var(--glass-ink-soft)" : "var(--glass-ink-faint)",
               fontSize: 12.5,
               fontWeight: i === step ? 700 : 500,
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontFamily: "'Manrope', sans-serif",
             }}
           >
             <span
@@ -1660,8 +1660,8 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
                 height: 20,
                 borderRadius: "50%",
                 flexShrink: 0,
-                background: i === step ? accent : i < step ? `${accent}20` : "var(--surface-2)",
-                color: i === step ? "white" : i < step ? accent : "var(--text-faint)",
+                background: i === step ? accent : i < step ? `${accent}20` : "var(--glass-surface)",
+                color: i === step ? "white" : i < step ? accent : "var(--glass-ink-faint)",
                 fontSize: 10.5,
                 fontWeight: 700,
                 display: "flex",
@@ -1686,7 +1686,7 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
                     display: "block",
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "var(--foreground)",
+                    color: "var(--glass-ink)",
                     marginBottom: 5,
                   }}
                 >
@@ -1701,16 +1701,16 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
                     width: "100%",
                     padding: "9px 12px",
                     borderRadius: 9,
-                    border: "1.5px solid var(--border)",
-                    background: "var(--input)",
-                    color: "var(--foreground)",
+                    border: "1.5px solid var(--glass-border)",
+                    background: "var(--glass-surface)",
+                    color: "var(--glass-ink)",
                     fontSize: 13,
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontFamily: "'Manrope', sans-serif",
                     outline: "none",
                     transition: "border 0.15s",
                   }}
                   onFocus={(e) => (e.target.style.borderColor = accent)}
-                  onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+                  onBlur={(e) => (e.target.style.borderColor = "var(--glass-border)")}
                 />
               </div>
             ))}
@@ -1727,7 +1727,7 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
               fontWeight: 700,
               fontSize: 13.5,
               cursor: "pointer",
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontFamily: "'Manrope', sans-serif",
               display: "flex",
               alignItems: "center",
               gap: 8,
@@ -1742,8 +1742,8 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
         <div>
           <div
             style={{
-              background: "var(--surface-2)",
-              border: "1px solid var(--border)",
+              background: "var(--glass-surface)",
+              border: "1px solid var(--glass-border)",
               borderRadius: 12,
               padding: "24px",
               fontFamily: "monospace",
@@ -1751,15 +1751,15 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
           >
             <div style={{ textAlign: "center", marginBottom: 20 }}>
               <BelgianFlag />
-              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--foreground)", marginTop: 10 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--glass-ink)", marginTop: 10 }}>
                 ROYAUME DE BELGIQUE — ONEM
               </div>
-              <div style={{ height: 1, background: "var(--border)", margin: "14px 0" }}></div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--foreground)", textTransform: "uppercase" }}>
+              <div style={{ height: 1, background: "var(--glass-border)", margin: "14px 0" }}></div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--glass-ink)", textTransform: "uppercase" }}>
                 {tool.title}
               </div>
             </div>
-            <div style={{ fontSize: 12.5, color: "var(--foreground)", lineHeight: 2 }}>
+            <div style={{ fontSize: 12.5, color: "var(--glass-ink)", lineHeight: 2 }}>
               <div>
                 <strong>Nom :</strong> {formData.nom || "DUPONT"}
               </div>
@@ -1779,8 +1779,8 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
                 <strong>Commune :</strong> {formData.commune || "Bruxelles 1000"}
               </div>
             </div>
-            <div style={{ height: 1, background: "var(--border)", margin: "16px 0" }}></div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "right" }}>
+            <div style={{ height: 1, background: "var(--glass-border)", margin: "16px 0" }}></div>
+            <div style={{ fontSize: 11, color: "var(--glass-ink-soft)", textAlign: "right" }}>
               Généré le {new Date().toLocaleDateString("fr-BE")} via DocBel
             </div>
           </div>
@@ -1790,13 +1790,13 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
               style={{
                 padding: "9px 18px",
                 borderRadius: 9,
-                border: "1px solid var(--border)",
+                border: "1px solid var(--glass-border)",
                 background: "transparent",
-                color: "var(--text-muted)",
+                color: "var(--glass-ink-soft)",
                 fontWeight: 600,
                 fontSize: 13,
                 cursor: "pointer",
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontFamily: "'Manrope', sans-serif",
               }}
             >
               ← Modifier
@@ -1814,7 +1814,7 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
                 fontWeight: 700,
                 fontSize: 13.5,
                 cursor: "pointer",
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontFamily: "'Manrope', sans-serif",
                 opacity: loading ? 0.7 : 1,
               }}
             >
@@ -1826,10 +1826,10 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
 
       {step === 2 && (
         <div>
-          <div style={{ textAlign: "center", padding: "20px 0" }}>
-            <div style={{ fontSize: 52, marginBottom: 16 }}>✅</div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--foreground)", marginBottom: 8 }}>Document prêt !</h3>
-            <p style={{ fontSize: 13.5, color: "var(--text-muted)", marginBottom: 28 }}>
+          <div style={{ textAlign: "center", padding: "16px 0 20px" }}>
+            <div style={{ fontSize: 42, marginBottom: 10 }}>✅</div>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--glass-ink)", marginBottom: 6 }}>Document prêt !</h3>
+            <p style={{ fontSize: 13, color: "var(--glass-ink-soft)", marginBottom: 16 }}>
               Votre {tool.title.toLowerCase()} a été généré avec succès.
             </p>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
@@ -1843,7 +1843,7 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
                   fontWeight: 700,
                   fontSize: 13.5,
                   cursor: "pointer",
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontFamily: "'Manrope', sans-serif",
                 }}
               >
                 Aperçu PDF
@@ -1858,13 +1858,14 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
                   fontWeight: 700,
                   fontSize: 13.5,
                   cursor: "pointer",
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontFamily: "'Manrope', sans-serif",
                 }}
               >
                 ↓ Télécharger
               </button>
             </div>
           </div>
+          {/* BureauCallout AVANT le bouton download (l'étape suivante visuelle) */}
           <BureauCallout organismeCode={inferOrganismeFromTool(tool)} accent={accent} />
         </div>
       )}

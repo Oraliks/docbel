@@ -1,70 +1,34 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useTheme } from "@/components/theme-provider";
-import { Sidebar } from "./sidebar";
-import { TopBarNav } from "./topbar-nav";
-import { Footer } from "./footer";
-import { LoginModal } from "./login-modal";
+import { LandingCommandPalette } from "./landing/command-palette";
+import { LandingFooter } from "./landing/footer";
+import { LandingHeader } from "./landing/header";
 import { AppStateContext } from "@/lib/app-state-context";
-import { getAudience, getAudienceFromPath } from "@/lib/audience";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-
-const PUBLIC_LAYOUT_STYLE = {
-  "--sidebar-width": "18rem",
-  "--sidebar-width-mobile": "20rem",
-} as React.CSSProperties;
+import { getAudienceFromPath } from "@/lib/audience";
+import { TOOLS_DATA } from "@/lib/docbel-data";
 
 export function AppLayoutClient({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const pathname = usePathname();
-  const { data: session, isPending } = authClient.useSession();
   const { resolvedTheme, setTheme } = useTheme();
-  const [lang, setLang] = useState("FR");
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [toolsCat, setToolsCat] = useState("Tous");
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
-  const userLoggedIn = !isPending && Boolean(session?.user);
   const dark = resolvedTheme === "dark";
 
-  if (pathname.startsWith("/admin")) {
+  // /admin owns its own chrome (AppSidebar inside app/admin/layout).
+  // /login is a full-screen split layout — header would clash with it.
+  if (pathname.startsWith("/admin") || pathname.startsWith("/login")) {
     return <>{children}</>;
   }
 
+  // Public chrome: shared by every non-admin route. The URL drives which
+  // persona the header advertises; the actual page content sits inside the
+  // <main> below. Pages render whatever they want, without their own header
+  // or footer.
   const audience = getAudienceFromPath(pathname);
-
-  let activePage = "accueil";
-  if (pathname.startsWith("/actualites")) activePage = "actualites";
-  if (pathname.startsWith("/contact")) activePage = "contact";
-
-  const handleNavigate = (page: string) => {
-    if (page === "actualites") {
-      router.push("/actualites");
-      return;
-    }
-
-    if (page === "contact") {
-      router.push("/contact");
-      return;
-    }
-
-    if (page === "tutoriels") {
-      setToolsCat("Tutoriels");
-      router.push("/");
-      return;
-    }
-
-    if (page === "outils") {
-      router.push("/");
-      return;
-    }
-
-    router.push(getAudience(audience).path);
-  };
-
-  const toggleTheme = () => setTheme(dark ? "light" : "dark");
 
   return (
     <AppStateContext.Provider
@@ -75,55 +39,22 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
         setToolsCat,
       }}
     >
-      <SidebarProvider defaultOpen style={PUBLIC_LAYOUT_STYLE}>
-        <Sidebar
-          accent="#7C3AED"
-          dark={dark}
-          setDark={toggleTheme}
-          lang={lang}
-          setLang={setLang}
-          activePage={activePage}
-          setActivePage={handleNavigate}
-          userLoggedIn={userLoggedIn}
-          setShowLoginModal={setShowLoginModal}
-          outilsOpen={false}
-          setOutilsOpen={() => {}}
-          width={288}
-          userName={session?.user?.name || null}
-          toolsCat={toolsCat}
-          setToolsCat={setToolsCat}
-          newsFilter="all"
-          setNewsFilter={() => {}}
-          audience={audience}
-        />
-
-        <SidebarInset className="min-h-svh text-foreground">
-          <TopBarNav
-            accent="#7C3AED"
-            dark={dark}
-            setDark={toggleTheme}
-            activePage={activePage}
-            setActivePage={handleNavigate}
-            userLoggedIn={userLoggedIn}
-            setShowLoginModal={setShowLoginModal}
-            userName={session?.user?.name || null}
-            userRole={(session?.user as { role?: string })?.role || null}
-            notificationCount={0}
+      <div className="glass-root">
+        <main className="mx-auto flex min-h-svh w-full max-w-[1840px] flex-col gap-6 px-6 pt-6 pb-12 lg:px-12 2xl:px-16">
+          <LandingHeader
+            persona={audience}
+            onSearchOpen={() => setPaletteOpen(true)}
           />
+          {children}
+          <LandingFooter />
+        </main>
 
-          <div className="relative flex flex-1 flex-col">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-linear-to-b from-violet-100/35 via-white/0 to-transparent dark:from-violet-500/8" />
-            <main className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-5 lg:px-5 lg:py-5">
-              {children}
-            </main>
-            <Footer />
-          </div>
-        </SidebarInset>
-
-        {showLoginModal && (
-          <LoginModal onClose={() => setShowLoginModal(false)} accent="#7C3AED" />
-        )}
-      </SidebarProvider>
+        <LandingCommandPalette
+          open={paletteOpen}
+          setOpen={setPaletteOpen}
+          tools={TOOLS_DATA}
+        />
+      </div>
     </AppStateContext.Provider>
   );
 }

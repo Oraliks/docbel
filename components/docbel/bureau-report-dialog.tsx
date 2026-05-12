@@ -62,7 +62,7 @@ export function BureauReportDialog({
     }
     setBusy(true);
     try {
-      const res = await fetch(`/api/bureaus/${bureauId}/report`, {
+      const res = await fetch(`/api/bureaux/${bureauId}/report`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

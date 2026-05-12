@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { ArrowLeftIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tool } from "@/lib/docbel-data";
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
+import { pickToolVisual } from "@/components/docbel/landing/tool-card";
 import {
   CalcAGR,
   CalcCP,
@@ -17,6 +15,17 @@ import {
   Locator,
   Tutorial,
 } from "./tool-views";
+
+const VARIANT_BG: Record<string, string> = {
+  a: "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
+  b: "linear-gradient(135deg, var(--glass-accent-c), #E060A0)",
+  c: "linear-gradient(135deg, var(--glass-accent-d), #FF8050)",
+  d: "linear-gradient(135deg, #80E0C0, #40C0A0)",
+  e: "linear-gradient(135deg, #80B0FF, #5060FF)",
+  f: "linear-gradient(135deg, #FFE070, var(--glass-accent-d))",
+  g: "linear-gradient(135deg, #D08CFF, var(--glass-accent-a))",
+  h: "linear-gradient(135deg, #FF8CC0, #FFB070)",
+};
 
 interface ToolPageProps {
   tool: Tool;
@@ -53,31 +62,59 @@ export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
       });
   }, [type]);
 
+  const visual = pickToolVisual(tool);
+
   return (
-    <div className="flex flex-col gap-6">
+    <section className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="outline" onClick={onBack}>
-          <ArrowLeftIcon data-icon="inline-start" />
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition-colors outline-none hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+        >
+          <ArrowLeftIcon className="size-4" />
           Retour
-        </Button>
-        <Badge variant="secondary">{tool.cat}</Badge>
-        {tool.popular && <Badge>Populaire</Badge>}
+        </button>
+        <span
+          className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]"
+          style={{ background: "var(--glass-surface)" }}
+        >
+          {tool.cat}
+        </span>
+        {tool.popular ? (
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.05em]"
+            style={{
+              background: "var(--glass-pop-bg)",
+              color: "var(--glass-pop-fg)",
+            }}
+          >
+            Populaire
+          </span>
+        ) : null}
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <span className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <IconDisplay value={tool.icon} className="w-6 h-6" />
-            </span>
-            <div className="flex flex-col gap-1">
-              <CardTitle className="text-2xl">{tool.title}</CardTitle>
-              <p className="text-sm text-muted-foreground">{tool.desc}</p>
-            </div>
+      <article className="glass-surface flex flex-col gap-6 p-7 sm:p-9">
+        <header className="flex items-center gap-4">
+          <span
+            className="flex size-14 shrink-0 items-center justify-center rounded-2xl text-white"
+            style={{
+              backgroundImage: VARIANT_BG[visual.variant],
+            }}
+          >
+            <IconDisplay value={tool.icon} className="w-7 h-7" />
+          </span>
+          <div className="flex flex-col gap-1">
+            <h1 className="glass-display text-[28px] font-semibold leading-[1.1] sm:text-[32px]">
+              {tool.title}
+            </h1>
+            <p className="text-[13.5px] text-[color:var(--glass-ink-soft)]">
+              {tool.desc}
+            </p>
           </div>
-        </CardHeader>
+        </header>
 
-        <CardContent className="pt-0">
+        <div>
           {type === "calc_preavis" && <CalcPreavis accent={accent} />}
           {type === "calc_agr" && <CalcAGR accent={accent} />}
           {type === "calc_cp" && <CalcCP accent={accent} />}
@@ -88,22 +125,30 @@ export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
           {(type === "form" || type === "doc" || type === "calc") && (
             <FormFlow tool={tool} accent={accent} lang={lang} />
           )}
-        </CardContent>
+        </div>
 
-        {type === "calc_preavis" && preavisMetadata && (
-          <CardFooter className="flex flex-wrap items-center justify-between gap-3 border-t text-sm text-muted-foreground">
+        {type === "calc_preavis" && preavisMetadata ? (
+          <footer
+            className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-[12px] text-[color:var(--glass-ink-faint)]"
+            style={{ borderTopColor: "var(--glass-ink-line)" }}
+          >
             <span>
-              Source: <span className="font-medium text-foreground">{preavisMetadata.source}</span>
-            </span>
-            {preavisMetadata.lastUpdated && (
-              <span>
-                Mise a jour:{" "}
-                <span className="font-medium text-foreground">{preavisMetadata.lastUpdated}</span>
+              Source :{" "}
+              <span className="font-semibold text-[color:var(--glass-ink)]">
+                {preavisMetadata.source}
               </span>
-            )}
-          </CardFooter>
-        )}
-      </Card>
-    </div>
+            </span>
+            {preavisMetadata.lastUpdated ? (
+              <span>
+                Mise à jour :{" "}
+                <span className="font-semibold text-[color:var(--glass-ink)]">
+                  {preavisMetadata.lastUpdated}
+                </span>
+              </span>
+            ) : null}
+          </footer>
+        ) : null}
+      </article>
+    </section>
   );
 }

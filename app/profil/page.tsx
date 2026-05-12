@@ -44,8 +44,27 @@ export default async function ProfilRoute() {
     : null;
 
   return (
-    <div className="container max-w-4xl mx-auto py-6 px-4">
-      <ProfilePage initial={initial} userName={session.user.name || ""} userEmail={session.user.email} />
-    </div>
+    <section className="flex flex-col gap-6">
+      <header className="flex flex-col gap-3 px-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
+          Mon compte
+        </p>
+        <h1 className="glass-display text-[40px] font-semibold leading-[1.05] sm:text-[48px]">
+          Profil
+        </h1>
+        <p className="max-w-2xl text-[14px] text-[color:var(--glass-ink-soft)]">
+          Ces informations pré-remplissent automatiquement vos formulaires.
+          Elles ne sont jamais partagées avec un tiers.
+        </p>
+      </header>
+
+      <div className="mx-auto w-full max-w-4xl">
+        <ProfilePage
+          initial={initial}
+          userName={session.user.name || ""}
+          userEmail={session.user.email}
+        />
+      </div>
+    </section>
   );
 }

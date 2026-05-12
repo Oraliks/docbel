@@ -45,9 +45,33 @@
   --text-faint: #A8A8B3;
   --nav-bg: #FFFFFF;
   --nav-border: #EBEBEA;
-  /* Brand gradient (dark mauve → light mauve) */
-  --brand-gradient: linear-gradient(135deg, #5B21B6 0%, #A78BFA 100%);
-  --brand-gradient-soft: linear-gradient(135deg, #7C3AED 0%, #C4B5FD 100%);
+
+  /* Landing (glass) tokens — LIGHT mode. Promoted from the prototype
+     route at /glass so the home page (and any other page that opts in
+     via the .glass-root class) can share the same design language. */
+  --glass-bg-a: #e9d9ff;
+  --glass-bg-b: #f5dcef;
+  --glass-bg-c: #f8e8dc;
+  --glass-bg-d: #d8c8ff;
+  --glass-ink: #2a0f4d;
+  --glass-ink-soft: rgba(42, 15, 77, 0.65);
+  --glass-ink-faint: rgba(42, 15, 77, 0.45);
+  --glass-ink-line: rgba(42, 15, 77, 0.12);
+  --glass-surface: rgba(255, 255, 255, 0.5);
+  --glass-surface-strong: rgba(255, 255, 255, 0.62);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-shadow: 0 8px 32px rgba(80, 40, 140, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --glass-accent-a: #9f7cff;
+  --glass-accent-b: #d08cff;
+  --glass-accent-c: #ff8cc0;
+  --glass-accent-d: #ffb070;
+  --glass-accent-deep: #5a2a8c;
+  --glass-pop-bg: rgba(255, 80, 144, 0.16);
+  --glass-pop-fg: #c03070;
+  --glass-status-from: #8b6cf5;
+  --glass-status-to: #4a2178;
+  --glass-noise-opacity: 0.32;
 }
 
 .dark {
@@ -91,9 +115,161 @@
   --text-faint: #555C70;
   --nav-bg: #161920;
   --nav-border: #252830;
-  /* Brand gradient (dark mauve → light mauve) */
-  --brand-gradient: linear-gradient(135deg, #6D28D9 0%, #C4B5FD 100%);
-  --brand-gradient-soft: linear-gradient(135deg, #8B5CF6 0%, #DDD6FE 100%);
+
+  /* Landing (glass) tokens — DARK mode overrides. Used by the home
+     landing and any future page that opts into the .glass-root wrapper. */
+  --glass-bg-a: #1c1a28;
+  --glass-bg-b: #23202e;
+  --glass-bg-c: #15131e;
+  --glass-bg-d: #26222f;
+  --glass-ink: #ece6f2;
+  --glass-ink-soft: rgba(236, 230, 242, 0.68);
+  --glass-ink-faint: rgba(236, 230, 242, 0.42);
+  --glass-ink-line: rgba(255, 255, 255, 0.07);
+  --glass-surface: rgba(255, 255, 255, 0.04);
+  --glass-surface-strong: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 36px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-accent-a: #9a86c8;
+  --glass-accent-b: #b89fd4;
+  --glass-accent-c: #c09ebe;
+  --glass-accent-d: #c4a89e;
+  --glass-accent-deep: #b89fd4;
+  --glass-pop-bg: rgba(192, 158, 190, 0.14);
+  --glass-pop-fg: #c8aac4;
+  --glass-status-from: #2a2438;
+  --glass-status-to: #1a1424;
+  --glass-noise-opacity: 0.12;
+}
+
+/* ============================================================
+   LANDING (.glass-root + primitives)
+   ------------------------------------------------------------
+   Apply `.glass-root` to a page wrapper to get the mauve gradient
+   background + noise overlay + Manrope body font. Primitives
+   (.glass-surface, .glass-display, etc.) work without .glass-root —
+   they just consume the tokens declared at :root/.dark above.
+
+   Promoted from the prototype route at /glass so the home page (and
+   any other route that opts in) can share the same chrome.
+   ============================================================ */
+.glass-root {
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color: var(--glass-ink);
+  min-height: 100svh;
+  position: relative;
+  isolation: isolate;
+}
+
+.glass-root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse 90% 60% at 0% 0%, var(--glass-bg-a) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 100% 0%, var(--glass-bg-b) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 60% at 100% 100%, var(--glass-bg-c) 0%, transparent 60%),
+    radial-gradient(ellipse 90% 70% at 0% 100%, var(--glass-bg-d) 0%, transparent 60%),
+    linear-gradient(135deg, var(--glass-bg-a) 0%, var(--glass-bg-b) 50%, var(--glass-bg-d) 100%);
+}
+
+.glass-root::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: var(--glass-noise-opacity);
+  mix-blend-mode: soft-light;
+}
+
+.glass-surface {
+  background: var(--glass-surface);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  backdrop-filter: blur(28px) saturate(150%);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-surface-strong {
+  background: var(--glass-surface-strong);
+  -webkit-backdrop-filter: blur(36px) saturate(160%);
+  backdrop-filter: blur(36px) saturate(160%);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 18px;
+  box-shadow: 0 16px 50px rgba(40, 15, 80, 0.18);
+}
+
+.glass-display {
+  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+.glass-display em {
+  font-style: italic;
+  color: var(--glass-accent-deep);
+}
+
+.glass-header-shell {
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.glass-header-shell[data-hidden="true"] {
+  transform: translateY(calc(-100% - 24px));
+}
+
+/* ============================================================
+   .glass-popup — opt-in highlight skin for portal'd menus
+   ------------------------------------------------------------
+   WHEN to use this class:
+     Add `glass-popup` to the className of a `DropdownMenuContent`
+     (or any popup that uses `[data-slot=dropdown-menu-item]`)
+     that is rendered from inside a .glass-root tree.
+
+   WHEN NOT to use it:
+     Anywhere else. The colors below are HARDCODED to the glass
+     palette (#9F7CFF mauve / #2A0F4D ink / #ECE6F2 dark ink). If
+     you slap `glass-popup` onto a non-glass menu, its hover state
+     will paint mauve regardless of the surrounding theme.
+
+   WHY the class exists:
+     Base-ui's Menu portals content to <body>, so the popup is
+     OUTSIDE its trigger's subtree — meaning `var(--glass-accent-a)`
+     etc. would resolve from the global tokens (fine) but the
+     hardcoded values keep the highlight stable even if a future
+     theme moves the accent.
+
+   WHY the `!important` on descendants:
+     The project's default `DropdownMenuItem` ships
+     `focus:**:text-accent-foreground`, which forces every nested
+     element to white on focus. That outranks a plain `color` on
+     the item. We mirror our color onto descendants with
+     `!important` to win that cascade — otherwise titles + subtext
+     stay white on our mauve highlight in light mode.
+   ============================================================ */
+.glass-popup [data-slot="dropdown-menu-item"]:hover,
+.glass-popup [data-slot="dropdown-menu-item"]:focus,
+.glass-popup [data-slot="dropdown-menu-item"][data-highlighted] {
+  background-color: rgba(159, 124, 255, 0.22);
+  color: #2a0f4d;
+}
+
+.glass-popup [data-slot="dropdown-menu-item"]:hover *,
+.glass-popup [data-slot="dropdown-menu-item"]:focus *,
+.glass-popup [data-slot="dropdown-menu-item"][data-highlighted] * {
+  color: inherit !important;
+}
+
+.dark .glass-popup [data-slot="dropdown-menu-item"]:hover,
+.dark .glass-popup [data-slot="dropdown-menu-item"]:focus,
+.dark .glass-popup [data-slot="dropdown-menu-item"][data-highlighted] {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ece6f2;
 }
 
 @theme inline {
@@ -135,8 +311,6 @@
   --color-text-faint: var(--text-faint);
   --color-nav-bg: var(--nav-bg);
   --color-nav-border: var(--nav-border);
-  --background-image-brand-gradient: var(--brand-gradient);
-  --background-image-brand-gradient-soft: var(--brand-gradient-soft);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -295,6 +469,64 @@ body,
 @keyframes marquee {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
+}
+
+/* Skeleton shimmer — gradient streak sliding across a muted base */
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-shimmer {
+  background-color: var(--muted);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.06) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+.dark .skeleton-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
+  }
+}
+
+/* Hero "breathing" gradient — subtle scale + drift on the radial spotlight. */
+@keyframes hero-breath {
+  0%, 100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.12) translate(-2%, 1.5%);
+    opacity: 0.78;
+  }
+}
+
+.hero-breath {
+  animation: hero-breath 22s ease-in-out infinite;
+  will-change: transform, opacity;
+  transform-origin: 80% 80%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-breath {
+    animation: none;
+  }
 }
 
 /* A11y toolbar (page-blocks) */

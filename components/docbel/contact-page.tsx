@@ -1,29 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2Icon, ClockIcon, MailIcon, MessageCircleIcon, ShieldCheckIcon } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+  CheckCircle2Icon,
+  ClockIcon,
+  MailIcon,
+  MessageCircleIcon,
+  ShieldCheckIcon,
+} from "lucide-react";
 
 interface ContactPageProps {
-  accent: string;
+  accent?: string;
 }
 
 const CONTACT_EMAIL_PARTS = ["contact", "docbel", "be"];
-const getContactEmail = () => CONTACT_EMAIL_PARTS.join("@").replace("@be", ".be");
+const getContactEmail = () =>
+  CONTACT_EMAIL_PARTS.join("@").replace("@be", ".be");
+
+const SUBJECTS = [
+  "Question générale",
+  "Aide sur un formulaire",
+  "Suggestion d'outil",
+  "Signaler un bug",
+  "Partenariat",
+  "Presse",
+  "Autre",
+];
 
 export function ContactPage(_: ContactPageProps) {
   void _;
@@ -52,198 +54,251 @@ export function ContactPage(_: ContactPageProps) {
     try {
       const response = await fetch("/api/contact-messages", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to submit message");
-      }
+      if (!response.ok) throw new Error("Failed to submit message");
 
       setSubmitted(true);
       setFormData({ name: "", email: "", subject: "", message: "" });
       setAcceptData(false);
-
       window.setTimeout(() => setSubmitted(false), 4000);
     } catch (err) {
       console.error("Error submitting form:", err);
-      setError("Une erreur est survenue. Veuillez reessayer.");
+      setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const isFormValid =
-    formData.name && formData.email && formData.subject && formData.message && acceptData;
+    formData.name &&
+    formData.email &&
+    formData.subject &&
+    formData.message &&
+    acceptData;
+
+  const fieldClass =
+    "w-full rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-3 text-[14px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]";
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-semibold tracking-tight">Nous contacter</h1>
-        <p className="max-w-2xl text-muted-foreground">
-          Une question sur un document, une demarche ou un contenu public ? Ecrivez-nous.
+    <section className="flex flex-col gap-6">
+      <header className="flex flex-col gap-3 px-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
+          Nous contacter
         </p>
-      </div>
+        <h1 className="glass-display text-[40px] font-semibold leading-[1.05] sm:text-[48px]">
+          Une question ? <em>Écrivez-nous.</em>
+        </h1>
+        <p className="max-w-2xl text-[14px] text-[color:var(--glass-ink-soft)]">
+          On vous répond généralement sous 48h ouvrées. Pour les demandes
+          urgentes liées à un dossier ONEM, contactez directement votre bureau
+          local.
+        </p>
+      </header>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_360px]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Envoyer un message</CardTitle>
-            <CardDescription>
-              Remplissez le formulaire ci-dessous. Nous revenons vers vous sous 48 heures ouvrees.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-              {error && (
-                <Alert variant="destructive">
-                  <MessageCircleIcon />
-                  <AlertTitle>Envoi impossible</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {submitted && (
-                <Alert>
-                  <CheckCircle2Icon />
-                  <AlertTitle>Message envoye</AlertTitle>
-                  <AlertDescription>
-                    Merci. Votre demande a bien ete enregistree.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="contact-name">Nom complet</FieldLabel>
-                  <Input
-                    id="contact-name"
-                    value={formData.name}
-                    onChange={(event) => handleInputChange("name", event.target.value)}
-                    placeholder="Votre nom et prenom"
-                    required
-                  />
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="contact-email">Adresse e-mail</FieldLabel>
-                  <Input
-                    id="contact-email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(event) => handleInputChange("email", event.target.value)}
-                    placeholder="vous@exemple.be"
-                    required
-                  />
-                </Field>
-
-                <Field>
-                  <FieldLabel>Sujet</FieldLabel>
-                  <Select
-                    value={formData.subject}
-                    onValueChange={(value) => handleInputChange("subject", value ?? "")}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selectionnez un sujet" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="question">Question generale</SelectItem>
-                        <SelectItem value="technique">Probleme technique</SelectItem>
-                        <SelectItem value="feedback">Suggestion ou retour</SelectItem>
-                        <SelectItem value="autre">Autre sujet</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="contact-message">Votre message</FieldLabel>
-                  <Textarea
-                    id="contact-message"
-                    value={formData.message}
-                    onChange={(event) => handleInputChange("message", event.target.value)}
-                    placeholder="Decrivez votre demande..."
-                    rows={7}
-                    required
-                  />
-                </Field>
-
-                <Field orientation="horizontal">
-                  <Checkbox
-                    checked={acceptData}
-                    onCheckedChange={(value) => setAcceptData(Boolean(value))}
-                    aria-label="Accepter la politique de confidentialite"
-                  />
-                  <div className="flex flex-col gap-1">
-                    <FieldLabel>J&apos;accepte le traitement de mes donnees</FieldLabel>
-                    <FieldDescription>
-                      Elles seront utilisees uniquement pour repondre a votre message.
-                    </FieldDescription>
-                  </div>
-                </Field>
-              </FieldGroup>
-
-              <div className="flex items-center justify-between gap-3">
-                <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                  <ClockIcon className="size-4" />
-                  Reponse en 48h ouvrees
-                </span>
-                <Button type="submit" disabled={!isFormValid || isLoading || submitted}>
-                  {isLoading ? "Envoi en cours..." : "Envoyer le message"}
-                </Button>
+      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+        <form onSubmit={handleSubmit} className="glass-surface flex flex-col gap-5 p-7">
+          {submitted ? (
+            <div
+              className="flex items-start gap-3 rounded-2xl p-4 text-[13.5px]"
+              style={{
+                background: "rgba(80, 200, 140, 0.12)",
+                color: "#1d6b3e",
+              }}
+            >
+              <CheckCircle2Icon className="mt-0.5 size-5 shrink-0" />
+              <div>
+                <p className="font-bold">Message envoyé.</p>
+                <p className="opacity-80">
+                  Merci pour votre prise de contact. Notre équipe vous répond
+                  sous 48h ouvrées.
+                </p>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+            </div>
+          ) : null}
 
-        <div className="flex flex-col gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="inline-flex items-center gap-2">
-                <MailIcon className="size-5 text-primary" />
+          {error ? (
+            <div
+              className="rounded-2xl p-4 text-[13.5px] font-semibold"
+              style={{
+                background: "rgba(220, 80, 100, 0.12)",
+                color: "#b8324a",
+              }}
+            >
+              {error}
+            </div>
+          ) : null}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
+                Nom complet
+              </span>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                placeholder="Marie Dupont"
+                className={fieldClass}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
                 E-mail
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <p className="text-sm text-muted-foreground">Contact direct pour vos demandes generales.</p>
-              <Button variant="outline" render={<a href={`mailto:${contactEmail}`} />}>
+              </span>
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                placeholder="vous@exemple.be"
+                className={fieldClass}
+              />
+            </label>
+          </div>
+
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
+              Sujet
+            </span>
+            <select
+              required
+              value={formData.subject}
+              onChange={(e) => handleInputChange("subject", e.target.value)}
+              className={fieldClass}
+            >
+              <option value="">Sélectionnez un sujet…</option>
+              {SUBJECTS.map((subject) => (
+                <option key={subject} value={subject}>
+                  {subject}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
+              Message
+            </span>
+            <textarea
+              required
+              rows={6}
+              value={formData.message}
+              onChange={(e) => handleInputChange("message", e.target.value)}
+              placeholder="Décrivez votre demande en quelques lignes…"
+              className={`${fieldClass} resize-y`}
+            />
+          </label>
+
+          <label className="flex items-start gap-3 text-[12.5px] text-[color:var(--glass-ink-soft)]">
+            <input
+              type="checkbox"
+              checked={acceptData}
+              onChange={(e) => setAcceptData(e.target.checked)}
+              className="mt-0.5 size-4 accent-[color:var(--glass-accent-deep)]"
+            />
+            <span>
+              J&apos;accepte que mes données soient utilisées pour répondre à
+              cette demande. Aucune information n&apos;est partagée avec un
+              tiers.
+            </span>
+          </label>
+
+          <button
+            type="submit"
+            disabled={!isFormValid || isLoading}
+            className="inline-flex items-center justify-center gap-2 self-start rounded-full px-6 py-3 text-[13.5px] font-bold transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            style={{
+              background: "var(--glass-ink)",
+              color: "var(--glass-bg-a)",
+            }}
+          >
+            {isLoading ? "Envoi…" : "Envoyer le message"}
+          </button>
+        </form>
+
+        <aside className="flex flex-col gap-4">
+          <div className="glass-surface flex gap-3 p-5">
+            <span
+              className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-white"
+              style={{
+                backgroundImage:
+                  "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
+              }}
+            >
+              <MailIcon className="size-5" />
+            </span>
+            <div>
+              <p className="text-[13.5px] font-bold">E-mail direct</p>
+              <a
+                href={`mailto:${contactEmail}`}
+                className="mt-1 inline-block text-[12.5px] font-semibold text-[color:var(--glass-accent-deep)] hover:underline"
+              >
                 {contactEmail}
-              </Button>
-            </CardContent>
-          </Card>
+              </a>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="inline-flex items-center gap-2">
-                <MessageCircleIcon className="size-5 text-primary" />
-                Delai de reponse
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Notre equipe traite les demandes sous <span className="font-medium text-foreground">48 heures ouvrees</span>.
+          <div className="glass-surface flex gap-3 p-5">
+            <span
+              className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-white"
+              style={{
+                backgroundImage:
+                  "linear-gradient(135deg, var(--glass-accent-c), var(--glass-accent-d))",
+              }}
+            >
+              <ClockIcon className="size-5" />
+            </span>
+            <div>
+              <p className="text-[13.5px] font-bold">Temps de réponse</p>
+              <p className="mt-1 text-[12.5px] text-[color:var(--glass-ink-soft)]">
+                Sous 48h ouvrées pour les questions générales.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="inline-flex items-center gap-2">
-                <ShieldCheckIcon className="size-5 text-primary" />
-                Confidentialite
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Vos donnees restent confidentielles et ne sont jamais revendues ni diffusees.
+          <div className="glass-surface flex gap-3 p-5">
+            <span
+              className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-white"
+              style={{
+                backgroundImage:
+                  "linear-gradient(135deg, var(--glass-accent-deep), var(--glass-accent-a))",
+              }}
+            >
+              <ShieldCheckIcon className="size-5" />
+            </span>
+            <div>
+              <p className="text-[13.5px] font-bold">Confidentialité</p>
+              <p className="mt-1 text-[12.5px] text-[color:var(--glass-ink-soft)]">
+                Vos données ne sont utilisées que pour répondre à votre
+                message.
               </p>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
+
+          <div className="glass-surface flex gap-3 p-5">
+            <span
+              className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-white"
+              style={{
+                backgroundImage:
+                  "linear-gradient(135deg, #80B0FF, #5060FF)",
+              }}
+            >
+              <MessageCircleIcon className="size-5" />
+            </span>
+            <div>
+              <p className="text-[13.5px] font-bold">Vous avez un dossier urgent ?</p>
+              <p className="mt-1 text-[12.5px] text-[color:var(--glass-ink-soft)]">
+                Contactez directement votre bureau ONEM ou votre organisme de
+                paiement.
+              </p>
+            </div>
+          </div>
+        </aside>
       </div>
-    </div>
+    </section>
   );
 }

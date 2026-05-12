@@ -1,137 +1,103 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { HeroSection } from "@/components/docbel/hero";
-import { ToolsSection } from "@/components/docbel/tools";
-import { LoadingView } from "@/components/docbel/loading-view";
-import { Tool, NewsItem, getToolSlug, getToolsByAudience } from "@/lib/docbel-data";
-import { useAppState } from "@/lib/app-state-context";
+import { useEffect, useMemo, useState } from "react";
+import { LandingBottom } from "@/components/docbel/landing/bottom";
+import { LandingHero } from "@/components/docbel/landing/hero";
+import { LandingTools } from "@/components/docbel/landing/tools";
+import { type AudienceId, getAudienceFromPath } from "@/lib/audience";
+import {
+  type NewsItem,
+  TOOLS_DATA,
+  getToolsByAudience,
+} from "@/lib/docbel-data";
 
-export default function Home() {
-  const router = useRouter();
-  const { toolsCat, setToolsCat } = useAppState();
-  const [newsIdx, setNewsIdx] = useState(0);
-  const [apiNews, setApiNews] = useState<NewsItem[]>([]);
-  const [toolsSearch, setToolsSearch] = useState("");
-  const [toolsLayout, setToolsLayout] = useState<"grid" | "list">("grid");
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingTool, setLoadingTool] = useState<Tool | null>(null);
+const MONTH_LABELS = [
+  "JAN",
+  "FÉV",
+  "MARS",
+  "AVR",
+  "MAI",
+  "JUIN",
+  "JUIL",
+  "AOÛT",
+  "SEPT",
+  "OCT",
+  "NOV",
+  "DÉC",
+];
+
+function formatFrenchDate(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return `${String(parsed.getDate()).padStart(2, "0")} ${
+    MONTH_LABELS[parsed.getMonth()]
+  } ${String(parsed.getFullYear()).slice(2)}`;
+}
+
+export default function HomePage() {
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+
+  // The header (with persona switcher) lives in AppLayoutClient; this page
+  // just decides which tools to show based on the URL.
+  const persona: AudienceId = getAudienceFromPath("/");
 
   useEffect(() => {
-    const fetchNews = async () => {
+    let cancelled = false;
+    async function fetchNews() {
       try {
-        const response = await fetch("/api/news?status=published&featured=true");
-        if (!response.ok) return;
-
-        const data = await response.json();
-        const mappedNews = (data.articles || [])
-          .filter((article: { featured: boolean }) => article.featured === true)
-          .map(
-            (article: {
-              id: string;
-              slug: string;
-              category: string;
-              title: string;
-              excerpt: string;
-              publishedAt: string;
-              color: string;
-              readingTime: number;
-              featured: boolean;
-              image: string | null;
-            }) => ({
-              id: article.id,
-              slug: article.slug,
-              tag: article.category,
-              title: article.title,
-              desc: article.excerpt,
-              date: new Date(article.publishedAt).toLocaleDateString("fr-FR", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              }),
-              color: article.color,
-              readingTime: article.readingTime,
-              popular: article.featured,
-              image: article.image || undefined,
-            })
-          );
-
-        setApiNews(mappedNews);
+        const res = await fetch("/api/news?status=published&featured=true");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        const mapped: NewsItem[] = (data.articles || []).map((article: {
+          id: string;
+          slug: string;
+          category: string;
+          title: string;
+          excerpt: string;
+          publishedAt: string;
+          color: string;
+          readingTime: number;
+          featured: boolean;
+          image?: string | null;
+        }) => ({
+          id: article.id,
+          slug: article.slug,
+          tag: article.category,
+          title: article.title,
+          desc: article.excerpt,
+          date: formatFrenchDate(article.publishedAt),
+          color: article.color,
+          readingTime: article.readingTime,
+          popular: article.featured,
+          image: article.image || undefined,
+        }));
+        setNews(mapped);
       } catch (error) {
-        console.error("Error fetching news:", error);
+        console.error("Home — fetch news failed:", error);
+      } finally {
+        if (!cancelled) setNewsLoading(false);
       }
-    };
-
+    }
     void fetchNews();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  useEffect(() => {
-    if (!apiNews.length) return;
+  const tools = useMemo(() => {
+    const audienceTools = getToolsByAudience(persona);
+    return audienceTools.length ? audienceTools : TOOLS_DATA;
+  }, [persona]);
 
-    const timer = setInterval(() => {
-      setNewsIdx((value) => (value + 1) % apiNews.length);
-    }, 8000);
-
-    return () => clearInterval(timer);
-  }, [apiNews.length]);
-
-  const citoyenTools = getToolsByAudience("citoyen");
-  const filteredTools = citoyenTools.filter((tool) => {
-    const matchesCategory = toolsCat === "Tous" || tool.cat === toolsCat;
-    const matchesSearch =
-      tool.title.toLowerCase().includes(toolsSearch.toLowerCase()) ||
-      tool.desc.toLowerCase().includes(toolsSearch.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
-
-  const featuredTools = citoyenTools.filter((tool) => tool.id === 6 || tool.id === 2);
-
-  const handleToolClick = (tool: Tool) => {
-    setIsLoading(true);
-    setLoadingTool(tool);
-
-    window.setTimeout(() => {
-      router.push(`/outils/${getToolSlug(tool)}`);
-    }, 900);
-  };
-
-  const handleArticleClick = (article: NewsItem) => {
-    router.push(`/actualites/${article.slug ?? article.id}`);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center py-16">
-        <LoadingView accent="#7C3AED" tool={loadingTool} />
-      </div>
-    );
-  }
+  const featuredArticle = news[0] ?? null;
 
   return (
-    <div className="flex flex-col gap-5 lg:gap-6">
-      <HeroSection
-        news={apiNews}
-        newsIdx={newsIdx}
-        setNewsIdx={setNewsIdx}
-        accent="#7C3AED"
-        heroStyle="gradient"
-        onArticleClick={handleArticleClick}
-        featuredTools={featuredTools}
-        onToolClick={handleToolClick}
-      />
-
-      <ToolsSection
-        tools={filteredTools}
-        search={toolsSearch}
-        setSearch={setToolsSearch}
-        cat={toolsCat}
-        setCat={setToolsCat}
-        layout={toolsLayout}
-        setLayout={setToolsLayout}
-        accent="#7C3AED"
-        setOpenTool={handleToolClick}
-      />
-    </div>
+    <>
+      <LandingHero article={featuredArticle} loading={newsLoading} />
+      <LandingTools tools={tools} />
+      <LandingBottom news={news} loading={newsLoading} />
+    </>
   );
 }

@@ -133,22 +133,26 @@ const defaultData = {
     },
     {
       title: "Bureaux",
-      url: "/admin/bureaus",
+      url: "/admin/bureaux",
       icon: (
         <MapPinIcon className="size-4" />
       ),
       items: [
         {
-          title: "Tous les bureaux",
-          url: "/admin/bureaus",
+          title: "Annuaire",
+          url: "/admin/bureaux#annuaire",
         },
         {
-          title: "Compétences ONEM",
-          url: "/admin/bureaus/onem-assignments",
+          title: "Compétences territoriales",
+          url: "/admin/bureaux#services",
+        },
+        {
+          title: "Liens commissions paritaires",
+          url: "/admin/bureaux#commissions",
         },
         {
           title: "Signalements",
-          url: "/admin/bureaus/reports",
+          url: "/admin/bureaux#reports",
         },
       ],
     },

@@ -72,6 +72,10 @@ export async function PUT(req: NextRequest) {
     "jobTitle",
     "contractType",
     "contractStart",
+    // Préférences administratives (résolveur bureaux)
+    "organismePaiement",
+    "commissionParitaireCode",
+    "mutuelleCode",
   ];
 
   const data: Record<string, unknown> = {};

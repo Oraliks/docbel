@@ -1,13 +1,14 @@
 import {
   Building2Icon,
-  UsersIcon,
   CalendarDaysIcon,
-  GlobeIcon,
   CheckCircle2Icon,
   ClockIcon,
+  GlobeIcon,
+  UsersIcon,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GLASS_CARD } from "@/lib/glass-classes";
 
 interface Colleague {
   id: string;
@@ -38,7 +39,9 @@ export function PartnerDashboard({
   domains,
 }: PartnerDashboardProps) {
   const otherColleagues = colleagues.filter((c) => c.id !== currentUserId);
-  const activeColleagues = otherColleagues.filter((c) => c.status === "active");
+  const activeColleagues = otherColleagues.filter(
+    (c) => c.status === "active",
+  );
   const recentlyActive = otherColleagues
     .filter((c) => c.lastLoginAt)
     .sort(
@@ -49,94 +52,96 @@ export function PartnerDashboard({
     .slice(0, 5);
 
   return (
-    <div className="flex flex-col gap-6 py-2">
-      <section className="rounded-3xl border bg-linear-to-br from-violet-50 via-white to-violet-100/30 p-6 dark:from-violet-500/10 dark:via-background dark:to-violet-500/5 lg:p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-8">
-          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-300 via-violet-500 to-violet-900 text-white">
+    <section className="flex flex-col gap-6">
+      <Card className={GLASS_CARD}>
+        <CardContent className="flex flex-col gap-5 p-7 lg:flex-row lg:items-center lg:gap-8">
+          <span
+            className="flex size-14 shrink-0 items-center justify-center rounded-2xl text-white"
+            style={{
+              backgroundImage:
+                "linear-gradient(135deg, var(--glass-accent-deep), var(--glass-accent-a))",
+            }}
+          >
             <Building2Icon className="size-6" />
-          </div>
-          <div className="flex flex-1 flex-col gap-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">
+          </span>
+          <div className="flex flex-1 flex-col gap-2">
+            <span
+              className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em]"
+              style={{
+                background: "var(--glass-ink)",
+                color: "var(--glass-bg-a)",
+              }}
+            >
+              <span
+                className="size-1.5 rounded-full"
+                style={{ background: "var(--glass-accent-c)" }}
+              />
               Espace Partenaire
             </span>
-            <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">
+            <h1 className="glass-display text-[28px] font-semibold leading-[1.1] sm:text-[36px]">
               {organizationName}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[13.5px] text-[color:var(--glass-ink-soft)]">
               {activeColleagues.length} collègue
               {activeColleagues.length > 1 ? "s" : ""} actif
-              {activeColleagues.length > 1 ? "s" : ""} ·{" "}
-              {domains.length} domaine{domains.length > 1 ? "s" : ""} autorisé
+              {activeColleagues.length > 1 ? "s" : ""} · {domains.length} domaine
+              {domains.length > 1 ? "s" : ""} autorisé
               {domains.length > 1 ? "s" : ""}
             </p>
           </div>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      <section className="grid gap-3 sm:grid-cols-3">
-        <Card>
-          <CardContent className="flex items-start gap-3 p-5">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">
-              <UsersIcon className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm text-muted-foreground">Collègues inscrits</p>
-              <p className="mt-0.5 text-2xl font-bold tracking-tight">
-                {otherColleagues.length}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-start gap-3 p-5">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
-              <CheckCircle2Icon className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm text-muted-foreground">Comptes actifs</p>
-              <p className="mt-0.5 text-2xl font-bold tracking-tight">
-                {activeColleagues.length}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-start gap-3 p-5">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
-              <GlobeIcon className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm text-muted-foreground">Domaines autorisés</p>
-              <p className="mt-0.5 text-2xl font-bold tracking-tight">
-                {domains.length}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard
+          icon={UsersIcon}
+          label="Collègues inscrits"
+          value={otherColleagues.length}
+          gradient="linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))"
+        />
+        <StatCard
+          icon={CheckCircle2Icon}
+          label="Comptes actifs"
+          value={activeColleagues.length}
+          gradient="linear-gradient(135deg, #80E0C0, #40C0A0)"
+        />
+        <StatCard
+          icon={GlobeIcon}
+          label="Domaines autorisés"
+          value={domains.length}
+          gradient="linear-gradient(135deg, #80B0FF, #5060FF)"
+        />
+      </div>
 
-      <section className="grid gap-3 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <UsersIcon className="size-4" />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className={GLASS_CARD}>
+          <CardHeader className="px-7 pt-7 pb-3">
+            <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
+              <UsersIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
               Vos collègues
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-7 pb-7">
             {otherColleagues.length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
+              <p className="py-6 text-center text-[13px] text-[color:var(--glass-ink-soft)]">
                 Vous êtes la seule personne de {organizationName} inscrite pour
                 l&apos;instant.
               </p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="flex flex-col gap-2">
                 {otherColleagues.slice(0, 8).map((c) => (
                   <li
                     key={c.id}
-                    className="flex items-center gap-3 rounded-md border bg-muted/20 p-2.5"
+                    className="flex items-center gap-3 rounded-2xl p-3"
+                    style={{ background: "var(--glass-surface)" }}
                   >
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
+                    <span
+                      className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[11px] font-bold text-white"
+                      style={{
+                        backgroundImage:
+                          "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
+                      }}
+                    >
                       {c.name
                         .split(" ")
                         .map((n) => n[0])
@@ -146,64 +151,55 @@ export function PartnerDashboard({
                         .toUpperCase()}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{c.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">
+                      <p className="truncate text-[13.5px] font-bold">
+                        {c.name}
+                      </p>
+                      <p className="truncate text-[12px] text-[color:var(--glass-ink-faint)]">
                         {c.email}
                       </p>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className={
-                        c.status === "active"
-                          ? "gap-1 border-green-200 bg-green-50 text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300"
-                          : "gap-1"
-                      }
-                    >
-                      {c.status === "active" ? (
-                        <CheckCircle2Icon className="size-3" />
-                      ) : (
-                        <ClockIcon className="size-3" />
-                      )}
-                      {c.status}
-                    </Badge>
+                    <StatusBadge status={c.status} />
                   </li>
                 ))}
-                {otherColleagues.length > 8 && (
-                  <li className="pt-1 text-center text-xs text-muted-foreground">
+                {otherColleagues.length > 8 ? (
+                  <li className="pt-1 text-center text-[11.5px] text-[color:var(--glass-ink-faint)]">
                     + {otherColleagues.length - 8} autres
                   </li>
-                )}
+                ) : null}
               </ul>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <CalendarDaysIcon className="size-4" />
+        <Card className={GLASS_CARD}>
+          <CardHeader className="px-7 pt-7 pb-3">
+            <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
+              <CalendarDaysIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
               Dernières connexions
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-7 pb-7">
             {recentlyActive.length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
+              <p className="py-6 text-center text-[13px] text-[color:var(--glass-ink-soft)]">
                 Aucune connexion récente parmi vos collègues.
               </p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="flex flex-col gap-2">
                 {recentlyActive.map((c) => (
                   <li
                     key={c.id}
-                    className="flex items-center justify-between gap-3 rounded-md border bg-muted/20 p-2.5"
+                    className="flex items-center justify-between gap-3 rounded-2xl p-3"
+                    style={{ background: "var(--glass-surface)" }}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{c.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">
+                      <p className="truncate text-[13.5px] font-bold">
+                        {c.name}
+                      </p>
+                      <p className="truncate text-[12px] text-[color:var(--glass-ink-faint)]">
                         {c.email}
                       </p>
                     </div>
-                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                    <span className="shrink-0 text-[11.5px] font-semibold tabular-nums text-[color:var(--glass-ink-faint)]">
                       {new Date(c.lastLoginAt!).toLocaleDateString("fr-BE")}
                     </span>
                   </li>
@@ -212,35 +208,89 @@ export function PartnerDashboard({
             )}
           </CardContent>
         </Card>
-      </section>
+      </div>
 
-      <section>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <GlobeIcon className="size-4" />
-              Domaines autorisés pour {organizationName}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-1.5">
-              {domains.map((d) => (
-                <Badge
-                  key={d.domain}
-                  variant="outline"
-                  className={
-                    d.isActive
-                      ? "font-mono gap-1 border-green-200 bg-green-50 text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300"
-                      : "font-mono"
-                  }
-                >
-                  @{d.domain}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-    </div>
+      <Card className={GLASS_CARD}>
+        <CardHeader className="px-7 pt-7 pb-3">
+          <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
+            <GlobeIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
+            Domaines autorisés pour {organizationName}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-7 pb-7">
+          <div className="flex flex-wrap gap-2">
+            {domains.map((d) => (
+              <Badge
+                key={d.domain}
+                className={`font-mono rounded-full border-0 px-3 py-1 text-[11px] ${
+                  d.isActive ? "" : "opacity-60"
+                }`}
+                style={{
+                  background: d.isActive
+                    ? "rgba(80, 200, 140, 0.18)"
+                    : "var(--glass-surface)",
+                  color: d.isActive ? "#1d6b3e" : "var(--glass-ink-soft)",
+                }}
+              >
+                @{d.domain}
+              </Badge>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  gradient,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  gradient: string;
+}) {
+  return (
+    <Card className={GLASS_CARD}>
+      <CardContent className="flex items-start gap-3 p-5">
+        <span
+          className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-white"
+          style={{ backgroundImage: gradient }}
+        >
+          <Icon className="size-5" />
+        </span>
+        <div>
+          <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
+            {label}
+          </p>
+          <p className="glass-display mt-0.5 text-[28px] font-semibold leading-none">
+            {value}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const active = status === "active";
+  return (
+    <Badge
+      className="gap-1 rounded-full border-0 px-2.5 py-0.5 text-[10px] font-bold uppercase"
+      style={{
+        background: active ? "rgba(80, 200, 140, 0.18)" : "var(--glass-surface)",
+        color: active ? "#1d6b3e" : "var(--glass-ink-soft)",
+      }}
+    >
+      {active ? (
+        <CheckCircle2Icon className="size-3" />
+      ) : (
+        <ClockIcon className="size-3" />
+      )}
+      {status}
+    </Badge>
   );
 }

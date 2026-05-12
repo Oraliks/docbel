@@ -3,18 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  AlertCircleIcon,
+  ArrowRightIcon,
   CheckCircle2Icon,
   Loader2Icon,
-  AlertCircleIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 type Status = "idle" | "verifying" | "success" | "error";
 
@@ -57,57 +50,82 @@ export function ConfirmAccount({ token }: ConfirmAccountProps) {
 
   if (status === "verifying") {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-300">
-            <Loader2Icon className="size-6 animate-spin" />
-          </div>
-          <CardTitle>Activation en cours…</CardTitle>
-          <CardDescription>
-            Nous vérifions votre lien d&apos;activation.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="glass-surface flex flex-col items-center gap-4 p-10 text-center">
+        <span
+          className="flex size-14 items-center justify-center rounded-2xl text-white"
+          style={{
+            backgroundImage:
+              "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
+          }}
+        >
+          <Loader2Icon className="size-6 animate-spin" />
+        </span>
+        <h1 className="glass-display text-[24px] font-semibold">
+          Activation en cours…
+        </h1>
+        <p className="max-w-sm text-[13px] text-[color:var(--glass-ink-soft)]">
+          Nous vérifions votre lien d&apos;activation. Cela ne prend que
+          quelques secondes.
+        </p>
+      </div>
     );
   }
 
   if (status === "success") {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
-            <CheckCircle2Icon className="size-6" />
-          </div>
-          <CardTitle>Compte activé !</CardTitle>
-          <CardDescription>
-            Votre adresse email est confirmée. Vous pouvez maintenant vous
-            connecter à votre espace partenaire.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center">
-          <Button render={<Link href="/" />}>Se connecter</Button>
-        </CardContent>
-      </Card>
+      <div className="glass-surface flex flex-col items-center gap-4 p-10 text-center">
+        <span
+          className="flex size-14 items-center justify-center rounded-2xl text-white"
+          style={{
+            backgroundImage: "linear-gradient(135deg, #80E0C0, #40C0A0)",
+          }}
+        >
+          <CheckCircle2Icon className="size-6" />
+        </span>
+        <h1 className="glass-display text-[28px] font-semibold">
+          Compte activé !
+        </h1>
+        <p className="max-w-md text-[13.5px] text-[color:var(--glass-ink-soft)]">
+          Votre adresse email est confirmée. Vous pouvez maintenant vous
+          connecter à votre espace partenaire.
+        </p>
+        <Link
+          href="/login"
+          className="mt-2 inline-flex items-center gap-2 rounded-full px-6 py-3 text-[13.5px] font-bold transition hover:opacity-90"
+          style={{
+            background: "var(--glass-ink)",
+            color: "var(--glass-bg-a)",
+          }}
+        >
+          Se connecter
+          <ArrowRightIcon className="size-4" />
+        </Link>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-          <AlertCircleIcon className="size-6" />
-        </div>
-        <CardTitle>Activation impossible</CardTitle>
-        <CardDescription>{errorMessage}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex justify-center gap-2">
-        <Button
-          variant="outline"
-          render={<Link href="/inscription/partenaire" />}
-        >
-          Recommencer l&apos;inscription
-        </Button>
-      </CardContent>
-    </Card>
+    <div className="glass-surface flex flex-col items-center gap-4 p-10 text-center">
+      <span
+        className="flex size-14 items-center justify-center rounded-2xl text-white"
+        style={{
+          backgroundImage: "linear-gradient(135deg, #FF8CC0, #E0506A)",
+        }}
+      >
+        <AlertCircleIcon className="size-6" />
+      </span>
+      <h1 className="glass-display text-[24px] font-semibold">
+        Activation impossible
+      </h1>
+      <p className="max-w-md text-[13.5px] text-[color:var(--glass-ink-soft)]">
+        {errorMessage}
+      </p>
+      <Link
+        href="/inscription/partenaire"
+        className="mt-2 inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-2.5 text-[13px] font-semibold text-[color:var(--glass-ink)] transition hover:bg-white/55 dark:hover:bg-white/10"
+      >
+        Recommencer l&apos;inscription
+      </Link>
+    </div>
   );
 }

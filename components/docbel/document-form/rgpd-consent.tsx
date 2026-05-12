@@ -1,18 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
+import { GLASS_CARD, GLASS_PRIMARY_STYLE } from "@/lib/glass-classes";
 
 interface RgpdConsentProps {
   notice: string | null;
@@ -49,17 +50,22 @@ export function RgpdConsent({ notice, onContinue }: RgpdConsentProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-primary" />
+    <Card className={GLASS_CARD}>
+      <CardHeader className="px-7 pt-7 pb-3">
+        <CardTitle className="glass-display flex items-center gap-2 text-[22px] font-semibold">
+          <ShieldCheckIcon
+            className="size-5"
+            style={{ color: "var(--glass-accent-deep)" }}
+          />
           Avant de commencer — RGPD
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm whitespace-pre-line text-muted-foreground">{text}</p>
+      <CardContent className="flex flex-col gap-4 px-7 pb-7">
+        <p className="text-[13.5px] whitespace-pre-line text-[color:var(--glass-ink-soft)]">
+          {text}
+        </p>
 
-        <label className="flex items-start gap-2 text-sm cursor-pointer select-none">
+        <label className="flex cursor-pointer items-start gap-2 text-[13px] text-[color:var(--glass-ink)] select-none">
           <Checkbox
             checked={accepted}
             onCheckedChange={(c) => setAccepted(c === true)}
@@ -73,7 +79,7 @@ export function RgpdConsent({ notice, onContinue }: RgpdConsentProps) {
                 e.preventDefault();
                 openConditions();
               }}
-              className="text-primary underline underline-offset-2 hover:no-underline font-medium"
+              className="font-semibold text-[color:var(--glass-accent-deep)] underline underline-offset-2 hover:no-underline"
             >
               les conditions générales
             </button>{" "}
@@ -82,34 +88,52 @@ export function RgpdConsent({ notice, onContinue }: RgpdConsentProps) {
         </label>
 
         <div className="flex justify-end">
-          <Button onClick={onContinue} disabled={!accepted}>
+          <Button
+            onClick={onContinue}
+            disabled={!accepted}
+            className="rounded-full font-bold disabled:opacity-50"
+            style={GLASS_PRIMARY_STYLE}
+          >
             Commencer le formulaire
           </Button>
         </div>
       </CardContent>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+        <DialogContent className="flex max-h-[80vh] max-w-2xl flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-primary" />
+              <ShieldCheckIcon
+                className="size-5"
+                style={{ color: "var(--glass-accent-deep)" }}
+              />
               Conditions générales
             </DialogTitle>
             <DialogDescription>
               Veuillez lire attentivement avant de cocher la case de consentement.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto rounded border bg-muted/20 p-4">
+          <div
+            className="flex-1 overflow-y-auto rounded-2xl border border-[color:var(--glass-ink-line)] p-4"
+            style={{ background: "var(--glass-surface)" }}
+          >
             {loadingGeneral ? (
-              <p className="text-sm text-muted-foreground">Chargement…</p>
+              <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
+                Chargement…
+              </p>
             ) : (
-              <p className="text-sm whitespace-pre-line">
-                {generalText || "Aucun texte de conditions générales n'a été configuré."}
+              <p className="text-[13px] whitespace-pre-line text-[color:var(--glass-ink)]">
+                {generalText ||
+                  "Aucun texte de conditions générales n'a été configuré."}
               </p>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setModalOpen(false)}
+              className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)]"
+            >
               Fermer
             </Button>
             <Button
@@ -117,6 +141,8 @@ export function RgpdConsent({ notice, onContinue }: RgpdConsentProps) {
                 setAccepted(true);
                 setModalOpen(false);
               }}
+              className="rounded-full font-bold"
+              style={GLASS_PRIMARY_STYLE}
             >
               J&apos;accepte les conditions
             </Button>

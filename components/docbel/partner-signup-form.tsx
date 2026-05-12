@@ -2,22 +2,21 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
-  CheckCircle2Icon,
+  AlertCircleIcon,
   Building2Icon,
+  CheckCircle2Icon,
   Loader2Icon,
   MailCheckIcon,
-  AlertCircleIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  GLASS_CARD,
+  GLASS_INPUT,
+  GLASS_LABEL,
+} from "@/lib/glass-classes";
 
 type FormState = {
   name: string;
@@ -86,7 +85,10 @@ export function PartnerSignupForm() {
         );
         if (seq !== lookupSeqRef.current) return;
         if (!res.ok) {
-          setLookupResult({ emailQueried: normalizedEmail, recognized: false });
+          setLookupResult({
+            emailQueried: normalizedEmail,
+            recognized: false,
+          });
           return;
         }
         const data = await res.json();
@@ -155,21 +157,25 @@ export function PartnerSignupForm() {
 
   if (success) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-300">
+      <Card className={GLASS_CARD}>
+        <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
+          <span
+            className="flex size-14 items-center justify-center rounded-2xl text-white"
+            style={{
+              backgroundImage:
+                "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
+            }}
+          >
             <MailCheckIcon className="size-6" />
-          </div>
-          <CardTitle className="text-center">
+          </span>
+          <h2 className="glass-display text-[24px] font-semibold">
             Vérifiez votre boîte mail
-          </CardTitle>
-          <CardDescription className="text-center">
+          </h2>
+          <p className="max-w-md text-[13.5px] text-[color:var(--glass-ink-soft)]">
             Un email a été envoyé à <strong>{success.email}</strong> avec un
             lien d&apos;activation valable 24 heures.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-center text-xs text-muted-foreground">
+          </p>
+          <p className="text-[12px] text-[color:var(--glass-ink-faint)]">
             Pas d&apos;email reçu ? Vérifiez vos spams ou contactez-nous.
           </p>
         </CardContent>
@@ -180,22 +186,27 @@ export function PartnerSignupForm() {
   const submitDisabled = isPending || lookup.status !== "recognized";
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Votre nom</Label>
+    <Card className={GLASS_CARD}>
+      <CardContent className="p-7 sm:p-8">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="name" className={GLASS_LABEL}>
+              Votre nom
+            </Label>
             <Input
               id="name"
               autoComplete="name"
               required
               value={form.name}
               onChange={handleChange("name")}
+              className={GLASS_INPUT}
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Email professionnel</Label>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="email" className={GLASS_LABEL}>
+              Email professionnel
+            </Label>
             <Input
               id="email"
               type="email"
@@ -204,47 +215,68 @@ export function PartnerSignupForm() {
               placeholder="prenom.nom@cpas.brussels"
               value={form.email}
               onChange={handleChange("email")}
+              className={GLASS_INPUT}
             />
 
-            {lookup.status === "checking" && (
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            {lookup.status === "checking" ? (
+              <p className="flex items-center gap-1.5 text-[12px] text-[color:var(--glass-ink-soft)]">
                 <Loader2Icon className="size-3 animate-spin" />
                 Vérification du domaine…
               </p>
-            )}
-            {lookup.status === "recognized" && (
-              <div className="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-2.5 text-sm dark:border-emerald-500/30 dark:bg-emerald-500/10">
-                <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-300" />
+            ) : null}
+
+            {lookup.status === "recognized" ? (
+              <div
+                className="flex items-start gap-2 rounded-2xl p-3 text-[12.5px]"
+                style={{
+                  background: "rgba(80, 200, 140, 0.12)",
+                  color: "#1d6b3e",
+                }}
+              >
+                <CheckCircle2Icon className="mt-0.5 size-4 shrink-0" />
                 <div className="flex-1">
-                  <div className="flex items-center gap-1.5 font-medium text-emerald-700 dark:text-emerald-200">
+                  <div className="flex items-center gap-1.5 font-bold">
                     <Building2Icon className="size-3.5" />
                     {lookup.organizationName}
-                    {lookup.isTest && (
-                      <span className="ml-auto rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
+                    {lookup.isTest ? (
+                      <span
+                        className="ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase"
+                        style={{
+                          background: "rgba(255, 200, 140, 0.40)",
+                          color: "#8a4f0a",
+                        }}
+                      >
                         Test
                       </span>
-                    )}
+                    ) : null}
                   </div>
-                  <p className="text-xs text-emerald-700/80 dark:text-emerald-200/80">
-                    Organisation reconnue.
-                  </p>
+                  <p className="opacity-80">Organisation reconnue.</p>
                 </div>
               </div>
-            )}
-            {lookup.status === "unknown" && form.email.includes("@") && (
-              <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2.5 text-sm dark:border-amber-500/30 dark:bg-amber-500/10">
-                <AlertCircleIcon className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-300" />
-                <div className="flex-1 text-xs text-amber-800 dark:text-amber-200">
+            ) : null}
+
+            {lookup.status === "unknown" && form.email.includes("@") ? (
+              <div
+                className="flex items-start gap-2 rounded-2xl p-3 text-[12.5px]"
+                style={{
+                  background: "rgba(255, 200, 140, 0.18)",
+                  color: "#8a4f0a",
+                }}
+              >
+                <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
+                <div className="flex-1">
                   Ce domaine n&apos;est pas autorisé. Contactez DocBel pour
                   ajouter votre organisation.
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Mot de passe</Label>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="password" className={GLASS_LABEL}>
+                Mot de passe
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -253,10 +285,13 @@ export function PartnerSignupForm() {
                 minLength={8}
                 value={form.password}
                 onChange={handleChange("password")}
+                className={GLASS_INPUT}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="passwordConfirm">Confirmation</Label>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="passwordConfirm" className={GLASS_LABEL}>
+                Confirmation
+              </Label>
               <Input
                 id="passwordConfirm"
                 type="password"
@@ -265,24 +300,40 @@ export function PartnerSignupForm() {
                 minLength={8}
                 value={form.passwordConfirm}
                 onChange={handleChange("passwordConfirm")}
+                className={GLASS_INPUT}
               />
             </div>
           </div>
 
-          {error && (
-            <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          {error ? (
+            <div
+              className="flex items-start gap-2 rounded-2xl p-3 text-[13px]"
+              style={{
+                background: "rgba(220, 80, 100, 0.12)",
+                color: "#b8324a",
+              }}
+            >
+              <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
               {error}
             </div>
-          )}
+          ) : null}
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[12px] text-[color:var(--glass-ink-faint)]">
               En vous inscrivant, vous acceptez les conditions d&apos;utilisation
               de DocBel.
             </p>
-            <Button type="submit" disabled={submitDisabled}>
+            <Button
+              type="submit"
+              disabled={submitDisabled}
+              className="rounded-full px-5 py-3 text-[13px] font-bold disabled:opacity-50"
+              style={{
+                background: "var(--glass-ink)",
+                color: "var(--glass-bg-a)",
+              }}
+            >
               {isPending ? "Envoi…" : "Créer mon compte"}
-              {!isPending && <CheckCircle2Icon className="size-4" />}
+              {!isPending ? <CheckCircle2Icon className="size-4" /> : null}
             </Button>
           </div>
         </form>

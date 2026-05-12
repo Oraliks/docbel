@@ -497,6 +497,8 @@ model CommissionParitaire {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  bureauCommissions BureauCommission[]
+
   @@index([type])
   @@index([numeroOfficiel])
   @@index([code])
@@ -745,6 +747,10 @@ model UserProfile {
   jobTitle      String?
   contractType  String? // CDI | CDD | interim | independant
   contractStart DateTime?
+  // Préférences administratives (pour résolveur bureaux)
+  organismePaiement       String? // "capac" | "fgtb" | "csc" | "cgslb"
+  commissionParitaireCode String? // ref CommissionParitaire.code (ex: "124")
+  mutuelleCode            String? // "solidaris" | "mc" | "mloz" | "mutlibres" | "neutrales"
   // Méta
   updatedAt     DateTime  @updatedAt
   createdAt     DateTime  @default(now())
@@ -897,9 +903,10 @@ model Bureau {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  assignments BureauAssignment[]
-  revisions   BureauRevision[]
-  reports     BureauReport[]
+  assignments  BureauAssignment[]
+  revisions    BureauRevision[]
+  reports      BureauReport[]
+  commissions  BureauCommission[]
 
   @@index([organismeId, type])
   @@index([type])
@@ -908,6 +915,21 @@ model Bureau {
   @@index([active])
   @@index([verified])
   @@index([lastVerifiedAt])
+}
+
+/// Lie un bureau (sectoriel / syndicat / mutuelle) à une commission paritaire.
+/// Permet : "je travaille en CP 124 (construction) → voici les bureaux compétents".
+model BureauCommission {
+  bureauId     String
+  bureau       Bureau              @relation(fields: [bureauId], references: [id], onDelete: Cascade)
+  commissionId String
+  commission   CommissionParitaire @relation(fields: [commissionId], references: [id], onDelete: Cascade)
+  role         String              @default("general") // "centrale_sectorielle" | "permanence" | "general"
+  createdAt    DateTime            @default(now())
+
+  @@id([bureauId, commissionId])
+  @@index([commissionId])
+  @@index([bureauId])
 }
 
 /// Snapshot d'un bureau avant modification — permet rollback / audit.

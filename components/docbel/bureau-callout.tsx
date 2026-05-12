@@ -1,19 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowRight, MapPin } from "lucide-react";
 import type { ResolveResult } from "@/lib/bureaus/resolve";
 import type { SerializedBureau, BureauTypeCode } from "@/lib/bureaus/types";
 import { BureauCard } from "./bureau-card";
 
 type Props = {
-  /**
-   * Code organisme du document terminé (organisme.code).
-   *   - "cpas"  → CPAS attitré
-   *   - "commune" → Maison communale attitrée
-   *   - "onem"  → ONEM compétent
-   *   - "capac" / "csc" / "fgtb" / "cgslb" → syndicat le plus proche du bon code
-   */
   organismeCode?: string | null;
   accent?: string;
   postalCode?: string;
@@ -35,6 +28,7 @@ export function BureauCallout({
   postalCode,
 }: Props) {
   const [cp, setCp] = useState(postalCode ?? "");
+  const [orgPref, setOrgPref] = useState<string | null>(null);
   const [data, setData] = useState<ResolveResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -50,6 +44,7 @@ export function BureauCallout({
         if (cancelled) return;
         const pc = j?.postalCode;
         if (typeof pc === "string" && /^\d{4}$/.test(pc)) setCp(pc);
+        if (typeof j?.organismePaiement === "string") setOrgPref(j.organismePaiement);
       })
       .catch(() => {});
     return () => {
@@ -64,7 +59,10 @@ export function BureauCallout({
     }
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/bureaus/resolve?cp=${encodeURIComponent(cp)}`)
+    const params = new URLSearchParams({ cp });
+    // Si on demande "organisme de paiement", utiliser la préf user si elle existe
+    if (orgPref && organismeCode === "capac") params.set("org", orgPref);
+    fetch(`/api/bureaux/resolve?${params}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((j: ResolveResult | null) => {
         if (cancelled) return;
@@ -77,7 +75,7 @@ export function BureauCallout({
     return () => {
       cancelled = true;
     };
-  }, [cp, organismeCode]);
+  }, [cp, organismeCode, orgPref]);
 
   if (!organismeCode) return null;
   const targetType = TYPE_BY_CODE[organismeCode.toLowerCase()];
@@ -90,23 +88,26 @@ export function BureauCallout({
     else if (targetType === "ONEM") bureau = data.attitre.onem;
     else if (targetType === "SYNDICAT") {
       bureau =
+        data.attitre.organismePaiement ??
         data.proximite.syndicats.find(
           (s) => s.organismeCode?.toLowerCase() === organismeCode.toLowerCase()
-        ) ?? data.proximite.syndicats[0] ?? null;
+        ) ??
+        data.proximite.syndicats[0] ??
+        null;
     }
   }
 
   if (!cp) {
     return (
-      <Shell accent={accent} title="Où apporter ce document ?">
-        <div className="text-sm text-[var(--text-muted)]">
-          Entrez votre code postal pour voir où déposer ce document.
+      <Shell accent={accent}>
+        <div className="text-sm text-[var(--text-muted)] mb-3">
+          Pour vous indiquer où apporter ce document, indiquez votre code postal :
         </div>
         <input
           value={cp}
           onChange={(e) => setCp(e.target.value.replace(/\D/g, "").slice(0, 4))}
-          placeholder="Code postal (4 chiffres)"
-          className="mt-2 w-[200px] px-3 py-1.5 rounded-lg border-[1.5px] bg-[var(--input)] text-sm"
+          placeholder="Code postal"
+          className="w-[200px] px-3 py-2 rounded-lg border-[1.5px] bg-[var(--input)] text-sm font-semibold"
           style={{ borderColor: accent }}
           inputMode="numeric"
         />
@@ -116,8 +117,8 @@ export function BureauCallout({
 
   if (loading) {
     return (
-      <Shell accent={accent} title="Où apporter ce document ?">
-        <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+      <Shell accent={accent}>
+        <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] py-2">
           <Loader2 size={14} className="animate-spin" /> Recherche du bureau attitré...
         </div>
       </Shell>
@@ -126,12 +127,12 @@ export function BureauCallout({
 
   if (!bureau) {
     return (
-      <Shell accent={accent} title="Où apporter ce document ?">
-        <div className="text-sm text-[var(--text-muted)]">
+      <Shell accent={accent}>
+        <div className="text-sm text-[var(--text-muted)] py-2">
           Aucun bureau référencé pour le code postal {cp}.{" "}
           <button
             onClick={() => setCp("")}
-            className="underline"
+            className="underline font-semibold"
             style={{ color: accent }}
             type="button"
           >
@@ -143,10 +144,10 @@ export function BureauCallout({
   }
 
   return (
-    <Shell accent={accent} title="Où apporter ce document ?">
-      <BureauCard bureau={bureau} accent={accent} attitre compact enableReport={false} />
-      <div className="text-[11px] text-[var(--text-faint)] mt-2">
-        Code postal : {cp} ·{" "}
+    <Shell accent={accent}>
+      <BureauCard bureau={bureau} accent={accent} variant="attitre" enableReport={false} />
+      <div className="text-[11px] text-[var(--text-faint)] mt-2 flex items-center gap-1.5">
+        <MapPin size={11} /> Code postal : <strong>{cp}</strong> ·{" "}
         <button
           onClick={() => setCp("")}
           className="underline"
@@ -160,25 +161,21 @@ export function BureauCallout({
   );
 }
 
-function Shell({
-  accent,
-  title,
-  children,
-}: {
-  accent: string;
-  title: string;
-  children: React.ReactNode;
-}) {
+function Shell({ accent, children }: { accent: string; children: React.ReactNode }) {
   return (
     <div
-      className="mt-4 p-4 rounded-xl bg-[var(--surface-2)] border-[1.5px] border-l-4"
-      style={{ borderColor: `${accent}40`, borderLeftColor: accent }}
+      className="rounded-xl p-4 mb-4 transition-all"
+      style={{
+        background: `linear-gradient(to right, ${accent}10, ${accent}05)`,
+        border: `1.5px solid ${accent}30`,
+      }}
     >
       <div
-        className="text-[11px] font-bold uppercase tracking-wider mb-2"
+        className="text-[11px] font-extrabold uppercase tracking-wider mb-2.5 flex items-center gap-1.5"
         style={{ color: accent }}
       >
-        {title}
+        <ArrowRight size={12} />
+        Étape suivante — où apporter ce document
       </div>
       {children}
     </div>

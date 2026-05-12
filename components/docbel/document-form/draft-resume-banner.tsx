@@ -1,8 +1,8 @@
 "use client";
 
-import { Save } from "lucide-react";
+import { SaveIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { GLASS_PRIMARY_STYLE } from "@/lib/glass-classes";
 
 interface DraftResumeBannerProps {
   updatedAt: string;
@@ -10,25 +10,47 @@ interface DraftResumeBannerProps {
   onDiscard: () => void;
 }
 
-export function DraftResumeBanner({ updatedAt, onResume, onDiscard }: DraftResumeBannerProps) {
+export function DraftResumeBanner({
+  updatedAt,
+  onResume,
+  onDiscard,
+}: DraftResumeBannerProps) {
   return (
-    <Alert className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-start gap-2">
-        <Save className="w-5 h-5 mt-0.5 shrink-0" />
-        <AlertDescription>
+    <div className="glass-surface flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-start gap-3">
+        <span
+          className="flex size-9 shrink-0 items-center justify-center rounded-2xl text-white"
+          style={{
+            backgroundImage:
+              "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
+          }}
+        >
+          <SaveIcon className="size-4" />
+        </span>
+        <p className="text-[13px] text-[color:var(--glass-ink)]">
           Vous avez un brouillon en cours, sauvegardé le{" "}
-          <strong>{new Date(updatedAt).toLocaleString("fr-BE")}</strong>. Souhaitez-vous le
-          reprendre ?
-        </AlertDescription>
+          <strong>{new Date(updatedAt).toLocaleString("fr-BE")}</strong>.
+          Souhaitez-vous le reprendre ?
+        </p>
       </div>
-      <div className="flex gap-2 shrink-0">
-        <Button size="sm" variant="outline" onClick={onDiscard}>
+      <div className="flex shrink-0 gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onDiscard}
+          className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-white/55"
+        >
           Recommencer
         </Button>
-        <Button size="sm" onClick={onResume}>
+        <Button
+          size="sm"
+          onClick={onResume}
+          className="rounded-full font-bold"
+          style={GLASS_PRIMARY_STYLE}
+        >
           Reprendre
         </Button>
       </div>
-    </Alert>
+    </div>
   );
 }

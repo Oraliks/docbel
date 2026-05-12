@@ -13,6 +13,8 @@ import {
   AlertTriangle,
   Mail,
   Flag,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -20,9 +22,9 @@ import {
   dayLabelFr,
   type SerializedBureau,
   type BureauTypeCode,
+  type BureauHours,
 } from "@/lib/bureaus/types";
 import type { SerializedBureauWithDistance } from "@/lib/bureaus/resolve";
-import { BureauHoursDisplay } from "./bureau-hours-display";
 import { BureauReportDialog } from "./bureau-report-dialog";
 
 type IconProps = { className?: string; size?: number; style?: React.CSSProperties };
@@ -53,85 +55,163 @@ const SERVICE_LABEL_FR: Record<string, string> = {
 
 type Props = {
   bureau: SerializedBureau | SerializedBureauWithDistance;
-  /** Couleur d'accent (par défaut : couleur de l'organisme du bureau) */
   accent?: string;
-  /** Mis en avant comme bureau attitré (border colorée) */
-  attitre?: boolean;
-  /** Label optionnel à afficher en pill */
+  /** Variantes :
+   *   - "attitre" : gros, fond teinté, bordure colorée, badge fort
+   *   - "default" : standard
+   *   - "compact" : pour callout, sans services ni accordéon
+   */
+  variant?: "attitre" | "default" | "compact";
   label?: string;
-  /** Affiche les horaires en accordéon (défaut: true) */
-  showHours?: boolean;
-  /** Activer le bouton "Signaler une erreur" */
   enableReport?: boolean;
-  /** Mode compact (sans services, ni horaires) — pour BureauCallout */
-  compact?: boolean;
 };
 
 export function BureauCard({
   bureau,
   accent: accentProp,
-  attitre = false,
+  variant = "default",
   label,
-  showHours = true,
   enableReport = true,
-  compact = false,
 }: Props) {
   const [reportOpen, setReportOpen] = useState(false);
+  const [hoursOpen, setHoursOpen] = useState(false);
   const accent = accentProp ?? bureau.organismeColor ?? "#C8102E";
   const Icon = TYPE_ICONS[bureau.type] ?? Building2;
   const distance =
     "distanceKm" in bureau && typeof bureau.distanceKm === "number" ? bureau.distanceKm : null;
   const status = computeOpenStatus(bureau.hours);
+  const todayHours = getTodayHoursSummary(bureau.hours);
+
+  const isAttitre = variant === "attitre";
+  const isCompact = variant === "compact";
 
   return (
     <div
       className={cn(
-        "rounded-xl bg-[var(--surface-2)] p-4 flex flex-col gap-2",
-        attitre ? "border-[1.5px]" : "border"
+        "group rounded-xl flex flex-col gap-2 transition-all duration-200",
+        isAttitre
+          ? "p-5 shadow-sm hover:shadow-md"
+          : isCompact
+          ? "p-3"
+          : "p-4 hover:shadow-sm hover:-translate-y-0.5",
+        isAttitre ? "border-[1.5px]" : "border"
       )}
-      style={{ borderColor: attitre ? accent : "var(--border)" }}
+      style={{
+        borderColor: isAttitre ? accent : "var(--border)",
+        background: isAttitre ? `${accent}08` : "var(--surface-2)",
+      }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex flex-col gap-1 min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <Icon size={16} style={{ color: accent }} />
-            <h4 className="font-bold text-[13.5px] leading-tight text-[var(--foreground)]">
+      {/* Header : icône + nom + badges */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5 min-w-0 flex-1">
+          <div
+            className={cn(
+              "flex items-center justify-center rounded-lg shrink-0",
+              isAttitre ? "w-10 h-10" : "w-8 h-8"
+            )}
+            style={{ background: `${accent}15`, color: accent }}
+          >
+            <Icon size={isAttitre ? 20 : 16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4
+              className={cn(
+                "font-bold leading-tight text-[var(--foreground)]",
+                isAttitre ? "text-base" : "text-sm"
+              )}
+            >
               {bureau.name}
             </h4>
-          </div>
-          <div className="text-xs text-[var(--text-muted)] leading-snug">
-            <MapPin size={11} className="inline align-middle mr-0.5" />
-            {bureau.fullAddress}
-            {distance !== null && (
-              <span className="ml-1.5 font-semibold" style={{ color: accent }}>
-                · {distance.toFixed(1)} km
-              </span>
-            )}
+            <div className="text-xs text-[var(--text-muted)] leading-snug mt-0.5 flex items-center gap-1 flex-wrap">
+              <MapPin size={11} className="shrink-0" />
+              <span className="truncate">{bureau.fullAddress}</span>
+              {distance !== null && (
+                <span className="font-semibold whitespace-nowrap" style={{ color: accent }}>
+                  · {distance.toFixed(1)} km
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           {label && (
             <span
               className={cn(
-                "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
-                attitre ? "text-white" : "text-[var(--text-muted)] bg-[var(--border)]"
+                "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded",
+                isAttitre ? "text-white" : "text-[var(--text-muted)] bg-[var(--border)]"
               )}
-              style={attitre ? { backgroundColor: accent } : undefined}
+              style={isAttitre ? { backgroundColor: accent } : undefined}
             >
               {label}
             </span>
           )}
-          <OpenBadge status={status} />
+          {bureau.verified && (
+            <span
+              className="text-[9.5px] font-semibold uppercase tracking-wider text-green-700 dark:text-green-400"
+              title="Coordonnées vérifiées"
+            >
+              ✓ vérifié
+            </span>
+          )}
         </div>
       </div>
 
-      {bureau.hoursNotes && (
-        <div className="text-[11px] flex items-start gap-1 px-2 py-1 rounded bg-amber-100/40 border border-amber-300/40 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          <AlertTriangle size={11} className="shrink-0 mt-0.5" /> {bureau.hoursNotes}
+      {/* Aujourd'hui : ligne hyper visible */}
+      {!isCompact && (
+        <div
+          className={cn(
+            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs",
+            getTodayBackground(status)
+          )}
+        >
+          <Clock size={12} className="shrink-0" />
+          <span className="font-semibold">Aujourd&apos;hui :</span>
+          <span className="flex-1 truncate">{todayHours}</span>
+          <OpenChip status={status} />
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3 text-xs text-[var(--text-muted)]">
+      {/* Notes horaires en alerte */}
+      {bureau.hoursNotes && !isCompact && (
+        <div className="text-[11px] flex items-start gap-1.5 px-2.5 py-1.5 rounded-md bg-amber-100/40 border border-amber-300/40 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          <AlertTriangle size={11} className="shrink-0 mt-0.5" />
+          <span>{bureau.hoursNotes}</span>
+        </div>
+      )}
+
+      {/* Services en chips */}
+      {!isCompact && bureau.services.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {bureau.services.slice(0, 6).map((s) => (
+            <span
+              key={s}
+              className="text-[10.5px] px-2 py-0.5 rounded-full bg-[var(--border)]/60 text-[var(--text-muted)]"
+            >
+              {SERVICE_LABEL_FR[s] ?? s}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* CTA principal (RDV) — gros */}
+      {bureau.appointmentUrl && (
+        <a
+          href={bureau.appointmentUrl}
+          target="_blank"
+          rel="noreferrer"
+          className={cn(
+            "inline-flex items-center justify-center gap-1.5 font-bold text-white rounded-lg transition-transform hover:scale-[1.02]",
+            isAttitre ? "px-4 py-2.5 text-sm" : "px-3 py-2 text-xs"
+          )}
+          style={{ backgroundColor: accent }}
+        >
+          <CalendarCheck size={isAttitre ? 16 : 13} />
+          Prendre rendez-vous
+        </a>
+      )}
+
+      {/* Actions secondaires */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-muted)]">
         {bureau.phone && (
           <a
             href={`tel:${bureau.phone.replace(/\s/g, "")}`}
@@ -158,47 +238,35 @@ export function BureauCard({
             className="inline-flex items-center gap-1 no-underline hover:underline"
             style={{ color: accent }}
           >
-            <Globe size={11} /> Site
-          </a>
-        )}
-        {bureau.appointmentUrl && (
-          <a
-            href={bureau.appointmentUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 no-underline px-2.5 py-0.5 rounded font-bold text-white"
-            style={{ backgroundColor: accent }}
-          >
-            <CalendarCheck size={11} /> Prendre RDV
+            <Globe size={11} /> Site web
           </a>
         )}
       </div>
 
-      {!compact && bureau.services.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {bureau.services.slice(0, 6).map((s) => (
-            <span
-              key={s}
-              className="text-[10.5px] px-1.5 py-0.5 rounded bg-[var(--border)] text-[var(--foreground)]"
-            >
-              {SERVICE_LABEL_FR[s] ?? s}
-            </span>
-          ))}
+      {/* Accordéon horaires semaine */}
+      {!isCompact && bureau.hours.length > 0 && (
+        <div className="border-t border-[var(--border)] pt-2 mt-1">
+          <button
+            type="button"
+            onClick={() => setHoursOpen(!hoursOpen)}
+            className="text-[11px] text-[var(--text-muted)] hover:text-[var(--foreground)] inline-flex items-center gap-1 transition-colors"
+          >
+            Voir tous les horaires{" "}
+            {hoursOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+          </button>
+          {hoursOpen && <WeekHoursTable hours={bureau.hours} />}
         </div>
       )}
 
-      {!compact && showHours && bureau.hours.length > 0 && (
-        <BureauHoursDisplay hours={bureau.hours} />
-      )}
-
-      {enableReport && !compact && (
-        <div className="flex justify-end pt-1 border-t border-[var(--border)]">
+      {/* Footer : signaler */}
+      {enableReport && !isCompact && (
+        <div className="flex justify-end mt-0.5">
           <button
             type="button"
             onClick={() => setReportOpen(true)}
             className="text-[10.5px] inline-flex items-center gap-1 text-[var(--text-faint)] hover:text-[var(--text-muted)] hover:underline"
           >
-            <Flag size={10} /> Signaler une erreur
+            <Flag size={9} /> Signaler une erreur
           </button>
         </div>
       )}
@@ -215,42 +283,99 @@ export function BureauCard({
   );
 }
 
-function OpenBadge({ status }: { status: ReturnType<typeof computeOpenStatus> }) {
-  const base = "text-[10.5px] font-semibold px-1.5 py-0.5 rounded inline-flex items-center gap-1";
-  if (status.state === "no_data") {
-    return (
-      <span className={`${base} text-[var(--text-muted)]`}>Horaires non renseignés</span>
-    );
-  }
+/** Skeleton pour les cartes en chargement */
+export function BureauCardSkeleton({ variant = "default" }: { variant?: "attitre" | "default" }) {
+  const isAttitre = variant === "attitre";
+  return (
+    <div
+      className={cn(
+        "rounded-xl border bg-[var(--surface-2)] animate-pulse",
+        isAttitre ? "p-5" : "p-4"
+      )}
+    >
+      <div className="flex items-start gap-2.5 mb-3">
+        <div
+          className={cn("rounded-lg bg-[var(--border)]/60", isAttitre ? "w-10 h-10" : "w-8 h-8")}
+        />
+        <div className="flex-1 space-y-1.5">
+          <div className="h-3.5 w-3/4 bg-[var(--border)]/60 rounded" />
+          <div className="h-2.5 w-1/2 bg-[var(--border)]/40 rounded" />
+        </div>
+      </div>
+      <div className="h-6 w-full bg-[var(--border)]/40 rounded mb-2" />
+      <div className="flex gap-1.5">
+        <div className="h-4 w-14 bg-[var(--border)]/40 rounded-full" />
+        <div className="h-4 w-20 bg-[var(--border)]/40 rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+// ───────── helpers ─────────
+
+function OpenChip({ status }: { status: ReturnType<typeof computeOpenStatus> }) {
+  const base = "text-[10px] font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-1 shrink-0";
   if (status.state === "open") {
     return (
-      <span className={`${base} bg-green-500/15 text-green-700 dark:text-green-400`}>
-        ● Ouvert · ferme {status.closesAt}
+      <span className={`${base} bg-green-500/20 text-green-700 dark:text-green-400`}>
+        ● Ouvert
       </span>
     );
   }
   if (status.state === "holiday") {
     return (
-      <span className={`${base} bg-purple-500/10 text-purple-700 dark:text-purple-400`}>
-        Férié ({status.holidayName})
-      </span>
-    );
-  }
-  if (status.state === "closed_today") {
-    return (
-      <span className={`${base} bg-red-500/10 text-red-700 dark:text-red-400`}>
-        Fermé aujourd&apos;hui
-      </span>
-    );
-  }
-  if (status.state === "closed" && status.nextOpen) {
-    return (
-      <span className={`${base} bg-red-500/10 text-red-700 dark:text-red-400`}>
-        Fermé · ouvre {dayLabelFr(status.nextOpen.day)} {status.nextOpen.time}
+      <span className={`${base} bg-purple-500/20 text-purple-700 dark:text-purple-400`}>
+        Férié
       </span>
     );
   }
   return (
-    <span className={`${base} bg-red-500/10 text-red-700 dark:text-red-400`}>Fermé</span>
+    <span className={`${base} bg-red-500/15 text-red-700 dark:text-red-400`}>Fermé</span>
+  );
+}
+
+function getTodayBackground(status: ReturnType<typeof computeOpenStatus>): string {
+  if (status.state === "open") return "bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-200";
+  if (status.state === "holiday") return "bg-purple-50 dark:bg-purple-950/30 text-purple-900 dark:text-purple-200";
+  return "bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-200";
+}
+
+/** "9h–12h · 13h–16h" pour aujourd'hui, ou "Fermé · ouvre lun. 09:00" */
+function getTodayHoursSummary(hours: BureauHours): string {
+  const now = new Date();
+  const today = now.getDay();
+  const todaySlots = hours.find((h) => h.day === today)?.slots ?? [];
+  const status = computeOpenStatus(hours, now);
+
+  if (status.state === "holiday") {
+    return `Férié — ${status.holidayName}`;
+  }
+  if (todaySlots.length > 0) {
+    return todaySlots.map((s) => `${s.open}–${s.close}`).join(" · ");
+  }
+  if (status.state === "closed" && status.nextOpen) {
+    return `Fermé · ouvre ${dayLabelFr(status.nextOpen.day)} ${status.nextOpen.time}`;
+  }
+  return "Fermé aujourd'hui";
+}
+
+function WeekHoursTable({ hours }: { hours: BureauHours }) {
+  const order = [1, 2, 3, 4, 5, 6, 0];
+  return (
+    <div className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[11px] text-[var(--text-muted)]">
+      {order.map((d) => {
+        const slots = hours.find((h) => h.day === d)?.slots ?? [];
+        return (
+          <div key={d} className="contents">
+            <span className="font-semibold">{dayLabelFr(d)}</span>
+            <span>
+              {slots.length === 0
+                ? "—"
+                : slots.map((s) => `${s.open}–${s.close}`).join(" · ")}
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 }

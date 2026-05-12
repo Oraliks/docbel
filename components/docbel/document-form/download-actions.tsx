@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Download, Mail, RotateCcw, CheckCircle2 } from "lucide-react";
+import {
+  CheckCircle2Icon,
+  DownloadIcon,
+  MailIcon,
+  RotateCcwIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +21,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  GLASS_CARD,
+  GLASS_INPUT,
+  GLASS_LABEL,
+  GLASS_PRIMARY_STYLE,
+} from "@/lib/glass-classes";
 
 interface DownloadActionsProps {
   generatedId: string;
@@ -55,11 +66,14 @@ export function DownloadActions({
     setSending(true);
     try {
       const token = getTokenFromUrl(downloadUrl);
-      const res = await fetch(`/api/documents/generated/${generatedId}/email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: email, token, consent: emailConsent }),
-      });
+      const res = await fetch(
+        `/api/documents/generated/${generatedId}/email`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ to: email, token, consent: emailConsent }),
+        },
+      );
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error || "Échec d'envoi");
@@ -78,34 +92,64 @@ export function DownloadActions({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-500">
-            <CheckCircle2 className="w-5 h-5" />
+      <Card className={GLASS_CARD}>
+        <CardHeader className="px-7 pt-7 pb-3">
+          <CardTitle
+            className="glass-display flex items-center gap-2 text-[22px] font-semibold"
+            style={{ color: "#1d6b3e" }}
+          >
+            <span
+              className="flex size-9 items-center justify-center rounded-2xl text-white"
+              style={{
+                backgroundImage: "linear-gradient(135deg, #80E0C0, #40C0A0)",
+              }}
+            >
+              <CheckCircle2Icon className="size-5" />
+            </span>
             Document généré
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-sm">
+        <CardContent className="flex flex-col gap-4 px-7 pb-7">
+          <div className="text-[13.5px] text-[color:var(--glass-ink)]">
             <p>
-              Votre document <code className="font-mono">{filename}</code> est prêt.
+              Votre document{" "}
+              <code
+                className="rounded-md px-1.5 py-0.5 font-mono text-[12.5px]"
+                style={{ background: "var(--glass-surface)" }}
+              >
+                {filename}
+              </code>{" "}
+              est prêt.
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="mt-1 text-[12px] text-[color:var(--glass-ink-faint)]">
               Disponible jusqu&apos;au {expires.toLocaleString("fr-BE")}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button render={<a href={downloadUrl} download={filename} />}>
-              <Download className="w-4 h-4 mr-1" />
+            <Button
+              render={<a href={downloadUrl} download={filename} />}
+              className="rounded-full font-bold"
+              style={GLASS_PRIMARY_STYLE}
+            >
+              <DownloadIcon className="w-4 h-4 mr-1" />
               Télécharger
             </Button>
-            <Button variant="outline" onClick={() => setEmailOpen(true)} disabled={emailSent}>
-              <Mail className="w-4 h-4 mr-1" />
+            <Button
+              variant="outline"
+              onClick={() => setEmailOpen(true)}
+              disabled={emailSent}
+              className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-white/55"
+            >
+              <MailIcon className="w-4 h-4 mr-1" />
               {emailSent ? "Email envoyé" : "Envoyer par email"}
             </Button>
-            <Button variant="ghost" onClick={onRestart}>
-              <RotateCcw className="w-4 h-4 mr-1" />
+            <Button
+              variant="ghost"
+              onClick={onRestart}
+              className="rounded-full text-[color:var(--glass-ink-soft)] hover:bg-white/40 dark:hover:bg-white/8"
+            >
+              <RotateCcwIcon className="w-4 h-4 mr-1" />
               Recommencer
             </Button>
           </div>
@@ -117,35 +161,49 @@ export function DownloadActions({
           <DialogHeader>
             <DialogTitle>Envoyer le document par email</DialogTitle>
             <DialogDescription>
-              Le document sera envoyé en pièce jointe à l&apos;adresse indiquée.
+              Le document sera envoyé en pièce jointe à l&apos;adresse
+              indiquée.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="email-to">Adresse email</Label>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email-to" className={GLASS_LABEL}>
+                Adresse email
+              </Label>
               <Input
                 id="email-to"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="vous@example.be"
+                className={GLASS_INPUT}
               />
             </div>
-            <label className="flex items-start gap-2 text-sm cursor-pointer">
+            <label className="flex cursor-pointer items-start gap-2 text-[13px] text-[color:var(--glass-ink)]">
               <Checkbox
                 checked={emailConsent}
                 onCheckedChange={(c) => setEmailConsent(c === true)}
               />
               <span>
-                Je consens à l&apos;envoi de ce document par email à l&apos;adresse indiquée.
+                Je consens à l&apos;envoi de ce document par email à
+                l&apos;adresse indiquée.
               </span>
             </label>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEmailOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setEmailOpen(false)}
+              className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)]"
+            >
               Annuler
             </Button>
-            <Button onClick={sendEmail} disabled={sending || !email || !emailConsent}>
+            <Button
+              onClick={sendEmail}
+              disabled={sending || !email || !emailConsent}
+              className="rounded-full font-bold"
+              style={GLASS_PRIMARY_STYLE}
+            >
               {sending ? "Envoi…" : "Envoyer"}
             </Button>
           </DialogFooter>

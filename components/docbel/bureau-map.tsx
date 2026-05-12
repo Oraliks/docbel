@@ -11,10 +11,11 @@ import type { SerializedBureau } from "@/lib/bureaus/types";
 type Props = {
   bureaus: SerializedBureau[];
   center?: { lat: number; lng: number };
+  /** Hauteur explicite en px ; `undefined` ⇒ remplit le parent (100%). */
   height?: number;
 };
 
-export function BureauMap({ bureaus, center, height = 400 }: Props) {
+export function BureauMap({ bureaus, center, height }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const clusterRef = useRef<MarkerClusterGroup | null>(null);
@@ -80,8 +81,9 @@ export function BureauMap({ bureaus, center, height = 400 }: Props) {
     <div
       ref={containerRef}
       style={{
-        height,
+        height: height ?? "100%",
         width: "100%",
+        minHeight: 300,
         borderRadius: 12,
         overflow: "hidden",
         border: "1px solid var(--border)",

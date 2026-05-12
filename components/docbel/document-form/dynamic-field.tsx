@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { HelpCircle, Search, Loader2, CheckCircle } from "lucide-react";
+import {
+  CheckCircleIcon,
+  HelpCircleIcon,
+  Loader2Icon,
+  SearchIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +29,7 @@ import {
   getOptionLabel,
 } from "@/lib/documents/types";
 import type { BCELookupResult } from "@/lib/documents/bce-lookup";
+import { GLASS_INPUT, GLASS_LABEL } from "@/lib/glass-classes";
 import { AIHelpPopover } from "./ai-help-popover";
 
 interface DynamicFieldProps {
@@ -139,22 +145,27 @@ export function DynamicField({
   }
 
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor={inputId} className="flex items-center gap-1.5">
+    <div className="flex flex-col gap-1.5">
+      <Label
+        htmlFor={inputId}
+        className={`${GLASS_LABEL} flex items-center gap-1.5`}
+      >
         {label}
-        {required && <span className="text-destructive">*</span>}
-        {field.helpUrl && (
+        {required ? (
+          <span style={{ color: "#b8324a" }}>*</span>
+        ) : null}
+        {field.helpUrl ? (
           <a
             href={field.helpUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center text-[color:var(--glass-ink-faint)] transition-colors hover:text-[color:var(--glass-ink)]"
             title={lang === "nl" ? "Meer informatie" : "Plus d'informations"}
           >
-            <HelpCircle className="w-3.5 h-3.5" />
+            <HelpCircleIcon className="size-3.5" />
           </a>
-        )}
-        {aiHelpEnabled && (
+        ) : null}
+        {aiHelpEnabled ? (
           <AIHelpPopover
             templateName={templateName}
             organisme={organisme}
@@ -163,48 +174,60 @@ export function DynamicField({
             fieldHelp={helpText}
             lang={lang}
           />
-        )}
+        ) : null}
       </Label>
 
-      {field.type === "textarea" && (
+      {field.type === "textarea" ? (
         <Textarea
           id={inputId}
           {...register(field.id)}
           placeholder={field.placeholder || helpText}
           rows={4}
           maxLength={field.maxLength || 5000}
+          className={GLASS_INPUT}
           aria-required={required || undefined}
           aria-invalid={!!error || undefined}
-          aria-describedby={[helpText ? `${inputId}-help` : null, error ? `${inputId}-error` : null]
-            .filter(Boolean)
-            .join(" ") || undefined}
+          aria-describedby={
+            [
+              helpText ? `${inputId}-help` : null,
+              error ? `${inputId}-error` : null,
+            ]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
         />
-      )}
+      ) : null}
 
-      {field.type === "checkbox" && (
+      {field.type === "checkbox" ? (
         <Checkbox
           id={inputId}
           checked={value === true}
-          onCheckedChange={(c) => setValue(field.id, c === true, { shouldValidate: true })}
+          onCheckedChange={(c) =>
+            setValue(field.id, c === true, { shouldValidate: true })
+          }
           aria-required={required || undefined}
           aria-invalid={!!error || undefined}
           aria-describedby={error ? `${inputId}-error` : undefined}
         />
-      )}
+      ) : null}
 
-      {field.type === "select" && (
+      {field.type === "select" ? (
         <Select
           value={typeof value === "string" ? value : ""}
-          onValueChange={(v) => setValue(field.id, v, { shouldValidate: true })}
+          onValueChange={(v) =>
+            setValue(field.id, v, { shouldValidate: true })
+          }
         >
           <SelectTrigger
             id={inputId}
-            className="w-full"
+            className={`${GLASS_INPUT} w-full`}
             aria-required={required || undefined}
             aria-invalid={!!error || undefined}
             aria-describedby={error ? `${inputId}-error` : undefined}
           >
-            <SelectValue placeholder={lang === "nl" ? "Selecteer…" : "Sélectionnez…"} />
+            <SelectValue
+              placeholder={lang === "nl" ? "Selecteer…" : "Sélectionnez…"}
+            />
           </SelectTrigger>
           <SelectContent>
             {(field.options || []).map((opt) => (
@@ -214,50 +237,57 @@ export function DynamicField({
             ))}
           </SelectContent>
         </Select>
-      )}
+      ) : null}
 
-      {field.type === "date" && (
+      {field.type === "date" ? (
         <Input
           id={inputId}
           type="date"
           {...register(field.id)}
+          className={GLASS_INPUT}
           aria-required={required || undefined}
           aria-invalid={!!error || undefined}
           aria-describedby={error ? `${inputId}-error` : undefined}
         />
-      )}
+      ) : null}
 
-      {field.type === "number" && (
+      {field.type === "number" ? (
         <Input
           id={inputId}
           type="number"
           inputMode="decimal"
           {...register(field.id)}
+          className={GLASS_INPUT}
           aria-required={required || undefined}
           aria-invalid={!!error || undefined}
           aria-describedby={error ? `${inputId}-error` : undefined}
         />
-      )}
+      ) : null}
 
-      {(field.type === "text" ||
-        field.type === "niss" ||
-        field.type === "iban" ||
-        field.type === "postal_be" ||
-        field.type === "tva_be" ||
-        field.type === "bce" ||
-        field.type === "phone_be") && (
+      {field.type === "text" ||
+      field.type === "niss" ||
+      field.type === "iban" ||
+      field.type === "postal_be" ||
+      field.type === "tva_be" ||
+      field.type === "bce" ||
+      field.type === "phone_be" ? (
         <div className="flex gap-2">
           <Input
             id={inputId}
             type="text"
-            className="flex-1"
+            className={`${GLASS_INPUT} flex-1`}
             {...register(field.id)}
             maxLength={field.maxLength || 500}
             aria-required={required || undefined}
             aria-invalid={!!error || undefined}
-            aria-describedby={[helpText ? `${inputId}-help` : null, error ? `${inputId}-error` : null]
-              .filter(Boolean)
-              .join(" ") || undefined}
+            aria-describedby={
+              [
+                helpText ? `${inputId}-help` : null,
+                error ? `${inputId}-error` : null,
+              ]
+                .filter(Boolean)
+                .join(" ") || undefined
+            }
             inputMode={
               field.type === "niss" ||
               field.type === "postal_be" ||
@@ -269,53 +299,69 @@ export function DynamicField({
               field.type === "niss"
                 ? "00.00.00-000.00"
                 : field.type === "iban"
-                ? "BE00 0000 0000 0000"
-                : field.type === "postal_be"
-                ? "1000"
-                : field.type === "tva_be"
-                ? "BE0123456789"
-                : field.type === "bce"
-                ? "0123.456.789"
-                : field.type === "phone_be"
-                ? "+32 2 123 45 67"
-                : undefined
+                  ? "BE00 0000 0000 0000"
+                  : field.type === "postal_be"
+                    ? "1000"
+                    : field.type === "tva_be"
+                      ? "BE0123456789"
+                      : field.type === "bce"
+                        ? "0123.456.789"
+                        : field.type === "phone_be"
+                          ? "+32 2 123 45 67"
+                          : undefined
             }
           />
-          {(field.type === "bce" || field.type === "tva_be") && (
+          {field.type === "bce" || field.type === "tva_be" ? (
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={lookupBce}
               disabled={bceLooking || !value}
-              title={lang === "nl" ? "Gegevens uit KBO ophalen" : "Récupérer les infos depuis la BCE"}
+              title={
+                lang === "nl"
+                  ? "Gegevens uit KBO ophalen"
+                  : "Récupérer les infos depuis la BCE"
+              }
+              className="rounded-full border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-white/55"
             >
               {bceLooking ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2Icon className="size-4 animate-spin" />
               ) : bceFilled ? (
-                <CheckCircle className="w-4 h-4 text-green-600" />
+                <CheckCircleIcon
+                  className="size-4"
+                  style={{ color: "#1d6b3e" }}
+                />
               ) : (
                 <>
-                  <Search className="w-4 h-4 mr-1" />
-                  {lang === "nl" ? "BCE" : "BCE"}
+                  <SearchIcon className="size-4" />
+                  BCE
                 </>
               )}
             </Button>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
 
-      {helpText && field.type !== "textarea" && (
-        <p id={`${inputId}-help`} className="text-xs text-muted-foreground">
+      {helpText && field.type !== "textarea" ? (
+        <p
+          id={`${inputId}-help`}
+          className="text-[12px] text-[color:var(--glass-ink-soft)]"
+        >
           {helpText}
         </p>
-      )}
+      ) : null}
 
-      {error && (
-        <p id={`${inputId}-error`} role="alert" className="text-xs text-destructive">
+      {error ? (
+        <p
+          id={`${inputId}-error`}
+          role="alert"
+          className="text-[12px] font-semibold"
+          style={{ color: "#b8324a" }}
+        >
           {error}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

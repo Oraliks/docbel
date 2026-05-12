@@ -1,0 +1,137 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Building2, MapPinned, Network, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { BureausManager } from "./bureaux-manager";
+import { ServiceAssignmentsManager } from "./bureaux/service-assignments-manager";
+import { OnemAssignmentsManager } from "./bureaux/onem-assignments-manager";
+import { CommissionAssignmentsManager } from "./bureaux/commission-assignments-manager";
+import { ReportsManager } from "./bureaux/reports-manager";
+
+type Tab = "annuaire" | "services" | "onem" | "commissions" | "reports";
+
+const TABS: Array<{ value: Tab; label: string; icon: React.ComponentType<{ className?: string }>; help: string }> = [
+  {
+    value: "annuaire",
+    label: "Annuaire",
+    icon: Building2,
+    help: "Tous les bureaux : créer, modifier, vérifier, exporter, importer",
+  },
+  {
+    value: "services",
+    label: "Compétences territoriales",
+    icon: MapPinned,
+    help: "Quel bureau dessert quelle commune (ONEM, CAPAC, FGTB, CSC, mutuelles…)",
+  },
+  {
+    value: "onem",
+    label: "Compétences ONEM",
+    icon: MapPinned,
+    help: "Vue dédiée ONEM avec sélection multi-communes",
+  },
+  {
+    value: "commissions",
+    label: "Liens commissions",
+    icon: Network,
+    help: "Quels bureaux gèrent quelles commissions paritaires (syndicats sectoriels)",
+  },
+  {
+    value: "reports",
+    label: "Signalements",
+    icon: AlertCircle,
+    help: "Erreurs remontées par les utilisateurs publics",
+  },
+];
+
+export function BureauxAdminWorkspace() {
+  const [tab, setTab] = useState<Tab>("annuaire");
+  const [pendingReports, setPendingReports] = useState<number | null>(null);
+
+  // Sync depuis l'URL hash (initial + clic sidebar même page)
+  useEffect(() => {
+    const apply = () => {
+      const h = window.location.hash.replace(/^#/, "");
+      if (TABS.some((t) => t.value === h)) {
+        setTab(h as Tab);
+      }
+    };
+    apply();
+    window.addEventListener("hashchange", apply);
+    return () => window.removeEventListener("hashchange", apply);
+  }, []);
+
+  // Persist tab in URL hash
+  useEffect(() => {
+    if (window.location.hash !== `#${tab}`) {
+      window.history.replaceState(null, "", `#${tab}`);
+    }
+  }, [tab]);
+
+  // Badge sur "Signalements" pour les pending
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/bureaux/reports?status=pending")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled || !j) return;
+        setPendingReports(j.total ?? 0);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [tab]);
+
+  const currentTab = TABS.find((t) => t.value === tab);
+
+  return (
+    <Tabs value={tab} onValueChange={(v) => setTab((v ?? "annuaire") as Tab)}>
+      <TabsList className="flex w-full overflow-x-auto">
+        {TABS.map((t) => {
+          const Icon = t.icon;
+          return (
+            <TabsTrigger key={t.value} value={t.value} className="gap-1.5 flex-1 min-w-fit">
+              <Icon className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{t.label}</span>
+              <span className="sm:hidden">{t.label.split(" ")[0]}</span>
+              {t.value === "reports" && pendingReports !== null && pendingReports > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="h-4 px-1 text-[10px] ml-1"
+                >
+                  {pendingReports}
+                </Badge>
+              )}
+            </TabsTrigger>
+          );
+        })}
+      </TabsList>
+
+      {currentTab && (
+        <p className="text-xs text-muted-foreground mt-2 mb-3 px-1">{currentTab.help}</p>
+      )}
+
+      <TabsContent value="annuaire" className="mt-0">
+        <BureausManager />
+      </TabsContent>
+
+      <TabsContent value="services" className="mt-0">
+        <ServiceAssignmentsManager />
+      </TabsContent>
+
+      <TabsContent value="onem" className="mt-0">
+        <OnemAssignmentsManager />
+      </TabsContent>
+
+      <TabsContent value="commissions" className="mt-0">
+        <CommissionAssignmentsManager />
+      </TabsContent>
+
+      <TabsContent value="reports" className="mt-0">
+        <ReportsManager />
+      </TabsContent>
+    </Tabs>
+  );
+}

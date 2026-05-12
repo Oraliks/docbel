@@ -14,8 +14,8 @@ export default async function ConfirmAccountRoute({ searchParams }: PageProps) {
   const token = params.token ?? null;
 
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-6 py-10 text-center">
+    <section className="mx-auto flex w-full max-w-lg flex-col items-center py-12">
       <ConfirmAccount token={token} />
-    </div>
+    </section>
   );
 }

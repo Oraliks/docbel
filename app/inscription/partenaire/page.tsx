@@ -20,21 +20,25 @@ export default async function PartnerSignupRoute() {
   }
 
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-6 py-6">
-      <div className="space-y-1.5">
-        <span className="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-300">
+    <section className="mx-auto flex w-full max-w-xl flex-col gap-6">
+      <header className="flex flex-col gap-2 px-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
           Espace Partenaire
-        </span>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Inscription partenaire
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          L&apos;inscription est réservée aux adresses email professionnelles
-          autorisées (ex : <code>@cpas.brussels</code>). Si votre organisation
-          n&apos;est pas encore référencée, contactez-nous.
         </p>
-      </div>
+        <h1 className="glass-display text-[36px] font-semibold leading-[1.05] sm:text-[44px]">
+          Inscription <em>partenaire.</em>
+        </h1>
+        <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
+          L&apos;inscription est réservée aux adresses email professionnelles
+          autorisées (ex :{" "}
+          <code className="rounded-md bg-[color:var(--glass-surface)] px-1.5 py-0.5 font-mono text-[12.5px]">
+            @cpas.brussels
+          </code>
+          ). Si votre organisation n&apos;est pas encore référencée,
+          contactez-nous.
+        </p>
+      </header>
       <PartnerSignupForm />
-    </div>
+    </section>
   );
 }

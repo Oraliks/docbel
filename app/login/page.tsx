@@ -332,7 +332,6 @@ function LoginPageContent() {
           <Tabs defaultValue="citoyen" className="flex flex-col gap-6">
             <TabsList
               className="grid w-full grid-cols-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-1"
-              variant="solid"
             >
               <TabsTrigger
                 value="citoyen"

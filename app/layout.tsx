@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayoutClient } from "@/components/docbel/app-layout-client";
+import { VersionWatcher } from "@/components/version-watcher";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -52,6 +53,7 @@ export default function RootLayout({
           <AppLayoutClient>{children}</AppLayoutClient>
           <Toaster richColors position="bottom-right" duration={3500} />
           <ConfirmDialog />
+          <VersionWatcher />
           <Analytics />
         </ThemeProvider>
       </body>

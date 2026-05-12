@@ -23,17 +23,27 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { limit, since } = parsed.data;
+    const { limit, since, before } = parsed.data;
     const where: Prisma.ChangelogWhereInput = {};
-    if (since) where.publishedAt = { gt: new Date(since) };
+    if (since && before) {
+      where.publishedAt = { gt: new Date(since), lt: new Date(before) };
+    } else if (since) {
+      where.publishedAt = { gt: new Date(since) };
+    } else if (before) {
+      where.publishedAt = { lt: new Date(before) };
+    }
 
-    const entries = await prisma.changelog.findMany({
+    // On charge `limit + 1` pour savoir s'il reste des entrées après
+    // (`hasMore`) sans payer un second SELECT count.
+    const rows = await prisma.changelog.findMany({
       where,
       orderBy: { publishedAt: "desc" },
-      take: limit,
+      take: limit + 1,
     });
+    const hasMore = rows.length > limit;
+    const entries = hasMore ? rows.slice(0, limit) : rows;
 
-    return NextResponse.json({ entries }, { headers: jsonHeaders });
+    return NextResponse.json({ entries, hasMore }, { headers: jsonHeaders });
   } catch (error) {
     console.error("[changelog] list failed:", error);
     return NextResponse.json(

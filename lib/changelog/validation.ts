@@ -27,7 +27,10 @@ export const changelogUpdateSchema = changelogCreateSchema.partial();
 
 export const changelogListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  /** Curseur "after" (entrées strictement plus récentes que cette date). */
   since: z.string().datetime().optional(),
+  /** Curseur "before" (entrées strictement plus anciennes — pour l'infinite scroll). */
+  before: z.string().datetime().optional(),
 });
 
 export type ChangelogCreateInput = z.infer<typeof changelogCreateSchema>;

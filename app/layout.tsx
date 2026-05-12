@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayoutClient } from "@/components/docbel/app-layout-client";
+import { AcronymHydrator } from "@/components/docbel/acronym-hydrator";
 import { VersionWatcher } from "@/components/version-watcher";
 import "./globals.css";
 
@@ -54,6 +55,7 @@ export default function RootLayout({
           <Toaster richColors position="bottom-right" duration={3500} />
           <ConfirmDialog />
           <VersionWatcher />
+          <AcronymHydrator />
           <Analytics />
         </ThemeProvider>
       </body>

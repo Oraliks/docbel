@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ArrowRightIcon, SearchIcon } from "lucide-react";
 import type { NewsItem } from "@/lib/docbel-data";
+import { AcronymText } from "@/components/docbel/acronym";
 
 const MONTH_LABELS = [
   "JAN",
@@ -144,10 +145,10 @@ export function ActualitesView({
                   À la une · {featured.tag}
                 </span>
                 <h2 className="glass-display text-[28px] font-semibold leading-[1.1] lg:text-[34px]">
-                  {featured.title}
+                  <AcronymText>{featured.title}</AcronymText>
                 </h2>
                 <p className="text-[14px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
-                  {featured.desc}
+                  <AcronymText>{featured.desc}</AcronymText>
                 </p>
                 <span className="mt-2 inline-flex items-center gap-2 text-[13px] font-semibold text-[color:var(--glass-ink)]">
                   Lire l&apos;article
@@ -216,10 +217,10 @@ export function ActualitesView({
                     </div>
                     <div>
                       <div className="text-[14.5px] font-bold tracking-tight">
-                        {article.title}
+                        <AcronymText>{article.title}</AcronymText>
                       </div>
                       <div className="mt-1 line-clamp-1 text-[12px] text-[color:var(--glass-ink-faint)]">
-                        {article.desc}
+                        <AcronymText>{article.desc}</AcronymText>
                       </div>
                     </div>
                     <span

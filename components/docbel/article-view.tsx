@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { ArrowLeftIcon, CalendarIcon, ClockIcon } from "lucide-react";
 import type { NewsItem } from "@/lib/docbel-data";
 import { enrichHtmlWithAcronyms } from "@/lib/acronyms-html";
+import { AcronymText } from "@/components/docbel/acronym";
 
 interface ArticleViewProps {
   article: NewsItem;
@@ -50,11 +51,11 @@ export function ArticleView({ article }: ArticleViewProps) {
         </span>
 
         <h1 className="glass-display max-w-3xl text-[36px] font-semibold leading-[1.05] sm:text-[44px]">
-          {article.title}
+          <AcronymText>{article.title}</AcronymText>
         </h1>
 
         <p className="max-w-3xl text-[15px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
-          {article.desc}
+          <AcronymText>{article.desc}</AcronymText>
         </p>
 
         <div className="flex flex-wrap items-center gap-4 text-[12.5px] text-[color:var(--glass-ink-faint)]">

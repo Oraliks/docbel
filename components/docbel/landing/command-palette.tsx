@@ -40,10 +40,8 @@ const QUICK_LINKS = [
   { icon: PhoneIcon, label: "Contact", href: "/contact", shortcut: "C" },
 ];
 
-// Use the project's CommandItem default styling (gap-2 px-2 py-1.5 rounded-sm)
-// — it already gives readable spacing through its internal padding. We only
-// bump the corner radius to match the dialog and round numeric shortcuts.
-const ITEM_CLASS = "rounded-lg";
+// Rounded items need a small vertical gap so adjacent rows don't visually merge.
+const ITEM_CLASS = "rounded-lg mt-1 first:mt-0";
 
 export function LandingCommandPalette({
   open,

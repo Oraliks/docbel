@@ -290,6 +290,23 @@ model NewsletterSubscriber {
   updatedAt DateTime @updatedAt
 }
 
+model Changelog {
+  id          String   @id @default(cuid())
+  version     String   @unique
+  publishedAt DateTime
+  type        String   @default("feature") // feature | fix | improvement | breaking
+  title       String
+  description String   @default("")
+  changes     Json     @default("[]")
+  createdBy   String?
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([publishedAt(sort: Desc)])
+  @@index([type])
+}
+
 model InboxEmail {
   id             String   @id @default(cuid())
   // Folder = logical inbox category. Mirrors IMAP folders detected via SPECIAL-USE.

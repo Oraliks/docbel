@@ -12,15 +12,6 @@ export interface NewsItem {
   content?: string;
 }
 
-export interface ChangelogEntry {
-  version: string;
-  date: string;
-  type: "feature" | "fix" | "improvement" | "breaking";
-  title: string;
-  desc: string;
-  changes: string[];
-}
-
 import type { AudienceId } from "@/lib/audience";
 
 export interface Tool {
@@ -76,8 +67,6 @@ export function getToolBySlug(slug: string): Tool | undefined {
 export function getToolSlug(tool: Tool): string {
   return tool.slug ?? toolSlug(tool.title);
 }
-
-export const LANGS = ["FR", "NL", "DE", "EN"];
 
 export interface ColorPalette {
   bg: string;

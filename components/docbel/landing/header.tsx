@@ -5,8 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useTheme } from "@/components/theme-provider";
-import { useInboxUnreadCount } from "@/hooks/useInboxUnreadCount";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { NotificationBell } from "@/components/docbel/notification-bell";
 import { AUDIENCES, type AudienceId } from "@/lib/audience";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-  BellIcon,
   CheckIcon,
   ChevronDownIcon,
   LifeBuoyIcon,
@@ -91,7 +90,6 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
   const { data: session } = authClient.useSession();
   const activeNav = resolveActiveNav(pathname);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const unreadCount = useInboxUnreadCount();
 
   const current = AUDIENCES.find((aud) => aud.id === persona) ?? AUDIENCES[0];
   const Icon = current.Icon;
@@ -348,30 +346,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         >
           {dark ? <SunIcon /> : <MoonIcon />}
         </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => router.push("/admin/messagerie")}
-          className="relative size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10"
-          aria-label={
-            unreadCount > 0
-              ? `Notifications (${unreadCount} non lues)`
-              : "Notifications"
-          }
-        >
-          <BellIcon />
-          {unreadCount > 0 ? (
-            <span
-              className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
-              style={{
-                background: "var(--glass-accent-deep)",
-                boxShadow: "0 0 0 2px var(--glass-surface)",
-              }}
-            >
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          ) : null}
-        </Button>
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-1 transition-colors hover:bg-white/55 dark:hover:bg-white/8 md:pr-3.5">

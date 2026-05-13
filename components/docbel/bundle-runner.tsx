@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -13,6 +12,7 @@ import {
   Package,
   PenTool,
   RefreshCw,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,16 +22,26 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   evaluateCondition,
   describeCondition,
-  type BundleConditionRule,
+  type BundleCondition,
   type CollectedPayloads,
 } from "@/lib/documents/bundle-conditions";
+import {
+  type EligibilityAnswers,
+  type EligibilityQuestion,
+  parseEligibilityAnswers,
+  parseEligibilityQuestions,
+} from "@/lib/bundles/eligibility";
+import { parseBundleWarnings, type BundleWarning } from "@/lib/bundles/types";
+import { EligibilityPrequalifier } from "./onboarding/eligibility-prequalifier";
+import { BundleWarnings } from "./onboarding/bundle-warnings";
+import { ResumeCodeBanner } from "./onboarding/resume-code-banner";
 
 interface BundleItem {
   id: string;
   templateId: string;
   order: number;
   required: boolean;
-  condition: BundleConditionRule[] | null;
+  condition: BundleCondition;
   template: {
     id: string;
     toolName: string;
@@ -49,11 +59,18 @@ interface Bundle {
   description: string | null;
   color: string;
   items: BundleItem[];
+  /// Raw JSON depuis la base — sera parsé avec `parseEligibilityQuestions` etc.
+  eligibilityQuestions?: unknown;
+  warnings?: unknown;
 }
 
 interface BundleRunnerProps {
   bundle: Bundle;
   runId: string | null;
+  resumeCode: string | null;
+  resumeCodeExpiresAt: string | null;
+  resumeEmail: string | null;
+  eligibilityAnswers: EligibilityAnswers;
   completedTemplateIds: string[];
   payloads: CollectedPayloads;
   templateNames: Record<string, string>;
@@ -63,6 +80,10 @@ interface BundleRunnerProps {
 export function BundleRunner({
   bundle,
   runId: initialRunId,
+  resumeCode: initialResumeCode,
+  resumeCodeExpiresAt: initialResumeCodeExpiresAt,
+  resumeEmail,
+  eligibilityAnswers: initialEligibilityAnswers,
   completedTemplateIds,
   payloads,
   templateNames,
@@ -71,16 +92,53 @@ export function BundleRunner({
   const router = useRouter();
   const confirm = useConfirm();
   const [runId, setRunId] = useState<string | null>(initialRunId);
+  const [resumeCode, setResumeCode] = useState<string | null>(initialResumeCode);
+  const [resumeCodeExpiresAt, setResumeCodeExpiresAt] = useState<string | null>(
+    initialResumeCodeExpiresAt
+  );
   const [starting, setStarting] = useState(false);
+  const [eligibilityAnswers, setEligibilityAnswers] = useState<EligibilityAnswers>(
+    initialEligibilityAnswers
+  );
+  const [editingEligibility, setEditingEligibility] = useState(false);
 
-  async function ensureRun(): Promise<string | null> {
-    if (runId) return runId;
+  const eligibilityQuestions: EligibilityQuestion[] = useMemo(
+    () => parseEligibilityQuestions(bundle.eligibilityQuestions),
+    [bundle.eligibilityQuestions]
+  );
+  const warnings: BundleWarning[] = useMemo(
+    () => parseBundleWarnings(bundle.warnings),
+    [bundle.warnings]
+  );
+
+  const hasEligibilityQuestions = eligibilityQuestions.length > 0;
+  const eligibilityCompleted = useMemo(() => {
+    if (!hasEligibilityQuestions) return true;
+    return eligibilityQuestions.every(
+      (q) => eligibilityAnswers[q.id] !== undefined && eligibilityAnswers[q.id] !== ""
+    );
+  }, [hasEligibilityQuestions, eligibilityQuestions, eligibilityAnswers]);
+
+  /// Affichage de la pré-qualification :
+  /// - quand on n'a pas encore démarré le run ET il y a des questions
+  /// - OU quand l'utilisateur a explicitement demandé à revoir ses réponses
+  const showsPrequalifier =
+    (!runId && hasEligibilityQuestions) || editingEligibility;
+
+  async function ensureRun(answers?: EligibilityAnswers): Promise<string | null> {
+    if (runId && !answers) return runId;
     setStarting(true);
     try {
-      const res = await fetch(`/api/documents/bundles/${bundle.id}/run`, { method: "POST" });
+      const res = await fetch(`/api/documents/bundles/${bundle.id}/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eligibilityAnswers: answers ?? eligibilityAnswers }),
+      });
       if (!res.ok) throw new Error("Échec démarrage parcours");
       const run = await res.json();
       setRunId(run.id);
+      if (run.resumeCode) setResumeCode(run.resumeCode);
+      if (run.resumeCodeExpiresAt) setResumeCodeExpiresAt(run.resumeCodeExpiresAt);
       router.refresh();
       return run.id;
     } catch (err) {
@@ -96,6 +154,29 @@ export function BundleRunner({
     if (!id) return;
     const url = `/outils/${item.template.toolSlug}?bundleRun=${encodeURIComponent(id)}&bundleSlug=${encodeURIComponent(bundle.slug)}`;
     router.push(url);
+  }
+
+  async function handlePrequalifierContinue(answers: EligibilityAnswers) {
+    setEligibilityAnswers(answers);
+    if (editingEligibility && runId) {
+      // Update existant
+      try {
+        const res = await fetch(`/api/documents/bundles/${bundle.id}/run`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ eligibilityAnswers: answers }),
+        });
+        if (!res.ok) throw new Error("Échec mise à jour");
+        toast.success("Réponses mises à jour");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Erreur");
+      }
+      setEditingEligibility(false);
+      router.refresh();
+    } else {
+      // Premier démarrage : crée le run avec les réponses
+      await ensureRun(answers);
+    }
   }
 
   async function reset() {
@@ -162,143 +243,187 @@ export function BundleRunner({
         )}
       </div>
 
-      {!runId && (
-        <Alert>
-          <AlertDescription className="text-sm flex items-center justify-between gap-3 flex-wrap">
-            <span>
-              Cliquez sur un document pour démarrer votre parcours. Les documents qui dépendent de
-              vos réponses apparaîtront au fur et à mesure.
-            </span>
-          </AlertDescription>
-        </Alert>
+      {/* Avertissements importants — toujours en haut */}
+      {warnings.length > 0 && <BundleWarnings warnings={warnings} />}
+
+      {/* Pré-qualification — informatif, jamais bloquant */}
+      {showsPrequalifier && (
+        <EligibilityPrequalifier
+          questions={eligibilityQuestions}
+          initialAnswers={eligibilityAnswers}
+          onAnswersChange={setEligibilityAnswers}
+          onContinue={handlePrequalifierContinue}
+          continueLabel={runId ? "Enregistrer" : "Démarrer le parcours"}
+        />
       )}
 
-      {allRequiredDone && requiredVisible.length > 0 && (
-        <Alert className="bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-800">
-          <CheckCircle2 className="w-4 h-4 text-green-600" />
-          <AlertDescription className="text-sm text-green-700 dark:text-green-400">
-            Tous les documents obligatoires de ce parcours sont complétés.
-          </AlertDescription>
-        </Alert>
+      {/* Banner code de reprise — visible une fois le run créé */}
+      {runId && resumeCode && (
+        <ResumeCodeBanner
+          runId={runId}
+          resumeCode={resumeCode}
+          resumeCodeExpiresAt={resumeCodeExpiresAt}
+          initialResumeEmail={resumeEmail}
+        />
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Documents du parcours</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {visibleItems.map(({ item, completed, eligibility }, idx) => {
-            const isPending = eligibility === "pending";
-            return (
-              <div
-                key={item.id}
-                className={`flex items-start gap-3 p-3 border rounded-md transition-colors ${
-                  completed
-                    ? "bg-green-50/50 border-green-300 dark:bg-green-950/20"
-                    : isPending
-                      ? "bg-muted/30 border-dashed opacity-70"
-                      : "hover:bg-muted/40"
-                }`}
-              >
-                <div className="w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm flex-shrink-0">
-                  {completed ? (
-                    <CheckCircle2 className="w-6 h-6 text-green-600" />
-                  ) : isPending ? (
-                    <Clock className="w-5 h-5 text-muted-foreground" />
-                  ) : (
-                    <Circle className="w-5 h-5 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium">
-                      {idx + 1}. {item.template.toolName}
-                    </span>
-                    {item.template.organisme && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs"
-                        style={{
-                          borderColor: item.template.organisme.color,
-                          color: item.template.organisme.color,
-                        }}
-                      >
-                        {item.template.organisme.shortName}
-                      </Badge>
-                    )}
-                    {!item.required && (
-                      <Badge variant="secondary" className="text-xs">
-                        Optionnel
-                      </Badge>
-                    )}
-                    {item.template.requiresSignature && (
-                      <Badge variant="outline" className="text-xs gap-1">
-                        <PenTool className="w-3 h-3" />
-                        Signature
-                      </Badge>
+      {/* Section "modifier la pré-qualification" — visible quand un run existe et qu'il y avait des questions */}
+      {runId && hasEligibilityQuestions && eligibilityCompleted && !editingEligibility && (
+        <div className="flex items-center justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setEditingEligibility(true)}
+            className="text-xs"
+          >
+            <Pencil className="w-3 h-3 mr-1" />
+            Modifier mes réponses préliminaires
+          </Button>
+        </div>
+      )}
+
+      {/* Documents — masqué tant que la pré-qualification n'est pas faite */}
+      {(!showsPrequalifier || runId) && (
+        <>
+          {!runId && (
+            <Alert>
+              <AlertDescription className="text-sm flex items-center justify-between gap-3 flex-wrap">
+                <span>
+                  Cliquez sur un document pour démarrer votre parcours. Les documents qui dépendent de
+                  vos réponses apparaîtront au fur et à mesure.
+                </span>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {allRequiredDone && requiredVisible.length > 0 && (
+            <Alert className="bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-800">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              <AlertDescription className="text-sm text-green-700 dark:text-green-400">
+                Tous les documents obligatoires de ce parcours sont complétés.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Documents du parcours</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {visibleItems.map(({ item, completed, eligibility }, idx) => {
+                const isPending = eligibility === "pending";
+                return (
+                  <div
+                    key={item.id}
+                    className={`flex items-start gap-3 p-3 border rounded-md transition-colors ${
+                      completed
+                        ? "bg-green-50/50 border-green-300 dark:bg-green-950/20"
+                        : isPending
+                          ? "bg-muted/30 border-dashed opacity-70"
+                          : "hover:bg-muted/40"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm flex-shrink-0">
+                      {completed ? (
+                        <CheckCircle2 className="w-6 h-6 text-green-600" />
+                      ) : isPending ? (
+                        <Clock className="w-5 h-5 text-muted-foreground" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium">
+                          {idx + 1}. {item.template.toolName}
+                        </span>
+                        {item.template.organisme && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs"
+                            style={{
+                              borderColor: item.template.organisme.color,
+                              color: item.template.organisme.color,
+                            }}
+                          >
+                            {item.template.organisme.shortName}
+                          </Badge>
+                        )}
+                        {!item.required && (
+                          <Badge variant="secondary" className="text-xs">
+                            Optionnel
+                          </Badge>
+                        )}
+                        {item.template.requiresSignature && (
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <PenTool className="w-3 h-3" />
+                            Signature
+                          </Badge>
+                        )}
+                      </div>
+                      {item.template.toolDescription && (
+                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                          {item.template.toolDescription}
+                        </p>
+                      )}
+                      {item.condition && (
+                        <p className="text-[11px] text-muted-foreground mt-1 italic">
+                          Condition : {describeCondition(item.condition, templateNames, fieldLabels)}
+                        </p>
+                      )}
+                      {isPending && (
+                        <p className="text-[11px] text-amber-700 mt-1">
+                          Complétez d&apos;abord les documents précédents pour savoir si celui-ci est
+                          requis.
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={completed ? "outline" : "default"}
+                      onClick={() => handleStart(item)}
+                      disabled={isPending || starting}
+                    >
+                      {completed
+                        ? "Modifier"
+                        : starting
+                          ? "Démarrage…"
+                          : "Compléter"}
+                      {!completed && <ArrowRight className="w-4 h-4 ml-1" />}
+                    </Button>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          {hiddenItems.length > 0 && (
+            <Card className="border-dashed bg-muted/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
+                  <EyeOff className="w-4 h-4" />
+                  Documents non requis pour votre situation ({hiddenItems.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1.5">
+                {hiddenItems.map(({ item }) => (
+                  <div
+                    key={item.id}
+                    className="text-xs text-muted-foreground flex items-center gap-2"
+                  >
+                    <Circle className="w-3 h-3" />
+                    <span>{item.template.toolName}</span>
+                    {item.condition && (
+                      <span className="italic">
+                        (requis si : {describeCondition(item.condition, templateNames, fieldLabels)})
+                      </span>
                     )}
                   </div>
-                  {item.template.toolDescription && (
-                    <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                      {item.template.toolDescription}
-                    </p>
-                  )}
-                  {item.condition && item.condition.length > 0 && (
-                    <p className="text-[11px] text-muted-foreground mt-1 italic">
-                      Condition : {describeCondition(item.condition, templateNames, fieldLabels)}
-                    </p>
-                  )}
-                  {isPending && (
-                    <p className="text-[11px] text-amber-700 mt-1">
-                      Complétez d&apos;abord les documents précédents pour savoir si celui-ci est
-                      requis.
-                    </p>
-                  )}
-                </div>
-                <Button
-                  size="sm"
-                  variant={completed ? "outline" : "default"}
-                  onClick={() => handleStart(item)}
-                  disabled={isPending || starting}
-                >
-                  {completed
-                    ? "Modifier"
-                    : starting
-                      ? "Démarrage…"
-                      : "Compléter"}
-                  {!completed && <ArrowRight className="w-4 h-4 ml-1" />}
-                </Button>
-              </div>
-            );
-          })}
-        </CardContent>
-      </Card>
-
-      {hiddenItems.length > 0 && (
-        <Card className="border-dashed bg-muted/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
-              <EyeOff className="w-4 h-4" />
-              Documents non requis pour votre situation ({hiddenItems.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1.5">
-            {hiddenItems.map(({ item }) => (
-              <div
-                key={item.id}
-                className="text-xs text-muted-foreground flex items-center gap-2"
-              >
-                <Circle className="w-3 h-3" />
-                <span>{item.template.toolName}</span>
-                {item.condition && (
-                  <span className="italic">
-                    (requis si : {describeCondition(item.condition, templateNames, fieldLabels)})
-                  </span>
-                )}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );

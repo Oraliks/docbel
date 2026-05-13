@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { parseEligibilityQuestions } from "@/lib/bundles/eligibility";
+import { parseVocabularyTags } from "@/lib/bundles/vocabulary";
+import { parseBundleWarnings } from "@/lib/bundles/types";
 
 export async function GET(
   _req: NextRequest,
@@ -50,6 +53,23 @@ export async function PUT(
   if (body.order !== undefined) data.order = body.order;
   if (body.active !== undefined) data.active = !!body.active;
 
+  // Champs onboarding (migration 12)
+  if (body.lifeEventCategory !== undefined) {
+    data.lifeEventCategory = body.lifeEventCategory || null;
+  }
+  if (body.showOnOnboarding !== undefined) {
+    data.showOnOnboarding = !!body.showOnOnboarding;
+  }
+  if (body.vocabularyTags !== undefined) {
+    data.vocabularyTags = parseVocabularyTags(body.vocabularyTags) as unknown as Prisma.InputJsonValue;
+  }
+  if (body.eligibilityQuestions !== undefined) {
+    data.eligibilityQuestions = parseEligibilityQuestions(body.eligibilityQuestions) as unknown as Prisma.InputJsonValue;
+  }
+  if (body.warnings !== undefined) {
+    data.warnings = parseBundleWarnings(body.warnings) as unknown as Prisma.InputJsonValue;
+  }
+
   // Mise à jour des items (remplacement complet de la liste)
   if (Array.isArray(body.items)) {
     await prisma.documentBundleItem.deleteMany({ where: { bundleId: id } });
@@ -57,7 +77,11 @@ export async function PUT(
       templateId: string;
       order?: number;
       required?: boolean;
-      condition?: { fieldId: string; equals: unknown } | null;
+      // condition est laissé en `unknown` car deux formats coexistent :
+      //   V1 legacy : BundleConditionRule[]
+      //   V2 nouveau : ConditionGroup
+      // Les deux sont sérialisables tels quels en JSON.
+      condition?: unknown;
     };
     const items = body.items as IncomingItem[];
     if (items.length > 0) {
@@ -67,7 +91,7 @@ export async function PUT(
           templateId: it.templateId,
           order: typeof it.order === "number" ? it.order : idx,
           required: it.required !== false,
-          condition: (it.condition ?? Prisma.JsonNull) as unknown as Prisma.InputJsonValue,
+          condition: (it.condition ?? Prisma.JsonNull) as Prisma.InputJsonValue,
         })),
       });
     }

@@ -670,6 +670,10 @@ model SignatureRecord {
 
 /// Bundle = groupe de documents générés en cascade pour un parcours utilisateur.
 /// Ex: "Demande de chômage complète" = C1 + C4 + Annexe 27.
+///
+/// Un bundle peut aussi représenter un **événement de vie** (ex. "J'ai perdu
+/// mon emploi") affiché sur la page d'onboarding. Le mapping se fait via
+/// `lifeEventCategory` + `showOnOnboarding`.
 model DocumentBundle {
   id          String   @id @default(cuid())
   slug        String   @unique
@@ -679,6 +683,26 @@ model DocumentBundle {
   color       String   @default("#7C3AED")
   active      Boolean  @default(true)
   order       Int      @default(0)
+
+  // Onboarding ("Quelle est ma situation ?") — page d'accueil dédiée
+  /// Catégorie d'événement de vie : "emploi", "formation", "famille", "logement", "sante"…
+  /// Sert au regroupement visuel sur l'onboarding.
+  lifeEventCategory String?
+  /// Si true, ce bundle apparaît dans la grille principale de /onboarding.
+  showOnOnboarding  Boolean @default(false)
+  /// Tags / synonymes pour la recherche libre et la détection d'intention.
+  /// Ex: ["chômage temporaire", "intempéries", "chômage technique", "mise au chômage"]
+  vocabularyTags    Json    @default("[]")
+
+  /// Questions de pré-qualification informatives, posées AVANT de démarrer le parcours.
+  /// Format: EligibilityQuestion[] (cf. lib/bundles/eligibility.ts).
+  /// Le résultat est purement informatif, ne bloque JAMAIS la suite.
+  eligibilityQuestions Json @default("[]")
+
+  /// Avertissements importants affichés en tête de parcours (ex. EC32 à installer
+  /// avant le 1er du mois). Format: BundleWarning[] (cf. lib/bundles/types.ts).
+  warnings Json @default("[]")
+
   createdBy   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -687,6 +711,8 @@ model DocumentBundle {
   runs  BundleRun[]
 
   @@index([active])
+  @@index([showOnOnboarding])
+  @@index([lifeEventCategory])
 }
 
 model DocumentBundleItem {
@@ -714,11 +740,22 @@ model BundleRun {
   id        String         @id @default(cuid())
   bundleId  String
   bundle    DocumentBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
-  // Identification utilisateur (l'un des deux)
+  // Identification utilisateur (l'un des trois)
   userId    String?
   sessionId String? // cookie côté client
+  /// Code de reprise lisible par l'utilisateur (ex. "BELDOC-3X7K-9P2M").
+  /// Permet de reprendre un dossier depuis un autre appareil / après expiration du cookie.
+  /// Généré au premier `POST /api/documents/bundles/[id]/run` quand le run est créé.
+  resumeCode          String?   @unique
+  resumeCodeExpiresAt DateTime? // TTL par défaut = 30 jours
+  /// Email optionnel saisi par l'utilisateur pour se faire envoyer le code par mail.
+  /// Pas une donnée d'identification — purement pratique pour la reprise.
+  resumeEmail         String?
   // Payloads collectés : { [templateId]: { ...validated payload } }
   payloads  Json           @default("{}")
+  /// Réponses au questionnaire de pré-qualification (informatif).
+  /// Clé : questionId. Valeur : réponse de l'utilisateur.
+  eligibilityAnswers Json @default("{}")
   // Liste des templateIds complétés (ordre d'achèvement)
   completedTemplateIds Json @default("[]")
   status    String         @default("in_progress") // in_progress | completed | abandoned
@@ -730,6 +767,7 @@ model BundleRun {
   @@index([userId])
   @@index([sessionId])
   @@index([status])
+  @@index([resumeCodeExpiresAt])
 }
 
 /// Profil utilisateur enrichi pour pré-remplissage des formulaires (Phase 8).

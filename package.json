@@ -5,10 +5,10 @@
   "packageManager": "pnpm@10.33.2",
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "prisma generate && next build --webpack",
+    "build": "prisma generate && node scripts/copy-pdf-worker.mjs && next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && node scripts/copy-pdf-worker.mjs",
     "db:push": "dotenv -e .env.local -- prisma db push",
     "db:migrate": "dotenv -e .env.local -- prisma migrate deploy",
     "db:migrate:dev": "dotenv -e .env.local -- prisma migrate dev",

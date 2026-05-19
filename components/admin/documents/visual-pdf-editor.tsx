@@ -31,6 +31,7 @@ import {
   type GraphicShape,
 } from "@/lib/documents/ocr-detector";
 import { findBestCorrection, type StoredCorrection } from "@/lib/documents/ocr-corrections";
+import { PDF_WORKER_SRC } from "@/lib/documents/pdf-worker";
 
 const PDFDocument = dynamic(() => import("react-pdf").then((m) => m.Document), {
   ssr: false,
@@ -89,7 +90,7 @@ export function VisualPdfEditor({
     let cancelled = false;
     import("react-pdf").then(({ pdfjs }) => {
       if (cancelled) return;
-      pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+      pdfjs.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
       setPdfWorkerReady(true);
     });
     return () => {
@@ -765,6 +766,7 @@ export function VisualPdfEditor({
             <PDFDocument
               file={`/api/files/${sourceFileId}/download`}
               onLoadSuccess={(pdf) => setNumPages(pdf.numPages)}
+              onLoadError={(err) => console.error("PDF load error:", err)}
               loading={<div className="p-12 text-center">Chargement du PDF…</div>}
               error={<div className="p-12 text-center text-destructive">Erreur de chargement du PDF</div>}
             >

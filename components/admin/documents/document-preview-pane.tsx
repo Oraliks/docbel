@@ -6,6 +6,7 @@ import { FileText, FileType } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PDF_WORKER_SRC } from "@/lib/documents/pdf-worker";
 
 const PDFDocument = dynamic(() => import("react-pdf").then((m) => m.Document), {
   ssr: false,
@@ -39,7 +40,7 @@ export function DocumentPreviewPane({
     let cancelled = false;
     import("react-pdf").then(({ pdfjs }) => {
       if (cancelled) return;
-      pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+      pdfjs.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
       setPdfWorkerReady(true);
     });
     return () => {
@@ -81,6 +82,7 @@ export function DocumentPreviewPane({
               <PDFDocument
                 file={`/api/files/${sourceFileId}/download`}
                 onLoadSuccess={(pdf) => setNumPages(pdf.numPages)}
+                onLoadError={(err) => console.error("PDF load error:", err)}
                 loading={<div className="p-8 text-center text-sm">Chargement…</div>}
                 error={
                   <div className="p-8 text-center text-sm text-destructive">

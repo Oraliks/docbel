@@ -19,6 +19,7 @@ const eslintConfig = defineConfig([
     "prisma/migrations/**",
     "components/ui/**", // shadcn auto-generated, edit at your own risk
     "scripts/seed-files.ts",
+    "public/**", // static assets (pdf.worker.min.mjs, svg, etc.)
   ]),
 ]);
 

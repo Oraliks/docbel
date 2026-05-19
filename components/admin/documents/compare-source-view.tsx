@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PDF_WORKER_SRC } from "@/lib/documents/pdf-worker";
 
 const PDFDocument = dynamic(() => import("react-pdf").then((m) => m.Document), { ssr: false });
 const PDFPage = dynamic(() => import("react-pdf").then((m) => m.Page), { ssr: false });
@@ -64,7 +65,7 @@ export function CompareSourceView({ toolId, toolName, currentFile, otherPdfs }: 
     let cancelled = false;
     import("react-pdf").then(({ pdfjs }) => {
       if (cancelled) return;
-      pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+      pdfjs.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
       setPdfWorkerReady(true);
     });
     return () => {

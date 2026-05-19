@@ -43,6 +43,9 @@ public/uploads/*
 private/uploads/*
 !private/uploads/.gitkeep
 
+# Copied at install/build time by scripts/copy-pdf-worker.mjs
+public/pdf.worker.min.mjs
+
 # Temporary files
 tempzip/
 *.tmp

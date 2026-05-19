@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { createElement, useMemo, useState } from "react";
 import {
   Search,
   Star,
@@ -21,10 +21,13 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -148,8 +151,9 @@ export function FieldLibraryPicker({ presets, onPick, disabled }: Props) {
       activeCategory === "popular"
         ? popularPresets
         : canonicalPresets.filter((p) => p.category === activeCategory);
+    // Recherche : si on tape, on ignore la catégorie et on cherche dans tout
     if (q) {
-      list = list.filter((p) => {
+      list = canonicalPresets.filter((p) => {
         const hay = normalize(
           `${p.name} ${p.defaultLabel ?? ""} ${p.description ?? ""} ${p.fieldType}`
         );
@@ -163,39 +167,53 @@ export function FieldLibraryPicker({ presets, onPick, disabled }: Props) {
     onPick(preset);
     setOpen(false);
     setSearch("");
+    setActiveCategory("popular");
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          size="sm"
-          variant="default"
-          disabled={disabled}
-          title="Ajouter un champ depuis la bibliothèque canonique"
-        >
-          <Library className="w-4 h-4 mr-1" />
-          Bibliothèque
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[480px] p-0" align="end">
-        <div className="flex flex-col max-h-[60vh]">
-          {/* Search bar */}
-          <div className="p-3 border-b">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher (NISS, email, signature…)"
-                className="pl-8 h-8 text-sm"
-                autoFocus
-              />
-            </div>
-          </div>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger
+        render={
+          <Button
+            size="sm"
+            variant="default"
+            disabled={disabled}
+            title="Ajouter un champ depuis la bibliothèque canonique"
+          >
+            <Library className="w-4 h-4 mr-1" />
+            Bibliothèque
+          </Button>
+        }
+      />
+      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
+        <SheetHeader className="px-4 pt-4 pb-2 border-b">
+          <SheetTitle className="flex items-center gap-2">
+            <Library className="size-4" />
+            Bibliothèque de champs
+          </SheetTitle>
+          <SheetDescription>
+            {canonicalPresets.length} presets canoniques. Cliquez pour ajouter au
+            centre de la page courante.
+          </SheetDescription>
+        </SheetHeader>
 
-          {/* Category tabs */}
-          <div className="flex flex-wrap gap-1 p-2 border-b">
+        {/* Search */}
+        <div className="px-4 py-2 border-b">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher (NISS, email, signature…)"
+              className="pl-9 h-9"
+              autoFocus
+            />
+          </div>
+        </div>
+
+        {/* Category tabs */}
+        {!search && (
+          <div className="flex flex-wrap gap-1 px-3 py-2 border-b">
             {categories.map((cat) => {
               const isActive = activeCategory === cat;
               const label =
@@ -212,10 +230,10 @@ export function FieldLibraryPicker({ presets, onPick, disabled }: Props) {
                   key={cat}
                   type="button"
                   onClick={() => setActiveCategory(cat)}
-                  className={`px-2 py-1 text-[11px] font-medium rounded transition-colors ${
+                  className={`px-2.5 py-1 text-xs font-medium rounded-full transition-colors ${
                     isActive
                       ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted text-muted-foreground"
+                      : "bg-muted hover:bg-muted/70 text-muted-foreground"
                   }`}
                 >
                   {label}
@@ -223,60 +241,77 @@ export function FieldLibraryPicker({ presets, onPick, disabled }: Props) {
               );
             })}
           </div>
+        )}
 
-          {/* Field list */}
-          <div className="flex-1 overflow-y-auto p-2">
-            {filtered.length === 0 ? (
-              <div className="text-center py-8 text-sm text-muted-foreground">
-                Aucun champ ne correspond.
-              </div>
-            ) : (
-              <ul className="space-y-1">
-                {filtered.map((p) => {
-                  const Icon = getIconFor(p);
-                  return (
-                    <li key={p.id}>
-                      <button
-                        type="button"
-                        onClick={() => handlePick(p)}
-                        className="w-full text-left px-2 py-1.5 rounded hover:bg-muted transition-colors flex items-start gap-2 group"
-                      >
-                        <span className="inline-flex items-center justify-center size-7 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 flex-shrink-0 group-hover:bg-blue-200">
-                          <Icon className="size-3.5" />
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium flex items-center gap-1.5">
-                            <span className="truncate">{p.defaultLabel}</span>
-                            {p.popular && (
-                              <Star className="size-3 text-amber-500 flex-shrink-0" />
-                            )}
-                            <Badge
-                              variant="outline"
-                              className="text-[9px] py-0 px-1 flex-shrink-0"
-                            >
-                              {p.fieldType}
-                            </Badge>
-                          </div>
-                          {p.description && (
-                            <p className="text-[11px] text-muted-foreground truncate">
-                              {p.description}
-                            </p>
-                          )}
-                        </div>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-
-          {/* Footer count */}
-          <div className="border-t px-3 py-1.5 text-[10px] text-muted-foreground">
-            {filtered.length} / {canonicalPresets.length} champ{canonicalPresets.length > 1 ? "s" : ""}
-          </div>
+        {/* Field grid */}
+        <div className="flex-1 overflow-y-auto p-3">
+          {filtered.length === 0 ? (
+            <div className="text-center py-12 text-sm text-muted-foreground">
+              Aucun champ ne correspond à « {search} ».
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-1.5">
+              {filtered.map((p) => (
+                <FieldCard key={p.id} preset={p} onPick={handlePick} />
+              ))}
+            </div>
+          )}
         </div>
-      </PopoverContent>
-    </Popover>
+
+        {/* Footer count */}
+        <div className="border-t px-4 py-2 text-[11px] text-muted-foreground bg-muted/20">
+          {filtered.length} / {canonicalPresets.length} champ
+          {canonicalPresets.length > 1 ? "s" : ""}
+          {search && (
+            <span className="ml-2">— recherche « {search} »</span>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+interface FieldCardProps {
+  preset: CanonicalFieldPreset;
+  onPick: (preset: CanonicalFieldPreset) => void;
+}
+
+/// Carte d'un preset dans la grille. Sortie comme composant pour éviter le
+/// pattern lint react-hooks/static-components (composant Icon en variable).
+function FieldCard({ preset, onPick }: FieldCardProps) {
+  const iconNode = createElement(getIconFor(preset), {
+    className: "size-4",
+  });
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(preset)}
+      className="w-full text-left p-2.5 rounded-lg border border-transparent hover:border-border hover:bg-muted/50 transition-colors flex items-start gap-2.5 group"
+    >
+      <span className="inline-flex items-center justify-center size-8 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex-shrink-0 group-hover:bg-blue-200 dark:group-hover:bg-blue-900">
+        {iconNode}
+      </span>
+      <div className="flex-1 min-w-0 py-0.5">
+        <div className="text-sm font-medium flex items-center gap-1.5">
+          <span className="truncate">{preset.defaultLabel ?? preset.name}</span>
+          {preset.popular && (
+            <Star className="size-3 text-amber-500 flex-shrink-0" />
+          )}
+        </div>
+        {preset.description && (
+          <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+            {preset.description}
+          </p>
+        )}
+        <div className="flex items-center gap-1 mt-1">
+          <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4">
+            {preset.fieldType}
+          </Badge>
+          <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4">
+            {CATEGORY_LABELS[preset.category] ?? preset.category}
+          </Badge>
+        </div>
+      </div>
+    </button>
   );
 }

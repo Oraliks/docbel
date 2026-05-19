@@ -79,6 +79,9 @@ export interface DocumentField {
   helpUrl?: string;
   placeholder?: string;
   placeholderNl?: string;
+  /// Note interne admin — pas affichée à l'utilisateur. Pour mémoriser pourquoi
+  /// ce champ existe, des contraintes spécifiques, des TODO, etc.
+  internalNote?: string;
 
   // Comportement
   defaultValue?: string | number | boolean;

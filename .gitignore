@@ -48,6 +48,10 @@ tempzip/
 *.tmp
 *.zip
 
+# Seed PDFs (PII possible, ne pas committer)
+seed-pdfs/
+ONBOARDING_IMPLEMENTATION.md
+
 # Development tools
 .claude/
 .agents/

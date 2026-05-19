@@ -65,7 +65,13 @@ export function ConfirmDialog() {
 
   return (
     <AlertDialog open={open} onOpenChange={(v) => !v && hide(false)}>
-      <AlertDialogContent>
+      {/*
+        Largeur élargie par rapport au défaut `data-[size=default]:sm:max-w-sm`
+        (384px) : les descriptions de confirmation font typiquement 100-200
+        caractères et étouffaient dans la largeur par défaut. À 512px (lg),
+        elles tiennent sur 2-3 lignes confortables.
+      */}
+      <AlertDialogContent className="data-[size=default]:sm:max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle>{options?.title || "Confirmer ?"}</AlertDialogTitle>
           {options?.description && (

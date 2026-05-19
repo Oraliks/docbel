@@ -589,12 +589,33 @@ model Organisme {
 /// Preset de validation réutilisable pour les champs de formulaire.
 /// Permet de définir une fois "Nom de famille" et de l'appliquer à tous les docs.
 /// Les presets builtin sont seedés et non supprimables.
+///
+/// **Bibliothèque canonique** : depuis migration 13, les presets servent aussi
+/// de "templates de champs" (defaultLabel + dimensions par défaut) pour le
+/// click-to-place dans l'éditeur visuel. `popular=true` les met dans la palette
+/// rapide.
 model FieldValidationPreset {
   id          String  @id @default(cuid())
   name        String  @unique // "Nom de famille", "Date passée", "Salaire mensuel"
   description String?
-  category    String  @default("custom") // identity | contact | financial | date | belgian | custom
+  category    String  @default("custom") // identity | contact | address | bank | employer | social | document | other
   fieldType   String // text | textarea | number | date | select | checkbox | etc.
+
+  // Bibliothèque canonique (migration 13)
+  /// Label par défaut affiché quand le champ est placé via la palette.
+  /// Si null, on retombe sur `name`.
+  defaultLabel String?
+  /// Largeur par défaut en points PDF quand placé via la palette.
+  defaultWidth Int?
+  /// Hauteur par défaut en points PDF.
+  defaultHeight Int?
+  /// Valeur par défaut (ex. "Belgique" pour le champ Pays).
+  defaultValue String?
+  /// Options par défaut pour type=select : `[{value, label}, ...]`.
+  /// Stocké en JSON ; chaque option : { value: string, label: string, labelNl?, labelDe? }.
+  defaultOptions Json?
+  /// Si true, apparaît dans la palette rapide (8-12 max recommandés).
+  popular Boolean @default(false)
 
   // Validation rules (toutes optionnelles, combinées en AND)
   regex      String?

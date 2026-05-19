@@ -87,6 +87,14 @@ export default async function EditDocumentTemplatePage({
     helpTextNl: p.helpTextNl,
     placeholder: p.placeholder,
     placeholderNl: p.placeholderNl,
+    // Bibliothèque canonique (migration 13)
+    defaultLabel: p.defaultLabel,
+    defaultWidth: p.defaultWidth,
+    defaultHeight: p.defaultHeight,
+    defaultValue: p.defaultValue,
+    defaultOptions: p.defaultOptions,
+    popular: p.popular,
+    icon: p.icon,
   }));
 
   return (

@@ -69,6 +69,14 @@ export interface PresetOption {
   helpTextNl: string | null;
   placeholder: string | null;
   placeholderNl: string | null;
+  // Bibliothèque canonique (migration 13)
+  defaultLabel: string | null;
+  defaultWidth: number | null;
+  defaultHeight: number | null;
+  defaultValue: string | null;
+  defaultOptions: unknown; // JSON : [{value, label}, ...]
+  popular: boolean;
+  icon: string | null;
 }
 
 interface TemplateInitial {
@@ -502,6 +510,10 @@ export function TemplateEditor({ initial, organismes, presets }: TemplateEditorP
           {activeTab === "visual" && isPdf && sourceType === "pdf_flat" && (
             <VisualPdfEditor
               templateId={initial.id}
+              templateName={initial.tool.name}
+              organismeName={
+                organismes.find((o) => o.id === organismeId)?.name ?? null
+              }
               sourceFileId={initial.sourceFile.id}
               sourceFileSha256={initial.sourceFile.sha256}
               schema={schema}

@@ -1,311 +1,610 @@
 import { PrismaClient } from "@prisma/client";
 
-interface PresetSeed {
-  name: string;
+/// Bibliothèque canonique de champs réutilisables (migration 13).
+///
+/// Source UNIQUE des `FieldValidationPreset` builtin. Sert à la fois :
+///   - de validation (regex, belgianType, errorMsg)
+///   - de "template de champ" via la palette de l'éditeur visuel
+///     (`defaultLabel`, `defaultWidth`, `defaultHeight`, `defaultValue`,
+///     `defaultOptions`). Le picker filtre sur `defaultLabel != null` pour ne
+///     proposer que les vrais canoniques.
+///
+/// Conventions :
+///   - `popular: true` → apparaît dans la palette rapide (~12 max)
+///   - `category` ∈ identity | contact | address | bank | employer | social | document | other
+///   - `defaultWidth/Height` en POINTS PDF (origine bas-gauche, échelle native)
+///
+/// Idempotent : upsert par `name` (unique). Re-runnable sans danger.
+
+export interface CanonicalFieldSeed {
+  name: string; // identifiant unique (slug-like), sert de clé d'upsert
+  defaultLabel: string;
   description?: string;
-  category: "identity" | "contact" | "financial" | "date" | "belgian" | "address" | "custom";
+  category: string;
   fieldType: string;
-  regex?: string;
-  regexFlags?: string;
-  minLength?: number;
-  maxLength?: number;
-  minValue?: number;
-  maxValue?: number;
-  minDate?: string;
-  maxDate?: string;
-  belgianType?: "niss" | "iban" | "tva" | "bce" | "postal" | "phone";
-  errorMsg: string;
-  errorMsgNl?: string;
+  belgianType?: string | null;
+  defaultWidth: number;
+  defaultHeight: number;
+  defaultValue?: string;
+  defaultOptions?: { value: string; label: string }[];
   helpText?: string;
-  helpTextNl?: string;
   placeholder?: string;
-  placeholderNl?: string;
+  errorMsg?: string;
+  regex?: string;
+  popular?: boolean;
   icon?: string;
-  color?: string;
 }
 
-const PRESETS: PresetSeed[] = [
-  // === Identité ===
+export const CANONICAL_FIELDS: CanonicalFieldSeed[] = [
+  // ========================================================================
+  // IDENTITÉ
+  // ========================================================================
   {
-    name: "Nom de famille",
-    description: "Nom légal — lettres uniquement, accents, tirets et apostrophes autorisés.",
+    name: "NISS",
+    defaultLabel: "NISS",
+    description: "Numéro de Registre national belge",
     category: "identity",
-    fieldType: "text",
-    regex: "^[A-Za-zÀ-ÖØ-öø-ÿ' \\-]{1,80}$",
-    minLength: 1,
-    maxLength: 80,
-    errorMsg: "Nom invalide. Lettres, espaces, tirets et apostrophes uniquement.",
-    errorMsgNl: "Ongeldige naam. Alleen letters, spaties, koppeltekens en apostrofs.",
-    placeholder: "Dupont",
-    icon: "User",
-  },
-  {
-    name: "Prénom",
-    description: "Prénom — lettres uniquement, accents, tirets et apostrophes autorisés.",
-    category: "identity",
-    fieldType: "text",
-    regex: "^[A-Za-zÀ-ÖØ-öø-ÿ' \\-]{1,60}$",
-    minLength: 1,
-    maxLength: 60,
-    errorMsg: "Prénom invalide. Lettres, espaces, tirets et apostrophes uniquement.",
-    errorMsgNl: "Ongeldige voornaam.",
-    placeholder: "Jean",
-    icon: "User",
-  },
-  {
-    name: "Nom complet (prénom + nom)",
-    description: "Nom et prénom sur une seule ligne.",
-    category: "identity",
-    fieldType: "text",
-    regex: "^[A-Za-zÀ-ÖØ-öø-ÿ' \\-]{2,140}$",
-    minLength: 2,
-    maxLength: 140,
-    errorMsg: "Nom complet invalide.",
-    placeholder: "Jean Dupont",
-    icon: "User",
-  },
-
-  // === Belge (validateurs natifs) ===
-  {
-    name: "NISS belge",
-    description: "Numéro d'identification de la sécurité sociale (11 chiffres, validation modulo 97).",
-    category: "belgian",
     fieldType: "niss",
     belgianType: "niss",
-    errorMsg: "NISS invalide. Format attendu : 11 chiffres (ex : 90.05.27-123.45).",
-    errorMsgNl: "Ongeldig rijksregisternummer.",
-    placeholder: "90.05.27-123.45",
-    helpText: "Le NISS figure au dos de votre carte d'identité électronique.",
+    defaultWidth: 150,
+    defaultHeight: 14,
+    helpText: "Trouvez votre NISS sur votre carte d'identité (11 chiffres)",
+    placeholder: "XX.XX.XX-XXX.XX",
+    errorMsg: "Numéro NISS invalide (format XX.XX.XX-XXX.XX, 11 chiffres)",
+    popular: true,
     icon: "IdCard",
   },
   {
-    name: "IBAN belge",
-    description: "Numéro de compte bancaire belge (BE + 14 chiffres).",
-    category: "belgian",
-    fieldType: "iban",
-    belgianType: "iban",
-    errorMsg: "IBAN belge invalide. Format attendu : BE68 5390 0754 7034.",
-    errorMsgNl: "Ongeldig Belgisch IBAN-nummer.",
-    placeholder: "BE68 5390 0754 7034",
-    icon: "CreditCard",
-  },
-  {
-    name: "BCE / Numéro d'entreprise",
-    description: "Banque-Carrefour des Entreprises (10 chiffres, validation modulo 97).",
-    category: "belgian",
-    fieldType: "bce",
-    belgianType: "bce",
-    errorMsg: "Numéro d'entreprise invalide. Format attendu : 0XXX.XXX.XXX (10 chiffres).",
-    errorMsgNl: "Ongeldig ondernemingsnummer.",
-    placeholder: "0123.456.789",
-    helpText: "Vérifiable sur kbopub.economie.fgov.be",
-    icon: "Building",
-  },
-  {
-    name: "TVA belge",
-    description: "Numéro de TVA belge (BE + 10 chiffres).",
-    category: "belgian",
-    fieldType: "tva_be",
-    belgianType: "tva",
-    errorMsg: "Numéro de TVA invalide. Format attendu : BE0XXX.XXX.XXX.",
-    errorMsgNl: "Ongeldig BTW-nummer.",
-    placeholder: "BE0123.456.789",
-    icon: "Receipt",
-  },
-  {
-    name: "Code postal belge",
-    description: "Code postal belge (1000 à 9999).",
-    category: "belgian",
-    fieldType: "postal_be",
-    belgianType: "postal",
-    errorMsg: "Code postal belge invalide (1000–9999).",
-    errorMsgNl: "Ongeldige postcode.",
-    placeholder: "1000",
-    icon: "MapPin",
-  },
-  {
-    name: "Téléphone belge",
-    description: "Numéro fixe ou GSM belge (national ou international +32).",
-    category: "belgian",
-    fieldType: "phone_be",
-    belgianType: "phone",
-    errorMsg: "Numéro de téléphone belge invalide.",
-    errorMsgNl: "Ongeldig Belgisch telefoonnummer.",
-    placeholder: "+32 470 12 34 56",
-    icon: "Phone",
-  },
-
-  // === Contact ===
-  {
-    name: "Email",
-    description: "Adresse e-mail standard.",
-    category: "contact",
+    name: "Nom",
+    defaultLabel: "Nom",
+    description: "Nom de famille",
+    category: "identity",
     fieldType: "text",
-    regex: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$",
-    maxLength: 254,
-    errorMsg: "Adresse e-mail invalide.",
-    errorMsgNl: "Ongeldig e-mailadres.",
-    placeholder: "jean.dupont@example.be",
-    icon: "Mail",
-  },
-
-  // === Adresse ===
-  {
-    name: "Rue (nom de voie)",
-    description: "Nom de rue — lettres, chiffres, accents, tirets, apostrophes.",
-    category: "address",
-    fieldType: "text",
-    regex: "^[A-Za-z0-9À-ÖØ-öø-ÿ' \\-,.]{1,120}$",
-    maxLength: 120,
-    errorMsg: "Nom de rue invalide.",
-    placeholder: "Rue de la Loi",
-    icon: "Road",
-  },
-  {
-    name: "Numéro de rue",
-    description: "Numéro avec bte/boîte optionnelle (ex : 16, 16A, 16 bte 3).",
-    category: "address",
-    fieldType: "text",
-    regex: "^[0-9]+[A-Za-z]?( ?(bte|boite|boîte) ?[0-9A-Za-z]+)?$",
-    regexFlags: "i",
-    maxLength: 20,
-    errorMsg: "Numéro de rue invalide (ex : 16, 16A, 16 bte 3).",
-    placeholder: "16 bte 3",
-    icon: "Hash",
-  },
-  {
-    name: "Ville",
-    description: "Nom de commune ou ville.",
-    category: "address",
-    fieldType: "text",
-    regex: "^[A-Za-zÀ-ÖØ-öø-ÿ' \\-]{1,80}$",
-    maxLength: 80,
-    errorMsg: "Nom de ville invalide.",
-    placeholder: "Bruxelles",
-    icon: "MapPin",
-  },
-
-  // === Dates ===
-  {
-    name: "Date passée",
-    description: "Date dans le passé uniquement (jusqu'à aujourd'hui inclus).",
-    category: "date",
-    fieldType: "date",
-    maxDate: "today",
-    errorMsg: "La date doit être dans le passé ou aujourd'hui.",
-    errorMsgNl: "De datum moet in het verleden of vandaag liggen.",
-    icon: "Calendar",
-  },
-  {
-    name: "Date future",
-    description: "Date à partir d'aujourd'hui.",
-    category: "date",
-    fieldType: "date",
-    minDate: "today",
-    errorMsg: "La date doit être à partir d'aujourd'hui.",
-    icon: "Calendar",
-  },
-  {
-    name: "Date de naissance",
-    description: "Date entre 1900 et aujourd'hui.",
-    category: "date",
-    fieldType: "date",
-    minDate: "1900-01-01",
-    maxDate: "today",
-    errorMsg: "Date de naissance invalide (entre 1900 et aujourd'hui).",
-    icon: "Cake",
-  },
-  {
-    name: "Date majeur (18+ ans)",
-    description: "Date impliquant un âge d'au moins 18 ans.",
-    category: "date",
-    fieldType: "date",
-    minDate: "1900-01-01",
-    // maxDate calculé en runtime : aujourd'hui - 18 ans → géré côté validator
-    errorMsg: "Vous devez être majeur (18 ans ou plus).",
-    icon: "Calendar",
-  },
-
-  // === Financier ===
-  {
-    name: "Montant en euros (positif)",
-    description: "Montant ≥ 0 avec 2 décimales max.",
-    category: "financial",
-    fieldType: "number",
-    minValue: 0,
-    maxValue: 9999999.99,
-    errorMsg: "Montant invalide (≥ 0).",
-    placeholder: "0,00",
-    icon: "Euro",
-  },
-  {
-    name: "Salaire mensuel brut",
-    description: "Salaire mensuel brut en euros (0 à 50 000).",
-    category: "financial",
-    fieldType: "number",
-    minValue: 0,
-    maxValue: 50000,
-    errorMsg: "Salaire mensuel invalide (0 à 50 000 €).",
-    helpText: "Indiquez le montant brut avant retenues sociales et précompte professionnel.",
-    placeholder: "2500.00",
-    icon: "Euro",
-  },
-  {
-    name: "Pourcentage (0–100)",
-    category: "financial",
-    fieldType: "number",
-    minValue: 0,
-    maxValue: 100,
-    errorMsg: "Pourcentage invalide (0 à 100).",
-    placeholder: "50",
-    icon: "Percent",
-  },
-
-  // === Custom génériques ===
-  {
-    name: "Texte court (max 100)",
-    description: "Champ texte libre limité à 100 caractères.",
-    category: "custom",
-    fieldType: "text",
-    maxLength: 100,
-    errorMsg: "Maximum 100 caractères.",
+    defaultWidth: 200,
+    defaultHeight: 14,
+    placeholder: "Dupont",
+    popular: true,
     icon: "Type",
   },
   {
-    name: "Texte long (max 1000)",
-    description: "Champ texte libre limité à 1000 caractères.",
-    category: "custom",
+    name: "Prénom",
+    defaultLabel: "Prénom",
+    category: "identity",
+    fieldType: "text",
+    defaultWidth: 200,
+    defaultHeight: 14,
+    placeholder: "Jean",
+    popular: true,
+    icon: "Type",
+  },
+  {
+    name: "Prénom et nom",
+    defaultLabel: "Prénom et nom",
+    description: "Champ combiné prénom + nom (utilisé sur certains formulaires)",
+    category: "identity",
+    fieldType: "text",
+    defaultWidth: 300,
+    defaultHeight: 14,
+    placeholder: "Jean Dupont",
+    popular: true,
+    icon: "Type",
+  },
+  {
+    name: "Date de naissance",
+    defaultLabel: "Date de naissance",
+    category: "identity",
+    fieldType: "date",
+    defaultWidth: 80,
+    defaultHeight: 14,
+    placeholder: "JJ/MM/AAAA",
+    popular: true,
+    icon: "Calendar",
+  },
+  {
+    name: "Lieu de naissance",
+    defaultLabel: "Lieu de naissance",
+    category: "identity",
+    fieldType: "text",
+    defaultWidth: 200,
+    defaultHeight: 14,
+    icon: "MapPin",
+  },
+  {
+    name: "Nationalité",
+    defaultLabel: "Nationalité",
+    category: "identity",
+    fieldType: "text",
+    defaultWidth: 150,
+    defaultHeight: 14,
+    defaultValue: "Belge",
+    icon: "Type",
+  },
+  {
+    name: "Sexe",
+    defaultLabel: "Sexe",
+    category: "identity",
+    fieldType: "select",
+    defaultWidth: 80,
+    defaultHeight: 14,
+    defaultOptions: [
+      { value: "M", label: "Masculin" },
+      { value: "F", label: "Féminin" },
+    ],
+    icon: "Type",
+  },
+  {
+    name: "Accès au marché de l'emploi",
+    defaultLabel: "Accès au marché de l'emploi",
+    description: "Droit de travailler en Belgique (pour étrangers)",
+    category: "identity",
+    fieldType: "select",
+    defaultWidth: 200,
+    defaultHeight: 14,
+    defaultOptions: [
+      { value: "illimite", label: "Accès illimité" },
+      { value: "limite", label: "Accès limité" },
+      { value: "aucun", label: "Aucun accès" },
+    ],
+  },
+  {
+    name: "Statut de réfugié ou apatride",
+    defaultLabel: "Statut de réfugié ou apatride",
+    category: "identity",
+    fieldType: "select",
+    defaultWidth: 200,
+    defaultHeight: 14,
+    defaultOptions: [
+      { value: "refugie", label: "Statut de réfugié" },
+      { value: "apatride", label: "Apatride reconnu" },
+      { value: "non_applicable", label: "Non applicable" },
+    ],
+  },
+
+  // ========================================================================
+  // CONTACT
+  // ========================================================================
+  {
+    name: "Email",
+    defaultLabel: "Adresse e-mail",
+    category: "contact",
+    fieldType: "text",
+    defaultWidth: 250,
+    defaultHeight: 14,
+    regex: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+    errorMsg: "Adresse e-mail invalide",
+    placeholder: "jean.dupont@exemple.be",
+    popular: true,
+    icon: "Type",
+  },
+  {
+    name: "Téléphone",
+    defaultLabel: "Téléphone",
+    description: "Téléphone fixe ou GSM — accepte +32 belge ou international",
+    category: "contact",
+    fieldType: "phone_be",
+    belgianType: "phone",
+    defaultWidth: 150,
+    defaultHeight: 14,
+    placeholder: "+32 470 12 34 56",
+    errorMsg: "Numéro de téléphone invalide",
+    popular: true,
+    icon: "Phone",
+  },
+
+  // ========================================================================
+  // ADRESSE
+  // ========================================================================
+  {
+    name: "Rue",
+    defaultLabel: "Rue / Avenue / Chaussée",
+    category: "address",
+    fieldType: "text",
+    defaultWidth: 250,
+    defaultHeight: 14,
+    placeholder: "Rue de la Loi",
+    popular: true,
+    icon: "MapPin",
+  },
+  {
+    name: "Numéro de rue",
+    defaultLabel: "Numéro",
+    category: "address",
+    fieldType: "text",
+    defaultWidth: 60,
+    defaultHeight: 14,
+    placeholder: "16",
+    icon: "Hash",
+  },
+  {
+    name: "Numéro de boîte",
+    defaultLabel: "Boîte",
+    description: "Numéro de boîte aux lettres (optionnel)",
+    category: "address",
+    fieldType: "text",
+    defaultWidth: 60,
+    defaultHeight: 14,
+    placeholder: "A",
+    icon: "Hash",
+  },
+  {
+    name: "Code postal",
+    defaultLabel: "Code postal",
+    category: "address",
+    fieldType: "postal_be",
+    belgianType: "postal",
+    defaultWidth: 60,
+    defaultHeight: 14,
+    placeholder: "1000",
+    errorMsg: "Code postal belge invalide (4 chiffres)",
+    popular: true,
+    icon: "MapPin",
+  },
+  {
+    name: "Commune",
+    defaultLabel: "Commune",
+    category: "address",
+    fieldType: "text",
+    defaultWidth: 150,
+    defaultHeight: 14,
+    placeholder: "Bruxelles",
+    popular: true,
+    icon: "MapPin",
+  },
+  {
+    name: "Pays",
+    defaultLabel: "Pays",
+    category: "address",
+    fieldType: "text",
+    defaultWidth: 120,
+    defaultHeight: 14,
+    defaultValue: "Belgique",
+    icon: "MapPin",
+  },
+
+  // ========================================================================
+  // BANCAIRE
+  // ========================================================================
+  {
+    name: "IBAN",
+    defaultLabel: "IBAN",
+    description: "Numéro de compte international (BE, FR, LU, Revolut LT, etc.)",
+    category: "bank",
+    fieldType: "iban",
+    belgianType: "iban",
+    defaultWidth: 250,
+    defaultHeight: 14,
+    placeholder: "BE68 5390 0754 7034",
+    errorMsg: "IBAN invalide",
+    popular: true,
+    icon: "CreditCard",
+  },
+  {
+    name: "BIC",
+    defaultLabel: "Code BIC",
+    description: "Code SWIFT/BIC de la banque (8 ou 11 caractères)",
+    category: "bank",
+    fieldType: "text",
+    defaultWidth: 120,
+    defaultHeight: 14,
+    regex: "^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$",
+    placeholder: "GKCCBEBB",
+    icon: "CreditCard",
+  },
+  {
+    name: "Titulaire du compte",
+    defaultLabel: "Titulaire du compte",
+    description: "Nom du titulaire si différent du demandeur (Revolut, tiers...)",
+    category: "bank",
+    fieldType: "text",
+    defaultWidth: 200,
+    defaultHeight: 14,
+    icon: "Type",
+  },
+
+  // ========================================================================
+  // EMPLOYEUR
+  // ========================================================================
+  {
+    name: "N° BCE",
+    defaultLabel: "N° BCE (Banque-Carrefour des Entreprises)",
+    description:
+      "Numéro d'entreprise belge — déclenche le lookup auto pour remplir ONSS + nom",
+    category: "employer",
+    fieldType: "bce",
+    belgianType: "bce",
+    defaultWidth: 120,
+    defaultHeight: 14,
+    placeholder: "0XXX.XXX.XXX",
+    errorMsg: "Numéro BCE invalide",
+    popular: true,
+    icon: "Building2",
+  },
+  {
+    name: "N° ONSS",
+    defaultLabel: "N° ONSS",
+    description: "Auto-rempli par lookup BCE quand possible",
+    category: "employer",
+    fieldType: "text",
+    defaultWidth: 120,
+    defaultHeight: 14,
+    icon: "Building2",
+  },
+  {
+    name: "Nom employeur",
+    defaultLabel: "Nom de l'employeur",
+    description: "Auto-rempli par lookup BCE quand possible",
+    category: "employer",
+    fieldType: "text",
+    defaultWidth: 300,
+    defaultHeight: 14,
+    icon: "Building2",
+  },
+  {
+    name: "Statut professionnel",
+    defaultLabel: "Statut professionnel",
+    description: "Ouvrier ou employé (mutuellement exclusif)",
+    category: "employer",
+    fieldType: "select",
+    defaultWidth: 150,
+    defaultHeight: 14,
+    defaultOptions: [
+      { value: "ouvrier", label: "Ouvrier" },
+      { value: "employe", label: "Employé" },
+    ],
+    icon: "Building2",
+  },
+
+  // ========================================================================
+  // SOCIAL — spécifique démarches chômage
+  // ========================================================================
+  {
+    name: "Période - date de début",
+    defaultLabel: "Date de début",
+    description: "Date de début d'une période (incapacité, indisponibilité...)",
+    category: "social",
+    fieldType: "date",
+    defaultWidth: 80,
+    defaultHeight: 14,
+    icon: "Calendar",
+  },
+  {
+    name: "Période - date de fin",
+    defaultLabel: "Date de fin",
+    category: "social",
+    fieldType: "date",
+    defaultWidth: 80,
+    defaultHeight: 14,
+    icon: "Calendar",
+  },
+  {
+    name: "Situation familiale",
+    defaultLabel: "Situation familiale",
+    category: "social",
+    fieldType: "select",
+    defaultWidth: 200,
+    defaultHeight: 14,
+    defaultOptions: [
+      { value: "seul", label: "J'habite seul(e)" },
+      { value: "cohabite", label: "Je cohabite avec une ou plusieurs personnes" },
+    ],
+  },
+  {
+    name: "Nom et prénom d'un proche",
+    defaultLabel: "Nom et prénom",
+    category: "social",
+    fieldType: "text",
+    defaultWidth: 250,
+    defaultHeight: 14,
+  },
+  {
+    name: "Lien de parenté",
+    defaultLabel: "Lien de parenté",
+    category: "social",
+    fieldType: "text",
+    defaultWidth: 150,
+    defaultHeight: 14,
+  },
+  {
+    name: "Revenu professionnel oui/non",
+    defaultLabel: "Revenu professionnel ?",
+    category: "social",
+    fieldType: "select",
+    defaultWidth: 80,
+    defaultHeight: 14,
+    defaultOptions: [
+      { value: "non", label: "Non" },
+      { value: "oui", label: "Oui" },
+    ],
+  },
+  {
+    name: "Montant mensuel brut",
+    defaultLabel: "Montant mensuel brut (€)",
+    category: "social",
+    fieldType: "number",
+    defaultWidth: 100,
+    defaultHeight: 14,
+    placeholder: "0.00",
+    icon: "Hash",
+  },
+  {
+    name: "Type de demandeur",
+    defaultLabel: "Type de demandeur",
+    category: "social",
+    fieldType: "select",
+    defaultWidth: 250,
+    defaultHeight: 14,
+    defaultOptions: [
+      { value: "chomeur_complet", label: "Chômeur complet" },
+      { value: "temps_partiel", label: "Travailleur à temps partiel" },
+    ],
+  },
+  {
+    name: "Autorisation cotisation syndicale",
+    defaultLabel: "Cotisation syndicale",
+    category: "social",
+    fieldType: "select",
+    defaultWidth: 200,
+    defaultHeight: 14,
+    defaultOptions: [
+      { value: "autorise", label: "J'autorise la retenue" },
+      { value: "refuse", label: "Je n'autorise plus la retenue" },
+    ],
+  },
+  {
+    name: "Incapacité travail permanente",
+    defaultLabel: "Incapacité de travail permanente ≥33% ?",
+    category: "social",
+    fieldType: "select",
+    defaultWidth: 80,
+    defaultHeight: 14,
+    defaultOptions: [
+      { value: "non", label: "Non" },
+      { value: "oui", label: "Oui" },
+    ],
+  },
+
+  // ========================================================================
+  // DOCUMENT
+  // ========================================================================
+  {
+    name: "Date de signature",
+    defaultLabel: "Date de signature",
+    category: "document",
+    fieldType: "date",
+    defaultWidth: 80,
+    defaultHeight: 14,
+    popular: true,
+    icon: "Calendar",
+  },
+  {
+    name: "Signature travailleur",
+    defaultLabel: "Signature du travailleur",
+    description: "Canvas dessin (crayon numérique ou doigt sur tactile) obligatoire",
+    category: "document",
+    fieldType: "signature",
+    defaultWidth: 150,
+    defaultHeight: 40,
+    popular: true,
+    icon: "PenTool",
+  },
+  {
+    name: "Signature employeur",
+    defaultLabel: "Signature de l'employeur",
+    description: "Canvas dessin obligatoire — distinct de la signature du travailleur",
+    category: "document",
+    fieldType: "signature",
+    defaultWidth: 150,
+    defaultHeight: 40,
+    icon: "PenTool",
+  },
+  {
+    name: "Date générique",
+    defaultLabel: "Date",
+    description: "Champ date générique (date du jour, date de l'événement...)",
+    category: "document",
+    fieldType: "date",
+    defaultWidth: 80,
+    defaultHeight: 14,
+    icon: "Calendar",
+  },
+  {
+    name: "Nombre de jours de travail",
+    defaultLabel: "Nombre de jours de travail",
+    category: "document",
+    fieldType: "number",
+    defaultWidth: 70,
+    defaultHeight: 14,
+    icon: "Hash",
+  },
+  {
+    name: "Nombre d'heures de travail",
+    defaultLabel: "Nombre d'heures de travail",
+    category: "document",
+    fieldType: "number",
+    defaultWidth: 70,
+    defaultHeight: 14,
+    icon: "Hash",
+  },
+  {
+    name: "Déclaration sur l'honneur",
+    defaultLabel: "Déclaration sur l'honneur",
+    description: "Case à cocher d'attestation",
+    category: "document",
+    fieldType: "checkbox",
+    defaultWidth: 14,
+    defaultHeight: 14,
+    icon: "CheckSquare",
+  },
+  {
+    name: "Documents joints",
+    defaultLabel: "Documents joints",
+    category: "document",
+    fieldType: "text",
+    defaultWidth: 250,
+    defaultHeight: 14,
+  },
+
+  // ========================================================================
+  // AUTRE
+  // ========================================================================
+  {
+    name: "Remarques",
+    defaultLabel: "Remarques ou informations complémentaires",
+    category: "other",
     fieldType: "textarea",
-    maxLength: 1000,
-    errorMsg: "Maximum 1000 caractères.",
-    icon: "FileText",
+    defaultWidth: 400,
+    defaultHeight: 60,
+    icon: "AlignLeft",
   },
 ];
 
+/// Seed des FieldValidationPreset à partir de CANONICAL_FIELDS.
+///
+/// Upsert par `name` : ré-exécutable, met à jour les presets existants avec les
+/// nouvelles méta-données canoniques.
 export async function seedFieldValidationPresets(prisma: PrismaClient) {
   let created = 0;
   let updated = 0;
 
-  for (const preset of PRESETS) {
+  for (const field of CANONICAL_FIELDS) {
+    const data = {
+      name: field.name,
+      description: field.description ?? null,
+      category: field.category,
+      fieldType: field.fieldType,
+      belgianType: field.belgianType ?? null,
+      defaultLabel: field.defaultLabel,
+      defaultWidth: field.defaultWidth,
+      defaultHeight: field.defaultHeight,
+      defaultValue: field.defaultValue ?? null,
+      defaultOptions: field.defaultOptions
+        ? (field.defaultOptions as unknown as object)
+        : undefined,
+      regex: field.regex ?? null,
+      errorMsg: field.errorMsg ?? `Valeur invalide pour "${field.name}"`,
+      helpText: field.helpText ?? null,
+      placeholder: field.placeholder ?? null,
+      icon: field.icon ?? null,
+      builtin: true,
+      popular: field.popular ?? false,
+    };
+
     const existing = await prisma.fieldValidationPreset.findUnique({
-      where: { name: preset.name },
+      where: { name: field.name },
     });
     if (existing) {
-      // Si builtin existait déjà, on met à jour (on assume que les builtin sont la source de vérité)
-      if (existing.builtin) {
-        await prisma.fieldValidationPreset.update({
-          where: { name: preset.name },
-          data: { ...preset, builtin: true },
-        });
-        updated++;
-      }
-    } else {
-      await prisma.fieldValidationPreset.create({
-        data: { ...preset, builtin: true },
+      await prisma.fieldValidationPreset.update({
+        where: { id: existing.id },
+        data,
       });
+      updated++;
+    } else {
+      await prisma.fieldValidationPreset.create({ data });
       created++;
     }
   }
 
-  console.log(`  ✓ Presets de validation : ${created} créés, ${updated} mis à jour`);
+  console.log(
+    `  ✓ Presets canoniques : ${created} créés, ${updated} mis à jour (total ${CANONICAL_FIELDS.length})`
+  );
 }

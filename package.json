@@ -16,6 +16,8 @@
     "seed": "dotenv -e .env.local -- tsx prisma/seed.ts",
     "db:setup": "dotenv -e .env.local -- prisma db push && pnpm seed && tsx scripts/setup-local-auth.ts",
     "auth:backfill": "tsx scripts/backfill-better-auth-accounts.ts",
+    "detect:canonical": "dotenv -e .env.local -- tsx scripts/detect-canonical-fields.ts",
+    "seed:canonical": "dotenv -e .env.local -- tsx scripts/seed-canonical-fields.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

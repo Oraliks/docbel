@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { DocumentField } from "@/lib/documents/types";
 import { computeSchemaDiff } from "@/lib/documents/diff";
+import { autoLearnFromSchema } from "@/lib/documents/auto-learn";
 
 export async function GET(
   _req: NextRequest,
@@ -137,6 +138,20 @@ export async function PUT(
     where: { id },
     data,
   });
+
+  // Apprentissage automatique de la mémoire OCR (si le schema a changé).
+  // Best-effort : ne bloque jamais la réponse en cas d'échec.
+  if (createRevision && Array.isArray(body.schema)) {
+    try {
+      await autoLearnFromSchema(
+        id,
+        body.schema as DocumentField[],
+        auth.user?.id ?? null
+      );
+    } catch (err) {
+      console.warn("auto-learn failed (non-blocking):", err);
+    }
+  }
 
   // Mettre à jour usageCount des presets impactés (best-effort)
   for (const [presetId, delta] of Object.entries(presetCountDeltas)) {

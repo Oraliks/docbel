@@ -8,6 +8,7 @@
 /// 4. Suggestion d'un preset de validation correspondant
 
 import { inferFromLabel } from "./label-hints";
+import { cleanOcrLabel } from "./label-cleanup";
 
 export interface OCRWord {
   text: string;
@@ -68,9 +69,11 @@ export function shapesToDetections(
     if (!label) continue; // pas de label trouvé → on ignore
 
     const isSmallSquare = s.type === "rectangle" && s.w < 25 && s.h < 25;
+    const cleanedLabel = cleanOcrLabel(label);
+    if (!cleanedLabel) continue; // si tout le label était du bruit, on ignore
     detections.push({
       type: isSmallSquare ? "checkbox" : "text",
-      label,
+      label: cleanedLabel,
       x: s.x,
       y: s.y,
       w: Math.max(s.w, 30),
@@ -211,19 +214,23 @@ export function detectFields(words: OCRWord[], pageIdx: number): DetectedField[]
   // Regroupement : cases alignées (NISS box-array, oui/non, etc.)
   const grouped = groupAlignedFields(deduplicated, pageIdx);
 
-  // Inférence du type + preset depuis le label
-  return grouped.map((f) => {
-    const inferred = inferFromLabel(f.label);
-    if (!inferred) return f;
-    // On garde le type "checkbox" tel quel s'il vient du visuel (case détectée)
-    // mais on applique inférence sinon
-    const preserveDetectedType = f.type === "checkbox" && inferred.type !== "select";
-    return {
-      ...f,
-      type: preserveDetectedType ? f.type : inferred.type,
-      suggestedPresetName: inferred.presetName,
-    };
-  });
+  // Nettoyage des labels OCR (retire underscores/astérisques/(*)/etc. en lot)
+  // PUIS inférence du type + preset depuis le label nettoyé.
+  return grouped
+    .map((f) => ({ ...f, label: cleanOcrLabel(f.label) }))
+    .filter((f) => f.label.length > 0) // ignore les détections dont le label entier était du bruit
+    .map((f) => {
+      const inferred = inferFromLabel(f.label);
+      if (!inferred) return f;
+      // On garde le type "checkbox" tel quel s'il vient du visuel (case détectée)
+      // mais on applique inférence sinon
+      const preserveDetectedType = f.type === "checkbox" && inferred.type !== "select";
+      return {
+        ...f,
+        type: preserveDetectedType ? f.type : inferred.type,
+        suggestedPresetName: inferred.presetName,
+      };
+    });
 }
 
 /// Regroupe les champs alignés horizontalement avec espacement régulier.

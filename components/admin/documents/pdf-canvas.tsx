@@ -320,86 +320,90 @@ function FieldRect({
   // Violet primary si pulse (depuis sidebar), bleu sinon
   const accent = isPulsing ? "139, 92, 246" : "37, 99, 235";
 
+  // Le ContextMenu DOIT être à l'intérieur du Rnd : sinon le wrapper
+  // ContextMenuTrigger (div en flow normal) fausse le calcul
+  // `offsetFromParent` de react-rnd (cf. updateOffsetFromParent dans la lib :
+  // il prend `this.resizable.parentNode` comme référence). Le wrapper se
+  // retrouvant après la <Page> dans le flow, l'offset ajouté = hauteur de la
+  // page → tous les champs sont rendus 1× page sous leur position correcte.
   return (
-    <ContextMenu>
-      <ContextMenuTrigger>
-        <Rnd
-          bounds="parent"
-          position={{ x: htmlX, y: htmlY }}
-          size={{ width: htmlW, height: htmlH }}
-          onDragStop={(_, p) =>
-            onUpdatePosition(field.id, { x: p.x, y: p.y, w: htmlW, h: htmlH })
-          }
-          onResizeStop={(_e, _dir, ref, _delta, position) =>
-            onUpdatePosition(field.id, {
-              x: position.x,
-              y: position.y,
-              w: ref.offsetWidth,
-              h: ref.offsetHeight,
-            })
-          }
-          onClick={(e: React.MouseEvent) => onSelect(field.id, e)}
-          style={{
-            border: `2px ${isMultiSelected ? "dashed" : "solid"} ${
-              isSelected || isPulsing || isMultiSelected
-                ? `rgb(${accent})`
-                : `rgba(${accent}, 0.6)`
-            }`,
-            background:
-              isSelected || isPulsing || isMultiSelected
-                ? `rgba(${accent}, 0.18)`
-                : `rgba(${accent}, 0.08)`,
-            borderRadius: 4,
-            pointerEvents: "auto",
-            boxShadow: isHovered
-              ? `0 0 0 3px rgba(139, 92, 246, 0.25)`
-              : isPulsing
-              ? `0 0 0 6px rgba(139, 92, 246, 0.18)`
-              : undefined,
-            transition: "box-shadow 200ms, border-color 200ms",
-          }}
+    <Rnd
+      bounds="parent"
+      position={{ x: htmlX, y: htmlY }}
+      size={{ width: htmlW, height: htmlH }}
+      onDragStop={(_, p) =>
+        onUpdatePosition(field.id, { x: p.x, y: p.y, w: htmlW, h: htmlH })
+      }
+      onResizeStop={(_e, _dir, ref, _delta, position) =>
+        onUpdatePosition(field.id, {
+          x: position.x,
+          y: position.y,
+          w: ref.offsetWidth,
+          h: ref.offsetHeight,
+        })
+      }
+      onClick={(e: React.MouseEvent) => onSelect(field.id, e)}
+      style={{
+        border: `2px ${isMultiSelected ? "dashed" : "solid"} ${
+          isSelected || isPulsing || isMultiSelected
+            ? `rgb(${accent})`
+            : `rgba(${accent}, 0.6)`
+        }`,
+        background:
+          isSelected || isPulsing || isMultiSelected
+            ? `rgba(${accent}, 0.18)`
+            : `rgba(${accent}, 0.08)`,
+        borderRadius: 4,
+        pointerEvents: "auto",
+        boxShadow: isHovered
+          ? `0 0 0 3px rgba(139, 92, 246, 0.25)`
+          : isPulsing
+          ? `0 0 0 6px rgba(139, 92, 246, 0.18)`
+          : undefined,
+        transition: "box-shadow 200ms, border-color 200ms",
+      }}
+    >
+      <ContextMenu>
+        <ContextMenuTrigger
+          className={`flex items-center justify-center w-full h-full overflow-hidden ${
+            isPulsing
+              ? "text-violet-700 dark:text-violet-300"
+              : "text-blue-700 dark:text-blue-300"
+          }`}
+          title={`${field.label} — clic droit pour actions`}
         >
-          <div
-            className={`flex items-center justify-center w-full h-full overflow-hidden ${
-              isPulsing
-                ? "text-violet-700 dark:text-violet-300"
-                : "text-blue-700 dark:text-blue-300"
-            }`}
-            title={`${field.label} — clic droit pour actions`}
+          {previewMode ? (
+            <span
+              className="text-[10px] truncate px-1 text-foreground font-medium"
+              style={{
+                fontSize: Math.max(8, Math.min(14, scale * 10)),
+              }}
+            >
+              {getPreviewValue(field)}
+            </span>
+          ) : (
+            createElement(getFieldTypeIcon(field.type), { className: "size-3.5" })
+          )}
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-52">
+          <ContextMenuItem onClick={() => onEdit(field)}>
+            <Pencil className="size-4 mr-2" />
+            Modifier
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => onDuplicate(field)}>
+            <Copy className="size-4 mr-2" />
+            Dupliquer
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            onClick={() => onRemove(field.id)}
+            className="text-destructive focus:text-destructive"
           >
-            {previewMode ? (
-              <span
-                className="text-[10px] truncate px-1 text-foreground font-medium"
-                style={{
-                  fontSize: Math.max(8, Math.min(14, scale * 10)),
-                }}
-              >
-                {getPreviewValue(field)}
-              </span>
-            ) : (
-              createElement(getFieldTypeIcon(field.type), { className: "size-3.5" })
-            )}
-          </div>
-        </Rnd>
-      </ContextMenuTrigger>
-      <ContextMenuContent className="w-52">
-        <ContextMenuItem onClick={() => onEdit(field)}>
-          <Pencil className="size-4 mr-2" />
-          Modifier
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => onDuplicate(field)}>
-          <Copy className="size-4 mr-2" />
-          Dupliquer
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem
-          onClick={() => onRemove(field.id)}
-          className="text-destructive focus:text-destructive"
-        >
-          <Trash2 className="size-4 mr-2" />
-          Supprimer
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+            <Trash2 className="size-4 mr-2" />
+            Supprimer
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    </Rnd>
   );
 }

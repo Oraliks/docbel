@@ -333,6 +333,16 @@ body,
   height: 100%;
 }
 
+/* Belt-and-braces: clip any stray horizontal overflow at the document root
+   so a wide element (e.g. an artwork with absolute decorations) can never
+   make the whole page scroll sideways on mobile. `clip` is preferred over
+   `hidden` because it doesn't create a scroll container, so sticky headers
+   keep working. */
+html,
+body {
+  overflow-x: clip;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }

@@ -19,6 +19,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { EmailList } from "./email-list";
 import { EmailDetail } from "./email-detail";
 import { ComposeDialog } from "./compose-dialog";
@@ -52,6 +53,7 @@ function formatRelativeFromNow(date: Date | null): string {
 }
 
 export function MessageriePanel() {
+  const confirm = useConfirm();
   const [folder, setFolder] = useState<Folder>("INBOX");
   const [emails, setEmails] = useState<EmailListItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -248,7 +250,15 @@ export function MessageriePanel() {
     if (ids.length === 0) return;
 
     if (action === "delete" && folder === "TRASH") {
-      if (!confirm(`Supprimer définitivement ${ids.length} email(s) ?`)) return;
+      const ok = await confirm({
+        title: `Supprimer ${ids.length} email(s) ?`,
+        description:
+          "Vidage définitif depuis la corbeille. Le contenu, pièces jointes et threads ne pourront plus être restaurés.",
+        confirmText: `Supprimer ${ids.length} email${ids.length > 1 ? "s" : ""}`,
+        destructive: true,
+        requireText: "supprimer",
+      });
+      if (!ok) return;
     }
 
     try {

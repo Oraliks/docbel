@@ -259,6 +259,7 @@ export function ChangelogManager() {
       description: "Cette action est irréversible.",
       confirmText: "Supprimer",
       destructive: true,
+      requireText: entry.version,
     });
     if (!ok) return;
 

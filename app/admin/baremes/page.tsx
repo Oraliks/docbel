@@ -41,6 +41,7 @@ import {
   ArrowUpDown,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useConfirm } from '@/components/ui/confirm-dialog'
 
 interface BareFile {
   id: string
@@ -77,6 +78,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function BaremesAdminPage() {
+  const confirm = useConfirm()
   const [files, setFiles] = useState<BareFile[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -160,14 +162,15 @@ export default function BaremesAdminPage() {
   }
 
   const handlePublish = async (id: string, hasErrors: boolean) => {
-    if (
-      !confirm(
-        hasErrors
-          ? 'Publier malgré les alertes d’erreur ?'
-          : 'Publier cet import ? L’ancien publié sera archivé.'
-      )
-    )
-      return
+    const ok = await confirm({
+      title: hasErrors ? 'Publier malgré les alertes d’erreur ?' : 'Publier cet import ?',
+      description: hasErrors
+        ? 'Des erreurs ont été détectées dans la dernière analyse. La publication forcée passera outre — assure-toi d’avoir vérifié manuellement.'
+        : 'La version actuellement publiée sera archivée et remplacée par celle-ci.',
+      confirmText: hasErrors ? 'Publier quand même' : 'Publier',
+      destructive: hasErrors,
+    })
+    if (!ok) return
     setActing(id)
     try {
       const res = await fetch(`/api/baremes/import/${id}/publish`, {
@@ -187,7 +190,13 @@ export default function BaremesAdminPage() {
   }
 
   const handleReject = async (id: string) => {
-    if (!confirm('Rejeter cet import ?')) return
+    const ok = await confirm({
+      title: 'Rejeter cet import ?',
+      description: 'Il sera marqué "rejeté" et ne pourra plus être publié. Tu pourras toujours réuploader le fichier.',
+      confirmText: 'Rejeter',
+      destructive: true,
+    })
+    if (!ok) return
     setActing(id)
     try {
       const res = await fetch(`/api/baremes/import/${id}/reject`, { method: 'POST' })
@@ -203,7 +212,17 @@ export default function BaremesAdminPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer définitivement ce fichier ?')) return
+    const file = files.find((f) => f.id === id)
+    const fileName = file?.name ?? id.slice(0, 8)
+    const ok = await confirm({
+      title: `Supprimer le fichier "${fileName}" ?`,
+      description:
+        "Le BaremeFile et tous ses BaremeAmount associés seront effacés définitivement. Si le fichier est actif, les montants publics rendus depuis cette source ne seront plus résolvables.",
+      confirmText: 'Supprimer définitivement',
+      destructive: true,
+      requireText: fileName,
+    })
+    if (!ok) return
     setActing(id)
     try {
       const res = await fetch(`/api/baremes/${id}`, { method: 'DELETE' })

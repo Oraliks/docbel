@@ -132,12 +132,15 @@ export function GeneratedDocumentsView() {
   }, [templateId, userFilter, emailedOnly]);
 
   async function deleteOne(id: string) {
+    const doc = items.find((i) => i.id === id);
+    const fileName = doc?.fileName ?? id.slice(0, 8);
     const ok = await confirmDialog({
       title: "Supprimer ce document ?",
       description:
         "Le fichier sera supprimé du stockage et l'enregistrement de génération sera effacé. Si le document a été signé, l'audit signature sera également perdu. Cette action est irréversible.",
       confirmText: "Supprimer",
       destructive: true,
+      requireText: fileName,
     });
     if (!ok) return;
     setBusyId(id);

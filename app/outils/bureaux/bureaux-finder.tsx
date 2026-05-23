@@ -19,6 +19,7 @@ import { CommunePanel } from './_components/commune-panel'
 import {
   GeolocBanner,
   haversineKm,
+  reverseGeocodeBE,
   type UserGeoloc,
 } from './_components/geoloc-banner'
 import { InfoBands } from './_components/info-bands'
@@ -46,6 +47,23 @@ export function BureauxFinder() {
   const [data, setData] = useState<ResolveResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  /**
+   * Géoloc autorisée → on enrichit avec reverse geocode (Nominatim) pour
+   * récupérer le CP + ville, on met à jour le champ search, ce qui déclenche
+   * automatiquement la recherche via le debounce déjà en place.
+   */
+  const handleLocated = useCallback(async (geo: UserGeoloc) => {
+    // Set immédiatement la position pour que les distances soient calculées
+    // depuis chez le user même avant que le reverse résolve.
+    setUserGeoloc(geo)
+    const resolved = await reverseGeocodeBE(geo.lat, geo.lng)
+    if (resolved) {
+      setUserGeoloc({ ...geo, postcode: resolved.postcode, city: resolved.city })
+      // Auto-fill le CP → déclenche la recherche via le debounce
+      setCp(resolved.postcode)
+    }
+  }, [])
 
   const resolve = useCallback(async (postalCode: string) => {
     if (!/^\d{4}$/.test(postalCode)) {
@@ -135,7 +153,7 @@ export function BureauxFinder() {
         </label>
         {/* Banner géoloc à côté en desktop, dessous en mobile */}
         <div className="flex-1 min-w-0">
-          <GeolocBanner onLocated={setUserGeoloc} located={userGeoloc} />
+          <GeolocBanner onLocated={handleLocated} located={userGeoloc} />
         </div>
       </div>
 

@@ -9,6 +9,10 @@ const DISMISS_KEY = 'bureaux:geoloc:dismissed'
 export interface UserGeoloc {
   lat: number
   lng: number
+  /** Code postal résolu via reverse geocode (optionnel). */
+  postcode?: string
+  /** Ville résolue (town/city/village) via reverse geocode. */
+  city?: string
 }
 
 interface Props {
@@ -39,12 +43,24 @@ export function GeolocBanner({ onLocated, located }: Props) {
   }, [])
 
   if (located) {
+    const place =
+      located.city && located.postcode
+        ? `${located.city} (${located.postcode})`
+        : located.postcode
+          ? located.postcode
+          : null
     return (
       <div className="flex items-center gap-2 text-xs text-green-700 dark:text-green-400 bg-green-50/60 dark:bg-green-950/20 border border-green-200/60 rounded-md px-3 py-1.5">
         <Check className="w-3.5 h-3.5 shrink-0" />
         <span>
-          Position activée — les distances affichées sont calculées depuis
-          ta position actuelle.
+          {place ? (
+            <>
+              Position détectée : <strong>{place}</strong>. La recherche est
+              lancée.
+            </>
+          ) : (
+            'Position activée — distances calculées depuis chez toi.'
+          )}
         </span>
       </div>
     )
@@ -144,6 +160,50 @@ export function GeolocBanner({ onLocated, located }: Props) {
       </button>
     </div>
   )
+}
+
+/**
+ * Reverse geocode via Nominatim : lat/lng → adresse belge structurée.
+ * Renvoie le code postal + la ville si trouvable, ou null sinon.
+ *
+ * Nominatim est gratuit, sans clé, mais demande un User-Agent et un usage
+ * raisonnable (1 req/s côté server, dans le browser pas de limite stricte
+ * mais on évite le spam). Pour notre cas (1 reverse par activation géoloc),
+ * c'est largement OK.
+ */
+export async function reverseGeocodeBE(
+  lat: number,
+  lng: number
+): Promise<{ postcode: string; city: string } | null> {
+  try {
+    const url = new URL('https://nominatim.openstreetmap.org/reverse')
+    url.searchParams.set('lat', String(lat))
+    url.searchParams.set('lon', String(lng))
+    url.searchParams.set('format', 'json')
+    url.searchParams.set('addressdetails', '1')
+    url.searchParams.set('zoom', '14') // niveau commune/quartier
+    const r = await fetch(url.toString(), {
+      headers: { 'Accept-Language': 'fr' },
+    })
+    if (!r.ok) return null
+    const data = (await r.json()) as {
+      address?: {
+        postcode?: string
+        city?: string
+        town?: string
+        village?: string
+        suburb?: string
+        municipality?: string
+      }
+    }
+    const a = data.address ?? {}
+    const postcode = a.postcode
+    const city = a.city ?? a.town ?? a.village ?? a.municipality ?? a.suburb ?? ''
+    if (!postcode || !/^\d{4}$/.test(postcode)) return null
+    return { postcode, city }
+  } catch {
+    return null
+  }
 }
 
 /**

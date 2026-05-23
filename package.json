@@ -25,6 +25,7 @@
     "bureaux:sync-sections-paiement": "dotenv -e .env.local -- tsx scripts/bureaux-sync-sections-paiement.ts",
     "bureaux:import-osm": "dotenv -e .env.local -- tsx scripts/bureaux-import-osm.ts",
     "communes:import-refnis": "dotenv -e .env.local -- tsx scripts/communes-import-refnis.ts",
+    "communes:fix": "dotenv -e .env.local -- tsx scripts/communes-fix-region-coords.ts",
     "bureaux:import-op": "dotenv -e .env.local -- tsx scripts/bureaux-import-op.ts",
     "bureaux:geocode-op": "dotenv -e .env.local -- tsx scripts/bureaux-geocode-op.ts",
     "tools:cleanup-mocks": "dotenv -e .env.local -- tsx scripts/cleanup-mock-tools.ts",

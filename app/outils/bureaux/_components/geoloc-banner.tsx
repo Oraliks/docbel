@@ -57,6 +57,20 @@ export function GeolocBanner({ onLocated, located }: Props) {
       setError('Géolocalisation non supportée par ton navigateur.')
       return
     }
+    // La geoloc nécessite HTTPS (sauf localhost). Si on est sur du HTTP non
+    // local, on prévient avant de tenter — sinon l'utilisateur a juste
+    // "Échec" sans comprendre pourquoi.
+    const isSecure =
+      typeof window !== 'undefined' &&
+      (window.location.protocol === 'https:' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1')
+    if (!isSecure) {
+      setError(
+        'La géolocalisation nécessite une connexion sécurisée (HTTPS). Sur un domaine HTTP, le navigateur la bloque.'
+      )
+      return
+    }
     setLoading(true)
     setError(null)
     navigator.geolocation.getCurrentPosition(
@@ -67,14 +81,20 @@ export function GeolocBanner({ onLocated, located }: Props) {
       (err) => {
         setLoading(false)
         if (err.code === err.PERMISSION_DENIED) {
-          setError('Permission refusée. Tu peux activer la géoloc dans les réglages du navigateur.')
+          setError(
+            "Permission refusée. Pour réessayer : icône cadenas dans la barre d'adresse → Paramètres du site → Localisation = Autoriser."
+          )
         } else if (err.code === err.POSITION_UNAVAILABLE) {
-          setError('Position indisponible — réessaye dans un instant.')
+          setError(
+            'Position indisponible (GPS/WiFi désactivés ?). Réessaye dans un instant.'
+          )
+        } else if (err.code === err.TIMEOUT) {
+          setError('Temps dépassé. Réessaye — ton GPS prend peut-être du temps à fixer.')
         } else {
-          setError('Échec de la géoloc.')
+          setError(`Échec de la géoloc (code ${err.code}): ${err.message ?? 'inconnu'}.`)
         }
       },
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 5 * 60 * 1000 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 }
     )
   }
 

@@ -2,9 +2,25 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Info, MapPin } from 'lucide-react'
-import { BureauMap } from '@/components/docbel/bureau-map'
+import { CommuneFinderMap } from './commune-finder-map'
 import type { BureauResult, CommuneSummary } from './types'
-import type { SerializedBureau } from '@/lib/bureaus/types'
+
+/** Mapping resilient des valeurs region stockées en DB (minuscules anglais
+ * via le seed REFNIS) vers leur label FR. Fallback : on retourne la valeur
+ * brute si pas reconnue (mieux que de cacher silencieusement). */
+function regionLabel(raw: string): string {
+  const map: Record<string, string> = {
+    brussels: 'Région de Bruxelles-Capitale',
+    wallonia: 'Région wallonne',
+    flanders: 'Région flamande',
+    germanophone: 'Communauté germanophone',
+    // Anciens codes au cas où il en reste en DB
+    bru: 'Région de Bruxelles-Capitale',
+    wal: 'Région wallonne',
+    fla: 'Région flamande',
+  }
+  return map[raw.toLowerCase()] ?? raw
+}
 
 interface Props {
   commune: CommuneSummary | null
@@ -18,51 +34,31 @@ interface Props {
 export function CommunePanel({ commune, bureaux }: Props) {
   const validBureaux = bureaux.filter((b): b is BureauResult => !!b)
 
-  // Adapter BureauResult → SerializedBureau pour BureauMap. Le composant Map
-  // ne lit que name / lat / lng / fullAddress / phone / website / organismeColor,
-  // donc on remplit le minimum nécessaire et on cast pour le reste.
-  const mapBureaus: SerializedBureau[] = validBureaux
-    .filter((b) => b.lat !== null && b.lng !== null)
+  // Couleurs des pins par type bureau (cohérent avec les icônes des cards)
+  const TYPE_COLOR: Record<string, string> = {
+    ONEM: '#0050A0',
+    CPAS: '#7c3aed',
+    COMMUNE: '#059669',
+    SYNDICAT: '#ea580c',
+  }
+
+  const mapBureaus = validBureaux
+    .filter((b): b is BureauResult & { lat: number; lng: number } =>
+      b.lat !== null && b.lng !== null
+    )
     .map((b) => ({
       id: b.id,
-      type: b.type as SerializedBureau['type'],
       name: b.name,
-      nameNl: null,
-      nameDe: null,
-      street: b.street,
-      streetNum: b.streetNum,
-      postalCode: b.postalCode,
-      city: b.city,
-      fullAddress: `${b.street}${b.streetNum ? ' ' + b.streetNum : ''}, ${b.postalCode} ${b.city}`,
       lat: b.lat,
       lng: b.lng,
-      phone: b.phone,
-      email: b.email,
-      website: b.website,
-      appointmentUrl: b.appointmentUrl,
-      hours: b.hours,
-      hoursNotes: b.hoursNotes,
-      services: [],
-      active: true,
-      notes: null,
-      verified: false,
-      lastVerifiedAt: null,
-      verifiedBy: null,
-      updatedBy: null,
-      organismeId: '',
-      communeId: null,
-      communeName: null,
-      organismeName: b.organismeName,
-      organismeCode: b.organismeCode,
-      organismeColor: b.organismeColor,
-      createdAt: '',
-      updatedAt: '',
+      color: b.organismeColor ?? TYPE_COLOR[b.type] ?? '#7c3aed',
+      type: b.type,
     }))
 
   const center =
     commune?.lat != null && commune?.lng != null
       ? { lat: commune.lat, lng: commune.lng }
-      : undefined
+      : null
 
   return (
     <div className="space-y-3">
@@ -77,19 +73,21 @@ export function CommunePanel({ commune, bureaux }: Props) {
             </h2>
             {commune?.region && (
               <p className="text-xs text-muted-foreground">
-                {commune.region === 'BRU'
-                  ? 'Région de Bruxelles-Capitale'
-                  : commune.region === 'WAL'
-                    ? 'Région wallonne'
-                    : commune.region === 'FLA'
-                      ? 'Région flamande'
-                      : commune.region}
+                {regionLabel(commune.region)}
+                {commune.province && commune.region !== 'brussels' && (
+                  <> · {commune.province}</>
+                )}
               </p>
             )}
           </div>
 
           <div className="h-[420px] -mx-4 -mb-4">
-            <BureauMap bureaus={mapBureaus} center={center} height={420} />
+            <CommuneFinderMap
+              center={center}
+              communeName={commune?.nameFr ?? null}
+              bureaus={mapBureaus}
+              height={420}
+            />
           </div>
         </CardContent>
       </Card>

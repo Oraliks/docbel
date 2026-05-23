@@ -26,7 +26,11 @@ interface Props {
 export function OpHelpModal({ open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="data-[size=default]:sm:max-w-2xl">
+      <DialogContent
+        // Force la largeur au-delà du sm:max-w-sm par défaut. Le ! prefix
+        // override la classe baseline du composant.
+        className="!sm:max-w-3xl !max-w-[min(calc(100%-2rem),720px)] max-h-[85vh] overflow-y-auto"
+      >
         <DialogHeader>
           <DialogTitle>Quel organisme de paiement choisir&nbsp;?</DialogTitle>
           <DialogDescription>

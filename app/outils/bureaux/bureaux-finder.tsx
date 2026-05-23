@@ -27,7 +27,10 @@ interface BureauResult {
   email: string | null
   website: string | null
   appointmentUrl: string | null
-  organisme: { name: string; shortName: string | null; color: string }
+  // Champs à plat depuis serializeBureau (lib/bureaus/types.ts)
+  organismeCode: string | null
+  organismeName: string | null
+  organismeColor: string | null
 }
 
 interface ResolveResponse {
@@ -168,13 +171,17 @@ function BureauCard({
           <span className="text-xs uppercase font-semibold text-muted-foreground tracking-wider">
             {title}
           </span>
-          {bureau && (
+          {bureau?.organismeName && (
             <Badge
               variant="outline"
               className="text-[10px] font-mono"
-              style={{ borderColor: bureau.organisme.color, color: bureau.organisme.color }}
+              style={
+                bureau.organismeColor
+                  ? { borderColor: bureau.organismeColor, color: bureau.organismeColor }
+                  : undefined
+              }
             >
-              {bureau.organisme.shortName ?? bureau.organisme.name}
+              {bureau.organismeName}
             </Badge>
           )}
         </div>

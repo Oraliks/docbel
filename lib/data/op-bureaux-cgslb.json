@@ -1,0 +1,11 @@
+{
+  "source": "https://www.cgslb.be/fr/secretariats/comtes",
+  "scrapedAt": "2026-05-23",
+  "note": "Site CGSLB necessite navigation par province (11 provinces × 1-22 secretariats = 89 total). Seul Bruxelles (3) + siege Gand scrapes ici. Pour completer : naviguer chaque province /fr/locations/provinces/{name}.",
+  "bureaux": [
+    { "name": "CGSLB Berchem-Sainte-Agathe", "street": "Avenue Charles Quint", "streetNum": "408", "postalCode": "1082", "city": "Berchem-Sainte-Agathe" },
+    { "name": "CGSLB Bruxelles", "street": "Boulevard Baudouin", "streetNum": "9", "postalCode": "1000", "city": "Bruxelles" },
+    { "name": "CGSLB Saint-Gilles", "street": "Place Marcel Broodthaers", "streetNum": "8", "postalCode": "1060", "city": "Saint-Gilles" },
+    { "name": "CGSLB Siège central", "street": "Koning Albertlaan", "streetNum": "95", "postalCode": "9000", "city": "Gand" }
+  ]
+}

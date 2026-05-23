@@ -1,0 +1,30 @@
+{
+  "source": [
+    "https://fgtb-wallonne.be/ou-nous-trouver/regionales/",
+    "https://fgtb-chomage-bxl.be/permanence/"
+  ],
+  "todo": ["Flandre (afspraken.abvv-vlaamsbrabant.be) — complexe, à scraper plus tard"],
+  "scrapedAt": "2026-05-23",
+  "bureaux": [
+    { "name": "FGTB Brabant wallon", "street": "Rue du Géant", "streetNum": "4 bte2", "postalCode": "1400", "city": "Nivelles", "phone": "067 21 50 06", "website": "https://fgtbcentre.be" },
+    { "name": "FGTB Centre", "street": "Rue Henri Aubry", "streetNum": "23", "postalCode": "7100", "city": "Haine-Saint-Paul", "phone": "064 23 61 61", "website": "https://fgtbcentre.be" },
+    { "name": "FGTB Charleroi & Sud-Hainaut", "street": "Boulevard Devreux", "streetNum": "36/38", "postalCode": "6000", "city": "Charleroi", "phone": "071 64 13 80", "website": "https://fgtb-charleroi.be" },
+    { "name": "FGTB Liège-Huy-Waremme", "street": "Place Saint-Paul", "streetNum": "9/11", "postalCode": "4000", "city": "Liège", "phone": "04 221 95 11", "website": "https://fgtb-liege.be" },
+    { "name": "FGTB Luxembourg", "street": "Rue des Martyrs", "streetNum": "80", "postalCode": "6700", "city": "Arlon", "phone": "063 23 00 50", "website": "https://fgtb-luxembourg.be" },
+    { "name": "FGTB Mons-Borinage", "street": "Rue Lamir", "streetNum": "18/20", "postalCode": "7000", "city": "Mons", "phone": "065 32 38 00", "website": "https://fgtb-mons-borinage.be" },
+    { "name": "FGTB Namur", "street": "Rue Dewez", "streetNum": "40", "postalCode": "5000", "city": "Namur", "phone": "081 64 99 00", "website": "https://fgtb-namur.be" },
+    { "name": "FGTB Verviers & Communauté germanophone", "street": "Pont aux Lions", "streetNum": "23", "postalCode": "4800", "city": "Verviers", "phone": "087 39 46 46", "website": "https://fgtb-verviers.be" },
+    { "name": "FGTB Wallonie Picarde (Mouscron)", "street": "Rue du Val", "streetNum": "3", "postalCode": "7700", "city": "Mouscron", "phone": "056 85 33 33", "website": "https://fgtbwapi.be" },
+    { "name": "FGTB Wallonie Picarde (Tournai)", "street": "Rue du crampon", "streetNum": "12A", "postalCode": "7500", "city": "Tournai", "phone": "069 88 18 81", "website": "https://fgtbwapi.be" },
+    { "name": "FGTB Bruxelles — Permanence Anderlecht (P100)", "street": "Rue Saint-Guidon", "streetNum": "71", "postalCode": "1070", "city": "Anderlecht", "phone": "02/552.03.31", "email": "T10P100@fgtb.be" },
+    { "name": "FGTB Bruxelles — Permanence Schaerbeek (P200)", "street": "Place de la Reine", "streetNum": "5", "postalCode": "1030", "city": "Schaerbeek", "phone": "02/552.03.31", "email": "T10P200@fgtb.be" },
+    { "name": "FGTB Bruxelles — Permanence Etterbeek (P210)", "street": "Avenue de la Chasse", "streetNum": "88", "postalCode": "1040", "city": "Etterbeek", "phone": "02/552.03.31", "email": "T10P210@fgtb.be" },
+    { "name": "FGTB Bruxelles — Permanence Jette (P300)", "street": "Avenue F.Lecharlier", "streetNum": "157", "postalCode": "1090", "city": "Jette", "phone": "02/552.03.31", "email": "T10P300@fgtb.be" },
+    { "name": "FGTB Bruxelles — Permanence Molenbeek (P310)", "street": "Rue Albert Vanderkindere", "streetNum": "15", "postalCode": "1080", "city": "Molenbeek-Saint-Jean", "phone": "02/552.03.31", "email": "T10P310@fgtb.be" },
+    { "name": "FGTB Bruxelles — Permanence Bruxelles (P500)", "street": "Rue Saint Jean", "streetNum": "12", "postalCode": "1000", "city": "Bruxelles", "phone": "02/552.03.31", "email": "T10P500@fgtb.be" },
+    { "name": "FGTB Bruxelles — Permanence Saint-Gilles (P600)", "street": "Rue de Suède", "streetNum": "45", "postalCode": "1060", "city": "Saint-Gilles", "phone": "02/552.03.31", "email": "T10P600@fgtb.be" },
+    { "name": "FGTB Bruxelles — Permanence Hors-Bruxelles (P690)", "street": "Rue de Suède", "streetNum": "45", "postalCode": "1060", "city": "Saint-Gilles", "phone": "02/552.03.37", "email": "T10P690@fgtb.be" },
+    { "name": "FGTB Bruxelles — Permanence artistes (P700)", "street": "Rue de Suède", "streetNum": "45", "postalCode": "1060", "city": "Saint-Gilles", "phone": "02/552.03.84", "email": "T10P700@fgtb.be" },
+    { "name": "FGTB Bruxelles — Permanence Délégués d'entreprise (P900)", "street": "Rue de Suède", "streetNum": "45", "postalCode": "1060", "city": "Saint-Gilles", "phone": "02/552.03.74", "email": "T10P900@fgtb.be" }
+  ]
+}

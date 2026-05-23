@@ -1,0 +1,11 @@
+{
+  "source": "https://www.lacsc.be/contactez-nous/pagecontact/centredeservices",
+  "scrapedAt": "2026-05-23",
+  "note": "Site CSC necessite recherche par CP + rayon (pas de liste complete). 4 centres Bruxelles seulement. Pour completer : faire des recherches dans chaque province via UI, ou utiliser BCE pour scrape complet.",
+  "bureaux": [
+    { "name": "CSC centre de services Bruxelles-ville", "street": "Boulevard Barthelemy", "streetNum": "43", "postalCode": "1000", "city": "Bruxelles" },
+    { "name": "CSC centre de services Ixelles", "street": "Rue Malibran", "streetNum": "51", "postalCode": "1050", "city": "Ixelles" },
+    { "name": "CSC centre de services Forest", "street": "Rue du Patinage", "streetNum": "51", "postalCode": "1190", "city": "Forest" },
+    { "name": "CSC centre de services Jette", "street": "Rue Uyttenhove", "streetNum": "45", "postalCode": "1090", "city": "Jette" }
+  ]
+}

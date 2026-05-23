@@ -109,11 +109,15 @@ const defaultData = {
         {
           title: "Modèles",
           url: "/admin/documents",
+        },
+        {
+          title: "Configurations",
+          url: "/admin/documents/config",
           children: [
-            { title: "Sections", url: "/admin/documents/sections" },
-            { title: "Organismes", url: "/admin/documents/organismes" },
-            { title: "Presets validation", url: "/admin/documents/presets" },
-            { title: "Bundles", url: "/admin/documents/bundles" },
+            { title: "Sections", url: "/admin/documents/config" },
+            { title: "Organismes", url: "/admin/documents/config?tab=organismes" },
+            { title: "Presets validation", url: "/admin/documents/config?tab=presets" },
+            { title: "Bundles", url: "/admin/documents/config?tab=bundles" },
           ],
         },
         {

@@ -241,19 +241,19 @@ export function TemplateList({ templates, organismes }: TemplateListProps) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button render={<Link href="/admin/documents/sections" />} variant="outline" size="sm">
+          <Button render={<Link href="/admin/documents/config" />} variant="outline" size="sm">
             <FolderTree className="w-4 h-4 mr-2" />
             Sections
           </Button>
-          <Button render={<Link href="/admin/documents/organismes" />} variant="outline" size="sm">
+          <Button render={<Link href="/admin/documents/config?tab=organismes" />} variant="outline" size="sm">
             <Building2 className="w-4 h-4 mr-2" />
             Organismes
           </Button>
-          <Button render={<Link href="/admin/documents/presets" />} variant="outline" size="sm">
+          <Button render={<Link href="/admin/documents/config?tab=presets" />} variant="outline" size="sm">
             <Library className="w-4 h-4 mr-2" />
             Presets
           </Button>
-          <Button render={<Link href="/admin/documents/bundles" />} variant="outline" size="sm">
+          <Button render={<Link href="/admin/documents/config?tab=bundles" />} variant="outline" size="sm">
             <Package className="w-4 h-4 mr-2" />
             Bundles
           </Button>

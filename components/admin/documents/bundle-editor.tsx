@@ -223,7 +223,7 @@ export function BundleEditor({ initial, availableTemplates, templateSchemas }: P
       }
 
       toast.success(isEdit ? "Bundle mis à jour" : "Bundle créé");
-      router.push("/admin/documents/bundles");
+      router.push("/admin/documents/config?tab=bundles");
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur");
@@ -236,7 +236,7 @@ export function BundleEditor({ initial, availableTemplates, templateSchemas }: P
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
-        <Button render={<Link href="/admin/documents/bundles" />} variant="ghost" size="sm">
+        <Button render={<Link href="/admin/documents/config?tab=bundles" />} variant="ghost" size="sm">
           <ArrowLeft className="w-4 h-4 mr-1" />
           Retour
         </Button>
@@ -547,7 +547,7 @@ export function BundleEditor({ initial, availableTemplates, templateSchemas }: P
       {/* Footer action bar (sticky) */}
       <div className="sticky bottom-0 z-10 -mx-4 lg:-mx-6 border-t bg-background/95 backdrop-blur px-4 lg:px-6 py-3 flex items-center justify-end gap-2">
         <Button
-          render={<Link href="/admin/documents/bundles" />}
+          render={<Link href="/admin/documents/config?tab=bundles" />}
           variant="outline"
         >
           Annuler

@@ -222,7 +222,7 @@ export function PresetForm({ presetId, initial, builtin = false, usageCount = 0 
         throw new Error(j.error || "Échec");
       }
       toast.success("Preset supprimé");
-      router.push("/admin/documents/presets");
+      router.push("/admin/documents/config?tab=presets");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur");
       setDeleting(false);
@@ -245,7 +245,7 @@ export function PresetForm({ presetId, initial, builtin = false, usageCount = 0 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 flex-wrap">
-        <Button render={<Link href="/admin/documents/presets" />} variant="ghost" size="sm">
+        <Button render={<Link href="/admin/documents/config?tab=presets" />} variant="ghost" size="sm">
           <ArrowLeft className="w-4 h-4 mr-1" />
           Retour à la liste
         </Button>

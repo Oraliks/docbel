@@ -2,14 +2,11 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import {
   Building2,
   Loader2,
   MapPin,
-  Search,
   AlertCircle,
   Users,
   Wallet,
@@ -19,7 +16,6 @@ import {
 import { BureauCard } from './_components/bureau-card'
 import { OpTabsCard } from './_components/op-tabs-card'
 import { CommunePanel } from './_components/commune-panel'
-import { DemarcheSelector } from './_components/demarche-selector'
 import {
   GeolocBanner,
   haversineKm,
@@ -27,37 +23,25 @@ import {
 } from './_components/geoloc-banner'
 import { InfoBands } from './_components/info-bands'
 import { MobileMapSheet } from './_components/mobile-map-sheet'
-import {
-  type ResolveResponse,
-  type DemarcheKey,
-  type BureauResult,
-  recommendedBureauType,
-} from './_components/types'
+import { type ResolveResponse, type BureauResult } from './_components/types'
 
 /**
- * Orchestrateur du finder de bureaux. Layout :
+ * Orchestrateur du finder de bureaux.
  *
- *  [Search bar (CP)]
- *  [Banner géoloc] (dismissible)
- *  [Sélecteur démarche]
+ *  [Search compacte CP (4 chiffres)] [Banner géoloc dismissible]
  *
  *  ┌────────────────┬────────────────────────────────┐
- *  │  CommunePanel  │  4 cards (ONEM / CPAS / Commune│
- *  │  (map + info)  │  + OP tabs)                    │
+ *  │  CommunePanel  │  4 cards horizontales          │
+ *  │  (map + info)  │  (ONEM / CPAS / Commune / OP)  │
  *  └────────────────┴────────────────────────────────┘
  *
  *  [4 InfoBands en bas]
- *
- * Persist : ?cp=, ?for= (démarche) → bookmarkable / shareable.
  */
 export function BureauxFinder() {
   const router = useRouter()
   const params = useSearchParams()
 
   const [cp, setCp] = useState(params?.get('cp') ?? '')
-  const [demarche, setDemarche] = useState<DemarcheKey | null>(
-    (params?.get('for') as DemarcheKey) || null
-  )
   const [userGeoloc, setUserGeoloc] = useState<UserGeoloc | null>(null)
   const [data, setData] = useState<ResolveResponse | null>(null)
   const [loading, setLoading] = useState(false)
@@ -86,18 +70,15 @@ export function BureauxFinder() {
   useEffect(() => {
     const t = setTimeout(() => {
       void resolve(cp.trim())
-      // Sync URL
       const usp = new URLSearchParams(params?.toString() ?? '')
       if (cp.trim()) usp.set('cp', cp.trim())
       else usp.delete('cp')
-      if (demarche) usp.set('for', demarche)
-      else usp.delete('for')
       const qs = usp.toString()
       router.replace(qs ? `?${qs}` : '?', { scroll: false })
     }, 350)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cp, demarche, resolve])
+  }, [cp, resolve])
 
   // Référence pour calculer les distances : géoloc si dispo, sinon centroïde commune
   const distanceRef = useMemo(() => {
@@ -116,42 +97,46 @@ export function BureauxFinder() {
     [distanceRef]
   )
 
-  const recommendedType = recommendedBureauType(demarche)
-  const recoReason =
-    demarche === 'chomage'
-      ? 'pour ta démarche chômage'
-      : demarche === 'aide_sociale'
-        ? 'pour ta démarche aide sociale'
-        : undefined
-
   const showResults = !!data && !loading
+  const fourBureaus = useMemo(
+    () =>
+      data
+        ? [
+            data.attitre.onem,
+            data.attitre.cpas,
+            data.attitre.commune,
+            ...data.attitre.organismesPaiement.slice(0, 1),
+          ]
+        : [],
+    [data]
+  )
 
   return (
     <div className="space-y-4 w-full">
-      {/* Recherche CP */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]{4}"
-              maxLength={4}
-              placeholder="Code postal (ex: 1000 pour Bruxelles)"
-              value={cp}
-              onChange={(e) => setCp(e.target.value.replace(/\D/g, ''))}
-              className="pl-9 text-base h-11"
-              autoFocus
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Géoloc + démarche */}
-      <div className="flex flex-col gap-3">
-        <GeolocBanner onLocated={setUserGeoloc} located={userGeoloc} />
-        <DemarcheSelector value={demarche} onChange={setDemarche} />
+      {/* Search compacte : input CP 4 chiffres centré, pas de gros wrapper Card */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <label
+          htmlFor="cp-input"
+          className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 h-10 max-w-[200px] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-0"
+        >
+          <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+          <Input
+            id="cp-input"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]{4}"
+            maxLength={4}
+            placeholder="Ex: 1000"
+            value={cp}
+            onChange={(e) => setCp(e.target.value.replace(/\D/g, ''))}
+            className="border-0 px-0 h-auto text-sm font-medium tabular-nums shadow-none focus-visible:ring-0 bg-transparent w-[80px]"
+            autoFocus
+          />
+        </label>
+        {/* Banner géoloc à côté en desktop, dessous en mobile */}
+        <div className="flex-1 min-w-0">
+          <GeolocBanner onLocated={setUserGeoloc} located={userGeoloc} />
+        </div>
       </div>
 
       {loading && (
@@ -162,77 +147,54 @@ export function BureauxFinder() {
       )}
 
       {error && (
-        <Card className="border-red-300 bg-red-50">
-          <CardContent className="p-4 text-sm text-red-800">{error}</CardContent>
-        </Card>
+        <div className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+          {error}
+        </div>
       )}
 
       {showResults && data && (
         <>
-          {/* Warnings techniques (CP pas en DB, fallback, etc.) */}
           {data.warnings.length > 0 && (
-            <Card className="border-orange-300 bg-orange-50/60 dark:bg-orange-950/10">
-              <CardContent className="p-3 text-xs text-orange-900 dark:text-orange-200 space-y-1">
-                {data.warnings.map((w, i) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                    <span>{w}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            <div className="rounded-md border border-orange-300 bg-orange-50/60 dark:bg-orange-950/10 p-3 text-xs text-orange-900 dark:text-orange-200 space-y-1">
+              {data.warnings.map((w, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{w}</span>
+                </div>
+              ))}
+            </div>
           )}
 
-          {/* Layout 2 colonnes : map gauche, cards droite (mobile : map dans Sheet) */}
+          {/* Layout 2-col desktop : map sticky gauche, cards droite */}
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,380px)_1fr] gap-4">
-            {/* Desktop : map à gauche */}
             <div className="hidden lg:block lg:sticky lg:top-4 lg:self-start">
-              <CommunePanel
-                commune={data.commune}
-                bureaux={[
-                  data.attitre.cpas,
-                  data.attitre.commune,
-                  data.attitre.onem,
-                  ...data.attitre.organismesPaiement.slice(0, 1),
-                ]}
-              />
+              <CommunePanel commune={data.commune} bureaux={fourBureaus} />
             </div>
-            {/* Mobile : bouton Sheet */}
             <div className="lg:hidden">
-              <MobileMapSheet
-                commune={data.commune}
-                bureaux={[
-                  data.attitre.cpas,
-                  data.attitre.commune,
-                  data.attitre.onem,
-                  ...data.attitre.organismesPaiement.slice(0, 1),
-                ]}
-              />
+              <MobileMapSheet commune={data.commune} bureaux={fourBureaus} />
             </div>
 
-            {/* Cards droite */}
             <div className="space-y-3">
               <BureauCard
                 title="ONEM (chômage)"
-                icon={<Briefcase className="w-3.5 h-3.5" />}
+                icon={<Briefcase className="w-5 h-5" />}
+                iconBg="linear-gradient(135deg, #0050A0, #3B82F6)"
                 bureau={data.attitre.onem}
                 distanceKm={distance(data.attitre.onem)}
                 fromUserLocation={!!userGeoloc}
-                recommended={recommendedType === 'ONEM'}
-                recommendedReason={recoReason}
               />
               <BureauCard
                 title="CPAS"
-                icon={<Users className="w-3.5 h-3.5" />}
+                icon={<Users className="w-5 h-5" />}
+                iconBg="linear-gradient(135deg, #7c3aed, #a78bfa)"
                 bureau={data.attitre.cpas}
                 distanceKm={distance(data.attitre.cpas)}
                 fromUserLocation={!!userGeoloc}
-                recommended={recommendedType === 'CPAS'}
-                recommendedReason={recoReason}
               />
               <BureauCard
                 title="Maison communale"
-                icon={<Building2 className="w-3.5 h-3.5" />}
+                icon={<Building2 className="w-5 h-5" />}
+                iconBg="linear-gradient(135deg, #059669, #34d399)"
                 bureau={data.attitre.commune}
                 distanceKm={distance(data.attitre.commune)}
                 fromUserLocation={!!userGeoloc}
@@ -246,25 +208,23 @@ export function BureauxFinder() {
               ) : (
                 <BureauCard
                   title="Organisme de paiement"
-                  icon={<Wallet className="w-3.5 h-3.5" />}
+                  icon={<Wallet className="w-5 h-5" />}
+                  iconBg="linear-gradient(135deg, #ea580c, #fb923c)"
                   bureau={null}
                 />
               )}
             </div>
           </div>
 
-          {/* 4 bandes pédagogiques bas de page */}
           <InfoBands />
         </>
       )}
 
       {!loading && !data && cp.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            <MapPin className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
-            Tape ton code postal pour voir les bureaux compétents pour ta commune.
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
+          <MapPin className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
+          Tape ton code postal pour voir les bureaux compétents pour ta commune.
+        </div>
       )}
     </div>
   )

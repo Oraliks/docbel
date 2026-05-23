@@ -58,20 +58,6 @@ export interface ResolveResponse {
   warnings: string[]
 }
 
-export type DemarcheKey = 'chomage' | 'aide_sociale' | 'autre'
-
-export const DEMARCHE_LABEL: Record<DemarcheKey, string> = {
-  chomage: 'Chômage',
-  aide_sociale: 'Aide sociale',
-  autre: 'Autre démarche',
-}
-
-/**
- * Quel bureau mettre en avant selon la démarche. null = aucun (neutre).
- * Types Bureau possibles : ONEM, CPAS, COMMUNE, SYNDICAT.
- */
-export function recommendedBureauType(demarche: DemarcheKey | null): string | null {
-  if (demarche === 'chomage') return 'ONEM'
-  if (demarche === 'aide_sociale') return 'CPAS'
-  return null
-}
+// DemarcheKey/recommendedBureauType retirés : le sélecteur de démarche a été
+// jugé inutile par le user (pas d'usage clair). Si on veut réactiver un
+// "Recommandé" contextuel un jour, c'est ici qu'il viendra.

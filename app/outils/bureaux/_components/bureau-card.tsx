@@ -104,7 +104,7 @@ export function BureauCard({
                 {logo && <div className="shrink-0">{logo}</div>}
                 <div className="min-w-0 flex-1 space-y-0.5">
                   <h3 className="text-sm font-semibold leading-tight">
-                    {bureau.name}
+                    {displayBureauName(bureau)}
                   </h3>
                   <p className="text-xs text-muted-foreground leading-snug">
                     {bureau.street}
@@ -243,7 +243,7 @@ export function BureauContent({
     <div className="space-y-2.5">
       <div className="flex flex-col md:flex-row md:items-stretch gap-3">
         <div className="shrink-0 md:w-[300px] min-w-0 space-y-0.5">
-          <h3 className="text-sm font-semibold leading-tight">{bureau.name}</h3>
+          <h3 className="text-sm font-semibold leading-tight">{displayBureauName(bureau)}</h3>
           <p className="text-xs text-muted-foreground leading-snug">
             {bureau.street}
             {bureau.streetNum ? ` ${bureau.streetNum}` : ''},{' '}
@@ -318,6 +318,39 @@ function shortDomain(url: string): string {
   } catch {
     return url
   }
+}
+
+/**
+ * Affichage du nom d'un bureau dans la card.
+ *
+ * Cas particulier ONEM : le `name` en DB vient du lookup officiel ONEM
+ * et n'est que la ville en MAJUSCULES (ex: "BRUXELLES", "LIEGE",
+ * "ANTWERPEN"). Affiché brut, on lit "BRUXELLES" en gros, on ne sait
+ * pas de quel organisme il s'agit — alors qu'on est dans la card
+ * ONEM. On préfixe "ONEM de " + on convertit la ville en TitleCase
+ * pour avoir "ONEM de Bruxelles" lisible.
+ *
+ * Si le name commence déjà par "ONEM" (cas où on aurait nettoyé la
+ * DB plus tard), on garde tel quel pour éviter "ONEM de ONEM …".
+ *
+ * Pour les autres types (CPAS, COMMUNE, SYNDICAT) les noms en DB sont
+ * déjà self-descriptive ("CPAS de Schaerbeek", "FGTB Bruxelles") donc
+ * on ne touche pas.
+ */
+function displayBureauName(bureau: BureauResult): string {
+  if (bureau.type === 'ONEM') {
+    const raw = bureau.name.trim()
+    if (/^onem\b/i.test(raw)) return raw
+    return `ONEM de ${toTitleCase(raw)}`
+  }
+  return bureau.name
+}
+
+/** "BRUXELLES" → "Bruxelles", "SAINT-JOSSE-TEN-NOODE" → "Saint-Josse-Ten-Noode" */
+function toTitleCase(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/(^|[\s\-'])\p{L}/gu, (m) => m.toUpperCase())
 }
 
 export function FlagToggle({

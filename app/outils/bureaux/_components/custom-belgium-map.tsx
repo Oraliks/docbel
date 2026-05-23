@@ -318,13 +318,9 @@ export function CustomBelgiumMap({
             )
           })}
 
-          {/* Dot centroïde commune sélectionnée (au-dessus des bureaux, plus
-              gros pour bien repérer le centre de zone) */}
-          {sel && selCentroid && Number.isFinite(selCentroid[0]) && (
-            <g transform={`translate(${selCentroid[0]}, ${selCentroid[1]})`}>
-              <Dot color="var(--primary)" title={sel.properties.name_fr} large />
-            </g>
-          )}
+          {/* Pas de dot sur le centroïde : le polygone violet entoure
+              déjà la commune sélectionnée, ce dot ne fait que doubler
+              l'info visuelle et ajouter du bruit sur les bureaux. */}
         </g>
       </svg>
 

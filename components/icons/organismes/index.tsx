@@ -127,12 +127,12 @@ export function OpLogo({ size = 48, ...rest }: LogoProps) {
 }
 
 /* ─────────────────────────────────────────────────────────────────── */
-/* CAPAC — bleu marine (organisme public, similaire ONEM)             */
+/* CAPAC — orange (couleur officielle du logo)                        */
 /* ─────────────────────────────────────────────────────────────────── */
 export function CapacLogo({ size = 48, ...rest }: LogoProps) {
   return (
     <svg {...baseProps(size, rest)} aria-label="CAPAC">
-      <RoundedBg from="#003E7E" to="#1976D2" id="capac-bg" />
+      <RoundedBg from="#E8651E" to="#F58220" id="capac-bg" />
       <text
         x="24"
         y="30"

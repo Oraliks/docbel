@@ -198,54 +198,42 @@ export function BureauxFinder() {
               <MobileMapSheet commune={data.commune} bureaux={fourBureaus} />
             </div>
 
-            {/* Cards */}
-            <div className="space-y-4">
-              {/* Featured ONEM (outil sous Chômage → ONEM = démarche par défaut) */}
+            {/* Cards — 4 bureaux traités équitablement (pas de recommandé) */}
+            <div className="space-y-2.5">
               <BureauCard
-                variant="featured"
                 label="ONEM (chômage)"
-                logo={<OnemLogo size={56} />}
+                logo={<OnemLogo size={48} />}
                 bureau={data.attitre.onem}
                 distanceKm={distance(data.attitre.onem)}
                 fromUserLocation={!!userGeoloc}
               />
-
-              {/* Section header */}
-              <div className="pt-2">
-                <p className="text-xs text-muted-foreground px-1">
-                  Autres bureaux compétents
-                </p>
-              </div>
-
-              <div className="space-y-2.5">
-                <BureauCard
-                  label="CPAS"
-                  logo={<CpasLogo size={48} />}
-                  bureau={data.attitre.cpas}
-                  distanceKm={distance(data.attitre.cpas)}
-                  fromUserLocation={!!userGeoloc}
+              <BureauCard
+                label="CPAS"
+                logo={<CpasLogo size={48} />}
+                bureau={data.attitre.cpas}
+                distanceKm={distance(data.attitre.cpas)}
+                fromUserLocation={!!userGeoloc}
+              />
+              <BureauCard
+                label="Maison communale"
+                logo={<CommuneLogo size={48} />}
+                bureau={data.attitre.commune}
+                distanceKm={distance(data.attitre.commune)}
+                fromUserLocation={!!userGeoloc}
+              />
+              {data.attitre.organismesPaiement.length > 0 ? (
+                <OpTabsCard
+                  bureaux={data.attitre.organismesPaiement}
+                  commune={data.commune}
+                  userGeoloc={userGeoloc}
                 />
+              ) : (
                 <BureauCard
-                  label="Maison communale"
-                  logo={<CommuneLogo size={48} />}
-                  bureau={data.attitre.commune}
-                  distanceKm={distance(data.attitre.commune)}
-                  fromUserLocation={!!userGeoloc}
+                  label="Organisme de paiement"
+                  logo={<OpLogo size={48} />}
+                  bureau={null}
                 />
-                {data.attitre.organismesPaiement.length > 0 ? (
-                  <OpTabsCard
-                    bureaux={data.attitre.organismesPaiement}
-                    commune={data.commune}
-                    userGeoloc={userGeoloc}
-                  />
-                ) : (
-                  <BureauCard
-                    label="Organisme de paiement"
-                    logo={<OpLogo size={48} />}
-                    bureau={null}
-                  />
-                )}
-              </div>
+              )}
             </div>
           </div>
 

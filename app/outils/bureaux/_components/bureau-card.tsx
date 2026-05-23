@@ -2,17 +2,14 @@
 
 import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Phone,
   Globe,
   Flag,
   X,
-  MapPin,
   Footprints,
   Car,
-  Sparkles,
   ExternalLink,
 } from 'lucide-react'
 import { HoursTimeline } from './hours-timeline'
@@ -20,7 +17,7 @@ import { ReportForm } from './report-form'
 import type { BureauResult } from './types'
 
 interface Props {
-  /** Label catégorie (CPAS, ONEM (CHÔMAGE), MAISON COMMUNALE, ORGANISME DE PAIEMENT) */
+  /** Label catégorie (CPAS, ONEM, MAISON COMMUNALE, ORGANISME DE PAIEMENT) */
   label: string
   /** Logo SVG du bureau/organisme (depuis components/icons/organismes). */
   logo?: React.ReactNode
@@ -28,11 +25,6 @@ interface Props {
   /** Distance en km depuis le user (géoloc) ou centroïde commune (fallback). */
   distanceKm?: number | null
   fromUserLocation?: boolean
-  /**
-   * featured = card mise en avant (badge "Recommandé pour toi", taille plus
-   * grosse, CTA primary violet). default = compact, CTA outline.
-   */
-  variant?: 'featured' | 'default'
   /**
    * Si fourni, remplace toute la zone droite (utilisé par OpTabsCard pour
    * afficher les tabs en place du dropdown horaires).
@@ -45,18 +37,21 @@ interface Props {
   hideReport?: boolean
 }
 
+/**
+ * Card uniforme : header avec label + flag, ligne logo+infos+distances+horaires,
+ * bouton "Voir l'itinéraire" toujours présent (utilise lat/lng si dispo,
+ * sinon fallback sur l'adresse texte pour Google Maps).
+ */
 export function BureauCard({
   label,
   logo,
   bureau,
   distanceKm,
   fromUserLocation,
-  variant = 'default',
   rightSlot,
   hideReport,
 }: Props) {
   const [showReport, setShowReport] = useState(false)
-  const isFeatured = variant === 'featured'
 
   if (!bureau) {
     return (
@@ -83,56 +78,31 @@ export function BureauCard({
       : null
 
   return (
-    <Card
-      className={
-        isFeatured
-          ? 'border-primary/60 ring-1 ring-primary/30 bg-primary/[0.025]'
-          : ''
-      }
-    >
-      <CardContent className={isFeatured ? 'p-4 space-y-3' : 'p-3.5 space-y-2.5'}>
-        {/* Badge "Recommandé pour toi" en haut (featured uniquement) */}
-        {isFeatured && (
-          <div className="flex items-center justify-between gap-2">
-            <Badge className="gap-1 bg-primary text-primary-foreground hover:bg-primary text-[10px] tracking-wider uppercase">
-              <Sparkles className="w-3 h-3" />
-              Recommandé pour toi
-            </Badge>
-            {!hideReport && (
-              <FlagToggle
-                active={showReport}
-                onToggle={() => setShowReport(!showReport)}
-              />
-            )}
-          </div>
-        )}
+    <Card>
+      <CardContent className="p-3.5 space-y-2.5">
+        {/* Header : label + flag report */}
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
+            {label}
+          </p>
+          {!hideReport && (
+            <FlagToggle
+              active={showReport}
+              onToggle={() => setShowReport(!showReport)}
+            />
+          )}
+        </div>
 
         {showReport ? (
           <ReportForm bureauId={bureau.id} onClose={() => setShowReport(false)} />
         ) : (
           <>
-            {/* Layout horizontal */}
             <div className="flex flex-col md:flex-row md:items-start gap-3">
-              {/* Zone 1 : logo + label + nom + addr + contact */}
+              {/* Logo + nom + addr + contact */}
               <div className="flex gap-3 flex-1 min-w-0">
-                {logo && (
-                  <div className="shrink-0">
-                    {logo}
-                  </div>
-                )}
+                {logo && <div className="shrink-0">{logo}</div>}
                 <div className="min-w-0 flex-1 space-y-0.5">
-                  <p
-                    className={`text-[10px] uppercase font-semibold tracking-wider ${
-                      isFeatured ? 'text-primary' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {label}
-                  </p>
-                  <h3
-                    className={`font-semibold leading-tight ${
-                      isFeatured ? 'text-base' : 'text-sm'
-                    }`}
-                  >
+                  <h3 className="text-sm font-semibold leading-tight">
                     {bureau.name}
                   </h3>
                   <p className="text-xs text-muted-foreground leading-snug">
@@ -165,7 +135,7 @@ export function BureauCard({
                 </div>
               </div>
 
-              {/* Zone 2 : distances (verticales) */}
+              {/* Distances */}
               {(walkingMin !== null || drivingMin !== null) && (
                 <div
                   className="flex md:flex-col md:items-end gap-3 md:gap-1.5 shrink-0 md:min-w-[80px]"
@@ -190,12 +160,8 @@ export function BureauCard({
                 </div>
               )}
 
-              {/* Zone 3 : horaires (dropdown) ou rightSlot custom */}
-              <div
-                className={`shrink-0 ${
-                  isFeatured ? 'md:w-[220px]' : 'md:w-[200px]'
-                }`}
-              >
+              {/* Horaires (ou rightSlot custom) */}
+              <div className="shrink-0 md:w-[200px]">
                 {rightSlot ?? (
                   <HoursTimeline
                     hours={bureau.hours}
@@ -205,33 +171,9 @@ export function BureauCard({
                 )}
               </div>
 
-              {/* Zone 4 : CTA itinéraire + flag pour non-featured */}
-              <div className="flex md:flex-col items-center md:items-end gap-2 shrink-0">
-                {bureau.lat !== null && bureau.lng !== null && (
-                  <Button
-                    render={
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${bureau.lat},${bureau.lng}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      />
-                    }
-                    variant={isFeatured ? 'default' : 'outline'}
-                    size="sm"
-                    className={`h-8 text-xs gap-1 ${
-                      isFeatured ? 'px-4' : 'px-3'
-                    }`}
-                  >
-                    {isFeatured ? "Voir l'itinéraire" : 'Itinéraire'}
-                    <ExternalLink className="w-3 h-3 opacity-70" />
-                  </Button>
-                )}
-                {!isFeatured && !hideReport && (
-                  <FlagToggle
-                    active={showReport}
-                    onToggle={() => setShowReport(!showReport)}
-                  />
-                )}
+              {/* CTA itinéraire — toujours présent */}
+              <div className="shrink-0">
+                <ItineraireButton bureau={bureau} />
               </div>
             </div>
           </>
@@ -241,7 +183,38 @@ export function BureauCard({
   )
 }
 
-/** Rendu détail sans header — utilisé par OpTabsCard (qui gère son label). */
+/**
+ * Bouton itinéraire toujours présent. Utilise lat/lng si dispo (plus précis,
+ * pas d'ambiguïté), sinon fallback sur l'adresse texte (concat
+ * street + streetNum + CP + ville) que Google Maps sait résoudre.
+ */
+function ItineraireButton({ bureau }: { bureau: BureauResult }) {
+  const destination =
+    bureau.lat !== null && bureau.lng !== null
+      ? `${bureau.lat},${bureau.lng}`
+      : encodeURIComponent(
+          `${bureau.street}${bureau.streetNum ? ' ' + bureau.streetNum : ''}, ${bureau.postalCode} ${bureau.city}, Belgique`
+        )
+  return (
+    <Button
+      render={
+        <a
+          href={`https://www.google.com/maps/dir/?api=1&destination=${destination}`}
+          target="_blank"
+          rel="noreferrer"
+        />
+      }
+      variant="outline"
+      size="sm"
+      className="h-8 text-xs gap-1 px-3"
+    >
+      Itinéraire
+      <ExternalLink className="w-3 h-3 opacity-70" />
+    </Button>
+  )
+}
+
+/** Rendu détail sans header — utilisé par OpTabsCard. */
 export function BureauContent({
   bureau,
   distanceKm,
@@ -263,7 +236,7 @@ export function BureauContent({
       ? Math.max(1, Math.round((distanceKm / 30) * 60))
       : null
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       <div className="flex flex-col md:flex-row md:items-start gap-3">
         <div className="flex-1 min-w-0 space-y-0.5">
           <h3 className="text-sm font-semibold leading-tight">{bureau.name}</h3>
@@ -316,32 +289,17 @@ export function BureauContent({
             )}
           </div>
         )}
-        <div className="md:w-[200px] shrink-0">
+        <div className="shrink-0 md:w-[200px]">
           <HoursTimeline
             hours={bureau.hours}
             notes={bureau.hoursNotes}
             type={bureau.type}
           />
         </div>
+        <div className="shrink-0">
+          <ItineraireButton bureau={bureau} />
+        </div>
       </div>
-      {bureau.lat !== null && bureau.lng !== null && (
-        <Button
-          render={
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${bureau.lat},${bureau.lng}`}
-              target="_blank"
-              rel="noreferrer"
-            />
-          }
-          variant="outline"
-          size="sm"
-          className="w-full h-8 text-xs gap-1"
-        >
-          <MapPin className="w-3 h-3" />
-          Voir l&apos;itinéraire
-          <ExternalLink className="w-3 h-3 ml-0.5 opacity-60" />
-        </Button>
-      )}
     </div>
   )
 }
@@ -352,7 +310,6 @@ function formatDistance(km: number): string {
   return `${Math.round(km)} km`
 }
 
-/** "https://www.onem.be/foo" → "onem.be" */
 function shortDomain(url: string): string {
   try {
     const u = new URL(url)

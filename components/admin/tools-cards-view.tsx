@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { useConfirm } from '@/components/ui/confirm-dialog'
 import { ExternalLink, Settings2, Star, Clock, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -101,6 +102,7 @@ export function ToolsCardsView({ sections }: Props) {
 
 function ToolCard({ tool }: { tool: Tool }) {
   const router = useRouter()
+  const confirm = useConfirm()
   const [active, setActive] = useState(tool.active)
   const [popular, setPopular] = useState(tool.popular)
   const [saving, setSaving] = useState(false)
@@ -141,12 +143,14 @@ function ToolCard({ tool }: { tool: Tool }) {
   }
 
   async function handleDelete() {
-    const confirmed = confirm(
-      `Supprimer définitivement "${tool.name}" ?\n\n` +
-        `Le template associé et tous ses générés/révisions seront aussi supprimés.\n` +
-        `Cette action est irréversible.`
-    )
-    if (!confirmed) return
+    const ok = await confirm({
+      title: `Supprimer "${tool.name}" ?`,
+      description:
+        'Le template associé (et tous ses générés, révisions, items de bundle) sera aussi supprimé en cascade. Cette action est irréversible.',
+      confirmText: 'Supprimer définitivement',
+      destructive: true,
+    })
+    if (!ok) return
     setSaving(true)
     try {
       const res = await fetch(`/api/tools/${tool.slug}`, { method: 'DELETE' })

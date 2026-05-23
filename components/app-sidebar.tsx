@@ -66,6 +66,9 @@ const defaultData = {
           url: "/admin/chomage/outils",
           children: [
             { title: "Préavis", url: "/admin/chomage/preavis" },
+            { title: "Barèmes officiels", url: "/admin/baremes" },
+            { title: "Commissions paritaires", url: "/admin/commissions" },
+            { title: "Institutions U1 (EEE)", url: "/admin/u1-institutions" },
           ],
         },
         {
@@ -78,23 +81,6 @@ const defaultData = {
             { title: "Anomalies", url: "/admin/chomage/lookup?tab=anomalies" },
             { title: "Import en lot", url: "/admin/chomage/lookup?tab=import" },
           ],
-        },
-        {
-          title: "Barèmes officiels",
-          url: "/admin/baremes",
-          children: [
-            { title: "Liste", url: "/admin/baremes" },
-            { title: "Nouvel import", url: "/admin/baremes/import" },
-            { title: "Mappings d'onglets", url: "/admin/baremes/mappings" },
-          ],
-        },
-        {
-          title: "Commissions paritaires",
-          url: "/admin/commissions",
-        },
-        {
-          title: "Institutions U1 (EEE)",
-          url: "/admin/u1-institutions",
         },
       ],
     },

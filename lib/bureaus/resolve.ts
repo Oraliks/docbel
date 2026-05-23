@@ -269,9 +269,10 @@ export async function resolveBureausForPostalCode(
       sectorielBureaus = bcs
         .map((bc) => {
           const b = bc.bureau;
+          const coords = getBureauCoords(b);
           const dist =
-            refLat !== null && refLng !== null && b.lat !== null && b.lng !== null
-              ? haversineKm({ lat: refLat, lng: refLng }, { lat: b.lat, lng: b.lng })
+            refLat !== null && refLng !== null && coords
+              ? haversineKm({ lat: refLat, lng: refLng }, coords)
               : null;
           return { ...serializeBureau(b), distanceKm: dist };
         })
@@ -312,9 +313,10 @@ export async function resolveBureausForPostalCode(
   );
 
   const withDistance = nearbyRaw.map((b) => {
+    const coords = getBureauCoords(b);
     const distance =
-      refLat !== null && refLng !== null && b.lat !== null && b.lng !== null
-        ? haversineKm({ lat: refLat, lng: refLng }, { lat: b.lat, lng: b.lng })
+      refLat !== null && refLng !== null && coords
+        ? haversineKm({ lat: refLat, lng: refLng }, coords)
         : null;
     return { bureau: b, distance };
   });
@@ -423,6 +425,20 @@ function isCentralHQ(bureau: BureauWithRelations): boolean {
   return /si[èe]ge|central|national|h[eé]ad\s*office/i.test(name);
 }
 
+/**
+ * Coords effectives d'un bureau : lat/lng direct si présent, sinon ceux de sa
+ * commune via communeId. Indispensable pour les bureaux OP scrapés où on n'a
+ * pas géocodé chaque adresse (les bureaux ont communeId résolu via postalCode
+ * mais lat/lng restent NULL).
+ */
+function getBureauCoords(b: BureauWithRelations): { lat: number; lng: number } | null {
+  if (b.lat !== null && b.lng !== null) return { lat: b.lat, lng: b.lng };
+  if (b.commune?.lat != null && b.commune?.lng != null) {
+    return { lat: b.commune.lat, lng: b.commune.lng };
+  }
+  return null;
+}
+
 function nearestBureau(
   bureaus: BureauWithRelations[],
   lat: number | null,
@@ -432,12 +448,15 @@ function nearestBureau(
   let best: BureauWithRelations | null = null;
   let bestD = Infinity;
   for (const b of bureaus) {
-    if (b.lat === null || b.lng === null) continue;
-    const d = haversineKm({ lat, lng }, { lat: b.lat, lng: b.lng });
+    const coords = getBureauCoords(b);
+    if (!coords) continue;
+    const d = haversineKm({ lat, lng }, coords);
     if (d < bestD) {
       bestD = d;
       best = b;
     }
   }
-  return best ?? bureaus[0] ?? null;
+  // Si aucun bureau n'a de coords du tout, on retourne null plutôt que
+  // bureaus[0] (qui serait arbitraire et donne une mauvaise réponse au user).
+  return best;
 }

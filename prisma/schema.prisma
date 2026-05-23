@@ -243,6 +243,7 @@ model Tool {
   popular     Boolean     @default(false)
   timeMin     Int?
   order       Int         @default(0)
+  active      Boolean     @default(true) // false = caché du catalogue public
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 

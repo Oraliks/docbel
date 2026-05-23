@@ -1,11 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { ToolsManager } from "@/components/admin/tools-manager";
+import { ToolsCardsView } from "@/components/admin/tools-cards-view";
 
 export const dynamic = "force-dynamic";
 
 export default async function OutilsPage() {
-  // Sections + tools (mêmes données qu'utilisait l'ancien ToolsListView, mais
-  // expressed comme structure groupée pour ToolsManager qui sait éditer).
   const sectionsRaw = await prisma.toolSection.findMany({
     include: {
       tools: { orderBy: { order: "asc" } },
@@ -19,8 +17,6 @@ export default async function OutilsPage() {
     description: s.description,
     icon: s.icon ?? undefined,
     order: s.order,
-    createdAt: s.createdAt.toISOString(),
-    updatedAt: s.updatedAt.toISOString(),
     tools: s.tools.map((t) => ({
       id: t.id,
       name: t.name,
@@ -31,12 +27,16 @@ export default async function OutilsPage() {
       popular: t.popular,
       timeMin: t.timeMin ?? undefined,
       order: t.order,
+      // active : peut ne pas exister sur le client Prisma régénéré si
+      // db:generate n'a pas tourné après migration. On défaut à true.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      active: (t as any).active ?? true,
     })),
   }));
 
   return (
     <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
-      <ToolsManager sections={sections} />
+      <ToolsCardsView sections={sections} />
     </div>
   );
 }

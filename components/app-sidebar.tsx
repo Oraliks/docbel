@@ -64,10 +64,9 @@ const defaultData = {
         {
           title: "Outils",
           url: "/admin/chomage/outils",
-        },
-        {
-          title: "Préavis",
-          url: "/admin/chomage/preavis",
+          children: [
+            { title: "Préavis", url: "/admin/chomage/preavis" },
+          ],
         },
         {
           title: "Lookup ONEM",

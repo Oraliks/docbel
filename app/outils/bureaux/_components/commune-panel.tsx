@@ -51,14 +51,27 @@ export function CommunePanel({ commune, bureaux }: Props) {
     .filter((b): b is BureauResult & { lat: number; lng: number } =>
       b.lat !== null && b.lng !== null
     )
-    .map((b) => ({
-      id: b.id,
-      name: b.name,
-      lat: b.lat,
-      lng: b.lng,
-      color: b.organismeColor ?? TYPE_COLOR[b.type] ?? '#7c3aed',
-      type: b.type,
-    }))
+    .map((b) => {
+      // Pour ONEM/CPAS/COMMUNE on force TYPE_COLOR (rouge clair / gris /
+      // blanc) — organismeColor en DB peut avoir des valeurs historiques
+      // bleues qui collidaient avec CGSLB (cf. bug visible : 2 dots bleus
+      // ONEM + CGSLB indistinguables).
+      //
+      // Pour SYNDICAT on prend organismeColor (couleur officielle de chaque
+      // OP : CAPAC orange, FGTB rouge, CSC vert, CGSLB bleu).
+      const color =
+        b.type === 'SYNDICAT'
+          ? (b.organismeColor ?? TYPE_COLOR.SYNDICAT)
+          : (TYPE_COLOR[b.type] ?? '#7c3aed')
+      return {
+        id: b.id,
+        name: b.name,
+        lat: b.lat,
+        lng: b.lng,
+        color,
+        type: b.type,
+      }
+    })
 
   const center =
     commune?.lat != null && commune?.lng != null

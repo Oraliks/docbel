@@ -9,7 +9,6 @@ import { ActivityLog, ActivityItem } from "@/components/admin/activity-log";
 import { AdminDashboardOverview } from "@/components/admin/admin-dashboard-overview";
 import { FileManager } from "@/components/docbel/file-manager";
 import { ChangelogManager } from "@/components/admin/changelog-manager";
-import { ToolsManager } from "@/components/admin/tools-manager";
 
 interface Page {
   id: string;
@@ -122,9 +121,9 @@ export function AdminDashboard({ pages, users, sections }: AdminDashboardProps) 
     return <ChangelogManager />
   }
 
-  if (view === "tools") {
-    return <ToolsManager sections={sections} />
-  }
+  // `?view=tools` retiré : ToolsManager est désormais accessible via
+  // /admin/chomage/outils (sidebar canonique). Aucun lien n'utilisait
+  // cette branche, c'était du dead code.
 
   if (view === "users") {
     return (

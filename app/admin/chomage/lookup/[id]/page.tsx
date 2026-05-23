@@ -73,6 +73,8 @@ export default function LookupTableDetailPage() {
   const [uploading, setUploading] = useState(false)
   const [displayLang, setDisplayLang] = useState<LangCode>('fr')
   const [editingTable, setEditingTable] = useState(false)
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 100
 
   const load = useCallback(async () => {
     if (!id) return
@@ -81,7 +83,8 @@ export default function LookupTableDetailPage() {
       const usp = new URLSearchParams()
       if (search.trim()) usp.set('q', search.trim())
       if (includeAll) usp.set('includeAll', 'true')
-      usp.set('limit', '200')
+      usp.set('limit', String(PAGE_SIZE))
+      usp.set('offset', String(page * PAGE_SIZE))
       const res = await fetch(`/api/lookup/tables/${id}?${usp.toString()}`)
       if (!res.ok) throw new Error('Chargement impossible')
       const data = await res.json()
@@ -93,7 +96,13 @@ export default function LookupTableDetailPage() {
     } finally {
       setLoading(false)
     }
-  }, [id, search, includeAll])
+  }, [id, search, includeAll, page])
+
+  // Une nouvelle recherche / un changement de filtre repart à la page 0.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(0)
+  }, [search, includeAll])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -321,6 +330,35 @@ export default function LookupTableDetailPage() {
                 )}
               </TableBody>
             </Table>
+            {total > PAGE_SIZE && (
+              <div className="flex items-center justify-between px-4 py-3 border-t text-sm">
+                <span className="text-muted-foreground">
+                  {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} sur{' '}
+                  {total.toLocaleString('fr-BE')}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page === 0 || loading}
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  >
+                    Précédent
+                  </Button>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    Page {page + 1} / {Math.ceil(total / PAGE_SIZE)}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={(page + 1) * PAGE_SIZE >= total || loading}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Suivant
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

@@ -43,31 +43,35 @@ export function LookupOnemSearch({ initialQ, initialCategory }: Props) {
       .catch(() => {})
   }, [])
 
-  const runSearch = useCallback(async (query: string, table: string) => {
-    // On lance la requête si on a soit une query >= 2 chars, soit un module
-    // sélectionné (mode browse — l'API retourne toutes les entrées du module).
-    const hasQuery = query.length >= 2
-    if (!hasQuery && !table) {
-      setResults([])
-      setTotal(0)
-      return
-    }
-    setLoading(true)
-    try {
-      const usp = new URLSearchParams()
-      if (hasQuery) usp.set('q', query)
-      if (table) usp.set('tableSlug', table)
-      // En mode browse, augmenter la limite pour voir plus d'entrées
-      if (!hasQuery && table) usp.set('limit', '200')
-      const res = await fetch(`/api/lookup/search?${usp.toString()}`)
-      if (!res.ok) throw new Error('Échec recherche')
-      const data = await res.json()
-      setResults(data.results ?? [])
-      setTotal(data.total ?? 0)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const runSearch = useCallback(
+    async (query: string, table: string, isLargeTable: boolean) => {
+      const hasQuery = query.length >= 2
+      // Mode browse "voir tout" : OK pour les petites tables, refusé pour les
+      // énormes (ex: code-rue 144k rues) — on force la recherche par critère.
+      if (!hasQuery && (!table || isLargeTable)) {
+        setResults([])
+        setTotal(0)
+        return
+      }
+      setLoading(true)
+      try {
+        const usp = new URLSearchParams()
+        if (hasQuery) usp.set('q', query)
+        if (table) usp.set('tableSlug', table)
+        // Limite : 5 pour les grosses tables (top hits seulement), 200 sinon.
+        if (isLargeTable) usp.set('limit', '5')
+        else if (!hasQuery && table) usp.set('limit', '200')
+        const res = await fetch(`/api/lookup/search?${usp.toString()}`)
+        if (!res.ok) throw new Error('Échec recherche')
+        const data = await res.json()
+        setResults(data.results ?? [])
+        setTotal(data.total ?? 0)
+      } finally {
+        setLoading(false)
+      }
+    },
+    []
+  )
 
   // Sync URL (un seul paramètre "cat" = slug table sélectionnée).
   useEffect(() => {
@@ -78,11 +82,18 @@ export function LookupOnemSearch({ initialQ, initialCategory }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, tableSlug])
 
+  // Une table est "large" au-delà de 1000 entrées — on force alors une query
+  // (pas de browse all) et limite les résultats à 5.
+  const selectedTable = tableSlug
+    ? categories.flatMap((c) => c.tables).find((t) => t.slug === tableSlug)
+    : null
+  const isLargeTable = (selectedTable?.entriesCount ?? 0) > 1000
+
   // Debounced search
   useEffect(() => {
-    const timer = setTimeout(() => void runSearch(q, tableSlug), 250)
+    const timer = setTimeout(() => void runSearch(q, tableSlug, isLargeTable), 250)
     return () => clearTimeout(timer)
-  }, [q, tableSlug, runSearch])
+  }, [q, tableSlug, isLargeTable, runSearch])
 
   const toggleExpanded = (id: string) => setExpanded((prev) => toggleInSet(prev, id))
   const toggleSection = (slug: string) => setCollapsed((prev) => toggleInSet(prev, slug))
@@ -116,7 +127,10 @@ export function LookupOnemSearch({ initialQ, initialCategory }: Props) {
       {loading && results.length === 0 ? (
         <LoadingState />
       ) : results.length === 0 ? (
-        <EmptyState q={q} />
+        <EmptyState
+          q={q}
+          largeTableLabel={isLargeTable ? selectedTable?.labelFr : undefined}
+        />
       ) : (
         <>
           <ResultsHeader
@@ -163,7 +177,7 @@ function LoadingState() {
   )
 }
 
-function EmptyState({ q }: { q: string }) {
+function EmptyState({ q, largeTableLabel }: { q: string; largeTableLabel?: string }) {
   if (q && q.length >= 2) {
     return (
       <Card>
@@ -173,6 +187,27 @@ function EmptyState({ q }: { q: string }) {
           </p>
           <p className="text-xs mt-2">
             Essaie un autre terme ou vérifie l&apos;orthographe du code.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+  // Cas spécial : table énorme sélectionnée sans query (ex: Code rue 144k entrées)
+  // — on ne peut pas afficher tout, on demande au partenaire un critère.
+  if (largeTableLabel) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center space-y-2">
+          <Search className="w-10 h-10 mx-auto text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">
+            <strong>{largeTableLabel}</strong> contient trop d&apos;entrées pour tout
+            afficher.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Tape un code postal (ex:{' '}
+            <code className="bg-muted px-1 rounded">1000</code>) ou un nom de rue (ex:{' '}
+            <code className="bg-muted px-1 rounded">avenue Louise</code>) — les 5 résultats
+            les plus pertinents s&apos;afficheront.
           </p>
         </CardContent>
       </Card>

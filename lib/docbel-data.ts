@@ -38,17 +38,63 @@ export interface Tool {
   href?: string;
 }
 
+/**
+ * Catalogue statique — sert à 2 usages :
+ *
+ * 1. Rendu de /outils/[slug] via LegacyToolView quand l'outil n'a pas de
+ *    DocumentTemplate publié (calc, locator…). Doit donc contenir preavis,
+ *    bureaux, et les outils statiques externes (lookup-onem partenaire).
+ *
+ * 2. Synthétiques pour la page /outils : entrées avec `href` absolu sont
+ *    mergées avec les Tool DB actifs sur la page catalogue (cf.
+ *    app/outils/page.tsx). Les entrées sans `href` qui correspondent à un
+ *    slug DB sont dédupliquées (la version DB gagne).
+ *
+ * Si tu construis un nouvel outil "normal" routé via /outils/{slug}, crée-le
+ * côté admin (table Tool) — pas ici. N'ajoute ici que les outils vraiment
+ * statiques (sans backend) ou les pointeurs externes.
+ */
 export const TOOLS_DATA: Tool[] = [
-  { id: 1, cat: "Documents", icon: "📄", title: "Formulaire C4", desc: "Générez votre certificat de chômage C4 (attestation de fin de contrat délivrée par l'employeur).", popular: true, time: "5 min", type: "form", audiences: ["citoyen", "employeur"] },
-  { id: 2, cat: "Documents", icon: "📝", title: "Formulaire C1", desc: "Demande d'allocations de chômage à introduire auprès de votre organisme de paiement.", popular: true, time: "8 min", type: "form", audiences: ["citoyen"] },
-  { id: 3, cat: "Documents", icon: "⏸️", title: "Chômage temporaire", desc: "Déclaration de chômage temporaire pour force majeure ou raisons économiques (formulaire C3.2).", popular: false, time: "4 min", type: "form", audiences: ["citoyen", "employeur"] },
-  { id: 6, cat: "Calculs", icon: "🧮", title: "Calculateur de préavis", desc: "Calculez votre délai de préavis légal en fonction de votre ancienneté, statut et date d'entrée en service.", popular: true, time: "2 min", type: "calc_preavis", audiences: ["citoyen", "employeur"] },
-  { id: 7, cat: "Calculs", icon: "💶", title: "Calcul AGR", desc: "Estimez votre Allocation de Garantie de Revenu (AGR) pour les travailleurs à temps partiel involontaire.", popular: true, time: "3 min", type: "calc_agr", audiences: ["citoyen"] },
-  { id: 8, cat: "Calculs", icon: "💼", title: "Salaire minimum par CP", desc: "Consultez le salaire minimum garanti par commission paritaire (CP) pour votre secteur d'activité.", popular: false, time: "1 min", type: "calc_cp", audiences: ["citoyen", "employeur", "partenaire"] },
-  { id: 12, cat: "Organismes", icon: "🗺️", title: "Trouver un bureau", desc: "CPAS, Commune, ONEM, organismes de paiement, syndicats : trouvez d'un coup le bureau compétent pour votre situation, partout en Belgique.", popular: true, time: "1 min", type: "locator", slug: "bureaux", audiences: ["citoyen", "employeur", "partenaire"] },
-  { id: 19, cat: "CPAS", icon: "🏠", title: "Demande d'aide sociale", desc: "Formulaire de demande d'aide sociale (revenu d'intégration sociale) auprès du CPAS de votre commune.", popular: true, time: "10 min", type: "form", audiences: ["citoyen"] },
-  { id: 30, cat: "Référentiels", icon: "🔍", title: "Lookup ONEM", desc: "Décodage de tous les codes officiels ONEM (S01, S04, S38, Dispo, BCSS…). Recherche fuzzy multilingue FR/NL/DE/EN dans 11 000+ entrées.", popular: true, time: "instant", type: "lookup", slug: "lookup-onem", href: "/partenaire/lookup-onem", audiences: ["partenaire"] },
-  { id: 23, cat: "Tutoriels", icon: "🃏", title: "Envoyer sa carte électronique C", desc: "Guide pas à pas pour envoyer votre carte de contrôle C via MyONEM ou chez votre organisme de paiement.", popular: true, time: "3 min", type: "tutorial", audiences: ["citoyen"] },
+  {
+    id: 6,
+    cat: "Calculs",
+    icon: "🧮",
+    title: "Calculateur de préavis",
+    desc:
+      "Calculez votre délai de préavis légal en fonction de votre ancienneté, statut et date d'entrée en service.",
+    popular: true,
+    time: "2 min",
+    type: "calc_preavis",
+    slug: "preavis",
+    audiences: ["citoyen", "employeur"],
+  },
+  {
+    id: 12,
+    cat: "Organismes",
+    icon: "🗺️",
+    title: "Trouver un bureau",
+    desc:
+      "CPAS, Commune, ONEM, organismes de paiement, syndicats : trouvez d'un coup le bureau compétent pour votre situation, partout en Belgique.",
+    popular: true,
+    time: "1 min",
+    type: "locator",
+    slug: "bureaux",
+    audiences: ["citoyen", "employeur", "partenaire"],
+  },
+  {
+    id: 30,
+    cat: "Référentiels",
+    icon: "🔍",
+    title: "Lookup ONEM",
+    desc:
+      "Décodage de tous les codes officiels ONEM (S01, S04, S38, Dispo, BCSS…). Recherche fuzzy multilingue FR/NL/DE/EN dans 11 000+ entrées.",
+    popular: true,
+    time: "instant",
+    type: "lookup",
+    slug: "lookup-onem",
+    href: "/partenaire/lookup-onem",
+    audiences: ["partenaire"],
+  },
 ];
 
 export function getToolsByAudience(audience: AudienceId): Tool[] {

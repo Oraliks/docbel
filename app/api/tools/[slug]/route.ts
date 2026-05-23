@@ -40,6 +40,42 @@ const patchSchema = z.object({
  * Met à jour les champs admin du Tool (active, popular, order…). Utilisé
  * par le toggle Switch sur /admin/chomage/outils.
  */
+/**
+ * DELETE /api/tools/[slug] — admin-only.
+ * Supprime l'outil et cascade son DocumentTemplate (+ révisions, drafts,
+ * generated docs, bundle items) via Prisma onDelete: Cascade.
+ *
+ * Pas de soft-delete : si l'admin veut juste cacher, il a déjà le toggle
+ * active. La suppression est définitive.
+ */
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    const role = (session?.user as { role?: string } | undefined)?.role
+    if (!session || role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { slug } = await params
+    const tool = await prisma.tool.findUnique({
+      where: { slug },
+      select: { id: true, name: true },
+    })
+    if (!tool) {
+      return NextResponse.json({ error: 'Tool not found' }, { status: 404 })
+    }
+
+    await prisma.tool.delete({ where: { id: tool.id } })
+    return NextResponse.json({ deleted: tool.name, slug })
+  } catch (error) {
+    console.error('Error deleting tool:', error)
+    return NextResponse.json({ error: 'Failed to delete tool' }, { status: 500 })
+  }
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }

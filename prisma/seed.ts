@@ -278,6 +278,9 @@ async function main() {
   console.log(`   ✓ Chômage section created`);
 
   console.log("🌱 Seeding tools...");
+  // Uniquement les outils qui ont une vraie implémentation. Les coquilles
+  // (agr, salaire-min, C1/C4…) ont été retirées le 2026-05-23 — ré-ajouter
+  // quand le code est prêt pour éviter les "mocks fantômes" en DB.
   const tools = [
     {
       sectionId: chomageSection.id,
@@ -292,28 +295,6 @@ async function main() {
     },
     {
       sectionId: chomageSection.id,
-      name: "Allocation de Garantie de Revenu",
-      slug: "agr",
-      description: "Calcul de l'AGR et conditions d'accès",
-      type: "calc_agr",
-      icon: "💰",
-      popular: true,
-      timeMin: 5,
-      order: 2,
-    },
-    {
-      sectionId: chomageSection.id,
-      name: "Salaire minimum par secteur",
-      slug: "salaire-min",
-      description: "Consultez le salaire minimum dans votre secteur",
-      type: "calc_cp",
-      icon: "💵",
-      popular: false,
-      timeMin: 3,
-      order: 3,
-    },
-    {
-      sectionId: chomageSection.id,
       name: "Trouver un bureau",
       slug: "bureaux",
       description:
@@ -322,7 +303,7 @@ async function main() {
       icon: "🗺️",
       popular: true,
       timeMin: 2,
-      order: 4,
+      order: 2,
     },
   ];
 

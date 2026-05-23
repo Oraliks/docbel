@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { ExternalLink, Settings2, Star, Clock } from 'lucide-react'
+import { ExternalLink, Settings2, Star, Clock, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Tool {
@@ -99,9 +100,11 @@ export function ToolsCardsView({ sections }: Props) {
 }
 
 function ToolCard({ tool }: { tool: Tool }) {
+  const router = useRouter()
   const [active, setActive] = useState(tool.active)
   const [popular, setPopular] = useState(tool.popular)
   const [saving, setSaving] = useState(false)
+  const [deleted, setDeleted] = useState(false)
 
   async function patch(body: { active?: boolean; popular?: boolean }) {
     setSaving(true)
@@ -136,6 +139,32 @@ function ToolCard({ tool }: { tool: Tool }) {
     setPopular(next)
     void patch({ popular: next })
   }
+
+  async function handleDelete() {
+    const confirmed = confirm(
+      `Supprimer définitivement "${tool.name}" ?\n\n` +
+        `Le template associé et tous ses générés/révisions seront aussi supprimés.\n` +
+        `Cette action est irréversible.`
+    )
+    if (!confirmed) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/tools/${tool.slug}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error ?? 'Échec suppression')
+      }
+      setDeleted(true)
+      toast.success(`${tool.name} supprimé`)
+      // Refresh server-rendered list pour que la card disparaisse aux yeux des autres.
+      router.refresh()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur')
+      setSaving(false)
+    }
+  }
+
+  if (deleted) return null
 
   const configUrl = CONFIG_URL[tool.slug]
 
@@ -194,21 +223,27 @@ function ToolCard({ tool }: { tool: Tool }) {
               <Settings2 className="w-3 h-3 mr-1" />
               Configurer
             </Button>
-          ) : (
-            <span className="text-[11px] text-muted-foreground italic px-2 py-1">
-              Pas de config dédiée
-            </span>
-          )}
+          ) : null}
           <Button
             render={
               <a href={`/outils/${tool.slug}`} target="_blank" rel="noreferrer" />
             }
             variant="ghost"
             size="sm"
-            className="h-7 text-xs px-2 ml-auto"
+            className="h-7 text-xs px-2"
             disabled={!active}
           >
             Voir <ExternalLink className="w-3 h-3 ml-1" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDelete}
+            disabled={saving}
+            className="h-7 text-xs px-2 ml-auto text-red-600 hover:text-red-700 hover:bg-red-50"
+            title="Supprimer l'outil"
+          >
+            <Trash2 className="w-3 h-3" />
           </Button>
         </div>
       </CardContent>

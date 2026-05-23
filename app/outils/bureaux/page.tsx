@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 
 export default function BureauxToolPage() {
   return (
-    <div className="flex flex-col gap-6 py-6 px-4 lg:px-6 max-w-5xl mx-auto">
+    <div className="flex flex-col gap-6 py-6 px-4 lg:px-6 w-full">
       <div>
         <h1 className="text-2xl font-bold">Trouver un bureau</h1>
         <p className="text-sm text-muted-foreground mt-1">

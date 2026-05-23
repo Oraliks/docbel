@@ -30,7 +30,11 @@ export type ResolveResult = {
     cpas: SerializedBureau | null;
     commune: SerializedBureau | null;
     onem: SerializedBureau | null;
+    /** Bureau OP attitré quand le user a précisé son organisme (?org=capac…) */
     organismePaiement: SerializedBureau | null;
+    /** Les 4 OPs compétents pour la commune (1 par organisme). Utilisé sur
+     * /outils/bureaux pour que l'utilisateur choisisse via tabs. */
+    organismesPaiement: SerializedBureau[];
     mutuelle: SerializedBureau | null;
   };
   sectoriel: {
@@ -50,6 +54,7 @@ export type SerializedBureauWithDistance = SerializedBureau & {
 };
 
 const NEAR_LIMIT = 12;
+const OP_CODES = ["capac", "fgtb", "csc", "cgslb"] as const;
 
 export type ResolveOptions = {
   /** Code organisme de paiement choisi par le user ("capac" | "fgtb" | "csc" | "cgslb") */
@@ -103,6 +108,7 @@ export async function resolveBureausForPostalCode(
   let communeRow: BureauWithRelations | null = null;
   let onemRow: BureauWithRelations | null = null;
   let paiementRow: BureauWithRelations | null = null;
+  const paiementsRows: BureauWithRelations[] = [];
   let mutuelleRow: BureauWithRelations | null = null;
 
   if (commune) {
@@ -183,6 +189,42 @@ export async function resolveBureausForPostalCode(
             `Bureau ${organismePaiement.toUpperCase()} compétent estimé par proximité`
           );
         }
+      }
+    }
+
+    // Liste des 4 OPs compétents pour la commune (1 bureau par organisme).
+    // Sert au public où l'utilisateur n'a pas précisé son OP : on affiche les
+    // 4 cards en tabs pour qu'il choisisse celui où il est affilié.
+    //
+    // On exclut les sièges centraux (Bruxelles) du calcul de proximité — sinon
+    // ils gagnent toujours pour les CP bruxellois alors qu'il existe une
+    // antenne locale plus pertinente pour les chômeurs.
+    if (paiementsRows.length === 0) {
+      const allSyndicats = await withDbRetry(() =>
+        prisma.bureau.findMany({
+          where: { active: true, type: "SYNDICAT" },
+          include: { organisme: true, commune: true },
+        })
+      );
+      for (const code of OP_CODES) {
+        const candidats = allSyndicats.filter((b) => b.organisme?.code === code);
+        if (candidats.length === 0) continue;
+        // 1. Match direct par commune (antenne locale exacte)
+        const direct = candidats.find((b) => b.communeId === commune.id);
+        if (direct) {
+          paiementsRows.push(direct);
+          continue;
+        }
+        // 2. Proche par proximité, en excluant les sièges centraux
+        const locaux = candidats.filter((b) => !isCentralHQ(b));
+        const nearestLocal = nearestBureau(locaux, commune.lat, commune.lng);
+        if (nearestLocal) {
+          paiementsRows.push(nearestLocal);
+          continue;
+        }
+        // 3. Dernier recours : n'importe quel bureau du même organisme
+        const fallback = nearestBureau(candidats, commune.lat, commune.lng);
+        if (fallback) paiementsRows.push(fallback);
       }
     }
 
@@ -318,6 +360,7 @@ export async function resolveBureausForPostalCode(
       commune: communeRow ? serializeBureau(communeRow) : null,
       onem: onemRow ? serializeBureau(onemRow) : null,
       organismePaiement: paiementRow ? serializeBureau(paiementRow) : null,
+      organismesPaiement: paiementsRows.map(serializeBureau),
       mutuelle: mutuelleRow ? serializeBureau(mutuelleRow) : null,
     },
     sectoriel: { commissionRelated: sectorielBureaus },
@@ -336,7 +379,7 @@ function emptyResult(
   return {
     query: { postalCode, organismePaiement: org, commissionCode: cp, mutuelleCode: mut },
     commune: null,
-    attitre: { cpas: null, commune: null, onem: null, organismePaiement: null, mutuelle: null },
+    attitre: { cpas: null, commune: null, onem: null, organismePaiement: null, organismesPaiement: [], mutuelle: null },
     sectoriel: { commissionRelated: [] },
     proximite: { syndicats: [], permanences: [], autres: [] },
     warnings,
@@ -369,6 +412,15 @@ async function findOnemViaLookupCP(
       include: { organisme: true, commune: true },
     })
   ).catch(() => null);
+}
+
+/**
+ * Détecte un siège central (HQ) à exclure du calcul de proximité pour les
+ * organismes de paiement. Heuristique sur le nom : "siège", "central", "national".
+ */
+function isCentralHQ(bureau: BureauWithRelations): boolean {
+  const name = bureau.name.toLowerCase();
+  return /si[èe]ge|central|national|h[eé]ad\s*office/i.test(name);
 }
 
 function nearestBureau(

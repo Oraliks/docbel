@@ -168,6 +168,7 @@ export function BureauCard({
                     hours={bureau.hours}
                     notes={bureau.hoursNotes}
                     type={bureau.type}
+                    onReport={() => setShowReport(true)}
                   />
                 )}
               </div>

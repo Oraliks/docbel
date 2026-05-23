@@ -194,6 +194,7 @@ export function OpTabsCard({ bureaux, commune, userGeoloc }: Props) {
                   hours={active.hours}
                   notes={active.hoursNotes}
                   type={active.type}
+                  onReport={() => setShowReport(true)}
                 />
               </div>
 

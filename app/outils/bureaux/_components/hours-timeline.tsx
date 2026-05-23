@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Clock, ChevronDown, Info } from 'lucide-react'
+import { Clock, ChevronDown, Info, Flag } from 'lucide-react'
 
 interface HourSlot {
   open: string
@@ -16,6 +16,12 @@ interface Props {
   hours: DayHours[]
   notes?: string | null
   type: string
+  /**
+   * Callback déclenché par le CTA "Signaler" dans l'empty state quand on n'a
+   * pas d'horaires. Typiquement ouvre le ReportForm de la card parente.
+   * Si pas fourni, le CTA n'apparaît pas.
+   */
+  onReport?: () => void
 }
 
 const DAY_LABELS_SHORT = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.']
@@ -58,7 +64,7 @@ function computeStatus(slots: HourSlot[]): Status {
  *
  * "Aujourd'hui" en vert si Ouvert, gris si Fermé.
  */
-export function HoursTimeline({ hours, notes, type }: Props) {
+export function HoursTimeline({ hours, notes, type, onReport }: Props) {
   const [open, setOpen] = useState(false)
 
   const hideWeekend = type !== 'COMMUNE' && type !== 'CPAS'
@@ -68,7 +74,37 @@ export function HoursTimeline({ hours, notes, type }: Props) {
   })
 
   const hasData = (hours ?? []).some((d) => d.slots.length > 0)
-  if (!hasData) return null
+
+  // Empty state : pas d'horaires connus → affichage explicite + CTA signaler
+  if (!hasData) {
+    return (
+      <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 space-y-1.5">
+        <div className="flex items-center gap-2">
+          <Clock className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+          <span className="text-xs font-medium text-muted-foreground">
+            Horaires non disponibles
+          </span>
+        </div>
+        <p className="text-[10px] text-muted-foreground/80 leading-snug">
+          Pas d&apos;information fiable sur les horaires de ce bureau.
+          Consulte le site officiel ou téléphone avant de te déplacer.
+        </p>
+        {onReport && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onReport()
+            }}
+            className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline font-medium"
+          >
+            <Flag className="w-2.5 h-2.5" />
+            Tu connais les horaires ? Aide-nous à les ajouter
+          </button>
+        )}
+      </div>
+    )
+  }
 
   const today = new Date().getDay()
   const todaySlots = (hours ?? []).find((d) => d.day === today)?.slots ?? []

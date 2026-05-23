@@ -149,6 +149,7 @@ function ToolCard({ tool }: { tool: Tool }) {
         'Le template associé (et tous ses générés, révisions, items de bundle) sera aussi supprimé en cascade. Cette action est irréversible.',
       confirmText: 'Supprimer définitivement',
       destructive: true,
+      requireText: tool.name,
     })
     if (!ok) return
     setSaving(true)

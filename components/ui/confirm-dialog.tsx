@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { create } from "zustand";
 import {
   AlertDialog,
@@ -11,6 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export interface ConfirmOptions {
   title: string;
@@ -19,6 +22,13 @@ export interface ConfirmOptions {
   cancelText?: string;
   /** Style le bouton de confirmation en rouge (suppression). */
   destructive?: boolean;
+  /**
+   * Garde-fou type-to-confirm (à la GitHub). Si défini, le bouton de
+   * confirmation reste désactivé tant que l'utilisateur n'a pas tapé
+   * exactement cette chaîne dans le champ. Casse-insensible aux espaces
+   * de début/fin uniquement.
+   */
+  requireText?: string;
 }
 
 interface ConfirmState {
@@ -63,6 +73,15 @@ export function ConfirmDialog() {
   const options = useConfirmStore((s) => s.options);
   const hide = useConfirmStore((s) => s.hide);
 
+  // Garde-fou type-to-confirm. State local au dialog, reset à chaque ouverture.
+  const [typed, setTyped] = useState("");
+  useEffect(() => {
+    if (open) setTyped("");
+  }, [open]);
+
+  const requireText = options?.requireText?.trim() ?? "";
+  const matches = requireText ? typed.trim() === requireText : true;
+
   return (
     <AlertDialog open={open} onOpenChange={(v) => !v && hide(false)}>
       {/*
@@ -78,16 +97,41 @@ export function ConfirmDialog() {
             <AlertDialogDescription>{options.description}</AlertDialogDescription>
           )}
         </AlertDialogHeader>
+
+        {requireText && (
+          <div className="space-y-2 py-2">
+            <Label htmlFor="confirm-typed-text" className="text-sm">
+              Pour confirmer, tape{" "}
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                {requireText}
+              </code>{" "}
+              ci-dessous :
+            </Label>
+            <Input
+              id="confirm-typed-text"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              autoComplete="off"
+              autoFocus
+              placeholder={requireText}
+              // Vert quand le texte match, neutre sinon. Pas d'erreur agressive
+              // pendant que l'user tape (juste pas de match).
+              className={matches ? "border-green-400 focus-visible:ring-green-400/50" : undefined}
+            />
+          </div>
+        )}
+
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => hide(false)}>
             {options?.cancelText || "Annuler"}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={() => hide(true)}
+            disabled={!matches}
             className={
               options?.destructive
-                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                : undefined
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+                : "disabled:opacity-50"
             }
           >
             {options?.confirmText || "Confirmer"}

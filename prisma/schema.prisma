@@ -354,16 +354,257 @@ model BaremeFile {
   description    String?
   fileType       String   @default("onem-rates")
   multiplicateur Float?
+  // Status:
+  //   "active"           = legacy upload (avant le nouveau workflow draft/published)
+  //   "draft"            = import nouveau, en attente de validation
+  //   "pending_approval" = workflow 4 yeux : 1 approbation reçue, attend la 2ème
+  //   "published"        = version validée, source pour les calculateurs
+  //   "rejected"         = draft refusé manuellement
+  //   "archived"         = version précédemment publiée, remplacée par un plus récent
   status         String   @default("active")
 
-  sheets    BareSheet[]
-  createdBy String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  // Workflow d'import (nouveaux uploads via /api/baremes/import)
+  fileHash    String?   @unique // sha256, null pour les BaremeFile legacy
+  validFrom   DateTime? // Date de validité parsée (en plus de effectiveDate qui est String legacy)
+  summary     Json? // { sheetsDetected, sheetsParsed, sheetsIgnored, amountsExtracted, newEntries, modifiedEntries, removedEntries }
+  alerts      Json? // [{ level: 'info'|'warn'|'error', sheet?, message }]
+  publishedAt DateTime?
+  publishedBy String?
+
+  // 4 yeux : si true, exige 2 approbations distinctes avant published
+  requiresApproval Boolean @default(false)
+
+  sheets       BareSheet[]
+  amounts      BaremeAmount[]
+  approvals    BaremeApproval[]
+  publications BaremePublicationLog[]
+  createdBy    String?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
 
   @@index([effectiveDate])
   @@index([status])
   @@index([fileType])
+  @@index([validFrom])
+  @@index([publishedAt])
+}
+
+// Audit log : trace toutes les transitions de statut
+model BaremePublicationLog {
+  id     String     @id @default(cuid())
+  fileId String
+  file   BaremeFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  // ex: "published" | "rejected" | "archived" | "rollback" | "approved" | "submitted_for_approval"
+  action     String
+  fromStatus String?
+  toStatus   String?
+
+  actorEmail String?
+  details    Json? // ex: { archivedPreviousId, approvalsCount, ... }
+
+  createdAt DateTime @default(now())
+
+  @@index([fileId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// Approbations 4 yeux : 1 par admin, exige 2 distinctes pour publier
+model BaremeApproval {
+  id     String     @id @default(cuid())
+  fileId String
+  file   BaremeFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  approverEmail String
+  approverName  String?
+  comment       String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([fileId, approverEmail]) // un approbateur ne peut approuver qu'une fois par fichier
+  @@index([fileId])
+}
+
+// Catégorie de premier niveau du lookup ONEM (Signaletic, Global, Vérification, Dispo, BCSS, Autre).
+// Reflète la nomenclature officielle de services.onem.be/lookupweb.
+model LookupCategory {
+  id      String @id @default(cuid())
+  slug    String @unique // "signaletic", "global", "verification", "dispo", "bcss", "autre"
+  labelFr String
+  labelNl String
+  order   Int    @default(0)
+
+  tables LookupTable[]
+
+  @@index([order])
+}
+
+// Table individuelle d'un référentiel (ex: "S04/S36 - Article d'indemnisation").
+// Chaque table peut être alimentée par un import CSV exporté depuis le lookup ONEM.
+model LookupTable {
+  id         String         @id @default(cuid())
+  categoryId String
+  category   LookupCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  slug    String // "s04-s36-article-indemnisation"
+  prefix  String // "S04/S36", "S01", "A27", "H33"
+  labelFr String
+  labelNl String
+  group   String? // sous-groupe pour la cat. Global (ex: "Chômage", "Adresse")
+  // URL relative de la table sur services.onem.be/lookupweb (pour le lien "voir source")
+  sourcePath String?
+  // Nom interne ONEM (anglais) tel qu'utilisé dans les exports CSV.
+  // Ex: "SignaleticCompensationArticle" → fichier "SignaleticCompensationArticle-export_fr.csv".
+  // Permet un match exact lors de l'auto-détection du batch upload.
+  exportName String?
+
+  // Métadonnées du dernier import
+  lastImportedAt   DateTime?
+  lastImportedBy   String?
+  lastImportSource String? // ex: "csv-onem-export-20260522.csv"
+  entriesCount     Int       @default(0)
+
+  notes String? // annotations admin libres
+
+  // Workflow 4 yeux : si true, les modifications nécessitent 2 approbations.
+  requiresApproval Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries   LookupEntry[]
+  approvals LookupApproval[]
+
+  @@unique([categoryId, slug])
+  @@index([prefix])
+  @@index([categoryId, group])
+}
+
+// Approbation 4 yeux pour les changements sur une LookupTable sensible.
+// Quand un admin édite une table requiresApproval=true, ses modifications sont
+// "pending" jusqu'à ce qu'un second admin distinct approuve.
+model LookupApproval {
+  id      String      @id @default(cuid())
+  tableId String
+  table   LookupTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  approverEmail String
+  approverName  String?
+  comment       String?
+
+  // Snapshot du changeset au moment de l'approbation (debug/audit)
+  changeset Json?
+
+  createdAt DateTime @default(now())
+
+  @@unique([tableId, approverEmail])
+  @@index([tableId])
+}
+
+// Entrée individuelle (code + libellés FR/NL + validité temporelle).
+// Un même code peut exister en plusieurs versions (différentes validFrom).
+model LookupEntry {
+  id      String      @id @default(cuid())
+  tableId String
+  table   LookupTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  code       String    // "01AINT", "27,2A1", "28&3,3", "44N"…
+  labelFr    String
+  labelNl    String
+  labelDe    String?   // Description allemande (les CSV ONEM la fournissent, souvent vide)
+  labelEn    String?   // Description anglaise (idem, souvent vide)
+  validFrom  DateTime?
+  validUntil DateTime? // null = toujours valide
+
+  // Colonnes spécifiques à la table source ONEM (ex: pour UnemploymentOffice :
+  // téléphone, IBAN, adresse ; pour BCPost : BC, régime linguistique, région ;
+  // pour SignaleticCompensationArticle : flag S04/S36, allocations familiales, etc.)
+  // Stocké en clé:valeur pour préserver la richesse du CSV ONEM sans avoir
+  // à créer un schéma rigide par table.
+  metadata Json?
+
+  notes String? // annotation interne libre
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tableId, code, validFrom])
+  @@index([tableId, code])
+  @@index([validFrom, validUntil])
+  @@index([code]) // recherche transverse
+}
+
+// Mapping manuel : override de structure pour un onglet dont la mise en page a changé
+// Si présent et matché par sheetName + fileType, le parser utilise ce mapping plutôt
+// que la détection auto. Permet d'absorber un changement ONEM sans déployer de code.
+model BaremeSheetMapping {
+  id String @id @default(cuid())
+
+  // Cible
+  sheetName String
+  fileType  String @default("onem-rates")
+
+  // Type de parser à utiliser : "allocation_matrix" | "salary_brackets" | "basic_amounts" | "hourly_wages" | ...
+  parserType String
+
+  // Catégorie à attribuer aux montants extraits (BaremeCategory)
+  category String
+
+  // Configuration spécifique au parser (positions de colonnes, mots-clés de header, etc.)
+  // ex pour allocation_matrix : { headerKeyword: "Code", trancheCol: 0 }
+  // ex pour basic_amounts : { articleCol: 0, amountCol: 3, unitCol: 4 }
+  config Json
+
+  // Notes admin (optionnel)
+  notes String?
+
+  enabled   Boolean  @default(true)
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sheetName, fileType])
+  @@index([fileType])
+  @@index([enabled])
+}
+
+model BaremeAmount {
+  id     String     @id @default(cuid())
+  fileId String
+  file   BaremeFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  sourceSheet String // ex: "A_N_B_vol_plein"
+  category    String // "full_unemployment" | "salary_bracket" | "basic_amount" | ...
+
+  allocationCode String? // ex: "AA1"
+  salaryCode     String? // ex: "MIN" ou "29"
+  article        String? // ex: "art. 114, § 5"
+
+  labelFr String?
+  labelNl String?
+
+  unit   String? // "daily" | "monthly" | "yearly" | "hourly" | "rate"
+  amount Decimal @db.Decimal(14, 4)
+
+  // Pour tranches salariales
+  minDailySalary Decimal? @db.Decimal(14, 4)
+  maxDailySalary Decimal? @db.Decimal(14, 4)
+
+  validFrom DateTime?
+  rawData   Json? // pour debug/traçabilité (cellule source, valeurs alternatives)
+
+  // Clé stable pour comparer les versions: ex "full_unemployment:AA1:MIN" ou "basic_amount:art_114_5"
+  comparisonKey String
+
+  createdAt DateTime @default(now())
+
+  @@index([fileId])
+  @@index([category])
+  @@index([allocationCode])
+  @@index([salaryCode])
+  @@index([validFrom])
+  @@index([comparisonKey])
 }
 
 model BareSheet {

@@ -70,6 +70,26 @@ const defaultData = {
           url: "/admin/chomage/preavis",
         },
         {
+          title: "Lookup ONEM",
+          url: "/admin/chomage/lookup",
+          children: [
+            { title: "Tables", url: "/admin/chomage/lookup" },
+            { title: "Recherche", url: "/admin/chomage/lookup/search" },
+            { title: "Statistiques", url: "/admin/chomage/lookup/stats" },
+            { title: "Anomalies", url: "/admin/chomage/lookup/anomalies" },
+            { title: "Import en lot", url: "/admin/chomage/lookup/import-batch" },
+          ],
+        },
+        {
+          title: "Barèmes officiels",
+          url: "/admin/baremes",
+          children: [
+            { title: "Liste", url: "/admin/baremes" },
+            { title: "Nouvel import", url: "/admin/baremes/import" },
+            { title: "Mappings d'onglets", url: "/admin/baremes/mappings" },
+          ],
+        },
+        {
           title: "Commissions paritaires",
           url: "/admin/commissions",
         },

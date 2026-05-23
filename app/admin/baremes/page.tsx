@@ -1,396 +1,553 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Upload, Download, Search, Trash2, FileSpreadsheet, Calendar } from 'lucide-react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Search,
+  Plus,
+  MoreHorizontal,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  Trash2,
+  Download,
+  RefreshCw,
+  ArrowUpDown,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 interface BareFile {
   id: string
   name: string
+  status: string
   effectiveDate: string
+  validFrom: string | null
   uploadedAt: string
-  multiplicateur?: number
+  publishedAt: string | null
+  multiplicateur: number | null
+  isLegacy: boolean
   sheetsCount: number
+  amountsCount: number
 }
 
-interface SheetData {
-  id: string
-  name: string
-  category: string
-  rowCount: number
-  colCount: number
-  sheetIndex: number
-  cellData: string[][]
+type SortKey = 'name' | 'status' | 'validFrom' | 'uploadedAt' | 'amountsCount'
+type SortDir = 'asc' | 'desc'
+
+const STATUS_INFO: Record<string, { label: string; tone: string; order: number }> = {
+  draft: { label: 'Brouillon', tone: 'bg-yellow-100 text-yellow-900 border-yellow-300', order: 0 },
+  published: { label: 'Publié', tone: 'bg-green-100 text-green-900 border-green-300', order: 1 },
+  archived: { label: 'Archivé', tone: 'bg-muted text-muted-foreground', order: 3 },
+  rejected: { label: 'Rejeté', tone: 'bg-red-100 text-red-900 border-red-300', order: 4 },
+  active: { label: 'Legacy', tone: 'bg-blue-100 text-blue-900 border-blue-300', order: 2 },
 }
 
-interface FileWithSheets {
-  file: {
-    id: string
-    name: string
-    effectiveDate: string
-    multiplicateur?: number
-    filePath: string
-  }
-  sheets: SheetData[]
+function StatusBadge({ status }: { status: string }) {
+  const info = STATUS_INFO[status] ?? { label: status, tone: 'bg-muted', order: 99 }
+  return (
+    <span className={`inline-block text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border ${info.tone}`}>
+      {info.label}
+    </span>
+  )
 }
 
-export default function BaremesPage() {
+export default function BaremesAdminPage() {
   const [files, setFiles] = useState<BareFile[]>([])
-  const [selectedFileData, setSelectedFileData] = useState<FileWithSheets | null>(null)
-  const [activeSheetId, setActiveSheetId] = useState<string>('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [uploading, setUploading] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [sortKey, setSortKey] = useState<SortKey>('uploadedAt')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [acting, setActing] = useState<string | null>(null)
 
-  const loadFile = async (fileId: string) => {
+  const load = useCallback(async () => {
     setLoading(true)
-    try {
-      const res = await fetch(`/api/baremes?fileId=${fileId}`)
-      const data = await res.json()
-      setSelectedFileData(data)
-      if (data.sheets?.[0]) {
-        setActiveSheetId(data.sheets[0].id)
-      }
-    } catch (error) {
-      toast.error('Failed to load file')
-      console.error(error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchFiles = async () => {
     try {
       const res = await fetch('/api/baremes')
       const data = await res.json()
-      setFiles(data.files || [])
-      // Auto-sélectionner le premier fichier
-      if (data.files?.[0] && !selectedFileData) {
-        loadFile(data.files[0].id)
-      }
-    } catch (error) {
-      console.error(error)
+      setFiles(data.files ?? [])
+    } catch (err) {
+      console.error(err)
+      toast.error('Chargement impossible')
+    } finally {
+      setLoading(false)
     }
-  }
-
-  // Charger la liste des fichiers
-  useEffect(() => {
-    async function load() { await fetchFiles() }
-    void load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleUpload = async (e: React.DragEvent | React.ChangeEvent<HTMLInputElement>) => {
-    let file: File | null = null
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load()
+  }, [load])
 
-    if ('dataTransfer' in e) {
-      e.preventDefault()
-      file = e.dataTransfer.files[0]
+  const counts = useMemo(() => {
+    const byStatus: Record<string, number> = {}
+    for (const f of files) {
+      byStatus[f.status] = (byStatus[f.status] ?? 0) + 1
+    }
+    const totalAmounts = files.reduce((sum, f) => sum + (f.amountsCount ?? 0), 0)
+    return { byStatus, totalAmounts, total: files.length }
+  }, [files])
+
+  const filtered = useMemo(() => {
+    let result = files
+    if (statusFilter !== 'all') {
+      result = result.filter((f) => f.status === statusFilter)
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase().trim()
+      result = result.filter((f) => f.name.toLowerCase().includes(q))
+    }
+    const sorted = [...result].sort((a, b) => {
+      let cmp = 0
+      switch (sortKey) {
+        case 'name':
+          cmp = a.name.localeCompare(b.name)
+          break
+        case 'status':
+          cmp =
+            (STATUS_INFO[a.status]?.order ?? 99) -
+            (STATUS_INFO[b.status]?.order ?? 99)
+          break
+        case 'validFrom':
+          cmp =
+            (a.validFrom ? new Date(a.validFrom).getTime() : 0) -
+            (b.validFrom ? new Date(b.validFrom).getTime() : 0)
+          break
+        case 'uploadedAt':
+          cmp = new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime()
+          break
+        case 'amountsCount':
+          cmp = a.amountsCount - b.amountsCount
+          break
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+    return sorted
+  }, [files, search, statusFilter, sortKey, sortDir])
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
     } else {
-      file = e.currentTarget.files?.[0] || null
+      setSortKey(key)
+      setSortDir(key === 'name' || key === 'status' ? 'asc' : 'desc')
     }
+  }
 
-    if (!file || !file.name.endsWith('.xlsx')) {
-      toast.error('Only .xlsx files allowed')
+  const handlePublish = async (id: string, hasErrors: boolean) => {
+    if (
+      !confirm(
+        hasErrors
+          ? 'Publier malgré les alertes d’erreur ?'
+          : 'Publier cet import ? L’ancien publié sera archivé.'
+      )
+    )
       return
-    }
-
-    setUploading(true)
+    setActing(id)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const res = await fetch('/api/baremes/upload', {
+      const res = await fetch(`/api/baremes/import/${id}/publish`, {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: hasErrors }),
       })
-
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Upload failed')
-      }
-
-      const data = await res.json()
-      toast.success(`${data.sheetsCount} feuilles importées`)
-
-      await fetchFiles()
-      loadFile(data.fileId)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Upload failed')
-      console.error(error)
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error ?? 'Échec')
+      toast.success('Import publié')
+      await load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur')
     } finally {
-      setUploading(false)
+      setActing(null)
     }
   }
 
-  const handleDelete = async (fileId: string) => {
-    if (!confirm('Supprimer ce fichier ?')) return
-
+  const handleReject = async (id: string) => {
+    if (!confirm('Rejeter cet import ?')) return
+    setActing(id)
     try {
-      const res = await fetch(`/api/baremes/${fileId}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Delete failed')
-
-      toast.success('Fichier supprimé')
-      if (selectedFileData?.file.id === fileId) {
-        setSelectedFileData(null)
-      }
-      await fetchFiles()
-    } catch {
-      toast.error('Delete failed')
+      const res = await fetch(`/api/baremes/import/${id}/reject`, { method: 'POST' })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error ?? 'Échec')
+      toast.success('Import rejeté')
+      await load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur')
+    } finally {
+      setActing(null)
     }
   }
 
-  const handleExportSheet = (sheetId: string, sheetName: string) => {
-    const a = document.createElement('a')
-    a.href = `/api/baremes/export?sheetId=${sheetId}`
-    a.click()
-    toast.success(`Téléchargement: ${sheetName}.csv`)
-  }
-
-  const handleDownloadOriginal = () => {
-    if (selectedFileData?.file.filePath) {
-      window.open(selectedFileData.file.filePath, '_blank')
+  const handleDelete = async (id: string) => {
+    if (!confirm('Supprimer définitivement ce fichier ?')) return
+    setActing(id)
+    try {
+      const res = await fetch(`/api/baremes/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Échec suppression')
+      toast.success('Fichier supprimé')
+      await load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur')
+    } finally {
+      setActing(null)
     }
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Barèmes ONEM</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Upload et consultation des barèmes officiels
-        </p>
+    <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold">Barèmes officiels</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Workflow d’import : upload .xlsx → brouillon → validation → publication versionnée.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/baremes/mappings"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Mappings d&apos;onglets
+          </Link>
+          <Button variant="outline" onClick={() => load()} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Actualiser
+          </Button>
+          <Link href="/admin/baremes/import">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvel import
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Liste des fichiers */}
+      {/* KPI */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <KpiCard label="Total fichiers" value={counts.total} />
+        <KpiCard
+          label="Brouillons"
+          value={counts.byStatus.draft ?? 0}
+          tone={counts.byStatus.draft ? 'warn' : 'muted'}
+          onClick={() => setStatusFilter('draft')}
+        />
+        <KpiCard
+          label="Publiés"
+          value={counts.byStatus.published ?? 0}
+          tone="success"
+          onClick={() => setStatusFilter('published')}
+        />
+        <KpiCard
+          label="Archivés"
+          value={counts.byStatus.archived ?? 0}
+          tone="muted"
+          onClick={() => setStatusFilter('archived')}
+        />
+        <KpiCard
+          label="Legacy"
+          value={counts.byStatus.active ?? 0}
+          tone="info"
+          onClick={() => setStatusFilter('active')}
+        />
+        <KpiCard label="Montants extraits" value={counts.totalAmounts} tone="primary" />
+      </div>
+
+      {/* Filtres */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center justify-between">
-            <span>Fichiers ({files.length})</span>
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept=".xlsx"
-                onChange={handleUpload}
-                className="hidden"
-                disabled={uploading}
-              />
-              <Button disabled={uploading} type="button">
-                <Upload className="w-4 h-4 mr-2" />
-                {uploading ? 'Upload...' : 'Uploader'}
-              </Button>
-            </label>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {files.length === 0 ? (
-            <div
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleUpload}
-              className="border-2 border-dashed rounded-lg p-12 text-center hover:border-blue-500 transition"
+        <CardContent className="p-4 flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher par nom de fichier…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? 'all')}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Filtrer par statut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les statuts</SelectItem>
+              <SelectItem value="draft">Brouillons</SelectItem>
+              <SelectItem value="published">Publiés</SelectItem>
+              <SelectItem value="archived">Archivés</SelectItem>
+              <SelectItem value="rejected">Rejetés</SelectItem>
+              <SelectItem value="active">Legacy</SelectItem>
+            </SelectContent>
+          </Select>
+          {(statusFilter !== 'all' || search) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearch('')
+                setStatusFilter('all')
+              }}
             >
-              <FileSpreadsheet className="mx-auto w-12 h-12 text-muted-foreground mb-3" />
-              <p className="font-medium mb-1">Aucun fichier uploadé</p>
-              <p className="text-sm text-muted-foreground">Glissez un fichier .xlsx ici</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {files.map((f) => (
-                <div
-                  key={f.id}
-                  onClick={() => loadFile(f.id)}
-                  className={`p-3 border rounded-lg cursor-pointer transition ${
-                    selectedFileData?.file.id === f.id
-                      ? 'border-primary bg-primary/10'
-                      : 'hover:border-muted-foreground'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate" title={f.name}>
-                        {f.name}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        <Calendar className="w-3 h-3" />
-                        {f.effectiveDate}
-                      </div>
-                      <div className="flex gap-2 mt-2">
-                        <Badge variant="secondary" className="text-xs">
-                          {f.sheetsCount} feuilles
-                        </Badge>
-                        {f.multiplicateur && (
-                          <Badge variant="outline" className="text-xs">
-                            ×{f.multiplicateur}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDelete(f.id)
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+              Réinitialiser
+            </Button>
           )}
+          <div className="ml-auto text-sm text-muted-foreground">
+            {filtered.length} / {files.length} fichiers
+          </div>
         </CardContent>
       </Card>
 
-      {/* Visualisation du fichier */}
-      {loading && <p className="text-center py-8 text-muted-foreground">Chargement...</p>}
-
-      {selectedFileData && !loading && (
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <CardTitle>{selectedFileData.file.name}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  En vigueur depuis le {selectedFileData.file.effectiveDate}
-                  {selectedFileData.file.multiplicateur &&
-                    ` • Multiplicateur: ${selectedFileData.file.multiplicateur}`}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <div className="relative">
-                  <Search className="absolute left-2 top-2.5 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Rechercher dans le tableau..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8 w-64"
-                  />
-                </div>
-                <Button variant="outline" onClick={handleDownloadOriginal}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Original
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeSheetId} onValueChange={setActiveSheetId}>
-              <div className="overflow-x-auto pb-2">
-                <TabsList className="inline-flex w-auto">
-                  {selectedFileData.sheets.map((sheet) => (
-                    <TabsTrigger key={sheet.id} value={sheet.id} className="text-xs">
-                      {sheet.name}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
-
-              {selectedFileData.sheets.map((sheet) => (
-                <TabsContent key={sheet.id} value={sheet.id} className="mt-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold">{sheet.category}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {sheet.rowCount} lignes × {sheet.colCount} colonnes
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleExportSheet(sheet.id, sheet.name)}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      CSV
-                    </Button>
-                  </div>
-
-                  <ExcelGrid cellData={sheet.cellData} searchTerm={searchTerm} />
-                </TabsContent>
+      {/* Table */}
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <SortHead label="Fichier" active={sortKey === 'name'} dir={sortDir} onClick={() => toggleSort('name')} />
+              <SortHead label="Statut" active={sortKey === 'status'} dir={sortDir} onClick={() => toggleSort('status')} />
+              <SortHead
+                label="Valide à partir du"
+                active={sortKey === 'validFrom'}
+                dir={sortDir}
+                onClick={() => toggleSort('validFrom')}
+              />
+              <SortHead
+                label="Montants"
+                active={sortKey === 'amountsCount'}
+                dir={sortDir}
+                onClick={() => toggleSort('amountsCount')}
+                align="right"
+              />
+              <TableHead>Feuilles</TableHead>
+              <TableHead>Mult.</TableHead>
+              <SortHead
+                label="Uploadé"
+                active={sortKey === 'uploadedAt'}
+                dir={sortDir}
+                onClick={() => toggleSort('uploadedAt')}
+              />
+              <TableHead className="w-12 text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                  Chargement…
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading && filtered.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-12">
+                  <p className="text-muted-foreground mb-3">Aucun fichier ne correspond.</p>
+                  {files.length === 0 && (
+                    <Link href="/admin/baremes/import">
+                      <Button variant="outline" size="sm">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Faire le premier import
+                      </Button>
+                    </Link>
+                  )}
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading &&
+              filtered.map((f) => (
+                <TableRow key={f.id} className={acting === f.id ? 'opacity-60' : ''}>
+                  <TableCell className="font-medium max-w-[400px] truncate" title={f.name}>
+                    <Link href={`/admin/baremes/import/${f.id}`} className="hover:underline">
+                      {f.name}
+                    </Link>
+                    {f.isLegacy && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        Sans hash — uploadé avant le nouveau workflow
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={f.status} />
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {f.validFrom
+                      ? new Date(f.validFrom).toLocaleDateString('fr-BE')
+                      : f.effectiveDate || '—'}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    {f.amountsCount > 0 ? f.amountsCount.toLocaleString('fr-BE') : '—'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="text-xs">
+                      {f.sheetsCount}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {f.multiplicateur ? `×${f.multiplicateur.toFixed(4)}` : '—'}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {new Date(f.uploadedAt).toLocaleDateString('fr-BE')}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <RowActions
+                      file={f}
+                      acting={acting === f.id}
+                      onPublish={() => handlePublish(f.id, false)}
+                      onReject={() => handleReject(f.id)}
+                      onDelete={() => handleDelete(f.id)}
+                    />
+                  </TableCell>
+                </TableRow>
               ))}
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   )
 }
 
-// Composant tableau type Excel
-function ExcelGrid({
-  cellData,
-  searchTerm,
+function KpiCard({
+  label,
+  value,
+  tone = 'default',
+  onClick,
 }: {
-  cellData: string[][]
-  searchTerm: string
+  label: string
+  value: number
+  tone?: 'default' | 'success' | 'muted' | 'primary' | 'warn' | 'info' | 'error'
+  onClick?: () => void
 }) {
-  const search = searchTerm.toLowerCase().trim()
-
-  // Highlight la recherche
-  const highlightCell = (val: string): React.ReactNode => {
-    if (!search || !val) return val
-    const lower = val.toLowerCase()
-    const idx = lower.indexOf(search)
-    if (idx === -1) return val
-    return (
-      <>
-        {val.slice(0, idx)}
-        <mark className="bg-yellow-200 dark:bg-yellow-700/60 dark:text-yellow-50 px-0.5">{val.slice(idx, idx + search.length)}</mark>
-        {val.slice(idx + search.length)}
-      </>
-    )
+  const toneClass: Record<typeof tone, string> = {
+    default: 'border-border',
+    success: 'border-green-300 bg-green-50/40 dark:bg-green-950/10',
+    muted: 'border-border bg-muted/30',
+    primary: 'border-primary/30 bg-primary/5',
+    warn: 'border-yellow-300 bg-yellow-50/40 dark:bg-yellow-950/10',
+    info: 'border-blue-300 bg-blue-50/40 dark:bg-blue-950/10',
+    error: 'border-red-300 bg-red-50/40 dark:bg-red-950/10',
   }
-
-  // Détecte si la cellule matche
-  const isMatchingRow = (row: string[]): boolean => {
-    if (!search) return true
-    return row.some((c) => c && c.toLowerCase().includes(search))
-  }
-
-  if (!cellData || cellData.length === 0) {
-    return <p className="text-center py-8 text-muted-foreground">Pas de données</p>
-  }
-
+  const Comp = onClick ? 'button' : 'div'
   return (
-    <div className="border rounded-lg overflow-auto max-h-[600px]">
-      <table className="text-sm w-full border-collapse">
-        <tbody>
-          {cellData.map((row, rIdx) => {
-            const matches = isMatchingRow(row)
-            return (
-              <tr
-                key={rIdx}
-                className={`${
-                  search && !matches ? 'opacity-30' : ''
-                } ${rIdx === 0 ? 'bg-muted font-semibold' : 'hover:bg-primary/5'}`}
-              >
-                <td className="border border-border px-2 py-1 text-xs text-muted-foreground sticky left-0 bg-muted/50 font-mono">
-                  {rIdx + 1}
-                </td>
-                {row.map((cell, cIdx) => {
-                  const isError = cell?.startsWith('#')
-                  return (
-                    <td
-                      key={cIdx}
-                      className={`border border-border px-2 py-1 whitespace-nowrap ${
-                        isError ? 'text-red-400 italic text-xs' : ''
-                      }`}
-                    >
-                      {isError ? '' : highlightCell(cell || '')}
-                    </td>
-                  )
-                })}
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+    <Comp
+      onClick={onClick}
+      className={`text-left rounded-lg border p-3 transition ${toneClass[tone]} ${
+        onClick ? 'hover:border-primary cursor-pointer' : ''
+      }`}
+    >
+      <div className="text-2xl font-semibold tabular-nums">{value.toLocaleString('fr-BE')}</div>
+      <div className="text-xs text-muted-foreground mt-1">{label}</div>
+    </Comp>
+  )
+}
+
+function SortHead({
+  label,
+  active,
+  dir,
+  onClick,
+  align = 'left',
+}: {
+  label: string
+  active: boolean
+  dir: SortDir
+  onClick: () => void
+  align?: 'left' | 'right'
+}) {
+  return (
+    <TableHead className={align === 'right' ? 'text-right' : ''}>
+      <button
+        onClick={onClick}
+        className={`inline-flex items-center gap-1 hover:text-foreground ${
+          active ? 'text-foreground font-medium' : ''
+        }`}
+      >
+        {label}
+        <ArrowUpDown className={`w-3 h-3 ${active ? 'opacity-100' : 'opacity-40'}`} />
+        {active && <span className="text-[10px]">{dir === 'asc' ? '↑' : '↓'}</span>}
+      </button>
+    </TableHead>
+  )
+}
+
+function RowActions({
+  file,
+  acting,
+  onPublish,
+  onReject,
+  onDelete,
+}: {
+  file: BareFile
+  acting: boolean
+  onPublish: () => void
+  onReject: () => void
+  onDelete: () => void
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" size="sm" disabled={acting} className="h-8 w-8 p-0">
+            <MoreHorizontal className="w-4 h-4" />
+            <span className="sr-only">Actions</span>
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem render={<Link href={`/admin/baremes/import/${file.id}`} />}>
+          <Eye className="w-4 h-4 mr-2" />
+          Voir les détails
+        </DropdownMenuItem>
+        {file.status === 'draft' && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onPublish}>
+              <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
+              Publier
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onReject}>
+              <XCircle className="w-4 h-4 mr-2 text-red-600" />
+              Rejeter
+            </DropdownMenuItem>
+          </>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          render={
+            <a href={`/api/baremes?fileId=${file.id}`} target="_blank" rel="noreferrer" />
+          }
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Télécharger JSON
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={onDelete}
+          className="text-red-600 focus:text-red-700"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          Supprimer
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

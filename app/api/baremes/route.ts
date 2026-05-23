@@ -9,19 +9,28 @@ export async function GET(req: NextRequest) {
     const fileId = searchParams.get('fileId')
     const search = searchParams.get('search')?.toLowerCase().trim() || ''
 
-    // Liste tous les fichiers
+    // Liste tous les fichiers (tous statuts), triés par pertinence
     if (!fileId) {
+      const statusParam = searchParams.get('status')
+      const where = statusParam
+        ? { status: { in: statusParam.split(',').map((s) => s.trim()) } }
+        : {} // pas de filtre = tous statuts
+
       const files = await prisma.baremeFile.findMany({
-        where: { status: 'active' },
+        where,
         select: {
           id: true,
           name: true,
           effectiveDate: true,
+          validFrom: true,
           uploadedAt: true,
+          publishedAt: true,
           multiplicateur: true,
-          _count: { select: { sheets: true } },
+          status: true,
+          fileHash: true,
+          _count: { select: { sheets: true, amounts: true } },
         },
-        orderBy: { uploadedAt: 'desc' },
+        orderBy: [{ uploadedAt: 'desc' }],
       })
 
       return NextResponse.json(
@@ -30,9 +39,14 @@ export async function GET(req: NextRequest) {
             id: f.id,
             name: f.name,
             effectiveDate: f.effectiveDate,
+            validFrom: f.validFrom,
             uploadedAt: f.uploadedAt,
+            publishedAt: f.publishedAt,
             multiplicateur: f.multiplicateur,
+            status: f.status,
+            isLegacy: !f.fileHash, // legacy = ancien upload sans hash, donc sans BaremeAmount
             sheetsCount: f._count.sheets,
+            amountsCount: f._count.amounts,
           })),
         },
         { headers: { 'Content-Type': 'application/json; charset=utf-8' } }

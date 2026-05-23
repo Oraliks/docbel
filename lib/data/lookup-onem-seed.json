@@ -1,0 +1,123 @@
+{
+  "_meta": {
+    "purpose": "Seed des catégories et tables du lookup ONEM. Reflète la nomenclature officielle de services.onem.be/lookupweb au 2026-05-22. Les contenus (LookupEntry) viennent ensuite via imports CSV.",
+    "source": "https://services.onem.be/lookupweb/",
+    "totalCategories": 6,
+    "totalTables": 60,
+    "lastUpdated": "2026-05-22"
+  },
+  "categories": [
+    {
+      "slug": "global",
+      "labelFr": "Global",
+      "labelNl": "Globaal",
+      "order": 1,
+      "tables": [
+        { "group": "Chômage", "prefix": "G", "slug": "bureau",                  "labelFr": "Bureau",                                                "labelNl": "Bureau",                                                  "exportName": "UnemploymentEntity" },
+        { "group": "Chômage", "prefix": "G", "slug": "bureau-de-chomage",       "labelFr": "Bureau de chômage",                                     "labelNl": "Werkloosheidsbureau",                                     "exportName": "UnemploymentOffice" },
+        { "group": "Chômage", "prefix": "G", "slug": "cluster",                 "labelFr": "Cluster",                                               "labelNl": "Cluster",                                                 "exportName": "UnemploymentCluster" },
+        { "group": "Chômage", "prefix": "S01", "slug": "organisme-paiement-allocations", "labelFr": "Organisme de paiement des allocations de chômage (S01)", "labelNl": "Uitbetalingsinstelling werkloosheidsuitkeringen (S01)", "exportName": "PayOrganism" },
+        { "group": "Chômage", "prefix": "G", "slug": "parametres-onem-cp",      "labelFr": "Paramètres ONEM par code postal",                       "labelNl": "RVA-parameters per postcode",                             "exportName": "BCPost" },
+        { "group": "Chômage", "prefix": "G", "slug": "parametres-onem-localite",       "labelFr": "Paramètres ONEM par localité",                  "labelNl": "RVA-parameters per gemeente",                             "exportName": "PostalCode" },
+        { "group": "Chômage", "prefix": "G", "slug": "parametres-onem-localite-star",  "labelFr": "Paramètres ONEM par localité *",                "labelNl": "RVA-parameters per gemeente *" },
+        { "group": "Chômage", "prefix": "S01", "slug": "section-organismes-paiement",  "labelFr": "Section des organismes de paiement (S01)",      "labelNl": "Sectie van uitbetalingsinstellingen (S01)",               "exportName": "PayOrganismSection" },
+        { "group": "Adresse", "prefix": "G", "slug": "code-rue",                "labelFr": "Code rue",                                              "labelNl": "Straatcode" },
+        { "group": "Adresse", "prefix": "G", "slug": "localite",                "labelFr": "Localité",                                              "labelNl": "Gemeente",                                                "exportName": "BelgianCommunity" },
+        { "group": "Adresse", "prefix": "S01", "slug": "nationalite",           "labelFr": "Nationalité (codification BCSS) (S01)",                  "labelNl": "Nationaliteit (codering KSZ) (S01)",                      "exportName": "NationalityBCSS" },
+        { "group": "Adresse", "prefix": "G", "slug": "region",                  "labelFr": "Région",                                                "labelNl": "Gewest" },
+        { "group": "Institution régionale pour l'emploi", "prefix": "G", "slug": "institution-regionale-emploi", "labelFr": "Institution régionale pour l'emploi", "labelNl": "Gewestelijke instelling voor arbeidsbemiddeling" },
+        { "group": "Autres institutions ou services", "prefix": "G", "slug": "commission-paritaire-tw", "labelFr": "Commission paritaire (Chômage temporaire)", "labelNl": "Paritair comité (Tijdelijke werkloosheid)" },
+        { "group": "Autres institutions ou services", "prefix": "G", "slug": "tribunal",            "labelFr": "Tribunal",                              "labelNl": "Rechtbank" },
+        { "group": "Autres institutions ou services", "prefix": "G", "slug": "bureau-aide-juridique","labelFr": "Bureau d'aide juridique",               "labelNl": "Bureau voor juridische bijstand",                         "exportName": "JuridicalHelpOffice" },
+        { "group": "Autres",  "prefix": "G", "slug": "periode-vacances-scolaires", "labelFr": "Période de vacances scolaires",                       "labelNl": "Schoolvakantieperiode",                                    "exportName": "SchoolHolidayPeriod" }
+      ]
+    },
+    {
+      "slug": "signaletic",
+      "labelFr": "Signalétique",
+      "labelNl": "Signaletiek",
+      "order": 2,
+      "tables": [
+        { "group": "A27 - Périodes assimilées",   "prefix": "A27", "slug": "a27-periodes-assimilees",          "labelFr": "A27 - Périodes assimilées",            "labelNl": "A27 - Gelijkgestelde periodes" },
+        { "group": "S01 - Signalétique général",  "prefix": "S01", "slug": "s01-allocations-familiales",       "labelFr": "S01 - Allocations familiales",         "labelNl": "S01 - Kinderbijslag" },
+        { "group": "S01 - Signalétique général",  "prefix": "S01", "slug": "s01-archivage-pge",                "labelFr": "S01 - Archivage PGE",                  "labelNl": "S01 - PGE-archivering" },
+        { "group": "S01 - Signalétique général",  "prefix": "S01", "slug": "s01-categorie-dossier",            "labelFr": "S01 - Catégorie de dossier",            "labelNl": "S01 - Dossiercategorie" },
+        { "group": "S01 - Signalétique général",  "prefix": "S01", "slug": "s01-mandat-cotisation-syndicale",  "labelFr": "S01 - Mandat cotisation syndicale",     "labelNl": "S01 - Mandaat vakbondsbijdrage" },
+        { "group": "S01 - Signalétique général",  "prefix": "S01", "slug": "s01-mode-paiement",                "labelFr": "S01 - Mode de paiement",                "labelNl": "S01 - Betaalwijze" },
+        { "group": "S01 - Signalétique général",  "prefix": "S01", "slug": "s01-refugie",                      "labelFr": "S01 - Réfugié",                         "labelNl": "S01 - Vluchteling" },
+        { "group": "S01 - Signalétique général",  "prefix": "S01", "slug": "s01-sexe",                         "labelFr": "S01 - Sexe",                            "labelNl": "S01 - Geslacht" },
+        { "group": "S01 - Signalétique général",  "prefix": "S01", "slug": "s01-type-contrat-travail",         "labelFr": "S01 - Type de contrat de travail",      "labelNl": "S01 - Type arbeidsovereenkomst" },
+        { "group": "S02 - Dispense",              "prefix": "S02", "slug": "s02-dispenses",                    "labelFr": "S02 - Dispenses",                       "labelNl": "S02 - Vrijstellingen" },
+        { "group": "S02 - Dispense",              "prefix": "S02", "slug": "s02-dispenses-regions",            "labelFr": "S02 - Dispenses - régions",             "labelNl": "S02 - Vrijstellingen - gewesten" },
+        { "group": "S04 - Admissibilité",         "prefix": "S04", "slug": "s04-categorie-speciale",           "labelFr": "S04 - Catégorie spéciale",              "labelNl": "S04 - Bijzondere categorie" },
+        { "group": "S04 - Admissibilité",         "prefix": "S04", "slug": "s04-complement",                   "labelFr": "S04 - Complément",                      "labelNl": "S04 - Aanvulling" },
+        { "group": "S04 - Admissibilité",         "prefix": "S04", "slug": "s04-contexte",                     "labelFr": "S04 - Contexte",                        "labelNl": "S04 - Context" },
+        { "group": "S04 - Admissibilité",         "prefix": "S04", "slug": "s04-limite-code-chiffre",          "labelFr": "S04 - Limite code chiffré",             "labelNl": "S04 - Limiet gecijferde code" },
+        { "group": "S04 - Admissibilité",         "prefix": "S04", "slug": "s04-passe-professionnel",          "labelFr": "S04 - Passé professionnel",             "labelNl": "S04 - Beroepsverleden" },
+        { "group": "S04 - Admissibilité",         "prefix": "S04", "slug": "s04-parametres-suspension-contrat","labelFr": "Paramètres suspension de contrat (commissions paritaires)", "labelNl": "Parameters contractschorsing (paritaire comités)", "exportName": "ContractSuspensionParams" },
+        { "group": "S04/S36",                     "prefix": "S04/S36", "slug": "s04-s36-article-admission",    "labelFr": "S04/S36 - Article d'admission",         "labelNl": "S04/S36 - Toelaatbaarheidsartikel" },
+        { "group": "S04/S36",                     "prefix": "S04/S36", "slug": "s04-s36-article-indemnisation","labelFr": "S04/S36 - Article d'indemnisation",     "labelNl": "S04/S36 - Vergoedingsartikel",
+          "sourcePath": "/lookupweb/lookups/signaletic/SignaleticCompensationArticleList.seam",
+          "exportName": "SignaleticCompensationArticle" },
+        { "group": "S04/S36",                     "prefix": "S04/S36", "slug": "s04-s36-bareme-vacances-jeunes-senior", "labelFr": "S04/S36 - Barème vacances jeunes ou senior", "labelNl": "S04/S36 - Vakantieschaal jongeren of senior" },
+        { "group": "S04/S36",                     "prefix": "S04/S36", "slug": "s04-s36-prefixe-type-chomage", "labelFr": "S04/S36 - Préfixe - type de chômage",   "labelNl": "S04/S36 - Voorvoegsel - type werkloosheid" },
+        { "group": "H33",                         "prefix": "H33", "slug": "h33-categorie-documents-scannes",   "labelFr": "H33 - Catégorie documents scannés",     "labelNl": "H33 - Categorie gescande documenten" },
+        { "group": "S05 - Retenue",               "prefix": "S05", "slug": "s05-ateliers-proteges",            "labelFr": "S05 - Ateliers protégés",               "labelNl": "S05 - Beschutte werkplaatsen",          "exportName": "SignaleticShelteredWorkshop" },
+        { "group": "S05 - Retenue",               "prefix": "S05", "slug": "s05-nature-retenues",              "labelFr": "S05 - Nature des retenues",             "labelNl": "S05 - Aard van de inhoudingen" }
+      ]
+    },
+    {
+      "slug": "verification",
+      "labelFr": "Vérification",
+      "labelNl": "Verificatie",
+      "order": 3,
+      "tables": [
+        { "group": "Vérification", "prefix": "V",   "slug": "baremes-gel-construction",       "labelFr": "Barèmes Gel & Construction",          "labelNl": "Schalen Vorst & Bouw" },
+        { "group": "Vérification", "prefix": "V",   "slug": "code-decision-verification",     "labelFr": "Code de décision vérification",        "labelNl": "Code verificatiebeslissing" },
+        { "group": "Vérification", "prefix": "V",   "slug": "code-nature-du-jour",            "labelFr": "Code nature du jour",                  "labelNl": "Code aard van de dag" },
+        { "group": "Vérification", "prefix": "V",   "slug": "codes-verification-preliminaire","labelFr": "Codes vérification préliminaire",       "labelNl": "Codes voorafgaande verificatie" },
+        { "group": "Vérification", "prefix": "V",   "slug": "dates-jours-repos-compensatoires","labelFr": "Dates jours de repos compensatoires",  "labelNl": "Datums inhaalrustdagen" },
+        { "group": "Vérification", "prefix": "V",   "slug": "rejet-168bis",                   "labelFr": "Rejet du 168Bis",                      "labelNl": "Verwerping 168Bis" },
+        { "group": "Vérification", "prefix": "V",   "slug": "type-c10",                       "labelFr": "Type C10",                              "labelNl": "Type C10" }
+      ]
+    },
+    {
+      "slug": "dispo",
+      "labelFr": "Dispo",
+      "labelNl": "Dispo",
+      "order": 4,
+      "tables": [
+        { "group": "Dispo", "prefix": "S38", "slug": "s38-identification-action",       "labelFr": "Identification de l'action (S38)",          "labelNl": "Identificatie van de actie (S38)" },
+        { "group": "Dispo", "prefix": "S38", "slug": "lieu-entretien-dispo",            "labelFr": "Lieu d'entretien DISPO",                    "labelNl": "Plaats gesprek DISPO" },
+        { "group": "Dispo", "prefix": "S38", "slug": "s38-nature-actions",              "labelFr": "Nature des actions (S38)",                  "labelNl": "Aard van de acties (S38)" },
+        { "group": "Dispo", "prefix": "S38", "slug": "s38-raison-refus-absence",        "labelFr": "Raison de refus / absence (S38)",            "labelNl": "Reden weigering / afwezigheid (S38)" },
+        { "group": "Dispo", "prefix": "S38", "slug": "raison-statut",                   "labelFr": "Raison statut",                              "labelNl": "Reden status" },
+        { "group": "Dispo", "prefix": "S38", "slug": "s38-raisons-arret-premature",     "labelFr": "Raisons d'arrêt prématuré (S38)",            "labelNl": "Redenen vroegtijdige stopzetting (S38)" },
+        { "group": "Dispo", "prefix": "S38", "slug": "s38-resultat-action-screening",   "labelFr": "Résultat de l'action/screening (S38)",        "labelNl": "Resultaat van de actie/screening (S38)" },
+        { "group": "Dispo", "prefix": "S38", "slug": "s38-resultats-offre-emploi",      "labelFr": "Résultats de l'offre d'emploi (S38)",         "labelNl": "Resultaten van het werkaanbod (S38)" },
+        { "group": "Dispo", "prefix": "S38", "slug": "s38-session-info-collective",     "labelFr": "Session d'info collective (S38)",            "labelNl": "Collectieve infosessie (S38)" },
+        { "group": "Dispo", "prefix": "S38", "slug": "statut-dossier-dispo",            "labelFr": "Statut de dossier DISPO",                    "labelNl": "Status dossier DISPO" }
+      ]
+    },
+    {
+      "slug": "bcss",
+      "labelFr": "BCSS",
+      "labelNl": "KSZ",
+      "order": 5,
+      "tables": [
+        { "group": "DMFA",        "prefix": "DMFA", "slug": "dmfa-classe-personnel-marin", "labelFr": "Classe Personnel Marin",  "labelNl": "Klasse Zeevarend personeel" },
+        { "group": "DRS-Consult", "prefix": "DRS",  "slug": "drs-codes-retour",            "labelFr": "Codes Retour DRS",         "labelNl": "DRS-retourcodes" }
+      ]
+    },
+    {
+      "slug": "autre",
+      "labelFr": "Autre",
+      "labelNl": "Andere",
+      "order": 6,
+      "tables": [
+        { "group": "Chômage temporaire", "prefix": "TW", "slug": "tw-motifs-chomage-temporaire", "labelFr": "Motifs de chômage temporaire", "labelNl": "Redenen tijdelijke werkloosheid", "exportName": "TemporaryUnemploymentCause" },
+        { "group": "Chômage temporaire", "prefix": "TW", "slug": "tw-type-chomage-temporaire",   "labelFr": "Type de chômage temporaire",    "labelNl": "Type tijdelijke werkloosheid" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,611 @@
+{
+  "_meta": {
+    "purpose": "Auto-généré par scripts/generate-missing-seed.ts. À fusionner dans lib/data/lookup-onem-seed.json.",
+    "totalNew": 74,
+    "skipped": 15
+  },
+  "additions": {
+    "bcss": [
+      {
+        "group": "DRS-Consult",
+        "prefix": "DRS",
+        "slug": "asr-drs-return-code",
+        "labelFr": "Asr DRS retour code",
+        "labelNl": "Asr DRS retour code",
+        "exportName": "AsrDrsReturnCode"
+      },
+      {
+        "group": "DMFA",
+        "prefix": "DMFA",
+        "slug": "cbss-seamen-class",
+        "labelFr": "Cbss Seamen Class",
+        "labelNl": "Cbss Seamen Class",
+        "exportName": "CbssSeamenClass"
+      }
+    ],
+    "signaletic": [
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "c10type",
+        "labelFr": "C10Type",
+        "labelNl": "C10Type",
+        "exportName": "C10Type"
+      },
+      {
+        "group": "S01 - Signalétique",
+        "prefix": "S01",
+        "slug": "s01archiving-pge",
+        "labelFr": "S01Archiving PGE",
+        "labelNl": "S01Archiving PGE",
+        "exportName": "S01ArchivingPGE"
+      },
+      {
+        "group": "S01 - Signalétique",
+        "prefix": "S01",
+        "slug": "s01child-allowance",
+        "labelFr": "S01Child allocation",
+        "labelNl": "S01Child allocation",
+        "exportName": "S01ChildAllowance"
+      },
+      {
+        "group": "S01 - Signalétique",
+        "prefix": "S01",
+        "slug": "s01file-category",
+        "labelFr": "S01File catégorie",
+        "labelNl": "S01File catégorie",
+        "exportName": "S01FileCategory"
+      },
+      {
+        "group": "S01 - Signalétique",
+        "prefix": "S01",
+        "slug": "s01refugee",
+        "labelFr": "S01Refugee",
+        "labelNl": "S01Refugee",
+        "exportName": "S01Refugee"
+      },
+      {
+        "group": "S01 - Signalétique",
+        "prefix": "S01",
+        "slug": "s01sex",
+        "labelFr": "S01Sex",
+        "labelNl": "S01Sex",
+        "exportName": "S01Sex"
+      },
+      {
+        "group": "S01 - Signalétique",
+        "prefix": "S01",
+        "slug": "s01syndical-mandate",
+        "labelFr": "S01Syndical mandat",
+        "labelNl": "S01Syndical mandat",
+        "exportName": "S01SyndicalMandate"
+      },
+      {
+        "group": "S04 - Signalétique",
+        "prefix": "S04",
+        "slug": "s04context",
+        "labelFr": "S04Context",
+        "labelNl": "S04Context",
+        "exportName": "S04Context"
+      },
+      {
+        "group": "S04 - Signalétique",
+        "prefix": "S04",
+        "slug": "s04professional-past",
+        "labelFr": "S04Professional passé",
+        "labelNl": "S04Professional passé",
+        "exportName": "S04ProfessionalPast"
+      },
+      {
+        "group": "S04 - Signalétique",
+        "prefix": "S04",
+        "slug": "s04special-category",
+        "labelFr": "S04Special catégorie",
+        "labelNl": "S04Special catégorie",
+        "exportName": "S04SpecialCategory"
+      },
+      {
+        "group": "S07 - Signalétique",
+        "prefix": "S07",
+        "slug": "s07noss-code",
+        "labelFr": "S07Noss code",
+        "labelNl": "S07Noss code",
+        "exportName": "S07NossCode"
+      },
+      {
+        "group": "S07 - Signalétique",
+        "prefix": "S07",
+        "slug": "s07plan",
+        "labelFr": "S07Plan",
+        "labelNl": "S07Plan",
+        "exportName": "S07Plan"
+      },
+      {
+        "group": "S07 - Signalétique",
+        "prefix": "S07",
+        "slug": "s07treatment",
+        "labelFr": "S07Treatment",
+        "labelNl": "S07Treatment",
+        "exportName": "S07Treatment"
+      },
+      {
+        "group": "S07 - Signalétique",
+        "prefix": "S07",
+        "slug": "s07work-contract",
+        "labelFr": "S07Work contrat",
+        "labelNl": "S07Work contrat",
+        "exportName": "S07WorkContract"
+      },
+      {
+        "group": "S07 - Signalétique",
+        "prefix": "S07",
+        "slug": "s07worker-status",
+        "labelFr": "S07Worker statut",
+        "labelNl": "S07Worker statut",
+        "exportName": "S07WorkerStatus"
+      },
+      {
+        "group": "S11 - Signalétique",
+        "prefix": "S11",
+        "slug": "s11holiday-runout",
+        "labelFr": "S11Holiday Runout",
+        "labelNl": "S11Holiday Runout",
+        "exportName": "S11HolidayRunout"
+      },
+      {
+        "group": "S11 - Signalétique",
+        "prefix": "S11",
+        "slug": "s11holiday-system",
+        "labelFr": "S11Holiday système",
+        "labelNl": "S11Holiday système",
+        "exportName": "S11HolidaySystem"
+      },
+      {
+        "group": "S15 - Signalétique",
+        "prefix": "S15",
+        "slug": "s15recovery-reason",
+        "labelFr": "S15Recovery raison",
+        "labelNl": "S15Recovery raison",
+        "exportName": "S15RecoveryReason"
+      },
+      {
+        "group": "S15 - Signalétique",
+        "prefix": "S15",
+        "slug": "s15undue",
+        "labelFr": "S15Undue",
+        "labelNl": "S15Undue",
+        "exportName": "S15Undue"
+      },
+      {
+        "group": "S17 - Signalétique",
+        "prefix": "S17",
+        "slug": "s17industrial-sector",
+        "labelFr": "S17Industrial secteur",
+        "labelNl": "S17Industrial secteur",
+        "exportName": "S17IndustrialSector"
+      },
+      {
+        "group": "S24 - Signalétique",
+        "prefix": "S24",
+        "slug": "s24decision",
+        "labelFr": "S24Decision",
+        "labelNl": "S24Decision",
+        "exportName": "S24Decision"
+      },
+      {
+        "group": "S24 - Signalétique",
+        "prefix": "S24",
+        "slug": "s24pzone",
+        "labelFr": "S24P zone",
+        "labelNl": "S24P zone",
+        "exportName": "S24PZone"
+      },
+      {
+        "group": "S24 - Signalétique",
+        "prefix": "S24",
+        "slug": "s24second-introduction",
+        "labelFr": "S24Second introduction",
+        "labelNl": "S24Second introduction",
+        "exportName": "S24SecondIntroduction"
+      },
+      {
+        "group": "S25 - Signalétique",
+        "prefix": "S25",
+        "slug": "s25law95",
+        "labelFr": "S25Law95",
+        "labelNl": "S25Law95",
+        "exportName": "S25Law95"
+      },
+      {
+        "group": "S25 - Signalétique",
+        "prefix": "S25",
+        "slug": "s25mandatory-replacement",
+        "labelFr": "S25Mandatory remplacement",
+        "labelNl": "S25Mandatory remplacement",
+        "exportName": "S25MandatoryReplacement"
+      },
+      {
+        "group": "S25 - Signalétique",
+        "prefix": "S25",
+        "slug": "s25standard-deduction",
+        "labelFr": "S25Standard déduction",
+        "labelNl": "S25Standard déduction",
+        "exportName": "S25StandardDeduction"
+      },
+      {
+        "group": "S42 - Signalétique",
+        "prefix": "S42",
+        "slug": "s42type",
+        "labelFr": "S42Type",
+        "labelNl": "S42Type",
+        "exportName": "S42Type"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-activation-allowance-rejection-code",
+        "labelFr": "signalétique activation allocation rejet code",
+        "labelNl": "signalétique activation allocation rejet code",
+        "exportName": "SignaleticActivationAllowanceRejectionCode"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-activation-allowance-scale",
+        "labelFr": "signalétique activation allocation barème",
+        "labelNl": "signalétique activation allocation barème",
+        "exportName": "SignaleticActivationAllowanceScale"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-activation-allowance-scale-prefix",
+        "labelFr": "signalétique activation allocation barème préfixe",
+        "labelNl": "signalétique activation allocation barème préfixe",
+        "exportName": "SignaleticActivationAllowanceScalePrefix"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-admissibility-article",
+        "labelFr": "signalétique admissibilité article",
+        "labelNl": "signalétique admissibilité article",
+        "exportName": "SignaleticAdmissibilityArticle"
+      },
+      {
+        "group": "S31 - Signalétique",
+        "prefix": "S31",
+        "slug": "signaletic-attestation-s31",
+        "labelFr": "signalétique attestation S31",
+        "labelNl": "signalétique attestation S31",
+        "exportName": "SignaleticAttestationS31"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-c9type",
+        "labelFr": "signalétique C9Type",
+        "labelNl": "signalétique C9Type",
+        "exportName": "SignaleticC9Type"
+      },
+      {
+        "group": "S27 - Signalétique",
+        "prefix": "S27",
+        "slug": "signaletic-certificate-s27",
+        "labelFr": "signalétique certificat S27",
+        "labelNl": "signalétique certificat S27",
+        "exportName": "SignaleticCertificateS27"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-cipher-code",
+        "labelFr": "signalétique chiffré code",
+        "labelNl": "signalétique chiffré code",
+        "exportName": "SignaleticCipherCode"
+      },
+      {
+        "group": "S29 - Signalétique",
+        "prefix": "S29",
+        "slug": "signaletic-compensation-article-s29",
+        "labelFr": "signalétique indemnisation article S29",
+        "labelNl": "signalétique indemnisation article S29",
+        "exportName": "SignaleticCompensationArticleS29"
+      },
+      {
+        "group": "S36 - Signalétique",
+        "prefix": "S36",
+        "slug": "signaletic-complement-s04s36",
+        "labelFr": "signalétique complément S04S36",
+        "labelNl": "signalétique complément S04S36",
+        "exportName": "SignaleticComplementS04S36"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-decision131bis",
+        "labelFr": "signalétique Decision131Bis",
+        "labelNl": "signalétique Decision131Bis",
+        "exportName": "SignaleticDecision131Bis"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-deduction-type",
+        "labelFr": "signalétique déduction type",
+        "labelNl": "signalétique déduction type",
+        "exportName": "SignaleticDeductionType"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-exemption",
+        "labelFr": "signalétique dispense",
+        "labelNl": "signalétique dispense",
+        "exportName": "SignaleticExemption"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-exemption-region",
+        "labelFr": "signalétique dispense région",
+        "labelNl": "signalétique dispense région",
+        "exportName": "SignaleticExemptionRegion"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-junior-senior-holiday-allowance-scale",
+        "labelFr": "signalétique jeune senior vacances allocation barème",
+        "labelNl": "signalétique jeune senior vacances allocation barème",
+        "exportName": "SignaleticJuniorSeniorHolidayAllowanceScale"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-local-agency-for-employment",
+        "labelFr": "signalétique local agence pour emploi",
+        "labelNl": "signalétique local agence pour emploi",
+        "exportName": "SignaleticLocalAgencyForEmployment"
+      },
+      {
+        "group": "S52 - Signalétique",
+        "prefix": "S52",
+        "slug": "signaletic-negative-decision-s52",
+        "labelFr": "signalétique négatif décision S52",
+        "labelNl": "signalétique négatif décision S52",
+        "exportName": "SignaleticNegativeDecisionS52"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-out-unemployment-period",
+        "labelFr": "signalétique hors chômage période",
+        "labelNl": "signalétique hors chômage période",
+        "exportName": "SignaleticOutUnemploymentPeriod"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-payment-way",
+        "labelFr": "signalétique paiement mode",
+        "labelNl": "signalétique paiement mode",
+        "exportName": "SignaleticPaymentWay"
+      },
+      {
+        "group": "S24 - Signalétique",
+        "prefix": "S24",
+        "slug": "signaletic-positive-decision-s24",
+        "labelFr": "signalétique positif décision S24",
+        "labelNl": "signalétique positif décision S24",
+        "exportName": "SignaleticPositiveDecisionS24"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-replacement-exemption-reason",
+        "labelFr": "signalétique remplacement dispense raison",
+        "labelNl": "signalétique remplacement dispense raison",
+        "exportName": "SignaleticReplacementExemptionReason"
+      },
+      {
+        "group": "S43 - Signalétique",
+        "prefix": "S43",
+        "slug": "signaletic-s43without-consequence-reason",
+        "labelFr": "signalétique S43Without conséquence raison",
+        "labelNl": "signalétique S43Without conséquence raison",
+        "exportName": "SignaleticS43WithoutConsequenceReason"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-sanction-article",
+        "labelFr": "signalétique sanction article",
+        "labelNl": "signalétique sanction article",
+        "exportName": "SignaleticSanctionArticle"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-scale-prefix",
+        "labelFr": "signalétique barème préfixe",
+        "labelNl": "signalétique barème préfixe",
+        "exportName": "SignaleticScalePrefix"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-special-compensation-article",
+        "labelFr": "signalétique spéciale indemnisation article",
+        "labelNl": "signalétique spéciale indemnisation article",
+        "exportName": "SignaleticSpecialCompensationArticle"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-unemployment-allowance-debtor",
+        "labelFr": "signalétique chômage allocation débiteur",
+        "labelNl": "signalétique chômage allocation débiteur",
+        "exportName": "SignaleticUnemploymentAllowanceDebtor"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-unemployment-like-period-type",
+        "labelFr": "signalétique chômage assimilé période type",
+        "labelNl": "signalétique chômage assimilé période type",
+        "exportName": "SignaleticUnemploymentLikePeriodType"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-uo-visit-outcome",
+        "labelFr": "signalétique UO visite résultat",
+        "labelNl": "signalétique UO visite résultat",
+        "exportName": "SignaleticUoVisitOutcome"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-uo-visit-reason",
+        "labelFr": "signalétique UO visite raison",
+        "labelNl": "signalétique UO visite raison",
+        "exportName": "SignaleticUoVisitReason"
+      },
+      {
+        "group": "Signalétique",
+        "prefix": "S",
+        "slug": "signaletic-work-contract-type",
+        "labelFr": "signalétique Work contrat type",
+        "labelNl": "signalétique Work contrat type",
+        "exportName": "SignaleticWorkContractType"
+      }
+    ],
+    "dispo": [
+      {
+        "group": "Dispo",
+        "prefix": "S38",
+        "slug": "dispo-absence-reason",
+        "labelFr": "dispo Absence raison",
+        "labelNl": "dispo Absence raison",
+        "exportName": "DispoAbsenceReason"
+      },
+      {
+        "group": "Dispo",
+        "prefix": "S38",
+        "slug": "dispo-action-identification",
+        "labelFr": "dispo action identification",
+        "labelNl": "dispo action identification",
+        "exportName": "DispoActionIdentification"
+      },
+      {
+        "group": "Dispo",
+        "prefix": "S38",
+        "slug": "dispo-action-nature",
+        "labelFr": "dispo action nature",
+        "labelNl": "dispo action nature",
+        "exportName": "DispoActionNature"
+      },
+      {
+        "group": "Dispo",
+        "prefix": "S38",
+        "slug": "dispo-action-result",
+        "labelFr": "dispo action résultat",
+        "labelNl": "dispo action résultat",
+        "exportName": "DispoActionResult"
+      },
+      {
+        "group": "Dispo",
+        "prefix": "S38",
+        "slug": "dispo-early-end-reason",
+        "labelFr": "dispo précoce fin raison",
+        "labelNl": "dispo précoce fin raison",
+        "exportName": "DispoEarlyEndReason"
+      },
+      {
+        "group": "Dispo",
+        "prefix": "S38",
+        "slug": "dispo-info-session",
+        "labelFr": "dispo info session",
+        "labelNl": "dispo info session",
+        "exportName": "DispoInfoSession"
+      },
+      {
+        "group": "Dispo",
+        "prefix": "S38",
+        "slug": "dispo-job-offer-result",
+        "labelFr": "dispo emploi offre résultat",
+        "labelNl": "dispo emploi offre résultat",
+        "exportName": "DispoJobOfferResult"
+      },
+      {
+        "group": "Dispo",
+        "prefix": "S38",
+        "slug": "dispo-location",
+        "labelFr": "dispo lieu",
+        "labelNl": "dispo lieu",
+        "exportName": "DispoLocation"
+      },
+      {
+        "group": "Dispo",
+        "prefix": "S38",
+        "slug": "dispo-state",
+        "labelFr": "dispo statut",
+        "labelNl": "dispo statut",
+        "exportName": "DispoState"
+      },
+      {
+        "group": "Dispo",
+        "prefix": "S38",
+        "slug": "dispo-state-reason",
+        "labelFr": "dispo statut raison",
+        "labelNl": "dispo statut raison",
+        "exportName": "DispoStateReason"
+      }
+    ],
+    "autre": [
+      {
+        "group": "Chômage temporaire",
+        "prefix": "TW",
+        "slug": "temporary-unemployment-type",
+        "labelFr": "temporaire chômage type",
+        "labelNl": "temporaire chômage type",
+        "exportName": "TemporaryUnemploymentType"
+      }
+    ],
+    "verification": [
+      {
+        "group": "Vérification",
+        "prefix": "V",
+        "slug": "verif168bis-rejection",
+        "labelFr": "Verif 168bis rejet",
+        "labelNl": "Verif 168bis rejet",
+        "exportName": "Verif168bisRejection"
+      },
+      {
+        "group": "Vérification",
+        "prefix": "V",
+        "slug": "verif-compensatory-rest-day",
+        "labelFr": "Verif compensatoire repos jour",
+        "labelNl": "Verif compensatoire repos jour",
+        "exportName": "VerifCompensatoryRestDay"
+      },
+      {
+        "group": "Vérification",
+        "prefix": "V",
+        "slug": "verif-day-nature-drs",
+        "labelFr": "Verif jour nature DRS",
+        "labelNl": "Verif jour nature DRS",
+        "exportName": "VerifDayNatureDRS"
+      },
+      {
+        "group": "Vérification",
+        "prefix": "V",
+        "slug": "verif-decision-code",
+        "labelFr": "Verif décision code",
+        "labelNl": "Verif décision code",
+        "exportName": "VerifDecisionCode"
+      }
+    ]
+  }
+}

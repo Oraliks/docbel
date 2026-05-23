@@ -1,0 +1,51 @@
+{
+  "_meta": {
+    "purpose": "Mapping FR pour les libellés des barèmes ONEM. Le fichier Excel officiel n'a souvent que des libellés NL ; ce fichier complète au moment de la lecture (getActiveBaremeData).",
+    "schema": {
+      "byKey": "comparisonKey exact → labelFr (priorité 1)",
+      "byArticle": "article (string brute du fichier) → labelFr (priorité 2, fallback)",
+      "byCategory": "category → labelFr générique (priorité 3, dernier recours)"
+    },
+    "lastUpdated": "2026-05-22"
+  },
+  "byKey": {
+    "basic_amount:D7": "GMMI à partir du 01/04/2026",
+    "basic_amount:D8": "GMMI au 01/01/2024",
+    "basic_amount:D9": "GMMI au 01/04/2022",
+    "basic_amount:D10": "Montant des stages",
+    "basic_amount:D11": "Sportifs rémunérés — plafond",
+    "basic_amount:D12": "Volontariat fiscal — montant journalier",
+    "basic_amount:D13": "Volontariat fiscal — montant annuel",
+    "basic_amount:D14": "Jetons de présence culturels",
+    "other_allocation:opvanguitkering:full": "Allocation d'accueil — plein",
+    "other_allocation:opvanguitkering:half": "Allocation d'accueil — demi",
+    "other_allocation:leefloon:gezinshoofd:monthly": "Revenu d'intégration — chef de ménage (mensuel)",
+    "other_allocation:leefloon:gezinshoofd:yearly": "Revenu d'intégration — chef de ménage (annuel)",
+    "other_allocation:leefloon:alleenstaande:monthly": "Revenu d'intégration — isolé (mensuel)",
+    "other_allocation:leefloon:alleenstaande:yearly": "Revenu d'intégration — isolé (annuel)",
+    "other_allocation:leefloon:samenwonende:monthly": "Revenu d'intégration — cohabitant (mensuel)",
+    "other_allocation:leefloon:samenwonende:yearly": "Revenu d'intégration — cohabitant (annuel)"
+  },
+  "byArticle": {
+    "28, § 2 (5 MB)": "Article 28, §2 — GMMI",
+    "37": "Article 37 — Sportifs rémunérés",
+    "45bis": "Article 45bis — Volontariat fiscal",
+    "46, § 3, 7°": "Article 46, §3, 7° — Jetons de présence culturels"
+  },
+  "byCategory": {
+    "full_unemployment": "Allocation de chômage — plein temps",
+    "half_unemployment": "Allocation de chômage — mi-temps",
+    "temporary_unemployment_full": "Chômage temporaire — plein",
+    "temporary_unemployment_half": "Chômage temporaire — demi",
+    "special_category_full": "Catégorie spéciale — plein",
+    "special_category_half": "Catégorie spéciale — demi",
+    "salary_bracket": "Tranche salariale",
+    "hourly_wage": "Salaire horaire",
+    "allocation_w": "Allocation d'insertion / de sauvegarde",
+    "other_unemployment_amount": "Autre montant chômage",
+    "activation": "Allocation d'activation",
+    "other_allocation": "Autre allocation",
+    "employment_bonus": "Bonus à l'emploi",
+    "basic_amount": "Montant de base"
+  }
+}

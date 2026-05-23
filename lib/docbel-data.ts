@@ -30,6 +30,12 @@ export interface Tool {
    * `/outils/bureaux` plutôt que `/outils/trouver-un-bureau-onem`.
    */
   slug?: string;
+  /**
+   * URL absolue/relative qui override le routage par slug `/outils/{slug}`.
+   * Utile pour les outils hors de l'arborescence /outils (ex: page dédiée
+   * dans /partenaire/...).
+   */
+  href?: string;
 }
 
 export const TOOLS_DATA: Tool[] = [
@@ -40,7 +46,8 @@ export const TOOLS_DATA: Tool[] = [
   { id: 7, cat: "Calculs", icon: "💶", title: "Calcul AGR", desc: "Estimez votre Allocation de Garantie de Revenu (AGR) pour les travailleurs à temps partiel involontaire.", popular: true, time: "3 min", type: "calc_agr", audiences: ["citoyen"] },
   { id: 8, cat: "Calculs", icon: "💼", title: "Salaire minimum par CP", desc: "Consultez le salaire minimum garanti par commission paritaire (CP) pour votre secteur d'activité.", popular: false, time: "1 min", type: "calc_cp", audiences: ["citoyen", "employeur", "partenaire"] },
   { id: 12, cat: "Organismes", icon: "🗺️", title: "Trouver un bureau", desc: "CPAS, Commune, ONEM, organismes de paiement, syndicats : trouvez d'un coup le bureau compétent pour votre situation, partout en Belgique.", popular: true, time: "1 min", type: "locator", slug: "bureaux", audiences: ["citoyen", "employeur", "partenaire"] },
-  { id: 19, cat: "CPAS", icon: "🏠", title: "Demande d'aide sociale", desc: "Formulaire de demande d'aide sociale (revenu d'intégration sociale) auprès du CPAS de votre commune.", popular: true, time: "10 min", type: "form", audiences: ["citoyen", "partenaire"] },
+  { id: 19, cat: "CPAS", icon: "🏠", title: "Demande d'aide sociale", desc: "Formulaire de demande d'aide sociale (revenu d'intégration sociale) auprès du CPAS de votre commune.", popular: true, time: "10 min", type: "form", audiences: ["citoyen"] },
+  { id: 30, cat: "Référentiels", icon: "🔍", title: "Lookup ONEM", desc: "Décodage de tous les codes officiels ONEM (S01, S04, S38, Dispo, BCSS…). Recherche fuzzy multilingue FR/NL/DE/EN dans 11 000+ entrées.", popular: true, time: "instant", type: "lookup", slug: "lookup-onem", href: "/partenaire/lookup-onem", audiences: ["partenaire"] },
   { id: 23, cat: "Tutoriels", icon: "🃏", title: "Envoyer sa carte électronique C", desc: "Guide pas à pas pour envoyer votre carte de contrôle C via MyONEM ou chez votre organisme de paiement.", popular: true, time: "3 min", type: "tutorial", audiences: ["citoyen"] },
 ];
 
@@ -48,7 +55,7 @@ export function getToolsByAudience(audience: AudienceId): Tool[] {
   return TOOLS_DATA.filter((tool) => tool.audiences.includes(audience));
 }
 
-export const CATEGORIES = ["Tous", "Documents", "Calculs", "Organismes", "CPAS", "Tutoriels"];
+export const CATEGORIES = ["Tous", "Documents", "Calculs", "Organismes", "CPAS", "Tutoriels", "Référentiels"];
 
 // Helper to generate URL-friendly slugs
 export function toolSlug(title: string): string {

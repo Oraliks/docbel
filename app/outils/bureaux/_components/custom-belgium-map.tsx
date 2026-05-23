@@ -51,15 +51,15 @@ type MunicipalityFeature = Feature<Polygon | MultiPolygon, MunicipalityProps>
  * Le TopoJSON est chargé lazy au mount (1 fetch, ~150KB gzippé). En SSR le
  * composant rend juste un placeholder (height fixe pour pas de layout shift).
  */
-type ZoomLevel = 'commune' | 'arrondissement' | 'region'
+type ZoomLevel = 'commune' | 'arrondissement' | 'country'
 
 const ZOOM_LABELS: Record<ZoomLevel, string> = {
   commune: 'Commune',
   arrondissement: 'Arrondissement',
-  region: 'Région',
+  country: 'Belgique',
 }
 
-const ZOOM_ORDER: ZoomLevel[] = ['commune', 'arrondissement', 'region']
+const ZOOM_ORDER: ZoomLevel[] = ['commune', 'arrondissement', 'country']
 
 export function CustomBelgiumMap({
   selectedInsCode,
@@ -123,7 +123,7 @@ export function CustomBelgiumMap({
     // Détermine les voisins selon le niveau de zoom :
     //   commune        : voisins directs (bbox overlap)
     //   arrondissement : toutes les communes du même arr_nis
-    //   region         : toutes les communes du même reg_nis
+    //   country        : toutes les communes du pays (Belgique entière)
     let neighbors: MunicipalityFeature[] = []
     if (selected) {
       if (level === 'arrondissement') {
@@ -132,11 +132,10 @@ export function CustomBelgiumMap({
             f.properties.nis !== selected.properties.nis &&
             f.properties.arr_nis === selected.properties.arr_nis
         ) as MunicipalityFeature[]
-      } else if (level === 'region') {
+      } else if (level === 'country') {
+        // Toute la Belgique : toutes les autres communes
         neighbors = fc.features.filter(
-          (f) =>
-            f.properties.nis !== selected.properties.nis &&
-            f.properties.reg_nis === selected.properties.reg_nis
+          (f) => f.properties.nis !== selected.properties.nis
         ) as MunicipalityFeature[]
       } else {
         // commune : voisins directs via bbox overlap
@@ -160,12 +159,15 @@ export function CustomBelgiumMap({
     // Projection : fitExtent dépend du niveau
     //   commune        : juste la commune sélectionnée (gros zoom)
     //   arrondissement : commune + toutes celles de l'arrondissement
-    //   region         : commune + toutes celles de la région
+    //   country        : toute la Belgique (toutes les communes du pays)
     let focusFeatures: MunicipalityFeature[]
     if (!selected) {
       focusFeatures = fc.features as MunicipalityFeature[]
     } else if (level === 'commune') {
       focusFeatures = [selected]
+    } else if (level === 'country') {
+      // Fit sur tout le pays — peu importe la commune sélectionnée
+      focusFeatures = fc.features as MunicipalityFeature[]
     } else {
       focusFeatures = [selected, ...neighbors]
     }
@@ -173,7 +175,9 @@ export function CustomBelgiumMap({
       type: 'FeatureCollection',
       features: focusFeatures,
     }
-    const pad = level === 'commune' ? 70 : 24
+    // Padding : gros zoom commune = beaucoup d'air ; arr/pays = bord
+    // serré pour maximiser la surface utile
+    const pad = level === 'commune' ? 70 : level === 'country' ? 12 : 24
     const proj = geoMercator().fitExtent(
       [
         [pad, pad],
@@ -224,14 +228,24 @@ export function CustomBelgiumMap({
         style={{ display: 'block' }}
       >
         <g>
-          {/* Voisins en gris clair */}
+          {/* Voisins en gris clair. Stroke + fill légèrement plus
+              discrets au niveau pays (580 polygones) pour ne pas
+              créer un quadrillage trop chargé. */}
           {projection?.neighbors.map((f) => (
             <path
               key={f.properties.nis}
               d={projection.path(f as unknown as GeoPermissibleObjects) ?? undefined}
-              fill="color-mix(in oklab, var(--foreground) 5%, transparent)"
-              stroke="color-mix(in oklab, var(--foreground) 15%, transparent)"
-              strokeWidth={0.6}
+              fill={
+                level === 'country'
+                  ? 'color-mix(in oklab, var(--foreground) 3%, transparent)'
+                  : 'color-mix(in oklab, var(--foreground) 5%, transparent)'
+              }
+              stroke={
+                level === 'country'
+                  ? 'color-mix(in oklab, var(--foreground) 10%, transparent)'
+                  : 'color-mix(in oklab, var(--foreground) 15%, transparent)'
+              }
+              strokeWidth={level === 'country' ? 0.4 : 0.6}
               vectorEffect="non-scaling-stroke"
             />
           ))}
@@ -246,9 +260,10 @@ export function CustomBelgiumMap({
             />
           )}
 
-          {/* Labels voisins — masqués en zoom région (trop de communes,
-              overlap illisible). Affichés au niveau commune + arrondissement. */}
-          {level !== 'region' &&
+          {/* Labels voisins — masqués au niveau pays (580 communes,
+              labels superposés totalement illisibles). Affichés
+              uniquement au niveau commune + arrondissement. */}
+          {level !== 'country' &&
             projection?.neighbors.map((f) => {
               const c = projection.path.centroid(f as unknown as GeoPermissibleObjects)
               if (!Number.isFinite(c[0])) return null
@@ -275,8 +290,10 @@ export function CustomBelgiumMap({
               )
             })}
 
-          {/* Label commune sélectionnée */}
-          {sel && selBbox && (
+          {/* Label commune sélectionnée — masqué au niveau pays car
+              la commune est minuscule et un texte 12px serait
+              disproportionné (illisible / déborde) */}
+          {sel && selBbox && level !== 'country' && (
             <text
               x={selCentroid![0]}
               y={selBbox[0][1] - 4}
@@ -336,7 +353,7 @@ export function CustomBelgiumMap({
               const i = ZOOM_ORDER.indexOf(level)
               if (i < ZOOM_ORDER.length - 1) setLevel(ZOOM_ORDER[i + 1])
             }}
-            disabled={level === 'region'}
+            disabled={level === 'country'}
             className="p-1.5 hover:bg-muted transition-colors border-t border-border disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Dézoomer (étendre la zone affichée)"
             title="Dézoomer"

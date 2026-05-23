@@ -26,6 +26,7 @@
     "bureaux:import-osm": "dotenv -e .env.local -- tsx scripts/bureaux-import-osm.ts",
     "communes:import-refnis": "dotenv -e .env.local -- tsx scripts/communes-import-refnis.ts",
     "bureaux:import-op": "dotenv -e .env.local -- tsx scripts/bureaux-import-op.ts",
+    "bureaux:geocode-op": "dotenv -e .env.local -- tsx scripts/bureaux-geocode-op.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

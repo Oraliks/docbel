@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Info, MapPin } from 'lucide-react'
-import { CommuneFinderMap } from './commune-finder-map'
+import { CustomBelgiumMap } from './custom-belgium-map'
 import type { BureauResult, CommuneSummary } from './types'
 
 /** Mapping resilient des valeurs region stockées en DB (minuscules anglais
@@ -82,9 +82,9 @@ export function CommunePanel({ commune, bureaux }: Props) {
           </div>
 
           <div className="h-[420px] -mx-4 -mb-4">
-            <CommuneFinderMap
+            <CustomBelgiumMap
+              selectedInsCode={commune?.insCode ?? null}
               center={center}
-              communeName={commune?.nameFr ?? null}
               bureaus={mapBureaus}
               height={420}
             />

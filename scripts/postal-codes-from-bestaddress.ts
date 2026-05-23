@@ -48,7 +48,7 @@ async function main() {
     select: { id: true, insCode: true, nameFr: true },
   })
   const byIns = new Map(communes.map((c) => [c.insCode, c]))
-  console.log(`Communes en DB : ${communes.size ?? communes.length}\n`)
+  console.log(`Communes en DB : ${communes.length}\n`)
 
   // 4) Précharge les PostalCode existants (PK = code, pas d'id séparé)
   const existing = await prisma.postalCode.findMany({

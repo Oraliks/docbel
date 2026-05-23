@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Building2, Users, ExternalLink, Info } from 'lucide-react'
+import { Building2, Users, Info } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -129,15 +129,7 @@ export function OpHelpModal({ open, onOpenChange }: Props) {
 
         <DialogFooter className="flex sm:justify-between gap-2 flex-wrap">
           <p className="text-[10px] text-muted-foreground italic">
-            Source&nbsp;:{' '}
-            <a
-              href="https://www.onem.be/citoyens/chomage/admission-au-droit/votre-organisme-de-paiement"
-              target="_blank"
-              rel="noreferrer"
-              className="underline inline-flex items-center gap-0.5"
-            >
-              ONEM <ExternalLink className="size-2.5" />
-            </a>
+            Source&nbsp;: ONEM
           </p>
           <Button onClick={() => onOpenChange(false)} variant="outline" size="sm">
             J&apos;ai compris

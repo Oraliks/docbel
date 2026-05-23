@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent } from '@/components/ui/card'
-import { Info, MapPin } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 import { CustomBelgiumMap } from './custom-belgium-map'
 import type { BureauResult, CommuneSummary } from './types'
 
@@ -82,23 +82,35 @@ export function CommunePanel({ commune, bureaux }: Props) {
       ? { lat: commune.lat, lng: commune.lng }
       : null
 
+  const geolocCount = validBureaux.filter((b) => b.lat !== null).length
+
   return (
     <div className="space-y-3">
       <Card>
         <CardContent className="p-4 space-y-3">
-          <div>
-            <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
-              Votre zone sélectionnée
-            </p>
-            <h2 className="text-lg font-semibold mt-0.5">
-              {commune?.nameFr ?? '—'}
-            </h2>
-            {commune?.region && (
-              <p className="text-xs text-muted-foreground">
-                {regionLabel(commune.region)}
-                {commune.province && commune.region !== 'brussels' && (
-                  <> · {commune.province}</>
-                )}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
+                Votre zone sélectionnée
+              </p>
+              <h2 className="text-lg font-semibold mt-0.5 truncate">
+                {commune?.nameFr ?? '—'}
+              </h2>
+              {commune?.region && (
+                <p className="text-xs text-muted-foreground">
+                  {regionLabel(commune.region)}
+                  {commune.province && commune.region !== 'brussels' && (
+                    <> · {commune.province}</>
+                  )}
+                </p>
+              )}
+            </div>
+            {/* Compteur de bureaux affichés sur la map, dans la même card
+                pour rester collé à la carte (avant : phrase isolée plus bas) */}
+            {geolocCount > 0 && (
+              <p className="shrink-0 text-[10px] text-muted-foreground/80 flex items-center gap-1 mt-1">
+                <MapPin className="w-3 h-3" />
+                {geolocCount} bureau{geolocCount > 1 ? 'x' : ''} sur la carte
               </p>
             )}
           </div>
@@ -113,27 +125,6 @@ export function CommunePanel({ commune, bureaux }: Props) {
           </div>
         </CardContent>
       </Card>
-
-      <Card>
-        <CardContent className="p-3 flex items-start gap-2 text-[11px] text-muted-foreground">
-          <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary/70" />
-          <p>
-            <strong className="text-foreground">Bon à savoir.</strong>{' '}
-            Les horaires peuvent varier (jours fériés, ponts, fermetures
-            exceptionnelles). Vérifie toujours par téléphone ou sur le site
-            de l&apos;organisme avant de te déplacer.
-          </p>
-        </CardContent>
-      </Card>
-
-      {validBureaux.length > 0 && (
-        <p className="text-[10px] text-muted-foreground/70 px-1 flex items-center gap-1">
-          <MapPin className="w-3 h-3" />
-          {validBureaux.filter((b) => b.lat !== null).length} bureau
-          {validBureaux.length > 1 ? 'x' : ''} géolocalisé
-          {validBureaux.length > 1 ? 's' : ''} sur la carte
-        </p>
-      )}
     </div>
   )
 }

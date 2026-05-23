@@ -51,6 +51,16 @@ type MunicipalityFeature = Feature<Polygon | MultiPolygon, MunicipalityProps>
  * Le TopoJSON est chargé lazy au mount (1 fetch, ~150KB gzippé). En SSR le
  * composant rend juste un placeholder (height fixe pour pas de layout shift).
  */
+type ZoomLevel = 'commune' | 'arrondissement' | 'region'
+
+const ZOOM_LABELS: Record<ZoomLevel, string> = {
+  commune: 'Commune',
+  arrondissement: 'Arrondissement',
+  region: 'Région',
+}
+
+const ZOOM_ORDER: ZoomLevel[] = ['commune', 'arrondissement', 'region']
+
 export function CustomBelgiumMap({
   selectedInsCode,
   center,
@@ -60,7 +70,12 @@ export function CustomBelgiumMap({
   const [topo, setTopo] = useState<Topology | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [size, setSize] = useState({ w: 380, h: height })
-  const [zoom, setZoom] = useState(1)
+  const [level, setLevel] = useState<ZoomLevel>('commune')
+
+  // Reset au niveau commune quand la commune sélectionnée change
+  useEffect(() => {
+    setLevel('commune')
+  }, [selectedInsCode])
 
   // Charge le TopoJSON une fois
   useEffect(() => {
@@ -105,47 +120,60 @@ export function CustomBelgiumMap({
         ) as MunicipalityFeature | undefined)
       : null
 
-    // Détermine les voisins via bbox overlap (approche simple, suffit pour
-    // l'effet design "commune au centre, voisins autour")
+    // Détermine les voisins selon le niveau de zoom :
+    //   commune        : voisins directs (bbox overlap)
+    //   arrondissement : toutes les communes du même arr_nis
+    //   region         : toutes les communes du même reg_nis
     let neighbors: MunicipalityFeature[] = []
     if (selected) {
-      const p = geoPath()
-      const sb = p.bounds(selected as unknown as GeoPermissibleObjects)
-      // sb = [[x0,y0],[x1,y1]] en lat/lng (puisque path sans projection)
-      const [[x0, y0], [x1, y1]] = sb
-      const padX = (x1 - x0) * 0.6
-      const padY = (y1 - y0) * 0.6
-      const expanded: [[number, number], [number, number]] = [
-        [x0 - padX, y0 - padY],
-        [x1 + padX, y1 + padY],
-      ]
-      neighbors = fc.features.filter((f) => {
-        if (f.properties.nis === selected.properties.nis) return false
-        const fb = p.bounds(f as unknown as GeoPermissibleObjects)
-        return bboxOverlaps(fb, expanded)
-      }) as MunicipalityFeature[]
+      if (level === 'arrondissement') {
+        neighbors = fc.features.filter(
+          (f) =>
+            f.properties.nis !== selected.properties.nis &&
+            f.properties.arr_nis === selected.properties.arr_nis
+        ) as MunicipalityFeature[]
+      } else if (level === 'region') {
+        neighbors = fc.features.filter(
+          (f) =>
+            f.properties.nis !== selected.properties.nis &&
+            f.properties.reg_nis === selected.properties.reg_nis
+        ) as MunicipalityFeature[]
+      } else {
+        // commune : voisins directs via bbox overlap
+        const p = geoPath()
+        const sb = p.bounds(selected as unknown as GeoPermissibleObjects)
+        const [[x0, y0], [x1, y1]] = sb
+        const padX = (x1 - x0) * 0.6
+        const padY = (y1 - y0) * 0.6
+        const expanded: [[number, number], [number, number]] = [
+          [x0 - padX, y0 - padY],
+          [x1 + padX, y1 + padY],
+        ]
+        neighbors = fc.features.filter((f) => {
+          if (f.properties.nis === selected.properties.nis) return false
+          const fb = p.bounds(f as unknown as GeoPermissibleObjects)
+          return bboxOverlaps(fb, expanded)
+        }) as MunicipalityFeature[]
+      }
     }
 
-    // Projection : zoome sur la commune sélectionnée (elle prend ~60-70% du
-    // viewport). Les voisins rendus autour s'étendent au-delà mais restent
-    // visibles dans l'espace de marge. Si pas de commune sélectionnée :
-    // fitExtent sur tout le pays.
-    let focusCollection: FeatureCollection<Polygon | MultiPolygon>
-    if (selected) {
-      focusCollection = {
-        type: 'FeatureCollection',
-        features: [selected],
-      }
+    // Projection : fitExtent dépend du niveau
+    //   commune        : juste la commune sélectionnée (gros zoom)
+    //   arrondissement : commune + toutes celles de l'arrondissement
+    //   region         : commune + toutes celles de la région
+    let focusFeatures: MunicipalityFeature[]
+    if (!selected) {
+      focusFeatures = fc.features as MunicipalityFeature[]
+    } else if (level === 'commune') {
+      focusFeatures = [selected]
     } else {
-      focusCollection = {
-        type: 'FeatureCollection',
-        features: fc.features,
-      }
+      focusFeatures = [selected, ...neighbors]
     }
-    // Padding : 60-70px autour de la commune cible — laisse de l'air pour
-    // voir les voisins en débord. Plus le padding est petit, plus la commune
-    // sélectionnée est grosse à l'écran.
-    const pad = selected ? 70 : 12
+    const focusCollection: FeatureCollection<Polygon | MultiPolygon> = {
+      type: 'FeatureCollection',
+      features: focusFeatures,
+    }
+    const pad = level === 'commune' ? 70 : 24
     const proj = geoMercator().fitExtent(
       [
         [pad, pad],
@@ -160,7 +188,7 @@ export function CustomBelgiumMap({
       path,
       proj,
     }
-  }, [topo, selectedInsCode, size.w, size.h])
+  }, [topo, selectedInsCode, size.w, size.h, level])
 
   if (!topo) {
     return (
@@ -195,7 +223,7 @@ export function CustomBelgiumMap({
         viewBox={`0 0 ${size.w} ${size.h}`}
         style={{ display: 'block' }}
       >
-        <g style={{ transform: `scale(${zoom})`, transformOrigin: 'center' }}>
+        <g>
           {/* Voisins en gris clair */}
           {projection?.neighbors.map((f) => (
             <path
@@ -218,33 +246,34 @@ export function CustomBelgiumMap({
             />
           )}
 
-          {/* Labels voisins */}
-          {projection?.neighbors.map((f) => {
-            const c = projection.path.centroid(f as unknown as GeoPermissibleObjects)
-            if (!Number.isFinite(c[0])) return null
-            const b = projection.path.bounds(f as unknown as GeoPermissibleObjects)
-            const polyW = b[1][0] - b[0][0]
-            // skip si trop petit pour le label
-            if (polyW < 35) return null
-            return (
-              <text
-                key={`lbl-${f.properties.nis}`}
-                x={c[0]}
-                y={c[1]}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize={9.5}
-                fill="color-mix(in oklab, var(--foreground) 55%, transparent)"
-                style={{
-                  pointerEvents: 'none',
-                  fontFamily:
-                    'var(--font-sans), system-ui, sans-serif',
-                }}
-              >
-                {f.properties.name_fr}
-              </text>
-            )
-          })}
+          {/* Labels voisins — masqués en zoom région (trop de communes,
+              overlap illisible). Affichés au niveau commune + arrondissement. */}
+          {level !== 'region' &&
+            projection?.neighbors.map((f) => {
+              const c = projection.path.centroid(f as unknown as GeoPermissibleObjects)
+              if (!Number.isFinite(c[0])) return null
+              const b = projection.path.bounds(f as unknown as GeoPermissibleObjects)
+              const polyW = b[1][0] - b[0][0]
+              // skip si trop petit pour le label
+              if (polyW < 35) return null
+              return (
+                <text
+                  key={`lbl-${f.properties.nis}`}
+                  x={c[0]}
+                  y={c[1]}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={9.5}
+                  fill="color-mix(in oklab, var(--foreground) 55%, transparent)"
+                  style={{
+                    pointerEvents: 'none',
+                    fontFamily: 'var(--font-sans), system-ui, sans-serif',
+                  }}
+                >
+                  {f.properties.name_fr}
+                </text>
+              )
+            })}
 
           {/* Label commune sélectionnée */}
           {sel && selBbox && (
@@ -282,24 +311,39 @@ export function CustomBelgiumMap({
         </g>
       </svg>
 
-      {/* Boutons zoom custom */}
-      <div className="absolute bottom-3 right-3 flex flex-col rounded-md overflow-hidden shadow border border-border bg-background">
-        <button
-          type="button"
-          onClick={() => setZoom((z) => Math.min(3, z * 1.3))}
-          className="p-1.5 hover:bg-muted transition-colors"
-          aria-label="Zoomer"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setZoom((z) => Math.max(0.5, z / 1.3))}
-          className="p-1.5 hover:bg-muted transition-colors border-t border-border"
-          aria-label="Dézoomer"
-        >
-          <Minus className="w-3.5 h-3.5" />
-        </button>
+      {/* Boutons zoom custom — 3 niveaux discrets : commune → arrondissement → région */}
+      <div className="absolute bottom-3 right-3 flex flex-col items-end gap-1.5">
+        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-background/95 border border-border text-muted-foreground shadow-sm">
+          {ZOOM_LABELS[level]}
+        </span>
+        <div className="flex flex-col rounded-md overflow-hidden shadow border border-border bg-background">
+          <button
+            type="button"
+            onClick={() => {
+              const i = ZOOM_ORDER.indexOf(level)
+              if (i > 0) setLevel(ZOOM_ORDER[i - 1])
+            }}
+            disabled={level === 'commune'}
+            className="p-1.5 hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Zoomer (réduire la zone affichée)"
+            title="Zoomer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const i = ZOOM_ORDER.indexOf(level)
+              if (i < ZOOM_ORDER.length - 1) setLevel(ZOOM_ORDER[i + 1])
+            }}
+            disabled={level === 'region'}
+            className="p-1.5 hover:bg-muted transition-colors border-t border-border disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Dézoomer (étendre la zone affichée)"
+            title="Dézoomer"
+          >
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Attribution discrète */}

@@ -119,14 +119,17 @@ export function BureauxFinder() {
   )
 
   const showResults = !!data && !loading
-  const fourBureaus = useMemo(
+  // Pour la map : on inclut TOUS les OP (CAPAC + FGTB + CSC + CGSLB), pas
+  // juste le premier. Ça permet de voir leur dispersion géographique réelle
+  // autour de la commune sélectionnée.
+  const mapBureaus = useMemo(
     () =>
       data
         ? [
             data.attitre.onem,
             data.attitre.cpas,
             data.attitre.commune,
-            ...data.attitre.organismesPaiement.slice(0, 1),
+            ...data.attitre.organismesPaiement,
           ]
         : [],
     [data]
@@ -192,10 +195,10 @@ export function BureauxFinder() {
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,380px)_1fr] gap-4">
             {/* Map sticky desktop */}
             <div className="hidden lg:block lg:sticky lg:top-4 lg:self-start">
-              <CommunePanel commune={data.commune} bureaux={fourBureaus} />
+              <CommunePanel commune={data.commune} bureaux={mapBureaus} />
             </div>
             <div className="lg:hidden">
-              <MobileMapSheet commune={data.commune} bureaux={fourBureaus} />
+              <MobileMapSheet commune={data.commune} bureaux={mapBureaus} />
             </div>
 
             {/* Cards — 4 bureaux traités équitablement (pas de recommandé) */}

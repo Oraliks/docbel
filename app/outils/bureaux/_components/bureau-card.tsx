@@ -20,56 +20,51 @@ import { ReportForm } from './report-form'
 import type { BureauResult } from './types'
 
 interface Props {
-  title: string
-  icon?: React.ReactNode
-  iconBg?: string // gradient/color pour le carré icon
+  /** Label catégorie (CPAS, ONEM (CHÔMAGE), MAISON COMMUNALE, ORGANISME DE PAIEMENT) */
+  label: string
+  /** Logo SVG du bureau/organisme (depuis components/icons/organismes). */
+  logo?: React.ReactNode
   bureau: BureauResult | null
   /** Distance en km depuis le user (géoloc) ou centroïde commune (fallback). */
   distanceKm?: number | null
-  /** Le user est-il géolocalisé ? Influence le label "depuis chez toi" vs "depuis la commune". */
   fromUserLocation?: boolean
-  /** Met en avant la card avec un badge "Recommandé" + bordure colorée. */
-  recommended?: boolean
-  recommendedReason?: string
-  /** Header inutile si on est dans un OP wrapper (OrganismesPaiementCard gère). */
-  hideHeader?: boolean
+  /**
+   * featured = card mise en avant (badge "Recommandé pour toi", taille plus
+   * grosse, CTA primary violet). default = compact, CTA outline.
+   */
+  variant?: 'featured' | 'default'
+  /**
+   * Si fourni, remplace toute la zone droite (utilisé par OpTabsCard pour
+   * afficher les tabs en place du dropdown horaires).
+   */
+  rightSlot?: React.ReactNode
+  /**
+   * Si true, on n'affiche pas le bouton "Signaler une erreur" (utilisé par
+   * OpTabsCard qui gère son propre flag en haut, avec les tabs).
+   */
+  hideReport?: boolean
 }
 
-/**
- * Card horizontale 3-zones (style mockup) :
- *
- *  ┌────────────────────────────────────────────────────────────┐
- *  │ [icon] Nom du bureau              [Horaires ⌄]  [850 m  ]  │
- *  │        Adresse                                  [10 min  ]  │
- *  │        📞 phone · 🌐 site                                   │
- *  │ ─────────────────────────────────────────────────────────  │
- *  │ [             Voir l'itinéraire (outline button)        ]  │
- *  └────────────────────────────────────────────────────────────┘
- *
- * En mobile, les zones s'empilent verticalement.
- */
 export function BureauCard({
-  title,
-  icon,
-  iconBg,
+  label,
+  logo,
   bureau,
   distanceKm,
   fromUserLocation,
-  recommended,
-  recommendedReason,
-  hideHeader,
+  variant = 'default',
+  rightSlot,
+  hideReport,
 }: Props) {
   const [showReport, setShowReport] = useState(false)
+  const isFeatured = variant === 'featured'
 
   if (!bureau) {
     return (
       <Card>
         <CardContent className="p-4">
-          {!hideHeader && (
-            <span className="text-xs uppercase font-semibold text-muted-foreground tracking-wider">
-              {title}
-            </span>
-          )}
+          <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
+            {label}
+          </span>
           <p className="text-xs text-muted-foreground italic mt-2">
             Aucun bureau attitré trouvé pour cette commune.
           </p>
@@ -78,73 +73,66 @@ export function BureauCard({
     )
   }
 
-  const drivingMin = distanceKm !== null && distanceKm !== undefined
-    ? Math.max(1, Math.round((distanceKm / 30) * 60)) // ~30km/h urbain moyen
-    : null
-  const walkingMin = distanceKm !== null && distanceKm !== undefined
-    ? Math.max(1, Math.round((distanceKm / 5) * 60)) // ~5km/h marche
-    : null
+  const walkingMin =
+    distanceKm !== null && distanceKm !== undefined
+      ? Math.max(1, Math.round((distanceKm / 5) * 60))
+      : null
+  const drivingMin =
+    distanceKm !== null && distanceKm !== undefined
+      ? Math.max(1, Math.round((distanceKm / 30) * 60))
+      : null
 
   return (
     <Card
       className={
-        recommended
+        isFeatured
           ? 'border-primary/60 ring-1 ring-primary/30 bg-primary/[0.025]'
           : ''
       }
     >
-      <CardContent className="p-4 space-y-3">
-        {/* Badge Recommandé en haut */}
-        {recommended && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge className="gap-1 bg-primary text-primary-foreground hover:bg-primary">
+      <CardContent className={isFeatured ? 'p-4 space-y-3' : 'p-3.5 space-y-2.5'}>
+        {/* Badge "Recommandé pour toi" en haut (featured uniquement) */}
+        {isFeatured && (
+          <div className="flex items-center justify-between gap-2">
+            <Badge className="gap-1 bg-primary text-primary-foreground hover:bg-primary text-[10px] tracking-wider uppercase">
               <Sparkles className="w-3 h-3" />
-              Recommandé
+              Recommandé pour toi
             </Badge>
-            {recommendedReason && (
-              <span className="text-[10px] text-muted-foreground italic">
-                {recommendedReason}
-              </span>
+            {!hideReport && (
+              <FlagToggle
+                active={showReport}
+                onToggle={() => setShowReport(!showReport)}
+              />
             )}
           </div>
         )}
 
-        {/* Si formulaire signalement ouvert, on remplace tout le contenu */}
         {showReport ? (
           <ReportForm bureauId={bureau.id} onClose={() => setShowReport(false)} />
         ) : (
           <>
-            {/* Header : icon + titre catégorie + flag report */}
-            {!hideHeader && (
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
-                  {title}
-                </span>
-                <FlagToggle
-                  active={showReport}
-                  onToggle={() => setShowReport(true)}
-                />
-              </div>
-            )}
-
-            {/* Layout horizontal : icon+infos | horaires | distances */}
-            <div className="flex flex-col md:flex-row md:items-start gap-4">
-              {/* Zone 1 : icon + nom + addr + contact */}
+            {/* Layout horizontal */}
+            <div className="flex flex-col md:flex-row md:items-start gap-3">
+              {/* Zone 1 : logo + label + nom + addr + contact */}
               <div className="flex gap-3 flex-1 min-w-0">
-                {icon && (
-                  <span
-                    className="flex size-12 items-center justify-center rounded-xl text-white shrink-0"
-                    style={{
-                      background:
-                        iconBg ??
-                        'linear-gradient(135deg, var(--primary), color-mix(in oklab, var(--primary) 70%, white))',
-                    }}
-                  >
-                    {icon}
-                  </span>
+                {logo && (
+                  <div className="shrink-0">
+                    {logo}
+                  </div>
                 )}
-                <div className="min-w-0 space-y-1">
-                  <h3 className="text-sm font-semibold leading-tight">
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <p
+                    className={`text-[10px] uppercase font-semibold tracking-wider ${
+                      isFeatured ? 'text-primary' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {label}
+                  </p>
+                  <h3
+                    className={`font-semibold leading-tight ${
+                      isFeatured ? 'text-base' : 'text-sm'
+                    }`}
+                  >
                     {bureau.name}
                   </h3>
                   <p className="text-xs text-muted-foreground leading-snug">
@@ -170,67 +158,82 @@ export function BureauCard({
                         className="inline-flex items-center gap-1 text-primary hover:underline"
                       >
                         <Globe className="w-3 h-3" />
-                        Site web
+                        {shortDomain(bureau.website)}
                       </a>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Zone 2 : horaires (dropdown) */}
-              <div className="md:w-[260px] shrink-0">
-                <HoursTimeline
-                  hours={bureau.hours}
-                  notes={bureau.hoursNotes}
-                  type={bureau.type}
-                />
-              </div>
+              {/* Zone 2 : distances (verticales) */}
+              {(walkingMin !== null || drivingMin !== null) && (
+                <div
+                  className="flex md:flex-col md:items-end gap-3 md:gap-1.5 shrink-0 md:min-w-[80px]"
+                  title={
+                    fromUserLocation
+                      ? 'depuis ta position'
+                      : 'depuis le centre de la commune'
+                  }
+                >
+                  {distanceKm !== null && distanceKm !== undefined && (
+                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+                      <Footprints className="w-3.5 h-3.5" />
+                      {formatDistance(distanceKm)}
+                    </span>
+                  )}
+                  {drivingMin !== null && (
+                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+                      <Car className="w-3.5 h-3.5" />
+                      {drivingMin} min
+                    </span>
+                  )}
+                </div>
+              )}
 
-              {/* Zone 3 : distances + flag report (top-right si pas de header) */}
-              <div className="flex md:flex-col md:items-end md:w-[100px] shrink-0 gap-3 md:gap-1.5 items-center">
-                {hideHeader && (
-                  <FlagToggle
-                    active={showReport}
-                    onToggle={() => setShowReport(true)}
+              {/* Zone 3 : horaires (dropdown) ou rightSlot custom */}
+              <div
+                className={`shrink-0 ${
+                  isFeatured ? 'md:w-[220px]' : 'md:w-[200px]'
+                }`}
+              >
+                {rightSlot ?? (
+                  <HoursTimeline
+                    hours={bureau.hours}
+                    notes={bureau.hoursNotes}
+                    type={bureau.type}
                   />
                 )}
-                {walkingMin !== null && (
-                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
-                    <Footprints className="w-3.5 h-3.5" />
-                    {formatDistance(distanceKm!)}
-                  </span>
-                )}
-                {drivingMin !== null && (
-                  <span
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums"
-                    title={fromUserLocation ? 'depuis ta position' : 'depuis le centre de la commune'}
+              </div>
+
+              {/* Zone 4 : CTA itinéraire + flag pour non-featured */}
+              <div className="flex md:flex-col items-center md:items-end gap-2 shrink-0">
+                {bureau.lat !== null && bureau.lng !== null && (
+                  <Button
+                    render={
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${bureau.lat},${bureau.lng}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      />
+                    }
+                    variant={isFeatured ? 'default' : 'outline'}
+                    size="sm"
+                    className={`h-8 text-xs gap-1 ${
+                      isFeatured ? 'px-4' : 'px-3'
+                    }`}
                   >
-                    <Car className="w-3.5 h-3.5" />
-                    {drivingMin} min
-                  </span>
+                    {isFeatured ? "Voir l'itinéraire" : 'Itinéraire'}
+                    <ExternalLink className="w-3 h-3 opacity-70" />
+                  </Button>
+                )}
+                {!isFeatured && !hideReport && (
+                  <FlagToggle
+                    active={showReport}
+                    onToggle={() => setShowReport(!showReport)}
+                  />
                 )}
               </div>
             </div>
-
-            {/* CTA itinéraire pleine largeur */}
-            {bureau.lat !== null && bureau.lng !== null && (
-              <Button
-                render={
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${bureau.lat},${bureau.lng}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  />
-                }
-                variant="outline"
-                size="sm"
-                className="w-full h-8 text-xs gap-1"
-              >
-                <MapPin className="w-3 h-3" />
-                Voir l&apos;itinéraire
-                <ExternalLink className="w-3 h-3 ml-0.5 opacity-60" />
-              </Button>
-            )}
           </>
         )}
       </CardContent>
@@ -238,10 +241,7 @@ export function BureauCard({
   )
 }
 
-/**
- * Rendu détail seul (sans header / badge / cta) — utilisé par OpTabsCard
- * qui réutilise une variante "embedded".
- */
+/** Rendu détail sans header — utilisé par OpTabsCard (qui gère son label). */
 export function BureauContent({
   bureau,
   distanceKm,
@@ -258,13 +258,14 @@ export function BureauContent({
       </p>
     )
   }
-  const drivingMin = distanceKm !== null && distanceKm !== undefined
-    ? Math.max(1, Math.round((distanceKm / 30) * 60))
-    : null
+  const drivingMin =
+    distanceKm !== null && distanceKm !== undefined
+      ? Math.max(1, Math.round((distanceKm / 30) * 60))
+      : null
   return (
     <div className="space-y-3">
-      <div className="flex flex-col md:flex-row md:items-start gap-4">
-        <div className="flex-1 min-w-0 space-y-1">
+      <div className="flex flex-col md:flex-row md:items-start gap-3">
+        <div className="flex-1 min-w-0 space-y-0.5">
           <h3 className="text-sm font-semibold leading-tight">{bureau.name}</h3>
           <p className="text-xs text-muted-foreground leading-snug">
             {bureau.street}
@@ -289,36 +290,38 @@ export function BureauContent({
                 className="inline-flex items-center gap-1 text-primary hover:underline"
               >
                 <Globe className="w-3 h-3" />
-                Site web
+                {shortDomain(bureau.website)}
               </a>
             )}
           </div>
         </div>
-        <div className="md:w-[260px] shrink-0">
+        {distanceKm !== null && distanceKm !== undefined && (
+          <div
+            className="flex md:flex-col md:items-end gap-3 md:gap-1.5 shrink-0"
+            title={
+              fromUserLocation
+                ? 'depuis ta position'
+                : 'depuis le centre de la commune'
+            }
+          >
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+              <Footprints className="w-3.5 h-3.5" />
+              {formatDistance(distanceKm)}
+            </span>
+            {drivingMin !== null && (
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+                <Car className="w-3.5 h-3.5" />
+                {drivingMin} min
+              </span>
+            )}
+          </div>
+        )}
+        <div className="md:w-[200px] shrink-0">
           <HoursTimeline
             hours={bureau.hours}
             notes={bureau.hoursNotes}
             type={bureau.type}
           />
-        </div>
-        <div className="flex md:flex-col md:items-end md:w-[100px] shrink-0 gap-3 md:gap-1.5 items-center">
-          {distanceKm !== null && distanceKm !== undefined && (
-            <>
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
-                <Footprints className="w-3.5 h-3.5" />
-                {formatDistance(distanceKm)}
-              </span>
-              {drivingMin !== null && (
-                <span
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums"
-                  title={fromUserLocation ? 'depuis ta position' : 'depuis le centre de la commune'}
-                >
-                  <Car className="w-3.5 h-3.5" />
-                  {drivingMin} min
-                </span>
-              )}
-            </>
-          )}
         </div>
       </div>
       {bureau.lat !== null && bureau.lng !== null && (
@@ -349,6 +352,16 @@ function formatDistance(km: number): string {
   return `${Math.round(km)} km`
 }
 
+/** "https://www.onem.be/foo" → "onem.be" */
+function shortDomain(url: string): string {
+  try {
+    const u = new URL(url)
+    return u.hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
+
 export function FlagToggle({
   active,
   onToggle,
@@ -362,7 +375,7 @@ export function FlagToggle({
       onClick={onToggle}
       title={active ? 'Fermer le signalement' : 'Signaler une erreur'}
       aria-label={active ? 'Fermer le signalement' : 'Signaler une erreur'}
-      className="text-muted-foreground hover:text-red-600 transition-colors shrink-0"
+      className="text-muted-foreground hover:text-red-600 transition-colors shrink-0 p-1 -m-1 rounded"
     >
       {active ? <X className="w-4 h-4" /> : <Flag className="w-3.5 h-3.5" />}
     </button>

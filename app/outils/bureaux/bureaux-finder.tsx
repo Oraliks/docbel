@@ -3,15 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Input } from '@/components/ui/input'
-import {
-  Building2,
-  Loader2,
-  MapPin,
-  AlertCircle,
-  Users,
-  Wallet,
-  Briefcase,
-} from 'lucide-react'
+import { Loader2, MapPin, AlertCircle } from 'lucide-react'
 
 import { BureauCard } from './_components/bureau-card'
 import { OpTabsCard } from './_components/op-tabs-card'
@@ -25,18 +17,32 @@ import {
 import { InfoBands } from './_components/info-bands'
 import { MobileMapSheet } from './_components/mobile-map-sheet'
 import { type ResolveResponse, type BureauResult } from './_components/types'
+import {
+  OnemLogo,
+  CpasLogo,
+  CommuneLogo,
+  OpLogo,
+} from '@/components/icons/organismes'
 
 /**
  * Orchestrateur du finder de bureaux.
  *
- *  [Search compacte CP (4 chiffres)] [Banner géoloc dismissible]
+ * Layout :
+ *  [CP input compact] [Banner géoloc avec Modifier]
  *
  *  ┌────────────────┬────────────────────────────────┐
- *  │  CommunePanel  │  4 cards horizontales          │
- *  │  (map + info)  │  (ONEM / CPAS / Commune / OP)  │
+ *  │  CommunePanel  │  ┌──────────────────────────┐  │
+ *  │  (map)         │  │ Featured Recommandé ONEM │  │
+ *  │                │  └──────────────────────────┘  │
+ *  │                │  ─── Autres bureaux ───        │
+ *  │                │  CPAS · Commune · OP (compact) │
  *  └────────────────┴────────────────────────────────┘
  *
  *  [4 InfoBands en bas]
+ *
+ * La card mise en avant est l'ONEM par défaut (cet outil vit sous Outils >
+ * Chômage, donc l'ONEM est la démarche par défaut). On peut piloter un autre
+ * "featured" via ?for= dans le futur.
  */
 export function BureauxFinder() {
   const router = useRouter()
@@ -49,20 +55,19 @@ export function BureauxFinder() {
   const [error, setError] = useState<string | null>(null)
 
   /**
-   * Géoloc autorisée → on enrichit avec reverse geocode (Nominatim) pour
-   * récupérer le CP + ville, on met à jour le champ search, ce qui déclenche
-   * automatiquement la recherche via le debounce déjà en place.
+   * Géoloc autorisée → enrichit avec reverse geocode → auto-fill le CP.
    */
   const handleLocated = useCallback(async (geo: UserGeoloc) => {
-    // Set immédiatement la position pour que les distances soient calculées
-    // depuis chez le user même avant que le reverse résolve.
     setUserGeoloc(geo)
     const resolved = await reverseGeocodeBE(geo.lat, geo.lng)
     if (resolved) {
       setUserGeoloc({ ...geo, postcode: resolved.postcode, city: resolved.city })
-      // Auto-fill le CP → déclenche la recherche via le debounce
       setCp(resolved.postcode)
     }
+  }, [])
+
+  const clearGeoloc = useCallback(() => {
+    setUserGeoloc(null)
   }, [])
 
   const resolve = useCallback(async (postalCode: string) => {
@@ -84,7 +89,6 @@ export function BureauxFinder() {
     }
   }, [])
 
-  // Debounce + sync URL
   useEffect(() => {
     const t = setTimeout(() => {
       void resolve(cp.trim())
@@ -98,7 +102,6 @@ export function BureauxFinder() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cp, resolve])
 
-  // Référence pour calculer les distances : géoloc si dispo, sinon centroïde commune
   const distanceRef = useMemo(() => {
     if (userGeoloc) return userGeoloc
     if (data?.commune?.lat != null && data?.commune?.lng != null) {
@@ -131,7 +134,7 @@ export function BureauxFinder() {
 
   return (
     <div className="space-y-4 w-full">
-      {/* Search compacte : input CP 4 chiffres centré, pas de gros wrapper Card */}
+      {/* Ligne search + géoloc */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <label
           htmlFor="cp-input"
@@ -151,9 +154,12 @@ export function BureauxFinder() {
             autoFocus
           />
         </label>
-        {/* Banner géoloc à côté en desktop, dessous en mobile */}
         <div className="flex-1 min-w-0">
-          <GeolocBanner onLocated={handleLocated} located={userGeoloc} />
+          <GeolocBanner
+            onLocated={handleLocated}
+            located={userGeoloc}
+            onClear={clearGeoloc}
+          />
         </div>
       </div>
 
@@ -183,8 +189,8 @@ export function BureauxFinder() {
             </div>
           )}
 
-          {/* Layout 2-col desktop : map sticky gauche, cards droite */}
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,380px)_1fr] gap-4">
+            {/* Map sticky desktop */}
             <div className="hidden lg:block lg:sticky lg:top-4 lg:self-start">
               <CommunePanel commune={data.commune} bureaux={fourBureaus} />
             </div>
@@ -192,45 +198,54 @@ export function BureauxFinder() {
               <MobileMapSheet commune={data.commune} bureaux={fourBureaus} />
             </div>
 
-            <div className="space-y-3">
+            {/* Cards */}
+            <div className="space-y-4">
+              {/* Featured ONEM (outil sous Chômage → ONEM = démarche par défaut) */}
               <BureauCard
-                title="ONEM (chômage)"
-                icon={<Briefcase className="w-5 h-5" />}
-                iconBg="linear-gradient(135deg, #0050A0, #3B82F6)"
+                variant="featured"
+                label="ONEM (chômage)"
+                logo={<OnemLogo size={56} />}
                 bureau={data.attitre.onem}
                 distanceKm={distance(data.attitre.onem)}
                 fromUserLocation={!!userGeoloc}
               />
-              <BureauCard
-                title="CPAS"
-                icon={<Users className="w-5 h-5" />}
-                iconBg="linear-gradient(135deg, #7c3aed, #a78bfa)"
-                bureau={data.attitre.cpas}
-                distanceKm={distance(data.attitre.cpas)}
-                fromUserLocation={!!userGeoloc}
-              />
-              <BureauCard
-                title="Maison communale"
-                icon={<Building2 className="w-5 h-5" />}
-                iconBg="linear-gradient(135deg, #059669, #34d399)"
-                bureau={data.attitre.commune}
-                distanceKm={distance(data.attitre.commune)}
-                fromUserLocation={!!userGeoloc}
-              />
-              {data.attitre.organismesPaiement.length > 0 ? (
-                <OpTabsCard
-                  bureaux={data.attitre.organismesPaiement}
-                  commune={data.commune}
-                  userGeoloc={userGeoloc}
-                />
-              ) : (
+
+              {/* Section header */}
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground px-1">
+                  Autres bureaux compétents
+                </p>
+              </div>
+
+              <div className="space-y-2.5">
                 <BureauCard
-                  title="Organisme de paiement"
-                  icon={<Wallet className="w-5 h-5" />}
-                  iconBg="linear-gradient(135deg, #ea580c, #fb923c)"
-                  bureau={null}
+                  label="CPAS"
+                  logo={<CpasLogo size={48} />}
+                  bureau={data.attitre.cpas}
+                  distanceKm={distance(data.attitre.cpas)}
+                  fromUserLocation={!!userGeoloc}
                 />
-              )}
+                <BureauCard
+                  label="Maison communale"
+                  logo={<CommuneLogo size={48} />}
+                  bureau={data.attitre.commune}
+                  distanceKm={distance(data.attitre.commune)}
+                  fromUserLocation={!!userGeoloc}
+                />
+                {data.attitre.organismesPaiement.length > 0 ? (
+                  <OpTabsCard
+                    bureaux={data.attitre.organismesPaiement}
+                    commune={data.commune}
+                    userGeoloc={userGeoloc}
+                  />
+                ) : (
+                  <BureauCard
+                    label="Organisme de paiement"
+                    logo={<OpLogo size={48} />}
+                    bureau={null}
+                  />
+                )}
+              </div>
             </div>
           </div>
 

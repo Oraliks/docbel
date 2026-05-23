@@ -18,6 +18,8 @@ export interface UserGeoloc {
 interface Props {
   onLocated: (geo: UserGeoloc) => void
   located: UserGeoloc | null
+  /** Permet à l'utilisateur de retirer sa position (bouton "Modifier"). */
+  onClear?: () => void
 }
 
 /**
@@ -28,7 +30,7 @@ interface Props {
  * État dismissed sauvegardé en localStorage pour pas réafficher à chaque
  * visite.
  */
-export function GeolocBanner({ onLocated, located }: Props) {
+export function GeolocBanner({ onLocated, located, onClear }: Props) {
   const [dismissed, setDismissed] = useState<boolean>(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -52,16 +54,28 @@ export function GeolocBanner({ onLocated, located }: Props) {
     return (
       <div className="flex items-center gap-2 text-xs text-green-700 dark:text-green-400 bg-green-50/60 dark:bg-green-950/20 border border-green-200/60 rounded-md px-3 py-1.5">
         <Check className="w-3.5 h-3.5 shrink-0" />
-        <span>
+        <span className="flex-1">
           {place ? (
             <>
-              Position détectée : <strong>{place}</strong>. La recherche est
-              lancée.
+              <strong>Position active</strong> pour des distances précises
+              depuis chez toi.
             </>
           ) : (
             'Position activée — distances calculées depuis chez toi.'
           )}
         </span>
+        {onClear && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-6 text-[11px] px-2 gap-1"
+            onClick={onClear}
+            title="Désactiver la géolocalisation et changer manuellement le code postal"
+          >
+            <MapPin className="w-3 h-3" /> Modifier
+          </Button>
+        )}
       </div>
     )
   }

@@ -140,6 +140,19 @@ export async function resolveBureausForPostalCode(
         );
       }
     }
+  }
+
+  // Fallback ONEM via lookup officiel parametres-onem-cp si pas de commune
+  // ou si aucun BureauAssignment ne match. Source : ONEM (1298 CP → BC officiels).
+  if (!onemRow) {
+    onemRow = await findOnemViaLookupCP(postalCode);
+    if (onemRow) {
+      warnings.push("Bureau ONEM trouvé via le mapping officiel ONEM (CP → BC)");
+    }
+  }
+
+  if (commune) {
+    // Reprise du bloc pour les autres services (paiement / mutuelle) après le fallback ONEM
 
     // Organisme de paiement attitré (selon préférence user)
     if (organismePaiement) {
@@ -328,6 +341,34 @@ function emptyResult(
     proximite: { syndicats: [], permanences: [], autres: [] },
     warnings,
   };
+}
+
+/**
+ * Cherche le bureau ONEM compétent pour un code postal en passant par la table
+ * lookup officielle ONEM `parametres-onem-cp` (1298 mappings CP → numéro de BC).
+ * Utile quand le PostalCode n'est pas dans notre seed mais qu'on a quand même
+ * envie de proposer un bureau au user.
+ */
+async function findOnemViaLookupCP(
+  postalCode: string
+): Promise<BureauWithRelations | null> {
+  const entry = await withDbRetry(() =>
+    prisma.lookupEntry.findFirst({
+      where: { table: { slug: "parametres-onem-cp" }, code: postalCode },
+      select: { metadata: true },
+    })
+  ).catch(() => null);
+  if (!entry?.metadata) return null;
+  const meta = entry.metadata as { BC?: string };
+  const numeroOnem = meta.BC?.split("-")[0]?.trim();
+  if (!numeroOnem) return null;
+  return withDbRetry(() =>
+    prisma.bureau.findFirst({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      where: { type: "ONEM", active: true, numeroOnem } as any,
+      include: { organisme: true, commune: true },
+    })
+  ).catch(() => null);
 }
 
 function nearestBureau(

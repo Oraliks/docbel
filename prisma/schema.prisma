@@ -1213,6 +1213,12 @@ model Bureau {
   verified       Boolean   @default(false)
   lastVerifiedAt DateTime?
   verifiedBy     String?
+  // Identifiants ONEM (pour les bureaux type=onem, sync depuis lookup
+  // bureau-de-chomage). Permet le cross-ref avec parametres-onem-cp pour
+  // les assignations CP→BC automatiques.
+  numeroOnem String? // "11", "12"... = numéro de bureau de chômage
+  regionOnem String? // "Bruxelles", "Wallonie", "Flandre"…
+  clusterOnem String? // numéro de cluster ONEM
   // i18n labels optionnels
   nameNl     String?
   nameDe     String?
@@ -1232,6 +1238,7 @@ model Bureau {
   @@index([active])
   @@index([verified])
   @@index([lastVerifiedAt])
+  @@index([numeroOnem])
 }
 
 /// Lie un bureau (sectoriel / syndicat / mutuelle) à une commission paritaire.

@@ -21,6 +21,8 @@
     "lookup:import": "dotenv -e .env.local -- tsx scripts/import-lookup-bulk.ts",
     "lookup:setup-trgm": "dotenv -e .env.local -- tsx scripts/setup-lookup-trgm.ts",
     "lookup:import-streets": "dotenv -e .env.local -- tsx scripts/import-bestaddress-streets.ts",
+    "bureaux:sync-onem": "dotenv -e .env.local -- tsx scripts/bureaux-sync-onem.ts",
+    "bureaux:sync-sections-paiement": "dotenv -e .env.local -- tsx scripts/bureaux-sync-sections-paiement.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

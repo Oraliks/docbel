@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { setToolActive } from '@/lib/tools-active'
 import { z } from 'zod'
 
 export async function GET(
@@ -100,13 +101,23 @@ export async function PATCH(
       return NextResponse.json({ error: 'Aucun champ à mettre à jour' }, { status: 400 })
     }
 
-    const updated = await prisma.tool.update({
-      where: { slug },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data: parsed.data as any,
-    })
+    // `active` n'est pas dans le client Prisma tant que db:generate n'a pas
+    // tourné après la migration. On le passe en raw SQL pour s'assurer que
+    // le toggle persiste vraiment. Les autres champs vont par la voie normale.
+    const { active, ...rest } = parsed.data
+    if (typeof active === 'boolean') {
+      await setToolActive(slug, active)
+    }
 
-    return NextResponse.json(updated)
+    let updated = null
+    if (Object.keys(rest).length > 0) {
+      updated = await prisma.tool.update({
+        where: { slug },
+        data: rest,
+      })
+    }
+
+    return NextResponse.json({ ok: true, slug, active, ...updated })
   } catch (error) {
     console.error('Error patching tool:', error)
     return NextResponse.json({ error: 'Failed to patch tool' }, { status: 500 })

@@ -9,6 +9,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
+import { fetchAllToolsActive } from '@/lib/tools-active'
 import { TOOLS_DATA, type Tool, toolSlug } from '@/lib/docbel-data'
 import type { AudienceId } from '@/lib/audience'
 
@@ -63,14 +64,17 @@ function hashCode(s: string): number {
 }
 
 export async function getPublicCatalog(): Promise<Tool[]> {
-  // 1) Tous les outils DB actifs. eslint-disable-next-line car Prisma client
-  // peut ne pas connaître `active` tant que pnpm db:generate n'a pas tourné
-  // après la migration récente.
-  const dbTools = await prisma.tool.findMany({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    where: { active: true } as any,
-    orderBy: [{ popular: 'desc' }, { order: 'asc' }, { name: 'asc' }],
-  })
+  // 1) Tous les outils DB. Le filtre `active=true` passe par un raw SQL
+  // (cf. fetchAllToolsActive) car le client Prisma ne connaît pas encore le
+  // champ tant que pnpm db:generate n'a pas tourné après la migration.
+  const [allTools, activeRows] = await Promise.all([
+    prisma.tool.findMany({
+      orderBy: [{ popular: 'desc' }, { order: 'asc' }, { name: 'asc' }],
+    }),
+    fetchAllToolsActive(),
+  ])
+  const activeSlugs = new Set(activeRows.filter((r) => r.active).map((r) => r.slug))
+  const dbTools = allTools.filter((t) => activeSlugs.has(t.slug))
   const dbSlugs = new Set(dbTools.map((t) => t.slug))
 
   const fromDb = dbTools.map(dbToolToDisplay)

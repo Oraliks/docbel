@@ -9,7 +9,9 @@ import {
   type NewsItem,
   TOOLS_DATA,
   getToolsByAudience,
+  getToolSlug,
 } from "@/lib/docbel-data";
+import { useInactiveTools } from "@/hooks/useInactiveTools";
 
 const MONTH_LABELS = [
   "JAN",
@@ -86,10 +88,15 @@ export default function HomePage() {
     };
   }, []);
 
+  const inactiveSlugs = useInactiveTools();
+
   const tools = useMemo(() => {
     const audienceTools = getToolsByAudience(persona);
-    return audienceTools.length ? audienceTools : TOOLS_DATA;
-  }, [persona]);
+    const base = audienceTools.length ? audienceTools : TOOLS_DATA;
+    // Filtre les outils désactivés par l'admin (DB Tool.active=false). Les
+    // entrées sans correspondance DB (ex: lookup-onem partenaire) passent.
+    return base.filter((t) => !inactiveSlugs.has(getToolSlug(t)));
+  }, [persona, inactiveSlugs]);
 
   const featuredArticle = news[0] ?? null;
 

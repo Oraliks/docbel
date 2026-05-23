@@ -8,15 +8,18 @@ import { LandingFooter } from "./landing/footer";
 import { LandingHeader } from "./landing/header";
 import { AppStateContext } from "@/lib/app-state-context";
 import { getAudienceFromPath } from "@/lib/audience";
-import { TOOLS_DATA } from "@/lib/docbel-data";
+import { TOOLS_DATA, getToolSlug } from "@/lib/docbel-data";
+import { useInactiveTools } from "@/hooks/useInactiveTools";
 
 export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
   const [toolsCat, setToolsCat] = useState("Tous");
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const inactiveSlugs = useInactiveTools();
 
   const dark = resolvedTheme === "dark";
+  const visibleTools = TOOLS_DATA.filter((t) => !inactiveSlugs.has(getToolSlug(t)));
 
   // /admin owns its own chrome (AppSidebar inside app/admin/layout).
   // /login is a full-screen split layout — header would clash with it.
@@ -52,7 +55,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
         <LandingCommandPalette
           open={paletteOpen}
           setOpen={setPaletteOpen}
-          tools={TOOLS_DATA}
+          tools={visibleTools}
         />
       </div>
     </AppStateContext.Provider>

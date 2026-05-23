@@ -97,9 +97,10 @@ export function BureauCard({
           <ReportForm bureauId={bureau.id} onClose={() => setShowReport(false)} />
         ) : (
           <>
-            <div className="flex flex-col md:flex-row md:items-start gap-3">
-              {/* Logo + nom + addr + contact */}
-              <div className="flex gap-3 flex-1 min-w-0">
+            <div className="flex flex-col md:flex-row md:items-stretch gap-3">
+              {/* Logo + nom + addr + contact — largeur fixe pour éviter le
+                  ballooning quand le contenu est court (3-4 lignes max) */}
+              <div className="flex gap-3 shrink-0 md:w-[340px] min-w-0">
                 {logo && <div className="shrink-0">{logo}</div>}
                 <div className="min-w-0 flex-1 space-y-0.5">
                   <h3 className="text-sm font-semibold leading-tight">
@@ -138,7 +139,7 @@ export function BureauCard({
               {/* Distances */}
               {(walkingMin !== null || drivingMin !== null) && (
                 <div
-                  className="flex md:flex-col md:items-end gap-3 md:gap-1.5 shrink-0 md:min-w-[80px]"
+                  className="flex md:flex-col md:items-end gap-3 md:gap-1.5 shrink-0 md:w-[80px]"
                   title={
                     fromUserLocation
                       ? 'depuis ta position'
@@ -160,8 +161,9 @@ export function BureauCard({
                 </div>
               )}
 
-              {/* Horaires (ou rightSlot custom) */}
-              <div className="shrink-0 md:w-[200px]">
+              {/* Horaires : grow pour absorber l'espace dispo (au lieu de
+                  laisser un trou au milieu de la card) */}
+              <div className="flex-1 min-w-0 md:min-w-[260px]">
                 {rightSlot ?? (
                   <HoursTimeline
                     hours={bureau.hours}
@@ -237,8 +239,8 @@ export function BureauContent({
       : null
   return (
     <div className="space-y-2.5">
-      <div className="flex flex-col md:flex-row md:items-start gap-3">
-        <div className="flex-1 min-w-0 space-y-0.5">
+      <div className="flex flex-col md:flex-row md:items-stretch gap-3">
+        <div className="shrink-0 md:w-[300px] min-w-0 space-y-0.5">
           <h3 className="text-sm font-semibold leading-tight">{bureau.name}</h3>
           <p className="text-xs text-muted-foreground leading-snug">
             {bureau.street}
@@ -270,7 +272,7 @@ export function BureauContent({
         </div>
         {distanceKm !== null && distanceKm !== undefined && (
           <div
-            className="flex md:flex-col md:items-end gap-3 md:gap-1.5 shrink-0"
+            className="flex md:flex-col md:items-end gap-3 md:gap-1.5 shrink-0 md:w-[80px]"
             title={
               fromUserLocation
                 ? 'depuis ta position'
@@ -289,7 +291,7 @@ export function BureauContent({
             )}
           </div>
         )}
-        <div className="shrink-0 md:w-[200px]">
+        <div className="flex-1 min-w-0 md:min-w-[260px]">
           <HoursTimeline
             hours={bureau.hours}
             notes={bureau.hoursNotes}

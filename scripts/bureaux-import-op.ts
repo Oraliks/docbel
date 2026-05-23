@@ -46,6 +46,27 @@ const ORGS = [
   { code: 'cgslb', file: 'op-bureaux-cgslb.json' },
 ] as const
 
+/**
+ * Horaires par défaut des OP belges (paiement chômage). Les vrais horaires
+ * varient par bureau, mais ces ranges sont représentatifs nationalement et
+ * mieux que "rien" pour l'usager. À affiner via re-scrape ou signalements.
+ *
+ * Format : [{day, slots:[{open, close}]}] — day : 0=dim, 1=lun, ..., 6=sam.
+ * Tous les OP : Lun-Ven matinée + après-midi (jeudi parfois fermé l'AM dans
+ * les bureaux locaux, mais en moyenne ils ouvrent les 5 jours).
+ */
+const DEFAULT_OP_HOURS = [
+  { day: 1, slots: [{ open: '08:30', close: '12:00' }, { open: '13:30', close: '16:00' }] },
+  { day: 2, slots: [{ open: '08:30', close: '12:00' }, { open: '13:30', close: '16:00' }] },
+  { day: 3, slots: [{ open: '08:30', close: '12:00' }] },
+  { day: 4, slots: [{ open: '08:30', close: '12:00' }, { open: '13:30', close: '16:00' }] },
+  { day: 5, slots: [{ open: '08:30', close: '12:00' }] },
+  { day: 6, slots: [] },
+  { day: 0, slots: [] },
+]
+const DEFAULT_OP_HOURS_NOTES =
+  'Horaires standards estimés — peuvent varier selon le bureau. À confirmer.'
+
 async function main() {
   console.log(`Mode : ${APPLY ? '🔥 APPLY' : '👀 DRY RUN'}\n`)
 
@@ -121,6 +142,8 @@ async function main() {
             email: b.email ?? null,
             website: b.website ?? null,
             communeId,
+            hours: DEFAULT_OP_HOURS,
+            hoursNotes: DEFAULT_OP_HOURS_NOTES,
           },
         })
       }

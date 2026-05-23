@@ -97,39 +97,42 @@ export function HoursTimeline({ hours, notes, type }: Props) {
       </div>
 
       {open ? (
-        <div className="pt-1 space-y-0.5 mt-1">
-          {visibleDays.map((day) => {
-            const slots = byDay.get(day) ?? []
-            const closed = slots.length === 0
-            const isToday = day === today
-            return (
-              <div
-                key={day}
-                className="flex items-baseline gap-3 text-[11px] tabular-nums"
-              >
-                <span
-                  className={`w-9 shrink-0 font-medium ${
-                    isToday
-                      ? status.tone === 'open'
-                        ? 'text-green-700 dark:text-green-400'
-                        : 'text-primary'
-                      : 'text-muted-foreground'
-                  }`}
+        <div className="pt-1 mt-1">
+          {/* 2 colonnes pour gagner de la largeur (4+3 ou 3+2 selon weekend) */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+            {visibleDays.map((day) => {
+              const slots = byDay.get(day) ?? []
+              const closed = slots.length === 0
+              const isToday = day === today
+              return (
+                <div
+                  key={day}
+                  className="flex items-baseline gap-2 text-[11px] tabular-nums"
                 >
-                  {DAY_LABELS_SHORT[day]}
-                </span>
-                <span
-                  className={
-                    closed ? 'text-primary font-medium' : 'text-foreground'
-                  }
-                >
-                  {closed
-                    ? 'Fermé'
-                    : slots.map((s) => `${s.open}–${s.close}`).join(' · ')}
-                </span>
-              </div>
-            )
-          })}
+                  <span
+                    className={`w-9 shrink-0 font-medium ${
+                      isToday
+                        ? status.tone === 'open'
+                          ? 'text-green-700 dark:text-green-400'
+                          : 'text-primary'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    {DAY_LABELS_SHORT[day]}
+                  </span>
+                  <span
+                    className={`truncate ${
+                      closed ? 'text-primary font-medium' : 'text-foreground'
+                    }`}
+                  >
+                    {closed
+                      ? 'Fermé'
+                      : slots.map((s) => `${s.open}–${s.close}`).join(' · ')}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
           {notes && (
             <p className="text-[10px] text-muted-foreground italic pt-1 mt-1 border-t border-border/40">
               {notes}

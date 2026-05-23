@@ -136,30 +136,29 @@ export function BureauCard({
                 </div>
               </div>
 
-              {/* Distances */}
-              {(walkingMin !== null || drivingMin !== null) && (
-                <div
-                  className="flex md:flex-col md:items-end gap-3 md:gap-1.5 shrink-0 md:w-[80px]"
-                  title={
-                    fromUserLocation
-                      ? 'depuis ta position'
-                      : 'depuis le centre de la commune'
-                  }
-                >
-                  {distanceKm !== null && distanceKm !== undefined && (
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
-                      <Footprints className="w-3.5 h-3.5" />
-                      {formatDistance(distanceKm)}
-                    </span>
-                  )}
-                  {drivingMin !== null && (
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
-                      <Car className="w-3.5 h-3.5" />
-                      {drivingMin} min
-                    </span>
-                  )}
-                </div>
-              )}
+              {/* Distances — toujours rendues (placeholder si pas de coords)
+                  pour uniformité visuelle entre cards */}
+              <div
+                className="flex md:flex-col md:items-end gap-3 md:gap-1.5 shrink-0 md:w-[80px]"
+                title={
+                  fromUserLocation
+                    ? 'depuis ta position'
+                    : 'depuis le centre de la commune'
+                }
+              >
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+                  <Footprints className="w-3.5 h-3.5" />
+                  {distanceKm !== null && distanceKm !== undefined
+                    ? formatDistance(distanceKm)
+                    : <span className="text-muted-foreground/40">—</span>}
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+                  <Car className="w-3.5 h-3.5" />
+                  {drivingMin !== null
+                    ? `${drivingMin} min`
+                    : <span className="text-muted-foreground/40">—</span>}
+                </span>
+              </div>
 
               {/* Horaires : grow pour absorber l'espace dispo (au lieu de
                   laisser un trou au milieu de la card) */}
@@ -189,6 +188,9 @@ export function BureauCard({
  * Bouton itinéraire toujours présent. Utilise lat/lng si dispo (plus précis,
  * pas d'ambiguïté), sinon fallback sur l'adresse texte (concat
  * street + streetNum + CP + ville) que Google Maps sait résoudre.
+ *
+ * Animation : un léger glow violet pulsant en continu pour attirer l'œil,
+ * + scale au hover + slide de l'icône external. Subtil mais intriguant.
  */
 function ItineraireButton({ bureau }: { bureau: BureauResult }) {
   const destination =
@@ -208,10 +210,12 @@ function ItineraireButton({ bureau }: { bureau: BureauResult }) {
       }
       variant="outline"
       size="sm"
-      className="h-8 text-xs gap-1 px-3"
+      className="group h-8 text-xs gap-1 px-3 relative overflow-hidden transition-all hover:scale-[1.03] hover:border-primary hover:text-primary hover:shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_15%,transparent)]"
     >
-      Itinéraire
-      <ExternalLink className="w-3 h-3 opacity-70" />
+      <span className="relative z-10">Itinéraire</span>
+      <ExternalLink className="relative z-10 w-3 h-3 opacity-70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+      {/* Glow shimmer subtil qui passe en continu */}
+      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/15 to-transparent animate-cta-shimmer pointer-events-none" />
     </Button>
   )
 }

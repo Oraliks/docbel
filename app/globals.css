@@ -505,6 +505,24 @@ body,
   }
 }
 
+/* CTA shimmer — bande lumineuse qui traverse un bouton outline en boucle
+   pour attirer l'œil. Utilisé sur les CTA "Itinéraire" des cards bureaux.
+   Désactivé par prefers-reduced-motion. */
+@keyframes cta-shimmer {
+  0%   { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(200%); }
+}
+
+.animate-cta-shimmer {
+  animation: cta-shimmer 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-cta-shimmer {
+    animation: none;
+  }
+}
+
 /* Hero "breathing" gradient — subtle scale + drift on the radial spotlight. */
 @keyframes hero-breath {
   0%, 100% {

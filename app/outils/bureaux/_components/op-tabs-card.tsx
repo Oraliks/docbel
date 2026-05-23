@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
   HelpCircle,
-  Phone,
   Globe,
   Footprints,
   Car,
@@ -13,6 +12,7 @@ import {
 } from 'lucide-react'
 import { FlagToggle } from './bureau-card'
 import { HoursTimeline } from './hours-timeline'
+import { PhoneReveal } from './phone-reveal'
 import { ReportForm } from './report-form'
 import { OpHelpModal } from './op-help-modal'
 import { haversineKm, type UserGeoloc } from './geoloc-banner'
@@ -146,13 +146,10 @@ export function OpTabsCard({ bureaux, commune, userGeoloc }: Props) {
                   </p>
                   <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs pt-0.5">
                     {active.phone && (
-                      <a
-                        href={`tel:${active.phone.replace(/\s/g, '')}`}
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
-                      >
-                        <Phone className="w-3 h-3" />
-                        {active.phone}
-                      </a>
+                      <PhoneReveal
+                        phone={active.phone}
+                        className="group inline-flex items-center gap-1 text-primary hover:underline"
+                      />
                     )}
                     {active.website && (
                       <a

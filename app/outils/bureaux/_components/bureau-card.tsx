@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
-  Phone,
   Globe,
   Flag,
   X,
@@ -13,6 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { HoursTimeline } from './hours-timeline'
+import { PhoneReveal } from './phone-reveal'
 import { ReportForm } from './report-form'
 import type { BureauResult } from './types'
 
@@ -113,13 +113,10 @@ export function BureauCard({
                   </p>
                   <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs pt-0.5">
                     {bureau.phone && (
-                      <a
-                        href={`tel:${bureau.phone.replace(/\s/g, '')}`}
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
-                      >
-                        <Phone className="w-3 h-3" />
-                        {bureau.phone}
-                      </a>
+                      <PhoneReveal
+                        phone={bureau.phone}
+                        className="group inline-flex items-center gap-1 text-primary hover:underline"
+                      />
                     )}
                     {bureau.website && (
                       <a
@@ -254,13 +251,10 @@ export function BureauContent({
           </p>
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs pt-0.5">
             {bureau.phone && (
-              <a
-                href={`tel:${bureau.phone.replace(/\s/g, '')}`}
-                className="inline-flex items-center gap-1 text-primary hover:underline"
-              >
-                <Phone className="w-3 h-3" />
-                {bureau.phone}
-              </a>
+              <PhoneReveal
+                phone={bureau.phone}
+                className="group inline-flex items-center gap-1 text-primary hover:underline"
+              />
             )}
             {bureau.website && (
               <a

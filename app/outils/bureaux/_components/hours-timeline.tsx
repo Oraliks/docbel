@@ -1,6 +1,7 @@
 'use client'
 
-import { Clock, Info } from 'lucide-react'
+import { useState } from 'react'
+import { Clock, ChevronDown, Info } from 'lucide-react'
 
 interface HourSlot {
   open: string
@@ -42,23 +43,24 @@ function computeStatus(slots: HourSlot[]): Status {
   for (const s of slots) {
     const open = timeToMinutes(s.open)
     const close = timeToMinutes(s.close)
-    if (now >= open && now < close) {
-      return { label: 'Ouvert', tone: 'open' }
-    }
+    if (now >= open && now < close) return { label: 'Ouvert', tone: 'open' }
     if (now < open) return { label: 'Fermé', tone: 'closed' }
   }
   return { label: 'Fermé', tone: 'closed' }
 }
 
 /**
- * Panneau horaires statique (toujours visible) :
- *  - Header : icon Clock + "Horaires d'ouverture" + StatusPill
- *  - Body : 1 ligne par jour (Lun→Dim, ou Lun→Ven si ONEM/OP),
- *    format `Lun.  08:30–12:00 · 13:30–16:00`. Fermé en violet.
+ * Panneau horaires dropdown :
+ *  - Fermé (par défaut) : header avec status + ligne "Aujourd'hui · Lun.
+ *    08:30–12:00 · 13:30–16:00 ⌄". Compact — montre l'info la plus utile
+ *    (les horaires d'aujourd'hui) sans déployer le bloc.
+ *  - Ouvert : header + 7 jours (Lun→Dim, ou Lun→Ven si ONEM/OP) + ⌃
  *
- * Le tout dans un container bordé compact pour s'intégrer dans la card.
+ * "Aujourd'hui" en vert si Ouvert, gris si Fermé.
  */
 export function HoursTimeline({ hours, notes, type }: Props) {
+  const [open, setOpen] = useState(false)
+
   const hideWeekend = type !== 'COMMUNE' && type !== 'CPAS'
   const visibleDays = DAYS_ORDER.filter((d) => {
     if (hideWeekend && (d === 0 || d === 6)) return false
@@ -74,8 +76,18 @@ export function HoursTimeline({ hours, notes, type }: Props) {
   const byDay = new Map<number, HourSlot[]>()
   for (const d of hours ?? []) byDay.set(d.day, d.slots)
 
+  const todayClosed = todaySlots.length === 0
+  const todayLabel = DAY_LABELS_SHORT[today]
+  const todayHours = todayClosed
+    ? 'Fermé'
+    : todaySlots.map((s) => `${s.open}–${s.close}`).join(' · ')
+
   return (
-    <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 space-y-1">
+    <button
+      type="button"
+      onClick={() => setOpen((v) => !v)}
+      className="w-full text-left rounded-md border border-border/60 bg-muted/30 hover:bg-muted/50 transition-colors px-3 py-2 space-y-1"
+    >
       <div className="flex items-center gap-2">
         <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         <span className="text-xs font-medium text-foreground">
@@ -84,40 +96,76 @@ export function HoursTimeline({ hours, notes, type }: Props) {
         <StatusPill status={status} className="ml-auto" />
       </div>
 
-      <div className="pt-1 space-y-0.5">
-        {visibleDays.map((day) => {
-          const slots = byDay.get(day) ?? []
-          const closed = slots.length === 0
-          return (
-            <div
-              key={day}
-              className="flex items-baseline gap-3 text-[11px] tabular-nums"
-            >
-              <span className="text-muted-foreground w-9 shrink-0 font-medium">
-                {DAY_LABELS_SHORT[day]}
-              </span>
-              <span
-                className={closed ? 'text-primary font-medium' : 'text-foreground'}
+      {open ? (
+        <div className="pt-1 space-y-0.5 mt-1">
+          {visibleDays.map((day) => {
+            const slots = byDay.get(day) ?? []
+            const closed = slots.length === 0
+            const isToday = day === today
+            return (
+              <div
+                key={day}
+                className="flex items-baseline gap-3 text-[11px] tabular-nums"
               >
-                {closed
-                  ? 'Fermé'
-                  : slots.map((s) => `${s.open}–${s.close}`).join(' · ')}
-              </span>
-            </div>
-          )
-        })}
-      </div>
-
-      {(notes || true) && (
-        <p className="flex items-start gap-1 text-[10px] text-muted-foreground/70 pt-1 mt-1 border-t border-border/40">
-          <Info className="w-2.5 h-2.5 shrink-0 mt-0.5" />
-          <span>
-            {notes ??
-              "Fermetures exceptionnelles non listées. À confirmer par téléphone."}
+                <span
+                  className={`w-9 shrink-0 font-medium ${
+                    isToday
+                      ? status.tone === 'open'
+                        ? 'text-green-700 dark:text-green-400'
+                        : 'text-primary'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  {DAY_LABELS_SHORT[day]}
+                </span>
+                <span
+                  className={
+                    closed ? 'text-primary font-medium' : 'text-foreground'
+                  }
+                >
+                  {closed
+                    ? 'Fermé'
+                    : slots.map((s) => `${s.open}–${s.close}`).join(' · ')}
+                </span>
+              </div>
+            )
+          })}
+          {notes && (
+            <p className="text-[10px] text-muted-foreground italic pt-1 mt-1 border-t border-border/40">
+              {notes}
+            </p>
+          )}
+          <p className="flex items-start gap-1 text-[10px] text-muted-foreground/70 pt-1 mt-1 border-t border-border/40">
+            <Info className="w-2.5 h-2.5 shrink-0 mt-0.5" />
+            <span>
+              Fermetures exceptionnelles non listées. À confirmer par téléphone.
+            </span>
+          </p>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 text-[11px] tabular-nums pt-0.5">
+          <span
+            className={`shrink-0 font-medium ${
+              status.tone === 'open'
+                ? 'text-green-700 dark:text-green-400'
+                : 'text-muted-foreground'
+            }`}
+          >
+            Aujourd&apos;hui
           </span>
-        </p>
+          <span className="text-muted-foreground/50">·</span>
+          <span className="text-muted-foreground font-medium">{todayLabel}</span>
+          <span
+            className={`truncate ${
+              todayClosed ? 'text-primary font-medium' : 'text-foreground'
+            }`}
+          >
+            {todayHours}
+          </span>
+          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-auto shrink-0" />
+        </div>
       )}
-    </div>
+    </button>
   )
 }
 

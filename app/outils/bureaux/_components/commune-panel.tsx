@@ -34,14 +34,18 @@ interface Props {
 export function CommunePanel({ commune, bureaux }: Props) {
   const validBureaux = bureaux.filter((b): b is BureauResult => !!b)
 
-  // Couleurs des dots sur la map :
-  //  - ONEM    : rouge clair (distinct de FGTB qui est rouge foncé)
+  // Couleurs des dots sur la map. Contrainte : aucune collision visuelle
+  // avec les 4 OP (CAPAC orange, FGTB rouge, CSC vert, CGSLB bleu) ni
+  // avec le centroïde commune (violet primary).
+  //  - ONEM    : anthracite (sobre, "officiel", distinct de toutes les
+  //              couleurs OP — le rouge clair précédent #F87171 était
+  //              trop proche de l'orange CAPAC #F58220)
   //  - CPAS    : gris neutre
   //  - COMMUNE : blanc (stroke pour visibilité sur fond clair)
-  //  - SYNDICAT: couleur de l'organisme (FGTB rouge foncé, CSC vert, CGSLB
+  //  - SYNDICAT: couleur de l'organisme (FGTB rouge, CSC vert, CGSLB
   //              bleu, CAPAC orange — déjà dans organismeColor en DB)
   const TYPE_COLOR: Record<string, string> = {
-    ONEM: '#F87171', // red-400, plus clair que FGTB (#E30613)
+    ONEM: '#1F2937', // gray-800 anthracite — distinct de tous les OP
     CPAS: '#9CA3AF', // gray-400
     COMMUNE: '#FFFFFF', // blanc, stroke géré côté Pin
     SYNDICAT: '#ea580c', // fallback si organismeColor manque

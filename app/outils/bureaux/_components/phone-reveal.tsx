@@ -68,11 +68,18 @@ export function PhoneReveal({ phone, className }: Props) {
       aria-label="Afficher le numéro de téléphone"
     >
       <Phone className="w-3 h-3" />
-      <span className="tabular-nums tracking-wider select-none">
-        •• •• •• •• ••
-      </span>
-      <span className="text-[10px] opacity-70 underline-offset-2 group-hover:underline">
-        afficher
+      {/* Pointillés en filigrane pour suggérer un numéro caché,
+          surmontés du mot "Afficher" qui indique l'action. */}
+      <span className="relative inline-flex items-center">
+        <span
+          aria-hidden
+          className="tabular-nums tracking-wider text-muted-foreground/50 select-none"
+        >
+          •• •• ••
+        </span>
+        <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold">
+          Afficher
+        </span>
       </span>
     </button>
   )

@@ -90,7 +90,7 @@ function sleep(ms: number) {
 async function main() {
   console.log(`Mode : ${APPLY ? '🔥 APPLY' : '👀 DRY RUN'}${FORCE ? ' (force)' : ''}${ORG_FILTER ? ' org=' + ORG_FILTER : ''}\n`)
 
-  const where: Parameters<typeof prisma.bureau.findMany>[0] = {
+  const bureaus = await prisma.bureau.findMany({
     where: {
       type: 'SYNDICAT',
       active: true,
@@ -99,8 +99,7 @@ async function main() {
     },
     include: { organisme: { select: { code: true } } },
     orderBy: [{ organisme: { code: 'asc' } }, { postalCode: 'asc' }],
-  }
-  const bureaus = await prisma.bureau.findMany(where)
+  })
   console.log(`${bureaus.length} bureaux à géocoder\n`)
 
   let ok = 0

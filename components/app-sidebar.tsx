@@ -74,10 +74,10 @@ const defaultData = {
           url: "/admin/chomage/lookup",
           children: [
             { title: "Tables", url: "/admin/chomage/lookup" },
-            { title: "Recherche", url: "/admin/chomage/lookup/search" },
-            { title: "Statistiques", url: "/admin/chomage/lookup/stats" },
-            { title: "Anomalies", url: "/admin/chomage/lookup/anomalies" },
-            { title: "Import en lot", url: "/admin/chomage/lookup/import-batch" },
+            { title: "Recherche", url: "/admin/chomage/lookup?tab=search" },
+            { title: "Statistiques", url: "/admin/chomage/lookup?tab=stats" },
+            { title: "Anomalies", url: "/admin/chomage/lookup?tab=anomalies" },
+            { title: "Import en lot", url: "/admin/chomage/lookup?tab=import" },
           ],
         },
         {

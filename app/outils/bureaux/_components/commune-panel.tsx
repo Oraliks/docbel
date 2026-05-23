@@ -34,12 +34,17 @@ interface Props {
 export function CommunePanel({ commune, bureaux }: Props) {
   const validBureaux = bureaux.filter((b): b is BureauResult => !!b)
 
-  // Couleurs des pins par type bureau (cohérent avec les icônes des cards)
+  // Couleurs des dots sur la map :
+  //  - ONEM    : rouge clair (distinct de FGTB qui est rouge foncé)
+  //  - CPAS    : gris neutre
+  //  - COMMUNE : blanc (stroke pour visibilité sur fond clair)
+  //  - SYNDICAT: couleur de l'organisme (FGTB rouge foncé, CSC vert, CGSLB
+  //              bleu, CAPAC orange — déjà dans organismeColor en DB)
   const TYPE_COLOR: Record<string, string> = {
-    ONEM: '#0050A0',
-    CPAS: '#7c3aed',
-    COMMUNE: '#059669',
-    SYNDICAT: '#ea580c',
+    ONEM: '#F87171', // red-400, plus clair que FGTB (#E30613)
+    CPAS: '#9CA3AF', // gray-400
+    COMMUNE: '#FFFFFF', // blanc, stroke géré côté Pin
+    SYNDICAT: '#ea580c', // fallback si organismeColor manque
   }
 
   const mapBureaus = validBureaux

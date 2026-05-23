@@ -126,17 +126,30 @@ export function CustomBelgiumMap({
       }) as MunicipalityFeature[]
     }
 
-    // Calcule la projection pour englober commune + voisins (ou tout pays
-    // en fallback)
-    const focusFeatures = selected ? [selected, ...neighbors] : fc.features
-    const focusCollection: FeatureCollection<Polygon | MultiPolygon> = {
-      type: 'FeatureCollection',
-      features: focusFeatures,
+    // Projection : zoome sur la commune sélectionnée (elle prend ~60-70% du
+    // viewport). Les voisins rendus autour s'étendent au-delà mais restent
+    // visibles dans l'espace de marge. Si pas de commune sélectionnée :
+    // fitExtent sur tout le pays.
+    let focusCollection: FeatureCollection<Polygon | MultiPolygon>
+    if (selected) {
+      focusCollection = {
+        type: 'FeatureCollection',
+        features: [selected],
+      }
+    } else {
+      focusCollection = {
+        type: 'FeatureCollection',
+        features: fc.features,
+      }
     }
+    // Padding : 60-70px autour de la commune cible — laisse de l'air pour
+    // voir les voisins en débord. Plus le padding est petit, plus la commune
+    // sélectionnée est grosse à l'écran.
+    const pad = selected ? 70 : 12
     const proj = geoMercator().fitExtent(
       [
-        [12, 12],
-        [size.w - 12, size.h - 12],
+        [pad, pad],
+        [size.w - pad, size.h - pad],
       ],
       focusCollection as unknown as GeoPermissibleObjects
     )
@@ -248,21 +261,22 @@ export function CustomBelgiumMap({
             </text>
           )}
 
-          {/* Pins bureaux */}
+          {/* Dots bureaux (simple cercle coloré, couleur par type d'org) */}
           {bureaus.map((b) => {
             const xy = projection?.proj([b.lng, b.lat])
             if (!xy || !Number.isFinite(xy[0])) return null
             return (
               <g key={b.id} transform={`translate(${xy[0]}, ${xy[1]})`}>
-                <Pin color={b.color} title={b.name} />
+                <Dot color={b.color} title={b.name} />
               </g>
             )
           })}
 
-          {/* Pin centroïde commune sélectionnée (au-dessus des bureaux) */}
+          {/* Dot centroïde commune sélectionnée (au-dessus des bureaux, plus
+              gros pour bien repérer le centre de zone) */}
           {sel && selCentroid && Number.isFinite(selCentroid[0]) && (
             <g transform={`translate(${selCentroid[0]}, ${selCentroid[1]})`}>
-              <Pin color="var(--primary)" title={sel.properties.name_fr} large />
+              <Dot color="var(--primary)" title={sel.properties.name_fr} large />
             </g>
           )}
         </g>
@@ -305,7 +319,16 @@ export function CustomBelgiumMap({
   )
 }
 
-function Pin({
+/**
+ * Marqueur simple : un cercle plein coloré avec un fin halo pour le détacher
+ * du fond. La taille `large` est utilisée pour le centroïde de la commune
+ * sélectionnée — distingue le repère "ma zone" des bureaux individuels.
+ *
+ * Stroke contrastant : noir pour les couleurs claires (blanc CPAS/Commune),
+ * blanc pour les couleurs vives (ONEM rouge clair, syndicats colorés). Ça
+ * garantit la lisibilité sur le fond pastel et sur le polygone violet.
+ */
+function Dot({
   color,
   title,
   large = false,
@@ -314,21 +337,39 @@ function Pin({
   title: string
   large?: boolean
 }) {
-  const w = large ? 22 : 14
-  const h = large ? 26 : 16
+  const r = large ? 6 : 4.5
+  const isLight = isLightColor(color)
   return (
     <g>
       <title>{title}</title>
-      {/* Drop pin shape */}
-      <path
-        d={`M0 ${-h} C ${-w / 1.6} ${-h} ${-w / 1.6} ${-h / 2.2} 0 0 C ${w / 1.6} ${-h / 2.2} ${w / 1.6} ${-h} 0 ${-h} Z`}
+      <circle
+        cx={0}
+        cy={0}
+        r={r}
         fill={color}
-        stroke="white"
-        strokeWidth={1.5}
+        stroke={isLight ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.95)'}
+        strokeWidth={1.2}
       />
-      <circle cx={0} cy={-h * 0.65} r={w / 4} fill="white" />
     </g>
   )
+}
+
+/** Détecte si une couleur est claire (pour adapter le stroke). */
+function isLightColor(hexOrVar: string): boolean {
+  // var(--primary) ou autres custom properties : on suppose pas clair
+  if (hexOrVar.startsWith('var(')) return false
+  // FFFFFF blanc évident
+  if (/^#?fff(fff)?$/i.test(hexOrVar)) return true
+  // hex courts ou longs
+  const m = hexOrVar.replace('#', '')
+  if (m.length !== 3 && m.length !== 6) return false
+  const expand = m.length === 3 ? m.split('').map((c) => c + c).join('') : m
+  const r = parseInt(expand.slice(0, 2), 16)
+  const g = parseInt(expand.slice(2, 4), 16)
+  const b = parseInt(expand.slice(4, 6), 16)
+  // perceived luminance (Rec. 709)
+  const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+  return lum > 0.7
 }
 
 function bboxOverlaps(

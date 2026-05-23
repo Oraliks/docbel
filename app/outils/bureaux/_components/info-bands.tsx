@@ -26,9 +26,9 @@ export function InfoBands() {
         body="Les informations (horaires, coordonnées, services) sont vérifiées et mises à jour régulièrement."
       />
       <InfoBand
-        icon={<Flag className="w-4 h-4 text-red-600" />}
+        icon={<Flag className="w-3.5 h-3.5" />}
         title="Une info incorrecte ?"
-        body="Utilise le bouton 🚩 sur la card concernée pour nous signaler une erreur précise."
+        body="Utilise le bouton drapeau en haut à droite de la card concernée pour nous signaler une erreur précise."
       />
     </div>
   )
@@ -44,7 +44,7 @@ function InfoBand({
   body: string
 }) {
   return (
-    <div className="rounded-lg border bg-card/50 p-3 space-y-1">
+    <div className="rounded-lg border bg-card p-3 space-y-1">
       <div className="flex items-center gap-2">
         <span className="text-muted-foreground">{icon}</span>
         <h3 className="text-xs font-semibold">{title}</h3>

@@ -92,14 +92,14 @@ export function CommunePanel({ commune, bureaux }: Props) {
         </CardContent>
       </Card>
 
-      <Card className="bg-primary/[0.03]">
+      <Card>
         <CardContent className="p-3 flex items-start gap-2 text-[11px] text-muted-foreground">
           <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary/70" />
           <p>
-            <strong className="text-foreground">Bon à savoir.</strong> Les horaires
-            peuvent varier (jours fériés, ponts, fermetures exceptionnelles).
-            Vérifie toujours par téléphone ou sur le site de l&apos;organisme
-            avant de te déplacer.
+            <strong className="text-foreground">Bon à savoir.</strong>{' '}
+            Les horaires peuvent varier (jours fériés, ponts, fermetures
+            exceptionnelles). Vérifie toujours par téléphone ou sur le site
+            de l&apos;organisme avant de te déplacer.
           </p>
         </CardContent>
       </Card>

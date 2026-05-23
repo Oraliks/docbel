@@ -69,7 +69,9 @@ async function fixRegions() {
     if (APPLY) {
       await prisma.commune.update({
         where: { id: c.id },
-        data: { region: correctRegion },
+        // Le champ region est un enum Prisma — TS infère mal le string ; cast direct.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: { region: correctRegion as any },
       })
     }
     if (toUpdate <= 20) {

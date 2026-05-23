@@ -3,7 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { MapPin } from 'lucide-react'
 import { CustomBelgiumMap } from './custom-belgium-map'
-import type { BureauResult, CommuneSummary } from './types'
+import { displayBureauName, type BureauResult, type CommuneSummary } from './types'
 
 /** Mapping resilient des valeurs region stockées en DB (minuscules anglais
  * via le seed REFNIS) vers leur label FR. Fallback : on retourne la valeur
@@ -69,7 +69,9 @@ export function CommunePanel({ commune, bureaux }: Props) {
           : (TYPE_COLOR[b.type] ?? '#7c3aed')
       return {
         id: b.id,
-        name: b.name,
+        // displayBureauName : "BRUXELLES" → "ONEM de Bruxelles" pour
+        // que le tooltip du dot soit aussi clair que la card.
+        name: displayBureauName(b),
         lat: b.lat,
         lng: b.lng,
         color,

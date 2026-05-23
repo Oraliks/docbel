@@ -14,7 +14,7 @@ import {
 import { HoursTimeline } from './hours-timeline'
 import { PhoneReveal } from './phone-reveal'
 import { ReportForm } from './report-form'
-import type { BureauResult } from './types'
+import { displayBureauName, type BureauResult } from './types'
 
 interface Props {
   /** Label catégorie (CPAS, ONEM, MAISON COMMUNALE, ORGANISME DE PAIEMENT) */
@@ -320,38 +320,8 @@ function shortDomain(url: string): string {
   }
 }
 
-/**
- * Affichage du nom d'un bureau dans la card.
- *
- * Cas particulier ONEM : le `name` en DB vient du lookup officiel ONEM
- * et n'est que la ville en MAJUSCULES (ex: "BRUXELLES", "LIEGE",
- * "ANTWERPEN"). Affiché brut, on lit "BRUXELLES" en gros, on ne sait
- * pas de quel organisme il s'agit — alors qu'on est dans la card
- * ONEM. On préfixe "ONEM de " + on convertit la ville en TitleCase
- * pour avoir "ONEM de Bruxelles" lisible.
- *
- * Si le name commence déjà par "ONEM" (cas où on aurait nettoyé la
- * DB plus tard), on garde tel quel pour éviter "ONEM de ONEM …".
- *
- * Pour les autres types (CPAS, COMMUNE, SYNDICAT) les noms en DB sont
- * déjà self-descriptive ("CPAS de Schaerbeek", "FGTB Bruxelles") donc
- * on ne touche pas.
- */
-function displayBureauName(bureau: BureauResult): string {
-  if (bureau.type === 'ONEM') {
-    const raw = bureau.name.trim()
-    if (/^onem\b/i.test(raw)) return raw
-    return `ONEM de ${toTitleCase(raw)}`
-  }
-  return bureau.name
-}
-
-/** "BRUXELLES" → "Bruxelles", "SAINT-JOSSE-TEN-NOODE" → "Saint-Josse-Ten-Noode" */
-function toTitleCase(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/(^|[\s\-'])\p{L}/gu, (m) => m.toUpperCase())
-}
+// displayBureauName extrait dans types.ts pour être partagé avec
+// commune-panel.tsx (tooltip des dots sur la map).
 
 export function FlagToggle({
   active,

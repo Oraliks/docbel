@@ -192,9 +192,15 @@ export function BureauxFinder() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,380px)_1fr] gap-4">
-            {/* Map sticky desktop */}
-            <div className="hidden lg:block lg:sticky lg:top-4 lg:self-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,380px)_1fr] gap-4 lg:items-stretch">
+            {/* Map desktop : la div stretch à la hauteur de la colonne
+                droite (grâce à items-stretch sur le grid + h-full dans
+                CommunePanel). Pas de sticky : le user a demandé que la
+                map prenne la même hauteur que les cards, donc elle
+                "vit" dans le flow normal du grid. Une max-height sur
+                la map elle-même évite qu'elle dépasse le viewport quand
+                la colonne droite est très haute. */}
+            <div className="hidden lg:block">
               <CommunePanel commune={data.commune} bureaux={mapBureaus} />
             </div>
             <div className="lg:hidden">

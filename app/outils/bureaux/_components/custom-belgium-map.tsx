@@ -199,8 +199,9 @@ export function CustomBelgiumMap({
       <div
         ref={containerRef}
         style={{
-          height,
           width: '100%',
+          height: '100%',
+          minHeight: height,
           borderRadius: 10,
           background: 'var(--muted)',
         }}
@@ -218,7 +219,17 @@ export function CustomBelgiumMap({
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height, borderRadius: 10, overflow: 'hidden' }}
+      // height: 100 % laisse le parent (flex-1 dans CommunePanel) imposer
+      // la vraie hauteur ; minHeight garantit un fallback lisible si le
+      // parent n'a pas de hauteur explicite (e.g. usage standalone).
+      // Le ResizeObserver détecte la taille réelle et reprojette la carte.
+      style={{
+        width: '100%',
+        height: '100%',
+        minHeight: height,
+        borderRadius: 10,
+        overflow: 'hidden',
+      }}
       className="relative bg-[color-mix(in_oklab,var(--primary)_4%,white)] dark:bg-[color-mix(in_oklab,var(--primary)_8%,#0c0c12)] border border-border"
     >
       <svg

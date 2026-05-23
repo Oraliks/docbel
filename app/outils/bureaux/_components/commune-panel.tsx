@@ -85,9 +85,13 @@ export function CommunePanel({ commune, bureaux }: Props) {
   const geolocCount = validBureaux.filter((b) => b.lat !== null).length
 
   return (
-    <div className="space-y-3">
-      <Card>
-        <CardContent className="p-4 space-y-3">
+    // h-full : la div racine prend toute la hauteur du parent (qui est
+    // stretch via grid items-stretch dans bureaux-finder). La Card hérite
+    // de cette hauteur, et le conteneur de la map prend tout l'espace
+    // restant après le bloc titre (flex-1).
+    <div className="h-full">
+      <Card className="h-full flex flex-col">
+        <CardContent className="p-4 flex flex-col gap-3 flex-1 min-h-0">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
@@ -115,7 +119,10 @@ export function CommunePanel({ commune, bureaux }: Props) {
             )}
           </div>
 
-          <div className="h-[420px] -mx-4 -mb-4">
+          {/* min-h-[420px] : garantit une hauteur lisible même si la
+              colonne droite est très courte. Le ResizeObserver dans
+              CustomBelgiumMap détecte la vraie taille et reprojette. */}
+          <div className="flex-1 min-h-[420px] -mx-4 -mb-4">
             <CustomBelgiumMap
               selectedInsCode={commune?.insCode ?? null}
               center={center}

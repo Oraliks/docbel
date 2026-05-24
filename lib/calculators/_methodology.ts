@@ -1164,8 +1164,144 @@ const METHODOLOGIES: CalcMethodology[] = [
     sourceFile: "lib/calculators/pension.ts",
     reliability: "high",
     reliabilityNote:
-      "Régime salarié belge modélisé fidèlement : pas de malus linéaire (supprimé) mais vraies conditions d'éligibilité au départ anticipé (`getConditionAnticipation` : 60/44, 61/43, 62-64/42), avec gestion des périodes assimilées (chômage, maladie, crédit-temps reconnu) intégrées dans la carrière totale. Pour le chiffre exact : mypension.be (compte de carrière individuel).",
+      "Formule SFP officielle (taux × carrière/45). Plafond salarial annuel 2026 (69 521 €) et minimum garanti mensuel post-indexation mars 2026 (1 844,93 € isolé / 2 305,44 € ménage). Conditions d'anticipation conformes à la loi du 10 août 2015 (60/44, 61/43, 62-64/42), avec périodes assimilées intégrées dans la carrière totale. Estimation indicative — pour le calcul officiel et personnalisé : mypension.be.",
     year: 2026,
+    lastUpdatedAt: "2026-05-25",
+    badges: ["Belgique", "Salarié 2026", "Données 2026"],
+    category: "Retraite & Sécurité sociale",
+    tags: ["pension", "retraite", "SFP", "salarié", "carrière"],
+    pedagogyIntro:
+      "La pension légale du salarié belge se calcule selon une **formule officielle** simple : `salaire pris × taux × (carrière / 45)`, où le **taux** est de 60 % pour un isolé ou 75 % pour le taux ménage, la **carrière complète** vaut 45 ans, et le **salaire pris** est la moyenne des salaires plafonnée annuellement (69 521 €/an en 2026). Le départ avant l'**âge légal** (65, 66 ou 67 ans selon votre année de naissance) n'est pas possible avec un simple « malus » : la **loi du 10 août 2015** fixe une carrière minimum par âge (44 ans à 60 ans, 43 ans à 61 ans, 42 ans entre 62 et 64 ans). Deux garde-fous viennent compléter ce calcul : un **plancher minimum garanti** mensuel (1 844,93 € isolé / 2 305,44 € ménage en 2026, proratisé selon la carrière) si vous avez au moins 30 ans de carrière, et un **plafond pension** indicatif au-delà duquel la pension légale n'augmente plus.",
+    differentiators: [
+      {
+        label: "Vraies conditions de départ anticipé (loi 10/08/2015)",
+        description:
+          "Aucun malus linéaire fantaisiste : on applique les conditions de carrière minimum publiées par le SFP — 44 ans à 60 ans, 43 ans à 61 ans, 42 ans entre 62 et 64 ans. Si la condition n'est pas remplie, le calc bascule sur l'âge légal et explique pourquoi.",
+      },
+      {
+        label: "Périodes assimilées intégrées",
+        description:
+          "Chômage indemnisé, maladie de longue durée, congé parental, service militaire et crédit-temps reconnu s'ajoutent à la carrière effective et comptent à la fois pour l'éligibilité à l'anticipation et pour le calcul de la pension (régime SFP fidèle).",
+      },
+      {
+        label: "Minimum garanti proratisé",
+        description:
+          "Si la carrière totale atteint au moins 30 ans (deux tiers d'une carrière complète), un plancher minimum mensuel s'applique, proratisé sur 45 — exactement comme le fait le SFP.",
+      },
+      {
+        label: "Plafonds salarial et pension actifs",
+        description:
+          "Plafond salarial 69 521 €/an (SFP 2026) et plafonds pension mensuels indicatifs (3 500 € isolé / 4 350 € ménage) — affichés dans le résultat quand ils s'activent, pour expliquer pourquoi la pension ne grimpe pas au-delà.",
+      },
+      {
+        label: "Détection automatique de l'âge légal",
+        description:
+          "L'âge légal (65 / 66 / 67 ans) est calculé à partir de la date de naissance selon la loi du 10/08/2015 : pas besoin que l'utilisateur le sache, c'est l'outil qui adapte.",
+      },
+    ],
+    maintenanceGuide: [
+      {
+        trigger: "Plafond salarial annuel (indexation)",
+        source: "SFP — Plafond salarial (page officielle)",
+        sourceUrl:
+          "https://www.sfpd.fgov.be/fr/montant-de-la-pension/calcul/types-de-pensions/salaries/salaires/plafond-salarial/",
+        frequency: "1 fois/an (indexation, souvent en janvier ou en mars)",
+        codeLocation: "lib/calculators/pension.ts → PLAFOND_SALARIAL_2026",
+      },
+      {
+        trigger: "Minimum garanti (isolé + ménage)",
+        source: "SFP — Pension minimum garantie",
+        sourceUrl:
+          "https://www.sfpd.fgov.be/fr/montant-de-la-pension/calcul/minimum-garanti-de-pension/",
+        frequency: "Indexation pivot (généralement 1-2 fois/an)",
+        codeLocation:
+          "lib/calculators/pension.ts → MINIMUM_ISOLE / MINIMUM_MENAGE",
+      },
+      {
+        trigger: "Conditions de départ anticipé (carrière minimum / âge)",
+        source: "SFP — Pension anticipée (loi 10/08/2015)",
+        sourceUrl:
+          "https://www.sfpd.fgov.be/fr/montant-de-la-pension/calcul/age-de-la-pension/",
+        frequency: "Rare (modification = loi)",
+        codeLocation:
+          "lib/calculators/pension.ts → getConditionAnticipation()",
+      },
+      {
+        trigger: "Âge légal de la pension par année de naissance",
+        source: "Moniteur belge — Loi du 10 août 2015",
+        sourceUrl: "https://www.ejustice.just.fgov.be",
+        frequency: "Stable (jusqu'à éventuelle nouvelle loi)",
+        codeLocation: "lib/calculators/pension.ts → getAgeLegal()",
+      },
+      {
+        trigger: "Validation périodique des cas de référence",
+        source: "mypension.be — compte de carrière individuel",
+        sourceUrl: "https://www.mypension.be",
+        frequency:
+          "1 fois/an (après indexation, comparaison contre simulateur officiel)",
+        codeLocation: "scripts/debug-pension.ts → re-tester les 6 cas",
+      },
+    ],
+    briefMeta: [
+      {
+        label: "Méthode",
+        value: "Formule SFP officielle (taux × carrière / 45)",
+        icon: "FileCode2",
+      },
+      {
+        label: "Indexation",
+        value: "Plafond salarial + minimum garanti indexés annuellement",
+        icon: "Calendar",
+      },
+      { label: "Unités", value: "Mensuel + annuel (€ brut)", icon: "Calculator" },
+      { label: "Dernière MAJ", value: "25 mai 2026", icon: "Clock" },
+      { label: "Auteur", value: "Équipe Docbel", icon: "Users" },
+    ],
+    inputsDetailed: [
+      {
+        label: "Date de naissance",
+        description:
+          "Détermine automatiquement l'âge légal (65 ans avant 1960, 66 ans 1960-1963, 67 ans à partir de 1964).",
+        icon: "Calendar",
+      },
+      {
+        label: "Années de carrière effectives",
+        description:
+          "Années réellement travaillées comme salarié (hors périodes assimilées).",
+        icon: "Briefcase",
+      },
+      {
+        label: "Périodes assimilées",
+        description:
+          "Chômage indemnisé, maladie de longue durée, congé parental, service militaire, crédit-temps reconnu. Comptent comme carrière.",
+        icon: "Clock",
+      },
+      {
+        label: "Salaire annuel brut moyen sur la carrière",
+        description:
+          "Moyenne sur l'ensemble de la carrière (pas seulement le dernier salaire). Plafonné à 69 521 €/an en 2026.",
+        icon: "Euro",
+      },
+      {
+        label: "Statut civil",
+        description: "Isolé (taux 60 %) ou ménage / cohabitant légal (taux 75 %).",
+        icon: "Users",
+      },
+      {
+        label: "Âge de départ envisagé",
+        description:
+          "Entre 60 et 70 ans. Le départ avant l'âge légal est conditionné à la carrière minimum.",
+        icon: "Hourglass",
+      },
+    ],
+    outputs: [
+      "Pension mensuelle brute estimée (€)",
+      "Pension annuelle brute estimée (€)",
+      "Âge légal et âge de départ effectivement retenu",
+      "Éligibilité au départ anticipé (oui/non + condition manquée)",
+      "Carrière totale (effective + assimilée) prise en compte",
+      "Indication plafond salarial ou plafond pension atteint",
+    ],
     inputs: [
       "Date de naissance (détermine l'âge légal)",
       "Années de carrière prévues (0–50)",
@@ -1180,12 +1316,12 @@ const METHODOLOGIES: CalcMethodology[] = [
         expression: "carrière_totale = années_carrière + périodes_assimilées",
       },
       {
-        label: "Éligibilité départ anticipé",
+        label: "Éligibilité départ anticipé (loi 10/08/2015)",
         expression:
-          "60 ans → ≥ 44 ans / 61 ans → ≥ 43 ans / 62-64 ans → ≥ 42 ans (sinon : âge légal)",
+          "60 ans → ≥ 44 ans / 61 ans → ≥ 43 ans / 62-64 ans → ≥ 42 ans (sinon : calcul à l'âge légal pour info)",
       },
       {
-        label: "Salaire pris",
+        label: "Salaire pris en compte",
         expression: "salaire_pris = min(salaire_moyen, plafond_salarial)",
       },
       {
@@ -1195,26 +1331,43 @@ const METHODOLOGIES: CalcMethodology[] = [
       },
       {
         label: "Plancher minimum garanti (si carrière totale ≥ 30 ans)",
-        expression: "pension = max(pension, minimum × carrière/45)",
+        expression: "pension_mensuelle = max(pension_mensuelle, minimum × carrière/45)",
       },
       {
-        label: "Plafond légal",
-        expression: "pension = min(pension, plafond_pension)",
+        label: "Plafond légal indicatif",
+        expression:
+          "pension_mensuelle = min(pension_mensuelle, plafond_pension)",
       },
     ],
     constants: [
-      { name: "Plafond salarial annuel", value: "69 521 €/an", note: "Barème SFPD 2026 (corrigé après audit)." },
-      { name: "Carrière complète", value: "45 ans" },
+      {
+        name: "Plafond salarial annuel",
+        value: "69 521 €/an",
+        note: "Barème SFP 2026 (indexé). Au-delà, le salaire n'augmente plus la pension.",
+      },
+      { name: "Carrière complète conventionnelle", value: "45 ans" },
       { name: "Taux isolé", value: "60 %" },
-      { name: "Taux ménage", value: "75 %" },
-      { name: "Minimum garanti isolé", value: "1 700 €/mois", note: "Carrière totale ≥ 30 ans, proratisé sur 45." },
-      { name: "Minimum garanti ménage", value: "2 100 €/mois" },
-      { name: "Plafond pension isolé", value: "3 500 €/mois", note: "Plafond indicatif." },
-      { name: "Plafond pension ménage", value: "4 350 €/mois" },
+      { name: "Taux ménage", value: "75 %", note: "Conjoint sans revenu propre suffisant." },
+      {
+        name: "Minimum garanti isolé",
+        value: "1 844,93 €/mois",
+        note: "Barème SFP au 1ᵉʳ mars 2026 (post-indexation +2 %). Carrière totale ≥ 30 ans, proratisé sur 45.",
+      },
+      {
+        name: "Minimum garanti ménage",
+        value: "2 305,44 €/mois",
+        note: "Barème SFP au 1ᵉʳ mars 2026 (post-indexation).",
+      },
+      {
+        name: "Plafond pension isolé (mensuel)",
+        value: "3 500 €/mois",
+        note: "Plafond indicatif au-delà duquel la pension légale plafonne dans le calc.",
+      },
+      { name: "Plafond pension ménage (mensuel)", value: "4 350 €/mois" },
       {
         name: "Condition anticipation — 60 ans",
         value: `${getConditionAnticipation(60)?.conditionCarriere ?? 44} ans de carrière`,
-        note: "Carrière totale = effective + assimilée.",
+        note: "Carrière totale (effective + assimilée).",
       },
       {
         name: "Condition anticipation — 61 ans",
@@ -1227,17 +1380,29 @@ const METHODOLOGIES: CalcMethodology[] = [
       {
         name: "Âge légal de pension",
         value: "65 (<1960) / 66 (1960–1963) / 67 (≥1964)",
-        note: "Loi du 10 août 2015.",
+        note: "Loi du 10 août 2015 (Moniteur belge).",
       },
     ],
     sources: [
-      { name: "SFP — Service Fédéral des Pensions", url: "https://www.sfpd.fgov.be" },
-      { name: "mypension.be — calcul officiel", url: "https://www.mypension.be" },
-      { name: "Loi du 10 août 2015 (âge légal + anticipation)", url: "https://www.ejustice.just.fgov.be" },
-      { name: "AR 21/12/1967 (régime général salarié)", url: "https://www.ejustice.just.fgov.be" },
+      {
+        name: "SFP — Service Fédéral des Pensions",
+        url: "https://www.sfpd.fgov.be",
+      },
+      {
+        name: "mypension.be — compte de carrière officiel",
+        url: "https://www.mypension.be",
+      },
+      {
+        name: "Moniteur belge — Loi du 10 août 2015 (âge légal + anticipation)",
+        url: "https://www.ejustice.just.fgov.be",
+      },
+      {
+        name: "Moniteur belge — AR du 21 décembre 1967 (régime général salariés)",
+        url: "https://www.ejustice.just.fgov.be",
+      },
     ],
     limitations: [
-      "Pas de bonus pour les carrières longues (>45 ans).",
+      "Pas de bonus pour les carrières longues (>45 ans) : non prévu dans le régime salarié actuel.",
       "Pas de calcul de la pension de survie ou de la pension complémentaire (2e pilier).",
       "Pas de calcul pour les indépendants ou les fonctionnaires (régimes distincts).",
       "Salaire moyen unique sur toute la carrière : la réalité applique le salaire plafonné de chaque année.",
@@ -1734,26 +1899,175 @@ const METHODOLOGIES: CalcMethodology[] = [
     slug: "tarif-social-energie",
     title: "Tarif social énergie",
     pitch:
-      "Vérification d'éligibilité au tarif social fédéral (élec + gaz) + estimation du gain annuel.",
+      "Vérification d'éligibilité au tarif social fédéral (élec + gaz) + estimation du gain annuel selon les tarifs CREG trimestriels.",
     sourceFile: "lib/calculators/tarif-social.ts",
     reliability: "high",
     reliabilityNote:
-      "Tarifs " +
+      "Conforme aux barèmes CREG " +
       Q_REFERENCE +
-      " (CREG note Z3153) avec application exacte des plafonds de consommation : split tarif social ≤ plafond + tarif standard sur l'excédent. Plafonds modulés par la taille du ménage (+200 kWh/personne pour l'élec) et le type de chauffage gaz (helpers `plafondElecKwh` et `plafondGazKwh` exportés). À ré-actualiser à chaque nouvelle note CREG trimestrielle.",
+      " et à la liste des bénéficiaires SPF Économie 2026. Élec sociale " +
+      (TARIFS_2026.ELEC_SOCIAL * 100).toFixed(3) +
+      " c€/kWh TVAC, gaz social " +
+      (TARIFS_2026.GAZ_SOCIAL * 100).toFixed(3) +
+      " c€/kWh TVAC, recalculés par la CREG chaque trimestre. Statut BIM exclu de l'éligibilité automatique depuis le 1ᵉʳ juillet 2023 (fin de l'extension crise énergétique). Plafonds techniques modulés par la taille du ménage (+200 kWh/personne pour l'élec) et le type de chauffage (helpers `plafondElecKwh` et `plafondGazKwh` exportés). À ré-actualiser à chaque nouvelle note CREG trimestrielle.",
     year: 2026,
+    lastUpdatedAt: "2026-05-25",
+    badges: ["Belgique", Q_REFERENCE, "Données 2026"],
+    category: "Énergie & Aides sociales",
+    tags: ["tarif social", "énergie", "CREG", "RIS", "GRAPA"],
+    author: "Équipe Docbel",
+    pedagogyIntro:
+      "Le **tarif social fédéral** est le tarif commercial le plus bas du marché belge pour l'électricité et le gaz naturel. Il est uniforme partout en Belgique et **recalculé chaque trimestre par la CREG**. L'application est **entièrement automatique** : le SPF Économie vérifie 4× par an votre éligibilité par croisement de bases de données et notifie votre fournisseur — aucune démarche à effectuer. Pour la **majorité des ménages éligibles**, le tarif social s'applique à toute la consommation. Au-delà de plafonds techniques indicatifs (~4 600 kWh élec si chauffage élec, ~23 260 kWh gaz si chauffage gaz), le tarif standard du fournisseur peut s'appliquer sur l'excédent.",
     inputs: [
-      "6 statuts (cases à cocher) : BIM / RIS / GRAPA / handicap / aide sociale équivalente / logement social",
+      "5 statuts officiels (cases à cocher) : RIS / GRAPA / handicap (DG HAN) / aide sociale équivalente CPAS / logement social agréé",
+      "BIM (à titre indicatif — n'ouvre plus le droit seul depuis le 01.07.2023)",
       "Consommation annuelle électricité (kWh)",
       "Consommation annuelle gaz naturel (kWh, 0 si pas de gaz)",
-      "Chauffage électrique (oui/non)",
-      "Chauffage au gaz (oui/non, défaut oui)",
-      "Taille du ménage (1–15, défaut 2)",
+      "Chauffage électrique (oui/non) — module le plafond élec",
+      "Chauffage au gaz (oui/non, défaut oui) — module le plafond gaz",
+      "Taille du ménage (1–15, défaut 2) — +200 kWh/pers. au plafond élec",
+    ],
+    inputsDetailed: [
+      {
+        label: "Statuts d'éligibilité",
+        description:
+          "5 cases à cocher : RIS, GRAPA, handicap DG HAN, aide CPAS équivalente, logement social. Un seul suffit.",
+        icon: "CheckCircle2",
+      },
+      {
+        label: "Taille du ménage",
+        description:
+          "1 à 15 personnes. Ajoute 200 kWh/personne au plafond électricité de base.",
+        icon: "Users",
+      },
+      {
+        label: "Consommation électricité",
+        description:
+          "Conso annuelle en kWh (voir facture). Moyenne BE ≈ 3 500 kWh.",
+        icon: "Zap",
+      },
+      {
+        label: "Consommation gaz naturel",
+        description:
+          "Conso annuelle en kWh (0 si pas raccordé au gaz). Moyenne BE ≈ 17 000 kWh.",
+        icon: "Flame",
+      },
+      {
+        label: "Type de chauffage",
+        description:
+          "Élec ou gaz — détermine le plafond applicable (4 600 vs 1 800 kWh élec ; 23 260 vs 12 000 kWh gaz).",
+        icon: "Thermometer",
+      },
+    ],
+    outputs: [
+      "Éligibilité automatique (oui/non)",
+      "Liste des motifs d'éligibilité (statuts qui ouvrent le droit)",
+      "Économie annuelle estimée (élec + gaz)",
+      "Économie mensuelle moyenne",
+      "Détail par énergie (gain élec, gain gaz)",
+      "Plafonds appliqués (élec + gaz) et excédents éventuels",
+      "Comparaison coût tarif standard vs tarif social",
+      "Notes pédagogiques (ex: BIM suspendu)",
+    ],
+    briefMeta: [
+      {
+        label: "Méthode",
+        value: "Barèmes CREG + liste SPF Économie",
+        icon: "FileCode2",
+      },
+      {
+        label: "Indexation",
+        value: "Trimestrielle (CREG)",
+        icon: "Calendar",
+      },
+      {
+        label: "Unités",
+        value: "€/kWh TVAC · kWh/an",
+        icon: "Calculator",
+      },
+      {
+        label: "Dernière MAJ",
+        value: "25 mai 2026",
+        icon: "Clock",
+      },
+      {
+        label: "Auteur",
+        value: "Équipe Docbel",
+        icon: "Users",
+      },
+    ],
+    differentiators: [
+      {
+        label: "Application automatique modélisée fidèlement",
+        description:
+          "Le SPF Économie vérifie 4× par an l'éligibilité et notifie le fournisseur — l'outil l'explique clairement (aucune démarche à entamer pour l'utilisateur éligible).",
+      },
+      {
+        label: "Plafonds techniques appliqués au lieu d'être ignorés",
+        description:
+          "Beaucoup d'outils calculent un gain sur 100 % de la conso, ignorant qu'au-delà du plafond (~4 600 kWh élec si chauffage élec, ~23 260 kWh gaz) le tarif standard peut s'appliquer. Nous modélisons un split sous-plafond/excédent.",
+      },
+      {
+        label: "5 catégories d'éligibilité officielles 2026 documentées",
+        description:
+          "RIS, GRAPA, allocation handicap DG HAN, aide sociale équivalente CPAS, logement social agréé — chaque catégorie est décrite avec son organisme de tutelle.",
+      },
+      {
+        label: "Statut BIM correctement traité (suspendu depuis 01.07.2023)",
+        description:
+          "Le BIM reste affiché à titre indicatif (un utilisateur peut le cocher), mais une note pédagogique explique qu'il n'ouvre plus le droit seul depuis fin juin 2023 (fin de l'extension crise énergétique).",
+      },
+      {
+        label: "Comparaison gain net annuel + lien vers aides régionales",
+        description:
+          "Si pas éligible au tarif social fédéral, l'outil oriente vers les autres aides (prime énergie régionale, fonds gaz/électricité du CPAS, chèque mazout).",
+      },
+    ],
+    maintenanceGuide: [
+      {
+        trigger: "Tarif social électricité (trimestriel)",
+        source: "CREG — Tarif social pour l'énergie",
+        sourceUrl:
+          "https://www.creg.be/fr/consommateurs/prix-et-tarifs/tarif-social/tarif-social-pour-lenergie",
+        frequency: "4 fois/an (note CREG trimestrielle)",
+        codeLocation: "lib/calculators/tarif-social.ts → TARIFS_2026.ELEC_SOCIAL",
+      },
+      {
+        trigger: "Tarif social gaz naturel (trimestriel)",
+        source: "CREG — Tarif social pour l'énergie",
+        sourceUrl:
+          "https://www.creg.be/fr/consommateurs/prix-et-tarifs/tarif-social/tarif-social-pour-lenergie",
+        frequency: "4 fois/an (note CREG trimestrielle)",
+        codeLocation: "lib/calculators/tarif-social.ts → TARIFS_2026.GAZ_SOCIAL",
+      },
+      {
+        trigger: "Plafonds de consommation (AR 29.03.2012)",
+        source: "Moniteur belge — AR 29 mars 2012",
+        sourceUrl: "https://www.ejustice.just.fgov.be",
+        frequency: "Rare (modification = nouvelle loi)",
+        codeLocation: "lib/calculators/tarif-social.ts → PLAFONDS_2026",
+      },
+      {
+        trigger: "Liste des bénéficiaires automatiques",
+        source: "SPF Économie — Tarif social pour l'énergie",
+        sourceUrl:
+          "https://economie.fgov.be/fr/themes/energie/energie-sociale/tarif-social-pour-lenergie",
+        frequency: "1-2 fois/an (modifications réglementaires)",
+        codeLocation: "lib/calculators/tarif-social.ts → MOTIFS_LABELS",
+      },
+      {
+        trigger: "Validation périodique (régression test)",
+        source: "CREG — Note trimestrielle (Z3153 + suivantes)",
+        sourceUrl: "https://www.creg.be/fr/publications/note-z3153",
+        frequency: "Chaque trimestre (validation manuelle vs CREG)",
+        codeLocation: "scripts/debug-tarif-social.ts → re-tester 6 cas",
+      },
     ],
     formulas: [
       {
         label: "Éligibilité",
-        expression: "éligible = au moins un statut coché",
+        expression:
+          "éligible = (RIS ∨ GRAPA ∨ handicap ∨ aide_équivalente ∨ logement_social). BIM seul exclu depuis 01.07.2023.",
       },
       {
         label: "Plafond élec",
@@ -1784,26 +2098,72 @@ const METHODOLOGIES: CalcMethodology[] = [
       {
         name: "Trimestre de référence",
         value: Q_REFERENCE,
-        note: "Tarifs recalculés chaque trimestre par la CREG (note Z3153).",
+        note: "Tarifs CREG recalculés chaque trimestre (note Z3153 pour Q1 2026).",
       },
-      { name: "Tarif social élec", value: fmtEUR(TARIFS_2026.ELEC_SOCIAL) + "/kWh", note: "Tout inclus TVAC." },
-      { name: "Tarif standard moyen élec", value: fmtEUR(TARIFS_2026.ELEC_STANDARD) + "/kWh" },
-      { name: "Tarif social gaz", value: fmtEUR(TARIFS_2026.GAZ_SOCIAL) + "/kWh" },
-      { name: "Tarif standard moyen gaz", value: fmtEUR(TARIFS_2026.GAZ_STANDARD) + "/kWh" },
-      { name: "Plafond élec base", value: `${PLAFONDS_2026.ELEC_BASE} kWh + ${PLAFONDS_2026.ELEC_PAR_PERSONNE}/personne` },
-      { name: "Plafond élec chauffage", value: `${PLAFONDS_2026.ELEC_CHAUFFAGE} kWh + ${PLAFONDS_2026.ELEC_PAR_PERSONNE}/personne` },
-      { name: "Plafond gaz cuisine/ecs", value: `${PLAFONDS_2026.GAZ_NON_CHAUFFAGE} kWh` },
-      { name: "Plafond gaz chauffage", value: `${PLAFONDS_2026.GAZ_CHAUFFAGE} kWh` },
+      {
+        name: "Tarif social élec (monohoraire)",
+        value: (TARIFS_2026.ELEC_SOCIAL * 100).toFixed(3) + " c€/kWh",
+        note: "TVA 6 % incluse. Tout compris (énergie + transport + distribution). Source CREG.",
+      },
+      {
+        name: "Tarif standard moyen élec",
+        value: fmtEUR(TARIFS_2026.ELEC_STANDARD) + "/kWh",
+        note: "Moyenne nationale résidentielle 2026, observatoire CREG.",
+      },
+      {
+        name: "Tarif social gaz",
+        value: (TARIFS_2026.GAZ_SOCIAL * 100).toFixed(3) + " c€/kWh",
+        note: "TVA 6 % incluse. Tout compris. Source CREG (Q2 2026 : +5,14 % vs Q1).",
+      },
+      {
+        name: "Tarif standard moyen gaz",
+        value: fmtEUR(TARIFS_2026.GAZ_STANDARD) + "/kWh",
+        note: "Moyenne nationale résidentielle 2026, observatoire CREG.",
+      },
+      {
+        name: "Plafond élec base",
+        value: `${PLAFONDS_2026.ELEC_BASE} kWh + ${PLAFONDS_2026.ELEC_PAR_PERSONNE}/personne supplémentaire`,
+        note: "Sans chauffage électrique. AR 29/03/2012.",
+      },
+      {
+        name: "Plafond élec chauffage",
+        value: `${PLAFONDS_2026.ELEC_CHAUFFAGE} kWh + ${PLAFONDS_2026.ELEC_PAR_PERSONNE}/personne`,
+        note: "Avec chauffage électrique. AR 29/03/2012.",
+      },
+      {
+        name: "Plafond gaz cuisine/ECS",
+        value: `${PLAFONDS_2026.GAZ_NON_CHAUFFAGE} kWh`,
+        note: "Sans chauffage au gaz (cuisine + eau chaude uniquement).",
+      },
+      {
+        name: "Plafond gaz chauffage",
+        value: `${PLAFONDS_2026.GAZ_CHAUFFAGE} kWh`,
+        note: "Avec chauffage au gaz (cas le plus courant).",
+      },
     ],
     sources: [
-      { name: "SPF Économie — Tarif social", url: "https://economie.fgov.be" },
-      { name: "CREG — Tarifs sociaux trimestriels (note Z3153)", url: "https://www.creg.be" },
-      { name: "AR du 29 mars 2012 (catégories bénéficiaires)", url: "https://www.ejustice.just.fgov.be" },
+      {
+        name: "CREG — Tarif social pour l'énergie",
+        url: "https://www.creg.be/fr/consommateurs/prix-et-tarifs/tarif-social/tarif-social-pour-lenergie",
+      },
+      {
+        name: "CREG — Note Z3153 (prix maximaux sociaux Q1 2026)",
+        url: "https://www.creg.be/fr/publications/note-z3153",
+      },
+      {
+        name: "SPF Économie — Tarif social pour l'énergie",
+        url: "https://economie.fgov.be/fr/themes/energie/energie-sociale/tarif-social-pour-lenergie",
+      },
+      {
+        name: "Moniteur belge — AR du 29 mars 2012 (catégories bénéficiaires)",
+        url: "https://www.ejustice.just.fgov.be",
+      },
     ],
     limitations: [
-      "Tarif standard = moyenne simple, varie ±20 % selon fournisseur.",
-      "Pas de gestion des contrats à tarif fixe vs variable.",
-      "Pas de prise en compte des heures creuses/pleines.",
+      "Tarif standard = moyenne nationale, varie ±20 % selon le fournisseur, le contrat (fixe/variable) et la région.",
+      "Pas de gestion des compteurs bihoraires (jour/nuit) ni exclusif nuit — utilise le tarif monohoraire.",
+      "Plafonds appliqués selon un modèle technique « habitation résidentielle normale » ; en pratique, 95 % des bénéficiaires reçoivent le tarif social sur toute leur conso.",
+      "Pas de prise en compte des frais fixes / coûts d'abonnement (que les fournisseurs facturent séparément).",
     ],
   },
 

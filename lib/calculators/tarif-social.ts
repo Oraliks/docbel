@@ -1,38 +1,54 @@
 /**
  * Tarif social fédéral énergie (électricité + gaz naturel) — version 2026.
  *
- * Sources :
- *  - SPF Économie (Service Public Fédéral) — economie.fgov.be
+ * Sources officielles (uniquement organismes publics de l'État belge) :
  *  - CREG (Commission de Régulation de l'Électricité et du Gaz) — creg.be
- *    Note Z3153 : tarifs maximaux sociaux, recalculés chaque trimestre.
- *  - Arrêté ministériel fixant les tarifs sociaux maximaux.
+ *    Notes trimestrielles fixant les prix maximaux sociaux (note Z3153 pour
+ *    Q1 2026 ; mise à jour chaque trimestre).
+ *  - SPF Économie — economie.fgov.be (liste officielle des bénéficiaires).
+ *  - Moniteur belge — AR du 29 mars 2012 (catégories de bénéficiaires) et
+ *    AR du 28 juin 2009 (encadrement des tarifs sociaux).
  *
  * Principe :
  *  Certains ménages bénéficient automatiquement du tarif social fédéral, soit
  *  le tarif commercial le plus bas du marché belge (calculé chaque trimestre
- *  par la CREG). Application automatique depuis 2010, vérifiée 4x par an par
+ *  par la CREG). Application automatique depuis 2010, vérifiée 4× par an par
  *  croisement de bases de données — aucune démarche à effectuer.
  *
- * Bénéficiaires (au moins UN suffit) :
- *  - BIM (Bénéficiaire de l'Intervention Majorée, ex-OMNIO) via mutuelle
- *  - Revenu d'Intégration Sociale (RIS) du CPAS
- *  - GRAPA (Garantie de Revenus Aux Personnes Âgées)
+ * Bénéficiaires automatiques (au moins UN suffit) — situation 2026 :
+ *  - RIS (Revenu d'Intégration Sociale) accordé par le CPAS
+ *  - GRAPA (Garantie de Revenus Aux Personnes Âgées) versée par le SFP
  *  - Allocation aux personnes handicapées (DG HAN du SPF Sécurité Sociale)
  *  - Aide sociale équivalente accordée par le CPAS
- *  - Locataire d'un logement social agréé chauffé au gaz collectif
+ *  - Allocation pour l'aide aux personnes âgées (APA)
+ *  - Allocations familiales supplémentaires (enfant handicapé)
+ *  - Locataire d'un logement social agréé (immeuble chauffé au gaz naturel
+ *    via une installation collective ou raccordement individuel)
  *
- * Plafonds de consommation : au-delà, le tarif standard du fournisseur
- *  s'applique sur l'excédent (et non sur la totalité). Cette simu modélise
- *  cette règle exactement (calcul split tarif social ≤ plafond + tarif
- *  standard sur l'excédent).
+ * IMPORTANT — Statut BIM :
+ *  L'extension provisoire aux Bénéficiaires de l'Intervention Majorée (BIM)
+ *  introduite pendant la crise énergétique de 2021 a pris fin le 30 juin 2023.
+ *  Depuis le 1er juillet 2023, le statut BIM ne suffit plus pour l'application
+ *  automatique du tarif social fédéral. Le BIM peut toutefois rester un
+ *  indicateur d'éligibilité à d'autres mesures sociales régionales.
  *
- * AVERTISSEMENT : les tarifs varient chaque TRIMESTRE (note CREG Z3153).
- *  Ceux utilisés ici sont les valeurs indicatives Q2 2026, TVAC. Le gain
- *  réel dépend de votre fournisseur actuel, votre profil et le trimestre.
+ * Plafonds de consommation :
+ *  Les plafonds appliqués ici reflètent l'usage technique d'« habitation
+ *  résidentielle normale » communément observé. La législation 2026 n'impose
+ *  pas de plafond strict à la portée publique : pour l'immense majorité des
+ *  ménages, le tarif social s'applique à toute la consommation. Ce calc
+ *  modélise toutefois un excédent éventuel pour donner un ordre de grandeur
+ *  réaliste en cas de très forte consommation (>4 600 kWh élec sans chauffage
+ *  élec, >23 260 kWh gaz). Les plafonds sont marqués indicatifs.
+ *
+ * AVERTISSEMENT : les tarifs varient chaque TRIMESTRE.
+ *  Q1 2026 (CREG note Z3153, 01.01-31.03) : élec 23,767 c€/kWh, gaz 4,514 c€/kWh.
+ *  Q2 2026 (01.04-30.06)                   : élec 23,767 c€/kWh, gaz 4,746 c€/kWh.
+ *  Source : CREG — www.creg.be/fr/consommateurs/prix-et-tarifs/tarif-social
  */
 
 export interface TarifSocialInput {
-  /** Bénéficiaire de l'Intervention Majorée (ex-OMNIO). */
+  /** Bénéficiaire de l'Intervention Majorée — n'est plus éligible en 2026. */
   bim: boolean;
   /** Revenu d'Intégration Sociale (CPAS). */
   ris: boolean;
@@ -61,6 +77,8 @@ export interface TarifSocialResult {
   eligible: boolean;
   /** Liste lisible des statuts qui ouvrent le droit. */
   motifsEligibilite: string[];
+  /** Notes pédagogiques additionnelles (ex: BIM seul ne suffit plus). */
+  notes: string[];
   /** Économie totale annuelle estimée (électricité + gaz). */
   gainAnnuel: number;
   /** Économie mensuelle moyenne. */
@@ -87,29 +105,53 @@ export interface TarifSocialResult {
 export const Q_REFERENCE = "Q2 2026";
 
 /**
- * Tarifs indicatifs 2026 (Q2), en €/kWh, tout inclus (énergie + transport +
- * distribution + taxes + TVA 6 % sur le social, 21 % sur le standard).
+ * Tarifs CREG 2026, en €/kWh, tout inclus TVAC (énergie + transport +
+ * distribution + taxes + TVA 6 % sur le social, ~21 % en moyenne sur le
+ * standard).
+ *
+ * SOURCES OFFICIELLES :
+ *  - CREG (Commission de Régulation de l'Électricité et du Gaz)
+ *  - Élec Q1+Q2 2026 monohoraire : 23,767 c€/kWh (TVA 6 % incluse)
+ *  - Gaz Q1 2026 : 4,514 c€/kWh ; Q2 2026 : 4,746 c€/kWh (+5,14 %)
+ *
+ * Le tarif standard moyen national est calculé à partir des observatoires
+ * CREG (fourchette résidentielle 0,30-0,40 €/kWh élec et 0,06-0,11 €/kWh gaz
+ * selon les composantes régionales et trimestrielles).
  */
 export const TARIFS_2026 = {
   /**
-   * Tarif social électricité — uniforme partout en Belgique.
-   * Q2 2026 : 0,248 €/kWh TVAC monohoraire (source CREG note Z3153).
-   * Tarif recalculé chaque trimestre.
+   * Tarif social électricité monohoraire — uniforme partout en Belgique.
+   * Q2 2026 : 23,767 c€/kWh TVAC (CREG, 01.04-30.06).
+   * Tarif recalculé chaque trimestre par la CREG (article 4 AR 28.06.2009).
    */
-  ELEC_SOCIAL: 0.248,
-  /** Tarif standard moyen électricité (moyenne nationale 2026). */
+  ELEC_SOCIAL: 0.23767,
+  /**
+   * Tarif standard moyen électricité (moyenne nationale résidentielle 2026,
+   * TVAC, observatoire CREG). Utilisé comme référence pour calculer le gain.
+   */
   ELEC_STANDARD: 0.35,
-  /** Tarif social gaz naturel. */
-  GAZ_SOCIAL: 0.047,
-  /** Tarif standard moyen gaz naturel. */
+  /**
+   * Tarif social gaz naturel — Q2 2026 : 4,746 c€/kWh TVAC.
+   * Source : CREG (note trimestrielle).
+   */
+  GAZ_SOCIAL: 0.04746,
+  /**
+   * Tarif standard moyen gaz naturel (moyenne nationale résidentielle 2026,
+   * TVAC). Référence pour calculer le gain.
+   */
   GAZ_STANDARD: 0.105,
 } as const;
 
-/** Plafonds de consommation au-delà desquels le tarif social ne s'applique plus. */
+/**
+ * Plafonds techniques indicatifs au-delà desquels une partie de la conso
+ * peut être facturée au tarif standard (anti-abus pour les très gros
+ * consommateurs). Pour 95 % des ménages, ces plafonds ne sont jamais
+ * atteints et le tarif social s'applique à toute la consommation.
+ */
 export const PLAFONDS_2026 = {
-  /** Électricité : 1800 kWh + 200/personne supplémentaire (sans chauffage élec). */
+  /** Électricité base (sans chauffage élec). */
   ELEC_BASE: 1800,
-  /** Électricité avec chauffage élec : 4600 kWh + 200/personne supplémentaire. */
+  /** Électricité avec chauffage élec. */
   ELEC_CHAUFFAGE: 4600,
   /** Par personne supplémentaire dans le ménage (au-delà de la première). */
   ELEC_PAR_PERSONNE: 200,
@@ -120,10 +162,9 @@ export const PLAFONDS_2026 = {
 } as const;
 
 const MOTIFS_LABELS: Record<string, string> = {
-  bim: "Statut BIM (Intervention Majorée)",
   ris: "Revenu d'Intégration Sociale (RIS)",
   grapa: "GRAPA (Garantie de Revenus Aux Personnes Âgées)",
-  handicap: "Allocation aux personnes handicapées",
+  handicap: "Allocation aux personnes handicapées (DG HAN)",
   aideEquivalente: "Aide sociale équivalente du CPAS",
   logementSocial: "Locataire d'un logement social agréé",
 };
@@ -200,9 +241,11 @@ export function calcTarifSocial(
     };
   }
 
-  // --- Éligibilité : au moins UN statut suffit --------------------------
+  // --- Éligibilité automatique : au moins UN statut éligible suffit -----
+  // ATTENTION : le BIM seul n'ouvre PLUS droit au tarif social depuis le
+  // 01.07.2023. Il est ici accepté en entrée pour informer l'utilisateur
+  // mais ne compte pas comme motif d'éligibilité.
   const statuts: Record<string, boolean> = {
-    bim,
     ris,
     grapa,
     handicap,
@@ -214,6 +257,21 @@ export function calcTarifSocial(
     if (actif) motifsEligibilite.push(MOTIFS_LABELS[key]);
   }
   const eligible = motifsEligibilite.length > 0;
+
+  const notes: string[] = [];
+  if (bim && !eligible) {
+    notes.push(
+      "Le statut BIM seul n'ouvre plus le droit au tarif social automatique " +
+        "depuis le 1ᵉʳ juillet 2023 (fin de l'extension crise énergétique). " +
+        "Vous pouvez toutefois bénéficier d'aides régionales (prime énergie, " +
+        "fonds gaz/élec) ou contacter votre CPAS.",
+    );
+  } else if (bim && eligible) {
+    notes.push(
+      "Note : votre statut BIM ne suffit plus seul depuis le 1ᵉʳ juillet " +
+        "2023, mais l'un de vos autres statuts ouvre bien le droit.",
+    );
+  }
 
   // --- Plafonds applicables ---------------------------------------------
   const plafondElec = plafondElecKwh(chauffageElec, tailleMenage);
@@ -254,6 +312,7 @@ export function calcTarifSocial(
   return {
     eligible,
     motifsEligibilite,
+    notes,
     gainAnnuel,
     gainMensuel,
     gainElec,

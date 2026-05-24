@@ -114,26 +114,38 @@ export interface PensionResult {
 
 /**
  * Plafond salarial annuel pris en compte pour la pension (2026).
- * Source : SFPD (Service Fédéral des Pensions Données) — barème indexé.
- * La valeur précédente (78 690) correspondait à une projection erronée.
+ * Source : SFP — page « Plafond salarial » indexée annuellement.
+ * Sites publics (calculateur-de-salaire.be, macalculatriceenligne.com) et
+ * sources sectorielles cohérentes autour de 69 000 €/an. Conservé à
+ * 69 521 € (indexation mars 2026 incluse).
  */
-const PLAFOND_SALARIAL_2026 = 69521;
+export const PLAFOND_SALARIAL_2026 = 69521;
 
 /** Carrière complète conventionnelle (en années). */
-const CARRIERE_COMPLETE = 45;
+export const CARRIERE_COMPLETE = 45;
 
-/** Taux selon le statut civil. */
-const TAUX_ISOLE = 0.6;
-const TAUX_MENAGE = 0.75;
+/** Taux selon le statut civil (régime salarié). */
+export const TAUX_ISOLE = 0.6;
+export const TAUX_MENAGE = 0.75;
 
-/** Minimum garanti mensuel (carrière complète ≥ 30 ans). */
-const MINIMUM_ISOLE = 1700;
-const MINIMUM_MENAGE = 2100;
-const SEUIL_CARRIERE_MINIMUM = 30;
+/**
+ * Minimum garanti mensuel — barème SFP au 1ᵉʳ mars 2026.
+ * Source : aide-sociale.be (publication SFP) — montants après l'indexation
+ * pivot dépassée en décembre 2025 (+2 % en mars 2026).
+ * Valeurs précédentes 1 700 / 2 100 € corrigées vers les chiffres officiels.
+ */
+export const MINIMUM_ISOLE = 1844.93;
+export const MINIMUM_MENAGE = 2305.44;
+export const SEUIL_CARRIERE_MINIMUM = 30;
 
-/** Plafond légal indicatif de la pension (mensuel). */
-const PLAFOND_PENSION_ISOLE = 3500;
-const PLAFOND_PENSION_MENAGE = 4350;
+/**
+ * Plafond légal indicatif mensuel de la pension salarié.
+ * Source : ordre de grandeur SFP — au-delà, la pension légale est très
+ * rarement atteinte (carrière 45 ans au plafond salarial maximal).
+ * Garde des valeurs prudentes en attendant un chiffre officiel précis.
+ */
+export const PLAFOND_PENSION_ISOLE = 3500;
+export const PLAFOND_PENSION_MENAGE = 4350;
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                           */

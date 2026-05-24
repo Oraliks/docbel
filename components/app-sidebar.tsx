@@ -148,6 +148,14 @@ const defaultData = {
       ),
       items: [
         {
+          title: "Santé des données",
+          url: "/admin/bureaux#sante",
+        },
+        {
+          title: "Aperçu user",
+          url: "/admin/bureaux#preview",
+        },
+        {
           title: "Annuaire",
           url: "/admin/bureaux#annuaire",
         },
@@ -156,8 +164,8 @@ const defaultData = {
           url: "/admin/bureaux#services",
         },
         {
-          title: "Liens commissions paritaires",
-          url: "/admin/bureaux#commissions",
+          title: "Compétences ONEM",
+          url: "/admin/bureaux#onem",
         },
         {
           title: "Signalements",

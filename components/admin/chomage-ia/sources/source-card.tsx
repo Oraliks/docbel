@@ -8,6 +8,7 @@
  */
 
 import {
+  AlertTriangle,
   CheckCircle2,
   ExternalLink,
   Eye,
@@ -35,6 +36,39 @@ interface SourceCardProps {
   onSummarize: () => void;
 }
 
+/**
+ * Détecte les sources "cassées" : extraction qui a échoué et n'a inséré que
+ * le placeholder, ou content trop court pour être utile à l'IA.
+ *
+ * Cas typique : un PDF scanné (que des images) ou un parseur qui a planté
+ * silencieusement. La source existe mais l'IA ne pourra rien en faire.
+ */
+function detectExtractionIssue(item: KnowledgeSourceListItem): string | null {
+  if (
+    item.contentPreview.startsWith("(Contenu") ||
+    item.contentPreview.includes("non extrait automatiquement")
+  ) {
+    return "Extraction automatique échouée — édite manuellement ou re-uploade.";
+  }
+  if (
+    item.contentLength < 200 &&
+    item.kind !== "image_caption" &&
+    item.kind !== "url"
+  ) {
+    return `Contenu très court (${item.contentLength} chars) — l'IA aura peu à exploiter.`;
+  }
+  return null;
+}
+
+/**
+ * Format compact + lisible de la taille du content.
+ */
+function fmtContentLen(n: number): string {
+  if (n < 1000) return `${n} chars`;
+  if (n < 1_000_000) return `${(n / 1000).toFixed(1)}K chars`;
+  return `${(n / 1_000_000).toFixed(1)}M chars`;
+}
+
 export function SourceCard({
   item,
   aiAvailable,
@@ -46,6 +80,7 @@ export function SourceCard({
   const Icon = getKindIcon(item.kind);
   const color = getKindColor(item.kind);
   const preview = item.summary || item.contentPreview;
+  const issue = detectExtractionIssue(item);
 
   return (
     <article
@@ -85,6 +120,14 @@ export function SourceCard({
       <h3 className="text-[14px] font-bold leading-tight">
         {truncate(item.title, 100)}
       </h3>
+
+      {/* Alerte extraction échouée */}
+      {issue ? (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11.5px] text-amber-800 dark:text-amber-200">
+          <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
+          <span className="leading-snug">{issue}</span>
+        </div>
+      ) : null}
 
       {/* Aperçu (summary ou content) */}
       <p className="flex-1 whitespace-pre-line text-[12.5px] leading-relaxed text-muted-foreground">
@@ -127,7 +170,7 @@ export function SourceCard({
       {/* Méta + actions */}
       <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-2 text-[10.5px] text-muted-foreground">
         <span>
-          {fmtRelative(item.updatedAt)} · {Math.round(item.contentLength / 1024)} k
+          {fmtRelative(item.updatedAt)} · {fmtContentLen(item.contentLength)}
         </span>
         <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100">
           {aiAvailable ? (

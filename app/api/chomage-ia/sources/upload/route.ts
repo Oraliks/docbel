@@ -311,33 +311,60 @@ async function handleUpload(req: NextRequest) {
   const buffer = Buffer.from(arrayBuf);
   const sha256 = createHash("sha256").update(buffer).digest("hex");
 
-  // Stockage en private/ (sources internes — pas de raison d'exposer en public)
+  // Stockage en private/uploads — best-effort. En environnement serverless
+  // (Netlify Functions / Vercel / Lambda), `/var/task` est read-only et seul
+  // `/tmp` est writable mais éphémère. Pour le chat IA, ce qui compte est le
+  // TEXTE extrait, pas le binaire — donc on accepte de skip la persistance
+  // si le FS est read-only et on continue avec juste le texte. Une note dans
+  // le content informe l'admin que le binaire n'a pas été conservé.
   const { relativeDir, absoluteDir } = getUploadDirectory(true);
-  if (!existsSync(absoluteDir)) {
-    await mkdir(absoluteDir, { recursive: true });
-  }
   const ext = (file.name.split(".").pop() || "bin").toLowerCase();
   const uniqueName = `${nanoid(12)}-${sanitizeFileName(file.name)}`;
   const filePath = buildStoredFilePath(relativeDir, uniqueName);
   const fullPath = join(absoluteDir, uniqueName);
-  await writeFile(fullPath, buffer);
 
-  // 1. Crée un File en DB.
-  const fileType = KIND_TO_FILE_TYPE[kind] ?? "file";
-  const dbFile = await prisma.file.create({
-    data: {
-      name: file.name,
-      type: "file",
-      fileType,
-      mimeType: file.type || null,
-      size: buffer.byteLength,
-      sha256,
-      parentId: null,
-      isPrivate: true,
-      filePath,
-      createdBy: auth.user.id,
-    },
-  });
+  let dbFile: { id: string } | null = null;
+  let fileWriteWarning: string | null = null;
+
+  try {
+    if (!existsSync(absoluteDir)) {
+      await mkdir(absoluteDir, { recursive: true });
+    }
+    await writeFile(fullPath, buffer);
+
+    const fileType = KIND_TO_FILE_TYPE[kind] ?? "file";
+    dbFile = await prisma.file.create({
+      data: {
+        name: file.name,
+        type: "file",
+        fileType,
+        mimeType: file.type || null,
+        size: buffer.byteLength,
+        sha256,
+        parentId: null,
+        isPrivate: true,
+        filePath,
+        createdBy: auth.user.id,
+      },
+    });
+  } catch (err) {
+    // EROFS / EACCES = filesystem read-only (serverless) → on tolère et on
+    // continue sans persister le binaire. L'erreur est tracée serveur.
+    const code =
+      err && typeof err === "object" && "code" in err
+        ? String((err as { code: unknown }).code)
+        : "";
+    if (code === "EROFS" || code === "EACCES" || code === "ENOSPC") {
+      console.warn(
+        `[chomage-ia upload] FS unavailable (${code}) — binary skipped, keeping extracted text only`
+      );
+      fileWriteWarning =
+        "Le binaire n'a pas pu être conservé (filesystem en lecture seule). Le texte extrait est en place et exploitable par l'IA.";
+    } else {
+      // Autre erreur (ex: Prisma) — on re-throw, sera capturée par le wrap global.
+      throw err;
+    }
+  }
 
   // 2. Extraction texte selon le kind, sauf si l'admin a déjà rempli `content`.
   let finalContent = content;
@@ -370,7 +397,7 @@ async function handleUpload(req: NextRequest) {
     }
   }
 
-  // 3. Crée la KnowledgeSource liée au File.
+  // 3. Crée la KnowledgeSource (liée au File si on a pu le persister).
   const ks = await prisma.knowledgeSource.create({
     data: {
       title,
@@ -378,7 +405,7 @@ async function handleUpload(req: NextRequest) {
       content: finalContent,
       summary: null,
       sourceUrl: sourceUrl || null,
-      fileId: dbFile.id,
+      fileId: dbFile?.id ?? null,
       tags,
       enabled: true,
       domain,
@@ -387,17 +414,21 @@ async function handleUpload(req: NextRequest) {
   });
 
   console.log(
-    `chomage-ia upload: ${kind} "${title}" (${buffer.byteLength}B, ext=${ext}) → ks=${ks.id} file=${dbFile.id}`
+    `chomage-ia upload: ${kind} "${title}" (${buffer.byteLength}B, ext=${ext}) → ks=${ks.id} file=${dbFile?.id ?? "none"}`
   );
+
+  // Concat des warnings : binaire skippé + extraction échouée.
+  const combinedWarning =
+    [fileWriteWarning, extractWarning].filter(Boolean).join(" · ") || null;
 
   return NextResponse.json(
     {
       id: ks.id,
       title: ks.title,
       kind: ks.kind,
-      fileId: dbFile.id,
+      fileId: dbFile?.id ?? null,
       contentLength: finalContent.length,
-      extractWarning,
+      extractWarning: combinedWarning,
     },
     { status: 201 }
   );

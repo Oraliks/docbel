@@ -341,16 +341,23 @@ export function UploadDialog({
 
   const canSubmit = stats.pending > 0 && !uploading;
 
+  const hasErrors = stats.error > 0;
+
   return (
     <Dialog
       open={open}
       onOpenChange={(o) => {
-        if (!o && !uploading) reset();
+        // Bloque la fermeture pendant un upload OU s'il reste des erreurs
+        // visibles à corriger — sinon le user perd la trace du message.
+        if (!o && (uploading || hasErrors)) return;
+        if (!o) reset();
         onOpenChange(o);
       }}
     >
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[92vh] w-[min(96vw,960px)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-[960px]">
+        {/* Click-outside et ESC sont déjà interceptés via onOpenChange ci-dessus
+            qui bloque la fermeture pendant l'upload ou s'il reste des erreurs. */}
+        <DialogHeader className="border-b border-border px-6 py-4">
           <DialogTitle>Upload de fichiers vers la KB</DialogTitle>
           <DialogDescription>
             Glissez plusieurs fichiers à la fois. Formats : PDF, Word (.docx),
@@ -359,7 +366,7 @@ export function UploadDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
           {/* Dropzone */}
           <div
             {...dropHandlers}
@@ -503,13 +510,20 @@ export function UploadDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-t border-border px-6 py-3">
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => {
+              // Force la fermeture quel que soit l'état d'erreur (le user
+              // a cliqué explicitement sur le bouton — on ne pas se met en
+              // travers ici, contrairement au click outside).
+              if (uploading) return;
+              reset();
+              onOpenChange(false);
+            }}
             disabled={uploading}
           >
-            {stats.success > 0 ? "Fermer" : "Annuler"}
+            {stats.success > 0 || hasErrors ? "Fermer" : "Annuler"}
           </Button>
           <Button onClick={uploadAll} disabled={!canSubmit}>
             {uploading ? (

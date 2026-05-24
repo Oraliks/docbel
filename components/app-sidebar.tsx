@@ -65,7 +65,6 @@ const defaultData = {
           title: "Outils",
           url: "/admin/chomage/outils",
           children: [
-            { title: "Préavis", url: "/admin/chomage/preavis" },
             { title: "Calculateurs (méthodologie)", url: "/admin/chomage/outils/calculateurs" },
             { title: "Barèmes officiels", url: "/admin/baremes" },
             { title: "Commissions paritaires", url: "/admin/commissions" },

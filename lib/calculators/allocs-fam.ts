@@ -20,8 +20,11 @@
  * Les montants 2026 ici sont issus des sites OFFICIELS des organismes
  * régionaux (FAMIWAL/FAMIRIS/Groeipakket/Ostbelgien Familie) au printemps
  * 2026. Indexation au 1ᵉʳ mars (FAMIWAL/FAMIRIS) ou au 1ᵉʳ septembre
- * (Groeipakket). La réalité dépend de la date exacte de naissance, du
- * revenu cadastral, et du nombre de points AVIQ / Iriscare / Opgroeien.
+ * (Groeipakket). Particularité Kindergeld DG : l'indexation a été
+ * suspendue par décret en 2025 et 2026 (mesure budgétaire DG), et le
+ * Schulbonus annuel a été supprimé fin 2024. La réalité dépend de la
+ * date exacte de naissance, du revenu cadastral, et du nombre de points
+ * AVIQ / Iriscare / Opgroeien.
  *
  * AVERTISSEMENT : ce calcul ne remplace pas un avis officiel. Il vise
  * juste à donner un ordre de grandeur réaliste au citoyen avant qu'il
@@ -275,12 +278,22 @@ const FLA_SUPP_1_2_INT = 37.31;
 const FLA_SUPP_3PLUS_BAS = 108.29;
 const FLA_SUPP_3PLUS_INT = 85.22;
 
-/** Supplément handicap médian Groeipakket (zorgtoeslag). */
-const FLA_SUPP_HANDICAP_MEDIAN = 192.91; // ~9-11 pts, valeur médiane
+/**
+ * Supplément handicap médian Groeipakket (zorgtoeslag).
+ * Catégorie médiane « 6-8 pts, < 4 pts sur le pilier 1 » = 124,09 €/mois.
+ * (Source officielle groeipakket.be/amounts, septembre 2025 / 2026.)
+ * Pour mémoire : catégorie haute (6-8 pts, ≥4 sur le pilier 1) = 478,02 €.
+ */
+const FLA_SUPP_HANDICAP_MEDIAN = 124.09;
 
-/** Supplément orphelin Groeipakket. */
-const FLA_SUPP_ORPHELIN_UN = 199.6;
-const FLA_SUPP_ORPHELIN_DEUX = 399.21;
+/**
+ * Supplément orphelin Groeipakket (wezentoeslag) — montants officiels
+ * indexés septembre 2025 / 2026.
+ *   - semi-orphelin (1 parent décédé)  → 147,71 €/mois
+ *   - orphelin total (2 parents)       → 184,61 €/mois
+ */
+const FLA_SUPP_ORPHELIN_UN = 147.71;
+const FLA_SUPP_ORPHELIN_DEUX = 184.61;
 
 /** Startbedrag Flandre 2026 (forfait). */
 const FLA_PRIME_NAISSANCE = 1_269.25;
@@ -297,24 +310,49 @@ function flaBonusRentree(age: number): number {
 
 /* ----- GERMANOPHONE — Kindergeld DG (sources : ostbelgienfamilie.be) */
 
+/**
+ * Kindergeld DG : indexation suspendue en 2025 et 2026 (mesure budgétaire
+ * du gouvernement DG, programme-décret 2025). Les suppléments ont été
+ * légèrement augmentés (+~3 €/enfant) en janvier 2025 pour compenser
+ * la suppression du Schulbonus. Le Basiskindergeld reste à 188,89 €.
+ */
 const DG_BASE = 188.89;
+
+/**
+ * Seuil de revenu Sozialzuschlag DG — valeur indicative.
+ * Les conditions exactes (ménages avec personne au chômage de longue
+ * durée, pensionné, malade ou orphelin) ne sont pas publiquement
+ * détaillées par un seuil unique en €/an sur ostbelgienfamilie.be.
+ * On retient un seuil aligné Wallonie/AVIQ par défaut.
+ */
 const DG_SEUIL_BAS = 34_000;
 
 const DG_SUPP_SOCIAL = 93.23;
 const DG_SUPP_LARGE_FAMILLE = 165.4; // dès le 3e enfant
-const DG_SUPP_HANDICAP_MEDIAN = 141.9;
-const DG_SUPP_ORPHELIN_UN = 180;
-const DG_SUPP_ORPHELIN_DEUX = 400;
+const DG_SUPP_HANDICAP_MEDIAN = 141.9; // indicatif — barème à confirmer
+const DG_SUPP_ORPHELIN_UN = 180; // indicatif — source à confirmer
+const DG_SUPP_ORPHELIN_DEUX = 400; // indicatif — source à confirmer
 
-const DG_PRIME_NAISSANCE = 1_296;
+/**
+ * Geburtsprämie DG 2026 — forfait officiel publié par ostbelgienfamilie.be
+ * (page « Starthilfe Geburtsprämie », confirmé mai 2026). Montant unique
+ * versé une seule fois, demande possible dès le 6e mois de grossesse.
+ */
+const DG_PRIME_NAISSANCE = 1_376.16;
 
-/** Schulbonus DG — montants approchés (régime aligné Wallonie). */
-function dgBonusRentree(age: number): number {
-  if (age < 0) return 0;
-  if (age <= 5) return 25.36;
-  if (age <= 11) return 38.05;
-  if (age <= 17) return 63.41;
-  if (age <= 24) return 101.46;
+/**
+ * Schulbonus DG — SUPPRIMÉ depuis 2025 (programme-décret 2024, mesure
+ * budgétaire). Source : BRF / GrenzEcho / DG Parlament (octobre 2025).
+ *
+ * Le « Jahreszuschlag » de ~62,55 € qui était versé en août chaque année
+ * pour aider à la rentrée scolaire n'est plus payé. Le gouvernement a
+ * compensé partiellement via : laptops gratuits dans les écoles, repas
+ * scolaires à prix réduit, baisse des frais d'accueil extrascolaire,
+ * et hausse de ~3 €/enfant sur les autres suppléments (janvier 2025).
+ *
+ * On retourne donc 0 €. À réactiver si la mesure venait à être annulée.
+ */
+function dgBonusRentree(_age: number): number {
   return 0;
 }
 

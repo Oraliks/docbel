@@ -1253,9 +1253,9 @@ const METHODOLOGIES: CalcMethodology[] = [
     sourceFile: "lib/calculators/allocs-fam.ts",
     reliability: "high",
     reliabilityNote:
-      "Conforme aux barèmes officiels FAMIWAL/FAMIRIS/Groeipakket/Kindergeld DG 2026 (indexation mars 2026 pour WAL/BXL, septembre 2025 pour FLA). Validé sur 6 points de référence : 2 cas Wallonie nouveau et ancien régime, 1 cas Bruxelles, 1 cas Flandre (3 enfants), 1 cas handicap, 1 cas orphelin. Base FAMIWAL nouveau régime 196,57 € (0-17 ans), 209,25 € (18-24) ; base FAMIRIS par tranche d'âge (190,23 / 202,91 / 215,59 €) ; basisbedrag Groeipakket 184,62 € ; Basiskindergeld DG 188,89 €. **FAMIRIS — supplément social** : barème officiel exact (article 9, ordonnance 25/04/2019) appliqué par enfant selon la taille de la famille (1/2/3+ enfants), l'âge (0-11 ou 12-24) et le statut monoparental — plus de moyenne médiane. Pour le montant officiel : caisse d'allocations.",
+      "Conforme aux barèmes officiels FAMIWAL/FAMIRIS/Groeipakket/Kindergeld DG 2026 (indexation mars 2026 pour WAL/BXL, septembre 2025 pour FLA — Kindergeld DG : indexation suspendue en 2025-2026 par programme-décret). Validé sur 7 points de référence : 2 cas Wallonie (nouveau/ancien), 2 cas Bruxelles (intermédiaire et bas-mono), 1 cas Flandre (3 enfants), 1 cas handicap, 1 cas orphelin. Base FAMIWAL nouveau régime 196,57 € (0-17 ans), 209,25 € (18-24) ; base FAMIRIS par tranche d'âge (190,23 / 202,91 / 215,59 €) ; basisbedrag Groeipakket 184,62 € ; Basiskindergeld DG 188,89 €. **FAMIRIS — supplément social** : barème officiel exact (article 9, ordonnance 25/04/2019) appliqué par enfant selon la taille de la famille (1/2/3+ enfants), l'âge (0-11 ou 12-24) et le statut monoparental. **Groeipakket — zorgtoeslag médian** corrigé à 124,09 €/mois (catégorie 6-8 pts pilier 1 < 4) et **wezentoeslag** corrigée à 147,71 € (semi-orphelin) / 184,61 € (orphelin total). **Kindergeld DG** : Geburtsprämie portée à 1 376,16 € (vs 1 296 € précédemment) et Schulbonus annuel supprimé depuis 2025 (décret budgétaire DG). Pour le montant officiel : caisse d'allocations.",
     year: 2026,
-    lastUpdatedAt: "2026-05-25",
+    lastUpdatedAt: "2026-05-24",
     badges: ["Belgique", "Régions 2026", "Données 2026"],
     category: "Famille & Enfants",
     tags: [
@@ -1277,17 +1277,17 @@ const METHODOLOGIES: CalcMethodology[] = [
       {
         label: "Allocation de naissance one-shot par région",
         description:
-          "Prime de naissance distincte par région et selon le rang : 1 395,02 € FAMIWAL/FAMIRIS rang 1, 634,10 € FAMIRIS suivants, 1 269,25 € Startbedrag Flandre, 1 296 € Kindergeld DG.",
+          "Prime de naissance distincte par région et selon le rang : 1 395,02 € FAMIWAL/FAMIRIS rang 1, 634,10 € FAMIRIS suivants, 1 269,25 € Startbedrag Flandre, 1 376,16 € Kindergeld DG.",
       },
       {
         label: "Suppléments handicap & orphelin avec barème par régime",
         description:
-          "Handicap : catégorie médiane « modérée » 141,90 € (WAL/DG), 192,91 € (FLA), 546,58 € (BXL). Orphelin : barème complet (1 parent / 2 parents, ancien / nouveau régime selon date de décès).",
+          "Handicap : catégorie médiane « modérée » 141,90 € (WAL/DG), 124,09 € (FLA zorgtoeslag 6-8 pts), 546,58 € (BXL). Orphelin : barème complet (1 parent / 2 parents, ancien / nouveau régime selon date de décès) — wezentoeslag Groeipakket à 147,71 / 184,61 €.",
       },
       {
         label: "Bonus rentrée scolaire annuel par âge",
         description:
-          "Prime scolaire 2026 différenciée par tranche d'âge et par région (25,36 → 101,46 € WAL/BXL ; 23,07 → 69,22 € FLA Schoolbonus).",
+          "Prime scolaire 2026 différenciée par tranche d'âge et par région (25,36 → 101,46 € WAL/BXL ; 23,07 → 69,22 € FLA Schoolbonus). Côté Kindergeld DG, le Schulbonus a été supprimé en 2025 par décret budgétaire.",
       },
       {
         label: "Détection auto du régime selon région",
@@ -1350,7 +1350,7 @@ const METHODOLOGIES: CalcMethodology[] = [
       { label: "Méthode", value: "Barèmes officiels FAMIWAL/FAMIRIS/Groeipakket/DG", icon: "FileCode2" },
       { label: "Régionalisation", value: "4 régimes (2019 FLA · 2020 WAL/BXL)", icon: "MapPin" },
       { label: "Unités", value: "Mensuel (€) + bonus annuels", icon: "Calculator" },
-      { label: "Dernière MAJ", value: "25 mai 2026", icon: "Clock" },
+      { label: "Dernière MAJ", value: "24 mai 2026", icon: "Clock" },
       { label: "Auteur", value: "Équipe Docbel", icon: "Users" },
     ],
     inputsDetailed: [
@@ -1427,17 +1427,17 @@ const METHODOLOGIES: CalcMethodology[] = [
       {
         label: "Supplément handicap (cumulable, catégorie médiane modérée)",
         expression:
-          "+ 141,90 € (WAL/DG) · + 192,91 € (FLA) · + 546,58 € (BXL). Réel = 93 à 621 € selon points.",
+          "+ 141,90 € (WAL/DG) · + 124,09 € (FLA zorgtoeslag 6-8 pts pilier 1 <4) · + 546,58 € (BXL). Réel = 93 à 621 € selon points (catégorie haute Groeipakket = 478,02 €).",
       },
       {
         label: "Supplément orphelin (cumulable)",
         expression:
-          "WAL ≥2020 : 98,29 (0-17) / 104,63 (18-24) / 443,87 (2 parents). WAL <2020 : 466,75 €. FAMIRIS : +50 % base (1 parent) ou +100 % (2). FLA : 199,60 / 399,21 €. DG : 180 / 400 €.",
+          "WAL ≥2020 : 98,29 (0-17) / 104,63 (18-24) / 443,87 (2 parents). WAL <2020 : 466,75 €. FAMIRIS : +50 % base (1 parent) ou +100 % (2). FLA wezentoeslag : 147,71 (semi) / 184,61 (total). DG : 180 / 400 € (indicatif).",
       },
       {
         label: "Allocation de naissance (one-shot)",
         expression:
-          "WAL : 1 395,02 € forfait. BXL : 1 395,02 € (rang 1) / 634,10 € (suivants). FLA : 1 269,25 € Startbedrag. DG : 1 296 €.",
+          "WAL : 1 395,02 € forfait. BXL : 1 395,02 € (rang 1) / 634,10 € (suivants). FLA : 1 269,25 € Startbedrag. DG : 1 376,16 €.",
       },
     ],
     constants: [
@@ -1540,6 +1540,16 @@ const METHODOLOGIES: CalcMethodology[] = [
         value: "1-2 enf : 73,68 / 37,31 € · 3+ enf : 108,29 / 85,22 €",
       },
       {
+        name: "FLA — zorgtoeslag (handicap, médian)",
+        value: "124,09 € (6-8 pts, pilier 1 < 4) · 478,02 € (6-8 pts, pilier 1 ≥ 4)",
+        note: "Source officielle groeipakket.be/amounts. On retient la valeur basse (médiane modérée).",
+      },
+      {
+        name: "FLA — wezentoeslag (orphelin)",
+        value: "147,71 € (semi-orphelin) · 184,61 € (orphelin total)",
+        note: "Montants officiels sept 2025 / 2026 — corrigés vs ancienne estimation (199,60 / 399,21 €).",
+      },
+      {
         name: "FLA — startbedrag (naissance)",
         value: "1 269,25 €",
       },
@@ -1550,34 +1560,45 @@ const METHODOLOGIES: CalcMethodology[] = [
       {
         name: "DG — Basiskindergeld",
         value: "188,89 €",
-        note: "Source Ostbelgien Familie.",
+        note: "Source Ostbelgien Familie. Indexation suspendue en 2025 et 2026 par programme-décret.",
       },
       {
         name: "DG — Sozialzuschlag",
         value: "+93,23 € si bas revenu (≤ 34 000 €/an)",
+        note: "Hausse d'environ +3 €/enfant en janvier 2025 pour compenser la suppression du Schulbonus.",
       },
       {
         name: "DG — Familienzuschlag (3e+)",
         value: "+165,40 € dès le 3e enfant",
       },
       {
-        name: "DG — Geburtszulage",
-        value: "1 296 € forfait",
+        name: "DG — Geburtsprämie",
+        value: "1 376,16 € forfait",
+        note: "Source ostbelgienfamilie.be — page Starthilfe Geburtsprämie (mai 2026).",
+      },
+      {
+        name: "DG — Schulbonus",
+        value: "Supprimé depuis 2025",
+        note: "Mesure budgétaire DG (programme-décret 2024). Ancien Jahreszuschlag ~62,55 €/an. Compensations : laptops gratuits dans les écoles, repas réduits, baisse frais d'accueil extrascolaire.",
       },
       {
         name: "Supplément handicap (par région — catégorie médiane modérée)",
         value:
-          "WAL/DG 141,90 € · FLA 192,91 € · BXL 546,58 €",
-        note: "Le réel va de 93 € (modéré) à 621 € (sévère) selon les points AVIQ / Iriscare / Opgroeien.",
+          "WAL/DG 141,90 € · FLA 124,09 € (6-8 pts pilier 1 <4) · BXL 546,58 €",
+        note: "Le réel va de 93 € (modéré) à 621 € (sévère) selon les points AVIQ / Iriscare / Opgroeien. Catégorie Groeipakket haute (≥4 pts pilier 1) = 478,02 €.",
       },
     ],
     sources: [
       { name: "FAMIWAL — Allocations familiales en Wallonie", url: "https://www.famiwal.be" },
+      { name: "FAMIWAL — Résumé des montants 2026", url: "https://www.famiwal.be/montants/resume-des-montants" },
+      { name: "FAMIWAL — Le supplément social", url: "https://www.famiwal.be/vos-supplements/le-supplement-social" },
       { name: "AVIQ — Agence pour une Vie de Qualité (tutelle Wallonie)", url: "https://www.aviq.be" },
       { name: "FAMIRIS — Allocations familiales à Bruxelles", url: "https://famiris.brussels" },
       { name: "Iriscare — Tutelle Bruxelles", url: "https://www.iriscare.brussels" },
-      { name: "Groeipakket / Opgroeien — Paquet de croissance Flandre", url: "https://www.groeipakket.be" },
-      { name: "Ministerium der Deutschsprachigen Gemeinschaft — Kindergeld DG", url: "https://ostbelgienlive.be" },
+      { name: "Groeipakket — Bedragen / Amounts 2025-2026", url: "https://www.groeipakket.be/en/amounts" },
+      { name: "Groeipakket — Sociale toeslag", url: "https://www.groeipakket.be/en/benefits-Groeipakket/social-allowance" },
+      { name: "Ministerium der Deutschsprachigen Gemeinschaft — Ostbelgien Familie", url: "https://ostbelgienfamilie.be" },
+      { name: "Ostbelgien Familie — Starthilfe Geburtsprämie", url: "https://ostbelgienfamilie.be/desktopdefault.aspx/tabid-5913/" },
     ],
     limitations: [
       "Supplément handicap : valeur centrale (catégorie médiane modérée) — le montant réel dépend du nombre de points AVIQ / Iriscare / Opgroeien (93 à 621 €).",

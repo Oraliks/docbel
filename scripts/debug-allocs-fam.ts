@@ -94,6 +94,37 @@ const cases: Cas[] = [
       monoparental: false,
     },
   },
+  {
+    label: "C7 — Flandre · 1 enfant ORPHELIN un parent (2019) · revenu 50 000 € · non mono",
+    input: {
+      region: "flandre",
+      enfants: [{ anneeNaissance: 2019, orphelin: "un_parent" }],
+      revenuMenageAnnuel: 50_000,
+      monoparental: false,
+    },
+  },
+  {
+    label: "C8 — Germanophone · 3 enfants (2017, 2020, 2024) · revenu 28 000 € (bas) · non mono",
+    input: {
+      region: "germanophone",
+      enfants: [
+        { anneeNaissance: 2017 },
+        { anneeNaissance: 2020 },
+        { anneeNaissance: 2024 },
+      ],
+      revenuMenageAnnuel: 28_000,
+      monoparental: false,
+    },
+  },
+  {
+    label: "C9 — Germanophone · 1 enfant né en 2026 · revenu 50 000 € · non mono (test Geburtsprämie)",
+    input: {
+      region: "germanophone",
+      enfants: [{ anneeNaissance: 2026 }],
+      revenuMenageAnnuel: 50_000,
+      monoparental: false,
+    },
+  },
 ];
 
 const fmt = (n: number) =>

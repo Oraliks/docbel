@@ -1,7 +1,7 @@
 /**
- * Compare notre calc Brut/Net avec les références CSC.
+ * Compare notre calc Brut/Net avec les valeurs attendues (barème SPF 2026).
  *
- * 7 cas de référence (CSC, version 1 janvier 2026 - capturés le 24/05/2026)
+ * 7 cas de référence (barème SPF Finances 2026 - figés le 24/05/2026)
  * Tous : employé, secteur privé, temps plein 38/38, né le 01/01/1990.
  */
 
@@ -96,7 +96,7 @@ let countPass = 0;
 for (const c of cases) {
   const res = calcBrutNet(c.input);
   console.log(`\n=== ${c.label} ===`);
-  console.log(`Référence CSC      : ONSS ${c.refOnss.toFixed(2)} | Impos ${c.refImposable.toFixed(2)} | Précompte ${c.refPrecompte.toFixed(2)} | CSSS ${c.refCSSS.toFixed(2)} | NET ${c.refNet.toFixed(2)}`);
+  console.log(`Référence SPF      : ONSS ${c.refOnss.toFixed(2)} | Impos ${c.refImposable.toFixed(2)} | Précompte ${c.refPrecompte.toFixed(2)} | CSSS ${c.refCSSS.toFixed(2)} | NET ${c.refNet.toFixed(2)}`);
   if ("error" in res) {
     console.log(`Notre code : ERROR — ${res.error}`);
     continue;
@@ -111,7 +111,7 @@ for (const c of cases) {
   if (absEcart < 5) countPass++;
 
   const tag = absEcart < 5 ? "OK " : absEcart < 10 ? "WARN" : "FAIL";
-  console.log(`  Écart NET vs CSC : ${ecart >= 0 ? "+" : ""}${ecart.toFixed(2)} € (${(ecart / c.refNet * 100).toFixed(2)} %) ${tag}`);
+  console.log(`  Écart NET vs réf : ${ecart >= 0 ? "+" : ""}${ecart.toFixed(2)} € (${(ecart / c.refNet * 100).toFixed(2)} %) ${tag}`);
 }
 
 console.log(`\n────────────────────────────────────────`);

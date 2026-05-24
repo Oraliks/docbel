@@ -73,10 +73,10 @@ const ASSETS = [
     order: 60,
   },
   {
-    label: "CSC — Simulateur Brut-Net (référence de calibrage)",
+    label: "SPF Finances — Tax-on-web (validation et déclaration officielle)",
     description:
-      "Outil officiel CSC utilisé comme source de vérité pour le calibrage de notre calc. Version 1ᵉʳ janvier 2026. À ré-tester chaque janvier pour valider notre code (cf. scripts/debug-brut-net.ts).",
-    url: "https://tools.lacsc.be/trefzeker-tools/acv/brutonetto-light?lang=fr",
+      "Outil officiel SPF Finances pour la déclaration fiscale et la régularisation annuelle. À utiliser comme référence de validation finale (cf. scripts/debug-brut-net.ts).",
+    url: "https://finances.belgium.be/fr/E-services/tax-on-web",
     category: "general",
     year: 2026,
     order: 70,

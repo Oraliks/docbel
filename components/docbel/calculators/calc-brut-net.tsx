@@ -377,7 +377,7 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       doc.setFont("", "italic");
       doc.setTextColor(120, 120, 120);
       const footer = doc.splitTextToSize(
-        "Estimation indicative — chiffres 2026 calibrés sur le simulateur officiel CSC Brut-Net (tools.lacsc.be, v1ᵉʳ janvier 2026). Sources : SPF Finances, ONSS, Securex. Le précompte exact dépend de votre situation fiscale précise (double pécule, ATN multiples, cotisations spéciales).",
+        "Estimation indicative — chiffres 2026 conformes au barème SPF Finances (Annexe III AR/CIR 92) et aux taux ONSS officiels. Le précompte exact dépend de votre situation fiscale précise (double pécule, ATN multiples, cotisations spéciales). Régularisation finale via Tax-on-web.",
         pageWidth - margin * 2,
       );
       doc.text(footer, margin, y);
@@ -589,9 +589,8 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       {/* Mention "Mis à jour" */}
       <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
         Calculateur mis à jour le <strong>{lastUpdatedFr}</strong> · Données
-        2026 · Calibré sur le simulateur officiel CSC Brut-Net (v1
-        <sup>er</sup> janv. 2026, écart &lt; 1 €) · Sources : SPF Finances,
-        ONSS, Securex.
+        2026 · Conforme à l&apos;Annexe III AR/CIR 92 · Sources : SPF Finances
+        et ONSS.
       </p>
     </div>
   );

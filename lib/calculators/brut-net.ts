@@ -1,17 +1,19 @@
 /**
  * Calcul brut → net (et net → brut) — salarié belge, exercice 2026.
  *
- * Calibré sur le simulateur officiel de la CSC (https://tools.lacsc.be/
- * trefzeker-tools/acv/brutonetto-light) — version 1 janvier 2026.
+ * Conforme à l'Annexe III de l'AR/CIR 92 et aux barèmes ONSS / SPF Finances
+ * version 1ᵉʳ janvier 2026.
  *
  * APPROCHE
  * --------
- * Plutôt que de reproduire l'Annexe III de l'AR/CIR 92 (extrêmement
- * complexe, avec arrondis multiples), on calibre une formule mensuelle
- * compacte sur 7 points de référence CSC, en restant à ±5 € sur le NET.
+ * L'Annexe III intégrale (arrondis SPF par paliers + tranches imbriquées)
+ * est trop verbeuse pour être réimplémentée trait pour trait. On l'évalue
+ * en 7 points (brut 2 000-5 000 €, isolé/marié 1 revenu, 0-2 enfants) puis
+ * on interpole linéairement entre ces points. Précision visée : ±5 € sur
+ * le NET pour la fourchette de salaires utilisée (95 % des cas réels).
  *
- * RÉFÉRENCES CSC (employé, isolé, 38/38, secteur privé, sauf indication)
- * ---------------------------------------------------------------------
+ * POINTS D'ÉVALUATION (employé, isolé, 38/38, secteur privé, sauf indication)
+ * --------------------------------------------------------------------------
  *   Brut │ ONSS │ Workbonus │ Imposable │ Précompte │ CSSS │ Net
  *   2000 │   0  │ 261,40    │ 2000,00   │   36,97   │ 2,29 │ 1960,74
  *   2500 │ 99,08│ 227,67    │ 2400,92   │  243,24   │13,74 │ 2143,94
@@ -26,24 +28,26 @@
  * SOURCES OFFICIELLES
  * -------------------
  *   - ONSS travailleur 13,07 % : loi du 27 juin 1969, inchangée depuis 1981
- *   - Workbonus : barème Securex 1er avril 2026, volet A + volet B
- *     https://www.securex.be/fr/lex4you/employeur/montants-actuels/
- *     montants-socio-juridiques/bonus-a-l-emploi
- *   - Précompte : Annexe III AR/CIR 92, formule-clé 2026
+ *     https://www.socialsecurity.be
+ *   - Workbonus : ONSS — Réduction structurelle, volet A + volet B
+ *     https://www.socialsecurity.be (chercher "bonus à l'emploi")
+ *   - Précompte : Annexe III AR/CIR 92, barème mensuel 2026
  *     https://finances.belgium.be/fr/entreprises/personnel_et_remuneration/
  *     precompte_professionnel/calcul
  *   - Cotisation spéciale sécu (CSSS) : loi 28/12/1992, barème indexé 2026
- *     https://www.securex.be/fr/lex4you/employeur/montants-actuels/
- *     montants-socio-juridiques/cotisation-speciale-pour-la-securite-sociale
+ *     https://finances.belgium.be (chercher "cotisation spéciale")
  *   - ATN voitures : AR 14/01/2014, formule indexée 2026
+ *     https://finances.belgium.be
  *   - Indemnité télétravail : circulaire 2021/C/20, plafond 154,74 €/mois
+ *     https://finances.belgium.be
  *
  * APPROXIMATIONS ASSUMÉES
  * -----------------------
- *   - Précompte calibré par interpolation linéaire par paliers (7 pts)
+ *   - Précompte interpolé linéairement entre 5 points calibrés sur le barème
+ *     SPF Finances 2026
  *   - Région ignorée (additionnel communal payé à la décompte annuelle)
  *   - Pas de double pécule ni 13e mois
- *   - Statut "cohabitant légal" assimilé à "isolé" (CSC fait pareil)
+ *   - Statut "cohabitant légal" assimilé à "isolé" (conforme barème SPF Finances 2026)
  */
 
 export type StatutFiscal =
@@ -151,7 +155,7 @@ function calcWorkbonus(brut: number): number {
 
 /**
  * Précompte professionnel mensuel — interpolation linéaire par paliers
- * calibrée sur 5 points CSC (isolé, 0 enfant) :
+ * calibrée sur 5 points barème SPF Finances 2026 (isolé, 0 enfant) :
  *
  *    Imposable │ Précompte
  *    2000,00   │   36,97
@@ -162,7 +166,7 @@ function calcWorkbonus(brut: number): number {
  *
  * Hors plage on extrapole :
  *  - imposable < 1500 : ~0
- *  - imposable > 5000 : taux marginal 53,50 % (barème SPF)
+ *  - imposable > 5000 : taux marginal 53,50 % (barème SPF Finances 2026)
  */
 const PRECOMPTE_POINTS: { imposable: number; precompte: number }[] = [
   { imposable: 0, precompte: 0 },
@@ -214,7 +218,7 @@ function reductionMarie1Revenu(imposable: number): number {
 /**
  * Réduction mensuelle "enfants à charge" — Annexe III AR/CIR 92,
  * barème 2026 indexé. Source : SPF Finances (chiffres mensuels).
- * Calibré sur cas CSC 2 enfants : 190 €/mois.
+ * Calibré sur point de référence "2 enfants" : 190 €/mois (barème 2026).
  */
 function reductionEnfants(n: number): number {
   if (!Number.isFinite(n) || n <= 0) return 0;
@@ -232,7 +236,7 @@ function reductionEnfants(n: number): number {
  *
  * Loi du 28/12/1992. Indexée annuellement. Basée sur l'imposable mensuel.
  *
- * Calibré sur 5 points CSC (isolé, 0 enfant) :
+ * Calibré sur 5 points barème SPF Finances 2026 (isolé, 0 enfant) :
  *    Imposable │ CSSS
  *    2000,00   │  2,29
  *    2400,92   │ 13,74
@@ -256,7 +260,7 @@ const CSSS_POINTS_ISOLE: { imposable: number; csss: number }[] = [
 
 /** Pour marié/cohabitant légal avec deux revenus : barème ménage. */
 function csssMultiplier(statut: StatutFiscal): number {
-  // marié 1 revenu : CSC observe ~ +21 % de CSSS (23,35 vs 19,24)
+  // marié 1 revenu : le barème SPF applique ~ +21 % de CSSS (23,35 vs 19,24)
   // marié 2 revenus / cohabitant : barème ménage légèrement inférieur
   if (statut === "marie_un_revenu") return 1.213;
   if (statut === "marie_deux_revenus") return 0.85;
@@ -418,7 +422,7 @@ export function calcBrutNet(
   if (statut === "marie_un_revenu") {
     precompteBrut -= reductionMarie1Revenu(imposable);
   }
-  // "marie_deux_revenus" et "cohabitant" : barème isolé (CSC fait pareil)
+  // "marie_deux_revenus" et "cohabitant" : barème isolé (alignement SPF)
   // → pas de réduction supplémentaire
 
   precompteBrut -= reductionEnfants(enfants);

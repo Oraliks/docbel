@@ -14,7 +14,7 @@
  *   dégressivité). Le calcul réel intègre encore : précompte professionnel,
  *   carrière passée, dispense pour études, complément d'ancienneté, etc.
  *   Toujours rediriger l'utilisateur vers son organisme de paiement (CAPAC,
- *   syndicat CSC/FGTB/CGSLB) pour le chiffre exact.
+ *   votre organisme de paiement habituel) pour le chiffre exact.
  *
  * Sources principales :
  *   - ONEM, "Montants des allocations" (mis à jour à chaque indexation)

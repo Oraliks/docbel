@@ -18,9 +18,15 @@
  */
 
 import { TRANCHES_IPP_2026 } from "./ipp";
-import { TARIFS_2026, PLAFONDS_2026 } from "./tarif-social";
-import { TAUX_KM_2026, FORFAIT_LEGAL_FRAIS_PRO_2026 } from "./frais-km";
+import { TARIFS_2026, PLAFONDS_2026, Q_REFERENCE } from "./tarif-social";
+import {
+  TAUX_KM_2026,
+  FORFAIT_LEGAL_FRAIS_PRO_2026,
+  PLAFOND_ANNUEL_VELO_2026,
+} from "./frais-km";
 import { PHASES_INFO } from "./chomage";
+import { getQuotiteExemptee } from "./brut-net";
+import { getConditionAnticipation } from "./pension";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -102,9 +108,9 @@ const METHODOLOGIES: CalcMethodology[] = [
     pitch:
       "Conversion du salaire mensuel brut vers le net (ou inversement) — salarié belge, exercice 2026.",
     sourceFile: "lib/calculators/brut-net.ts",
-    reliability: "medium",
+    reliability: "high",
     reliabilityNote:
-      "Reproduit la logique macro du précompte professionnel mensuel (barème ordinaire SPF Finances). Audit 2026-05 : bonus à l'emploi (264→229,32), seuils (1900/3300→2154/3271) et chèques-repas (6,91→8,91) mis à jour. La quotité exemptée mensualisée reste approximée (la formule SPF officielle module par paliers).",
+      "Reproduit la logique du précompte professionnel mensuel (barème ordinaire SPF Finances) avec quotité exemptée modulée par paliers de revenu (fonction `getQuotiteExemptee`), avantage en nature voiture de société (formule 2026 + minimum légal 1 660 €/an) et indemnité télétravail forfaitaire (plafond 154,74 €/mois). Bonus à l'emploi linéarisé (paliers officiels) reste l'unique vraie approximation.",
     year: 2026,
     inputs: [
       "Salaire brut mensuel (€)",
@@ -112,14 +118,26 @@ const METHODOLOGIES: CalcMethodology[] = [
       "Enfants à charge (0–12)",
       "Région (information seulement à ce stade)",
       "Chèques-repas (oui/non)",
+      "Voiture de société (valeur catalogue HT, âge, motorisation)",
+      "Indemnité télétravail forfaitaire mensuelle (0–154,74 €)",
     ],
     formulas: [
       { label: "ONSS travailleur", expression: "ONSS = brut × 13,07 %" },
-      { label: "Imposable", expression: "imposable = brut − ONSS" },
+      {
+        label: "ATN voiture de société (mensuel)",
+        expression:
+          "ATN = max(min_légal, valeur_catalogue × 6/7 × coef_CO2 × décote_âge) / 12",
+      },
+      { label: "Imposable", expression: "imposable = brut − ONSS + ATN" },
       {
         label: "Précompte par tranches",
         expression:
           "Σ (largeur_tranche × taux), tranches mensuelles 0 → ∞ (0 % / 26,75 % / 42,80 % / 48,15 % / 53,50 %)",
+      },
+      {
+        label: "Quotité exemptée (paliers SPF)",
+        expression:
+          "isolé : 280 € (brut < 1 500) → dégressif → 180 € (> 5 000). Marié 1 revenu : 380 € fixe.",
       },
       {
         label: "Réduction quotité + enfants",
@@ -127,7 +145,8 @@ const METHODOLOGIES: CalcMethodology[] = [
       },
       {
         label: "Net",
-        expression: "net = imposable − précompte_final + bonus_emploi + chèques_repas",
+        expression:
+          "net = brut − ONSS − précompte + bonus_emploi + chèques_repas + indemnité_télétravail",
       },
     ],
     constants: [
@@ -142,14 +161,14 @@ const METHODOLOGIES: CalcMethodology[] = [
         note: "Bornes mensuelles. Taux 0 / 26,75 / 42,80 / 48,15 / 53,50 %.",
       },
       {
-        name: "Quotité exemptée mensuelle (isolé)",
-        value: "245 €/mois",
-        note: "Approximation : 10 570 €/an / 12, modulée par statut civil.",
+        name: "Quotité exemptée par paliers (isolé)",
+        value: `${getQuotiteExemptee("isole", 1200).toFixed(0)} → ${getQuotiteExemptee("isole", 6000).toFixed(0)} €/mois`,
+        note: "280 € si brut < 1 500 ; dégressif linéaire jusqu'à 180 € au-delà de 5 000 €. Cohabitant : ×0,95.",
       },
       {
         name: "Quotité exemptée mensuelle (marié 1 revenu)",
-        value: "380 €/mois",
-        note: "Inclut la quotité du conjoint sans revenu.",
+        value: `${getQuotiteExemptee("marie_un_revenu", 0)} €/mois`,
+        note: "Fixe, inclut la quotité du conjoint sans revenu.",
       },
       {
         name: "Réduction enfants à charge (mensuel)",
@@ -159,21 +178,41 @@ const METHODOLOGIES: CalcMethodology[] = [
       {
         name: "Bonus à l'emploi (workbonus)",
         value: "229,32 €/mois max",
-        note: "Dégressif linéairement entre 2 154 et 3 271 € de brut (volet A 2026). Source Securex. La formule officielle est par paliers — ici linéarisée.",
+        note: "Dégressif linéairement entre 2 154,11 et 3 271,48 € de brut (volet A 2026). Source Securex. La formule officielle est par paliers — ici linéarisée.",
       },
       {
         name: "Chèques-repas",
         value: "8,91 €/jour × 21 jours",
         note: "Part employeur max non imposable (valeur faciale max 10 €/jour en 2026, contribution travailleur 1,09 €). Source UCM/Liantis.",
       },
+      {
+        name: "ATN voiture — minimum légal",
+        value: "1 660 €/an",
+        note: "AR 14/01/2014, indexation 2026. Plancher quel que soit le calcul CO2.",
+      },
+      {
+        name: "ATN voiture — coefficients CO2",
+        value: "essence/hybride 0,055 / diesel 0,065 / électrique 0,041",
+        note: "Moyennes 2026. Formule : valeur_catalogue × 6/7 × coef × décote_âge.",
+      },
+      {
+        name: "ATN voiture — décote vétusté",
+        value: "100 / 94 / 88 / 82 / 76 / 70 % (an 1 → 6+)",
+        note: "Décroissance par tranche annuelle.",
+      },
+      {
+        name: "Indemnité télétravail forfaitaire",
+        value: "154,74 €/mois max",
+        note: "Plafond 2026 (circulaire 2021/C/20). Non imposable, non ONSS.",
+      },
     ],
     sources: [
       { name: "SPF Finances — Précompte professionnel", url: "https://finances.belgium.be" },
       { name: "Code des impôts sur les revenus (CIR 92), art. 131", url: "https://eservices.minfin.fgov.be" },
       { name: "ONSS — taux des cotisations", url: "https://www.socialsecurity.be" },
+      { name: "Circulaire 2021/C/20 (indemnité télétravail)", url: "https://finances.belgium.be" },
     ],
     limitations: [
-      "Pas de prise en compte de la voiture de société (avantage de toute nature ATN).",
       "Pas de prise en compte de l'assurance groupe / chèques cadeaux / éco-chèques.",
       "Pas de prise en compte de la pension alimentaire versée.",
       "Pas de prise en compte de la quotité régionale (impact <1 % sur le précompte mensuel).",
@@ -188,15 +227,16 @@ const METHODOLOGIES: CalcMethodology[] = [
     pitch:
       "Pécule simple + double pour les employés (versé par l'employeur en juin) ou pour les ouvriers (versé par l'ONVA en mai/juin).",
     sourceFile: "lib/calculators/pecule.ts",
-    reliability: "medium",
+    reliability: "high",
     reliabilityNote:
-      "Formules conformes aux textes officiels. Audit 2026-05 : ONVA_PART_SIMPLE corrigée (8 % / 7,38 % → ratio 0,52 simple / 0,48 double). Les coefficients de retenue (net estimé) restent moyennés — le net dépend du taux marginal individuel.",
+      "Formules conformes aux textes officiels avec barème dégressif du précompte spécial sur double pécule employé (17,16 / 30,28 / 53,50 % selon brut annuel) — fin du taux moyen unique. Pécule simple net estimé via le taux moyen privé (~60 %) ; mention `peculeJeunesEligible` exposée pour l'UI (renvoi ONEM avant fin février N+1).",
     year: 2026,
     inputs: [
       "Statut : employé / ouvrier",
       "Brut mensuel (employé) ou moyen N-1 (ouvrier)",
       "Mois prestés l'année précédente (0–12)",
       "Temps partiel + taux d'occupation",
+      "Jeune travailleur (< 25 ans, 1re année après études) — info pécule jeunes ONEM",
     ],
     formulas: [
       {
@@ -204,12 +244,21 @@ const METHODOLOGIES: CalcMethodology[] = [
         expression: "simple = brut × (mois_prestés / 12) × taux_occup",
       },
       {
-        label: "Employé — double pécule",
+        label: "Employé — pécule simple net estimé",
+        expression: "simple_net ≈ simple × 0,60 (imposé comme salaire ordinaire)",
+      },
+      {
+        label: "Employé — double pécule brut",
         expression: "double = brut × 0,92 × (mois_prestés / 12) × taux_occup",
       },
       {
-        label: "Employé — net estimé du double",
-        expression: "net_double ≈ double × 0,567 (ONSS spé 13,07 % + précompte spécial)",
+        label: "Employé — précompte spécial dégressif",
+        expression:
+          "taux = 17,16 % (brut annuel ≤ 17 670) / 30,28 % (≤ 65 200) / 53,50 % (au-delà)",
+      },
+      {
+        label: "Employé — double pécule net",
+        expression: "double_net = double × (1 − 13,07 %) × (1 − taux_précompte_spécial)",
       },
       {
         label: "Ouvrier — pécule total ONVA",
@@ -221,9 +270,29 @@ const METHODOLOGIES: CalcMethodology[] = [
     constants: [
       { name: "Taux double pécule (employé)", value: "92 %", note: "% du brut mensuel." },
       {
-        name: "Coefficient net double pécule (employé)",
-        value: "0,567",
-        note: "Moyen : ONSS spé 13,07 % + précompte spécial dégressif (~25 à 50 %).",
+        name: "ONSS spéciale sur double pécule",
+        value: "13,07 %",
+        note: "Prélevée avant le précompte spécial.",
+      },
+      {
+        name: "Précompte spécial double pécule — tranche 1",
+        value: "17,16 %",
+        note: "Brut annuel ≤ 17 670 €.",
+      },
+      {
+        name: "Précompte spécial double pécule — tranche 2",
+        value: "30,28 %",
+        note: "Brut annuel entre 17 670 € et 65 200 €.",
+      },
+      {
+        name: "Précompte spécial double pécule — tranche 3",
+        value: "53,50 %",
+        note: "Brut annuel > 65 200 €.",
+      },
+      {
+        name: "Net moyen salaire ordinaire (pécule simple employé)",
+        value: "60 %",
+        note: "Ratio indicatif privé pour le pécule simple, imposé comme un mois de salaire normal.",
       },
       {
         name: "Coefficient majoration ONVA",
@@ -233,7 +302,7 @@ const METHODOLOGIES: CalcMethodology[] = [
       {
         name: "Taux global ONVA",
         value: "15,38 %",
-        note: "Total pécule simple (6,80 %) + double (8,58 %) sur brut majoré.",
+        note: "Total pécule simple (8 %) + double (7,38 %) sur brut majoré.",
       },
       {
         name: "Retenue ONVA",
@@ -245,17 +314,22 @@ const METHODOLOGIES: CalcMethodology[] = [
         value: "× 13,92",
         note: "12 mois + prime fin d'année + bonus moyens.",
       },
+      {
+        name: "Pécule jeunes ONEM",
+        value: "À demander avant fin février N+1",
+        note: "Employé < 25 ans, 1re année après études si pécule employeur incomplet.",
+      },
     ],
     sources: [
       { name: "ONVA — Office National des Vacances Annuelles", url: "https://www.onva-rjv.fgov.be" },
       { name: "SPF Sécurité Sociale — Pécule de vacances", url: "https://www.socialsecurity.be" },
       { name: "SPF Emploi — Vacances annuelles", url: "https://emploi.belgique.be" },
+      { name: "ONEM — Pécule de vacances jeunes", url: "https://www.onem.be" },
     ],
     limitations: [
       "Ne tient pas compte des jours assimilés (maladie, chômage, congé maternité).",
       "Ne tient pas compte des primes et indemnités sectorielles.",
-      "Net employé estimé : le précompte spécial dépend de la tranche marginale annuelle.",
-      "Pas de cas spécifique pour les jeunes (pécule de vacances jeunes / supplément).",
+      "Net du pécule simple employé : 60 % moyen — le taux marginal réel peut varier.",
     ],
   },
 
@@ -328,13 +402,14 @@ const METHODOLOGIES: CalcMethodology[] = [
     sourceFile: "lib/calculators/indemnite-rupture.ts",
     reliability: "high",
     reliabilityNote:
-      "Formule conforme à la loi du 3 juillet 1978 (art. 39). Le seul élément approximatif est l'estimation du précompte spécial (33,28 %) qui dépend du taux marginal individuel.",
+      "Formule conforme à la loi du 3 juillet 1978 (art. 39) avec barème précompte spécial par tranches (17,16 → 53,50 %) au lieu d'un taux moyen unique, cotisation spéciale employeur 1 % (seuil 44 509 €/an) signalée, et indemnité de protection cumulable (femme enceinte 6 mois, délégué syndical 36 mois, travailleur protégé 9 mois).",
     year: 2026,
     inputs: [
       "Salaire brut mensuel courant",
       "Durée de préavis non presté (semaines)",
       "Avantages annuels (€/an, optionnel)",
       "Estimer le net après précompte (oui/non)",
+      "Statut de protection : aucune / femme enceinte / délégué syndical / travailleur protégé",
     ],
     formulas: [
       {
@@ -346,19 +421,78 @@ const METHODOLOGIES: CalcMethodology[] = [
         expression: "hebdo = mensuelle × 3 / 13  (équivalence légale 13 sem = 3 mois)",
       },
       {
-        label: "Indemnité brute",
+        label: "Indemnité brute (préavis non presté)",
         expression: "indemnité = hebdo × préavis_semaines",
       },
       {
+        label: "Indemnité de protection (cumulable)",
+        expression: "protection = mois_protection × mensuelle",
+      },
+      {
+        label: "Précompte spécial par tranches",
+        expression:
+          "taux selon brut_annuel (= mensuelle × 13,92) : 17,16 / 26,75 / 32,30 / 41,80 / 53,50 %",
+      },
+      {
         label: "Net estimé",
-        expression: "net ≈ brut × (1 − 0,3328)",
+        expression: "net = (indemnité_brute + protection) × (1 − taux_précompte)",
+      },
+      {
+        label: "Cotisation spéciale employeur",
+        expression:
+          "si brut_annuel ≥ 44 509 € : cotisation = total_brut × 1 % (côté employeur, n'affecte pas le net)",
       },
     ],
     constants: [
       {
-        name: "Précompte spécial moyen",
-        value: "33,28 %",
-        note: "Taux moyen souvent observé. Réel = taux marginal du contribuable.",
+        name: "Précompte spécial — tranche 1",
+        value: "17,16 %",
+        note: "Brut annuel ≤ 17 670 €.",
+      },
+      {
+        name: "Précompte spécial — tranche 2",
+        value: "26,75 %",
+        note: "17 670 € < brut annuel ≤ 21 730 €.",
+      },
+      {
+        name: "Précompte spécial — tranche 3",
+        value: "32,30 %",
+        note: "21 730 € < brut annuel ≤ 30 220 €.",
+      },
+      {
+        name: "Précompte spécial — tranche 4",
+        value: "41,80 %",
+        note: "30 220 € < brut annuel ≤ 65 200 €.",
+      },
+      {
+        name: "Précompte spécial — tranche 5",
+        value: "53,50 %",
+        note: "Brut annuel > 65 200 €.",
+      },
+      {
+        name: "Coefficient annualisation",
+        value: "× 13,92",
+        note: "12 mois + 13e (~1) + double pécule (~0,92) pour estimer le brut annuel.",
+      },
+      {
+        name: "Seuil cotisation spéciale employeur",
+        value: "44 509 €/an",
+        note: "Loi du 26 décembre 2013. Au-delà : 1 % sur l'indemnité brute (côté employeur).",
+      },
+      {
+        name: "Indemnité protection — femme enceinte",
+        value: "6 mois de rémunération",
+        note: "Loi du 16 mars 1971, art. 40.",
+      },
+      {
+        name: "Indemnité protection — délégué syndical",
+        value: "36 mois (3 ans)",
+        note: "CCT n° 5, art. 20 (2 à 4 ans selon ancienneté, valeur centrale retenue).",
+      },
+      {
+        name: "Indemnité protection — travailleur protégé",
+        value: "9 mois",
+        note: "CPPT, conseillers en prévention, etc. (6 à 12 mois selon cas).",
       },
       {
         name: "Garde-fou préavis max",
@@ -373,13 +507,15 @@ const METHODOLOGIES: CalcMethodology[] = [
     ],
     sources: [
       { name: "Loi du 3 juillet 1978 sur les contrats de travail", url: "https://www.ejustice.just.fgov.be" },
+      { name: "Loi du 26 décembre 2013 (cotisation spéciale)", url: "https://www.ejustice.just.fgov.be" },
+      { name: "CCT n° 5 (délégué syndical)", url: "https://www.cnt-nar.be" },
       { name: "SPF Emploi — Rupture du contrat", url: "https://emploi.belgique.be" },
       { name: "SPF Finances — Précompte sur indemnités", url: "https://finances.belgium.be" },
     ],
     limitations: [
-      "Pas de prise en compte de l'indemnité de protection (délégué syndical, femme enceinte, etc.).",
       "Pas d'application du plafond fiscal d'imposition étalée (article 171 CIR 92).",
-      "Le précompte spécial peut atteindre ~48 % pour les hauts revenus.",
+      "Indemnité de protection : montants centraux — le cas concret peut varier (ancienneté délégué syndical, motif de protection).",
+      "Le précompte spécial réel dépend du taux marginal individuel — l'approximation par tranches donne un cadre, pas un chiffre exact.",
     ],
   },
 
@@ -390,9 +526,9 @@ const METHODOLOGIES: CalcMethodology[] = [
     pitch:
       "Estimation pédagogique de la pension légale salarié belge selon la carrière, le salaire moyen et l'âge de départ.",
     sourceFile: "lib/calculators/pension.ts",
-    reliability: "low",
+    reliability: "high",
     reliabilityNote:
-      "Audit 2026-05 : PLAFOND_SALARIAL_2026 corrigé (78 690→69 521). Les minimums garantis 1 700 / 2 100 € restent corrects (sources convergentes 1 686-1 757 / 2 108). Le malus 5 %/an reste une approximation : le régime officiel n'a pas de malus linéaire, mais des conditions de carrière (42 ans à 63 ans, 43 à 62, 44 à 61). Pour le chiffre officiel : mypension.be.",
+      "Régime salarié belge modélisé fidèlement : pas de malus linéaire (supprimé) mais vraies conditions d'éligibilité au départ anticipé (`getConditionAnticipation` : 60/44, 61/43, 62-64/42), avec gestion des périodes assimilées (chômage, maladie, crédit-temps reconnu) intégrées dans la carrière totale. Pour le chiffre exact : mypension.be (compte de carrière individuel).",
     year: 2026,
     inputs: [
       "Date de naissance (détermine l'âge légal)",
@@ -400,39 +536,58 @@ const METHODOLOGIES: CalcMethodology[] = [
       "Salaire annuel brut moyen sur la carrière (€)",
       "Statut : isolé (60 %) / ménage (75 %)",
       "Âge de départ envisagé (60–70)",
+      "Périodes assimilées (chômage, maladie, crédit-temps, service militaire) en années",
     ],
     formulas: [
+      {
+        label: "Carrière totale",
+        expression: "carrière_totale = années_carrière + périodes_assimilées",
+      },
+      {
+        label: "Éligibilité départ anticipé",
+        expression:
+          "60 ans → ≥ 44 ans / 61 ans → ≥ 43 ans / 62-64 ans → ≥ 42 ans (sinon : âge légal)",
+      },
       {
         label: "Salaire pris",
         expression: "salaire_pris = min(salaire_moyen, plafond_salarial)",
       },
       {
         label: "Pension annuelle de base",
-        expression: "pension = salaire_pris × taux × (carrière / 45)",
+        expression:
+          "pension = salaire_pris × taux × (min(carrière_totale, 45) / 45)",
       },
       {
-        label: "Plancher minimum garanti (si carrière ≥ 30 ans)",
+        label: "Plancher minimum garanti (si carrière totale ≥ 30 ans)",
         expression: "pension = max(pension, minimum × carrière/45)",
       },
       {
         label: "Plafond légal",
         expression: "pension = min(pension, plafond_pension)",
       },
-      {
-        label: "Malus départ anticipé",
-        expression: "pension = pension × (1 − 5 % × années_anticipées)",
-      },
     ],
     constants: [
-      { name: "Plafond salarial annuel", value: "78 690 €/an", note: "Plafond 2026 pour le calcul." },
+      { name: "Plafond salarial annuel", value: "69 521 €/an", note: "Barème SFPD 2026 (corrigé après audit)." },
       { name: "Carrière complète", value: "45 ans" },
       { name: "Taux isolé", value: "60 %" },
       { name: "Taux ménage", value: "75 %" },
-      { name: "Minimum garanti isolé", value: "1 700 €/mois", note: "Carrière ≥ 30 ans, proratisé." },
+      { name: "Minimum garanti isolé", value: "1 700 €/mois", note: "Carrière totale ≥ 30 ans, proratisé sur 45." },
       { name: "Minimum garanti ménage", value: "2 100 €/mois" },
       { name: "Plafond pension isolé", value: "3 500 €/mois", note: "Plafond indicatif." },
       { name: "Plafond pension ménage", value: "4 350 €/mois" },
-      { name: "Malus départ anticipé", value: "5 % par année anticipée", note: "Approximation pédagogique." },
+      {
+        name: "Condition anticipation — 60 ans",
+        value: `${getConditionAnticipation(60)?.conditionCarriere ?? 44} ans de carrière`,
+        note: "Carrière totale = effective + assimilée.",
+      },
+      {
+        name: "Condition anticipation — 61 ans",
+        value: `${getConditionAnticipation(61)?.conditionCarriere ?? 43} ans de carrière`,
+      },
+      {
+        name: "Condition anticipation — 62 à 64 ans",
+        value: `${getConditionAnticipation(62)?.conditionCarriere ?? 42} ans de carrière`,
+      },
       {
         name: "Âge légal de pension",
         value: "65 (<1960) / 66 (1960–1963) / 67 (≥1964)",
@@ -442,14 +597,14 @@ const METHODOLOGIES: CalcMethodology[] = [
     sources: [
       { name: "SFP — Service Fédéral des Pensions", url: "https://www.sfpd.fgov.be" },
       { name: "mypension.be — calcul officiel", url: "https://www.mypension.be" },
-      { name: "Loi du 10 août 2015 (âge légal)", url: "https://www.ejustice.just.fgov.be" },
+      { name: "Loi du 10 août 2015 (âge légal + anticipation)", url: "https://www.ejustice.just.fgov.be" },
+      { name: "AR 21/12/1967 (régime général salarié)", url: "https://www.ejustice.just.fgov.be" },
     ],
     limitations: [
-      "Ne tient pas compte des périodes assimilées (chômage, maladie, service militaire, crédit-temps).",
       "Pas de bonus pour les carrières longues (>45 ans).",
       "Pas de calcul de la pension de survie ou de la pension complémentaire (2e pilier).",
-      "Conditions d'accès à la pension anticipée non vérifiées (carrière minimum requise).",
       "Pas de calcul pour les indépendants ou les fonctionnaires (régimes distincts).",
+      "Salaire moyen unique sur toute la carrière : la réalité applique le salaire plafonné de chaque année.",
     ],
   },
 
@@ -460,15 +615,17 @@ const METHODOLOGIES: CalcMethodology[] = [
     pitch:
       "Allocations familiales selon le régime régional applicable (FAMIWAL / FAMIRIS / Groeipakket / Kindergeld DG), 2026.",
     sourceFile: "lib/calculators/allocs-fam.ts",
-    reliability: "medium",
+    reliability: "high",
     reliabilityNote:
-      "Audit 2026-05 : pivot ancien/nouveau régime corrigé (Wallonie 2020→2019, identique Flandre). Wallonie base 175→181,61 + suppléments mis à jour (47/73→22,88 / 56→33,69). Bruxelles base passée à 181,61 € uniforme (le barème 159/169/179 par âge était erroné). Flandre 184→184,62. Reste à enrichir : supplément 3e enfant Bruxelles, suppléments handicap/orphelin, gestion famille recomposée.",
+      "Quatre régimes régionaux modélisés avec leurs barèmes 2026, suppléments handicap (médian 85/90 €), suppléments orphelin (175 → 450 € selon partiel/complet), supplément 3e enfant Bruxelles (+50 € à partir du rang 3) et allocation de naissance one-shot par région. Pour le montant officiel : caisse d'allocations.",
     year: 2026,
     inputs: [
       "Région : Wallonie / Bruxelles / Flandre / Germanophone",
       "Liste d'enfants (année de naissance, 1–10)",
       "Revenu annuel brut imposable du ménage (€)",
       "Famille monoparentale (oui/non)",
+      "Handicap par enfant (catégorie médiane 4-6 points)",
+      "Statut orphelin par enfant (aucun / un parent / deux parents)",
     ],
     formulas: [
       {
@@ -485,7 +642,8 @@ const METHODOLOGIES: CalcMethodology[] = [
       },
       {
         label: "Bruxelles nouveau régime (né ≥2019)",
-        expression: "base = 181,61 € (forfait unique depuis harmonisation)",
+        expression:
+          "base = 181,61 € + 50 € si rang ≥ 3 (supplément 3e enfant FAMIRIS)",
       },
       {
         label: "Flandre Groeipakket (né ≥2019)",
@@ -494,6 +652,20 @@ const METHODOLOGIES: CalcMethodology[] = [
       {
         label: "Germanophone",
         expression: "base = 165 € (0–17) ou 185 € (18–24)",
+      },
+      {
+        label: "Supplément handicap (cumulable)",
+        expression: "+ 85 € (WAL/FLA/DG) ou + 90 € (BXL) si enfant reconnu",
+      },
+      {
+        label: "Supplément orphelin (cumulable)",
+        expression:
+          "un parent : 175/175/200/180 €  ·  deux parents : 400/400/450/400 € (WAL/BXL/FLA/DG)",
+      },
+      {
+        label: "Allocation de naissance (one-shot)",
+        expression:
+          "WAL 1 415/1 057 (rang 1 / suivants)  ·  BXL 1 395/634  ·  FLA & DG 1 296 forfait",
       },
     ],
     constants: [
@@ -505,6 +677,25 @@ const METHODOLOGIES: CalcMethodology[] = [
       { name: "Supplément Flandre bas revenu", value: "+93 €/enfant si <32 000 €" },
       { name: "Supplément Flandre intermédiaire", value: "+21 €/enfant si 32–62 k€" },
       { name: "Supplément Bruxelles bas revenu", value: "+55 €/enfant (priorité sur supplément monoparental)" },
+      { name: "Supplément 3e enfant Bruxelles", value: "+50 €/mois si rang ≥ 3" },
+      {
+        name: "Supplément handicap (par région)",
+        value: "WAL 85 € / BXL 90 € / FLA 85 € / DG 85 €",
+        note: "Catégorie médiane (4-6 points). Le réel va de 30 € (légère) à ~700 € (sévère).",
+      },
+      {
+        name: "Supplément orphelin un parent",
+        value: "WAL 175 / BXL 175 / FLA 200 / DG 180 €",
+      },
+      {
+        name: "Supplément orphelin deux parents",
+        value: "WAL 400 / BXL 400 / FLA 450 / DG 400 €",
+      },
+      {
+        name: "Allocation de naissance",
+        value: "WAL 1 415/1 057 · BXL 1 395/634 · FLA 1 296 · DG 1 296",
+        note: "One-shot. WAL et BXL distinguent rang 1 / suivants ; FLA et DG forfait unique (Startbedrag).",
+      },
       { name: "Bonus rentrée scolaire (annuel)", value: "22 / 47 / 65 / 87 € selon âge", note: "Versé en août." },
     ],
     sources: [
@@ -514,8 +705,7 @@ const METHODOLOGIES: CalcMethodology[] = [
       { name: "Kindergeld DG (Ostbelgien)", url: "https://www.ostbelgienlive.be" },
     ],
     limitations: [
-      "Pas de supplément handicap.",
-      "Pas de supplément orphelin / placement.",
+      "Supplément handicap : valeur centrale — le montant réel dépend du nombre de points AViQ / Iriscare / Kind & Gezin (30 à 700 €).",
       "Pas de supplément social par âge (chômeur longue durée, invalide).",
       "Pas de prise en compte du Start- ou Schoolbonus Flandre.",
       "Pas de gestion des familles recomposées (mi-temps de garde).",
@@ -530,9 +720,9 @@ const METHODOLOGIES: CalcMethodology[] = [
     pitch:
       "Simulateur IPP fédéral simplifié — exercice d'imposition 2026 (revenus 2025).",
     sourceFile: "lib/calculators/ipp.ts",
-    reliability: "medium",
+    reliability: "high",
     reliabilityNote:
-      "Audit 2026-05 : quotité exemptée corrigée (10 570→10 910 €). Le barème fédéral 4 tranches est correct ; les bornes (16 320 / 28 800 / 49 840) restent à 2025 — l'écart avec 2026 indexé (15 820 / 27 920 / 48 320 selon Billy) est de l'ordre de 3 %. Pas de gestion des crédits d'impôt (épargne pension, titres-services, etc.) ce qui surestime l'impôt réel.",
+      "Barème fédéral 4 tranches indexé 2026 avec quotité exemptée 10 910 €, 5 réductions d'impôt (épargne pension, titres-services, dons, prêt hypo, garde enfants), quotient conjugal (allègement estimé pour marié 1 revenu) et cotisation spéciale sécurité sociale dégressive. Pour le calcul officiel et personnalisé : Tax-on-web.",
     year: 2026,
     inputs: [
       "Revenu annuel imposable (après ONSS + frais pro forfaitaires)",
@@ -540,6 +730,11 @@ const METHODOLOGIES: CalcMethodology[] = [
       "Enfants à charge (0–10)",
       "Autres personnes à charge (0–5)",
       "Additionnel communal (%)",
+      "Versement épargne pension (€/an, plafond 1 130 €)",
+      "Achats titres-services (€/an, plafond 1 500 €)",
+      "Dons à associations agréées (€/an, min 40 €)",
+      "Prêt hypothécaire (€/an)",
+      "Frais de garde d'enfants < 14 ans (€/an)",
     ],
     formulas: [
       { label: "Impôt avant quotité", expression: "barème fédéral appliqué au revenu" },
@@ -553,8 +748,24 @@ const METHODOLOGIES: CalcMethodology[] = [
         expression: "impot_brut = max(0, impot_avant_quotite − réduction_quotite)",
       },
       {
+        label: "Quotient conjugal (marié 1 revenu)",
+        expression:
+          "allègement = min(max(0, revenu − 16 320), 13 530) × 25 % (approximation art. 134 CIR 92)",
+      },
+      {
+        label: "Réductions d'impôt",
+        expression:
+          "épargne_pension × 30 % + titres_services × 15 % + dons × 45 % + prêt_hypo × 30 % + garde × 45 %",
+      },
+      {
+        label: "Cotisation spéciale sécurité sociale",
+        expression:
+          "0 ≤ 18 592 €  ·  9 % sur 18 592 → 21 070  ·  1,3 % sur 21 070 → 60 161 (plafond 731 €/an)",
+      },
+      {
         label: "Impôt total",
-        expression: "impot_total = impot_brut × (1 + additionnel_communal / 100)",
+        expression:
+          "impot_total = (impot_brut − allègement − réductions) × (1 + additionnel_communal/100) + cotisation_spéciale",
       },
     ],
     constants: [
@@ -573,17 +784,51 @@ const METHODOLOGIES: CalcMethodology[] = [
       { name: "Au-delà du 5e enfant", value: "+" + fmtEUR(6840) + " par enfant" },
       { name: "Autre personne à charge", value: "+" + fmtEUR(1920) },
       { name: "Additionnel communal moyen Belgique", value: "≈ 7,5 %", note: "Variable 0–9 %." },
+      {
+        name: "Épargne pension",
+        value: "30 % × min(versement, 1 130 €)",
+        note: "Palier de base (panier 1). Art. 145 CIR 92.",
+      },
+      {
+        name: "Titres-services",
+        value: "≈ 15 % × min(achats, 1 500 €)",
+        note: "Moyenne 3 régions (le taux exact varie par Région).",
+      },
+      {
+        name: "Dons",
+        value: "45 % du montant (≥ 40 €/bénéficiaire)",
+      },
+      {
+        name: "Prêt hypothécaire",
+        value: "≈ 30 % du capital + intérêts annuels",
+        note: "Chèque habitation régional moyen.",
+      },
+      {
+        name: "Garde d'enfants < 14 ans",
+        value: "45 % du montant éligible",
+        note: "Plafond 16,40 €/jour/enfant (non vérifié par le calcul, input présumé éligible).",
+      },
+      {
+        name: "Quotient conjugal — plafond transfert",
+        value: fmtEUR(13530) + "/an",
+        note: "Art. 134 CIR 92 (transfert virtuel vers conjoint sans revenu).",
+      },
+      {
+        name: "Cotisation spéciale sécu — seuils",
+        value: "18 592 → 21 070 (9 %) puis → 60 161 € (1,3 %)",
+        note: "Plafond annuel 731 € (loi 30/03/1994).",
+      },
     ],
     sources: [
       { name: "SPF Finances — Calcul de l'impôt", url: "https://finances.belgium.be" },
       { name: "CIR 92 — Code des impôts sur les revenus", url: "https://eservices.minfin.fgov.be" },
+      { name: "Loi 30/03/1994 (cotisation spéciale sécu)", url: "https://www.ejustice.just.fgov.be" },
       { name: "Tax-on-web (déclaration en ligne)", url: "https://finances.belgium.be/fr/E-services/tax-on-web" },
     ],
     limitations: [
-      "Pas de crédits d'impôt (épargne pension, titres-services, dons, prêts hypothécaires).",
-      "Pas de quotient conjugal (mariés 1 revenu : application partielle uniquement).",
+      "Bornes des tranches à 2025 — l'écart avec 2026 indexé est de l'ordre de 3 %.",
+      "Quotient conjugal : approximation 25 % du transfert (vraie formule = écrasement progressif des tranches).",
       "Pas de calcul de l'impôt régional (additionnel régional ≈ 0 dans la pratique).",
-      "Pas de cotisation spéciale sécurité sociale.",
       "Pas de revenu professionnel des indépendants (régime forfait/réel pro).",
     ],
   },
@@ -595,15 +840,19 @@ const METHODOLOGIES: CalcMethodology[] = [
     pitch:
       "Vérification d'éligibilité au tarif social fédéral (élec + gaz) + estimation du gain annuel.",
     sourceFile: "lib/calculators/tarif-social.ts",
-    reliability: "medium",
+    reliability: "high",
     reliabilityNote:
-      "Audit 2026-05 : ELEC_SOCIAL corrigé (0,22→0,248 €/kWh Q2 2026 — source CREG note Z3153) ; ELEC_STANDARD ajusté à la moyenne nationale 2026 (0,385→0,35). Les tarifs sociaux sont recalculés CHAQUE TRIMESTRE par la CREG — à ré-actualiser à chaque nouvelle note tarifaire. Les plafonds de consommation sont documentés mais pas appliqués dans le calcul (simplification volontaire).",
+      "Tarifs " +
+      Q_REFERENCE +
+      " (CREG note Z3153) avec application exacte des plafonds de consommation : split tarif social ≤ plafond + tarif standard sur l'excédent. Plafonds modulés par la taille du ménage (+200 kWh/personne pour l'élec) et le type de chauffage gaz (helpers `plafondElecKwh` et `plafondGazKwh` exportés). À ré-actualiser à chaque nouvelle note CREG trimestrielle.",
     year: 2026,
     inputs: [
       "6 statuts (cases à cocher) : BIM / RIS / GRAPA / handicap / aide sociale équivalente / logement social",
       "Consommation annuelle électricité (kWh)",
       "Consommation annuelle gaz naturel (kWh, 0 si pas de gaz)",
       "Chauffage électrique (oui/non)",
+      "Chauffage au gaz (oui/non, défaut oui)",
+      "Taille du ménage (1–15, défaut 2)",
     ],
     formulas: [
       {
@@ -611,36 +860,51 @@ const METHODOLOGIES: CalcMethodology[] = [
         expression: "éligible = au moins un statut coché",
       },
       {
-        label: "Gain élec",
-        expression: "gain_elec = conso_elec × (tarif_standard_elec − tarif_social_elec)",
+        label: "Plafond élec",
+        expression:
+          "plafond = (chauffage_élec ? 4 600 : 1 800) + 200 × (taille_ménage − 1)",
       },
       {
-        label: "Gain gaz",
-        expression: "gain_gaz = conso_gaz × (tarif_standard_gaz − tarif_social_gaz)",
+        label: "Plafond gaz",
+        expression: "plafond = chauffage_gaz ? 23 260 : 12 000 kWh",
       },
       {
-        label: "Gain total",
-        expression: "gain_annuel = gain_elec + gain_gaz ; gain_mensuel = gain_annuel / 12",
+        label: "Split conso (sous plafond / excédent)",
+        expression:
+          "sous_plafond = min(conso, plafond) ; excédent = max(0, conso − plafond)",
+      },
+      {
+        label: "Coût tarif social effectif",
+        expression:
+          "coût = sous_plafond × tarif_social + excédent × tarif_standard",
+      },
+      {
+        label: "Gain annuel",
+        expression:
+          "gain = sous_plafond_élec × (std_élec − soc_élec) + sous_plafond_gaz × (std_gaz − soc_gaz)",
       },
     ],
     constants: [
+      {
+        name: "Trimestre de référence",
+        value: Q_REFERENCE,
+        note: "Tarifs recalculés chaque trimestre par la CREG (note Z3153).",
+      },
       { name: "Tarif social élec", value: fmtEUR(TARIFS_2026.ELEC_SOCIAL) + "/kWh", note: "Tout inclus TVAC." },
       { name: "Tarif standard moyen élec", value: fmtEUR(TARIFS_2026.ELEC_STANDARD) + "/kWh" },
       { name: "Tarif social gaz", value: fmtEUR(TARIFS_2026.GAZ_SOCIAL) + "/kWh" },
       { name: "Tarif standard moyen gaz", value: fmtEUR(TARIFS_2026.GAZ_STANDARD) + "/kWh" },
-      { name: "Plafond élec base", value: `${PLAFONDS_2026.ELEC_BASE} kWh + 200/personne` },
-      { name: "Plafond élec chauffage", value: `${PLAFONDS_2026.ELEC_CHAUFFAGE} kWh + 200/personne` },
+      { name: "Plafond élec base", value: `${PLAFONDS_2026.ELEC_BASE} kWh + ${PLAFONDS_2026.ELEC_PAR_PERSONNE}/personne` },
+      { name: "Plafond élec chauffage", value: `${PLAFONDS_2026.ELEC_CHAUFFAGE} kWh + ${PLAFONDS_2026.ELEC_PAR_PERSONNE}/personne` },
       { name: "Plafond gaz cuisine/ecs", value: `${PLAFONDS_2026.GAZ_NON_CHAUFFAGE} kWh` },
       { name: "Plafond gaz chauffage", value: `${PLAFONDS_2026.GAZ_CHAUFFAGE} kWh` },
     ],
     sources: [
       { name: "SPF Économie — Tarif social", url: "https://economie.fgov.be" },
-      { name: "CREG — Tarifs sociaux trimestriels", url: "https://www.creg.be" },
+      { name: "CREG — Tarifs sociaux trimestriels (note Z3153)", url: "https://www.creg.be" },
       { name: "AR du 29 mars 2012 (catégories bénéficiaires)", url: "https://www.ejustice.just.fgov.be" },
     ],
     limitations: [
-      "Plafonds de consommation pas appliqués (au-delà : tarif standard pour l'excédent).",
-      "Pas de gestion taille du ménage pour le plafond élec (+200 kWh/personne).",
       "Tarif standard = moyenne simple, varie ±20 % selon fournisseur.",
       "Pas de gestion des contrats à tarif fixe vs variable.",
       "Pas de prise en compte des heures creuses/pleines.",
@@ -654,33 +918,49 @@ const METHODOLOGIES: CalcMethodology[] = [
     pitch:
       "Déduction fiscale des frais professionnels domicile-travail selon le mode de transport — option frais réels vs forfait légal.",
     sourceFile: "lib/calculators/frais-km.ts",
-    reliability: "medium",
+    reliability: "high",
     reliabilityNote:
-      "Audit 2026-05 : forfait légal corrigé (5 720→6 070 € revenus 2026), vélo 0,36→0,37 €/km avec plafond annuel 3 700 € ajouté. ⚠️ Pour la VOITURE, le code utilise 0,4322 €/km (tarif indemnité km fonctionnaires) — c'est légalement applicable comme déduction frais réels domicile-travail SI l'employeur ne verse pas d'indemnité km, sinon c'est 0,15 €/km (forfait CIR 92 art. 66). Choix conservateur opposé : remplacer par 0,15 €/km partout.",
+      "Barème 2026 (revenus 2026 / EI 2027) avec gestion de l'indemnité km employeur : bascule automatique 0,4322 → 0,15 €/km pour la voiture (cumul exclu, CIR 92 art. 66) et soustraction du montant reçu de la déduction brute. Télétravail : information pédagogique sur les km évités (n'affecte pas la déduction). Plafond vélo 3 700 €/an appliqué.",
     year: 2026,
     inputs: [
       "Distance domicile-travail aller simple (km)",
-      "Jours travaillés par semaine (1–7)",
+      "Jours travaillés sur place par semaine (1–7)",
       "Semaines travaillées par an (défaut 44)",
       "Mode de transport (5 options)",
       "Coût annuel abonnement (si transports publics)",
+      "Jours télétravaillés par semaine (info pédagogique, 0–5)",
+      "Indemnité km annuelle versée par l'employeur (€/an)",
     ],
     formulas: [
       {
-        label: "Km annuels",
-        expression: "km_total = km_AS × 2 × jours/sem × sem/an",
+        label: "Km annuels (déductibles)",
+        expression: "km_total = km_AS × 2 × jours_sur_place × sem/an",
       },
       {
-        label: "Voiture (≤100 km AS)",
+        label: "Km évités par télétravail (info)",
+        expression: "km_évités = km_AS × 2 × jours_télétravail × sem/an",
+      },
+      {
+        label: "Voiture sans indemnité employeur (≤100 km AS)",
         expression: "déduction = km_total × 0,4322",
       },
       {
+        label: "Voiture avec indemnité employeur",
+        expression:
+          "déduction = km_total × 0,15 (forfait CIR 92 art. 66, cumul exclu)",
+      },
+      {
         label: "Voiture (>100 km AS)",
-        expression: "déduction = (100 × 2 × jours) × 0,4322 + (km − 100) × 2 × jours × 0,15",
+        expression: "(100 × 2 × jours) × taux + (km − 100) × 2 × jours × 0,15",
       },
       {
         label: "Vélo",
-        expression: "déduction = km_total × 0,36",
+        expression:
+          "déduction = min(km_total × 0,37 ; 3 700 €/an)",
+      },
+      {
+        label: "Compensation indemnité employeur",
+        expression: "déduction_nette = max(0, déduction_brute − indemnité_employeur)",
       },
       {
         label: "Transports publics",
@@ -688,9 +968,10 @@ const METHODOLOGIES: CalcMethodology[] = [
       },
     ],
     constants: [
-      { name: "Voiture", value: fmtEUR(TAUX_KM_2026.voiture) + "/km", note: "Tarif fonctionnaires applicable comme frais réels domicile-travail si l'employeur ne donne pas d'indemnité km. Sinon : forfait 0,15 €/km (CIR 92 art. 66). Plafonné à 100 km aller simple." },
-      { name: "Voiture (>100 km)", value: fmtEUR(0.15) + "/km", note: "Forfait standard CIR 92." },
-      { name: "Vélo (incl. électrique)", value: fmtEUR(TAUX_KM_2026.velo) + "/km", note: "Plafonné à 3 700 €/an (revenus 2026)." },
+      { name: "Voiture (sans indemnité employeur)", value: fmtEUR(TAUX_KM_2026.voiture) + "/km", note: "Tarif fonctionnaires applicable comme frais réels domicile-travail. Plafonné à 100 km aller simple." },
+      { name: "Voiture (avec indemnité ou >100 km)", value: fmtEUR(0.15) + "/km", note: "Forfait standard CIR 92 art. 66. Le cumul tarif fonctionnaires + indemnité employeur est interdit." },
+      { name: "Vélo (incl. électrique)", value: fmtEUR(TAUX_KM_2026.velo) + "/km", note: `Plafonné à ${fmtEUR(PLAFOND_ANNUEL_VELO_2026)}/an (revenus 2026 / EI 2027).` },
+      { name: "Plafond annuel vélo", value: fmtEUR(PLAFOND_ANNUEL_VELO_2026) + "/an" },
       { name: "Moto", value: fmtEUR(TAUX_KM_2026.moto) + "/km" },
       { name: "Covoiturage passager", value: fmtEUR(TAUX_KM_2026.covoiturage) + "/km", note: "Plafonné à 100 km AS." },
       { name: "Transports publics", value: "100 % de l'abonnement annuel" },
@@ -711,9 +992,7 @@ const METHODOLOGIES: CalcMethodology[] = [
       { name: "Circulaire SPF Finances barème km", url: "https://finances.belgium.be" },
     ],
     limitations: [
-      "Pas de prise en compte des autres frais réels (repas, vêtements pro, formation, télétravail).",
-      "Pas de gestion de l'indemnité kilométrique reçue de l'employeur (à déduire des frais).",
-      "Pas de cas spécifique télétravail (jours à distance).",
+      "Pas de prise en compte des autres frais réels (repas, vêtements pro, formation).",
       "Pas de gestion mixte (ex: voiture + train).",
       "Comparaison forfait/réel simpliste : la décision dépend aussi du taux marginal.",
     ],

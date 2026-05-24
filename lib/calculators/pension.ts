@@ -5,7 +5,8 @@
  * -------
  *  - SFP (Service Fédéral des Pensions) — sfpd.fgov.be
  *  - mypension.be (compte de carrière officiel)
- *  - Loi du 10 août 2015 relevant l'âge légal de la pension
+ *  - Loi du 10 août 2015 relevant l'âge légal de la pension et durcissant
+ *    les conditions de pension anticipée (carrière minimum par âge).
  *  - AR 21/12/1967 (régime général de la pension de retraite des salariés)
  *
  * AVERTISSEMENT TRÈS FORT
@@ -19,23 +20,30 @@
  *
  * FORMULE GÉNÉRALE (simplifiée)
  * -----------------------------
- *   pension_annuelle = salaire_pris × taux × (annees_carriere / 45)
+ *   pension_annuelle = salaire_pris × taux × (carriere_totale / 45)
  *
  *   où :
- *     - salaire_pris = min(salaire_moyen_carriere, plafond_salarial_2026)
- *     - taux         = 0,60 (isolé) ou 0,75 (ménage)
+ *     - salaire_pris     = min(salaire_moyen_carriere, plafond_salarial_2026)
+ *     - taux             = 0,60 (isolé) ou 0,75 (ménage)
  *     - carrière complète conventionnelle = 45 ans
+ *     - carriere_totale  = annees_carriere + periodes_assimilees
  *
- * On applique ensuite :
- *   - un plancher (minimum garanti) si carrière >= 30 ans
- *   - un plafond légal indicatif
- *   - un malus en cas de départ anticipé avant l'âge légal
+ * ÉLIGIBILITÉ AU DÉPART ANTICIPÉ
+ * ------------------------------
+ * Le régime belge n'applique pas de malus linéaire. Soit la personne remplit
+ * les conditions de carrière minimum, soit elle ne peut pas partir avant
+ * l'âge légal :
+ *   - 60 ans → carrière ≥ 44 ans
+ *   - 61 ans → carrière ≥ 43 ans
+ *   - 62 ans → carrière ≥ 42 ans
+ *   - 63-64 ans → carrière ≥ 42 ans (41 ans dans certains cas transitoires)
+ *   - âge légal → pas de condition
  */
 
 export interface PensionInput {
   /** Date de naissance au format ISO YYYY-MM-DD. */
   dateNaissance: string;
-  /** Années de carrière prévues à la date de départ (0-50). */
+  /** Années de carrière effectives prévues à la date de départ (0-50). */
   anneesCarriere: number;
   /** Salaire annuel brut moyen sur l'ensemble de la carrière (€). */
   salaireMoyen: number;
@@ -43,6 +51,24 @@ export interface PensionInput {
   statut: "isole" | "menage";
   /** Âge de départ envisagé (60-70). */
   ageDepart: number;
+  /**
+   * Années équivalentes de périodes assimilées (chômage indemnisé, maladie,
+   * congé parental, service militaire, crédit-temps reconnu, etc.).
+   * Comptent comme carrière pour l'éligibilité à l'anticipation et pour le
+   * calcul de la pension. Optionnel, défaut 0.
+   */
+  periodesAssimilees?: number;
+}
+
+export interface PensionEligibiliteAnticipee {
+  /** True si la personne peut effectivement partir à l'âge demandé. */
+  possible: boolean;
+  /** Phrase explicative quand `possible === false`. */
+  raison?: string;
+  /** Carrière minimum requise à cet âge pour partir anticipé. */
+  conditionCarriere?: number;
+  /** Âge anticipé évalué. */
+  conditionAge?: number;
 }
 
 export interface PensionResult {
@@ -54,14 +80,32 @@ export interface PensionResult {
   ageLegal: number;
   /** Âge de départ envisagé (recopié pour affichage). */
   ageDepart: number;
-  /** Pourcentage de malus appliqué (0 si départ ≥ âge légal). */
+  /**
+   * Âge effectivement utilisé pour le calcul : min(ageDepart, ageLegal) si
+   * la personne est éligible à l'anticipation, sinon ageLegal (calcul à
+   * l'âge légal donné à titre d'information).
+   */
+  ageEffectif: number;
+  /**
+   * Conservé pour rétrocompatibilité. Toujours 0 : le régime salarié belge
+   * n'a pas de malus linéaire. Voir `eligibiliteAnticipee` à la place.
+   * @deprecated
+   */
   malusPourcent: number;
-  /** Années de carrière prises en compte (recopiées). */
+  /** Années de carrière effectives (recopiées). */
   anneesCarriere: number;
+  /** Périodes assimilées prises en compte (recopiées). */
+  periodesAssimilees: number;
+  /** Carrière totale = anneesCarriere + periodesAssimilees. */
+  carriereTotale: number;
+  /** True si la carrière totale dépasse 45 ans (proratisée à 45/45). */
+  longueCarriere: boolean;
   /** True si le salaire moyen a été plafonné par le maximum 2026. */
   plafondAtteint: boolean;
   /** Libellé lisible du statut ("Isolé" / "Ménage"). */
   statutLabel: string;
+  /** Éligibilité au départ anticipé à l'âge demandé. */
+  eligibiliteAnticipee: PensionEligibiliteAnticipee;
 }
 
 /* ------------------------------------------------------------------ */
@@ -91,9 +135,6 @@ const SEUIL_CARRIERE_MINIMUM = 30;
 const PLAFOND_PENSION_ISOLE = 3500;
 const PLAFOND_PENSION_MENAGE = 4350;
 
-/** Malus indicatif en cas de départ anticipé (par année anticipée). */
-const MALUS_PAR_AN_ANTICIPE = 0.05;
-
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                           */
 /* ------------------------------------------------------------------ */
@@ -113,6 +154,27 @@ export function getAgeLegal(dateNaissance: string): number {
   return 67;
 }
 
+/**
+ * Retourne la condition d'éligibilité à la pension anticipée pour un âge
+ * donné. Retourne `null` si l'âge correspond à l'âge légal ou au-delà
+ * (aucune condition de carrière requise).
+ *
+ * Loi du 10/08/2015 — conditions stabilisées :
+ *   - 60 ans → carrière ≥ 44 ans
+ *   - 61 ans → carrière ≥ 43 ans
+ *   - 62 ans → carrière ≥ 42 ans
+ *   - 63-64 ans → carrière ≥ 42 ans
+ */
+export function getConditionAnticipation(
+  age: number,
+): { conditionAge: number; conditionCarriere: number } | null {
+  if (!Number.isFinite(age) || age >= 65) return null;
+  if (age <= 60) return { conditionAge: 60, conditionCarriere: 44 };
+  if (age === 61) return { conditionAge: 61, conditionCarriere: 43 };
+  // 62, 63, 64 → 42 ans
+  return { conditionAge: age, conditionCarriere: 42 };
+}
+
 /** Extrait l'année de naissance d'une date ISO. Retourne NaN si invalide. */
 function parseAnneeNaissance(dateNaissance: string): number {
   if (!dateNaissance) return NaN;
@@ -130,8 +192,14 @@ function parseAnneeNaissance(dateNaissance: string): number {
 export function calcPension(
   input: PensionInput,
 ): PensionResult | { error: string } {
-  const { dateNaissance, anneesCarriere, salaireMoyen, statut, ageDepart } =
-    input;
+  const {
+    dateNaissance,
+    anneesCarriere,
+    salaireMoyen,
+    statut,
+    ageDepart,
+    periodesAssimilees = 0,
+  } = input;
 
   // --- Validation ------------------------------------------------------
   if (!Number.isFinite(parseAnneeNaissance(dateNaissance))) {
@@ -146,6 +214,16 @@ export function calcPension(
       error: "Les années de carrière doivent être comprises entre 0 et 50.",
     };
   }
+  if (
+    !Number.isFinite(periodesAssimilees) ||
+    periodesAssimilees < 0 ||
+    periodesAssimilees > 50
+  ) {
+    return {
+      error:
+        "Les périodes assimilées doivent être comprises entre 0 et 50 ans.",
+    };
+  }
   if (!Number.isFinite(salaireMoyen) || salaireMoyen <= 1000) {
     return {
       error: "Le salaire annuel moyen doit être supérieur à 1 000 €.",
@@ -157,6 +235,44 @@ export function calcPension(
     };
   }
 
+  // --- 0. Carrière totale + éligibilité anticipée ---------------------
+  const carriereTotale = anneesCarriere + periodesAssimilees;
+  const ageLegal = getAgeLegal(dateNaissance);
+
+  let eligibiliteAnticipee: PensionEligibiliteAnticipee;
+  let ageEffectif = ageDepart;
+
+  if (ageDepart >= ageLegal) {
+    eligibiliteAnticipee = { possible: true };
+    ageEffectif = ageDepart;
+  } else {
+    const cond = getConditionAnticipation(ageDepart);
+    if (cond && carriereTotale >= cond.conditionCarriere) {
+      eligibiliteAnticipee = {
+        possible: true,
+        conditionAge: cond.conditionAge,
+        conditionCarriere: cond.conditionCarriere,
+      };
+      ageEffectif = ageDepart;
+    } else if (cond) {
+      // Inéligible : on calcule à titre informatif à l'âge légal.
+      eligibiliteAnticipee = {
+        possible: false,
+        conditionAge: cond.conditionAge,
+        conditionCarriere: cond.conditionCarriere,
+        raison: `Pour partir à ${ageDepart} ans, il faut justifier d'au moins ${cond.conditionCarriere} ans de carrière (assimilations comprises). Vous totalisez ${carriereTotale.toFixed(carriereTotale % 1 === 0 ? 0 : 1)} an${carriereTotale > 1 ? "s" : ""}.`,
+      };
+      ageEffectif = ageLegal;
+    } else {
+      // Sécurité : âge < 60 ans → impossible quelle que soit la carrière.
+      eligibiliteAnticipee = {
+        possible: false,
+        raison: `La pension anticipée n'est pas accessible avant 60 ans.`,
+      };
+      ageEffectif = ageLegal;
+    }
+  }
+
   // --- 1. Plafonnement du salaire -------------------------------------
   const plafondAtteint = salaireMoyen > PLAFOND_SALARIAL_2026;
   const salairePris = Math.min(salaireMoyen, PLAFOND_SALARIAL_2026);
@@ -166,14 +282,15 @@ export function calcPension(
   const statutLabel =
     statut === "menage" ? "Ménage (75 %)" : "Isolé (60 %)";
 
-  // --- 3. Formule de base ---------------------------------------------
-  const fractionCarriere = Math.min(anneesCarriere, CARRIERE_COMPLETE) /
-    CARRIERE_COMPLETE;
+  // --- 3. Formule de base (utilise la carrière totale) ----------------
+  const longueCarriere = carriereTotale > CARRIERE_COMPLETE;
+  const fractionCarriere =
+    Math.min(carriereTotale, CARRIERE_COMPLETE) / CARRIERE_COMPLETE;
   let pensionAnnuelle = salairePris * taux * fractionCarriere;
   let pensionMensuelle = pensionAnnuelle / 12;
 
-  // --- 4. Plancher : minimum garanti si carrière ≥ 30 ans -------------
-  if (anneesCarriere >= SEUIL_CARRIERE_MINIMUM) {
+  // --- 4. Plancher : minimum garanti si carrière totale ≥ 30 ans ------
+  if (carriereTotale >= SEUIL_CARRIERE_MINIMUM) {
     const minimum = statut === "menage" ? MINIMUM_MENAGE : MINIMUM_ISOLE;
     // Proratisé : le minimum garanti correspond à 45 ans, on l'ajuste.
     const minimumProratise = minimum * fractionCarriere;
@@ -191,25 +308,24 @@ export function calcPension(
     pensionAnnuelle = pensionMensuelle * 12;
   }
 
-  // --- 6. Malus départ anticipé ---------------------------------------
-  const ageLegal = getAgeLegal(dateNaissance);
-  let malusPourcent = 0;
-  if (ageDepart < ageLegal) {
-    const anneesAnticipees = ageLegal - ageDepart;
-    malusPourcent = anneesAnticipees * MALUS_PAR_AN_ANTICIPE * 100;
-    const coefMalus = 1 - anneesAnticipees * MALUS_PAR_AN_ANTICIPE;
-    pensionMensuelle = pensionMensuelle * Math.max(coefMalus, 0);
-    pensionAnnuelle = pensionMensuelle * 12;
-  }
+  // --- 6. Pas de malus linéaire (régime belge) -------------------------
+  // Le régime salarié belge ne pénalise pas le départ anticipé par un malus :
+  // soit la personne remplit les conditions de carrière, soit elle ne peut
+  // pas partir avant l'âge légal. Voir `eligibiliteAnticipee`.
 
   return {
     pensionMensuelle,
     pensionAnnuelle,
     ageLegal,
     ageDepart,
-    malusPourcent,
+    ageEffectif,
+    malusPourcent: 0,
     anneesCarriere,
+    periodesAssimilees,
+    carriereTotale,
+    longueCarriere,
     plafondAtteint,
     statutLabel,
+    eligibiliteAnticipee,
   };
 }

@@ -14,19 +14,29 @@ import React, { useState } from "react";
 import {
   calcIndemniteRupture,
   type IndemniteResult,
+  type ProtectionSpeciale,
 } from "@/lib/calculators/indemnite-rupture";
 import {
   CalcLayout,
   CalcField,
   CalcRadio,
+  CalcSelect,
   CalcSubmitButton,
   CalcResult,
   CalcError,
   fmtEUR,
+  fmtNumber,
   parseNum,
 } from "./_shared";
 
 type OuiNon = "oui" | "non";
+
+const PROTECTION_OPTIONS: { value: ProtectionSpeciale; label: string }[] = [
+  { value: "aucune", label: "Aucune" },
+  { value: "femme_enceinte", label: "Femme enceinte (+6 mois)" },
+  { value: "delegue_syndical", label: "Délégué syndical CCT 5 (+~3 ans)" },
+  { value: "travailleur_protege", label: "Travailleur protégé (+~9 mois)" },
+];
 
 export function CalcIndemnite({ accent }: { accent: string }) {
   const [salaire, setSalaire] = useState("");
@@ -34,6 +44,7 @@ export function CalcIndemnite({ accent }: { accent: string }) {
   const [inclureAvantages, setInclureAvantages] = useState<OuiNon>("non");
   const [avantages, setAvantages] = useState("");
   const [precompte, setPrecompte] = useState<OuiNon>("oui");
+  const [protection, setProtection] = useState<ProtectionSpeciale>("aucune");
 
   const [result, setResult] = useState<IndemniteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +72,7 @@ export function CalcIndemnite({ accent }: { accent: string }) {
       avantagesAnnuels: Number.isFinite(avantagesNum) ? avantagesNum : 0,
       inclureAvantages: inclureAvantages === "oui",
       precompte: precompte === "oui",
+      protectionSpeciale: protection,
     });
 
     if ("error" in res) {
@@ -71,6 +83,61 @@ export function CalcIndemnite({ accent }: { accent: string }) {
   };
 
   const avecPrecompte = precompte === "oui";
+
+  const rows = result
+    ? [
+        {
+          label: "Rémunération mensuelle de base",
+          value: fmtEUR(result.remunerationMensuelle),
+        },
+        {
+          label: "Rémunération hebdomadaire (×3/13)",
+          value: fmtEUR(result.remunerationHebdomadaire),
+        },
+        {
+          label: "Préavis non presté",
+          value: `${result.preavisSemaines} sem.`,
+        },
+        {
+          label: "Indemnité standard",
+          value: fmtEUR(result.indemniteBrute),
+        },
+        ...(result.indemniteProtectionSupplement > 0
+          ? [
+              {
+                label: "Indemnité de protection",
+                value: fmtEUR(result.indemniteProtectionSupplement),
+              },
+            ]
+          : []),
+        {
+          label: "Total brut",
+          value: fmtEUR(result.indemniteTotalBrute),
+          emphasis: true,
+        },
+        ...(avecPrecompte
+          ? [
+              {
+                label: "Taux de précompte appliqué",
+                value: `${fmtNumber(result.tauxPrecompteAppliquePourcent, 2)} %`,
+              },
+              {
+                label: "Net estimé",
+                value: fmtEUR(result.indemniteNetEstimee),
+                emphasis: true,
+              },
+            ]
+          : []),
+        ...(result.cotisationSpecialeEmployeur > 0
+          ? [
+              {
+                label: "Cotisation spéciale employeur (info)",
+                value: fmtEUR(result.cotisationSpecialeEmployeur),
+              },
+            ]
+          : []),
+      ]
+    : [];
 
   return (
     <CalcLayout
@@ -134,9 +201,18 @@ export function CalcIndemnite({ accent }: { accent: string }) {
         />
       ) : null}
 
+      <CalcSelect<ProtectionSpeciale>
+        id="indemnite-protection"
+        label="Protection spéciale"
+        hint="Certains statuts ouvrent droit à une indemnité de protection cumulable (mois de salaire en sus)."
+        value={protection}
+        onChange={setProtection}
+        options={PROTECTION_OPTIONS}
+      />
+
       <CalcRadio<OuiNon>
         label="Estimer le net après précompte ?"
-        hint="Précompte spécial cumulé moyen ≈ 33 % — estimation rapide."
+        hint="Précompte spécial calculé selon votre tranche de revenu annuel (barème SPF Finances)."
         value={precompte}
         onChange={setPrecompte}
         options={[
@@ -155,40 +231,28 @@ export function CalcIndemnite({ accent }: { accent: string }) {
       {result ? (
         <CalcResult
           accent={accent}
-          headline={fmtEUR(result.indemniteBrute)}
-          unit="brut"
+          headline={fmtEUR(result.indemniteTotalBrute)}
+          unit="brut total"
           subtext={
             avecPrecompte ? (
               <>
                 ≈ <strong>{fmtEUR(result.indemniteNetEstimee)}</strong> net après
-                précompte spécial
+                précompte spécial (
+                {fmtNumber(result.tauxPrecompteAppliquePourcent, 2)} %)
               </>
             ) : null
           }
-          rows={[
-            {
-              label: "Rémunération mensuelle de base",
-              value: fmtEUR(result.remunerationMensuelle),
-            },
-            {
-              label: "Rémunération hebdomadaire (×3/13)",
-              value: fmtEUR(result.remunerationHebdomadaire),
-            },
-            {
-              label: "Préavis non presté",
-              value: `${result.preavisSemaines} sem.`,
-            },
-            {
-              label: "Indemnité brute",
-              value: fmtEUR(result.indemniteBrute),
-              emphasis: true,
-            },
-          ]}
+          rows={rows}
           footer={
             <>
               L&apos;<strong>indemnité compensatoire de préavis</strong> est due
               si l&apos;employeur rompt le contrat sans faire prester le préavis.
-              Précompte spécial cumulé ~33 %. Source :{" "}
+              Le <strong>taux de précompte</strong> est déterminé selon le
+              revenu annuel de référence (salaire mensuel × 13,92), via un
+              barème par tranches (de 17,16 % à 53,50 %). Si la rémunération
+              annuelle ≥ 44 509 €, l&apos;employeur supporte en plus une{" "}
+              <strong>cotisation spéciale de compensation</strong> de 1 % (Loi
+              du 26 décembre 2013). Source :{" "}
               <strong>Loi du 3 juillet 1978</strong> sur les contrats de
               travail.
             </>

@@ -1,14 +1,15 @@
 /**
- * Tarif social fédéral énergie (électricité + gaz naturel) — version 2026 S1.
+ * Tarif social fédéral énergie (électricité + gaz naturel) — version 2026.
  *
  * Sources :
  *  - SPF Économie (Service Public Fédéral) — economie.fgov.be
  *  - CREG (Commission de Régulation de l'Électricité et du Gaz) — creg.be
- *  - Arrêté ministériel fixant les tarifs sociaux maximaux, semestriel.
+ *    Note Z3153 : tarifs maximaux sociaux, recalculés chaque trimestre.
+ *  - Arrêté ministériel fixant les tarifs sociaux maximaux.
  *
  * Principe :
  *  Certains ménages bénéficient automatiquement du tarif social fédéral, soit
- *  le tarif commercial le plus bas du marché belge (calculé chaque semestre
+ *  le tarif commercial le plus bas du marché belge (calculé chaque trimestre
  *  par la CREG). Application automatique depuis 2010, vérifiée 4x par an par
  *  croisement de bases de données — aucune démarche à effectuer.
  *
@@ -21,13 +22,13 @@
  *  - Locataire d'un logement social agréé chauffé au gaz collectif
  *
  * Plafonds de consommation : au-delà, le tarif standard du fournisseur
- *  s'applique. Cette simu ne demande pas la taille du ménage pour rester
- *  simple — on applique le tarif sur la consommation déclarée sans gérer
- *  le dépassement (à mentionner en disclaimer).
+ *  s'applique sur l'excédent (et non sur la totalité). Cette simu modélise
+ *  cette règle exactement (calcul split tarif social ≤ plafond + tarif
+ *  standard sur l'excédent).
  *
- * AVERTISSEMENT : les tarifs varient chaque semestre. Ceux utilisés ici
- *  sont les valeurs moyennes indicatives 2026 S1, tout inclus (TVAC).
- *  Le gain réel dépend de votre fournisseur actuel et de votre profil.
+ * AVERTISSEMENT : les tarifs varient chaque TRIMESTRE (note CREG Z3153).
+ *  Ceux utilisés ici sont les valeurs indicatives Q2 2026, TVAC. Le gain
+ *  réel dépend de votre fournisseur actuel, votre profil et le trimestre.
  */
 
 export interface TarifSocialInput {
@@ -47,8 +48,12 @@ export interface TarifSocialInput {
   consoElecKwh: number;
   /** Consommation annuelle de gaz naturel (kWh). 0 si pas de gaz. */
   consoGazKwh: number;
-  /** Chauffage électrique (consommation plus élevée). */
+  /** Chauffage électrique (consommation plus élevée → plafond plus haut). */
   chauffageElec: boolean;
+  /** Chauffage au gaz (impacte le plafond gaz). Défaut : true. */
+  chauffageGaz?: boolean;
+  /** Nombre de personnes dans le ménage (1-15). Défaut : 2. */
+  tailleMenage?: number;
 }
 
 export interface TarifSocialResult {
@@ -66,12 +71,23 @@ export interface TarifSocialResult {
   gainGaz: number;
   /** Facture totale au tarif standard moyen. */
   coutStandardTotal: number;
-  /** Facture totale au tarif social. */
+  /** Facture totale au tarif social (avec excédents au tarif standard). */
   coutSocialTotal: number;
+  /** Plafond élec appliqué (kWh) — au-delà, tarif standard sur excédent. */
+  plafondElec: number;
+  /** Plafond gaz appliqué (kWh). */
+  plafondGaz: number;
+  /** kWh élec au-dessus du plafond (facturés au tarif standard). */
+  consoExcedentElec: number;
+  /** kWh gaz au-dessus du plafond (facturés au tarif standard). */
+  consoExcedentGaz: number;
 }
 
+/** Trimestre de référence des tarifs codés ci-dessous (affichage UI). */
+export const Q_REFERENCE = "Q2 2026";
+
 /**
- * Tarifs indicatifs 2026 S1, en €/kWh, tout inclus (énergie + transport +
+ * Tarifs indicatifs 2026 (Q2), en €/kWh, tout inclus (énergie + transport +
  * distribution + taxes + TVA 6 % sur le social, 21 % sur le standard).
  */
 export const TARIFS_2026 = {
@@ -91,11 +107,11 @@ export const TARIFS_2026 = {
 
 /** Plafonds de consommation au-delà desquels le tarif social ne s'applique plus. */
 export const PLAFONDS_2026 = {
-  /** Électricité : 1800 kWh + 200/personne (sans chauffage élec). */
+  /** Électricité : 1800 kWh + 200/personne supplémentaire (sans chauffage élec). */
   ELEC_BASE: 1800,
-  /** Électricité avec chauffage élec : 4600 kWh + 200/personne. */
+  /** Électricité avec chauffage élec : 4600 kWh + 200/personne supplémentaire. */
   ELEC_CHAUFFAGE: 4600,
-  /** Par personne supplémentaire dans le ménage. */
+  /** Par personne supplémentaire dans le ménage (au-delà de la première). */
   ELEC_PAR_PERSONNE: 200,
   /** Gaz sans chauffage gaz (cuisine + eau chaude). */
   GAZ_NON_CHAUFFAGE: 12000,
@@ -103,18 +119,38 @@ export const PLAFONDS_2026 = {
   GAZ_CHAUFFAGE: 23260,
 } as const;
 
-const MOTIFS_LABELS: Record<keyof TarifSocialInput, string> = {
+const MOTIFS_LABELS: Record<string, string> = {
   bim: "Statut BIM (Intervention Majorée)",
   ris: "Revenu d'Intégration Sociale (RIS)",
   grapa: "GRAPA (Garantie de Revenus Aux Personnes Âgées)",
   handicap: "Allocation aux personnes handicapées",
   aideEquivalente: "Aide sociale équivalente du CPAS",
   logementSocial: "Locataire d'un logement social agréé",
-  // Champs non-statut, jamais affichés comme motif.
-  consoElecKwh: "",
-  consoGazKwh: "",
-  chauffageElec: "",
 };
+
+/**
+ * Calcule le plafond électrique applicable au ménage.
+ *   - Base : 1 800 kWh (sans chauffage élec) ou 4 600 kWh (avec chauffage élec).
+ *   - +200 kWh par personne supplémentaire (au-delà de la première).
+ */
+export function plafondElecKwh(
+  chauffageElec: boolean,
+  tailleMenage: number,
+): number {
+  const base = chauffageElec
+    ? PLAFONDS_2026.ELEC_CHAUFFAGE
+    : PLAFONDS_2026.ELEC_BASE;
+  const supplement =
+    Math.max(0, tailleMenage - 1) * PLAFONDS_2026.ELEC_PAR_PERSONNE;
+  return base + supplement;
+}
+
+/** Calcule le plafond gaz selon le type de chauffage. */
+export function plafondGazKwh(chauffageGaz: boolean): number {
+  return chauffageGaz
+    ? PLAFONDS_2026.GAZ_CHAUFFAGE
+    : PLAFONDS_2026.GAZ_NON_CHAUFFAGE;
+}
 
 export function calcTarifSocial(
   input: TarifSocialInput,
@@ -128,6 +164,9 @@ export function calcTarifSocial(
     logementSocial,
     consoElecKwh,
     consoGazKwh,
+    chauffageElec,
+    chauffageGaz = true,
+    tailleMenage = 2,
   } = input;
 
   // --- Validation des consommations -------------------------------------
@@ -151,24 +190,61 @@ export function calcTarifSocial(
         "La consommation de gaz doit être comprise entre 0 et 100 000 kWh (0 si pas de gaz).",
     };
   }
+  if (
+    !Number.isFinite(tailleMenage) ||
+    tailleMenage < 1 ||
+    tailleMenage > 15
+  ) {
+    return {
+      error: "La taille du ménage doit être comprise entre 1 et 15 personnes.",
+    };
+  }
 
   // --- Éligibilité : au moins UN statut suffit --------------------------
-  const statuts = { bim, ris, grapa, handicap, aideEquivalente, logementSocial };
+  const statuts: Record<string, boolean> = {
+    bim,
+    ris,
+    grapa,
+    handicap,
+    aideEquivalente,
+    logementSocial,
+  };
   const motifsEligibilite: string[] = [];
   for (const [key, actif] of Object.entries(statuts)) {
-    if (actif) motifsEligibilite.push(MOTIFS_LABELS[key as keyof TarifSocialInput]);
+    if (actif) motifsEligibilite.push(MOTIFS_LABELS[key]);
   }
   const eligible = motifsEligibilite.length > 0;
 
+  // --- Plafonds applicables ---------------------------------------------
+  const plafondElec = plafondElecKwh(chauffageElec, tailleMenage);
+  const plafondGaz = plafondGazKwh(chauffageGaz);
+
+  // --- Split conso : tarif social ≤ plafond + tarif standard sur l'excédent
+  const elecSousPlafond = Math.min(consoElecKwh, plafondElec);
+  const consoExcedentElec = Math.max(0, consoElecKwh - plafondElec);
+  const gazSousPlafond = Math.min(consoGazKwh, plafondGaz);
+  const consoExcedentGaz = Math.max(0, consoGazKwh - plafondGaz);
+
   // --- Estimation du gain (qu'on calcule même si pas éligible, comme
   //     "ce que vous pourriez économiser") ------------------------------
+  // Coût "tout au tarif standard" (référence sans tarif social).
   const coutStandardElec = consoElecKwh * TARIFS_2026.ELEC_STANDARD;
-  const coutSocialElec = consoElecKwh * TARIFS_2026.ELEC_SOCIAL;
-  const gainElec = coutStandardElec - coutSocialElec;
-
   const coutStandardGaz = consoGazKwh * TARIFS_2026.GAZ_STANDARD;
-  const coutSocialGaz = consoGazKwh * TARIFS_2026.GAZ_SOCIAL;
-  const gainGaz = coutStandardGaz - coutSocialGaz;
+
+  // Coût "tarif social plafonné" : social sous plafond + standard sur excédent.
+  const coutSocialElec =
+    elecSousPlafond * TARIFS_2026.ELEC_SOCIAL +
+    consoExcedentElec * TARIFS_2026.ELEC_STANDARD;
+  const coutSocialGaz =
+    gazSousPlafond * TARIFS_2026.GAZ_SOCIAL +
+    consoExcedentGaz * TARIFS_2026.GAZ_STANDARD;
+
+  // Le gain ne porte que sur la part sous plafond (différentiel de tarif
+  // appliqué uniquement aux kWh éligibles).
+  const gainElec =
+    elecSousPlafond * (TARIFS_2026.ELEC_STANDARD - TARIFS_2026.ELEC_SOCIAL);
+  const gainGaz =
+    gazSousPlafond * (TARIFS_2026.GAZ_STANDARD - TARIFS_2026.GAZ_SOCIAL);
 
   const gainAnnuel = gainElec + gainGaz;
   const gainMensuel = gainAnnuel / 12;
@@ -184,5 +260,9 @@ export function calcTarifSocial(
     gainGaz,
     coutStandardTotal,
     coutSocialTotal,
+    plafondElec,
+    plafondGaz,
+    consoExcedentElec,
+    consoExcedentGaz,
   };
 }

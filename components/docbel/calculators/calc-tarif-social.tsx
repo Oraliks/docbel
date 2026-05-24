@@ -7,11 +7,12 @@
  *  1) Le ménage est-il éligible au tarif social fédéral automatique
  *     (au moins un statut parmi BIM, RIS, GRAPA, handicap, aide CPAS,
  *     logement social) ?
- *  2) Quel serait le gain annuel estimé sur la facture énergie ?
+ *  2) Quel serait le gain annuel estimé sur la facture énergie, en tenant
+ *     compte des plafonds de consommation (tarif standard sur l'excédent) ?
  *
  * La logique pure vit dans `lib/calculators/tarif-social.ts` — ici on
- * assemble juste les inputs (statuts en checkboxes, conso en CalcField)
- * et la carte de résultat.
+ * assemble juste les inputs (statuts en checkboxes, conso en CalcField,
+ * taille du ménage, chauffage gaz/élec) et la carte de résultat.
  */
 
 import { useState } from "react";
@@ -25,10 +26,12 @@ import {
   CalcError,
   CalcInfo,
   fmtEUR,
+  fmtNumber,
   parseNum,
 } from "./_shared";
 import {
   calcTarifSocial,
+  Q_REFERENCE,
   type TarifSocialResult,
 } from "@/lib/calculators/tarif-social";
 
@@ -96,10 +99,12 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
   const [aideEquivalente, setAideEquivalente] = useState(false);
   const [logementSocial, setLogementSocial] = useState(false);
 
-  // Consommation
+  // Consommation et profil
   const [consoElec, setConsoElec] = useState("3500");
   const [consoGaz, setConsoGaz] = useState("17000");
+  const [tailleMenage, setTailleMenage] = useState("2");
   const [chauffageElec, setChauffageElec] = useState<Oui>("non");
+  const [chauffageGaz, setChauffageGaz] = useState<Oui>("oui");
 
   const [result, setResult] = useState<TarifSocialResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -110,6 +115,7 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
 
     const elec = parseNum(consoElec);
     const gaz = parseNum(consoGaz);
+    const taille = parseNum(tailleMenage);
 
     const out = calcTarifSocial({
       bim,
@@ -121,6 +127,8 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
       consoElecKwh: isNaN(elec) ? 0 : elec,
       consoGazKwh: isNaN(gaz) ? 0 : gaz,
       chauffageElec: chauffageElec === "oui",
+      chauffageGaz: chauffageGaz === "oui",
+      tailleMenage: isNaN(taille) ? 2 : Math.round(taille),
     });
 
     if ("error" in out) {
@@ -204,7 +212,7 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
         an par le SPF Économie). Aucune démarche.
       </CalcInfo>
 
-      {/* --- Étape 2 : conso ----------------------------------------- */}
+      {/* --- Étape 2 : profil de consommation ------------------------ */}
       <div className="flex flex-col gap-2">
         <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-[color:var(--glass-ink-faint)]">
           2. Estimer votre gain
@@ -232,19 +240,43 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
             max={99999}
             suffix="kWh"
           />
+          <CalcField
+            id="ts-taille-menage"
+            label="Personnes dans le ménage"
+            hint="Le plafond élec augmente de 200 kWh par personne supplémentaire."
+            value={tailleMenage}
+            onChange={setTailleMenage}
+            placeholder="2"
+            min={1}
+            max={15}
+            step={1}
+          />
         </CalcGrid>
 
-        <CalcRadio<Oui>
-          label="Chauffage électrique ?"
-          hint="Si oui, votre conso élec est probablement plus élevée."
-          value={chauffageElec}
-          onChange={setChauffageElec}
-          options={[
-            { value: "non", label: "Non" },
-            { value: "oui", label: "Oui" },
-          ]}
-          accent={accent}
-        />
+        <CalcGrid cols={2}>
+          <CalcRadio<Oui>
+            label="Chauffage électrique ?"
+            hint="Plafond élec : 4 600 kWh si oui (sinon 1 800 kWh)."
+            value={chauffageElec}
+            onChange={setChauffageElec}
+            options={[
+              { value: "non", label: "Non" },
+              { value: "oui", label: "Oui" },
+            ]}
+            accent={accent}
+          />
+          <CalcRadio<Oui>
+            label="Chauffage au gaz ?"
+            hint="Plafond gaz : 23 260 kWh si oui (sinon 12 000 kWh)."
+            value={chauffageGaz}
+            onChange={setChauffageGaz}
+            options={[
+              { value: "oui", label: "Oui" },
+              { value: "non", label: "Non" },
+            ]}
+            accent={accent}
+          />
+        </CalcGrid>
       </div>
 
       <CalcSubmitButton accent={accent} onClick={onCalc}>
@@ -286,6 +318,30 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
                 value: fmtEUR(result.gainGaz),
               },
               {
+                label: "Plafond élec applicable",
+                value: `${fmtNumber(result.plafondElec)} kWh`,
+              },
+              ...(result.consoExcedentElec > 0
+                ? [
+                    {
+                      label: "Excédent élec (tarif standard)",
+                      value: `${fmtNumber(result.consoExcedentElec)} kWh`,
+                    },
+                  ]
+                : []),
+              {
+                label: "Plafond gaz applicable",
+                value: `${fmtNumber(result.plafondGaz)} kWh`,
+              },
+              ...(result.consoExcedentGaz > 0
+                ? [
+                    {
+                      label: "Excédent gaz (tarif standard)",
+                      value: `${fmtNumber(result.consoExcedentGaz)} kWh`,
+                    },
+                  ]
+                : []),
+              {
                 label: "Coût annuel tarif standard",
                 value: fmtEUR(result.coutStandardTotal),
               },
@@ -296,10 +352,11 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
             ]}
             footer={
               <>
-                Estimation indicative. Source : SPF Économie. Tarifs
-                susceptibles de varier chaque semestre. Des plafonds de
-                consommation s&apos;appliquent — au-delà, le tarif standard du
-                fournisseur s&apos;applique sur le dépassement.
+                Estimation indicative basée sur les tarifs CREG{" "}
+                <strong>{Q_REFERENCE}</strong>. Les tarifs sociaux sont
+                recalculés chaque trimestre (note CREG Z3153). Au-delà du
+                plafond de consommation, le tarif standard du fournisseur
+                s&apos;applique sur l&apos;excédent. Source : SPF Économie.
               </>
             }
           />
@@ -320,8 +377,8 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
             footer={
               <>
                 À titre d&apos;information, le gain théorique aurait été de{" "}
-                <strong>{fmtEUR(result.gainAnnuel)}/an</strong> avec votre
-                consommation déclarée.
+                <strong>{fmtEUR(result.gainAnnuel)}/an</strong> (tarifs{" "}
+                {Q_REFERENCE}, plafonds appliqués).
               </>
             }
           />
@@ -329,9 +386,10 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
       ) : (
         <CalcInfo>
           Le tarif social fédéral est le tarif commercial le plus bas du
-          marché belge, calculé chaque semestre par la CREG. En 2026 S1, il
-          se situe autour de <strong>0,22 €/kWh</strong> en électricité et{" "}
-          <strong>0,047 €/kWh</strong> en gaz (tout inclus).
+          marché belge, recalculé chaque <strong>trimestre</strong> par la
+          CREG (note Z3153). Référence {Q_REFERENCE} : ~
+          <strong>0,248 €/kWh</strong> en électricité et{" "}
+          <strong>0,047 €/kWh</strong> en gaz (TVAC).
         </CalcInfo>
       )}
     </CalcLayout>

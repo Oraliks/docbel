@@ -16,6 +16,7 @@ import {
   type BrutNetResult,
   type StatutFiscal,
   type Region,
+  type MotorisationVehicule,
 } from "@/lib/calculators/brut-net";
 import {
   CalcLayout,
@@ -45,6 +46,13 @@ const REGIONS: { value: Region; label: string }[] = [
   { value: "flandre", label: "Flandre" },
 ];
 
+const MOTORISATIONS: { value: MotorisationVehicule; label: string }[] = [
+  { value: "essence", label: "Essence" },
+  { value: "diesel", label: "Diesel" },
+  { value: "hybride", label: "Hybride" },
+  { value: "electrique", label: "Électrique" },
+];
+
 const ENFANTS_OPTIONS = Array.from({ length: 7 }, (_, i) => ({
   value: String(i) as `${number}`,
   label: i === 0 ? "Aucun" : i === 6 ? "6 ou plus" : String(i),
@@ -57,6 +65,16 @@ export function CalcBrutNet({ accent }: { accent: string }) {
   const [enfants, setEnfants] = useState("0");
   const [region, setRegion] = useState<Region>("wallonie");
   const [chequesRepas, setChequesRepas] = useState<"oui" | "non">("non");
+
+  // Voiture de société (ATN)
+  const [hasVehicule, setHasVehicule] = useState<"oui" | "non">("non");
+  const [valeurCatalogue, setValeurCatalogue] = useState("");
+  const [ageVehicule, setAgeVehicule] = useState("0");
+  const [motorisation, setMotorisation] =
+    useState<MotorisationVehicule>("essence");
+
+  // Indemnité télétravail
+  const [telework, setTelework] = useState("");
 
   const [result, setResult] = useState<BrutNetResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,11 +89,25 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       return;
     }
 
+    const voitureSociete = hasVehicule === "oui"
+      ? {
+          hasVehicule: true,
+          valeurCatalogueHT: parseNum(valeurCatalogue) || 0,
+          ageVehicule: parseInt(ageVehicule, 10) || 0,
+          motorisation,
+        }
+      : undefined;
+
+    const teleworkNum = parseNum(telework);
+    const indemniteTelework = Number.isFinite(teleworkNum) ? teleworkNum : 0;
+
     const params = {
       statut,
       enfants: parseInt(enfants, 10) || 0,
       region,
       chequesRepas: chequesRepas === "oui",
+      voitureSociete,
+      indemniteTelework,
     };
 
     const res =
@@ -106,7 +138,8 @@ export function CalcBrutNet({ accent }: { accent: string }) {
         <>
           Estimation rapide du <strong>passage brut → net mensuel</strong> pour
           un salarié belge. Inversement possible avec le mode{" "}
-          <em>Net → Brut</em>. Chiffres 2026 simplifiés — voir disclaimer.
+          <em>Net → Brut</em>. Inclut voiture de société (ATN) et indemnité
+          télétravail — chiffres 2026, voir disclaimer.
         </>
       }
     >
@@ -168,11 +201,68 @@ export function CalcBrutNet({ accent }: { accent: string }) {
           onChange={setChequesRepas}
           options={[
             { value: "non", label: "Non" },
-            { value: "oui", label: "Oui (6,91 €/jour)" },
+            { value: "oui", label: "Oui (8,91 €/jour)" },
           ]}
           accent={accent}
         />
       </CalcGrid>
+
+      <CalcRadio<"oui" | "non">
+        label="Voiture de société"
+        hint="Avantage en nature imposable (ATN), s'ajoute à l'imposable pour le précompte."
+        value={hasVehicule}
+        onChange={setHasVehicule}
+        options={[
+          { value: "non", label: "Non" },
+          { value: "oui", label: "Oui" },
+        ]}
+        accent={accent}
+      />
+
+      {hasVehicule === "oui" ? (
+        <CalcGrid cols={3}>
+          <CalcField
+            id="brut-net-valeur-catalogue"
+            label="Valeur catalogue HT"
+            hint="Prix neuf hors TVA (constructeur)."
+            value={valeurCatalogue}
+            onChange={setValeurCatalogue}
+            placeholder="ex : 35000"
+            suffix="€"
+            min={0}
+          />
+          <CalcField
+            id="brut-net-age-vehicule"
+            label="Âge du véhicule"
+            hint="En années (0 = neuf, 6 = vieux)."
+            value={ageVehicule}
+            onChange={setAgeVehicule}
+            placeholder="0"
+            suffix="ans"
+            min={0}
+            max={30}
+          />
+          <CalcSelect<MotorisationVehicule>
+            id="brut-net-motorisation"
+            label="Motorisation"
+            value={motorisation}
+            onChange={setMotorisation}
+            options={MOTORISATIONS}
+          />
+        </CalcGrid>
+      ) : null}
+
+      <CalcField
+        id="brut-net-telework"
+        label="Indemnité télétravail mensuelle"
+        hint="Forfaitaire, non imposable. Plafond légal 2026 : 154,74 €/mois."
+        value={telework}
+        onChange={setTelework}
+        placeholder="ex : 154"
+        suffix="€"
+        min={0}
+        max={200}
+      />
 
       {error ? <CalcError>{error}</CalcError> : null}
 
@@ -196,6 +286,14 @@ export function CalcBrutNet({ accent }: { accent: string }) {
           rows={[
             { label: "Salaire brut", value: fmtEUR(result.brut) },
             { label: "− Cotisations ONSS (13,07 %)", value: `− ${fmtEUR(result.onss)}` },
+            ...(result.atn > 0
+              ? [
+                  {
+                    label: "+ ATN voiture société (imposable)",
+                    value: `+ ${fmtEUR(result.atn)}`,
+                  },
+                ]
+              : []),
             { label: "= Salaire imposable", value: fmtEUR(result.imposable) },
             { label: "− Précompte professionnel", value: `− ${fmtEUR(result.precompte)}` },
             ...(result.bonus > 0
@@ -209,15 +307,24 @@ export function CalcBrutNet({ accent }: { accent: string }) {
                   },
                 ]
               : []),
+            ...(result.indemniteTelework > 0
+              ? [
+                  {
+                    label: "+ Indemnité télétravail",
+                    value: `+ ${fmtEUR(result.indemniteTelework)}`,
+                  },
+                ]
+              : []),
             { label: "Net en poche", value: fmtEUR(result.net), emphasis: true },
           ]}
           footer={
             <>
               <strong>Estimation indicative</strong> — chiffres 2026 simplifiés.
-              Le précompte exact dépend de votre situation fiscale précise
-              (avantages, double pécule, conjoint à charge, etc.). Pour le
-              calcul officiel, consultez votre fiche de paie ou le simulateur
-              du <strong>SPF Finances</strong>.
+              L'ATN voiture utilise les coefficients CO2 moyens et la décote
+              d'âge officielle (AR 14/01/2014). Le précompte exact dépend de
+              votre situation fiscale précise (double pécule, conjoint à
+              charge, etc.). Pour le calcul officiel, consultez votre fiche
+              de paie ou le simulateur du <strong>SPF Finances</strong>.
             </>
           }
         />

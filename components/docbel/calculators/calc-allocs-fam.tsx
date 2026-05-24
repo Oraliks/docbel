@@ -11,7 +11,8 @@
  *
  * La logique pure vit dans `lib/calculators/allocs-fam.ts` — ici on
  * assemble juste les inputs (région, enfants dynamiques, revenu, mono-
- * parentalité) et la carte de résultat avec les primitives `_shared`.
+ * parentalité, handicap, orphelin) et la carte de résultat avec les
+ * primitives `_shared`.
  */
 
 import { useState } from "react";
@@ -32,16 +33,22 @@ import {
 import {
   calcAllocsFam,
   type AllocsFamResult,
+  type OrphelinStatus,
   type Region,
 } from "@/lib/calculators/allocs-fam";
 
 type MonoYesNo = "oui" | "non";
+type HandicapYesNo = "oui" | "non";
 
 interface EnfantRow {
   /** Identifiant local pour la clé React (n'affecte pas le calcul). */
   uid: number;
   /** Année de naissance saisie sous forme de string (parsée au calcul). */
   anneeNaissance: string;
+  /** Enfant en situation de handicap reconnu (catégorie médiane). */
+  handicap: HandicapYesNo;
+  /** Statut d'orphelin de l'enfant. */
+  orphelin: OrphelinStatus;
 }
 
 const ANNEE_COURANTE = new Date().getFullYear();
@@ -50,31 +57,33 @@ const DEFAUT_ANNEE_ENFANT = ANNEE_COURANTE - 5; // ex : 2021 si on est en 2026
 let _uid = 0;
 const nextUid = () => ++_uid;
 
+const newEnfant = (): EnfantRow => ({
+  uid: nextUid(),
+  anneeNaissance: String(DEFAUT_ANNEE_ENFANT),
+  handicap: "non",
+  orphelin: "aucun",
+});
+
 export function CalcAllocsFam({ accent }: { accent: string }) {
   const [region, setRegion] = useState<Region>("wallonie");
   const [revenu, setRevenu] = useState("50000");
   const [monoparental, setMonoparental] = useState<MonoYesNo>("non");
-  const [enfants, setEnfants] = useState<EnfantRow[]>([
-    { uid: nextUid(), anneeNaissance: String(DEFAUT_ANNEE_ENFANT) },
-  ]);
+  const [enfants, setEnfants] = useState<EnfantRow[]>([newEnfant()]);
   const [result, setResult] = useState<AllocsFamResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const addEnfant = () => {
     if (enfants.length >= 10) return;
-    setEnfants((prev) => [
-      ...prev,
-      { uid: nextUid(), anneeNaissance: String(DEFAUT_ANNEE_ENFANT) },
-    ]);
+    setEnfants((prev) => [...prev, newEnfant()]);
   };
 
   const removeEnfant = (uid: number) => {
     setEnfants((prev) => prev.filter((e) => e.uid !== uid));
   };
 
-  const updateEnfant = (uid: number, anneeNaissance: string) => {
+  const updateEnfant = (uid: number, patch: Partial<EnfantRow>) => {
     setEnfants((prev) =>
-      prev.map((e) => (e.uid === uid ? { ...e, anneeNaissance } : e)),
+      prev.map((e) => (e.uid === uid ? { ...e, ...patch } : e)),
     );
   };
 
@@ -90,6 +99,8 @@ export function CalcAllocsFam({ accent }: { accent: string }) {
     const rev = parseNum(revenu);
     const parsedEnfants = enfants.map((e) => ({
       anneeNaissance: parseNum(e.anneeNaissance),
+      handicap: e.handicap === "oui",
+      orphelin: e.orphelin,
     }));
 
     const out = calcAllocsFam({
@@ -120,9 +131,64 @@ export function CalcAllocsFam({ accent }: { accent: string }) {
     <>
       Estimez vos <strong>allocations familiales</strong> mensuelles. Depuis
       la régionalisation, chaque entité belge a son propre barème :
-      sélectionnez votre région et ajoutez vos enfants.
+      sélectionnez votre région et ajoutez vos enfants (handicap, orphelin
+      et rang sont pris en compte).
     </>
   );
+
+  // Construit les lignes détaillées du résultat — une ligne par enfant
+  // avec, en sous-titre, la décomposition des suppléments quand ils existent.
+  const rows = result
+    ? result.detail.flatMap((d) => {
+        const out: { label: string; value: string; emphasis?: boolean }[] = [
+          {
+            label: `Enfant ${d.rang} — ${d.age} an${d.age > 1 ? "s" : ""}`,
+            value: fmtEUR(d.total),
+            emphasis: false,
+          },
+        ];
+        // Détail base
+        out.push({
+          label: "  • base mensuelle",
+          value: fmtEUR(d.montantBase),
+        });
+        if (d.supplementHandicap) {
+          out.push({
+            label: "  • supplément handicap (médian)",
+            value: `+ ${fmtEUR(d.supplementHandicap)}`,
+          });
+        }
+        if (d.supplementOrphelin) {
+          out.push({
+            label: "  • supplément orphelin",
+            value: `+ ${fmtEUR(d.supplementOrphelin)}`,
+          });
+        }
+        if (d.supplement3eEnfant) {
+          out.push({
+            label: "  • supplément 3e enfant (BXL)",
+            value: `+ ${fmtEUR(d.supplement3eEnfant)}`,
+          });
+        }
+        // Reste des suppléments (mono / bas revenu / social Flandre)
+        const autresSupp =
+          d.supplements -
+          (d.supplementHandicap ?? 0) -
+          (d.supplementOrphelin ?? 0) -
+          (d.supplement3eEnfant ?? 0);
+        if (autresSupp > 0.0001) {
+          out.push({
+            label: "  • supplément social/monoparental",
+            value: `+ ${fmtEUR(autresSupp)}`,
+          });
+        }
+        return out;
+      })
+    : [];
+
+  // Y a-t-il au moins un enfant en situation de handicap dans le résultat ?
+  const aHandicap =
+    result?.detail.some((d) => (d.supplementHandicap ?? 0) > 0) ?? false;
 
   return (
     <CalcLayout intro={intro}>
@@ -194,30 +260,59 @@ export function CalcAllocsFam({ accent }: { accent: string }) {
           {enfants.map((enfant, idx) => (
             <div
               key={enfant.uid}
-              className="flex items-end gap-2 rounded-xl border-[1.5px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3"
+              className="flex flex-col gap-3 rounded-xl border-[1.5px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3"
             >
-              <div className="flex-1">
-                <CalcField
-                  id={`allocs-enfant-${enfant.uid}`}
-                  label={`Enfant ${idx + 1} — année de naissance`}
-                  value={enfant.anneeNaissance}
-                  onChange={(v) => updateEnfant(enfant.uid, v)}
-                  placeholder={String(DEFAUT_ANNEE_ENFANT)}
-                  min={2000}
-                  max={ANNEE_COURANTE}
-                  step={1}
-                />
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <CalcField
+                    id={`allocs-enfant-${enfant.uid}`}
+                    label={`Enfant ${idx + 1} — année de naissance`}
+                    value={enfant.anneeNaissance}
+                    onChange={(v) =>
+                      updateEnfant(enfant.uid, { anneeNaissance: v })
+                    }
+                    placeholder={String(DEFAUT_ANNEE_ENFANT)}
+                    min={2000}
+                    max={ANNEE_COURANTE}
+                    step={1}
+                  />
+                </div>
+                {enfants.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => removeEnfant(enfant.uid)}
+                    aria-label={`Supprimer l'enfant ${idx + 1}`}
+                    className="mb-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-lg border-[1.5px] border-[color:var(--glass-border)] text-[color:var(--glass-ink-faint)] transition hover:border-amber-300 hover:text-amber-700"
+                  >
+                    <X className="size-4" />
+                  </button>
+                ) : null}
               </div>
-              {enfants.length > 1 ? (
-                <button
-                  type="button"
-                  onClick={() => removeEnfant(enfant.uid)}
-                  aria-label={`Supprimer l'enfant ${idx + 1}`}
-                  className="mb-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-lg border-[1.5px] border-[color:var(--glass-border)] text-[color:var(--glass-ink-faint)] transition hover:border-amber-300 hover:text-amber-700"
-                >
-                  <X className="size-4" />
-                </button>
-              ) : null}
+
+              <CalcGrid cols={2}>
+                <CalcRadio<HandicapYesNo>
+                  label="Handicap reconnu ?"
+                  hint="Estimation catégorie médiane (4-6 points)."
+                  value={enfant.handicap}
+                  onChange={(v) => updateEnfant(enfant.uid, { handicap: v })}
+                  options={[
+                    { value: "non", label: "Non" },
+                    { value: "oui", label: "Oui" },
+                  ]}
+                  accent={accent}
+                />
+                <CalcSelect<OrphelinStatus>
+                  id={`allocs-orphelin-${enfant.uid}`}
+                  label="Statut orphelin"
+                  value={enfant.orphelin}
+                  onChange={(v) => updateEnfant(enfant.uid, { orphelin: v })}
+                  options={[
+                    { value: "aucun", label: "Aucun" },
+                    { value: "un_parent", label: "Un parent décédé" },
+                    { value: "deux_parents", label: "Deux parents décédés" },
+                  ]}
+                />
+              </CalcGrid>
             </div>
           ))}
         </div>
@@ -239,18 +334,35 @@ export function CalcAllocsFam({ accent }: { accent: string }) {
               Régime : <strong>{result.regionLabel}</strong>
             </>
           }
-          rows={result.detail.map((d) => ({
-            label: `Enfant ${d.rang} — ${d.age} an${d.age > 1 ? "s" : ""}`,
-            value: fmtEUR(d.total),
-            emphasis: false,
-          }))}
+          rows={rows}
           footer={
             <>
-              Bonus rentrée scolaire annuel estimé :{" "}
-              <strong>{fmtEUR(result.bonusRentreeAnnuel)}</strong>. Estimation
-              indicative. Pour le montant exact, contactez votre caisse :
-              FAMIWAL (Wallonie), FAMIRIS (Bruxelles), Groeipakket (Flandre),
-              Ministerium DG (Ostbelgien).
+              <div>
+                <strong>Bonus rentrée scolaire</strong> annuel estimé :{" "}
+                <strong>{fmtEUR(result.bonusRentreeAnnuel)}</strong> (versé en
+                été).
+              </div>
+              {result.allocationNaissanceTotale > 0 ? (
+                <div className="mt-1.5">
+                  <strong>Allocation de naissance</strong> (one-shot){" "}
+                  pour les enfants nés en {ANNEE_COURANTE} :{" "}
+                  <strong>{fmtEUR(result.allocationNaissanceTotale)}</strong>.
+                </div>
+              ) : null}
+              {aHandicap ? (
+                <div className="mt-1.5">
+                  <em>
+                    Supplément handicap estimé sur la catégorie médiane (4-6
+                    points). Le montant réel peut aller de 30 € à 700 € selon
+                    la gravité — à vérifier auprès de la caisse.
+                  </em>
+                </div>
+              ) : null}
+              <div className="mt-1.5">
+                Estimation indicative. Pour le montant exact, contactez votre
+                caisse : FAMIWAL (Wallonie), FAMIRIS (Bruxelles), Groeipakket
+                (Flandre), Ministerium DG (Ostbelgien).
+              </div>
             </>
           }
         />
@@ -258,9 +370,11 @@ export function CalcAllocsFam({ accent }: { accent: string }) {
         <CalcInfo>
           Les barèmes diffèrent selon la <strong>région</strong> et la{" "}
           <strong>date de naissance</strong> de l'enfant (régime « ancien »
-          avant 2019/2020 vs « nouveau » après). Les ménages à bas revenu
+          avant 2019 vs « nouveau » après). Les ménages à bas revenu
           (&lt; 36 000 €/an) et monoparentaux bénéficient de suppléments
-          sociaux dans la plupart des régimes.
+          sociaux. Le <strong>handicap reconnu</strong>, le statut{" "}
+          <strong>orphelin</strong> et le rang (3e enfant à Bruxelles)
+          ouvrent des suppléments additionnels.
         </CalcInfo>
       )}
     </CalcLayout>

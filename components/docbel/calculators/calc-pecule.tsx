@@ -8,6 +8,12 @@
  * employés, mai/juin pour les ouvriers via l'ONVA). La logique pure vit
  * dans `lib/calculators/pecule.ts` — ici on assemble juste les inputs et
  * la carte de résultat avec les primitives `_shared`.
+ *
+ * Améliorations 2026 :
+ *  - Précompte spécial dégressif appliqué au double pécule employé.
+ *  - Différencie net simple (salaire normal) vs net double (précompte spé).
+ *  - Mention pécule jeunes ONEM si "première année après études".
+ *  - Note pédagogique sur les jours assimilés.
  */
 
 import { useState } from "react";
@@ -21,12 +27,14 @@ import {
   CalcError,
   CalcInfo,
   fmtEUR,
+  fmtPct,
   parseNum,
 } from "./_shared";
 import { calcPecule, type PeculeResult } from "@/lib/calculators/pecule";
 
 type Statut = "employe" | "ouvrier";
 type Regime = "plein" | "partiel";
+type YesNo = "non" | "oui";
 
 export function CalcPecule({ accent }: { accent: string }) {
   const [statut, setStatut] = useState<Statut>("employe");
@@ -34,6 +42,7 @@ export function CalcPecule({ accent }: { accent: string }) {
   const [moisPrestes, setMoisPrestes] = useState("12");
   const [regime, setRegime] = useState<Regime>("plein");
   const [tauxOccupation, setTauxOccupation] = useState("80");
+  const [jeune, setJeune] = useState<YesNo>("non");
   const [result, setResult] = useState<PeculeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +60,7 @@ export function CalcPecule({ accent }: { accent: string }) {
       moisPrestes: isNaN(mois) ? 12 : mois,
       tempsPartiel: regime === "partiel",
       tauxOccupation: isNaN(taux) ? 100 : taux,
+      jeuneTravailleur: jeune === "oui",
     });
 
     if ("error" in out) {
@@ -104,7 +114,7 @@ export function CalcPecule({ accent }: { accent: string }) {
         <CalcField
           id="pecule-mois"
           label="Mois prestés l'an dernier"
-          hint="De 0 à 12. Laissez 12 pour une année complète."
+          hint="De 0 à 12. Jours de maladie, congé maternité et chômage temporaire comptent comme prestés."
           value={moisPrestes}
           onChange={setMoisPrestes}
           placeholder="12"
@@ -140,6 +150,20 @@ export function CalcPecule({ accent }: { accent: string }) {
         />
       ) : null}
 
+      {statut === "employe" ? (
+        <CalcRadio<YesNo>
+          label="Première année après vos études ?"
+          hint="Si oui et que vous avez moins de 25 ans, vous avez peut-être droit au pécule jeunes versé par l'ONEM."
+          value={jeune}
+          onChange={setJeune}
+          options={[
+            { value: "non", label: "Non" },
+            { value: "oui", label: "Oui" },
+          ]}
+          accent={accent}
+        />
+      ) : null}
+
       <CalcSubmitButton accent={accent} onClick={onCalc}>
         Calculer le pécule
       </CalcSubmitButton>
@@ -161,15 +185,19 @@ export function CalcPecule({ accent }: { accent: string }) {
           }
           rows={[
             {
-              label: "Pécule simple (brut)",
+              label: "Pécule simple brut",
               value: fmtEUR(result.peculeSimpleBrut),
             },
             {
-              label: "Double pécule (brut)",
+              label: "Pécule simple net (estimé)",
+              value: fmtEUR(result.peculeSimpleNetEstime),
+            },
+            {
+              label: "Double pécule brut",
               value: fmtEUR(result.doublePeculeBrut),
             },
             {
-              label: "Net estimé du double pécule",
+              label: "Double pécule net (estimé)",
               value: fmtEUR(result.doublePeculeNetEstime),
               emphasis: true,
             },
@@ -178,8 +206,32 @@ export function CalcPecule({ accent }: { accent: string }) {
             <>
               Estimation indicative. Le pécule réel dépend de votre fiche de paie
               {result.statut === "ouvrier" ? " / décompte ONVA officiel" : ""}.
-              Calcul simplifié 2026 — ne tient pas compte des primes, jours
-              assimilés, conventions sectorielles ni précompte personnalisé.
+              {result.statut === "employe" ? (
+                <>
+                  {" "}Précompte spécial appliqué sur le double pécule :{" "}
+                  <strong>
+                    {fmtPct(result.tauxPrecompteAppliquePourcent, 2)}
+                  </strong>{" "}
+                  (barème dégressif par tranches de brut annuel : 17,16 % /
+                  30,28 % / 53,50 %).
+                </>
+              ) : (
+                <>
+                  {" "}Retenue ONVA globale :{" "}
+                  <strong>
+                    {fmtPct(result.tauxPrecompteAppliquePourcent, 2)}
+                  </strong>{" "}
+                  (ONSS + précompte).
+                </>
+              )}
+              {result.peculeJeunesEligible ? (
+                <>
+                  {" "}<br />
+                  <strong>Pécule jeunes ONEM :</strong> vous avez peut-être
+                  droit à un pécule supplémentaire (jusqu'à 4 semaines), à
+                  demander avant fin février auprès de l'ONEM.
+                </>
+              ) : null}
             </>
           }
         />
@@ -188,15 +240,21 @@ export function CalcPecule({ accent }: { accent: string }) {
           {statut === "employe" ? (
             <>
               Le <strong>pécule simple</strong> correspond à votre salaire normal
-              pendant les congés (déjà payé par l'employeur). Le{" "}
+              pendant les congés (imposé comme un salaire ordinaire). Le{" "}
               <strong>double pécule</strong> ≈ 92 % du brut mensuel est versé
-              une fois par an, généralement en juin.
+              une fois par an, généralement en juin, et subit un{" "}
+              <strong>précompte spécial dégressif</strong> (17 à 54 % selon
+              votre brut annuel). Les <strong>jours assimilés</strong>
+              {" "}(maladie, congé maternité, chômage temporaire) comptent
+              comme prestés pour le calcul.
             </>
           ) : (
             <>
               L'<strong>ONVA</strong> verse en mai/juin un montant unique
               d'environ 15,38 % du salaire brut majoré de l'année précédente,
-              moins une retenue d'environ 23 % (ONSS + précompte).
+              moins une retenue d'environ 23 % (ONSS + précompte). Les{" "}
+              <strong>jours assimilés</strong> (maladie, congé maternité)
+              comptent comme prestés.
             </>
           )}
         </CalcInfo>

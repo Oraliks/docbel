@@ -26,9 +26,22 @@
 
 export type Region = "wallonie" | "bruxelles" | "flandre" | "germanophone";
 
+export type OrphelinStatus = "aucun" | "un_parent" | "deux_parents";
+
 export interface EnfantInput {
   /** Année de naissance de l'enfant (entre 2000 et l'année courante). */
   anneeNaissance: number;
+  /**
+   * Enfant reconnu en situation de handicap (catégorie médiane 4-6 points,
+   * valeur indicative — la réalité va de 30 € à 700 € selon la gravité).
+   */
+  handicap?: boolean;
+  /**
+   * Statut d'orphelin de l'enfant. Par défaut `aucun`.
+   *  - `un_parent`  : un parent décédé (orphelin partiel)
+   *  - `deux_parents` : deux parents décédés (orphelin complet)
+   */
+  orphelin?: OrphelinStatus;
 }
 
 export interface AllocsFamInput {
@@ -47,8 +60,14 @@ export interface AllocsFamDetailRow {
   age: number;
   /** Montant de base mensuel pour cet enfant. */
   montantBase: number;
-  /** Suppléments mensuels cumulés pour cet enfant. */
+  /** Suppléments mensuels cumulés pour cet enfant (tous suppléments confondus). */
   supplements: number;
+  /** Supplément handicap mensuel (inclus dans `supplements`). */
+  supplementHandicap?: number;
+  /** Supplément orphelin mensuel (inclus dans `supplements`). */
+  supplementOrphelin?: number;
+  /** Supplément 3e enfant Bruxelles (inclus dans `supplements`). */
+  supplement3eEnfant?: number;
   /** Total mensuel pour cet enfant (base + suppléments). */
   total: number;
 }
@@ -58,6 +77,11 @@ export interface AllocsFamResult {
   totalMensuel: number;
   /** Bonus rentrée scolaire annuel (versé une fois par an, été). */
   bonusRentreeAnnuel: number;
+  /**
+   * Allocation de naissance versée une fois (one-shot) pour les enfants
+   * nés cette année. Somme indicative pour info aux jeunes parents.
+   */
+  allocationNaissanceTotale: number;
   /** Détail par enfant (1 ligne = 1 enfant). */
   detail: AllocsFamDetailRow[];
   /** Libellé lisible du régime appliqué (« FAMIWAL », etc.). */
@@ -82,6 +106,55 @@ const SEUIL_FLANDRE_BAS = 32_000;
  */
 const PIVOT_NOUVEAU_REGIME = 2019;
 const PIVOT_FLANDRE = 2019;
+
+/**
+ * Supplément handicap mensuel — catégorie médiane (4-6 points de
+ * reconnaissance officielle). Le réel va de ~30 € (légère atteinte) à
+ * ~700 € (handicap sévère) selon la grille AViQ / Iriscare / Kind & Gezin.
+ */
+const SUPPLEMENT_HANDICAP: Record<Region, number> = {
+  wallonie: 85,
+  bruxelles: 90,
+  flandre: 85,
+  germanophone: 85,
+};
+
+/** Supplément orphelin partiel (un parent décédé) — €/mois indicatif. */
+const SUPPLEMENT_ORPHELIN_UN: Record<Region, number> = {
+  wallonie: 175,
+  bruxelles: 175,
+  flandre: 200,
+  germanophone: 180,
+};
+
+/** Supplément orphelin complet (deux parents décédés) — €/mois indicatif. */
+const SUPPLEMENT_ORPHELIN_DEUX: Record<Region, number> = {
+  wallonie: 400,
+  bruxelles: 400,
+  flandre: 450,
+  germanophone: 400,
+};
+
+/**
+ * Supplément « large famille » Bruxelles (FAMIRIS) :
+ * +50 €/mois à partir du 3e enfant (rang ≥ 3).
+ */
+const SUPPLEMENT_3E_ENFANT_BXL = 50;
+
+/**
+ * Allocation de naissance (one-shot) — versée une fois à la naissance.
+ * Wallonie et Bruxelles distinguent 1er enfant / suivants ; Flandre et
+ * Communauté germanophone appliquent un forfait unique (Startbedrag).
+ */
+const ALLOC_NAISSANCE: Record<
+  Region,
+  { premier: number; suivants: number }
+> = {
+  wallonie: { premier: 1_415, suivants: 1_057 },
+  bruxelles: { premier: 1_395, suivants: 634 },
+  flandre: { premier: 1_296, suivants: 1_296 },
+  germanophone: { premier: 1_296, suivants: 1_296 },
+};
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -270,6 +343,7 @@ export function calcAllocsFam(
   const detail: AllocsFamDetailRow[] = [];
   let totalMensuel = 0;
   let bonusRentreeAnnuel = 0;
+  let allocationNaissanceTotale = 0;
 
   enfantsTries.forEach((enfant, idx) => {
     const rang = idx + 1;
@@ -303,22 +377,60 @@ export function calcAllocsFam(
         break;
     }
 
-    const total = calc.base + calc.supplements;
+    // --- Suppléments transversaux (handicap / orphelin / 3e enfant) ----
+    let supplementHandicap = 0;
+    if (enfant.handicap) {
+      supplementHandicap = SUPPLEMENT_HANDICAP[region];
+    }
+
+    let supplementOrphelin = 0;
+    const orphelin: OrphelinStatus = enfant.orphelin ?? "aucun";
+    if (orphelin === "un_parent") {
+      supplementOrphelin = SUPPLEMENT_ORPHELIN_UN[region];
+    } else if (orphelin === "deux_parents") {
+      supplementOrphelin = SUPPLEMENT_ORPHELIN_DEUX[region];
+    }
+
+    let supplement3eEnfant = 0;
+    if (region === "bruxelles" && rang >= 3) {
+      supplement3eEnfant = SUPPLEMENT_3E_ENFANT_BXL;
+    }
+
+    const supplementsTotaux =
+      calc.supplements +
+      supplementHandicap +
+      supplementOrphelin +
+      supplement3eEnfant;
+    const total = calc.base + supplementsTotaux;
+
     detail.push({
       rang,
       age,
       montantBase: calc.base,
-      supplements: calc.supplements,
+      supplements: supplementsTotaux,
+      supplementHandicap: supplementHandicap > 0 ? supplementHandicap : undefined,
+      supplementOrphelin: supplementOrphelin > 0 ? supplementOrphelin : undefined,
+      supplement3eEnfant:
+        supplement3eEnfant > 0 ? supplement3eEnfant : undefined,
       total,
     });
 
     totalMensuel += total;
     bonusRentreeAnnuel += bonusRentreeParAge(age);
+
+    // Allocation de naissance — versée uniquement aux enfants nés
+    // l'année courante (one-shot). On utilise le rang pour distinguer
+    // 1er enfant / suivants en Wallonie et Bruxelles.
+    if (enfant.anneeNaissance === anneeCourante) {
+      const bareme = ALLOC_NAISSANCE[region];
+      allocationNaissanceTotale += rang === 1 ? bareme.premier : bareme.suivants;
+    }
   });
 
   return {
     totalMensuel,
     bonusRentreeAnnuel,
+    allocationNaissanceTotale,
     detail,
     regionLabel: REGION_LABELS[region],
   };

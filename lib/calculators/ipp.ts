@@ -1,6 +1,6 @@
 /**
  * Calcul de l'Impôt des Personnes Physiques (IPP) — Belgique.
- * Exercice d'imposition 2026 (revenus 2025), version simplifiée.
+ * Exercice d'imposition 2026 (revenus 2025), version enrichie.
  *
  * SOURCES
  * -------
@@ -9,24 +9,28 @@
  *  - Barème fédéral indexé 2026 (AR/CIR 92, annexe III)
  *  - Art. 131 CIR 92 (quotité du revenu exemptée d'impôt)
  *  - Art. 132 CIR 92 (suppléments pour personnes à charge)
+ *  - Art. 134 CIR 92 (quotient conjugal)
+ *  - Art. 145 CIR 92 et suivants (réductions d'impôt)
+ *  - Loi 30/03/1994 — cotisation spéciale sécurité sociale
  *
  * AVERTISSEMENT
  * -------------
- * Ce calcul est INDICATIF — pédagogique uniquement. Le calcul officiel
- * intègre de nombreux crédits, réductions et dépenses déductibles non
- * simulés ici (épargne pension, titres-services, dons, prêts hypothécaires,
- * pensions alimentaires versées, libéralités, garde d'enfants, etc.).
- *
+ * Ce calcul est INDICATIF — pédagogique. Il intègre les principales réductions
+ * d'impôt (épargne pension, titres-services, dons, prêts hypothécaires, garde
+ * d'enfants) et le quotient conjugal de façon SIMPLIFIÉE.
  * Pour le calcul officiel et personnalisé : Tax-on-web (SPF Finances).
  *
  * FORMULE GÉNÉRALE
  * ----------------
  *   1. impot_avant_quotite = barème fédéral appliqué au revenu imposable
+ *      (avec quotient conjugal si applicable)
  *   2. reduction_quotite   = barème fédéral appliqué à la quotité exemptée
- *      (en partant du bas du barème : la quotité "consomme" d'abord la
- *       tranche à 25 %, puis la 40 %, etc.)
- *   3. impot_brut          = max(0, impot_avant_quotite - reduction_quotite)
- *   4. impot_total         = impot_brut × (1 + additionnel_communal / 100)
+ *      (en partant du bas du barème)
+ *   3. impot_brut_federal  = max(0, impot_avant_quotite - reduction_quotite)
+ *   4. reductions_totales  = somme des crédits d'impôt (épargne pension, etc.)
+ *   5. impot_apres_credits = max(0, impot_brut_federal - reductions_totales)
+ *   6. impot_total         = impot_apres_credits × (1 + additionnel_communal/100)
+ *                            + cotisation_speciale_secu
  */
 
 /* ------------------------------------------------------------------ */
@@ -46,13 +50,31 @@ export interface IPPInput {
   autresPersonnesACharge: number;
   /** Additionnel communal en % (0-15 ; moyenne belge ≈ 7,5 %). */
   additionnelCommunal: number;
+
+  /* -- Réductions d'impôt (optionnelles, défaut 0) -- */
+  /** Versement annuel épargne pension (€/an, max 1 130 €). Réduction 30 %. */
+  epargnePension?: number;
+  /** Achats annuels titres-services (€/an, max 1 500 €). Réduction ≈ 15 %. */
+  titresServices?: number;
+  /** Dons à associations agréées (€/an, min 40 €/bénéficiaire). Réduction 45 %. */
+  dons?: number;
+  /** Capital + intérêts annuels prêt hypothécaire (€/an). Réduction ≈ 30 %. */
+  pretHypothecaire?: number;
+  /** Frais garde enfants < 14 ans (€/an, plafond 16,40 €/jour). Réduction 45 %. */
+  gardeEnfants?: number;
 }
 
 export interface IPPResult {
-  /** Impôt total dû (fédéral + additionnel communal), en €/an. */
+  /** Impôt total dû (fédéral + additionnel communal + cotisation spéciale), en €/an. */
   impotTotal: number;
   /** Impôt fédéral brut après application de la quotité exemptée (€/an). */
   impotBrutFederal: number;
+  /** Total des réductions d'impôt appliquées (€/an). */
+  reductionsTotales: number;
+  /** Impôt fédéral après imputation des crédits / réductions (€/an). */
+  impotBrutApresCredits: number;
+  /** Cotisation spéciale sécurité sociale (€/an). */
+  cotisationSpecialeSecu: number;
   /** Montant absolu de l'additionnel communal (€/an). */
   additionnelCommunalEur: number;
   /** Réduction d'impôt liée à la quotité exemptée (€/an). */
@@ -67,6 +89,8 @@ export interface IPPResult {
   revenuNetApresImpot: number;
   /** Détail par tranche (debug / transparence pédagogique). */
   tranches: Array<{ borne: number; taux: number; impotTranche: number }>;
+  /** Si quotient conjugal appliqué : montant de l'allègement estimé (€/an). */
+  allegementQuotientConjugal: number;
 }
 
 export interface IPPError {
@@ -91,16 +115,12 @@ export const TRANCHES_IPP_2026: Array<{ min: number; max: number; taux: number }
 /**
  * Quotité du revenu exemptée d'impôt — base EI 2026 (revenus 2025).
  * Art. 131 CIR 92 (montant unique depuis l'EI 2020).
- * Source : SPF Finances / Wikifin (montant indexé 2026).
  */
 const QUOTITE_BASE_2026 = 10910;
 
 /**
  * Suppléments cumulatifs de quotité par nombre d'enfants à charge.
  * Art. 132 CIR 92 — montants indexés 2026.
- *
- * Cumulatif (non linéaire) : pour n enfants, on prend SUPPLEMENT_ENFANTS[n].
- * Au-delà de 5, on ajoute 6 840 € par enfant supplémentaire.
  */
 const SUPPLEMENT_ENFANTS: Record<number, number> = {
   0: 0,
@@ -117,12 +137,50 @@ const SUPPLEMENT_ENFANT_AU_DELA_5 = 6840;
 const SUPPLEMENT_AUTRE_PERSONNE = 1920;
 
 /* ------------------------------------------------------------------ */
+/*  Constantes — réductions d'impôt 2026                              */
+/* ------------------------------------------------------------------ */
+
+/** Épargne pension : versement max ouvrant droit à réduction. */
+const EPARGNE_PENSION_PLAFOND = 1130;
+/** Épargne pension : taux de réduction (30 % sur le palier de base). */
+const EPARGNE_PENSION_TAUX = 0.3;
+
+/** Titres-services : taux moyen de réduction (moyenne 3 régions ≈ 15 %). */
+const TITRES_SERVICES_TAUX = 0.15;
+/** Titres-services : plafond annuel d'achats ouvrant droit à réduction. */
+const TITRES_SERVICES_PLAFOND = 1500;
+
+/** Dons : taux de réduction (45 %) — minimum 40 €/an/bénéficiaire. */
+const DONS_TAUX = 0.45;
+const DONS_MINIMUM = 40;
+
+/** Prêt hypothécaire : taux moyen (chèque habitation régional ≈ 30 %). */
+const PRET_HYPO_TAUX = 0.3;
+
+/** Garde d'enfants : taux 45 %, plafond 16,40 €/jour/enfant. */
+const GARDE_ENFANTS_TAUX = 0.45;
+
+/* ------------------------------------------------------------------ */
+/*  Constantes — quotient conjugal & cotisation spéciale              */
+/* ------------------------------------------------------------------ */
+
+/** Quotient conjugal : plafond du transfert virtuel vers conjoint sans revenu. */
+const QUOTIENT_CONJUGAL_PLAFOND = 13530;
+
+/** Cotisation spéciale sécurité sociale — seuils 2026 (loi 30/03/1994). */
+const CSS_SEUIL_BAS = 18592;
+const CSS_SEUIL_MOYEN = 21070;
+const CSS_SEUIL_HAUT = 60161;
+const CSS_TAUX_TRANCHE_1 = 0.09; // 9 % sur 18 592 → 21 070
+const CSS_TAUX_TRANCHE_2 = 0.013; // 1,3 % sur 21 070 → 60 161
+const CSS_PLAFOND_ANNUEL = 731;
+
+/* ------------------------------------------------------------------ */
 /*  Helpers internes                                                  */
 /* ------------------------------------------------------------------ */
 
 /**
  * Applique le barème fédéral progressif à un montant, en partant du bas.
- * Retourne le total d'impôt + le détail par tranche.
  */
 function appliquerBareme(montant: number): {
   total: number;
@@ -175,6 +233,77 @@ function tauxMarginalPour(revenu: number): number {
   return TRANCHES_IPP_2026[TRANCHES_IPP_2026.length - 1].taux;
 }
 
+/**
+ * Cotisation spéciale sécurité sociale (CSS) — barème dégressif.
+ * Source : loi 30/03/1994, montants 2026.
+ */
+function calculerCotisationSpecialeSecu(revenu: number): number {
+  if (revenu <= CSS_SEUIL_BAS) return 0;
+
+  // Tranche 18 592 → 21 070 : 9 %
+  if (revenu <= CSS_SEUIL_MOYEN) {
+    return (revenu - CSS_SEUIL_BAS) * CSS_TAUX_TRANCHE_1;
+  }
+
+  // Tranche 21 070 → 60 161 : montant plancher + 1,3 % sur excédent
+  const plancher = (CSS_SEUIL_MOYEN - CSS_SEUIL_BAS) * CSS_TAUX_TRANCHE_1;
+  if (revenu <= CSS_SEUIL_HAUT) {
+    return Math.min(
+      CSS_PLAFOND_ANNUEL,
+      plancher + (revenu - CSS_SEUIL_MOYEN) * CSS_TAUX_TRANCHE_2,
+    );
+  }
+
+  // Au-delà : plafond fixe
+  return CSS_PLAFOND_ANNUEL;
+}
+
+/**
+ * Réductions d'impôt — version simplifiée.
+ * Toutes les valeurs en input sont des MONTANTS (€/an), pas des plafonds.
+ */
+function calculerReductions(input: IPPInput): number {
+  const {
+    epargnePension = 0,
+    titresServices = 0,
+    dons = 0,
+    pretHypothecaire = 0,
+    gardeEnfants = 0,
+  } = input;
+
+  let total = 0;
+
+  // 1. Épargne pension : 30 % du versement, plafonné à 1 130 € versés.
+  if (epargnePension > 0) {
+    const verseEffectif = Math.min(epargnePension, EPARGNE_PENSION_PLAFOND);
+    total += verseEffectif * EPARGNE_PENSION_TAUX;
+  }
+
+  // 2. Titres-services : ≈ 15 % des achats, plafonné à 1 500 €.
+  if (titresServices > 0) {
+    const achatsEffectifs = Math.min(titresServices, TITRES_SERVICES_PLAFOND);
+    total += achatsEffectifs * TITRES_SERVICES_TAUX;
+  }
+
+  // 3. Dons : 45 % à partir de 40 €/an/bénéficiaire (seuil unique simplifié).
+  if (dons >= DONS_MINIMUM) {
+    total += dons * DONS_TAUX;
+  }
+
+  // 4. Prêt hypothécaire : 30 % (chèque habitation moyen).
+  if (pretHypothecaire > 0) {
+    total += pretHypothecaire * PRET_HYPO_TAUX;
+  }
+
+  // 5. Garde d'enfants : 45 % (plafond journalier non vérifié ici, l'input
+  //    est déjà supposé être le montant éligible).
+  if (gardeEnfants > 0) {
+    total += gardeEnfants * GARDE_ENFANTS_TAUX;
+  }
+
+  return total;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Calcul principal                                                  */
 /* ------------------------------------------------------------------ */
@@ -182,9 +311,15 @@ function tauxMarginalPour(revenu: number): number {
 export function calcIPP(input: IPPInput): IPPResult | IPPError {
   const {
     revenuAnnuelImposable,
+    statut,
     enfants,
     autresPersonnesACharge,
     additionnelCommunal,
+    epargnePension = 0,
+    titresServices = 0,
+    dons = 0,
+    pretHypothecaire = 0,
+    gardeEnfants = 0,
   } = input;
 
   /* -- Validation des entrées -- */
@@ -221,6 +356,41 @@ export function calcIPP(input: IPPInput): IPPResult | IPPError {
         "L'additionnel communal doit être compris entre 0 % et 15 %.",
     };
   }
+  if (
+    !Number.isFinite(epargnePension) ||
+    epargnePension < 0 ||
+    epargnePension > 5000
+  ) {
+    return {
+      error: "Versement épargne pension : entre 0 et 5 000 €/an.",
+    };
+  }
+  if (
+    !Number.isFinite(titresServices) ||
+    titresServices < 0 ||
+    titresServices > 5000
+  ) {
+    return {
+      error: "Achats titres-services : entre 0 et 5 000 €/an.",
+    };
+  }
+  if (!Number.isFinite(dons) || dons < 0 || dons > 100_000) {
+    return { error: "Dons : entre 0 et 100 000 €/an." };
+  }
+  if (
+    !Number.isFinite(pretHypothecaire) ||
+    pretHypothecaire < 0 ||
+    pretHypothecaire > 50_000
+  ) {
+    return { error: "Prêt hypothécaire : entre 0 et 50 000 €/an." };
+  }
+  if (
+    !Number.isFinite(gardeEnfants) ||
+    gardeEnfants < 0 ||
+    gardeEnfants > 50_000
+  ) {
+    return { error: "Frais de garde : entre 0 et 50 000 €/an." };
+  }
 
   /* -- 1. Quotité exemptée (en fonction de la situation familiale) -- */
   const quotiteExemptee = calculerQuotiteExemptee(
@@ -233,28 +403,56 @@ export function calcIPP(input: IPPInput): IPPResult | IPPError {
     revenuAnnuelImposable,
   );
 
-  /* -- 3. Réduction d'impôt liée à la quotité exemptée --
-   *
-   * La quotité exemptée n'est PAS une déduction du revenu : elle génère une
-   * réduction d'impôt égale à ce que serait l'impôt sur ce montant, calculé
-   * en partant du bas du barème (tranche 25 %, puis 40 %, etc.).
-   *
-   * On plafonne au revenu imposable pour ne pas créer de réduction sur des
-   * tranches "vides" lorsque la quotité dépasse le revenu.
-   */
+  /* -- 3. Réduction d'impôt liée à la quotité exemptée -- */
   const baseQuotite = Math.min(quotiteExemptee, revenuAnnuelImposable);
   const { total: reductionQuotite } = appliquerBareme(baseQuotite);
 
   /* -- 4. Impôt fédéral brut après quotité -- */
-  const impotBrutFederal = Math.max(0, impotAvantQuotite - reductionQuotite);
+  let impotBrutFederal = Math.max(0, impotAvantQuotite - reductionQuotite);
 
-  /* -- 5. Additionnel communal (appliqué sur l'impôt fédéral) -- */
+  /* -- 5. Quotient conjugal (marié un seul revenu) — approximation -- *
+   *
+   * Le calcul officiel : transfert virtuel de 30 % du revenu (max 13 530 €)
+   * vers le conjoint sans revenu, chaque part bénéficiant de sa propre
+   * quotité de base 10 910 €.
+   *
+   * Approximation retenue : réduction d'impôt de 25 % sur la partie au-delà
+   * de 16 320 €, plafonnée au plafond légal de transfert. Cela reproduit
+   * grossièrement l'allègement de l'écrasement progressif des tranches.
+   */
+  let allegementQuotientConjugal = 0;
+  if (statut === "marie_un_revenu") {
+    const baseTransfert = Math.min(
+      Math.max(0, revenuAnnuelImposable - 16320),
+      QUOTIENT_CONJUGAL_PLAFOND,
+    );
+    allegementQuotientConjugal = baseTransfert * 0.25;
+    impotBrutFederal = Math.max(
+      0,
+      impotBrutFederal - allegementQuotientConjugal,
+    );
+  }
+
+  /* -- 6. Réductions d'impôt (crédits) -- */
+  const reductionsTotales = calculerReductions(input);
+  const impotBrutApresCredits = Math.max(
+    0,
+    impotBrutFederal - reductionsTotales,
+  );
+
+  /* -- 7. Additionnel communal (appliqué sur l'impôt après crédits) -- */
   const additionnelCommunalEur =
-    impotBrutFederal * (additionnelCommunal / 100);
+    impotBrutApresCredits * (additionnelCommunal / 100);
 
-  const impotTotal = impotBrutFederal + additionnelCommunalEur;
+  /* -- 8. Cotisation spéciale sécurité sociale -- */
+  const cotisationSpecialeSecu = calculerCotisationSpecialeSecu(
+    revenuAnnuelImposable,
+  );
 
-  /* -- 6. Indicateurs synthétiques -- */
+  const impotTotal =
+    impotBrutApresCredits + additionnelCommunalEur + cotisationSpecialeSecu;
+
+  /* -- 9. Indicateurs synthétiques -- */
   const tauxMoyen =
     revenuAnnuelImposable > 0
       ? (impotTotal / revenuAnnuelImposable) * 100
@@ -262,9 +460,19 @@ export function calcIPP(input: IPPInput): IPPResult | IPPError {
   const tauxMarginal = tauxMarginalPour(revenuAnnuelImposable) * 100;
   const revenuNetApresImpot = revenuAnnuelImposable - impotTotal;
 
+  // Silence "unused" pour les destructurés (servent à la validation in-loco).
+  void epargnePension;
+  void titresServices;
+  void dons;
+  void pretHypothecaire;
+  void gardeEnfants;
+
   return {
     impotTotal,
     impotBrutFederal,
+    reductionsTotales,
+    impotBrutApresCredits,
+    cotisationSpecialeSecu,
     additionnelCommunalEur,
     reductionQuotite,
     quotiteExemptee,
@@ -272,5 +480,6 @@ export function calcIPP(input: IPPInput): IPPResult | IPPError {
     tauxMarginal,
     revenuNetApresImpot,
     tranches,
+    allegementQuotientConjugal,
   };
 }

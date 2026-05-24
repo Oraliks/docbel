@@ -11,19 +11,39 @@
  * PRINCIPE
  * --------
  * Le contribuable peut, à la place du forfait légal de frais professionnels
- * (≈ 30 % du brut, plafonné à 5 720 €/an en 2026), opter pour la déduction
+ * (≈ 30 % du brut, plafonné à 6 070 €/an en 2026), opter pour la déduction
  * des frais réels. La déduction kilométrique domicile-travail est la part la
  * plus visible de ces frais réels.
  *
  * BARÈMES 2026 (€/km)
  * -------------------
- *  - Voiture personnelle : 0,4322 €/km, mais plafonné à 100 km aller simple.
- *    Au-delà de ce plafond : 0,15 €/km pour les km en excédent.
+ *  - Voiture personnelle :
+ *      * 0,4322 €/km (barème "indemnité km" fonctionnaires) UNIQUEMENT si
+ *        l'employeur ne verse PAS d'indemnité km au contribuable. Plafond
+ *        100 km aller simple ; au-delà : 0,15 €/km.
+ *      * 0,15 €/km (forfait CIR 92 art. 66) dès lors que l'employeur verse
+ *        une indemnité km : le contribuable ne peut plus cumuler avec le
+ *        tarif fonctionnaires (l'indemnité reçue est défalquée des frais
+ *        réels — cf. tolérance admin et jurisprudence Cour de cassation).
  *  - Moto : 0,15 €/km (forfait standard, pas de plafond km/jour).
- *  - Vélo (y compris électrique) : 0,36 €/km, déductible intégralement.
+ *  - Vélo (y compris électrique) : 0,37 €/km (revenus 2026, EI 2027),
+ *    plafond annuel de déduction 3 700 €.
  *  - Transports publics : 100 % du coût de l'abonnement annuel
  *    (SNCB, STIB, TEC, De Lijn).
  *  - Covoiturage (passager) : 0,15 €/km plafonné à 100 km aller simple.
+ *
+ * TÉLÉTRAVAIL
+ * -----------
+ * Les jours télétravaillés ne génèrent pas de déduction km (pas de
+ * déplacement). On les utilise UNIQUEMENT pour afficher, à titre
+ * pédagogique, l'estimation des km évités sur l'année.
+ *
+ * INDEMNITÉ KM EMPLOYEUR
+ * ----------------------
+ * Lorsque l'employeur verse une indemnité km, celle-ci doit être soustraite
+ * de la déduction frais réels (sinon double avantage). On expose deux
+ * montants : `deductionKmBrute` (avant compensation) et `deductionKmNette`
+ * (après compensation, plancher à 0).
  *
  * AVERTISSEMENT
  * -------------
@@ -50,13 +70,39 @@ export interface FraisKmInput {
   transport: TransportMode;
   /** Si `transport === "transports_publics"` : coût annuel de l'abonnement (€). */
   coutAbonnement: number;
+  /**
+   * Jours télétravaillés par semaine (0-5, défaut 0). Sert UNIQUEMENT à
+   * estimer les km évités (information pédagogique) — ne réduit pas
+   * la déduction (les jours sur place sont déjà comptés via `joursParSemaine`).
+   */
+  joursTelework?: number;
+  /**
+   * Indemnité km annuelle versée par l'employeur (€/an, défaut 0).
+   * Si > 0 : applique le forfait 0,15 €/km pour la voiture (au lieu du
+   * tarif 0,4322 €/km) et soustrait le montant reçu de la déduction brute.
+   */
+  indemniteEmployeurAnnuelle?: number;
 }
 
 export interface FraisKmResult {
   /** Distance totale parcourue dans l'année (aller-retour × jours × semaines). */
   kmTotalAnnuel: number;
-  /** Déduction fiscale annuelle estimée (€). */
+  /**
+   * Déduction fiscale annuelle estimée (€) — alias de `deductionKmNette`,
+   * conservé pour rétro-compatibilité.
+   */
   deductionKm: number;
+  /** Déduction brute, avant compensation par l'indemnité employeur (€). */
+  deductionKmBrute: number;
+  /** Déduction nette = max(0, brute − indemnité employeur) (€). */
+  deductionKmNette: number;
+  /** Indemnité employeur effectivement reprise dans le calcul (€/an). */
+  indemniteEmployeurAnnuelle: number;
+  /**
+   * Estimation des km évités grâce au télétravail sur l'année (info
+   * pédagogique, hors calcul de déduction).
+   */
+  kmTeleworkEvites?: number;
   /** Libellé lisible du mode de transport. */
   modeLabel: string;
   /** Taux appliqué (€/km), ou libellé spécial pour les transports publics. */
@@ -76,12 +122,11 @@ export interface FraisKmResult {
 /**
  * Taux kilométriques 2026 (€/km), par mode de transport.
  *
- * Pour la VOITURE on retient le tarif "indemnité km" 0,4322 €/km
- * (barème fonctionnaires) applicable depuis 2022 comme déduction de
- * frais réels domicile-travail lorsque l'employeur ne verse pas
- * d'indemnité km. À défaut, c'est le forfait 0,15 €/km (art. 66 CIR 92)
- * qui s'applique. Le calcul ici utilise la valeur la plus avantageuse,
- * pertinent dans la majorité des situations.
+ * Pour la VOITURE on expose 0,4322 €/km (tarif "indemnité km" fonctionnaires)
+ * applicable comme déduction de frais réels domicile-travail lorsque
+ * l'employeur ne verse pas d'indemnité km. Si l'employeur verse une
+ * indemnité, on bascule sur le forfait CIR 92 art. 66 = 0,15 €/km
+ * (`TAUX_VOITURE_FORFAIT`), choisi à l'exécution du calcul.
  */
 export const TAUX_KM_2026 = {
   voiture: 0.4322,
@@ -93,8 +138,12 @@ export const TAUX_KM_2026 = {
 /** Plafond annuel de déduction vélo (revenus 2026). */
 export const PLAFOND_ANNUEL_VELO_2026 = 3700;
 
-/** Tarif de remplacement (€/km) pour les km au-delà du plafond (voiture). */
-const TAUX_VOITURE_AU_DELA = 0.15;
+/**
+ * Tarif voiture forfait CIR 92 art. 66 — appliqué lorsque l'employeur verse
+ * une indemnité km (le tarif fonctionnaires 0,4322 €/km n'est alors plus
+ * cumulable) ET aux km voiture au-delà du plafond 100 km aller simple.
+ */
+const TAUX_VOITURE_FORFAIT = 0.15;
 
 /** Plafond de km aller simple soumis au forfait préférentiel voiture / covoit. */
 const PLAFOND_KM_ALLER_SIMPLE = 100;
@@ -126,7 +175,19 @@ export function calcFraisKm(
     semainesParAn,
     transport,
     coutAbonnement,
+    joursTelework: joursTeleworkRaw,
+    indemniteEmployeurAnnuelle: indemniteRaw,
   } = input;
+
+  // Normalisations (backwards-compat : champs optionnels).
+  const joursTelework =
+    Number.isFinite(joursTeleworkRaw) && (joursTeleworkRaw ?? 0) > 0
+      ? Math.min(5, Math.max(0, joursTeleworkRaw ?? 0))
+      : 0;
+  const indemniteEmployeurAnnuelle =
+    Number.isFinite(indemniteRaw) && (indemniteRaw ?? 0) > 0
+      ? Math.max(0, indemniteRaw ?? 0)
+      : 0;
 
   // --- Validation ------------------------------------------------------
   if (
@@ -157,6 +218,12 @@ export function calcFraisKm(
       error: "Le nombre de semaines par an doit être compris entre 1 et 52.",
     };
   }
+  if (joursTelework + joursParSemaine > 7) {
+    return {
+      error:
+        "Jours sur place + télétravail ne peuvent pas dépasser 7 jours/semaine.",
+    };
+  }
   if (
     transport === "transports_publics" &&
     (!Number.isFinite(coutAbonnement) || coutAbonnement <= 0)
@@ -167,44 +234,71 @@ export function calcFraisKm(
     };
   }
 
-  // --- 1. Distance annuelle parcourue ---------------------------------
-  const kmTotalAnnuel =
-    kmAllerSimple * 2 * joursParSemaine * semainesParAn;
+  // --- 1. Distances annuelles ----------------------------------------
+  const kmTotalAnnuel = kmAllerSimple * 2 * joursParSemaine * semainesParAn;
+  // Pédagogique : km évités par les jours de télétravail (non comptés
+  // dans la déduction, juste affichés à titre informatif).
+  const kmTeleworkEvites =
+    joursTelework > 0
+      ? joursTelework * 2 * kmAllerSimple * semainesParAn
+      : undefined;
   const modeLabel = MODE_LABELS[transport];
+
+  // Helper : applique l'indemnité employeur sur une déduction brute.
+  const withIndemnite = (brute: number) => {
+    const nette = Math.max(0, brute - indemniteEmployeurAnnuelle);
+    return { brute, nette };
+  };
 
   // --- 2. Cas spécial : transports publics ----------------------------
   if (transport === "transports_publics") {
-    const deductionKm = coutAbonnement;
+    const { brute, nette } = withIndemnite(coutAbonnement);
     return {
       kmTotalAnnuel,
-      deductionKm,
+      deductionKm: nette,
+      deductionKmBrute: brute,
+      deductionKmNette: nette,
+      indemniteEmployeurAnnuelle,
+      kmTeleworkEvites,
       modeLabel,
       tauxApplique: "100 % de l'abonnement",
       abonnementInclus: coutAbonnement,
-      recommandationFraisReels: deductionKm > SEUIL_RECOMMANDATION,
+      recommandationFraisReels: nette > SEUIL_RECOMMANDATION,
       plafondAtteint: false,
     };
   }
 
-  // --- 3. Voiture : barème préférentiel + plafond 100 km AS -----------
+  // --- 3. Voiture : choix du taux selon présence indemnité employeur --
+  // Règle métier (CIR 92 art. 66 + tolérance admin tarif fonctionnaires) :
+  //  - indemnité employeur = 0 → tarif 0,4322 €/km (fonctionnaires)
+  //  - indemnité employeur > 0 → forfait 0,15 €/km (cumul exclu)
+  // Dans les deux cas le plafond 100 km AS s'applique : au-delà = 0,15 €/km.
   if (transport === "voiture") {
     const plafondAtteint = kmAllerSimple > PLAFOND_KM_ALLER_SIMPLE;
     const jours = joursParSemaine * semainesParAn;
+    const useForfait = indemniteEmployeurAnnuelle > 0;
+    const tauxPlafonne = useForfait
+      ? TAUX_VOITURE_FORFAIT
+      : TAUX_KM_2026.voiture;
     const kmPlafonnes =
       Math.min(kmAllerSimple, PLAFOND_KM_ALLER_SIMPLE) * 2 * jours;
     const kmExcedent = plafondAtteint
       ? (kmAllerSimple - PLAFOND_KM_ALLER_SIMPLE) * 2 * jours
       : 0;
-    const deductionKm =
-      kmPlafonnes * TAUX_KM_2026.voiture +
-      kmExcedent * TAUX_VOITURE_AU_DELA;
+    const brute =
+      kmPlafonnes * tauxPlafonne + kmExcedent * TAUX_VOITURE_FORFAIT;
+    const { nette } = withIndemnite(brute);
     return {
       kmTotalAnnuel,
-      deductionKm,
+      deductionKm: nette,
+      deductionKmBrute: brute,
+      deductionKmNette: nette,
+      indemniteEmployeurAnnuelle,
+      kmTeleworkEvites,
       modeLabel,
-      tauxApplique: TAUX_KM_2026.voiture,
+      tauxApplique: tauxPlafonne,
       abonnementInclus: 0,
-      recommandationFraisReels: deductionKm > SEUIL_RECOMMANDATION,
+      recommandationFraisReels: nette > SEUIL_RECOMMANDATION,
       plafondAtteint,
     };
   }
@@ -213,15 +307,20 @@ export function calcFraisKm(
   if (transport === "covoiturage") {
     const plafondAtteint = kmAllerSimple > PLAFOND_KM_ALLER_SIMPLE;
     const kmRetenu = Math.min(kmAllerSimple, PLAFOND_KM_ALLER_SIMPLE);
-    const deductionKm =
+    const brute =
       kmRetenu * 2 * joursParSemaine * semainesParAn * TAUX_KM_2026.covoiturage;
+    const { nette } = withIndemnite(brute);
     return {
       kmTotalAnnuel,
-      deductionKm,
+      deductionKm: nette,
+      deductionKmBrute: brute,
+      deductionKmNette: nette,
+      indemniteEmployeurAnnuelle,
+      kmTeleworkEvites,
       modeLabel,
       tauxApplique: TAUX_KM_2026.covoiturage,
       abonnementInclus: 0,
-      recommandationFraisReels: deductionKm > SEUIL_RECOMMANDATION,
+      recommandationFraisReels: nette > SEUIL_RECOMMANDATION,
       plafondAtteint,
     };
   }
@@ -229,19 +328,24 @@ export function calcFraisKm(
   // --- 5. Vélo / moto : taux uniforme ---------------------------------
   // Vélo plafonné à 3 700 €/an (revenus 2026). Moto : pas de plafond.
   const taux = TAUX_KM_2026[transport];
-  let deductionKm = kmTotalAnnuel * taux;
+  let brute = kmTotalAnnuel * taux;
   let plafondVeloAtteint = false;
-  if (transport === "velo" && deductionKm > PLAFOND_ANNUEL_VELO_2026) {
-    deductionKm = PLAFOND_ANNUEL_VELO_2026;
+  if (transport === "velo" && brute > PLAFOND_ANNUEL_VELO_2026) {
+    brute = PLAFOND_ANNUEL_VELO_2026;
     plafondVeloAtteint = true;
   }
+  const { nette } = withIndemnite(brute);
   return {
     kmTotalAnnuel,
-    deductionKm,
+    deductionKm: nette,
+    deductionKmBrute: brute,
+    deductionKmNette: nette,
+    indemniteEmployeurAnnuelle,
+    kmTeleworkEvites,
     modeLabel,
     tauxApplique: taux,
     abonnementInclus: 0,
-    recommandationFraisReels: deductionKm > SEUIL_RECOMMANDATION,
+    recommandationFraisReels: nette > SEUIL_RECOMMANDATION,
     plafondAtteint: plafondVeloAtteint,
   };
 }

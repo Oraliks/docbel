@@ -7,12 +7,36 @@ import { logActivity } from "@/lib/activity-logger";
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
 /**
- * Auto-assigne toutes les communes d'une province (ou région) à un bureau ONEM.
+ * Auto-assigne toutes les communes d'une province (ou région) à un bureau,
+ * pour un serviceType donné. Version générique de l'ancien
+ * /admin/bureaux/onem-assignments/auto-by-province (qui n'acceptait que
+ * type=ONEM + serviceType=chomage hardcodé).
  *
- * POST { bureauId, scope: { province?: string, region?: BelgianRegion }, mode: "replace" | "merge" }
- *  - replace : supprime les assignments existants du bureau et met seulement les nouvelles
+ * POST {
+ *   bureauId: string,
+ *   serviceType: string,   // "chomage" | "paiement_capac" | …
+ *   scope: { province?: string, region?: BelgianRegion },
+ *   mode: "replace" | "merge"
+ * }
+ *  - replace : supprime les assignments existants du bureau pour ce
+ *              serviceType et met seulement les nouvelles
  *  - merge   : ajoute aux existantes
  */
+const KNOWN_SERVICE_TYPES = [
+  "chomage",
+  "paiement_capac",
+  "paiement_fgtb",
+  "paiement_csc",
+  "paiement_cgslb",
+  "mutuelle_solidaris",
+  "mutuelle_mc",
+  "mutuelle_mloz",
+  "mutuelle_mutlibres",
+  "mutuelle_neutrales",
+  "emploi_regional",
+  "pension",
+];
+
 export async function POST(req: NextRequest) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
@@ -26,11 +50,18 @@ export async function POST(req: NextRequest) {
 
   const raw = body as Record<string, unknown>;
   const bureauId = String(raw.bureauId ?? "").trim();
+  const serviceType = String(raw.serviceType ?? "").trim();
   const scope = (raw.scope ?? {}) as { province?: string; region?: string };
   const mode = (raw.mode === "replace" ? "replace" : "merge") as "replace" | "merge";
 
   if (!bureauId) {
     return NextResponse.json({ error: "bureauId requis" }, { status: 400, headers: jsonHeaders });
+  }
+  if (!serviceType || !KNOWN_SERVICE_TYPES.includes(serviceType)) {
+    return NextResponse.json(
+      { error: `serviceType invalide. Valeurs : ${KNOWN_SERVICE_TYPES.join(", ")}` },
+      { status: 400, headers: jsonHeaders }
+    );
   }
   if (!scope.province && !scope.region) {
     return NextResponse.json(
@@ -42,12 +73,6 @@ export async function POST(req: NextRequest) {
   const bureau = await withDbRetry(() => prisma.bureau.findUnique({ where: { id: bureauId } }));
   if (!bureau) {
     return NextResponse.json({ error: "Bureau introuvable" }, { status: 404, headers: jsonHeaders });
-  }
-  if (bureau.type !== "ONEM") {
-    return NextResponse.json(
-      { error: "Le bureau n'est pas de type ONEM" },
-      { status: 400, headers: jsonHeaders }
-    );
   }
 
   // Récupère les communes du scope
@@ -73,14 +98,14 @@ export async function POST(req: NextRequest) {
   await prisma.$transaction(async (tx) => {
     if (mode === "replace") {
       await tx.bureauAssignment.deleteMany({
-        where: { bureauId, serviceType: "chomage" },
+        where: { bureauId, serviceType },
       });
     }
     await tx.bureauAssignment.createMany({
       data: communes.map((c) => ({
         bureauId,
         communeId: c.id,
-        serviceType: "chomage",
+        serviceType,
       })),
       skipDuplicates: true,
     });
@@ -90,14 +115,14 @@ export async function POST(req: NextRequest) {
     auth.user.name,
     "updated",
     "setting",
-    `Auto-assign ONEM — ${bureau.name}`,
+    `Auto-assign ${serviceType} — ${bureau.name}`,
     bureauId,
     `${mode}: ${communes.length} communes (scope=${JSON.stringify(scope)})`
   );
 
   revalidatePath("/api/bureaux/resolve", "layout");
   return NextResponse.json(
-    { ok: true, applied: communes.length, mode },
+    { ok: true, applied: communes.length, mode, serviceType },
     { headers: jsonHeaders }
   );
 }

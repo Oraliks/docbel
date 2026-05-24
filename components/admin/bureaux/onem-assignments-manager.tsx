@@ -65,7 +65,7 @@ export function OnemAssignmentsManager() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      fetch("/api/admin/bureaux/onem-assignments").then((r) => r.json()),
+      fetch("/api/admin/bureaux/service-assignments?serviceType=chomage").then((r) => r.json()),
       fetch("/api/admin/communes?limit=600").then((r) => r.json()),
     ])
       .then(([oData, cData]) => {
@@ -150,10 +150,15 @@ export function OnemAssignmentsManager() {
     if (!selectedBureauId) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/bureaux/onem-assignments/auto-by-province", {
+      const res = await fetch("/api/admin/bureaux/service-assignments/auto-by-territory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bureauId: selectedBureauId, scope, mode }),
+        body: JSON.stringify({
+          bureauId: selectedBureauId,
+          serviceType: "chomage",
+          scope,
+          mode,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -163,7 +168,7 @@ export function OnemAssignmentsManager() {
       toast.success(`${data.applied} commune(s) assignée(s)`);
       // Reload data
       const [oData, cData] = await Promise.all([
-        fetch("/api/admin/bureaux/onem-assignments").then((r) => r.json()),
+        fetch("/api/admin/bureaux/service-assignments?serviceType=chomage").then((r) => r.json()),
         fetch("/api/admin/communes?limit=600").then((r) => r.json()),
       ]);
       const items = (oData?.items ?? []) as Onem[];
@@ -180,10 +185,14 @@ export function OnemAssignmentsManager() {
     if (!selectedBureauId) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/bureaux/onem-assignments", {
+      const res = await fetch("/api/admin/bureaux/service-assignments", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bureauId: selectedBureauId, communeIds: [...selection] }),
+        body: JSON.stringify({
+          bureauId: selectedBureauId,
+          serviceType: "chomage",
+          communeIds: [...selection],
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

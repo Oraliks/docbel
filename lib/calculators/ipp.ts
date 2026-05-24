@@ -89,10 +89,11 @@ export const TRANCHES_IPP_2026: Array<{ min: number; max: number; taux: number }
 ];
 
 /**
- * Quotité du revenu exemptée d'impôt — base 2026.
+ * Quotité du revenu exemptée d'impôt — base EI 2026 (revenus 2025).
  * Art. 131 CIR 92 (montant unique depuis l'EI 2020).
+ * Source : SPF Finances / Wikifin (montant indexé 2026).
  */
-const QUOTITE_BASE_2026 = 10570;
+const QUOTITE_BASE_2026 = 10910;
 
 /**
  * Suppléments cumulatifs de quotité par nombre d'enfants à charge.

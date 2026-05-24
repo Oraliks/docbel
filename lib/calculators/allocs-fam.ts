@@ -75,9 +75,12 @@ const SEUIL_FLANDRE_INTERMEDIAIRE = 62_000;
 /** Seuil bas Flandre. */
 const SEUIL_FLANDRE_BAS = 32_000;
 
-/** Date pivot : enfants nés à partir de 2020 = « nouveau régime » WAL/BXL. */
-const PIVOT_NOUVEAU_REGIME = 2020;
-/** Date pivot Flandre : Groeipakket démarre en 2019. */
+/**
+ * Date pivot ancien/nouveau régime — IDENTIQUE pour les 3 régions :
+ * enfants nés à partir du 1er janvier 2019 → nouveau régime régional.
+ * (Auparavant on utilisait 2020 pour WAL/BXL — c'était une erreur.)
+ */
+const PIVOT_NOUVEAU_REGIME = 2019;
 const PIVOT_FLANDRE = 2019;
 
 /* ------------------------------------------------------------------ */
@@ -113,23 +116,24 @@ function calcWallonie(
 ): { base: number; supplements: number } {
   let base: number;
   if (anneeNaissance < PIVOT_NOUVEAU_REGIME) {
-    // Ancien régime wallon (enfants nés avant 2020).
+    // Ancien régime wallon (nés avant 2019).
     if (rang === 1) base = 119;
     else if (rang === 2) base = 219;
     else base = 327;
   } else {
-    // Nouveau régime wallon (à partir de 2020) : forfait par tranche d'âge.
-    base = age <= 17 ? 175 : 199;
+    // Nouveau régime FAMIWAL (nés ≥ 2019) — barème indexé fév 2026.
+    base = age <= 17 ? 181.61 : 202;
   }
 
+  // Suppléments indexés FAMIWAL 2026 (source famiwal.be).
   let supplements = 0;
   if (monoparental) {
-    // Le supplément monoparental dépend du revenu.
-    supplements += revenuBas ? 73 : 47;
+    // Supplément monoparental — montant unique, peu dépendant du revenu.
+    supplements += 22.88;
   }
   if (revenuBas) {
-    // Supplément social bas revenu (cumulable avec monoparental).
-    supplements += 56;
+    // Supplément social bas revenu.
+    supplements += 33.69;
   }
 
   return { base, supplements };
@@ -148,22 +152,24 @@ function calcBruxelles(
 ): { base: number; supplements: number } {
   let base: number;
   if (anneeNaissance < PIVOT_NOUVEAU_REGIME) {
-    // Ancien régime bruxellois.
+    // Ancien régime bruxellois (nés avant 2019).
     if (rang === 1) base = 113;
     else if (rang === 2) base = 211;
     else base = 314;
   } else {
-    // Nouveau régime FAMIRIS (à partir de 2020) : forfait par tranche d'âge.
-    if (age <= 11) base = 159;
-    else if (age <= 17) base = 169;
-    else base = 179;
+    // Nouveau régime FAMIRIS (nés ≥ 2019) — montant unique 181,61 €
+    // depuis l'harmonisation (le barème dégressif 159/169/179 était erroné).
+    base = 181.61;
   }
 
-  // Suppléments revenu (ne se cumulent PAS à Bruxelles : on prend le plus
-  // avantageux entre « monoparental + bas revenu » et « bas revenu seul »).
+  // Supplément social FAMIRIS — montant unique 55 €/enfant si revenu bas.
+  // Le supplément monoparental ne se cumule pas avec le bas revenu.
   let supplements = 0;
   if (revenuBas) {
-    supplements = monoparental ? 66 : 44;
+    supplements = 55;
+  } else if (monoparental) {
+    // Cas monoparental sans bas revenu — supplément réduit.
+    supplements = 22;
   }
 
   return { base, supplements };
@@ -180,8 +186,8 @@ function calcFlandre(
 ): { base: number; supplements: number } {
   let base: number;
   if (anneeNaissance >= PIVOT_FLANDRE) {
-    // Régime Groeipakket : forfait identique pour tous les enfants.
-    base = 184;
+    // Régime Groeipakket — basisbedrag indexé sept 2026 : 184,62 €.
+    base = 184.62;
   } else {
     // Ancien régime flamand (enfants nés avant 2019).
     if (rang === 1) base = 100;

@@ -68,8 +68,12 @@ export interface PensionResult {
 /*  Constantes — barème 2026                                          */
 /* ------------------------------------------------------------------ */
 
-/** Plafond salarial annuel pris en compte pour la pension (2026). */
-const PLAFOND_SALARIAL_2026 = 78690;
+/**
+ * Plafond salarial annuel pris en compte pour la pension (2026).
+ * Source : SFPD (Service Fédéral des Pensions Données) — barème indexé.
+ * La valeur précédente (78 690) correspondait à une projection erronée.
+ */
+const PLAFOND_SALARIAL_2026 = 69521;
 
 /** Carrière complète conventionnelle (en années). */
 const CARRIERE_COMPLETE = 45;

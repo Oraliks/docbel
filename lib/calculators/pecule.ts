@@ -79,8 +79,12 @@ const ONVA_COEF_MAJORATION = 1.08;
 /** Taux global ONVA appliqué au brut majoré. */
 const ONVA_TAUX_TOTAL = 0.1538;
 
-/** Part "pécule simple" dans le total ONVA. */
-const ONVA_PART_SIMPLE = 0.068 / ONVA_TAUX_TOTAL; // ≈ 0,442
+/**
+ * Part "pécule simple" dans le total ONVA.
+ * Officiellement : 8 % (simple) + 7,38 % (double) = 15,38 % total.
+ * (La valeur précédente 0,068 sous-estimait la part simple.)
+ */
+const ONVA_PART_SIMPLE = 0.08 / ONVA_TAUX_TOTAL; // ≈ 0,520
 
 /** Annualisation approximative pour un ouvrier (12 mois + prime + bonus). */
 const OUVRIER_COEF_ANNUEL = 13.92;

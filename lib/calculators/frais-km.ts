@@ -73,13 +73,25 @@ export interface FraisKmResult {
 /*  Constantes — barème 2026                                          */
 /* ------------------------------------------------------------------ */
 
-/** Taux kilométriques 2026 (€/km), par mode de transport. */
+/**
+ * Taux kilométriques 2026 (€/km), par mode de transport.
+ *
+ * Pour la VOITURE on retient le tarif "indemnité km" 0,4322 €/km
+ * (barème fonctionnaires) applicable depuis 2022 comme déduction de
+ * frais réels domicile-travail lorsque l'employeur ne verse pas
+ * d'indemnité km. À défaut, c'est le forfait 0,15 €/km (art. 66 CIR 92)
+ * qui s'applique. Le calcul ici utilise la valeur la plus avantageuse,
+ * pertinent dans la majorité des situations.
+ */
 export const TAUX_KM_2026 = {
   voiture: 0.4322,
-  velo: 0.36,
+  velo: 0.37, // Revenus 2026 (EI 2027), précédemment 0,36 pour revenus 2025.
   moto: 0.15,
   covoiturage: 0.15,
 } as const;
+
+/** Plafond annuel de déduction vélo (revenus 2026). */
+export const PLAFOND_ANNUEL_VELO_2026 = 3700;
 
 /** Tarif de remplacement (€/km) pour les km au-delà du plafond (voiture). */
 const TAUX_VOITURE_AU_DELA = 0.15;
@@ -87,8 +99,8 @@ const TAUX_VOITURE_AU_DELA = 0.15;
 /** Plafond de km aller simple soumis au forfait préférentiel voiture / covoit. */
 const PLAFOND_KM_ALLER_SIMPLE = 100;
 
-/** Forfait légal de frais professionnels 2026 (€). */
-const FORFAIT_LEGAL_2026 = 5720;
+/** Forfait légal de frais professionnels — revenus 2026 / EI 2027 (€). */
+const FORFAIT_LEGAL_2026 = 6070;
 
 /** Seuil de recommandation : au-delà, les frais réels deviennent crédibles. */
 const SEUIL_RECOMMANDATION = 3000;
@@ -214,9 +226,15 @@ export function calcFraisKm(
     };
   }
 
-  // --- 5. Vélo / moto : taux uniforme, pas de plafond -----------------
+  // --- 5. Vélo / moto : taux uniforme ---------------------------------
+  // Vélo plafonné à 3 700 €/an (revenus 2026). Moto : pas de plafond.
   const taux = TAUX_KM_2026[transport];
-  const deductionKm = kmTotalAnnuel * taux;
+  let deductionKm = kmTotalAnnuel * taux;
+  let plafondVeloAtteint = false;
+  if (transport === "velo" && deductionKm > PLAFOND_ANNUEL_VELO_2026) {
+    deductionKm = PLAFOND_ANNUEL_VELO_2026;
+    plafondVeloAtteint = true;
+  }
   return {
     kmTotalAnnuel,
     deductionKm,
@@ -224,7 +242,7 @@ export function calcFraisKm(
     tauxApplique: taux,
     abonnementInclus: 0,
     recommandationFraisReels: deductionKm > SEUIL_RECOMMANDATION,
-    plafondAtteint: false,
+    plafondAtteint: plafondVeloAtteint,
   };
 }
 

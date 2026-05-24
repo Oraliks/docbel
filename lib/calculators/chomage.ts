@@ -66,12 +66,16 @@ export interface ChomageResult {
 /* ------------------------------------------------------------------ */
 
 /**
- * Plafonds salariaux mensuels (€) — indexés annuellement par l'ONEM.
- * Source : ONEM, "Montants des allocations de chômage" (édition 2025/2026).
+ * Plafonds salariaux mensuels (€) — barèmes ONEM au 1er mars 2026.
+ * Source : onem.be — "À combien s'élève votre allocation de chômage".
+ *
+ * NB : la réforme 2026 a relevé les plafonds. La phase 4-6 a aussi son
+ * propre plafond (PLAFOND_A_BIS) ; on l'utilise quand la phase est 1B.
  */
-const PLAFOND_A = 3279.67; // mois 1-6
-const PLAFOND_B = 3057.8; // mois 7-12
-const PLAFOND_C = 2858.79; // mois 13+
+const PLAFOND_A = 4265.98; // mois 1-3 (phase 1A)
+const PLAFOND_A_BIS = 4010.98; // mois 4-6 (phase 1B)
+const PLAFOND_B = 3262.99; // mois 7-12 (phase 2A)
+const PLAFOND_C = 3262.99; // mois 13+ (phase 2B) — aligné sur B après réforme 2026
 
 /**
  * Forfaits MINIMUM mensuels par situation familiale (€).
@@ -161,7 +165,8 @@ function getPhaseParams(phase: ChomagePhase): { plafond: number; taux: number } 
     case "1A":
       return { plafond: PLAFOND_A, taux: 0.65 };
     case "1B":
-      return { plafond: PLAFOND_A, taux: 0.6 };
+      // Plafond distinct mois 4-6 depuis la réforme 2026.
+      return { plafond: PLAFOND_A_BIS, taux: 0.6 };
     case "2A":
       return { plafond: PLAFOND_B, taux: 0.6 };
     case "2B":

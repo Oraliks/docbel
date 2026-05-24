@@ -61,10 +61,19 @@ export interface BrutNetError {
 
 const ONSS_TRAVAILLEUR = 0.1307;
 
-/** Bonus à l'emploi : ~264 €/mois max, dégressif entre ~1 900 et 3 300 €. */
-const BONUS_PLAFOND = 264;
-const BONUS_BRUT_MIN_PLEIN = 1900;
-const BONUS_BRUT_MAX = 3300;
+/**
+ * Bonus à l'emploi (workbonus) — barème 2026.
+ *
+ * Volet A max consolidé : 229,32 €/mois en 2026 (source Securex).
+ * Dégressivité linéaire entre le RMMMG (≈ 2 154,11 €/mois au 1er mars 2026)
+ * et le seuil de sortie (≈ 3 271,48 €/mois pour le volet A).
+ *
+ * Approximation : la formule réelle utilise 2 volets distincts (A et B) avec
+ * des paliers, ici linéarisée pour rester pédagogique.
+ */
+const BONUS_PLAFOND = 229.32;
+const BONUS_BRUT_MIN_PLEIN = 2154.11;
+const BONUS_BRUT_MAX = 3271.48;
 
 /** Tranches mensuelles de précompte (sur l'imposable mensuel). */
 const TRANCHES: { plafond: number; taux: number }[] = [
@@ -93,8 +102,15 @@ function reductionEnfants(n: number): number {
   return 580 + (n - 4) * 250;
 }
 
-/** Chèques-repas : ~6,91 €/jour × 21 jours/mois (avantage non-imposable). */
-const CHEQUES_REPAS_PAR_JOUR = 6.91;
+/**
+ * Chèques-repas : depuis 2026, valeur faciale max 10 €/jour dont 8,91 €
+ * de contribution employeur (non imposable, non soumise ONSS) et
+ * 1,09 € de contribution travailleur.
+ *
+ * On retient ici la part employeur (≈ gain net pour le travailleur).
+ * Source : UCM / Liantis (titres-repas 2026).
+ */
+const CHEQUES_REPAS_PAR_JOUR = 8.91;
 const JOURS_PAR_MOIS = 21;
 
 /* ------------------------------------------------------------------ */

@@ -75,10 +75,14 @@ export interface TarifSocialResult {
  * distribution + taxes + TVA 6 % sur le social, 21 % sur le standard).
  */
 export const TARIFS_2026 = {
-  /** Tarif social électricité — uniforme partout en Belgique. */
-  ELEC_SOCIAL: 0.22,
-  /** Tarif standard moyen électricité — moyenne marché belge. */
-  ELEC_STANDARD: 0.385,
+  /**
+   * Tarif social électricité — uniforme partout en Belgique.
+   * Q2 2026 : 0,248 €/kWh TVAC monohoraire (source CREG note Z3153).
+   * Tarif recalculé chaque trimestre.
+   */
+  ELEC_SOCIAL: 0.248,
+  /** Tarif standard moyen électricité (moyenne nationale 2026). */
+  ELEC_STANDARD: 0.35,
   /** Tarif social gaz naturel. */
   GAZ_SOCIAL: 0.047,
   /** Tarif standard moyen gaz naturel. */

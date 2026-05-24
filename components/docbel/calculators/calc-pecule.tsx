@@ -793,13 +793,14 @@ function PeculeResultPanel({
               </li>
               <li>
                 Le <strong>double pécule</strong> (
-                {fmtPct(TAUX_DOUBLE_PECULE_EMPLOYE * 100, 0)} du brut) subit
-                un précompte spécial dégressif selon votre tranche fiscale —
-                ici{" "}
+                {fmtPct(TAUX_DOUBLE_PECULE_EMPLOYE * 100, 0)} du brut) se
+                décompose en 85 % « légal » (soumis ONSS 13,07 %) + 7 %
+                « complément » (sans ONSS), puis suit le barème SPF
+                « pécule de vacances » 11 tranches —{" "}
                 <strong>
                   {fmtPct(result.tauxPrecompteAppliquePourcent, 2)}
                 </strong>{" "}
-                appliqué (barème SPF Finances 11 tranches).
+                ici.
               </li>
               <li>
                 Les <strong>jours assimilés</strong> (maladie, chômage

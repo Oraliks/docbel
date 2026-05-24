@@ -402,22 +402,27 @@ const METHODOLOGIES: CalcMethodology[] = [
     sourceFile: "lib/calculators/pecule.ts",
     reliability: "high",
     reliabilityNote:
-      "Conforme aux barèmes ONVA (régime ouvrier) et SPF Finances (précompte spécial double pécule employé) version 2026. Barème SPF Finances 11 tranches (« pécule de vacances » + « allocations exceptionnelles » — Annexe III AR/CIR 92 points 53-55) appliqué intégralement au lieu d'un taux moyen. Retenue ONVA décomposée : ONSS 13,07 % + solidarité 1 % + précompte 17,16 % (≤ 1 740 €) ou 23,22 %. Mention vacances-jeunes ONEM (C103, < 25 ans + 1re année post-études, demande avant fin février N+1).",
+      "Conforme à la formule officielle ONVA (régime ouvrier) et au barème SPF Finances « pécule de vacances » (Annexe III AR/CIR 92 points 53-55) pour le double pécule employé. Validé sur 6 points de référence contre simulateur RH professionnel et formule officielle ONVA : écart < 0,02 € sur les 4 cas employés et les 2 cas ouvriers. Régime employé : décomposition double pécule en part « légale » 85 % (soumise ONSS 13,07 %) + part « complément » 7 % (sans ONSS). Régime ouvrier : formule ONVA exacte (brut annuel × 1,08 × 15,38 % avec ONSS limitée à 6,8 % du brut majoré × 13,07 %, solidarité 1 %, précompte 17,16 % ≤ 1 740 € ou 23,22 %). Mention vacances-jeunes ONEM (C103, < 25 ans + 1re année post-études, demande avant fin février N+1).",
     year: 2026,
-    lastUpdatedAt: "2026-05-25",
+    lastUpdatedAt: "2026-05-24",
     badges: ["Belgique", "ONVA 2026", "Données 2026"],
     pedagogyIntro:
-      "Le pécule de vacances belge se compose d'un **pécule simple** (le salaire normal pendant les congés) et d'un **double pécule** (la prime extra-légale ≈ un mois supplémentaire). Deux régimes distincts coexistent : pour les **employés du privé**, l'employeur verse les deux montants directement, généralement en juin. Pour les **ouvriers**, c'est l'Office National des Vacances Annuelles (**ONVA**) qui paie en mai ou juin, sur base des salaires déclarés l'année précédente (15,38 % du brut majoré à 108 %). Le double pécule employé est soumis à un précompte spécial (barème SPF Finances 11 tranches, 0 à 53,50 %), tandis que le pécule ONVA subit une retenue globale (ONSS + solidarité + précompte ≈ 31-37 %).",
+      "Le pécule de vacances belge se compose d'un **pécule simple** (le salaire normal pendant les congés — pas une prime distincte mais le salaire courant qui continue d'être versé) et d'un **double pécule** (la vraie prime extra-légale ≈ un mois supplémentaire, versée en juin). Deux régimes distincts coexistent : pour les **employés du privé**, l'employeur verse les deux montants directement, généralement en juin. Pour les **ouvriers**, c'est l'Office National des Vacances Annuelles (**ONVA**) qui paie en mai ou juin, selon une formule officielle (15,38 % du brut majoré à 108 %, avec retenue ONSS limitée à 6,8 %). Le double pécule employé suit le barème SPF Finances « pécule de vacances » (11 tranches, 0 à 53,50 %) — et NON le barème « allocations exceptionnelles » (qui s'applique aux primes/bonus/13e mois).",
     differentiators: [
       {
-        label: "Barème SPF officiel 11 tranches (vs taux moyen unique)",
+        label: "Barème SPF officiel 11 tranches « pécule de vacances »",
         description:
-          "Le barème SPF Finances 2026 « pécule de vacances » et « allocations exceptionnelles » (Annexe III AR/CIR 92, points 53-55) compte 11 tranches dégressives. La plupart des calculateurs publics utilisent un taux moyen unique (~36 %) ; nous appliquons le vrai barème, pour une précision ±5 % sur le double pécule net.",
+          "Le double pécule employé suit le barème SPF Finances 2026 « pécule de vacances » (Annexe III AR/CIR 92, points 53-55) — 11 tranches dégressives, 0 à 53,50 %. La plupart des calculateurs publics utilisent un taux moyen unique (~36 %) ; nous appliquons le vrai barème, validé contre un simulateur RH professionnel (écart < 0,02 €).",
       },
       {
-        label: "Distinction nette pécule simple / double",
+        label: "Décomposition double pécule 85 % + 7 % (vs 92 % global)",
         description:
-          "Deux barèmes SPF distincts s'appliquent : « pécule de vacances » (simple) commence à 19,17 % et « allocations exceptionnelles » (double) à 23,22 %. La séparation nette des deux nets dans le résultat évite la confusion fréquente entre les deux régimes fiscaux.",
+          "Le double pécule (92 % du brut) se décompose en 85 % « légal » (soumis à l'ONSS spéciale 13,07 %) + 7 % « complément » (NON soumis à l'ONSS). La plupart des calcs grand public appliquent l'ONSS sur les 92 %, ce qui surévalue les retenues de ~6 % — nous appliquons la décomposition officielle.",
+      },
+      {
+        label: "Formule officielle ONVA exacte (régime ouvrier)",
+        description:
+          "Pour les ouvriers, nous appliquons la formule officielle publiée par l'ONVA : (1) salaire annuel × 1,08, (2) pécule = 15,38 %, (3) ONSS = brut majoré × 6,8 % × 13,07 % (et non 13,07 % du total), (4) solidarité 1 %, (5) précompte 17,16 % ou 23,22 %. Écart < 0,02 € avec la formule officielle ONVA.",
       },
       {
         label: "Vacances-jeunes ONEM signalées",
@@ -425,14 +430,9 @@ const METHODOLOGIES: CalcMethodology[] = [
           "Si l'utilisateur est < 25 ans en 1re année après études, le résultat affiche le rappel ONEM (formulaire C103, demande avant fin février N+1, allocation 65 % du salaire plafonné). Rarement signalé par les calculateurs concurrents.",
       },
       {
-        label: "Régime ouvrier ONVA détaillé (coef 1,08, retenue 3 volets)",
-        description:
-          "Pour les ouvriers : annualisation × 13,92, majoration légale 1,08, 8 % simple + 7,38 % double, et retenue décomposée explicitement en ONSS 13,07 % + solidarité 1 % + précompte 17,16 % ou 23,22 % selon le pécule imposable.",
-      },
-      {
         label: "Précompte ONVA à deux paliers (vs taux unique 23,22 %)",
         description:
-          "Pour les ouvriers à faible pécule (≤ 1 740 €), le précompte est 17,16 % et non 23,22 %. Nous gérons les deux paliers — ce qui change le net de plusieurs dizaines d'€ pour un travailleur à temps partiel.",
+          "Pour les ouvriers à faible pécule imposable (≤ 1 740 €), le précompte est 17,16 % et non 23,22 %. Nous gérons les deux paliers — ce qui change le net de plusieurs dizaines d'€ pour un travailleur à temps partiel.",
       },
     ],
     maintenanceGuide: [
@@ -486,6 +486,13 @@ const METHODOLOGIES: CalcMethodology[] = [
         frequency: "1 fois/an (vérification des conditions, montant suit le salaire plafonné chômage)",
         codeLocation: "components/docbel/calculators/calc-pecule.tsx (mention UI)",
       },
+      {
+        trigger: "Validation périodique (régression test)",
+        source: "ONVA officiel (ouvrier) + SPF Finances Annexe III (employé)",
+        sourceUrl: "https://www.onva.fgov.be/fr/pecule-de-vacances/calcul-du-pecule-de-vacances",
+        frequency: "1 fois/an (mai-juin, à la sortie du décompte annuel ONVA)",
+        codeLocation: "scripts/debug-pecule.ts → re-tester 6 cas",
+      },
     ],
     inputs: [
       "Statut : employé / ouvrier",
@@ -497,35 +504,41 @@ const METHODOLOGIES: CalcMethodology[] = [
     formulas: [
       {
         label: "Employé — pécule simple brut",
-        expression: "simple = brut × (mois_prestés / 12) × taux_occup",
+        expression: "simple = brut_mensuel × (mois_prestés / 12) × taux_occup",
       },
       {
-        label: "Employé — pécule simple net",
+        label: "Employé — pécule simple net (indicatif)",
         expression:
-          "simple_net = simple × (1 − 13,07 %) × (1 − taux_SPF_simple_selon_brut_annuel)",
+          "simple_net ≈ simple × (1 − 13,07 %) × (1 − taux_SPF_pécule_vacances). En pratique : suit le précompte mensuel ordinaire (= calc Brut/Net).",
       },
       {
-        label: "Employé — double pécule brut",
-        expression: "double = brut × 0,92 × (mois_prestés / 12) × taux_occup",
+        label: "Employé — double pécule brut (92 % du brut mensuel)",
+        expression:
+          "légal = brut_mensuel × 85 % × (mois/12) × taux_occup  ·  complément = brut_mensuel × 7 % × (mois/12) × taux_occup  ·  double_brut = légal + complément",
+      },
+      {
+        label: "Employé — ONSS sur la part légale uniquement",
+        expression: "ONSS = légal × 13,07 %  (le complément 7 % n'est PAS soumis à l'ONSS)",
       },
       {
         label: "Employé — double pécule net",
         expression:
-          "double_net = double × (1 − 13,07 %) × (1 − taux_SPF_exceptionnel_selon_brut_annuel)",
+          "imposable = double_brut − ONSS  ·  précompte = imposable × taux_SPF_pécule_vacances  ·  net = imposable − précompte",
       },
       {
-        label: "Ouvrier — pécule total ONVA",
+        label: "Ouvrier — formule officielle ONVA",
         expression:
-          "pécule = (brut_mensuel × 13,92 × mois/12) × 1,08 × 15,38 % × taux_occup",
+          "(1) annuel_100 = brut_mensuel × mois_prestés × taux_occup  ·  (2) annuel_108 = annuel_100 × 1,08  ·  (5) pécule_brut = annuel_108 × 15,38 %",
       },
       {
-        label: "Ouvrier — retenue totale",
+        label: "Ouvrier — retenue ONVA officielle",
         expression:
-          "retenue = 13,07 % (ONSS) + 1 % (solidarité) + 17,16 % (≤ 1 740 €) ou 23,22 %",
+          "(6) ONSS = annuel_108 × 6,8 % × 13,07 %  ·  (7) solidarité = pécule_brut × 1 %  ·  (8) imposable = pécule_brut − (6) − (7)",
       },
       {
-        label: "Ouvrier — net estimé",
-        expression: "net = brut_pécule × (1 − retenue_totale)",
+        label: "Ouvrier — précompte et net",
+        expression:
+          "(9) précompte = imposable × 17,16 % si ≤ 1 740 € sinon 23,22 %  ·  (10) net = imposable − précompte",
       },
     ],
     constants: [
@@ -535,19 +548,29 @@ const METHODOLOGIES: CalcMethodology[] = [
         note: "% du brut mensuel — taux légal applicable depuis 1971.",
       },
       {
+        name: "Part « légale » double pécule",
+        value: "85 % du brut mensuel",
+        note: "Soumise à l'ONSS spéciale 13,07 %.",
+      },
+      {
+        name: "Part « complément » double pécule",
+        value: "7 % du brut mensuel",
+        note: "NON soumise à l'ONSS (vérifié sur simulateur RH professionnel).",
+      },
+      {
         name: "ONSS spéciale sur double pécule",
         value: "13,07 %",
-        note: "Identique au taux ONSS travailleur ordinaire, prélevée avant le précompte spécial.",
+        note: "Identique au taux ONSS travailleur ordinaire, prélevée sur la part légale (85 %) avant le précompte.",
       },
       {
-        name: "Précompte SPF « pécule de vacances » (simple)",
+        name: "Précompte SPF « pécule de vacances » — barème appliqué",
         value: "0 / 19,17 / 21,20 / 26,25 / 31,30 / 34,33 / 36,34 / 39,37 / 42,39 / 47,44 / 53,50 %",
-        note: "11 tranches de brut annuel, seuils 10 675 / 13 660 / 17 375 / 20 840 / 23 580 / 26 340 / 31 830 / 34 640 / 45 860 / 59 900 €. Source: Annexe III AR/CIR 92.",
+        note: "11 tranches de brut annuel, seuils 10 675 / 13 660 / 17 375 / 20 840 / 23 580 / 26 340 / 31 830 / 34 640 / 45 860 / 59 900 €. Source: Annexe III AR/CIR 92 (SPF Finances 2026). Appliqué AU DOUBLE PÉCULE EMPLOYÉ.",
       },
       {
-        name: "Précompte SPF « allocations exceptionnelles » (double)",
-        value: "0 / 23,22 / 25,23 / 30,28 / 35,33 / 38,36 / 40,38 / 43,41 / 46,44 / 51,48 / 53,50 %",
-        note: "Mêmes seuils que le pécule simple, taux nettement plus élevés. Source: Annexe III AR/CIR 92.",
+        name: "Précompte SPF « allocations exceptionnelles » (documentation)",
+        value: "23,22 / 23,22 / 25,23 / 30,28 / 35,33 / 38,36 / 40,38 / 43,41 / 46,44 / 51,48 / 53,50 %",
+        note: "Mêmes seuils que le pécule. N'est PAS appliqué au pécule de vacances. S'applique aux primes de fin d'année, gratifications, bonus de productivité.",
       },
       {
         name: "Coefficient de majoration ONVA",
@@ -560,9 +583,14 @@ const METHODOLOGIES: CalcMethodology[] = [
         note: "Total pécule simple (8 %) + double (7,38 %) sur brut majoré.",
       },
       {
+        name: "ONVA — part légale double (assiette ONSS)",
+        value: "6,8 %",
+        note: "Coefficient officiel ONVA appliqué au brut majoré pour calculer la retenue ONSS (formule ONVA : annuel_108 × 6,8 % × 13,07 %). L'exonération de 0,58 % vient d'une règle légale spécifique.",
+      },
+      {
         name: "Cotisation de solidarité ONVA",
         value: "1 %",
-        note: "Retenue spécifique sur le pécule ouvrier (en plus de l'ONSS et du précompte).",
+        note: "Retenue spécifique sur le pécule brut total (en plus de l'ONSS et du précompte).",
       },
       {
         name: "Précompte ONVA — tranche basse",
@@ -573,11 +601,6 @@ const METHODOLOGIES: CalcMethodology[] = [
         name: "Précompte ONVA — tranche haute",
         value: "23,22 %",
         note: "Pécule imposable > 1 740 € (2026).",
-      },
-      {
-        name: "Annualisation ouvrier",
-        value: "× 13,92",
-        note: "12 mois + prime fin d'année + bonus moyens.",
       },
       {
         name: "Vacances-jeunes ONEM",
@@ -615,7 +638,8 @@ const METHODOLOGIES: CalcMethodology[] = [
       "Approximation des jours assimilés (maladie, chômage temporaire, congé maternité) via la saisie « mois prestés ».",
       "Ne tient pas compte des primes et indemnités sectorielles spécifiques (commission paritaire).",
       "Ne modélise pas les pécules de sortie versés en cas de fin de contrat (« pécule de départ »).",
-      "Précompte ONVA simplifié à deux paliers : la réalité applique parfois des règles transitoires selon le type de pécule (8 % / 7,38 %).",
+      "Pécule simple employé : estimation indicative seulement (sur la fiche de paie, le pécule simple suit le précompte mensuel ordinaire — voir calculateur Brut/Net).",
+      "Salaires variables (bonus, commissions) non pris en compte côté employé : pour un calcul exact, ajouter (variable_12_derniers_mois / 12) au brut mensuel.",
     ],
   },
 

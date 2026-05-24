@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { useConfirm } from '@/components/ui/confirm-dialog'
-import { ExternalLink, Settings2, Star, Clock, Trash2 } from 'lucide-react'
+import { ExternalLink, Settings2, Star, Clock, Trash2, BookOpenCheck } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Tool {
@@ -41,6 +41,16 @@ const TYPE_LABEL: Record<string, string> = {
   calc_preavis: 'Calculatrice — Préavis',
   calc_agr: 'Calculatrice — AGR',
   calc_cp: 'Calculatrice — Salaire',
+  // Batch calculateurs citoyens 2026-05 (cf. lib/calculators/*).
+  calc_brut_net: 'Calculatrice — Brut/Net',
+  calc_pecule: 'Calculatrice — Pécule',
+  calc_chomage: 'Calculatrice — Chômage',
+  calc_indemnite: 'Calculatrice — Indemnité rupture',
+  calc_pension: 'Calculatrice — Pension',
+  calc_allocs_fam: 'Calculatrice — Allocs familiales',
+  calc_ipp: 'Calculatrice — IPP',
+  calc_tarif_social: 'Calculatrice — Tarif social',
+  calc_km: 'Calculatrice — Frais km',
   locator: 'Localisateur',
   tutorial: 'Tutoriel',
   info: 'FAQ',
@@ -172,6 +182,14 @@ function ToolCard({ tool }: { tool: Tool }) {
   if (deleted) return null
 
   const configUrl = CONFIG_URL[tool.slug]
+  /**
+   * Pour les calculateurs (`type` commençant par `calc_`), on expose un
+   * bouton "Méthodologie" qui mène à la fiche détaillée
+   * `/admin/chomage/outils/calculateurs/[slug]` : formules, constantes,
+   * sources officielles, limitations. C'est l'endroit où l'admin (expert
+   * métier) peut auditer chaque chiffre du calcul.
+   */
+  const showMethodology = tool.type.startsWith('calc_')
 
   return (
     <Card className={active ? '' : 'opacity-60 border-dashed'}>
@@ -227,6 +245,22 @@ function ToolCard({ tool }: { tool: Tool }) {
             >
               <Settings2 className="w-3 h-3 mr-1" />
               Configurer
+            </Button>
+          ) : null}
+          {showMethodology ? (
+            <Button
+              render={
+                <Link
+                  href={`/admin/chomage/outils/calculateurs/${tool.slug}`}
+                />
+              }
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs px-2"
+              title="Voir la méthodologie (formules, constantes, sources)"
+            >
+              <BookOpenCheck className="w-3 h-3 mr-1" />
+              Méthodologie
             </Button>
           ) : null}
           <Button

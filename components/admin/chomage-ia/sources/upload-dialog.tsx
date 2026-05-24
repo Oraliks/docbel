@@ -283,7 +283,11 @@ export function UploadDialog({
           body: fd,
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+        if (!res.ok) {
+          // Concat error + detail si présent (la route logge le stack en 500)
+          const msg = data?.error ?? `HTTP ${res.status}`;
+          throw new Error(data?.detail ? `${msg} — ${data.detail}` : msg);
+        }
         successCount++;
         setSlots((prev) =>
           prev.map((s) =>

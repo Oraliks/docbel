@@ -221,6 +221,27 @@ function decodeXmlEntities(s: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  try {
+    return await handleUpload(req);
+  } catch (err) {
+    // Catch global : une exception non-catchée (Prisma, fs, parser) sortait
+    // en 500 sans message côté client. Ici on logue le stack côté serveur et
+    // on renvoie le message en JSON pour debug — le frontend l'affichera
+    // dans le toast d'erreur.
+    console.error("[chomage-ia upload] uncaught error:", err);
+    const message =
+      err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    return NextResponse.json(
+      {
+        error: "Erreur serveur lors de l'upload",
+        detail: message,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleUpload(req: NextRequest) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
 

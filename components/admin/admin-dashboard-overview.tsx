@@ -5,25 +5,23 @@ import Link from "next/link";
 import {
   Bar,
   BarChart as RBarChart,
-  CartesianGrid,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import {
-  ArrowUpRightIcon,
-  FileTextIcon,
-  TrendingDownIcon,
-  TrendingUpIcon,
-  UsersIcon,
-  WrenchIcon,
+  ArrowUpRight,
+  FileText,
+  Handshake,
+  MapPin,
+  Newspaper,
+  Search,
+  Users,
+  Wrench,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { type ActivityItem } from "@/components/admin/activity-log";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +64,10 @@ interface Props {
   activities: ActivityItem[];
 }
 
+// ─────────────────────────────────────────────────────────────────
+// Utilitaires temps
+// ─────────────────────────────────────────────────────────────────
+
 type Period = "7d" | "14d" | "30d";
 const PERIOD_DAYS: Record<Period, number> = { "7d": 7, "14d": 14, "30d": 30 };
 
@@ -85,11 +87,6 @@ function countSince(items: { createdAt: string }[], since: Date): number {
   return items.filter((i) => new Date(i.createdAt) >= since).length;
 }
 
-function trendDelta(current: number, previous: number): number {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return Math.round(((current - previous) / previous) * 100);
-}
-
 function buildSignupSeries(users: { createdAt: string }[], days: number) {
   const today = startOfDay(new Date());
   const series: { label: string; count: number }[] = [];
@@ -102,94 +99,143 @@ function buildSignupSeries(users: { createdAt: string }[], days: number) {
       const c = new Date(u.createdAt);
       return c >= d && c < next;
     }).length;
-    const label =
-      days <= 14
-        ? d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })
-        : d.getDate().toString();
-    series.push({ label, count });
+    series.push({ label: d.getDate().toString(), count });
   }
   return series;
 }
 
-function formatRelativeTime(dateString: string): string {
+function relativeShort(dateString: string): string {
   const date = new Date(dateString);
-  const now = new Date();
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  if (seconds < 60) return "à l'instant";
-  if (seconds < 3600) return `il y a ${Math.floor(seconds / 60)}m`;
-  if (seconds < 86400) return `il y a ${Math.floor(seconds / 3600)}h`;
-  if (seconds < 604800) return `il y a ${Math.floor(seconds / 86400)}j`;
-  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+  const sec = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (sec < 60) return "now";
+  if (sec < 3600) return `${Math.floor(sec / 60)}m`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)}h`;
+  if (sec < 604800) return `${Math.floor(sec / 86400)}j`;
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
 }
 
 function getInitials(name: string, email: string): string {
   const source = name?.trim() || email;
-  return source
-    .split(/[\s@.]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((s) => s[0]?.toUpperCase() ?? "")
-    .join("") || "?";
-}
-
-interface KpiCardProps {
-  label: string;
-  value: number | string;
-  hint?: string;
-  delta?: number;
-  deltaSuffix?: string;
-  icon: React.ComponentType<{ className?: string }>;
-  iconClass?: string;
-}
-
-function KpiCard({ label, value, hint, delta, deltaSuffix, icon: Icon, iconClass }: KpiCardProps) {
-  const showTrend = typeof delta === "number";
-  const up = (delta ?? 0) >= 0;
   return (
-    <Card className="relative overflow-hidden">
-      <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-        <CardDescription className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+    source
+      .split(/[\s@.]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((s) => s[0]?.toUpperCase() ?? "")
+      .join("") || "?"
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Sous-composants visuels
+// ─────────────────────────────────────────────────────────────────
+
+/** Grosse stat sans description — juste le chiffre + label discret. */
+function MetricTile({
+  value,
+  label,
+  trend,
+  accent = "primary",
+}: {
+  value: number | string;
+  label: string;
+  trend?: number;
+  accent?: "primary" | "emerald" | "blue" | "amber";
+}) {
+  const accentBg = {
+    primary: "from-primary/20 via-primary/5 to-transparent",
+    emerald: "from-emerald-500/20 via-emerald-500/5 to-transparent",
+    blue: "from-blue-500/20 via-blue-500/5 to-transparent",
+    amber: "from-amber-500/20 via-amber-500/5 to-transparent",
+  }[accent];
+  const accentText = {
+    primary: "text-primary",
+    emerald: "text-emerald-500",
+    blue: "text-blue-500",
+    amber: "text-amber-500",
+  }[accent];
+  return (
+    <Card className="relative overflow-hidden border-border/60">
+      <div
+        aria-hidden
+        className={cn("absolute inset-0 bg-gradient-to-br pointer-events-none", accentBg)}
+      />
+      <CardContent className="relative p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {label}
-        </CardDescription>
-        <div
-          className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-lg",
-            iconClass ?? "bg-primary/10 text-primary",
-          )}
-        >
-          <Icon className="h-4 w-4" />
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold tracking-tight tabular-nums">{value}</span>
-          {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
-        </div>
-        {showTrend && (
-          <div className="flex items-center gap-1.5 text-xs">
+        </p>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="text-4xl font-bold tracking-tight tabular-nums">{value}</span>
+          {typeof trend === "number" && trend !== 0 && (
             <span
               className={cn(
-                "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 font-medium",
-                up
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+                "text-xs font-semibold tabular-nums",
+                trend > 0 ? "text-emerald-500" : "text-rose-500",
               )}
             >
-              {up ? (
-                <TrendingUpIcon className="h-3 w-3" />
-              ) : (
-                <TrendingDownIcon className="h-3 w-3" />
-              )}
-              {up ? "+" : ""}
-              {delta}%
+              {trend > 0 ? "+" : ""}
+              {trend}%
             </span>
-            <span className="text-muted-foreground">{deltaSuffix ?? "vs période préc."}</span>
-          </div>
-        )}
+          )}
+        </div>
+        <div className={cn("mt-3 h-1 w-12 rounded-full", accentText, "bg-current opacity-60")} />
       </CardContent>
     </Card>
   );
 }
+
+/** Tuile d'action vers une section admin — visuelle, cliquable, mini-stat optionnelle. */
+function ActionTile({
+  href,
+  icon: Icon,
+  label,
+  count,
+  accent = "primary",
+}: {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  count?: number | string;
+  accent?: "primary" | "emerald" | "blue" | "amber" | "rose" | "violet" | "cyan";
+}) {
+  const accentClasses = {
+    primary: "bg-primary/10 text-primary group-hover:bg-primary/20",
+    emerald: "bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20",
+    blue: "bg-blue-500/10 text-blue-500 group-hover:bg-blue-500/20",
+    amber: "bg-amber-500/10 text-amber-500 group-hover:bg-amber-500/20",
+    rose: "bg-rose-500/10 text-rose-500 group-hover:bg-rose-500/20",
+    violet: "bg-violet-500/10 text-violet-500 group-hover:bg-violet-500/20",
+    cyan: "bg-cyan-500/10 text-cyan-500 group-hover:bg-cyan-500/20",
+  }[accent];
+  return (
+    <Link
+      href={href}
+      className="group relative flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-4 transition-all hover:border-border hover:shadow-md hover:-translate-y-0.5"
+    >
+      <div className="flex items-start justify-between">
+        <div
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
+            accentClasses,
+          )}
+        >
+          <Icon className="h-5 w-5" />
+        </div>
+        <ArrowUpRight className="h-4 w-4 text-muted-foreground/40 transition-all group-hover:text-foreground group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+      </div>
+      <div>
+        <p className="text-sm font-semibold leading-tight">{label}</p>
+        {count !== undefined && (
+          <p className="mt-0.5 text-2xl font-bold tabular-nums text-foreground/90">{count}</p>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Dashboard principal
+// ─────────────────────────────────────────────────────────────────
 
 export function AdminDashboardOverview({ pages, users, sections, activities }: Props) {
   const [period, setPeriod] = useState<Period>("14d");
@@ -197,29 +243,27 @@ export function AdminDashboardOverview({ pages, users, sections, activities }: P
   const stats = useMemo(() => {
     const totalUsers = users.length;
     const activeUsers = users.filter((u) => u.status === "active").length;
-    const totalPages = pages.length;
     const publishedPages = pages.filter((p) => p.status === "published").length;
-    const draftPages = pages.filter((p) => p.status === "draft").length;
     const totalTools = sections.reduce((sum, s) => sum + s.tools.length, 0);
 
     const since7 = daysAgo(7);
     const since14 = daysAgo(14);
     const usersLast7 = countSince(users, since7);
-    const usersPrev7 = countSince(users, since14) - usersLast7;
-    const pagesLast7 = countSince(pages, since7);
-    const pagesPrev7 = countSince(pages, since14) - pagesLast7;
+    const usersPrev7 = Math.max(0, countSince(users, since14) - usersLast7);
+    const usersDelta =
+      usersPrev7 === 0
+        ? usersLast7 > 0
+          ? 100
+          : 0
+        : Math.round(((usersLast7 - usersPrev7) / usersPrev7) * 100);
 
     return {
       totalUsers,
       activeUsers,
-      totalPages,
       publishedPages,
-      draftPages,
       totalTools,
       usersLast7,
-      pagesLast7,
-      usersDelta: trendDelta(usersLast7, usersPrev7),
-      pagesDelta: trendDelta(pagesLast7, pagesPrev7),
+      usersDelta,
     };
   }, [users, pages, sections]);
 
@@ -228,322 +272,197 @@ export function AdminDashboardOverview({ pages, users, sections, activities }: P
     [users, period],
   );
 
-  const recentUsers = useMemo(
-    () =>
-      [...users]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 5),
-    [users],
+  // Compteurs pour les tuiles d'action
+  const counts = useMemo(
+    () => ({
+      pages: pages.length,
+      users: users.length,
+      tools: stats.totalTools,
+    }),
+    [pages, users, stats.totalTools],
   );
-
-  const recentPages = useMemo(
-    () =>
-      [...pages]
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-        .slice(0, 5),
-    [pages],
-  );
-
-  const today = new Date().toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-
-  const activeRatio = stats.totalUsers
-    ? Math.round((stats.activeUsers / stats.totalUsers) * 100)
-    : 0;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Vue d&apos;ensemble</h1>
-          <p className="text-sm text-muted-foreground capitalize">{today}</p>
-        </div>
-        <Badge variant="outline" className="gap-1.5 self-start font-normal sm:self-end">
-          <span className="relative flex h-2 w-2">
+      {/* Header minimaliste : pas de date complète, pas de badge "Système opérationnel" */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="relative flex h-1.5 w-1.5">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
           </span>
-          Système opérationnel
-        </Badge>
+          Live
+        </span>
       </div>
 
-      {/* KPI grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Utilisateurs"
+      {/* Metrics — gros chiffres, labels mini, gradient subtil par accent */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <MetricTile
           value={stats.totalUsers}
-          hint={`+${stats.usersLast7} cette semaine`}
-          delta={stats.usersDelta}
-          icon={UsersIcon}
+          label="Utilisateurs"
+          trend={stats.usersDelta}
+          accent="primary"
         />
-        <KpiCard
-          label="Actifs"
-          value={stats.activeUsers}
-          hint={`${activeRatio}% du total`}
-          icon={UsersIcon}
-          iconClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-        />
-        <KpiCard
-          label="Pages publiées"
-          value={stats.publishedPages}
-          hint={`${stats.draftPages} brouillon${stats.draftPages > 1 ? "s" : ""}`}
-          delta={stats.pagesDelta}
-          icon={FileTextIcon}
-          iconClass="bg-blue-500/10 text-blue-600 dark:text-blue-400"
-        />
-        <KpiCard
-          label="Outils"
-          value={stats.totalTools}
-          hint={`${sections.length} section${sections.length > 1 ? "s" : ""}`}
-          icon={WrenchIcon}
-          iconClass="bg-amber-500/10 text-amber-600 dark:text-amber-400"
-        />
+        <MetricTile value={stats.activeUsers} label="Actifs" accent="emerald" />
+        <MetricTile value={stats.publishedPages} label="Pages publiées" accent="blue" />
+        <MetricTile value={stats.totalTools} label="Outils actifs" accent="amber" />
       </div>
 
-      {/* Chart + Activity */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      {/* Tuiles d'action — accès direct visuel aux sections. Hover micro-interactions. */}
+      <div>
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Sections
+          </h2>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+          <ActionTile href="/admin/bureaux" icon={MapPin} label="Bureaux" accent="violet" />
+          <ActionTile
+            href="/admin/pages"
+            icon={FileText}
+            label="Pages"
+            count={counts.pages}
+            accent="blue"
+          />
+          <ActionTile href="/admin/documents" icon={FileText} label="Documents" accent="cyan" />
+          <ActionTile
+            href="/admin/chomage/outils"
+            icon={Wrench}
+            label="Outils"
+            count={counts.tools}
+            accent="amber"
+          />
+          <ActionTile
+            href="/admin/chomage/lookup"
+            icon={Search}
+            label="Lookup ONEM"
+            accent="emerald"
+          />
+          <ActionTile
+            href="/admin/partenaires"
+            icon={Handshake}
+            label="Partenaires"
+            accent="rose"
+          />
+          <ActionTile href="/admin/news" icon={Newspaper} label="Actualités" accent="primary" />
+        </div>
+      </div>
+
+      {/* Chart + activité — densité visuelle, peu de texte explicatif */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+        {/* Inscriptions : chart prend 3/5, tabs période en haut */}
+        <Card className="lg:col-span-3">
+          <CardContent className="p-5">
+            <div className="mb-4 flex items-end justify-between">
               <div>
-                <CardTitle>Inscriptions</CardTitle>
-                <CardDescription>
-                  {stats.usersLast7} nouveaux utilisateurs sur les 7 derniers jours
-                </CardDescription>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Inscriptions
+                </p>
+                <p className="mt-1 text-2xl font-bold tabular-nums">+{stats.usersLast7}</p>
+                <p className="text-xs text-muted-foreground">sur 7 jours</p>
               </div>
-              <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
-                <TabsList className="h-8">
-                  <TabsTrigger value="7d" className="text-xs">7j</TabsTrigger>
-                  <TabsTrigger value="14d" className="text-xs">14j</TabsTrigger>
-                  <TabsTrigger value="30d" className="text-xs">30j</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-[11px]">
+                {(["7d", "14d", "30d"] as Period[]).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPeriod(p)}
+                    className={cn(
+                      "rounded-md px-2.5 py-1 transition-colors",
+                      period === p
+                        ? "bg-background shadow-sm text-foreground"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
-              <RBarChart
-                data={series}
-                margin={{ top: 8, right: 8, bottom: 0, left: -16 }}
-              >
-                  <defs>
-                    <linearGradient id="signups-gradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.95} />
-                      <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.55} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="var(--border)"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="label"
-                    stroke="var(--muted-foreground)"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis
-                    stroke="var(--muted-foreground)"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    allowDecimals={false}
-                    width={32}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "var(--muted)", opacity: 0.4 }}
-                    contentStyle={{
-                      backgroundColor: "var(--popover)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 8,
-                      fontSize: 12,
-                      padding: "6px 10px",
-                    }}
-                    labelStyle={{ color: "var(--muted-foreground)", marginBottom: 2 }}
-                    formatter={(value) => [value as number, "Inscriptions"]}
-                  />
-                  <Bar
-                    dataKey="count"
-                    fill="url(#signups-gradient)"
-                    radius={[6, 6, 0, 0]}
-                    maxBarSize={36}
-                  />
+            <ResponsiveContainer width="100%" height={180}>
+              <RBarChart data={series} margin={{ top: 4, right: 0, bottom: 0, left: -28 }}>
+                <defs>
+                  <linearGradient id="signups-gradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.4} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="label"
+                  stroke="var(--muted-foreground)"
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={false}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  stroke="var(--muted-foreground)"
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  width={28}
+                />
+                <Tooltip
+                  cursor={{ fill: "var(--muted)", opacity: 0.3 }}
+                  contentStyle={{
+                    backgroundColor: "var(--popover)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    fontSize: 11,
+                    padding: "4px 8px",
+                  }}
+                  labelStyle={{ color: "var(--muted-foreground)" }}
+                  formatter={(value) => [value as number, ""]}
+                />
+                <Bar
+                  dataKey="count"
+                  fill="url(#signups-gradient)"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={28}
+                />
               </RBarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col">
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle>Activité récente</CardTitle>
-              <CardDescription>Dernières actions</CardDescription>
+        {/* Activité : 2/5, scroll si beaucoup d'items, texte compact */}
+        <Card className="lg:col-span-2">
+          <CardContent className="p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Activité
+              </p>
+              <Link
+                href="/admin?view=activity"
+                className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
+              >
+                Tout <ArrowUpRight className="h-3 w-3" />
+              </Link>
             </div>
-            <Link
-              href="/admin?view=activity"
-              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-            >
-              Tout voir
-              <ArrowUpRightIcon className="h-3 w-3" />
-            </Link>
-          </CardHeader>
-          <CardContent className="flex-1">
             {activities.length > 0 ? (
-              <ul className="space-y-3">
+              <ul className="space-y-2.5">
                 {activities.slice(0, 6).map((a) => (
-                  <li key={a.id} className="flex items-start gap-3 text-sm">
+                  <li key={a.id} className="flex items-center gap-2.5 text-[12px]">
                     <Avatar size="sm">
-                      <AvatarFallback>{getInitials(a.user, a.user)}</AvatarFallback>
+                      <AvatarFallback className="text-[10px]">
+                        {getInitials(a.user, a.user)}
+                      </AvatarFallback>
                     </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate">
-                        <span className="font-medium">{a.user}</span>{" "}
-                        <span className="text-muted-foreground">
-                          a {a.action} {a.resource}
-                        </span>{" "}
-                        <span className="font-medium">{a.resourceName}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatRelativeTime(a.timestamp)}
-                      </p>
-                    </div>
+                    <p className="min-w-0 flex-1 truncate">
+                      <span className="font-medium">{a.user}</span>{" "}
+                      <span className="text-muted-foreground">{a.action}</span>{" "}
+                      <span className="font-medium text-foreground/80">{a.resourceName}</span>
+                    </p>
+                    <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
+                      {relativeShort(a.timestamp)}
+                    </span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <Empty className="border-0 p-0 text-left items-start">
-                <EmptyHeader className="items-start">
-                  <EmptyTitle className="text-sm">Aucune activité</EmptyTitle>
-                  <EmptyDescription className="text-xs">
-                    Les actions admin apparaîtront ici.
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent users + pages */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle>Nouveaux utilisateurs</CardTitle>
-              <CardDescription>Les 5 dernières inscriptions</CardDescription>
-            </div>
-            <Link
-              href="/admin?view=users"
-              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-            >
-              Tous
-              <ArrowUpRightIcon className="h-3 w-3" />
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {recentUsers.length > 0 ? (
-              <ul className="divide-y divide-border">
-                {recentUsers.map((u) => (
-                  <li key={u.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                    <Avatar>
-                      <AvatarFallback>{getInitials(u.name, u.email)}</AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{u.name || u.email}</p>
-                      <p className="truncate text-xs text-muted-foreground">{u.email}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge variant={u.role === "admin" ? "default" : "outline"} className="text-[10px]">
-                        {u.role}
-                      </Badge>
-                      <span className="text-[11px] text-muted-foreground">
-                        {formatRelativeTime(u.createdAt)}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <Empty className="border-0">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <UsersIcon />
-                  </EmptyMedia>
-                  <EmptyTitle>Aucun utilisateur</EmptyTitle>
-                </EmptyHeader>
-              </Empty>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle>Pages récentes</CardTitle>
-              <CardDescription>Dernières modifications</CardDescription>
-            </div>
-            <Link
-              href="/admin/pages"
-              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-            >
-              Toutes
-              <ArrowUpRightIcon className="h-3 w-3" />
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {recentPages.length > 0 ? (
-              <ul className="divide-y divide-border">
-                {recentPages.map((p) => (
-                  <li key={p.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                      <FileTextIcon className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <Link
-                        href={`/admin/pages/${p.id}`}
-                        className="block truncate text-sm font-medium hover:text-primary"
-                      >
-                        {p.title}
-                      </Link>
-                      <p className="truncate text-xs text-muted-foreground">/{p.slug}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge
-                        variant={p.status === "published" ? "default" : "secondary"}
-                        className="gap-1 text-[10px]"
-                      >
-                        <span
-                          className={cn(
-                            "h-1.5 w-1.5 rounded-full",
-                            p.status === "published" ? "bg-emerald-400" : "bg-muted-foreground/60",
-                          )}
-                        />
-                        {p.status === "published" ? "Publiée" : "Brouillon"}
-                      </Badge>
-                      <span className="text-[11px] text-muted-foreground">
-                        {formatRelativeTime(p.updatedAt)}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <Empty className="border-0">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <FileTextIcon />
-                  </EmptyMedia>
-                  <EmptyTitle>Aucune page</EmptyTitle>
-                </EmptyHeader>
-              </Empty>
+              <p className="py-8 text-center text-xs text-muted-foreground">Pas d&apos;activité</p>
             )}
           </CardContent>
         </Card>

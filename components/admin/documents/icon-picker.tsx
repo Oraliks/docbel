@@ -19,6 +19,14 @@ interface IconPickerProps {
   value: string | null;
   onChange: (next: string | null) => void;
   emojiAllowed?: boolean;
+  /**
+   * Override du trigger par défaut (Button outline plein largeur). Quand
+   * fourni, on rend ce nœud comme trigger du Dialog. Utile pour les usages
+   * compacts (ex: card admin) où on veut juste un bouton carré 36×36 avec
+   * l'icône actuelle, sans label texte. Doit être un élément React qui
+   * accepte les props de DialogTrigger (`render` pattern de base-ui).
+   */
+  trigger?: React.ReactElement;
 }
 
 /**
@@ -37,7 +45,12 @@ export function IconDisplay({
   return <span className="text-2xl leading-none">{value}</span>;
 }
 
-export function IconPicker({ value, onChange, emojiAllowed = true }: IconPickerProps) {
+export function IconPicker({
+  value,
+  onChange,
+  emojiAllowed = true,
+  trigger,
+}: IconPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [emojiInput, setEmojiInput] = useState("");
@@ -64,50 +77,53 @@ export function IconPicker({ value, onChange, emojiAllowed = true }: IconPickerP
     setOpen(false);
   }
 
+  // Si l'appelant fournit un trigger custom, on l'utilise directement
+  // (pattern d'override pour usages compacts). Sinon : Button outline
+  // plein largeur historique.
+  const defaultTrigger = (
+    <Button type="button" variant="outline" className="h-10 w-full justify-start gap-2">
+      <span className="flex items-center justify-center w-6 h-6 shrink-0">
+        {value ? (
+          <IconDisplay value={value} className="w-5 h-5" />
+        ) : (
+          <Smile className="w-5 h-5 text-muted-foreground" />
+        )}
+      </span>
+      <span className="truncate text-sm">
+        {value
+          ? isLucide
+            ? value
+            : `Emoji : ${value}`
+          : "Choisir une icône…"}
+      </span>
+      {value && (
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            clear();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.stopPropagation();
+              clear();
+            }
+          }}
+          className="ml-auto p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+          aria-label="Retirer l'icône"
+        >
+          <X className="w-3.5 h-3.5" />
+        </span>
+      )}
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button type="button" variant="outline" className="h-10 w-full justify-start gap-2">
-            <span className="flex items-center justify-center w-6 h-6 shrink-0">
-              {value ? (
-                <IconDisplay value={value} className="w-5 h-5" />
-              ) : (
-                <Smile className="w-5 h-5 text-muted-foreground" />
-              )}
-            </span>
-            <span className="truncate text-sm">
-              {value
-                ? isLucide
-                  ? value
-                  : `Emoji : ${value}`
-                : "Choisir une icône…"}
-            </span>
-            {value && (
-              <span
-                role="button"
-                tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  clear();
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    clear();
-                  }
-                }}
-                className="ml-auto p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
-                aria-label="Retirer l'icône"
-              >
-                <X className="w-3.5 h-3.5" />
-              </span>
-            )}
-          </Button>
-        }
-      />
+      <DialogTrigger render={trigger ?? defaultTrigger} />
       <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Choisir une icône</DialogTitle>

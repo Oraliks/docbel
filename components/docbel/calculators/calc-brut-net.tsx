@@ -28,6 +28,10 @@ import {
   CalcRadio,
   CalcSubmitButton,
   CalcError,
+  CalcBadge,
+  CalcCard,
+  YesNoToggle,
+  ResultRow,
   fmtEUR,
   parseNum,
 } from "./_shared";
@@ -84,153 +88,6 @@ const MOTOR_LABEL: Record<MotorisationVehicule, string> = {
   hybride: "Hybride",
   electrique: "Électrique",
 };
-
-/* ------------------------------------------------------------------ */
-/*  Sous-composants locaux : Badge, Card, Toggle Non/Oui              */
-/* ------------------------------------------------------------------ */
-
-function CalcBadge({
-  children,
-  accent,
-}: {
-  children: React.ReactNode;
-  accent?: string;
-}) {
-  return (
-    <span
-      className="inline-flex items-center gap-1 rounded-full border-[1.5px] px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.04em]"
-      style={{
-        background: accent ? `${accent}15` : "var(--glass-surface)",
-        borderColor: accent ? `${accent}40` : "var(--glass-border)",
-        color: accent ?? "var(--glass-ink-soft)",
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
-function CalcCard({
-  children,
-  className = "",
-  style,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border-[1.5px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-5 sm:p-6 ${className}`}
-      style={style}
-    >
-      {children}
-    </div>
-  );
-}
-
-/** Pill toggle Non/Oui (utilisé pour chèques-repas + voiture). */
-function YesNoToggle({
-  label,
-  hint,
-  value,
-  onChange,
-  accent,
-  yesLabel = "Oui",
-  noLabel = "Non",
-}: {
-  label: string;
-  hint?: string;
-  value: "oui" | "non";
-  onChange: (v: "oui" | "non") => void;
-  accent: string;
-  yesLabel?: string;
-  noLabel?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-[12px] font-semibold text-[color:var(--glass-ink)]">
-        {label}
-      </span>
-      <div
-        className="inline-flex rounded-full border-[1.5px] p-0.5"
-        style={{ borderColor: "var(--glass-border)", background: "var(--glass-surface)" }}
-      >
-        {(["non", "oui"] as const).map((v) => {
-          const active = v === value;
-          return (
-            <button
-              key={v}
-              type="button"
-              onClick={() => onChange(v)}
-              className="rounded-full px-4 py-1.5 text-[12.5px] font-semibold transition"
-              style={{
-                background: active ? accent : "transparent",
-                color: active ? "white" : "var(--glass-ink-soft)",
-              }}
-            >
-              {v === "oui" ? yesLabel : noLabel}
-            </button>
-          );
-        })}
-      </div>
-      {hint ? (
-        <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-          {hint}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-/** Une ligne de détail dans le panneau résultat (avec direction +/−). */
-function ResultRow({
-  label,
-  value,
-  direction = "neutral",
-  emphasis = false,
-}: {
-  label: string;
-  value: string;
-  direction?: "plus" | "minus" | "neutral";
-  emphasis?: boolean;
-}) {
-  const sign =
-    direction === "minus" ? "−" : direction === "plus" ? "+" : null;
-  const signColor =
-    direction === "minus"
-      ? "var(--glass-ink-faint)"
-      : direction === "plus"
-        ? "#22a06b"
-        : "var(--glass-ink-faint)";
-  return (
-    <div
-      className={`flex items-baseline justify-between gap-3 ${emphasis ? "border-t pt-2 mt-1" : ""}`}
-      style={emphasis ? { borderTopColor: "var(--glass-ink-line)" } : undefined}
-    >
-      <span
-        className={`text-[12.5px] ${emphasis ? "font-bold text-[color:var(--glass-ink)]" : "text-[color:var(--glass-ink-soft)]"}`}
-      >
-        {label}
-      </span>
-      <span
-        className={`flex items-baseline gap-1 ${
-          emphasis ? "text-[16px] font-extrabold" : "text-[13px] font-semibold"
-        }`}
-        style={
-          emphasis ? { color: "var(--glass-ink)" } : { color: "var(--glass-ink)" }
-        }
-      >
-        {sign ? (
-          <span className="text-[12px] font-bold" style={{ color: signColor }}>
-            {sign}
-          </span>
-        ) : null}
-        <span>{value}</span>
-      </span>
-    </div>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /*  Composant principal                                               */

@@ -6,6 +6,7 @@
  */
 
 export { CalcBrutNet } from "./calc-brut-net";
+export { CalcPreavis } from "./calc-preavis";
 export { CalcPecule } from "./calc-pecule";
 export { CalcChomage } from "./calc-chomage";
 export { CalcIndemnite } from "./calc-indemnite";

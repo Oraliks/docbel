@@ -20,6 +20,10 @@ import {
   Pencil,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  IconDisplay,
+  IconPicker,
+} from '@/components/admin/documents/icon-picker'
 
 interface Tool {
   id: string
@@ -127,6 +131,7 @@ function ToolCard({ tool }: { tool: Tool }) {
   const [popular, setPopular] = useState(tool.popular)
   const [name, setName] = useState(tool.name)
   const [description, setDescription] = useState(tool.description)
+  const [icon, setIcon] = useState<string | null>(tool.icon ?? null)
   const [saving, setSaving] = useState(false)
   const [deleted, setDeleted] = useState(false)
 
@@ -141,6 +146,7 @@ function ToolCard({ tool }: { tool: Tool }) {
     popular?: boolean
     name?: string
     description?: string
+    icon?: string | null
   }) {
     setSaving(true)
     try {
@@ -195,6 +201,24 @@ function ToolCard({ tool }: { tool: Tool }) {
       router.refresh()
     } catch {
       setDescription(tool.description)
+    }
+  }
+
+  /**
+   * Sauvegarde de l'icône — utilisée par IconPicker. Accepte string (nom
+   * lucide ou emoji 1-4 chars) ou null (retirer l'icône).
+   */
+  async function saveIcon(next: string | null) {
+    if (next === (tool.icon ?? null)) return
+    const previous = icon
+    setIcon(next)
+    try {
+      await patch({ icon: next })
+      tool.icon = next ?? undefined
+      toast.success(next ? 'Icône mise à jour' : 'Icône retirée')
+      router.refresh()
+    } catch {
+      setIcon(previous)
     }
   }
 
@@ -254,7 +278,11 @@ function ToolCard({ tool }: { tool: Tool }) {
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            {tool.icon && <span className="text-xl shrink-0">{tool.icon}</span>}
+            <IconPickerInline
+              value={icon}
+              onChange={saveIcon}
+              disabled={saving}
+            />
             <div className="min-w-0 flex-1">
               <EditableField
                 value={name}
@@ -364,6 +392,46 @@ function ToolCard({ tool }: { tool: Tool }) {
       </CardContent>
     </Card>
   )
+}
+
+/* ------------------------------------------------------------------ */
+/*  IconPickerInline — bouton icône compact qui ouvre le IconPicker   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Wrapper compact autour de <IconPicker /> pour usage dans la card admin.
+ *
+ * On passe au IconPicker un `trigger` custom : un bouton carré 36×36 qui
+ * affiche l'icône courante via `IconDisplay`. Le clic ouvre le Dialog
+ * complet (recherche d'icônes lucide + emoji custom) ; à la sélection,
+ * `onChange` est appelé avec la nouvelle valeur (string | null).
+ */
+function IconPickerInline({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string | null
+  onChange: (next: string | null) => void
+  disabled?: boolean
+}) {
+  const trigger = (
+    <button
+      type="button"
+      disabled={disabled}
+      className="group relative flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card transition hover:border-primary hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
+      title="Changer l'icône"
+      aria-label="Changer l'icône"
+    >
+      {value ? (
+        <IconDisplay value={value} className="size-5" />
+      ) : (
+        <Pencil className="size-3.5 text-muted-foreground" />
+      )}
+      <Pencil className="absolute -bottom-0.5 -right-0.5 size-3 rounded bg-primary p-0.5 text-primary-foreground opacity-0 transition group-hover:opacity-100" />
+    </button>
+  )
+  return <IconPicker value={value} onChange={onChange} trigger={trigger} />
 }
 
 /* ------------------------------------------------------------------ */

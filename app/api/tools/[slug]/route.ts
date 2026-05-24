@@ -38,6 +38,10 @@ const patchSchema = z.object({
   // d'écraser un champ par erreur (UI inline edit envoie ces champs).
   name: z.string().trim().min(2).max(120).optional(),
   description: z.string().trim().min(1).max(600).optional(),
+  // Nom d'icône lucide (ex: "Calculator") ou emoji court (1-4 chars).
+  // Null pour retirer l'icône. Validation laxiste : le picker côté admin
+  // borne déjà à des valeurs sensées.
+  icon: z.string().trim().min(1).max(64).nullable().optional(),
 })
 
 /**

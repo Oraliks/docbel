@@ -8,7 +8,6 @@ import { pickToolVisual } from "@/components/docbel/landing/tool-card";
 import {
   CalcAGR,
   CalcCP,
-  CalcPreavis,
   FormFlow,
   InfoPanel,
   LinkPanel,
@@ -16,6 +15,7 @@ import {
 } from "./tool-views";
 import {
   CalcBrutNet,
+  CalcPreavis,
   CalcPecule,
   CalcChomage,
   CalcIndemnite,

@@ -562,11 +562,78 @@ body,
   animation: fade-in-up 0.35s ease-out;
 }
 
+/* ─── GPS Loader ─── 3 satellites + lignes "marching ants" via
+   stroke-dashoffset animé. Plus robuste qu'offset-path (support
+   browser inégal). Le signal "voyage" de chaque satellite vers le
+   pin central. */
+@keyframes gps-march {
+  to { stroke-dashoffset: -44; }
+}
+.animate-gps-march {
+  animation: gps-march 1.6s linear infinite;
+}
+
+@keyframes gps-sat {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50%      { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+}
+.animate-gps-sat {
+  animation: gps-sat 2s ease-in-out infinite;
+}
+
+/* ─── Compass Loader ─── aiguille qui scanne en oscillation continue */
+@keyframes compass-spin {
+  0%   { transform: rotate(0deg); }
+  25%  { transform: rotate(90deg); }
+  50%  { transform: rotate(180deg); }
+  75%  { transform: rotate(270deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-compass-spin {
+  animation: compass-spin 2.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* Glow des lettres cardinales (N E S O) quand l'aiguille pointe dessus */
+@keyframes card-glow {
+  0%, 75%, 100% { opacity: 0.5; color: var(--foreground); transform: scale(1); }
+  10%, 20%      { opacity: 1;   color: var(--primary);    transform: scale(1.2); }
+}
+.animate-card-glow {
+  animation: card-glow 2.8s ease-in-out infinite;
+}
+
+/* ─── Pin Drop Loader ─── pin qui tombe du ciel avec rebond */
+@keyframes pin-drop {
+  0%   { transform: translate(-50%, -200%) scale(0.6); opacity: 0; }
+  40%  { transform: translate(-50%, -100%) scale(1.1); opacity: 1; }
+  55%  { transform: translate(-50%, -90%)  scale(0.92); }
+  70%  { transform: translate(-50%, -100%) scale(1.02); }
+  100% { transform: translate(-50%, -100%) scale(1);   opacity: 1; }
+}
+.animate-pin-drop {
+  animation: pin-drop 0.6s cubic-bezier(0.5, 1.5, 0.5, 1);
+}
+
+/* Ping unique qui se diffuse 1× quand un pin atterrit (pas en boucle) */
+@keyframes ping-once {
+  0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+}
+.animate-ping-once {
+  animation: ping-once 0.8s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-radar-pulse,
   .animate-radar-dot,
   .animate-pin-bounce,
-  .animate-fade-in-up {
+  .animate-fade-in-up,
+  .animate-gps-march,
+  .animate-gps-sat,
+  .animate-compass-spin,
+  .animate-card-glow,
+  .animate-pin-drop,
+  .animate-ping-once {
     animation: none;
   }
 }

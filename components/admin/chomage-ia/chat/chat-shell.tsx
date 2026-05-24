@@ -137,6 +137,7 @@ export function ChatShell({
 
   async function sendMessage(text: string) {
     if (!text.trim() || sending) return;
+    const startedAt = Date.now();
     const userMsg: ChatMessageItem = {
       role: "user",
       content: text,
@@ -148,6 +149,7 @@ export function ChatShell({
       content: "…",
       citedSourceIds: [],
       pending: true,
+      pendingStartedAt: startedAt,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, userMsg, pendingAssistant]);
@@ -180,6 +182,7 @@ export function ChatShell({
         refreshSessions();
       }
       // Remplace le pending par la vraie réponse.
+      const elapsedMs = Date.now() - startedAt;
       setMessages((prev) => {
         const next = [...prev];
         const last = next[next.length - 1];
@@ -193,6 +196,7 @@ export function ChatShell({
             model: data.usage?.model ?? null,
             tokensIn: data.usage?.inputTokens ?? null,
             tokensOut: data.usage?.outputTokens ?? null,
+            elapsedMs,
           };
         }
         return next;

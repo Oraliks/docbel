@@ -22,6 +22,11 @@ export interface ChatMessageItem {
   createdAt?: string;
   /** Marker local pour le streaming optimistic (avant réponse serveur). */
   pending?: boolean;
+  /** Timestamp (ms) du début de la requête — sert au timer live + à la
+   *  durée totale persistée dans `elapsedMs` une fois la réponse arrivée. */
+  pendingStartedAt?: number;
+  /** Durée totale de l'appel IA en millisecondes (côté client uniquement). */
+  elapsedMs?: number;
 }
 
 export interface CitedSourceLite {

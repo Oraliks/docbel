@@ -89,16 +89,28 @@ function inferKind(file: File, declaredKind: string): string {
 }
 
 /**
- * PDF → pdfjs-dist (dynamic import — ESM only).
+ * PDF → 2 stratégies en cascade :
+ *   1. pdfjs-dist (legacy build, sans worker) — précis sur les PDF natifs.
+ *   2. pdf-parse en fallback — plus tolérant sur les PDF complexes ou les
+ *      environnements serverless où pdfjs-dist peut planter silencieusement.
+ *
+ * Loggue chaque étape (pages traitées, chars extraits, erreur) pour qu'on
+ * sache exactement pourquoi un PDF n'est pas extrait quand ça arrive
+ * (cf. console serveur).
  */
 async function extractPdfText(buffer: Buffer): Promise<string> {
+  let viaPdfjs = "";
+  let pdfjsPages = 0;
+  let pdfjsErr: unknown = null;
+
+  // 1. Tentative pdfjs-dist
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
     const uint8 = new Uint8Array(buffer);
     const doc = await pdfjs.getDocument({ data: uint8 }).promise;
     const pages: string[] = [];
-    const maxPages = Math.min(doc.numPages, 80); // safety cap
+    const maxPages = Math.min(doc.numPages, 80);
     for (let i = 1; i <= maxPages; i++) {
       try {
         const page = await doc.getPage(i);
@@ -110,14 +122,57 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
           .trim();
         if (pageText.length > 0) pages.push(pageText);
       } catch {
-        // skip page on error, continue with next
+        // skip page on error
       }
     }
-    return pages.join("\n\n").trim().slice(0, 180_000);
+    pdfjsPages = pages.length;
+    viaPdfjs = pages.join("\n\n").trim().slice(0, 180_000);
+    console.log(
+      `[chomage-ia upload] pdfjs: ${doc.numPages} pages totales, ${pdfjsPages} avec texte, ${viaPdfjs.length} chars extraits`
+    );
   } catch (err) {
-    console.error("PDF extract error:", err);
-    return "";
+    pdfjsErr = err;
+    console.error("[chomage-ia upload] pdfjs failed:", err);
   }
+
+  // Si pdfjs a réussi à extraire suffisamment, on retourne directement.
+  if (viaPdfjs.length >= 50) return viaPdfjs;
+
+  // 2. Fallback pdf-parse v2 (classe PDFParse, API moderne).
+  try {
+    const { PDFParse } = await import("pdf-parse");
+    const parser = new PDFParse({ data: new Uint8Array(buffer) });
+    const result = await parser.getText();
+    await parser.destroy();
+    // result.text concatène toutes les pages. Si null/vide, on essaie pages[].text.
+    const raw =
+      result.text ??
+      (result.pages ?? [])
+        .map((p) => p.text ?? "")
+        .filter(Boolean)
+        .join("\n\n");
+    const text = (raw ?? "")
+      .replace(/\r\n?/g, "\n")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+      .slice(0, 180_000);
+    console.log(
+      `[chomage-ia upload] pdf-parse: ${result.total ?? "?"} pages, ${text.length} chars extraits`
+    );
+    if (text.length > viaPdfjs.length) return text;
+  } catch (err) {
+    console.error("[chomage-ia upload] pdf-parse failed:", err);
+  }
+
+  // Aucune des 2 libs n'a réussi → on retourne ce qu'on a (peut-être vide).
+  // Pour un vrai PDF scanné, OCR (Tesseract / Mistral) serait nécessaire.
+  if (viaPdfjs.length === 0 && pdfjsErr) {
+    console.warn(
+      "[chomage-ia upload] PDF illisible — probablement scanné/image. Pour OCR, intégrer Tesseract.js ou Mistral OCR."
+    );
+  }
+  return viaPdfjs;
 }
 
 /**

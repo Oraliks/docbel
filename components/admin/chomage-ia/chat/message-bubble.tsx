@@ -9,8 +9,8 @@
  * éviter d'embarquer marked/react-markdown juste pour quelques cas simples.
  */
 
-import { useMemo, useState } from "react";
-import { Loader2, User, Sparkles, Copy, CheckCheck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, User, Sparkles, Copy, CheckCheck, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { fmtDateTime, fmtTokens, getKindIcon, getKindLabel, truncate } from "../_shared";
@@ -76,10 +76,7 @@ export function MessageBubble({ message, citedSources }: Props) {
           )}
         >
           {message.pending ? (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="size-3.5 animate-spin" />
-              <span className="text-[12.5px]">L&apos;IA réfléchit…</span>
-            </div>
+            <PendingIndicator startedAt={message.pendingStartedAt} />
           ) : (
             <div
               className="chomage-ia-md"
@@ -93,6 +90,14 @@ export function MessageBubble({ message, citedSources }: Props) {
         {/* Méta + actions */}
         <div className="flex items-center gap-2 px-2 text-[10.5px] text-muted-foreground">
           <span>{fmtDateTime(message.createdAt)}</span>
+          {message.elapsedMs != null && message.elapsedMs > 0 ? (
+            <span
+              className="inline-flex items-center gap-0.5"
+              title="Durée de l'appel IA"
+            >
+              · <Clock className="size-2.5" /> {fmtElapsed(message.elapsedMs)}
+            </span>
+          ) : null}
           {message.tokensIn != null || message.tokensOut != null ? (
             <span>
               · {fmtTokens(message.tokensIn)}/{fmtTokens(message.tokensOut)} tk
@@ -146,6 +151,70 @@ export function MessageBubble({ message, citedSources }: Props) {
       </div>
     </div>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Pending indicator — timer live + status rotatif                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Messages affichés pendant que l'IA répond — donne l'impression d'activité
+ * et l'idée de ce qu'elle fait derrière. Sans vrai streaming, on simule
+ * une progression avec des paliers basés sur le temps écoulé.
+ */
+const PENDING_STEPS = [
+  { atSec: 0, label: "Lecture des sources de la KB…" },
+  { atSec: 4, label: "Synthèse et identification des citations…" },
+  { atSec: 10, label: "Rédaction de la réponse…" },
+  { atSec: 25, label: "Réponse longue en cours, encore un instant…" },
+  { atSec: 60, label: "Toujours en cours — la requête peut prendre 1-2 min." },
+] as const;
+
+function PendingIndicator({ startedAt }: { startedAt?: number }) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!startedAt) return;
+    const t = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(t);
+  }, [startedAt]);
+
+  const elapsedMs = startedAt ? Math.max(0, now - startedAt) : 0;
+  const elapsedSec = elapsedMs / 1000;
+  const step =
+    [...PENDING_STEPS].reverse().find((s) => elapsedSec >= s.atSec) ??
+    PENDING_STEPS[0];
+
+  return (
+    <div className="flex items-center gap-2 text-muted-foreground">
+      <Loader2 className="size-3.5 animate-spin" />
+      <span className="text-[12.5px]">{step.label}</span>
+      {startedAt ? (
+        <span
+          className="ml-auto inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[10.5px] tabular-nums"
+          title="Temps écoulé"
+        >
+          <Clock className="size-2.5" />
+          {fmtElapsed(elapsedMs)}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Formate une durée en ms vers une chaîne lisible :
+ * < 1 s   → "0.3s"
+ * < 60 s  → "12s"
+ * ≥ 60 s  → "1m 23s"
+ */
+function fmtElapsed(ms: number): string {
+  if (ms < 1000) return `${(ms / 1000).toFixed(1)}s`;
+  const totalSec = Math.round(ms / 1000);
+  if (totalSec < 60) return `${totalSec}s`;
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}m ${s.toString().padStart(2, "0")}s`;
 }
 
 /* ------------------------------------------------------------------ */

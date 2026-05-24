@@ -23,6 +23,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { type ActivityItem } from "@/components/admin/activity-log";
+import { ApiHealthCheck } from "@/components/admin/api-health-check";
 import { cn } from "@/lib/utils";
 
 interface Page {
@@ -284,17 +285,13 @@ export function AdminDashboardOverview({ pages, users, sections, activities }: P
 
   return (
     <div className="space-y-6">
-      {/* Header minimaliste : pas de date complète, pas de badge "Système opérationnel" */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
-        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          </span>
-          Live
-        </span>
-      </div>
+      {/* Header minimaliste : juste le titre, le statut "Live" est désormais
+          porté par le bandeau ApiHealthCheck juste en dessous (plus précis :
+          overall vert/orange/rouge basé sur l'état réel des endpoints). */}
+      <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
+
+      {/* Bandeau API status — refresh auto 30 s, dots colorés par endpoint */}
+      <ApiHealthCheck />
 
       {/* Metrics — gros chiffres, labels mini, gradient subtil par accent */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

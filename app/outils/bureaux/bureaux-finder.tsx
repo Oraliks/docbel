@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Loader2, MapPin, AlertCircle } from 'lucide-react'
@@ -70,26 +70,61 @@ export function BureauxFinder() {
     setUserGeoloc(null)
   }, [])
 
+  // Cache mémoire des résultats par CP : si tu retapes un CP déjà vu
+  // pendant la session, on render direct depuis ce cache (0 ms, aucun
+  // appel réseau). Survit pendant toute la vie du component, vidé au
+  // refresh page. Map (pas Set) parce qu'on stocke la response complète.
+  const cacheRef = useRef<Map<string, ResolveResponse>>(new Map())
+  // Permet d'annuler la requête en cours si le user tape un autre CP
+  // avant qu'elle finisse (évite race condition + données obsolètes).
+  const abortRef = useRef<AbortController | null>(null)
+
   const resolve = useCallback(async (postalCode: string) => {
     if (!/^\d{4}$/.test(postalCode)) {
       setData(null)
+      setLoading(false)
       return
     }
+
+    // 1) Cache hit → instantané, pas de spinner
+    const cached = cacheRef.current.get(postalCode)
+    if (cached) {
+      setData(cached)
+      setError(null)
+      setLoading(false)
+      return
+    }
+
+    // 2) Annule la requête précédente si encore en vol
+    abortRef.current?.abort()
+    const ac = new AbortController()
+    abortRef.current = ac
+
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/bureaux/resolve?cp=${postalCode}`)
+      const res = await fetch(`/api/bureaux/resolve?cp=${postalCode}`, {
+        signal: ac.signal,
+      })
       if (!res.ok) throw new Error('Échec de la recherche')
-      setData(await res.json())
+      const json = (await res.json()) as ResolveResponse
+      cacheRef.current.set(postalCode, json)
+      // Ne rafraîchit l'UI que si on est toujours sur ce CP
+      if (!ac.signal.aborted) setData(json)
     } catch (e) {
+      // Ignore les aborts (race normale), on log les vraies erreurs
+      if ((e as Error)?.name === 'AbortError') return
       setError(e instanceof Error ? e.message : 'Erreur')
       setData(null)
     } finally {
-      setLoading(false)
+      if (!ac.signal.aborted) setLoading(false)
     }
   }, [])
 
   useEffect(() => {
+    // Debounce 150 ms (vs 350 ms avant) : assez court pour que ça
+    // paraisse réactif, assez long pour qu'on ne fetch pas à chaque
+    // touche quand le user tape "1030" en une volée.
     const t = setTimeout(() => {
       void resolve(cp.trim())
       const usp = new URLSearchParams(params?.toString() ?? '')
@@ -97,7 +132,7 @@ export function BureauxFinder() {
       else usp.delete('cp')
       const qs = usp.toString()
       router.replace(qs ? `?${qs}` : '?', { scroll: false })
-    }, 350)
+    }, 150)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cp, resolve])

@@ -200,9 +200,16 @@ export async function resolveBureausForPostalCode(
     // ils gagnent toujours pour les CP bruxellois alors qu'il existe une
     // antenne locale plus pertinente pour les chômeurs.
     if (paiementsRows.length === 0) {
+      // Filtre dès Prisma sur les 4 OP_CODES au lieu de charger tous
+      // les SYNDICAT et filtrer côté JS — gain réseau + parse JSON
+      // (était la requête la plus lourde du resolver).
       const allSyndicats = await withDbRetry(() =>
         prisma.bureau.findMany({
-          where: { active: true, type: "SYNDICAT" },
+          where: {
+            active: true,
+            type: "SYNDICAT",
+            organisme: { code: { in: [...OP_CODES] } },
+          },
           include: { organisme: true, commune: true },
         })
       );

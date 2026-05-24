@@ -26,7 +26,17 @@ interface SourcesWorkspaceProps {
   aiAvailable: boolean;
 }
 
-type FilterKind = "all" | "text" | "url" | "tutorial" | "video_transcript" | "image_caption" | "pdf";
+type FilterKind =
+  | "all"
+  | "text"
+  | "url"
+  | "tutorial"
+  | "video_transcript"
+  | "image_caption"
+  | "pdf"
+  | "docx"
+  | "xlsx"
+  | "pptx";
 
 export function SourcesWorkspace({ domain, aiAvailable }: SourcesWorkspaceProps) {
   const [items, setItems] = useState<KnowledgeSourceListItem[]>([]);
@@ -178,7 +188,7 @@ export function SourcesWorkspace({ domain, aiAvailable }: SourcesWorkspaceProps)
             size="sm"
             onClick={() => setUploadOpen(true)}
           >
-            Upload PDF/Image
+            Upload fichiers
           </Button>
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="size-3.5" />

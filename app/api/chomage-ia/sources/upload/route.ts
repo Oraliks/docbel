@@ -1,19 +1,24 @@
 /**
  * POST /api/chomage-ia/sources/upload
  *
- * Upload d'un PDF ou d'une image qui devient une KnowledgeSource :
- *  1. On crée un File (réutilise le système existant : public/uploads/...)
- *  2. Pour les PDFs : on tente d'extraire le texte avec pdfjs-dist.
- *     Si l'extraction échoue ou produit < 50 caractères → l'admin devra
- *     éditer le contenu manuellement après création.
- *  3. Pour les images : `content` est obligatoire (caption manuel).
- *  4. On crée une KnowledgeSource liée au File.
+ * Upload d'un fichier qui devient une KnowledgeSource. Single-file par requête —
+ * le frontend boucle sur les fichiers pour les uploader séquentiellement.
+ *
+ *  1. On crée un File (réutilise public/uploads/ via lib/file-storage).
+ *  2. Extraction texte selon le MIME :
+ *       - application/pdf                                    → pdfjs-dist
+ *       - application/vnd.openxmlformats…wordprocessingml…   → mammoth
+ *       - application/vnd.openxmlformats…spreadsheetml…      → xlsx (TSV par feuille)
+ *       - application/vnd.openxmlformats…presentationml…     → adm-zip + regex sur <a:t>
+ *       - image/*                                            → caption manuel obligatoire
+ *     Si l'extraction échoue (< 50 caractères), on tombe en fallback "édition manuelle".
+ *  3. On crée la KnowledgeSource liée au File.
  *
  * FormData attendu :
  *   file        : Blob (obligatoire)
  *   title       : string (obligatoire)
- *   kind        : "pdf" | "image_caption" (obligatoire)
- *   content     : string (obligatoire pour image_caption ; optionnel pour pdf)
+ *   kind        : "pdf" | "image_caption" | "docx" | "xlsx" | "pptx" (optionnel — détecté via MIME si absent)
+ *   content     : string (obligatoire pour image_caption ; optionnel sinon)
  *   tags        : string JSON array (optionnel)
  *   sourceUrl   : string (optionnel)
  *   domain      : string (optionnel, défaut "chomage")
@@ -31,27 +36,63 @@ import { nanoid } from "nanoid";
 import { DEFAULT_DOMAIN } from "@/lib/chomage-ia/types";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
-const ALLOWED_KINDS = new Set(["pdf", "image_caption"]);
-const ALLOWED_MIME = new Set([
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
+
+// Mapping MIME → kind canonique (priorité sur le `kind` envoyé par le client).
+const MIME_TO_KIND: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "image_caption",
+  "image/png": "image_caption",
+  "image/webp": "image_caption",
+  "image/gif": "image_caption",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    "docx",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+    "pptx",
+};
+
+const ALLOWED_KINDS = new Set([
+  "pdf",
+  "image_caption",
+  "docx",
+  "xlsx",
+  "pptx",
 ]);
+
+// fileType DB (libre) : sert au filtrage côté file manager.
+const KIND_TO_FILE_TYPE: Record<string, string> = {
+  pdf: "pdf",
+  image_caption: "image",
+  docx: "docx",
+  xlsx: "xlsx",
+  pptx: "pptx",
+};
 
 function sanitizeFileName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200);
 }
 
 /**
- * Extrait le texte d'un PDF avec pdfjs-dist (ESM dynamic import — pdfjs
- * fonctionne mal en CJS et il est déjà utilisé ailleurs dans le projet).
- * Retourne "" si l'extraction échoue.
+ * Détecte le kind à partir du MIME en priorité, puis fallback sur l'extension.
+ */
+function inferKind(file: File, declaredKind: string): string {
+  const fromMime = MIME_TO_KIND[file.type];
+  if (fromMime) return fromMime;
+  if (declaredKind && ALLOWED_KINDS.has(declaredKind)) return declaredKind;
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  if (ext === "pdf") return "pdf";
+  if (ext === "docx") return "docx";
+  if (ext === "xlsx") return "xlsx";
+  if (ext === "pptx") return "pptx";
+  if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) return "image_caption";
+  return "";
+}
+
+/**
+ * PDF → pdfjs-dist (dynamic import — ESM only).
  */
 async function extractPdfText(buffer: Buffer): Promise<string> {
   try {
-    // Dynamic import pour éviter de charger pdfjs au build.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
     const uint8 = new Uint8Array(buffer);
@@ -79,6 +120,106 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
   }
 }
 
+/**
+ * DOCX → mammoth (texte brut, on perd la mise en forme mais on garde la
+ * structure paragraphes).
+ */
+async function extractDocxText(buffer: Buffer): Promise<string> {
+  try {
+    const mammoth = await import("mammoth");
+    const result = await mammoth.extractRawText({ buffer });
+    return result.value.replace(/\r\n?/g, "\n").trim().slice(0, 180_000);
+  } catch (err) {
+    console.error("DOCX extract error:", err);
+    return "";
+  }
+}
+
+/**
+ * XLSX → xlsx lib. Pour chaque feuille on rend un bloc TSV précédé du nom.
+ * Format dégradé volontairement texte-friendly pour que l'IA puisse le lire.
+ */
+async function extractXlsxText(buffer: Buffer): Promise<string> {
+  try {
+    const XLSX = await import("xlsx");
+    const wb = XLSX.read(buffer, { type: "buffer", cellDates: true });
+    const blocks: string[] = [];
+    for (const sheetName of wb.SheetNames) {
+      const ws = wb.Sheets[sheetName];
+      if (!ws) continue;
+      const rows = XLSX.utils.sheet_to_json<string[]>(ws, {
+        header: 1,
+        defval: "",
+        raw: false,
+        blankrows: false,
+      });
+      if (rows.length === 0) continue;
+      // Cap raisonnable : 500 lignes par feuille, 50 col max.
+      const capped = rows.slice(0, 500).map((r) =>
+        r.slice(0, 50).map((c) => String(c ?? "").replace(/\t|\n|\r/g, " ").trim())
+      );
+      const tsv = capped.map((r) => r.join("\t")).join("\n");
+      blocks.push(`### Feuille: ${sheetName}\n${tsv}`);
+    }
+    return blocks.join("\n\n").trim().slice(0, 180_000);
+  } catch (err) {
+    console.error("XLSX extract error:", err);
+    return "";
+  }
+}
+
+/**
+ * PPTX → adm-zip + regex sur `<a:t>` (texte des runs).
+ * Un .pptx est un ZIP avec une slide par fichier `ppt/slides/slide{N}.xml`.
+ * On ne dépend pas d'une lib dédiée (pas de support natif dans le projet).
+ */
+async function extractPptxText(buffer: Buffer): Promise<string> {
+  try {
+    const AdmZip = (await import("adm-zip")).default;
+    const zip = new AdmZip(buffer);
+    const entries = zip.getEntries();
+    // Trie les slides par numéro pour préserver l'ordre.
+    const slideEntries = entries
+      .filter((e) => /^ppt\/slides\/slide\d+\.xml$/i.test(e.entryName))
+      .sort((a, b) => {
+        const na = parseInt(a.entryName.match(/slide(\d+)\.xml$/i)?.[1] ?? "0", 10);
+        const nb = parseInt(b.entryName.match(/slide(\d+)\.xml$/i)?.[1] ?? "0", 10);
+        return na - nb;
+      });
+    if (slideEntries.length === 0) return "";
+
+    const slides: string[] = [];
+    for (let i = 0; i < slideEntries.length; i++) {
+      const xml = slideEntries[i].getData().toString("utf8");
+      // Récupère tout ce qu'il y a entre <a:t> et </a:t> (avec ou sans attributs).
+      const matches: string[] = [];
+      const re = /<a:t(?:\s[^>]*)?>([\s\S]*?)<\/a:t>/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(xml)) !== null) {
+        const txt = decodeXmlEntities(m[1]).trim();
+        if (txt.length > 0) matches.push(txt);
+      }
+      if (matches.length > 0) {
+        slides.push(`### Slide ${i + 1}\n${matches.join("\n")}`);
+      }
+    }
+    return slides.join("\n\n").trim().slice(0, 180_000);
+  } catch (err) {
+    console.error("PPTX extract error:", err);
+    return "";
+  }
+}
+
+function decodeXmlEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)));
+}
+
 export async function POST(req: NextRequest) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
@@ -92,7 +233,7 @@ export async function POST(req: NextRequest) {
 
   const file = formData.get("file") as File | null;
   const title = (formData.get("title") as string | null)?.trim() ?? "";
-  const kind = (formData.get("kind") as string | null) ?? "";
+  const declaredKind = (formData.get("kind") as string | null) ?? "";
   const content = (formData.get("content") as string | null)?.trim() ?? "";
   const sourceUrl = (formData.get("sourceUrl") as string | null)?.trim() ?? "";
   const domain = (formData.get("domain") as string | null) ?? DEFAULT_DOMAIN;
@@ -104,21 +245,25 @@ export async function POST(req: NextRequest) {
   if (!title || title.length < 2) {
     return NextResponse.json({ error: "Titre requis" }, { status: 400 });
   }
-  if (!ALLOWED_KINDS.has(kind)) {
-    return NextResponse.json({ error: "Kind non supporté" }, { status: 400 });
-  }
   if (file.size > MAX_FILE_SIZE) {
     return NextResponse.json(
       { error: `Fichier trop volumineux (max ${MAX_FILE_SIZE / 1024 / 1024} Mo)` },
       { status: 413 }
     );
   }
-  if (!ALLOWED_MIME.has(file.type)) {
+
+  // Détecte kind via MIME (autoritaire) → fallback declaredKind → fallback extension.
+  const kind = inferKind(file, declaredKind);
+  if (!ALLOWED_KINDS.has(kind)) {
     return NextResponse.json(
-      { error: "Type MIME non autorisé (PDF/JPEG/PNG/WebP/GIF uniquement)" },
+      {
+        error:
+          "Type non supporté. Formats acceptés : PDF, Word (.docx), Excel (.xlsx), PowerPoint (.pptx), images (JPG/PNG/WebP/GIF).",
+      },
       { status: 415 }
     );
   }
+
   if (kind === "image_caption" && content.length < 10) {
     return NextResponse.json(
       { error: "Description (content) requise pour les images" },
@@ -156,8 +301,8 @@ export async function POST(req: NextRequest) {
   const fullPath = join(absoluteDir, uniqueName);
   await writeFile(fullPath, buffer);
 
-  // 1. Crée un File en DB (réutilise le pattern Beldoc existant).
-  const fileType = kind === "pdf" ? "pdf" : "image";
+  // 1. Crée un File en DB.
+  const fileType = KIND_TO_FILE_TYPE[kind] ?? "file";
   const dbFile = await prisma.file.create({
     data: {
       name: file.name,
@@ -173,19 +318,34 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // 2. Si PDF et content vide, tente extraction.
+  // 2. Extraction texte selon le kind, sauf si l'admin a déjà rempli `content`.
   let finalContent = content;
   let extractWarning: string | null = null;
-  if (kind === "pdf" && finalContent.length < 10) {
-    const extracted = await extractPdfText(buffer);
+
+  if (finalContent.length < 10 && kind !== "image_caption") {
+    let extracted = "";
+    if (kind === "pdf") extracted = await extractPdfText(buffer);
+    else if (kind === "docx") extracted = await extractDocxText(buffer);
+    else if (kind === "xlsx") extracted = await extractXlsxText(buffer);
+    else if (kind === "pptx") extracted = await extractPptxText(buffer);
+
     if (extracted.length >= 50) {
       finalContent = extracted;
     } else {
+      const label =
+        kind === "pdf"
+          ? "PDF"
+          : kind === "docx"
+          ? "document Word"
+          : kind === "xlsx"
+          ? "fichier Excel"
+          : kind === "pptx"
+          ? "fichier PowerPoint"
+          : "fichier";
       finalContent =
         content ||
-        `(Contenu PDF non extrait automatiquement — éditer manuellement.)\n\nFichier : ${file.name}\nTaille : ${buffer.byteLength} octets`;
-      extractWarning =
-        "Le texte n'a pas pu être extrait automatiquement. Édite la source pour ajouter le contenu.";
+        `(Contenu ${label} non extrait automatiquement — éditer manuellement.)\n\nFichier : ${file.name}\nTaille : ${buffer.byteLength} octets`;
+      extractWarning = `Le texte n'a pas pu être extrait automatiquement (${label}). Édite la source pour ajouter le contenu.`;
     }
   }
 
@@ -205,7 +365,6 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Détail logged (sans secret)
   console.log(
     `chomage-ia upload: ${kind} "${title}" (${buffer.byteLength}B, ext=${ext}) → ks=${ks.id} file=${dbFile.id}`
   );

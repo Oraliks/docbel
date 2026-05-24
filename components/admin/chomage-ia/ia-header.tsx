@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { ArrowLeft, Sparkles, MessageSquare, BookOpen, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UsageBadge } from "@/components/admin/chomage-ia/usage-badge";
 
 interface IaHeaderProps {
   /** Onglet actif courant. */
@@ -19,6 +20,8 @@ interface IaHeaderProps {
     sessions?: number;
     prompts?: number;
   };
+  /** Domaine pour le compteur de crédit IA (par défaut "chomage"). */
+  domain?: string;
 }
 
 const TABS = [
@@ -42,7 +45,7 @@ const TABS = [
   },
 ];
 
-export function IaHeader({ activeTab, stats }: IaHeaderProps) {
+export function IaHeader({ activeTab, stats, domain = "chomage" }: IaHeaderProps) {
   return (
     <header className="flex flex-col gap-4">
       {/* Breadcrumb */}
@@ -58,7 +61,7 @@ export function IaHeader({ activeTab, stats }: IaHeaderProps) {
         <span className="truncate">Assistant IA</span>
       </nav>
 
-      {/* Titre + stats */}
+      {/* Titre + stats + crédit IA */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -73,33 +76,36 @@ export function IaHeader({ activeTab, stats }: IaHeaderProps) {
             </p>
           </div>
         </div>
-        {stats ? (
-          <div className="flex flex-wrap items-center gap-2 text-[12px]">
-            {typeof stats.sources === "number" ? (
-              <Pill
-                label={`${stats.sources} source${stats.sources > 1 ? "s" : ""}`}
-                tone="muted"
-                title={
-                  typeof stats.enabledSources === "number"
-                    ? `${stats.enabledSources} activée${stats.enabledSources > 1 ? "s" : ""}`
-                    : undefined
-                }
-              />
-            ) : null}
-            {typeof stats.sessions === "number" ? (
-              <Pill
-                label={`${stats.sessions} conversation${stats.sessions > 1 ? "s" : ""}`}
-                tone="muted"
-              />
-            ) : null}
-            {typeof stats.prompts === "number" ? (
-              <Pill
-                label={`${stats.prompts} prompt${stats.prompts > 1 ? "s" : ""}`}
-                tone="muted"
-              />
-            ) : null}
-          </div>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3">
+          {stats ? (
+            <div className="flex flex-wrap items-center gap-2 text-[12px]">
+              {typeof stats.sources === "number" ? (
+                <Pill
+                  label={`${stats.sources} source${stats.sources > 1 ? "s" : ""}`}
+                  tone="muted"
+                  title={
+                    typeof stats.enabledSources === "number"
+                      ? `${stats.enabledSources} activée${stats.enabledSources > 1 ? "s" : ""}`
+                      : undefined
+                  }
+                />
+              ) : null}
+              {typeof stats.sessions === "number" ? (
+                <Pill
+                  label={`${stats.sessions} conversation${stats.sessions > 1 ? "s" : ""}`}
+                  tone="muted"
+                />
+              ) : null}
+              {typeof stats.prompts === "number" ? (
+                <Pill
+                  label={`${stats.prompts} prompt${stats.prompts > 1 ? "s" : ""}`}
+                  tone="muted"
+                />
+              ) : null}
+            </div>
+          ) : null}
+          <UsageBadge domain={domain} />
+        </div>
       </div>
 
       {/* Tabs */}

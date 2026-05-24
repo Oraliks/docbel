@@ -7,10 +7,13 @@
 
 import {
   FileText,
+  FileSpreadsheet,
+  FileType2,
   Link2,
   ListChecks,
   Mic,
   ImageIcon,
+  Presentation,
   Type,
   type LucideIcon,
 } from "lucide-react";
@@ -22,6 +25,9 @@ export const KIND_LABELS: Record<string, string> = {
   video_transcript: "Transcript vidéo",
   image_caption: "Image",
   pdf: "PDF",
+  docx: "Word",
+  xlsx: "Excel",
+  pptx: "PowerPoint",
 };
 
 export const KIND_ICONS: Record<string, LucideIcon> = {
@@ -31,6 +37,9 @@ export const KIND_ICONS: Record<string, LucideIcon> = {
   video_transcript: Mic,
   image_caption: ImageIcon,
   pdf: FileText,
+  docx: FileType2,
+  xlsx: FileSpreadsheet,
+  pptx: Presentation,
 };
 
 export const KIND_COLORS: Record<string, string> = {
@@ -40,6 +49,9 @@ export const KIND_COLORS: Record<string, string> = {
   video_transcript: "#ec4899",
   image_caption: "#f59e0b",
   pdf: "#ef4444",
+  docx: "#2563eb",
+  xlsx: "#16a34a",
+  pptx: "#ea580c",
 };
 
 export function getKindLabel(kind: string): string {

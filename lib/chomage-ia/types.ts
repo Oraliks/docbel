@@ -18,6 +18,9 @@ export const KNOWLEDGE_SOURCE_KINDS = [
   "video_transcript",
   "image_caption",
   "pdf",
+  "docx",
+  "xlsx",
+  "pptx",
 ] as const;
 
 export type KnowledgeSourceKind = (typeof KNOWLEDGE_SOURCE_KINDS)[number];

@@ -82,6 +82,19 @@ const defaultData = {
             { title: "Import en lot", url: "/admin/chomage/lookup?tab=import" },
           ],
         },
+        {
+          // Assistant IA : knowledge base + chat sourcé + générateur de
+          // prompts Claude Code. URL volontairement neutre — l'auth admin
+          // est validée à l'intérieur de chaque page (cf. principe Beldoc
+          // "URLs conditionnées par l'auth, pas par le path").
+          title: "Assistant IA",
+          url: "/admin/chomage/ia",
+          children: [
+            { title: "Sources (KB)", url: "/admin/chomage/ia/sources" },
+            { title: "Chat", url: "/admin/chomage/ia/chat" },
+            { title: "Générateur de prompts", url: "/admin/chomage/ia/prompt-builder" },
+          ],
+        },
       ],
     },
     {

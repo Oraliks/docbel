@@ -1356,3 +1356,95 @@ model BureauAssignment {
   @@index([communeId, serviceType])
   @@index([bureauId])
 }
+
+// =====================================================================
+// Chômage IA — Knowledge base + chat persistent + prompt builder
+// =====================================================================
+
+/// Source de connaissance déposée dans la KB de l'assistant IA chômage.
+/// Une "source" = un bloc autosuffisant d'information cité par l'IA dans
+/// ses réponses : article de loi, AR ONEM, tutoriel pas-à-pas, transcript
+/// vidéo, caption d'image / diagramme, URL externe, PDF d'archive.
+///
+/// `kind` :
+///   "text"             → contenu rédigé directement dans l'admin
+///   "url"              → URL externe (avec contenu optionnel scrappé/manuel)
+///   "tutorial"         → étapes d'une démarche (markdown structuré)
+///   "video_transcript" → transcription d'une vidéo (avec timecodes possibles)
+///   "image_caption"    → description d'une image / diagramme + image attachée
+///   "pdf"              → PDF uploadé, contenu = texte extrait
+///
+/// `enabled=false` → la source reste en DB mais n'est plus injectée dans le
+/// contexte envoyé à Claude (pause sans perte).
+///
+/// `fileId` : ID du File uploadé (PDF / image), null pour les sources texte/URL.
+model KnowledgeSource {
+  id          String   @id @default(cuid())
+  title       String
+  kind        String
+  content     String   @db.Text
+  summary     String?  @db.Text
+  sourceUrl   String?
+  fileId      String?
+  tags        String[] @default([])
+  enabled     Boolean  @default(true)
+  domain      String   @default("chomage")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+
+  @@index([domain, enabled])
+  @@index([createdAt])
+}
+
+/// Session de chat IA — un fil de discussion entre l'admin et l'assistant.
+/// `title` est généré automatiquement à partir du premier message (ou éditable
+/// manuellement plus tard). On scope par `domain` pour permettre des chats
+/// dédiés à des thématiques différentes plus tard (chômage, sécu, etc.).
+model ChatSession {
+  id          String        @id @default(cuid())
+  title       String        @default("Nouvelle conversation")
+  domain      String        @default("chomage")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  messages    ChatMessage[]
+  createdById String?
+
+  @@index([domain, createdAt])
+}
+
+/// Message individuel d'une session de chat.
+/// `citedSourceIds` : IDs KnowledgeSource cités par l'assistant dans son
+/// message (extraits par regex sur les marqueurs [SRC:id]).
+/// `tokensIn` / `tokensOut` : pour suivre le coût et faire des analytics.
+model ChatMessage {
+  id             String      @id @default(cuid())
+  sessionId      String
+  session        ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role           String
+  content        String      @db.Text
+  citedSourceIds String[]    @default([])
+  model          String?
+  tokensIn       Int?
+  tokensOut      Int?
+  createdAt      DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+/// Prompt Claude Code généré via le prompt-builder.
+/// Conserve l'historique pour ré-utilisation et amélioration du système.
+/// `brief` = consigne libre de l'admin ("crée-moi un prompt pour un calc d'AGR").
+/// `output` = prompt finalisé prêt à coller dans Claude Code.
+model GeneratedPrompt {
+  id             String   @id @default(cuid())
+  title          String
+  brief          String   @db.Text
+  output         String   @db.Text
+  domain         String   @default("chomage")
+  citedSourceIds String[] @default([])
+  createdAt      DateTime @default(now())
+  createdById    String?
+
+  @@index([domain, createdAt])
+}

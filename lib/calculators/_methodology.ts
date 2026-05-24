@@ -203,6 +203,226 @@ const fmtEUR = (n: number) =>
 /* ------------------------------------------------------------------ */
 
 const METHODOLOGIES: CalcMethodology[] = [
+  /* 0. PRÉAVIS ------------------------------------------------------- */
+  {
+    slug: "preavis",
+    title: "Calcul du préavis",
+    pitch:
+      "Calcul du délai de préavis légal selon la loi belge — ouvrier ou employé, rupture par l'employeur ou le travailleur, contrats avant ou après 2014.",
+    sourceFile: "components/docbel/calculators/calc-preavis.tsx",
+    reliability: "high",
+    reliabilityNote:
+      "Conforme à la Loi du 3 juillet 1978 sur les contrats de travail (CCT 109 — régime unifié depuis le 1ᵉʳ janvier 2014) et aux tables officielles SPF Emploi. Détection automatique du régime (avant / après 2014) selon la date d'entrée en service ; calcul du préavis ouvrier basé sur les CCT sectorielles, du préavis employé sur la grille SPF post-2014.",
+    year: 2026,
+    lastUpdatedAt: "2026-05-25",
+    badges: ["Belgique", "Loi 1978", "Données 2026"],
+    category: "Rupture du contrat",
+    tags: ["préavis", "rupture", "CCT 109", "ouvrier", "employé"],
+    pedagogyIntro:
+      "Le délai de préavis dépend de **3 facteurs** : votre statut (ouvrier / employé), la partie qui rompt le contrat (employeur / travailleur), et votre date d'entrée en service. Depuis le 1ᵉʳ janvier 2014, un **régime unifié** s'applique pour les ouvriers et employés (CCT 109). Pour les contrats antérieurs, on conserve l'ancien régime pour la période ≤ 31/12/2013, puis on bascule sur le nouveau pour la période ≥ 01/01/2014 — c'est le « régime mixte ».",
+    inputs: [
+      "Statut : Ouvrier / Employé",
+      "Partie qui rompt : Employeur / Travailleur",
+      "Type d'emploi : Temps plein / Temps partiel",
+      "Commission paritaire (autocomplete, pour préavis ouvrier pré-2014)",
+      "Date d'entrée en service (détermine le régime)",
+      "Date de licenciement",
+      "Salaire annuel brut (employé pré-2014, pour grille Claeys)",
+    ],
+    inputsDetailed: [
+      {
+        label: "Statut",
+        description: "Ouvrier ou employé — détermine la grille appliquée pré-2014.",
+        icon: "Briefcase",
+      },
+      {
+        label: "Partie qui rompt",
+        description:
+          "Employeur ou travailleur — le préavis est plus court quand c'est le travailleur qui démissionne.",
+        icon: "ArrowLeftRight",
+      },
+      {
+        label: "Type d'emploi",
+        description: "Temps plein ou partiel — sans impact sur la durée, juste informatif.",
+        icon: "Clock",
+      },
+      {
+        label: "Commission paritaire",
+        description:
+          "Pour les ouvriers pré-2014, certaines CP ont leur propre table (ex: CP 124 construction).",
+        icon: "Users",
+      },
+      {
+        label: "Date d'entrée en service",
+        description:
+          "Détermine si le régime « avant 2014 » s'applique, totalement ou en mixte.",
+        icon: "Calendar",
+      },
+      {
+        label: "Date de licenciement / démission",
+        description: "Détermine la fin de l'ancienneté et le 1ᵉʳ lundi suivant.",
+        icon: "CalendarX",
+      },
+    ],
+    outputs: [
+      "Nombre de semaines / jours de préavis",
+      "Date de début (1ᵉʳ lundi après notification)",
+      "Date de fin du préavis",
+      "Règle appliquée (régime avant 2014 / après 2014 / mixte)",
+      "Indemnité compensatoire de licenciement (ICL) si applicable",
+      "Régime détecté automatiquement",
+    ],
+    briefMeta: [
+      { label: "Méthode", value: "Régime unifié CCT 109 + grille pré-2014" },
+      { label: "Régime", value: "Auto-détection (mixte si à cheval)" },
+      { label: "Unités", value: "Semaines / jours" },
+      { label: "Dernière MAJ formules", value: "25 mai 2026" },
+      { label: "Auteur", value: "Équipe Docbel" },
+    ],
+    formulas: [
+      {
+        label: "Régime POST-2014 (toutes ruptures à partir du 01/01/2014)",
+        expression:
+          "Préavis en semaines selon une grille progressive : 2 sem (< 3 mois), 4 sem (3-6 mois), 6 sem (6-9 mois), 7 sem (9-12 mois), 8 sem (12-15 mois)… jusqu'à 65 sem (≥ 20 ans). Démission travailleur : moitié de la valeur employeur.",
+      },
+      {
+        label: "Régime PRÉ-2014 — Ouvrier",
+        expression:
+          "Préavis en JOURS selon la CCT (générale ou sectorielle). CCT 75 : 28 j (< 6 mois), 40 j (6 mois - 5 ans), 48 j (5-10), 64 j (10-15), 97 j (15-20), 129 j (≥ 20). Démission travailleur : moitié.",
+      },
+      {
+        label: "Régime PRÉ-2014 — Employé",
+        expression:
+          "Préavis en MOIS selon la formule Claeys (salaire annuel brut). Inférieur à 32 254 € : 0,25 mois / an d'ancienneté (min 3 mois). De 32 254 à 64 508 € : 1 mois / an. Au-delà : négociable, min 1 mois / an.",
+      },
+      {
+        label: "Régime MIXTE (contrat à cheval sur le 31/12/2013)",
+        expression:
+          "Étape 1 : préavis pour la période ≤ 31/12/2013 (ancien régime).\nÉtape 2 : préavis pour la période ≥ 01/01/2014 (CCT 109).\nÉtape 3 : addition des 2 étapes.",
+      },
+      {
+        label: "Date de début du préavis",
+        expression:
+          "Le préavis commence le 1ᵉʳ LUNDI suivant la semaine de notification (notification effective si reçue avant le mercredi de la semaine).",
+      },
+      {
+        label: "Indemnité compensatoire (ICL)",
+        expression:
+          "Si l'employeur rompt sans laisser prester : ICL = rémunération hebdomadaire × nombre de semaines de préavis. La rémunération hebdo = salaire mensuel × 3 / 13.",
+      },
+    ],
+    constants: [
+      {
+        name: "Date pivot régime unifié",
+        value: "1ᵉʳ janvier 2014",
+        note: "CCT 109 entrée en vigueur. Détermine si on applique le régime mixte.",
+      },
+      {
+        name: "Grille post-2014 (employeur, semaines)",
+        value: "2 / 4 / 6 / 7 / 8 / 9 / 10 / 11 / 12 / 13 / 15 / 17 / 19 / 21 / 23 / 25 / 27 / 29 / 30 …",
+        note: "Progressive jusqu'à 65 semaines après 20 ans d'ancienneté. Source : SPF Emploi.",
+      },
+      {
+        name: "Démission travailleur post-2014",
+        value: "= moitié du préavis employeur",
+        note: "Plafonné à 13 semaines.",
+      },
+      {
+        name: "CCT 75 (préavis ouvrier pré-2014, jours)",
+        value: "28 / 40 / 48 / 64 / 97 / 129",
+        note: "Selon ancienneté : <6m / 6m-5a / 5-10a / 10-15a / 15-20a / ≥20a (rupture employeur).",
+      },
+      {
+        name: "Formule Claeys (employé pré-2014)",
+        value: "0,25 mois ou 1 mois × ancienneté",
+        note: "Selon tranche de salaire annuel brut (< 32 254 € / > 32 254 €).",
+      },
+      {
+        name: "Rémunération hebdomadaire (ICL)",
+        value: "mensuelle × 3 / 13",
+        note: "Équivalence légale : 13 semaines = 3 mois.",
+      },
+    ],
+    sources: [
+      {
+        name: "Loi du 3 juillet 1978 sur les contrats de travail",
+        url: "https://www.ejustice.just.fgov.be",
+      },
+      {
+        name: "SPF Emploi — Préavis et indemnité de rupture",
+        url: "https://emploi.belgique.be/fr/themes/contrats-de-travail/preavis-et-indemnite-de-rupture",
+      },
+      {
+        name: "CCT 109 — Régime unifié de préavis",
+        url: "https://www.cnt-nar.be",
+      },
+      {
+        name: "SPF Emploi — Commissions paritaires (CCT sectorielles)",
+        url: "https://emploi.belgique.be/fr/themes/concertation-sociale/commissions-paritaires",
+      },
+    ],
+    limitations: [
+      "Pas de gestion fine des dispenses de prestation (rupture commun accord, force majeure).",
+      "Indemnité de protection (femme enceinte, délégué syndical) non calculée ici (cf. calculateur Indemnité de rupture).",
+      "Pour les ouvriers, certaines CP ont leur propre table — la nôtre prend la CCT générale par défaut.",
+      "Pas de prise en compte du contrat d'étudiant ou des CDD à terme défini.",
+    ],
+    differentiators: [
+      {
+        label: "Détection automatique du régime",
+        description:
+          "Selon la date d'entrée en service, l'outil détermine seul s'il faut appliquer l'ancien régime, le nouveau, ou le mixte (calcul en 2 étapes).",
+      },
+      {
+        label: "Régime mixte intégré",
+        description:
+          "Les contrats à cheval sur le 31/12/2013 reçoivent automatiquement le calcul combiné (pré-2014 + post-2014), ce que beaucoup d'outils oublient.",
+      },
+      {
+        label: "Commissions paritaires sectorielles",
+        description:
+          "Autocomplete avec accès aux ~140 CP pour les cas où une CCT sectorielle s'applique au préavis ouvrier pré-2014.",
+      },
+      {
+        label: "Indication ICL incluse",
+        description:
+          "L'indemnité compensatoire de licenciement est calculée en parallèle, prête à utiliser dans le calculateur dédié.",
+      },
+    ],
+    maintenanceGuide: [
+      {
+        trigger: "Grille post-2014 (CCT 109)",
+        source: "SPF Emploi — Préavis CCT 109",
+        sourceUrl:
+          "https://emploi.belgique.be/fr/themes/contrats-de-travail/preavis-et-indemnite-de-rupture",
+        frequency: "Rare (modification = loi, pas indexation)",
+        codeLocation: "lib/notice-periods-spf.ts → NOTICE_PERIODS_POST_2014",
+      },
+      {
+        trigger: "CCT 75 ouvrier (pré-2014)",
+        source: "SPF Emploi — CCT 75",
+        sourceUrl: "https://www.cnt-nar.be",
+        frequency: "Stable (loi 1978, pas d'indexation)",
+        codeLocation: "lib/notice-periods-spf.ts → NOTICE_PERIODS_OUVRIER_PRE_2014_CCT75",
+      },
+      {
+        trigger: "Commissions paritaires",
+        source: "SPF Emploi — Concertation sociale",
+        sourceUrl:
+          "https://emploi.belgique.be/fr/themes/concertation-sociale/commissions-paritaires",
+        frequency: "1-2 fois/an (création/fusion de CP)",
+        codeLocation: "lib/data/commissions-paritaires-belgique.json",
+      },
+      {
+        trigger: "Validation périodique",
+        source: "SPF Emploi — Simulateur préavis officiel",
+        sourceUrl: "https://emploi.belgique.be",
+        frequency: "1 fois/an (cohérence avec sim. SPF)",
+        codeLocation: "components/docbel/calculators/calc-preavis.tsx",
+      },
+    ],
+  },
+
   /* 1. BRUT / NET ---------------------------------------------------- */
   {
     slug: "brut-net",

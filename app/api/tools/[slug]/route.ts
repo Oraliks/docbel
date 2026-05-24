@@ -42,6 +42,9 @@ const patchSchema = z.object({
   // Null pour retirer l'icône. Validation laxiste : le picker côté admin
   // borne déjà à des valeurs sensées.
   icon: z.string().trim().min(1).max(64).nullable().optional(),
+  // Audience minimale qui peut voir l'outil. Cf. lib/audience.ts pour la
+  // hiérarchie (citoyen < employeur < partenaire).
+  audience: z.enum(['citoyen', 'employeur', 'partenaire']).optional(),
 })
 
 /**

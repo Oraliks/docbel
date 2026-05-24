@@ -11,6 +11,12 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   ExternalLink,
   Settings2,
   Star,
@@ -18,12 +24,14 @@ import {
   Trash2,
   BookOpenCheck,
   Pencil,
+  ChevronDown,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   IconDisplay,
   IconPicker,
 } from '@/components/admin/documents/icon-picker'
+import { AUDIENCES, type AudienceId } from '@/lib/audience'
 
 interface Tool {
   id: string
@@ -36,6 +44,7 @@ interface Tool {
   timeMin?: number
   order: number
   active: boolean
+  audience: AudienceId
 }
 
 interface Section {
@@ -132,6 +141,7 @@ function ToolCard({ tool }: { tool: Tool }) {
   const [name, setName] = useState(tool.name)
   const [description, setDescription] = useState(tool.description)
   const [icon, setIcon] = useState<string | null>(tool.icon ?? null)
+  const [audience, setAudience] = useState<AudienceId>(tool.audience)
   const [saving, setSaving] = useState(false)
   const [deleted, setDeleted] = useState(false)
 
@@ -147,6 +157,7 @@ function ToolCard({ tool }: { tool: Tool }) {
     name?: string
     description?: string
     icon?: string | null
+    audience?: AudienceId
   }) {
     setSaving(true)
     try {
@@ -232,6 +243,25 @@ function ToolCard({ tool }: { tool: Tool }) {
     const next = !popular
     setPopular(next)
     void patch({ popular: next })
+  }
+
+  /**
+   * Sauvegarde l'audience de l'outil. UI optimiste : on update tout de suite,
+   * on revert si l'API échoue.
+   */
+  async function saveAudience(next: AudienceId) {
+    if (next === audience) return
+    const previous = audience
+    setAudience(next)
+    try {
+      await patch({ audience: next })
+      tool.audience = next
+      const label = AUDIENCES.find((a) => a.id === next)?.label ?? next
+      toast.success(`Audience : ${label}`)
+      router.refresh()
+    } catch {
+      setAudience(previous)
+    }
   }
 
   async function handleDelete() {
@@ -337,6 +367,12 @@ function ToolCard({ tool }: { tool: Tool }) {
             <Star className={`w-2.5 h-2.5 ${popular ? 'fill-yellow-500 text-yellow-500' : ''}`} />
             {popular ? 'Populaire' : 'Non populaire'}
           </button>
+
+          <AudiencePicker
+            value={audience}
+            onChange={saveAudience}
+            disabled={saving}
+          />
         </div>
 
         <div className="flex items-center gap-1.5 pt-1 border-t border-border/50">
@@ -392,6 +428,92 @@ function ToolCard({ tool }: { tool: Tool }) {
       </CardContent>
     </Card>
   )
+}
+
+/* ------------------------------------------------------------------ */
+/*  AudiencePicker — chip cliquable + dropdown pour choisir l'audience */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Compact picker pour `Tool.audience`. Affiche un chip coloré (violet clair
+ * → foncé selon l'audience) et ouvre un dropdown au clic pour basculer entre
+ * citoyen / employeur / partenaire.
+ *
+ * Hiérarchie (cf. lib/audience.ts) :
+ *   - citoyen   : visible par tous (badge violet clair)
+ *   - employeur : visible par employeur + partenaire (badge violet moyen)
+ *   - partenaire: visible uniquement par partenaire (badge violet foncé)
+ *
+ * Les couleurs reprennent `Audience.dotClass` / `iconBgClass`.
+ */
+function AudiencePicker({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: AudienceId
+  onChange: (next: AudienceId) => void
+  disabled?: boolean
+}) {
+  const current = AUDIENCES.find((a) => a.id === value) ?? AUDIENCES[0]
+  const CurrentIcon = current.Icon
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            disabled={disabled}
+            title={`Audience : ${current.label}. Hiérarchie : citoyen = tous, employeur = employeur+partenaire, partenaire = partenaire uniquement.`}
+            aria-label={`Audience actuelle : ${current.label}`}
+            className={`inline-flex items-center gap-1 rounded border border-violet-300/60 bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 transition hover:border-violet-500 dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-200 disabled:opacity-50`}
+          />
+        }
+      >
+        <CurrentIcon className="w-2.5 h-2.5" />
+        <span className="capitalize">{current.id}</span>
+        <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[220px]">
+        {AUDIENCES.map((aud) => {
+          const Icon = aud.Icon
+          const isActive = aud.id === value
+          return (
+            <DropdownMenuItem
+              key={aud.id}
+              onClick={() => onChange(aud.id)}
+              className={isActive ? 'bg-accent/60 font-semibold' : ''}
+            >
+              <span
+                className={`inline-flex size-5 shrink-0 items-center justify-center rounded ${aud.iconBgClass}`}
+              >
+                <Icon className="size-3" />
+              </span>
+              <div className="flex flex-col items-start">
+                <span className="text-xs capitalize">{aud.id}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {audienceHint(aud.id)}
+                </span>
+              </div>
+            </DropdownMenuItem>
+          )
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/** Petite phrase d'aide affichée sous chaque entrée du picker. */
+function audienceHint(id: AudienceId): string {
+  switch (id) {
+    case 'citoyen':
+      return 'Visible par tous'
+    case 'employeur':
+      return 'Employeur + partenaire'
+    case 'partenaire':
+      return 'Partenaire uniquement'
+  }
 }
 
 /* ------------------------------------------------------------------ */

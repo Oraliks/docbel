@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ToolsCardsView } from "@/components/admin/tools-cards-view";
+import { isAudienceId, type AudienceId } from "@/lib/audience";
 
 export const dynamic = "force-dynamic";
 
@@ -17,21 +18,28 @@ export default async function OutilsPage() {
     description: s.description,
     icon: s.icon ?? undefined,
     order: s.order,
-    tools: s.tools.map((t) => ({
-      id: t.id,
-      name: t.name,
-      slug: t.slug,
-      description: t.description,
-      type: t.type,
-      icon: t.icon ?? undefined,
-      popular: t.popular,
-      timeMin: t.timeMin ?? undefined,
-      order: t.order,
-      // active : peut ne pas exister sur le client Prisma régénéré si
-      // db:generate n'a pas tourné après migration. On défaut à true.
+    tools: s.tools.map((t) => {
+      // Le client Prisma régénéré peut ne pas exposer les nouveaux champs
+      // tant que pnpm db:generate n'a pas tourné. Fallback safe :
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      active: (t as any).active ?? true,
-    })),
+      const raw = t as any;
+      const audience: AudienceId = isAudienceId(raw.audience)
+        ? raw.audience
+        : "citoyen";
+      return {
+        id: t.id,
+        name: t.name,
+        slug: t.slug,
+        description: t.description,
+        type: t.type,
+        icon: t.icon ?? undefined,
+        popular: t.popular,
+        timeMin: t.timeMin ?? undefined,
+        order: t.order,
+        active: raw.active ?? true,
+        audience,
+      };
+    }),
   }));
 
   return (

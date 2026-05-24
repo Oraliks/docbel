@@ -64,3 +64,51 @@ export function getAudienceFromPath(pathname: string): AudienceId {
 export function getAudience(id: AudienceId): Audience {
   return AUDIENCES.find((aud) => aud.id === id) ?? AUDIENCES[0];
 }
+
+/**
+ * Niveau hiérarchique d'une audience (plus bas = plus permissif).
+ *
+ * Les outils marqués "citoyen" sont visibles par tout le monde (niveau 0).
+ * "employeur" (niveau 1) restreint aux employeurs et partenaires.
+ * "partenaire" (niveau 2) restreint aux seuls partenaires.
+ */
+const AUDIENCE_LEVEL: Record<AudienceId, number> = {
+  citoyen: 0,
+  employeur: 1,
+  partenaire: 2,
+};
+
+/**
+ * Détermine si un viewer (espace courant) peut voir un outil marqué
+ * comme étant pour `toolAudience`. Règle : viewer.level >= tool.level.
+ *
+ * Exemple : un partenaire (level 2) peut voir un outil citoyen (level 0).
+ * Un citoyen (level 0) NE peut PAS voir un outil partenaire (level 2).
+ */
+export function canViewAudience(
+  toolAudience: AudienceId,
+  viewerAudience: AudienceId,
+): boolean {
+  return AUDIENCE_LEVEL[viewerAudience] >= AUDIENCE_LEVEL[toolAudience];
+}
+
+/**
+ * Convertit l'audience minimale d'un outil (champ DB `Tool.audience`) en
+ * liste des audiences qui peuvent le voir. Compat avec `Tool.audiences`
+ * (pluriel) côté `lib/docbel-data.ts`.
+ *
+ * citoyen → ["citoyen", "employeur", "partenaire"]
+ * employeur → ["employeur", "partenaire"]
+ * partenaire → ["partenaire"]
+ */
+export function deriveAudiences(toolAudience: AudienceId): AudienceId[] {
+  const minLevel = AUDIENCE_LEVEL[toolAudience];
+  return (Object.keys(AUDIENCE_LEVEL) as AudienceId[]).filter(
+    (id) => AUDIENCE_LEVEL[id] >= minLevel,
+  );
+}
+
+/** Garde-fou : valide qu'une string arbitraire est bien une AudienceId. */
+export function isAudienceId(value: unknown): value is AudienceId {
+  return value === "citoyen" || value === "employeur" || value === "partenaire";
+}

@@ -35,6 +35,23 @@ export async function fetchAllToolsActive(): Promise<ToolActiveRow[]> {
   )
 }
 
+export interface ToolAudienceRow {
+  slug: string
+  audience: string
+}
+
+/**
+ * Récupère l'audience de tous les tools. Fallback raw SQL pour parer aux
+ * caches du client Prisma post-migration sur Windows (cf. tools-active).
+ */
+export async function fetchAllToolsAudience(): Promise<ToolAudienceRow[]> {
+  return withDbRetry(() =>
+    prisma.$queryRaw<ToolAudienceRow[]>`
+      SELECT slug, audience FROM "Tool"
+    `
+  )
+}
+
 /**
  * Récupère l'état actif d'un seul tool par slug.
  * Renvoie null si l'outil n'existe pas.

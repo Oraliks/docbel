@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ShieldCheckIcon, UserPlusIcon } from "lucide-react";
 import { LandingToolCard } from "@/components/docbel/landing/tool-card";
 import { getAudience, type AudienceId } from "@/lib/audience";
-import { getToolsByAudience } from "@/lib/docbel-data";
+import { getToolsByAudience, type Tool } from "@/lib/docbel-data";
 
 type SpaceCopy = {
   hero: {
@@ -63,12 +63,18 @@ const COPY: Record<Exclude<AudienceId, "citoyen">, SpaceCopy> = {
 
 interface SpaceLandingProps {
   audience: Exclude<AudienceId, "citoyen">;
+  /**
+   * Liste d'outils déjà filtrés par audience (source DB côté serveur).
+   * Si non fourni, fallback sur le catalogue statique `TOOLS_DATA` filtré
+   * par `getToolsByAudience`.
+   */
+  tools?: Tool[];
 }
 
-export function SpaceLanding({ audience }: SpaceLandingProps) {
+export function SpaceLanding({ audience, tools: toolsProp }: SpaceLandingProps) {
   const audienceMeta = getAudience(audience);
   const copy = COPY[audience];
-  const tools = getToolsByAudience(audience);
+  const tools = toolsProp ?? getToolsByAudience(audience);
   const HeroIcon = audienceMeta.Icon;
 
   const heroBg =

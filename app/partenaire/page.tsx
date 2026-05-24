@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SpaceLanding } from "@/components/docbel/space-landing";
 import { PartnerDashboard } from "@/components/docbel/partner-dashboard";
+import { filterByAudience, getPublicCatalog } from "@/lib/outils-catalog";
 
 export const metadata: Metadata = {
   title: "Espace Partenaire | DocBel",
@@ -63,5 +64,10 @@ export default async function PartenaireRoute() {
     }
   }
 
-  return <SpaceLanding audience="partenaire" />;
+  // Catalogue serveur filtré par audience. Un partenaire voit tous les
+  // outils (citoyen, employeur, partenaire) car niveau hiérarchique le plus
+  // haut. Cf. lib/audience.ts pour la règle.
+  const all = await getPublicCatalog();
+  const tools = filterByAudience(all, "partenaire");
+  return <SpaceLanding audience="partenaire" tools={tools} />;
 }

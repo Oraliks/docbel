@@ -244,6 +244,12 @@ model Tool {
   timeMin     Int?
   order       Int         @default(0)
   active      Boolean     @default(true) // false = caché du catalogue public
+  /// Audience minimale qui peut voir l'outil. Hiérarchique : citoyen = visible
+  /// par tous, employeur = visible par employeur+partenaire, partenaire =
+  /// visible uniquement par partenaire. Sert au filtrage côté pages publiques
+  /// (/outils, /employeur, /partenaire) via canViewAudience() dans lib/audience.
+  /// Valeurs : "citoyen" | "employeur" | "partenaire".
+  audience    String      @default("citoyen")
   // Vérification annuelle de la fiabilité des chiffres / formules. L'admin
   // appuie sur "Marquer comme revu" via /api/admin/calculators/[slug]/review
   // → lastReviewedAt = now, nextReviewDue = now + 12 mois. Un bandeau

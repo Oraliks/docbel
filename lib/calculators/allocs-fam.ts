@@ -181,13 +181,62 @@ const BXL_SEUIL_BAS = 40_586.52;
 const BXL_SEUIL_INTERMEDIAIRE = 58_915.92;
 
 /**
- * Supplément social FAMIRIS — montant moyen indicatif (le réel dépend du
- * nombre d'enfants et de l'âge). On retient la fourchette médiane par
- * tranche pour rester pédagogique.
+ * Supplément social FAMIRIS (Article 9, ordonnance 25/04/2019) — barème
+ * officiel mars 2026.
+ *
+ * Le montant est versé PAR ENFANT, mais il dépend de la TAILLE de la
+ * famille (1 / 2 / 3+ enfants), de l'ÂGE de l'enfant (0-11 vs 12-24) et
+ * du statut MONOPARENTAL (uniquement pour 2+ enfants — pour 1 enfant le
+ * barème est identique mono/cohabitant).
+ *
+ * Référence officielle :
+ *   PDF FAMIRIS — Barème 01/03/2026 (Article 9, points 3.2 et 3.3)
+ *   https://famiris.brussels/wp-content/uploads/2026/02/2026-03-01-Famiris-montant-allocations-familiales-indexation.pdf
+ *
+ * Section 3.2 — revenus ≤ 1ᵉʳ plafond (40 586,52 €) :
+ *                  1 enfant   2 enfants mono   2 enfants autre   3+ mono   3+ autre
+ *  0-11 ans         50,73 €   101,46 €         88,77 €           164,87 €  139,50 €
+ *  12-24 ans        63,41 €   114,14 €         101,46 €          177,55 €  152,18 €
+ *
+ * Section 3.3 — revenus entre 1ᵉʳ et 2ᵉ plafond (40 586,52 → 58 915,92 €) :
+ *                  1 enfant   2 enfants   3+ enfants
+ *  tous âges        0 €       31,71 €     91,31 €
+ *
+ * (au-delà de 58 915,92 € → aucun supplément)
  */
-const BXL_SUPP_SOCIAL_BAS_2_PARENTS = 95; // moyenne (50,73 → 139,50)
-const BXL_SUPP_SOCIAL_BAS_MONO = 107; // moyenne (50,73 → 164,87)
-const BXL_SUPP_SOCIAL_INT = 45; // moyenne (0 → 91,31)
+type BxlSuppBande = "0_11" | "12_24";
+type BxlSuppTaille = "un" | "deux" | "trois_plus";
+
+/** Bas revenu (≤ 40 586,52 €) — montant par enfant. */
+const BXL_SUPP_SOCIAL_BAS: Record<
+  BxlSuppTaille,
+  { mono: Record<BxlSuppBande, number>; autre: Record<BxlSuppBande, number> }
+> = {
+  un: {
+    // 1 enfant : barème identique mono/cohabitant.
+    mono: { "0_11": 50.73, "12_24": 63.41 },
+    autre: { "0_11": 50.73, "12_24": 63.41 },
+  },
+  deux: {
+    mono: { "0_11": 101.46, "12_24": 114.14 },
+    autre: { "0_11": 88.77, "12_24": 101.46 },
+  },
+  trois_plus: {
+    mono: { "0_11": 164.87, "12_24": 177.55 },
+    autre: { "0_11": 139.50, "12_24": 152.18 },
+  },
+};
+
+/**
+ * Revenu intermédiaire (40 586,52 → 58 915,92 €) — montant par enfant.
+ * Pas de différenciation mono/cohabitant ni d'âge selon le barème officiel
+ * (article 9 §3.3).
+ */
+const BXL_SUPP_SOCIAL_INT: Record<BxlSuppTaille, number> = {
+  un: 0,
+  deux: 31.71,
+  trois_plus: 91.31,
+};
 
 /** Supplément orphelin FAMIRIS — % de la base de l'enfant. */
 // 1 parent : base + 50 % de base ; 2 parents : 2× base.
@@ -357,6 +406,7 @@ function calcBruxelles(
   anneeNaissance: number,
   revenuMenage: number,
   monoparental: boolean,
+  nbEnfants: number,
 ): {
   base: number;
   supplements: number;
@@ -376,19 +426,28 @@ function calcBruxelles(
     else base = BXL_BASE_NOUVEAU_18_24;
   }
 
-  // Supplément social FAMIRIS.
+  // Supplément social FAMIRIS — barème officiel article 9 (PDF 01/03/2026).
+  // Le montant par enfant dépend de :
+  //   - la tranche de revenu (≤ 40 586,52 € / 40 586,52-58 915,92 € / >)
+  //   - la taille de la famille (1 / 2 / 3+ enfants)
+  //   - dans la tranche bas revenu : l'âge de l'enfant (0-11 / 12-24) et
+  //     le statut monoparental (sauf famille à 1 enfant)
+  const taille: BxlSuppTaille =
+    nbEnfants >= 3 ? "trois_plus" : nbEnfants === 2 ? "deux" : "un";
+  const bande: BxlSuppBande = age <= 11 ? "0_11" : "12_24";
+
   let supplementSocial = 0;
   if (revenuMenage <= BXL_SEUIL_BAS) {
-    supplementSocial = monoparental
-      ? BXL_SUPP_SOCIAL_BAS_MONO
-      : BXL_SUPP_SOCIAL_BAS_2_PARENTS;
+    const grille = monoparental
+      ? BXL_SUPP_SOCIAL_BAS[taille].mono
+      : BXL_SUPP_SOCIAL_BAS[taille].autre;
+    supplementSocial = grille[bande];
   } else if (revenuMenage <= BXL_SEUIL_INTERMEDIAIRE) {
-    supplementSocial = BXL_SUPP_SOCIAL_INT;
+    supplementSocial = BXL_SUPP_SOCIAL_INT[taille];
   }
 
-  // FAMIRIS n'a pas de supplément monoparental distinct : il est inclus
-  // dans le calcul du supplément social (la majoration mono est déjà
-  // appliquée ci-dessus).
+  // FAMIRIS n'a pas de supplément monoparental distinct : le barème social
+  // mono/cohabitant est déjà appliqué ci-dessus.
   const supplementMono = 0;
   const supplements = supplementSocial + supplementMono;
   return { base, supplements, supplementSocial, supplementMono };
@@ -548,6 +607,7 @@ export function calcAllocsFam(
           enfant.anneeNaissance,
           revenuMenageAnnuel,
           monoparental,
+          nbEnfants,
         );
         break;
       case "flandre":
@@ -699,8 +759,7 @@ export const ALLOCS_FAM_CONST = {
   BXL_BASE_NOUVEAU_18_24,
   BXL_SEUIL_BAS,
   BXL_SEUIL_INTERMEDIAIRE,
-  BXL_SUPP_SOCIAL_BAS_2_PARENTS,
-  BXL_SUPP_SOCIAL_BAS_MONO,
+  BXL_SUPP_SOCIAL_BAS,
   BXL_SUPP_SOCIAL_INT,
   BXL_SUPP_HANDICAP_MEDIAN,
   BXL_PRIME_NAISSANCE_RANG_1,

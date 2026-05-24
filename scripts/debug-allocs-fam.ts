@@ -37,7 +37,8 @@ const cases: Cas[] = [
     },
   },
   {
-    label: "C3 — Bruxelles · 2 enfants (2017, 2021) · revenu 50 000 € · non mono",
+    label:
+      "C3 — Bruxelles · 2 enfants (2017, 2021) · revenu 50 000 € (intermédiaire) · non mono",
     input: {
       region: "bruxelles",
       enfants: [
@@ -46,6 +47,20 @@ const cases: Cas[] = [
       ],
       revenuMenageAnnuel: 50_000,
       monoparental: false,
+    },
+  },
+  {
+    label:
+      "C3bis — Bruxelles · 3 enfants (2014, 2018, 2022) · revenu 30 000 € (bas) · MONO",
+    input: {
+      region: "bruxelles",
+      enfants: [
+        { anneeNaissance: 2014 },
+        { anneeNaissance: 2018 },
+        { anneeNaissance: 2022 },
+      ],
+      revenuMenageAnnuel: 30_000,
+      monoparental: true,
     },
   },
   {

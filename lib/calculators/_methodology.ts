@@ -1253,7 +1253,7 @@ const METHODOLOGIES: CalcMethodology[] = [
     sourceFile: "lib/calculators/allocs-fam.ts",
     reliability: "high",
     reliabilityNote:
-      "Conforme aux barèmes officiels FAMIWAL/FAMIRIS/Groeipakket/Kindergeld DG 2026 (indexation mars 2026 pour WAL/BXL, septembre 2025 pour FLA). Validé sur 6 points de référence : 2 cas Wallonie nouveau et ancien régime, 1 cas Bruxelles, 1 cas Flandre (3 enfants), 1 cas handicap, 1 cas orphelin. Base FAMIWAL nouveau régime 196,57 € (0-17 ans), 209,25 € (18-24) ; base FAMIRIS par tranche d'âge (190,23 / 202,91 / 215,59 €) ; basisbedrag Groeipakket 184,62 € ; Basiskindergeld DG 188,89 €. Suppléments sociaux à barèmes officiels par tranche de revenu et nombre d'enfants. Pour le montant officiel : caisse d'allocations.",
+      "Conforme aux barèmes officiels FAMIWAL/FAMIRIS/Groeipakket/Kindergeld DG 2026 (indexation mars 2026 pour WAL/BXL, septembre 2025 pour FLA). Validé sur 6 points de référence : 2 cas Wallonie nouveau et ancien régime, 1 cas Bruxelles, 1 cas Flandre (3 enfants), 1 cas handicap, 1 cas orphelin. Base FAMIWAL nouveau régime 196,57 € (0-17 ans), 209,25 € (18-24) ; base FAMIRIS par tranche d'âge (190,23 / 202,91 / 215,59 €) ; basisbedrag Groeipakket 184,62 € ; Basiskindergeld DG 188,89 €. **FAMIRIS — supplément social** : barème officiel exact (article 9, ordonnance 25/04/2019) appliqué par enfant selon la taille de la famille (1/2/3+ enfants), l'âge (0-11 ou 12-24) et le statut monoparental — plus de moyenne médiane. Pour le montant officiel : caisse d'allocations.",
     year: 2026,
     lastUpdatedAt: "2026-05-25",
     badges: ["Belgique", "Régions 2026", "Données 2026"],
@@ -1412,7 +1412,7 @@ const METHODOLOGIES: CalcMethodology[] = [
       {
         label: "Bruxelles nouveau régime (né ≥2020)",
         expression:
-          "base = 190,23 € (0–11) / 202,91 € (12–17) / 215,59 € (18–24). Supp social ≈ 95 € (2 parents) ou 107 € (mono) si ≤ 40 587 €/an, ≈ 45 € si ≤ 58 916 €/an.",
+          "base = 190,23 € (0–11) / 202,91 € (12–17) / 215,59 € (18–24). Supp social par enfant (barème article 9) selon taille famille, âge et statut mono — voir constantes.",
       },
       {
         label: "Flandre Groeipakket",
@@ -1506,9 +1506,17 @@ const METHODOLOGIES: CalcMethodology[] = [
         value: "≤ 40 586,52 € (bas) · ≤ 58 915,92 € (intermédiaire)",
       },
       {
-        name: "BXL — supplément social",
-        value: "≈ 95 € (2 parents) / 107 € (mono) si bas revenu · ≈ 45 € si intermédiaire",
-        note: "Valeurs médianes — le réel dépend du nombre d'enfants et de l'âge.",
+        name: "BXL — supplément social bas revenu (≤ 40 586,52 €/an), par enfant",
+        value:
+          "1 enfant : 50,73 € (0-11) / 63,41 € (12-24) — identique mono/cohabitant. " +
+          "2 enfants mono : 101,46 / 114,14 € · cohabitants : 88,77 / 101,46 €. " +
+          "3+ enfants mono : 164,87 / 177,55 € · cohabitants : 139,50 / 152,18 €.",
+        note: "Barème officiel article 9 §3.2 (PDF FAMIRIS 01/03/2026).",
+      },
+      {
+        name: "BXL — supplément social intermédiaire (40 586,52-58 915,92 €/an), par enfant",
+        value: "1 enfant : 0 € · 2 enfants : 31,71 € · 3+ enfants : 91,31 €",
+        note: "Barème officiel article 9 §3.3, sans différenciation âge/mono.",
       },
       {
         name: "BXL — orphelin",
@@ -1573,7 +1581,6 @@ const METHODOLOGIES: CalcMethodology[] = [
     ],
     limitations: [
       "Supplément handicap : valeur centrale (catégorie médiane modérée) — le montant réel dépend du nombre de points AVIQ / Iriscare / Opgroeien (93 à 621 €).",
-      "FAMIRIS : le supplément social affiche une valeur médiane par tranche de revenu — le réel varie selon le nombre d'enfants et l'âge (50,73 → 177,55 €).",
       "Pas de prise en compte du revenu cadastral plafond (FAMIRIS exige cadastre ≤ 2 000 € pour le supplément social).",
       "Pas de gestion des familles recomposées (mi-temps de garde, coparentalité).",
       "Bonus rentrée scolaire = montant annuel, pas réparti mensuellement.",

@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Input } from '@/components/ui/input'
-import { Loader2, MapPin, AlertCircle } from 'lucide-react'
+import { MapPin, AlertCircle } from 'lucide-react'
 
 import { BureauCard } from './_components/bureau-card'
 import { OpTabsCard } from './_components/op-tabs-card'
 import { CommunePanel } from './_components/commune-panel'
+import { SearchLoader } from './_components/search-loader'
 import {
   GeolocBanner,
   haversineKm,
@@ -201,12 +202,7 @@ export function BureauxFinder() {
         </div>
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-8 text-muted-foreground">
-          <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          Recherche…
-        </div>
-      )}
+      {loading && <SearchLoader cp={cp.trim() || undefined} />}
 
       {error && (
         <div className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-800">

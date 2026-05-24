@@ -523,6 +523,54 @@ body,
   }
 }
 
+/* Radar loader — utilisé par /outils/bureaux pendant la résolution CP.
+   Métaphore "scan de zone" : ondes circulaires qui se diffusent, dots
+   colorés (4 OP : CAPAC/FGTB/CSC/CGSLB) qui s'allument en orbite, pin
+   central qui pulse. Liaison directe avec la map (mêmes couleurs).
+   Tout désactivable via prefers-reduced-motion. */
+@keyframes radar-pulse {
+  0%   { transform: scale(0.3); opacity: 1; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.animate-radar-pulse {
+  animation: radar-pulse 1.8s ease-out infinite;
+}
+
+@keyframes radar-dot {
+  0%, 100% { opacity: 0.25; transform: scale(0.7); }
+  50%      { opacity: 1;    transform: scale(1.25); }
+}
+.animate-radar-dot {
+  animation: radar-dot 1.6s ease-in-out infinite;
+}
+
+@keyframes pin-bounce {
+  0%, 100% { transform: translateY(0)     scale(1); }
+  50%      { transform: translateY(-3px)  scale(1.08); }
+}
+.animate-pin-bounce {
+  animation: pin-bounce 1.2s ease-in-out infinite;
+}
+
+/* Fade-in-up court utilisé quand on change la phrase rotative du loader.
+   key={idx} sur le <p> force le remount → l'anim rejoue à chaque message. */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.35s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-radar-pulse,
+  .animate-radar-dot,
+  .animate-pin-bounce,
+  .animate-fade-in-up {
+    animation: none;
+  }
+}
+
 /* Hero "breathing" gradient — subtle scale + drift on the radial spotlight. */
 @keyframes hero-breath {
   0%, 100% {

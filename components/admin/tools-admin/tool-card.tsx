@@ -3,9 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,7 +21,8 @@ import {
   Trash2,
   BookOpenCheck,
   Pencil,
-  ChevronDown,
+  MoreVertical,
+  Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -32,44 +30,94 @@ import {
   IconPicker,
 } from "@/components/admin/documents/icon-picker";
 import { AUDIENCES, type AudienceId } from "@/lib/audience";
+import { cn } from "@/lib/utils";
 import type { Tool } from "./types";
 
 /**
  * Labels d'affichage pour le champ `type` (technique) d'un Tool.
- * Conserve la totalité des entrées de l'ancien `tools-cards-view`.
+ * Conserve la totalité des entrées de l'ancien `tool-card`.
  */
 const TYPE_LABEL: Record<string, string> = {
-  calc_preavis: "Calculatrice — Préavis",
-  calc_agr: "Calculatrice — AGR",
-  calc_cp: "Calculatrice — Salaire",
-  // Batch calculateurs citoyens 2026-05 (cf. lib/calculators/*).
-  calc_brut_net: "Calculatrice — Brut/Net",
-  calc_pecule: "Calculatrice — Pécule",
-  calc_chomage: "Calculatrice — Chômage",
-  calc_indemnite: "Calculatrice — Indemnité rupture",
-  calc_pension: "Calculatrice — Pension",
-  calc_allocs_fam: "Calculatrice — Allocs familiales",
-  calc_ipp: "Calculatrice — IPP",
-  calc_tarif_social: "Calculatrice — Tarif social",
-  calc_km: "Calculatrice — Frais km",
+  calc_preavis: "Calc — Préavis",
+  calc_agr: "Calc — AGR",
+  calc_cp: "Calc — Salaire",
+  calc_brut_net: "Calc — Brut/Net",
+  calc_pecule: "Calc — Pécule",
+  calc_chomage: "Calc — Chômage",
+  calc_indemnite: "Calc — Indemnité",
+  calc_pension: "Calc — Pension",
+  calc_allocs_fam: "Calc — Allocs fam.",
+  calc_ipp: "Calc — IPP",
+  calc_tarif_social: "Calc — Tarif social",
+  calc_km: "Calc — Frais km",
   locator: "Localisateur",
   tutorial: "Tutoriel",
   info: "FAQ",
   links: "Liens",
   form: "Formulaire",
-  doc_generator: "Générateur de document",
+  doc_generator: "Générateur doc",
 };
 
 /**
- * Mapping slug → page admin de configuration spécifique. Utilisé pour le
- * bouton "Configurer" sur chaque card. Si pas d'entrée ici, le bouton
- * est masqué (l'outil n'a pas de config dédiée).
+ * Mapping slug → page admin de configuration spécifique. Si une entrée
+ * existe, on ajoute "Configurer" au menu kebab.
  */
 const CONFIG_URL: Record<string, string> = {
   preavis: "/admin/chomage/preavis",
   bureaux: "/outils/bureaux",
 };
 
+/**
+ * Couleurs (badge + icône tile) par audience. Aligné sur la sémantique
+ * lib/audience.ts mais avec des teintes distinctes pour permettre la
+ * lecture visuelle rapide dans la liste.
+ *   - citoyen   : bleu  (public, ouvert à tous)
+ *   - employeur : violet (métier RH, plus restreint)
+ *   - partenaire: ambre (B2B, partenaires institutionnels uniquement)
+ */
+const AUDIENCE_TONE: Record<
+  AudienceId,
+  { badge: string; iconBg: string; iconText: string; label: string }
+> = {
+  citoyen: {
+    badge:
+      "bg-blue-500/10 text-blue-700 border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-300",
+    iconBg: "bg-blue-500/10 dark:bg-blue-500/15",
+    iconText: "text-blue-700 dark:text-blue-300",
+    label: "Citoyen",
+  },
+  employeur: {
+    badge:
+      "bg-violet-500/10 text-violet-700 border-violet-500/30 dark:bg-violet-500/15 dark:text-violet-300",
+    iconBg: "bg-violet-500/10 dark:bg-violet-500/15",
+    iconText: "text-violet-700 dark:text-violet-300",
+    label: "Employeur",
+  },
+  partenaire: {
+    badge:
+      "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
+    iconBg: "bg-amber-500/10 dark:bg-amber-500/15",
+    iconText: "text-amber-700 dark:text-amber-300",
+    label: "Partenaire",
+  },
+};
+
+/**
+ * Card horizontale compacte d'un outil dans la liste admin /outils.
+ *
+ * Layout (left to right) :
+ *   - Tile icône (size-9, teintée audience) — clique pour ouvrir IconPicker
+ *   - Bloc texte : nom (éditable inline) + sub-label (type + durée éventuelle)
+ *   - Badges : Populaire (si applicable) + Audience (cliquable → menu)
+ *   - Switch on/off (PATCH /api/tools/[slug])
+ *   - Bouton lien externe → /outils/[slug] (nouvelle tab)
+ *   - Menu kebab : éditer description, méthodologie (si calc_*), config,
+ *                  toggle populaire, supprimer
+ *
+ * Description : affichée en clair sous le bloc texte si non vide, et
+ * éditable via le menu kebab pour garder la densité — la majorité des
+ * actions courantes (toggle, lien) sont accessibles sans ouvrir le menu.
+ */
 export function ToolCard({ tool }: { tool: Tool }) {
   const router = useRouter();
   const confirm = useConfirm();
@@ -81,12 +129,11 @@ export function ToolCard({ tool }: { tool: Tool }) {
   const [audience, setAudience] = useState<AudienceId>(tool.audience);
   const [saving, setSaving] = useState(false);
   const [deleted, setDeleted] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
 
   /**
    * PATCH générique du Tool. Body partiel — n'envoie que les champs modifiés.
-   * En cas d'erreur on revert visuellement l'état booléen (UI optimiste pour
-   * les toggles ; les champs texte gardent la nouvelle valeur dans l'état
-   * même si la sauvegarde échoue — l'utilisateur peut retenter).
+   * UI optimiste pour les toggles : revert visuel en cas d'erreur.
    */
   async function patch(body: {
     active?: boolean;
@@ -119,13 +166,12 @@ export function ToolCard({ tool }: { tool: Tool }) {
 
   async function saveName(next: string) {
     const trimmed = next.trim();
-    if (!trimmed || trimmed === tool.name) {
-      setName(tool.name);
+    if (!trimmed || trimmed === name) {
+      setName(name);
       return;
     }
     try {
       await patch({ name: trimmed });
-      tool.name = trimmed;
       toast.success("Titre mis à jour");
       router.refresh();
     } catch {
@@ -135,27 +181,28 @@ export function ToolCard({ tool }: { tool: Tool }) {
 
   async function saveDescription(next: string) {
     const trimmed = next.trim();
-    if (!trimmed || trimmed === tool.description) {
-      setDescription(tool.description);
+    if (!trimmed || trimmed === description) {
+      setDescription(description);
+      setEditingDescription(false);
       return;
     }
     try {
       await patch({ description: trimmed });
-      tool.description = trimmed;
       toast.success("Description mise à jour");
       router.refresh();
     } catch {
       setDescription(tool.description);
+    } finally {
+      setEditingDescription(false);
     }
   }
 
   async function saveIcon(next: string | null) {
-    if (next === (tool.icon ?? null)) return;
+    if (next === icon) return;
     const previous = icon;
     setIcon(next);
     try {
       await patch({ icon: next });
-      tool.icon = next ?? undefined;
       toast.success(next ? "Icône mise à jour" : "Icône retirée");
       router.refresh();
     } catch {
@@ -173,6 +220,7 @@ export function ToolCard({ tool }: { tool: Tool }) {
     const next = !popular;
     setPopular(next);
     void patch({ popular: next });
+    toast.success(next ? "Marqué populaire" : "Retiré des populaires");
   }
 
   async function saveAudience(next: AudienceId) {
@@ -181,9 +229,7 @@ export function ToolCard({ tool }: { tool: Tool }) {
     setAudience(next);
     try {
       await patch({ audience: next });
-      tool.audience = next;
-      const label = AUDIENCES.find((a) => a.id === next)?.label ?? next;
-      toast.success(`Audience : ${label}`);
+      toast.success(`Audience : ${AUDIENCE_TONE[next].label}`);
       router.refresh();
     } catch {
       setAudience(previous);
@@ -218,90 +264,168 @@ export function ToolCard({ tool }: { tool: Tool }) {
 
   if (deleted) return null;
 
+  const tone = AUDIENCE_TONE[audience];
   const configUrl = CONFIG_URL[tool.slug];
-  /**
-   * Pour les calculateurs (`type` commençant par `calc_`), on expose un
-   * bouton "Méthodologie" qui mène à la fiche détaillée
-   * `/admin/chomage/outils/calculateurs/[slug]` : formules, constantes,
-   * sources officielles, limitations.
-   */
   const showMethodology = tool.type.startsWith("calc_");
+  const typeLabel = TYPE_LABEL[tool.type] ?? tool.type;
 
   return (
-    <Card
-      className={`flex h-full flex-col gap-3 p-4 transition ${
-        active ? "" : "opacity-60 border-dashed"
-      }`}
+    <article
+      className={cn(
+        "group relative flex flex-col gap-2 rounded-xl border border-border bg-card p-3 transition-all",
+        "hover:border-primary/30 hover:shadow-sm",
+        active ? "" : "opacity-60",
+      )}
     >
-      {/* Header : icône violet clair + titre/slug + switch */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <IconPickerInline
-            value={icon}
-            onChange={saveIcon}
+      {/* Ligne principale ------------------------------------------------ */}
+      <div className="flex items-center gap-3">
+        {/* Tile icône (cliquable → IconPicker) */}
+        <IconPickerTile
+          value={icon}
+          onChange={saveIcon}
+          disabled={saving}
+          iconBg={tone.iconBg}
+          iconText={tone.iconText}
+        />
+
+        {/* Nom (éditable inline) + sub-label ------------------------- */}
+        <div className="min-w-0 flex-1">
+          <EditableInline
+            value={name}
+            onSave={saveName}
+            onChange={setName}
+            placeholder="Titre de l'outil…"
+            ariaLabel="Éditer le titre"
+            disabled={saving}
+            className="text-[13.5px] font-semibold text-foreground"
+          />
+          <p className="flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
+            <span>{typeLabel}</span>
+            {tool.timeMin ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="inline-flex items-center gap-0.5">
+                  <Clock className="size-2.5" />
+                  {tool.timeMin} min
+                </span>
+              </>
+            ) : null}
+            <span aria-hidden="true">·</span>
+            <span className="font-mono">{tool.slug}</span>
+          </p>
+        </div>
+
+        {/* Badges (populaire + audience) ------------------------------- */}
+        <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
+          {popular ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+              title="Outil marqué comme populaire"
+            >
+              <Star className="size-2.5 fill-current" />
+              Populaire
+            </span>
+          ) : null}
+          <AudiencePicker
+            value={audience}
+            onChange={saveAudience}
             disabled={saving}
           />
-          <div className="min-w-0 flex-1">
-            <EditableField
-              value={name}
-              onSave={saveName}
-              onChange={setName}
-              mode="input"
-              placeholder="Titre de l'outil…"
-              ariaLabel="Éditer le titre"
-              disabled={saving}
-              className="text-sm font-semibold"
-            />
-            <p className="truncate font-mono text-[11px] text-muted-foreground">
-              {tool.slug}
-            </p>
-          </div>
         </div>
+
+        {/* Switch on/off ------------------------------------------------ */}
         <Switch
           checked={active}
           onCheckedChange={toggleActive}
           disabled={saving}
-          aria-label={active ? "Désactiver" : "Activer"}
+          aria-label={active ? "Désactiver l'outil" : "Activer l'outil"}
+          className="shrink-0"
         />
+
+        {/* Lien externe ------------------------------------------------- */}
+        <a
+          href={`/outils/${tool.slug}`}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Ouvrir ${tool.name} dans un nouvel onglet`}
+          title="Voir la page publique"
+          className={cn(
+            "inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground",
+            !active && "pointer-events-none opacity-40",
+          )}
+        >
+          <ExternalLink className="size-3.5" />
+        </a>
+
+        {/* Menu kebab --------------------------------------------------- */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <button
+                type="button"
+                aria-label="Plus d'actions"
+                title="Plus d'actions"
+                className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                <MoreVertical className="size-3.5" />
+              </button>
+            }
+          />
+          <DropdownMenuContent align="end" className="min-w-[200px]">
+            <DropdownMenuItem
+              onClick={() => setEditingDescription(true)}
+              disabled={saving}
+            >
+              <Pencil className="size-3.5" />
+              Éditer la description
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={togglePopular} disabled={saving}>
+              <Star
+                className={cn(
+                  "size-3.5",
+                  popular && "fill-amber-500 text-amber-500",
+                )}
+              />
+              {popular ? "Retirer des populaires" : "Marquer populaire"}
+            </DropdownMenuItem>
+            {showMethodology ? (
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href={`/admin/chomage/outils/calculateurs/${tool.slug}`}
+                  />
+                }
+              >
+                <BookOpenCheck className="size-3.5" />
+                Méthodologie
+              </DropdownMenuItem>
+            ) : null}
+            {configUrl ? (
+              <DropdownMenuItem render={<Link href={configUrl} />}>
+                <Settings2 className="size-3.5" />
+                Configurer
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuItem
+              onClick={handleDelete}
+              disabled={saving}
+              className="text-red-600 dark:text-red-400"
+            >
+              <Trash2 className="size-3.5" />
+              Supprimer l&apos;outil
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {/* Description éditable (clic pour éditer) */}
-      <EditableField
-        value={description}
-        onSave={saveDescription}
-        onChange={setDescription}
-        mode="textarea"
-        placeholder="Description publique…"
-        ariaLabel="Éditer la description"
-        disabled={saving}
-        className="text-xs text-muted-foreground"
-      />
-
-      {/* Pills : type / durée / populaire / audience */}
-      <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-        <Badge variant="outline">{TYPE_LABEL[tool.type] ?? tool.type}</Badge>
-        {tool.timeMin ? (
-          <Badge variant="outline" className="gap-1">
-            <Clock className="h-2.5 w-2.5" /> {tool.timeMin} min
-          </Badge>
+      {/* Badges mobiles ------------------------------------------------ */}
+      <div className="flex items-center gap-1.5 sm:hidden">
+        {popular ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+            <Star className="size-2.5 fill-current" />
+            Populaire
+          </span>
         ) : null}
-        <button
-          onClick={togglePopular}
-          disabled={saving}
-          title={popular ? "Retirer des populaires" : "Marquer populaire"}
-          className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] transition ${
-            popular
-              ? "border-yellow-400 bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30"
-              : "border-border text-muted-foreground hover:border-yellow-300"
-          }`}
-        >
-          <Star
-            className={`h-2.5 w-2.5 ${
-              popular ? "fill-yellow-500 text-yellow-500" : ""
-            }`}
-          />
-          {popular ? "Populaire" : "Non populaire"}
-        </button>
         <AudiencePicker
           value={audience}
           onChange={saveAudience}
@@ -309,67 +433,82 @@ export function ToolCard({ tool }: { tool: Tool }) {
         />
       </div>
 
-      {/* Boutons d'actions : Configurer / Méthodologie / Voir / Supprimer */}
-      <div className="mt-auto flex items-center gap-1 border-t border-border/50 pt-2">
-        {configUrl ? (
-          <Button
-            render={<Link href={configUrl} />}
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs"
-          >
-            <Settings2 className="mr-1 h-3 w-3" />
-            Configurer
-          </Button>
-        ) : null}
-        {showMethodology ? (
-          <Button
-            render={
-              <Link
-                href={`/admin/chomage/outils/calculateurs/${tool.slug}`}
-              />
-            }
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs"
-            title="Voir la méthodologie (formules, constantes, sources)"
-          >
-            <BookOpenCheck className="mr-1 h-3 w-3" />
-            Méthodologie
-          </Button>
-        ) : null}
-        <Button
-          render={
-            <a
-              href={`/outils/${tool.slug}`}
-              target="_blank"
-              rel="noreferrer"
-            />
-          }
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-xs"
-          disabled={!active}
-        >
-          Voir <ExternalLink className="ml-1 h-3 w-3" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleDelete}
+      {/* Description (lecture seule + édition via menu) --------------- */}
+      {editingDescription ? (
+        <DescriptionEditor
+          value={description}
+          onSave={saveDescription}
+          onChange={setDescription}
+          onCancel={() => {
+            setDescription(tool.description);
+            setEditingDescription(false);
+          }}
           disabled={saving}
-          className="ml-auto h-7 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
-          title="Supprimer l'outil"
+        />
+      ) : description ? (
+        <p
+          className="line-clamp-2 pl-12 text-[11.5px] leading-snug text-muted-foreground"
+          title={description}
         >
-          <Trash2 className="h-3 w-3" />
-        </Button>
-      </div>
-    </Card>
+          {description}
+        </p>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditingDescription(true)}
+          disabled={saving}
+          className="pl-12 text-left text-[11.5px] italic text-muted-foreground/50 hover:text-muted-foreground"
+        >
+          Ajouter une description…
+        </button>
+      )}
+    </article>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  AudiencePicker — chip cliquable + dropdown pour choisir l'audience */
+/*  IconPickerTile — bouton tile (size-9) qui ouvre le IconPicker      */
+/* ------------------------------------------------------------------ */
+
+function IconPickerTile({
+  value,
+  onChange,
+  disabled,
+  iconBg,
+  iconText,
+}: {
+  value: string | null;
+  onChange: (next: string | null) => void;
+  disabled?: boolean;
+  iconBg: string;
+  iconText: string;
+}) {
+  const trigger = (
+    <button
+      type="button"
+      disabled={disabled}
+      title="Changer l'icône"
+      aria-label="Changer l'icône"
+      className={cn(
+        "group/icon relative flex size-9 shrink-0 items-center justify-center rounded-lg transition",
+        iconBg,
+        iconText,
+        "hover:ring-2 hover:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50",
+      )}
+    >
+      {value ? (
+        <IconDisplay value={value} className="size-4" />
+      ) : (
+        <Wrench className="size-4 opacity-60" />
+      )}
+      <Pencil className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded bg-primary p-0.5 text-primary-foreground opacity-0 transition group-hover/icon:opacity-100" />
+    </button>
+  );
+  return <IconPicker value={value} onChange={onChange} trigger={trigger} />;
+}
+
+/* ------------------------------------------------------------------ */
+/*  AudiencePicker — pill cliquable avec dropdown                      */
 /* ------------------------------------------------------------------ */
 
 function AudiencePicker({
@@ -381,8 +520,7 @@ function AudiencePicker({
   onChange: (next: AudienceId) => void;
   disabled?: boolean;
 }) {
-  const current = AUDIENCES.find((a) => a.id === value) ?? AUDIENCES[0];
-  const CurrentIcon = current.Icon;
+  const tone = AUDIENCE_TONE[value];
 
   return (
     <DropdownMenu>
@@ -391,20 +529,22 @@ function AudiencePicker({
           <button
             type="button"
             disabled={disabled}
-            title={`Audience : ${current.label}. Hiérarchie : citoyen = tous, employeur = employeur+partenaire, partenaire = partenaire uniquement.`}
-            aria-label={`Audience actuelle : ${current.label}`}
-            className="inline-flex items-center gap-1 rounded border border-violet-300/60 bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 transition hover:border-violet-500 disabled:opacity-50 dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-200"
+            title={`Audience : ${tone.label} — clic pour changer.`}
+            aria-label={`Audience actuelle : ${tone.label}`}
+            className={cn(
+              "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide transition hover:opacity-80 disabled:opacity-50",
+              tone.badge,
+            )}
           />
         }
       >
-        <CurrentIcon className="h-2.5 w-2.5" />
-        <span className="capitalize">{current.id}</span>
-        <ChevronDown className="h-2.5 w-2.5 opacity-60" />
+        {tone.label}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[220px]">
+      <DropdownMenuContent align="end" className="min-w-[220px]">
         {AUDIENCES.map((aud) => {
           const Icon = aud.Icon;
           const isActive = aud.id === value;
+          const audTone = AUDIENCE_TONE[aud.id];
           return (
             <DropdownMenuItem
               key={aud.id}
@@ -412,12 +552,16 @@ function AudiencePicker({
               className={isActive ? "bg-accent/60 font-semibold" : ""}
             >
               <span
-                className={`inline-flex size-5 shrink-0 items-center justify-center rounded ${aud.iconBgClass}`}
+                className={cn(
+                  "inline-flex size-5 shrink-0 items-center justify-center rounded",
+                  audTone.iconBg,
+                  audTone.iconText,
+                )}
               >
                 <Icon className="size-3" />
               </span>
               <div className="flex flex-col items-start">
-                <span className="text-xs capitalize">{aud.id}</span>
+                <span className="text-xs">{audTone.label}</span>
                 <span className="text-[10px] text-muted-foreground">
                   {audienceHint(aud.id)}
                 </span>
@@ -442,77 +586,40 @@ function audienceHint(id: AudienceId): string {
 }
 
 /* ------------------------------------------------------------------ */
-/*  IconPickerInline — bouton icône compact qui ouvre le IconPicker   */
+/*  EditableInline — click-to-edit pour le titre                       */
 /* ------------------------------------------------------------------ */
 
-function IconPickerInline({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: string | null;
-  onChange: (next: string | null) => void;
-  disabled?: boolean;
-}) {
-  const trigger = (
-    <button
-      type="button"
-      disabled={disabled}
-      className="group relative flex size-10 shrink-0 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-700 transition hover:border-violet-400 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-200"
-      title="Changer l'icône"
-      aria-label="Changer l'icône"
-    >
-      {value ? (
-        <IconDisplay value={value} className="size-5" />
-      ) : (
-        <Pencil className="size-3.5 text-violet-500/70" />
-      )}
-      <Pencil className="absolute -bottom-0.5 -right-0.5 size-3 rounded bg-primary p-0.5 text-primary-foreground opacity-0 transition group-hover:opacity-100" />
-    </button>
-  );
-  return <IconPicker value={value} onChange={onChange} trigger={trigger} />;
-}
-
-/* ------------------------------------------------------------------ */
-/*  EditableField — click-to-edit pour le titre et la description     */
-/* ------------------------------------------------------------------ */
-
-interface EditableFieldProps {
+interface EditableInlineProps {
   value: string;
   onChange: (next: string) => void;
   onSave: (next: string) => void;
-  mode: "input" | "textarea";
   placeholder?: string;
   ariaLabel?: string;
   disabled?: boolean;
   className?: string;
 }
 
-function EditableField({
+function EditableInline({
   value,
   onChange,
   onSave,
-  mode,
   placeholder,
   ariaLabel,
   disabled,
   className = "",
-}: EditableFieldProps) {
+}: EditableInlineProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    if (!editing) setDraft(value);
-  }, [value, editing]);
-
+  // Focus + select au passage en mode édition. La synchro `value` → `draft`
+  // hors-édition est faite à la main dans `startEdit` (pas besoin d'effect :
+  // le bouton de lecture affiche `value` directement).
   useEffect(() => {
     if (!editing) return;
-    const el = mode === "input" ? inputRef.current : textareaRef.current;
-    el?.focus();
-    if (el && "select" in el) el.select();
-  }, [editing, mode]);
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, [editing]);
 
   function startEdit() {
     if (disabled) return;
@@ -537,39 +644,16 @@ function EditableField({
     if (e.key === "Escape") {
       e.preventDefault();
       cancel();
-      return;
-    }
-    if (e.key === "Enter") {
-      if (
-        mode === "input" ||
-        (mode === "textarea" && (e.metaKey || e.ctrlKey))
-      ) {
-        e.preventDefault();
-        commit();
-      }
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      commit();
     }
   }
 
   if (editing) {
-    if (mode === "input") {
-      return (
-        <Input
-          ref={inputRef}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          aria-label={ariaLabel}
-          disabled={disabled}
-          maxLength={120}
-          className={`h-7 px-2 py-0 text-sm ${className}`}
-        />
-      );
-    }
     return (
-      <Textarea
-        ref={textareaRef}
+      <Input
+        ref={inputRef}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
@@ -577,9 +661,8 @@ function EditableField({
         placeholder={placeholder}
         aria-label={ariaLabel}
         disabled={disabled}
-        maxLength={600}
-        rows={3}
-        className={`min-h-[64px] resize-none text-xs ${className}`}
+        maxLength={120}
+        className={cn("h-6 px-1 py-0", className)}
       />
     );
   }
@@ -591,16 +674,82 @@ function EditableField({
       disabled={disabled}
       aria-label={ariaLabel}
       title={ariaLabel ? `${ariaLabel} (clic)` : "Cliquer pour éditer"}
-      className={`group/edit relative -mx-1 w-full rounded px-1 text-left transition hover:bg-muted/60 disabled:cursor-not-allowed ${
-        mode === "input" ? "truncate" : "line-clamp-2"
-      } ${className}`}
+      className={cn(
+        "group/edit relative -mx-1 block w-full truncate rounded px-1 text-left transition hover:bg-muted/60 disabled:cursor-not-allowed",
+        className,
+      )}
     >
       {value || (
         <span className="italic text-muted-foreground/60">
           {placeholder ?? "Cliquer pour éditer"}
         </span>
       )}
-      <Pencil className="absolute right-1 top-1 size-2.5 opacity-0 transition group-hover/edit:opacity-50" />
     </button>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  DescriptionEditor — textarea inline pour éditer la description     */
+/* ------------------------------------------------------------------ */
+
+function DescriptionEditor({
+  value,
+  onSave,
+  onChange,
+  onCancel,
+  disabled,
+}: {
+  value: string;
+  onSave: (next: string) => void;
+  onChange: (next: string) => void;
+  onCancel: () => void;
+  disabled?: boolean;
+}) {
+  const [draft, setDraft] = useState(value);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+    textareaRef.current?.select();
+  }, []);
+
+  function commit() {
+    if (draft !== value) {
+      onChange(draft);
+      onSave(draft);
+    } else {
+      onCancel();
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      onCancel();
+    } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      commit();
+    }
+  }
+
+  return (
+    <div className="pl-12">
+      <Textarea
+        ref={textareaRef}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={handleKeyDown}
+        placeholder="Description publique…"
+        aria-label="Éditer la description"
+        disabled={disabled}
+        maxLength={600}
+        rows={3}
+        className="min-h-[60px] resize-none text-[11.5px]"
+      />
+      <p className="mt-1 text-[10px] text-muted-foreground/70">
+        ⌘+Enter pour valider · Échap pour annuler
+      </p>
+    </div>
   );
 }

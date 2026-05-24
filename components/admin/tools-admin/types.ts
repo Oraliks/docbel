@@ -31,8 +31,12 @@ export interface Section {
   tools: Tool[];
 }
 
-/** Statut filtrable côté UI. */
-export type StatusFilter = "all" | "active" | "inactive";
+/**
+ * Filtre principal de la barre de tabs (refonte 2026-05) — combine statut
+ * (actif/inactif) ET vue "populaires", car ce sont les 3 axes de tri rapides
+ * pour un admin qui veut vérifier sa vitrine publique en un coup d'œil.
+ */
+export type StatusFilter = "all" | "active" | "inactive" | "popular";
 
 /** Critère de tri à l'intérieur d'une section. */
 export type SortKey = "category" | "name" | "recent";

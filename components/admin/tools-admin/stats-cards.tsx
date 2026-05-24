@@ -1,88 +1,108 @@
-"use client";
+import { cn } from "@/lib/utils";
 
-import { Card } from "@/components/ui/card";
-import { CheckCircle2, CircleOff, LayoutGrid, Star } from "lucide-react";
-import type { Section } from "./types";
-
-interface Props {
-  sections: Section[];
+interface StatsCardsProps {
+  counts: {
+    total: number;
+    active: number;
+    inactive: number;
+    popular: number;
+  };
 }
 
 /**
- * 4 cards en haut de la page admin /outils :
- * Total, Actifs, Inactifs, Populaires.
- * Calcule les agrégats à partir des sections reçues (memoless — pas besoin
- * de useMemo : un map+reduce léger sur <30 outils).
+ * 4 cards stats compactes en haut de la page admin /outils.
+ *
+ * Chaque card affiche un gros chiffre (le compte) + un label court, avec
+ * une bordure colorée fine côté gauche (`border-l-4`) qui matérialise la
+ * catégorie. Pattern aligné sur `overview-stats.tsx` (page méthodologie
+ * des calculateurs) pour cohérence visuelle de la zone admin.
+ *
+ * Purement présentationnel : compteurs passés en props depuis `workspace.tsx`,
+ * pas d'agrégation interne.
  */
-export function StatsCards({ sections }: Props) {
-  const tools = sections.flatMap((s) => s.tools);
-  const total = tools.length;
-  const actifs = tools.filter((t) => t.active).length;
-  const inactifs = total - actifs;
-  const populaires = tools.filter((t) => t.popular).length;
-
-  const pct = (n: number) =>
-    total === 0 ? "0%" : `${Math.round((n / total) * 100)}%`;
-
+export function StatsCards({ counts }: StatsCardsProps) {
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <StatCard value={counts.total} label="Total" tone="slate" />
       <StatCard
-        label="Total"
-        value={total}
-        hint="Toutes catégories"
-        Icon={LayoutGrid}
-        accent="bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-200"
-      />
-      <StatCard
+        symbol="✓"
+        value={counts.active}
         label="Actifs"
-        value={actifs}
-        hint={`${pct(actifs)} du total`}
-        Icon={CheckCircle2}
-        accent="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200"
+        tone="emerald"
       />
       <StatCard
+        symbol="∅"
+        value={counts.inactive}
         label="Inactifs"
-        value={inactifs}
-        hint={`${pct(inactifs)} du total`}
-        Icon={CircleOff}
-        accent="bg-zinc-100 text-zinc-700 dark:bg-zinc-500/15 dark:text-zinc-300"
+        tone="red"
       />
       <StatCard
+        symbol="★"
+        value={counts.popular}
         label="Populaires"
-        value={populaires}
-        hint="Marqués populaires"
-        Icon={Star}
-        accent="bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-200"
+        tone="amber"
       />
     </div>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  hint,
-  Icon,
-  accent,
-}: {
-  label: string;
+type Tone = "emerald" | "amber" | "red" | "slate";
+
+const TONE_STYLES: Record<
+  Tone,
+  { border: string; symbol: string; value: string }
+> = {
+  emerald: {
+    border: "border-l-emerald-500",
+    symbol: "text-emerald-600 dark:text-emerald-400",
+    value: "text-emerald-700 dark:text-emerald-300",
+  },
+  amber: {
+    border: "border-l-amber-500",
+    symbol: "text-amber-600 dark:text-amber-400",
+    value: "text-amber-700 dark:text-amber-300",
+  },
+  red: {
+    border: "border-l-red-500",
+    symbol: "text-red-600 dark:text-red-400",
+    value: "text-red-700 dark:text-red-300",
+  },
+  slate: {
+    border: "border-l-slate-400 dark:border-l-slate-500",
+    symbol: "text-slate-500 dark:text-slate-400",
+    value: "text-foreground",
+  },
+};
+
+interface StatCardProps {
+  symbol?: string;
   value: number;
-  hint: string;
-  Icon: React.ComponentType<{ className?: string }>;
-  accent: string;
-}) {
+  label: string;
+  tone: Tone;
+}
+
+function StatCard({ symbol, value, label, tone }: StatCardProps) {
+  const styles = TONE_STYLES[tone];
   return (
-    <Card className="flex flex-row items-center gap-3 p-4">
-      <div
-        className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${accent}`}
-      >
-        <Icon className="size-5" />
+    <div
+      className={cn(
+        "flex flex-col gap-0.5 rounded-xl border border-border bg-card px-4 py-3 border-l-4",
+        styles.border,
+      )}
+    >
+      <div className="flex items-baseline gap-2">
+        {symbol ? (
+          <span className={cn("text-lg font-bold leading-none", styles.symbol)}>
+            {symbol}
+          </span>
+        ) : null}
+        <span
+          className={cn("text-2xl font-bold leading-none", styles.value)}
+        >
+          {value}
+        </span>
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <p className="text-2xl font-bold leading-tight">{value}</p>
-        <p className="truncate text-[11px] text-muted-foreground">{hint}</p>
-      </div>
-    </Card>
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+    </div>
   );
 }

@@ -13,6 +13,7 @@
 
 import React, { useState } from "react";
 import { Download, Info } from "lucide-react";
+import { CountryFlag } from "@/components/docbel/country-flag";
 import {
   calcBrutNet,
   calcNetToBrut,
@@ -423,7 +424,7 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <CalcBadge>
-            <span aria-hidden="true">🇧🇪</span>
+            <CountryFlag code="be" size={14} country="Belgique" />
             Belgique
           </CalcBadge>
           <CalcBadge accent={accent}>ATN 2026</CalcBadge>

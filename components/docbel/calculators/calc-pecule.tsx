@@ -24,6 +24,7 @@ import {
   ExternalLink,
   Sun,
 } from "lucide-react";
+import { CountryFlag } from "@/components/docbel/country-flag";
 import {
   calcPecule,
   type PeculeResult,
@@ -470,7 +471,7 @@ export function CalcPecule({ accent }: { accent: string }) {
           {/* Badges */}
           <div className="flex flex-wrap items-center gap-2">
             <CalcBadge>
-              <span aria-hidden="true">🇧🇪</span>
+              <CountryFlag code="be" size={14} country="Belgique" />
               Belgique
             </CalcBadge>
             <CalcBadge accent={accent}>ONVA 2026</CalcBadge>

@@ -158,15 +158,19 @@ export function PreviewFinder() {
                 className="border-0 px-0 h-auto text-sm font-medium tabular-nums shadow-none focus-visible:ring-0 bg-transparent w-[80px]"
               />
             </label>
-            <Button asChild variant="ghost" size="sm" className="gap-1">
-              <a
-                href={`/outils/bureaux${cp ? `?cp=${cp}` : ""}`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                Voir en vrai <ExternalLink className="size-3" />
-              </a>
+            <Button
+              render={
+                <a
+                  href={`/outils/bureaux${cp ? `?cp=${cp}` : ""}`}
+                  target="_blank"
+                  rel="noreferrer"
+                />
+              }
+              variant="ghost"
+              size="sm"
+              className="gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              Voir en vrai <ExternalLink className="size-3" />
             </Button>
           </div>
           <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -327,15 +331,13 @@ function PreviewBureauRow({ bureau }: { bureau: BureauResult }) {
 
       {/* Lien admin */}
       <Button
-        asChild
+        render={<a href="#annuaire" title="Éditer dans l'annuaire" />}
         variant="ghost"
         size="sm"
         className="shrink-0 h-7 text-[11px] gap-1"
       >
-        <a href={`#annuaire`} title="Éditer dans l'annuaire">
-          <ExternalLink className="size-3" />
-          Éditer
-        </a>
+        <ExternalLink className="size-3" />
+        Éditer
       </Button>
     </div>
   );

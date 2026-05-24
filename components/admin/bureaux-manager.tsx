@@ -47,13 +47,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Pencil, Plus, Search, Trash2, Loader2, Upload, MapPin, Download, ShieldCheck, ShieldAlert, History, AlertTriangle } from "lucide-react";
+import { Pencil, Plus, Search, Trash2, Loader2, MapPin, Download, ShieldCheck, ShieldAlert, History, AlertTriangle } from "lucide-react";
 import type { SerializedBureau, BureauTypeCode } from "@/lib/bureaus/types";
 import { dayLabelFr } from "@/lib/bureaus/types";
 import { HoursEditor } from "./bureaux/hours-editor";
 import { CommuneCombobox } from "./bureaux/commune-combobox";
 import { ServicesChips } from "./bureaux/services-chips";
-import { ImportCsvDialog } from "./bureaux/import-csv-dialog";
 import { BureauRevisionsDialog } from "./bureaux/revisions-dialog";
 import { BureauFormDialog } from "./bureaux/bureau-form-dialog";
 
@@ -211,7 +210,6 @@ export function BureausManager() {
   const [editing, setEditing] = useState<SerializedBureau | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
 
   const [confirmDelete, setConfirmDelete] = useState<SerializedBureau | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -422,9 +420,8 @@ export function BureausManager() {
             <Button variant="outline" onClick={() => doExport()}>
               <Download className="mr-2 h-4 w-4" /> Export CSV
             </Button>
-            <Button variant="outline" onClick={() => setImportOpen(true)}>
-              <Upload className="mr-2 h-4 w-4" /> Import CSV
-            </Button>
+            {/* Import CSV admin retiré : on utilise les scripts/ pour les
+                imports en masse, l'UI ligne par ligne n'était pas utilisée. */}
             <Button onClick={openCreate}>
               <Plus className="mr-2 h-4 w-4" /> Nouveau bureau
             </Button>
@@ -633,8 +630,6 @@ export function BureausManager() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <ImportCsvDialog open={importOpen} onOpenChange={setImportOpen} onImported={refresh} organismes={organismes} />
 
       <BureauRevisionsDialog
         bureau={revisionsFor}

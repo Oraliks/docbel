@@ -14,7 +14,8 @@ import {
 } from "@/lib/notice-periods-spf";
 import { parseDate, formatDate, calculateSeniority, addDaysToDate, isBeforeThreshold, isValidDate } from "@/lib/date-utils";
 import { getCommissionsParitaires, searchCommissions, CommissionParitaire } from "@/lib/data-client";
-import { BureauLocator } from "./bureau-locator";
+// BureauLocator retiré (composant legacy supprimé) — l'outil "bureaux"
+// est rendu directement par app/outils/bureaux/page.tsx (BureauxFinder).
 import { BureauCallout } from "./bureau-callout";
 
 interface ViewProps {
@@ -1319,15 +1320,8 @@ export function CalcCP({ accent }: ViewProps) {
   );
 }
 
-export function Locator({ tool, accent }: ToolViewProps) {
-  // Le titre détermine le type de bureau initialement mis en avant.
-  const initialType: "ONEM" | "SYNDICAT" | "ALL" = tool.title.includes("ONEM")
-    ? "ONEM"
-    : tool.title.toLowerCase().includes("paiement") || tool.title.toLowerCase().includes("syndicat")
-    ? "SYNDICAT"
-    : "ALL";
-  return <BureauLocator initialFocus={initialType} accent={accent} />;
-}
+// Fonction Locator() supprimée avec BureauLocator. L'outil "bureaux" est
+// désormais routé directement vers app/outils/bureaux/page.tsx.
 
 export function Tutorial({ tool, accent }: ToolViewProps) {
   const [activeStep, setActiveStep] = useState(0);

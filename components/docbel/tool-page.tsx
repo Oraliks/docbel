@@ -12,7 +12,6 @@ import {
   FormFlow,
   InfoPanel,
   LinkPanel,
-  Locator,
   Tutorial,
 } from "./tool-views";
 
@@ -118,7 +117,9 @@ export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
           {type === "calc_preavis" && <CalcPreavis accent={accent} />}
           {type === "calc_agr" && <CalcAGR accent={accent} />}
           {type === "calc_cp" && <CalcCP accent={accent} />}
-          {type === "locator" && <Locator tool={tool} accent={accent} />}
+          {/* type "locator" retiré : le seul outil concerné (slug "bureaux")
+              a sa propre page app/outils/bureaux/page.tsx qui prend la
+              priorité de routing. Composants BureauLocator/Wizard supprimés. */}
           {type === "tutorial" && <Tutorial tool={tool} accent={accent} />}
           {type === "info" && <InfoPanel tool={tool} accent={accent} />}
           {type === "link" && <LinkPanel tool={tool} accent={accent} />}

@@ -2,22 +2,26 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, MapPinned, Network, AlertCircle } from "lucide-react";
+import { Building2, MapPinned, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BureausManager } from "./bureaux-manager";
 import { ServiceAssignmentsManager } from "./bureaux/service-assignments-manager";
 import { OnemAssignmentsManager } from "./bureaux/onem-assignments-manager";
-import { CommissionAssignmentsManager } from "./bureaux/commission-assignments-manager";
 import { ReportsManager } from "./bureaux/reports-manager";
 
-type Tab = "annuaire" | "services" | "onem" | "commissions" | "reports";
+type Tab = "annuaire" | "services" | "onem" | "reports";
 
+// Onglet "commissions" retiré : la feature commission paritaire (syndicats
+// sectoriels) n'était pas surfacée côté front (pas de sélecteur). Code +
+// route + composant supprimés ; modèles Prisma conservés au cas où on
+// veuille ré-ouvrir cette feature (les tables BureauCommission /
+// CommissionParitaire restent en DB, juste plus utilisées).
 const TABS: Array<{ value: Tab; label: string; icon: React.ComponentType<{ className?: string }>; help: string }> = [
   {
     value: "annuaire",
     label: "Annuaire",
     icon: Building2,
-    help: "Tous les bureaux : créer, modifier, vérifier, exporter, importer",
+    help: "Tous les bureaux : créer, modifier, vérifier, exporter",
   },
   {
     value: "services",
@@ -30,12 +34,6 @@ const TABS: Array<{ value: Tab; label: string; icon: React.ComponentType<{ class
     label: "Compétences ONEM",
     icon: MapPinned,
     help: "Vue dédiée ONEM avec sélection multi-communes",
-  },
-  {
-    value: "commissions",
-    label: "Liens commissions",
-    icon: Network,
-    help: "Quels bureaux gèrent quelles commissions paritaires (syndicats sectoriels)",
   },
   {
     value: "reports",
@@ -123,10 +121,6 @@ export function BureauxAdminWorkspace() {
 
       <TabsContent value="onem" className="mt-0">
         <OnemAssignmentsManager />
-      </TabsContent>
-
-      <TabsContent value="commissions" className="mt-0">
-        <CommissionAssignmentsManager />
       </TabsContent>
 
       <TabsContent value="reports" className="mt-0">

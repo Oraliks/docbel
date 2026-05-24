@@ -22,7 +22,6 @@ export type ResolveResult = {
   query: {
     postalCode: string;
     organismePaiement: string | null;
-    commissionCode: string | null;
     mutuelleCode: string | null;
   };
   commune: CommuneSummary | null;
@@ -36,10 +35,6 @@ export type ResolveResult = {
      * /outils/bureaux pour que l'utilisateur choisisse via tabs. */
     organismesPaiement: SerializedBureau[];
     mutuelle: SerializedBureau | null;
-  };
-  sectoriel: {
-    /** Bureaux liés à la commission paritaire (le syndicat sectoriel du user) */
-    commissionRelated: SerializedBureauWithDistance[];
   };
   proximite: {
     syndicats: SerializedBureauWithDistance[];
@@ -59,8 +54,6 @@ const OP_CODES = ["capac", "fgtb", "csc", "cgslb"] as const;
 export type ResolveOptions = {
   /** Code organisme de paiement choisi par le user ("capac" | "fgtb" | "csc" | "cgslb") */
   organismePaiement?: string | null;
-  /** Code commission paritaire (ex: "124") */
-  commissionCode?: string | null;
   /** Code mutuelle ("solidaris" | "mc" | ...) */
   mutuelleCode?: string | null;
 };
@@ -78,11 +71,10 @@ export async function resolveBureausForPostalCode(
   const postalCode = rawCp.trim();
   const warnings: string[] = [];
   const organismePaiement = options.organismePaiement?.toLowerCase() ?? null;
-  const commissionCode = options.commissionCode?.trim() ?? null;
   const mutuelleCode = options.mutuelleCode?.toLowerCase() ?? null;
 
   if (!/^\d{4}$/.test(postalCode)) {
-    return emptyResult(postalCode, organismePaiement, commissionCode, mutuelleCode, [
+    return emptyResult(postalCode, organismePaiement, mutuelleCode, [
       "Code postal invalide (4 chiffres attendus)",
     ]);
   }
@@ -248,54 +240,12 @@ export async function resolveBureausForPostalCode(
     }
   }
 
-  // 3) Bureaux sectoriels (selon commission paritaire)
-  let sectorielBureaus: SerializedBureauWithDistance[] = [];
-  if (commissionCode) {
-    // Recherche flexible : code exact OU numero/numeroOfficiel "200"
-    const commission = await withDbRetry(() =>
-      prisma.commissionParitaire.findFirst({
-        where: {
-          OR: [
-            { code: commissionCode },
-            { numero: commissionCode },
-            { numeroOfficiel: commissionCode },
-          ],
-        },
-      })
-    );
-    if (commission) {
-      const bcs = await withDbRetry(() =>
-        prisma.bureauCommission.findMany({
-          where: { commissionId: commission.id, bureau: { active: true } },
-          include: { bureau: { include: { organisme: true, commune: true } } },
-          take: 30,
-        })
-      );
-      const refLat = commune?.lat ?? null;
-      const refLng = commune?.lng ?? null;
-      sectorielBureaus = bcs
-        .map((bc) => {
-          const b = bc.bureau;
-          const coords = getBureauCoords(b);
-          const dist =
-            refLat !== null && refLng !== null && coords
-              ? haversineKm({ lat: refLat, lng: refLng }, coords)
-              : null;
-          return { ...serializeBureau(b), distanceKm: dist };
-        })
-        .sort((a, b) => {
-          if (a.distanceKm === null && b.distanceKm === null) return 0;
-          if (a.distanceKm === null) return 1;
-          if (b.distanceKm === null) return -1;
-          return a.distanceKm - b.distanceKm;
-        })
-        .slice(0, 8);
-    } else {
-      warnings.push(`Commission paritaire ${commissionCode} introuvable`);
-    }
-  }
+  // Bloc commission paritaire (sectoriel) supprimé : la feature n'était
+  // pas surfacée côté front (pas de sélecteur de commission). Modèles
+  // Prisma BureauCommission / CommissionParitaire conservés au cas où on
+  // veuille la ré-ouvrir.
 
-  // 4) Proximité — syndicats / permanences / autres
+  // 3) Proximité — syndicats / permanences / autres
   const refLat = commune?.lat ?? null;
   const refLng = commune?.lng ?? null;
 
@@ -350,7 +300,7 @@ export async function resolveBureausForPostalCode(
   }
 
   return {
-    query: { postalCode, organismePaiement, commissionCode, mutuelleCode },
+    query: { postalCode, organismePaiement, mutuelleCode },
     commune: commune
       ? {
           id: commune.id,
@@ -372,7 +322,6 @@ export async function resolveBureausForPostalCode(
       organismesPaiement: paiementsRows.map(serializeBureau),
       mutuelle: mutuelleRow ? serializeBureau(mutuelleRow) : null,
     },
-    sectoriel: { commissionRelated: sectorielBureaus },
     proximite: { syndicats, permanences, autres },
     warnings,
   };
@@ -381,15 +330,13 @@ export async function resolveBureausForPostalCode(
 function emptyResult(
   postalCode: string,
   org: string | null,
-  cp: string | null,
   mut: string | null,
   warnings: string[]
 ): ResolveResult {
   return {
-    query: { postalCode, organismePaiement: org, commissionCode: cp, mutuelleCode: mut },
+    query: { postalCode, organismePaiement: org, mutuelleCode: mut },
     commune: null,
     attitre: { cpas: null, commune: null, onem: null, organismePaiement: null, organismesPaiement: [], mutuelle: null },
-    sectoriel: { commissionRelated: [] },
     proximite: { syndicats: [], permanences: [], autres: [] },
     warnings,
   };

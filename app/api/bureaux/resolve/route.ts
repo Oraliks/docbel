@@ -9,7 +9,6 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const cp = sp.get("cp")?.trim() ?? "";
   const org = sp.get("org")?.trim() ?? null;
-  const commission = sp.get("cp_secteur")?.trim() ?? sp.get("commission")?.trim() ?? null;
   const mutuelle = sp.get("mutuelle")?.trim() ?? null;
 
   if (!cp) {
@@ -21,7 +20,6 @@ export async function GET(req: NextRequest) {
   try {
     const result = await resolveBureausForPostalCode(cp, {
       organismePaiement: org,
-      commissionCode: commission,
       mutuelleCode: mutuelle,
     });
     return NextResponse.json(result, { headers: jsonHeaders });

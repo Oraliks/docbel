@@ -285,7 +285,12 @@ export function CalcBrutNet({ accent }: { accent: string }) {
           }
           rows={[
             { label: "Salaire brut", value: fmtEUR(result.brut) },
-            { label: "− Cotisations ONSS (13,07 %)", value: `− ${fmtEUR(result.onss)}` },
+            {
+              label: result.bonus > 0
+                ? `− ONSS retenue (workbonus −${fmtEUR(result.bonus)})`
+                : "− Cotisations ONSS (13,07 %)",
+              value: `− ${fmtEUR(result.onssRetenue)}`,
+            },
             ...(result.atn > 0
               ? [
                   {
@@ -296,8 +301,13 @@ export function CalcBrutNet({ accent }: { accent: string }) {
               : []),
             { label: "= Salaire imposable", value: fmtEUR(result.imposable) },
             { label: "− Précompte professionnel", value: `− ${fmtEUR(result.precompte)}` },
-            ...(result.bonus > 0
-              ? [{ label: "+ Bonus à l'emploi", value: `+ ${fmtEUR(result.bonus)}` }]
+            ...(result.cotisationSpeciale > 0
+              ? [
+                  {
+                    label: "− Cotisation spéciale sécu",
+                    value: `− ${fmtEUR(result.cotisationSpeciale)}`,
+                  },
+                ]
               : []),
             ...(result.chequesRepas > 0
               ? [
@@ -319,12 +329,14 @@ export function CalcBrutNet({ accent }: { accent: string }) {
           ]}
           footer={
             <>
-              <strong>Estimation indicative</strong> — chiffres 2026 simplifiés.
-              L'ATN voiture utilise les coefficients CO2 moyens et la décote
-              d'âge officielle (AR 14/01/2014). Le précompte exact dépend de
-              votre situation fiscale précise (double pécule, conjoint à
-              charge, etc.). Pour le calcul officiel, consultez votre fiche
-              de paie ou le simulateur du <strong>SPF Finances</strong>.
+              <strong>Estimation indicative</strong> — chiffres 2026 calibrés
+              sur le simulateur officiel <strong>CSC Brut-Net</strong>{" "}
+              (tools.lacsc.be, version 1<sup>er</sup> janvier 2026). Le
+              workbonus (volet A + volet B Securex) réduit l'ONSS retenue
+              avant calcul du précompte. Le précompte exact dépend de votre
+              situation fiscale précise (double pécule, ATN multiples,
+              cotisations spéciales). Pour le décompte officiel : votre
+              fiche de paie ou le simulateur du <strong>SPF Finances</strong>.
             </>
           }
         />

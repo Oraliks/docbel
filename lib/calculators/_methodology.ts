@@ -110,7 +110,7 @@ const METHODOLOGIES: CalcMethodology[] = [
     sourceFile: "lib/calculators/brut-net.ts",
     reliability: "high",
     reliabilityNote:
-      "Reproduit la logique du précompte professionnel mensuel (barème ordinaire SPF Finances) avec quotité exemptée modulée par paliers de revenu (fonction `getQuotiteExemptee`), avantage en nature voiture de société (formule 2026 + minimum légal 1 660 €/an) et indemnité télétravail forfaitaire (plafond 154,74 €/mois). Bonus à l'emploi linéarisé (paliers officiels) reste l'unique vraie approximation.",
+      "Calibré sur le simulateur officiel CSC Brut-Net (tools.lacsc.be, version 1ᵉʳ janvier 2026) — écart < 1 € sur 7 cas de référence (2 000-5 000 €, isolé/marié 1 revenu, 0-2 enfants). Workbonus calculé via la formule Securex 1ᵉʳ avril 2026 (volet A + volet B) et déduit de l'ONSS retenue. Précompte interpolé par paliers calibrés ; cotisation spéciale sécu (CSSS) calculée et déduite explicitement. Voiture de société (AR 14/01/2014 + minimum légal 1 660 €/an) et indemnité télétravail (plafond 154,74 €/mois) en plus.",
     year: 2026,
     inputs: [
       "Salaire brut mensuel (€)",
@@ -122,31 +122,43 @@ const METHODOLOGIES: CalcMethodology[] = [
       "Indemnité télétravail forfaitaire mensuelle (0–154,74 €)",
     ],
     formulas: [
-      { label: "ONSS travailleur", expression: "ONSS = brut × 13,07 %" },
+      { label: "ONSS travailleur (théorique)", expression: "ONSS = brut × 13,07 %" },
+      {
+        label: "Workbonus (volet A + volet B)",
+        expression:
+          "Volet A : 125,04 € si brut ≤ 2880,32 €, dégressif jusqu'à 0 à 3 336,98 €. Volet B : 168,62 € si brut ≤ 2 255,50 €, dégressif jusqu'à 0 à 2 880,32 €. Total plafonné à l'ONSS théorique.",
+      },
+      { label: "ONSS retenue", expression: "ONSS_retenue = max(0, ONSS − workbonus)" },
       {
         label: "ATN voiture de société (mensuel)",
         expression:
           "ATN = max(min_légal, valeur_catalogue × 6/7 × coef_CO2 × décote_âge) / 12",
       },
-      { label: "Imposable", expression: "imposable = brut − ONSS + ATN" },
+      { label: "Imposable", expression: "imposable = brut − ONSS_retenue + ATN" },
       {
-        label: "Précompte par tranches",
+        label: "Précompte (interpolation calibrée CSC)",
         expression:
-          "Σ (largeur_tranche × taux), tranches mensuelles 0 → ∞ (0 % / 26,75 % / 42,80 % / 48,15 % / 53,50 %)",
+          "Fonction par paliers calibrée sur 5 points CSC (imposable de 2 000 à 4 346 €), extrapolation 53,50 % au-delà.",
       },
       {
-        label: "Quotité exemptée (paliers SPF)",
+        label: "Réduction statut conjugal",
         expression:
-          "isolé : 280 € (brut < 1 500) → dégressif → 180 € (> 5 000). Marié 1 revenu : 380 € fixe.",
+          "Marié 1 revenu : −13,13 % × imposable (plafond 800 €). Cohabitant/marié 2 revenus : barème isolé.",
       },
       {
-        label: "Réduction quotité + enfants",
-        expression: "précompte_final = max(0, précompte − quotité − réduc_enfants)",
+        label: "Réduction enfants à charge (Annexe III 2026)",
+        expression:
+          "1: 56 € / 2: 190 € / 3: 489 € / 4: 856 € / 5: 1 234 € (calibré CSC, +400 €/enfant au-delà).",
+      },
+      {
+        label: "Cotisation spéciale sécu (CSSS)",
+        expression:
+          "Barème indexé 2026. Calibré sur 5 points CSC. Multiplicateur statut : marié 1 rev ×1,21 / marié 2 rev ×0,85.",
       },
       {
         label: "Net",
         expression:
-          "net = brut − ONSS − précompte + bonus_emploi + chèques_repas + indemnité_télétravail",
+          "net = brut − ONSS_retenue − précompte − CSSS + chèques_repas + indemnité_télétravail",
       },
     ],
     constants: [
@@ -156,29 +168,29 @@ const METHODOLOGIES: CalcMethodology[] = [
         note: "Inchangé depuis 1981. Source: SPF Sécurité Sociale.",
       },
       {
-        name: "Tranches précompte mensuel",
-        value: "1360 / 2400 / 4100 / 7070 €",
-        note: "Bornes mensuelles. Taux 0 / 26,75 / 42,80 / 48,15 / 53,50 %.",
+        name: "Précompte — points de calibrage CSC (isolé)",
+        value: "2000→36,97 / 2400,92→243,24 / 2700,17→436,10 / 3477,20→826,69 / 4346,50→1245,26",
+        note: "Imposable mensuel → précompte mensuel, valeurs lues sur tools.lacsc.be (version 1ᵉʳ janvier 2026). Interpolation linéaire entre points, extrapolation 53,50 % au-delà.",
       },
       {
-        name: "Quotité exemptée par paliers (isolé)",
-        value: `${getQuotiteExemptee("isole", 1200).toFixed(0)} → ${getQuotiteExemptee("isole", 6000).toFixed(0)} €/mois`,
-        note: "280 € si brut < 1 500 ; dégressif linéaire jusqu'à 180 € au-delà de 5 000 €. Cohabitant : ×0,95.",
+        name: "Réduction enfants à charge (mensuel, 2026)",
+        value: "1: 56 € / 2: 190 € / 3: 489 € / 4: 856 € / 5: 1 234 € / +6+ : +400 €/enf.",
+        note: "Calibré sur cas CSC 2 enfants (réduction 190 €). Aligné Annexe III 2026 indexée.",
       },
       {
-        name: "Quotité exemptée mensuelle (marié 1 revenu)",
-        value: `${getQuotiteExemptee("marie_un_revenu", 0)} €/mois`,
-        note: "Fixe, inclut la quotité du conjoint sans revenu.",
+        name: "Workbonus — Volet A (employé)",
+        value: "125,04 € max (brut ≤ 2 880,32 €), dégressif jusqu'à 0 à 3 336,98 €",
+        note: "Source Securex 1ᵉʳ avril 2026. Pente β = 0,2738.",
       },
       {
-        name: "Réduction enfants à charge (mensuel)",
-        value: "1: 45 € / 2: 120 € / 3: 320 € / 4: 580 € / +5: +250 €/enfant",
-        note: "Barème SPF approché — l'écart avec les fiches officielles est minime à faible revenu, plus marqué au-dessus du 4e enfant.",
+        name: "Workbonus — Volet B (employé)",
+        value: "168,62 € max (brut ≤ 2 255,50 €), dégressif jusqu'à 0 à 2 880,32 €",
+        note: "Source Securex 1ᵉʳ avril 2026. Pente β = 0,2699.",
       },
       {
-        name: "Bonus à l'emploi (workbonus)",
-        value: "229,32 €/mois max",
-        note: "Dégressif linéairement entre 2 154,11 et 3 271,48 € de brut (volet A 2026). Source Securex. La formule officielle est par paliers — ici linéarisée.",
+        name: "Cotisation spéciale sécu (CSSS) — points isolé",
+        value: "2000→2,29 / 2400,92→13,74 / 2700,17→19,24 / 3477,20→36,29 / 4346,50→49,51 €/mois",
+        note: "Imposable mensuel → CSSS isolé, calibré CSC. Plafond ~60,94 €/mois pour isolé au-delà de 6 038 €.",
       },
       {
         name: "Chèques-repas",
@@ -207,16 +219,18 @@ const METHODOLOGIES: CalcMethodology[] = [
       },
     ],
     sources: [
-      { name: "SPF Finances — Précompte professionnel", url: "https://finances.belgium.be" },
-      { name: "Code des impôts sur les revenus (CIR 92), art. 131", url: "https://eservices.minfin.fgov.be" },
-      { name: "ONSS — taux des cotisations", url: "https://www.socialsecurity.be" },
+      { name: "CSC — Simulateur Brut-Net (version 1ᵉʳ janvier 2026)", url: "https://tools.lacsc.be/trefzeker-tools/acv/brutonetto-light?lang=fr" },
+      { name: "Securex — Bonus à l'emploi (volet A + B)", url: "https://www.securex.be/fr/lex4you/employeur/montants-actuels/montants-socio-juridiques/bonus-a-l-emploi" },
+      { name: "Securex — Cotisation spéciale sécu (CSSS)", url: "https://www.securex.be/fr/lex4you/employeur/montants-actuels/montants-socio-juridiques/cotisation-speciale-pour-la-securite-sociale" },
+      { name: "SPF Finances — Précompte professionnel", url: "https://finances.belgium.be/fr/entreprises/personnel_et_remuneration/precompte_professionnel/calcul" },
+      { name: "ONSS — taux des cotisations 13,07 %", url: "https://www.socialsecurity.be" },
       { name: "Circulaire 2021/C/20 (indemnité télétravail)", url: "https://finances.belgium.be" },
     ],
     limitations: [
       "Pas de prise en compte de l'assurance groupe / chèques cadeaux / éco-chèques.",
       "Pas de prise en compte de la pension alimentaire versée.",
       "Pas de prise en compte de la quotité régionale (impact <1 % sur le précompte mensuel).",
-      "Bonus à l'emploi linéarisé : la formule officielle est par paliers.",
+      "Précompte interpolé entre points calibrés CSC (2 000-5 000 € brut) ; pour des brut très élevés (>10 000 €), extrapolation au taux marginal 53,50 % — précision dégradée.",
     ],
   },
 

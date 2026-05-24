@@ -104,7 +104,7 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 101,
     cat: "Calculs",
-    icon: "💰",
+    icon: "Wallet",
     title: "Brut ↔ Net",
     desc:
       "Convertissez votre salaire brut en net (ou inversement) selon votre statut familial, votre région et vos avantages.",
@@ -117,7 +117,7 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 102,
     cat: "Calculs",
-    icon: "🏖️",
+    icon: "Plane",
     title: "Pécule de vacances",
     desc:
       "Estimez votre pécule simple et double (employé ou ouvrier) en fonction de votre salaire et de votre ancienneté.",
@@ -130,7 +130,7 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 103,
     cat: "Calculs",
-    icon: "💸",
+    icon: "Coins",
     title: "Allocations de chômage",
     desc:
       "Calculez votre allocation mensuelle de chômage selon votre situation familiale, votre salaire et votre durée de chômage.",
@@ -143,7 +143,7 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 104,
     cat: "Calculs",
-    icon: "📤",
+    icon: "FileSignature",
     title: "Indemnité de rupture",
     desc:
       "Convertissez votre préavis non presté en indemnité compensatoire (€). Complément du calculateur de préavis.",
@@ -156,7 +156,7 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 105,
     cat: "Calculs",
-    icon: "👵",
+    icon: "Hourglass",
     title: "Pension légale estimée",
     desc:
       "Estimation simplifiée de votre pension légale salarié selon votre carrière, votre salaire moyen et votre âge de départ.",
@@ -169,7 +169,7 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 106,
     cat: "Calculs",
-    icon: "👶",
+    icon: "Baby",
     title: "Allocations familiales",
     desc:
       "Calculez vos allocations familiales selon votre région (FAMIWAL, FAMIRIS, Groeipakket, Kindergeld DG) et le rang de l'enfant.",
@@ -182,7 +182,7 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 107,
     cat: "Calculs",
-    icon: "📊",
+    icon: "Calculator",
     title: "Impôt des personnes physiques",
     desc:
       "Simulateur IPP simplifié : tranches d'imposition, quotité exemptée, enfants à charge et additionnels communaux.",
@@ -195,7 +195,7 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 108,
     cat: "Calculs",
-    icon: "⚡",
+    icon: "Zap",
     title: "Tarif social énergie",
     desc:
       "Vérifiez votre éligibilité au tarif social électricité/gaz et estimez votre gain par rapport au tarif standard.",
@@ -208,7 +208,7 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 109,
     cat: "Calculs",
-    icon: "🚗",
+    icon: "Car",
     title: "Frais kilométriques",
     desc:
       "Calculez la déduction fiscale de vos frais domicile-travail selon votre mode de transport (voiture, vélo, transports en commun).",

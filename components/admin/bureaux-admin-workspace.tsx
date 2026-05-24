@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, MapPinned, AlertCircle } from "lucide-react";
+import { Activity, Building2, MapPinned, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BureausManager } from "./bureaux-manager";
 import { ServiceAssignmentsManager } from "./bureaux/service-assignments-manager";
 import { OnemAssignmentsManager } from "./bureaux/onem-assignments-manager";
 import { ReportsManager } from "./bureaux/reports-manager";
+import { HealthDashboard } from "./bureaux/health-dashboard";
 
-type Tab = "annuaire" | "services" | "onem" | "reports";
+type Tab = "sante" | "annuaire" | "services" | "onem" | "reports";
 
 // Onglet "commissions" retiré : la feature commission paritaire (syndicats
 // sectoriels) n'était pas surfacée côté front (pas de sélecteur). Code +
@@ -17,6 +18,12 @@ type Tab = "annuaire" | "services" | "onem" | "reports";
 // veuille ré-ouvrir cette feature (les tables BureauCommission /
 // CommissionParitaire restent en DB, juste plus utilisées).
 const TABS: Array<{ value: Tab; label: string; icon: React.ComponentType<{ className?: string }>; help: string }> = [
+  {
+    value: "sante",
+    label: "Santé",
+    icon: Activity,
+    help: "Vue d'ensemble : couverture territoriale, trous data, stubs à enrichir",
+  },
   {
     value: "annuaire",
     label: "Annuaire",
@@ -44,7 +51,7 @@ const TABS: Array<{ value: Tab; label: string; icon: React.ComponentType<{ class
 ];
 
 export function BureauxAdminWorkspace() {
-  const [tab, setTab] = useState<Tab>("annuaire");
+  const [tab, setTab] = useState<Tab>("sante");
   const [pendingReports, setPendingReports] = useState<number | null>(null);
 
   // Sync depuis l'URL hash (initial + clic sidebar même page)
@@ -85,7 +92,7 @@ export function BureauxAdminWorkspace() {
   const currentTab = TABS.find((t) => t.value === tab);
 
   return (
-    <Tabs value={tab} onValueChange={(v) => setTab((v ?? "annuaire") as Tab)}>
+    <Tabs value={tab} onValueChange={(v) => setTab((v ?? "sante") as Tab)}>
       <TabsList className="flex w-full overflow-x-auto">
         {TABS.map((t) => {
           const Icon = t.icon;
@@ -110,6 +117,10 @@ export function BureauxAdminWorkspace() {
       {currentTab && (
         <p className="text-xs text-muted-foreground mt-2 mb-3 px-1">{currentTab.help}</p>
       )}
+
+      <TabsContent value="sante" className="mt-0">
+        <HealthDashboard />
+      </TabsContent>
 
       <TabsContent value="annuaire" className="mt-0">
         <BureausManager />

@@ -14,6 +14,17 @@ import {
   LinkPanel,
   Tutorial,
 } from "./tool-views";
+import {
+  CalcBrutNet,
+  CalcPecule,
+  CalcChomage,
+  CalcIndemnite,
+  CalcPension,
+  CalcAllocsFam,
+  CalcIPP,
+  CalcTarifSocial,
+  CalcKm,
+} from "./calculators";
 
 const VARIANT_BG: Record<string, string> = {
   a: "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
@@ -117,6 +128,16 @@ export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
           {type === "calc_preavis" && <CalcPreavis accent={accent} />}
           {type === "calc_agr" && <CalcAGR accent={accent} />}
           {type === "calc_cp" && <CalcCP accent={accent} />}
+          {/* Batch calculateurs citoyens 2026-05 — cf. components/docbel/calculators/ */}
+          {type === "calc_brut_net" && <CalcBrutNet accent={accent} />}
+          {type === "calc_pecule" && <CalcPecule accent={accent} />}
+          {type === "calc_chomage" && <CalcChomage accent={accent} />}
+          {type === "calc_indemnite" && <CalcIndemnite accent={accent} />}
+          {type === "calc_pension" && <CalcPension accent={accent} />}
+          {type === "calc_allocs_fam" && <CalcAllocsFam accent={accent} />}
+          {type === "calc_ipp" && <CalcIPP accent={accent} />}
+          {type === "calc_tarif_social" && <CalcTarifSocial accent={accent} />}
+          {type === "calc_km" && <CalcKm accent={accent} />}
           {/* type "locator" retiré : le seul outil concerné (slug "bureaux")
               a sa propre page app/outils/bureaux/page.tsx qui prend la
               priorité de routing. Composants BureauLocator/Wizard supprimés. */}

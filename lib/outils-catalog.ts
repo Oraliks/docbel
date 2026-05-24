@@ -23,6 +23,16 @@ const TYPE_TO_CATEGORY: Record<string, string> = {
   calc_preavis: 'Calculs',
   calc_agr: 'Calculs',
   calc_cp: 'Calculs',
+  // Batch calculateurs citoyens 2026-05 (cf. lib/calculators/*).
+  calc_brut_net: 'Calculs',
+  calc_pecule: 'Calculs',
+  calc_chomage: 'Calculs',
+  calc_indemnite: 'Calculs',
+  calc_pension: 'Calculs',
+  calc_allocs_fam: 'Calculs',
+  calc_ipp: 'Calculs',
+  calc_tarif_social: 'Calculs',
+  calc_km: 'Calculs',
   locator: 'Organismes',
   tutorial: 'Tutoriels',
   info: 'Référentiels',
@@ -87,6 +97,9 @@ export async function getPublicCatalog(): Promise<Tool[]> {
     const slug = s.slug ?? toolSlug(s.title)
     // Toujours afficher les entrées avec href absolu (ex: partenaire/...)
     if (s.href) return true
+    // Calculateurs purement statiques (logique en code, pas de DocumentTemplate)
+    // — on les expose tant qu'aucune entrée DB ne couvre déjà le slug.
+    if (s.type?.startsWith('calc_') && !dbSlugs.has(slug)) return true
     // Sinon, n'afficher que si le slug existe AUSSI en DB → on garde la
     // version DB (filtrée plus haut), donc rien à ajouter ici.
     return false && dbSlugs.has(slug)

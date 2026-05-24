@@ -95,6 +95,129 @@ export const TOOLS_DATA: Tool[] = [
     href: "/partenaire/lookup-onem",
     audiences: ["partenaire"],
   },
+
+  /* ------------------------------------------------------------------ */
+  /*  Calculateurs citoyens — batch 2026-05                              */
+  /*  Sans backend : logique pure dans lib/calculators/, vue dans        */
+  /*  components/docbel/calculators/. Slug stable explicite.             */
+  /* ------------------------------------------------------------------ */
+  {
+    id: 101,
+    cat: "Calculs",
+    icon: "💰",
+    title: "Brut ↔ Net",
+    desc:
+      "Convertissez votre salaire brut en net (ou inversement) selon votre statut familial, votre région et vos avantages.",
+    popular: true,
+    time: "2 min",
+    type: "calc_brut_net",
+    slug: "brut-net",
+    audiences: ["citoyen", "employeur"],
+  },
+  {
+    id: 102,
+    cat: "Calculs",
+    icon: "🏖️",
+    title: "Pécule de vacances",
+    desc:
+      "Estimez votre pécule simple et double (employé ou ouvrier) en fonction de votre salaire et de votre ancienneté.",
+    popular: true,
+    time: "2 min",
+    type: "calc_pecule",
+    slug: "pecule-vacances",
+    audiences: ["citoyen"],
+  },
+  {
+    id: 103,
+    cat: "Calculs",
+    icon: "💸",
+    title: "Allocations de chômage",
+    desc:
+      "Calculez votre allocation mensuelle de chômage selon votre situation familiale, votre salaire et votre durée de chômage.",
+    popular: true,
+    time: "3 min",
+    type: "calc_chomage",
+    slug: "allocations-chomage",
+    audiences: ["citoyen"],
+  },
+  {
+    id: 104,
+    cat: "Calculs",
+    icon: "📤",
+    title: "Indemnité de rupture",
+    desc:
+      "Convertissez votre préavis non presté en indemnité compensatoire (€). Complément du calculateur de préavis.",
+    popular: false,
+    time: "2 min",
+    type: "calc_indemnite",
+    slug: "indemnite-rupture",
+    audiences: ["citoyen", "employeur"],
+  },
+  {
+    id: 105,
+    cat: "Calculs",
+    icon: "👵",
+    title: "Pension légale estimée",
+    desc:
+      "Estimation simplifiée de votre pension légale salarié selon votre carrière, votre salaire moyen et votre âge de départ.",
+    popular: false,
+    time: "3 min",
+    type: "calc_pension",
+    slug: "pension-estimation",
+    audiences: ["citoyen"],
+  },
+  {
+    id: 106,
+    cat: "Calculs",
+    icon: "👶",
+    title: "Allocations familiales",
+    desc:
+      "Calculez vos allocations familiales selon votre région (FAMIWAL, FAMIRIS, Groeipakket, Kindergeld DG) et le rang de l'enfant.",
+    popular: true,
+    time: "2 min",
+    type: "calc_allocs_fam",
+    slug: "allocations-familiales",
+    audiences: ["citoyen"],
+  },
+  {
+    id: 107,
+    cat: "Calculs",
+    icon: "📊",
+    title: "Impôt des personnes physiques",
+    desc:
+      "Simulateur IPP simplifié : tranches d'imposition, quotité exemptée, enfants à charge et additionnels communaux.",
+    popular: true,
+    time: "3 min",
+    type: "calc_ipp",
+    slug: "ipp-simulateur",
+    audiences: ["citoyen"],
+  },
+  {
+    id: 108,
+    cat: "Calculs",
+    icon: "⚡",
+    title: "Tarif social énergie",
+    desc:
+      "Vérifiez votre éligibilité au tarif social électricité/gaz et estimez votre gain par rapport au tarif standard.",
+    popular: true,
+    time: "2 min",
+    type: "calc_tarif_social",
+    slug: "tarif-social-energie",
+    audiences: ["citoyen"],
+  },
+  {
+    id: 109,
+    cat: "Calculs",
+    icon: "🚗",
+    title: "Frais kilométriques",
+    desc:
+      "Calculez la déduction fiscale de vos frais domicile-travail selon votre mode de transport (voiture, vélo, transports en commun).",
+    popular: false,
+    time: "2 min",
+    type: "calc_km",
+    slug: "frais-kilometriques",
+    audiences: ["citoyen"],
+  },
 ];
 
 export function getToolsByAudience(audience: AudienceId): Tool[] {

@@ -50,6 +50,7 @@ import { Switch } from "@/components/ui/switch";
 import { Pencil, Plus, Search, Trash2, Loader2, MapPin, Download, ShieldCheck, ShieldAlert, History, AlertTriangle } from "lucide-react";
 import type { SerializedBureau, BureauTypeCode } from "@/lib/bureaus/types";
 import { dayLabelFr } from "@/lib/bureaus/types";
+import { displayBureauName } from "@/lib/bureaus/format";
 import { HoursEditor } from "./bureaux/hours-editor";
 import { CommuneCombobox } from "./bureaux/commune-combobox";
 import { ServicesChips } from "./bureaux/services-chips";
@@ -515,7 +516,9 @@ export function BureausManager() {
               {items.map((b) => (
                 <TableRow key={b.id}>
                   <TableCell>
-                    <div className="font-medium">{b.name}</div>
+                    {/* displayBureauName : "BRUXELLES" → "ONEM de Bruxelles"
+                        pour les bureaux ONEM, cohérent avec le front public. */}
+                    <div className="font-medium">{displayBureauName(b)}</div>
                     {b.organismeName && (
                       <div className="text-xs text-muted-foreground">{b.organismeName}</div>
                     )}

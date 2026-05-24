@@ -16,6 +16,7 @@ import {
   Phone,
   Search,
 } from "lucide-react";
+import { displayBureauName } from "@/lib/bureaus/format";
 
 interface BureauResult {
   id: string;
@@ -304,7 +305,7 @@ function PreviewBureauRow({ bureau }: { bureau: BureauResult }) {
           )}
         </div>
         <p className="text-sm font-semibold leading-tight truncate">
-          {bureau.name}
+          {displayBureauName(bureau)}
         </p>
         <p className="text-xs text-muted-foreground leading-snug truncate">
           {bureau.street}

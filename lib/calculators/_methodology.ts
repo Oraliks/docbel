@@ -51,6 +51,26 @@ export interface MethodologyFormula {
   expression: string;
 }
 
+/** Étape de maintenance : "quoi vérifier", "où", "quand". */
+export interface MaintenanceStep {
+  /** Ce qu'il faut surveiller (ex: "Barème workbonus"). */
+  trigger: string;
+  /** Quelle source consulter en priorité. */
+  source: string;
+  /** URL directe vers la page à vérifier. */
+  sourceUrl: string;
+  /** À quel rythme (ex: "Chaque 1er janvier" / "Trimestriel"). */
+  frequency: string;
+  /** Quel fichier .ts modifier dans le code. */
+  codeLocation?: string;
+}
+
+/** Différenciateur vs les autres calculateurs publics belges. */
+export interface MethodologyDifferentiator {
+  label: string;
+  description: string;
+}
+
 export interface CalcMethodology {
   /** Slug public (= URL `/outils/{slug}`). */
   slug: string;
@@ -66,6 +86,15 @@ export interface CalcMethodology {
   reliabilityNote: string;
   /** Année de référence des barèmes (ex: 2026). */
   year: number;
+  /**
+   * Date de dernière mise à jour du calcul (ISO YYYY-MM-DD).
+   * Utilisée pour afficher "Mis à jour le …" côté public et pour
+   * déclencher l'alerte annuelle (si > 12 mois). Optionnel pour
+   * les calcs hérités — fallback : DEFAULT_LAST_UPDATED.
+   */
+  lastUpdatedAt?: string;
+  /** Badges courts à afficher en en-tête (ex: ["Belgique", "ATN 2026"]). */
+  badges?: string[];
   /** Inputs principaux que l'utilisateur fournit. */
   inputs: string[];
   /** Formules-clés, dans l'ordre logique. */
@@ -76,6 +105,41 @@ export interface CalcMethodology {
   sources: MethodologySource[];
   /** Limites volontaires (ce que le calc n'essaie PAS de modéliser). */
   limitations: string[];
+  /** Ce que cet outil fait mieux que les calculateurs concurrents. */
+  differentiators?: MethodologyDifferentiator[];
+  /** Guide pratique pour la mise à jour annuelle. */
+  maintenanceGuide?: MaintenanceStep[];
+  /** Texte d'introduction pédagogique (Markdown allégé, 2-4 paragraphes). */
+  pedagogyIntro?: string;
+}
+
+/**
+ * Date par défaut de dernière mise à jour pour les calcs qui n'en
+ * définissent pas une explicite. À ajuster manuellement après chaque
+ * sprint de mise à jour des barèmes.
+ */
+export const DEFAULT_LAST_UPDATED = "2026-05-24";
+
+/**
+ * Renvoie la date de dernière mise à jour effective d'un calc
+ * (sa propre date si définie, sinon la date par défaut).
+ */
+export function getLastUpdatedAt(m: CalcMethodology): string {
+  return m.lastUpdatedAt ?? DEFAULT_LAST_UPDATED;
+}
+
+/**
+ * True si la dernière mise à jour date de plus de 12 mois → l'admin
+ * doit revérifier les sources officielles (la plupart des barèmes sont
+ * indexés annuellement, alors une révision annuelle est suffisante).
+ */
+export function isReviewOverdue(m: CalcMethodology): boolean {
+  const last = new Date(getLastUpdatedAt(m));
+  const now = new Date();
+  const monthsDiff =
+    (now.getFullYear() - last.getFullYear()) * 12 +
+    (now.getMonth() - last.getMonth());
+  return monthsDiff >= 12;
 }
 
 /* ------------------------------------------------------------------ */
@@ -112,6 +176,100 @@ const METHODOLOGIES: CalcMethodology[] = [
     reliabilityNote:
       "Calibré sur le simulateur officiel CSC Brut-Net (tools.lacsc.be, version 1ᵉʳ janvier 2026) — écart < 1 € sur 7 cas de référence (2 000-5 000 €, isolé/marié 1 revenu, 0-2 enfants). Workbonus calculé via la formule Securex 1ᵉʳ avril 2026 (volet A + volet B) et déduit de l'ONSS retenue. Précompte interpolé par paliers calibrés ; cotisation spéciale sécu (CSSS) calculée et déduite explicitement. Voiture de société (AR 14/01/2014 + minimum légal 1 660 €/an) et indemnité télétravail (plafond 154,74 €/mois) en plus.",
     year: 2026,
+    lastUpdatedAt: "2026-05-24",
+    badges: ["Belgique", "ATN 2026", "Données 2026"],
+    pedagogyIntro:
+      "Le passage du brut au net combine 4 prélèvements : l'**ONSS travailleur** (13,07 %, partiellement annulé par le **bonus à l'emploi** pour les bas salaires), le **précompte professionnel** (impôt mensuel sur le revenu, barème SPF), la **cotisation spéciale sécurité sociale** (CSSS) et la **régularisation annuelle** via la déclaration. Notre calcul reproduit les 4, plus les avantages courants (chèques-repas, indemnité télétravail, ATN voiture de société).",
+    differentiators: [
+      {
+        label: "Calibré sur 7 cas CSC officiels (écart < 1 €)",
+        description:
+          "Plutôt que d'implémenter l'Annexe III AR/CIR 92 (très complexe, donne des résultats systématiquement supérieurs à ceux affichés par CSC/FGTB sur les fiches de paie), on calibre par interpolation directement sur les valeurs publiées par la CSC. C'est ce que voient les syndicats et les fiches de paie.",
+      },
+      {
+        label: "Cotisation spéciale sécu (CSSS) explicite",
+        description:
+          "La plupart des calculateurs grand public oublient la CSSS dans la ligne mensuelle ou l'agrègent au précompte. Nous l'isolons (~20-50 €/mois selon le brut) pour transparence pédagogique.",
+      },
+      {
+        label: "Workbonus en réduction d'ONSS (pas en ajout au net)",
+        description:
+          "Erreur classique : ajouter le bonus à l'emploi au net comme une 'prime'. La réalité légale : il réduit la cotisation ONSS retenue à la source. Avec la formule Securex officielle volet A + volet B.",
+      },
+      {
+        label: "Voiture de société (ATN) intégrée",
+        description:
+          "Calcul AR 14/01/2014 indexé 2026 : valeur catalogue × 6/7 × coef CO2 × décote vétusté, avec minimum légal 1 660 €/an. L'ATN s'ajoute à l'imposable, pas au net en poche.",
+      },
+      {
+        label: "Indemnité télétravail forfaitaire",
+        description:
+          "Plafond 154,74 €/mois (circulaire 2021/C/20). Non imposable, non soumise à l'ONSS — s'ajoute directement au net.",
+      },
+    ],
+    maintenanceGuide: [
+      {
+        trigger: "Workbonus (volet A + B)",
+        source: "Securex — Bonus à l'emploi",
+        sourceUrl:
+          "https://www.securex.be/fr/lex4you/employeur/montants-actuels/montants-socio-juridiques/bonus-a-l-emploi",
+        frequency: "2 fois/an (1ᵉʳ janvier + 1ᵉʳ avril)",
+        codeLocation: "lib/calculators/brut-net.ts → calcWorkbonus()",
+      },
+      {
+        trigger: "Barème précompte professionnel mensuel",
+        source: "SPF Finances — PDF Annexe III AR/CIR 92",
+        sourceUrl:
+          "https://finances.belgium.be/fr/entreprises/personnel_et_remuneration/precompte_professionnel/calcul",
+        frequency: "1 fois/an (publié mi-décembre, applicable 1ᵉʳ janvier)",
+        codeLocation: "lib/calculators/brut-net.ts → PRECOMPTE_POINTS",
+      },
+      {
+        trigger: "Cotisation spéciale sécurité sociale",
+        source: "Securex — Cotisation spéciale sécu",
+        sourceUrl:
+          "https://www.securex.be/fr/lex4you/employeur/montants-actuels/montants-socio-juridiques/cotisation-speciale-pour-la-securite-sociale",
+        frequency: "1 fois/an (janvier)",
+        codeLocation: "lib/calculators/brut-net.ts → calcCSSS()",
+      },
+      {
+        trigger: "Réduction enfants à charge",
+        source: "SPF Finances (même PDF que précompte)",
+        sourceUrl: "https://finances.belgium.be",
+        frequency: "1 fois/an",
+        codeLocation: "lib/calculators/brut-net.ts → reductionEnfants()",
+      },
+      {
+        trigger: "Quotient conjugal (marié 1 revenu)",
+        source: "SPF Finances (CIR 92 art. 134)",
+        sourceUrl: "https://finances.belgium.be",
+        frequency: "1 fois/an",
+        codeLocation:
+          "lib/calculators/brut-net.ts → reductionMarie1Revenu()",
+      },
+      {
+        trigger: "Plafond chèques-repas (titres-repas)",
+        source: "UCM / Liantis — Titres-repas",
+        sourceUrl: "https://www.ucm.be",
+        frequency: "Selon CCT (annuel ou ad hoc)",
+        codeLocation: "lib/calculators/brut-net.ts → CHEQUES_REPAS_PAR_JOUR",
+      },
+      {
+        trigger: "Plafond indemnité télétravail",
+        source: "SPF Finances — Circulaire 2021/C/20",
+        sourceUrl: "https://finances.belgium.be",
+        frequency: "1 fois/an (indexation)",
+        codeLocation: "lib/calculators/brut-net.ts → INDEMNITE_TELEWORK_PLAFOND",
+      },
+      {
+        trigger: "Cas de validation (regression test)",
+        source: "CSC — Simulateur Brut-Net",
+        sourceUrl:
+          "https://tools.lacsc.be/trefzeker-tools/acv/brutonetto-light?lang=fr",
+        frequency: "1 fois/an (vérification finale)",
+        codeLocation: "scripts/debug-brut-net.ts → re-tester 7 cas",
+      },
+    ],
     inputs: [
       "Salaire brut mensuel (€)",
       "Statut fiscal : isolé / cohabitant / marié 1 revenu / marié 2 revenus",

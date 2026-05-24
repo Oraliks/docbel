@@ -7,6 +7,11 @@ import {
   getMethodologyBySlug,
 } from "@/lib/calculators/_methodology";
 import { MethodologyCard } from "@/components/admin/calculateurs/methodology-card";
+import {
+  AssetsManager,
+  type CalculatorAsset,
+} from "@/components/admin/calculateurs/assets-manager";
+import { ReviewBanner } from "@/components/admin/calculateurs/review-banner";
 
 /**
  * Page admin : fiche méthodologie d'UN calculateur, accessible via le
@@ -49,8 +54,20 @@ export default async function MethodologyDetailPage({
       description: true,
       popular: true,
       active: true,
+      lastReviewedAt: true,
+      nextReviewDue: true,
     },
   });
+
+  // Sources officielles attachées au calc (URLs externes, PDFs téléchargeables)
+  const rawAssets = await prisma.calculatorAsset.findMany({
+    where: { slug },
+    orderBy: [{ order: "asc" }, { uploadedAt: "desc" }],
+  });
+  const assets: CalculatorAsset[] = rawAssets.map((a) => ({
+    ...a,
+    uploadedAt: a.uploadedAt.toISOString(),
+  }));
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6 lg:px-6">
@@ -66,6 +83,19 @@ export default async function MethodologyDetailPage({
         <span>/</span>
         <span className="truncate">{methodology.title}</span>
       </nav>
+
+      {/* Bandeau revue annuelle (si Tool existe en DB) -------------- */}
+      {dbTool ? (
+        <ReviewBanner
+          slug={slug}
+          lastReviewedAt={
+            dbTool.lastReviewedAt ? dbTool.lastReviewedAt.toISOString() : null
+          }
+          nextReviewDue={
+            dbTool.nextReviewDue ? dbTool.nextReviewDue.toISOString() : null
+          }
+        />
+      ) : null}
 
       {/* Version DB éditée par l'admin (si présente) ----------------- */}
       {dbTool ? (
@@ -121,8 +151,11 @@ export default async function MethodologyDetailPage({
         </section>
       )}
 
+      {/* Sources officielles & PDFs téléchargeables ----------------- */}
+      <AssetsManager slug={slug} initialAssets={assets} />
+
       {/* Fiche méthodologie complète --------------------------------- */}
-      <MethodologyCard data={methodology} />
+      <MethodologyCard data={methodology} assets={assets} />
 
       {/* Liens rapides ----------------------------------------------- */}
       <section className="flex flex-wrap gap-3 text-[12.5px]">

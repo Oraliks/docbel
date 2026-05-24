@@ -244,6 +244,13 @@ model Tool {
   timeMin     Int?
   order       Int         @default(0)
   active      Boolean     @default(true) // false = caché du catalogue public
+  // Vérification annuelle de la fiabilité des chiffres / formules. L'admin
+  // appuie sur "Marquer comme revu" via /api/admin/calculators/[slug]/review
+  // → lastReviewedAt = now, nextReviewDue = now + 12 mois. Un bandeau
+  // d'alerte s'affiche dans /admin/chomage/outils/calculateurs/[slug]
+  // dès que nextReviewDue arrive ou est passé.
+  lastReviewedAt DateTime?
+  nextReviewDue  DateTime?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -251,6 +258,36 @@ model Tool {
 
   @@index([sectionId])
   @@index([slug])
+  @@index([nextReviewDue])
+}
+
+/// Sources officielles attachées à un calculateur citoyen.
+/// kind="url"   → URL externe (SPF Finances, Securex, CSC, Moniteur belge…)
+/// kind="pdf"   → fichier PDF uploadé via Vercel Blob (barème téléchargeable)
+/// kind="image" → capture / scan / diagramme uploadé via Vercel Blob
+///
+/// Catégorise par grand thème (workbonus, precompte, css, atn, general)
+/// pour permettre de filtrer dans l'admin & afficher en groupes côté public.
+model CalculatorAsset {
+  id          String   @id @default(cuid())
+  slug        String   // slug du calc, ex "brut-net" (réfère à Tool.slug, sans FK pour simplifier le seed)
+  kind        String   // "pdf" | "url" | "image"
+  label       String   // ex "Barème SPF Annexe III 2026"
+  description String?  // optionnel
+  url         String   // URL publique (Vercel Blob ou URL externe directe)
+  category    String?  // "workbonus" | "precompte" | "css" | "atn" | "general" | ...
+  fileSize    Int?     // bytes (pour les uploads)
+  mimeType    String?  // "application/pdf", "image/png", …
+  year        Int?     // année de référence (2026, 2025, …)
+  order       Int      @default(0)
+  uploadedAt  DateTime @default(now())
+  uploadedBy  String?  // User.id ou email — pas de FK : on garde l'historique même si l'admin part
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@index([slug, category])
+  @@index([slug, order])
 }
 
 model News {

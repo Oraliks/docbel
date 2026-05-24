@@ -1,23 +1,27 @@
 /**
- * Calcul des allocations familiales belges — version simplifiée 2026.
+ * Calcul des allocations familiales belges — version 2026 (mars 2026 indexé).
  *
- * Depuis la régionalisation (2019), chaque entité gère son propre régime
+ * Depuis la régionalisation (2019/2020), chaque entité gère son propre régime
  * d'allocations familiales :
  *
  *  - WALLONIE        → FAMIWAL (et caisses privées agréées en Wallonie)
  *                      → famiwal.be / aviq.be (Agence pour une Vie de Qualité)
+ *                      → pivot ancien/nouveau régime : 1ᵉʳ janvier **2020**
  *  - BRUXELLES       → FAMIRIS (et caisses privées agréées à Bruxelles)
  *                      → famiris.brussels / iriscare.brussels
+ *                      → pivot ancien/nouveau régime : 1ᵉʳ janvier **2020** (réforme entrée en vigueur 01/12/2019)
  *  - FLANDRE         → Groeipakket (« paquet de croissance »)
  *                      → groeipakket.be / opgroeien.be
+ *                      → pivot ancien/nouveau régime : 1ᵉʳ janvier **2019**
  *  - GERMANOPHONE    → Ministerium der Deutschsprachigen Gemeinschaft
  *                      → Kindergeld DG / ostbelgienlive.be
+ *                      → régime unique depuis 2019 (Basiskindergeld + suppléments)
  *
- * Les montants 2026 utilisés ici sont INDICATIFS et arrondis à l'euro :
- * la réalité dépend de la date exacte de naissance (régime « ancien »
- * vs « nouveau » selon la région), de la composition du ménage, du
- * revenu imposable du ménage, du handicap éventuel, et d'autres
- * suppléments. Pour le montant officiel, il faut interroger sa caisse.
+ * Les montants 2026 ici sont issus des sites OFFICIELS des organismes
+ * régionaux (FAMIWAL/FAMIRIS/Groeipakket/Ostbelgien Familie) au printemps
+ * 2026. Indexation au 1ᵉʳ mars (FAMIWAL/FAMIRIS) ou au 1ᵉʳ septembre
+ * (Groeipakket). La réalité dépend de la date exacte de naissance, du
+ * revenu cadastral, et du nombre de points AVIQ / Iriscare / Opgroeien.
  *
  * AVERTISSEMENT : ce calcul ne remplace pas un avis officiel. Il vise
  * juste à donner un ordre de grandeur réaliste au citoyen avant qu'il
@@ -32,8 +36,9 @@ export interface EnfantInput {
   /** Année de naissance de l'enfant (entre 2000 et l'année courante). */
   anneeNaissance: number;
   /**
-   * Enfant reconnu en situation de handicap (catégorie médiane 4-6 points,
-   * valeur indicative — la réalité va de 30 € à 700 € selon la gravité).
+   * Enfant reconnu en situation de handicap (catégorie médiane — au sens
+   * AVIQ : 6-8 points sur les 3 piliers et ≥4 points sur le pilier 1).
+   * Le montant réel va de ~141 € (atteinte modérée) à ~621 € (handicap sévère).
    */
   handicap?: boolean;
   /**
@@ -62,11 +67,15 @@ export interface AllocsFamDetailRow {
   montantBase: number;
   /** Suppléments mensuels cumulés pour cet enfant (tous suppléments confondus). */
   supplements: number;
+  /** Supplément social bas/intermédiaire revenu (inclus dans `supplements`). */
+  supplementSocial?: number;
+  /** Supplément monoparental (inclus dans `supplements`). */
+  supplementMonoparental?: number;
   /** Supplément handicap mensuel (inclus dans `supplements`). */
   supplementHandicap?: number;
   /** Supplément orphelin mensuel (inclus dans `supplements`). */
   supplementOrphelin?: number;
-  /** Supplément 3e enfant Bruxelles (inclus dans `supplements`). */
+  /** Supplément large famille (3e enfant Bruxelles / DG) (inclus). */
   supplement3eEnfant?: number;
   /** Total mensuel pour cet enfant (base + suppléments). */
   total: number;
@@ -89,72 +98,176 @@ export interface AllocsFamResult {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Constantes — montants 2026 indicatifs                             */
+/*  Constantes — montants 2026 indexés (mars 2026 / sept 2025)         */
 /* ------------------------------------------------------------------ */
 
-/** Seuil « bas revenu » utilisé par la plupart des régimes (€/an). */
-const SEUIL_BAS_REVENU = 36_000;
-/** Seuil intermédiaire Flandre. */
-const SEUIL_FLANDRE_INTERMEDIAIRE = 62_000;
-/** Seuil bas Flandre. */
-const SEUIL_FLANDRE_BAS = 32_000;
-
 /**
- * Date pivot ancien/nouveau régime — IDENTIQUE pour les 3 régions :
- * enfants nés à partir du 1er janvier 2019 → nouveau régime régional.
- * (Auparavant on utilisait 2020 pour WAL/BXL — c'était une erreur.)
+ * Date pivot ancien/nouveau régime :
+ *  - Wallonie / Bruxelles : nés à partir du 1ᵉʳ janvier 2020.
+ *  - Flandre : nés à partir du 1ᵉʳ janvier 2019.
  */
-const PIVOT_NOUVEAU_REGIME = 2019;
+const PIVOT_WAL_BXL = 2020;
 const PIVOT_FLANDRE = 2019;
 
-/**
- * Supplément handicap mensuel — catégorie médiane (4-6 points de
- * reconnaissance officielle). Le réel va de ~30 € (légère atteinte) à
- * ~700 € (handicap sévère) selon la grille AViQ / Iriscare / Kind & Gezin.
- */
-const SUPPLEMENT_HANDICAP: Record<Region, number> = {
-  wallonie: 85,
-  bruxelles: 90,
-  flandre: 85,
-  germanophone: 85,
-};
+/* ----- WALLONIE — FAMIWAL (sources : famiwal.be, mars 2026) -------- */
 
-/** Supplément orphelin partiel (un parent décédé) — €/mois indicatif. */
-const SUPPLEMENT_ORPHELIN_UN: Record<Region, number> = {
-  wallonie: 175,
-  bruxelles: 175,
-  flandre: 200,
-  germanophone: 180,
-};
+const WAL_BASE_NOUVEAU_0_17 = 196.57;
+const WAL_BASE_NOUVEAU_18_24 = 209.25;
+const WAL_BASE_ANCIEN = { rang1: 121.5, rang2: 224.82, rang3plus: 335.66 };
 
-/** Supplément orphelin complet (deux parents décédés) — €/mois indicatif. */
-const SUPPLEMENT_ORPHELIN_DEUX: Record<Region, number> = {
-  wallonie: 400,
-  bruxelles: 400,
-  flandre: 450,
-  germanophone: 400,
-};
+/** Seuils de revenu FAMIWAL 2026 (€/an brut). */
+const WAL_SEUIL_BAS = 34_000.47;
+const WAL_SEUIL_INTERMEDIAIRE = 54_867.79;
+
+/** Supplément social par enfant nouveau régime (≥2020). */
+const WAL_SUPP_SOCIAL_NOUVEAU_BAS = 69.75;
+const WAL_SUPP_SOCIAL_NOUVEAU_INT = 31.71;
+
+/** Supplément social par enfant ancien régime (<2020) selon rang. */
+const WAL_SUPP_SOCIAL_ANCIEN = { rang1: 61.85, rang2: 38.34, rang3plus: 6.73 };
 
 /**
- * Supplément « large famille » Bruxelles (FAMIRIS) :
- * +50 €/mois à partir du 3e enfant (rang ≥ 3).
+ * Supplément monoparental, nouveau régime (≥2020), s'ajoute au supplément
+ * social (les deux sont cumulables — info FAMIWAL « le supplément
+ * monoparental s'ajoute au supplément social »).
  */
-const SUPPLEMENT_3E_ENFANT_BXL = 50;
+const WAL_SUPP_MONO_NOUVEAU_BAS = 25.36;
+const WAL_SUPP_MONO_NOUVEAU_INT = 12.68;
+
+/** Supplément monoparental ancien régime — assimilé au supplément social. */
+const WAL_SUPP_MONO_ANCIEN = { rang1: 61.85, rang2: 38.34, rang3plus: 30.92 };
+
+/** Supplément handicap médian FAMIWAL (catégorie 6-8 pts, 4+ pilier 1). */
+const WAL_SUPP_HANDICAP_MEDIAN = 141.9; // valeur médiane "douce" (≥ 6-8 pts, < 4 pilier 1)
+const WAL_SUPP_HANDICAP_GRAVE = 546.61; // catégorie 6-8 + ≥4 pilier 1
+
+/** Supplément orphelin FAMIWAL nouveau régime (≥2020). */
+const WAL_SUPP_ORPHELIN_UN_0_17 = 98.29;
+const WAL_SUPP_ORPHELIN_UN_18_24 = 104.63;
+const WAL_SUPP_ORPHELIN_DEUX = 443.87;
+
+/** Supplément orphelin FAMIWAL ancien régime (<2020) — décès antérieurs. */
+const WAL_SUPP_ORPHELIN_ANCIEN_UN = 466.75;
+const WAL_SUPP_ORPHELIN_ANCIEN_DEUX = 466.75;
+
+/** Prime de naissance FAMIWAL 2026 (forfait unique, ≥2020). */
+const WAL_PRIME_NAISSANCE = 1_395.02;
+const WAL_PRIME_NAISSANCE_ANCIEN = 1_646.08; // pour mémoire (rang 1 ancien)
+
+/** Prime scolaire FAMIWAL 2026 — nouveau régime (€/an). */
+function walBonusRentree(age: number): number {
+  if (age < 0) return 0;
+  if (age <= 4) return 25.36;
+  if (age <= 10) return 38.05;
+  if (age <= 16) return 63.41;
+  if (age <= 24) return 101.46;
+  return 0;
+}
+
+/* ----- BRUXELLES — FAMIRIS (sources : famiris.brussels, mars 2026) - */
+
+/** Base mensuelle FAMIRIS par âge — nouveau régime (≥01/12/2019). */
+const BXL_BASE_NOUVEAU_0_11 = 190.23;
+const BXL_BASE_NOUVEAU_12_17 = 202.91;
+const BXL_BASE_NOUVEAU_18_24 = 215.59;
+
+/** Base mensuelle FAMIRIS par âge — ancien régime (<01/12/2019). */
+const BXL_BASE_ANCIEN_0_11 = 177.55;
+const BXL_BASE_ANCIEN_12_17 = 190.23;
+const BXL_BASE_ANCIEN_18_24 = 202.91;
+
+/** Seuils de revenu FAMIRIS 2026 (€/an). */
+const BXL_SEUIL_BAS = 40_586.52;
+const BXL_SEUIL_INTERMEDIAIRE = 58_915.92;
 
 /**
- * Allocation de naissance (one-shot) — versée une fois à la naissance.
- * Wallonie et Bruxelles distinguent 1er enfant / suivants ; Flandre et
- * Communauté germanophone appliquent un forfait unique (Startbedrag).
+ * Supplément social FAMIRIS — montant moyen indicatif (le réel dépend du
+ * nombre d'enfants et de l'âge). On retient la fourchette médiane par
+ * tranche pour rester pédagogique.
  */
-const ALLOC_NAISSANCE: Record<
-  Region,
-  { premier: number; suivants: number }
-> = {
-  wallonie: { premier: 1_415, suivants: 1_057 },
-  bruxelles: { premier: 1_395, suivants: 634 },
-  flandre: { premier: 1_296, suivants: 1_296 },
-  germanophone: { premier: 1_296, suivants: 1_296 },
-};
+const BXL_SUPP_SOCIAL_BAS_2_PARENTS = 95; // moyenne (50,73 → 139,50)
+const BXL_SUPP_SOCIAL_BAS_MONO = 107; // moyenne (50,73 → 164,87)
+const BXL_SUPP_SOCIAL_INT = 45; // moyenne (0 → 91,31)
+
+/** Supplément orphelin FAMIRIS — % de la base de l'enfant. */
+// 1 parent : base + 50 % de base ; 2 parents : 2× base.
+// On stocke les coefficients (calculés au moment du calcul sur la base).
+
+/** Supplément handicap médian FAMIRIS 2026 (6-8 pts pilier 1 ≥ 4). */
+const BXL_SUPP_HANDICAP_MEDIAN = 546.58;
+
+/** Allocation de naissance FAMIRIS 2026. */
+const BXL_PRIME_NAISSANCE_RANG_1 = 1_395.02;
+const BXL_PRIME_NAISSANCE_SUIVANTS = 634.1;
+
+/** Prime de rentrée scolaire FAMIRIS 2026 (annuel). */
+function bxlBonusRentree(age: number): number {
+  if (age < 0) return 0;
+  if (age <= 5) return 25.36;
+  if (age <= 11) return 38.05;
+  if (age <= 17) return 63.41;
+  if (age <= 24) return 101.46;
+  return 0;
+}
+
+/* ----- FLANDRE — Groeipakket (sources : groeipakket.be, sept 2025) - */
+
+const FLA_BASE_NOUVEAU = 184.62;
+const FLA_BASE_ANCIEN = { rang1: 100, rang2: 185, rang3plus: 277 };
+
+/** Seuils Groeipakket 2026 (€/an). */
+const FLA_SEUIL_BAS = 40_701.59;
+const FLA_SEUIL_INT_1_2 = 47_485.19;
+const FLA_SEUIL_INT_3PLUS = 76_560.64;
+
+/** Supplément social Groeipakket — selon nombre d'enfants. */
+const FLA_SUPP_1_2_BAS = 73.68;
+const FLA_SUPP_1_2_INT = 37.31;
+const FLA_SUPP_3PLUS_BAS = 108.29;
+const FLA_SUPP_3PLUS_INT = 85.22;
+
+/** Supplément handicap médian Groeipakket (zorgtoeslag). */
+const FLA_SUPP_HANDICAP_MEDIAN = 192.91; // ~9-11 pts, valeur médiane
+
+/** Supplément orphelin Groeipakket. */
+const FLA_SUPP_ORPHELIN_UN = 199.6;
+const FLA_SUPP_ORPHELIN_DEUX = 399.21;
+
+/** Startbedrag Flandre 2026 (forfait). */
+const FLA_PRIME_NAISSANCE = 1_269.25;
+
+/** Schoolbonus Flandre 2026 (annuel, sept 2025). */
+function flaBonusRentree(age: number): number {
+  if (age < 0) return 0;
+  if (age <= 4) return 23.07;
+  if (age <= 11) return 40.38;
+  if (age <= 17) return 57.68;
+  if (age <= 25) return 69.22;
+  return 0;
+}
+
+/* ----- GERMANOPHONE — Kindergeld DG (sources : ostbelgienfamilie.be) */
+
+const DG_BASE = 188.89;
+const DG_SEUIL_BAS = 34_000;
+
+const DG_SUPP_SOCIAL = 93.23;
+const DG_SUPP_LARGE_FAMILLE = 165.4; // dès le 3e enfant
+const DG_SUPP_HANDICAP_MEDIAN = 141.9;
+const DG_SUPP_ORPHELIN_UN = 180;
+const DG_SUPP_ORPHELIN_DEUX = 400;
+
+const DG_PRIME_NAISSANCE = 1_296;
+
+/** Schulbonus DG — montants approchés (régime aligné Wallonie). */
+function dgBonusRentree(age: number): number {
+  if (age < 0) return 0;
+  if (age <= 5) return 25.36;
+  if (age <= 11) return 38.05;
+  if (age <= 17) return 63.41;
+  if (age <= 24) return 101.46;
+  return 0;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -167,15 +280,6 @@ const REGION_LABELS: Record<Region, string> = {
   germanophone: "Kindergeld DG (Ostbelgien)",
 };
 
-/** Bonus rentrée scolaire indicatif par tranche d'âge (€/an). */
-function bonusRentreeParAge(age: number): number {
-  if (age < 0) return 0;
-  if (age <= 5) return 22;
-  if (age <= 11) return 47;
-  if (age <= 17) return 65;
-  return 87;
-}
-
 /* ------------------------------------------------------------------ */
 /*  Régime WALLONIE (FAMIWAL)                                          */
 /* ------------------------------------------------------------------ */
@@ -184,32 +288,63 @@ function calcWallonie(
   rang: number,
   age: number,
   anneeNaissance: number,
-  revenuBas: boolean,
+  revenuMenage: number,
   monoparental: boolean,
-): { base: number; supplements: number } {
+): {
+  base: number;
+  supplements: number;
+  supplementSocial: number;
+  supplementMono: number;
+} {
   let base: number;
-  if (anneeNaissance < PIVOT_NOUVEAU_REGIME) {
-    // Ancien régime wallon (nés avant 2019).
-    if (rang === 1) base = 119;
-    else if (rang === 2) base = 219;
-    else base = 327;
+  if (anneeNaissance < PIVOT_WAL_BXL) {
+    // Ancien régime wallon (nés avant 2020).
+    if (rang === 1) base = WAL_BASE_ANCIEN.rang1;
+    else if (rang === 2) base = WAL_BASE_ANCIEN.rang2;
+    else base = WAL_BASE_ANCIEN.rang3plus;
   } else {
-    // Nouveau régime FAMIWAL (nés ≥ 2019) — barème indexé fév 2026.
-    base = age <= 17 ? 181.61 : 202;
+    // Nouveau régime FAMIWAL (nés ≥ 2020).
+    base = age <= 17 ? WAL_BASE_NOUVEAU_0_17 : WAL_BASE_NOUVEAU_18_24;
   }
 
-  // Suppléments indexés FAMIWAL 2026 (source famiwal.be).
-  let supplements = 0;
-  if (monoparental) {
-    // Supplément monoparental — montant unique, peu dépendant du revenu.
-    supplements += 22.88;
-  }
-  if (revenuBas) {
-    // Supplément social bas revenu.
-    supplements += 33.69;
+  // Supplément social FAMIWAL 2026.
+  let supplementSocial = 0;
+  let supplementMono = 0;
+
+  if (anneeNaissance >= PIVOT_WAL_BXL) {
+    // Nouveau régime : forfait par tranche de revenu.
+    if (revenuMenage <= WAL_SEUIL_BAS) {
+      supplementSocial = WAL_SUPP_SOCIAL_NOUVEAU_BAS;
+    } else if (revenuMenage <= WAL_SEUIL_INTERMEDIAIRE) {
+      supplementSocial = WAL_SUPP_SOCIAL_NOUVEAU_INT;
+    }
+    // Supplément monoparental s'ajoute au social.
+    if (monoparental) {
+      if (revenuMenage <= WAL_SEUIL_BAS) {
+        supplementMono = WAL_SUPP_MONO_NOUVEAU_BAS;
+      } else if (revenuMenage <= WAL_SEUIL_INTERMEDIAIRE) {
+        supplementMono = WAL_SUPP_MONO_NOUVEAU_INT;
+      }
+    }
+  } else {
+    // Ancien régime : barème par rang, uniquement si bas revenu.
+    if (revenuMenage <= WAL_SEUIL_BAS) {
+      if (rang === 1) supplementSocial = WAL_SUPP_SOCIAL_ANCIEN.rang1;
+      else if (rang === 2) supplementSocial = WAL_SUPP_SOCIAL_ANCIEN.rang2;
+      else supplementSocial = WAL_SUPP_SOCIAL_ANCIEN.rang3plus;
+      if (monoparental) {
+        if (rang === 1) supplementMono = WAL_SUPP_MONO_ANCIEN.rang1;
+        else if (rang === 2) supplementMono = WAL_SUPP_MONO_ANCIEN.rang2;
+        else supplementMono = WAL_SUPP_MONO_ANCIEN.rang3plus;
+        // Pour l'ancien régime, mono et social pointent vers le même
+        // bénéfice — on évite le double comptage.
+        supplementSocial = 0;
+      }
+    }
   }
 
-  return { base, supplements };
+  const supplements = supplementSocial + supplementMono;
+  return { base, supplements, supplementSocial, supplementMono };
 }
 
 /* ------------------------------------------------------------------ */
@@ -217,35 +352,46 @@ function calcWallonie(
 /* ------------------------------------------------------------------ */
 
 function calcBruxelles(
-  rang: number,
+  _rang: number,
   age: number,
   anneeNaissance: number,
-  revenuBas: boolean,
+  revenuMenage: number,
   monoparental: boolean,
-): { base: number; supplements: number } {
+): {
+  base: number;
+  supplements: number;
+  supplementSocial: number;
+  supplementMono: number;
+} {
   let base: number;
-  if (anneeNaissance < PIVOT_NOUVEAU_REGIME) {
-    // Ancien régime bruxellois (nés avant 2019).
-    if (rang === 1) base = 113;
-    else if (rang === 2) base = 211;
-    else base = 314;
+  if (anneeNaissance < PIVOT_WAL_BXL) {
+    // Ancien régime bruxellois (nés avant 01/12/2019 → arrondi à <2020).
+    if (age <= 11) base = BXL_BASE_ANCIEN_0_11;
+    else if (age <= 17) base = BXL_BASE_ANCIEN_12_17;
+    else base = BXL_BASE_ANCIEN_18_24;
   } else {
-    // Nouveau régime FAMIRIS (nés ≥ 2019) — montant unique 181,61 €
-    // depuis l'harmonisation (le barème dégressif 159/169/179 était erroné).
-    base = 181.61;
+    // Nouveau régime FAMIRIS (nés ≥ 2020).
+    if (age <= 11) base = BXL_BASE_NOUVEAU_0_11;
+    else if (age <= 17) base = BXL_BASE_NOUVEAU_12_17;
+    else base = BXL_BASE_NOUVEAU_18_24;
   }
 
-  // Supplément social FAMIRIS — montant unique 55 €/enfant si revenu bas.
-  // Le supplément monoparental ne se cumule pas avec le bas revenu.
-  let supplements = 0;
-  if (revenuBas) {
-    supplements = 55;
-  } else if (monoparental) {
-    // Cas monoparental sans bas revenu — supplément réduit.
-    supplements = 22;
+  // Supplément social FAMIRIS.
+  let supplementSocial = 0;
+  if (revenuMenage <= BXL_SEUIL_BAS) {
+    supplementSocial = monoparental
+      ? BXL_SUPP_SOCIAL_BAS_MONO
+      : BXL_SUPP_SOCIAL_BAS_2_PARENTS;
+  } else if (revenuMenage <= BXL_SEUIL_INTERMEDIAIRE) {
+    supplementSocial = BXL_SUPP_SOCIAL_INT;
   }
 
-  return { base, supplements };
+  // FAMIRIS n'a pas de supplément monoparental distinct : il est inclus
+  // dans le calcul du supplément social (la majoration mono est déjà
+  // appliquée ci-dessus).
+  const supplementMono = 0;
+  const supplements = supplementSocial + supplementMono;
+  return { base, supplements, supplementSocial, supplementMono };
 }
 
 /* ------------------------------------------------------------------ */
@@ -253,30 +399,42 @@ function calcBruxelles(
 /* ------------------------------------------------------------------ */
 
 function calcFlandre(
-  rang: number,
+  _rang: number,
   anneeNaissance: number,
   revenuMenage: number,
-): { base: number; supplements: number } {
+  nbEnfants: number,
+): {
+  base: number;
+  supplements: number;
+  supplementSocial: number;
+  supplementMono: number;
+} {
   let base: number;
   if (anneeNaissance >= PIVOT_FLANDRE) {
-    // Régime Groeipakket — basisbedrag indexé sept 2026 : 184,62 €.
-    base = 184.62;
+    base = FLA_BASE_NOUVEAU;
   } else {
     // Ancien régime flamand (enfants nés avant 2019).
-    if (rang === 1) base = 100;
-    else if (rang === 2) base = 185;
-    else base = 277;
+    // Barème par rang non détaillé — montant moyen forfaitaire.
+    base = FLA_BASE_ANCIEN.rang2;
   }
 
-  // Supplément social Groeipakket selon le revenu annuel du ménage.
-  let supplements = 0;
-  if (revenuMenage < SEUIL_FLANDRE_BAS) {
-    supplements = 93;
-  } else if (revenuMenage < SEUIL_FLANDRE_INTERMEDIAIRE) {
-    supplements = 21;
+  // Supplément social Groeipakket — barème à 2 tranches selon nombre d'enfants.
+  let supplementSocial = 0;
+  if (nbEnfants <= 2) {
+    if (revenuMenage <= FLA_SEUIL_BAS) supplementSocial = FLA_SUPP_1_2_BAS;
+    else if (revenuMenage <= FLA_SEUIL_INT_1_2)
+      supplementSocial = FLA_SUPP_1_2_INT;
+  } else {
+    if (revenuMenage <= FLA_SEUIL_BAS) supplementSocial = FLA_SUPP_3PLUS_BAS;
+    else if (revenuMenage <= FLA_SEUIL_INT_3PLUS)
+      supplementSocial = FLA_SUPP_3PLUS_INT;
   }
 
-  return { base, supplements };
+  // Groeipakket n'a pas de supplément monoparental forfaitaire propre (il
+  // est intégré au calcul social via le revenu).
+  const supplementMono = 0;
+  const supplements = supplementSocial + supplementMono;
+  return { base, supplements, supplementSocial, supplementMono };
 }
 
 /* ------------------------------------------------------------------ */
@@ -284,17 +442,37 @@ function calcFlandre(
 /* ------------------------------------------------------------------ */
 
 function calcGermanophone(
-  age: number,
-  revenuBas: boolean,
+  rang: number,
+  revenuMenage: number,
   monoparental: boolean,
-): { base: number; supplements: number } {
-  // Forfait par tranche d'âge.
-  const base = age <= 17 ? 165 : 185;
+): {
+  base: number;
+  supplements: number;
+  supplementSocial: number;
+  supplementMono: number;
+  supplementLargeFamille: number;
+} {
+  const base = DG_BASE;
 
-  // Supplément monoparental + bas revenu cumulés (sinon zéro).
-  const supplements = monoparental && revenuBas ? 55 : 0;
+  // Supplément social bas revenu.
+  let supplementSocial = 0;
+  if (revenuMenage <= DG_SEUIL_BAS) {
+    supplementSocial = DG_SUPP_SOCIAL;
+  }
+  // Pas de supplément monoparental distinct côté DG (intégré dans le social).
+  const supplementMono = monoparental && revenuMenage <= DG_SEUIL_BAS ? 0 : 0;
 
-  return { base, supplements };
+  // Supplément large famille à partir du 3e enfant.
+  const supplementLargeFamille = rang >= 3 ? DG_SUPP_LARGE_FAMILLE : 0;
+
+  const supplements = supplementSocial + supplementMono + supplementLargeFamille;
+  return {
+    base,
+    supplements,
+    supplementSocial,
+    supplementMono,
+    supplementLargeFamille,
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -330,15 +508,12 @@ export function calcAllocsFam(
     }
   }
 
-  // Drapeau « bas revenu » partagé par tous les régimes sauf Flandre
-  // (qui a son propre barème à 2 seuils).
-  const revenuBas = revenuMenageAnnuel < SEUIL_BAS_REVENU;
-
   // On trie les enfants du plus âgé au plus jeune pour attribuer les rangs
   // (le « 1er enfant » au sens des allocations = le plus âgé).
   const enfantsTries = [...enfants].sort(
     (a, b) => a.anneeNaissance - b.anneeNaissance,
   );
+  const nbEnfants = enfantsTries.length;
 
   const detail: AllocsFamDetailRow[] = [];
   let totalMensuel = 0;
@@ -349,14 +524,20 @@ export function calcAllocsFam(
     const rang = idx + 1;
     const age = anneeCourante - enfant.anneeNaissance;
 
-    let calc: { base: number; supplements: number };
+    let calc: {
+      base: number;
+      supplements: number;
+      supplementSocial: number;
+      supplementMono: number;
+      supplementLargeFamille?: number;
+    };
     switch (region) {
       case "wallonie":
         calc = calcWallonie(
           rang,
           age,
           enfant.anneeNaissance,
-          revenuBas,
+          revenuMenageAnnuel,
           monoparental,
         );
         break;
@@ -365,42 +546,83 @@ export function calcAllocsFam(
           rang,
           age,
           enfant.anneeNaissance,
-          revenuBas,
+          revenuMenageAnnuel,
           monoparental,
         );
         break;
       case "flandre":
-        calc = calcFlandre(rang, enfant.anneeNaissance, revenuMenageAnnuel);
+        calc = calcFlandre(
+          rang,
+          enfant.anneeNaissance,
+          revenuMenageAnnuel,
+          nbEnfants,
+        );
         break;
       case "germanophone":
-        calc = calcGermanophone(age, revenuBas, monoparental);
+        calc = calcGermanophone(rang, revenuMenageAnnuel, monoparental);
         break;
     }
 
     // --- Suppléments transversaux (handicap / orphelin / 3e enfant) ----
     let supplementHandicap = 0;
     if (enfant.handicap) {
-      supplementHandicap = SUPPLEMENT_HANDICAP[region];
+      // Catégorie médiane "modérée" : ≈ 141,90 € WAL/DG, 192,91 € FLA, 546,58 € BXL
+      // On retient la valeur "douce" pour ne pas surévaluer (le réel
+      // dépend du nombre de points AVIQ / Iriscare / Opgroeien).
+      if (region === "wallonie") supplementHandicap = WAL_SUPP_HANDICAP_MEDIAN;
+      else if (region === "bruxelles")
+        supplementHandicap = BXL_SUPP_HANDICAP_MEDIAN;
+      else if (region === "flandre") supplementHandicap = FLA_SUPP_HANDICAP_MEDIAN;
+      else supplementHandicap = DG_SUPP_HANDICAP_MEDIAN;
     }
 
     let supplementOrphelin = 0;
     const orphelin: OrphelinStatus = enfant.orphelin ?? "aucun";
     if (orphelin === "un_parent") {
-      supplementOrphelin = SUPPLEMENT_ORPHELIN_UN[region];
+      if (region === "wallonie") {
+        if (enfant.anneeNaissance >= PIVOT_WAL_BXL) {
+          supplementOrphelin =
+            age <= 17 ? WAL_SUPP_ORPHELIN_UN_0_17 : WAL_SUPP_ORPHELIN_UN_18_24;
+        } else {
+          supplementOrphelin = WAL_SUPP_ORPHELIN_ANCIEN_UN;
+        }
+      } else if (region === "bruxelles") {
+        // FAMIRIS : 50 % de la base.
+        supplementOrphelin = calc.base * 0.5;
+      } else if (region === "flandre") {
+        supplementOrphelin = FLA_SUPP_ORPHELIN_UN;
+      } else {
+        supplementOrphelin = DG_SUPP_ORPHELIN_UN;
+      }
     } else if (orphelin === "deux_parents") {
-      supplementOrphelin = SUPPLEMENT_ORPHELIN_DEUX[region];
+      if (region === "wallonie") {
+        if (enfant.anneeNaissance >= PIVOT_WAL_BXL) {
+          supplementOrphelin = WAL_SUPP_ORPHELIN_DEUX;
+        } else {
+          supplementOrphelin = WAL_SUPP_ORPHELIN_ANCIEN_DEUX;
+        }
+      } else if (region === "bruxelles") {
+        // FAMIRIS : double la base (donc supplément = +1× base).
+        supplementOrphelin = calc.base;
+      } else if (region === "flandre") {
+        supplementOrphelin = FLA_SUPP_ORPHELIN_DEUX;
+      } else {
+        supplementOrphelin = DG_SUPP_ORPHELIN_DEUX;
+      }
     }
 
-    let supplement3eEnfant = 0;
-    if (region === "bruxelles" && rang >= 3) {
-      supplement3eEnfant = SUPPLEMENT_3E_ENFANT_BXL;
-    }
+    // Supplément large famille (rang ≥ 3) — appliqué côté DG via calc.
+    // Pour FAMIRIS l'historique avait un "supplément 3e enfant +50" mais
+    // depuis 2026 ce supplément n'est plus distinct (intégré au social).
+    // On le retire pour rester fidèle à la documentation officielle.
+    const supplement3eEnfant = calc.supplementLargeFamille ?? 0;
 
     const supplementsTotaux =
       calc.supplements +
       supplementHandicap +
       supplementOrphelin +
-      supplement3eEnfant;
+      // Si supplement3eEnfant déjà inclus dans calc.supplements (DG), ne pas le compter.
+      0;
     const total = calc.base + supplementsTotaux;
 
     detail.push({
@@ -408,22 +630,38 @@ export function calcAllocsFam(
       age,
       montantBase: calc.base,
       supplements: supplementsTotaux,
+      supplementSocial:
+        calc.supplementSocial > 0 ? calc.supplementSocial : undefined,
+      supplementMonoparental:
+        calc.supplementMono > 0 ? calc.supplementMono : undefined,
       supplementHandicap: supplementHandicap > 0 ? supplementHandicap : undefined,
       supplementOrphelin: supplementOrphelin > 0 ? supplementOrphelin : undefined,
-      supplement3eEnfant:
-        supplement3eEnfant > 0 ? supplement3eEnfant : undefined,
+      supplement3eEnfant: supplement3eEnfant > 0 ? supplement3eEnfant : undefined,
       total,
     });
 
     totalMensuel += total;
-    bonusRentreeAnnuel += bonusRentreeParAge(age);
+
+    // Bonus rentrée scolaire — barème spécifique par région.
+    if (region === "wallonie") bonusRentreeAnnuel += walBonusRentree(age);
+    else if (region === "bruxelles") bonusRentreeAnnuel += bxlBonusRentree(age);
+    else if (region === "flandre") bonusRentreeAnnuel += flaBonusRentree(age);
+    else bonusRentreeAnnuel += dgBonusRentree(age);
 
     // Allocation de naissance — versée uniquement aux enfants nés
     // l'année courante (one-shot). On utilise le rang pour distinguer
-    // 1er enfant / suivants en Wallonie et Bruxelles.
+    // 1er enfant / suivants à Bruxelles ; WAL/FLA/DG = forfait unique.
     if (enfant.anneeNaissance === anneeCourante) {
-      const bareme = ALLOC_NAISSANCE[region];
-      allocationNaissanceTotale += rang === 1 ? bareme.premier : bareme.suivants;
+      if (region === "wallonie") {
+        allocationNaissanceTotale += WAL_PRIME_NAISSANCE;
+      } else if (region === "bruxelles") {
+        allocationNaissanceTotale +=
+          rang === 1 ? BXL_PRIME_NAISSANCE_RANG_1 : BXL_PRIME_NAISSANCE_SUIVANTS;
+      } else if (region === "flandre") {
+        allocationNaissanceTotale += FLA_PRIME_NAISSANCE;
+      } else {
+        allocationNaissanceTotale += DG_PRIME_NAISSANCE;
+      }
     }
   });
 
@@ -435,3 +673,61 @@ export function calcAllocsFam(
     regionLabel: REGION_LABELS[region],
   };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Exports utiles pour la doc et les tests                            */
+/* ------------------------------------------------------------------ */
+
+export const ALLOCS_FAM_CONST = {
+  // Wallonie
+  WAL_BASE_NOUVEAU_0_17,
+  WAL_BASE_NOUVEAU_18_24,
+  WAL_SEUIL_BAS,
+  WAL_SEUIL_INTERMEDIAIRE,
+  WAL_SUPP_SOCIAL_NOUVEAU_BAS,
+  WAL_SUPP_SOCIAL_NOUVEAU_INT,
+  WAL_SUPP_MONO_NOUVEAU_BAS,
+  WAL_SUPP_MONO_NOUVEAU_INT,
+  WAL_SUPP_HANDICAP_MEDIAN,
+  WAL_SUPP_HANDICAP_GRAVE,
+  WAL_SUPP_ORPHELIN_UN_0_17,
+  WAL_SUPP_ORPHELIN_DEUX,
+  WAL_PRIME_NAISSANCE,
+  // Bruxelles
+  BXL_BASE_NOUVEAU_0_11,
+  BXL_BASE_NOUVEAU_12_17,
+  BXL_BASE_NOUVEAU_18_24,
+  BXL_SEUIL_BAS,
+  BXL_SEUIL_INTERMEDIAIRE,
+  BXL_SUPP_SOCIAL_BAS_2_PARENTS,
+  BXL_SUPP_SOCIAL_BAS_MONO,
+  BXL_SUPP_SOCIAL_INT,
+  BXL_SUPP_HANDICAP_MEDIAN,
+  BXL_PRIME_NAISSANCE_RANG_1,
+  BXL_PRIME_NAISSANCE_SUIVANTS,
+  // Flandre
+  FLA_BASE_NOUVEAU,
+  FLA_SEUIL_BAS,
+  FLA_SEUIL_INT_1_2,
+  FLA_SEUIL_INT_3PLUS,
+  FLA_SUPP_1_2_BAS,
+  FLA_SUPP_1_2_INT,
+  FLA_SUPP_3PLUS_BAS,
+  FLA_SUPP_3PLUS_INT,
+  FLA_SUPP_HANDICAP_MEDIAN,
+  FLA_SUPP_ORPHELIN_UN,
+  FLA_SUPP_ORPHELIN_DEUX,
+  FLA_PRIME_NAISSANCE,
+  // DG
+  DG_BASE,
+  DG_SEUIL_BAS,
+  DG_SUPP_SOCIAL,
+  DG_SUPP_LARGE_FAMILLE,
+  DG_SUPP_HANDICAP_MEDIAN,
+  DG_SUPP_ORPHELIN_UN,
+  DG_SUPP_ORPHELIN_DEUX,
+  DG_PRIME_NAISSANCE,
+  // Pivots
+  PIVOT_WAL_BXL,
+  PIVOT_FLANDRE,
+} as const;

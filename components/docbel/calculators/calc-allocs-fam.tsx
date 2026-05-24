@@ -1,41 +1,54 @@
 "use client";
 
 /**
- * Calculateur "Allocations familiales" — UI.
+ * Calculateur "Allocations familiales" — UI refondue 2026-05.
+ *
+ * Pattern UI aligné sur Brut/Net + Pécule : layout 2 colonnes
+ * (form / résultat sticky), badges officiels, export PDF, mention
+ * "Mis à jour le …".
  *
  * Pourquoi ce composant : depuis la régionalisation, un parent belge n'a
  * plus une réponse simple à "combien je vais toucher par mois ?". Chaque
- * région a son organisme, son barème, ses dates pivot, ses suppléments.
+ * région a son organisme officiel (FAMIWAL / FAMIRIS / Groeipakket /
+ * Kindergeld DG), son barème indexé, sa date pivot et ses suppléments.
  * Ce calc donne un ordre de grandeur réaliste avant que l'utilisateur
- * contacte sa caisse (FAMIWAL / FAMIRIS / Groeipakket / Kindergeld DG).
+ * contacte sa caisse.
  *
- * La logique pure vit dans `lib/calculators/allocs-fam.ts` — ici on
- * assemble juste les inputs (région, enfants dynamiques, revenu, mono-
- * parentalité, handicap, orphelin) et la carte de résultat avec les
- * primitives `_shared`.
+ * La logique pure vit dans `lib/calculators/allocs-fam.ts` ; ici on
+ * assemble les inputs (région, enfants dynamiques, revenu, monoparen-
+ * talité, handicap, orphelin) et la carte de résultat.
  */
 
-import { useState } from "react";
-import { Plus, X } from "lucide-react";
+import React, { useState } from "react";
 import {
-  CalcLayout,
-  CalcGrid,
-  CalcField,
-  CalcSelect,
-  CalcRadio,
-  CalcSubmitButton,
-  CalcResult,
-  CalcError,
-  CalcInfo,
-  fmtEUR,
-  parseNum,
-} from "./_shared";
+  Baby,
+  Download,
+  Info,
+  Plus,
+  RotateCcw,
+  Users,
+  X,
+} from "lucide-react";
+import { CountryFlag } from "@/components/docbel/country-flag";
 import {
   calcAllocsFam,
   type AllocsFamResult,
   type OrphelinStatus,
   type Region,
 } from "@/lib/calculators/allocs-fam";
+import {
+  CalcBadge,
+  CalcCard,
+  CalcError,
+  CalcField,
+  CalcGrid,
+  CalcSelect,
+  CalcSubmitButton,
+  ResultRow,
+  YesNoToggle,
+  fmtEUR,
+  parseNum,
+} from "./_shared";
 
 type MonoYesNo = "oui" | "non";
 type HandicapYesNo = "oui" | "non";
@@ -51,6 +64,12 @@ interface EnfantRow {
   orphelin: OrphelinStatus;
 }
 
+/**
+ * Date de mise à jour du calculateur — pilote l'affichage public et
+ * l'alerte annuelle dans /admin/calculateurs.
+ */
+const LAST_UPDATED = "2026-05-25";
+
 const ANNEE_COURANTE = new Date().getFullYear();
 const DEFAUT_ANNEE_ENFANT = ANNEE_COURANTE - 5; // ex : 2021 si on est en 2026
 
@@ -64,6 +83,40 @@ const newEnfant = (): EnfantRow => ({
   orphelin: "aucun",
 });
 
+const REGION_OPTIONS: { value: Region; label: string; hint: string }[] = [
+  {
+    value: "wallonie",
+    label: "Wallonie (FAMIWAL)",
+    hint: "Caisse publique de référence : FAMIWAL (ou caisse privée agréée en Wallonie).",
+  },
+  {
+    value: "bruxelles",
+    label: "Bruxelles (FAMIRIS)",
+    hint: "Caisse publique de référence : FAMIRIS (ou caisse privée agréée à Bruxelles).",
+  },
+  {
+    value: "flandre",
+    label: "Flandre (Groeipakket)",
+    hint: "Régime Groeipakket (« paquet de croissance ») géré par Opgroeien.",
+  },
+  {
+    value: "germanophone",
+    label: "Communauté germanophone (Kindergeld DG)",
+    hint: "Régime Kindergeld géré par le Ministerium der Deutschsprachigen Gemeinschaft.",
+  },
+];
+
+const REGION_BADGE: Record<Region, string> = {
+  wallonie: "FAMIWAL nouveau régime",
+  bruxelles: "FAMIRIS nouveau régime",
+  flandre: "Groeipakket",
+  germanophone: "Kindergeld DG",
+};
+
+/* ------------------------------------------------------------------ */
+/*  Composant principal                                               */
+/* ------------------------------------------------------------------ */
+
 export function CalcAllocsFam({ accent }: { accent: string }) {
   const [region, setRegion] = useState<Region>("wallonie");
   const [revenu, setRevenu] = useState("50000");
@@ -71,6 +124,16 @@ export function CalcAllocsFam({ accent }: { accent: string }) {
   const [enfants, setEnfants] = useState<EnfantRow[]>([newEnfant()]);
   const [result, setResult] = useState<AllocsFamResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [exportingPDF, setExportingPDF] = useState(false);
+
+  const reset = () => {
+    setRegion("wallonie");
+    setRevenu("50000");
+    setMonoparental("non");
+    setEnfants([newEnfant()]);
+    setResult(null);
+    setError(null);
+  };
 
   const addEnfant = () => {
     if (enfants.length >= 10) return;
@@ -117,266 +180,744 @@ export function CalcAllocsFam({ accent }: { accent: string }) {
     setResult(out);
   };
 
-  // Hint sur le sélecteur de région : on rappelle quelle caisse correspond.
-  const regionHint =
-    region === "wallonie"
-      ? "Caisse de référence : FAMIWAL (ou une caisse privée agréée en Wallonie)."
-      : region === "bruxelles"
-        ? "Caisse de référence : FAMIRIS (ou une caisse privée agréée à Bruxelles)."
-        : region === "flandre"
-          ? "Régime Groeipakket (« paquet de croissance ») géré par Opgroeien."
-          : "Régime Kindergeld géré par le Ministerium der Deutschsprachigen Gemeinschaft.";
+  /* --------------------------------------------------------------- */
+  /*  Export PDF (jspdf en import dynamique)                         */
+  /* --------------------------------------------------------------- */
+  const handleExportPDF = async () => {
+    if (!result) return;
+    setExportingPDF(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait",
+      });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 16;
+      const lineGap = 6;
+      let y = 20;
 
-  const intro = (
-    <>
-      Estimez vos <strong>allocations familiales</strong> mensuelles. Depuis
-      la régionalisation, chaque entité belge a son propre barème :
-      sélectionnez votre région et ajoutez vos enfants (handicap, orphelin
-      et rang sont pris en compte).
-    </>
-  );
+      // Header
+      doc.setFontSize(18);
+      doc.setFont("", "bold");
+      doc.setTextColor(0, 51, 102);
+      doc.text("DOCBEL", margin, y);
+      y += 7;
+      doc.setDrawColor(200, 16, 46);
+      doc.setLineWidth(0.6);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 6;
 
-  // Construit les lignes détaillées du résultat — une ligne par enfant
-  // avec, en sous-titre, la décomposition des suppléments quand ils existent.
-  const rows = result
-    ? result.detail.flatMap((d) => {
-        const out: { label: string; value: string; emphasis?: boolean }[] = [
-          {
-            label: `Enfant ${d.rang} — ${d.age} an${d.age > 1 ? "s" : ""}`,
-            value: fmtEUR(d.total),
-            emphasis: false,
-          },
+      doc.setFontSize(9);
+      doc.setFont("", "normal");
+      doc.setTextColor(110, 110, 110);
+      doc.text("https://www.docbel.be", margin, y);
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("fr-BE");
+      const timeStr = now.toLocaleTimeString("fr-BE", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      doc.text(`Généré le ${dateStr} à ${timeStr}`, pageWidth - margin, y, {
+        align: "right",
+      });
+      y += 10;
+
+      // Titre
+      doc.setFontSize(15);
+      doc.setFont("", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(
+        `Estimation Allocations familiales 2026 — ${result.regionLabel}`,
+        margin,
+        y,
+      );
+      y += 10;
+
+      // Section Inputs
+      doc.setFontSize(11);
+      doc.setFont("", "bold");
+      doc.setTextColor(200, 16, 46);
+      doc.text("Paramètres saisis", margin, y);
+      y += 6;
+
+      doc.setFontSize(9.5);
+      doc.setFont("", "normal");
+      doc.setTextColor(0, 0, 0);
+
+      const inputs: [string, string][] = [
+        ["Région", REGION_OPTIONS.find((r) => r.value === region)?.label ?? region],
+        ["Revenu annuel ménage", fmtEUR(parseNum(revenu) || 0)],
+        ["Famille monoparentale", monoparental === "oui" ? "Oui" : "Non"],
+        ["Nombre d'enfants", String(enfants.length)],
+      ];
+
+      const colKey = margin + 2;
+      const colVal = pageWidth / 2 + 5;
+      inputs.forEach(([k, v]) => {
+        doc.setTextColor(90, 90, 90);
+        doc.text(k, colKey, y);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("", "bold");
+        doc.text(v, colVal, y);
+        doc.setFont("", "normal");
+        y += lineGap;
+      });
+      y += 4;
+
+      // Encadré TOTAL MENSUEL
+      const boxH = 28;
+      doc.setFillColor(248, 244, 252);
+      doc.setDrawColor(159, 124, 255);
+      doc.setLineWidth(0.8);
+      doc.roundedRect(margin, y, pageWidth - margin * 2, boxH, 2, 2, "FD");
+
+      doc.setFontSize(10);
+      doc.setFont("", "bold");
+      doc.setTextColor(90, 42, 140);
+      doc.text("TOTAL MENSUEL ESTIMÉ", margin + 4, y + 7);
+
+      doc.setFontSize(22);
+      doc.setTextColor(0, 0, 0);
+      doc.text(fmtEUR(result.totalMensuel), margin + 4, y + 17);
+
+      doc.setFontSize(9);
+      doc.setFont("", "normal");
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        `Versé chaque mois par votre caisse · Bonus rentrée scolaire ${fmtEUR(result.bonusRentreeAnnuel)}/an`,
+        margin + 4,
+        y + 24,
+      );
+      y += boxH + 8;
+
+      // Détail par enfant
+      doc.setFontSize(11);
+      doc.setFont("", "bold");
+      doc.setTextColor(200, 16, 46);
+      doc.text("Détail par enfant", margin, y);
+      y += 6;
+
+      doc.setFontSize(9.5);
+      doc.setFont("", "normal");
+      doc.setTextColor(0, 0, 0);
+
+      result.detail.forEach((d) => {
+        if (y > pageHeight - 30) {
+          doc.addPage();
+          y = 20;
+        }
+        doc.setFont("", "bold");
+        doc.setTextColor(0, 51, 102);
+        doc.text(
+          `Enfant ${d.rang} — ${d.age} an${d.age > 1 ? "s" : ""}`,
+          colKey,
+          y,
+        );
+        doc.setFont("", "bold");
+        doc.setTextColor(0, 0, 0);
+        doc.text(fmtEUR(d.total), pageWidth - margin, y, { align: "right" });
+        y += lineGap;
+
+        doc.setFont("", "normal");
+        doc.setTextColor(80, 80, 80);
+        const rows: [string, string][] = [
+          ["  base mensuelle", fmtEUR(d.montantBase)],
         ];
-        // Détail base
-        out.push({
-          label: "  • base mensuelle",
-          value: fmtEUR(d.montantBase),
+        if (d.supplementSocial)
+          rows.push(["  supplément social", `+ ${fmtEUR(d.supplementSocial)}`]);
+        if (d.supplementMonoparental)
+          rows.push([
+            "  supplément monoparental",
+            `+ ${fmtEUR(d.supplementMonoparental)}`,
+          ]);
+        if (d.supplementHandicap)
+          rows.push([
+            "  supplément handicap (médian)",
+            `+ ${fmtEUR(d.supplementHandicap)}`,
+          ]);
+        if (d.supplementOrphelin)
+          rows.push([
+            "  supplément orphelin",
+            `+ ${fmtEUR(d.supplementOrphelin)}`,
+          ]);
+        if (d.supplement3eEnfant)
+          rows.push([
+            "  supplément large famille",
+            `+ ${fmtEUR(d.supplement3eEnfant)}`,
+          ]);
+        rows.forEach(([k, v]) => {
+          doc.text(k, colKey, y);
+          doc.text(v, pageWidth - margin, y, { align: "right" });
+          y += lineGap;
         });
-        if (d.supplementHandicap) {
-          out.push({
-            label: "  • supplément handicap (médian)",
-            value: `+ ${fmtEUR(d.supplementHandicap)}`,
-          });
-        }
-        if (d.supplementOrphelin) {
-          out.push({
-            label: "  • supplément orphelin",
-            value: `+ ${fmtEUR(d.supplementOrphelin)}`,
-          });
-        }
-        if (d.supplement3eEnfant) {
-          out.push({
-            label: "  • supplément 3e enfant (BXL)",
-            value: `+ ${fmtEUR(d.supplement3eEnfant)}`,
-          });
-        }
-        // Reste des suppléments (mono / bas revenu / social Flandre)
-        const autresSupp =
-          d.supplements -
-          (d.supplementHandicap ?? 0) -
-          (d.supplementOrphelin ?? 0) -
-          (d.supplement3eEnfant ?? 0);
-        if (autresSupp > 0.0001) {
-          out.push({
-            label: "  • supplément social/monoparental",
-            value: `+ ${fmtEUR(autresSupp)}`,
-          });
-        }
-        return out;
-      })
-    : [];
+        y += 1;
+      });
 
-  // Y a-t-il au moins un enfant en situation de handicap dans le résultat ?
-  const aHandicap =
-    result?.detail.some((d) => (d.supplementHandicap ?? 0) > 0) ?? false;
+      // Bonus + naissance
+      if (y > pageHeight - 30) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFont("", "bold");
+      doc.setTextColor(200, 16, 46);
+      doc.setFontSize(11);
+      doc.text("Bonus annuels", margin, y);
+      y += 6;
+      doc.setFontSize(9.5);
+      doc.setFont("", "normal");
+      doc.setTextColor(0, 0, 0);
+      doc.text("Bonus rentrée scolaire (versé en août)", colKey, y);
+      doc.setFont("", "bold");
+      doc.text(fmtEUR(result.bonusRentreeAnnuel), pageWidth - margin, y, {
+        align: "right",
+      });
+      y += lineGap;
+      if (result.allocationNaissanceTotale > 0) {
+        doc.setFont("", "normal");
+        doc.text(
+          `Allocation de naissance ${ANNEE_COURANTE} (one-shot)`,
+          colKey,
+          y,
+        );
+        doc.setFont("", "bold");
+        doc.text(
+          fmtEUR(result.allocationNaissanceTotale),
+          pageWidth - margin,
+          y,
+          { align: "right" },
+        );
+        y += lineGap;
+      }
+      y += 4;
+
+      // Footer
+      if (y > pageHeight - 40) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFontSize(8);
+      doc.setFont("", "italic");
+      doc.setTextColor(120, 120, 120);
+      const footer = doc.splitTextToSize(
+        "Estimation indicative — barèmes 2026 conformes aux organismes officiels FAMIWAL (Wallonie), FAMIRIS (Bruxelles), Groeipakket (Flandre) et Kindergeld DG (Ostbelgien). Pour le montant exact, contactez votre caisse. Le supplément handicap utilise la valeur de la catégorie médiane (modérée) — le réel dépend des points AVIQ/Iriscare/Opgroeien.",
+        pageWidth - margin * 2,
+      );
+      doc.text(footer, margin, y);
+      y += footer.length * 4 + 4;
+
+      doc.setFont("", "normal");
+      doc.setTextColor(150, 150, 150);
+      doc.text(
+        "Docbel © 2026 | https://www.docbel.be",
+        pageWidth / 2,
+        pageHeight - 8,
+        { align: "center" },
+      );
+
+      doc.save(`docbel-allocations-familiales-${now.toISOString().split("T")[0]}.pdf`);
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
+  const lastUpdatedFr = new Date(LAST_UPDATED).toLocaleDateString("fr-BE", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const regionHint =
+    REGION_OPTIONS.find((o) => o.value === region)?.hint ?? "";
 
   return (
-    <CalcLayout intro={intro}>
-      <CalcSelect<Region>
-        id="allocs-region"
-        label="Région de résidence"
-        hint={regionHint}
-        value={region}
-        onChange={setRegion}
-        options={[
-          { value: "wallonie", label: "Wallonie (FAMIWAL)" },
-          { value: "bruxelles", label: "Bruxelles (FAMIRIS)" },
-          { value: "flandre", label: "Flandre (Groeipakket)" },
-          { value: "germanophone", label: "Communauté germanophone (Kindergeld DG)" },
-        ]}
-      />
+    <div className="flex flex-col gap-5">
+      {/* Layout 2 colonnes : form (gauche) | résultat sticky (droite) */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr]">
+        {/* ---------- Colonne gauche : formulaire ---------- */}
+        <CalcCard className="flex flex-col gap-4">
+          {/* En-tête : icône + titre + sous-titre + bouton Reset */}
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span
+                className="flex size-10 shrink-0 items-center justify-center rounded-xl text-white"
+                style={{
+                  background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+                }}
+              >
+                <Baby className="size-5" />
+              </span>
+              <div>
+                <h2 className="text-[16px] font-bold text-[color:var(--glass-ink)]">
+                  Allocations familiales
+                </h2>
+                <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
+                  Estimez vos allocations mensuelles — 4 régimes régionaux 2026
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border-[1.5px] px-2.5 text-[11.5px] font-semibold transition"
+              style={{
+                borderColor: "var(--glass-border)",
+                background: "var(--glass-surface)",
+                color: "var(--glass-ink-soft)",
+              }}
+              title="Réinitialiser le formulaire"
+            >
+              <RotateCcw className="size-3.5" />
+              Réinitialiser
+            </button>
+          </div>
 
-      <CalcGrid cols={2}>
-        <CalcField
-          id="allocs-revenu"
-          label="Revenu annuel brut du ménage (€)"
-          hint="Revenu imposable cumulé du ménage. Sert au calcul des suppléments sociaux."
-          value={revenu}
-          onChange={setRevenu}
-          placeholder="ex : 50000"
-          min={0}
-          max={500000}
-          step={1000}
-          suffix="€"
-        />
-        <div className="flex flex-col gap-1.5">
-          <CalcRadio<MonoYesNo>
-            label="Famille monoparentale ?"
-            hint="Un seul adulte assume la charge du ménage."
-            value={monoparental}
-            onChange={setMonoparental}
-            options={[
-              { value: "non", label: "Non" },
-              { value: "oui", label: "Oui" },
-            ]}
-            accent={accent}
+          {/* Badges */}
+          <div className="flex flex-wrap items-center gap-2">
+            <CalcBadge>
+              <CountryFlag code="be" size={14} country="Belgique" />
+              Belgique
+            </CalcBadge>
+            <CalcBadge accent={accent}>Régions 2026</CalcBadge>
+            <CalcBadge accent={accent}>Données 2026</CalcBadge>
+          </div>
+
+          {/* Région */}
+          <CalcSelect<Region>
+            id="allocs-region"
+            label="Région de résidence"
+            hint={regionHint}
+            value={region}
+            onChange={setRegion}
+            options={REGION_OPTIONS.map((r) => ({ value: r.value, label: r.label }))}
           />
-        </div>
-      </CalcGrid>
 
-      {/* ----- Liste dynamique d'enfants ---------------------------------- */}
-      <div className="flex flex-col gap-2.5">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[12px] font-semibold text-[color:var(--glass-ink)]">
-            Enfants ({enfants.length}/10)
-          </span>
-          <button
-            type="button"
-            onClick={addEnfant}
-            disabled={enfants.length >= 10}
-            className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-3 py-1 text-[12px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+          {/* Revenu + monoparental */}
+          <CalcGrid cols={2}>
+            <CalcField
+              id="allocs-revenu"
+              label="Revenu annuel brut du ménage"
+              hint="Revenu imposable cumulé. Sert au calcul des suppléments sociaux."
+              value={revenu}
+              onChange={setRevenu}
+              placeholder="ex : 50000"
+              min={0}
+              max={500000}
+              step={1000}
+              suffix="€"
+            />
+            <YesNoToggle
+              label="Famille monoparentale ?"
+              hint="Un seul adulte assume la charge du ménage."
+              value={monoparental}
+              onChange={setMonoparental}
+              accent={accent}
+            />
+          </CalcGrid>
+
+          {/* ----- Liste dynamique d'enfants ---------------------------- */}
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[color:var(--glass-ink)]">
+                <Users className="size-3.5" />
+                Enfants ({enfants.length}/10)
+              </span>
+              <button
+                type="button"
+                onClick={addEnfant}
+                disabled={enfants.length >= 10}
+                className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-3 py-1 text-[12px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                style={{
+                  borderColor: accent,
+                  color: accent,
+                  background: `${accent}10`,
+                }}
+              >
+                <Plus className="size-3.5" />
+                Ajouter un enfant
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              {enfants.map((enfant, idx) => (
+                <div
+                  key={enfant.uid}
+                  className="flex flex-col gap-3 rounded-xl border-[1.5px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3"
+                >
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <CalcField
+                        id={`allocs-enfant-${enfant.uid}`}
+                        label={`Enfant ${idx + 1} — année de naissance`}
+                        value={enfant.anneeNaissance}
+                        onChange={(v) =>
+                          updateEnfant(enfant.uid, { anneeNaissance: v })
+                        }
+                        placeholder={String(DEFAUT_ANNEE_ENFANT)}
+                        min={2000}
+                        max={ANNEE_COURANTE}
+                        step={1}
+                      />
+                    </div>
+                    {enfants.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => removeEnfant(enfant.uid)}
+                        aria-label={`Supprimer l'enfant ${idx + 1}`}
+                        className="mb-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-lg border-[1.5px] border-[color:var(--glass-border)] text-[color:var(--glass-ink-faint)] transition hover:border-amber-300 hover:text-amber-700"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <CalcGrid cols={2}>
+                    <YesNoToggle
+                      label="Handicap reconnu ?"
+                      hint="Catégorie médiane (~141 €/mois). Le réel va de 93 à 621 €."
+                      value={enfant.handicap}
+                      onChange={(v) =>
+                        updateEnfant(enfant.uid, { handicap: v })
+                      }
+                      accent={accent}
+                    />
+                    <CalcSelect<OrphelinStatus>
+                      id={`allocs-orphelin-${enfant.uid}`}
+                      label="Statut orphelin"
+                      value={enfant.orphelin}
+                      onChange={(v) =>
+                        updateEnfant(enfant.uid, { orphelin: v })
+                      }
+                      options={[
+                        { value: "aucun", label: "Aucun" },
+                        { value: "un_parent", label: "Un parent décédé" },
+                        { value: "deux_parents", label: "Deux parents décédés" },
+                      ]}
+                    />
+                  </CalcGrid>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {error ? <CalcError>{error}</CalcError> : null}
+
+          {/* Boutons : Calculer + Réinitialiser */}
+          <CalcGrid cols={2}>
+            <CalcSubmitButton accent={accent} onClick={onCalc}>
+              Calculer les allocations
+            </CalcSubmitButton>
+            <button
+              type="button"
+              onClick={reset}
+              className="mt-1 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border-[1.5px] text-[13px] font-semibold transition"
+              style={{
+                borderColor: "var(--glass-border)",
+                background: "var(--glass-surface)",
+                color: "var(--glass-ink-soft)",
+              }}
+            >
+              <RotateCcw className="size-4" />
+              Réinitialiser le formulaire
+            </button>
+          </CalcGrid>
+
+          {/* Info disclaimer bas form */}
+          <div
+            className="flex items-start gap-2 rounded-xl border-[1.5px] p-3 text-[11.5px] leading-[1.55]"
             style={{
-              borderColor: accent,
-              color: accent,
-              background: `${accent}10`,
+              borderColor: "var(--glass-border)",
+              background: "var(--glass-surface)",
+              color: "var(--glass-ink-soft)",
             }}
           >
-            <Plus className="size-3.5" />
-            Ajouter un enfant
-          </button>
-        </div>
+            <Info className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-ink-faint)]" />
+            <div>
+              <strong className="text-[color:var(--glass-ink)]">
+                Estimation indicative.
+              </strong>{" "}
+              Le montant exact dépend de votre date précise de naissance et du
+              dossier complet de votre caisse régionale.
+            </div>
+          </div>
+        </CalcCard>
 
+        {/* ---------- Colonne droite : résultat sticky ---------- */}
+        <div className="lg:sticky lg:top-6 lg:self-start">
+          <CalcCard
+            style={{
+              background: `${accent}10`,
+              borderColor: `${accent}30`,
+            }}
+          >
+            {result ? (
+              <AllocsFamResultPanel
+                result={result}
+                region={region}
+                accent={accent}
+                onExportPDF={handleExportPDF}
+                exporting={exportingPDF}
+              />
+            ) : (
+              <AllocsFamResultPlaceholder accent={accent} />
+            )}
+          </CalcCard>
+        </div>
+      </div>
+
+      {/* Footer : Mise à jour + sources */}
+      <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
+        Calculateur mis à jour le <strong>{lastUpdatedFr}</strong> · Données
+        2026 · Sources officielles : FAMIWAL, FAMIRIS, Groeipakket et
+        Kindergeld DG.
+      </p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Panneau résultat (rempli)                                         */
+/* ------------------------------------------------------------------ */
+
+function AllocsFamResultPanel({
+  result,
+  region,
+  accent,
+  onExportPDF,
+  exporting,
+}: {
+  result: AllocsFamResult;
+  region: Region;
+  accent: string;
+  onExportPDF: () => void;
+  exporting: boolean;
+}) {
+  const aHandicap = result.detail.some((d) => (d.supplementHandicap ?? 0) > 0);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className="text-[11px] font-bold uppercase tracking-[0.06em]"
+          style={{ color: accent }}
+        >
+          Résultat estimatif
+        </span>
+        <span
+          className="inline-flex items-center"
+          title="Estimation indicative — barèmes FAMIWAL / FAMIRIS / Groeipakket / DG 2026"
+          aria-label="Estimation indicative — barèmes FAMIWAL / FAMIRIS / Groeipakket / DG 2026"
+        >
+          <Info
+            className="size-4"
+            style={{ color: "var(--glass-ink-faint)" }}
+          />
+        </span>
+      </div>
+
+      <div>
+        <div
+          className="font-extrabold tracking-[-0.5px] text-[color:var(--glass-ink)]"
+          style={{ fontSize: 36, lineHeight: 1.05 }}
+        >
+          {fmtEUR(result.totalMensuel)}
+        </div>
+        <div
+          className="mt-1 text-[13px] font-semibold"
+          style={{ color: "var(--glass-ink-soft)" }}
+        >
+          / mois pour {result.detail.length} enfant
+          {result.detail.length > 1 ? "s" : ""}
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <CalcBadge accent={accent}>{REGION_BADGE[region]}</CalcBadge>
+          <span className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
+            versé par votre caisse
+          </span>
+        </div>
+      </div>
+
+      {/* Détail par enfant */}
+      <div
+        className="border-t pt-3"
+        style={{ borderTopColor: "var(--glass-ink-line)" }}
+      >
+        <div
+          className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em]"
+          style={{ color: "var(--glass-ink-faint)" }}
+        >
+          Détail par enfant
+        </div>
         <div className="flex flex-col gap-2">
-          {enfants.map((enfant, idx) => (
+          {result.detail.map((d) => (
             <div
-              key={enfant.uid}
-              className="flex flex-col gap-3 rounded-xl border-[1.5px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3"
+              key={d.rang}
+              className="rounded-xl bg-[color:var(--glass-surface)] p-3"
             >
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
-                  <CalcField
-                    id={`allocs-enfant-${enfant.uid}`}
-                    label={`Enfant ${idx + 1} — année de naissance`}
-                    value={enfant.anneeNaissance}
-                    onChange={(v) =>
-                      updateEnfant(enfant.uid, { anneeNaissance: v })
-                    }
-                    placeholder={String(DEFAUT_ANNEE_ENFANT)}
-                    min={2000}
-                    max={ANNEE_COURANTE}
-                    step={1}
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[12.5px] font-semibold text-[color:var(--glass-ink)]">
+                  Enfant {d.rang}
+                  <span className="ml-1.5 text-[color:var(--glass-ink-soft)]">
+                    · {d.age} an{d.age > 1 ? "s" : ""}
+                  </span>
+                </span>
+                <span className="text-[14px] font-extrabold text-[color:var(--glass-ink)]">
+                  {fmtEUR(d.total)}
+                </span>
+              </div>
+              <div className="mt-1.5 flex flex-col gap-1">
+                <ResultRow label="base mensuelle" value={fmtEUR(d.montantBase)} />
+                {d.supplementSocial ? (
+                  <ResultRow
+                    label="supplément social"
+                    value={fmtEUR(d.supplementSocial)}
+                    direction="plus"
                   />
-                </div>
-                {enfants.length > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => removeEnfant(enfant.uid)}
-                    aria-label={`Supprimer l'enfant ${idx + 1}`}
-                    className="mb-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-lg border-[1.5px] border-[color:var(--glass-border)] text-[color:var(--glass-ink-faint)] transition hover:border-amber-300 hover:text-amber-700"
-                  >
-                    <X className="size-4" />
-                  </button>
+                ) : null}
+                {d.supplementMonoparental ? (
+                  <ResultRow
+                    label="supplément monoparental"
+                    value={fmtEUR(d.supplementMonoparental)}
+                    direction="plus"
+                  />
+                ) : null}
+                {d.supplementHandicap ? (
+                  <ResultRow
+                    label="supplément handicap (médian)"
+                    value={fmtEUR(d.supplementHandicap)}
+                    direction="plus"
+                  />
+                ) : null}
+                {d.supplementOrphelin ? (
+                  <ResultRow
+                    label="supplément orphelin"
+                    value={fmtEUR(d.supplementOrphelin)}
+                    direction="plus"
+                  />
+                ) : null}
+                {d.supplement3eEnfant ? (
+                  <ResultRow
+                    label="supplément large famille"
+                    value={fmtEUR(d.supplement3eEnfant)}
+                    direction="plus"
+                  />
                 ) : null}
               </div>
-
-              <CalcGrid cols={2}>
-                <CalcRadio<HandicapYesNo>
-                  label="Handicap reconnu ?"
-                  hint="Estimation catégorie médiane (4-6 points)."
-                  value={enfant.handicap}
-                  onChange={(v) => updateEnfant(enfant.uid, { handicap: v })}
-                  options={[
-                    { value: "non", label: "Non" },
-                    { value: "oui", label: "Oui" },
-                  ]}
-                  accent={accent}
-                />
-                <CalcSelect<OrphelinStatus>
-                  id={`allocs-orphelin-${enfant.uid}`}
-                  label="Statut orphelin"
-                  value={enfant.orphelin}
-                  onChange={(v) => updateEnfant(enfant.uid, { orphelin: v })}
-                  options={[
-                    { value: "aucun", label: "Aucun" },
-                    { value: "un_parent", label: "Un parent décédé" },
-                    { value: "deux_parents", label: "Deux parents décédés" },
-                  ]}
-                />
-              </CalcGrid>
             </div>
           ))}
         </div>
       </div>
 
-      <CalcSubmitButton accent={accent} onClick={onCalc}>
-        Calculer les allocations
-      </CalcSubmitButton>
+      {/* Bloc bonus rentrée + allocation naissance */}
+      <div
+        className="rounded-xl p-3 text-[11.5px] leading-[1.55]"
+        style={{
+          background: "#EFF6FF",
+          border: "1px solid #BFDBFE",
+          color: "#1E40AF",
+        }}
+      >
+        <div className="mb-1 flex items-center gap-1.5 font-bold">
+          <Info className="size-3.5" /> Bonus annuels
+        </div>
+        <ul className="text-[#1E3A8A]">
+          <li>
+            <strong>Bonus rentrée scolaire</strong> annuel ≈{" "}
+            <strong>{fmtEUR(result.bonusRentreeAnnuel)}</strong> (versé en
+            août).
+          </li>
+          {result.allocationNaissanceTotale > 0 ? (
+            <li className="mt-1">
+              <strong>Allocation de naissance</strong> (one-shot){" "}
+              {ANNEE_COURANTE} :{" "}
+              <strong>{fmtEUR(result.allocationNaissanceTotale)}</strong>.
+            </li>
+          ) : null}
+        </ul>
+      </div>
 
-      {error ? <CalcError>{error}</CalcError> : null}
+      {/* Bloc "À savoir" */}
+      <div
+        className="rounded-xl p-3 text-[11.5px] leading-[1.6]"
+        style={{
+          background: `${accent}10`,
+          border: `1px solid ${accent}25`,
+          color: "var(--glass-ink-soft)",
+        }}
+      >
+        <div className="mb-1 flex items-center gap-1.5 font-bold text-[color:var(--glass-ink)]">
+          <Info className="size-3.5" /> À savoir
+        </div>
+        <ul className="list-inside list-disc space-y-1">
+          <li>
+            Les barèmes diffèrent selon la <strong>région</strong> et la{" "}
+            <strong>date de naissance</strong> (régime « ancien » avant 2019/2020
+            vs « nouveau »).
+          </li>
+          <li>
+            Les ménages à <strong>bas revenu</strong> et{" "}
+            <strong>monoparentaux</strong> bénéficient de suppléments sociaux.
+          </li>
+          {aHandicap ? (
+            <li>
+              Le <strong>supplément handicap</strong> affiché correspond à la
+              catégorie médiane. Le réel va de 93 € (atteinte modérée) à 621 €
+              (handicap sévère) selon les points AVIQ / Iriscare / Opgroeien.
+            </li>
+          ) : null}
+          <li>
+            Pour le montant exact, contactez votre caisse :{" "}
+            <strong>FAMIWAL</strong> (Wallonie), <strong>FAMIRIS</strong>{" "}
+            (Bruxelles), <strong>Groeipakket</strong> (Flandre),{" "}
+            <strong>Ministerium DG</strong> (Ostbelgien).
+          </li>
+        </ul>
+      </div>
 
-      {result ? (
-        <CalcResult
-          accent={accent}
-          headline={fmtEUR(result.totalMensuel)}
-          unit="/ mois"
-          subtext={
-            <>
-              Régime : <strong>{result.regionLabel}</strong>
-            </>
-          }
-          rows={rows}
-          footer={
-            <>
-              <div>
-                <strong>Bonus rentrée scolaire</strong> annuel estimé :{" "}
-                <strong>{fmtEUR(result.bonusRentreeAnnuel)}</strong> (versé en
-                été).
-              </div>
-              {result.allocationNaissanceTotale > 0 ? (
-                <div className="mt-1.5">
-                  <strong>Allocation de naissance</strong> (one-shot){" "}
-                  pour les enfants nés en {ANNEE_COURANTE} :{" "}
-                  <strong>{fmtEUR(result.allocationNaissanceTotale)}</strong>.
-                </div>
-              ) : null}
-              {aHandicap ? (
-                <div className="mt-1.5">
-                  <em>
-                    Supplément handicap estimé sur la catégorie médiane (4-6
-                    points). Le montant réel peut aller de 30 € à 700 € selon
-                    la gravité — à vérifier auprès de la caisse.
-                  </em>
-                </div>
-              ) : null}
-              <div className="mt-1.5">
-                Estimation indicative. Pour le montant exact, contactez votre
-                caisse : FAMIWAL (Wallonie), FAMIRIS (Bruxelles), Groeipakket
-                (Flandre), Ministerium DG (Ostbelgien).
-              </div>
-            </>
-          }
-        />
-      ) : (
-        <CalcInfo>
-          Les barèmes diffèrent selon la <strong>région</strong> et la{" "}
-          <strong>date de naissance</strong> de l'enfant (régime « ancien »
-          avant 2019 vs « nouveau » après). Les ménages à bas revenu
-          (&lt; 36 000 €/an) et monoparentaux bénéficient de suppléments
-          sociaux. Le <strong>handicap reconnu</strong>, le statut{" "}
-          <strong>orphelin</strong> et le rang (3e enfant à Bruxelles)
-          ouvrent des suppléments additionnels.
-        </CalcInfo>
-      )}
-    </CalcLayout>
+      <button
+        type="button"
+        onClick={onExportPDF}
+        disabled={exporting}
+        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border-[1.5px] text-[13px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+        style={{
+          borderColor: `${accent}50`,
+          background: "var(--glass-surface)",
+          color: accent,
+        }}
+      >
+        <Download className="size-4" />
+        {exporting ? "Génération du PDF…" : "Télécharger le détail (PDF)"}
+      </button>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Placeholder : avant le premier calcul                             */
+/* ------------------------------------------------------------------ */
+
+function AllocsFamResultPlaceholder({ accent }: { accent: string }) {
+  return (
+    <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 text-center">
+      <span
+        className="text-[11px] font-bold uppercase tracking-[0.06em]"
+        style={{ color: accent }}
+      >
+        Résultat estimatif
+      </span>
+      <div
+        className="text-[15px] font-semibold leading-snug text-[color:var(--glass-ink-soft)]"
+        style={{ maxWidth: 260 }}
+      >
+        Sélectionnez votre région, ajoutez vos enfants et indiquez le revenu du
+        ménage, puis cliquez sur{" "}
+        <em>« Calculer les allocations »</em>.
+      </div>
+      <Info
+        className="mt-1 size-5"
+        style={{ color: "var(--glass-ink-faint)" }}
+      />
+    </div>
   );
 }

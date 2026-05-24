@@ -1253,14 +1253,145 @@ const METHODOLOGIES: CalcMethodology[] = [
     sourceFile: "lib/calculators/allocs-fam.ts",
     reliability: "high",
     reliabilityNote:
-      "Quatre régimes régionaux modélisés avec leurs barèmes 2026, suppléments handicap (médian 85/90 €), suppléments orphelin (175 → 450 € selon partiel/complet), supplément 3e enfant Bruxelles (+50 € à partir du rang 3) et allocation de naissance one-shot par région. Pour le montant officiel : caisse d'allocations.",
+      "Conforme aux barèmes officiels FAMIWAL/FAMIRIS/Groeipakket/Kindergeld DG 2026 (indexation mars 2026 pour WAL/BXL, septembre 2025 pour FLA). Validé sur 6 points de référence : 2 cas Wallonie nouveau et ancien régime, 1 cas Bruxelles, 1 cas Flandre (3 enfants), 1 cas handicap, 1 cas orphelin. Base FAMIWAL nouveau régime 196,57 € (0-17 ans), 209,25 € (18-24) ; base FAMIRIS par tranche d'âge (190,23 / 202,91 / 215,59 €) ; basisbedrag Groeipakket 184,62 € ; Basiskindergeld DG 188,89 €. Suppléments sociaux à barèmes officiels par tranche de revenu et nombre d'enfants. Pour le montant officiel : caisse d'allocations.",
     year: 2026,
+    lastUpdatedAt: "2026-05-25",
+    badges: ["Belgique", "Régions 2026", "Données 2026"],
+    category: "Famille & Enfants",
+    tags: [
+      "allocations",
+      "famille",
+      "enfants",
+      "FAMIWAL",
+      "FAMIRIS",
+      "Groeipakket",
+    ],
+    pedagogyIntro:
+      "Depuis la **régionalisation** entrée en vigueur entre 2019 et 2020, les allocations familiales belges sont gérées par **4 organismes officiels distincts** : FAMIWAL (Wallonie), FAMIRIS (Bruxelles), Groeipakket (Flandre) et Kindergeld DG (Communauté germanophone). Chaque régime a son propre barème indexé, sa date pivot ancien/nouveau régime (2019 en Flandre, 2020 en WAL/BXL), et ses suppléments. Notre calculateur applique automatiquement le bon barème selon la région, l'âge de chaque enfant et la composition du ménage — pour donner un ordre de grandeur réaliste avant le contact avec la caisse.",
+    differentiators: [
+      {
+        label: "4 régimes régionaux intégrés",
+        description:
+          "FAMIWAL, FAMIRIS, Groeipakket et Kindergeld DG sont modélisés avec leurs barèmes officiels mars/septembre 2026 et leurs dates pivot distinctes (2019 Flandre, 2020 WAL/BXL).",
+      },
+      {
+        label: "Allocation de naissance one-shot par région",
+        description:
+          "Prime de naissance distincte par région et selon le rang : 1 395,02 € FAMIWAL/FAMIRIS rang 1, 634,10 € FAMIRIS suivants, 1 269,25 € Startbedrag Flandre, 1 296 € Kindergeld DG.",
+      },
+      {
+        label: "Suppléments handicap & orphelin avec barème par régime",
+        description:
+          "Handicap : catégorie médiane « modérée » 141,90 € (WAL/DG), 192,91 € (FLA), 546,58 € (BXL). Orphelin : barème complet (1 parent / 2 parents, ancien / nouveau régime selon date de décès).",
+      },
+      {
+        label: "Bonus rentrée scolaire annuel par âge",
+        description:
+          "Prime scolaire 2026 différenciée par tranche d'âge et par région (25,36 → 101,46 € WAL/BXL ; 23,07 → 69,22 € FLA Schoolbonus).",
+      },
+      {
+        label: "Détection auto du régime selon région",
+        description:
+          "L'utilisateur ne fait que sélectionner sa région : le calc applique automatiquement les bons seuils de revenu, suppléments par rang et barèmes par tranche d'âge, sans avoir à choisir manuellement.",
+      },
+    ],
+    maintenanceGuide: [
+      {
+        trigger: "Barèmes FAMIWAL (base, supplément social, monoparental, orphelin, handicap)",
+        source: "FAMIWAL — Résumé des montants",
+        sourceUrl: "https://www.famiwal.be/montants/resume-des-montants",
+        frequency: "1 fois/an (indexation mars)",
+        codeLocation:
+          "lib/calculators/allocs-fam.ts → WAL_BASE_NOUVEAU_*, WAL_SUPP_*",
+      },
+      {
+        trigger: "Barèmes FAMIRIS (base par âge, supplément social, orphelin %)",
+        source: "FAMIRIS — Montants des allocations familiales",
+        sourceUrl:
+          "https://famiris.brussels/fr/faq/payments-amounts-of-child-benefits/child-benefit-rates/",
+        frequency: "1 fois/an (indexation mars)",
+        codeLocation:
+          "lib/calculators/allocs-fam.ts → BXL_BASE_NOUVEAU_*, BXL_SUPP_*",
+      },
+      {
+        trigger: "Barèmes Groeipakket (basisbedrag, sociale toeslag, zorgtoeslag)",
+        source: "Groeipakket — Bedragen",
+        sourceUrl: "https://www.groeipakket.be/fr/montants",
+        frequency: "1 fois/an (indexation septembre)",
+        codeLocation:
+          "lib/calculators/allocs-fam.ts → FLA_BASE_NOUVEAU, FLA_SUPP_*",
+      },
+      {
+        trigger: "Barèmes Kindergeld DG (Basiskindergeld, Sozialzuschlag, Geburtszulage)",
+        source: "Ostbelgien Familie — Beträge",
+        sourceUrl: "https://ostbelgienfamilie.be/desktopdefault.aspx/tabid-5900/",
+        frequency: "1 fois/an (indexation annuelle)",
+        codeLocation: "lib/calculators/allocs-fam.ts → DG_BASE, DG_SUPP_*",
+      },
+      {
+        trigger: "Bonus rentrée scolaire (par âge et par région)",
+        source:
+          "FAMIWAL prime scolaire / FAMIRIS supplément d'âge annuel / Schoolbonus Groeipakket",
+        sourceUrl:
+          "https://www.famiwal.be/accedez-aux-themes/vos-allocations-familiales/votre-supplement-dage-annuel-prime-scolaire",
+        frequency: "1 fois/an (avant le versement d'août)",
+        codeLocation:
+          "lib/calculators/allocs-fam.ts → walBonusRentree / bxlBonusRentree / flaBonusRentree / dgBonusRentree",
+      },
+      {
+        trigger: "Validation périodique (régression test)",
+        source: "FAMIWAL/FAMIRIS/Groeipakket — simulateurs officiels",
+        sourceUrl: "https://www.famiwal.be/calculatrice",
+        frequency: "1 fois/an (mars-avril, après l'indexation officielle)",
+        codeLocation: "scripts/debug-allocs-fam.ts → re-tester 6 cas",
+      },
+    ],
+    briefMeta: [
+      { label: "Méthode", value: "Barèmes officiels FAMIWAL/FAMIRIS/Groeipakket/DG", icon: "FileCode2" },
+      { label: "Régionalisation", value: "4 régimes (2019 FLA · 2020 WAL/BXL)", icon: "MapPin" },
+      { label: "Unités", value: "Mensuel (€) + bonus annuels", icon: "Calculator" },
+      { label: "Dernière MAJ", value: "25 mai 2026", icon: "Clock" },
+      { label: "Auteur", value: "Équipe Docbel", icon: "Users" },
+    ],
+    inputsDetailed: [
+      {
+        label: "Région de résidence",
+        description:
+          "Wallonie / Bruxelles / Flandre / Germanophone — détermine la caisse et le barème.",
+        icon: "MapPin",
+      },
+      {
+        label: "Revenu annuel du ménage",
+        description:
+          "Revenu imposable cumulé. Sert au calcul des suppléments sociaux et monoparentaux.",
+        icon: "Euro",
+      },
+      {
+        label: "Famille monoparentale",
+        description:
+          "Un seul adulte assume la charge — active le supplément monoparental quand il existe.",
+        icon: "Users",
+      },
+      {
+        label: "Liste d'enfants (1–10)",
+        description:
+          "Année de naissance, handicap reconnu (médian), statut orphelin (1 ou 2 parents).",
+        icon: "Baby",
+      },
+    ],
+    outputs: [
+      "Total mensuel toutes allocations",
+      "Détail par enfant (base + suppléments)",
+      "Bonus rentrée scolaire annuel (versé en août)",
+      "Allocation de naissance (one-shot pour les enfants nés cette année)",
+      "Régime détecté automatiquement par enfant (ancien / nouveau)",
+    ],
     inputs: [
       "Région : Wallonie / Bruxelles / Flandre / Germanophone",
       "Liste d'enfants (année de naissance, 1–10)",
       "Revenu annuel brut imposable du ménage (€)",
       "Famille monoparentale (oui/non)",
-      "Handicap par enfant (catégorie médiane 4-6 points)",
+      "Handicap par enfant (catégorie médiane)",
       "Statut orphelin par enfant (aucun / un parent / deux parents)",
     ],
     formulas: [
@@ -1269,83 +1400,184 @@ const METHODOLOGIES: CalcMethodology[] = [
         expression: "rang attribué du plus âgé (rang 1) au plus jeune",
       },
       {
-        label: "Wallonie nouveau régime (né ≥2019)",
-        expression: "base = 181,61 € (0–17 ans) ou 202 € (18–24 ans)",
-      },
-      {
-        label: "Wallonie ancien régime (né <2019)",
-        expression: "base = 119 / 219 / 327 € selon rang 1 / 2 / 3+",
-      },
-      {
-        label: "Bruxelles nouveau régime (né ≥2019)",
+        label: "Wallonie nouveau régime (né ≥2020)",
         expression:
-          "base = 181,61 € + 50 € si rang ≥ 3 (supplément 3e enfant FAMIRIS)",
+          "base = 196,57 € (0–17 ans) ou 209,25 € (18–24 ans). +69,75 € supp social si ≤ 34 000 €/an, +31,71 € si ≤ 54 868 €/an. +25,36 / 12,68 € supp mono.",
       },
       {
-        label: "Flandre Groeipakket (né ≥2019)",
-        expression: "base = 184,62 € forfait identique tous enfants",
+        label: "Wallonie ancien régime (né <2020)",
+        expression:
+          "base = 121,50 € (1er) / 224,82 € (2e) / 335,66 € (3e+). Supplément social par rang (61,85 / 38,34 / 6,73 €) si bas revenu.",
       },
       {
-        label: "Germanophone",
-        expression: "base = 165 € (0–17) ou 185 € (18–24)",
+        label: "Bruxelles nouveau régime (né ≥2020)",
+        expression:
+          "base = 190,23 € (0–11) / 202,91 € (12–17) / 215,59 € (18–24). Supp social ≈ 95 € (2 parents) ou 107 € (mono) si ≤ 40 587 €/an, ≈ 45 € si ≤ 58 916 €/an.",
       },
       {
-        label: "Supplément handicap (cumulable)",
-        expression: "+ 85 € (WAL/FLA/DG) ou + 90 € (BXL) si enfant reconnu",
+        label: "Flandre Groeipakket",
+        expression:
+          "basisbedrag 184,62 €. Supp social 1-2 enf : 73,68 € (≤ 40 702 €) ou 37,31 € (≤ 47 485 €). 3+ enfants : 108,29 € ou 85,22 € (seuils 40 702 / 76 561 €).",
+      },
+      {
+        label: "Germanophone (Kindergeld DG)",
+        expression:
+          "Basiskindergeld 188,89 €. Sozialzuschlag 93,23 € si bas revenu. Familienzuschlag 165,40 € à partir du 3e enfant.",
+      },
+      {
+        label: "Supplément handicap (cumulable, catégorie médiane modérée)",
+        expression:
+          "+ 141,90 € (WAL/DG) · + 192,91 € (FLA) · + 546,58 € (BXL). Réel = 93 à 621 € selon points.",
       },
       {
         label: "Supplément orphelin (cumulable)",
         expression:
-          "un parent : 175/175/200/180 €  ·  deux parents : 400/400/450/400 € (WAL/BXL/FLA/DG)",
+          "WAL ≥2020 : 98,29 (0-17) / 104,63 (18-24) / 443,87 (2 parents). WAL <2020 : 466,75 €. FAMIRIS : +50 % base (1 parent) ou +100 % (2). FLA : 199,60 / 399,21 €. DG : 180 / 400 €.",
       },
       {
         label: "Allocation de naissance (one-shot)",
         expression:
-          "WAL 1 415/1 057 (rang 1 / suivants)  ·  BXL 1 395/634  ·  FLA & DG 1 296 forfait",
+          "WAL : 1 395,02 € forfait. BXL : 1 395,02 € (rang 1) / 634,10 € (suivants). FLA : 1 269,25 € Startbedrag. DG : 1 296 €.",
       },
     ],
     constants: [
-      { name: "Seuil bas revenu général", value: "< 36 000 €/an" },
-      { name: "Seuil Flandre intermédiaire", value: "32 000 – 62 000 €/an" },
-      { name: "Pivot nouveau régime (toutes régions)", value: "Né à partir de 2019" },
-      { name: "Supplément monoparental Wallonie", value: "+22,88 €/enfant" },
-      { name: "Supplément social Wallonie", value: "+33,69 €/enfant si bas revenu" },
-      { name: "Supplément Flandre bas revenu", value: "+93 €/enfant si <32 000 €" },
-      { name: "Supplément Flandre intermédiaire", value: "+21 €/enfant si 32–62 k€" },
-      { name: "Supplément Bruxelles bas revenu", value: "+55 €/enfant (priorité sur supplément monoparental)" },
-      { name: "Supplément 3e enfant Bruxelles", value: "+50 €/mois si rang ≥ 3" },
       {
-        name: "Supplément handicap (par région)",
-        value: "WAL 85 € / BXL 90 € / FLA 85 € / DG 85 €",
-        note: "Catégorie médiane (4-6 points). Le réel va de 30 € (légère) à ~700 € (sévère).",
+        name: "Pivot ancien/nouveau régime — WAL/BXL",
+        value: "1ᵉʳ janvier 2020",
+        note: "FAMIRIS : strictement 01/12/2019, arrondi à <2020 dans le calcul.",
       },
       {
-        name: "Supplément orphelin un parent",
-        value: "WAL 175 / BXL 175 / FLA 200 / DG 180 €",
+        name: "Pivot ancien/nouveau régime — Flandre",
+        value: "1ᵉʳ janvier 2019",
+        note: "Démarrage du Groeipakket (« paquet de croissance »).",
       },
       {
-        name: "Supplément orphelin deux parents",
-        value: "WAL 400 / BXL 400 / FLA 450 / DG 400 €",
+        name: "WAL — base nouveau régime",
+        value: "196,57 € (0-17 ans) · 209,25 € (18-24 ans)",
+        note: "Source FAMIWAL mars 2026.",
       },
       {
-        name: "Allocation de naissance",
-        value: "WAL 1 415/1 057 · BXL 1 395/634 · FLA 1 296 · DG 1 296",
-        note: "One-shot. WAL et BXL distinguent rang 1 / suivants ; FLA et DG forfait unique (Startbedrag).",
+        name: "WAL — base ancien régime",
+        value: "121,50 € (1er) · 224,82 € (2e) · 335,66 € (3e+)",
+        note: "Source FAMIWAL mars 2026.",
       },
-      { name: "Bonus rentrée scolaire (annuel)", value: "22 / 47 / 65 / 87 € selon âge", note: "Versé en août." },
+      {
+        name: "WAL — seuils revenu",
+        value: "≤ 34 000,47 € (bas) · ≤ 54 867,79 € (intermédiaire)",
+        note: "Indexés annuellement.",
+      },
+      {
+        name: "WAL — supplément social nouveau régime",
+        value: "+69,75 € (bas) · +31,71 € (intermédiaire)",
+      },
+      {
+        name: "WAL — supplément monoparental nouveau régime",
+        value: "+25,36 € (bas) · +12,68 € (intermédiaire)",
+        note: "S'ajoute au supplément social.",
+      },
+      {
+        name: "WAL — orphelin nouveau régime",
+        value: "98,29 € (0-17) / 104,63 € (18-24) / 443,87 € (2 parents)",
+      },
+      {
+        name: "WAL — orphelin ancien régime",
+        value: "466,75 € (décès antérieurs à 2020)",
+      },
+      {
+        name: "WAL — prime de naissance",
+        value: "1 395,02 € forfait (≥2020)",
+        note: "Ancien régime (rang 1) : 1 646,08 €.",
+      },
+      {
+        name: "WAL — prime scolaire (annuel)",
+        value: "25,36 € (0-4) · 38,05 € (5-10) · 63,41 € (11-16) · 101,46 € (17-24)",
+      },
+      {
+        name: "BXL — base nouveau régime",
+        value: "190,23 € (0-11) · 202,91 € (12-17) · 215,59 € (18-24 sup)",
+        note: "Source FAMIRIS indexée 01/03/2026.",
+      },
+      {
+        name: "BXL — base ancien régime",
+        value: "177,55 € (0-11) · 190,23 € (12-17) · 202,91 € (18-24)",
+      },
+      {
+        name: "BXL — seuils revenu",
+        value: "≤ 40 586,52 € (bas) · ≤ 58 915,92 € (intermédiaire)",
+      },
+      {
+        name: "BXL — supplément social",
+        value: "≈ 95 € (2 parents) / 107 € (mono) si bas revenu · ≈ 45 € si intermédiaire",
+        note: "Valeurs médianes — le réel dépend du nombre d'enfants et de l'âge.",
+      },
+      {
+        name: "BXL — orphelin",
+        value: "+50 % base (1 parent) · +100 % base (2 parents)",
+      },
+      {
+        name: "BXL — prime de naissance",
+        value: "1 395,02 € (rang 1) · 634,10 € (suivants)",
+      },
+      {
+        name: "FLA — basisbedrag",
+        value: "184,62 €",
+        note: "Source Groeipakket sept 2025 / 2026.",
+      },
+      {
+        name: "FLA — seuils revenu",
+        value: "≤ 40 701,59 € · ≤ 47 485,19 € (1-2 enf) · ≤ 76 560,64 € (3+ enf)",
+      },
+      {
+        name: "FLA — supplément social",
+        value: "1-2 enf : 73,68 / 37,31 € · 3+ enf : 108,29 / 85,22 €",
+      },
+      {
+        name: "FLA — startbedrag (naissance)",
+        value: "1 269,25 €",
+      },
+      {
+        name: "FLA — Schoolbonus (annuel)",
+        value: "23,07 € (0-4) · 40,38 € (5-11) · 57,68 € (12-17) · 69,22 € (18-25)",
+      },
+      {
+        name: "DG — Basiskindergeld",
+        value: "188,89 €",
+        note: "Source Ostbelgien Familie.",
+      },
+      {
+        name: "DG — Sozialzuschlag",
+        value: "+93,23 € si bas revenu (≤ 34 000 €/an)",
+      },
+      {
+        name: "DG — Familienzuschlag (3e+)",
+        value: "+165,40 € dès le 3e enfant",
+      },
+      {
+        name: "DG — Geburtszulage",
+        value: "1 296 € forfait",
+      },
+      {
+        name: "Supplément handicap (par région — catégorie médiane modérée)",
+        value:
+          "WAL/DG 141,90 € · FLA 192,91 € · BXL 546,58 €",
+        note: "Le réel va de 93 € (modéré) à 621 € (sévère) selon les points AVIQ / Iriscare / Opgroeien.",
+      },
     ],
     sources: [
-      { name: "FAMIWAL (Wallonie)", url: "https://www.famiwal.be" },
-      { name: "FAMIRIS (Bruxelles)", url: "https://www.famiris.brussels" },
-      { name: "Groeipakket (Flandre)", url: "https://www.groeipakket.be" },
-      { name: "Kindergeld DG (Ostbelgien)", url: "https://www.ostbelgienlive.be" },
+      { name: "FAMIWAL — Allocations familiales en Wallonie", url: "https://www.famiwal.be" },
+      { name: "AVIQ — Agence pour une Vie de Qualité (tutelle Wallonie)", url: "https://www.aviq.be" },
+      { name: "FAMIRIS — Allocations familiales à Bruxelles", url: "https://famiris.brussels" },
+      { name: "Iriscare — Tutelle Bruxelles", url: "https://www.iriscare.brussels" },
+      { name: "Groeipakket / Opgroeien — Paquet de croissance Flandre", url: "https://www.groeipakket.be" },
+      { name: "Ministerium der Deutschsprachigen Gemeinschaft — Kindergeld DG", url: "https://ostbelgienlive.be" },
     ],
     limitations: [
-      "Supplément handicap : valeur centrale — le montant réel dépend du nombre de points AViQ / Iriscare / Kind & Gezin (30 à 700 €).",
-      "Pas de supplément social par âge (chômeur longue durée, invalide).",
-      "Pas de prise en compte du Start- ou Schoolbonus Flandre.",
-      "Pas de gestion des familles recomposées (mi-temps de garde).",
+      "Supplément handicap : valeur centrale (catégorie médiane modérée) — le montant réel dépend du nombre de points AVIQ / Iriscare / Opgroeien (93 à 621 €).",
+      "FAMIRIS : le supplément social affiche une valeur médiane par tranche de revenu — le réel varie selon le nombre d'enfants et l'âge (50,73 → 177,55 €).",
+      "Pas de prise en compte du revenu cadastral plafond (FAMIRIS exige cadastre ≤ 2 000 € pour le supplément social).",
+      "Pas de gestion des familles recomposées (mi-temps de garde, coparentalité).",
       "Bonus rentrée scolaire = montant annuel, pas réparti mensuellement.",
+      "Pas de prise en compte des aides annexes (étudiant supérieur, jeune en alternance, etc.).",
     ],
   },
 

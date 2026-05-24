@@ -2,16 +2,19 @@
  * Calcul de l'Impôt des Personnes Physiques (IPP) — Belgique.
  * Exercice d'imposition 2026 (revenus 2025), version enrichie.
  *
- * SOURCES
- * -------
- *  - SPF Finances — finances.belgium.be
- *  - Code des impôts sur les revenus 1992 (CIR 92)
- *  - Barème fédéral indexé 2026 (AR/CIR 92, annexe III)
+ * SOURCES (officielles, État belge UNIQUEMENT)
+ * --------------------------------------------
+ *  - SPF Finances — https://fin.belgium.be (taux d'imposition, quotité)
+ *  - CIR 92 — Code des impôts sur les revenus 1992
+ *  - AR/CIR 92 (barème fédéral indexé, annexe III)
  *  - Art. 131 CIR 92 (quotité du revenu exemptée d'impôt)
  *  - Art. 132 CIR 92 (suppléments pour personnes à charge)
  *  - Art. 134 CIR 92 (quotient conjugal)
  *  - Art. 145 CIR 92 et suivants (réductions d'impôt)
  *  - Loi 30/03/1994 — cotisation spéciale sécurité sociale
+ *  - ONSS — https://socialsecurity.be (CSS bénéficiaires)
+ *  - Moniteur belge — https://www.ejustice.just.fgov.be
+ *  - Tax-on-web — https://finances.belgium.be/fr/E-services/tax-on-web
  *
  * AVERTISSEMENT
  * -------------
@@ -50,9 +53,15 @@ export interface IPPInput {
   autresPersonnesACharge: number;
   /** Additionnel communal en % (0-15 ; moyenne belge ≈ 7,5 %). */
   additionnelCommunal: number;
+  /**
+   * Parent isolé (allocataire seul) avec ≥ 1 enfant à charge.
+   * Ouvre droit à un supplément de quotité de 1 980 € (EI 2026).
+   * Ignoré si enfants === 0 ou si statut ≠ "isole".
+   */
+  parentIsole?: boolean;
 
   /* -- Réductions d'impôt (optionnelles, défaut 0) -- */
-  /** Versement annuel épargne pension (€/an, max 1 130 €). Réduction 30 %. */
+  /** Versement annuel épargne pension (€/an, max 1 050 € à 30 %). Réduction 30 %. */
   epargnePension?: number;
   /** Achats annuels titres-services (€/an, max 1 500 €). Réduction ≈ 15 %. */
   titresServices?: number;
@@ -104,6 +113,7 @@ export interface IPPError {
 /**
  * Tranches du barème fédéral IPP — exercice d'imposition 2026 (revenus 2025).
  * Les bornes sont les revenus annuels imposables.
+ * Source : SPF Finances — https://fin.belgium.be/fr/particuliers/declaration_impot/taux-imposition-revenus/taux-imposition
  */
 export const TRANCHES_IPP_2026: Array<{ min: number; max: number; taux: number }> = [
   { min: 0, max: 16320, taux: 0.25 },
@@ -115,65 +125,92 @@ export const TRANCHES_IPP_2026: Array<{ min: number; max: number; taux: number }
 /**
  * Quotité du revenu exemptée d'impôt — base EI 2026 (revenus 2025).
  * Art. 131 CIR 92 (montant unique depuis l'EI 2020).
+ * Source : SPF Finances — https://fin.belgium.be/en/private-individuals/tax-return/income/tax-rates
  */
-const QUOTITE_BASE_2026 = 10910;
+export const QUOTITE_BASE_2026 = 10910;
 
 /**
- * Suppléments cumulatifs de quotité par nombre d'enfants à charge.
- * Art. 132 CIR 92 — montants indexés 2026.
+ * Suppléments cumulatifs de quotité par nombre d'enfants à charge — EI 2026.
+ * Art. 132 CIR 92 — montants indexés (revenus 2025).
+ * Source : SPF Finances — https://fin.belgium.be/fr/particuliers/declaration-impot/situation-personnelle/personnes-a-charge/enfants
  */
-const SUPPLEMENT_ENFANTS: Record<number, number> = {
+export const SUPPLEMENT_ENFANTS: Record<number, number> = {
   0: 0,
-  1: 1920,
-  2: 4950,
-  3: 11080,
-  4: 17920,
-  5: 17920 + 6840,
+  1: 1980,
+  2: 5110,
+  3: 11440,
+  4: 18510,
+  5: 18510 + 7070,
 };
 
-const SUPPLEMENT_ENFANT_AU_DELA_5 = 6840;
+export const SUPPLEMENT_ENFANT_AU_DELA_5 = 7070;
 
-/** Supplément par autre personne à charge (parent âgé, etc.). */
-const SUPPLEMENT_AUTRE_PERSONNE = 1920;
+/**
+ * Supplément par autre personne à charge (parent âgé, etc.) — EI 2026.
+ * Source : SPF Finances — https://fin.belgium.be/fr/particuliers/declaration-impot/situation-personnelle/personnes-a-charge/autres
+ * Note : 5 950 € si la personne a 66 ans+ et en état de dépendance ; on retient
+ * 1 980 € comme cas générique (autre personne à charge).
+ */
+export const SUPPLEMENT_AUTRE_PERSONNE = 1980;
+
+/**
+ * Supplément pour parent isolé (allocataire seul) avec ≥ 1 enfant à charge.
+ * Source : SPF Finances — EI 2026 (revenus 2025).
+ */
+export const SUPPLEMENT_PARENT_ISOLE = 1980;
 
 /* ------------------------------------------------------------------ */
 /*  Constantes — réductions d'impôt 2026                              */
 /* ------------------------------------------------------------------ */
 
-/** Épargne pension : versement max ouvrant droit à réduction. */
-const EPARGNE_PENSION_PLAFOND = 1130;
-/** Épargne pension : taux de réduction (30 % sur le palier de base). */
-const EPARGNE_PENSION_TAUX = 0.3;
+/**
+ * Épargne pension — panier de base (palier 1) : versement max ouvrant droit
+ * à la réduction au taux normal de 30 %. EI 2026 (revenus 2025).
+ * Source : SPF Finances — https://fin.belgium.be/fr/particuliers/avantages-fiscaux/epargne-pension
+ */
+export const EPARGNE_PENSION_PLAFOND = 1050;
+/** Épargne pension : taux de réduction (30 % sur le palier de base). Art. 145 CIR 92. */
+export const EPARGNE_PENSION_TAUX = 0.3;
 
 /** Titres-services : taux moyen de réduction (moyenne 3 régions ≈ 15 %). */
-const TITRES_SERVICES_TAUX = 0.15;
+export const TITRES_SERVICES_TAUX = 0.15;
 /** Titres-services : plafond annuel d'achats ouvrant droit à réduction. */
-const TITRES_SERVICES_PLAFOND = 1500;
+export const TITRES_SERVICES_PLAFOND = 1500;
 
-/** Dons : taux de réduction (45 %) — minimum 40 €/an/bénéficiaire. */
-const DONS_TAUX = 0.45;
-const DONS_MINIMUM = 40;
+/** Dons : taux de réduction (45 %) — minimum 40 €/an/bénéficiaire. Art. 145³³ CIR 92. */
+export const DONS_TAUX = 0.45;
+export const DONS_MINIMUM = 40;
 
 /** Prêt hypothécaire : taux moyen (chèque habitation régional ≈ 30 %). */
-const PRET_HYPO_TAUX = 0.3;
+export const PRET_HYPO_TAUX = 0.3;
 
 /** Garde d'enfants : taux 45 %, plafond 16,40 €/jour/enfant. */
-const GARDE_ENFANTS_TAUX = 0.45;
+export const GARDE_ENFANTS_TAUX = 0.45;
 
 /* ------------------------------------------------------------------ */
 /*  Constantes — quotient conjugal & cotisation spéciale              */
 /* ------------------------------------------------------------------ */
 
-/** Quotient conjugal : plafond du transfert virtuel vers conjoint sans revenu. */
-const QUOTIENT_CONJUGAL_PLAFOND = 13530;
+/**
+ * Quotient conjugal — plafond du transfert virtuel vers conjoint sans revenu.
+ * Art. 134 CIR 92, montant indexé EI 2026 (revenus 2025).
+ * Source : SPF Finances — page mariage et cohabitation.
+ */
+export const QUOTIENT_CONJUGAL_PLAFOND = 13460;
 
-/** Cotisation spéciale sécurité sociale — seuils 2026 (loi 30/03/1994). */
+/**
+ * Cotisation spéciale sécurité sociale — seuils 2026 (loi 30/03/1994).
+ * Source : ONSS — https://socialsecurity.be (DmfA 2026/1, code 856).
+ * Note : le barème ONSS officiel est trimestriel et plus granulaire ;
+ * on retient ici une approximation annuelle préservant le plafond légal
+ * de 731,28 €/an (arrondi à 731 €).
+ */
 const CSS_SEUIL_BAS = 18592;
 const CSS_SEUIL_MOYEN = 21070;
 const CSS_SEUIL_HAUT = 60161;
 const CSS_TAUX_TRANCHE_1 = 0.09; // 9 % sur 18 592 → 21 070
 const CSS_TAUX_TRANCHE_2 = 0.013; // 1,3 % sur 21 070 → 60 161
-const CSS_PLAFOND_ANNUEL = 731;
+export const CSS_PLAFOND_ANNUEL = 731;
 
 /* ------------------------------------------------------------------ */
 /*  Helpers internes                                                  */
@@ -211,6 +248,7 @@ function appliquerBareme(montant: number): {
 function calculerQuotiteExemptee(
   enfants: number,
   autresPersonnes: number,
+  parentIsole: boolean,
 ): number {
   let supplementEnfants = 0;
   if (enfants <= 5) {
@@ -221,8 +259,15 @@ function calculerQuotiteExemptee(
   }
 
   const supplementAutres = autresPersonnes * SUPPLEMENT_AUTRE_PERSONNE;
+  const supplementIsole =
+    parentIsole && enfants > 0 ? SUPPLEMENT_PARENT_ISOLE : 0;
 
-  return QUOTITE_BASE_2026 + supplementEnfants + supplementAutres;
+  return (
+    QUOTITE_BASE_2026 +
+    supplementEnfants +
+    supplementAutres +
+    supplementIsole
+  );
 }
 
 /** Renvoie le taux marginal applicable au dernier euro gagné. */
@@ -273,7 +318,8 @@ function calculerReductions(input: IPPInput): number {
 
   let total = 0;
 
-  // 1. Épargne pension : 30 % du versement, plafonné à 1 130 € versés.
+  // 1. Épargne pension : 30 % du versement, plafonné à 1 050 € versés (EI 2026).
+  //    Note : 25 % entre 1 050 et 1 350 € — non modélisé ici (rare en pratique).
   if (epargnePension > 0) {
     const verseEffectif = Math.min(epargnePension, EPARGNE_PENSION_PLAFOND);
     total += verseEffectif * EPARGNE_PENSION_TAUX;
@@ -315,6 +361,7 @@ export function calcIPP(input: IPPInput): IPPResult | IPPError {
     enfants,
     autresPersonnesACharge,
     additionnelCommunal,
+    parentIsole = false,
     epargnePension = 0,
     titresServices = 0,
     dons = 0,
@@ -396,6 +443,7 @@ export function calcIPP(input: IPPInput): IPPResult | IPPError {
   const quotiteExemptee = calculerQuotiteExemptee(
     enfants,
     autresPersonnesACharge,
+    parentIsole,
   );
 
   /* -- 2. Impôt brut sur le revenu imposable (avant quotité) -- */
@@ -464,6 +512,7 @@ export function calcIPP(input: IPPInput): IPPResult | IPPError {
   void epargnePension;
   void titresServices;
   void dons;
+  void parentIsole;
   void pretHypothecaire;
   void gardeEnfants;
 

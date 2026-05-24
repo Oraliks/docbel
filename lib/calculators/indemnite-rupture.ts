@@ -22,15 +22,25 @@
  * -----------------
  * Les indemnités de rupture supportent un précompte professionnel
  * "spécial" cumulé, dont le taux dépend du revenu annuel de référence.
- * On applique un barème par tranches (valeurs simplifiées 2026) basé sur
- * brutAnnuel = salaireBrutMensuel × 13.92 (12 mois + 13e + double pécule
- * estimés), pour une estimation plus juste que le taux moyen unique.
+ * On applique un barème par tranches (valeurs indicatives 2026,
+ * inspirées des barèmes officiels SPF Finances pour le précompte sur
+ * arriérés/indemnités de dédit) basé sur brutAnnuel = salaireBrutMensuel
+ * × 13.92 (12 mois + 13e + double pécule estimés), pour une estimation
+ * plus juste que le taux moyen unique.
  *
- * Cotisation spéciale de compensation
- * -----------------------------------
- * Loi du 26 décembre 2013 : si la rémunération annuelle ≥ 44 509 €
- * (seuil 2026), l'employeur supporte une cotisation de 1 % de l'indemnité
- * brute. Pas déduite du net du salarié, mais signalée pour transparence.
+ * Cotisation spéciale de compensation employeur (DmfA)
+ * ----------------------------------------------------
+ * Loi du 26 décembre 2013 — ONSS instructions administratives 2026/1 :
+ * l'employeur supporte une cotisation progressive sur la part de
+ * l'indemnité de rupture couvrant des prestations effectuées à partir
+ * du 1ᵉʳ janvier 2014. Trois tranches actuelles (seuils valables depuis
+ * 01/01/2023, encore en vigueur en 2026) :
+ *   - rémunération annuelle ≥ 50 166 €      → 1 %
+ *   - rémunération annuelle ≥ 61 437 €      → 2 %
+ *   - rémunération annuelle ≥ 72 707 €      → 3 %
+ * Source: ONSS — Cotisation spéciale sur les indemnités de rupture
+ * destinée au Fonds de fermeture des entreprises (DmfA).
+ * Pas déduite du net du salarié, mais signalée pour transparence.
  *
  * Indemnité de protection
  * -----------------------
@@ -38,21 +48,30 @@
  * protégé) ouvrent droit à une indemnité de protection cumulable. On
  * applique un multiplicateur de mois de rémunération mensuelle.
  *
+ * Important : l'indemnité de protection (femme enceinte, délégué
+ * syndical, conseiller en prévention) n'est PAS soumise aux cotisations
+ * sociales (ONSS, instructions 2026/1, notion de rémunération). Elle est
+ * exclue de la base de la cotisation spéciale de compensation.
+ *
  * Ce fichier est de la logique pure : pas de React, pas de side-effects.
  */
 
 /** Garde-fou : un préavis raisonnable ne dépasse pas ~4 ans (200 semaines). */
-const PREAVIS_MAX_SEMAINES = 200;
+export const PREAVIS_MAX_SEMAINES = 200;
 
 /**
  * Coefficient d'annualisation salaire mensuel → brut annuel de référence.
  * 12 mois + 13e (~1 mois) + double pécule (~0,92 mois) ≈ 13,92.
  */
-const COEF_ANNUALISATION = 13.92;
+export const COEF_ANNUALISATION = 13.92;
 
 /**
- * Barème simplifié du précompte spécial 2026 (tranches sur brut annuel).
- * Cf. SPF Finances, fiches de calcul indemnités de dédit.
+ * Barème indicatif du précompte spécial 2026 (tranches sur brut annuel).
+ * Source: SPF Finances — Précompte professionnel 2026, règles relatives
+ * aux arriérés et indemnités de dédit. Valeurs simplifiées en 5 tranches
+ * pour une estimation citoyenne pédagogique. Pour un calcul de paie
+ * exact, voir l'annexe officielle (~25 tranches détaillées).
+ * URL: https://finances.belgium.be/fr/entreprises/personnel_et_remuneration/precompte_professionnel/calcul
  */
 interface TranchePrecompte {
   /** Borne supérieure exclusive (en €/an). Infinity pour la dernière. */
@@ -60,7 +79,7 @@ interface TranchePrecompte {
   /** Taux appliqué dans cette tranche (en décimal). */
   taux: number;
 }
-const BAREME_PRECOMPTE_SPECIAL: TranchePrecompte[] = [
+export const BAREME_PRECOMPTE_SPECIAL: TranchePrecompte[] = [
   { jusqua: 17_670, taux: 0.1716 },
   { jusqua: 21_730, taux: 0.2675 },
   { jusqua: 30_220, taux: 0.323 },
@@ -68,10 +87,27 @@ const BAREME_PRECOMPTE_SPECIAL: TranchePrecompte[] = [
   { jusqua: Infinity, taux: 0.535 },
 ];
 
-/** Seuil 2026 de la cotisation spéciale de compensation employeur. */
-const SEUIL_COTISATION_SPECIALE = 44_509;
-/** Taux de la cotisation spéciale (employeur, sur indemnité brute). */
-const TAUX_COTISATION_SPECIALE = 0.01;
+/**
+ * Tranches 2026 de la cotisation spéciale de compensation employeur.
+ * Source: ONSS — Instructions administratives 2026/1, "Cotisation
+ * spéciale sur les indemnités de rupture destinée au Fonds de fermeture
+ * des entreprises (DmfA)". Seuils inchangés depuis le 01/01/2023.
+ * URL: https://www.socialsecurity.be/employer/instructions/dmfa/fr/latest/instructions/special_contributions/other_specialcontributions/terminationfeecontribution.html
+ */
+interface TrancheCotisation {
+  /** Seuil de déclenchement (en €/an, rémunération annuelle). */
+  seuil: number;
+  /** Taux appliqué dans cette tranche (en décimal). */
+  taux: number;
+}
+export const TRANCHES_COTISATION_SPECIALE: TrancheCotisation[] = [
+  { seuil: 50_166, taux: 0.01 }, // 1 % entre 50 166 € et 61 437 €
+  { seuil: 61_437, taux: 0.02 }, // 2 % entre 61 437 € et 72 707 €
+  { seuil: 72_707, taux: 0.03 }, // 3 % au-delà de 72 707 €
+];
+
+/** Premier seuil sous lequel aucune cotisation spéciale n'est due. */
+export const SEUIL_COTISATION_SPECIALE = TRANCHES_COTISATION_SPECIALE[0].seuil;
 
 /** Statuts ouvrant droit à une indemnité de protection. */
 export type ProtectionSpeciale =
@@ -84,14 +120,18 @@ export type ProtectionSpeciale =
  * Multiplicateur (en mois de rémunération mensuelle) d'indemnité de
  * protection. Valeurs centrales / typiques — pour cas concret, voir
  * CCT 5 (délégués syndicaux) et lois spécifiques.
+ * Source: Loi du 16 mars 1971 art. 40 (femme enceinte), CCT n° 5 art. 20
+ * (délégué syndical), Loi du 19 mars 1991 (conseiller en prévention).
  */
-const PROTECTION_MOIS: Record<ProtectionSpeciale, number> = {
+export const PROTECTION_MOIS: Record<ProtectionSpeciale, number> = {
   aucune: 0,
-  // Loi du 16 mars 1971, art. 40 : 6 mois forfaitaires.
+  // Loi du 16 mars 1971, art. 40 : 6 mois forfaitaires de rémunération
+  // (rémunération en cours + avantages dus en vertu du contrat).
   femme_enceinte: 6,
-  // CCT 5, art. 20 : 2 à 4 ans selon ancienneté → on retient 3 ans = 36 mois.
+  // CCT n° 5, art. 20 : 2 à 4 ans selon ancienneté → valeur centrale 3 ans.
   delegue_syndical: 36,
-  // Indemnité protection (CPPT, etc.) : 6 à 12 mois → on retient 9 mois.
+  // Loi du 19 mars 1991 (conseiller en prévention, CPPT) : 6 à 12 mois
+  // selon ancienneté — on retient une valeur intermédiaire de 9 mois.
   travailleur_protege: 9,
 };
 
@@ -118,8 +158,14 @@ export interface IndemniteResult {
   indemniteNetEstimee: number;
   /** Taux de précompte appliqué (en %), selon la tranche de revenu. */
   tauxPrecompteAppliquePourcent: number;
-  /** Cotisation spéciale due par l'employeur (1 % si seuil atteint). */
+  /** Cotisation spéciale due par l'employeur (1 / 2 / 3 % si seuils atteints). */
   cotisationSpecialeEmployeur: number;
+  /** Taux progressif effectif appliqué pour la cotisation spéciale (en %). */
+  tauxCotisationSpecialePourcent: number;
+  /** Brut annuel de référence (salaire mensuel × 13,92). */
+  brutAnnuelReference: number;
+  /** Statut de protection retenu. */
+  protectionSpeciale: ProtectionSpeciale;
   preavisSemaines: number;
 }
 
@@ -134,6 +180,19 @@ function tauxPrecompteSpecial(brutAnnuel: number): number {
   }
   // Sécurité : ne devrait jamais être atteint grâce à Infinity.
   return BAREME_PRECOMPTE_SPECIAL[BAREME_PRECOMPTE_SPECIAL.length - 1].taux;
+}
+
+/**
+ * Retourne le taux progressif (0 / 1 / 2 / 3 %) de la cotisation spéciale
+ * de compensation employeur selon le brut annuel de référence.
+ * Source: ONSS — Instructions administratives 2026/1.
+ */
+export function tauxCotisationSpecialeProgressif(brutAnnuel: number): number {
+  let taux = 0;
+  for (const t of TRANCHES_COTISATION_SPECIALE) {
+    if (brutAnnuel >= t.seuil) taux = t.taux;
+  }
+  return taux;
 }
 
 export function calcIndemniteRupture(
@@ -202,12 +261,13 @@ export function calcIndemniteRupture(
     ? indemniteTotalBrute * (1 - tauxPrecompte)
     : indemniteTotalBrute;
 
-  // 8. Cotisation spéciale employeur (1 % si rémunération annuelle ≥ seuil).
-  //    Calculée sur le total brut (information employeur, n'affecte pas le net).
-  const cotisationSpecialeEmployeur =
-    brutAnnuel >= SEUIL_COTISATION_SPECIALE
-      ? indemniteTotalBrute * TAUX_COTISATION_SPECIALE
-      : 0;
+  // 8. Cotisation spéciale employeur (taux progressif selon brut annuel).
+  //    Calculée sur l'indemnité de RUPTURE (sans la part protection :
+  //    l'indemnité de protection est exclue des cotisations sociales,
+  //    cf. ONSS 2026/1, notion de rémunération).
+  //    Information employeur, n'affecte pas le net du salarié.
+  const tauxCotisationSpeciale = tauxCotisationSpecialeProgressif(brutAnnuel);
+  const cotisationSpecialeEmployeur = indemniteBrute * tauxCotisationSpeciale;
 
   return {
     remunerationMensuelle,
@@ -218,6 +278,9 @@ export function calcIndemniteRupture(
     indemniteNetEstimee,
     tauxPrecompteAppliquePourcent: tauxPrecompte * 100,
     cotisationSpecialeEmployeur,
+    tauxCotisationSpecialePourcent: tauxCotisationSpeciale * 100,
+    brutAnnuelReference: brutAnnuel,
+    protectionSpeciale,
     preavisSemaines: dureePreavisSemaines,
   };
 }

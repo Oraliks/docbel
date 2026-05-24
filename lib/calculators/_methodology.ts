@@ -1038,14 +1038,167 @@ const METHODOLOGIES: CalcMethodology[] = [
     sourceFile: "lib/calculators/indemnite-rupture.ts",
     reliability: "high",
     reliabilityNote:
-      "Formule conforme à la loi du 3 juillet 1978 (art. 39) avec barème précompte spécial par tranches (17,16 → 53,50 %) au lieu d'un taux moyen unique, cotisation spéciale employeur 1 % (seuil 44 509 €/an) signalée, et indemnité de protection cumulable (femme enceinte 6 mois, délégué syndical 36 mois, travailleur protégé 9 mois).",
+      "Formule conforme à la Loi du 3 juillet 1978 (art. 39) avec barème précompte spécial SPF Finances 2026 par tranches (17,16 → 53,50 %) au lieu d'un taux moyen unique, cotisation spéciale employeur progressive ONSS 2026/1 (1 % / 2 % / 3 % selon brut annuel ≥ 50 166 / 61 437 / 72 707 €) signalée, et indemnité de protection cumulable (femme enceinte 6 mois, délégué syndical 36 mois, conseiller prévention 9 mois). L'indemnité de protection est correctement exclue de la base de la cotisation spéciale (ONSS 2026/1, notion de rémunération).",
     year: 2026,
+    lastUpdatedAt: "2026-05-25",
+    badges: ["Belgique", "Salarié", "2026"],
+    category: "Rupture du contrat",
+    tags: [
+      "indemnité",
+      "préavis",
+      "rupture",
+      "précompte spécial",
+      "cotisation 1%",
+    ],
+    pedagogyIntro:
+      "Quand l'employeur **rompt le contrat sans faire prester le préavis** (totalement ou partiellement), il doit verser une **indemnité compensatoire** égale à la rémunération courante correspondant à la durée non prestée. Côté salarié, cet outil estime le brut, le précompte spécial SPF Finances et le net après retenues. Côté employeur, il signale la cotisation spéciale de compensation ONSS (1 / 2 / 3 % selon la rémunération annuelle) due au Fonds de fermeture des entreprises. Trois statuts protégés ouvrent en plus droit à une **indemnité de protection cumulable** (femme enceinte, délégué syndical, conseiller en prévention).",
+    differentiators: [
+      {
+        label: "Précompte spécial par tranches (5 paliers) plutôt qu'un taux moyen",
+        description:
+          "La plupart des calculateurs gratuits appliquent un taux unique (~33 ou ~40 %) qui sur-estime le net pour les bas salaires et sous-estime pour les hauts. Ici, le barème SPF Finances 2026 est modélisé en 5 tranches (17,16 / 26,75 / 32,30 / 41,80 / 53,50 %) appliquées au brut annuel de référence.",
+      },
+      {
+        label: "Cotisation spéciale ONSS progressive 1 / 2 / 3 % signalée",
+        description:
+          "Conformément aux instructions administratives ONSS 2026/1, l'outil applique le bon taux selon les 3 tranches (≥ 50 166 € / ≥ 61 437 € / ≥ 72 707 €) — plutôt qu'un taux fixe 1 % approximatif. La cotisation est correctement présentée comme à charge de l'employeur, sans impact sur le net du salarié.",
+      },
+      {
+        label: "Indemnité de protection pour 3 statuts (loi 1971 / CCT 5 / loi 1991)",
+        description:
+          "Femme enceinte (6 mois forfaitaires, art. 40 loi 16/03/1971), délégué syndical (36 mois centre CCT n° 5 art. 20), conseiller en prévention (9 mois médian, loi 19/03/1991). L'indemnité de protection est correctement exclue de la base de la cotisation spéciale ONSS.",
+      },
+      {
+        label: "Avantages extra-légaux mensualisés",
+        description:
+          "Prime de fin d'année, double pécule, chèques-repas annuels, voiture de société, assurance groupe — l'utilisateur saisit le total annuel, l'outil le divise par 12 et l'ajoute à la rémunération mensuelle de base avant le calcul hebdo.",
+      },
+      {
+        label: "Source de vérité : SPF Finances + ONSS + Moniteur belge uniquement",
+        description:
+          "Aucune référence à des secrétariats sociaux privés ou simulateurs concurrents : tous les chiffres et règles viennent du SPF Finances (précompte), de l'ONSS (cotisation spéciale, exonération de l'indemnité de protection) et du Moniteur belge (Loi 1978, loi 1971, loi 1991, loi 2013).",
+      },
+    ],
+    maintenanceGuide: [
+      {
+        trigger: "Barème précompte spécial (annexe précompte professionnel)",
+        source: "SPF Finances — Précompte professionnel 2026",
+        sourceUrl:
+          "https://finances.belgium.be/fr/entreprises/personnel_et_remuneration/precompte_professionnel/calcul",
+        frequency: "1 fois/an (publication SPF Finances, généralement en janvier)",
+        codeLocation:
+          "lib/calculators/indemnite-rupture.ts → BAREME_PRECOMPTE_SPECIAL",
+      },
+      {
+        trigger: "Seuils cotisation spéciale (1 / 2 / 3 %)",
+        source: "ONSS — Instructions administratives DmfA",
+        sourceUrl:
+          "https://www.socialsecurity.be/employer/instructions/dmfa/fr/latest/instructions/special_contributions/other_specialcontributions/terminationfeecontribution.html",
+        frequency:
+          "1 fois/an (vérifier indexation ; seuils stables depuis 01/01/2023)",
+        codeLocation:
+          "lib/calculators/indemnite-rupture.ts → TRANCHES_COTISATION_SPECIALE",
+      },
+      {
+        trigger:
+          "Indemnité de protection (multiplicateurs femme enceinte / délégué / CPPT)",
+        source: "Moniteur belge — Loi 16/03/1971, CCT n° 5, Loi 19/03/1991",
+        sourceUrl: "https://www.ejustice.just.fgov.be",
+        frequency: "Rare (modification = nouvelle loi)",
+        codeLocation: "lib/calculators/indemnite-rupture.ts → PROTECTION_MOIS",
+      },
+      {
+        trigger: "CCT n° 5 — fourchette d'ancienneté pour délégué syndical",
+        source: "CNT — CCT n° 5 sur le statut des délégations syndicales",
+        sourceUrl: "https://www.cnt-nar.be",
+        frequency: "Stable (révisions très rares)",
+        codeLocation:
+          "lib/calculators/indemnite-rupture.ts → PROTECTION_MOIS.delegue_syndical",
+      },
+      {
+        trigger: "Validation périodique des 6 cas de référence",
+        source: "SPF Emploi — Fin du contrat de travail",
+        sourceUrl:
+          "https://emploi.belgique.be/fr/themes/contrats-de-travail/fin-du-contrat-de-travail",
+        frequency: "1 fois/an (après nouveaux barèmes janvier)",
+        codeLocation:
+          "scripts/debug-indemnite-rupture.ts → re-tester les 6 cas",
+      },
+    ],
+    briefMeta: [
+      {
+        label: "Audience",
+        value: "Salariés & employeurs (rupture sans préavis presté)",
+        icon: "Users",
+      },
+      {
+        label: "Durée de l'estimation",
+        value: "~ 30 secondes (salaire + préavis suffisent)",
+        icon: "Clock",
+      },
+      {
+        label: "Prérequis",
+        value: "Connaître le salaire brut mensuel et la durée du préavis",
+        icon: "FileText",
+      },
+      {
+        label: "Sortie",
+        value: "Indemnité brute, net après précompte, cotisation employeur",
+        icon: "Calculator",
+      },
+      {
+        label: "Complexité",
+        value: "Faible (3 inputs minimum, 5 maximum)",
+        icon: "Sparkles",
+      },
+    ],
     inputs: [
       "Salaire brut mensuel courant",
-      "Durée de préavis non presté (semaines)",
+      "Durée de préavis non presté (semaines, 0-200)",
       "Avantages annuels (€/an, optionnel)",
       "Estimer le net après précompte (oui/non)",
-      "Statut de protection : aucune / femme enceinte / délégué syndical / travailleur protégé",
+      "Statut de protection : aucune / femme enceinte / délégué syndical / conseiller en prévention",
+    ],
+    inputsDetailed: [
+      {
+        label: "Salaire mensuel brut",
+        description:
+          "Montant indiqué sur la fiche de paie avant retenues. Le calculateur multiplie par 13,92 pour estimer le brut annuel de référence (qui détermine le taux de précompte et la cotisation employeur).",
+        icon: "Euro",
+      },
+      {
+        label: "Durée du préavis non presté",
+        description:
+          "En semaines (0 à 200). Si l'employeur fait prester une partie du préavis, indiquer ici la partie non prestée. À combiner avec le calculateur de préavis pour obtenir la durée totale.",
+        icon: "Calendar",
+      },
+      {
+        label: "Avantages extra-légaux annualisés",
+        description:
+          "Prime de fin d'année, double pécule de vacances, chèques-repas, voiture de société, assurance groupe… Total annuel estimé en €/an. Divisé par 12 et ajouté à la rémunération mensuelle de base.",
+        icon: "Gift",
+      },
+      {
+        label: "Statut de protection spéciale",
+        description:
+          "4 valeurs possibles : aucune / femme enceinte (+6 mois) / délégué syndical CCT 5 (+~3 ans) / conseiller en prévention CPPT (+~9 mois). Cumule une indemnité de protection à l'indemnité standard.",
+        icon: "ShieldAlert",
+      },
+      {
+        label: "Calcul du net après précompte",
+        description:
+          "Oui : applique le barème précompte spécial SPF Finances (5 tranches). Non : affiche uniquement le brut total.",
+        icon: "Percent",
+      },
+    ],
+    outputs: [
+      "Indemnité brute standard (rémunération hebdo × semaines)",
+      "Indemnité de protection si statut protégé (mois × rémunération mensuelle)",
+      "Total brut",
+      "Taux de précompte spécial appliqué (selon tranche)",
+      "Net estimé après précompte (si demandé)",
+      "Cotisation spéciale employeur (1 / 2 / 3 %) — info, n'affecte pas le net",
+      "Brut annuel de référence (salaire × 13,92)",
     ],
     formulas: [
       {
@@ -1054,7 +1207,8 @@ const METHODOLOGIES: CalcMethodology[] = [
       },
       {
         label: "Rémunération hebdomadaire",
-        expression: "hebdo = mensuelle × 3 / 13  (équivalence légale 13 sem = 3 mois)",
+        expression:
+          "hebdo = mensuelle × 3 / 13  (équivalence légale 13 sem = 3 mois)",
       },
       {
         label: "Indemnité brute (préavis non presté)",
@@ -1071,12 +1225,13 @@ const METHODOLOGIES: CalcMethodology[] = [
       },
       {
         label: "Net estimé",
-        expression: "net = (indemnité_brute + protection) × (1 − taux_précompte)",
+        expression:
+          "net = (indemnité_brute + protection) × (1 − taux_précompte)",
       },
       {
-        label: "Cotisation spéciale employeur",
+        label: "Cotisation spéciale employeur (progressive)",
         expression:
-          "si brut_annuel ≥ 44 509 € : cotisation = total_brut × 1 % (côté employeur, n'affecte pas le net)",
+          "taux = 1 % (≥ 50 166 €) / 2 % (≥ 61 437 €) / 3 % (≥ 72 707 €) ; cotisation = indemnité_brute × taux (hors protection)",
       },
     ],
     constants: [
@@ -1111,14 +1266,24 @@ const METHODOLOGIES: CalcMethodology[] = [
         note: "12 mois + 13e (~1) + double pécule (~0,92) pour estimer le brut annuel.",
       },
       {
-        name: "Seuil cotisation spéciale employeur",
-        value: "44 509 €/an",
-        note: "Loi du 26 décembre 2013. Au-delà : 1 % sur l'indemnité brute (côté employeur).",
+        name: "Cotisation spéciale — tranche 1",
+        value: "1 %",
+        note: "50 166 € ≤ rémunération annuelle < 61 437 € (ONSS 2026/1).",
+      },
+      {
+        name: "Cotisation spéciale — tranche 2",
+        value: "2 %",
+        note: "61 437 € ≤ rémunération annuelle < 72 707 € (ONSS 2026/1).",
+      },
+      {
+        name: "Cotisation spéciale — tranche 3",
+        value: "3 %",
+        note: "Rémunération annuelle ≥ 72 707 € (ONSS 2026/1).",
       },
       {
         name: "Indemnité protection — femme enceinte",
         value: "6 mois de rémunération",
-        note: "Loi du 16 mars 1971, art. 40.",
+        note: "Loi du 16 mars 1971, art. 40 (forfaitaire).",
       },
       {
         name: "Indemnité protection — délégué syndical",
@@ -1126,9 +1291,9 @@ const METHODOLOGIES: CalcMethodology[] = [
         note: "CCT n° 5, art. 20 (2 à 4 ans selon ancienneté, valeur centrale retenue).",
       },
       {
-        name: "Indemnité protection — travailleur protégé",
+        name: "Indemnité protection — conseiller prévention",
         value: "9 mois",
-        note: "CPPT, conseillers en prévention, etc. (6 à 12 mois selon cas).",
+        note: "Loi du 19 mars 1991 (6 à 12 mois selon ancienneté).",
       },
       {
         name: "Garde-fou préavis max",
@@ -1138,20 +1303,32 @@ const METHODOLOGIES: CalcMethodology[] = [
       {
         name: "Équivalence légale",
         value: "13 semaines = 3 mois",
-        note: "Conversion mensuelle → hebdomadaire (loi du 3 juillet 1978).",
+        note: "Conversion mensuelle → hebdomadaire (Loi du 3 juillet 1978).",
       },
     ],
     sources: [
-      { name: "Loi du 3 juillet 1978 sur les contrats de travail", url: "https://www.ejustice.just.fgov.be" },
-      { name: "Loi du 26 décembre 2013 (cotisation spéciale)", url: "https://www.ejustice.just.fgov.be" },
-      { name: "CCT n° 5 (délégué syndical)", url: "https://www.cnt-nar.be" },
-      { name: "SPF Emploi — Rupture du contrat", url: "https://emploi.belgique.be" },
-      { name: "SPF Finances — Précompte sur indemnités", url: "https://finances.belgium.be" },
+      {
+        name: "SPF Finances — Précompte professionnel 2026 (calcul)",
+        url: "https://finances.belgium.be/fr/entreprises/personnel_et_remuneration/precompte_professionnel/calcul",
+      },
+      {
+        name: "ONSS — Cotisation spéciale sur les indemnités de rupture (DmfA 2026/1)",
+        url: "https://www.socialsecurity.be/employer/instructions/dmfa/fr/latest/instructions/special_contributions/other_specialcontributions/terminationfeecontribution.html",
+      },
+      {
+        name: "Moniteur belge — Loi du 3 juillet 1978 sur les contrats de travail",
+        url: "https://www.ejustice.just.fgov.be",
+      },
+      {
+        name: "SPF Emploi — Fin du contrat de travail",
+        url: "https://emploi.belgique.be/fr/themes/contrats-de-travail/fin-du-contrat-de-travail",
+      },
     ],
     limitations: [
-      "Pas d'application du plafond fiscal d'imposition étalée (article 171 CIR 92).",
-      "Indemnité de protection : montants centraux — le cas concret peut varier (ancienneté délégué syndical, motif de protection).",
-      "Le précompte spécial réel dépend du taux marginal individuel — l'approximation par tranches donne un cadre, pas un chiffre exact.",
+      "Pas d'application du régime fiscal de taxation distincte (article 171 CIR 92, taux marginal de l'année précédente) — l'outil applique le précompte spécial source.",
+      "Indemnité de protection : montants centraux — le cas concret peut varier (ancienneté du délégué syndical, motif précis de la protection).",
+      "Le précompte spécial réel dépend du taux marginal individuel (personnes à charge, conjoint, etc.) — l'approximation par 5 tranches donne un cadre, pas un chiffre exact.",
+      "La cotisation spéciale s'applique uniquement à la part d'indemnité couvrant des prestations à partir du 01/01/2014 — l'outil l'applique sur l'indemnité brute totale (approximation conservatrice pour les contrats récents).",
     ],
   },
 
@@ -1779,30 +1956,175 @@ const METHODOLOGIES: CalcMethodology[] = [
     slug: "ipp-simulateur",
     title: "Impôt des Personnes Physiques (IPP)",
     pitch:
-      "Simulateur IPP fédéral simplifié — exercice d'imposition 2026 (revenus 2025).",
+      "Simulateur IPP fédéral pédagogique — exercice d'imposition 2026 (revenus 2025), barème SPF Finances.",
     sourceFile: "lib/calculators/ipp.ts",
     reliability: "high",
     reliabilityNote:
-      "Barème fédéral 4 tranches indexé 2026 avec quotité exemptée 10 910 €, 5 réductions d'impôt (épargne pension, titres-services, dons, prêt hypo, garde enfants), quotient conjugal (allègement estimé pour marié 1 revenu) et cotisation spéciale sécurité sociale dégressive. Pour le calcul officiel et personnalisé : Tax-on-web.",
+      "Barème fédéral 4 tranches officiel SPF Finances (25/40/45/50 %), quotité exemptée 10 910 € (art. 131 CIR 92) avec suppléments enfants à jour EI 2026 (1 980 / 5 110 / 11 440 / 18 510 / +7 070 €, art. 132), quotient conjugal plafonné à 13 460 € (art. 134), 5 réductions d'impôt principales (épargne pension 30 % @ 1 050 €, titres-services ≈ 15 %, dons 45 %, prêt hypo ≈ 30 %, garde 45 %) et cotisation spéciale sécurité sociale dégressive (loi 30/03/1994, plafond 731 €/an). Pour le calcul officiel et personnalisé : Tax-on-web.",
     year: 2026,
+    lastUpdatedAt: "2026-05-25",
+    badges: ["Belgique", "Exercice 2026", "Revenus 2025"],
+    category: "Fiscalité",
+    tags: ["IPP", "impôt", "tax-on-web", "additionnels", "quotité exemptée"],
+    author: "Équipe Docbel",
+    pedagogyIntro:
+      "L'**impôt des personnes physiques** belge se calcule en appliquant le **barème fédéral progressif** (4 tranches : 25 %, 40 %, 45 %, 50 %) au revenu annuel imposable, puis en retirant la **réduction liée à la quotité exemptée** (10 910 € de base + suppléments par personne à charge, art. 131-132 CIR 92), et enfin en ajoutant l'**additionnel communal** (en moyenne 7,5 % en Belgique, variable selon la commune) et la **cotisation spéciale sécurité sociale** (loi 30/03/1994). Ce simulateur est **indicatif** : pour le calcul officiel et personnalisé (revenus mobiliers, immobiliers, pensions alimentaires, bonus à l'emploi, particularismes régionaux), rendez-vous sur **Tax-on-web** (SPF Finances) — l'outil officiel reste la référence.",
+    differentiators: [
+      {
+        label: "Barème par tranches transparent",
+        description:
+          "Chaque euro est imposé tranche par tranche selon le barème officiel SPF Finances 2026 (25 % jusqu'à 16 320 €, 40 % jusqu'à 28 800 €, 45 % jusqu'à 49 840 €, 50 % au-delà), avec affichage du détail par tranche dans le résultat.",
+      },
+      {
+        label: "Quotient conjugal approximé (art. 134 CIR 92)",
+        description:
+          "Pour les couples mariés à un seul revenu, l'allègement du quotient conjugal est estimé sur la base du transfert virtuel jusqu'à 13 460 € (montant indexé EI 2026), reproduisant l'effet d'écrasement progressif des tranches sans entrer dans la complexité du recalcul double-tranches.",
+      },
+      {
+        label: "5 réductions d'impôt principales intégrées",
+        description:
+          "Épargne pension (30 % sur 1 050 €), titres-services (≈ 15 % sur 1 500 €), dons (45 % au-delà de 40 €), prêt hypothécaire (chèque habitation régional ≈ 30 %), garde d'enfants (45 %) — les 5 réductions les plus consultées par les contribuables salariés.",
+      },
+      {
+        label: "Cotisation spéciale sécu (loi 30/03/1994)",
+        description:
+          "Souvent oubliée dans les simulateurs grand public, la CSS est intégrée avec ses seuils dégressifs et son plafond annuel de 731 €. Elle est visible dans la décomposition du résultat.",
+      },
+      {
+        label: "Additionnels communaux variables",
+        description:
+          "L'additionnel communal (0 à 9 %) est paramétrable précisément : pas de moyenne nationale forcée. Note pédagogique sur les communes principales (Bruxelles 7 %, Anvers 7 %, Liège 8 %, Charleroi 8,5 %).",
+      },
+    ],
+    maintenanceGuide: [
+      {
+        trigger: "Barème fédéral indexé (tranches 25/40/45/50 %)",
+        source: "SPF Finances — Taux d'imposition",
+        sourceUrl:
+          "https://fin.belgium.be/fr/particuliers/declaration_impot/taux-imposition-revenus/taux-imposition",
+        frequency: "1 fois/an (indexation, en général en janvier ou février)",
+        codeLocation: "lib/calculators/ipp.ts → TRANCHES_IPP_2026",
+      },
+      {
+        trigger: "Quotité exemptée de base (art. 131 CIR 92)",
+        source: "SPF Finances — page taux d'imposition (mention quotité)",
+        sourceUrl:
+          "https://fin.belgium.be/en/private-individuals/tax-return/income/tax-rates",
+        frequency: "1 fois/an (montant indexé)",
+        codeLocation: "lib/calculators/ipp.ts → QUOTITE_BASE_2026",
+      },
+      {
+        trigger: "Suppléments enfants à charge (art. 132 CIR 92)",
+        source: "SPF Finances — Enfants à charge",
+        sourceUrl:
+          "https://fin.belgium.be/fr/particuliers/declaration-impot/situation-personnelle/personnes-a-charge/enfants",
+        frequency: "1 fois/an (peut être gelé certaines années)",
+        codeLocation:
+          "lib/calculators/ipp.ts → SUPPLEMENT_ENFANTS / SUPPLEMENT_ENFANT_AU_DELA_5",
+      },
+      {
+        trigger: "Cotisation spéciale sécu (loi 30/03/1994)",
+        source: "ONSS — Instructions DmfA, cotisation spéciale (code 856)",
+        sourceUrl:
+          "https://www.socialsecurity.be/employer/instructions/dmfa/fr/latest/instructions/special_contributions/other_specialcontributions/specialsocialsecuritycontribution.html",
+        frequency: "Rare (modification = nouvelle loi)",
+        codeLocation: "lib/calculators/ipp.ts → CSS_PLAFOND_ANNUEL + seuils",
+      },
+      {
+        trigger: "Plafonds des réductions d'impôt (art. 145 et suiv. CIR 92)",
+        source: "SPF Finances — Épargne pension (plafonds annuels)",
+        sourceUrl:
+          "https://fin.belgium.be/fr/particuliers/avantages-fiscaux/epargne-pension",
+        frequency: "1 fois/an (plafonds épargne pension indexés)",
+        codeLocation:
+          "lib/calculators/ipp.ts → EPARGNE_PENSION_PLAFOND / TITRES_SERVICES_PLAFOND",
+      },
+    ],
+    briefMeta: [
+      {
+        label: "Méthode",
+        value: "Barème fédéral 4 tranches (SPF Finances)",
+        icon: "FileCode2",
+      },
+      {
+        label: "Indexation",
+        value: "Annuelle (quotité, suppléments, plafonds réductions)",
+        icon: "Calendar",
+      },
+      {
+        label: "Unités",
+        value: "€/an (annuel) + taux moyen + taux marginal",
+        icon: "Calculator",
+      },
+      { label: "Dernière MAJ", value: "25 mai 2026", icon: "Clock" },
+      { label: "Auteur", value: "Équipe Docbel", icon: "Users" },
+    ],
+    inputsDetailed: [
+      {
+        label: "Revenu annuel imposable net",
+        description:
+          "Revenu après ONSS et frais pro forfaitaires (≈ salaire brut annuel × 0,73 pour un salarié type).",
+        icon: "Euro",
+      },
+      {
+        label: "Statut familial",
+        description:
+          "Isolé(e) / Marié — 1 revenu (quotient conjugal appliqué) / Marié — 2 revenus.",
+        icon: "Users",
+      },
+      {
+        label: "Enfants à charge (0–10)",
+        description:
+          "Suppléments cumulatifs à la quotité : 1 980 € (1), 5 110 € (2), 11 440 € (3), 18 510 € (4), +7 070 €/enfant au-delà.",
+        icon: "Baby",
+      },
+      {
+        label: "Autres personnes à charge (0–5)",
+        description:
+          "Parents, grands-parents, frère/sœur 66+ en dépendance — 1 980 € par personne dans le cas générique.",
+        icon: "Users",
+      },
+      {
+        label: "Additionnel communal (%)",
+        description:
+          "Pourcentage communal appliqué à l'impôt fédéral après crédits. Moyenne belge ≈ 7,5 % (Bruxelles 7 %, Anvers 7 %, Liège 8 %, Charleroi 8,5 %).",
+        icon: "Building2",
+      },
+      {
+        label: "Réductions d'impôt (optionnel)",
+        description:
+          "Épargne pension (≤ 1 050 €), titres-services (≤ 1 500 €), dons (≥ 40 €/an), prêt hypothécaire, garde enfants — chaque réduction est appliquée à son taux standard.",
+        icon: "Percent",
+      },
+    ],
+    outputs: [
+      "Impôt total annuel estimé (€)",
+      "Taux moyen d'imposition (%)",
+      "Taux marginal (tranche du dernier euro gagné)",
+      "Revenu net après impôt (€/an + ≈ €/mois)",
+      "Décomposition : impôt brut, quotité, quotient conjugal, réductions, additionnel, CSS",
+      "Détail par tranche (transparence pédagogique)",
+      "PDF exportable récapitulatif",
+    ],
     inputs: [
       "Revenu annuel imposable (après ONSS + frais pro forfaitaires)",
       "Statut : isolé / marié 1 revenu / marié 2 revenus",
       "Enfants à charge (0–10)",
       "Autres personnes à charge (0–5)",
-      "Additionnel communal (%)",
-      "Versement épargne pension (€/an, plafond 1 130 €)",
+      "Parent isolé (allocataire seul) — supplément 1 980 € si applicable",
+      "Additionnel communal (%, variable par commune)",
+      "Versement épargne pension (€/an, plafond 1 050 € à 30 %)",
       "Achats titres-services (€/an, plafond 1 500 €)",
       "Dons à associations agréées (€/an, min 40 €)",
       "Prêt hypothécaire (€/an)",
       "Frais de garde d'enfants < 14 ans (€/an)",
     ],
     formulas: [
-      { label: "Impôt avant quotité", expression: "barème fédéral appliqué au revenu" },
+      { label: "Impôt avant quotité", expression: "barème fédéral progressif appliqué au revenu" },
       {
         label: "Réduction quotité",
         expression:
-          "barème fédéral appliqué à la quotité exemptée totale (en partant du bas du barème, plafonné au revenu)",
+          "barème fédéral appliqué à la quotité exemptée totale (en partant du bas, plafonné au revenu)",
       },
       {
         label: "Impôt fédéral brut",
@@ -1811,7 +2133,7 @@ const METHODOLOGIES: CalcMethodology[] = [
       {
         label: "Quotient conjugal (marié 1 revenu)",
         expression:
-          "allègement = min(max(0, revenu − 16 320), 13 530) × 25 % (approximation art. 134 CIR 92)",
+          "allègement = min(max(0, revenu − 16 320), 13 460) × 25 % (approximation art. 134 CIR 92)",
       },
       {
         label: "Réductions d'impôt",
@@ -1821,7 +2143,7 @@ const METHODOLOGIES: CalcMethodology[] = [
       {
         label: "Cotisation spéciale sécurité sociale",
         expression:
-          "0 ≤ 18 592 €  ·  9 % sur 18 592 → 21 070  ·  1,3 % sur 21 070 → 60 161 (plafond 731 €/an)",
+          "0 si ≤ 18 592 € · 9 % sur 18 592 → 21 070 · 1,3 % sur 21 070 → 60 161 (plafond 731 €/an)",
       },
       {
         label: "Impôt total",
@@ -1837,27 +2159,33 @@ const METHODOLOGIES: CalcMethodology[] = [
         } €`,
         note: `Taux : ${fmtPct(t.taux)}`,
       })),
-      { name: "Quotité exemptée de base", value: fmtEUR(10910) + "/an", note: "Art. 131 CIR 92 — indexé EI 2026." },
-      { name: "Supplément 1er enfant", value: fmtEUR(1920) },
-      { name: "Supplément 2 enfants (cumulé)", value: fmtEUR(4950) },
-      { name: "Supplément 3 enfants (cumulé)", value: fmtEUR(11080) },
-      { name: "Supplément 4 enfants (cumulé)", value: fmtEUR(17920) },
-      { name: "Au-delà du 5e enfant", value: "+" + fmtEUR(6840) + " par enfant" },
-      { name: "Autre personne à charge", value: "+" + fmtEUR(1920) },
-      { name: "Additionnel communal moyen Belgique", value: "≈ 7,5 %", note: "Variable 0–9 %." },
       {
-        name: "Épargne pension",
-        value: "30 % × min(versement, 1 130 €)",
-        note: "Palier de base (panier 1). Art. 145 CIR 92.",
+        name: "Quotité exemptée de base",
+        value: fmtEUR(10910) + "/an",
+        note: "Art. 131 CIR 92 — indexé EI 2026 (revenus 2025).",
+      },
+      { name: "Supplément 1er enfant", value: fmtEUR(1980), note: "EI 2026 (art. 132 CIR 92)." },
+      { name: "Supplément 2 enfants (cumulé)", value: fmtEUR(5110) },
+      { name: "Supplément 3 enfants (cumulé)", value: fmtEUR(11440) },
+      { name: "Supplément 4 enfants (cumulé)", value: fmtEUR(18510) },
+      { name: "Au-delà du 5e enfant", value: "+" + fmtEUR(7070) + " par enfant" },
+      { name: "Autre personne à charge", value: fmtEUR(1980), note: "Cas générique. 5 950 € si ≥ 66 ans en dépendance." },
+      { name: "Supplément parent isolé (allocataire seul)", value: fmtEUR(1980), note: "Conditionné à ≥ 1 enfant à charge." },
+      { name: "Additionnel communal moyen Belgique", value: "≈ 7,5 %", note: "Variable 0 à 9 % selon la commune." },
+      {
+        name: "Épargne pension (panier de base)",
+        value: "30 % × min(versement, 1 050 €)",
+        note: "Palier de base (réduction max 315 €). Art. 145 CIR 92.",
       },
       {
         name: "Titres-services",
         value: "≈ 15 % × min(achats, 1 500 €)",
-        note: "Moyenne 3 régions (le taux exact varie par Région).",
+        note: "Moyenne 3 régions (Wallonie 10 %, Bruxelles 15 %, Flandre 20 %).",
       },
       {
-        name: "Dons",
+        name: "Dons à associations agréées",
         value: "45 % du montant (≥ 40 €/bénéficiaire)",
+        note: "Art. 145³³ CIR 92.",
       },
       {
         name: "Prêt hypothécaire",
@@ -1871,8 +2199,8 @@ const METHODOLOGIES: CalcMethodology[] = [
       },
       {
         name: "Quotient conjugal — plafond transfert",
-        value: fmtEUR(13530) + "/an",
-        note: "Art. 134 CIR 92 (transfert virtuel vers conjoint sans revenu).",
+        value: fmtEUR(13460) + "/an",
+        note: "Art. 134 CIR 92, indexé EI 2026 (transfert virtuel vers conjoint sans revenu).",
       },
       {
         name: "Cotisation spéciale sécu — seuils",
@@ -1881,16 +2209,29 @@ const METHODOLOGIES: CalcMethodology[] = [
       },
     ],
     sources: [
-      { name: "SPF Finances — Calcul de l'impôt", url: "https://finances.belgium.be" },
-      { name: "CIR 92 — Code des impôts sur les revenus", url: "https://eservices.minfin.fgov.be" },
-      { name: "Loi 30/03/1994 (cotisation spéciale sécu)", url: "https://www.ejustice.just.fgov.be" },
-      { name: "Tax-on-web (déclaration en ligne)", url: "https://finances.belgium.be/fr/E-services/tax-on-web" },
+      {
+        name: "SPF Finances — Taux d'imposition (barème IPP)",
+        url: "https://fin.belgium.be/fr/particuliers/declaration_impot/taux-imposition-revenus/taux-imposition",
+      },
+      {
+        name: "SPF Finances — Tax-on-web (déclaration en ligne)",
+        url: "https://finances.belgium.be/fr/E-services/tax-on-web",
+      },
+      {
+        name: "Moniteur belge — CIR 92 (Code des impôts sur les revenus)",
+        url: "https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=1992041252&table_name=loi",
+      },
+      {
+        name: "Moniteur belge — Loi du 30 mars 1994 (cotisation spéciale sécu)",
+        url: "https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=1994033052&table_name=loi",
+      },
     ],
     limitations: [
-      "Bornes des tranches à 2025 — l'écart avec 2026 indexé est de l'ordre de 3 %.",
-      "Quotient conjugal : approximation 25 % du transfert (vraie formule = écrasement progressif des tranches).",
-      "Pas de calcul de l'impôt régional (additionnel régional ≈ 0 dans la pratique).",
-      "Pas de revenu professionnel des indépendants (régime forfait/réel pro).",
+      "Barème fédéral uniquement — pas d'impôt régional (additionnel régional ≈ 0 dans la pratique).",
+      "Quotient conjugal : approximation 25 % du transfert (vraie formule = écrasement progressif des tranches double-déclaration).",
+      "Réductions au taux moyen national : le taux exact titres-services et chèque habitation varie par Région.",
+      "Pas de prise en compte des revenus mobiliers (précompte 30 %), immobiliers (revenu cadastral), pensions alimentaires versées, ni du bonus à l'emploi.",
+      "Pas de calcul du régime indépendant (frais professionnels réels, cotisations sociales INASTI).",
     ],
   },
 
@@ -2176,8 +2517,170 @@ const METHODOLOGIES: CalcMethodology[] = [
     sourceFile: "lib/calculators/frais-km.ts",
     reliability: "high",
     reliabilityNote:
-      "Barème 2026 (revenus 2026 / EI 2027) avec gestion de l'indemnité km employeur : bascule automatique 0,4322 → 0,15 €/km pour la voiture (cumul exclu, CIR 92 art. 66) et soustraction du montant reçu de la déduction brute. Télétravail : information pédagogique sur les km évités (n'affecte pas la déduction). Plafond vélo 3 700 €/an appliqué.",
+      "Barème revenus 2026 / EI 2027 conforme aux sources de l'État belge : tarif voiture 0,4327 €/km Q2 2026 (circulaire BOSA n° 764, applicable 01/04/2026 – 30/06/2026, révisée trimestriellement au Moniteur belge), forfait CIR 92 art. 66 = 0,15 €/km (bascule automatique si l'employeur verse une indemnité km, cumul interdit), plafond 100 km aller simple voiture / covoiturage, vélo 0,37 €/km plafonné à 3 700 €/an (SPF Finances + SPF Mobilité), transports publics 100 % de l'abonnement (SNCB / STIB / TEC / De Lijn). Forfait légal frais pro 6 070 €/an (CIR 92 art. 51) affiché en comparaison instantanée. Télétravail : information pédagogique sur les km évités (n'affecte pas la déduction).",
     year: 2026,
+    lastUpdatedAt: "2026-05-25",
+    badges: ["Belgique", "Revenus 2026", "EI 2027"],
+    category: "Fiscalité",
+    tags: [
+      "frais professionnels",
+      "km",
+      "vélo",
+      "voiture",
+      "transport public",
+      "télétravail",
+    ],
+    pedagogyIntro:
+      "Chaque salarié belge a le choix entre **deux régimes** pour ses frais professionnels : le **forfait légal** (CIR 92 art. 51, plafonné à 6 070 €/an en 2026, sans justificatif) ou les **frais réels** (justificatifs obligatoires). L'option frais réels est avantageuse surtout quand les déplacements domicile-travail coûtent cher : long trajet en voiture, abonnement SNCB / STIB / TEC / De Lijn, ou vélo quotidien. La **déduction kilométrique** est la composante la plus visible : pour la voiture, deux taux coexistent — **0,4327 €/km** (tarif indemnité fonctionnaires, circulaire BOSA n° 764 Q2 2026) si l'employeur ne verse pas d'indemnité km, ou **0,15 €/km** (forfait CIR 92 art. 66) en cas d'indemnité employeur — le cumul est explicitement interdit (jurisprudence Cour de cassation et règle de non-double remboursement). Le **vélo** offre 0,37 €/km plafonné à 3 700 €/an. Les **transports publics** sont déductibles à 100 % du coût de l'abonnement. La **règle d'or** : opter pour les frais réels uniquement si la somme totale (km + autres frais) dépasse le forfait légal de 6 070 €.",
+    differentiators: [
+      {
+        label: "Plafond 100 km voiture appliqué automatiquement",
+        description:
+          "Au-delà de 100 km aller simple, l'excédent passe au forfait 0,15 €/km (et le tarif fonctionnaires reste sur les 100 premiers km dans chaque sens). Beaucoup d'outils oublient cette règle et surestiment la déduction.",
+      },
+      {
+        label: "Indemnité employeur soustraite automatiquement",
+        description:
+          "Si l'employeur verse une indemnité km, l'outil bascule la voiture sur 0,15 €/km (cumul interdit, CIR 92 art. 66) ET soustrait le montant reçu de la déduction brute pour obtenir la nette — règle de non-cumul intégrée.",
+      },
+      {
+        label: "Comparaison instantanée vs forfait légal 6 070 €",
+        description:
+          "Le résultat indique en temps réel si vos frais réels sont probablement plus avantageux que le forfait légal automatique de 6 070 €/an — pas besoin de calculer à la main.",
+      },
+      {
+        label: "Plafond vélo 3 700 €/an respecté",
+        description:
+          "Le vélo (y compris électrique) est capé à 3 700 €/an (revenus 2026 / EI 2027). L'outil affiche un badge « Plafond vélo atteint » dès que la déduction théorique dépasserait ce plafond.",
+      },
+      {
+        label: "Km évités par le télétravail (info pédago)",
+        description:
+          "Les jours de télétravail ne réduisent pas la déduction (les jours sur place sont déjà comptés) mais l'outil affiche les km annuels économisés à titre informatif — utile pour rappeler l'empreinte carbone et les coûts réels (carburant, usure).",
+      },
+    ],
+    maintenanceGuide: [
+      {
+        trigger: "Tarif indemnité km fonctionnaires (révision trimestrielle)",
+        source: "BOSA — Indemnité pour frais de parcours",
+        sourceUrl:
+          "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/remuneration-et-avantages/allocations-et-indemnites-13",
+        frequency:
+          "Trimestriel (Q1/Q2/Q3/Q4) — circulaire BOSA publiée au Moniteur belge",
+        codeLocation: "lib/calculators/frais-km.ts → TAUX_KM_2026.voiture",
+      },
+      {
+        trigger: "Taux vélo + plafond annuel vélo (indexation annuelle)",
+        source: "SPF Finances — Indemnités frais déplacement domicile-travail",
+        sourceUrl:
+          "https://fin.belgium.be/fr/particuliers/declaration-impot/revenus/indemnites-frais-deplacement-domicile-lieu-travail",
+        frequency: "1 fois/an (indexation pour l'exercice d'imposition suivant)",
+        codeLocation:
+          "lib/calculators/frais-km.ts → TAUX_KM_2026.velo + PLAFOND_ANNUEL_VELO_2026",
+      },
+      {
+        trigger: "Forfait légal frais pro (plafond 6 070 € indexé chaque janvier)",
+        source: "SPF Finances — Forfait et frais réels",
+        sourceUrl:
+          "https://fin.belgium.be/fr/particuliers/transport/deduction_frais_de_transport/trajet_domicile_travail/forfait_et_frais_reels",
+        frequency:
+          "1 fois/an (indexation des revenus, généralement en janvier)",
+        codeLocation:
+          "lib/calculators/frais-km.ts → FORFAIT_LEGAL_FRAIS_PRO_2026",
+      },
+      {
+        trigger:
+          "Abonnements SNCB / STIB / TEC / De Lijn — règle 100 % déductible",
+        source: "SPF Finances + opérateurs publics",
+        sourceUrl:
+          "https://fin.belgium.be/fr/particuliers/declaration-impot/revenus/indemnites-frais-deplacement-domicile-lieu-travail",
+        frequency:
+          "Stable (la règle 100 % reste, seul le prix de l'abonnement varie)",
+        codeLocation: "lib/calculators/frais-km.ts → cas transports_publics",
+      },
+      {
+        trigger:
+          "Cas covoiturage / moto / plafond 100 km — re-tester après modif",
+        source: "scripts/debug-frais-km.ts (6 cas de référence)",
+        sourceUrl:
+          "https://fin.belgium.be/fr/particuliers/declaration-impot/revenus/indemnites-frais-deplacement-domicile-lieu-travail",
+        frequency: "Après chaque modification de barème",
+        codeLocation: "scripts/debug-frais-km.ts",
+      },
+    ],
+    briefMeta: [
+      {
+        label: "Méthode",
+        value: "CIR 92 art. 51 (forfait) + art. 66 (km) + circulaire BOSA",
+        icon: "FileCode2",
+      },
+      {
+        label: "Indexation",
+        value:
+          "Voiture trimestrielle (BOSA) — vélo et forfait légal annuels (SPF Finances)",
+        icon: "Calendar",
+      },
+      {
+        label: "Unités",
+        value: "€/km × km annuels — comparaison vs forfait légal",
+        icon: "Calculator",
+      },
+      { label: "Dernière MAJ", value: "25 mai 2026", icon: "Clock" },
+      { label: "Auteur", value: "Équipe Docbel", icon: "Users" },
+    ],
+    inputsDetailed: [
+      {
+        label: "Distance aller simple",
+        description:
+          "Distance domicile-travail en kilomètres (1 sens). Multipliée × 2 pour le retour, × jours/semaine, × semaines/an.",
+        icon: "MapPin",
+      },
+      {
+        label: "Jours sur place / semaine",
+        description:
+          "Jours physiquement présents au travail (hors télétravail). Détermine la fréquence des allers-retours.",
+        icon: "Calendar",
+      },
+      {
+        label: "Semaines travaillées / an",
+        description:
+          "52 semaines − vacances − maladie. Défaut 44 (corrélé au congé légal belge).",
+        icon: "CalendarDays",
+      },
+      {
+        label: "Mode de transport principal",
+        description:
+          "Voiture, vélo, transports publics (SNCB/STIB/TEC/De Lijn), moto, covoiturage passager. Chaque mode a son barème.",
+        icon: "Car",
+      },
+      {
+        label: "Coût annuel abonnement (transports publics)",
+        description:
+          "100 % du prix de l'abonnement SNCB / STIB / TEC / De Lijn — déductible intégralement.",
+        icon: "Bus",
+      },
+      {
+        label: "Indemnité km employeur (€/an)",
+        description:
+          "Indemnité de déplacement versée par l'employeur. Si > 0 → bascule voiture vers 0,15 €/km et soustraction du montant reçu.",
+        icon: "Euro",
+      },
+      {
+        label: "Jours de télétravail / semaine (avancé)",
+        description:
+          "Info pédagogique — ne réduit pas la déduction mais affiche les km évités à titre informatif.",
+        icon: "Home",
+      },
+    ],
+    outputs: [
+      "Déduction kilométrique nette annuelle (€)",
+      "Déduction brute (avant compensation indemnité employeur)",
+      "Km totaux annuels parcourus (aller-retour)",
+      "Taux €/km effectivement appliqué",
+      "Recommandation : frais réels vs forfait légal 6 070 €",
+      "Indication plafond atteint (100 km voiture ou 3 700 € vélo)",
+      "Km évités par télétravail (information)",
+    ],
     inputs: [
       "Distance domicile-travail aller simple (km)",
       "Jours travaillés sur place par semaine (1–7)",
@@ -2198,7 +2701,7 @@ const METHODOLOGIES: CalcMethodology[] = [
       },
       {
         label: "Voiture sans indemnité employeur (≤100 km AS)",
-        expression: "déduction = km_total × 0,4322",
+        expression: "déduction = km_total × 0,4327 (Q2 2026, BOSA n° 764)",
       },
       {
         label: "Voiture avec indemnité employeur",
@@ -2207,50 +2710,95 @@ const METHODOLOGIES: CalcMethodology[] = [
       },
       {
         label: "Voiture (>100 km AS)",
-        expression: "(100 × 2 × jours) × taux + (km − 100) × 2 × jours × 0,15",
+        expression:
+          "(100 × 2 × jours_sur_place × sem) × taux + (km_AS − 100) × 2 × jours × sem × 0,15",
       },
       {
         label: "Vélo",
         expression:
-          "déduction = min(km_total × 0,37 ; 3 700 €/an)",
+          "déduction = min(km_total × 0,37 ; 3 700 €/an) [revenus 2026]",
       },
       {
         label: "Compensation indemnité employeur",
-        expression: "déduction_nette = max(0, déduction_brute − indemnité_employeur)",
+        expression:
+          "déduction_nette = max(0, déduction_brute − indemnité_employeur)",
       },
       {
         label: "Transports publics",
         expression: "déduction = coût_abonnement_annuel (100 %)",
       },
+      {
+        label: "Comparaison forfait vs réels",
+        expression:
+          "frais_réels_avantageux = (déduction_nette + autres_frais_réels) > 6 070 €",
+      },
     ],
     constants: [
-      { name: "Voiture (sans indemnité employeur)", value: fmtEUR(TAUX_KM_2026.voiture) + "/km", note: "Tarif fonctionnaires applicable comme frais réels domicile-travail. Plafonné à 100 km aller simple." },
-      { name: "Voiture (avec indemnité ou >100 km)", value: fmtEUR(0.15) + "/km", note: "Forfait standard CIR 92 art. 66. Le cumul tarif fonctionnaires + indemnité employeur est interdit." },
-      { name: "Vélo (incl. électrique)", value: fmtEUR(TAUX_KM_2026.velo) + "/km", note: `Plafonné à ${fmtEUR(PLAFOND_ANNUEL_VELO_2026)}/an (revenus 2026 / EI 2027).` },
-      { name: "Plafond annuel vélo", value: fmtEUR(PLAFOND_ANNUEL_VELO_2026) + "/an" },
+      {
+        name: "Voiture (sans indemnité employeur) — Q2 2026",
+        value: fmtEUR(TAUX_KM_2026.voiture) + "/km",
+        note: "Tarif fonctionnaires Q2 2026 (circulaire BOSA n° 764, 01/04/2026 – 30/06/2026). Applicable comme frais réels domicile-travail. Plafonné à 100 km aller simple ; au-delà = 0,15 €/km.",
+      },
+      {
+        name: "Voiture (avec indemnité ou >100 km AS)",
+        value: fmtEUR(0.15) + "/km",
+        note: "Forfait standard CIR 92 art. 66. Le cumul tarif fonctionnaires + indemnité employeur est interdit (règle de non-double remboursement).",
+      },
+      {
+        name: "Vélo (incl. électrique)",
+        value: fmtEUR(TAUX_KM_2026.velo) + "/km",
+        note: `Plafonné à ${fmtEUR(PLAFOND_ANNUEL_VELO_2026)}/an (revenus 2026 / EI 2027). Exonération uniquement si frais professionnels calculés au forfait.`,
+      },
+      {
+        name: "Plafond annuel vélo",
+        value: fmtEUR(PLAFOND_ANNUEL_VELO_2026) + "/an",
+        note: "SPF Finances revenus 2026.",
+      },
       { name: "Moto", value: fmtEUR(TAUX_KM_2026.moto) + "/km" },
-      { name: "Covoiturage passager", value: fmtEUR(TAUX_KM_2026.covoiturage) + "/km", note: "Plafonné à 100 km AS." },
-      { name: "Transports publics", value: "100 % de l'abonnement annuel" },
+      {
+        name: "Covoiturage passager",
+        value: fmtEUR(TAUX_KM_2026.covoiturage) + "/km",
+        note: "Plafonné à 100 km aller simple.",
+      },
+      {
+        name: "Transports publics",
+        value: "100 % de l'abonnement annuel",
+        note: "SNCB, STIB, TEC, De Lijn — opérateurs publics.",
+      },
       {
         name: "Forfait légal frais pro",
         value: fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026) + "/an",
-        note: "≈ 30 % du brut, à comparer aux frais réels.",
+        note: "CIR 92 art. 51 — ≈ 30 % du brut plafonné à 6 070 € (revenus 2026 / EI 2027). À comparer aux frais réels.",
       },
       {
-        name: "Seuil recommandation frais réels",
-        value: fmtEUR(3000) + "/an",
-        note: "Raccourci pédagogique : au-delà, vaut le coup d'opter pour les frais réels.",
+        name: "Codes Tax-on-web",
+        value: "1254/2254 (indemnité reçue) et 1255/2255 (exonération)",
+        note: "À utiliser dans la déclaration fiscale annuelle (MyMinfin).",
       },
     ],
     sources: [
-      { name: "SPF Finances — Frais professionnels", url: "https://finances.belgium.be" },
-      { name: "CIR 92 art. 51 (forfait) et art. 66 (km)", url: "https://eservices.minfin.fgov.be" },
-      { name: "Circulaire SPF Finances barème km", url: "https://finances.belgium.be" },
+      {
+        name: "SPF Finances — Indemnités frais déplacement domicile-travail",
+        url: "https://fin.belgium.be/fr/particuliers/declaration-impot/revenus/indemnites-frais-deplacement-domicile-lieu-travail",
+      },
+      {
+        name: "SPF Mobilité — Avantages fiscaux et primes vélo",
+        url: "https://mobilit.belgium.be/fr/mobilite-durable/velos/avantages-fiscaux-et-primes-velo",
+      },
+      {
+        name: "BOSA — Indemnité kilométrique fonctionnaires (circulaires trimestrielles)",
+        url: "https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/remuneration-et-avantages/allocations-et-indemnites-13",
+      },
+      {
+        name: "Moniteur belge — CIR 92 art. 51 (forfait) et art. 66 (km)",
+        url: "https://www.ejustice.just.fgov.be",
+      },
     ],
     limitations: [
-      "Pas de prise en compte des autres frais réels (repas, vêtements pro, formation).",
-      "Pas de gestion mixte (ex: voiture + train).",
-      "Comparaison forfait/réel simpliste : la décision dépend aussi du taux marginal.",
+      "Pas de prise en compte des autres frais réels (repas, vêtements pro, formation, matériel) qui s'ajoutent à la déduction km pour décider du choix forfait/réels.",
+      "Pas de gestion mixte (ex: voiture + train sur le même trajet) — choisir le mode majoritaire.",
+      "Comparaison forfait/réels simplifiée : la décision réelle dépend aussi du taux marginal d'imposition.",
+      "Réforme « verdissement » 2026 : le forfait 0,15 €/km pour les véhicules thermiques fait l'objet d'un régime transitoire dans le cadre des frais professionnels d'indépendants — non modélisé pour le calc domicile-travail standard (où il reste applicable).",
     ],
   },
 ];

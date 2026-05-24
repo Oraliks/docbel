@@ -18,9 +18,9 @@
  * BARÈMES 2026 (€/km)
  * -------------------
  *  - Voiture personnelle :
- *      * 0,4322 €/km (barème "indemnité km" fonctionnaires) UNIQUEMENT si
- *        l'employeur ne verse PAS d'indemnité km au contribuable. Plafond
- *        100 km aller simple ; au-delà : 0,15 €/km.
+ *      * 0,4327 €/km (barème "indemnité km" fonctionnaires Q2 2026, circulaire
+ *        BOSA n° 764) UNIQUEMENT si l'employeur ne verse PAS d'indemnité km
+ *        au contribuable. Plafond 100 km aller simple ; au-delà : 0,15 €/km.
  *      * 0,15 €/km (forfait CIR 92 art. 66) dès lors que l'employeur verse
  *        une indemnité km : le contribuable ne peut plus cumuler avec le
  *        tarif fonctionnaires (l'indemnité reçue est défalquée des frais
@@ -122,15 +122,28 @@ export interface FraisKmResult {
 /**
  * Taux kilométriques 2026 (€/km), par mode de transport.
  *
- * Pour la VOITURE on expose 0,4322 €/km (tarif "indemnité km" fonctionnaires)
- * applicable comme déduction de frais réels domicile-travail lorsque
- * l'employeur ne verse pas d'indemnité km. Si l'employeur verse une
- * indemnité, on bascule sur le forfait CIR 92 art. 66 = 0,15 €/km
- * (`TAUX_VOITURE_FORFAIT`), choisi à l'exécution du calcul.
+ * Pour la VOITURE on expose 0,4327 €/km (tarif "indemnité km" fonctionnaires
+ * Q2 2026, applicable du 01/04/2026 au 30/06/2026) applicable comme déduction
+ * de frais réels domicile-travail lorsque l'employeur ne verse pas d'indemnité
+ * km. Si l'employeur verse une indemnité, on bascule sur le forfait CIR 92
+ * art. 66 = 0,15 €/km (`TAUX_VOITURE_FORFAIT`), choisi à l'exécution du calcul.
+ *
+ * Source voiture : Circulaire BOSA n° 764 du 19/03/2026 (Moniteur belge).
+ *   https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/remuneration-et-avantages/allocations-et-indemnites-13
+ * Source vélo : SPF Finances — Indemnités frais de déplacement domicile-lieu
+ *   de travail (revenus 2026 / EI 2027).
+ *   https://fin.belgium.be/fr/particuliers/declaration-impot/revenus/indemnites-frais-deplacement-domicile-lieu-travail
+ *
+ * Maintenance : le tarif voiture est révisé chaque trimestre (Q1/Q2/Q3/Q4)
+ * par circulaire BOSA. Mettre à jour à chaque nouveau trimestre.
  */
 export const TAUX_KM_2026 = {
-  voiture: 0.4322,
-  velo: 0.37, // Revenus 2026 (EI 2027), précédemment 0,36 pour revenus 2025.
+  // Source: Circulaire BOSA n° 764 (Moniteur belge) — applicable Q2 2026
+  // (01/04/2026 – 30/06/2026). Pour les autres trimestres :
+  //   Q1 2026 (n° 762) = 0,4326 ; Q4 2025 (n° 757) = 0,4312 ;
+  //   Q3 2025 (n° 753) = 0,4309 ; Q2 2025 (n° 749) = 0,4320.
+  voiture: 0.4327,
+  velo: 0.37, // Revenus 2026 (EI 2027). Source: SPF Finances + SPF Mobilité.
   moto: 0.15,
   covoiturage: 0.15,
 } as const;

@@ -1,15 +1,35 @@
 import type { Metadata } from 'next'
+import { prisma } from '@/lib/prisma'
 import { BureauxFinder } from './bureaux-finder'
+import { DisabledToolView } from '../[slug]/disabled-tool-view'
 
 export const metadata: Metadata = {
   title: 'Trouver un bureau — DocBel',
   description:
-    "Trouve d'un coup le bureau compétent pour ta commune : ONEM, CPAS, organisme de paiement (CAPAC, FGTB, CSC, CGSLB), aide juridique. Données officielles ONEM.",
+    "Trouve d'un coup le bureau compétent pour ta commune : ONEM, CPAS, organisme de paiement, aide juridique. Données officielles ONEM.",
 }
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-export default function BureauxToolPage() {
+/**
+ * Route dédiée au localisateur "Trouver un bureau".
+ *
+ * Cette page contourne le routage générique `/outils/[slug]/page.tsx`
+ * (qui gère la désactivation via DisabledToolView) — donc on doit
+ * répliquer la même vérification ici, sinon désactiver "bureaux" en
+ * admin laisse la page accessible.
+ */
+export default async function BureauxToolPage() {
+  const dbTool = await prisma.tool.findUnique({
+    where: { slug: 'bureaux' },
+    select: { name: true, active: true },
+  })
+
+  if (dbTool && dbTool.active === false) {
+    return <DisabledToolView toolName={dbTool.name} />
+  }
+
   return (
     <div className="flex flex-col gap-6 py-6 px-4 lg:px-6 w-full">
       <div>

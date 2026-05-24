@@ -1,14 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { useConfirm } from '@/components/ui/confirm-dialog'
-import { ExternalLink, Settings2, Star, Clock, Trash2, BookOpenCheck } from 'lucide-react'
+import {
+  ExternalLink,
+  Settings2,
+  Star,
+  Clock,
+  Trash2,
+  BookOpenCheck,
+  Pencil,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Tool {
@@ -115,10 +125,23 @@ function ToolCard({ tool }: { tool: Tool }) {
   const confirm = useConfirm()
   const [active, setActive] = useState(tool.active)
   const [popular, setPopular] = useState(tool.popular)
+  const [name, setName] = useState(tool.name)
+  const [description, setDescription] = useState(tool.description)
   const [saving, setSaving] = useState(false)
   const [deleted, setDeleted] = useState(false)
 
-  async function patch(body: { active?: boolean; popular?: boolean }) {
+  /**
+   * PATCH générique du Tool. Body partiel — n'envoie que les champs modifiés.
+   * En cas d'erreur on revert visuellement l'état booléen (UI optimiste pour
+   * les toggles ; les champs texte, eux, gardent la nouvelle valeur dans
+   * l'état même si la sauvegarde échoue — l'utilisateur peut retenter).
+   */
+  async function patch(body: {
+    active?: boolean
+    popular?: boolean
+    name?: string
+    description?: string
+  }) {
     setSaving(true)
     try {
       const res = await fetch(`/api/tools/${tool.slug}`, {
@@ -131,12 +154,47 @@ function ToolCard({ tool }: { tool: Tool }) {
         throw new Error(j.error ?? 'Échec mise à jour')
       }
     } catch (err) {
-      // Revert UI
+      // Revert UI booléens
       if ('active' in body) setActive(!body.active)
       if ('popular' in body) setPopular(!body.popular)
       toast.error(err instanceof Error ? err.message : 'Erreur')
+      throw err
     } finally {
       setSaving(false)
+    }
+  }
+
+  /** Sauvegarde du nom — utilisée par EditableField. */
+  async function saveName(next: string) {
+    const trimmed = next.trim()
+    if (!trimmed || trimmed === tool.name) {
+      setName(tool.name)
+      return
+    }
+    try {
+      await patch({ name: trimmed })
+      tool.name = trimmed // mutate pour cohérence (ex: si on supprime ensuite)
+      toast.success('Titre mis à jour')
+      router.refresh()
+    } catch {
+      setName(tool.name)
+    }
+  }
+
+  /** Sauvegarde de la description — utilisée par EditableField. */
+  async function saveDescription(next: string) {
+    const trimmed = next.trim()
+    if (!trimmed || trimmed === tool.description) {
+      setDescription(tool.description)
+      return
+    }
+    try {
+      await patch({ description: trimmed })
+      tool.description = trimmed
+      toast.success('Description mise à jour')
+      router.refresh()
+    } catch {
+      setDescription(tool.description)
     }
   }
 
@@ -197,8 +255,17 @@ function ToolCard({ tool }: { tool: Tool }) {
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {tool.icon && <span className="text-xl shrink-0">{tool.icon}</span>}
-            <div className="min-w-0">
-              <CardTitle className="text-sm truncate">{tool.name}</CardTitle>
+            <div className="min-w-0 flex-1">
+              <EditableField
+                value={name}
+                onSave={saveName}
+                onChange={setName}
+                mode="input"
+                placeholder="Titre de l'outil…"
+                ariaLabel="Éditer le titre"
+                disabled={saving}
+                className="text-sm font-semibold"
+              />
               <p className="text-[11px] text-muted-foreground font-mono">{tool.slug}</p>
             </div>
           </div>
@@ -211,7 +278,16 @@ function ToolCard({ tool }: { tool: Tool }) {
         </div>
       </CardHeader>
       <CardContent className="space-y-3 pt-1">
-        <p className="text-xs text-muted-foreground line-clamp-2">{tool.description}</p>
+        <EditableField
+          value={description}
+          onSave={saveDescription}
+          onChange={setDescription}
+          mode="textarea"
+          placeholder="Description publique…"
+          ariaLabel="Éditer la description"
+          disabled={saving}
+          className="text-xs text-muted-foreground"
+        />
 
         <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
           <Badge variant="outline">{TYPE_LABEL[tool.type] ?? tool.type}</Badge>
@@ -287,5 +363,148 @@ function ToolCard({ tool }: { tool: Tool }) {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  EditableField — click-to-edit pour le titre et la description     */
+/* ------------------------------------------------------------------ */
+
+interface EditableFieldProps {
+  value: string
+  onChange: (next: string) => void
+  onSave: (next: string) => void
+  mode: 'input' | 'textarea'
+  placeholder?: string
+  ariaLabel?: string
+  disabled?: boolean
+  className?: string
+}
+
+/**
+ * Champ d'affichage qui passe en édition au clic.
+ *
+ * - `Enter` (input) ou `Cmd/Ctrl+Enter` (textarea) → sauvegarde
+ * - `Esc` → annule (recharge la valeur initiale)
+ * - `blur` → sauvegarde
+ *
+ * En mode lecture, hover affiche une icône Pencil discrète pour signaler
+ * la possibilité d'éditer. Le composant est volontairement minimaliste —
+ * il ne valide rien côté client (la validation Zod côté API garde le
+ * dernier mot).
+ */
+function EditableField({
+  value,
+  onChange,
+  onSave,
+  mode,
+  placeholder,
+  ariaLabel,
+  disabled,
+  className = '',
+}: EditableFieldProps) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Re-sync quand la valeur change côté parent (ex: après refresh).
+  useEffect(() => {
+    if (!editing) setDraft(value)
+  }, [value, editing])
+
+  // Auto-focus + sélection à l'entrée en édition.
+  useEffect(() => {
+    if (!editing) return
+    const el = mode === 'input' ? inputRef.current : textareaRef.current
+    el?.focus()
+    if (el && 'select' in el) el.select()
+  }, [editing, mode])
+
+  function startEdit() {
+    if (disabled) return
+    setDraft(value)
+    setEditing(true)
+  }
+
+  function commit() {
+    setEditing(false)
+    if (draft !== value) {
+      onChange(draft)
+      onSave(draft)
+    }
+  }
+
+  function cancel() {
+    setEditing(false)
+    setDraft(value)
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      cancel()
+      return
+    }
+    if (e.key === 'Enter') {
+      if (mode === 'input' || (mode === 'textarea' && (e.metaKey || e.ctrlKey))) {
+        e.preventDefault()
+        commit()
+      }
+    }
+  }
+
+  if (editing) {
+    if (mode === 'input') {
+      return (
+        <Input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          aria-label={ariaLabel}
+          disabled={disabled}
+          maxLength={120}
+          className={`h-7 px-2 py-0 text-sm ${className}`}
+        />
+      )
+    }
+    return (
+      <Textarea
+        ref={textareaRef}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        aria-label={ariaLabel}
+        disabled={disabled}
+        maxLength={600}
+        rows={3}
+        className={`min-h-[64px] resize-none text-xs ${className}`}
+      />
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={startEdit}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      title={ariaLabel ? `${ariaLabel} (clic)` : 'Cliquer pour éditer'}
+      className={`group/edit relative w-full rounded px-1 -mx-1 text-left transition hover:bg-muted/60 disabled:cursor-not-allowed ${
+        mode === 'input' ? 'truncate' : 'line-clamp-2'
+      } ${className}`}
+    >
+      {value || (
+        <span className="italic text-muted-foreground/60">
+          {placeholder ?? 'Cliquer pour éditer'}
+        </span>
+      )}
+      <Pencil className="absolute right-1 top-1 size-2.5 opacity-0 transition group-hover/edit:opacity-50" />
+    </button>
   )
 }

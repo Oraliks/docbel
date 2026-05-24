@@ -34,6 +34,10 @@ const patchSchema = z.object({
   active: z.boolean().optional(),
   popular: z.boolean().optional(),
   order: z.number().int().optional(),
+  // Champs éditoriaux — admin uniquement. Bornes raisonnables pour éviter
+  // d'écraser un champ par erreur (UI inline edit envoie ces champs).
+  name: z.string().trim().min(2).max(120).optional(),
+  description: z.string().trim().min(1).max(600).optional(),
 })
 
 /**

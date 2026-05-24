@@ -71,6 +71,22 @@ export interface MethodologyDifferentiator {
   description: string;
 }
 
+/** Item meta affiché dans la zone "En bref" (label + valeur + icône optionnelle). */
+export interface MethodologyBriefItem {
+  label: string;
+  value: string;
+  /** Nom d'icône lucide-react (clé du catalogue) — optionnel. */
+  icon?: string;
+}
+
+/** Input enrichi pour la zone "Ce que l'outil demande" (avec description + icône). */
+export interface MethodologyInputDetailed {
+  label: string;
+  description: string;
+  /** Nom d'icône lucide-react (clé du catalogue) — optionnel. */
+  icon?: string;
+}
+
 export interface CalcMethodology {
   /** Slug public (= URL `/outils/{slug}`). */
   slug: string;
@@ -111,6 +127,28 @@ export interface CalcMethodology {
   maintenanceGuide?: MaintenanceStep[];
   /** Texte d'introduction pédagogique (Markdown allégé, 2-4 paragraphes). */
   pedagogyIntro?: string;
+  /**
+   * Items meta affichés dans la zone "En bref" sous la description.
+   * 4-5 entrées max (Méthode, Régularisation, Unités, Auteur…).
+   * Optionnel — si absent, la section est skip.
+   */
+  briefMeta?: MethodologyBriefItem[];
+  /**
+   * Inputs enrichis pour la zone "Ce que l'outil demande" (gauche).
+   * Si absent, fallback sur `inputs` (liste simple sans description).
+   */
+  inputsDetailed?: MethodologyInputDetailed[];
+  /**
+   * Sorties / résultats listés à droite de la zone inputs/outputs.
+   * Optionnel — si absent, on skip la colonne droite.
+   */
+  outputs?: string[];
+  /** Catégorie pour la sidebar (ex: "Salaires & Rémunérations"). */
+  category?: string;
+  /** Tags pour la sidebar (ex: ["brut-net", "fiscalité", "ONSS"]). */
+  tags?: string[];
+  /** Auteur (par défaut "Équipe Docbel" côté composant). */
+  author?: string;
 }
 
 /**
@@ -178,6 +216,74 @@ const METHODOLOGIES: CalcMethodology[] = [
     year: 2026,
     lastUpdatedAt: "2026-05-24",
     badges: ["Belgique", "ATN 2026", "Données 2026"],
+    category: "Salaires & Rémunérations",
+    tags: ["brut-net", "fiscalité", "ONSS", "précompte", "ATN"],
+    author: "Équipe Docbel",
+    briefMeta: [
+      {
+        label: "Méthode",
+        value: "Barèmes SPF Finances + ONSS officiels",
+        icon: "FileCode2",
+      },
+      {
+        label: "Régularisation",
+        value: "Annuelle via Tax-on-web",
+        icon: "Calendar",
+      },
+      {
+        label: "Unités",
+        value: "Mensuel (€)",
+        icon: "Calculator",
+      },
+      {
+        label: "Dernière MAJ",
+        value: "24 mai 2026",
+        icon: "Clock",
+      },
+      {
+        label: "Auteur",
+        value: "Équipe Docbel",
+        icon: "Users",
+      },
+    ],
+    inputsDetailed: [
+      {
+        label: "Salaire brut mensuel",
+        description: "Montant en € avant cotisations et impôts.",
+        icon: "Euro",
+      },
+      {
+        label: "Statut fiscal",
+        description:
+          "Isolé / cohabitant / marié 1 revenu / marié 2 revenus.",
+        icon: "Users",
+      },
+      {
+        label: "Enfants à charge",
+        description: "Entre 0 et 12. Détermine la réduction d'impôt.",
+        icon: "Baby",
+      },
+      {
+        label: "Avantages",
+        description:
+          "Chèques-repas, ATN voiture, indemnité télétravail forfaitaire.",
+        icon: "Gift",
+      },
+      {
+        label: "Région",
+        description:
+          "Wallonie / Bruxelles / Flandre — info uniquement à ce stade.",
+        icon: "MapPin",
+      },
+    ],
+    outputs: [
+      "Net mensuel en poche (€)",
+      "ONSS travailleur retenue (avec bonus à l'emploi)",
+      "Précompte professionnel mensuel",
+      "Cotisation spéciale sécurité sociale (CSSS)",
+      "Détail des avantages (chèques-repas, ATN, télétravail)",
+      "Régularisation annuelle estimée",
+    ],
     pedagogyIntro:
       "Le passage du brut au net combine 4 prélèvements : l'**ONSS travailleur** (13,07 %, partiellement annulé par le **bonus à l'emploi** pour les bas salaires), le **précompte professionnel** (impôt mensuel sur le revenu, barème SPF), la **cotisation spéciale sécurité sociale** (CSSS) et la **régularisation annuelle** via la déclaration. Notre calcul reproduit les 4, plus les avantages courants (chèques-repas, indemnité télétravail, ATN voiture de société).",
     differentiators: [

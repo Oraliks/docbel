@@ -92,7 +92,9 @@ export const TOOLS_DATA: Tool[] = [
     time: "instant",
     type: "lookup",
     slug: "lookup-onem",
-    href: "/partenaire/lookup-onem",
+    // Pas de `href` : on suit le pattern standard `/outils/{slug}` —
+    // l'URL doit être neutre, l'auth interne à la page filtre les
+    // visiteurs non autorisés (partenaire ou admin requis).
     audiences: ["partenaire"],
   },
 

@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Building2, MapPinned, AlertCircle } from "lucide-react";
+import { Activity, Building2, Eye, MapPinned, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BureausManager } from "./bureaux-manager";
 import { ServiceAssignmentsManager } from "./bureaux/service-assignments-manager";
 import { OnemAssignmentsManager } from "./bureaux/onem-assignments-manager";
 import { ReportsManager } from "./bureaux/reports-manager";
 import { HealthDashboard } from "./bureaux/health-dashboard";
+import { PreviewFinder } from "./bureaux/preview-finder";
 
-type Tab = "sante" | "annuaire" | "services" | "onem" | "reports";
+type Tab = "sante" | "preview" | "annuaire" | "services" | "onem" | "reports";
 
 // Onglet "commissions" retiré : la feature commission paritaire (syndicats
 // sectoriels) n'était pas surfacée côté front (pas de sélecteur). Code +
@@ -23,6 +24,12 @@ const TABS: Array<{ value: Tab; label: string; icon: React.ComponentType<{ class
     label: "Santé",
     icon: Activity,
     help: "Vue d'ensemble : couverture territoriale, trous data, stubs à enrichir",
+  },
+  {
+    value: "preview",
+    label: "Aperçu user",
+    icon: Eye,
+    help: "Teste un CP — vois exactement ce qu'un utilisateur public verrait",
   },
   {
     value: "annuaire",
@@ -120,6 +127,10 @@ export function BureauxAdminWorkspace() {
 
       <TabsContent value="sante" className="mt-0">
         <HealthDashboard />
+      </TabsContent>
+
+      <TabsContent value="preview" className="mt-0">
+        <PreviewFinder />
       </TabsContent>
 
       <TabsContent value="annuaire" className="mt-0">

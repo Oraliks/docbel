@@ -25,11 +25,9 @@
     "bureaux:sync-sections-paiement": "dotenv -e .env.local -- tsx scripts/bureaux-sync-sections-paiement.ts",
     "bureaux:import-osm": "dotenv -e .env.local -- tsx scripts/bureaux-import-osm.ts",
     "communes:import-refnis": "dotenv -e .env.local -- tsx scripts/communes-import-refnis.ts",
-    "communes:fix": "dotenv -e .env.local -- tsx scripts/communes-fix-region-coords.ts",
-    "bureaux:stub-missing": "dotenv -e .env.local -- tsx scripts/bureaux-stub-missing.ts",
     "postal-codes:from-bestaddress": "dotenv -e .env.local -- tsx scripts/postal-codes-from-bestaddress.ts",
     "bureaux:import-op": "dotenv -e .env.local -- tsx scripts/bureaux-import-op.ts",
-    "bureaux:geocode-op": "dotenv -e .env.local -- tsx scripts/bureaux-geocode-op.ts",
+    "bureaux:geocode": "dotenv -e .env.local -- tsx scripts/bureaux-geocode.ts",
     "tools:cleanup-mocks": "dotenv -e .env.local -- tsx scripts/cleanup-mock-tools.ts",
     "test": "vitest run",
     "test:watch": "vitest"

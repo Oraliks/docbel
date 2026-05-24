@@ -65,7 +65,7 @@ const defaultData = {
           title: "Outils",
           url: "/admin/chomage/outils",
           children: [
-            { title: "Calculateurs (méthodologie)", url: "/admin/chomage/outils/calculateurs" },
+            { title: "Calculateurs", url: "/admin/chomage/outils/calculateurs" },
             { title: "Barèmes officiels", url: "/admin/baremes" },
             { title: "Commissions paritaires", url: "/admin/commissions" },
             { title: "Institutions U1 (EEE)", url: "/admin/u1-institutions" },

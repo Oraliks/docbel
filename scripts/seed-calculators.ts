@@ -5,7 +5,7 @@
  * et n'étaient pas éditables côté admin. En les insérant en DB sous une
  * section dédiée "Calculateurs", on permet à l'admin :
  *   1. d'éditer title / description / popularité / activation via l'UI
- *      existante (composant `ToolsCardsView` → API `/api/tools/[slug]`) ;
+ *      existante (composant `ToolsAdminWorkspace` → API `/api/tools/[slug]`) ;
  *   2. d'accéder à la méthodologie technique de chaque calc via le bouton
  *      "Méthodologie" qui mène à /admin/chomage/outils/calculateurs/[slug].
  *

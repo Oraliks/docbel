@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { ToolsCardsView } from "@/components/admin/tools-cards-view";
+import { ToolsAdminWorkspace } from "@/components/admin/tools-admin/workspace";
 import { isAudienceId, type AudienceId } from "@/lib/audience";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +44,7 @@ export default async function OutilsPage() {
 
   return (
     <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
-      <ToolsCardsView sections={sections} />
+      <ToolsAdminWorkspace sections={sections} />
     </div>
   );
 }

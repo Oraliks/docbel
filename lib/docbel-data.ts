@@ -58,7 +58,7 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 6,
     cat: "Calculs",
-    icon: "🧮",
+    icon: "Calendar",
     title: "Calculateur de préavis",
     desc:
       "Calculez votre délai de préavis légal en fonction de votre ancienneté, statut et date d'entrée en service.",
@@ -71,7 +71,7 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 12,
     cat: "Organismes",
-    icon: "🗺️",
+    icon: "MapPin",
     title: "Trouver un bureau",
     desc:
       "CPAS, Commune, ONEM, organismes de paiement, syndicats : trouvez d'un coup le bureau compétent pour votre situation, partout en Belgique.",
@@ -84,7 +84,7 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 30,
     cat: "Référentiels",
-    icon: "🔍",
+    icon: "Search",
     title: "Lookup ONEM",
     desc:
       "Décodage de tous les codes officiels ONEM (S01, S04, S38, Dispo, BCSS…). Recherche fuzzy multilingue FR/NL/DE/EN dans 11 000+ entrées.",

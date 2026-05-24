@@ -11,6 +11,10 @@ import {
   Calculator,
   Zap,
   Car,
+  // Anciens outils TOOLS_DATA (préavis, bureaux, lookup ONEM).
+  Calendar,
+  MapPin,
+  Search,
 } from "lucide-react";
 
 export interface IconEntry {
@@ -33,6 +37,10 @@ export const ICON_CATALOG: IconEntry[] = [
   { name: "Calculator", component: Calculator, keywords: ["impôt", "ipp", "calcul", "calculator", "tax"] },
   { name: "Zap", component: Zap, keywords: ["énergie", "électricité", "tarif social", "zap", "energy"] },
   { name: "Car", component: Car, keywords: ["voiture", "frais kilométriques", "transport", "car"] },
+  // Anciens outils
+  { name: "Calendar", component: Calendar, keywords: ["calendrier", "date", "préavis", "délai", "calendar"] },
+  { name: "MapPin", component: MapPin, keywords: ["bureau", "carte", "lieu", "localisation", "map", "pin"] },
+  { name: "Search", component: Search, keywords: ["recherche", "lookup", "search", "loupe"] },
 ];
 
 const ICON_MAP = new Map<string, IconEntry>(ICON_CATALOG.map((e) => [e.name, e] as [string, IconEntry]));

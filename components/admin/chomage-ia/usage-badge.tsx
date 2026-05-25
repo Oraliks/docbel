@@ -170,7 +170,7 @@ export function UsageBadge({
       <PopoverContent
         align="end"
         side="bottom"
-        className="w-[340px] max-w-[calc(100vw-1.5rem)] mr-2 p-0"
+        className="w-[min(340px,calc(100vw-1rem))] overflow-hidden p-0"
       >
         <UsageDetail data={data} onRefresh={() => fetchUsage(true)} refreshing={refreshing} />
       </PopoverContent>

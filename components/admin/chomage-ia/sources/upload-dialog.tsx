@@ -233,12 +233,9 @@ export function UploadDialog({
       toast.error("Aucun fichier à uploader");
       return;
     }
-    if (hasImages && imageCaption.trim().length < 10) {
-      toast.error(
-        "Description requise pour les images (10 caractères min, partagée par toutes les images)"
-      );
-      return;
-    }
+    // Caption images : plus obligatoire — le backend tente OCR automatiquement
+    // via Tesseract.js (fr+nl+en). Si l'OCR échoue ET caption vide, le backend
+    // renvoie 400 avec un message clair que le front affichera.
 
     const tags = tagsRaw
       .split(",")
@@ -273,7 +270,9 @@ export function UploadDialog({
       fd.append("domain", domain);
       if (trimmedUrl.length > 0) fd.append("sourceUrl", trimmedUrl);
       if (tagsJson) fd.append("tags", tagsJson);
-      if (slot.kind === "image_caption") {
+      if (slot.kind === "image_caption" && imageCaption.trim().length >= 10) {
+        // Caption manuel optionnel : si vide ou trop court, on laisse le
+        // backend tenter OCR Tesseract automatiquement.
         fd.append("content", imageCaption.trim());
       }
 
@@ -490,20 +489,23 @@ export function UploadDialog({
             {hasImages && (
               <div className="flex flex-col gap-1.5 sm:col-span-2">
                 <Label htmlFor="upload-caption" className="text-[12.5px]">
-                  Description des images *
+                  Description des images{" "}
+                  <span className="text-muted-foreground font-normal">
+                    (optionnel — OCR auto via Tesseract)
+                  </span>
                 </Label>
                 <Textarea
                   id="upload-caption"
                   value={imageCaption}
                   onChange={(e) => setImageCaption(e.target.value)}
-                  placeholder="Décris en détail ce que montrent les images (l'IA lit la description, pas l'image)."
+                  placeholder="Le texte des images est extrait automatiquement par OCR (Tesseract.js, fr+nl+en). Tu peux laisser vide pour utiliser l'OCR, ou décrire toi-même si tu veux un caption custom."
                   rows={3}
                   disabled={uploading}
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Partagée pour toutes les images de cet upload. Pour des
-                  descriptions individuelles, upload une image à la fois ou
-                  édite après création.
+                  Si vide, l&apos;OCR Tesseract tentera d&apos;extraire le texte
+                  (10-30 s la première fois, puis 3-10 s par image). Sinon ta
+                  description manuelle est utilisée telle quelle.
                 </p>
               </div>
             )}

@@ -265,6 +265,42 @@ async function extractPptxText(buffer: Buffer): Promise<string> {
   }
 }
 
+/**
+ * IMAGE → OCR via Tesseract.js (worker NodeJS, fr+nl+en).
+ *
+ * Modèles téléchargés et cachés au premier appel (~30 Mo). Premier OCR
+ * peut prendre 10-30s, les suivants 3-10s par image. Les workers sont
+ * créés à la demande et terminés à la fin pour éviter de garder la
+ * mémoire occupée entre requêtes.
+ *
+ * En serverless (Netlify/Vercel), Tesseract.js fonctionne nativement —
+ * pas de dépendance binaire externe.
+ */
+async function ocrImage(buffer: Buffer): Promise<string> {
+  try {
+    const { createWorker } = await import("tesseract.js");
+    // Belgique trilingue : fr + nl + en (anglais utile pour PDFs techniques)
+    const worker = await createWorker(["fra", "nld", "eng"]);
+    const { data } = await worker.recognize(buffer);
+    await worker.terminate();
+    const text = (data.text ?? "")
+      .replace(/\r\n?/g, "\n")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+      .slice(0, 180_000);
+    console.log(
+      `[chomage-ia upload] tesseract OCR: ${text.length} chars extraits (confidence avg=${Math.round(
+        data.confidence ?? 0
+      )}%)`
+    );
+    return text;
+  } catch (err) {
+    console.error("[chomage-ia upload] OCR failed:", err);
+    return "";
+  }
+}
+
 function decodeXmlEntities(s: string): string {
   return s
     .replace(/&amp;/g, "&")
@@ -340,12 +376,8 @@ async function handleUpload(req: NextRequest) {
     );
   }
 
-  if (kind === "image_caption" && content.length < 10) {
-    return NextResponse.json(
-      { error: "Description (content) requise pour les images" },
-      { status: 400 }
-    );
-  }
+  // Validation image_caption déplacée après tentative OCR (cf. plus bas) :
+  // on n'exige plus une description manuelle si Tesseract peut faire le job.
 
   let tags: string[] = [];
   if (tagsRaw) {
@@ -425,30 +457,57 @@ async function handleUpload(req: NextRequest) {
   let finalContent = content;
   let extractWarning: string | null = null;
 
-  if (finalContent.length < 10 && kind !== "image_caption") {
+  if (finalContent.length < 10) {
     let extracted = "";
     if (kind === "pdf") extracted = await extractPdfText(buffer);
     else if (kind === "docx") extracted = await extractDocxText(buffer);
     else if (kind === "xlsx") extracted = await extractXlsxText(buffer);
     else if (kind === "pptx") extracted = await extractPptxText(buffer);
+    else if (kind === "image_caption") extracted = await ocrImage(buffer);
 
     if (extracted.length >= 50) {
       finalContent = extracted;
+      if (kind === "image_caption") {
+        extractWarning =
+          "Caption auto-extrait par OCR (Tesseract). Édite la source si le texte reconnu est imparfait.";
+      }
     } else {
-      const label =
-        kind === "pdf"
-          ? "PDF"
-          : kind === "docx"
-          ? "document Word"
-          : kind === "xlsx"
-          ? "fichier Excel"
-          : kind === "pptx"
-          ? "fichier PowerPoint"
-          : "fichier";
-      finalContent =
-        content ||
-        `(Contenu ${label} non extrait automatiquement — éditer manuellement.)\n\nFichier : ${file.name}\nTaille : ${buffer.byteLength} octets`;
-      extractWarning = `Le texte n'a pas pu être extrait automatiquement (${label}). Édite la source pour ajouter le contenu.`;
+      // Message d'aide spécifique par kind — guide vers la bonne action.
+      if (kind === "pdf") {
+        // PDF où ni pdfjs ni pdf-parse n'ont rien trouvé = très probablement
+        // un PDF scanné (que des images). On guide vers la conversion en
+        // images individuelles pour OCR.
+        finalContent =
+          content ||
+          `(PDF probablement scanné — pas de couche texte.)\n\nFichier : ${file.name}\nTaille : ${buffer.byteLength} octets\n\nPour exploiter ce contenu : convertis chaque page en image (PNG/JPG) via Acrobat, Word, ou un service en ligne (smallpdf, ilovepdf…), puis re-uploade chaque image. L'OCR Tesseract s'occupera automatiquement de l'extraction.`;
+        extractWarning =
+          "PDF probablement scanné — convertis-le en images (1 par page) pour OCR auto. Ou édite ce contenu manuellement.";
+      } else if (kind === "image_caption") {
+        // OCR a échoué OU image sans texte exploitable.
+        if (content.length < 10) {
+          return NextResponse.json(
+            {
+              error:
+                "L'OCR n'a pas pu extraire de texte de cette image. Ajoute une description manuelle (10 chars min) pour décrire son contenu.",
+            },
+            { status: 400 }
+          );
+        }
+        finalContent = content;
+      } else {
+        const label =
+          kind === "docx"
+            ? "document Word"
+            : kind === "xlsx"
+            ? "fichier Excel"
+            : kind === "pptx"
+            ? "fichier PowerPoint"
+            : "fichier";
+        finalContent =
+          content ||
+          `(Contenu ${label} non extrait automatiquement — éditer manuellement.)\n\nFichier : ${file.name}\nTaille : ${buffer.byteLength} octets`;
+        extractWarning = `Le texte n'a pas pu être extrait automatiquement (${label}). Édite la source pour ajouter le contenu.`;
+      }
     }
   }
 

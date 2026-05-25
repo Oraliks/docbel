@@ -90,9 +90,15 @@ const defaultData = {
           title: "Assistant IA",
           url: "/admin/chomage/ia",
           children: [
-            { title: "Sources (KB)", url: "/admin/chomage/ia/sources" },
+            // Ordre par fréquence d'usage : opérationnel quotidien d'abord
+            // (Chat, Sources, Veille), supervision ensuite (Gaps, Mémoire),
+            // outils ponctuels en bas (Prompts).
             { title: "Chat", url: "/admin/chomage/ia/chat" },
-            { title: "Générateur de prompts", url: "/admin/chomage/ia/prompt-builder" },
+            { title: "Sources", url: "/admin/chomage/ia/sources" },
+            { title: "Veille", url: "/admin/chomage/ia/ingestion" },
+            { title: "Gaps", url: "/admin/chomage/ia/gaps" },
+            { title: "Mémoire", url: "/admin/chomage/ia/memory" },
+            { title: "Prompts", url: "/admin/chomage/ia/prompt-builder" },
           ],
         },
       ],

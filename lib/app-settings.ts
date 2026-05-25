@@ -18,6 +18,13 @@ export const SETTING_KEYS = {
   /// pour Whisper — Anthropic ne propose pas d'API de transcription audio).
   /// Désactivé par défaut pour éviter d'imposer une dépendance OpenAI.
   CHOMAGE_IA_VOICE_ENABLED: "chomage_ia_voice_enabled",
+  /// Migration 22 — toggle Veille / Ingestion automatique. Si "false", le cron
+  /// `/api/chomage-ia/ingestion/cron` short-circuite sans rien faire (les
+  /// IngestionSource restent en DB mais ne sont pas pollées).
+  CHOMAGE_IA_INGESTION_ENABLED: "chomage_ia_ingestion_enabled",
+  /// Migration 22 — toggle Web search. Si "false", le toggle UI 🌐 reste
+  /// désactivé même si BRAVE_SEARCH_API_KEY est présent.
+  CHOMAGE_IA_WEB_SEARCH_ENABLED: "chomage_ia_web_search_enabled",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
@@ -71,6 +78,8 @@ L'équipe DocBel`,
   contact_signature: "",
   ai_help_enabled: "false",
   chomage_ia_voice_enabled: "false",
+  chomage_ia_ingestion_enabled: "false",
+  chomage_ia_web_search_enabled: "false",
 };
 
 export async function getSetting(key: SettingKey): Promise<string> {

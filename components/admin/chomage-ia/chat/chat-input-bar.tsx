@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
+  Globe,
   Loader2,
   Paperclip,
   SendHorizontal,
@@ -60,8 +61,22 @@ interface Props {
   disabled: boolean;
   /** True pendant une requête (chat OU prompt). */
   sending: boolean;
-  /** Callback d'envoi en mode chat. */
-  onSendChat: (text: string) => void | Promise<void>;
+  /**
+   * Callback d'envoi en mode chat.
+   * `options.enableWebSearch` (Feature 5) : si true, le backend déclenche une
+   * recherche Brave avant Claude et injecte les résultats. Le toggle est
+   * single-use : reset après chaque envoi.
+   */
+  onSendChat: (
+    text: string,
+    options?: { enableWebSearch?: boolean },
+  ) => void | Promise<void>;
+  /**
+   * Active le toggle 🌐 (Feature 5).
+   * Faux par défaut — l'admin doit configurer BRAVE_SEARCH_API_KEY + activer
+   * le toggle `CHOMAGE_IA_WEB_SEARCH_ENABLED`.
+   */
+  webSearchAvailable?: boolean;
   /** Callback de génération en mode prompt. */
   onGeneratePrompt: (brief: string, contextHint?: string) => void | Promise<void>;
   /** Callback ouverture du modal upload (mode chat seulement). */
@@ -128,11 +143,13 @@ function ChatModeBar({
   snippets = [],
   onOpenSnippetsManage,
   voiceAvailable = false,
+  webSearchAvailable = false,
   folders = [],
   scopeFolderIds = [],
   onScopeChange,
 }: Props) {
   const [value, setValue] = useState("");
+  const [webSearchOnce, setWebSearchOnce] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -161,9 +178,12 @@ function ChatModeBar({
   function submit() {
     const trimmed = value.trim();
     if (!trimmed || disabled || sending) return;
-    onSendChat(trimmed);
+    onSendChat(trimmed, { enableWebSearch: webSearchOnce });
     setValue("");
     setSlashToken(null);
+    // Reset le toggle web search après chaque envoi : single-use volontaire
+    // (l'admin doit re-cliquer pour autoriser à nouveau).
+    setWebSearchOnce(false);
     requestAnimationFrame(() => {
       if (ref.current) ref.current.style.height = "auto";
     });
@@ -273,6 +293,29 @@ function ChatModeBar({
             disabled={disabled || sending}
             onTranscript={appendVoiceTranscript}
           />
+        ) : null}
+
+        {/* Bouton Web search (Feature 5) — toggle single-use, reset après
+            chaque envoi. Visible uniquement si BRAVE_SEARCH_API_KEY +
+            CHOMAGE_IA_WEB_SEARCH_ENABLED côté serveur. */}
+        {webSearchAvailable ? (
+          <Button
+            type="button"
+            variant={webSearchOnce ? "default" : "ghost"}
+            size="icon"
+            disabled={disabled || sending}
+            onClick={() => setWebSearchOnce((v) => !v)}
+            title={
+              webSearchOnce
+                ? "Web search ACTIVÉ pour ce message (cliquer pour désactiver)"
+                : "Autoriser la recherche web pour ce message (3 résultats max)"
+            }
+            aria-pressed={webSearchOnce}
+            aria-label="Autoriser la recherche web pour ce message"
+            className="size-9 shrink-0 rounded-xl"
+          >
+            <Globe className="size-4" />
+          </Button>
         ) : null}
 
         {/* Textarea */}

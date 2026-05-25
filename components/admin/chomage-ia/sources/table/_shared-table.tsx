@@ -154,3 +154,54 @@ export function extractAllTags(items: KnowledgeSourceListItem[]): string[] {
   }
   return Array.from(set).sort((a, b) => a.localeCompare(b, "fr"));
 }
+
+/* ------------------------------------------------------------------ */
+/*  Migration 22 — Validity status (fresh / stale / obsolete)          */
+/* ------------------------------------------------------------------ */
+
+export type ValidityFilter =
+  | "all"
+  | "fresh"
+  | "stale"
+  | "obsolete"
+  | "unknown";
+
+const VALIDITY_LABELS: Record<
+  KnowledgeSourceListItem["validityStatus"],
+  { label: string; emoji: string; className: string }
+> = {
+  fresh: {
+    label: "Fraîche",
+    emoji: "🟢",
+    className: "text-emerald-700 dark:text-emerald-400",
+  },
+  stale: {
+    label: "À vérifier",
+    emoji: "🟡",
+    className: "text-amber-700 dark:text-amber-400",
+  },
+  obsolete: {
+    label: "Périmée",
+    emoji: "🔴",
+    className: "text-red-700 dark:text-red-400",
+  },
+  unknown: {
+    label: "Non scannée",
+    emoji: "⚪",
+    className: "text-muted-foreground",
+  },
+};
+
+export function getValidityMeta(
+  status: KnowledgeSourceListItem["validityStatus"],
+): { label: string; emoji: string; className: string } {
+  return VALIDITY_LABELS[status] ?? VALIDITY_LABELS.unknown;
+}
+
+export function matchesValidityFilter(
+  item: KnowledgeSourceListItem,
+  filter: ValidityFilter,
+): boolean {
+  if (filter === "all") return true;
+  return item.validityStatus === filter;
+}

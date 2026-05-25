@@ -24,17 +24,25 @@ import { DEFAULT_DOMAIN } from "@/lib/chomage-ia/types";
 export const dynamic = "force-dynamic";
 
 export default async function ChomageIaChatPage() {
-  const [aiEnabledRaw, voiceEnabledRaw, total, enabled, sessionsCount, promptsCount] =
-    await Promise.all([
-      getSetting(SETTING_KEYS.AI_HELP_ENABLED),
-      getSetting(SETTING_KEYS.CHOMAGE_IA_VOICE_ENABLED),
-      prisma.knowledgeSource.count({ where: { domain: DEFAULT_DOMAIN } }),
-      prisma.knowledgeSource.count({
-        where: { domain: DEFAULT_DOMAIN, enabled: true },
-      }),
-      prisma.chatSession.count({ where: { domain: DEFAULT_DOMAIN } }),
-      prisma.generatedPrompt.count({ where: { domain: DEFAULT_DOMAIN } }),
-    ]);
+  const [
+    aiEnabledRaw,
+    voiceEnabledRaw,
+    webSearchEnabledRaw,
+    total,
+    enabled,
+    sessionsCount,
+    promptsCount,
+  ] = await Promise.all([
+    getSetting(SETTING_KEYS.AI_HELP_ENABLED),
+    getSetting(SETTING_KEYS.CHOMAGE_IA_VOICE_ENABLED),
+    getSetting(SETTING_KEYS.CHOMAGE_IA_WEB_SEARCH_ENABLED),
+    prisma.knowledgeSource.count({ where: { domain: DEFAULT_DOMAIN } }),
+    prisma.knowledgeSource.count({
+      where: { domain: DEFAULT_DOMAIN, enabled: true },
+    }),
+    prisma.chatSession.count({ where: { domain: DEFAULT_DOMAIN } }),
+    prisma.generatedPrompt.count({ where: { domain: DEFAULT_DOMAIN } }),
+  ]);
 
   const aiEnabled = aiEnabledRaw === "true";
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
@@ -42,6 +50,9 @@ export default async function ChomageIaChatPage() {
   // ET le toggle admin doit être ON. Les deux conditions doivent être vraies.
   const voiceAvailable =
     voiceEnabledRaw === "true" && !!process.env.OPENAI_API_KEY;
+  // Web search nécessite BRAVE_SEARCH_API_KEY + toggle admin.
+  const webSearchAvailable =
+    webSearchEnabledRaw === "true" && !!process.env.BRAVE_SEARCH_API_KEY;
 
   return (
     // Pleine hauteur du viewport admin = 100vh - header app (var --header-height = 48px)
@@ -64,6 +75,7 @@ export default async function ChomageIaChatPage() {
         domain={DEFAULT_DOMAIN}
         aiAvailable={aiEnabled && hasKey}
         voiceAvailable={voiceAvailable}
+        webSearchAvailable={webSearchAvailable}
         enabledSourcesCount={enabled}
       />
     </div>

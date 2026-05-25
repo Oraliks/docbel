@@ -7,6 +7,14 @@
     {
       "path": "/api/inbox/sync",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/chomage-ia/ingestion/cron",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/chomage-ia/sources/cron-obsolescence",
+      "schedule": "0 2 1 * *"
     }
   ]
 }

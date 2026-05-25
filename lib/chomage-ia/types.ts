@@ -21,6 +21,7 @@ export const KNOWLEDGE_SOURCE_KINDS = [
   "docx",
   "xlsx",
   "pptx",
+  "qa",
 ] as const;
 
 export type KnowledgeSourceKind = (typeof KNOWLEDGE_SOURCE_KINDS)[number];
@@ -53,11 +54,15 @@ export const KnowledgeSourceUpdateSchema = KnowledgeSourceCreateSchema.partial()
 /**
  * Schéma du body POST /api/chomage-ia/chat.
  * `sessionId` optionnel : si absent, on crée une nouvelle session.
+ * `enableWebSearch` (migration 22 — Feature 5) : si true, le backend déclenche
+ * une recherche Brave AVANT d'appeler Claude et injecte les résultats comme
+ * sources temporaires. Toggle UI explicite, jamais automatique.
  */
 export const ChatRequestSchema = z.object({
   sessionId: z.string().min(1).max(50).optional(),
   message: z.string().min(1, "Message vide").max(4000),
   domain: z.string().min(2).max(50).optional().default(DEFAULT_DOMAIN),
+  enableWebSearch: z.boolean().optional().default(false),
 });
 
 /**
@@ -93,6 +98,10 @@ export interface KnowledgeSourceListItem {
   indexError: string | null;
   /** Migration 21 — dossier de classement (null = racine "Sans dossier"). */
   folderId: string | null;
+  /** Migration 22 — statut de fraîcheur (fresh / stale / obsolete / unknown). */
+  validityStatus: "fresh" | "stale" | "obsolete" | "unknown";
+  /** Migration 22 — ISO du dernier "Toujours en vigueur" cliqué par l'admin. */
+  lastValidatedAt: string | null;
 }
 
 /**
@@ -124,3 +133,122 @@ export interface KnowledgeFolderListItem {
  * Validé côté API (lib/chomage-ia/folders.ts) à chaque mutation de parentId.
  */
 export const KNOWLEDGE_FOLDER_MAX_DEPTH = 3;
+
+/* ------------------------------------------------------------------ */
+/*  Migration 22 — Memory / Gaps / Ingestion                           */
+/* ------------------------------------------------------------------ */
+
+/** Importances autorisées pour une ChatMemory. */
+export const MEMORY_IMPORTANCES = ["high", "medium", "low"] as const;
+export type MemoryImportance = (typeof MEMORY_IMPORTANCES)[number];
+
+export const ChatMemoryCreateSchema = z.object({
+  content: z.string().min(3, "Contenu trop court").max(2000),
+  importance: z.enum(MEMORY_IMPORTANCES).optional().default("medium"),
+  enabled: z.boolean().optional().default(true),
+  domain: z.string().min(2).max(50).optional().default(DEFAULT_DOMAIN),
+});
+export const ChatMemoryUpdateSchema = ChatMemoryCreateSchema.partial();
+
+export interface ChatMemoryListItem {
+  id: string;
+  content: string;
+  importance: MemoryImportance;
+  enabled: boolean;
+  domain: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Statuts d'un gap de connaissance. */
+export const KNOWLEDGE_GAP_STATUSES = ["open", "resolved", "ignored"] as const;
+export type KnowledgeGapStatus = (typeof KNOWLEDGE_GAP_STATUSES)[number];
+
+export const KnowledgeGapUpdateSchema = z.object({
+  status: z.enum(KNOWLEDGE_GAP_STATUSES).optional(),
+  notes: z.string().max(2000).optional().nullable(),
+  knowledgeSourceId: z.string().max(50).optional().nullable(),
+});
+
+export interface KnowledgeGapListItem {
+  id: string;
+  query: string;
+  detectedAt: string;
+  sessionId: string | null;
+  messageId: string | null;
+  status: KnowledgeGapStatus;
+  resolvedBy: string | null;
+  knowledgeSourceId: string | null;
+  notes: string | null;
+  occurrences: number;
+  domain: string;
+}
+
+/** Statut de fraîcheur d'une KnowledgeSource (Feature 3). */
+export const SOURCE_VALIDITY_STATUSES = [
+  "fresh",
+  "stale",
+  "obsolete",
+  "unknown",
+] as const;
+export type SourceValidityStatus = (typeof SOURCE_VALIDITY_STATUSES)[number];
+
+/** Kinds d'une source de veille. */
+export const INGESTION_KINDS = ["rss", "scrape"] as const;
+export type IngestionKind = (typeof INGESTION_KINDS)[number];
+export const INGESTION_SCHEDULES = ["hourly", "daily", "weekly"] as const;
+export type IngestionSchedule = (typeof INGESTION_SCHEDULES)[number];
+
+export const IngestionSourceCreateSchema = z.object({
+  name: z.string().min(2).max(120),
+  kind: z.enum(INGESTION_KINDS),
+  url: z.string().url("URL invalide").max(2000),
+  schedule: z.enum(INGESTION_SCHEDULES).optional().default("daily"),
+  enabled: z.boolean().optional().default(true),
+  domain: z.string().min(2).max(50).optional().default(DEFAULT_DOMAIN),
+});
+export const IngestionSourceUpdateSchema = IngestionSourceCreateSchema.partial();
+
+export interface IngestionSourceListItem {
+  id: string;
+  name: string;
+  kind: IngestionKind;
+  url: string;
+  schedule: IngestionSchedule;
+  enabled: boolean;
+  domain: string;
+  lastCheckedAt: string | null;
+  lastSuccessAt: string | null;
+  lastError: string | null;
+  createdAt: string;
+  updatedAt: string;
+  pendingCount: number;
+}
+
+export interface IngestedDocumentListItem {
+  id: string;
+  ingestionSourceId: string;
+  ingestionSourceName: string;
+  externalUrl: string;
+  title: string;
+  publishedAt: string | null;
+  fetchedAt: string;
+  status: "pending" | "validated" | "rejected";
+  knowledgeSourceId: string | null;
+  notes: string | null;
+}
+
+/** Body de création d'une source depuis une Q&A validée (Feature 2). */
+export const SourceFromQaSchema = z.object({
+  chatMessageId: z.string().min(1).max(50),
+  title: z.string().min(2).max(200),
+  tags: z.array(z.string().max(50)).max(20).optional().default([]),
+  folderId: z.string().min(1).max(50).nullable().optional(),
+  notes: z.string().max(4000).optional().nullable(),
+});
+
+/** Body de requête web search (Feature 5). */
+export const WebSearchRequestSchema = z.object({
+  query: z.string().min(2).max(500),
+  count: z.number().int().min(1).max(5).optional().default(3),
+});

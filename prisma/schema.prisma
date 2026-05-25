@@ -1405,12 +1405,19 @@ model KnowledgeSource {
   folderId String?
   folder   KnowledgeFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
+  /// Migration 22 — détection d'obsolescence (Feature 3).
+  /// `lastValidatedAt` : null tant que l'admin n'a jamais cliqué "Toujours en vigueur".
+  /// `validityStatus`  : "unknown" (défaut), "fresh", "stale" (>12 mois), "obsolete" (>24 mois).
+  lastValidatedAt DateTime?
+  validityStatus  String   @default("unknown")
+
   /// Chunks RAG (1 source → N chunks). Cascade delete via FK.
   chunks KnowledgeChunk[]
 
   @@index([domain, enabled])
   @@index([createdAt])
   @@index([domain, folderId])
+  @@index([domain, validityStatus])
 }
 
 /// Dossier hiérarchique pour ranger les KnowledgeSource (migration 21).
@@ -1587,4 +1594,103 @@ model ChatSnippet {
 
   @@unique([domain, shortcut])
   @@index([domain, order])
+}
+
+/// Migration 22 — mémoire long-terme transversale (Feature 4).
+///
+/// Faits "permanents" injectés dans toutes les conversations chat IA, en début
+/// de contexte. Permet de stocker du vocabulaire (ONEM = …), des préférences
+/// utilisateur, des règles de style ("toujours citer les sources publiques").
+///
+/// `importance` ordonne le bloc injecté (high > medium > low) et sert de
+/// critère de troncature si le budget tokens est dépassé (cf. ChatMemory_BUDGET_TOKENS).
+model ChatMemory {
+  id          String   @id @default(cuid())
+  content     String   @db.Text
+  importance  String   @default("medium") // "high" | "medium" | "low"
+  domain      String   @default("chomage")
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+
+  @@index([domain, enabled, importance])
+}
+
+/// Migration 22 — gap de connaissance détecté (Feature 6).
+///
+/// Créé automatiquement par `postProcessChatAnswer` quand la réponse Claude
+/// contient un pattern "je n'ai pas d'info précise…" ou une ref légale absente
+/// de la KB. L'admin résout les gaps en ajoutant la source correspondante.
+///
+/// `occurrences` permet de prioriser les questions revenant souvent (groupé
+/// par query similaire dans la UI).
+model KnowledgeGap {
+  id                String   @id @default(cuid())
+  query             String   @db.Text
+  detectedAt        DateTime @default(now())
+  sessionId         String?
+  messageId         String?
+  status            String   @default("open") // "open" | "resolved" | "ignored"
+  resolvedBy        String?
+  knowledgeSourceId String?
+  notes             String?  @db.Text
+  domain            String   @default("chomage")
+  occurrences       Int      @default(1)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([domain, status, detectedAt(sort: Desc)])
+  @@index([sessionId])
+}
+
+/// Migration 22 — source de veille (Feature 1).
+///
+/// Définit une URL RSS ou une page HTML à scraper périodiquement pour détecter
+/// de nouveaux documents (ONEM, Moniteur belge, SPF Emploi, etc.). Le cron
+/// `/api/chomage-ia/ingestion/cron` itère sur les `enabled=true`, applique la
+/// stratégie selon `kind` et alimente `IngestedDocument`.
+///
+/// `lastError` : dernier message d'erreur ("HTTP 503", "0 documents trouvés"…).
+/// `lastSuccessAt` : dernière exécution AYANT trouvé au moins 1 document neuf.
+model IngestionSource {
+  id            String   @id @default(cuid())
+  name          String
+  kind          String   // "rss" | "scrape"
+  url           String
+  schedule      String   @default("daily") // "hourly" | "daily" | "weekly"
+  enabled       Boolean  @default(true)
+  domain        String   @default("chomage")
+  lastCheckedAt DateTime?
+  lastSuccessAt DateTime?
+  lastError     String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  documents IngestedDocument[]
+
+  @@index([domain, enabled])
+}
+
+/// Migration 22 — document détecté par la veille en attente de validation.
+///
+/// `externalUrl` est unique (dédoublonnage entre runs de cron).
+/// `status` :
+///   - "pending"   → en attente d'examen admin
+///   - "validated" → admin a validé : `knowledgeSourceId` pointe sur la KS créée
+///   - "rejected"  → admin a refusé (spam / hors-sujet)
+model IngestedDocument {
+  id                String   @id @default(cuid())
+  ingestionSourceId String
+  ingestionSource   IngestionSource @relation(fields: [ingestionSourceId], references: [id], onDelete: Cascade)
+  externalUrl       String   @unique
+  title             String
+  publishedAt       DateTime?
+  fetchedAt         DateTime @default(now())
+  status            String   @default("pending") // "pending" | "validated" | "rejected"
+  knowledgeSourceId String?
+  notes             String?  @db.Text
+
+  @@index([status, fetchedAt(sort: Desc)])
+  @@index([ingestionSourceId])
 }

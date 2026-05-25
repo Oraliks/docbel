@@ -38,6 +38,10 @@ interface Props {
   onForkFromMessage?: (messageId: string) => void;
   /** Ouvrir le drawer "Sources citées" (depuis context menu). */
   onOpenSources?: () => void;
+  /** Valider la réponse assistant comme source KB (Feature 2). */
+  onPromoteToSource?: (messageId: string) => void;
+  /** IDs de messages déjà convertis en source (pour masquer le bouton). */
+  promotedMessageIds?: Set<string>;
 }
 
 export function MessageList({
@@ -53,6 +57,8 @@ export function MessageList({
   onRegenerateMessage,
   onForkFromMessage,
   onOpenSources,
+  onPromoteToSource,
+  promotedMessageIds,
 }: Props) {
   if (loading) {
     return (
@@ -111,6 +117,10 @@ export function MessageList({
               onRegenerate={onRegenerateMessage}
               onFork={onForkFromMessage}
               onOpenSources={onOpenSources}
+              onPromoteToSource={onPromoteToSource}
+              alreadyPromoted={
+                m.id ? promotedMessageIds?.has(m.id) ?? false : false
+              }
             />
           )}
         </li>

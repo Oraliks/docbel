@@ -34,6 +34,7 @@ import {
   RefreshCw,
   GitBranch,
   BookOpen,
+  Star,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -74,6 +75,10 @@ interface Props {
   onFork?: (messageId: string) => void;
   /** Callback ouvrir le drawer "Sources citées". */
   onOpenSources?: () => void;
+  /** Callback "valider cette réponse comme source KB" (Feature 2 — assistant msg). */
+  onPromoteToSource?: (messageId: string) => void;
+  /** True si ce message a déjà été converti en source (badge "📌"). */
+  alreadyPromoted?: boolean;
 }
 
 export function MessageBubble({
@@ -88,6 +93,8 @@ export function MessageBubble({
   onRegenerate,
   onFork,
   onOpenSources,
+  onPromoteToSource,
+  alreadyPromoted = false,
 }: Props) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
@@ -267,6 +274,15 @@ export function MessageBubble({
               <ContextMenuItem onClick={handleOpenSources}>
                 <BookOpen className="size-3.5" />
                 Voir les sources citées
+              </ContextMenuItem>
+            ) : null}
+            {message.id && onPromoteToSource && !alreadyPromoted ? (
+              <ContextMenuItem
+                onClick={() => onPromoteToSource(message.id!)}
+                title="Convertir cette réponse en source permanente de la KB"
+              >
+                <Star className="size-3.5" />
+                Valider comme source KB
               </ContextMenuItem>
             ) : null}
           </>

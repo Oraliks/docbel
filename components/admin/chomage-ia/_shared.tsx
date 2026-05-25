@@ -11,6 +11,7 @@ import {
   FileType2,
   Link2,
   ListChecks,
+  MessageSquareQuote,
   Mic,
   ImageIcon,
   Presentation,
@@ -28,6 +29,7 @@ export const KIND_LABELS: Record<string, string> = {
   docx: "Word",
   xlsx: "Excel",
   pptx: "PowerPoint",
+  qa: "Q&A validée",
 };
 
 export const KIND_ICONS: Record<string, LucideIcon> = {
@@ -40,6 +42,7 @@ export const KIND_ICONS: Record<string, LucideIcon> = {
   docx: FileType2,
   xlsx: FileSpreadsheet,
   pptx: Presentation,
+  qa: MessageSquareQuote,
 };
 
 export const KIND_COLORS: Record<string, string> = {
@@ -52,6 +55,7 @@ export const KIND_COLORS: Record<string, string> = {
   docx: "#2563eb",
   xlsx: "#16a34a",
   pptx: "#ea580c",
+  qa: "#0d9488",
 };
 
 export function getKindLabel(kind: string): string {

@@ -46,6 +46,7 @@ import type { PaletteSnippet } from "./snippet-command-palette";
 import { UploadQuickDialog } from "../sources/upload-quick-dialog";
 import { KeyboardShortcuts } from "./keyboard-shortcuts";
 import { SessionModelPicker } from "./session-model-picker";
+import { PromoteQaDialog } from "./promote-qa-dialog";
 import { openChatStream } from "./sse-client";
 import type {
   ChatMessageItem,
@@ -59,6 +60,8 @@ interface ChatFullShellProps {
   aiAvailable: boolean;
   /** Toggle voice input (admin setting + OPENAI_API_KEY). Faux par défaut. */
   voiceAvailable?: boolean;
+  /** Toggle web search (admin setting + BRAVE_SEARCH_API_KEY). Faux par défaut. */
+  webSearchAvailable?: boolean;
   enabledSourcesCount: number;
 }
 
@@ -66,6 +69,7 @@ export function ChatFullShell({
   domain,
   aiAvailable,
   voiceAvailable = false,
+  webSearchAvailable = false,
   enabledSourcesCount,
 }: ChatFullShellProps) {
   const searchParams = useSearchParams();
@@ -152,6 +156,46 @@ export function ChatFullShell({
 
   // ----- Edit mode d'un message user dans le thread -----
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  // ----- Feature 2 — Promotion Q&A → source KB -----
+  // Set des assistantMessageId déjà convertis (mis à jour optimistiquement
+  // après chaque promotion ; pas de fetch initial pour rester simple).
+  const [promotedMessageIds, setPromotedMessageIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  // Payload du dialog actif (null = fermé).
+  const [promoteDialog, setPromoteDialog] = useState<{
+    messageId: string;
+    userQuestion: string;
+    assistantAnswer: string;
+  } | null>(null);
+
+  /**
+   * Ouvre le dialog de promotion Q&A pour un assistantMessageId donné.
+   * Cherche la question user en amont dans `messages[]` pour pré-remplir.
+   */
+  function openPromoteDialog(assistantMessageId: string) {
+    const aIdx = messages.findIndex(
+      (m) => m.id === assistantMessageId && m.role === "assistant",
+    );
+    if (aIdx === -1) {
+      toast.error("Message introuvable");
+      return;
+    }
+    const assistantContent = messages[aIdx].content;
+    let userContent = "(question d'origine introuvable)";
+    for (let i = aIdx - 1; i >= 0; i--) {
+      if (messages[i].role === "user" && messages[i].kind !== "generated_prompt") {
+        userContent = messages[i].content;
+        break;
+      }
+    }
+    setPromoteDialog({
+      messageId: assistantMessageId,
+      userQuestion: userContent,
+      assistantAnswer: assistantContent,
+    });
+  }
 
   // ----- Ref vers l'input principal pour les shortcuts Ctrl+Enter -----
   // (l'input bar gère son propre submit, on n'a pas besoin de ref direct).
@@ -459,7 +503,10 @@ export function ChatFullShell({
   // ici via le header `Accept: text/event-stream` posé par openChatStream.
   // En cas de fail-soft (clé Anthropic manquante), le helper yield un event
   // `json_fallback` qu'on traite comme la réponse legacy d'un coup.
-  async function sendChatMessage(text: string) {
+  async function sendChatMessage(
+    text: string,
+    options?: { enableWebSearch?: boolean },
+  ) {
     if (!text.trim() || sending) return;
     const startedAt = Date.now();
     const isFirstMessageOfNewSession = currentSessionId === null;
@@ -510,6 +557,7 @@ export function ChatFullShell({
           sessionId: currentSessionId ?? undefined,
           message: text,
           domain,
+          enableWebSearch: options?.enableWebSearch ?? false,
         },
         signal: ctrl.signal,
       })) {
@@ -1250,6 +1298,8 @@ export function ChatFullShell({
             onOpenSources={() => setSourcesSheetOpen(true)}
             onDeleteMessage={deleteMessage}
             onRegenerateMessage={regenerateFromAssistant}
+            onPromoteToSource={openPromoteDialog}
+            promotedMessageIds={promotedMessageIds}
             // onForkFromMessage : endpoint /fork pas encore implémenté → reste no-op
             // (le ContextMenu affiche le toast "bientôt dispo" par défaut).
           />
@@ -1276,6 +1326,7 @@ export function ChatFullShell({
             disabled={!aiAvailable || sending}
             sending={sending}
             voiceAvailable={voiceAvailable}
+            webSearchAvailable={webSearchAvailable}
             onSendChat={sendChatMessage}
             onGeneratePrompt={generatePrompt}
             onOpenUpload={() => setUploadOpen(true)}
@@ -1325,6 +1376,25 @@ export function ChatFullShell({
           // count au prochain reload de la page chat ou via l'écran Sources).
         }}
       />
+
+      {promoteDialog ? (
+        <PromoteQaDialog
+          open={true}
+          onOpenChange={(open) => !open && setPromoteDialog(null)}
+          assistantMessageId={promoteDialog.messageId}
+          userQuestion={promoteDialog.userQuestion}
+          assistantAnswer={promoteDialog.assistantAnswer}
+          onCreated={() => {
+            // Marque le message comme promu localement pour masquer l'option
+            // dans le ContextMenu à la prochaine ouverture.
+            setPromotedMessageIds((prev) => {
+              const next = new Set(prev);
+              next.add(promoteDialog.messageId);
+              return next;
+            });
+          }}
+        />
+      ) : null}
 
       {/* Raccourcis clavier globaux (composant invisible) */}
       <KeyboardShortcuts

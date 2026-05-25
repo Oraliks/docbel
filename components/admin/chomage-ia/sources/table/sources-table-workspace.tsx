@@ -41,10 +41,12 @@ import { buildFolderTree, type FolderNode } from "./folders-tree";
 import {
   extractAllTags,
   matchesStatusFilter,
+  matchesValidityFilter,
   sortSources,
   type SortColumn,
   type SortDirection,
   type StatusFilter,
+  type ValidityFilter,
 } from "./_shared-table";
 
 interface Props {
@@ -90,6 +92,7 @@ export function SourcesTableWorkspace({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [kindFilter, setKindFilter] = useState<string>("all");
+  const [validityFilter, setValidityFilter] = useState<ValidityFilter>("all");
   const [tagFilters, setTagFilters] = useState<string[]>([]);
 
   const [sortColumn, setSortColumn] = useState<SortColumn>("date");
@@ -196,6 +199,7 @@ export function SourcesTableWorkspace({
       }
       if (!matchesStatusFilter(s, statusFilter)) return false;
       if (kindFilter !== "all" && s.kind !== kindFilter) return false;
+      if (!matchesValidityFilter(s, validityFilter)) return false;
       if (tagFilters.length > 0) {
         const set = new Set(s.tags);
         const someMatch = tagFilters.some((t) => set.has(t));
@@ -215,6 +219,7 @@ export function SourcesTableWorkspace({
     search,
     statusFilter,
     kindFilter,
+    validityFilter,
     tagFilters,
     unassignedSelected,
     effectiveFolderIdSet,
@@ -629,6 +634,8 @@ export function SourcesTableWorkspace({
             onStatusChange={setStatusFilter}
             kindFilter={kindFilter}
             onKindChange={setKindFilter}
+            validityFilter={validityFilter}
+            onValidityChange={setValidityFilter}
             tagFilters={tagFilters}
             onTagFiltersChange={setTagFilters}
             allTags={allTags}

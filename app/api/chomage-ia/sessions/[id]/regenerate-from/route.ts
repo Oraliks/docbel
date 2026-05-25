@@ -200,6 +200,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       includedSourceIds: ctx.includedSourceIds,
       totalSourcesAvailable: ctx.totalSourcesAvailable,
       truncated: ctx.truncated,
+      userMessage: parsed.newContent,
       model: resolved.model,
     });
   }
@@ -251,26 +252,37 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     );
   }
 
-  // 7. Post-process via pipeline.
-  const { validCitedIds, citedSources, missingSources } =
-    await postProcessChatAnswer({
-      domain,
-      assistantText,
-      includedSourceIds: ctx.includedSourceIds,
-    });
-
-  // 8. Persiste le message assistant.
+  // 7. Persiste le message assistant AVANT le post-process pour avoir un messageId
+  //    (utilisé par la détection de gaps de connaissance — Feature 6).
   const assistantMsg = await prisma.chatMessage.create({
     data: {
       sessionId,
       role: "assistant",
       content: assistantText,
-      citedSourceIds: validCitedIds,
+      citedSourceIds: [],
       model: modelUsed,
       tokensIn: usage.inputTokens,
       tokensOut: usage.outputTokens,
     },
   });
+
+  // 8. Post-process via pipeline.
+  const { validCitedIds, citedSources, missingSources } =
+    await postProcessChatAnswer({
+      domain,
+      assistantText,
+      includedSourceIds: ctx.includedSourceIds,
+      userQuery: parsed.newContent,
+      sessionId,
+      messageId: assistantMsg.id,
+    });
+
+  if (validCitedIds.length > 0) {
+    await prisma.chatMessage.update({
+      where: { id: assistantMsg.id },
+      data: { citedSourceIds: validCitedIds },
+    });
+  }
 
   await prisma.chatSession.update({
     where: { id: sessionId },
@@ -309,6 +321,8 @@ interface StreamRegenerateArgs {
   includedSourceIds: string[];
   totalSourcesAvailable: number;
   truncated: boolean;
+  /** Nouveau contenu user message (utilisé pour la détection gaps Feature 6). */
+  userMessage: string;
   /** Modèle Claude effectif résolu via `resolveSessionModel`. */
   model: typeof CLAUDE_MODELS.sonnet | typeof CLAUDE_MODELS.haiku;
 }
@@ -395,24 +409,34 @@ function streamRegenerateResponse(args: StreamRegenerateArgs): Response {
 
       if (!streamErrored && assistantText.length > 0) {
         try {
-          const { validCitedIds, citedSources, missingSources } =
-            await postProcessChatAnswer({
-              domain: args.domain,
-              assistantText,
-              includedSourceIds: args.includedSourceIds,
-            });
-
           const assistantMsg = await prisma.chatMessage.create({
             data: {
               sessionId: args.sessionId,
               role: "assistant",
               content: assistantText,
-              citedSourceIds: validCitedIds,
+              citedSourceIds: [],
               model: usageFinal?.model ?? args.model,
               tokensIn: usageFinal?.inputTokens ?? null,
               tokensOut: usageFinal?.outputTokens ?? null,
             },
           });
+
+          const { validCitedIds, citedSources, missingSources } =
+            await postProcessChatAnswer({
+              domain: args.domain,
+              assistantText,
+              includedSourceIds: args.includedSourceIds,
+              userQuery: args.userMessage,
+              sessionId: args.sessionId,
+              messageId: assistantMsg.id,
+            });
+
+          if (validCitedIds.length > 0) {
+            await prisma.chatMessage.update({
+              where: { id: assistantMsg.id },
+              data: { citedSourceIds: validCitedIds },
+            });
+          }
 
           await prisma.chatSession.update({
             where: { id: args.sessionId },

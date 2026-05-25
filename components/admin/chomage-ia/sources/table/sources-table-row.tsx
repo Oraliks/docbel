@@ -47,6 +47,7 @@ import {
   deriveIndexStatus,
   fmtCompactDate,
   fmtContentLen,
+  getValidityMeta,
 } from "./_shared-table";
 
 interface RowAction {
@@ -200,8 +201,8 @@ export function SourcesTableRow({
         </div>
       </div>
 
-      {/* Status pills (enabled + index) */}
-      <div className="hidden w-[88px] shrink-0 items-center gap-1.5 sm:flex">
+      {/* Status pills (enabled + index + validity) */}
+      <div className="hidden w-[120px] shrink-0 items-center gap-1.5 sm:flex">
         <span
           className={`inline-block size-1.5 rounded-full ${
             source.enabled ? "bg-emerald-500" : "bg-muted-foreground/40"
@@ -212,6 +213,12 @@ export function SourcesTableRow({
           status={indexStatus}
           indexError={source.indexError}
         />
+        <span
+          className="text-[10px]"
+          title={`Fraîcheur : ${getValidityMeta(source.validityStatus).label}`}
+        >
+          {getValidityMeta(source.validityStatus).emoji}
+        </span>
         <span
           className={`text-[10.5px] font-medium uppercase tracking-wider ${
             source.enabled

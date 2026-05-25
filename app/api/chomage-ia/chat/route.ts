@@ -158,10 +158,13 @@ export async function POST(req: NextRequest) {
   const recentMessages = recentMessagesRaw.slice(1).reverse();
 
   // 4. Contexte sources — migration 21, lit le scope de la session si défini.
+  //    Migration 22 : si enableWebSearch=true côté body, le pipeline déclenche
+  //    une recherche Brave + injecte les résultats comme sources temporaires.
   const ctx = await prepareChatContext({
     domain,
     query: parsed.message,
     scopeFolderIds: session.scopeFolderIds ?? [],
+    enableWebSearch: parsed.enableWebSearch ?? false,
   });
 
   // 5. Construit les messages pour Claude (alternance user/assistant).
@@ -243,26 +246,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Échec du chat IA" }, { status: 500 });
   }
 
-  // Parse citations + missing sources via le pipeline partagé.
-  const { validCitedIds, citedSources, missingSources } =
-    await postProcessChatAnswer({
-      domain,
-      assistantText,
-      includedSourceIds: ctx.includedSourceIds,
-    });
-
-  // Persiste le message assistant.
+  // Persiste le message assistant AVANT le post-process pour avoir un messageId.
   const assistantMsg = await prisma.chatMessage.create({
     data: {
       sessionId: session.id,
       role: "assistant",
       content: assistantText,
-      citedSourceIds: validCitedIds,
+      citedSourceIds: [],
       model: modelUsed,
       tokensIn: usage.inputTokens,
       tokensOut: usage.outputTokens,
     },
   });
+
+  // Parse citations + missing sources via le pipeline partagé.
+  // Le `userQuery` permet la détection automatique des gaps de connaissance
+  // (Feature 6) — fire-and-forget en interne du pipeline.
+  const { validCitedIds, citedSources, missingSources } =
+    await postProcessChatAnswer({
+      domain,
+      assistantText,
+      includedSourceIds: ctx.includedSourceIds,
+      userQuery: parsed.message,
+      sessionId: session.id,
+      messageId: assistantMsg.id,
+    });
+
+  // Update les citedSourceIds maintenant qu'on les a (post-process).
+  if (validCitedIds.length > 0) {
+    await prisma.chatMessage.update({
+      where: { id: assistantMsg.id },
+      data: { citedSourceIds: validCitedIds },
+    });
+  }
 
   await prisma.chatSession.update({
     where: { id: session.id },
@@ -409,24 +425,34 @@ function streamChatResponse(args: StreamChatArgs): Response {
       // Si on a un texte assistant cohérent → post-process + persist + meta.
       if (!streamErrored && assistantText.length > 0) {
         try {
-          const { validCitedIds, citedSources, missingSources } =
-            await postProcessChatAnswer({
-              domain: args.domain,
-              assistantText,
-              includedSourceIds: args.includedSourceIds,
-            });
-
           const assistantMsg = await prisma.chatMessage.create({
             data: {
               sessionId: args.sessionId,
               role: "assistant",
               content: assistantText,
-              citedSourceIds: validCitedIds,
+              citedSourceIds: [],
               model: usageFinal?.model ?? args.model,
               tokensIn: usageFinal?.inputTokens ?? null,
               tokensOut: usageFinal?.outputTokens ?? null,
             },
           });
+
+          const { validCitedIds, citedSources, missingSources } =
+            await postProcessChatAnswer({
+              domain: args.domain,
+              assistantText,
+              includedSourceIds: args.includedSourceIds,
+              userQuery: args.userMessage,
+              sessionId: args.sessionId,
+              messageId: assistantMsg.id,
+            });
+
+          if (validCitedIds.length > 0) {
+            await prisma.chatMessage.update({
+              where: { id: assistantMsg.id },
+              data: { citedSourceIds: validCitedIds },
+            });
+          }
 
           await prisma.chatSession.update({
             where: { id: args.sessionId },

@@ -27,12 +27,16 @@ export async function GET(req: NextRequest) {
   const domain = url.searchParams.get("domain") ?? DEFAULT_DOMAIN;
   const enabledParam = url.searchParams.get("enabled");
   const kind = url.searchParams.get("kind");
+  const validity = url.searchParams.get("validity");
   const search = url.searchParams.get("search")?.trim();
 
   const where: Record<string, unknown> = { domain };
   if (enabledParam === "true") where.enabled = true;
   if (enabledParam === "false") where.enabled = false;
   if (kind) where.kind = kind;
+  if (validity && ["fresh", "stale", "obsolete", "unknown"].includes(validity)) {
+    where.validityStatus = validity;
+  }
   if (search && search.length >= 2) {
     where.OR = [
       { title: { contains: search, mode: "insensitive" } },
@@ -64,6 +68,8 @@ export async function GET(req: NextRequest) {
     indexedAt: r.indexedAt ? r.indexedAt.toISOString() : null,
     indexError: r.indexError,
     folderId: r.folderId,
+    validityStatus: r.validityStatus as KnowledgeSourceListItem["validityStatus"],
+    lastValidatedAt: r.lastValidatedAt ? r.lastValidatedAt.toISOString() : null,
   }));
 
   return NextResponse.json({ items, count: items.length });

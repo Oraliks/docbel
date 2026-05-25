@@ -40,6 +40,10 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     enabled: source.enabled,
     domain: source.domain,
     folderId: source.folderId,
+    validityStatus: source.validityStatus,
+    lastValidatedAt: source.lastValidatedAt
+      ? source.lastValidatedAt.toISOString()
+      : null,
     createdAt: source.createdAt.toISOString(),
     updatedAt: source.updatedAt.toISOString(),
   });

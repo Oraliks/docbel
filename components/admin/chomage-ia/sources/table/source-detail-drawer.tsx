@@ -21,6 +21,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
+  CheckCircle2,
   ExternalLink,
   Loader2,
   RefreshCcw,
@@ -39,8 +40,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import type { KnowledgeSourceListItem } from "@/lib/chomage-ia/types";
-import { getKindIcon, getKindLabel, getKindColor } from "../../_shared";
+import { getKindIcon, getKindLabel, getKindColor, fmtRelative } from "../../_shared";
 import { ConfirmDeleteDialog } from "../../_shared-alerts";
+import { getValidityMeta } from "./_shared-table";
 
 interface Props {
   open: boolean;
@@ -65,6 +67,8 @@ interface DetailState {
   enabled: boolean;
   indexedAt: string | null;
   indexError: string | null;
+  validityStatus: KnowledgeSourceListItem["validityStatus"];
+  lastValidatedAt: string | null;
 }
 
 export function SourceDetailDrawer({
@@ -107,6 +111,9 @@ export function SourceDetailDrawer({
           enabled: !!data.enabled,
           indexedAt: data.indexedAt ?? null,
           indexError: data.indexError ?? null,
+          validityStatus: (data.validityStatus ??
+            "unknown") as KnowledgeSourceListItem["validityStatus"],
+          lastValidatedAt: data.lastValidatedAt ?? null,
         };
         setState(next);
         setInitial(next);
@@ -257,8 +264,35 @@ export function SourceDetailDrawer({
         enabled: cachedItem.enabled,
         indexedAt: cachedItem.indexedAt,
         indexError: cachedItem.indexError,
+        validityStatus: cachedItem.validityStatus,
+        lastValidatedAt: cachedItem.lastValidatedAt,
       }
     : null);
+
+  async function handleRevalidate() {
+    if (!state) return;
+    try {
+      const res = await fetch(
+        `/api/chomage-ia/sources/${state.id}/revalidate`,
+        { method: "POST" },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const next: DetailState = {
+        ...state,
+        validityStatus: data.validityStatus ?? "fresh",
+        lastValidatedAt: data.lastValidatedAt ?? new Date().toISOString(),
+      };
+      setState(next);
+      setInitial(next);
+      toast.success("Source marquée comme à jour");
+      onSaved();
+    } catch (e) {
+      toast.error("Échec de la revalidation", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
 
   return (
     <>
@@ -312,6 +346,32 @@ export function SourceDetailDrawer({
                     checked={state.enabled}
                     onCheckedChange={(c) => update("enabled", c)}
                   />
+                </div>
+
+                {/* Fraîcheur (Feature 3) */}
+                <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
+                  <div className="flex flex-col">
+                    <span
+                      className={`text-[12px] font-semibold ${getValidityMeta(state.validityStatus).className}`}
+                    >
+                      {getValidityMeta(state.validityStatus).emoji}{" "}
+                      {getValidityMeta(state.validityStatus).label}
+                    </span>
+                    <span className="text-[10.5px] text-muted-foreground">
+                      {state.lastValidatedAt
+                        ? `Revalidée ${fmtRelative(state.lastValidatedAt)}`
+                        : "Jamais revalidée manuellement"}
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRevalidate}
+                    className="shrink-0"
+                  >
+                    <CheckCircle2 className="size-3.5" />
+                    Toujours en vigueur
+                  </Button>
                 </div>
 
                 {/* Titre */}

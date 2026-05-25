@@ -34,7 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { KIND_LABELS } from "../../_shared";
-import type { StatusFilter } from "./_shared-table";
+import type { StatusFilter, ValidityFilter } from "./_shared-table";
 
 const STATUS_OPTIONS: Array<{ value: StatusFilter; label: string }> = [
   { value: "all", label: "Tous les statuts" },
@@ -42,6 +42,14 @@ const STATUS_OPTIONS: Array<{ value: StatusFilter; label: string }> = [
   { value: "disabled", label: "Désactivées" },
   { value: "extraction-failed", label: "Extraction échouée" },
   { value: "not-indexed", label: "Non indexées (RAG)" },
+];
+
+const VALIDITY_OPTIONS: Array<{ value: ValidityFilter; label: string }> = [
+  { value: "all", label: "Toute fraîcheur" },
+  { value: "fresh", label: "🟢 Fraîches" },
+  { value: "stale", label: "🟡 À vérifier" },
+  { value: "obsolete", label: "🔴 Périmées" },
+  { value: "unknown", label: "⚪ Non scannées" },
 ];
 
 interface Props {
@@ -58,6 +66,9 @@ interface Props {
   /** Kind. */
   kindFilter: string;
   onKindChange: (k: string) => void;
+  /** Fraîcheur (migration 22). */
+  validityFilter: ValidityFilter;
+  onValidityChange: (v: ValidityFilter) => void;
   /** Tag filters. */
   tagFilters: string[];
   onTagFiltersChange: (tags: string[]) => void;
@@ -79,6 +90,8 @@ export function SourcesToolbar({
   onStatusChange,
   kindFilter,
   onKindChange,
+  validityFilter,
+  onValidityChange,
   tagFilters,
   onTagFiltersChange,
   allTags,
@@ -90,6 +103,7 @@ export function SourcesToolbar({
   const hasFilters =
     statusFilter !== "all" ||
     kindFilter !== "all" ||
+    validityFilter !== "all" ||
     tagFilters.length > 0 ||
     search.length > 0;
 
@@ -298,6 +312,47 @@ export function SourcesToolbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Validity (Feature 3) */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 text-[12px]"
+              />
+            }
+          >
+            {VALIDITY_OPTIONS.find((o) => o.value === validityFilter)?.label ?? "Fraîcheur"}
+            {validityFilter !== "all" ? (
+              <span className="ml-1 rounded-full bg-primary/10 px-1.5 text-[10px] font-bold tabular-nums text-primary">
+                1
+              </span>
+            ) : null}
+            <ChevronDown className="size-3 opacity-60" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-44">
+            <DropdownMenuLabel className="text-[10.5px] uppercase tracking-wider">
+              Filtrer par fraîcheur
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup
+              value={validityFilter}
+              onValueChange={(v) => onValidityChange(v as ValidityFilter)}
+            >
+              {VALIDITY_OPTIONS.map((opt) => (
+                <DropdownMenuRadioItem
+                  key={opt.value}
+                  value={opt.value}
+                  className="text-[12px]"
+                >
+                  {opt.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {hasFilters ? (
           <Button
             variant="ghost"
@@ -307,6 +362,7 @@ export function SourcesToolbar({
               onSearchChange("");
               onStatusChange("all");
               onKindChange("all");
+              onValidityChange("all");
               onTagFiltersChange([]);
             }}
           >

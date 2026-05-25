@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { useAuthSession } from "@/components/auth-session-provider";
 import { useTheme } from "@/components/theme-provider";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { NotificationBell } from "@/components/docbel/notification-bell";
@@ -87,7 +88,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
   const pathname = usePathname();
   const visible = useScrollReveal();
   const { resolvedTheme, setTheme } = useTheme();
-  const { data: session } = authClient.useSession();
+  const { data: session } = useAuthSession();
   const activeNav = resolveActiveNav(pathname);
   const [mobileOpen, setMobileOpen] = useState(false);
 

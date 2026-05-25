@@ -7,6 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AppLayoutClient } from "@/components/docbel/app-layout-client";
 import { AcronymHydrator } from "@/components/docbel/acronym-hydrator";
 import { VersionWatcher } from "@/components/version-watcher";
+import { AuthSessionProvider } from "@/components/auth-session-provider";
+import { getServerAuthSession } from "@/lib/auth-session";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -38,11 +40,16 @@ export const metadata: Metadata = {
   description: "Portail officieux des documents administratifs belges (chômage)",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Lit la session côté serveur (cookieCache Better Auth = ~ms, pas de DB).
+  // Permet aux headers d'afficher le bon état dès le 1er render → zéro
+  // flash "Invité → Compte".
+  const initialSession = await getServerAuthSession();
+
   return (
     <html
       lang="fr"
@@ -58,7 +65,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-full bg-background text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
-          <AppLayoutClient>{children}</AppLayoutClient>
+          <AuthSessionProvider initialSession={initialSession}>
+            <AppLayoutClient>{children}</AppLayoutClient>
+          </AuthSessionProvider>
           <Toaster richColors position="bottom-right" duration={3500} />
           <ConfirmDialog />
           <VersionWatcher />

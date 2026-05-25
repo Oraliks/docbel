@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
+import { useAuthSession } from "@/components/auth-session-provider"
 import { useTheme } from "@/components/theme-provider"
 import { HomeIcon, MoonIcon, ShieldCheckIcon, SunIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -20,7 +21,7 @@ const emptySubscribe = () => () => {}
 
 export function SiteHeader() {
   const router = useRouter()
-  const { data: session } = authClient.useSession()
+  const { data: session } = useAuthSession()
   const { resolvedTheme, setTheme } = useTheme()
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false)
 
@@ -64,7 +65,7 @@ export function SiteHeader() {
               </TooltipContent>
             </Tooltip>
 
-            {mounted && session && (
+            {session && (
               <>
                 <Link
                   href="/"

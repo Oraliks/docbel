@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { authClient } from "@/lib/auth-client"
+import { useAuthSession } from "@/components/auth-session-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -12,7 +12,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 export function AdminLayoutProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { data: session, isPending } = authClient.useSession()
+  const { data: session, isPending } = useAuthSession()
   const isBuilder = /^\/admin\/pages\/[^/]+$/.test(pathname ?? '')
 
   useEffect(() => {

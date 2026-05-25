@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma, withDbRetry } from '@/lib/prisma'
+import { memoCache } from '@/lib/memo-cache'
 
 export const runtime = 'nodejs'
 const jsonHeaders = {
@@ -140,8 +141,13 @@ export async function GET(req: NextRequest) {
     LIMIT $${params.length}
   `
 
-  const rows = await withDbRetry(
-    () => prisma.$queryRawUnsafe<SearchResultRow[]>(sql, ...params)
+  // Cache mémoire 60s par combinaison de params : la recherche fuzzy
+  // pg_trgm + scoring est lourde, et les lookups changent rarement (seed
+  // officiel). Le HTTP Cache-Control est déjà posé mais peut être bypass
+  // par cache: 'no-store' côté client — ce cache mémoire couvre ce cas.
+  const cacheKey = `lookup:search:${q}:${validOnly}:${categorySlug ?? ''}:${tableSlug ?? ''}:${limit}`
+  const rows = await memoCache(cacheKey, 60_000, () =>
+    withDbRetry(() => prisma.$queryRawUnsafe<SearchResultRow[]>(sql, ...params))
   )
 
   // Reshape pour matcher le format d'avant

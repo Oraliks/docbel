@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma, BureauType } from "@prisma/client";
-import { revalidatePath } from "next/cache";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { logActivity } from "@/lib/activity-logger";
 import { serializeBureau } from "@/lib/bureaus/types";
 import { validateBureauInput } from "@/lib/bureaus/validation";
+import { memoCache } from "@/lib/memo-cache";
+import {
+  BUREAUX_LIST_CACHE_PREFIX,
+  invalidateBureauCaches,
+} from "@/lib/bureaus/cache-invalidation";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
-
-function invalidateCaches() {
-  revalidatePath("/api/bureaux", "layout");
-  revalidatePath("/api/bureaux/resolve", "layout");
-}
 
 const VALID_TYPES: BureauType[] = ["CPAS", "COMMUNE", "ONEM", "SYNDICAT", "PERMANENCE", "AUTRE"];
 
@@ -62,19 +61,25 @@ export async function GET(req: NextRequest) {
   }
   if (andClauses.length > 0) where.AND = andClauses;
 
+  // Cache mémoire 5s, clé par params. Invalidé sur tout write via
+  // memoCacheInvalidatePrefix(BUREAUX_LIST_CACHE_PREFIX). 5s c'est court
+  // côté UX admin mais ça absorbe entièrement le polling monitoring (30s)
+  // ET les rendus multiples de la même page admin.
+  const cacheKey = `${BUREAUX_LIST_CACHE_PREFIX}${q}:${typeRaw}:${organismeId}:${region}:${activeRaw}:${verifiedRaw}:${limit}`;
+
   try {
-    const items = await withDbRetry(() =>
-      prisma.bureau.findMany({
-        where,
-        include: { organisme: true, commune: true },
-        orderBy: [{ type: "asc" }, { city: "asc" }, { name: "asc" }],
-        take: limit,
-      })
-    );
-    return NextResponse.json(
-      { items: items.map(serializeBureau), total: items.length },
-      { headers: jsonHeaders }
-    );
+    const payload = await memoCache(cacheKey, 5_000, async () => {
+      const items = await withDbRetry(() =>
+        prisma.bureau.findMany({
+          where,
+          include: { organisme: true, commune: true },
+          orderBy: [{ type: "asc" }, { city: "asc" }, { name: "asc" }],
+          take: limit,
+        })
+      );
+      return { items: items.map(serializeBureau), total: items.length };
+    });
+    return NextResponse.json(payload, { headers: jsonHeaders });
   } catch (error) {
     console.error("[admin/bureaus] list error:", error);
     return NextResponse.json(
@@ -175,7 +180,7 @@ export async function POST(req: NextRequest) {
       created.id
     );
 
-    invalidateCaches();
+    invalidateBureauCaches();
     return NextResponse.json(serializeBureau(created), {
       status: 201,
       headers: jsonHeaders,

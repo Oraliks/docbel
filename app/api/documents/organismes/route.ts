@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { OrganismeType } from "@prisma/client";
+import { memoCache, memoCacheInvalidate } from "@/lib/memo-cache";
 
 const VALID_TYPES: OrganismeType[] = [
   "federal",
@@ -12,16 +13,22 @@ const VALID_TYPES: OrganismeType[] = [
   "other",
 ];
 
+const ORGANISMES_CACHE_KEY = "documents:organismes:all";
+
 export async function GET() {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
 
-  const organismes = await prisma.organisme.findMany({
-    orderBy: [{ active: "desc" }, { order: "asc" }, { name: "asc" }],
-    include: {
-      _count: { select: { templates: true } },
-    },
-  });
+  // Cache 30s : les organismes changent rarement (création manuelle admin),
+  // et ce endpoint est pingué par le dashboard de monitoring.
+  const organismes = await memoCache(ORGANISMES_CACHE_KEY, 30_000, () =>
+    prisma.organisme.findMany({
+      orderBy: [{ active: "desc" }, { order: "asc" }, { name: "asc" }],
+      include: {
+        _count: { select: { templates: true } },
+      },
+    })
+  );
   return NextResponse.json(organismes);
 }
 
@@ -75,5 +82,6 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  memoCacheInvalidate(ORGANISMES_CACHE_KEY);
   return NextResponse.json(created, { status: 201 });
 }

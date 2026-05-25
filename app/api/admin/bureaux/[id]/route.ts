@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma, BureauType } from "@prisma/client";
-import { revalidatePath } from "next/cache";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { logActivity } from "@/lib/activity-logger";
 import { serializeBureau } from "@/lib/bureaus/types";
 import { validateBureauInput } from "@/lib/bureaus/validation";
 import { diffBureau, snapshotBureau } from "@/lib/bureaus/diff";
+import { invalidateBureauCaches } from "@/lib/bureaus/cache-invalidation";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
-
-function invalidateCaches() {
-  revalidatePath("/api/bureaux", "layout");
-  revalidatePath("/api/bureaux/resolve", "layout");
-}
 
 export async function GET(
   _req: NextRequest,
@@ -133,7 +128,7 @@ export async function PATCH(
       diff.changed.length > 0 ? `Champs modifiés : ${diff.changed.join(", ")}` : undefined
     );
 
-    invalidateCaches();
+    invalidateBureauCaches();
     return NextResponse.json(serializeBureau(updated), { headers: jsonHeaders });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
@@ -205,7 +200,7 @@ export async function DELETE(
       updated.id,
       "désactivé (soft delete)"
     );
-    invalidateCaches();
+    invalidateBureauCaches();
     return NextResponse.json({ ok: true }, { headers: jsonHeaders });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { OrganismeType } from "@prisma/client";
+import { memoCacheInvalidate } from "@/lib/memo-cache";
+
+const ORGANISMES_CACHE_KEY = "documents:organismes:all";
 
 const VALID_TYPES: OrganismeType[] = [
   "federal",
@@ -71,6 +74,7 @@ export async function PUT(
   if (body.active !== undefined) data.active = !!body.active;
 
   const updated = await prisma.organisme.update({ where: { id }, data });
+  memoCacheInvalidate(ORGANISMES_CACHE_KEY);
   return NextResponse.json(updated);
 }
 
@@ -96,6 +100,7 @@ export async function DELETE(
       where: { id },
       data: { active: false },
     });
+    memoCacheInvalidate(ORGANISMES_CACHE_KEY);
     return NextResponse.json({
       ...deactivated,
       softDelete: true,
@@ -104,5 +109,6 @@ export async function DELETE(
   }
 
   await prisma.organisme.delete({ where: { id } });
+  memoCacheInvalidate(ORGANISMES_CACHE_KEY);
   return NextResponse.json({ ok: true });
 }

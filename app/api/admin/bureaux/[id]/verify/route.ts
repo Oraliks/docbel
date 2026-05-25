@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { logActivity } from "@/lib/activity-logger";
+import { invalidateBureauCaches } from "@/lib/bureaus/cache-invalidation";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -37,7 +37,7 @@ export async function POST(
       `Bureau vérifié - ${updated.name}`,
       updated.id
     );
-    revalidatePath("/api/bureaux", "layout");
+    invalidateBureauCaches();
     return NextResponse.json({ ok: true, verifiedAt: updated.lastVerifiedAt }, { headers: jsonHeaders });
   } catch (error) {
     console.error("[verify] error:", error);
@@ -62,5 +62,6 @@ export async function DELETE(
       data: { verified: false, verifiedBy: null, lastVerifiedAt: null },
     })
   );
+  invalidateBureauCaches();
   return NextResponse.json({ ok: true }, { headers: jsonHeaders });
 }

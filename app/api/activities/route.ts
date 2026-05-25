@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { memoCache } from "@/lib/memo-cache";
 
 export async function GET(request: NextRequest) {
   const authCheck = await requireAdminAuth();
@@ -16,11 +17,17 @@ export async function GET(request: NextRequest) {
     if (action && action !== "all") where.action = action;
     if (resource && resource !== "all") where.resource = resource;
 
-    const activities = await prisma.activity.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: limit,
-    });
+    // Cache 5s par combinaison de params. Le log d'activité est append-only,
+    // 5s de staleness est invisible UX (et absorbe complètement le ping
+    // monitoring du dashboard admin).
+    const cacheKey = `activities:list:${action ?? ""}:${resource ?? ""}:${limit}`;
+    const activities = await memoCache(cacheKey, 5_000, () =>
+      prisma.activity.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: limit,
+      })
+    );
 
     return NextResponse.json(activities);
   } catch (error) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { memoCache } from "@/lib/memo-cache";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -24,17 +25,20 @@ export async function GET(req: NextRequest) {
   }
   if (region) where.region = region as Prisma.CommuneWhereInput["region"];
 
-  const items = await withDbRetry(() =>
-    prisma.commune.findMany({
-      where,
-      orderBy: [{ nameFr: "asc" }],
-      take: limit,
-      include: { postalCodes: { select: { code: true } } },
-    })
-  );
+  // Les communes BE sont quasi-immuables (jeu de données fixe ~600 entrées).
+  // Cache mémoire 60s suffit largement et absorbe le ping monitoring.
+  const cacheKey = `admin:communes:${q}:${region}:${limit}`;
 
-  return NextResponse.json(
-    {
+  const payload = await memoCache(cacheKey, 60_000, async () => {
+    const items = await withDbRetry(() =>
+      prisma.commune.findMany({
+        where,
+        orderBy: [{ nameFr: "asc" }],
+        take: limit,
+        include: { postalCodes: { select: { code: true } } },
+      })
+    );
+    return {
       items: items.map((c) => ({
         id: c.id,
         insCode: c.insCode,
@@ -48,7 +52,8 @@ export async function GET(req: NextRequest) {
         postalCodes: c.postalCodes.map((p) => p.code),
       })),
       total: items.length,
-    },
-    { headers: jsonHeaders }
-  );
+    };
+  });
+
+  return NextResponse.json(payload, { headers: jsonHeaders });
 }

@@ -34,16 +34,16 @@ interface CompactIaHeaderProps {
 
 const TABS = [
   {
-    id: "sources" as const,
-    href: "/admin/chomage/ia/sources",
-    label: "Sources",
-    icon: BookOpen,
-  },
-  {
     id: "chat" as const,
     href: "/admin/chomage/ia/chat",
     label: "Chat",
     icon: MessageSquare,
+  },
+  {
+    id: "sources" as const,
+    href: "/admin/chomage/ia/sources",
+    label: "Sources",
+    icon: BookOpen,
   },
 ];
 
@@ -60,9 +60,9 @@ export function CompactIaHeader({
       {/* Bloc gauche : breadcrumb + titre slim */}
       <div className="flex min-w-0 items-center gap-2">
         <Link
-          href="/admin/chomage/outils"
+          href="/admin"
           className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[11.5px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-          title="Retour aux outils chômage"
+          title="Retour au dashboard admin"
         >
           <ArrowLeft className="size-3.5" />
           <span className="hidden sm:inline">Retour</span>

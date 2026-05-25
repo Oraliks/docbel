@@ -57,12 +57,15 @@ import type {
 interface ChatFullShellProps {
   domain: string;
   aiAvailable: boolean;
+  /** Toggle voice input (admin setting + OPENAI_API_KEY). Faux par défaut. */
+  voiceAvailable?: boolean;
   enabledSourcesCount: number;
 }
 
 export function ChatFullShell({
   domain,
   aiAvailable,
+  voiceAvailable = false,
   enabledSourcesCount,
 }: ChatFullShellProps) {
   const searchParams = useSearchParams();
@@ -1007,6 +1010,7 @@ export function ChatFullShell({
             onModeChange={setMode}
             disabled={!aiAvailable || sending}
             sending={sending}
+            voiceAvailable={voiceAvailable}
             onSendChat={sendChatMessage}
             onGeneratePrompt={generatePrompt}
             onOpenUpload={() => setUploadOpen(true)}

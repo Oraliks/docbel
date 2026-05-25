@@ -24,9 +24,10 @@ import { DEFAULT_DOMAIN } from "@/lib/chomage-ia/types";
 export const dynamic = "force-dynamic";
 
 export default async function ChomageIaChatPage() {
-  const [aiEnabledRaw, total, enabled, sessionsCount, promptsCount] =
+  const [aiEnabledRaw, voiceEnabledRaw, total, enabled, sessionsCount, promptsCount] =
     await Promise.all([
       getSetting(SETTING_KEYS.AI_HELP_ENABLED),
+      getSetting(SETTING_KEYS.CHOMAGE_IA_VOICE_ENABLED),
       prisma.knowledgeSource.count({ where: { domain: DEFAULT_DOMAIN } }),
       prisma.knowledgeSource.count({
         where: { domain: DEFAULT_DOMAIN, enabled: true },
@@ -37,6 +38,10 @@ export default async function ChomageIaChatPage() {
 
   const aiEnabled = aiEnabledRaw === "true";
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
+  // Voice input nécessite OPENAI_API_KEY (Anthropic ne fait pas de transcription)
+  // ET le toggle admin doit être ON. Les deux conditions doivent être vraies.
+  const voiceAvailable =
+    voiceEnabledRaw === "true" && !!process.env.OPENAI_API_KEY;
 
   return (
     // Pleine hauteur du viewport admin = 100vh - header app (var --header-height = 48px)
@@ -58,6 +63,7 @@ export default async function ChomageIaChatPage() {
       <ChatFullShell
         domain={DEFAULT_DOMAIN}
         aiAvailable={aiEnabled && hasKey}
+        voiceAvailable={voiceAvailable}
         enabledSourcesCount={enabled}
       />
     </div>

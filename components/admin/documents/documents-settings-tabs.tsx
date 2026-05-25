@@ -12,6 +12,7 @@ import {
   KeyRound,
   ShieldCheck,
   Mail,
+  Mic,
   Save,
   RotateCcw,
 } from "lucide-react";
@@ -27,6 +28,8 @@ import { Textarea } from "@/components/ui/textarea";
 interface Props {
   aiHelpEnabled: boolean;
   hasAnthropicKey: boolean;
+  voiceEnabled: boolean;
+  hasOpenAiKey: boolean;
   rgpdGeneral: string;
   rgpdDefault: string;
   emailSubject: string;
@@ -40,6 +43,8 @@ type Tab = "ai" | "rgpd" | "email";
 export function DocumentsSettingsTabs({
   aiHelpEnabled: initialAi,
   hasAnthropicKey,
+  voiceEnabled: initialVoice,
+  hasOpenAiKey,
   rgpdGeneral: initialRgpd,
   rgpdDefault,
   emailSubject: initialEmailSubject,
@@ -104,11 +109,18 @@ export function DocumentsSettingsTabs({
       </div>
 
       {activeTab === "ai" && (
-        <AiHelpTab
-          initial={initialAi}
-          hasAnthropicKey={hasAnthropicKey}
-          onChanged={() => router.refresh()}
-        />
+        <div className="space-y-4">
+          <AiHelpTab
+            initial={initialAi}
+            hasAnthropicKey={hasAnthropicKey}
+            onChanged={() => router.refresh()}
+          />
+          <VoiceInputTab
+            initial={initialVoice}
+            hasOpenAiKey={hasOpenAiKey}
+            onChanged={() => router.refresh()}
+          />
+        </div>
       )}
 
       {activeTab === "rgpd" && (
@@ -254,6 +266,120 @@ function AiHelpTab({
         <p className="text-xs text-muted-foreground">
           Coût estimé (avec prompt caching) : ~0,001 € par question. Limité à 10 questions /
           minute par IP.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function VoiceInputTab({
+  initial,
+  hasOpenAiKey,
+  onChanged,
+}: {
+  initial: boolean;
+  hasOpenAiKey: boolean;
+  onChanged: () => void;
+}) {
+  const [enabled, setEnabled] = useState(initial);
+  const [saving, setSaving] = useState(false);
+
+  async function toggle(value: boolean) {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/settings/chomage_ia_voice_enabled", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: value ? "true" : "false" }),
+      });
+      if (!res.ok) throw new Error("Échec");
+      setEnabled(value);
+      toast.success(value ? "Voice input activé" : "Voice input désactivé");
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Mic className="w-4 h-4" />
+          Voice input (chat IA Chômage)
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Quand activé, un bouton micro <Mic className="w-3 h-3 inline" /> apparaît
+          dans la barre d&apos;input du chat IA Chômage. Click → enregistrement
+          browser → transcription via OpenAI Whisper → texte inséré dans la zone
+          de message.
+        </p>
+
+        <Alert variant="default" className="border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20">
+          <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-300" />
+          <AlertDescription className="text-sm">
+            <b>Dépendance OpenAI Whisper.</b> Anthropic ne propose pas d&apos;API
+            de transcription audio, donc cette feature utilise OpenAI Whisper
+            (séparé de ta clé Anthropic). Si tu ne veux pas créer de compte
+            OpenAI, laisse cette feature désactivée — tu tapes tes messages
+            normalement.
+          </AlertDescription>
+        </Alert>
+
+        {!hasOpenAiKey && (
+          <Alert variant="destructive">
+            <AlertTriangle className="w-4 h-4" />
+            <AlertDescription className="text-sm">
+              <b>Clé API OpenAI manquante.</b> L&apos;activation ne fonctionnera
+              pas sans
+              <code className="ml-1 px-1 py-0.5 rounded bg-muted">OPENAI_API_KEY</code>
+              dans votre <code className="px-1 py-0.5 rounded bg-muted">.env.local</code>.
+              Tu peux toggle ON sans clé pour préparer, mais le bouton renverra
+              503 jusqu&apos;à ce que la clé soit configurée.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {hasOpenAiKey && (
+          <Alert>
+            <KeyRound className="w-4 h-4" />
+            <AlertDescription className="text-sm">
+              <b>Clé OpenAI détectée.</b> Modèle utilisé :{" "}
+              <code className="px-1 py-0.5 rounded bg-muted">whisper-1</code>,
+              langue forcée FR.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="flex items-center justify-between border rounded-lg p-4">
+          <div className="space-y-0.5">
+            <Label htmlFor="voice-toggle" className="text-base font-medium cursor-pointer">
+              Activer le bouton micro dans le chat
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Désactivé par défaut. Le bouton n&apos;apparaît pas tant que c&apos;est OFF.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant={enabled ? "default" : "secondary"} className="text-xs">
+              {enabled ? "ON" : "OFF"}
+            </Badge>
+            <Switch
+              id="voice-toggle"
+              checked={enabled}
+              onCheckedChange={toggle}
+              disabled={saving}
+            />
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          Coût Whisper : ~$0.006/min d&apos;audio. Limité à 3 transcriptions/min/IP +
+          25 Mo max par fichier audio.
         </p>
       </CardContent>
     </Card>

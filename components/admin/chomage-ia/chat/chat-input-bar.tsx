@@ -84,6 +84,12 @@ interface Props {
   snippets?: PaletteSnippet[];
   /** Ouvre la Sheet de gestion des snippets (CRUD complet). */
   onOpenSnippetsManage?: () => void;
+  /**
+   * Active le bouton voice input (Whisper).
+   * Faux par défaut — l'admin doit l'activer dans /admin/documents/settings
+   * (nécessite OPENAI_API_KEY car Anthropic ne fait pas de transcription).
+   */
+  voiceAvailable?: boolean;
 }
 
 const DEFAULT_PLACEHOLDER =
@@ -114,6 +120,7 @@ function ChatModeBar({
   maxChars = DEFAULT_MAX,
   snippets = [],
   onOpenSnippetsManage,
+  voiceAvailable = false,
 }: Props) {
   const [value, setValue] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -236,11 +243,14 @@ function ChatModeBar({
           <Wand2 className="size-4" />
         </Button>
 
-        {/* Bouton Voice input (Whisper) */}
-        <VoiceInputButton
-          disabled={disabled || sending}
-          onTranscript={appendVoiceTranscript}
-        />
+        {/* Bouton Voice input (Whisper) — affiché uniquement si l'admin
+            a activé la feature ET configuré OPENAI_API_KEY. */}
+        {voiceAvailable ? (
+          <VoiceInputButton
+            disabled={disabled || sending}
+            onTranscript={appendVoiceTranscript}
+          />
+        ) : null}
 
         {/* Textarea */}
         <textarea

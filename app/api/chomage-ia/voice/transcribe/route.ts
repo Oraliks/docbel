@@ -21,6 +21,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
+import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
 
 /** Limite serveur = 25 Mo (limite hard de Whisper). */
 const MAX_BYTES = 25 * 1024 * 1024;
@@ -38,6 +39,19 @@ const OPENAI_TRANSCRIPTIONS_URL =
 export async function POST(req: NextRequest) {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) return auth.error;
+
+  // Feature désactivée par défaut côté admin — l'admin doit l'activer
+  // explicitement dans /admin/documents/settings (nécessite OPENAI_API_KEY).
+  const voiceEnabled = await getSetting(SETTING_KEYS.CHOMAGE_IA_VOICE_ENABLED);
+  if (voiceEnabled !== "true") {
+    return NextResponse.json(
+      {
+        error:
+          "Voice input désactivé. Active-le dans /admin/documents/settings (onglet IA Chômage).",
+      },
+      { status: 503 }
+    );
+  }
 
   const ip = getClientIp(req);
   const rl = checkRateLimit(`chomage-ia:voice:transcribe:${ip}`, {

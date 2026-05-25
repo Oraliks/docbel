@@ -13,6 +13,11 @@ export const SETTING_KEYS = {
   /// Toggle "true" / "false". Quand true, le bouton Aide IA apparaît à côté
   /// de chaque champ du formulaire public (nécessite ANTHROPIC_API_KEY côté serveur).
   AI_HELP_ENABLED: "ai_help_enabled",
+  /// Toggle "true" / "false". Quand true, le bouton micro apparaît dans la
+  /// barre d'input du chat IA chômage (nécessite OPENAI_API_KEY côté serveur
+  /// pour Whisper — Anthropic ne propose pas d'API de transcription audio).
+  /// Désactivé par défaut pour éviter d'imposer une dépendance OpenAI.
+  CHOMAGE_IA_VOICE_ENABLED: "chomage_ia_voice_enabled",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
@@ -65,6 +70,7 @@ Cordialement,
 L'équipe DocBel`,
   contact_signature: "",
   ai_help_enabled: "false",
+  chomage_ia_voice_enabled: "false",
 };
 
 export async function getSetting(key: SettingKey): Promise<string> {

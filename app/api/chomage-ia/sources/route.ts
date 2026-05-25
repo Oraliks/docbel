@@ -16,6 +16,7 @@ import {
   DEFAULT_DOMAIN,
   type KnowledgeSourceListItem,
 } from "@/lib/chomage-ia/types";
+import { runAutoTagInBackground } from "@/lib/chomage-ia/auto-tag";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdminAuth();
@@ -104,6 +105,15 @@ export async function POST(req: NextRequest) {
       createdById: auth.user.id,
     },
   });
+
+  // Auto-tag fire-and-forget : ne bloque pas la réponse client.
+  // Si Haiku échoue, les tags existants sont conservés tels quels.
+  void runAutoTagInBackground(
+    created.id,
+    parsed.content,
+    parsed.title,
+    parsed.tags ?? []
+  );
 
   return NextResponse.json(
     {

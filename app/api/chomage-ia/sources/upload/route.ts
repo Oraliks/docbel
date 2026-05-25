@@ -35,6 +35,7 @@ import { createHash } from "crypto";
 import { nanoid } from "nanoid";
 import { DEFAULT_DOMAIN } from "@/lib/chomage-ia/types";
 import { extractPdfViaClaude } from "@/lib/chomage-ia/pdf-via-claude";
+import { runAutoTagInBackground } from "@/lib/chomage-ia/auto-tag";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 
@@ -328,6 +329,91 @@ function decodeXmlEntities(s: string): string {
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)));
 }
 
+/**
+ * Normalise une chaîne pour comparaison case-insensitive et tolérante aux
+ * espaces / accents. Utilisé pour le fallback de détection de doublons
+ * quand le binaire n'a pas pu être persisté (fileId=null).
+ */
+function normalizeForDedup(text: string): string {
+  return (text ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Cherche un doublon existant dans la KB.
+ *
+ * Stratégies en cascade :
+ *  1. Match sha256 : on récupère les Files avec ce hash, puis on cherche
+ *     une KnowledgeSource du domaine qui pointe sur un de ces fileIds.
+ *     KnowledgeSource n'a pas de relation Prisma vers File (juste un fileId
+ *     scalaire optionnel), d'où la requête en 2 étapes.
+ *  2. Si content fourni (>= 1000 chars), fallback : titre identique
+ *     (case-insensitive) ET premiers 200 chars du content normalisés
+ *     identiques. Évite les faux positifs sur deux uploads d'un même PDF
+ *     avec extraction texte identique mais binaire pas persisté en serverless.
+ */
+async function findDuplicateSource({
+  domain,
+  sha256,
+  title,
+  content,
+}: {
+  domain: string;
+  sha256: string;
+  title: string;
+  content: string;
+}): Promise<{ id: string; title: string } | null> {
+  // 1. Match via sha256 → fileIds → KnowledgeSource du domaine.
+  const matchingFiles = await prisma.file.findMany({
+    where: { sha256 },
+    select: { id: true },
+    take: 20,
+  });
+  if (matchingFiles.length > 0) {
+    const bySha = await prisma.knowledgeSource.findFirst({
+      where: {
+        domain,
+        fileId: { in: matchingFiles.map((f) => f.id) },
+      },
+      select: { id: true, title: true },
+    });
+    if (bySha) return bySha;
+  }
+
+  // 2. Fallback : si content non vide (>= 1000 chars) on cherche un titre
+  //    identique avec un content qui commence pareil. Ne s'active que si
+  //    l'admin a déjà saisi du contenu — sinon trop bruyant.
+  if (content && content.length >= 1000) {
+    const titleNorm = normalizeForDedup(title);
+    const contentHeadNorm = normalizeForDedup(content.slice(0, 200));
+    // Prisma ne sait pas comparer après normalisation côté SQL — on récupère
+    // les candidats par titre proche et on filtre en JS. Limite : 10 lignes
+    // pour rester rapide même sur grosse KB.
+    const candidates = await prisma.knowledgeSource.findMany({
+      where: {
+        domain,
+        title: { equals: title, mode: "insensitive" },
+      },
+      select: { id: true, title: true, content: true },
+      take: 10,
+    });
+    for (const c of candidates) {
+      const candNorm = normalizeForDedup(c.title);
+      if (candNorm !== titleNorm) continue;
+      const candHead = normalizeForDedup(c.content.slice(0, 200));
+      if (candHead === contentHeadNorm && contentHeadNorm.length >= 50) {
+        return { id: c.id, title: c.title };
+      }
+    }
+  }
+
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   try {
     return await handleUpload(req);
@@ -414,6 +500,32 @@ async function handleUpload(req: NextRequest) {
   const arrayBuf = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuf);
   const sha256 = createHash("sha256").update(buffer).digest("hex");
+
+  // Détection doublons (sauf si l'admin a explicitement demandé le bypass via
+  // ?force=1). Cas premier : un KnowledgeSource du même domaine pointe vers
+  // un File du même sha256. Cas fallback (File pas persisté en serverless) :
+  // on compare titre normalisé + début du content si déjà fourni manuellement.
+  const force = new URL(req.url).searchParams.get("force") === "1";
+  if (!force) {
+    const dup = await findDuplicateSource({
+      domain,
+      sha256,
+      title,
+      content,
+    });
+    if (dup) {
+      return NextResponse.json(
+        {
+          error: "Doublon",
+          existingId: dup.id,
+          existingTitle: dup.title,
+          message:
+            "Cette source semble déjà exister dans la KB. Re-uploader avec ?force=1 pour bypasser.",
+        },
+        { status: 409 }
+      );
+    }
+  }
 
   // Stockage en private/uploads — best-effort. En environnement serverless
   // (Netlify Functions / Vercel / Lambda), `/var/task` est read-only et seul
@@ -543,6 +655,10 @@ async function handleUpload(req: NextRequest) {
       createdById: auth.user.id,
     },
   });
+
+  // Auto-tag en background — ne bloque pas la réponse client.
+  // Le PATCH des tags se fera quand Haiku aura répondu (quelques secondes).
+  void runAutoTagInBackground(ks.id, finalContent, title, tags);
 
   console.log(
     `chomage-ia upload: ${kind} "${title}" (${buffer.byteLength}B, ext=${ext}) → ks=${ks.id} file=${dbFile?.id ?? "none"}`

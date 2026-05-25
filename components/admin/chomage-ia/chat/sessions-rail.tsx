@@ -8,26 +8,41 @@
  *
  * Sections :
  *   - "+" bouton nouvelle conversation (top)
- *   - Liste des sessions (scrollable)
+ *   - Liste des sessions (scrollable, ContextMenu right-click sur chaque session)
  *   - Bouton "Historique prompts" (bottom — ouvre Sheet via callback parent)
  *
  * Mode "expanded" (click sur l'icône expand en bas) → bascule en sidebar plus
  * large avec titres lisibles + actions inline rename/delete.
+ *
+ * ContextMenu (right-click) sur chaque session :
+ *   Renommer, Épingler / Désépingler (TODO backend), Archiver (TODO),
+ *   Dupliquer (TODO), Supprimer (AlertDialog confirm).
  */
 
 import { useMemo, useState } from "react";
 import {
+  Archive,
   Check,
+  Copy,
   History,
   Loader2,
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
+  Pin,
   Plus,
   Trash2,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -35,6 +50,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { fmtRelative, truncate } from "../_shared";
+import { ConfirmDeleteDialog, RenameDialog } from "../_shared-alerts";
 import type { ChatSessionItem } from "./types";
 
 interface Props {
@@ -43,9 +59,15 @@ interface Props {
   currentId: string | null;
   onSelect: (id: string) => void;
   onNew: () => void;
-  onDelete: (id: string) => void;
-  onRename: (id: string, title: string) => void;
+  onDelete: (id: string) => void | Promise<void>;
+  onRename: (id: string, title: string) => void | Promise<void>;
   onOpenPrompts: () => void;
+  /** Épingler / désépingler la session. Si absent → toast "bientôt dispo". */
+  onTogglePin?: (id: string) => void;
+  /** Archiver la session. Si absent → toast "bientôt dispo". */
+  onArchive?: (id: string) => void;
+  /** Dupliquer la session avec ses messages. Si absent → toast "bientôt dispo". */
+  onDuplicate?: (id: string) => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -53,7 +75,6 @@ interface Props {
 /* ------------------------------------------------------------------ */
 
 const AVATAR_COLORS = [
-  // teintes pastel sur fond clair + contraste lisible
   "bg-rose-500/20 text-rose-700 dark:text-rose-300",
   "bg-orange-500/20 text-orange-700 dark:text-orange-300",
   "bg-amber-500/20 text-amber-700 dark:text-amber-300",
@@ -101,23 +122,72 @@ export function SessionsRail({
   onDelete,
   onRename,
   onOpenPrompts,
+  onTogglePin,
+  onArchive,
+  onDuplicate,
 }: Props) {
   // expanded = sidebar large avec titres + actions
   const [expanded, setExpanded] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
 
-  function startEdit(s: ChatSessionItem) {
+  // Dialogs partagés (rename + delete) déclenchés depuis le context menu.
+  const [renameTargetId, setRenameTargetId] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+
+  const renameTarget = useMemo(
+    () => sessions.find((s) => s.id === renameTargetId) ?? null,
+    [sessions, renameTargetId]
+  );
+  const deleteTarget = useMemo(
+    () => sessions.find((s) => s.id === deleteTargetId) ?? null,
+    [sessions, deleteTargetId]
+  );
+
+  function startInlineEdit(s: ChatSessionItem) {
     setEditingId(s.id);
     setDraftTitle(s.title);
   }
 
-  function commitEdit() {
+  function commitInlineEdit() {
     if (!editingId) return;
     if (draftTitle.trim().length > 0) {
-      onRename(editingId, draftTitle.trim());
+      void onRename(editingId, draftTitle.trim());
     }
     setEditingId(null);
+  }
+
+  function handleTogglePin(id: string) {
+    if (onTogglePin) {
+      onTogglePin(id);
+    } else {
+      // TODO(backend): ajouter colonne `pinnedAt` sur ChatSession + endpoint.
+      toast("Épinglage bientôt disponible", {
+        description: "Cette action nécessite une évolution du schéma.",
+      });
+    }
+  }
+
+  function handleArchive(id: string) {
+    if (onArchive) {
+      onArchive(id);
+    } else {
+      // TODO(backend): ajouter colonne `archivedAt` sur ChatSession + filtre liste.
+      toast("Archivage bientôt disponible", {
+        description: "Cette action nécessite une évolution du schéma.",
+      });
+    }
+  }
+
+  function handleDuplicate(id: string) {
+    if (onDuplicate) {
+      onDuplicate(id);
+    } else {
+      // TODO(backend): endpoint POST /api/chomage-ia/sessions/[id]/duplicate.
+      toast("Duplication bientôt disponible", {
+        description: "Cette action nécessite un endpoint dédié.",
+      });
+    }
   }
 
   return (
@@ -173,66 +243,60 @@ export function SessionsRail({
             </p>
           ) : null
         ) : (
-          <ul className={cn("flex flex-col", expanded ? "gap-0.5 px-1" : "items-center gap-1")}>
+          <ul
+            className={cn(
+              "flex flex-col",
+              expanded ? "gap-0.5 px-1" : "items-center gap-1"
+            )}
+          >
             {sessions.map((s) => {
               const isActive = s.id === currentId;
               const isEditing = s.id === editingId;
               const colorCls = avatarColorFor(s.id);
               const initials = initialsFromTitle(s.title);
 
-              if (expanded) {
+              if (expanded && isEditing) {
                 return (
                   <li key={s.id}>
-                    {isEditing ? (
-                      <ExpandedEditRow
-                        draft={draftTitle}
-                        onChange={setDraftTitle}
-                        onCommit={commitEdit}
-                        onCancel={() => setEditingId(null)}
-                      />
-                    ) : (
-                      <ExpandedRow
-                        session={s}
-                        active={isActive}
-                        avatarColor={colorCls}
-                        initials={initials}
-                        onSelect={() => onSelect(s.id)}
-                        onStartEdit={() => startEdit(s)}
-                        onDelete={() => onDelete(s.id)}
-                      />
-                    )}
+                    <ExpandedEditRow
+                      draft={draftTitle}
+                      onChange={setDraftTitle}
+                      onCommit={commitInlineEdit}
+                      onCancel={() => setEditingId(null)}
+                    />
                   </li>
                 );
               }
 
               return (
                 <li key={s.id}>
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <button
-                          type="button"
-                          onClick={() => onSelect(s.id)}
-                          aria-label={s.title}
-                          className={cn(
-                            "flex size-8 items-center justify-center rounded-full text-[11px] font-bold tabular-nums transition-all",
-                            colorCls,
-                            isActive &&
-                              "ring-2 ring-primary ring-offset-2 ring-offset-muted/30",
-                            !isActive && "opacity-80 hover:opacity-100"
-                          )}
-                        />
-                      }
-                    >
-                      {initials}
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
-                      <span className="font-semibold">{truncate(s.title, 60)}</span>
-                      <span className="block text-[10px] opacity-80">
-                        {s.messageCount} msg · {fmtRelative(s.updatedAt)}
-                      </span>
-                    </TooltipContent>
-                  </Tooltip>
+                  <SessionContextMenu
+                    onRename={() => setRenameTargetId(s.id)}
+                    onTogglePin={() => handleTogglePin(s.id)}
+                    onArchive={() => handleArchive(s.id)}
+                    onDuplicate={() => handleDuplicate(s.id)}
+                    onDelete={() => setDeleteTargetId(s.id)}
+                  >
+                    {expanded ? (
+                      <ExpandedRow
+                        session={s}
+                        active={isActive}
+                        avatarColor={colorCls}
+                        initials={initials}
+                        onSelect={() => onSelect(s.id)}
+                        onStartEdit={() => startInlineEdit(s)}
+                        onDelete={() => setDeleteTargetId(s.id)}
+                      />
+                    ) : (
+                      <CompactRow
+                        session={s}
+                        active={isActive}
+                        avatarColor={colorCls}
+                        initials={initials}
+                        onSelect={() => onSelect(s.id)}
+                      />
+                    )}
+                  </SessionContextMenu>
                 </li>
               );
             })}
@@ -286,13 +350,135 @@ export function SessionsRail({
           ) : null}
         </Tooltip>
       </div>
+
+      {/* Dialogs partagés (rename + delete depuis context menu). */}
+      <RenameDialog
+        open={!!renameTarget}
+        onOpenChange={(v) => !v && setRenameTargetId(null)}
+        title="Renommer la conversation"
+        description="Le nouveau titre apparaît dans le rail et l'historique."
+        label="Titre"
+        initialValue={renameTarget?.title ?? ""}
+        placeholder="Ex: Rupture amiable et préavis…"
+        onConfirm={async (value) => {
+          if (renameTargetId) await onRename(renameTargetId, value);
+        }}
+      />
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => !v && setDeleteTargetId(null)}
+        title="Supprimer cette conversation ?"
+        description={
+          deleteTarget
+            ? `« ${truncate(deleteTarget.title, 60)} » sera supprimée définitivement (${deleteTarget.messageCount} message${deleteTarget.messageCount > 1 ? "s" : ""}).`
+            : "Cette action est irréversible."
+        }
+        onConfirm={async () => {
+          if (deleteTargetId) await onDelete(deleteTargetId);
+        }}
+      />
     </aside>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Sous-composants pour le mode expanded                              */
+/*  ContextMenu wrapper réutilisable                                   */
 /* ------------------------------------------------------------------ */
+
+function SessionContextMenu({
+  children,
+  onRename,
+  onTogglePin,
+  onArchive,
+  onDuplicate,
+  onDelete,
+}: {
+  children: React.ReactNode;
+  onRename: () => void;
+  onTogglePin: () => void;
+  onArchive: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger render={<div />}>{children}</ContextMenuTrigger>
+      <ContextMenuContent className="min-w-48">
+        <ContextMenuItem onClick={onRename}>
+          <Pencil className="size-3.5" />
+          Renommer
+        </ContextMenuItem>
+        <ContextMenuItem onClick={onTogglePin}>
+          <Pin className="size-3.5" />
+          Épingler
+        </ContextMenuItem>
+        <ContextMenuItem onClick={onArchive}>
+          <Archive className="size-3.5" />
+          Archiver
+        </ContextMenuItem>
+        <ContextMenuItem onClick={onDuplicate}>
+          <Copy className="size-3.5" />
+          Dupliquer
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem variant="destructive" onClick={onDelete}>
+          <Trash2 className="size-3.5" />
+          Supprimer
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Sous-composants pour le mode expanded et compact                   */
+/* ------------------------------------------------------------------ */
+
+function CompactRow({
+  session,
+  active,
+  avatarColor,
+  initials,
+  onSelect,
+}: {
+  session: ChatSessionItem;
+  active: boolean;
+  avatarColor: string;
+  initials: string;
+  onSelect: () => void;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            type="button"
+            onClick={onSelect}
+            aria-label={session.title}
+            className={cn(
+              "flex size-8 items-center justify-center rounded-full text-[11px] font-bold tabular-nums transition-all",
+              avatarColor,
+              active &&
+                "ring-2 ring-primary ring-offset-2 ring-offset-muted/30",
+              !active && "opacity-80 hover:opacity-100"
+            )}
+          />
+        }
+      >
+        {initials}
+      </TooltipTrigger>
+      <TooltipContent side="right" className="max-w-xs">
+        <span className="font-semibold">{truncate(session.title, 60)}</span>
+        <span className="block text-[10px] opacity-80">
+          {session.messageCount} msg · {fmtRelative(session.updatedAt)}
+        </span>
+        <span className="mt-0.5 block text-[10px] opacity-60">
+          Clic droit pour les actions
+        </span>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 function ExpandedRow({
   session,
@@ -354,7 +540,7 @@ function ExpandedRow({
             e.stopPropagation();
             onStartEdit();
           }}
-          title="Renommer"
+          title="Renommer (inline)"
           aria-label="Renommer"
         >
           <Pencil className="size-3" />

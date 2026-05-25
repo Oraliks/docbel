@@ -1,29 +1,126 @@
 "use client";
 
 /**
- * Bulle de message individuelle. Rend le markdown léger (gras, italique, listes,
- * blocs de code inline, titres ##) et remplace les marqueurs [SRC:id] par des
- * pills cliquables.
+ * Bulle de message individuelle.
  *
- * Pas de dépendance markdown lourde — on fait un parsing maison minimal pour
- * éviter d'embarquer marked/react-markdown juste pour quelques cas simples.
+ * Responsabilités :
+ *   - Layout (avatar + bubble + méta footer)
+ *   - Rendu markdown JSX via `renderMarkdownReact` (citations [SRC:id] avec
+ *     HoverCard, tables, blockquotes, code blocks, listes, links)
+ *   - ContextMenu (right-click) avec actions :
+ *       Copier contenu, copier permalink, [user: éditer], [assistant: régénérer,
+ *       forker, voir sources], supprimer
+ *   - Mode édition inline (textarea + boutons Renvoyer / Annuler) pour user msg
+ *     contrôlé par le parent via `editMode` + callbacks `onRequestEdit`,
+ *     `onSubmitEdit`, `onCancelEdit`
+ *   - Pending indicator avec timer live + status rotatif (avant réponse IA)
+ *
+ * Les helpers markdown sont isolés dans `./markdown.tsx` pour respecter la
+ * limite 250 LOC du projet.
  */
 
-import { useEffect, useMemo, useState } from "react";
-import { Loader2, User, Sparkles, Copy, CheckCheck, Clock } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Loader2,
+  User,
+  Sparkles,
+  Copy,
+  CheckCheck,
+  Clock,
+  Pencil,
+  X,
+  SendHorizontal,
+  Link2,
+  RefreshCw,
+  GitBranch,
+  BookOpen,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
-import { fmtDateTime, fmtTokens, getKindIcon, getKindLabel, truncate } from "../_shared";
+import { fmtDateTime, fmtTokens, getKindIcon, truncate } from "../_shared";
+import { ConfirmDeleteDialog } from "../_shared-alerts";
+import { renderMarkdownReact } from "./markdown";
 import type { ChatMessageItem, CitedSourceLite } from "./types";
 
 interface Props {
   message: ChatMessageItem;
   citedSources: CitedSourceLite[];
+  /** Active le mode édition inline (textarea + boutons Renvoyer / Annuler).
+   *  Seulement valable pour les messages de role="user". */
+  editMode?: boolean;
+  /** Callback déclenché quand le user clique sur "Éditer" (button ou context menu).
+   *  Le parent doit retourner le messageId en passant à editMode=true. */
+  onRequestEdit?: () => void;
+  /** Callback en mode édition : envoyer le nouveau contenu (déclenche regenerate). */
+  onSubmitEdit?: (newContent: string) => void;
+  /** Callback en mode édition : annuler. */
+  onCancelEdit?: () => void;
+  /** Désactive les actions (pendant un sending global). */
+  disabled?: boolean;
+  /** Callback supprimer ce message (context menu). Si absent → toast "bientôt dispo". */
+  onDelete?: (messageId: string) => void | Promise<void>;
+  /** Callback régénérer (assistant msg). Si absent → toast "bientôt dispo". */
+  onRegenerate?: (messageId: string) => void;
+  /** Callback forker la conversation à partir de ce message (assistant msg). */
+  onFork?: (messageId: string) => void;
+  /** Callback ouvrir le drawer "Sources citées". */
+  onOpenSources?: () => void;
 }
 
-export function MessageBubble({ message, citedSources }: Props) {
+export function MessageBubble({
+  message,
+  citedSources,
+  editMode = false,
+  onRequestEdit,
+  onSubmitEdit,
+  onCancelEdit,
+  disabled = false,
+  onDelete,
+  onRegenerate,
+  onFork,
+  onOpenSources,
+}: Props) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
+  const [draft, setDraft] = useState(message.content);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const draftRef = useRef<HTMLTextAreaElement>(null);
+
+  // Quand on entre en édition, on initialise le draft avec le contenu courant
+  // et on focus le textarea.
+  useEffect(() => {
+    if (editMode) {
+      setDraft(message.content);
+      requestAnimationFrame(() => {
+        const el = draftRef.current;
+        if (el) {
+          el.focus();
+          el.setSelectionRange(el.value.length, el.value.length);
+          el.style.height = "auto";
+          el.style.height = Math.min(el.scrollHeight, 256) + "px";
+        }
+      });
+    }
+  }, [editMode, message.content]);
+
+  // Auto-resize du textarea pendant l'édition.
+  useEffect(() => {
+    if (!editMode) return;
+    const el = draftRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 256) + "px";
+  }, [editMode, draft]);
+
   const sourcesById = useMemo(() => {
     const map = new Map<string, CitedSourceLite>();
     for (const s of citedSources) map.set(s.id, s);
@@ -41,113 +138,366 @@ export function MessageBubble({ message, citedSources }: Props) {
       .catch(() => toast.error("Échec de la copie"));
   }
 
-  const renderedHtml = useMemo(
-    () => renderMarkdown(message.content, sourcesById),
+  function copyPermalink() {
+    if (!message.id) {
+      toast.error("Permalink indisponible (message non persisté)");
+      return;
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set("msg", message.id);
+    navigator.clipboard
+      .writeText(url.toString())
+      .then(() => toast.success("Lien copié"))
+      .catch(() => toast.error("Échec de la copie"));
+  }
+
+  function handleRegenerate() {
+    if (!message.id) {
+      toast.error("Régénération indisponible (message non persisté)");
+      return;
+    }
+    if (onRegenerate) {
+      onRegenerate(message.id);
+    } else {
+      // TODO(backend): brancher la régénération sur l'API. Pour l'instant,
+      // on signale juste à l'utilisateur que la feature est en préparation.
+      toast("Régénération bientôt disponible", {
+        description: "Cette action nécessite un endpoint dédié.",
+      });
+    }
+  }
+
+  function handleFork() {
+    if (!message.id) {
+      toast.error("Fork indisponible (message non persisté)");
+      return;
+    }
+    if (onFork) {
+      onFork(message.id);
+    } else {
+      // TODO(backend): brancher /api/chomage-ia/sessions/[id]/fork
+      toast("Fork bientôt disponible", {
+        description: "Cette action nécessite un endpoint dédié.",
+      });
+    }
+  }
+
+  function handleOpenSources() {
+    if (onOpenSources) {
+      onOpenSources();
+    } else {
+      toast("Ouvre le drawer « Sources citées » depuis l'en-tête.");
+    }
+  }
+
+  const renderedMd = useMemo(
+    () => renderMarkdownReact(message.content, sourcesById),
     [message.content, sourcesById]
   );
 
+  const bubbleClass = cn(
+    "rounded-2xl border px-3 py-2.5 text-[13.5px] leading-relaxed",
+    isUser
+      ? "border-primary/20 bg-primary/5 text-foreground"
+      : "border-border bg-card text-foreground",
+    editMode && "w-full max-w-2xl"
+  );
+
+  // Contenu de la bulle (sans le wrapper / context menu).
+  const bubbleBody =
+    editMode && isUser ? (
+      <EditModeContent
+        draftRef={draftRef}
+        draft={draft}
+        onChange={setDraft}
+        onSubmit={() => {
+          const trimmed = draft.trim();
+          if (!trimmed) return;
+          onSubmitEdit?.(trimmed);
+        }}
+        onCancel={() => onCancelEdit?.()}
+        disabled={disabled}
+      />
+    ) : message.pending ? (
+      <PendingIndicator startedAt={message.pendingStartedAt} />
+    ) : (
+      <div className="chomage-ia-md">{renderedMd}</div>
+    );
+
+  // ContextMenu désactivé pendant l'édition ou pendant le pending (rien d'utile
+  // à proposer, et le right-click sur un textarea ouvre le menu natif).
+  const allowContextMenu = !editMode && !message.pending;
+
+  const inner = allowContextMenu ? (
+    <ContextMenu>
+      <ContextMenuTrigger className={bubbleClass} render={<div />}>
+        {bubbleBody}
+      </ContextMenuTrigger>
+      <ContextMenuContent className="min-w-52">
+        <ContextMenuItem onClick={copyToClipboard}>
+          <Copy className="size-3.5" />
+          Copier le contenu
+        </ContextMenuItem>
+        {message.id ? (
+          <ContextMenuItem onClick={copyPermalink}>
+            <Link2 className="size-3.5" />
+            Copier le permalien
+          </ContextMenuItem>
+        ) : null}
+
+        {!isUser ? (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={handleRegenerate}>
+              <RefreshCw className="size-3.5" />
+              Régénérer la réponse
+            </ContextMenuItem>
+            <ContextMenuItem onClick={handleFork}>
+              <GitBranch className="size-3.5" />
+              Forker la conversation ici
+            </ContextMenuItem>
+            {message.citedSourceIds.length > 0 ? (
+              <ContextMenuItem onClick={handleOpenSources}>
+                <BookOpen className="size-3.5" />
+                Voir les sources citées
+              </ContextMenuItem>
+            ) : null}
+          </>
+        ) : null}
+
+        {isUser && onRequestEdit ? (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={() => onRequestEdit()}>
+              <Pencil className="size-3.5" />
+              Éditer le message
+            </ContextMenuItem>
+          </>
+        ) : null}
+
+        {message.id ? (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              variant="destructive"
+              onClick={() => setDeleteOpen(true)}
+            >
+              <Trash2 className="size-3.5" />
+              Supprimer ce message
+            </ContextMenuItem>
+          </>
+        ) : null}
+      </ContextMenuContent>
+    </ContextMenu>
+  ) : (
+    <div className={bubbleClass}>{bubbleBody}</div>
+  );
+
   return (
-    <div
-      className={cn(
-        "flex gap-2",
-        isUser ? "flex-row-reverse" : "flex-row"
-      )}
-    >
-      {/* Avatar */}
-      <span
+    <>
+      <div
         className={cn(
-          "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full",
-          isUser
-            ? "bg-primary/10 text-primary"
-            : "bg-muted text-foreground"
+          "flex gap-2",
+          isUser ? "flex-row-reverse" : "flex-row"
         )}
       >
-        {isUser ? <User className="size-3.5" /> : <Sparkles className="size-3.5" />}
-      </span>
-
-      {/* Bubble */}
-      <div className={cn("flex max-w-[85%] flex-col gap-1", isUser && "items-end")}>
-        <div
+        {/* Avatar */}
+        <span
           className={cn(
-            "rounded-2xl border px-3 py-2.5 text-[13.5px] leading-relaxed",
+            "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full",
             isUser
-              ? "border-primary/20 bg-primary/5 text-foreground"
-              : "border-border bg-card text-foreground"
+              ? "bg-primary/10 text-primary"
+              : "bg-muted text-foreground"
           )}
         >
-          {message.pending ? (
-            <PendingIndicator startedAt={message.pendingStartedAt} />
-          ) : (
-            <div
-              className="chomage-ia-md"
-              // dangerouslySetInnerHTML est sûr ici car renderMarkdown échappe le HTML
-              // dans le helper escapeHtml avant d'appliquer les remplacements légers.
-              dangerouslySetInnerHTML={{ __html: renderedHtml }}
-            />
-          )}
-        </div>
+          {isUser ? <User className="size-3.5" /> : <Sparkles className="size-3.5" />}
+        </span>
 
-        {/* Méta + actions */}
-        <div className="flex items-center gap-2 px-2 text-[10.5px] text-muted-foreground">
-          <span>{fmtDateTime(message.createdAt)}</span>
-          {message.elapsedMs != null && message.elapsedMs > 0 ? (
-            <span
-              className="inline-flex items-center gap-0.5"
-              title="Durée de l'appel IA"
-            >
-              · <Clock className="size-2.5" /> {fmtElapsed(message.elapsedMs)}
-            </span>
-          ) : null}
-          {message.tokensIn != null || message.tokensOut != null ? (
-            <span>
-              · {fmtTokens(message.tokensIn)}/{fmtTokens(message.tokensOut)} tk
-            </span>
-          ) : null}
-          {!message.pending ? (
-            <button
-              type="button"
-              onClick={copyToClipboard}
-              className="ml-auto inline-flex items-center gap-1 rounded-sm px-1 hover:bg-muted hover:text-foreground"
-              title="Copier le message"
-            >
-              {copied ? (
-                <CheckCheck className="size-3" />
-              ) : (
-                <Copy className="size-3" />
-              )}
-              {copied ? "Copié" : "Copier"}
-            </button>
-          ) : null}
-        </div>
+        {/* Bubble */}
+        <div className={cn("flex max-w-[85%] flex-col gap-1", isUser && "items-end")}>
+          {inner}
 
-        {/* Citations résumées sous la bulle (mini pills) */}
-        {!isUser && message.citedSourceIds.length > 0 ? (
-          <div className="mt-1 flex flex-wrap items-center gap-1 px-1">
-            {message.citedSourceIds.slice(0, 8).map((id) => {
-              const src = sourcesById.get(id);
-              const label = src ? truncate(src.title, 36) : id.slice(0, 8);
-              const Icon = src ? getKindIcon(src.kind) : Sparkles;
-              return (
-                <a
-                  key={id}
-                  href={src?.sourceUrl ?? "#"}
-                  target={src?.sourceUrl ? "_blank" : undefined}
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10.5px] font-medium hover:bg-muted"
-                  title={src?.summary ?? src?.title ?? id}
+          {/* Méta + actions */}
+          {!editMode ? (
+            <div className="flex items-center gap-2 px-2 text-[10.5px] text-muted-foreground">
+              <span>{fmtDateTime(message.createdAt)}</span>
+              {message.elapsedMs != null && message.elapsedMs > 0 ? (
+                <span
+                  className="inline-flex items-center gap-0.5"
+                  title="Durée de l'appel IA"
                 >
-                  <Icon className="size-3" />
-                  {label}
-                </a>
-              );
-            })}
-            {message.citedSourceIds.length > 8 ? (
-              <span className="text-[10.5px] text-muted-foreground">
-                +{message.citedSourceIds.length - 8} autres
-              </span>
-            ) : null}
-          </div>
-        ) : null}
+                  · <Clock className="size-2.5" /> {fmtElapsed(message.elapsedMs)}
+                </span>
+              ) : null}
+              {message.tokensIn != null || message.tokensOut != null ? (
+                <span>
+                  · {fmtTokens(message.tokensIn)}/{fmtTokens(message.tokensOut)} tk
+                </span>
+              ) : null}
+              {!message.pending ? (
+                <div className="ml-auto inline-flex items-center gap-0.5">
+                  {isUser && onRequestEdit ? (
+                    <button
+                      type="button"
+                      onClick={onRequestEdit}
+                      disabled={disabled}
+                      className="inline-flex items-center gap-1 rounded-sm px-1 hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Éditer ce message et régénérer la suite"
+                    >
+                      <Pencil className="size-3" />
+                      Éditer
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={copyToClipboard}
+                    className="inline-flex items-center gap-1 rounded-sm px-1 hover:bg-muted hover:text-foreground"
+                    title="Copier (ou clic droit pour plus d'actions)"
+                  >
+                    {copied ? (
+                      <CheckCheck className="size-3" />
+                    ) : (
+                      <Copy className="size-3" />
+                    )}
+                    {copied ? "Copié" : "Copier"}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Citations résumées sous la bulle (mini pills) */}
+          {!isUser && !editMode && message.citedSourceIds.length > 0 ? (
+            <div className="mt-1 flex flex-wrap items-center gap-1 px-1">
+              {message.citedSourceIds.slice(0, 8).map((id) => {
+                const src = sourcesById.get(id);
+                const label = src ? truncate(src.title, 36) : id.slice(0, 8);
+                const Icon = src ? getKindIcon(src.kind) : Sparkles;
+                return (
+                  <a
+                    key={id}
+                    href={src?.sourceUrl ?? "#"}
+                    target={src?.sourceUrl ? "_blank" : undefined}
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10.5px] font-medium hover:bg-muted"
+                    title={src?.summary ?? src?.title ?? id}
+                  >
+                    <Icon className="size-3" />
+                    {label}
+                  </a>
+                );
+              })}
+              {message.citedSourceIds.length > 8 ? (
+                <span className="text-[10.5px] text-muted-foreground">
+                  +{message.citedSourceIds.length - 8} autres
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Supprimer ce message ?"
+        description={
+          isUser
+            ? "Ce message utilisateur sera supprimé définitivement de la conversation."
+            : "Cette réponse IA sera supprimée définitivement. Les sources citées restent dans la KB."
+        }
+        onConfirm={async () => {
+          if (!message.id) {
+            toast.error("Message non persisté, suppression impossible.");
+            return;
+          }
+          if (!onDelete) {
+            // TODO(backend): brancher DELETE /api/chomage-ia/messages/[id]
+            toast("Suppression bientôt disponible", {
+              description: "Cette action nécessite un endpoint dédié.",
+            });
+            return;
+          }
+          await onDelete(message.id);
+        }}
+      />
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Edit mode — textarea + boutons Renvoyer / Annuler                  */
+/* ------------------------------------------------------------------ */
+
+function EditModeContent({
+  draftRef,
+  draft,
+  onChange,
+  onSubmit,
+  onCancel,
+  disabled,
+}: {
+  draftRef: React.RefObject<HTMLTextAreaElement | null>;
+  draft: string;
+  onChange: (v: string) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  disabled: boolean;
+}) {
+  const isEmpty = draft.trim().length === 0;
+  return (
+    <div className="flex flex-col gap-2">
+      <textarea
+        ref={draftRef}
+        value={draft}
+        onChange={(e) => onChange(e.target.value.slice(0, 4000))}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            onCancel();
+            return;
+          }
+          if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+            e.preventDefault();
+            if (!isEmpty) onSubmit();
+          }
+        }}
+        disabled={disabled}
+        rows={3}
+        aria-label="Éditer le message"
+        className={cn(
+          "min-h-[60px] max-h-64 w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-[13px] leading-relaxed",
+          "focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60",
+          "disabled:cursor-not-allowed disabled:opacity-60"
+        )}
+      />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[10.5px] text-muted-foreground">
+          Ctrl/Cmd+Entrée : renvoyer · Échap : annuler
+        </span>
+        <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            disabled={disabled}
+          >
+            <X className="size-3.5" />
+            Annuler
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onSubmit}
+            disabled={disabled || isEmpty}
+            title="Renvoyer le message édité et régénérer la suite"
+            className="gap-1"
+          >
+            <SendHorizontal className="size-3.5" />
+            Renvoyer
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -157,11 +507,6 @@ export function MessageBubble({ message, citedSources }: Props) {
 /*  Pending indicator — timer live + status rotatif                    */
 /* ------------------------------------------------------------------ */
 
-/**
- * Messages affichés pendant que l'IA répond — donne l'impression d'activité
- * et l'idée de ce qu'elle fait derrière. Sans vrai streaming, on simule
- * une progression avec des paliers basés sur le temps écoulé.
- */
 const PENDING_STEPS = [
   { atSec: 0, label: "Lecture des sources de la KB…" },
   { atSec: 4, label: "Synthèse et identification des citations…" },
@@ -215,99 +560,4 @@ function fmtElapsed(ms: number): string {
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}m ${s.toString().padStart(2, "0")}s`;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Mini-markdown renderer                                            */
-/* ------------------------------------------------------------------ */
-
-/**
- * Échappe l'HTML pour empêcher les injections.
- */
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-/**
- * Pipeline simple : escape → transformations légères → citations.
- * Supporte : ** gras **, * italique *, `code`, # titres, listes "- ", paragraphes.
- */
-function renderMarkdown(
-  text: string,
-  sourcesById: Map<string, CitedSourceLite>
-): string {
-  let out = escapeHtml(text);
-
-  // Code blocks ``` ... ``` (très simple, mono-ligne ou multi-ligne sans imbrication)
-  out = out.replace(
-    /```([\s\S]*?)```/g,
-    (_, code) =>
-      `<pre class="mt-1.5 rounded-md bg-muted px-2 py-1.5 text-[11.5px] font-mono leading-relaxed whitespace-pre-wrap break-words">${code}</pre>`
-  );
-  // Inline code
-  out = out.replace(
-    /`([^`\n]+)`/g,
-    `<code class="rounded bg-muted px-1 py-0.5 text-[12px] font-mono">$1</code>`
-  );
-  // Bold ** **
-  out = out.replace(/\*\*([^*]+)\*\*/g, `<strong>$1</strong>`);
-  // Italic * *
-  out = out.replace(/(^|\s)\*([^*]+)\*/g, `$1<em>$2</em>`);
-  // Citations [SRC:id]
-  out = out.replace(/\[(SRC|SOURCE):([a-z0-9_-]+)\]/gi, (_, _kind, id) => {
-    const src = sourcesById.get(id);
-    if (!src) {
-      return `<span class="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10.5px] font-mono text-muted-foreground" title="Source citée non trouvée dans la KB envoyée">${id.slice(0, 8)}</span>`;
-    }
-    const link = src.sourceUrl
-      ? `href="${escapeHtml(src.sourceUrl)}" target="_blank" rel="noopener noreferrer"`
-      : `href="#" onclick="return false"`;
-    const title = src.summary ?? src.title;
-    return `<a ${link} class="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10.5px] font-mono text-primary hover:bg-primary/20" title="${escapeHtml(title)}">${escapeHtml(truncate(src.title, 22))}</a>`;
-  });
-
-  // Titres ## et ###
-  out = out.replace(
-    /^###\s+(.+)$/gm,
-    `<h3 class="mt-2 text-[13px] font-bold">$1</h3>`
-  );
-  out = out.replace(
-    /^##\s+(.+)$/gm,
-    `<h2 class="mt-2.5 text-[14px] font-bold">$1</h2>`
-  );
-
-  // Listes "- "
-  out = out.replace(/(^|\n)((?:- .+\n?)+)/g, (_, prefix, block) => {
-    const items = block
-      .trim()
-      .split(/\n/)
-      .map((l: string) => l.replace(/^- /, "").trim())
-      .filter(Boolean)
-      .map((it: string) => `<li class="ml-4 list-disc">${it}</li>`)
-      .join("");
-    return `${prefix}<ul class="mt-1.5 space-y-0.5">${items}</ul>`;
-  });
-
-  // Paragraphes (double newline)
-  out = out
-    .split(/\n{2,}/)
-    .map((para) => {
-      if (
-        para.startsWith("<h2") ||
-        para.startsWith("<h3") ||
-        para.startsWith("<ul") ||
-        para.startsWith("<pre")
-      ) {
-        return para;
-      }
-      return `<p class="my-1">${para.replace(/\n/g, "<br/>")}</p>`;
-    })
-    .join("\n");
-
-  return out;
 }

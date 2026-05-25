@@ -140,3 +140,60 @@ export function fmtTokensCompact(n: number | null | undefined): string {
 export function roughTokenCount(text: string): number {
   return Math.ceil(text.length / 4);
 }
+
+/**
+ * Estime le coût d'une requête AVANT envoi à Claude — utilisé pour afficher
+ * un coût indicatif sous le bouton Send du chat.
+ *
+ * Formule :
+ *   inputTokens  = (promptChars + contextChars) / 4
+ *   outputTokens = maxOutputTokens (worst-case ; le coût réel sera <= à ça)
+ *   coût         = pricing.input * inputTokens + pricing.output * outputTokens
+ *
+ * Le résultat est volontairement majoré (on prend maxOutputTokens comme borne
+ * sup) pour donner à l'admin une idée du PIRE cas. La vraie consommation sera
+ * affichée après réponse via UsageBadge.
+ */
+export interface EstimateRequestCostInput {
+  /** Longueur (en chars) du prompt utilisateur (ce que l'admin tape). */
+  promptChars: number;
+  /** Longueur (en chars) du contexte sources injecté côté serveur. */
+  contextChars: number;
+  /** Modèle Claude (sonnet / haiku) — voir CLAUDE_MODELS. */
+  model: string;
+  /** Borne sup de tokens output. Défaut 8000 (>= maxTokens chat actuel à 2000). */
+  maxOutputTokens?: number;
+}
+
+export interface RequestCostEstimate {
+  usd: number;
+  eur: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+export function estimateRequestCost({
+  promptChars,
+  contextChars,
+  model,
+  maxOutputTokens = 8000,
+}: EstimateRequestCostInput): RequestCostEstimate {
+  const pricing =
+    (PRICING_USD_PER_M as Record<
+      string,
+      { input: number; output: number; cacheRead: number; cacheWrite: number }
+    >)[model] ?? PRICING_USD_PER_M[CLAUDE_MODELS.sonnet];
+
+  const inputTokens = Math.max(
+    0,
+    Math.ceil((promptChars + contextChars) / 4)
+  );
+  const outputTokens = Math.max(0, Math.floor(maxOutputTokens));
+
+  const usd =
+    (inputTokens * pricing.input + outputTokens * pricing.output) /
+    1_000_000;
+  const eur = usd * USD_TO_EUR;
+
+  return { usd, eur, inputTokens, outputTokens };
+}

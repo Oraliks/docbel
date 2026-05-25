@@ -56,7 +56,7 @@ interface UploadDialogProps {
 }
 
 type Kind = "pdf" | "image_caption" | "docx" | "xlsx" | "pptx";
-type SlotStatus = "pending" | "uploading" | "success" | "error";
+type SlotStatus = "pending" | "uploading" | "success" | "error" | "duplicate";
 
 interface FileSlot {
   id: string;
@@ -66,6 +66,10 @@ interface FileSlot {
   errorMessage?: string;
   resultId?: string;
   warning?: string;
+  /** Si statut = "duplicate", titre de la source déjà présente en KB. */
+  duplicateExistingTitle?: string;
+  /** Si statut = "duplicate", id de la source existante (pour lien optionnel). */
+  duplicateExistingId?: string;
 }
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 Mo
@@ -224,8 +228,112 @@ export function UploadDialog({
     const uploading_ = slots.filter((s) => s.status === "uploading").length;
     const success = slots.filter((s) => s.status === "success").length;
     const error = slots.filter((s) => s.status === "error").length;
-    return { total: slots.length, pending, uploading: uploading_, success, error };
+    const duplicate = slots.filter((s) => s.status === "duplicate").length;
+    return {
+      total: slots.length,
+      pending,
+      uploading: uploading_,
+      success,
+      error,
+      duplicate,
+    };
   }, [slots]);
+
+  async function uploadOne(slot: FileSlot, force: boolean): Promise<"ok" | "duplicate" | "error"> {
+    const baseFileTitle = stripExt(slot.file.name);
+    const trimmedBase = baseTitle.trim();
+    const title = trimmedBase
+      ? `${trimmedBase} — ${baseFileTitle}`.slice(0, 200)
+      : baseFileTitle;
+    const trimmedUrl = sourceUrl.trim();
+    const tags = tagsRaw
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0 && t.length <= 50)
+      .slice(0, 20);
+    const tagsJson = tags.length > 0 ? JSON.stringify(tags) : null;
+
+    const fd = new FormData();
+    fd.append("file", slot.file);
+    fd.append("title", title);
+    fd.append("kind", slot.kind);
+    fd.append("domain", domain);
+    if (trimmedUrl.length > 0) fd.append("sourceUrl", trimmedUrl);
+    if (tagsJson) fd.append("tags", tagsJson);
+    if (slot.kind === "image_caption" && imageCaption.trim().length >= 10) {
+      fd.append("content", imageCaption.trim());
+    }
+
+    const url = force
+      ? "/api/chomage-ia/sources/upload?force=1"
+      : "/api/chomage-ia/sources/upload";
+    try {
+      const res = await fetch(url, { method: "POST", body: fd });
+      const data = await res.json();
+      // Doublon non forcé : on flag le slot et on attend l'action user.
+      if (res.status === 409 && data?.existingId && !force) {
+        setSlots((prev) =>
+          prev.map((s) =>
+            s.id === slot.id
+              ? {
+                  ...s,
+                  status: "duplicate" as SlotStatus,
+                  duplicateExistingId: data.existingId,
+                  duplicateExistingTitle: data.existingTitle ?? "Source existante",
+                }
+              : s
+          )
+        );
+        return "duplicate";
+      }
+      if (!res.ok) {
+        const msg = data?.error ?? `HTTP ${res.status}`;
+        throw new Error(data?.detail ? `${msg} — ${data.detail}` : msg);
+      }
+      setSlots((prev) =>
+        prev.map((s) =>
+          s.id === slot.id
+            ? {
+                ...s,
+                status: "success" as SlotStatus,
+                resultId: data.id,
+                warning: data.extractWarning ?? undefined,
+              }
+            : s
+        )
+      );
+      return "ok";
+    } catch (e) {
+      setSlots((prev) =>
+        prev.map((s) =>
+          s.id === slot.id
+            ? {
+                ...s,
+                status: "error" as SlotStatus,
+                errorMessage: e instanceof Error ? e.message : String(e),
+              }
+            : s
+        )
+      );
+      return "error";
+    }
+  }
+
+  /** Re-upload un slot en doublon avec force=1 (confirmation côté UI). */
+  async function forceReupload(slot: FileSlot) {
+    setSlots((prev) =>
+      prev.map((s) =>
+        s.id === slot.id ? { ...s, status: "uploading" as SlotStatus } : s
+      )
+    );
+    setUploading(true);
+    try {
+      await uploadOne(slot, true);
+    } finally {
+      setUploading(false);
+      onSuccess();
+    }
+  }
 
   async function uploadAll() {
     const queue = slots.filter((s) => s.status === "pending");
@@ -237,19 +345,11 @@ export function UploadDialog({
     // via Tesseract.js (fr+nl+en). Si l'OCR échoue ET caption vide, le backend
     // renvoie 400 avec un message clair que le front affichera.
 
-    const tags = tagsRaw
-      .split(",")
-      .map((t) => t.trim())
-      .filter((t) => t.length > 0 && t.length <= 50)
-      .slice(0, 20);
-    const tagsJson = tags.length > 0 ? JSON.stringify(tags) : null;
-    const trimmedUrl = sourceUrl.trim();
-    const trimmedBase = baseTitle.trim();
-
     setUploading(true);
 
     let successCount = 0;
     let errorCount = 0;
+    let duplicateCount = 0;
 
     for (const slot of queue) {
       setSlots((prev) =>
@@ -257,90 +357,42 @@ export function UploadDialog({
           s.id === slot.id ? { ...s, status: "uploading" as SlotStatus } : s
         )
       );
-
-      const baseFileTitle = stripExt(slot.file.name);
-      const title = trimmedBase
-        ? `${trimmedBase} — ${baseFileTitle}`.slice(0, 200)
-        : baseFileTitle;
-
-      const fd = new FormData();
-      fd.append("file", slot.file);
-      fd.append("title", title);
-      fd.append("kind", slot.kind);
-      fd.append("domain", domain);
-      if (trimmedUrl.length > 0) fd.append("sourceUrl", trimmedUrl);
-      if (tagsJson) fd.append("tags", tagsJson);
-      if (slot.kind === "image_caption" && imageCaption.trim().length >= 10) {
-        // Caption manuel optionnel : si vide ou trop court, on laisse le
-        // backend tenter OCR Tesseract automatiquement.
-        fd.append("content", imageCaption.trim());
-      }
-
-      try {
-        const res = await fetch("/api/chomage-ia/sources/upload", {
-          method: "POST",
-          body: fd,
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          // Concat error + detail si présent (la route logge le stack en 500)
-          const msg = data?.error ?? `HTTP ${res.status}`;
-          throw new Error(data?.detail ? `${msg} — ${data.detail}` : msg);
-        }
-        successCount++;
-        setSlots((prev) =>
-          prev.map((s) =>
-            s.id === slot.id
-              ? {
-                  ...s,
-                  status: "success" as SlotStatus,
-                  resultId: data.id,
-                  warning: data.extractWarning ?? undefined,
-                }
-              : s
-          )
-        );
-      } catch (e) {
-        errorCount++;
-        setSlots((prev) =>
-          prev.map((s) =>
-            s.id === slot.id
-              ? {
-                  ...s,
-                  status: "error" as SlotStatus,
-                  errorMessage:
-                    e instanceof Error ? e.message : String(e),
-                }
-              : s
-          )
-        );
-      }
+      const result = await uploadOne(slot, false);
+      if (result === "ok") successCount++;
+      else if (result === "duplicate") duplicateCount++;
+      else errorCount++;
     }
 
     setUploading(false);
 
-    if (errorCount === 0) {
+    if (errorCount === 0 && duplicateCount === 0) {
       toast.success(
         `${successCount} fichier${successCount > 1 ? "s" : ""} uploadé${successCount > 1 ? "s" : ""}`
       );
       reset();
       onSuccess();
     } else {
-      toast.warning(
-        `${successCount} succès, ${errorCount} erreur${errorCount > 1 ? "s" : ""}`,
-        {
-          description:
-            "Les fichiers en erreur restent dans la liste — corrige et relance.",
-        }
-      );
-      // Refresh la liste parente pour afficher les succès quand-même.
+      const parts: string[] = [];
+      if (successCount > 0) parts.push(`${successCount} succès`);
+      if (duplicateCount > 0)
+        parts.push(`${duplicateCount} doublon${duplicateCount > 1 ? "s" : ""}`);
+      if (errorCount > 0)
+        parts.push(`${errorCount} erreur${errorCount > 1 ? "s" : ""}`);
+      toast.warning(parts.join(", "), {
+        description:
+          duplicateCount > 0
+            ? "Vérifie les doublons et clique « Re-uploader » si tu veux les ajouter quand même."
+            : "Les fichiers en erreur restent dans la liste — corrige et relance.",
+      });
       onSuccess();
     }
   }
 
   const canSubmit = stats.pending > 0 && !uploading;
 
-  const hasErrors = stats.error > 0;
+  // On bloque la fermeture si erreurs OU doublons non résolus, pour que l'admin
+  // voie l'info et puisse décider (re-upload ou ignorer).
+  const hasErrors = stats.error > 0 || stats.duplicate > 0;
 
   return (
     <Dialog
@@ -418,6 +470,11 @@ export function UploadDialog({
                       {stats.success} ok
                     </span>
                   )}
+                  {stats.duplicate > 0 && (
+                    <span className="text-amber-700 dark:text-amber-400">
+                      {stats.duplicate} doublon{stats.duplicate > 1 ? "s" : ""}
+                    </span>
+                  )}
                   {stats.error > 0 && (
                     <span className="text-destructive">
                       {stats.error} erreur{stats.error > 1 ? "s" : ""}
@@ -435,6 +492,7 @@ export function UploadDialog({
                     slot={slot}
                     disabled={uploading}
                     onRemove={() => removeSlot(slot.id)}
+                    onForceReupload={() => forceReupload(slot)}
                   />
                 ))}
               </div>
@@ -550,10 +608,12 @@ function SlotRow({
   slot,
   disabled,
   onRemove,
+  onForceReupload,
 }: {
   slot: FileSlot;
   disabled: boolean;
   onRemove: () => void;
+  onForceReupload: () => void;
 }) {
   const label =
     slot.kind === "unsupported" ? "?" : KIND_LABELS[slot.kind as Kind];
@@ -565,7 +625,9 @@ function SlotRow({
         slot.status === "success" &&
           "border-emerald-300 bg-emerald-50/40 dark:bg-emerald-950/10",
         slot.status === "error" &&
-          "border-destructive/40 bg-destructive/5"
+          "border-destructive/40 bg-destructive/5",
+        slot.status === "duplicate" &&
+          "border-amber-300 bg-amber-50/40 dark:bg-amber-950/10"
       )}
     >
       <KindIcon kind={slot.kind} className="size-4 shrink-0 text-muted-foreground" />
@@ -599,11 +661,22 @@ function SlotRow({
               </span>
             </>
           )}
+          {slot.status === "duplicate" && (
+            <>
+              <span>·</span>
+              <span
+                className="text-amber-700 dark:text-amber-400 truncate"
+                title={slot.duplicateExistingTitle ?? "Source existante"}
+              >
+                doublon : « {slot.duplicateExistingTitle ?? "Source existante"} »
+              </span>
+            </>
+          )}
         </div>
       </div>
 
       {/* Status indicator */}
-      <div className="shrink-0">
+      <div className="flex items-center gap-1 shrink-0">
         {slot.status === "pending" && (
           <button
             type="button"
@@ -624,6 +697,31 @@ function SlotRow({
         )}
         {slot.status === "error" && (
           <XCircle className="size-4 text-destructive" />
+        )}
+        {slot.status === "duplicate" && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-6 px-2 text-[10.5px] border-amber-400 text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/30"
+              disabled={disabled}
+              onClick={onForceReupload}
+              title="Ignorer le doublon et uploader quand même"
+            >
+              Re-uploader
+            </Button>
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={disabled}
+              className="text-muted-foreground hover:text-destructive disabled:opacity-50"
+              aria-label="Retirer"
+              title="Retirer de la liste"
+            >
+              <X className="size-4" />
+            </button>
+          </>
         )}
       </div>
     </div>

@@ -99,8 +99,9 @@ export function SourcesWorkspace({ domain, aiAvailable }: SourcesWorkspaceProps)
     }
   }
 
-  async function remove(id: string, title: string) {
-    if (!confirm(`Supprimer définitivement "${title}" ?`)) return;
+  // La confirmation est maintenant gérée dans `SourceCard` via un AlertDialog
+  // dédié (ConfirmDeleteDialog). Cette fonction est appelée APRÈS validation.
+  async function remove(id: string, _title: string) {
     try {
       const res = await fetch(`/api/chomage-ia/sources/${id}`, {
         method: "DELETE",

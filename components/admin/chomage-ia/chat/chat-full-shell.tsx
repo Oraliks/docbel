@@ -36,11 +36,13 @@ import { SessionsRail } from "./sessions-rail";
 import { MessageList } from "./message-list";
 import { ChatInputBar, type InputBarMode } from "./chat-input-bar";
 import { CitedSourcesSheet } from "./cited-sources-sheet";
+import { MissingSourcesHint } from "./missing-sources-hint";
 import {
   PromptsHistorySheet,
   type InjectablePrompt,
 } from "./prompts-history-sheet";
 import { UploadQuickDialog } from "../sources/upload-quick-dialog";
+import { KeyboardShortcuts } from "./keyboard-shortcuts";
 import type {
   ChatMessageItem,
   ChatSessionItem,
@@ -68,6 +70,10 @@ export function ChatFullShell({
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+  // Références légales détectées dans la dernière réponse assistant qui ne
+  // sont PAS couvertes par la KB. Sert à afficher la bannière `MissingSourcesHint`.
+  // Reset à chaque ouverture / nouvelle session / dismiss user.
+  const [missingSources, setMissingSources] = useState<string[]>([]);
 
   // ----- Mode input bar -----
   const initialMode: InputBarMode =
@@ -81,6 +87,12 @@ export function ChatFullShell({
 
   // ----- Pour revalider l'historique prompts après une nouvelle génération -----
   const [promptsRevalidateKey, setPromptsRevalidateKey] = useState(0);
+
+  // ----- Edit mode d'un message user dans le thread -----
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  // ----- Ref vers l'input principal pour les shortcuts Ctrl+Enter -----
+  // (l'input bar gère son propre submit, on n'a pas besoin de ref direct).
 
   const threadRef = useRef<HTMLDivElement>(null);
 
@@ -109,6 +121,7 @@ export function ChatFullShell({
   const openSession = useCallback(async (id: string) => {
     setCurrentSessionId(id);
     setLoadingMessages(true);
+    setMissingSources([]);
     try {
       const res = await fetch(`/api/chomage-ia/sessions/${id}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -141,10 +154,12 @@ export function ChatFullShell({
     setCurrentSessionId(null);
     setMessages([]);
     setCitedSources([]);
+    setMissingSources([]);
   }
 
+  // La confirmation est maintenant gérée par `SessionsRail` (ConfirmDeleteDialog).
+  // Cette fonction est appelée APRÈS validation utilisateur.
   async function deleteSession(id: string) {
-    if (!confirm("Supprimer définitivement cette conversation ?")) return;
     try {
       const res = await fetch(`/api/chomage-ia/sessions/${id}`, {
         method: "DELETE",
@@ -190,6 +205,7 @@ export function ChatFullShell({
   async function sendChatMessage(text: string) {
     if (!text.trim() || sending) return;
     const startedAt = Date.now();
+    const isFirstMessageOfNewSession = currentSessionId === null;
     const userMsg: ChatMessageItem = {
       role: "user",
       content: text,
@@ -226,6 +242,13 @@ export function ChatFullShell({
         setCurrentSessionId(data.sessionId);
         refreshSessions();
       }
+      // Auto-titre : pour une nouvelle session, Haiku titre en background côté
+      // serveur. Re-fetch la liste après ~4s pour récupérer le nouveau titre.
+      if (isFirstMessageOfNewSession) {
+        setTimeout(() => {
+          refreshSessions();
+        }, 4000);
+      }
       const elapsedMs = Date.now() - startedAt;
       setMessages((prev) => {
         const next = [...prev];
@@ -253,6 +276,13 @@ export function ChatFullShell({
           for (const s of data.citedSources as CitedSourceLite[]) map.set(s.id, s);
           return [...map.values()];
         });
+      }
+      // Refs légales détectées et absentes de la KB (max 3) — la bannière
+      // au-dessus de l'input bar invitera l'admin à les uploader.
+      if (Array.isArray(data.missingSources)) {
+        setMissingSources(data.missingSources as string[]);
+      } else {
+        setMissingSources([]);
       }
       if (data.aiDisabled) {
         toast.warning("IA non configurée — réponse simulée");
@@ -423,6 +453,172 @@ export function ChatFullShell({
     toast.success("Prompt réaffiché dans la conversation");
   }
 
+  // ----- Edit + regenerate -----
+  /**
+   * Édite un message user (par index dans `messages[]`) et relance la
+   * conversation à partir de ce message. Appelle l'endpoint
+   * `/api/chomega-ia/sessions/[id]/regenerate-from` qui supprime tous les
+   * messages d'index ≥ idx en DB, persiste le nouveau message user et
+   * renvoie la nouvelle réponse assistant.
+   *
+   * Côté UI : on tronque optimistement le thread, on remplace le user message
+   * par sa version éditée, puis on ajoute une bulle pending assistant.
+   */
+  async function editAndRegenerate(messageIndex: number, newContent: string) {
+    const trimmed = newContent.trim();
+    if (!trimmed || sending) return;
+    if (!currentSessionId) {
+      toast.error("Impossible d'éditer : aucune session active");
+      return;
+    }
+
+    // Calcule l'index réel côté serveur : on ignore les bulles non-persistées
+    // (kind="generated_prompt" sont uniquement client-side).
+    // En pratique les messages persistés sont en début de tableau et les
+    // bulles `generated_prompt` peuvent être intercalées. On compte donc le
+    // nombre de messages chat (user/assistant non-prompt) jusqu'à l'index.
+    let serverIndex = 0;
+    for (let i = 0; i < messageIndex; i++) {
+      const m = messages[i];
+      if (m.kind !== "generated_prompt") serverIndex++;
+    }
+
+    const targetMessage = messages[messageIndex];
+    if (!targetMessage || targetMessage.role !== "user") {
+      toast.error("Le message à éditer doit être un message utilisateur");
+      return;
+    }
+
+    const startedAt = Date.now();
+
+    // UI optimiste : tronque tout ce qui suit l'index édité, remplace le
+    // contenu, et ajoute une bulle pending.
+    setMessages((prev) => {
+      const next = prev.slice(0, messageIndex);
+      next.push({
+        ...targetMessage,
+        content: trimmed,
+        createdAt: new Date().toISOString(),
+      });
+      next.push({
+        role: "assistant",
+        content: "Régénération en cours…",
+        citedSourceIds: [],
+        pending: true,
+        pendingStartedAt: startedAt,
+        createdAt: new Date().toISOString(),
+        kind: "chat",
+      });
+      return next;
+    });
+    setEditingIndex(null);
+    setSending(true);
+    scrollThreadToBottom();
+
+    try {
+      const res = await fetch(
+        `/api/chomage-ia/sessions/${currentSessionId}/regenerate-from`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messageIndex: serverIndex,
+            newContent: trimmed,
+          }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+
+      const elapsedMs = Date.now() - startedAt;
+      setMessages((prev) => {
+        const next = [...prev];
+        const last = next[next.length - 1];
+        if (last && last.pending) {
+          next[next.length - 1] = {
+            id: data.message.id,
+            role: "assistant",
+            content: data.message.content,
+            citedSourceIds: data.message.citedSourceIds ?? [],
+            createdAt: data.message.createdAt,
+            model: data.usage?.model ?? null,
+            tokensIn: data.usage?.inputTokens ?? null,
+            tokensOut: data.usage?.outputTokens ?? null,
+            elapsedMs,
+            kind: "chat",
+          };
+        }
+        return next;
+      });
+      if (Array.isArray(data.citedSources)) {
+        setCitedSources((prev) => {
+          const map = new Map<string, CitedSourceLite>();
+          for (const s of prev) map.set(s.id, s);
+          for (const s of data.citedSources as CitedSourceLite[]) {
+            map.set(s.id, s);
+          }
+          return [...map.values()];
+        });
+      }
+      if (Array.isArray(data.missingSources)) {
+        setMissingSources(data.missingSources as string[]);
+      } else {
+        setMissingSources([]);
+      }
+      // Refresh la liste sessions pour updatedAt.
+      refreshSessions();
+      toast.success("Message édité et réponse régénérée");
+    } catch (e) {
+      setMessages((prev) => {
+        const next = [...prev];
+        const last = next[next.length - 1];
+        if (last && last.pending) {
+          next[next.length - 1] = {
+            role: "assistant",
+            content:
+              "⚠️ Échec de la régénération : " +
+              (e instanceof Error ? e.message : "Erreur inconnue"),
+            citedSourceIds: [],
+            createdAt: new Date().toISOString(),
+            kind: "chat",
+          };
+        }
+        return next;
+      });
+      toast.error("Échec de la régénération", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setSending(false);
+      scrollThreadToBottom();
+    }
+  }
+
+  // ----- Shortcut helpers -----
+  const toggleMode = useCallback(() => {
+    setMode((m) => (m === "chat" ? "prompt" : "chat"));
+  }, []);
+
+  const closeDrawers = useCallback(() => {
+    let closedSomething = false;
+    if (sourcesSheetOpen) {
+      setSourcesSheetOpen(false);
+      closedSomething = true;
+    }
+    if (promptsSheetOpen) {
+      setPromptsSheetOpen(false);
+      closedSomething = true;
+    }
+    if (uploadOpen) {
+      setUploadOpen(false);
+      closedSomething = true;
+    }
+    // Esc en mode édition annule l'édition.
+    if (editingIndex !== null && !closedSomething) {
+      setEditingIndex(null);
+    }
+  }, [sourcesSheetOpen, promptsSheetOpen, uploadOpen, editingIndex]);
+
   // ----- Rendu -----
   const currentSession = currentSessionId
     ? sessions.find((s) => s.id === currentSessionId)
@@ -486,8 +682,33 @@ export function ChatFullShell({
             messages={messages}
             loading={loadingMessages}
             citedSources={citedSources}
+            editingIndex={editingIndex}
+            onRequestEdit={(idx) => {
+              if (sending) return;
+              setEditingIndex(idx);
+            }}
+            onSubmitEdit={editAndRegenerate}
+            onCancelEdit={() => setEditingIndex(null)}
+            actionsDisabled={sending}
+            onOpenSources={() => setSourcesSheetOpen(true)}
+            // TODO(agent-1B / backend): wirer onDeleteMessage, onRegenerateMessage,
+            // onForkFromMessage quand les endpoints existent. Pour l'instant le
+            // MessageBubble affiche un toast "bientôt disponible".
           />
         </div>
+
+        {/* Bannière "sources manquantes" — apparaît si la dernière réponse IA
+            référence des lois/AR absents de la KB. L'admin peut ouvrir
+            directement le modal upload pour combler le gap. */}
+        {missingSources.length > 0 && !sending ? (
+          <div className="shrink-0 border-t border-border bg-background px-4 py-2">
+            <MissingSourcesHint
+              missingRefs={missingSources}
+              onOpenUpload={() => setUploadOpen(true)}
+              onDismiss={() => setMissingSources([])}
+            />
+          </div>
+        ) : null}
 
         {/* Input bar */}
         <div className="shrink-0 border-t border-border bg-card/40">
@@ -530,6 +751,13 @@ export function ChatFullShell({
           // Pas de refresh KB nécessaire ici (l'utilisateur reverra le nouveau
           // count au prochain reload de la page chat ou via l'écran Sources).
         }}
+      />
+
+      {/* Raccourcis clavier globaux (composant invisible) */}
+      <KeyboardShortcuts
+        onNewSession={newSession}
+        onToggleMode={toggleMode}
+        onCloseDrawers={closeDrawers}
       />
     </div>
   );

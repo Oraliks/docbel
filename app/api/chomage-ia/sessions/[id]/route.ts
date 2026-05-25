@@ -1,7 +1,11 @@
 /**
  * GET    /api/chomage-ia/sessions/[id] → détail d'une session avec tous ses messages
- * PATCH  /api/chomage-ia/sessions/[id] → rename d'une session (title)
+ * PATCH  /api/chomage-ia/sessions/[id] → update partiel (title / pinned / archived / folderId)
  * DELETE /api/chomage-ia/sessions/[id] → suppression cascade (messages détruits aussi)
+ *
+ * Migration 17 : le PATCH accepte désormais aussi `pinned`, `archived`,
+ * `folderId` en plus du `title` historique. Tous les champs sont optionnels —
+ * on ne touche que ceux passés explicitement (semantique merge).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -13,9 +17,22 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-const RenameSchema = z.object({
-  title: z.string().min(1).max(200),
-});
+const PatchSchema = z
+  .object({
+    title: z.string().min(1).max(200).optional(),
+    pinned: z.boolean().optional(),
+    archived: z.boolean().optional(),
+    // null = retirer du dossier ; string = id du dossier cible.
+    folderId: z.string().min(1).max(50).nullable().optional(),
+  })
+  .refine(
+    (v) =>
+      v.title !== undefined ||
+      v.pinned !== undefined ||
+      v.archived !== undefined ||
+      v.folderId !== undefined,
+    { message: "Aucun champ à mettre à jour" }
+  );
 
 export async function GET(_req: NextRequest, { params }: RouteContext) {
   const auth = await requireAdminAuth();
@@ -57,6 +74,9 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     id: session.id,
     title: session.title,
     domain: session.domain,
+    pinned: session.pinned,
+    archived: session.archived,
+    folderId: session.folderId,
     createdAt: session.createdAt.toISOString(),
     updatedAt: session.updatedAt.toISOString(),
     messages: session.messages.map((m) => ({
@@ -86,7 +106,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   }
   let parsed;
   try {
-    parsed = RenameSchema.parse(body);
+    parsed = PatchSchema.parse(body);
   } catch (err) {
     return NextResponse.json(
       {
@@ -98,12 +118,41 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       { status: 400 }
     );
   }
+
+  // Validation : si folderId !== null, vérifier l'existence pour éviter le crash FK.
+  if (
+    parsed.folderId !== undefined &&
+    parsed.folderId !== null
+  ) {
+    const folder = await prisma.chatFolder.findUnique({
+      where: { id: parsed.folderId },
+      select: { id: true },
+    });
+    if (!folder) {
+      return NextResponse.json(
+        { error: "Dossier introuvable" },
+        { status: 400 }
+      );
+    }
+  }
+
   try {
     const updated = await prisma.chatSession.update({
       where: { id },
-      data: { title: parsed.title },
+      data: {
+        ...(parsed.title !== undefined ? { title: parsed.title } : {}),
+        ...(parsed.pinned !== undefined ? { pinned: parsed.pinned } : {}),
+        ...(parsed.archived !== undefined ? { archived: parsed.archived } : {}),
+        ...(parsed.folderId !== undefined ? { folderId: parsed.folderId } : {}),
+      },
     });
-    return NextResponse.json({ id: updated.id, title: updated.title });
+    return NextResponse.json({
+      id: updated.id,
+      title: updated.title,
+      pinned: updated.pinned,
+      archived: updated.archived,
+      folderId: updated.folderId,
+    });
   } catch {
     return NextResponse.json({ error: "Session introuvable" }, { status: 404 });
   }

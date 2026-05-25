@@ -7,6 +7,7 @@
  * (date, longueur), + menu d'actions (édit, toggle enabled, summarize, delete).
  */
 
+import { useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -26,13 +27,15 @@ import {
   getKindLabel,
   truncate,
 } from "../_shared";
+import { ConfirmDeleteDialog } from "../_shared-alerts";
 
 interface SourceCardProps {
   item: KnowledgeSourceListItem;
   aiAvailable: boolean;
   onEdit: () => void;
   onToggleEnabled: () => void;
-  onDelete: () => void;
+  /** Callback exécuté APRÈS confirmation par l'utilisateur. */
+  onDelete: () => void | Promise<void>;
   onSummarize: () => void;
 }
 
@@ -81,6 +84,7 @@ export function SourceCard({
   const color = getKindColor(item.kind);
   const preview = item.summary || item.contentPreview;
   const issue = detectExtractionIssue(item);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
     <article
@@ -207,12 +211,22 @@ export function SourceCard({
             variant="ghost"
             size="icon-xs"
             title="Supprimer"
-            onClick={onDelete}
+            onClick={() => setDeleteOpen(true)}
           >
             <Trash2 className="size-3" />
           </Button>
         </div>
       </div>
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Supprimer cette source ?"
+        description={`« ${truncate(item.title, 80)} » sera supprimée définitivement de la knowledge base. Les conversations qui la citaient garderont les références (mais les pills seront grisées).`}
+        onConfirm={async () => {
+          await onDelete();
+        }}
+      />
     </article>
   );
 }

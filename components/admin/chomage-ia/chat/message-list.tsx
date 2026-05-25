@@ -5,6 +5,10 @@
  *
  * Route entre `MessageBubble` (chat/markdown) et `GeneratedPromptMessage`
  * (bulle ambre avec block code) selon `message.kind`.
+ *
+ * Supporte le mode édition d'un message user via `editingIndex` (l'index du
+ * message dans le tableau) + callbacks `onRequestEdit` / `onSubmitEdit` /
+ * `onCancelEdit` pour piloter le flux edit → regenerate.
  */
 
 import { Loader2, MessageSquare } from "lucide-react";
@@ -16,9 +20,40 @@ interface Props {
   messages: ChatMessageItem[];
   loading: boolean;
   citedSources: CitedSourceLite[];
+  /** Index du message actuellement en édition (null = aucun). */
+  editingIndex?: number | null;
+  /** Demande de passer en mode édition pour le message à `index`. */
+  onRequestEdit?: (index: number) => void;
+  /** Submit du contenu édité pour le message à `index`. */
+  onSubmitEdit?: (index: number, newContent: string) => void;
+  /** Annule l'édition. */
+  onCancelEdit?: () => void;
+  /** Désactive globalement les actions (sending). */
+  actionsDisabled?: boolean;
+  /** Supprimer un message (context menu). Si absent → toast "bientôt dispo". */
+  onDeleteMessage?: (messageId: string) => void | Promise<void>;
+  /** Régénérer une réponse IA (context menu sur assistant msg). */
+  onRegenerateMessage?: (messageId: string) => void;
+  /** Forker la conversation à partir d'un message (context menu sur assistant msg). */
+  onForkFromMessage?: (messageId: string) => void;
+  /** Ouvrir le drawer "Sources citées" (depuis context menu). */
+  onOpenSources?: () => void;
 }
 
-export function MessageList({ messages, loading, citedSources }: Props) {
+export function MessageList({
+  messages,
+  loading,
+  citedSources,
+  editingIndex = null,
+  onRequestEdit,
+  onSubmitEdit,
+  onCancelEdit,
+  actionsDisabled = false,
+  onDeleteMessage,
+  onRegenerateMessage,
+  onForkFromMessage,
+  onOpenSources,
+}: Props) {
   if (loading) {
     return (
       <div className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -56,7 +91,27 @@ export function MessageList({ messages, loading, citedSources }: Props) {
           {m.kind === "generated_prompt" ? (
             <GeneratedPromptMessage message={m} citedSources={citedSources} />
           ) : (
-            <MessageBubble message={m} citedSources={citedSources} />
+            <MessageBubble
+              message={m}
+              citedSources={citedSources}
+              editMode={editingIndex === i}
+              onRequestEdit={
+                m.role === "user" && !m.pending && onRequestEdit
+                  ? () => onRequestEdit(i)
+                  : undefined
+              }
+              onSubmitEdit={
+                onSubmitEdit
+                  ? (newContent) => onSubmitEdit(i, newContent)
+                  : undefined
+              }
+              onCancelEdit={onCancelEdit}
+              disabled={actionsDisabled}
+              onDelete={onDeleteMessage}
+              onRegenerate={onRegenerateMessage}
+              onFork={onForkFromMessage}
+              onOpenSources={onOpenSources}
+            />
           )}
         </li>
       ))}

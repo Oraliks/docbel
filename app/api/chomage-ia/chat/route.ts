@@ -38,6 +38,10 @@ import {
 } from "@/lib/chomage-ia/anthropic";
 import { CLAUDE_MODELS } from "@/lib/chomage-ia/models";
 import { CHAT_SYSTEM_PROMPT } from "@/lib/chomage-ia/prompts";
+import {
+  extractLegalReferences,
+  findMissingInKb,
+} from "@/lib/chomage-ia/legal-refs";
 
 const HISTORY_MAX = 10;
 
@@ -106,16 +110,18 @@ export async function POST(req: NextRequest) {
   let session = sessionId
     ? await prisma.chatSession.findUnique({ where: { id: sessionId } })
     : null;
+  // Flag pour savoir si on doit lancer l'auto-titrage Haiku en background.
+  const isNewSession = !session;
 
   if (!session) {
-    // Première phrase de l'user → titre auto (60 chars max).
-    const autoTitle =
+    // Titre temporaire (60 chars max) — sera remplacé par l'auto-titre Haiku.
+    const fallbackTitle =
       parsed.message.length > 60
         ? parsed.message.slice(0, 57) + "..."
         : parsed.message;
     session = await prisma.chatSession.create({
       data: {
-        title: autoTitle,
+        title: fallbackTitle,
         domain,
         createdById: auth.user.id,
       },
@@ -233,6 +239,33 @@ export async function POST(req: NextRequest) {
         })
       : [];
 
+  // 7-bis. Détection de "sources manquantes" : on extrait les références
+  // légales mentionnées par Claude (lois, AR, articles, circulaires) puis on
+  // cherche celles qui n'ont aucun match insensitive dans la KB du domaine.
+  // L'admin pourra cliquer sur la bannière "Uploader maintenant" sur la
+  // dernière bulle assistant pour combler le gap. Max 3 sugg pour rester sobre.
+  let missingSources: string[] = [];
+  try {
+    const refs = extractLegalReferences(assistantText);
+    if (refs.length > 0) {
+      // Compare au corpus minimal du domaine (titres + tags + content tronqué).
+      // On charge léger pour ne pas exploser la mémoire sur grosse KB :
+      // 500 sources max, slice du content à 4000 chars pour le matching.
+      const corpus = await prisma.knowledgeSource.findMany({
+        where: { domain, enabled: true },
+        select: { title: true, content: true, tags: true },
+        take: 500,
+      });
+      const titles = corpus.map((c) => c.title);
+      const contents = corpus.map((c) => c.content.slice(0, 4000));
+      const tags = corpus.flatMap((c) => c.tags);
+      missingSources = findMissingInKb(refs, titles, contents, tags, 3);
+    }
+  } catch (err) {
+    // Best-effort : si la détection échoue, on ne casse pas la réponse chat.
+    console.warn("[chomage-ia chat] missing sources detection failed:", err);
+  }
+
   // 8. Persiste le message assistant.
   const assistantMsg = await prisma.chatMessage.create({
     data: {
@@ -252,6 +285,16 @@ export async function POST(req: NextRequest) {
     data: { updatedAt: new Date() },
   });
 
+  // Lance l'auto-titrage Haiku en arrière-plan pour les nouvelles sessions
+  // (fire-and-forget — n'attend pas la réponse pour répondre à l'utilisateur).
+  if (isNewSession) {
+    void generateAutoTitle({
+      sessionId: session.id,
+      userMessage: parsed.message,
+      assistantMessage: assistantText,
+    });
+  }
+
   return NextResponse.json({
     sessionId: session.id,
     message: {
@@ -262,6 +305,7 @@ export async function POST(req: NextRequest) {
       createdAt: assistantMsg.createdAt.toISOString(),
     },
     citedSources,
+    missingSources,
     usage,
     kbStats: {
       totalSourcesAvailable,
@@ -269,4 +313,53 @@ export async function POST(req: NextRequest) {
       truncated,
     },
   });
+}
+
+/**
+ * Auto-titre généré par Claude Haiku à partir du premier échange.
+ *
+ * Fire-and-forget : appelé en background pour ne pas bloquer la réponse de
+ * l'API /chat. Si l'appel échoue (rate limit, timeout, etc.), on log et on
+ * laisse silencieusement le titre fallback (premiers 60 chars du message).
+ */
+async function generateAutoTitle({
+  sessionId,
+  userMessage,
+  assistantMessage,
+}: {
+  sessionId: string;
+  userMessage: string;
+  assistantMessage: string;
+}): Promise<void> {
+  try {
+    const combined = (userMessage + "\n\n" + assistantMessage).slice(0, 800);
+    const claudeRes = await callClaude({
+      model: CLAUDE_MODELS.haiku,
+      systemPrompt:
+        "Tu génères un titre court (4-6 mots, en français) résumant une conversation à partir de son premier échange. Pas de ponctuation finale, pas de guillemets. Réponds UNIQUEMENT par le titre, rien d'autre.",
+      messages: [
+        {
+          role: "user",
+          content: `Génère un titre court (4-6 mots, en français) résumant cette conversation. Pas de ponctuation finale, pas de guillemets.\n\nÉchange :\n${combined}`,
+        },
+      ],
+      maxTokens: 40,
+      timeoutMs: 15_000,
+    });
+    const rawTitle = claudeRes.text.trim();
+    // Nettoyage : retire guillemets, point final, et tronque à 120 chars max.
+    const cleaned = rawTitle
+      .replace(/^["«»'']+|["«»'']+$/g, "")
+      .replace(/[.!?]+$/, "")
+      .trim()
+      .slice(0, 120);
+    if (cleaned.length === 0) return;
+    await prisma.chatSession.update({
+      where: { id: sessionId },
+      data: { title: cleaned },
+    });
+  } catch (err) {
+    // Fallback silencieux — on garde le titre par défaut.
+    console.error("Auto-title generation failed:", err);
+  }
 }

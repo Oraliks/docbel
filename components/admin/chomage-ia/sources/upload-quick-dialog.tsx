@@ -169,7 +169,7 @@ export function UploadQuickDialog({
     disabled: uploading,
   });
 
-  async function upload() {
+  async function upload(force = false) {
     if (!file || uploading) return;
     const kind = inferKind(file);
     if (kind === "unsupported") return;
@@ -184,11 +184,28 @@ export function UploadQuickDialog({
 
     setUploading(true);
     try {
-      const res = await fetch("/api/chomage-ia/sources/upload", {
+      const url = force
+        ? "/api/chomage-ia/sources/upload?force=1"
+        : "/api/chomage-ia/sources/upload";
+      const res = await fetch(url, {
         method: "POST",
         body: fd,
       });
       const data = await res.json();
+      // 409 = doublon détecté côté serveur. On propose au user de confirmer.
+      if (res.status === 409 && data?.existingId) {
+        const ok = window.confirm(
+          `Cette source existe déjà : « ${data.existingTitle ?? "Source existante"} ».\n\nRe-uploader quand même ?`
+        );
+        if (ok) {
+          // Retry avec ?force=1 — le finally remettra uploading=false avant.
+          setUploading(false);
+          await upload(true);
+          return;
+        }
+        toast.message("Upload annulé — la source existe déjà");
+        return;
+      }
       if (!res.ok) {
         const msg = data?.error ?? `HTTP ${res.status}`;
         throw new Error(data?.detail ? `${msg} — ${data.detail}` : msg);
@@ -328,7 +345,7 @@ export function UploadQuickDialog({
           >
             Annuler
           </Button>
-          <Button onClick={upload} disabled={!file || uploading}>
+          <Button onClick={() => upload(false)} disabled={!file || uploading}>
             {uploading ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />

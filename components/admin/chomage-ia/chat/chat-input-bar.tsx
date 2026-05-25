@@ -176,9 +176,25 @@ function ChatModeBar({
         </Button>
       </div>
       <div className="flex items-center justify-between px-1 text-[10.5px] text-muted-foreground">
-        <span className="opacity-70">
-          Entrée pour envoyer · Maj+Entrée pour saut de ligne ·{" "}
-          <Wand2 className="inline size-2.5" /> pour générer un prompt
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 opacity-70">
+          <span>
+            Entrée pour envoyer · Maj+Entrée saut de ligne
+          </span>
+          <span className="hidden md:inline">·</span>
+          <span className="hidden md:inline-flex items-center gap-1">
+            <kbd className="rounded border border-border bg-muted/60 px-1 py-px font-mono text-[9.5px]">
+              Ctrl+K
+            </kbd>
+            nouveau
+            <kbd className="ml-1 rounded border border-border bg-muted/60 px-1 py-px font-mono text-[9.5px]">
+              Ctrl+/
+            </kbd>
+            mode
+            <kbd className="ml-1 rounded border border-border bg-muted/60 px-1 py-px font-mono text-[9.5px]">
+              Esc
+            </kbd>
+            fermer
+          </span>
         </span>
         <span
           className={cn(

@@ -6,9 +6,29 @@ export interface ChatSessionItem {
   id: string;
   title: string;
   domain: string;
+  /** Migration 17 — épinglée en haut du rail. */
+  pinned: boolean;
+  /** Migration 17 — sortie de la liste principale. */
+  archived: boolean;
+  /** Migration 17 — dossier de groupement (null = hors-dossier). */
+  folderId: string | null;
   createdAt: string;
   updatedAt: string;
   messageCount: number;
+}
+
+/**
+ * Dossier de groupement coloré pour ranger les sessions (migration 17).
+ */
+export interface ChatFolderItem {
+  id: string;
+  name: string;
+  color: string | null;
+  order: number;
+  domain: string;
+  sessionCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**

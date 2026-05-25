@@ -1401,16 +1401,44 @@ model KnowledgeSource {
 /// `title` est généré automatiquement à partir du premier message (ou éditable
 /// manuellement plus tard). On scope par `domain` pour permettre des chats
 /// dédiés à des thématiques différentes plus tard (chômage, sécu, etc.).
+///
+/// Power features (migration 17) :
+///   - `pinned` : épingle la session en haut du rail (badge visuel).
+///   - `archived` : sort la session de la liste principale sans la supprimer.
+///   - `folderId` : range la session dans un dossier de groupement coloré.
 model ChatSession {
   id          String        @id @default(cuid())
   title       String        @default("Nouvelle conversation")
   domain      String        @default("chomage")
+  pinned      Boolean       @default(false)
+  archived    Boolean       @default(false)
+  folderId    String?
+  folder      ChatFolder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   messages    ChatMessage[]
   createdById String?
 
   @@index([domain, createdAt])
+  @@index([domain, pinned, archived])
+  @@index([folderId])
+}
+
+/// Dossier de groupement coloré pour ranger les ChatSession.
+/// Couleurs : hex ("#7C3AED") ou nom Tailwind ("blue", "amber") au choix
+/// — le front décidera comment matcher (palette préset côté UI).
+model ChatFolder {
+  id          String        @id @default(cuid())
+  name        String
+  color       String?
+  order       Int           @default(0)
+  domain      String        @default("chomage")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  createdById String?
+  sessions    ChatSession[]
+
+  @@index([domain, order])
 }
 
 /// Message individuel d'une session de chat.

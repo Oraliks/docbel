@@ -31,7 +31,8 @@ import {
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { fmtRelative } from "../_shared";
+import { fmtRelative, truncate } from "../_shared";
+import { ConfirmDeleteDialog } from "../_shared-alerts";
 import { cn } from "@/lib/utils";
 
 interface PromptHistoryItem {
@@ -80,6 +81,12 @@ export function PromptsHistorySheet({
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState("");
   const [openingId, setOpeningId] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+
+  const deleteTarget = useMemo(
+    () => items.find((it) => it.id === deleteTargetId) ?? null,
+    [items, deleteTargetId]
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -147,7 +154,6 @@ export function PromptsHistorySheet({
   }
 
   async function deletePrompt(id: string) {
-    if (!confirm("Supprimer ce prompt de l'historique ?")) return;
     try {
       const res = await fetch(`/api/chomage-ia/prompts/${id}`, {
         method: "DELETE",
@@ -245,7 +251,7 @@ export function PromptsHistorySheet({
                         size="icon-xs"
                         onClick={(e) => {
                           e.stopPropagation();
-                          deletePrompt(it.id);
+                          setDeleteTargetId(it.id);
                         }}
                         title="Supprimer"
                         aria-label="Supprimer"
@@ -260,6 +266,23 @@ export function PromptsHistorySheet({
             })
           )}
         </ul>
+
+        <ConfirmDeleteDialog
+          open={!!deleteTarget}
+          onOpenChange={(v) => !v && setDeleteTargetId(null)}
+          title="Supprimer ce prompt ?"
+          description={
+            deleteTarget
+              ? `« ${truncate(deleteTarget.title, 80)} » sera supprimé définitivement de l'historique.`
+              : "Cette action est irréversible."
+          }
+          onConfirm={async () => {
+            if (deleteTargetId) {
+              await deletePrompt(deleteTargetId);
+              setDeleteTargetId(null);
+            }
+          }}
+        />
       </SheetContent>
     </Sheet>
   );

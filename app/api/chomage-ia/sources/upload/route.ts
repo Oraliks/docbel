@@ -165,14 +165,19 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
     console.error("[chomage-ia upload] pdf-parse failed:", err);
   }
 
-  // Aucune des 2 libs n'a réussi → on retourne ce qu'on a (peut-être vide).
-  // Pour un vrai PDF scanné, OCR (Tesseract / Mistral) serait nécessaire.
-  if (viaPdfjs.length === 0 && pdfjsErr) {
-    console.warn(
-      "[chomage-ia upload] PDF illisible — probablement scanné/image. Pour OCR, intégrer Tesseract.js ou Mistral OCR."
-    );
-  }
-  return viaPdfjs;
+  // 3. Fallback ultime : PDF probablement scanné → rasterise chaque page
+  //    en PNG et applique Tesseract OCR. Capé à PDF_OCR_MAX_PAGES.
+  console.log(
+    `[chomage-ia upload] PDF natif vide (pdfjs=${viaPdfjs.length} chars) — tentative OCR scanné…`
+  );
+  const viaOcr = await ocrPdfScanned(buffer);
+  if (viaOcr.length >= 50) return viaOcr;
+
+  // Vraiment rien à extraire — on retourne le best effort (probablement vide).
+  console.warn(
+    "[chomage-ia upload] PDF illisible même après OCR. Fichier peut-être corrompu, protégé ou avec une mauvaise qualité de scan."
+  );
+  return viaPdfjs.length > viaOcr.length ? viaPdfjs : viaOcr;
 }
 
 /**
@@ -266,23 +271,30 @@ async function extractPptxText(buffer: Buffer): Promise<string> {
 }
 
 /**
+ * Cap de pages OCR pour un PDF scanné — chaque page coûte ~5-10s sur
+ * un CPU moyen. 20 pages ≈ 2 min max, raisonnable côté UX.
+ */
+const PDF_OCR_MAX_PAGES = 20;
+
+/**
+ * Lazy-init d'un worker Tesseract trilingue (fr/nl/en). Réutilisable
+ * pour plusieurs `recognize()` consécutifs — beaucoup plus rapide que
+ * de recréer un worker par image (le premier appel charge ~30 Mo de
+ * modèles, les suivants utilisent le cache).
+ */
+async function getTesseractWorker() {
+  const { createWorker } = await import("tesseract.js");
+  return createWorker(["fra", "nld", "eng"]);
+}
+
+/**
  * IMAGE → OCR via Tesseract.js (worker NodeJS, fr+nl+en).
- *
- * Modèles téléchargés et cachés au premier appel (~30 Mo). Premier OCR
- * peut prendre 10-30s, les suivants 3-10s par image. Les workers sont
- * créés à la demande et terminés à la fin pour éviter de garder la
- * mémoire occupée entre requêtes.
- *
- * En serverless (Netlify/Vercel), Tesseract.js fonctionne nativement —
- * pas de dépendance binaire externe.
  */
 async function ocrImage(buffer: Buffer): Promise<string> {
+  let worker: Awaited<ReturnType<typeof getTesseractWorker>> | null = null;
   try {
-    const { createWorker } = await import("tesseract.js");
-    // Belgique trilingue : fr + nl + en (anglais utile pour PDFs techniques)
-    const worker = await createWorker(["fra", "nld", "eng"]);
+    worker = await getTesseractWorker();
     const { data } = await worker.recognize(buffer);
-    await worker.terminate();
     const text = (data.text ?? "")
       .replace(/\r\n?/g, "\n")
       .replace(/[ \t]+/g, " ")
@@ -290,7 +302,7 @@ async function ocrImage(buffer: Buffer): Promise<string> {
       .trim()
       .slice(0, 180_000);
     console.log(
-      `[chomage-ia upload] tesseract OCR: ${text.length} chars extraits (confidence avg=${Math.round(
+      `[chomage-ia upload] tesseract OCR: ${text.length} chars (confidence avg=${Math.round(
         data.confidence ?? 0
       )}%)`
     );
@@ -298,6 +310,73 @@ async function ocrImage(buffer: Buffer): Promise<string> {
   } catch (err) {
     console.error("[chomage-ia upload] OCR failed:", err);
     return "";
+  } finally {
+    if (worker) await worker.terminate();
+  }
+}
+
+/**
+ * PDF scanné → rasterise chaque page en PNG via pdf-to-img (pdfjs + sharp
+ * en interne, fonctionne en serverless), puis applique Tesseract OCR sur
+ * chaque image. Concatène avec un header "### Page N".
+ *
+ * Capé à PDF_OCR_MAX_PAGES pour éviter timeout serverless (~2 min max).
+ */
+async function ocrPdfScanned(buffer: Buffer): Promise<string> {
+  let worker: Awaited<ReturnType<typeof getTesseractWorker>> | null = null;
+  try {
+    // pdf-to-img exporte une factory async-iterable de buffers PNG.
+    // Scale 2 = bonne qualité OCR sans exploser la mémoire (1× = trop flou,
+    // 3× = très lent et lourd).
+    const { pdf } = await import("pdf-to-img");
+    const document = await pdf(buffer, { scale: 2 });
+
+    // Worker Tesseract réutilisé pour TOUTES les pages — gain perf majeur.
+    worker = await getTesseractWorker();
+
+    const pages: string[] = [];
+    let pageNum = 0;
+    let totalChars = 0;
+    let totalConfidence = 0;
+    let pagesWithText = 0;
+
+    for await (const imageBuf of document) {
+      pageNum++;
+      if (pageNum > PDF_OCR_MAX_PAGES) {
+        pages.push(
+          `\n\n(OCR interrompu après ${PDF_OCR_MAX_PAGES} pages — re-uploade la suite séparément si besoin.)`
+        );
+        break;
+      }
+      try {
+        const { data } = await worker.recognize(imageBuf);
+        const text = (data.text ?? "")
+          .replace(/\r\n?/g, "\n")
+          .replace(/[ \t]+/g, " ")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim();
+        if (text.length > 0) {
+          pages.push(`### Page ${pageNum}\n${text}`);
+          totalChars += text.length;
+          totalConfidence += data.confidence ?? 0;
+          pagesWithText++;
+        }
+      } catch (err) {
+        console.error(`[chomage-ia upload] OCR page ${pageNum} failed:`, err);
+      }
+    }
+
+    const avgConfidence =
+      pagesWithText > 0 ? Math.round(totalConfidence / pagesWithText) : 0;
+    console.log(
+      `[chomage-ia upload] PDF OCR: ${pagesWithText}/${pageNum} pages OK, ${totalChars} chars (confidence avg=${avgConfidence}%)`
+    );
+    return pages.join("\n\n").trim().slice(0, 180_000);
+  } catch (err) {
+    console.error("[chomage-ia upload] PDF rasterize/OCR failed:", err);
+    return "";
+  } finally {
+    if (worker) await worker.terminate();
   }
 }
 
@@ -474,14 +553,14 @@ async function handleUpload(req: NextRequest) {
     } else {
       // Message d'aide spécifique par kind — guide vers la bonne action.
       if (kind === "pdf") {
-        // PDF où ni pdfjs ni pdf-parse n'ont rien trouvé = très probablement
-        // un PDF scanné (que des images). On guide vers la conversion en
-        // images individuelles pour OCR.
+        // pdfjs + pdf-parse + Tesseract OCR ont tous échoué. Le PDF est
+        // probablement protégé, corrompu, ou la qualité du scan trop mauvaise
+        // pour que Tesseract reconnaisse quoi que ce soit.
         finalContent =
           content ||
-          `(PDF probablement scanné — pas de couche texte.)\n\nFichier : ${file.name}\nTaille : ${buffer.byteLength} octets\n\nPour exploiter ce contenu : convertis chaque page en image (PNG/JPG) via Acrobat, Word, ou un service en ligne (smallpdf, ilovepdf…), puis re-uploade chaque image. L'OCR Tesseract s'occupera automatiquement de l'extraction.`;
+          `(PDF illisible — extraction texte et OCR ont tous deux échoué.)\n\nFichier : ${file.name}\nTaille : ${buffer.byteLength} octets\n\nCauses possibles :\n• PDF protégé par mot de passe\n• Scan de très mauvaise qualité (résolution < 150 dpi, texte flou)\n• PDF corrompu ou format non standard\n\nSi le fichier ouvre normalement dans un lecteur, essaie de :\n1. Re-scanner les pages en meilleure qualité (300 dpi minimum)\n2. Convertir chaque page en image JPG/PNG manuellement et les uploader\n3. Ou édite ce contenu manuellement avec un copier-coller du texte`;
         extractWarning =
-          "PDF probablement scanné — convertis-le en images (1 par page) pour OCR auto. Ou édite ce contenu manuellement.";
+          "Extraction texte + OCR ont échoué. PDF possiblement protégé, corrompu, ou scan trop basse qualité.";
       } else if (kind === "image_caption") {
         // OCR a échoué OU image sans texte exploitable.
         if (content.length < 10) {

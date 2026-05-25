@@ -2,7 +2,8 @@
  * POST /api/chomage-ia/sessions/[id]/regenerate-from
  *
  * Édite un message utilisateur existant et relance Claude pour régénérer la
- * suite de la conversation.
+ * suite de la conversation. Supporte le même mode SSE streaming que /chat
+ * (header `Accept: text/event-stream` ou query `?stream=1`).
  *
  * Body : { messageIndex, newContent }
  *
@@ -15,7 +16,10 @@
  *   6. Reconstruit le contexte sources + l'historique + appelle Claude.
  *   7. Persiste le message assistant et renvoie le résultat (même shape que /chat).
  *
- * Réutilise les helpers de /chat/route.ts pour rester DRY.
+ * En mode streaming : émet `text_delta` → `meta` → `done`, persiste le
+ * message assistant à la fin (avant l'event `meta`).
+ *
+ * Réutilise les helpers du pipeline partagé `lib/chomage-ia/chat-pipeline.ts`.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -25,16 +29,19 @@ import { requireAdminAuth } from "@/lib/auth-check";
 import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
 import { DEFAULT_DOMAIN } from "@/lib/chomage-ia/types";
 import {
-  buildKnowledgeContext,
-  extractCitedSourceIds,
-} from "@/lib/chomage-ia/context";
-import {
   callClaude,
   AnthropicError,
   hasAnthropicKey,
 } from "@/lib/chomage-ia/anthropic";
+import { callClaudeStream } from "@/lib/chomage-ia/anthropic-stream";
 import { CLAUDE_MODELS } from "@/lib/chomage-ia/models";
 import { CHAT_SYSTEM_PROMPT } from "@/lib/chomage-ia/prompts";
+import {
+  prepareChatContext,
+  postProcessChatAnswer,
+  wantsStreaming,
+  sseFormat,
+} from "@/lib/chomage-ia/chat-pipeline";
 
 const HISTORY_MAX = 10;
 
@@ -61,7 +68,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Trop de requêtes — réessayez dans une minute" },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
@@ -83,7 +90,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
             ? err.issues[0]?.message || "Validation error"
             : "Validation error",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -93,7 +100,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         error:
           "ANTHROPIC_API_KEY non configurée — impossible de régénérer la réponse.",
       },
-      { status: 503 }
+      { status: 503 },
     );
   }
 
@@ -103,11 +110,12 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   if (!session) {
     return NextResponse.json(
       { error: "Session introuvable" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
   const domain = session.domain || DEFAULT_DOMAIN;
+  const streamMode = wantsStreaming(req);
 
   // 1. Récupère tous les messages triés (asc) pour pouvoir slicer.
   const allMessages = await prisma.chatMessage.findMany({
@@ -118,7 +126,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   if (parsed.messageIndex >= allMessages.length) {
     return NextResponse.json(
       { error: "messageIndex hors plage" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -126,7 +134,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   if (targetMessage.role !== "user") {
     return NextResponse.json(
       { error: "Le message à régénérer doit être un message utilisateur" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -152,20 +160,13 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const previousMessages = allMessages
     .slice(0, parsed.messageIndex)
     .filter((m) => m.role === "user" || m.role === "assistant");
-
-  // On garde les HISTORY_MAX derniers messages avant l'édit pour le contexte.
   const recentMessages = previousMessages.slice(-HISTORY_MAX);
 
   // 5. Contexte sources fondé sur la NOUVELLE question.
-  const { contextText, includedSourceIds, totalSourcesAvailable, truncated } =
-    await buildKnowledgeContext({
-      domain,
-      query: parsed.newContent,
-    });
-
-  const cachedContext = contextText
-    ? `Voici les sources de la knowledge base que tu dois utiliser pour répondre. Chaque source est encadrée par <SOURCE id="..."> ... </SOURCE>. Cite ces IDs avec [SRC:id] dans ta réponse pour chaque affirmation factuelle.\n\n${contextText}`
-    : `(La knowledge base est vide pour le domaine "${domain}". Préviens l'utilisateur que tu n'as pas de source et donne une réponse générique à vérifier.)`;
+  const ctx = await prepareChatContext({
+    domain,
+    query: parsed.newContent,
+  });
 
   // 6. Construit les messages pour Claude (alternance user/assistant).
   const apiMessages: Array<{ role: "user" | "assistant"; content: string }> = [];
@@ -177,7 +178,24 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
   apiMessages.push({ role: "user", content: parsed.newContent });
 
-  // 7. Appel Claude.
+  // ============================================================
+  // MODE STREAMING SSE
+  // ============================================================
+  if (streamMode) {
+    return streamRegenerateResponse({
+      sessionId,
+      domain,
+      apiMessages,
+      cachedContext: ctx.cachedContext,
+      includedSourceIds: ctx.includedSourceIds,
+      totalSourcesAvailable: ctx.totalSourcesAvailable,
+      truncated: ctx.truncated,
+    });
+  }
+
+  // ============================================================
+  // MODE NON-STREAMING (legacy)
+  // ============================================================
   let assistantText: string;
   let usage;
   let modelUsed: string = CLAUDE_MODELS.sonnet;
@@ -185,7 +203,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const claudeRes = await callClaude({
       model: CLAUDE_MODELS.sonnet,
       systemPrompt: CHAT_SYSTEM_PROMPT,
-      cachedContext,
+      cachedContext: ctx.cachedContext,
       messages: apiMessages,
       maxTokens: 2000,
       timeoutMs: 90_000,
@@ -195,11 +213,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     modelUsed = claudeRes.model;
   } catch (err) {
     if (err instanceof AnthropicError) {
-      console.error(
-        "Regenerate Anthropic error:",
-        err.status,
-        err.details
-      );
+      console.error("Regenerate Anthropic error:", err.status, err.details);
       const errMsg =
         err.status === 429
           ? "⚠️ L'API Claude est saturée (quota). Réessaie dans quelques secondes."
@@ -222,31 +236,19 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     console.error("Regenerate unknown error:", err);
     return NextResponse.json(
       { error: "Échec de la régénération" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
-  // 8. Parse citations + cross-check avec les IDs réellement inclus.
-  const allCitedIds = extractCitedSourceIds(assistantText);
-  const validCitedIds = allCitedIds.filter((id) =>
-    includedSourceIds.includes(id)
-  );
+  // 7. Post-process via pipeline.
+  const { validCitedIds, citedSources, missingSources } =
+    await postProcessChatAnswer({
+      domain,
+      assistantText,
+      includedSourceIds: ctx.includedSourceIds,
+    });
 
-  const citedSources =
-    validCitedIds.length > 0
-      ? await prisma.knowledgeSource.findMany({
-          where: { id: { in: validCitedIds } },
-          select: {
-            id: true,
-            title: true,
-            kind: true,
-            sourceUrl: true,
-            summary: true,
-          },
-        })
-      : [];
-
-  // 9. Persiste le message assistant.
+  // 8. Persiste le message assistant.
   const assistantMsg = await prisma.chatMessage.create({
     data: {
       sessionId,
@@ -274,11 +276,189 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       createdAt: assistantMsg.createdAt.toISOString(),
     },
     citedSources,
+    missingSources,
     usage,
     kbStats: {
-      totalSourcesAvailable,
-      includedInContext: includedSourceIds.length,
-      truncated,
+      totalSourcesAvailable: ctx.totalSourcesAvailable,
+      includedInContext: ctx.includedSourceIds.length,
+      truncated: ctx.truncated,
+    },
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mode STREAMING SSE pour /regenerate-from                            */
+/* ------------------------------------------------------------------ */
+
+interface StreamRegenerateArgs {
+  sessionId: string;
+  domain: string;
+  apiMessages: Array<{ role: "user" | "assistant"; content: string }>;
+  cachedContext: string;
+  includedSourceIds: string[];
+  totalSourcesAvailable: number;
+  truncated: boolean;
+}
+
+function streamRegenerateResponse(args: StreamRegenerateArgs): Response {
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let assistantText = "";
+      let usageFinal: {
+        inputTokens: number | null;
+        outputTokens: number | null;
+        cacheReadTokens: number | null;
+        cacheWriteTokens: number | null;
+        model: string;
+        stopReason: string | null;
+      } | null = null;
+      let streamErrored = false;
+
+      function send(payload: unknown) {
+        try {
+          controller.enqueue(encoder.encode(sseFormat(payload)));
+        } catch {
+          /* client a fermé */
+        }
+      }
+
+      try {
+        for await (const ev of callClaudeStream({
+          model: CLAUDE_MODELS.sonnet,
+          systemPrompt: CHAT_SYSTEM_PROMPT,
+          cachedContext: args.cachedContext,
+          messages: args.apiMessages,
+          maxTokens: 2000,
+          timeoutMs: 180_000,
+        })) {
+          if (ev.type === "text_delta") {
+            assistantText += ev.text;
+            send({ type: "text_delta", text: ev.text });
+          } else if (ev.type === "done") {
+            usageFinal = ev.usage;
+          } else if (ev.type === "error") {
+            streamErrored = true;
+            send({ type: "error", message: ev.message });
+            await prisma.chatMessage.create({
+              data: {
+                sessionId: args.sessionId,
+                role: "assistant",
+                content: `⚠️ ${ev.message}`,
+                citedSourceIds: [],
+              },
+            });
+          }
+        }
+      } catch (err) {
+        streamErrored = true;
+        const errMsg =
+          err instanceof AnthropicError
+            ? err.status === 429
+              ? "⚠️ L'API Claude est saturée (quota). Réessaie dans quelques secondes."
+              : `⚠️ Erreur Anthropic (HTTP ${err.status}).`
+            : err instanceof Error
+              ? err.message
+              : "Erreur inconnue";
+        console.error("[chomage-ia regenerate stream] error:", err);
+        send({ type: "error", message: errMsg });
+        try {
+          await prisma.chatMessage.create({
+            data: {
+              sessionId: args.sessionId,
+              role: "assistant",
+              content: errMsg,
+              citedSourceIds: [],
+            },
+          });
+        } catch (dbErr) {
+          console.error(
+            "[chomage-ia regenerate stream] failed to persist error message:",
+            dbErr,
+          );
+        }
+      }
+
+      if (!streamErrored && assistantText.length > 0) {
+        try {
+          const { validCitedIds, citedSources, missingSources } =
+            await postProcessChatAnswer({
+              domain: args.domain,
+              assistantText,
+              includedSourceIds: args.includedSourceIds,
+            });
+
+          const assistantMsg = await prisma.chatMessage.create({
+            data: {
+              sessionId: args.sessionId,
+              role: "assistant",
+              content: assistantText,
+              citedSourceIds: validCitedIds,
+              model: usageFinal?.model ?? CLAUDE_MODELS.sonnet,
+              tokensIn: usageFinal?.inputTokens ?? null,
+              tokensOut: usageFinal?.outputTokens ?? null,
+            },
+          });
+
+          await prisma.chatSession.update({
+            where: { id: args.sessionId },
+            data: { updatedAt: new Date() },
+          });
+
+          send({
+            type: "meta",
+            sessionId: args.sessionId,
+            messageId: assistantMsg.id,
+            createdAt: assistantMsg.createdAt.toISOString(),
+            citedSourceIds: validCitedIds,
+            citedSources,
+            missingSources,
+            usage: usageFinal
+              ? {
+                  inputTokens: usageFinal.inputTokens,
+                  outputTokens: usageFinal.outputTokens,
+                  cacheReadTokens: usageFinal.cacheReadTokens,
+                  cacheWriteTokens: usageFinal.cacheWriteTokens,
+                  model: usageFinal.model,
+                  stopReason: usageFinal.stopReason,
+                }
+              : null,
+            kbStats: {
+              totalSourcesAvailable: args.totalSourcesAvailable,
+              includedInContext: args.includedSourceIds.length,
+              truncated: args.truncated,
+            },
+          });
+        } catch (err) {
+          console.error(
+            "[chomage-ia regenerate stream] post-process failed:",
+            err,
+          );
+          send({
+            type: "error",
+            message:
+              "Échec de la persistence du message assistant (la réponse a bien été générée).",
+          });
+        }
+      }
+
+      send({ type: "done" });
+      try {
+        controller.close();
+      } catch {
+        /* déjà fermé */
+      }
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
     },
   });
 }

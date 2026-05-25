@@ -17,6 +17,7 @@ import {
   Loader2,
   Paperclip,
   SendHorizontal,
+  Square,
   Wand2,
   X,
 } from "lucide-react";
@@ -40,6 +41,13 @@ interface Props {
   onGeneratePrompt: (brief: string, contextHint?: string) => void | Promise<void>;
   /** Callback ouverture du modal upload (mode chat seulement). */
   onOpenUpload: () => void;
+  /**
+   * Callback d'interruption du stream SSE en cours.
+   * Quand `sending=true` ET `onStop` est fourni, on remplace le bouton Send
+   * par un bouton Stop (icône Square). Sinon le bouton Send affiche un spinner
+   * désactivé comme avant.
+   */
+  onStop?: () => void;
   /** Placeholder du chat textarea (par défaut un message générique). */
   placeholder?: string;
   /** Limite de chars en mode chat. */
@@ -69,6 +77,7 @@ function ChatModeBar({
   sending,
   onSendChat,
   onOpenUpload,
+  onStop,
   placeholder = DEFAULT_PLACEHOLDER,
   maxChars = DEFAULT_MAX,
 }: Props) {
@@ -152,28 +161,47 @@ function ChatModeBar({
           )}
         />
 
-        {/* Bouton Send */}
-        <Button
-          type="button"
-          size="icon"
-          disabled={disabled || sending || isEmpty || over}
-          onClick={submit}
-          title={
-            disabled
-              ? "IA désactivée"
-              : sending
-                ? "Envoi en cours…"
-                : "Envoyer (Entrée)"
-          }
-          className="size-9 shrink-0 rounded-xl"
-        >
-          {sending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <SendHorizontal className="size-4" />
-          )}
-          <span className="sr-only">Envoyer</span>
-        </Button>
+        {/* Bouton Send / Stop selon état :
+             - sending=true + onStop fourni → bouton Stop (interrompt le stream)
+             - sending=true sans onStop      → bouton spinner désactivé (fallback)
+             - sinon                          → bouton Send classique
+        */}
+        {sending && onStop ? (
+          <Button
+            type="button"
+            size="icon"
+            variant="destructive"
+            onClick={onStop}
+            title="Interrompre la réponse (Stop)"
+            aria-label="Interrompre la réponse en cours"
+            className="size-9 shrink-0 rounded-xl"
+          >
+            <Square className="size-3.5 fill-current" />
+            <span className="sr-only">Stop</span>
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            size="icon"
+            disabled={disabled || sending || isEmpty || over}
+            onClick={submit}
+            title={
+              disabled
+                ? "IA désactivée"
+                : sending
+                  ? "Envoi en cours…"
+                  : "Envoyer (Entrée)"
+            }
+            className="size-9 shrink-0 rounded-xl"
+          >
+            {sending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <SendHorizontal className="size-4" />
+            )}
+            <span className="sr-only">Envoyer</span>
+          </Button>
+        )}
       </div>
       <div className="flex items-center justify-between px-1 text-[10.5px] text-muted-foreground">
         <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 opacity-70">

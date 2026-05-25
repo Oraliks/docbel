@@ -204,6 +204,10 @@ export function MessageBubble({
   );
 
   // Contenu de la bulle (sans le wrapper / context menu).
+  // Trois états possibles pour une bulle assistant :
+  //   - pending=true               → spinner + status rotatif (avant 1er token)
+  //   - streaming=true, pending=false → rendu markdown + curseur clignotant à la fin
+  //   - aucun des deux             → rendu markdown final
   const bubbleBody =
     editMode && isUser ? (
       <EditModeContent
@@ -221,12 +225,18 @@ export function MessageBubble({
     ) : message.pending ? (
       <PendingIndicator startedAt={message.pendingStartedAt} />
     ) : (
-      <div className="chomage-ia-md">{renderedMd}</div>
+      <div className="chomage-ia-md">
+        {renderedMd}
+        {message.streaming ? <StreamCursor /> : null}
+      </div>
     );
 
-  // ContextMenu désactivé pendant l'édition ou pendant le pending (rien d'utile
-  // à proposer, et le right-click sur un textarea ouvre le menu natif).
-  const allowContextMenu = !editMode && !message.pending;
+  // ContextMenu désactivé pendant l'édition, le pending (rien d'utile à
+  // proposer, right-click sur un textarea ouvre le menu natif), ou le
+  // streaming actif (le message n'est pas encore persisté → permalink/regen
+  // pas disponibles, et copier-coller un message incomplet n'a pas grand
+  // sens — l'utilisateur peut le faire après le `done`).
+  const allowContextMenu = !editMode && !message.pending && !message.streaming;
 
   const inner = allowContextMenu ? (
     <ContextMenu>
@@ -334,7 +344,15 @@ export function MessageBubble({
                   · {fmtTokens(message.tokensIn)}/{fmtTokens(message.tokensOut)} tk
                 </span>
               ) : null}
-              {!message.pending ? (
+              {message.streaming ? (
+                <span
+                  className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
+                  title="Réponse en cours de génération via Claude streaming"
+                >
+                  <span className="size-1.5 animate-pulse rounded-full bg-primary" />
+                  Live
+                </span>
+              ) : !message.pending ? (
                 <div className="ml-auto inline-flex items-center gap-0.5">
                   {isUser && onRequestEdit ? (
                     <button
@@ -366,8 +384,13 @@ export function MessageBubble({
             </div>
           ) : null}
 
-          {/* Citations résumées sous la bulle (mini pills) */}
-          {!isUser && !editMode && message.citedSourceIds.length > 0 ? (
+          {/* Citations résumées sous la bulle (mini pills) — masquées pendant
+              le streaming car `citedSourceIds` n'arrive qu'avec l'event `meta`
+              à la fin du stream. */}
+          {!isUser &&
+          !editMode &&
+          !message.streaming &&
+          message.citedSourceIds.length > 0 ? (
             <div className="mt-1 flex flex-wrap items-center gap-1 px-1">
               {message.citedSourceIds.slice(0, 8).map((id) => {
                 const src = sourcesById.get(id);
@@ -544,6 +567,21 @@ function PendingIndicator({ startedAt }: { startedAt?: number }) {
         </span>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Petit curseur clignotant affiché à la fin du markdown pendant un stream SSE.
+ * Disparaît dès que le stream est terminé (event `done`) ou interrompu.
+ *
+ * Inline-block + animate-pulse pour un effet "ChatGPT-like" discret.
+ */
+function StreamCursor() {
+  return (
+    <span
+      className="ml-0.5 inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse rounded-sm bg-primary/70 align-middle"
+      aria-label="Réponse en cours de génération"
+    />
   );
 }
 

@@ -43,6 +43,7 @@ import {
 } from "./prompts-history-sheet";
 import { UploadQuickDialog } from "../sources/upload-quick-dialog";
 import { KeyboardShortcuts } from "./keyboard-shortcuts";
+import { openChatStream } from "./sse-client";
 import type {
   ChatMessageItem,
   ChatSessionItem,
@@ -95,6 +96,20 @@ export function ChatFullShell({
   // (l'input bar gère son propre submit, on n'a pas besoin de ref direct).
 
   const threadRef = useRef<HTMLDivElement>(null);
+
+  // ----- AbortController pour le bouton Stop pendant un stream SSE -----
+  // Tient l'AbortController du fetch streaming courant ; null si rien en cours.
+  // Activé pendant `sending=true`, le bouton Stop appelle `abort()` qui interrompt
+  // la lecture du ReadableStream → la bulle pending se finalise en "interrompue".
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  function abortCurrentStream() {
+    const ctrl = abortControllerRef.current;
+    if (ctrl) {
+      ctrl.abort();
+      abortControllerRef.current = null;
+    }
+  }
 
   // ----- Sessions: load + helpers -----
   const refreshSessions = useCallback(async () => {
@@ -201,7 +216,11 @@ export function ChatFullShell({
     });
   }
 
-  // ----- Send chat message -----
+  // ----- Send chat message (mode streaming SSE) -----
+  // Le backend supporte aussi le mode JSON legacy ; on demande TOUJOURS du SSE
+  // ici via le header `Accept: text/event-stream` posé par openChatStream.
+  // En cas de fail-soft (clé Anthropic manquante), le helper yield un event
+  // `json_fallback` qu'on traite comme la réponse legacy d'un coup.
   async function sendChatMessage(text: string) {
     if (!text.trim() || sending) return;
     const startedAt = Date.now();
@@ -215,9 +234,10 @@ export function ChatFullShell({
     };
     const pendingAssistant: ChatMessageItem = {
       role: "assistant",
-      content: "…",
+      content: "",
       citedSourceIds: [],
       pending: true,
+      streaming: true,
       pendingStartedAt: startedAt,
       createdAt: new Date().toISOString(),
       kind: "chat",
@@ -226,89 +246,163 @@ export function ChatFullShell({
     setSending(true);
     scrollThreadToBottom();
 
+    const ctrl = new AbortController();
+    abortControllerRef.current = ctrl;
+    let firstDeltaReceived = false;
+    let aborted = false;
+
+    /** Patch le dernier message (la bulle assistant pending) via un updater. */
+    function patchLastAssistant(
+      updater: (msg: ChatMessageItem) => ChatMessageItem,
+    ) {
+      setMessages((prev) => {
+        const next = [...prev];
+        const last = next[next.length - 1];
+        if (last && last.role === "assistant" && (last.pending || last.streaming)) {
+          next[next.length - 1] = updater(last);
+        }
+        return next;
+      });
+    }
+
     try {
-      const res = await fetch("/api/chomage-ia/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      for await (const ev of openChatStream({
+        url: "/api/chomage-ia/chat",
+        body: {
           sessionId: currentSessionId ?? undefined,
           message: text,
           domain,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      if (data.sessionId && data.sessionId !== currentSessionId) {
-        setCurrentSessionId(data.sessionId);
-        refreshSessions();
-      }
-      // Auto-titre : pour une nouvelle session, Haiku titre en background côté
-      // serveur. Re-fetch la liste après ~4s pour récupérer le nouveau titre.
-      if (isFirstMessageOfNewSession) {
-        setTimeout(() => {
-          refreshSessions();
-        }, 4000);
-      }
-      const elapsedMs = Date.now() - startedAt;
-      setMessages((prev) => {
-        const next = [...prev];
-        const last = next[next.length - 1];
-        if (last && last.pending) {
-          next[next.length - 1] = {
-            role: "assistant",
-            content: data.message.content,
-            citedSourceIds: data.message.citedSourceIds ?? [],
-            createdAt: data.message.createdAt,
-            id: data.message.id,
-            model: data.usage?.model ?? null,
-            tokensIn: data.usage?.inputTokens ?? null,
-            tokensOut: data.usage?.outputTokens ?? null,
+        },
+        signal: ctrl.signal,
+      })) {
+        if (ev.type === "text_delta") {
+          if (!firstDeltaReceived) {
+            firstDeltaReceived = true;
+            // Dès le 1er token, on retire le `pending` pour que le rendu
+            // markdown remplace le `PendingIndicator`. Le `streaming` reste
+            // true tant que `meta`/`done` n'est pas arrivé.
+            patchLastAssistant((m) => ({
+              ...m,
+              pending: false,
+              content: m.content + ev.text,
+            }));
+          } else {
+            patchLastAssistant((m) => ({
+              ...m,
+              content: m.content + ev.text,
+            }));
+          }
+          // Petit autoscroll pendant le stream — pas trop agressif pour
+          // ne pas casser le scroll manuel de l'utilisateur.
+          scrollThreadToBottom();
+        } else if (ev.type === "meta") {
+          // Capture sessionId / messageId / citedSources / missingSources.
+          if (ev.sessionId && ev.sessionId !== currentSessionId) {
+            setCurrentSessionId(ev.sessionId);
+            refreshSessions();
+          }
+          if (Array.isArray(ev.citedSources)) {
+            setCitedSources((prev) => {
+              const map = new Map<string, CitedSourceLite>();
+              for (const s of prev) map.set(s.id, s);
+              for (const s of ev.citedSources) map.set(s.id, s);
+              return [...map.values()];
+            });
+          }
+          if (Array.isArray(ev.missingSources)) {
+            setMissingSources(ev.missingSources);
+          } else {
+            setMissingSources([]);
+          }
+          const elapsedMs = Date.now() - startedAt;
+          patchLastAssistant((m) => ({
+            ...m,
+            id: ev.messageId,
+            citedSourceIds: ev.citedSourceIds ?? [],
+            createdAt: ev.createdAt ?? m.createdAt,
+            model: ev.usage?.model ?? null,
+            tokensIn: ev.usage?.inputTokens ?? null,
+            tokensOut: ev.usage?.outputTokens ?? null,
             elapsedMs,
-            kind: "chat",
-          };
+          }));
+        } else if (ev.type === "done") {
+          patchLastAssistant((m) => ({
+            ...m,
+            pending: false,
+            streaming: false,
+          }));
+        } else if (ev.type === "error") {
+          patchLastAssistant((m) => ({
+            ...m,
+            pending: false,
+            streaming: false,
+            content: m.content
+              ? `${m.content}\n\n⚠️ ${ev.message}`
+              : `⚠️ ${ev.message}`,
+          }));
+          toast.error("Erreur côté serveur", { description: ev.message });
+        } else if (ev.type === "json_fallback") {
+          // Cas du fail-soft "ANTHROPIC_API_KEY manquante" (le backend renvoie
+          // du JSON même si on a demandé du SSE).
+          const data = ev.payload as {
+            message?: { content?: string };
+            aiDisabled?: boolean;
+            error?: string;
+          } | null;
+          const fallbackContent =
+            data?.message?.content ?? data?.error ?? "Réponse indisponible.";
+          patchLastAssistant((m) => ({
+            ...m,
+            pending: false,
+            streaming: false,
+            content: fallbackContent,
+          }));
+          if (data?.aiDisabled) {
+            toast.warning("IA non configurée — réponse simulée");
+          }
         }
-        return next;
-      });
-      if (Array.isArray(data.citedSources)) {
-        setCitedSources((prev) => {
-          const map = new Map<string, CitedSourceLite>();
-          for (const s of prev) map.set(s.id, s);
-          for (const s of data.citedSources as CitedSourceLite[]) map.set(s.id, s);
-          return [...map.values()];
-        });
       }
-      // Refs légales détectées et absentes de la KB (max 3) — la bannière
-      // au-dessus de l'input bar invitera l'admin à les uploader.
-      if (Array.isArray(data.missingSources)) {
-        setMissingSources(data.missingSources as string[]);
-      } else {
-        setMissingSources([]);
-      }
-      if (data.aiDisabled) {
-        toast.warning("IA non configurée — réponse simulée");
+      if (isFirstMessageOfNewSession) {
+        // Auto-titre Haiku en background côté serveur → re-fetch ~4s plus tard.
+        setTimeout(() => refreshSessions(), 4000);
       }
     } catch (e) {
-      setMessages((prev) => {
-        const next = [...prev];
-        const last = next[next.length - 1];
-        if (last && last.pending) {
-          next[next.length - 1] = {
-            role: "assistant",
-            content:
-              "⚠️ " +
-              (e instanceof Error ? e.message : "Erreur inconnue") +
-              "\n\nRéessaie ou vérifie la console serveur.",
-            citedSourceIds: [],
-            createdAt: new Date().toISOString(),
-            kind: "chat",
-          };
-        }
-        return next;
-      });
-      toast.error("Échec de la requête", {
-        description: e instanceof Error ? e.message : String(e),
-      });
+      // AbortError = bouton Stop — gestion dédiée plus bas.
+      if (e instanceof DOMException && e.name === "AbortError") {
+        aborted = true;
+      } else {
+        const errMsg = e instanceof Error ? e.message : String(e);
+        patchLastAssistant((m) => ({
+          ...m,
+          pending: false,
+          streaming: false,
+          content: m.content
+            ? `${m.content}\n\n⚠️ ${errMsg}`
+            : `⚠️ ${errMsg}\n\nRéessaie ou vérifie la console serveur.`,
+        }));
+        toast.error("Échec de la requête", { description: errMsg });
+      }
     } finally {
+      if (aborted) {
+        // L'utilisateur a cliqué Stop. On garde le contenu partiel et on
+        // marque la bulle comme "interrompue".
+        // TODO(streaming): brancher un bouton "Régénérer ?" sur la bulle
+        // aborted (callback déjà câblé via context menu "Régénérer la réponse",
+        // mais nécessite un endpoint dédié — cf. message-bubble.tsx).
+        patchLastAssistant((m) => ({
+          ...m,
+          pending: false,
+          streaming: false,
+          aborted: true,
+          content: m.content
+            ? `${m.content}\n\n— *Réponse interrompue par l'utilisateur.*`
+            : "— *Réponse interrompue avant le premier token.*",
+        }));
+        toast("Réponse interrompue", {
+          description: "Le streaming a été arrêté.",
+        });
+      }
+      abortControllerRef.current = null;
       setSending(false);
       scrollThreadToBottom();
     }
@@ -492,7 +586,7 @@ export function ChatFullShell({
     const startedAt = Date.now();
 
     // UI optimiste : tronque tout ce qui suit l'index édité, remplace le
-    // contenu, et ajoute une bulle pending.
+    // contenu, et ajoute une bulle pending (en mode streaming dès le départ).
     setMessages((prev) => {
       const next = prev.slice(0, messageIndex);
       next.push({
@@ -502,9 +596,10 @@ export function ChatFullShell({
       });
       next.push({
         role: "assistant",
-        content: "Régénération en cours…",
+        content: "",
         citedSourceIds: [],
         pending: true,
+        streaming: true,
         pendingStartedAt: startedAt,
         createdAt: new Date().toISOString(),
         kind: "chat",
@@ -515,80 +610,138 @@ export function ChatFullShell({
     setSending(true);
     scrollThreadToBottom();
 
-    try {
-      const res = await fetch(
-        `/api/chomage-ia/sessions/${currentSessionId}/regenerate-from`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messageIndex: serverIndex,
-            newContent: trimmed,
-          }),
-        },
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+    const ctrl = new AbortController();
+    abortControllerRef.current = ctrl;
+    let firstDeltaReceived = false;
+    let aborted = false;
 
-      const elapsedMs = Date.now() - startedAt;
+    function patchLastAssistant(
+      updater: (msg: ChatMessageItem) => ChatMessageItem,
+    ) {
       setMessages((prev) => {
         const next = [...prev];
         const last = next[next.length - 1];
-        if (last && last.pending) {
-          next[next.length - 1] = {
-            id: data.message.id,
-            role: "assistant",
-            content: data.message.content,
-            citedSourceIds: data.message.citedSourceIds ?? [],
-            createdAt: data.message.createdAt,
-            model: data.usage?.model ?? null,
-            tokensIn: data.usage?.inputTokens ?? null,
-            tokensOut: data.usage?.outputTokens ?? null,
-            elapsedMs,
-            kind: "chat",
-          };
+        if (last && last.role === "assistant" && (last.pending || last.streaming)) {
+          next[next.length - 1] = updater(last);
         }
         return next;
       });
-      if (Array.isArray(data.citedSources)) {
-        setCitedSources((prev) => {
-          const map = new Map<string, CitedSourceLite>();
-          for (const s of prev) map.set(s.id, s);
-          for (const s of data.citedSources as CitedSourceLite[]) {
-            map.set(s.id, s);
+    }
+
+    try {
+      for await (const ev of openChatStream({
+        url: `/api/chomage-ia/sessions/${currentSessionId}/regenerate-from`,
+        body: {
+          messageIndex: serverIndex,
+          newContent: trimmed,
+        },
+        signal: ctrl.signal,
+      })) {
+        if (ev.type === "text_delta") {
+          if (!firstDeltaReceived) {
+            firstDeltaReceived = true;
+            patchLastAssistant((m) => ({
+              ...m,
+              pending: false,
+              content: m.content + ev.text,
+            }));
+          } else {
+            patchLastAssistant((m) => ({
+              ...m,
+              content: m.content + ev.text,
+            }));
           }
-          return [...map.values()];
+          scrollThreadToBottom();
+        } else if (ev.type === "meta") {
+          if (Array.isArray(ev.citedSources)) {
+            setCitedSources((prev) => {
+              const map = new Map<string, CitedSourceLite>();
+              for (const s of prev) map.set(s.id, s);
+              for (const s of ev.citedSources) map.set(s.id, s);
+              return [...map.values()];
+            });
+          }
+          if (Array.isArray(ev.missingSources)) {
+            setMissingSources(ev.missingSources);
+          } else {
+            setMissingSources([]);
+          }
+          const elapsedMs = Date.now() - startedAt;
+          patchLastAssistant((m) => ({
+            ...m,
+            id: ev.messageId,
+            citedSourceIds: ev.citedSourceIds ?? [],
+            createdAt: ev.createdAt ?? m.createdAt,
+            model: ev.usage?.model ?? null,
+            tokensIn: ev.usage?.inputTokens ?? null,
+            tokensOut: ev.usage?.outputTokens ?? null,
+            elapsedMs,
+          }));
+        } else if (ev.type === "done") {
+          patchLastAssistant((m) => ({
+            ...m,
+            pending: false,
+            streaming: false,
+          }));
+        } else if (ev.type === "error") {
+          patchLastAssistant((m) => ({
+            ...m,
+            pending: false,
+            streaming: false,
+            content: m.content
+              ? `${m.content}\n\n⚠️ ${ev.message}`
+              : `⚠️ ${ev.message}`,
+          }));
+          toast.error("Erreur côté serveur", { description: ev.message });
+        } else if (ev.type === "json_fallback") {
+          const data = ev.payload as {
+            message?: { content?: string };
+            error?: string;
+          } | null;
+          const fallbackContent =
+            data?.message?.content ?? data?.error ?? "Réponse indisponible.";
+          patchLastAssistant((m) => ({
+            ...m,
+            pending: false,
+            streaming: false,
+            content: fallbackContent,
+          }));
+        }
+      }
+      refreshSessions();
+      if (!aborted) {
+        toast.success("Message édité et réponse régénérée");
+      }
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        aborted = true;
+      } else {
+        const errMsg = e instanceof Error ? e.message : String(e);
+        patchLastAssistant((m) => ({
+          ...m,
+          pending: false,
+          streaming: false,
+          content:
+            "⚠️ Échec de la régénération : " + errMsg,
+        }));
+        toast.error("Échec de la régénération", { description: errMsg });
+      }
+    } finally {
+      if (aborted) {
+        patchLastAssistant((m) => ({
+          ...m,
+          pending: false,
+          streaming: false,
+          aborted: true,
+          content: m.content
+            ? `${m.content}\n\n— *Réponse interrompue par l'utilisateur.*`
+            : "— *Réponse interrompue avant le premier token.*",
+        }));
+        toast("Réponse interrompue", {
+          description: "Le streaming a été arrêté.",
         });
       }
-      if (Array.isArray(data.missingSources)) {
-        setMissingSources(data.missingSources as string[]);
-      } else {
-        setMissingSources([]);
-      }
-      // Refresh la liste sessions pour updatedAt.
-      refreshSessions();
-      toast.success("Message édité et réponse régénérée");
-    } catch (e) {
-      setMessages((prev) => {
-        const next = [...prev];
-        const last = next[next.length - 1];
-        if (last && last.pending) {
-          next[next.length - 1] = {
-            role: "assistant",
-            content:
-              "⚠️ Échec de la régénération : " +
-              (e instanceof Error ? e.message : "Erreur inconnue"),
-            citedSourceIds: [],
-            createdAt: new Date().toISOString(),
-            kind: "chat",
-          };
-        }
-        return next;
-      });
-      toast.error("Échec de la régénération", {
-        description: e instanceof Error ? e.message : String(e),
-      });
-    } finally {
+      abortControllerRef.current = null;
       setSending(false);
       scrollThreadToBottom();
     }
@@ -720,6 +873,7 @@ export function ChatFullShell({
             onSendChat={sendChatMessage}
             onGeneratePrompt={generatePrompt}
             onOpenUpload={() => setUploadOpen(true)}
+            onStop={abortCurrentStream}
           />
           {!aiAvailable ? (
             <p className="border-t border-border bg-amber-50/40 px-4 py-1.5 text-[11px] text-amber-800 dark:bg-amber-950/20 dark:text-amber-300">

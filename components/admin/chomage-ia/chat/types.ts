@@ -47,8 +47,14 @@ export interface ChatMessageItem {
   tokensIn?: number | null;
   tokensOut?: number | null;
   createdAt?: string;
-  /** Marker local pour le streaming optimistic (avant réponse serveur). */
+  /** Marker local : true tant qu'aucun token n'est encore arrivé (affichage du PendingIndicator).
+   *  - Mode non-streaming : reste à true jusqu'à la réponse complète.
+   *  - Mode streaming : passe à false dès le 1er `text_delta` (laisse `streaming=true`). */
   pending?: boolean;
+  /** Marker local : true tant que le stream SSE n'est pas terminé (deltas + meta + done).
+   *  Différent de `pending` : ici on a déjà du texte qui s'affiche, mais l'appel n'est pas
+   *  terminé. Permet d'afficher le bouton Stop et le badge "live" sur la bulle. */
+  streaming?: boolean;
   /** Timestamp (ms) du début de la requête — sert au timer live + à la
    *  durée totale persistée dans `elapsedMs` une fois la réponse arrivée. */
   pendingStartedAt?: number;
@@ -63,7 +69,40 @@ export interface ChatMessageItem {
   promptBrief?: string;
   /** Pour kind="generated_prompt" : titre court généré par Claude. */
   promptTitle?: string;
+  /** Marker local : true si la réponse streaming a été interrompue par l'utilisateur (Stop). */
+  aborted?: boolean;
 }
+
+/**
+ * Événements SSE reçus du backend pendant un stream chat / regenerate.
+ * Wire format : `data: {<JSON>}\n\n`.
+ */
+export type ChatStreamEvent =
+  | { type: "text_delta"; text: string }
+  | {
+      type: "meta";
+      sessionId: string;
+      messageId: string;
+      createdAt: string;
+      citedSourceIds: string[];
+      citedSources: CitedSourceLite[];
+      missingSources: string[];
+      usage: {
+        inputTokens: number | null;
+        outputTokens: number | null;
+        cacheReadTokens: number | null;
+        cacheWriteTokens: number | null;
+        model: string;
+        stopReason: string | null;
+      } | null;
+      kbStats: {
+        totalSourcesAvailable: number;
+        includedInContext: number;
+        truncated: boolean;
+      };
+    }
+  | { type: "done" }
+  | { type: "error"; message: string };
 
 export interface CitedSourceLite {
   id: string;

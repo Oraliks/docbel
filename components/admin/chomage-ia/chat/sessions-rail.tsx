@@ -22,16 +22,20 @@
 import { useMemo, useState } from "react";
 import {
   Archive,
+  ArchiveRestore,
   Check,
   Code2,
   Copy,
   Download,
+  Eye,
+  EyeOff,
   History,
   Loader2,
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
   Pin,
+  PinOff,
   Plus,
   Trash2,
   X,
@@ -83,6 +87,12 @@ interface Props {
    * l'entrée et un toast "bientôt dispo" s'affiche.
    */
   onExportMarkdown?: (id: string) => void;
+  /** True si la liste inclut déjà les sessions archivées. */
+  showArchived?: boolean;
+  /** Toggle pour afficher/masquer les sessions archivées dans le rail. */
+  onToggleShowArchived?: () => void;
+  /** Nombre total de sessions archivées (pour le tooltip / badge du toggle). */
+  archivedCount?: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -143,6 +153,9 @@ export function SessionsRail({
   onChangeModel,
   onOpenSnippets,
   onExportMarkdown,
+  showArchived = false,
+  onToggleShowArchived,
+  archivedCount = 0,
 }: Props) {
   // expanded = sidebar large avec titres + actions
   const [expanded, setExpanded] = useState(false);
@@ -297,6 +310,8 @@ export function SessionsRail({
               return (
                 <li key={s.id}>
                   <SessionContextMenu
+                    pinned={s.pinned}
+                    archived={s.archived}
                     onRename={() => setRenameTargetId(s.id)}
                     onTogglePin={() => handleTogglePin(s.id)}
                     onArchive={() => handleArchive(s.id)}
@@ -377,6 +392,36 @@ export function SessionsRail({
             <TooltipContent side="right">Snippets (insertion via /)</TooltipContent>
           </Tooltip>
         ) : null}
+        {onToggleShowArchived ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant={showArchived ? "default" : "ghost"}
+                  size="icon-sm"
+                  onClick={onToggleShowArchived}
+                  aria-label={
+                    showArchived
+                      ? "Masquer les archives"
+                      : "Afficher les archives"
+                  }
+                  aria-pressed={showArchived}
+                />
+              }
+            >
+              {showArchived ? (
+                <EyeOff className="size-4" />
+              ) : (
+                <Eye className="size-4" />
+              )}
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {showArchived
+                ? "Masquer les archives"
+                : `Afficher les archives${archivedCount > 0 ? ` (${archivedCount})` : ""}`}
+            </TooltipContent>
+          </Tooltip>
+        ) : null}
         <Tooltip>
           <TooltipTrigger
             render={
@@ -436,6 +481,8 @@ export function SessionsRail({
 
 function SessionContextMenu({
   children,
+  pinned,
+  archived,
   onRename,
   onTogglePin,
   onArchive,
@@ -444,6 +491,8 @@ function SessionContextMenu({
   onDelete,
 }: {
   children: React.ReactNode;
+  pinned: boolean;
+  archived: boolean;
   onRename: () => void;
   onTogglePin: () => void;
   onArchive: () => void;
@@ -460,12 +509,30 @@ function SessionContextMenu({
           Renommer
         </ContextMenuItem>
         <ContextMenuItem onClick={onTogglePin}>
-          <Pin className="size-3.5" />
-          Épingler
+          {pinned ? (
+            <>
+              <PinOff className="size-3.5" />
+              Désépingler
+            </>
+          ) : (
+            <>
+              <Pin className="size-3.5" />
+              Épingler
+            </>
+          )}
         </ContextMenuItem>
         <ContextMenuItem onClick={onArchive}>
-          <Archive className="size-3.5" />
-          Archiver
+          {archived ? (
+            <>
+              <ArchiveRestore className="size-3.5" />
+              Restaurer
+            </>
+          ) : (
+            <>
+              <Archive className="size-3.5" />
+              Archiver
+            </>
+          )}
         </ContextMenuItem>
         <ContextMenuItem onClick={onDuplicate}>
           <Copy className="size-3.5" />
@@ -512,22 +579,49 @@ function CompactRow({
             onClick={onSelect}
             aria-label={session.title}
             className={cn(
-              "flex size-8 items-center justify-center rounded-full text-[11px] font-bold tabular-nums transition-all",
+              "relative flex size-8 items-center justify-center rounded-full text-[11px] font-bold tabular-nums transition-all",
               avatarColor,
               active &&
                 "ring-2 ring-primary ring-offset-2 ring-offset-muted/30",
-              !active && "opacity-80 hover:opacity-100"
+              !active && "opacity-80 hover:opacity-100",
+              session.archived && "grayscale opacity-60"
             )}
           />
         }
       >
-        {initials}
+        <span>{initials}</span>
+        {session.pinned ? (
+          <span
+            className="absolute -right-0.5 -top-0.5 flex size-3 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm"
+            aria-label="Épinglée"
+          >
+            <Pin className="size-2" />
+          </span>
+        ) : null}
+        {session.archived && !session.pinned ? (
+          <span
+            className="absolute -right-0.5 -top-0.5 flex size-3 items-center justify-center rounded-full bg-muted-foreground/80 text-background"
+            aria-label="Archivée"
+          >
+            <Archive className="size-2" />
+          </span>
+        ) : null}
       </TooltipTrigger>
       <TooltipContent side="right" className="max-w-xs">
         <span className="font-semibold">{truncate(session.title, 60)}</span>
         <span className="block text-[10px] opacity-80">
           {session.messageCount} msg · {fmtRelative(session.updatedAt)}
         </span>
+        {session.pinned ? (
+          <span className="mt-0.5 block text-[10px] opacity-80">
+            Épinglée
+          </span>
+        ) : null}
+        {session.archived ? (
+          <span className="mt-0.5 block text-[10px] opacity-80">
+            Archivée
+          </span>
+        ) : null}
         <span className="mt-0.5 block text-[10px] opacity-60">
           Clic droit pour les actions
         </span>
@@ -559,7 +653,8 @@ function ExpandedRow({
     <div
       className={cn(
         "group flex items-center gap-2 rounded-md px-1 py-1 transition-colors hover:bg-muted",
-        active && "bg-primary/10"
+        active && "bg-primary/10",
+        session.archived && "opacity-70"
       )}
     >
       <button
@@ -569,21 +664,36 @@ function ExpandedRow({
       >
         <span
           className={cn(
-            "flex size-7 shrink-0 items-center justify-center rounded-full text-[10.5px] font-bold tabular-nums",
+            "relative flex size-7 shrink-0 items-center justify-center rounded-full text-[10.5px] font-bold tabular-nums",
             avatarColor,
-            active && "ring-2 ring-primary ring-offset-1 ring-offset-background"
+            active && "ring-2 ring-primary ring-offset-1 ring-offset-background",
+            session.archived && "grayscale"
           )}
         >
           {initials}
+          {session.pinned ? (
+            <span
+              className="absolute -right-0.5 -top-0.5 flex size-2.5 items-center justify-center rounded-full bg-primary text-primary-foreground"
+              aria-label="Épinglée"
+            >
+              <Pin className="size-1.5" />
+            </span>
+          ) : null}
         </span>
         <span className="flex min-w-0 flex-col">
           <span
             className={cn(
-              "truncate text-[11.5px] font-semibold leading-tight",
+              "flex items-center gap-1 truncate text-[11.5px] font-semibold leading-tight",
               active ? "text-primary" : "text-foreground"
             )}
           >
             {truncate(session.title, 40)}
+            {session.archived ? (
+              <Archive
+                className="size-3 shrink-0 text-muted-foreground"
+                aria-label="Archivée"
+              />
+            ) : null}
           </span>
           <span className="flex min-w-0 items-center gap-1.5 truncate text-[10px] text-muted-foreground">
             {onChangeModel ? (

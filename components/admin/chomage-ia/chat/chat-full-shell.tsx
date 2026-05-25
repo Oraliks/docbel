@@ -78,6 +78,9 @@ export function ChatFullShell({
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+  // Affiche les sessions archivées dans le rail (par défaut masquées).
+  // Le rail filtre côté UI ; la liste serveur renvoie toutes les non-archivées.
+  const [showArchived, setShowArchived] = useState(false);
   // Références légales détectées dans la dernière réponse assistant qui ne
   // sont PAS couvertes par la KB. Sert à afficher la bannière `MissingSourcesHint`.
   // Reset à chaque ouverture / nouvelle session / dismiss user.
@@ -280,6 +283,106 @@ export function ChatFullShell({
     }
   }
 
+  /**
+   * Migration 17 — toggle pinned. Le tri par `pinned DESC` côté serveur fera
+   * remonter automatiquement la session en haut du rail au prochain refresh.
+   */
+  async function toggleSessionPin(id: string) {
+    const target = sessions.find((s) => s.id === id);
+    if (!target) return;
+    const nextPinned = !target.pinned;
+    // Optimiste : flip le flag localement (le rail re-trie via le rendu).
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, pinned: nextPinned } : s)),
+    );
+    try {
+      const res = await fetch(`/api/chomage-ia/sessions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pinned: nextPinned }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+      toast.success(
+        nextPinned ? "Conversation épinglée" : "Conversation désépinglée",
+      );
+      refreshSessions();
+    } catch (e) {
+      refreshSessions();
+      toast.error("Échec de l'épinglage", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  /**
+   * Migration 17 — toggle archived. Une session archivée disparaît du rail
+   * (sauf si `showArchived=true`). On bascule sans confirmation : l'archive
+   * est réversible via le même menu (l'item se grise et le rail garde la
+   * session si "Afficher archives" est ON).
+   */
+  async function toggleSessionArchive(id: string) {
+    const target = sessions.find((s) => s.id === id);
+    if (!target) return;
+    const nextArchived = !target.archived;
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, archived: nextArchived } : s)),
+    );
+    try {
+      const res = await fetch(`/api/chomage-ia/sessions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived: nextArchived }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+      toast.success(
+        nextArchived
+          ? "Conversation archivée"
+          : "Conversation restaurée",
+      );
+      // Si on archive la session courante, on revient à un état "nouvelle conv".
+      if (nextArchived && currentSessionId === id) {
+        newSession();
+      }
+      refreshSessions();
+    } catch (e) {
+      refreshSessions();
+      toast.error("Échec de l'archivage", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  /**
+   * Duplique une session via POST `/api/chomage-ia/sessions/[id]/duplicate`
+   * (endpoint existant — vague 1D) puis ouvre la copie créée.
+   */
+  async function duplicateSession(id: string) {
+    try {
+      const res = await fetch(`/api/chomage-ia/sessions/${id}/duplicate`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+      const data = (await res.json()) as { id: string; title: string };
+      toast.success("Conversation dupliquée", { description: data.title });
+      await refreshSessions();
+      // Ouvre la nouvelle session pour que l'admin voie le résultat.
+      openSession(data.id);
+    } catch (e) {
+      toast.error("Échec de la duplication", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
   // ----- Scroll helper -----
   function scrollThreadToBottom() {
     requestAnimationFrame(() => {
@@ -459,10 +562,10 @@ export function ChatFullShell({
     } finally {
       if (aborted) {
         // L'utilisateur a cliqué Stop. On garde le contenu partiel et on
-        // marque la bulle comme "interrompue".
-        // TODO(streaming): brancher un bouton "Régénérer ?" sur la bulle
-        // aborted (callback déjà câblé via context menu "Régénérer la réponse",
-        // mais nécessite un endpoint dédié — cf. message-bubble.tsx).
+        // marque la bulle comme "interrompue". Le composant MessageBubble
+        // affiche un bouton "Régénérer la réponse" prominent sous la bulle
+        // qui relance Claude depuis le même message user en amont via
+        // `regenerateFromAssistant`.
         patchLastAssistant((m) => ({
           ...m,
           pending: false,
@@ -859,6 +962,91 @@ export function ChatFullShell({
     }
   }
 
+  // ----- Supprimer un message individuel (DELETE /messages/[id]) -----
+  /**
+   * Supprime un ChatMessage côté serveur + le retire du thread localement.
+   * Le filtre côté UI utilise l'id du message comme clé (pas l'index, car
+   * les bulles `generated_prompt` côté client peuvent décaler les positions).
+   */
+  async function deleteMessage(messageId: string) {
+    // Snapshot pour rollback en cas d'échec, puis update optimiste.
+    const snapshot = messages;
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    try {
+      const res = await fetch(`/api/chomage-ia/messages/${messageId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+      toast.success("Message supprimé");
+      // Re-fetch les sessions pour mettre à jour le messageCount du rail.
+      refreshSessions();
+    } catch (e) {
+      // Rollback si l'API a échoué.
+      setMessages(snapshot);
+      toast.error("Échec de la suppression", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  // ----- Régénérer une réponse assistant (depuis le bouton inline ou le menu) -----
+  /**
+   * Régénère la réponse à partir du dernier message user qui précède le message
+   * assistant ciblé. Réutilise la mécanique `editAndRegenerate` avec le même
+   * contenu (relance Claude depuis le même prompt, sans modification).
+   *
+   * Use case principal : bouton "Régénérer" sur une bulle aborted (Stop), ou
+   * sur n'importe quelle bulle assistant via le ContextMenu.
+   *
+   * Si `assistantMessageId` est vide, on cible le DERNIER message assistant
+   * du thread (cas aborted avant le 1er token quand l'id n'est pas encore
+   * arrivé via l'event meta).
+   */
+  function regenerateFromAssistant(assistantMessageId: string) {
+    if (sending) return;
+    let assistantIdx = -1;
+    if (assistantMessageId) {
+      assistantIdx = messages.findIndex(
+        (m) => m.id === assistantMessageId && m.role === "assistant",
+      );
+    }
+    // Fallback : pas d'id → on cherche le dernier message assistant non-prompt.
+    if (assistantIdx === -1) {
+      for (let i = messages.length - 1; i >= 0; i--) {
+        if (
+          messages[i].role === "assistant" &&
+          messages[i].kind !== "generated_prompt"
+        ) {
+          assistantIdx = i;
+          break;
+        }
+      }
+    }
+    if (assistantIdx === -1) {
+      toast.error("Message introuvable");
+      return;
+    }
+    // Cherche le dernier message user AVANT cette réponse assistant.
+    let userIdx = -1;
+    for (let i = assistantIdx - 1; i >= 0; i--) {
+      if (messages[i].role === "user" && messages[i].kind !== "generated_prompt") {
+        userIdx = i;
+        break;
+      }
+    }
+    if (userIdx === -1) {
+      toast.error("Aucun message utilisateur à régénérer en amont");
+      return;
+    }
+    const userContent = messages[userIdx].content;
+    // Délègue à editAndRegenerate avec le MÊME contenu user → Claude relance
+    // depuis ce point exact avec le même prompt.
+    editAndRegenerate(userIdx, userContent);
+  }
+
   // ----- Shortcut helpers -----
   const toggleMode = useCallback(() => {
     setMode((m) => (m === "chat" ? "prompt" : "chat"));
@@ -900,11 +1088,20 @@ export function ChatFullShell({
     : null;
   const currentTitle = currentSession?.title ?? "Nouvelle conversation";
 
+  // Filtre les archivées dans le rail si le toggle n'est pas activé.
+  // Si une session est à la fois `pinned` ET `archived` : on l'affiche QUAND
+  // showArchived=true. L'épinglage prime sur l'ordre (pinned en haut), mais
+  // pas sur la visibilité — l'archive masque toujours quand showArchived=false.
+  const displayedSessions = showArchived
+    ? sessions
+    : sessions.filter((s) => !s.archived);
+  const archivedCount = sessions.filter((s) => s.archived).length;
+
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
       {/* Rail gauche */}
       <SessionsRail
-        sessions={sessions}
+        sessions={displayedSessions}
         loading={loadingSessions}
         currentId={currentSessionId}
         onSelect={openSession}
@@ -915,6 +1112,12 @@ export function ChatFullShell({
         onChangeModel={changeSessionModel}
         onOpenSnippets={() => setSnippetsSheetOpen(true)}
         onExportMarkdown={exportSessionAsMarkdown}
+        onTogglePin={toggleSessionPin}
+        onArchive={toggleSessionArchive}
+        onDuplicate={duplicateSession}
+        showArchived={showArchived}
+        onToggleShowArchived={() => setShowArchived((v) => !v)}
+        archivedCount={archivedCount}
       />
 
       {/* Thread + input central */}
@@ -984,9 +1187,10 @@ export function ChatFullShell({
             onCancelEdit={() => setEditingIndex(null)}
             actionsDisabled={sending}
             onOpenSources={() => setSourcesSheetOpen(true)}
-            // TODO(agent-1B / backend): wirer onDeleteMessage, onRegenerateMessage,
-            // onForkFromMessage quand les endpoints existent. Pour l'instant le
-            // MessageBubble affiche un toast "bientôt disponible".
+            onDeleteMessage={deleteMessage}
+            onRegenerateMessage={regenerateFromAssistant}
+            // onForkFromMessage : endpoint /fork pas encore implémenté → reste no-op
+            // (le ContextMenu affiche le toast "bientôt dispo" par défaut).
           />
         </div>
 

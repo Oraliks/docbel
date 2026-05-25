@@ -12,7 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
 import { CompactIaHeader } from "@/components/admin/chomage-ia/compact-ia-header";
 import { AiDisabledBanner } from "@/components/admin/chomage-ia/ai-disabled-banner";
-import { SourcesWorkspace } from "@/components/admin/chomage-ia/sources/sources-workspace";
+import { SourcesTableWorkspace } from "@/components/admin/chomage-ia/sources/table/sources-table-workspace";
 import { DEFAULT_DOMAIN } from "@/lib/chomage-ia/types";
 
 export const dynamic = "force-dynamic";
@@ -45,7 +45,7 @@ export default async function ChomageIaSourcesPage() {
       />
       <div className="flex flex-col gap-4 px-4 py-4 lg:px-6">
         <AiDisabledBanner enabled={aiEnabled} hasKey={hasKey} />
-        <SourcesWorkspace
+        <SourcesTableWorkspace
           domain={DEFAULT_DOMAIN}
           aiAvailable={aiEnabled && hasKey}
         />

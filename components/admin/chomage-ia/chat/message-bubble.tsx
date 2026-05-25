@@ -152,19 +152,18 @@ export function MessageBubble({
   }
 
   function handleRegenerate() {
-    if (!message.id) {
-      toast.error("Régénération indisponible (message non persisté)");
-      return;
-    }
-    if (onRegenerate) {
-      onRegenerate(message.id);
-    } else {
+    if (!onRegenerate) {
       // TODO(backend): brancher la régénération sur l'API. Pour l'instant,
       // on signale juste à l'utilisateur que la feature est en préparation.
       toast("Régénération bientôt disponible", {
         description: "Cette action nécessite un endpoint dédié.",
       });
+      return;
     }
+    // Si pas d'id (cas aborted avant le 1er token persisté), on passe une
+    // chaîne vide — le parent ira chercher le dernier user message en amont
+    // par position dans le thread (l'aborted bubble est toujours la dernière).
+    onRegenerate(message.id ?? "");
   }
 
   function handleFork() {
@@ -326,6 +325,25 @@ export function MessageBubble({
         {/* Bubble */}
         <div className={cn("flex max-w-[85%] flex-col gap-1", isUser && "items-end")}>
           {inner}
+
+          {/* Bouton "Régénérer" prominent sous une bulle aborted (assistant uniquement).
+              Visible uniquement si la dernière réponse a été interrompue par
+              l'utilisateur (Stop). Clic → relance Claude depuis le même prompt
+              user qui précède cette bulle. */}
+          {!isUser && message.aborted && !message.streaming && !message.pending ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleRegenerate}
+              disabled={disabled}
+              className="mt-1 self-start gap-1.5"
+              title="Relancer Claude depuis la même question (le contenu partiel sera remplacé)"
+            >
+              <RefreshCw className="size-3.5" />
+              Régénérer la réponse
+            </Button>
+          ) : null}
 
           {/* Méta + actions */}
           {!editMode ? (

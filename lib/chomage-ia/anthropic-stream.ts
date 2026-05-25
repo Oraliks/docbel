@@ -100,10 +100,13 @@ export async function* callClaudeStream({
   cachedContext,
   signal,
 }: CallClaudeStreamOptions): AsyncGenerator<StreamEvent, void, undefined> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
+  const envKey = process.env.ANTHROPIC_API_KEY;
+  if (!envKey) {
     throw new AnthropicError("ANTHROPIC_API_KEY is not configured", 500);
   }
+  // Pinned dans une const locale pour que TS narrow correctement dans la
+  // closure `doFetch()` ci-dessous (sinon la propriété d'env reste optional).
+  const apiKey: string = envKey;
 
   // Compose un signal qui combine timeout + abort externe.
   // AbortSignal.any est dispo depuis Node 20.3 / Next 16 → OK.
@@ -133,23 +136,51 @@ export async function* callClaudeStream({
     });
   }
 
-  const res = await fetch(ANTHROPIC_API_URL, {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": ANTHROPIC_API_VERSION,
-      "content-type": "application/json",
-      accept: "text/event-stream",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: maxTokens,
-      system: systemBlocks,
-      messages,
-      stream: true,
-    }),
-    signal: combinedSignal,
+  const requestBody = JSON.stringify({
+    model,
+    max_tokens: maxTokens,
+    system: systemBlocks,
+    messages,
+    stream: true,
   });
+
+  /**
+   * Petit helper qui fait l'appel POST initial. Réutilisé pour le retry 429.
+   * Une seule retry sur 429 avant le démarrage du stream (avant tout token reçu) :
+   *   - Si Anthropic est saturé, on attend 1s puis on retente une fois.
+   *   - Si la 2e tentative échoue (429 ou autre), on propage l'erreur normalement.
+   *   - Si on est au milieu du stream et qu'une erreur survient → pas de retry
+   *     (déjà partiellement émis côté client, donc on laisse passer).
+   */
+  async function doFetch(): Promise<Response> {
+    return fetch(ANTHROPIC_API_URL, {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": ANTHROPIC_API_VERSION,
+        "content-type": "application/json",
+        accept: "text/event-stream",
+      },
+      body: requestBody,
+      signal: combinedSignal,
+    });
+  }
+
+  let res = await doFetch();
+
+  if (res.status === 429) {
+    console.warn(
+      "[anthropic-stream] 429 rate-limit, retrying once after 1s",
+    );
+    // Drain le body pour libérer la connexion proprement avant de re-fetch.
+    try {
+      await res.body?.cancel();
+    } catch {
+      /* ignore */
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    res = await doFetch();
+  }
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");

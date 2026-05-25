@@ -1,20 +1,36 @@
-import Link from "next/link";
-import { MailIcon } from "lucide-react";
 import {
   listExistingOrganizationNames,
   listOrganizations,
 } from "@/lib/partner-domains";
-import { PartnerDomainsManager } from "@/components/admin/partner-domains-manager";
+import { PartnerOverviewShell } from "@/components/admin/partenaires/overview/partner-overview-shell";
 
+/**
+ * Page d'overview admin des organisations partenaires (refonte 2026-05).
+ *
+ * Server component minimaliste : charge les organisations + noms distincts
+ * depuis Prisma, sérialise les dates pour traverser la frontière server →
+ * client, puis délègue tout l'UI à `<PartnerOverviewShell />`.
+ *
+ * Auth + role check : assurés par app/admin/layout.tsx.
+ *
+ * Pages adjacentes (boutons en header du shell) :
+ *   - /admin/partenaires/stats : vue stats détaillée
+ *   - /admin/partenaires/email : configuration de l'email d'invitation
+ *
+ * Toutes les mutations passent par les endpoints API existants
+ * (`/api/admin/partner-domains/*`, `/api/admin/partner-users/*`,
+ * `/api/admin/partner-organizations/rename`).
+ */
 export const dynamic = "force-dynamic";
 
-export default async function PartnerDomainsAdminPage() {
+export default async function PartenairesAdminPage() {
   const [initialOrganizations, existingOrgNames] = await Promise.all([
     listOrganizations(),
     listExistingOrganizationNames(),
   ]);
 
-  const serializedOrgs = initialOrganizations.map((org) => ({
+  // Sérialisation des dates (Date → ISO string) pour passer au client.
+  const serialized = initialOrganizations.map((org) => ({
     ...org,
     domains: org.domains.map((d) => ({
       ...d,
@@ -28,31 +44,9 @@ export default async function PartnerDomainsAdminPage() {
   }));
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Partenaires
-          </h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">
-            Gérez les organisations partenaires et leurs domaines email
-            autorisés. Plusieurs domaines peuvent appartenir à la même
-            organisation (ex : <code>fgtb.be</code> et <code>abvv.be</code>).
-            Cliquez sur une organisation pour voir ses utilisateurs inscrits.
-          </p>
-        </div>
-        <Link
-          href="/admin/partenaires/email"
-          className="inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-muted"
-        >
-          <MailIcon className="size-4" />
-          Email d&apos;invitation
-        </Link>
-      </div>
-      <PartnerDomainsManager
-        initialOrganizations={serializedOrgs}
-        existingOrganizationNames={existingOrgNames}
-      />
-    </div>
+    <PartnerOverviewShell
+      initialOrganizations={serialized}
+      existingOrganizationNames={existingOrgNames}
+    />
   );
 }

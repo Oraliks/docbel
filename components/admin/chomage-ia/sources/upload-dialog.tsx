@@ -417,13 +417,13 @@ export function UploadDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
-          {/* Dropzone */}
+        <div className="flex flex-1 min-h-0 flex-col gap-4 overflow-hidden px-6 py-4">
+          {/* Dropzone — compact, toujours visible en haut */}
           <div
             {...dropHandlers}
             onClick={() => !uploading && fileInputRef.current?.click()}
             className={cn(
-              "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors cursor-pointer",
+              "shrink-0 flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed py-4 px-4 text-center transition-colors cursor-pointer",
               dragOver
                 ? "border-primary bg-primary/5"
                 : "border-border hover:border-muted-foreground hover:bg-muted/40",
@@ -432,16 +432,15 @@ export function UploadDialog({
           >
             <UploadCloud
               className={cn(
-                "size-8",
+                "size-6",
                 dragOver ? "text-primary" : "text-muted-foreground"
               )}
             />
-            <p className="text-sm font-medium">
+            <p className="text-[13px] font-medium">
               Glissez vos fichiers ici ou cliquez pour parcourir
             </p>
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               PDF · Word · Excel · PowerPoint · Images — multi-fichiers
-              supporté
             </p>
             <input
               ref={fileInputRef}
@@ -457,10 +456,75 @@ export function UploadDialog({
             />
           </div>
 
-          {/* Queue */}
+          {/* Champs partagés — DESSUS de la queue pour qu'ils restent
+              visibles sans scroll, même avec 50 fichiers en file. */}
+          <div className="shrink-0 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="upload-base-title" className="text-[12.5px]">
+                Préfixe de titre (optionnel)
+              </Label>
+              <Input
+                id="upload-base-title"
+                value={baseTitle}
+                onChange={(e) => setBaseTitle(e.target.value)}
+                placeholder="Ex: Barème ONEM 2026"
+                disabled={uploading}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="upload-url" className="text-[12.5px]">
+                URL source (optionnel)
+              </Label>
+              <Input
+                id="upload-url"
+                type="url"
+                value={sourceUrl}
+                onChange={(e) => setSourceUrl(e.target.value)}
+                placeholder="https://www.onem.be/..."
+                disabled={uploading}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1 sm:col-span-2">
+              <Label htmlFor="upload-tags" className="text-[12.5px]">
+                Tags (séparés par des virgules)
+              </Label>
+              <Input
+                id="upload-tags"
+                value={tagsRaw}
+                onChange={(e) => setTagsRaw(e.target.value)}
+                placeholder="ex: ONEM, barèmes, 2026"
+                disabled={uploading}
+              />
+            </div>
+
+            {hasImages && (
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <Label htmlFor="upload-caption" className="text-[12.5px]">
+                  Description des images{" "}
+                  <span className="text-muted-foreground font-normal">
+                    (optionnel — OCR auto si vide)
+                  </span>
+                </Label>
+                <Textarea
+                  id="upload-caption"
+                  value={imageCaption}
+                  onChange={(e) => setImageCaption(e.target.value)}
+                  placeholder="Laisse vide → OCR Tesseract automatique (fr+nl+en). Sinon décris ce que montre l'image."
+                  rows={2}
+                  disabled={uploading}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Queue — prend tout l'espace restant avec son scroll interne.
+              flex-1 min-h-0 essentiel pour que le scroll fonctionne dans
+              un parent flex-col. */}
           {slots.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
+            <div className="flex flex-1 min-h-0 flex-col gap-1.5">
+              <div className="flex shrink-0 items-center justify-between">
                 <Label className="text-[12.5px]">
                   File d&apos;attente ({slots.length})
                 </Label>
@@ -485,89 +549,21 @@ export function UploadDialog({
                   )}
                 </div>
               </div>
-              <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto rounded-md border bg-muted/20 p-2">
-                {slots.map((slot) => (
-                  <SlotRow
-                    key={slot.id}
-                    slot={slot}
-                    disabled={uploading}
-                    onRemove={() => removeSlot(slot.id)}
-                    onForceReupload={() => forceReupload(slot)}
-                  />
-                ))}
+              <div className="flex-1 min-h-0 overflow-y-auto rounded-md border bg-muted/20 p-2">
+                <div className="flex flex-col gap-1.5">
+                  {slots.map((slot) => (
+                    <SlotRow
+                      key={slot.id}
+                      slot={slot}
+                      disabled={uploading}
+                      onRemove={() => removeSlot(slot.id)}
+                      onForceReupload={() => forceReupload(slot)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           )}
-
-          {/* Champs partagés */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="upload-base-title" className="text-[12.5px]">
-                Préfixe de titre (optionnel)
-              </Label>
-              <Input
-                id="upload-base-title"
-                value={baseTitle}
-                onChange={(e) => setBaseTitle(e.target.value)}
-                placeholder="Ex: Barème ONEM 2026"
-                disabled={uploading}
-              />
-              <p className="text-[11px] text-muted-foreground">
-                Vide → titre = nom du fichier. Sinon → « préfixe — nom ».
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="upload-url" className="text-[12.5px]">
-                URL source (optionnel)
-              </Label>
-              <Input
-                id="upload-url"
-                type="url"
-                value={sourceUrl}
-                onChange={(e) => setSourceUrl(e.target.value)}
-                placeholder="https://www.onem.be/..."
-                disabled={uploading}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <Label htmlFor="upload-tags" className="text-[12.5px]">
-                Tags (séparés par des virgules)
-              </Label>
-              <Input
-                id="upload-tags"
-                value={tagsRaw}
-                onChange={(e) => setTagsRaw(e.target.value)}
-                placeholder="ex: ONEM, barèmes, 2026"
-                disabled={uploading}
-              />
-            </div>
-
-            {hasImages && (
-              <div className="flex flex-col gap-1.5 sm:col-span-2">
-                <Label htmlFor="upload-caption" className="text-[12.5px]">
-                  Description des images{" "}
-                  <span className="text-muted-foreground font-normal">
-                    (optionnel — OCR auto via Tesseract)
-                  </span>
-                </Label>
-                <Textarea
-                  id="upload-caption"
-                  value={imageCaption}
-                  onChange={(e) => setImageCaption(e.target.value)}
-                  placeholder="Le texte des images est extrait automatiquement par OCR (Tesseract.js, fr+nl+en). Tu peux laisser vide pour utiliser l'OCR, ou décrire toi-même si tu veux un caption custom."
-                  rows={3}
-                  disabled={uploading}
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Si vide, l&apos;OCR Tesseract tentera d&apos;extraire le texte
-                  (10-30 s la première fois, puis 3-10 s par image). Sinon ta
-                  description manuelle est utilisée telle quelle.
-                </p>
-              </div>
-            )}
-          </div>
         </div>
 
         <DialogFooter className="border-t border-border px-6 py-3">

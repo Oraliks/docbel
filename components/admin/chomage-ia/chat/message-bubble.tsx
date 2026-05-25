@@ -239,9 +239,7 @@ export function MessageBubble({
 
   const inner = allowContextMenu ? (
     <ContextMenu>
-      <ContextMenuTrigger className={bubbleClass} render={<div />}>
-        {bubbleBody}
-      </ContextMenuTrigger>
+      <ContextMenuTrigger render={<div className={bubbleClass}>{bubbleBody}</div>} />
       <ContextMenuContent className="min-w-52">
         <ContextMenuItem onClick={copyToClipboard}>
           <Copy className="size-3.5" />

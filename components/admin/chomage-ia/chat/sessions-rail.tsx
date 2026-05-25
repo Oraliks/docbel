@@ -502,7 +502,7 @@ function SessionContextMenu({
 }) {
   return (
     <ContextMenu>
-      <ContextMenuTrigger render={<div />}>{children}</ContextMenuTrigger>
+      <ContextMenuTrigger render={<div>{children}</div>} />
       <ContextMenuContent className="min-w-48">
         <ContextMenuItem onClick={onRename}>
           <Pencil className="size-3.5" />

@@ -85,4 +85,8 @@ export interface KnowledgeSourceListItem {
   updatedAt: string;
   contentPreview: string;
   contentLength: number;
+  /** ISO timestamp du dernier indexing RAG, ou null. Migration 19. */
+  indexedAt: string | null;
+  /** Dernier message d'erreur d'indexing, ou null. Migration 19. */
+  indexError: string | null;
 }

@@ -14,6 +14,7 @@ import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
 import { callClaude, AnthropicError, hasAnthropicKey } from "@/lib/chomage-ia/anthropic";
 import { CLAUDE_MODELS } from "@/lib/chomage-ia/models";
 import { SUMMARIZE_SYSTEM_PROMPT } from "@/lib/chomage-ia/prompts";
+import { runIndexInBackground } from "@/lib/chomage-ia/indexer";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -79,6 +80,10 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       where: { id },
       data: { summary },
     });
+
+    // Le summary est préfixé au content dans le chunker pour booster le ranking
+    // → re-index pour que les embeddings reflètent le nouveau summary.
+    runIndexInBackground(updated.id);
 
     return NextResponse.json({
       id: updated.id,

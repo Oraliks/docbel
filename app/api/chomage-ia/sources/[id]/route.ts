@@ -13,6 +13,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { KnowledgeSourceUpdateSchema } from "@/lib/chomage-ia/types";
+import { runIndexInBackground } from "@/lib/chomage-ia/indexer";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -94,6 +95,19 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     where: { id },
     data,
   });
+
+  // Re-indexation RAG si le contenu sémantiquement chunké a changé.
+  // `title` est préfixé au content lors du chunking → si le titre change,
+  // le 1er chunk change aussi → reindex. `summary` est aussi préfixé.
+  // Pas de re-index si seulement `enabled`/`tags`/`sourceUrl` changent
+  // (sémantique du chunk identique).
+  const contentChanged =
+    parsed.content !== undefined ||
+    parsed.title !== undefined ||
+    parsed.summary !== undefined;
+  if (contentChanged) {
+    runIndexInBackground(updated.id);
+  }
 
   return NextResponse.json({
     id: updated.id,

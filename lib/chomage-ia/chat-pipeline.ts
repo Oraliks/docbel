@@ -16,6 +16,7 @@
 import { prisma } from "@/lib/prisma";
 import {
   buildKnowledgeContext,
+  buildKnowledgeContextRag,
   extractCitedSourceIds,
 } from "./context";
 import {
@@ -32,11 +33,26 @@ export interface PrepareChatContextResult {
   totalSourcesAvailable: number;
   /** True si le budget tokens a forcé une troncature de la KB. */
   truncated: boolean;
+  /**
+   * Mode effectif utilisé pour le retrieval :
+   *  - `"rag"`      : vector search pgvector (top-K chunks)
+   *  - `"fallback"` : ancien comportement (toute la KB filtrée par mots-clés)
+   *  - `"empty"`    : KB vide pour ce domain
+   */
+  retrievalMode: "rag" | "fallback" | "empty";
 }
 
 /**
  * Prépare le bloc de contexte à passer à Claude (KB serialisée) à partir
  * de la dernière question utilisateur.
+ *
+ * Stratégie en cascade :
+ *   1. Tenter `buildKnowledgeContextRag` (vector search pgvector). Si OK,
+ *      on injecte ~8 chunks de ~5K tokens — bien plus efficace qu'envoyer
+ *      toute la KB.
+ *   2. Si la RAG est indisponible (pas de provider, pas de chunks indexés,
+ *      erreur SQL/embed), fallback sur `buildKnowledgeContext` qui envoie
+ *      les sources entières.
  *
  * Le `cachedContext` est wrappé d'un préambule qui explique à Claude le
  * format des sources et la convention `[SRC:id]` à respecter.
@@ -48,6 +64,44 @@ export async function prepareChatContext({
   domain: string;
   query: string;
 }): Promise<PrepareChatContextResult> {
+  // 1. Tentative RAG.
+  let ragResult:
+    | Awaited<ReturnType<typeof buildKnowledgeContextRag>>
+    | null = null;
+  try {
+    ragResult = await buildKnowledgeContextRag({ domain, query });
+  } catch (err) {
+    // Best-effort — la fonction est censée déjà catch en interne, mais on
+    // double-check pour ne JAMAIS faire crasher le chat sur une erreur RAG.
+    console.warn("[chomage-ia chat-pipeline] RAG threw unexpectedly:", err);
+    ragResult = null;
+  }
+
+  if (ragResult && ragResult.mode === "rag" && ragResult.contextText.length > 0) {
+    // Compte les sources disponibles pour les stats côté UI (KB total).
+    const totalAvailable = await prisma.knowledgeSource.count({
+      where: { domain, enabled: true },
+    });
+    const cachedContext = `Voici les passages les plus pertinents de la knowledge base, sélectionnés par recherche sémantique (top-${ragResult.debug.chunkCount} chunks).
+
+Chaque source est encadrée par <SOURCE id="..."> ... </SOURCE> et peut contenir plusieurs chunks (### Chunk N). Cite ces IDs avec [SRC:id] dans ta réponse pour chaque affirmation factuelle. Si une info que tu connais n'est dans aucun de ces extraits, dis-le explicitement plutôt que de l'inventer.
+
+${ragResult.contextText}`;
+    return {
+      cachedContext,
+      includedSourceIds: ragResult.includedSourceIds,
+      totalSourcesAvailable: totalAvailable,
+      truncated: false,
+      retrievalMode: "rag",
+    };
+  }
+
+  // 2. Fallback : ancien comportement (toute la KB filtrée par mots-clés).
+  if (ragResult?.debug.fallbackReason) {
+    console.log(
+      `[chomage-ia chat-pipeline] fallback to legacy KB: ${ragResult.debug.fallbackReason}`,
+    );
+  }
   const { contextText, includedSourceIds, totalSourcesAvailable, truncated } =
     await buildKnowledgeContext({ domain, query });
 
@@ -60,6 +114,7 @@ export async function prepareChatContext({
     includedSourceIds,
     totalSourcesAvailable,
     truncated,
+    retrievalMode: totalSourcesAvailable === 0 ? "empty" : "fallback",
   };
 }
 

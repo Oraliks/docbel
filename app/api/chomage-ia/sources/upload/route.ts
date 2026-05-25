@@ -36,6 +36,7 @@ import { nanoid } from "nanoid";
 import { DEFAULT_DOMAIN } from "@/lib/chomage-ia/types";
 import { extractPdfViaClaude } from "@/lib/chomage-ia/pdf-via-claude";
 import { runAutoTagInBackground } from "@/lib/chomage-ia/auto-tag";
+import { runIndexInBackground } from "@/lib/chomage-ia/indexer";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 
@@ -659,6 +660,10 @@ async function handleUpload(req: NextRequest) {
   // Auto-tag en background — ne bloque pas la réponse client.
   // Le PATCH des tags se fera quand Haiku aura répondu (quelques secondes).
   void runAutoTagInBackground(ks.id, finalContent, title, tags);
+
+  // Indexing RAG fire-and-forget. Idem auto-tag : fail-soft si pas de
+  // provider d'embeddings, le chat retombera sur l'ancien comportement.
+  runIndexInBackground(ks.id);
 
   console.log(
     `chomage-ia upload: ${kind} "${title}" (${buffer.byteLength}B, ext=${ext}) → ks=${ks.id} file=${dbFile?.id ?? "none"}`

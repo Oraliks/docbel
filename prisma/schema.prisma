@@ -1393,8 +1393,50 @@ model KnowledgeSource {
   updatedAt   DateTime @updatedAt
   createdById String?
 
+  /// Timestamp du dernier indexing RAG réussi (migration 19, pgvector).
+  /// Null = jamais indexé (ou en attente). Mis à jour par `indexKnowledgeSource`.
+  indexedAt  DateTime?
+  /// Dernier message d'erreur d'indexing (provider down, content trop court…).
+  /// Null = pas d'erreur ou pas encore indexé.
+  indexError String?
+
+  /// Chunks RAG (1 source → N chunks). Cascade delete via FK.
+  chunks KnowledgeChunk[]
+
   @@index([domain, enabled])
   @@index([createdAt])
+}
+
+/// Chunk d'une `KnowledgeSource` indexé avec son embedding pour la RAG sémantique.
+/// Migration 19 active l'extension pgvector et déclare la colonne SQL `embedding`
+/// en `vector(1536)` (1536 = dim OpenAI text-embedding-3-small ; Voyage 3-lite
+/// renvoie du 1024, paddé à 1536 côté indexer pour partager la même colonne).
+///
+/// Prisma ne supporte pas le type `vector` nativement — on déclare donc `embedding`
+/// comme `Bytes?` ici (placeholder) et on fait toutes les écritures + lectures
+/// vectorielles via raw queries (`prisma.$executeRawUnsafe` / `prisma.$queryRawUnsafe`)
+/// dans `lib/chomage-ia/indexer.ts` et `lib/chomage-ia/context.ts`.
+model KnowledgeChunk {
+  id          String          @id @default(cuid())
+  sourceId    String
+  source      KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  /// Ordre dans la source originale (0, 1, 2, …).
+  chunkIndex  Int
+  content     String          @db.Text
+  /// sha256(content) — permet de skipper l'embedding si inchangé entre 2 runs.
+  contentHash String
+  /// Placeholder Prisma — la colonne SQL réelle est `vector(1536)`.
+  /// Ne PAS utiliser via Prisma client : faire des raw queries.
+  embedding   Bytes?          @db.ByteA
+  /// Dimension réelle du vector (ex. 1024 voyage-3-lite, 1536 openai-3-small).
+  embedDim    Int
+  /// Modèle d'embedding utilisé (ex. "voyage-3-lite", "text-embedding-3-small").
+  embedModel  String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([sourceId, chunkIndex])
+  @@index([embedModel])
 }
 
 /// Session de chat IA — un fil de discussion entre l'admin et l'assistant.

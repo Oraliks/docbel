@@ -19,6 +19,8 @@ interface SourcesListProps {
   onToggleEnabled: (id: string, current: boolean) => void;
   onDelete: (id: string, title: string) => void;
   onSummarize: (id: string) => void;
+  /** Appelé après une réindexation réussie pour rafraîchir la liste. */
+  onReindexed?: () => void;
 }
 
 export function SourcesList({
@@ -29,6 +31,7 @@ export function SourcesList({
   onToggleEnabled,
   onDelete,
   onSummarize,
+  onReindexed,
 }: SourcesListProps) {
   if (loading && items.length === 0) {
     return (
@@ -68,6 +71,7 @@ export function SourcesList({
             onToggleEnabled={() => onToggleEnabled(item.id, item.enabled)}
             onDelete={() => onDelete(item.id, item.title)}
             onSummarize={() => onSummarize(item.id)}
+            onReindexed={onReindexed}
           />
         </li>
       ))}

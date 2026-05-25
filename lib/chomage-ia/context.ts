@@ -1,15 +1,25 @@
 /**
  * Construction du contexte de sources injecté dans le system prompt de Claude.
  *
- * Stratégie MVP — pas d'embeddings :
- *   1. Récupère toutes les sources `enabled` du domaine.
- *   2. Si la question contient des mots-clés, booste les sources qui
- *      matchent (par titre, tags, début du contenu) — naïf mais utile.
- *   3. Tronque la liste pour rester sous KB_CONTEXT_BUDGET_TOKENS.
- *   4. Formate chaque source comme un bloc `[SRC:id]` digestible.
+ * Deux stratégies disponibles :
  *
- * TODO : ajouter retrieval sémantique (embeddings + pgvector) quand la KB
- *        dépasse ~200 sources ou que les réponses deviennent imprécises.
+ *   A. `buildKnowledgeContext` (MVP, fallback) — récupère TOUTES les sources
+ *      `enabled` du domaine, boost par mots-clés, tronque sous le budget.
+ *      Coûteuse en tokens quand la KB grandit (100+ sources → 250K tokens
+ *      par message).
+ *
+ *   B. `buildKnowledgeContextRag` (préférée depuis la migration 19) — embed
+ *      la query, query pgvector pour le top-K chunks pertinents, injecte
+ *      uniquement ces chunks (5-10K tokens). Cf. lib/chomage-ia/indexer.ts
+ *      pour l'indexation côté écriture.
+ *
+ * Le caller (`prepareChatContext` dans chat-pipeline.ts) tente la B en premier
+ * et retombe sur la A si :
+ *   - pas de provider d'embeddings configuré
+ *   - pas de chunks indexés pour ce domain
+ *   - erreur transitoire (provider down, query embed échoue)
+ *
+ * → Le chat continue de fonctionner même si la RAG est cassée.
  */
 
 import { prisma } from "@/lib/prisma";
@@ -17,6 +27,11 @@ import {
   KB_CONTEXT_BUDGET_TOKENS,
   estimateTokens,
 } from "./models";
+import {
+  embedTexts,
+  getEmbeddingProvider,
+  vectorToSqlLiteral,
+} from "./embeddings";
 import type { KnowledgeSource } from "@prisma/client";
 
 interface RankedSource {
@@ -193,4 +208,252 @@ export function extractCitedSourceIds(text: string): string[] {
     if (ids.size >= 50) break;
   }
   return [...ids];
+}
+
+/* ------------------------------------------------------------------ */
+/*  RAG sémantique via pgvector (migration 19)                         */
+/* ------------------------------------------------------------------ */
+
+/** Top-K par défaut : nombre de chunks récupérés via vector search. */
+export const RAG_DEFAULT_TOP_K = 8;
+
+/** Limite haute de chunks par source pour éviter qu'une seule source domine. */
+const RAG_MAX_CHUNKS_PER_SOURCE = 3;
+
+interface RagChunkRow {
+  chunk_id: string;
+  source_id: string;
+  chunk_index: number;
+  chunk_content: string;
+  source_title: string;
+  source_kind: string;
+  source_url: string | null;
+  distance: number;
+}
+
+export interface BuildKnowledgeContextRagResult {
+  /** Bloc texte à mettre dans `cachedContext`. Vide si aucun chunk pertinent. */
+  contextText: string;
+  /** IDs des sources injectées (déduplication des chunks → 1 ID par source). */
+  includedSourceIds: string[];
+  /** Mode effectif utilisé. `"rag"` = vector search OK, `"fallback"` = degraded. */
+  mode: "rag" | "fallback";
+  /** Détail debug : nb de chunks récupérés, modèle d'embed utilisé, etc. */
+  debug: {
+    chunkCount: number;
+    embedModel: string | null;
+    embedDim: number | null;
+    fallbackReason?: string;
+  };
+}
+
+/**
+ * Construit le contexte RAG via vector search pgvector.
+ *
+ * Étapes :
+ *   1. Embed la query (un seul vecteur).
+ *   2. Query pgvector :
+ *        SELECT chunks JOIN sources WHERE domain ET enabled ET embedding NOT NULL
+ *        ORDER BY embedding <=> queryVector  (cosine distance, ASC)
+ *        LIMIT topK
+ *   3. Regroupe par source, formate en blocs `[SRC:id]` lisibles.
+ *
+ * Si une étape échoue, on yield un `mode: "fallback"` et le caller doit
+ * basculer sur `buildKnowledgeContext`. L'erreur exacte est dans `debug.fallbackReason`.
+ *
+ * @param domain  Domaine de la KB ("chomage" par défaut)
+ * @param query   Question utilisateur — sera embeddée
+ * @param topK    Nombre max de chunks à récupérer (défaut RAG_DEFAULT_TOP_K)
+ */
+export async function buildKnowledgeContextRag({
+  domain,
+  query,
+  topK = RAG_DEFAULT_TOP_K,
+}: {
+  domain: string;
+  query: string;
+  topK?: number;
+}): Promise<BuildKnowledgeContextRagResult> {
+  // 1. Pas de provider → fallback immédiat.
+  if (!getEmbeddingProvider()) {
+    return {
+      contextText: "",
+      includedSourceIds: [],
+      mode: "fallback",
+      debug: {
+        chunkCount: 0,
+        embedModel: null,
+        embedDim: null,
+        fallbackReason:
+          "Aucun provider d'embeddings (VOYAGE_API_KEY ou OPENAI_API_KEY).",
+      },
+    };
+  }
+
+  const trimmedQuery = (query ?? "").trim();
+  if (trimmedQuery.length === 0) {
+    return {
+      contextText: "",
+      includedSourceIds: [],
+      mode: "fallback",
+      debug: {
+        chunkCount: 0,
+        embedModel: null,
+        embedDim: null,
+        fallbackReason: "Query vide.",
+      },
+    };
+  }
+
+  // 2. Embed la query.
+  let queryVector: number[];
+  let modelUsed: string;
+  let dimUsed: number;
+  try {
+    const { vectors, model, dim } = await embedTexts([trimmedQuery]);
+    if (!vectors[0] || vectors[0].length === 0) {
+      throw new Error("Embedding vide");
+    }
+    queryVector = vectors[0];
+    modelUsed = model;
+    dimUsed = dim;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[chomage-ia rag] query embed failed:", message);
+    return {
+      contextText: "",
+      includedSourceIds: [],
+      mode: "fallback",
+      debug: {
+        chunkCount: 0,
+        embedModel: null,
+        embedDim: null,
+        fallbackReason: `Échec embed query : ${message.slice(0, 200)}`,
+      },
+    };
+  }
+
+  // 3. Vector search via raw SQL.
+  // On surcharge légèrement la limit (topK * 2) pour gérer la dédup
+  // par source en JS sans risquer de manquer des sources distinctes.
+  const overSampleK = Math.min(topK * 3, 50);
+  const vecLit = vectorToSqlLiteral(queryVector);
+
+  let rows: RagChunkRow[] = [];
+  try {
+    rows = await prisma.$queryRawUnsafe<RagChunkRow[]>(
+      `SELECT
+         c."id" AS chunk_id,
+         c."sourceId" AS source_id,
+         c."chunkIndex" AS chunk_index,
+         c."content" AS chunk_content,
+         s."title" AS source_title,
+         s."kind" AS source_kind,
+         s."sourceUrl" AS source_url,
+         (c."embedding" <=> $1::vector) AS distance
+       FROM "KnowledgeChunk" c
+       INNER JOIN "KnowledgeSource" s ON s."id" = c."sourceId"
+       WHERE s."domain" = $2
+         AND s."enabled" = true
+         AND c."embedding" IS NOT NULL
+       ORDER BY c."embedding" <=> $1::vector ASC
+       LIMIT $3`,
+      vecLit,
+      domain,
+      overSampleK,
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[chomage-ia rag] vector search SQL failed:", message);
+    return {
+      contextText: "",
+      includedSourceIds: [],
+      mode: "fallback",
+      debug: {
+        chunkCount: 0,
+        embedModel: modelUsed,
+        embedDim: dimUsed,
+        fallbackReason: `Échec SQL vector search : ${message.slice(0, 200)}`,
+      },
+    };
+  }
+
+  if (rows.length === 0) {
+    // Pas de chunks indexés pour ce domain — on retombe sur le fallback KB complète.
+    return {
+      contextText: "",
+      includedSourceIds: [],
+      mode: "fallback",
+      debug: {
+        chunkCount: 0,
+        embedModel: modelUsed,
+        embedDim: dimUsed,
+        fallbackReason: "Aucun chunk indexé pour ce domain (KB pas encore indexée ?).",
+      },
+    };
+  }
+
+  // 4. Regroupe par source en limitant `RAG_MAX_CHUNKS_PER_SOURCE` chunks
+  //    par source pour diversifier (éviter qu'une longue source domine).
+  //    Les rows sont déjà triées par distance ASC (plus pertinent en premier).
+  const grouped = new Map<
+    string,
+    {
+      title: string;
+      kind: string;
+      sourceUrl: string | null;
+      chunks: Array<{ index: number; content: string; distance: number }>;
+    }
+  >();
+  let totalUsed = 0;
+  for (const row of rows) {
+    if (totalUsed >= topK) break;
+    let group = grouped.get(row.source_id);
+    if (!group) {
+      group = {
+        title: row.source_title,
+        kind: row.source_kind,
+        sourceUrl: row.source_url,
+        chunks: [],
+      };
+      grouped.set(row.source_id, group);
+    }
+    if (group.chunks.length >= RAG_MAX_CHUNKS_PER_SOURCE) continue;
+    group.chunks.push({
+      index: row.chunk_index,
+      content: row.chunk_content,
+      distance: Number(row.distance) || 0,
+    });
+    totalUsed++;
+  }
+
+  // 5. Trie les chunks d'une même source par chunkIndex pour préserver
+  //    l'ordre original du document.
+  const includedIds: string[] = [];
+  const blocks: string[] = [];
+  for (const [sourceId, group] of grouped) {
+    includedIds.push(sourceId);
+    group.chunks.sort((a, b) => a.index - b.index);
+    const header = [`<SOURCE id="${sourceId}" kind="${group.kind}" title="${escapeXml(group.title)}">`];
+    if (group.sourceUrl) header.push(`URL : ${group.sourceUrl}`);
+    header.push("");
+    for (const ch of group.chunks) {
+      header.push(`### Chunk ${ch.index}`);
+      header.push(ch.content);
+      header.push("");
+    }
+    header.push(`</SOURCE>`);
+    blocks.push(header.join("\n"));
+  }
+
+  return {
+    contextText: blocks.join("\n\n"),
+    includedSourceIds: includedIds,
+    mode: "rag",
+    debug: {
+      chunkCount: totalUsed,
+      embedModel: modelUsed,
+      embedDim: dimUsed,
+    },
+  };
 }

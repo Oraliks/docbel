@@ -17,6 +17,7 @@ import {
   type KnowledgeSourceListItem,
 } from "@/lib/chomage-ia/types";
 import { runAutoTagInBackground } from "@/lib/chomage-ia/auto-tag";
+import { runIndexInBackground } from "@/lib/chomage-ia/indexer";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdminAuth();
@@ -60,6 +61,8 @@ export async function GET(req: NextRequest) {
     updatedAt: r.updatedAt.toISOString(),
     contentPreview: r.content.slice(0, 240),
     contentLength: r.content.length,
+    indexedAt: r.indexedAt ? r.indexedAt.toISOString() : null,
+    indexError: r.indexError,
   }));
 
   return NextResponse.json({ items, count: items.length });
@@ -114,6 +117,11 @@ export async function POST(req: NextRequest) {
     parsed.title,
     parsed.tags ?? []
   );
+
+  // Indexing RAG fire-and-forget. Si Voyage/OpenAI sont indisponibles ou
+  // si le content est trop court, `indexKnowledgeSource` marque indexError
+  // et le chat retombe sur le fallback "toute la KB" (cf. context.ts).
+  runIndexInBackground(created.id);
 
   return NextResponse.json(
     {

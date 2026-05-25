@@ -233,6 +233,7 @@ export function SourcesWorkspace({ domain, aiAvailable }: SourcesWorkspaceProps)
         onToggleEnabled={toggleEnabled}
         onDelete={remove}
         onSummarize={summarize}
+        onReindexed={refresh}
       />
 
       {/* Modals */}

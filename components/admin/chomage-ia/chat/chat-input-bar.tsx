@@ -12,7 +12,7 @@
  * forcer le retour en mode chat après génération.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
   Loader2,
@@ -32,6 +32,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import {
+  detectSlashToken,
+  insertSnippetContent,
+  type SlashToken,
+} from "@/lib/chomage-ia/snippets-helper";
+import {
+  SnippetCommandPalette,
+  type PaletteSnippet,
+} from "./snippet-command-palette";
+import { VoiceInputButton } from "./voice-input-button";
 import {
   PROMPT_TEMPLATES_LIST,
   firstPlaceholderIndex,
@@ -66,6 +76,14 @@ interface Props {
   placeholder?: string;
   /** Limite de chars en mode chat. */
   maxChars?: number;
+  /**
+   * Snippets à afficher dans le command palette `/`. Chargés par le parent
+   * (chat-full-shell) et passés ici. Si la liste est vide, taper `/` affiche
+   * tout de même la palette avec l'entry "Gérer les snippets".
+   */
+  snippets?: PaletteSnippet[];
+  /** Ouvre la Sheet de gestion des snippets (CRUD complet). */
+  onOpenSnippetsManage?: () => void;
 }
 
 const DEFAULT_PLACEHOLDER =
@@ -94,9 +112,27 @@ function ChatModeBar({
   onStop,
   placeholder = DEFAULT_PLACEHOLDER,
   maxChars = DEFAULT_MAX,
+  snippets = [],
+  onOpenSnippetsManage,
 }: Props) {
   const [value, setValue] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // ----- Snippet command palette (`/<query>`) -----
+  const [slashToken, setSlashToken] = useState<SlashToken | null>(null);
+
+  /** Met à jour la valeur ET recalcule le token actif autour du curseur. */
+  const updateValueAndToken = useCallback(
+    (next: string, cursor?: number) => {
+      setValue(next);
+      const el = ref.current;
+      const pos = cursor ?? el?.selectionStart ?? next.length;
+      const token = detectSlashToken(next, pos);
+      setSlashToken(token);
+    },
+    []
+  );
 
   useEffect(() => {
     const el = ref.current;
@@ -110,16 +146,58 @@ function ChatModeBar({
     if (!trimmed || disabled || sending) return;
     onSendChat(trimmed);
     setValue("");
+    setSlashToken(null);
     requestAnimationFrame(() => {
       if (ref.current) ref.current.style.height = "auto";
     });
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // Si le palette est ouvert, il intercepte Enter/Esc/ArrowUp/ArrowDown
+    // au niveau document avec event.stopPropagation, donc on n'arrive ici
+    // que pour les autres touches.
+    if (slashToken) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       submit();
     }
+  }
+
+  /** Insère le contenu d'un snippet dans la textarea à la place du `/query`. */
+  function insertSnippet(snippet: PaletteSnippet) {
+    if (!slashToken) return;
+    const { value: nextValue, cursor: nextCursor } = insertSnippetContent(
+      value,
+      slashToken,
+      snippet.content,
+      { addTrailingSpace: true }
+    );
+    setValue(nextValue);
+    setSlashToken(null);
+    // Refocus + positionne le curseur après l'insertion.
+    requestAnimationFrame(() => {
+      const el = ref.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(nextCursor, nextCursor);
+    });
+  }
+
+  /** Ajoute une transcription voice à la fin de la textarea. */
+  function appendVoiceTranscript(text: string) {
+    if (!text) return;
+    setValue((prev) => {
+      const joiner = prev.length === 0 || /\s$/.test(prev) ? "" : " ";
+      return prev + joiner + text;
+    });
+    requestAnimationFrame(() => {
+      const el = ref.current;
+      if (el) {
+        el.focus();
+        const end = el.value.length;
+        el.setSelectionRange(end, end);
+      }
+    });
   }
 
   const isEmpty = value.trim().length === 0;
@@ -129,7 +207,7 @@ function ChatModeBar({
 
   return (
     <div className="flex flex-col gap-1 px-3 py-2.5">
-      <div className="flex items-end gap-1.5">
+      <div ref={wrapperRef} className="flex items-end gap-1.5">
         {/* Bouton Upload */}
         <Button
           type="button"
@@ -158,11 +236,43 @@ function ChatModeBar({
           <Wand2 className="size-4" />
         </Button>
 
+        {/* Bouton Voice input (Whisper) */}
+        <VoiceInputButton
+          disabled={disabled || sending}
+          onTranscript={appendVoiceTranscript}
+        />
+
         {/* Textarea */}
         <textarea
           ref={ref}
           value={value}
-          onChange={(e) => setValue(e.target.value.slice(0, maxChars + 50))}
+          onChange={(e) => {
+            const next = e.target.value.slice(0, maxChars + 50);
+            updateValueAndToken(next, e.target.selectionStart);
+          }}
+          onKeyUp={(e) => {
+            // Recalcule le token si l'utilisateur navigue avec les flèches /
+            // home/end (la position du curseur change sans onChange).
+            if (
+              e.key === "ArrowLeft" ||
+              e.key === "ArrowRight" ||
+              e.key === "Home" ||
+              e.key === "End"
+            ) {
+              const el = ref.current;
+              const pos = el?.selectionStart ?? value.length;
+              setSlashToken(detectSlashToken(value, pos));
+            }
+          }}
+          onClick={() => {
+            const el = ref.current;
+            const pos = el?.selectionStart ?? value.length;
+            setSlashToken(detectSlashToken(value, pos));
+          }}
+          onBlur={() => {
+            // On laisse le palette se gérer via click outside — pas de close
+            // sur blur ici, sinon click sur un item ne marche pas.
+          }}
           onKeyDown={onKeyDown}
           disabled={disabled}
           rows={1}
@@ -216,6 +326,16 @@ function ChatModeBar({
             <span className="sr-only">Envoyer</span>
           </Button>
         )}
+
+        {/* Command palette `/` — affiché ssi token actif. Anchor sur le wrapper. */}
+        <SnippetCommandPalette
+          snippets={snippets}
+          token={slashToken}
+          anchorRef={wrapperRef}
+          onInsert={insertSnippet}
+          onClose={() => setSlashToken(null)}
+          onOpenManage={() => onOpenSnippetsManage?.()}
+        />
       </div>
       <div className="flex items-center justify-between px-1 text-[10.5px] text-muted-foreground">
         <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 opacity-70">
@@ -263,12 +383,36 @@ function PromptModeBar({
   disabled,
   sending,
   onGeneratePrompt,
+  snippets = [],
+  onOpenSnippetsManage,
 }: Props) {
   const [brief, setBrief] = useState("");
   const [hint, setHint] = useState("");
   /** Template courant sélectionné (null = aucun, mode libre). */
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const briefRef = useRef<HTMLTextAreaElement>(null);
+  const briefWrapperRef = useRef<HTMLDivElement>(null);
+
+  // ----- Snippet command palette `/` côté brief uniquement -----
+  const [slashToken, setSlashToken] = useState<SlashToken | null>(null);
+
+  function insertSnippetInBrief(snippet: PaletteSnippet) {
+    if (!slashToken) return;
+    const { value: nextValue, cursor: nextCursor } = insertSnippetContent(
+      brief,
+      slashToken,
+      snippet.content,
+      { addTrailingSpace: true }
+    );
+    setBrief(nextValue);
+    setSlashToken(null);
+    requestAnimationFrame(() => {
+      const el = briefRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(nextCursor, nextCursor);
+    });
+  }
 
   const trimmed = brief.trim();
   const canSubmit = trimmed.length >= 5 && !disabled && !sending;
@@ -435,22 +579,54 @@ function PromptModeBar({
             </span>
           ) : null}
         </label>
-        <textarea
-          ref={briefRef}
-          id="prompt-brief"
-          value={brief}
-          onChange={(e) => setBrief(e.target.value.slice(0, 1000))}
-          disabled={disabled || sending}
-          rows={3}
-          placeholder="Ex : Crée un calculateur AGR pour temps partiels involontaires…"
-          aria-label="Brief à générer"
-          className={cn(
-            "w-full resize-y rounded-lg border border-amber-300/60 bg-background px-2.5 py-1.5 text-[12.5px] leading-relaxed shadow-sm",
-            "focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400",
-            "disabled:cursor-not-allowed disabled:opacity-60",
-            "dark:border-amber-500/30",
-          )}
-        />
+        <div ref={briefWrapperRef} className="relative">
+          <textarea
+            ref={briefRef}
+            id="prompt-brief"
+            value={brief}
+            onChange={(e) => {
+              const next = e.target.value.slice(0, 1000);
+              setBrief(next);
+              const pos = e.target.selectionStart;
+              setSlashToken(detectSlashToken(next, pos));
+            }}
+            onKeyUp={(e) => {
+              if (
+                e.key === "ArrowLeft" ||
+                e.key === "ArrowRight" ||
+                e.key === "Home" ||
+                e.key === "End"
+              ) {
+                const el = briefRef.current;
+                const pos = el?.selectionStart ?? brief.length;
+                setSlashToken(detectSlashToken(brief, pos));
+              }
+            }}
+            onClick={() => {
+              const el = briefRef.current;
+              const pos = el?.selectionStart ?? brief.length;
+              setSlashToken(detectSlashToken(brief, pos));
+            }}
+            disabled={disabled || sending}
+            rows={3}
+            placeholder="Ex : Crée un calculateur AGR pour temps partiels involontaires…"
+            aria-label="Brief à générer"
+            className={cn(
+              "w-full resize-y rounded-lg border border-amber-300/60 bg-background px-2.5 py-1.5 text-[12.5px] leading-relaxed shadow-sm",
+              "focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400",
+              "disabled:cursor-not-allowed disabled:opacity-60",
+              "dark:border-amber-500/30",
+            )}
+          />
+          <SnippetCommandPalette
+            snippets={snippets}
+            token={slashToken}
+            anchorRef={briefWrapperRef}
+            onInsert={insertSnippetInBrief}
+            onClose={() => setSlashToken(null)}
+            onOpenManage={() => onOpenSnippetsManage?.()}
+          />
+        </div>
       </div>
 
       {/* Hint optionnel */}

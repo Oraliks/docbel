@@ -41,6 +41,8 @@ import {
   PromptsHistorySheet,
   type InjectablePrompt,
 } from "./prompts-history-sheet";
+import { SnippetsSheet, type SnippetItem } from "./snippets-sheet";
+import type { PaletteSnippet } from "./snippet-command-palette";
 import { UploadQuickDialog } from "../sources/upload-quick-dialog";
 import { KeyboardShortcuts } from "./keyboard-shortcuts";
 import { SessionModelPicker } from "./session-model-picker";
@@ -86,7 +88,36 @@ export function ChatFullShell({
   // ----- Drawers -----
   const [sourcesSheetOpen, setSourcesSheetOpen] = useState(false);
   const [promptsSheetOpen, setPromptsSheetOpen] = useState(false);
+  const [snippetsSheetOpen, setSnippetsSheetOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+
+  // ----- Snippets disponibles (chargés une fois + revalidés à chaque mutation) -----
+  const [snippets, setSnippets] = useState<PaletteSnippet[]>([]);
+  const refreshSnippets = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/chomage-ia/snippets?domain=${encodeURIComponent(domain)}`,
+      );
+      if (!res.ok) return; // silencieux : pas de toast (chargement de fond)
+      const data = (await res.json()) as { items: SnippetItem[] };
+      setSnippets(
+        data.items.map((s) => ({
+          id: s.id,
+          shortcut: s.shortcut,
+          title: s.title,
+          content: s.content,
+          domain: s.domain,
+          order: s.order,
+        })),
+      );
+    } catch {
+      // silencieux — le palette s'affichera avec liste vide.
+    }
+  }, [domain]);
+
+  useEffect(() => {
+    refreshSnippets();
+  }, [refreshSnippets]);
 
   // ----- Pour revalider l'historique prompts après une nouvelle génération -----
   const [promptsRevalidateKey, setPromptsRevalidateKey] = useState(0);
@@ -787,6 +818,44 @@ export function ChatFullShell({
     }
   }
 
+  // ----- Export session → markdown -----
+  async function exportSessionAsMarkdown(id: string) {
+    const session = sessions.find((s) => s.id === id);
+    const fallbackName = `conversation-${id.slice(0, 8)}.md`;
+    try {
+      const res = await fetch(`/api/chomage-ia/sessions/${id}/export`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+      // Récupère le filename depuis le header Content-Disposition si présent,
+      // sinon utilise le titre de la session, sinon le fallback id-tronqué.
+      const dispo = res.headers.get("Content-Disposition") || "";
+      const m = dispo.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+      const filename = m
+        ? decodeURIComponent(m[1])
+        : session?.title
+          ? session.title.replace(/[<>:"/\\|?*]/g, "-").slice(0, 80) + ".md"
+          : fallbackName;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Conversation exportée", {
+        description: filename,
+      });
+    } catch (e) {
+      toast.error("Échec de l'export", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
   // ----- Shortcut helpers -----
   const toggleMode = useCallback(() => {
     setMode((m) => (m === "chat" ? "prompt" : "chat"));
@@ -802,6 +871,10 @@ export function ChatFullShell({
       setPromptsSheetOpen(false);
       closedSomething = true;
     }
+    if (snippetsSheetOpen) {
+      setSnippetsSheetOpen(false);
+      closedSomething = true;
+    }
     if (uploadOpen) {
       setUploadOpen(false);
       closedSomething = true;
@@ -810,7 +883,13 @@ export function ChatFullShell({
     if (editingIndex !== null && !closedSomething) {
       setEditingIndex(null);
     }
-  }, [sourcesSheetOpen, promptsSheetOpen, uploadOpen, editingIndex]);
+  }, [
+    sourcesSheetOpen,
+    promptsSheetOpen,
+    snippetsSheetOpen,
+    uploadOpen,
+    editingIndex,
+  ]);
 
   // ----- Rendu -----
   const currentSession = currentSessionId
@@ -831,6 +910,8 @@ export function ChatFullShell({
         onRename={renameSession}
         onOpenPrompts={() => setPromptsSheetOpen(true)}
         onChangeModel={changeSessionModel}
+        onOpenSnippets={() => setSnippetsSheetOpen(true)}
+        onExportMarkdown={exportSessionAsMarkdown}
       />
 
       {/* Thread + input central */}
@@ -930,6 +1011,8 @@ export function ChatFullShell({
             onGeneratePrompt={generatePrompt}
             onOpenUpload={() => setUploadOpen(true)}
             onStop={abortCurrentStream}
+            snippets={snippets}
+            onOpenSnippetsManage={() => setSnippetsSheetOpen(true)}
           />
           {!aiAvailable ? (
             <p className="border-t border-border bg-amber-50/40 px-4 py-1.5 text-[11px] text-amber-800 dark:bg-amber-950/20 dark:text-amber-300">
@@ -952,6 +1035,12 @@ export function ChatFullShell({
         domain={domain}
         onInject={injectPromptFromHistory}
         revalidateKey={promptsRevalidateKey}
+      />
+      <SnippetsSheet
+        open={snippetsSheetOpen}
+        onOpenChange={setSnippetsSheetOpen}
+        domain={domain}
+        onSnippetsChange={refreshSnippets}
       />
       <UploadQuickDialog
         open={uploadOpen}

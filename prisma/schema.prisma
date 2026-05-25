@@ -1523,3 +1523,25 @@ model GeneratedPrompt {
 
   @@index([domain, createdAt])
 }
+
+/// Snippet réutilisable inséré dans la textarea chat / prompt via le command
+/// palette `/<shortcut>`. Permet de sauver des phrases / consignes fréquentes
+/// (ex: "Vérifie tous les SRC:" ou un pattern récurrent pour les calculateurs).
+///
+/// `shortcut` : token utilisé pour le matching après le `/`. Unique par domaine.
+/// `title`    : libellé affiché dans la liste / palette.
+/// `content`  : texte effectivement inséré en remplacement du `/query`.
+model ChatSnippet {
+  id          String   @id @default(cuid())
+  shortcut    String
+  title       String
+  content     String   @db.Text
+  domain      String   @default("chomage")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+
+  @@unique([domain, shortcut])
+  @@index([domain, order])
+}

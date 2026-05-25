@@ -23,7 +23,9 @@ import { useMemo, useState } from "react";
 import {
   Archive,
   Check,
+  Code2,
   Copy,
+  Download,
   History,
   Loader2,
   PanelLeftClose,
@@ -74,6 +76,13 @@ interface Props {
    * (null = reset au défaut serveur Sonnet 4.5).
    */
   onChangeModel?: (id: string, model: ChatModelValue | null) => void | Promise<void>;
+  /** Ouvre la Sheet de gestion des snippets (migration 20). */
+  onOpenSnippets?: () => void;
+  /**
+   * Exporte la conversation au format Markdown. Si absent, le menu cache
+   * l'entrée et un toast "bientôt dispo" s'affiche.
+   */
+  onExportMarkdown?: (id: string) => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -132,6 +141,8 @@ export function SessionsRail({
   onArchive,
   onDuplicate,
   onChangeModel,
+  onOpenSnippets,
+  onExportMarkdown,
 }: Props) {
   // expanded = sidebar large avec titres + actions
   const [expanded, setExpanded] = useState(false);
@@ -194,6 +205,14 @@ export function SessionsRail({
       toast("Duplication bientôt disponible", {
         description: "Cette action nécessite un endpoint dédié.",
       });
+    }
+  }
+
+  function handleExport(id: string) {
+    if (onExportMarkdown) {
+      onExportMarkdown(id);
+    } else {
+      toast("Export bientôt disponible");
     }
   }
 
@@ -282,6 +301,7 @@ export function SessionsRail({
                     onTogglePin={() => handleTogglePin(s.id)}
                     onArchive={() => handleArchive(s.id)}
                     onDuplicate={() => handleDuplicate(s.id)}
+                    onExport={() => handleExport(s.id)}
                     onDelete={() => setDeleteTargetId(s.id)}
                   >
                     {expanded ? (
@@ -316,7 +336,7 @@ export function SessionsRail({
         )}
       </div>
 
-      {/* Footer rail : bouton historique prompts + toggle expand */}
+      {/* Footer rail : bouton historique prompts + snippets + toggle expand */}
       <div
         className={cn(
           "flex shrink-0 items-center border-t border-border bg-background/60",
@@ -340,6 +360,23 @@ export function SessionsRail({
           </TooltipTrigger>
           <TooltipContent side="right">Historique prompts générés</TooltipContent>
         </Tooltip>
+        {onOpenSnippets ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={onOpenSnippets}
+                  aria-label="Snippets (insertion via /)"
+                />
+              }
+            >
+              <Code2 className="size-4" />
+            </TooltipTrigger>
+            <TooltipContent side="right">Snippets (insertion via /)</TooltipContent>
+          </Tooltip>
+        ) : null}
         <Tooltip>
           <TooltipTrigger
             render={
@@ -403,6 +440,7 @@ function SessionContextMenu({
   onTogglePin,
   onArchive,
   onDuplicate,
+  onExport,
   onDelete,
 }: {
   children: React.ReactNode;
@@ -410,6 +448,7 @@ function SessionContextMenu({
   onTogglePin: () => void;
   onArchive: () => void;
   onDuplicate: () => void;
+  onExport: () => void;
   onDelete: () => void;
 }) {
   return (
@@ -431,6 +470,11 @@ function SessionContextMenu({
         <ContextMenuItem onClick={onDuplicate}>
           <Copy className="size-3.5" />
           Dupliquer
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={onExport}>
+          <Download className="size-3.5" />
+          Exporter en .md
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem variant="destructive" onClick={onDelete}>

@@ -109,44 +109,88 @@ function PopoverContent({
 }: PopoverContentProps) {
   const { open, setOpen, triggerRef } = usePopover()
   const contentRef = React.useRef<HTMLDivElement>(null)
-  const [position, setPosition] = React.useState<{ top: number; left: number }>({ top: 0, left: 0 })
+  const [position, setPosition] = React.useState<{ top: number; left: number; maxWidth: number }>({
+    top: 0,
+    left: 0,
+    maxWidth: 0,
+  })
 
-  // Position the popover relative to the trigger
+  // Position the popover relative to the trigger.
+  //
+  // On utilise un rAF imbriqué dans useLayoutEffect : le 1er render mounte
+  // l'élément, le browser fait son layout (incluant les `min()` Tailwind sur
+  // la width), puis on mesure dans la frame suivante. Sans ça, le 1er
+  // getBoundingClientRect peut renvoyer une largeur "intrinsic" non clampée
+  // par les CSS responsive — bug observé sur le UsageBadge popover qui
+  // dépassait à droite sur écran étroit.
+  //
+  // On force aussi un `maxWidth` inline qui sera appliqué AVANT la mesure
+  // suivante pour garantir un clamp robuste, peu importe les CSS du caller.
   React.useLayoutEffect(() => {
     if (!open) return
     const trigger = triggerRef.current
     const content = contentRef.current
     if (!trigger || !content) return
 
-    const triggerRect = trigger.getBoundingClientRect()
-    const contentRect = content.getBoundingClientRect()
-    const vw = window.innerWidth
-    const vh = window.innerHeight
+    const reposition = () => {
+      if (!triggerRef.current || !contentRef.current) return
+      const trig = triggerRef.current
+      const cont = contentRef.current
+      const vw = window.innerWidth
+      const vh = window.innerHeight
 
-    let top = 0
-    let left = 0
+      // Clamp maxWidth ABSOLU dès le départ : on n'autorise jamais le popover
+      // à dépasser viewport-16px (8px de marge de chaque côté).
+      const maxAllowedWidth = Math.max(160, vw - 16)
+      // Applique maxWidth inline AVANT de mesurer, pour forcer le browser à
+      // recalculer la largeur si le content intrinsic était plus large.
+      cont.style.maxWidth = `${maxAllowedWidth}px`
 
-    if (side === "bottom") top = triggerRect.bottom + sideOffset
-    else if (side === "top") top = triggerRect.top - contentRect.height - sideOffset
-    else if (side === "left") {
-      top = triggerRect.top
-      left = triggerRect.left - contentRect.width - sideOffset
-    } else if (side === "right") {
-      top = triggerRect.top
-      left = triggerRect.right + sideOffset
+      const triggerRect = trig.getBoundingClientRect()
+      const contentRect = cont.getBoundingClientRect()
+
+      let top = 0
+      let left = 0
+
+      if (side === "bottom") top = triggerRect.bottom + sideOffset
+      else if (side === "top") top = triggerRect.top - contentRect.height - sideOffset
+      else if (side === "left") {
+        top = triggerRect.top
+        left = triggerRect.left - contentRect.width - sideOffset
+      } else if (side === "right") {
+        top = triggerRect.top
+        left = triggerRect.right + sideOffset
+      }
+
+      if (side === "top" || side === "bottom") {
+        if (align === "start") left = triggerRect.left
+        else if (align === "end") left = triggerRect.right - contentRect.width
+        else left = triggerRect.left + (triggerRect.width - contentRect.width) / 2
+      }
+
+      // Clamp inside viewport
+      left = Math.max(8, Math.min(left, vw - contentRect.width - 8))
+      top = Math.max(8, Math.min(top, vh - contentRect.height - 8))
+
+      setPosition({ top, left, maxWidth: maxAllowedWidth })
     }
 
-    if (side === "top" || side === "bottom") {
-      if (align === "start") left = triggerRect.left
-      else if (align === "end") left = triggerRect.right - contentRect.width
-      else left = triggerRect.left + (triggerRect.width - contentRect.width) / 2
+    // Double rAF pour attendre que le browser ait appliqué le layout final
+    // (incluant les CSS responsive min/max-width des classes Tailwind).
+    const raf1 = requestAnimationFrame(() => {
+      const raf2 = requestAnimationFrame(reposition)
+      ;(reposition as unknown as { _raf2: number })._raf2 = raf2
+    })
+
+    // Recalcule la position au resize fenêtre (rotation mobile, redim browser).
+    window.addEventListener("resize", reposition)
+
+    return () => {
+      cancelAnimationFrame(raf1)
+      const raf2 = (reposition as unknown as { _raf2?: number })._raf2
+      if (raf2) cancelAnimationFrame(raf2)
+      window.removeEventListener("resize", reposition)
     }
-
-    // Clamp inside viewport
-    left = Math.max(8, Math.min(left, vw - contentRect.width - 8))
-    top = Math.max(8, Math.min(top, vh - contentRect.height - 8))
-
-    setPosition({ top, left })
   }, [open, side, align, sideOffset, triggerRef])
 
   // Close on click outside / escape
@@ -177,7 +221,19 @@ function PopoverContent({
       data-slot="popover-content"
       data-state={open ? "open" : "closed"}
       data-side={side}
-      style={{ position: "fixed", top: position.top, left: position.left, zIndex: 50 }}
+      style={{
+        position: "fixed",
+        top: position.top,
+        left: position.left,
+        // maxWidth inline = garde-fou contre tout overflow viewport, peu
+        // importe ce que le caller met en className. 0 = pas encore mesuré
+        // (premier paint avant le rAF).
+        maxWidth: position.maxWidth || undefined,
+        zIndex: 50,
+        // Garde le popover invisible avant la 1ère mesure pour éviter un
+        // flash mal positionné.
+        visibility: position.maxWidth === 0 ? "hidden" : undefined,
+      }}
       className={cn(
         "min-w-[8rem] rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg outline-none animate-in fade-in-0 zoom-in-95 duration-100",
         className

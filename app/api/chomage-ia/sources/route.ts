@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
     contentLength: r.content.length,
     indexedAt: r.indexedAt ? r.indexedAt.toISOString() : null,
     indexError: r.indexError,
+    folderId: r.folderId,
   }));
 
   return NextResponse.json({ items, count: items.length });
@@ -94,6 +95,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Validation folderId : si !== null, doit pointer sur un folder existant.
+  if (parsed.folderId) {
+    const folder = await prisma.knowledgeFolder.findUnique({
+      where: { id: parsed.folderId },
+      select: { id: true },
+    });
+    if (!folder) {
+      return NextResponse.json(
+        { error: "Dossier cible introuvable" },
+        { status: 400 },
+      );
+    }
+  }
+
   const created = await prisma.knowledgeSource.create({
     data: {
       title: parsed.title,
@@ -105,6 +120,7 @@ export async function POST(req: NextRequest) {
       tags: parsed.tags ?? [],
       enabled: parsed.enabled ?? true,
       domain: parsed.domain ?? DEFAULT_DOMAIN,
+      folderId: parsed.folderId ?? null,
       createdById: auth.user.id,
     },
   });

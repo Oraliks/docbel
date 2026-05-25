@@ -44,6 +44,8 @@ export const KnowledgeSourceCreateSchema = z.object({
   tags: z.array(z.string().max(50)).max(20).optional().default([]),
   enabled: z.boolean().optional().default(true),
   domain: z.string().min(2).max(50).optional().default(DEFAULT_DOMAIN),
+  /** Migration 21 — dossier optionnel (null = racine). */
+  folderId: z.string().min(1).max(50).nullable().optional(),
 });
 
 export const KnowledgeSourceUpdateSchema = KnowledgeSourceCreateSchema.partial();
@@ -89,4 +91,36 @@ export interface KnowledgeSourceListItem {
   indexedAt: string | null;
   /** Dernier message d'erreur d'indexing, ou null. Migration 19. */
   indexError: string | null;
+  /** Migration 21 — dossier de classement (null = racine "Sans dossier"). */
+  folderId: string | null;
 }
+
+/**
+ * Migration 21 — dossier de classement hiérarchique pour les KnowledgeSource.
+ *
+ * Hiérarchie limitée à 3 niveaux (racine = niveau 1). La profondeur est
+ * validée côté API à chaque mutation (POST / PATCH), pas en DB.
+ */
+export interface KnowledgeFolderListItem {
+  id: string;
+  name: string;
+  /** Hex (#3b82f6) ou nom Tailwind ("blue"). Front décide du rendu. */
+  color: string | null;
+  /** Nom d'icône lucide (ex. "Folder", "BookOpen"). Défaut "Folder" si null. */
+  icon: string | null;
+  parentId: string | null;
+  order: number;
+  domain: string;
+  /** Nombre de sources directement contenues dans ce folder (pas récursif). */
+  sourceCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Profondeur max autorisée pour l'arborescence des KnowledgeFolder.
+ * Racine = niveau 1. Donc parentId.parentId.parentId === null obligatoire.
+ *
+ * Validé côté API (lib/chomage-ia/folders.ts) à chaque mutation de parentId.
+ */
+export const KNOWLEDGE_FOLDER_MAX_DEPTH = 3;

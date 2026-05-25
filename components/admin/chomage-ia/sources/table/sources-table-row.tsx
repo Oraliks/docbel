@@ -9,9 +9,16 @@
  * Le click sur la ligne (hors checkbox / kebab) ouvre le drawer via `onClick`.
  * Le clic sur les colonnes interactives stop propagation pour ne pas ouvrir
  * le drawer.
+ *
+ * Migration 21 — la ligne est draggable via `useDraggable` (data type=source) :
+ *   - Drag handle = toute la zone "icon kind + titre + tags" (zone large).
+ *   - Activation : PointerSensor avec un délai de 150ms (cf. workspace) pour
+ *     ne pas déclencher un drag sur un simple click rapide qui ouvre le drawer.
+ *   - Si la ligne est dans `selectedIds`, le workspace draggue toute la sélection.
  */
 
 import { useState } from "react";
+import { useDraggable } from "@dnd-kit/core";
 import {
   AlertTriangle,
   Database,
@@ -23,6 +30,7 @@ import {
   RefreshCcw,
   Sparkles,
   Trash2,
+  GripVertical,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -81,6 +89,13 @@ export function SourcesTableRow({
   const color = getKindColor(source.kind);
   const indexStatus = deriveIndexStatus(source);
 
+  // Migration 21 — draggable. On utilise un handle dédié (icône GripVertical)
+  // pour éviter qu'un click sur le titre/zone ne se transforme en drag.
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `source:${source.id}`,
+    data: { type: "source", sourceId: source.id, selected },
+  });
+
   async function handleReindexClick(e: React.MouseEvent) {
     e.stopPropagation();
     if (reindexing) return;
@@ -94,6 +109,7 @@ export function SourcesTableRow({
 
   return (
     <div
+      ref={setNodeRef}
       role="row"
       data-selected={selected ? "true" : "false"}
       onClick={onOpen}
@@ -115,7 +131,9 @@ export function SourcesTableRow({
         selected
           ? "bg-primary/5"
           : "bg-card hover:bg-muted/40"
-      } ${!source.enabled ? "opacity-70" : ""}`}
+      } ${!source.enabled ? "opacity-70" : ""} ${
+        isDragging ? "opacity-40" : ""
+      }`}
     >
       {/* Checkbox */}
       <div
@@ -128,6 +146,20 @@ export function SourcesTableRow({
           aria-label={`Sélectionner ${source.title}`}
         />
       </div>
+
+      {/* Drag handle — déclenche le drag uniquement quand on l'utilise.
+          Évite que le click "ouvre drawer" ne devienne un drag accidentel. */}
+      <button
+        {...attributes}
+        {...listeners}
+        type="button"
+        onClick={(e) => e.stopPropagation()}
+        aria-label="Glisser pour déplacer"
+        title="Glisser pour déplacer vers un dossier"
+        className="flex size-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground/50 opacity-0 transition-opacity hover:bg-muted hover:text-foreground active:cursor-grabbing group-hover:opacity-100"
+      >
+        <GripVertical className="size-3.5" />
+      </button>
 
       {/* Icon kind */}
       <div

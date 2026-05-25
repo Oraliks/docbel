@@ -100,6 +100,8 @@ export function SourcesTable({
             disabled={items.length === 0}
           />
         </div>
+        {/* Spacer pour la drag-handle column (migration 21) */}
+        <div className="w-5 shrink-0" aria-hidden />
         <div className="w-8 shrink-0" aria-hidden />
         <SortHeader
           column="title"

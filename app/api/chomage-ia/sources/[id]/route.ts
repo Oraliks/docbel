@@ -39,6 +39,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     tags: source.tags,
     enabled: source.enabled,
     domain: source.domain,
+    folderId: source.folderId,
     createdAt: source.createdAt.toISOString(),
     updatedAt: source.updatedAt.toISOString(),
   });
@@ -79,6 +80,20 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     );
   }
 
+  // Validation folderId : si !== null, doit pointer sur un folder existant.
+  if (parsed.folderId !== undefined && parsed.folderId !== null) {
+    const folder = await prisma.knowledgeFolder.findUnique({
+      where: { id: parsed.folderId },
+      select: { id: true },
+    });
+    if (!folder) {
+      return NextResponse.json(
+        { error: "Dossier cible introuvable" },
+        { status: 400 },
+      );
+    }
+  }
+
   // Prisma update : on n'envoie que les champs explicitement fournis.
   const data: Record<string, unknown> = {};
   if (parsed.title !== undefined) data.title = parsed.title;
@@ -90,6 +105,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   if (parsed.tags !== undefined) data.tags = parsed.tags;
   if (parsed.enabled !== undefined) data.enabled = parsed.enabled;
   if (parsed.domain !== undefined) data.domain = parsed.domain;
+  if (parsed.folderId !== undefined) data.folderId = parsed.folderId;
 
   const updated = await prisma.knowledgeSource.update({
     where: { id },

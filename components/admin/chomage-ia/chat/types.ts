@@ -14,6 +14,8 @@ export interface ChatSessionItem {
   folderId: string | null;
   /** Migration 18 — modèle Claude forcé pour cette session (null = défaut Sonnet). */
   preferredModel: string | null;
+  /** Migration 21 — scope multi-folder KB. [] = toutes les sources. */
+  scopeFolderIds: string[];
   createdAt: string;
   updatedAt: string;
   messageCount: number;

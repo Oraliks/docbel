@@ -157,8 +157,12 @@ export async function POST(req: NextRequest) {
   });
   const recentMessages = recentMessagesRaw.slice(1).reverse();
 
-  // 4. Contexte sources.
-  const ctx = await prepareChatContext({ domain, query: parsed.message });
+  // 4. Contexte sources — migration 21, lit le scope de la session si défini.
+  const ctx = await prepareChatContext({
+    domain,
+    query: parsed.message,
+    scopeFolderIds: session.scopeFolderIds ?? [],
+  });
 
   // 5. Construit les messages pour Claude (alternance user/assistant).
   const apiMessages: Array<{ role: "user" | "assistant"; content: string }> = [];

@@ -42,11 +42,18 @@ const BulkRequestSchema = z
       "reindex",
       "add-tags",
       "remove-tags",
+      "move-to-folder",
     ]),
     tags: z
       .array(z.string().min(1).max(50))
       .max(20)
       .optional(),
+    /**
+     * Migration 21 — requis pour action="move-to-folder".
+     * `null` → retire les sources de leur dossier (vers racine "Sans dossier").
+     * `string` → id du KnowledgeFolder cible.
+     */
+    folderId: z.string().min(1).max(50).nullable().optional(),
   })
   .refine(
     (val) =>
@@ -56,7 +63,16 @@ const BulkRequestSchema = z
     {
       message: "Le champ `tags` est requis pour add-tags / remove-tags.",
       path: ["tags"],
-    }
+    },
+  )
+  .refine(
+    (val) =>
+      val.action !== "move-to-folder" ? true : val.folderId !== undefined,
+    {
+      message:
+        "Le champ `folderId` est requis pour move-to-folder (passer null pour retirer du dossier).",
+      path: ["folderId"],
+    },
   );
 
 export async function POST(req: NextRequest) {
@@ -85,7 +101,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { ids, action, tags } = parsed;
+  const { ids, action, tags, folderId } = parsed;
   const failed: Array<{ id: string; error: string }> = [];
   let updated = 0;
 
@@ -126,6 +142,28 @@ export async function POST(req: NextRequest) {
             failed.push({ id, error: "Source introuvable" });
           }
         }
+        break;
+      }
+
+      case "move-to-folder": {
+        // Si folderId n'est pas null, vérifie l'existence pour éviter le crash FK.
+        if (folderId !== null && folderId !== undefined) {
+          const folder = await prisma.knowledgeFolder.findUnique({
+            where: { id: folderId },
+            select: { id: true },
+          });
+          if (!folder) {
+            return NextResponse.json(
+              { error: "Dossier cible introuvable" },
+              { status: 400 },
+            );
+          }
+        }
+        const result = await prisma.knowledgeSource.updateMany({
+          where: { id: { in: ids } },
+          data: { folderId: folderId ?? null },
+        });
+        updated = result.count;
         break;
       }
 

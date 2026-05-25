@@ -1400,11 +1400,49 @@ model KnowledgeSource {
   /// Null = pas d'erreur ou pas encore indexé.
   indexError String?
 
+  /// Migration 21 — dossier de classement (null = racine "Sans dossier").
+  /// Différent de ChatFolder (qui range les sessions). Cf. KnowledgeFolder.
+  folderId String?
+  folder   KnowledgeFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
   /// Chunks RAG (1 source → N chunks). Cascade delete via FK.
   chunks KnowledgeChunk[]
 
   @@index([domain, enabled])
   @@index([createdAt])
+  @@index([domain, folderId])
+}
+
+/// Dossier hiérarchique pour ranger les KnowledgeSource (migration 21).
+///
+/// Différent de ChatFolder (qui range les ChatSession) — ici on range
+/// les *sources* de la knowledge base. Permet :
+///   - Une arborescence à 3 niveaux max (parentId auto-référence).
+///   - Une couleur + une icône pour l'identification visuelle dans la sidebar.
+///   - Le drag&drop des sources entre dossiers (front + bulk API).
+///
+/// Le scope multi-folder est lu depuis ChatSession.scopeFolderIds — quand non
+/// vide, le retrieval RAG filtre les sources sur `folderId IN (...)`.
+model KnowledgeFolder {
+  id          String   @id @default(cuid())
+  name        String
+  /// Hex (#3b82f6) ou nom Tailwind ("blue", "amber") — front décide du rendu.
+  color       String?
+  /// Nom d'icône lucide-react (ex. "Folder", "BookOpen"). Défaut "Folder" si null.
+  icon        String?
+  parentId    String?
+  parent      KnowledgeFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    KnowledgeFolder[] @relation("FolderHierarchy")
+  order       Int      @default(0)
+  domain      String   @default("chomage")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+
+  sources KnowledgeSource[]
+
+  @@index([domain, parentId, order])
+  @@index([parentId])
 }
 
 /// Chunk d'une `KnowledgeSource` indexé avec son embedding pour la RAG sémantique.
@@ -1461,6 +1499,11 @@ model ChatSession {
   folderId       String?
   folder         ChatFolder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
   preferredModel String?
+  /// Migration 21 — scope multi-folder pour limiter le retrieval RAG.
+  /// Tableau vide `[]` = toute la KB (défaut, rétrocompatible avec sessions
+  /// pré-migration 21). Liste d'IDs = filtre `KnowledgeSource.folderId IN (...)`.
+  /// NB : on stocke des IDs *de KnowledgeFolder*, pas de ChatFolder.
+  scopeFolderIds String[]      @default([])
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   messages       ChatMessage[]

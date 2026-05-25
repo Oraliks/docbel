@@ -93,26 +93,39 @@ function extractKeywords(query: string): string[] {
  * Construit le contexte sources à envoyer à Claude.
  * Retourne le bloc texte formaté + la liste des IDs effectivement inclus.
  *
- * @param domain   Domaine de la KB (défaut "chomage")
- * @param query    Question utilisateur (pour le ranking par mots-clés)
- * @param budget   Budget tokens max (optionnel — défaut KB_CONTEXT_BUDGET_TOKENS)
+ * @param domain          Domaine de la KB (défaut "chomage")
+ * @param query           Question utilisateur (pour le ranking par mots-clés)
+ * @param budget          Budget tokens max (optionnel — défaut KB_CONTEXT_BUDGET_TOKENS)
+ * @param scopeFolderIds  Migration 21 — si non vide, ne considère que les sources
+ *                        dont folderId ∈ scopeFolderIds (sinon toute la KB).
  */
 export async function buildKnowledgeContext({
   domain,
   query,
   budget = KB_CONTEXT_BUDGET_TOKENS,
+  scopeFolderIds,
 }: {
   domain: string;
   query: string;
   budget?: number;
+  scopeFolderIds?: string[];
 }): Promise<{
   contextText: string;
   includedSourceIds: string[];
   totalSourcesAvailable: number;
   truncated: boolean;
 }> {
+  const scoped =
+    Array.isArray(scopeFolderIds) && scopeFolderIds.length > 0
+      ? scopeFolderIds
+      : null;
+
   const allSources = await prisma.knowledgeSource.findMany({
-    where: { domain, enabled: true },
+    where: {
+      domain,
+      enabled: true,
+      ...(scoped ? { folderId: { in: scoped } } : {}),
+    },
     orderBy: { updatedAt: "desc" },
   });
 
@@ -254,6 +267,7 @@ export interface BuildKnowledgeContextRagResult {
  *   1. Embed la query (un seul vecteur).
  *   2. Query pgvector :
  *        SELECT chunks JOIN sources WHERE domain ET enabled ET embedding NOT NULL
+ *        [ET source.folderId ∈ scopeFolderIds si fourni]
  *        ORDER BY embedding <=> queryVector  (cosine distance, ASC)
  *        LIMIT topK
  *   3. Regroupe par source, formate en blocs `[SRC:id]` lisibles.
@@ -261,18 +275,22 @@ export interface BuildKnowledgeContextRagResult {
  * Si une étape échoue, on yield un `mode: "fallback"` et le caller doit
  * basculer sur `buildKnowledgeContext`. L'erreur exacte est dans `debug.fallbackReason`.
  *
- * @param domain  Domaine de la KB ("chomage" par défaut)
- * @param query   Question utilisateur — sera embeddée
- * @param topK    Nombre max de chunks à récupérer (défaut RAG_DEFAULT_TOP_K)
+ * @param domain          Domaine de la KB ("chomage" par défaut)
+ * @param query           Question utilisateur — sera embeddée
+ * @param topK            Nombre max de chunks à récupérer (défaut RAG_DEFAULT_TOP_K)
+ * @param scopeFolderIds  Migration 21 — si non vide, ne considère que les
+ *                        sources dont `folderId` ∈ scopeFolderIds.
  */
 export async function buildKnowledgeContextRag({
   domain,
   query,
   topK = RAG_DEFAULT_TOP_K,
+  scopeFolderIds,
 }: {
   domain: string;
   query: string;
   topK?: number;
+  scopeFolderIds?: string[];
 }): Promise<BuildKnowledgeContextRagResult> {
   // 1. Pas de provider → fallback immédiat.
   if (!getEmbeddingProvider()) {
@@ -338,30 +356,62 @@ export async function buildKnowledgeContextRag({
   // par source en JS sans risquer de manquer des sources distinctes.
   const overSampleK = Math.min(topK * 3, 50);
   const vecLit = vectorToSqlLiteral(queryVector);
+  const scoped =
+    Array.isArray(scopeFolderIds) && scopeFolderIds.length > 0
+      ? scopeFolderIds
+      : null;
 
   let rows: RagChunkRow[] = [];
   try {
-    rows = await prisma.$queryRawUnsafe<RagChunkRow[]>(
-      `SELECT
-         c."id" AS chunk_id,
-         c."sourceId" AS source_id,
-         c."chunkIndex" AS chunk_index,
-         c."content" AS chunk_content,
-         s."title" AS source_title,
-         s."kind" AS source_kind,
-         s."sourceUrl" AS source_url,
-         (c."embedding" <=> $1::vector) AS distance
-       FROM "KnowledgeChunk" c
-       INNER JOIN "KnowledgeSource" s ON s."id" = c."sourceId"
-       WHERE s."domain" = $2
-         AND s."enabled" = true
-         AND c."embedding" IS NOT NULL
-       ORDER BY c."embedding" <=> $1::vector ASC
-       LIMIT $3`,
-      vecLit,
-      domain,
-      overSampleK,
-    );
+    if (scoped) {
+      // Variante scopée : on ajoute un filtre `s.folderId = ANY($4)` qui filtre
+      // les sources sur les folders sélectionnés. Cf. ChatSession.scopeFolderIds.
+      rows = await prisma.$queryRawUnsafe<RagChunkRow[]>(
+        `SELECT
+           c."id" AS chunk_id,
+           c."sourceId" AS source_id,
+           c."chunkIndex" AS chunk_index,
+           c."content" AS chunk_content,
+           s."title" AS source_title,
+           s."kind" AS source_kind,
+           s."sourceUrl" AS source_url,
+           (c."embedding" <=> $1::vector) AS distance
+         FROM "KnowledgeChunk" c
+         INNER JOIN "KnowledgeSource" s ON s."id" = c."sourceId"
+         WHERE s."domain" = $2
+           AND s."enabled" = true
+           AND c."embedding" IS NOT NULL
+           AND s."folderId" = ANY($4::text[])
+         ORDER BY c."embedding" <=> $1::vector ASC
+         LIMIT $3`,
+        vecLit,
+        domain,
+        overSampleK,
+        scoped,
+      );
+    } else {
+      rows = await prisma.$queryRawUnsafe<RagChunkRow[]>(
+        `SELECT
+           c."id" AS chunk_id,
+           c."sourceId" AS source_id,
+           c."chunkIndex" AS chunk_index,
+           c."content" AS chunk_content,
+           s."title" AS source_title,
+           s."kind" AS source_kind,
+           s."sourceUrl" AS source_url,
+           (c."embedding" <=> $1::vector) AS distance
+         FROM "KnowledgeChunk" c
+         INNER JOIN "KnowledgeSource" s ON s."id" = c."sourceId"
+         WHERE s."domain" = $2
+           AND s."enabled" = true
+           AND c."embedding" IS NOT NULL
+         ORDER BY c."embedding" <=> $1::vector ASC
+         LIMIT $3`,
+        vecLit,
+        domain,
+        overSampleK,
+      );
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.warn("[chomage-ia rag] vector search SQL failed:", message);

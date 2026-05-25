@@ -42,6 +42,7 @@ import {
   type PaletteSnippet,
 } from "./snippet-command-palette";
 import { VoiceInputButton } from "./voice-input-button";
+import { ScopeSelector } from "./scope-selector";
 import {
   PROMPT_TEMPLATES_LIST,
   firstPlaceholderIndex,
@@ -90,6 +91,12 @@ interface Props {
    * (nécessite OPENAI_API_KEY car Anthropic ne fait pas de transcription).
    */
   voiceAvailable?: boolean;
+  /** Migration 21 — folders KB disponibles pour le scope selector. */
+  folders?: import("@/lib/chomage-ia/types").KnowledgeFolderListItem[];
+  /** Migration 21 — IDs des folders scopés pour la session courante. */
+  scopeFolderIds?: string[];
+  /** Migration 21 — callback de changement de scope (PATCH session côté shell). */
+  onScopeChange?: (next: string[]) => void;
 }
 
 const DEFAULT_PLACEHOLDER =
@@ -121,6 +128,9 @@ function ChatModeBar({
   snippets = [],
   onOpenSnippetsManage,
   voiceAvailable = false,
+  folders = [],
+  scopeFolderIds = [],
+  onScopeChange,
 }: Props) {
   const [value, setValue] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -214,6 +224,19 @@ function ChatModeBar({
 
   return (
     <div className="flex flex-col gap-1 px-3 py-2.5">
+      {/* Scope KB (migration 21) — affiché si onScopeChange fourni
+          (signal que le parent gère le scope multi-folder). Petite ligne
+          discrète au-dessus de la zone d'input. */}
+      {onScopeChange ? (
+        <div className="flex items-center gap-1.5">
+          <ScopeSelector
+            folders={folders}
+            value={scopeFolderIds}
+            onChange={onScopeChange}
+            disabled={disabled || sending}
+          />
+        </div>
+      ) : null}
       <div ref={wrapperRef} className="flex items-end gap-1.5">
         {/* Bouton Upload */}
         <Button

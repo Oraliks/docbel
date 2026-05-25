@@ -125,6 +125,28 @@ export function ChatFullShell({
     refreshSnippets();
   }, [refreshSnippets]);
 
+  // ----- Migration 21 : Folders KB pour le ScopeSelector -----
+  const [folders, setFolders] = useState<
+    import("@/lib/chomage-ia/types").KnowledgeFolderListItem[]
+  >([]);
+  const refreshFolders = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/chomage-ia/kb-folders?domain=${encodeURIComponent(domain)}`,
+      );
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        items: import("@/lib/chomage-ia/types").KnowledgeFolderListItem[];
+      };
+      setFolders(data.items);
+    } catch {
+      // silencieux — le scope selector affichera juste "Toutes les sources".
+    }
+  }, [domain]);
+  useEffect(() => {
+    refreshFolders();
+  }, [refreshFolders]);
+
   // ----- Pour revalider l'historique prompts après une nouvelle génération -----
   const [promptsRevalidateKey, setPromptsRevalidateKey] = useState(0);
 
@@ -278,6 +300,45 @@ export function ChatFullShell({
       // Rollback optimiste en cas d'erreur.
       refreshSessions();
       toast.error("Échec du changement de modèle", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  /**
+   * Migration 21 — change le scope folder de la session. [] = toute la KB.
+   * Si pas de session active → on stocke localement pour appliquer à la
+   * prochaine session créée (mais pour MVP on no-op, le scope est par session).
+   */
+  async function changeSessionScope(nextScope: string[]) {
+    if (!currentSessionId) {
+      // Pas de session active — on accepte le changement local pour quand
+      // la prochaine session sera créée (le state est gardé via useState
+      // dans le shell, mais la persistence DB attend une session).
+      // Pour MVP : ignore silencieusement (l'user verra le scope se réinitialiser
+      // sur la nouvelle session — pattern naturel).
+      return;
+    }
+    // Optimiste : update local
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === currentSessionId ? { ...s, scopeFolderIds: nextScope } : s,
+      ),
+    );
+    try {
+      const res = await fetch(`/api/chomage-ia/sessions/${currentSessionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scopeFolderIds: nextScope }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+    } catch (e) {
+      // Rollback
+      refreshSessions();
+      toast.error("Échec du changement de scope", {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -1221,6 +1282,11 @@ export function ChatFullShell({
             onStop={abortCurrentStream}
             snippets={snippets}
             onOpenSnippetsManage={() => setSnippetsSheetOpen(true)}
+            folders={folders}
+            scopeFolderIds={currentSession?.scopeFolderIds ?? []}
+            onScopeChange={
+              currentSessionId ? changeSessionScope : undefined
+            }
           />
           {!aiAvailable ? (
             <p className="border-t border-border bg-amber-50/40 px-4 py-1.5 text-[11px] text-amber-800 dark:bg-amber-950/20 dark:text-amber-300">

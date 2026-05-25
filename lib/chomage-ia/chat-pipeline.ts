@@ -56,20 +56,37 @@ export interface PrepareChatContextResult {
  *
  * Le `cachedContext` est wrappé d'un préambule qui explique à Claude le
  * format des sources et la convention `[SRC:id]` à respecter.
+ *
+ * Migration 21 — si `scopeFolderIds` est non vide, le retrieval (RAG et
+ * fallback) est restreint aux sources dont `folderId` ∈ scopeFolderIds.
+ * Le préambule informe Claude que sa connaissance est volontairement scope.
  */
 export async function prepareChatContext({
   domain,
   query,
+  scopeFolderIds,
 }: {
   domain: string;
   query: string;
+  /**
+   * Migration 21 — liste de KnowledgeFolder.id pour limiter la recherche.
+   * `undefined` ou `[]` → toute la KB (comportement par défaut).
+   */
+  scopeFolderIds?: string[];
 }): Promise<PrepareChatContextResult> {
+  const hasScope =
+    Array.isArray(scopeFolderIds) && scopeFolderIds.length > 0;
+
   // 1. Tentative RAG.
   let ragResult:
     | Awaited<ReturnType<typeof buildKnowledgeContextRag>>
     | null = null;
   try {
-    ragResult = await buildKnowledgeContextRag({ domain, query });
+    ragResult = await buildKnowledgeContextRag({
+      domain,
+      query,
+      scopeFolderIds,
+    });
   } catch (err) {
     // Best-effort — la fonction est censée déjà catch en interne, mais on
     // double-check pour ne JAMAIS faire crasher le chat sur une erreur RAG.
@@ -79,10 +96,18 @@ export async function prepareChatContext({
 
   if (ragResult && ragResult.mode === "rag" && ragResult.contextText.length > 0) {
     // Compte les sources disponibles pour les stats côté UI (KB total).
+    // Si scope actif, le count reflète le sous-ensemble scopé.
     const totalAvailable = await prisma.knowledgeSource.count({
-      where: { domain, enabled: true },
+      where: {
+        domain,
+        enabled: true,
+        ...(hasScope ? { folderId: { in: scopeFolderIds } } : {}),
+      },
     });
-    const cachedContext = `Voici les passages les plus pertinents de la knowledge base, sélectionnés par recherche sémantique (top-${ragResult.debug.chunkCount} chunks).
+    const scopeNotice = hasScope
+      ? `\n\n⚠️ Recherche limitée à ${scopeFolderIds!.length} dossier${scopeFolderIds!.length > 1 ? "s" : ""} de la KB. Réponds uniquement avec ces extraits — si rien ne couvre la question, dis-le explicitement.`
+      : "";
+    const cachedContext = `Voici les passages les plus pertinents de la knowledge base, sélectionnés par recherche sémantique (top-${ragResult.debug.chunkCount} chunks).${scopeNotice}
 
 Chaque source est encadrée par <SOURCE id="..."> ... </SOURCE> et peut contenir plusieurs chunks (### Chunk N). Cite ces IDs avec [SRC:id] dans ta réponse pour chaque affirmation factuelle. Si une info que tu connais n'est dans aucun de ces extraits, dis-le explicitement plutôt que de l'inventer.
 
@@ -103,11 +128,14 @@ ${ragResult.contextText}`;
     );
   }
   const { contextText, includedSourceIds, totalSourcesAvailable, truncated } =
-    await buildKnowledgeContext({ domain, query });
+    await buildKnowledgeContext({ domain, query, scopeFolderIds });
 
+  const scopeNotice = hasScope
+    ? `\n\n⚠️ Recherche limitée à ${scopeFolderIds!.length} dossier${scopeFolderIds!.length > 1 ? "s" : ""} de la KB.`
+    : "";
   const cachedContext = contextText
-    ? `Voici les sources de la knowledge base que tu dois utiliser pour répondre. Chaque source est encadrée par <SOURCE id="..."> ... </SOURCE>. Cite ces IDs avec [SRC:id] dans ta réponse pour chaque affirmation factuelle.\n\n${contextText}`
-    : `(La knowledge base est vide pour le domaine "${domain}". Préviens l'utilisateur que tu n'as pas de source et donne une réponse générique à vérifier.)`;
+    ? `Voici les sources de la knowledge base que tu dois utiliser pour répondre.${scopeNotice}\n\nChaque source est encadrée par <SOURCE id="..."> ... </SOURCE>. Cite ces IDs avec [SRC:id] dans ta réponse pour chaque affirmation factuelle.\n\n${contextText}`
+    : `(La knowledge base est vide${hasScope ? ` dans les dossiers sélectionnés` : ""} pour le domaine "${domain}". Préviens l'utilisateur que tu n'as pas de source et donne une réponse générique à vérifier.)`;
 
   return {
     cachedContext,

@@ -35,6 +35,14 @@ const PatchSchema = z
     preferredModel: z
       .union([z.enum(ALLOWED_MODELS), z.null()])
       .optional(),
+    /**
+     * Migration 21 — scope multi-folder pour le retrieval RAG. Tableau d'IDs
+     * de KnowledgeFolder. Tableau vide = toute la KB. Max 20 dossiers cumulés.
+     */
+    scopeFolderIds: z
+      .array(z.string().min(1).max(50))
+      .max(20)
+      .optional(),
   })
   .refine(
     (v) =>
@@ -42,7 +50,8 @@ const PatchSchema = z
       v.pinned !== undefined ||
       v.archived !== undefined ||
       v.folderId !== undefined ||
-      v.preferredModel !== undefined,
+      v.preferredModel !== undefined ||
+      v.scopeFolderIds !== undefined,
     { message: "Aucun champ à mettre à jour" }
   );
 
@@ -90,6 +99,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     archived: session.archived,
     folderId: session.folderId,
     preferredModel: session.preferredModel,
+    scopeFolderIds: session.scopeFolderIds,
     createdAt: session.createdAt.toISOString(),
     updatedAt: session.updatedAt.toISOString(),
     messages: session.messages.map((m) => ({
@@ -149,6 +159,21 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     }
   }
 
+  // Migration 21 — validation scopeFolderIds : chaque ID doit pointer sur un
+  // KnowledgeFolder existant. On accepte un tableau vide (= toute la KB).
+  if (parsed.scopeFolderIds !== undefined && parsed.scopeFolderIds.length > 0) {
+    const found = await prisma.knowledgeFolder.findMany({
+      where: { id: { in: parsed.scopeFolderIds } },
+      select: { id: true },
+    });
+    if (found.length !== parsed.scopeFolderIds.length) {
+      return NextResponse.json(
+        { error: "Au moins un dossier de scope est introuvable" },
+        { status: 400 },
+      );
+    }
+  }
+
   try {
     const updated = await prisma.chatSession.update({
       where: { id },
@@ -160,6 +185,9 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
         ...(parsed.preferredModel !== undefined
           ? { preferredModel: parsed.preferredModel }
           : {}),
+        ...(parsed.scopeFolderIds !== undefined
+          ? { scopeFolderIds: parsed.scopeFolderIds }
+          : {}),
       },
     });
     return NextResponse.json({
@@ -169,6 +197,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       archived: updated.archived,
       folderId: updated.folderId,
       preferredModel: updated.preferredModel,
+      scopeFolderIds: updated.scopeFolderIds,
     });
   } catch {
     return NextResponse.json({ error: "Session introuvable" }, { status: 404 });

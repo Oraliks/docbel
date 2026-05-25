@@ -166,10 +166,12 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     .filter((m) => m.role === "user" || m.role === "assistant");
   const recentMessages = previousMessages.slice(-HISTORY_MAX);
 
-  // 5. Contexte sources fondé sur la NOUVELLE question.
+  // 5. Contexte sources fondé sur la NOUVELLE question — migration 21,
+  //    on respecte le scope de la session si défini.
   const ctx = await prepareChatContext({
     domain,
     query: parsed.newContent,
+    scopeFolderIds: session.scopeFolderIds ?? [],
   });
 
   // 6. Construit les messages pour Claude (alternance user/assistant).

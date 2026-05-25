@@ -116,13 +116,13 @@ export function UsageBadge({
     return (
       <div
         className={cn(
-          "inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-[12px] font-medium text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
+          "inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11.5px] font-medium text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
           className
         )}
         aria-busy="true"
       >
-        <Loader2 className="size-3.5 animate-spin" />
-        Crédit IA…
+        <Loader2 className="size-3 animate-spin" />
+        <span className="hidden sm:inline">Crédit…</span>
       </div>
     );
   }
@@ -133,13 +133,13 @@ export function UsageBadge({
         type="button"
         onClick={() => fetchUsage()}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground",
+          "inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground hover:text-foreground",
           className
         )}
         title={error ?? "Erreur"}
       >
-        <AlertCircle className="size-3.5" />
-        Crédit indisponible
+        <AlertCircle className="size-3" />
+        <span className="hidden sm:inline">N/A</span>
       </button>
     );
   }
@@ -154,32 +154,23 @@ export function UsageBadge({
         <button
           type="button"
           className={cn(
-            "group inline-flex items-center gap-2 rounded-full border border-amber-300/60 bg-gradient-to-br from-amber-50 to-amber-100/40 px-3 py-1.5 text-left text-[12px] font-semibold text-amber-900 shadow-sm transition-all hover:shadow-md dark:border-amber-500/30 dark:from-amber-950/40 dark:to-amber-900/20 dark:text-amber-200",
+            "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-amber-300/60 bg-gradient-to-br from-amber-50 to-amber-100/40 px-2.5 text-[12px] font-semibold text-amber-900 shadow-sm transition-all hover:shadow-md dark:border-amber-500/30 dark:from-amber-950/40 dark:to-amber-900/20 dark:text-amber-200",
             className
           )}
-          title="Voir le détail du crédit IA consommé"
-          aria-label="Crédit IA consommé"
+          title={`${fmtTokensCompact(totalTokens)} tokens · ${eurStr} (${usdStr})`}
+          aria-label={`Crédit IA consommé : ${eurStr} (${fmtTokensCompact(totalTokens)} tokens)`}
         >
-          <span className="flex size-5 items-center justify-center rounded-full bg-amber-400/30 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
-            <Coins className="size-3" />
-          </span>
-          <span className="flex flex-col leading-tight">
-            <span className="text-[11px] font-medium opacity-80">
-              {fmtTokensCompact(totalTokens)} tk
-            </span>
-            <span className="text-[13px] font-bold tabular-nums">
-              ≈ {eurStr}
-            </span>
-          </span>
-          <span className="ml-0.5 text-[10.5px] font-normal text-amber-700/70 group-hover:text-amber-700 dark:text-amber-300/70">
-            détail
+          <Coins className="size-3.5 shrink-0" />
+          <span className="tabular-nums">≈ {eurStr}</span>
+          <span className="hidden text-[10.5px] font-normal text-amber-700/70 dark:text-amber-300/70 md:inline">
+            · {fmtTokensCompact(totalTokens)}tk
           </span>
         </button>
       </PopoverTrigger>
       <PopoverContent
         align="end"
         side="bottom"
-        className="w-[340px] max-w-[calc(100vw-1rem)] p-0"
+        className="w-[340px] max-w-[calc(100vw-1.5rem)] mr-2 p-0"
       >
         <UsageDetail data={data} onRefresh={() => fetchUsage(true)} refreshing={refreshing} />
       </PopoverContent>

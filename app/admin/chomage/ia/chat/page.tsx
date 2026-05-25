@@ -1,13 +1,24 @@
 /**
- * Page de chat IA. Server component qui charge l'état initial (toggle, stats)
- * et délègue l'UI conversationnelle au ChatShell client.
+ * Page de chat IA pleine page.
+ *
+ * Server component minimal : charge l'état initial (toggle IA, stats KB) puis
+ * délègue la totalité de l'UI au `ChatFullShell` client.
+ *
+ * Layout :
+ *   - CompactIaHeader (1 ligne dense, 2 tabs : Sources / Chat)
+ *   - Bandeau IA désactivée si nécessaire
+ *   - ChatFullShell prend toute la hauteur restante
+ *
+ * Le shell occupe `h-[calc(100vh-var(--header-height)-X)]` avec X qui couvre
+ * le header compact + le banner éventuel. On laisse flex-1 faire le job et on
+ * définit une hauteur min pour ne pas s'écraser.
  */
 
 import { prisma } from "@/lib/prisma";
 import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
-import { IaHeader } from "@/components/admin/chomage-ia/ia-header";
+import { CompactIaHeader } from "@/components/admin/chomage-ia/compact-ia-header";
 import { AiDisabledBanner } from "@/components/admin/chomage-ia/ai-disabled-banner";
-import { ChatShell } from "@/components/admin/chomage-ia/chat/chat-shell";
+import { ChatFullShell } from "@/components/admin/chomage-ia/chat/chat-full-shell";
 import { DEFAULT_DOMAIN } from "@/lib/chomage-ia/types";
 
 export const dynamic = "force-dynamic";
@@ -28,8 +39,9 @@ export default async function ChomageIaChatPage() {
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
 
   return (
-    <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
-      <IaHeader
+    // Pleine hauteur du viewport admin = 100vh - header app (var --header-height = 48px)
+    <div className="flex h-[calc(100svh-var(--header-height))] min-h-[480px] flex-col overflow-hidden">
+      <CompactIaHeader
         activeTab="chat"
         stats={{
           sources: total,
@@ -38,8 +50,12 @@ export default async function ChomageIaChatPage() {
           prompts: promptsCount,
         }}
       />
-      <AiDisabledBanner enabled={aiEnabled} hasKey={hasKey} />
-      <ChatShell
+      {!aiEnabled || !hasKey ? (
+        <div className="shrink-0 px-4 py-2">
+          <AiDisabledBanner enabled={aiEnabled} hasKey={hasKey} />
+        </div>
+      ) : null}
+      <ChatFullShell
         domain={DEFAULT_DOMAIN}
         aiAvailable={aiEnabled && hasKey}
         enabledSourcesCount={enabled}

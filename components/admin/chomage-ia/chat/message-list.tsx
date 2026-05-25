@@ -2,11 +2,15 @@
 
 /**
  * Liste des bulles de chat. Inclut un état "empty" descriptif + un état "loading".
+ *
+ * Route entre `MessageBubble` (chat/markdown) et `GeneratedPromptMessage`
+ * (bulle ambre avec block code) selon `message.kind`.
  */
 
 import { Loader2, MessageSquare } from "lucide-react";
 import type { ChatMessageItem, CitedSourceLite } from "./types";
 import { MessageBubble } from "./message-bubble";
+import { GeneratedPromptMessage } from "./generated-prompt-message";
 
 interface Props {
   messages: ChatMessageItem[];
@@ -35,7 +39,11 @@ export function MessageList({ messages, loading, citedSources }: Props) {
           </p>
           <p className="max-w-md text-[12.5px]">
             L&apos;IA citera les sources de la KB avec des marqueurs <code className="rounded bg-muted px-1 py-0.5 text-[11px]">[SRC:id]</code>{" "}
-            cliquables. Clique sur un marqueur pour ouvrir la fiche source.
+            cliquables. Bouton{" "}
+            <span className="inline-flex items-baseline gap-0.5 font-semibold">
+              baguette
+            </span>{" "}
+            pour générer un prompt Claude Code à coller.
           </p>
         </div>
       </div>
@@ -44,8 +52,12 @@ export function MessageList({ messages, loading, citedSources }: Props) {
   return (
     <ul className="flex flex-col gap-3">
       {messages.map((m, i) => (
-        <li key={m.id ?? `${m.role}-${i}`}>
-          <MessageBubble message={m} citedSources={citedSources} />
+        <li key={m.id ?? `${m.role}-${m.kind ?? "chat"}-${i}`}>
+          {m.kind === "generated_prompt" ? (
+            <GeneratedPromptMessage message={m} citedSources={citedSources} />
+          ) : (
+            <MessageBubble message={m} citedSources={citedSources} />
+          )}
         </li>
       ))}
     </ul>

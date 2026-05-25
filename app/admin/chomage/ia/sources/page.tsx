@@ -3,11 +3,14 @@
  *
  * Server component qui charge l'état initial (settings, stats) puis confie
  * l'UI interactive (liste, filtres, formulaires modaux) à `SourcesWorkspace`.
+ *
+ * Utilise le nouveau `CompactIaHeader` (2 tabs Sources / Chat — le générateur
+ * est désormais intégré au chat via le bouton Wand2).
  */
 
 import { prisma } from "@/lib/prisma";
 import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
-import { IaHeader } from "@/components/admin/chomage-ia/ia-header";
+import { CompactIaHeader } from "@/components/admin/chomage-ia/compact-ia-header";
 import { AiDisabledBanner } from "@/components/admin/chomage-ia/ai-disabled-banner";
 import { SourcesWorkspace } from "@/components/admin/chomage-ia/sources/sources-workspace";
 import { DEFAULT_DOMAIN } from "@/lib/chomage-ia/types";
@@ -30,8 +33,8 @@ export default async function ChomageIaSourcesPage() {
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
 
   return (
-    <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
-      <IaHeader
+    <div className="flex flex-col">
+      <CompactIaHeader
         activeTab="sources"
         stats={{
           sources: total,
@@ -40,11 +43,13 @@ export default async function ChomageIaSourcesPage() {
           prompts: promptsCount,
         }}
       />
-      <AiDisabledBanner enabled={aiEnabled} hasKey={hasKey} />
-      <SourcesWorkspace
-        domain={DEFAULT_DOMAIN}
-        aiAvailable={aiEnabled && hasKey}
-      />
+      <div className="flex flex-col gap-4 px-4 py-4 lg:px-6">
+        <AiDisabledBanner enabled={aiEnabled} hasKey={hasKey} />
+        <SourcesWorkspace
+          domain={DEFAULT_DOMAIN}
+          aiAvailable={aiEnabled && hasKey}
+        />
+      </div>
     </div>
   );
 }

@@ -11,6 +11,13 @@ export interface ChatSessionItem {
   messageCount: number;
 }
 
+/**
+ * Message dans le thread. `kind` (optionnel, défaut "chat") permet d'afficher
+ * un rendu spécial pour les prompts générés inline (mode `generated_prompt`).
+ * Les prompts générés ne sont PAS persistés comme ChatMessage en DB — ils sont
+ * sauvegardés via /api/chomage-ia/prompts (GeneratedPrompt). Ils n'apparaissent
+ * que dans la session courante côté UI.
+ */
 export interface ChatMessageItem {
   id?: string;
   role: "user" | "assistant";
@@ -27,6 +34,15 @@ export interface ChatMessageItem {
   pendingStartedAt?: number;
   /** Durée totale de l'appel IA en millisecondes (côté client uniquement). */
   elapsedMs?: number;
+  /** Type de bulle. "chat" (par défaut) = bulle markdown normale.
+   *  "generated_prompt" = bulle spéciale avec block code + bouton "Copier" prominent. */
+  kind?: "chat" | "generated_prompt";
+  /** Pour kind="generated_prompt" : id de l'entrée GeneratedPrompt persistée. */
+  promptId?: string;
+  /** Pour kind="generated_prompt" : brief d'origine (affiché dans la bulle). */
+  promptBrief?: string;
+  /** Pour kind="generated_prompt" : titre court généré par Claude. */
+  promptTitle?: string;
 }
 
 export interface CitedSourceLite {

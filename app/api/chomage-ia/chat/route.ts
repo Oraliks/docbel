@@ -43,6 +43,10 @@ import {
 } from "@/lib/chomage-ia/anthropic";
 import { callClaudeStream } from "@/lib/chomage-ia/anthropic-stream";
 import { CLAUDE_MODELS } from "@/lib/chomage-ia/models";
+import {
+  resolveSessionModel,
+  logResolvedModel,
+} from "@/lib/chomage-ia/model-resolver";
 import { CHAT_SYSTEM_PROMPT } from "@/lib/chomage-ia/prompts";
 import {
   prepareChatContext,
@@ -168,6 +172,11 @@ export async function POST(req: NextRequest) {
   }
   apiMessages.push({ role: "user", content: parsed.message });
 
+  // Résolution du modèle effectif : si la session a un `preferredModel` set
+  // par l'admin (UI sélecteur de modèle), on l'utilise — sinon défaut Sonnet.
+  const resolved = resolveSessionModel(session.preferredModel);
+  logResolvedModel("chat", resolved);
+
   // ============================================================
   // MODE STREAMING SSE
   // ============================================================
@@ -182,6 +191,7 @@ export async function POST(req: NextRequest) {
       truncated: ctx.truncated,
       isNewSession,
       userMessage: parsed.message,
+      model: resolved.model,
     });
   }
 
@@ -190,10 +200,10 @@ export async function POST(req: NextRequest) {
   // ============================================================
   let assistantText: string;
   let usage;
-  let modelUsed: string = CLAUDE_MODELS.sonnet;
+  let modelUsed: string = resolved.model;
   try {
     const claudeRes = await callClaude({
-      model: CLAUDE_MODELS.sonnet,
+      model: resolved.model,
       systemPrompt: CHAT_SYSTEM_PROMPT,
       cachedContext: ctx.cachedContext,
       messages: apiMessages,
@@ -297,6 +307,8 @@ interface StreamChatArgs {
   truncated: boolean;
   isNewSession: boolean;
   userMessage: string;
+  /** Modèle Claude effectif résolu via `resolveSessionModel`. */
+  model: typeof CLAUDE_MODELS.sonnet | typeof CLAUDE_MODELS.haiku;
 }
 
 /**
@@ -333,7 +345,7 @@ function streamChatResponse(args: StreamChatArgs): Response {
 
       try {
         for await (const ev of callClaudeStream({
-          model: CLAUDE_MODELS.sonnet,
+          model: args.model,
           systemPrompt: CHAT_SYSTEM_PROMPT,
           cachedContext: args.cachedContext,
           messages: args.apiMessages,
@@ -406,7 +418,7 @@ function streamChatResponse(args: StreamChatArgs): Response {
               role: "assistant",
               content: assistantText,
               citedSourceIds: validCitedIds,
-              model: usageFinal?.model ?? CLAUDE_MODELS.sonnet,
+              model: usageFinal?.model ?? args.model,
               tokensIn: usageFinal?.inputTokens ?? null,
               tokensOut: usageFinal?.outputTokens ?? null,
             },

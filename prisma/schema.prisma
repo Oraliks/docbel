@@ -1406,18 +1406,23 @@ model KnowledgeSource {
 ///   - `pinned` : épingle la session en haut du rail (badge visuel).
 ///   - `archived` : sort la session de la liste principale sans la supprimer.
 ///   - `folderId` : range la session dans un dossier de groupement coloré.
+///
+/// Migration 18 :
+///   - `preferredModel` : modèle Claude forcé pour cette session (null = défaut Sonnet).
+///     Valeurs autorisées : valeurs de `CLAUDE_MODELS` (sonnet | haiku).
 model ChatSession {
-  id          String        @id @default(cuid())
-  title       String        @default("Nouvelle conversation")
-  domain      String        @default("chomage")
-  pinned      Boolean       @default(false)
-  archived    Boolean       @default(false)
-  folderId    String?
-  folder      ChatFolder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  messages    ChatMessage[]
-  createdById String?
+  id             String        @id @default(cuid())
+  title          String        @default("Nouvelle conversation")
+  domain         String        @default("chomage")
+  pinned         Boolean       @default(false)
+  archived       Boolean       @default(false)
+  folderId       String?
+  folder         ChatFolder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  preferredModel String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  messages       ChatMessage[]
+  createdById    String?
 
   @@index([domain, createdAt])
   @@index([domain, pinned, archived])

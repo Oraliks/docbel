@@ -14,6 +14,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  ChevronDown,
   Loader2,
   Paperclip,
   SendHorizontal,
@@ -22,7 +23,20 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import {
+  PROMPT_TEMPLATES_LIST,
+  firstPlaceholderIndex,
+  type PromptTemplate,
+} from "./prompt-templates";
 
 export type InputBarMode = "chat" | "prompt";
 
@@ -244,12 +258,6 @@ function ChatModeBar({
 /*  Mode PROMPT                                                        */
 /* ------------------------------------------------------------------ */
 
-const EXAMPLES = [
-  "Crée un calculateur AGR (allocation de garantie de revenus) pour temps partiels involontaires",
-  "Génère un brief pour un outil de simulation activation Forem (ressort wallon)",
-  "Construis un assistant de rédaction de C4 chômage avec champs obligatoires",
-];
-
 function PromptModeBar({
   onModeChange,
   disabled,
@@ -258,6 +266,10 @@ function PromptModeBar({
 }: Props) {
   const [brief, setBrief] = useState("");
   const [hint, setHint] = useState("");
+  /** Template courant sélectionné (null = aucun, mode libre). */
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+  const briefRef = useRef<HTMLTextAreaElement>(null);
+
   const trimmed = brief.trim();
   const canSubmit = trimmed.length >= 5 && !disabled && !sending;
 
@@ -267,7 +279,53 @@ function PromptModeBar({
     // Reset après envoi — la bulle générée arrive dans le thread.
     setBrief("");
     setHint("");
+    setActiveTemplateId(null);
   }
+
+  /**
+   * Applique un template : remplace brief + contextHint et positionne le
+   * curseur sur le premier placeholder `[…]`.
+   *
+   * Si l'admin a déjà tapé du contenu non vide ET différent du template
+   * précédent, on demande confirmation pour éviter d'écraser son travail.
+   */
+  function applyTemplate(tpl: PromptTemplate) {
+    const userHasContent = brief.trim().length > 0 || hint.trim().length > 0;
+    if (userHasContent) {
+      const ok = window.confirm(
+        "Écraser le brief et le contexte technique actuels avec ce template ?"
+      );
+      if (!ok) return;
+    }
+    setBrief(tpl.brief);
+    setHint(tpl.contextHint ?? "");
+    setActiveTemplateId(tpl.id);
+    // Focus + sélection du 1er placeholder pour une UX directe.
+    requestAnimationFrame(() => {
+      const ta = briefRef.current;
+      if (!ta) return;
+      ta.focus();
+      const start = firstPlaceholderIndex(tpl.brief);
+      // Sélectionne le placeholder entier `[…]` si présent pour que l'admin
+      // puisse taper par-dessus.
+      const end = tpl.brief.indexOf("]", start);
+      ta.setSelectionRange(start, end === -1 ? start : end + 1);
+    });
+  }
+
+  /** Reset à l'état "aucun template". */
+  function clearTemplate() {
+    setBrief("");
+    setHint("");
+    setActiveTemplateId(null);
+    requestAnimationFrame(() => {
+      briefRef.current?.focus();
+    });
+  }
+
+  const activeTemplate = activeTemplateId
+    ? PROMPT_TEMPLATES_LIST.find((t) => t.id === activeTemplateId) ?? null
+    : null;
 
   return (
     <div className="flex flex-col gap-2 border-l-4 border-amber-400 bg-amber-50/30 px-3 py-2.5 dark:border-amber-500/60 dark:bg-amber-950/15">
@@ -277,16 +335,88 @@ function PromptModeBar({
           <Wand2 className="size-3.5" />
           Brief Claude Code
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          onClick={() => onModeChange("chat")}
-          title="Revenir au chat"
-          aria-label="Fermer le mode générateur"
-        >
-          <X className="size-3.5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {/* Sélecteur de template */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              disabled={disabled || sending}
+              render={
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] font-semibold transition-colors",
+                    activeTemplate
+                      ? "border-amber-500 bg-amber-100 text-amber-900 dark:border-amber-400/60 dark:bg-amber-900/40 dark:text-amber-100"
+                      : "border-amber-300/60 bg-background text-amber-800 hover:bg-amber-100/40 dark:border-amber-500/30 dark:text-amber-200 dark:hover:bg-amber-900/30",
+                    (disabled || sending) && "cursor-not-allowed opacity-60"
+                  )}
+                  aria-label="Choisir un template de prompt"
+                />
+              }
+            >
+              {activeTemplate ? (
+                <>
+                  <activeTemplate.icon className="size-3" />
+                  {activeTemplate.label}
+                </>
+              ) : (
+                <>Template</>
+              )}
+              <ChevronDown className="size-3 opacity-70" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-72">
+              <DropdownMenuLabel className="text-[10.5px] uppercase tracking-wider">
+                Templates pré-définis
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {PROMPT_TEMPLATES_LIST.map((tpl) => {
+                const Icon = tpl.icon;
+                const selected = tpl.id === activeTemplateId;
+                return (
+                  <DropdownMenuItem
+                    key={tpl.id}
+                    onClick={() => applyTemplate(tpl)}
+                    className={cn(
+                      "flex flex-col items-start gap-0.5",
+                      selected && "bg-accent/60"
+                    )}
+                  >
+                    <span className="flex w-full items-center gap-1.5 text-[12px] font-semibold">
+                      <Icon className="size-3.5" />
+                      {tpl.label}
+                      {selected ? (
+                        <span className="ml-auto rounded-full bg-primary/15 px-1.5 text-[9.5px] font-bold uppercase tracking-wider text-primary">
+                          actif
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="text-[10.5px] text-muted-foreground">
+                      {tpl.hint}
+                    </span>
+                  </DropdownMenuItem>
+                );
+              })}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={clearTemplate}
+                className="text-[12px]"
+              >
+                <X className="size-3.5" />
+                Effacer le template (brief libre)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => onModeChange("chat")}
+            title="Revenir au chat"
+            aria-label="Fermer le mode générateur"
+          >
+            <X className="size-3.5" />
+          </Button>
+        </div>
       </div>
 
       {/* Brief */}
@@ -296,8 +426,17 @@ function PromptModeBar({
           className="mb-1 block text-[10.5px] font-semibold uppercase tracking-wider text-amber-800/80 dark:text-amber-200/80"
         >
           Brief <span className="text-destructive">*</span>
+          {activeTemplate ? (
+            <span className="ml-2 normal-case font-normal opacity-70">
+              · Template « {activeTemplate.label} » — remplis les{" "}
+              <code className="rounded bg-muted px-1 font-mono text-[10px]">
+                [...]
+              </code>
+            </span>
+          ) : null}
         </label>
         <textarea
+          ref={briefRef}
           id="prompt-brief"
           value={brief}
           onChange={(e) => setBrief(e.target.value.slice(0, 1000))}
@@ -340,45 +479,29 @@ function PromptModeBar({
         />
       </div>
 
-      {/* Footer : exemples + bouton */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-1">
-          {EXAMPLES.map((ex) => (
-            <button
-              key={ex}
-              type="button"
-              disabled={disabled || sending}
-              onClick={() => setBrief(ex)}
-              className="rounded-full border border-amber-300/50 bg-amber-100/30 px-2 py-0.5 text-[10px] text-amber-900 hover:bg-amber-100/60 disabled:opacity-50 dark:border-amber-500/30 dark:bg-amber-900/20 dark:text-amber-200 dark:hover:bg-amber-900/40"
-              title="Pré-remplir avec cet exemple"
-            >
-              {ex.slice(0, 36)}{ex.length > 36 ? "…" : ""}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10.5px] text-amber-800/70 dark:text-amber-200/70">
-            {brief.length} / 1000
-          </span>
-          <Button
-            type="button"
-            disabled={!canSubmit}
-            onClick={submit}
-            className="gap-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600"
-          >
-            {sending ? (
-              <>
-                <Loader2 className="size-3.5 animate-spin" />
-                Génération…
-              </>
-            ) : (
-              <>
-                <Wand2 className="size-3.5" />
-                Générer
-              </>
-            )}
-          </Button>
-        </div>
+      {/* Footer : counter + bouton */}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <span className="text-[10.5px] text-amber-800/70 dark:text-amber-200/70">
+          {brief.length} / 1000
+        </span>
+        <Button
+          type="button"
+          disabled={!canSubmit}
+          onClick={submit}
+          className="gap-1.5 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600"
+        >
+          {sending ? (
+            <>
+              <Loader2 className="size-3.5 animate-spin" />
+              Génération…
+            </>
+          ) : (
+            <>
+              <Wand2 className="size-3.5" />
+              Générer
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );

@@ -12,9 +12,64 @@ export interface ChatSessionItem {
   archived: boolean;
   /** Migration 17 — dossier de groupement (null = hors-dossier). */
   folderId: string | null;
+  /** Migration 18 — modèle Claude forcé pour cette session (null = défaut Sonnet). */
+  preferredModel: string | null;
   createdAt: string;
   updatedAt: string;
   messageCount: number;
+}
+
+/**
+ * Modèles Claude exposés à la UI pour le sélecteur par session.
+ * Doit rester aligné avec `CLAUDE_MODELS` de `lib/chomage-ia/models.ts`
+ * et `ALLOWED_MODELS` côté API `PATCH /sessions/[id]`.
+ */
+export const CHAT_MODEL_OPTIONS = [
+  {
+    value: "claude-sonnet-4-5-20250929",
+    short: "S",
+    label: "Sonnet 4.5",
+    tagline: "Qualité — raisonnement long, citations multi-sources",
+    /** Couleur du badge dans le rail (Tailwind utility classes). */
+    badgeClass:
+      "bg-violet-500/20 text-violet-800 dark:text-violet-200 ring-violet-500/40",
+    pricePerMsg: "≈ $0.02 / msg",
+  },
+  {
+    value: "claude-haiku-4-5-20251001",
+    short: "H",
+    label: "Haiku 4.5",
+    tagline: "Rapide — réponses courtes, faible coût",
+    badgeClass:
+      "bg-cyan-500/20 text-cyan-800 dark:text-cyan-200 ring-cyan-500/40",
+    pricePerMsg: "≈ $0.001 / msg",
+  },
+] as const;
+
+export type ChatModelValue = (typeof CHAT_MODEL_OPTIONS)[number]["value"];
+
+/**
+ * Retourne l'option correspondant à un `preferredModel` stocké (ou null
+ * pour le défaut auto = Sonnet sans bouton "forcé").
+ */
+export function findChatModelOption(
+  value: string | null | undefined
+): (typeof CHAT_MODEL_OPTIONS)[number] | null {
+  if (!value) return null;
+  return CHAT_MODEL_OPTIONS.find((o) => o.value === value) ?? null;
+}
+
+/**
+ * Helper court pour afficher le nom du modèle dans un badge / tooltip.
+ * - `null` ou inconnu → "Auto" (= Sonnet par défaut).
+ */
+export function getModelShortName(
+  value: string | null | undefined
+): "Sonnet" | "Haiku" | "Auto" {
+  if (!value) return "Auto";
+  if (value === "claude-sonnet-4-5-20250929") return "Sonnet";
+  if (value === "claude-haiku-4-5-20251001") return "Haiku";
+  return "Auto";
 }
 
 /**

@@ -51,7 +51,8 @@ import {
 import { cn } from "@/lib/utils";
 import { fmtRelative, truncate } from "../_shared";
 import { ConfirmDeleteDialog, RenameDialog } from "../_shared-alerts";
-import type { ChatSessionItem } from "./types";
+import { SessionModelPicker } from "./session-model-picker";
+import type { ChatModelValue, ChatSessionItem } from "./types";
 
 interface Props {
   sessions: ChatSessionItem[];
@@ -68,6 +69,11 @@ interface Props {
   onArchive?: (id: string) => void;
   /** Dupliquer la session avec ses messages. Si absent → toast "bientôt dispo". */
   onDuplicate?: (id: string) => void;
+  /**
+   * Migration 18 — change le modèle Claude pour une session
+   * (null = reset au défaut serveur Sonnet 4.5).
+   */
+  onChangeModel?: (id: string, model: ChatModelValue | null) => void | Promise<void>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -125,6 +131,7 @@ export function SessionsRail({
   onTogglePin,
   onArchive,
   onDuplicate,
+  onChangeModel,
 }: Props) {
   // expanded = sidebar large avec titres + actions
   const [expanded, setExpanded] = useState(false);
@@ -286,6 +293,11 @@ export function SessionsRail({
                         onSelect={() => onSelect(s.id)}
                         onStartEdit={() => startInlineEdit(s)}
                         onDelete={() => setDeleteTargetId(s.id)}
+                        onChangeModel={
+                          onChangeModel
+                            ? (m) => onChangeModel(s.id, m)
+                            : undefined
+                        }
                       />
                     ) : (
                       <CompactRow
@@ -488,6 +500,7 @@ function ExpandedRow({
   onSelect,
   onStartEdit,
   onDelete,
+  onChangeModel,
 }: {
   session: ChatSessionItem;
   active: boolean;
@@ -496,6 +509,7 @@ function ExpandedRow({
   onSelect: () => void;
   onStartEdit: () => void;
   onDelete: () => void;
+  onChangeModel?: (model: ChatModelValue | null) => void | Promise<void>;
 }) {
   return (
     <div
@@ -527,8 +541,17 @@ function ExpandedRow({
           >
             {truncate(session.title, 40)}
           </span>
-          <span className="truncate text-[10px] text-muted-foreground">
-            {session.messageCount} msg · {fmtRelative(session.updatedAt)}
+          <span className="flex min-w-0 items-center gap-1.5 truncate text-[10px] text-muted-foreground">
+            {onChangeModel ? (
+              <SessionModelPicker
+                value={session.preferredModel}
+                onChange={onChangeModel}
+                variant="badge"
+              />
+            ) : null}
+            <span className="truncate">
+              {session.messageCount} msg · {fmtRelative(session.updatedAt)}
+            </span>
           </span>
         </span>
       </button>

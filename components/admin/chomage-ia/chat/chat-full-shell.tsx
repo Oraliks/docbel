@@ -43,9 +43,11 @@ import {
 } from "./prompts-history-sheet";
 import { UploadQuickDialog } from "../sources/upload-quick-dialog";
 import { KeyboardShortcuts } from "./keyboard-shortcuts";
+import { SessionModelPicker } from "./session-model-picker";
 import { openChatStream } from "./sse-client";
 import type {
   ChatMessageItem,
+  ChatModelValue,
   ChatSessionItem,
   CitedSourceLite,
 } from "./types";
@@ -201,6 +203,44 @@ export function ChatFullShell({
       refreshSessions();
     } catch (e) {
       toast.error("Échec du renommage", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  /**
+   * Migration 18 — change le modèle Claude associé à une session.
+   * `null` → reset au défaut serveur (Sonnet 4.5).
+   */
+  async function changeSessionModel(
+    id: string,
+    model: ChatModelValue | null,
+  ) {
+    // Optimiste : mute la liste locale d'abord pour un feedback instantané.
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, preferredModel: model } : s)),
+    );
+    try {
+      const res = await fetch(`/api/chomage-ia/sessions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preferredModel: model }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+      const labelMap: Record<string, string> = {
+        "claude-sonnet-4-5-20250929": "Sonnet 4.5 (qualité)",
+        "claude-haiku-4-5-20251001": "Haiku 4.5 (rapide)",
+      };
+      const label = model ? labelMap[model] ?? model : "défaut (auto)";
+      toast.success(`Modèle changé : ${label}`);
+      refreshSessions();
+    } catch (e) {
+      // Rollback optimiste en cas d'erreur.
+      refreshSessions();
+      toast.error("Échec du changement de modèle", {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -790,6 +830,7 @@ export function ChatFullShell({
         onDelete={deleteSession}
         onRename={renameSession}
         onOpenPrompts={() => setPromptsSheetOpen(true)}
+        onChangeModel={changeSessionModel}
       />
 
       {/* Thread + input central */}
@@ -804,6 +845,21 @@ export function ChatFullShell({
             <Database className="size-3" />
             {enabledSourcesCount} source{enabledSourcesCount > 1 ? "s" : ""} active{enabledSourcesCount > 1 ? "s" : ""}
           </span>
+          {/* Sélecteur de modèle Claude pour la session courante (migration 18).
+              Visible seulement si on a une session active — sinon le sélecteur
+              n'aurait rien à patcher. Pour une nouvelle conv non-persistée,
+              l'admin peut switcher dès le 1er envoi qui crée la session. */}
+          {currentSessionId ? (
+            <div className="ml-2 hidden items-center md:inline-flex">
+              <SessionModelPicker
+                value={currentSession?.preferredModel ?? null}
+                onChange={(m) => changeSessionModel(currentSessionId, m)}
+                variant="inline"
+                disabled={sending}
+                stopPropagation={false}
+              />
+            </div>
+          ) : null}
           <div className="ml-auto flex items-center gap-1">
             <Button
               variant="ghost"

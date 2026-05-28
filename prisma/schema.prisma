@@ -232,24 +232,24 @@ model ToolSection {
 }
 
 model Tool {
-  id          String      @id @default(cuid())
-  sectionId   String
-  section     ToolSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  name        String
-  slug        String      @unique // "preavis", "agr", etc.
-  description String
-  type        String // "calc_preavis", "calc_agr", "locator", "doc_generator", etc.
-  icon        String?
-  popular     Boolean     @default(false)
-  timeMin     Int?
-  order       Int         @default(0)
-  active      Boolean     @default(true) // false = caché du catalogue public
+  id             String      @id @default(cuid())
+  sectionId      String
+  section        ToolSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  name           String
+  slug           String      @unique // "preavis", "agr", etc.
+  description    String
+  type           String // "calc_preavis", "calc_agr", "locator", "doc_generator", etc.
+  icon           String?
+  popular        Boolean     @default(false)
+  timeMin        Int?
+  order          Int         @default(0)
+  active         Boolean     @default(true) // false = caché du catalogue public
   /// Audience minimale qui peut voir l'outil. Hiérarchique : citoyen = visible
   /// par tous, employeur = visible par employeur+partenaire, partenaire =
   /// visible uniquement par partenaire. Sert au filtrage côté pages publiques
   /// (/outils, /employeur, /partenaire) via canViewAudience() dans lib/audience.
   /// Valeurs : "citoyen" | "employeur" | "partenaire".
-  audience    String      @default("citoyen")
+  audience       String      @default("citoyen")
   // Vérification annuelle de la fiabilité des chiffres / formules. L'admin
   // appuie sur "Marquer comme revu" via /api/admin/calculators/[slug]/review
   // → lastReviewedAt = now, nextReviewDue = now + 12 mois. Un bandeau
@@ -257,8 +257,8 @@ model Tool {
   // dès que nextReviewDue arrive ou est passé.
   lastReviewedAt DateTime?
   nextReviewDue  DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
   documentTemplate DocumentTemplate?
 
@@ -276,18 +276,18 @@ model Tool {
 /// pour permettre de filtrer dans l'admin & afficher en groupes côté public.
 model CalculatorAsset {
   id          String   @id @default(cuid())
-  slug        String   // slug du calc, ex "brut-net" (réfère à Tool.slug, sans FK pour simplifier le seed)
-  kind        String   // "pdf" | "url" | "image"
-  label       String   // ex "Barème SPF Annexe III 2026"
-  description String?  // optionnel
-  url         String   // URL publique (Vercel Blob ou URL externe directe)
-  category    String?  // "workbonus" | "precompte" | "css" | "atn" | "general" | ...
-  fileSize    Int?     // bytes (pour les uploads)
-  mimeType    String?  // "application/pdf", "image/png", …
-  year        Int?     // année de référence (2026, 2025, …)
+  slug        String // slug du calc, ex "brut-net" (réfère à Tool.slug, sans FK pour simplifier le seed)
+  kind        String // "pdf" | "url" | "image"
+  label       String // ex "Barème SPF Annexe III 2026"
+  description String? // optionnel
+  url         String // URL publique (Vercel Blob ou URL externe directe)
+  category    String? // "workbonus" | "precompte" | "css" | "atn" | "general" | ...
+  fileSize    Int? // bytes (pour les uploads)
+  mimeType    String? // "application/pdf", "image/png", …
+  year        Int? // année de référence (2026, 2025, …)
   order       Int      @default(0)
   uploadedAt  DateTime @default(now())
-  uploadedBy  String?  // User.id ou email — pas de FK : on garde l'historique même si l'admin part
+  uploadedBy  String? // User.id ou email — pas de FK : on garde l'historique même si l'admin part
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -491,11 +491,11 @@ model LookupTable {
   categoryId String
   category   LookupCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  slug    String // "s04-s36-article-indemnisation"
-  prefix  String // "S04/S36", "S01", "A27", "H33"
-  labelFr String
-  labelNl String
-  group   String? // sous-groupe pour la cat. Global (ex: "Chômage", "Adresse")
+  slug       String // "s04-s36-article-indemnisation"
+  prefix     String // "S04/S36", "S01", "A27", "H33"
+  labelFr    String
+  labelNl    String
+  group      String? // sous-groupe pour la cat. Global (ex: "Chômage", "Adresse")
   // URL relative de la table sur services.onem.be/lookupweb (pour le lien "voir source")
   sourcePath String?
   // Nom interne ONEM (anglais) tel qu'utilisé dans les exports CSV.
@@ -553,11 +553,11 @@ model LookupEntry {
   tableId String
   table   LookupTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
-  code       String    // "01AINT", "27,2A1", "28&3,3", "44N"…
+  code       String // "01AINT", "27,2A1", "28&3,3", "44N"…
   labelFr    String
   labelNl    String
-  labelDe    String?   // Description allemande (les CSV ONEM la fournissent, souvent vide)
-  labelEn    String?   // Description anglaise (idem, souvent vide)
+  labelDe    String? // Description allemande (les CSV ONEM la fournissent, souvent vide)
+  labelEn    String? // Description anglaise (idem, souvent vide)
   validFrom  DateTime?
   validUntil DateTime? // null = toujours valide
 
@@ -706,9 +706,9 @@ model DocumentTemplate {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  generated   GeneratedDocument[]
-  drafts      DocumentDraft[]
-  revisions   DocumentTemplateRevision[]
+  generated       GeneratedDocument[]
+  drafts          DocumentDraft[]
+  revisions       DocumentTemplateRevision[]
   bundleItems     DocumentBundleItem[]
   analyticsEvents FormAnalyticsEvent[]
 
@@ -889,18 +889,18 @@ model FieldValidationPreset {
   // Bibliothèque canonique (migration 13)
   /// Label par défaut affiché quand le champ est placé via la palette.
   /// Si null, on retombe sur `name`.
-  defaultLabel String?
+  defaultLabel   String?
   /// Largeur par défaut en points PDF quand placé via la palette.
-  defaultWidth Int?
+  defaultWidth   Int?
   /// Hauteur par défaut en points PDF.
-  defaultHeight Int?
+  defaultHeight  Int?
   /// Valeur par défaut (ex. "Belgique" pour le champ Pays).
-  defaultValue String?
+  defaultValue   String?
   /// Options par défaut pour type=select : `[{value, label}, ...]`.
   /// Stocké en JSON ; chaque option : { value: string, label: string, labelNl?, labelDe? }.
   defaultOptions Json?
   /// Si true, apparaît dans la palette rapide (8-12 max recommandés).
-  popular Boolean @default(false)
+  popular        Boolean @default(false)
 
   // Validation rules (toutes optionnelles, combinées en AND)
   regex      String?
@@ -981,14 +981,14 @@ model SignatureRecord {
 /// mon emploi") affiché sur la page d'onboarding. Le mapping se fait via
 /// `lifeEventCategory` + `showOnOnboarding`.
 model DocumentBundle {
-  id          String   @id @default(cuid())
-  slug        String   @unique
+  id          String  @id @default(cuid())
+  slug        String  @unique
   name        String
   description String?
   icon        String?
-  color       String   @default("#7C3AED")
-  active      Boolean  @default(true)
-  order       Int      @default(0)
+  color       String  @default("#7C3AED")
+  active      Boolean @default(true)
+  order       Int     @default(0)
 
   // Onboarding ("Quelle est ma situation ?") — page d'accueil dédiée
   /// Catégorie d'événement de vie : "emploi", "formation", "famille", "logement", "sante"…
@@ -1009,9 +1009,9 @@ model DocumentBundle {
   /// avant le 1er du mois). Format: BundleWarning[] (cf. lib/bundles/types.ts).
   warnings Json @default("[]")
 
-  createdBy   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   items DocumentBundleItem[]
   runs  BundleRun[]
@@ -1033,7 +1033,7 @@ model DocumentBundleItem {
   // [{ sourceTemplateId, fieldId, op: "equals"|"notEquals"|"in"|"contains", value }]
   // Si sourceTemplateId === templateId courant : auto-référence (pas utile)
   // Si sourceTemplateId === null : champ d'un autre item du bundle (recherché par fieldId)
-  condition Json?
+  condition  Json?
 
   @@unique([bundleId, templateId])
   @@index([bundleId])
@@ -1043,31 +1043,31 @@ model DocumentBundleItem {
 /// Stocke les payloads validés des documents complétés.
 /// Permet d'évaluer les conditions des items à compléter.
 model BundleRun {
-  id        String         @id @default(cuid())
-  bundleId  String
-  bundle    DocumentBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  id                   String         @id @default(cuid())
+  bundleId             String
+  bundle               DocumentBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
   // Identification utilisateur (l'un des trois)
-  userId    String?
-  sessionId String? // cookie côté client
+  userId               String?
+  sessionId            String? // cookie côté client
   /// Code de reprise lisible par l'utilisateur (ex. "BELDOC-3X7K-9P2M").
   /// Permet de reprendre un dossier depuis un autre appareil / après expiration du cookie.
   /// Généré au premier `POST /api/documents/bundles/[id]/run` quand le run est créé.
-  resumeCode          String?   @unique
-  resumeCodeExpiresAt DateTime? // TTL par défaut = 30 jours
+  resumeCode           String?        @unique
+  resumeCodeExpiresAt  DateTime? // TTL par défaut = 30 jours
   /// Email optionnel saisi par l'utilisateur pour se faire envoyer le code par mail.
   /// Pas une donnée d'identification — purement pratique pour la reprise.
-  resumeEmail         String?
+  resumeEmail          String?
   // Payloads collectés : { [templateId]: { ...validated payload } }
-  payloads  Json           @default("{}")
+  payloads             Json           @default("{}")
   /// Réponses au questionnaire de pré-qualification (informatif).
   /// Clé : questionId. Valeur : réponse de l'utilisateur.
-  eligibilityAnswers Json @default("{}")
+  eligibilityAnswers   Json           @default("{}")
   // Liste des templateIds complétés (ordre d'achèvement)
-  completedTemplateIds Json @default("[]")
-  status    String         @default("in_progress") // in_progress | completed | abandoned
-  startedAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  completedAt DateTime?
+  completedTemplateIds Json           @default("[]")
+  status               String         @default("in_progress") // in_progress | completed | abandoned
+  startedAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  completedAt          DateTime?
 
   @@index([bundleId])
   @@index([userId])
@@ -1079,42 +1079,42 @@ model BundleRun {
 /// Profil utilisateur enrichi pour pré-remplissage des formulaires (Phase 8).
 /// Données stockées séparément du modèle User pour pouvoir être null/optionnelles.
 model UserProfile {
-  userId        String    @id
+  userId                  String    @id
   // Identité
-  firstName     String?
-  lastName      String?
-  niss          String?
-  birthDate     DateTime?
-  birthPlace    String?
-  nationality   String?
-  gender        String?
+  firstName               String?
+  lastName                String?
+  niss                    String?
+  birthDate               DateTime?
+  birthPlace              String?
+  nationality             String?
+  gender                  String?
   // Adresse
-  street        String?
-  streetNum     String?
-  postalCode    String?
-  city          String?
-  country       String    @default("BE")
+  street                  String?
+  streetNum               String?
+  postalCode              String?
+  city                    String?
+  country                 String    @default("BE")
   // Contact
-  phone         String?
-  mobilePhone   String?
+  phone                   String?
+  mobilePhone             String?
   // Bancaire
-  iban          String?
-  bic           String?
+  iban                    String?
+  bic                     String?
   // Civil
-  maritalStatus String? // single | married | cohabiting | divorced | widowed
+  maritalStatus           String? // single | married | cohabiting | divorced | widowed
   // Pro
-  employer      String?
-  employerBce   String?
-  jobTitle      String?
-  contractType  String? // CDI | CDD | interim | independant
-  contractStart DateTime?
+  employer                String?
+  employerBce             String?
+  jobTitle                String?
+  contractType            String? // CDI | CDD | interim | independant
+  contractStart           DateTime?
   // Préférences administratives (pour résolveur bureaux)
   organismePaiement       String? // "capac" | "fgtb" | "csc" | "cgslb"
   commissionParitaireCode String? // ref CommissionParitaire.code (ex: "124")
   mutuelleCode            String? // "solidaris" | "mc" | "mloz" | "mutlibres" | "neutrales"
   // Méta
-  updatedAt     DateTime  @updatedAt
-  createdAt     DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  createdAt               DateTime  @default(now())
 }
 
 /// Mémoire des corrections OCR : apprend des modifications admin pour
@@ -1183,23 +1183,23 @@ model FormAnalyticsEvent {
 /// Commune belge (fusion 2025) avec son code INS officiel.
 /// Identifiant pivot pour la résolution code postal → bureau attitré.
 model Commune {
-  id        String        @id @default(cuid())
-  insCode   String        @unique // "21001" Anderlecht, "11001" Aartselaar...
-  nameFr    String
-  nameNl    String?
-  nameDe    String?
-  region    BelgianRegion
-  province  String? // "liege", "hainaut", "namur", "luxembourg", "brabant-wallon", "antwerpen"...
+  id           String        @id @default(cuid())
+  insCode      String        @unique // "21001" Anderlecht, "11001" Aartselaar...
+  nameFr       String
+  nameNl       String?
+  nameDe       String?
+  region       BelgianRegion
+  province     String? // "liege", "hainaut", "namur", "luxembourg", "brabant-wallon", "antwerpen"...
   // Centroïde de la commune pour fallback géoloc et calcul distance par CP
-  lat       Float?
-  lng       Float?
+  lat          Float?
+  lng          Float?
   // Si fusion ultérieure : redirige vers la nouvelle commune
   mergedIntoId String?
-  mergedInto   Commune?  @relation("CommuneFusion", fields: [mergedIntoId], references: [id])
-  fusedFrom    Commune[] @relation("CommuneFusion")
+  mergedInto   Commune?      @relation("CommuneFusion", fields: [mergedIntoId], references: [id])
+  fusedFrom    Commune[]     @relation("CommuneFusion")
 
   postalCodes PostalCode[]
-  bureaus     Bureau[]              @relation("BureauCommune")
+  bureaus     Bureau[]           @relation("BureauCommune")
   assignments BureauAssignment[]
 
   createdAt DateTime @default(now())
@@ -1224,21 +1224,21 @@ model PostalCode {
 /// Pour ONEM : assignment via BureauAssignment (1 bureau dessert N communes).
 /// Pour Syndicat/Permanence : libre choix géographique, communeId optionnel.
 model Bureau {
-  id          String     @id @default(cuid())
-  organismeId String
-  organisme   Organisme  @relation(fields: [organismeId], references: [id])
-  type        BureauType
-  name        String // "CPAS de Saint-Gilles"
+  id             String     @id @default(cuid())
+  organismeId    String
+  organisme      Organisme  @relation(fields: [organismeId], references: [id])
+  type           BureauType
+  name           String // "CPAS de Saint-Gilles"
   // Localisation
-  street      String
-  streetNum   String?
-  postalCode  String
-  city        String
-  lat         Float?
-  lng         Float?
+  street         String
+  streetNum      String?
+  postalCode     String
+  city           String
+  lat            Float?
+  lng            Float?
   // Compétence territoriale (pour CPAS/COMMUNE = obligatoire)
-  communeId   String?
-  commune     Commune?   @relation("BureauCommune", fields: [communeId], references: [id])
+  communeId      String?
+  commune        Commune?   @relation("BureauCommune", fields: [communeId], references: [id])
   // Contact
   phone          String?
   email          String?
@@ -1246,34 +1246,34 @@ model Bureau {
   appointmentUrl String?
   // Horaires structurés : [{day: 1, slots: [{open: "09:00", close: "12:00"}, ...]}]
   // day: 0=dimanche, 1=lundi, ... 6=samedi
-  hours      Json    @default("[]")
-  hoursNotes String?
+  hours          Json       @default("[]")
+  hoursNotes     String?
   // Services rendus ici (codes libres : "RIS", "aide_juridique", "domiciliation", ...)
-  services   Json    @default("[]")
+  services       Json       @default("[]")
   // Méta
-  active     Boolean @default(true)
-  notes      String?
+  active         Boolean    @default(true)
+  notes          String?
   // Vérification : pour signaler que les coordonnées sont à jour.
-  verified       Boolean   @default(false)
+  verified       Boolean    @default(false)
   lastVerifiedAt DateTime?
   verifiedBy     String?
   // Identifiants ONEM (pour les bureaux type=onem, sync depuis lookup
   // bureau-de-chomage). Permet le cross-ref avec parametres-onem-cp pour
   // les assignations CP→BC automatiques.
-  numeroOnem String? // "11", "12"... = numéro de bureau de chômage
-  regionOnem String? // "Bruxelles", "Wallonie", "Flandre"…
-  clusterOnem String? // numéro de cluster ONEM
+  numeroOnem     String? // "11", "12"... = numéro de bureau de chômage
+  regionOnem     String? // "Bruxelles", "Wallonie", "Flandre"…
+  clusterOnem    String? // numéro de cluster ONEM
   // i18n labels optionnels
-  nameNl     String?
-  nameDe     String?
-  updatedBy  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  nameNl         String?
+  nameDe         String?
+  updatedBy      String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
-  assignments  BureauAssignment[]
-  revisions    BureauRevision[]
-  reports      BureauReport[]
-  commissions  BureauCommission[]
+  assignments BureauAssignment[]
+  revisions   BureauRevision[]
+  reports     BureauReport[]
+  commissions BureauCommission[]
 
   @@index([organismeId, type])
   @@index([type])
@@ -1302,16 +1302,16 @@ model BureauCommission {
 
 /// Snapshot d'un bureau avant modification — permet rollback / audit.
 model BureauRevision {
-  id            String   @id @default(cuid())
-  bureauId      String
-  bureau        Bureau   @relation(fields: [bureauId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  bureauId    String
+  bureau      Bureau   @relation(fields: [bureauId], references: [id], onDelete: Cascade)
   // Snapshot complet (JSON) du bureau avant la modification
-  snapshot      Json
+  snapshot    Json
   // Diff calculé : { changed: ["phone", "hours"], previous: {...}, current: {...} }
-  diff          Json?
-  changeNotes   String?
-  changedBy     String?
-  createdAt     DateTime @default(now())
+  diff        Json?
+  changeNotes String?
+  changedBy   String?
+  createdAt   DateTime @default(now())
 
   @@index([bureauId, createdAt(sort: Desc)])
   @@index([changedBy])
@@ -1319,24 +1319,24 @@ model BureauRevision {
 
 /// Signalement public d'erreur sur un bureau (horaires obsolètes, adresse fausse, etc.).
 model BureauReport {
-  id          String   @id @default(cuid())
-  bureauId    String
-  bureau      Bureau   @relation(fields: [bureauId], references: [id], onDelete: Cascade)
+  id            String    @id @default(cuid())
+  bureauId      String
+  bureau        Bureau    @relation(fields: [bureauId], references: [id], onDelete: Cascade)
   // Type d'erreur signalée
-  category    String // "hours" | "address" | "phone" | "closed" | "other"
-  message     String
+  category      String // "hours" | "address" | "phone" | "closed" | "other"
+  message       String
   // Contact optionnel pour follow-up
   reporterEmail String?
   // Métadonnées (pas de PII)
-  ipHash      String?
-  userAgent   String?
+  ipHash        String?
+  userAgent     String?
   // Workflow admin
-  status      String   @default("pending") // pending | resolved | dismissed
-  resolvedBy  String?
-  resolvedAt  DateTime?
-  adminNotes  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status        String    @default("pending") // pending | resolved | dismissed
+  resolvedBy    String?
+  resolvedAt    DateTime?
+  adminNotes    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([bureauId])
   @@index([status])
@@ -1409,7 +1409,7 @@ model KnowledgeSource {
   /// `lastValidatedAt` : null tant que l'admin n'a jamais cliqué "Toujours en vigueur".
   /// `validityStatus`  : "unknown" (défaut), "fresh", "stale" (>12 mois), "obsolete" (>24 mois).
   lastValidatedAt DateTime?
-  validityStatus  String   @default("unknown")
+  validityStatus  String    @default("unknown")
 
   /// Chunks RAG (1 source → N chunks). Cascade delete via FK.
   chunks KnowledgeChunk[]
@@ -1431,7 +1431,7 @@ model KnowledgeSource {
 /// Le scope multi-folder est lu depuis ChatSession.scopeFolderIds — quand non
 /// vide, le retrieval RAG filtre les sources sur `folderId IN (...)`.
 model KnowledgeFolder {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   name        String
   /// Hex (#3b82f6) ou nom Tailwind ("blue", "amber") — front décide du rendu.
   color       String?
@@ -1440,10 +1440,10 @@ model KnowledgeFolder {
   parentId    String?
   parent      KnowledgeFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children    KnowledgeFolder[] @relation("FolderHierarchy")
-  order       Int      @default(0)
-  domain      String   @default("chomage")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  order       Int               @default(0)
+  domain      String            @default("chomage")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   createdById String?
 
   sources KnowledgeSource[]
@@ -1654,18 +1654,18 @@ model KnowledgeGap {
 /// `lastError` : dernier message d'erreur ("HTTP 503", "0 documents trouvés"…).
 /// `lastSuccessAt` : dernière exécution AYANT trouvé au moins 1 document neuf.
 model IngestionSource {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   name          String
-  kind          String   // "rss" | "scrape"
+  kind          String // "rss" | "scrape"
   url           String
-  schedule      String   @default("daily") // "hourly" | "daily" | "weekly"
-  enabled       Boolean  @default(true)
-  domain        String   @default("chomage")
+  schedule      String    @default("daily") // "hourly" | "daily" | "weekly"
+  enabled       Boolean   @default(true)
+  domain        String    @default("chomage")
   lastCheckedAt DateTime?
   lastSuccessAt DateTime?
-  lastError     String?  @db.Text
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  lastError     String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   documents IngestedDocument[]
 
@@ -1680,17 +1680,173 @@ model IngestionSource {
 ///   - "validated" → admin a validé : `knowledgeSourceId` pointe sur la KS créée
 ///   - "rejected"  → admin a refusé (spam / hors-sujet)
 model IngestedDocument {
-  id                String   @id @default(cuid())
+  id                String          @id @default(cuid())
   ingestionSourceId String
   ingestionSource   IngestionSource @relation(fields: [ingestionSourceId], references: [id], onDelete: Cascade)
-  externalUrl       String   @unique
+  externalUrl       String          @unique
   title             String
   publishedAt       DateTime?
-  fetchedAt         DateTime @default(now())
-  status            String   @default("pending") // "pending" | "validated" | "rejected"
+  fetchedAt         DateTime        @default(now())
+  status            String          @default("pending") // "pending" | "validated" | "rejected"
   knowledgeSourceId String?
-  notes             String?  @db.Text
+  notes             String?         @db.Text
 
   @@index([status, fetchedAt(sort: Desc)])
   @@index([ingestionSourceId])
+}
+
+// =====================================================================
+// PDF Forms — nouvelle fonctionnalité (AcroForm only), indépendante de
+// DocumentTemplate. Namespace PdfForm*. Aucune dépendance vers les
+// modèles Document* afin de pouvoir supprimer l'ancien système à terme.
+//
+// Principes :
+//   - 1 PDF (à champs AcroForm) = 1 formulaire généré côté front.
+//   - Schéma à deux niveaux : `technicalSchema` (extraction brute, ancre
+//     immuable tant que le PDF source ne change pas) + `fields` (enrichi,
+//     librement éditable : labels multilingues, validation, prefill…).
+//   - RGPD : le PDF rempli n'est JAMAIS stocké. On ne garde qu'un log
+//     d'audit sans donnée nominative (PdfFormSubmissionLog).
+//   - Livraison : download one-shot ou envoi via Doccle (Belgique).
+//   - Prefill optionnel via itsme (claims OIDC) ou profil utilisateur.
+// =====================================================================
+
+enum PdfFormStatus {
+  draft
+  published
+  archived
+}
+
+/// Modèle de formulaire PDF. Le PDF source (vierge, officiel) est stocké
+/// via lib/pdf-forms/storage (chemin `sourceStoragePath`), découplé du
+/// modèle File de l'ancien système.
+model PdfForm {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  description String?
+  /// Organisme émetteur en texte libre (ONEM, CPAS, SPF…). Pas de FK pour
+  /// rester découplé ; un référentiel viendra plus tard si besoin.
+  issuer      String?
+  status      PdfFormStatus @default(draft)
+  version     Int           @default(1)
+
+  // --- Localisation ---
+  /// Locale par défaut (toujours présente). Valeurs : "fr" | "nl" | "de".
+  defaultLocale String @default("fr")
+  /// Locales disponibles pour ce formulaire, ex ["fr","de"].
+  locales       Json   @default("[\"fr\"]")
+
+  // --- PDF source (vierge) ---
+  sourceStoragePath String
+  sourceFileName    String
+  sourceByteSize    Int
+  sourceSha256      String
+  pageCount         Int    @default(1)
+
+  // --- Schémas ---
+  /// Extraction brute de l'AcroForm — AcroFieldRaw[] (cf. lib/pdf-forms/types).
+  /// Sert d'ancre de génération ; ne change qu'à un re-parse / nouvelle version.
+  technicalSchema Json @default("[]")
+  /// Schéma enrichi éditable — PdfFormField[] (cf. lib/pdf-forms/types).
+  fields          Json @default("[]")
+
+  // --- Livraison ---
+  allowDownload Boolean @default(true)
+  allowDoccle   Boolean @default(false)
+  /// Si true, propose le prefill via itsme côté front.
+  allowItsme    Boolean @default(false)
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  revisions   PdfFormRevision[]
+  submissions PdfFormSubmissionLog[]
+  drafts      PdfFormDraft[]
+
+  @@index([status])
+  @@index([updatedAt])
+}
+
+/// Historique de versions. Snapshot créé avant chaque changement de schéma
+/// ou de PDF source.
+model PdfFormRevision {
+  id              String   @id @default(cuid())
+  formId          String
+  form            PdfForm  @relation(fields: [formId], references: [id], onDelete: Cascade)
+  version         Int
+  fields          Json
+  technicalSchema Json
+  sourceSha256    String
+  sourceFileName  String
+  /// "minor" | "major" | "source_update" (= nouveau PDF officiel)
+  changeType      String   @default("minor")
+  changeNotes     String?
+  /// { added: [], removed: [], renamed: [], modified: [] } — cf. lib/pdf-forms/diff
+  diffSummary     Json?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+
+  @@index([formId])
+  @@index([createdAt])
+}
+
+/// Bibliothèque de presets de champs réutilisables (NISS, IBAN, code postal…).
+model PdfFieldPreset {
+  id         String  @id @default(cuid())
+  key        String  @unique
+  label      String
+  /// Type sémantique : text|niss|iban|postal_be|phone_be|bce|tva_be|date|number…
+  fieldType  String
+  regex      String?
+  /// Messages d'erreur localisés : { fr, nl?, de? }
+  errorMsg   Json?
+  helpText   Json?
+  maxLength  Int?
+  /// true pour les presets fournis d'origine (non supprimables par l'admin).
+  builtin    Boolean @default(false)
+  usageCount Int     @default(0)
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Audit de génération SANS donnée nominative (RGPD).
+/// On ne stocke jamais le payload ni le PDF : seulement un hash + métadonnées.
+model PdfFormSubmissionLog {
+  id          String   @id @default(cuid())
+  formId      String
+  form        PdfForm  @relation(fields: [formId], references: [id], onDelete: Cascade)
+  formVersion Int
+  locale      String
+  /// SHA256 du payload validé (intégrité / dédoublonnage), pas le payload.
+  payloadHash String
+  /// "download" | "doccle"
+  delivery    String
+  success     Boolean  @default(true)
+  /// Hash de l'IP (non réversible) pour stats anti-abus.
+  ipHash      String?
+  userId      String?
+  createdAt   DateTime @default(now())
+
+  @@index([formId])
+  @@index([createdAt])
+}
+
+/// Brouillon de saisie (formulaires longs). Contient des données nominatives
+/// → TTL court + purge cron obligatoire.
+model PdfFormDraft {
+  id        String   @id @default(cuid())
+  formId    String
+  form      PdfForm  @relation(fields: [formId], references: [id], onDelete: Cascade)
+  userId    String
+  payload   Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([formId, userId])
+  @@index([expiresAt])
 }

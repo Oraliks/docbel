@@ -139,6 +139,17 @@ const defaultData = {
       ],
     },
     {
+      title: "PDF Forms",
+      url: "/admin/pdf",
+      icon: (
+        <FileTextIcon className="size-4" />
+      ),
+      items: [
+        { title: "Formulaires", url: "/admin/pdf" },
+        { title: "Presets de champs", url: "/admin/pdf/presets" },
+      ],
+    },
+    {
       title: "Partenaires",
       url: "/admin/partenaires",
       icon: (

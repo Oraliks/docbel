@@ -1,0 +1,94 @@
+import { PdfFormField, Locale } from "./types";
+import type { PdfForm } from "@prisma/client";
+
+/// Vue publique d'un champ : on retire toute donnée interne admin
+/// (`internalNote`) et les détails techniques inutiles côté front.
+/// IMPOSSIBLE d'oublier : seul ce module expose les champs au public.
+export interface PublicField {
+  id: string;
+  type: PdfFormField["type"];
+  required: boolean;
+  label: PdfFormField["label"];
+  help?: PdfFormField["help"];
+  placeholder?: PdfFormField["placeholder"];
+  errorMsg?: PdfFormField["errorMsg"];
+  options?: PdfFormField["options"];
+  maxLength?: number;
+  minLength?: number;
+  min?: number;
+  max?: number;
+  regex?: string;
+  defaultValue?: PdfFormField["defaultValue"];
+  visibleIf?: PdfFormField["visibleIf"];
+  prefillFrom?: PdfFormField["prefillFrom"];
+  section?: string;
+  order?: number;
+}
+
+export function toPublicField(f: PdfFormField): PublicField {
+  return {
+    id: f.id,
+    type: f.type,
+    required: f.required,
+    label: f.label,
+    help: f.help,
+    placeholder: f.placeholder,
+    errorMsg: f.errorMsg,
+    options: f.options,
+    maxLength: f.maxLength,
+    minLength: f.minLength,
+    min: f.min,
+    max: f.max,
+    regex: f.regex,
+    defaultValue: f.defaultValue,
+    visibleIf: f.visibleIf,
+    prefillFrom: f.prefillFrom,
+    section: f.section,
+    order: f.order,
+  };
+}
+
+export interface PublicForm {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  issuer: string | null;
+  version: number;
+  defaultLocale: Locale;
+  locales: Locale[];
+  allowDownload: boolean;
+  allowDoccle: boolean;
+  allowItsme: boolean;
+  fields: PublicField[];
+}
+
+/// Sérialise un PdfForm (publié) pour le front. N'expose jamais le chemin de
+/// stockage, le schéma technique, ni les notes internes.
+export function toPublicForm(
+  form: Pick<
+    PdfForm,
+    | "id" | "slug" | "title" | "description" | "issuer" | "version"
+    | "defaultLocale" | "locales" | "allowDownload" | "allowDoccle" | "allowItsme" | "fields"
+  >
+): PublicForm {
+  const fields = ((form.fields as unknown as PdfFormField[]) || [])
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map(toPublicField);
+
+  return {
+    id: form.id,
+    slug: form.slug,
+    title: form.title,
+    description: form.description,
+    issuer: form.issuer,
+    version: form.version,
+    defaultLocale: (form.defaultLocale as Locale) || "fr",
+    locales: ((form.locales as unknown as Locale[]) || ["fr"]),
+    allowDownload: form.allowDownload,
+    allowDoccle: form.allowDoccle,
+    allowItsme: form.allowItsme,
+    fields,
+  };
+}

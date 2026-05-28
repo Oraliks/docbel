@@ -58,11 +58,25 @@ export function FloatingChatFab() {
     });
   }, []);
 
-  async function handleSend(text: string) {
+  async function handleSend(
+    text: string,
+    options?: { attachPage?: boolean },
+  ) {
     if (!text.trim() || sending) return;
+
+    // Si le toggle "Joindre la page" est ON, on extrait l'URL + le titre +
+    // un résumé court du DOM principal et on le préfixe au message envoyé
+    // à Claude. Le user voit son message tel quel (sans préambule technique).
+    const pageContext = options?.attachPage ? capturePageContext() : null;
+    const claudeMessage = pageContext
+      ? `[Contexte page actuelle]\nURL : ${pageContext.url}\nTitre : ${pageContext.title}\n\nExtrait :\n${pageContext.excerpt}\n\n---\n\n${text}`
+      : text;
+
     const userMsg: MiniMessage = {
       role: "user",
-      content: text,
+      content: pageContext
+        ? `${text}\n\n*📎 Page jointe : ${pageContext.url}*`
+        : text,
       createdAt: Date.now(),
     };
     const pendingMsg: MiniMessage = {
@@ -99,7 +113,7 @@ export function FloatingChatFab() {
       for await (const ev of openChatStream({
         url: "/api/chomage-ia/quick-chat",
         body: {
-          message: text,
+          message: claudeMessage,
           history: historySnapshot.map((m) => ({
             role: m.role,
             content: m.content,
@@ -259,4 +273,44 @@ export function FloatingChatFab() {
       </Sheet>
     </>
   );
+}
+
+/**
+ * Capture l'URL + titre + un extrait textuel de la page actuelle pour
+ * l'envoyer en contexte à Claude. Extrait :
+ *   - URL pathname + search (sans le hostname pour rester compact)
+ *   - document.title
+ *   - texte du `<main>` ou `[role="main"]` ou `body`, tronqué à 6000 chars
+ *
+ * On nettoie les chunks de whitespace pour économiser des tokens. Volontairement
+ * client-side simple : pas de scraping serveur ni de fetch — l'admin voit
+ * la page, le DOM est déjà chargé, on l'extrait localement.
+ */
+function capturePageContext(): {
+  url: string;
+  title: string;
+  excerpt: string;
+} | null {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return null;
+  }
+  const url = window.location.pathname + window.location.search;
+  const title = document.title || "Sans titre";
+
+  // On cherche le contenu "principal" pour éviter sidebar / nav / footer.
+  const root =
+    document.querySelector("main") ??
+    document.querySelector('[role="main"]') ??
+    document.body;
+
+  // innerText respecte le rendering CSS (display:none ignoré) — mieux que
+  // textContent qui inclut les éléments cachés.
+  const raw = (root as HTMLElement).innerText ?? "";
+  const cleaned = raw
+    .replace(/\s+/g, " ")
+    .replace(/(\S{120})/g, "$1 ") // casse les URLs/tokens monstre pour le wrap
+    .trim()
+    .slice(0, 6000);
+
+  return { url, title, excerpt: cleaned };
 }

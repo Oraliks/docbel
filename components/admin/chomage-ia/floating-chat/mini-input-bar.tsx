@@ -10,14 +10,14 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, SendHorizontal, Square } from "lucide-react";
+import { Loader2, Paperclip, SendHorizontal, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface Props {
   disabled: boolean;
   sending: boolean;
-  onSend: (text: string) => void;
+  onSend: (text: string, options?: { attachPage?: boolean }) => void;
   onStop: () => void;
   maxChars?: number;
 }
@@ -32,6 +32,7 @@ export function MiniInputBar({
   maxChars = DEFAULT_MAX,
 }: Props) {
   const [value, setValue] = useState("");
+  const [attachPage, setAttachPage] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize du textarea (cap à 6 lignes ~150px).
@@ -45,8 +46,11 @@ export function MiniInputBar({
   function submit() {
     const trimmed = value.trim();
     if (!trimmed || disabled || sending) return;
-    onSend(trimmed);
+    onSend(trimmed, { attachPage });
     setValue("");
+    // Reset le toggle après envoi : single-use volontaire (l'admin doit
+    // re-cliquer pour rattacher la page au message suivant).
+    setAttachPage(false);
     requestAnimationFrame(() => {
       if (ref.current) ref.current.style.height = "auto";
     });
@@ -65,6 +69,25 @@ export function MiniInputBar({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-end gap-1.5 rounded-xl border border-border bg-background px-2 py-1.5 focus-within:ring-2 focus-within:ring-primary/30">
+        {/* Toggle "joindre la page courante" — l'admin clique pour ajouter
+            l'URL + le titre + un extrait du DOM au prochain message. Single-use. */}
+        <Button
+          type="button"
+          variant={attachPage ? "default" : "ghost"}
+          size="icon-sm"
+          disabled={disabled || sending}
+          onClick={() => setAttachPage((v) => !v)}
+          aria-pressed={attachPage}
+          aria-label="Joindre la page courante"
+          title={
+            attachPage
+              ? "Page courante JOINTE au prochain message (cliquer pour annuler)"
+              : "Joindre l'URL + un extrait de la page courante au prochain message"
+          }
+          className="mb-0.5"
+        >
+          <Paperclip className="size-3" />
+        </Button>
         <textarea
           ref={ref}
           value={value}
@@ -109,7 +132,14 @@ export function MiniInputBar({
         )}
       </div>
       <div className="flex items-center justify-between px-1 text-[10px] text-muted-foreground">
-        <span>Entrée envoie · Maj+Entrée saut de ligne</span>
+        <span>
+          Entrée envoie
+          {attachPage ? (
+            <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-px text-primary">
+              <Paperclip className="size-2.5" /> page jointe
+            </span>
+          ) : null}
+        </span>
         <span
           className={cn(
             "tabular-nums",

@@ -1751,6 +1751,13 @@ model PdfForm {
   /// Schéma enrichi éditable — PdfFormField[] (cf. lib/pdf-forms/types).
   fields          Json @default("[]")
 
+  // --- Éditeur visuel d'AcroForms (v1 : text + checkbox sur PDF plats) ---
+  /// Wrapper VisualFieldsDoc — cf. lib/pdf-forms/visual/types.
+  visualFields               Json      @default("{\"version\":1,\"fields\":[]}")
+  /// Timestamp de la dernière matérialisation (création des AcroForms réels
+  /// dans le PDF source). null = jamais matérialisé.
+  visualFieldsMaterializedAt DateTime?
+
   // --- Livraison ---
   allowDownload Boolean @default(true)
   allowDoccle   Boolean @default(false)

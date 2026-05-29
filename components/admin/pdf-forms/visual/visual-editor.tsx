@@ -1,0 +1,126 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { VisualEditorProvider, useVisualEditor } from "./provider/visual-editor-context";
+import { VisualEditorToolbar } from "./visual-editor-toolbar";
+import { VisualCanvas } from "./visual-canvas";
+import { VisualFieldProperties } from "./visual-field-properties";
+import { VisualMaterializeDialog } from "./visual-materialize-dialog";
+
+interface VisualEditorProps {
+  formId: string;
+  /// Indique au shell si le PDF source contient déjà un AcroForm (cf. GET
+  /// /visual-fields). Sert à désactiver la matérialisation côté UI.
+  sourceHasAcroForm?: boolean;
+}
+
+/// Shell de l'éditeur visuel. Sur viewport mobile (md:hidden), bascule en
+/// mode read-only avec bannière d'information — l'édition de positions
+/// précises n'a pas de sens en dessous de 768px.
+export function VisualEditor({ formId }: VisualEditorProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => setIsMobile(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  return (
+    <VisualEditorProvider formId={formId} readOnly={isMobile}>
+      {isMobile && (
+        <div className="mb-3 rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-200">
+          L’éditeur visuel est en lecture seule sous 768px. Passez en mode bureau pour modifier.
+        </div>
+      )}
+      <VisualEditorShell />
+    </VisualEditorProvider>
+  );
+}
+
+function VisualEditorShell() {
+  const ed = useVisualEditor();
+  const { serverSnapshot, save, doc } = ed;
+  // numPages réel arrive via react-pdf onLoadSuccess ; on initialise au
+  // pageCount du serveur si dispo pour éviter un flash "page ? / ?".
+  const [numPagesFromPdf, setNumPagesFromPdf] = useState<number | null>(null);
+  const numPages = numPagesFromPdf ?? serverSnapshot?.pageCount ?? 0;
+  const [matOpen, setMatOpen] = useState(false);
+
+  // Raccourcis clavier (locaux : pas besoin du hook documents qui dépend de DocumentField).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target as HTMLElement)?.isContentEditable) return;
+      if (e.key === "v" || e.key === "V") ed.setTool("select");
+      else if (e.key === "t" || e.key === "T") ed.setTool("text");
+      else if (e.key === "c" || e.key === "C") ed.setTool("checkbox");
+      else if (e.key === "Escape") ed.selectField(null);
+      else if ((e.key === "Delete" || e.key === "Backspace") && ed.ui.selectedId) {
+        ed.removeField(ed.ui.selectedId);
+        e.preventDefault();
+      } else if (e.key === "s" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        save();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [ed, save]);
+
+  const onMaterialize = useCallback(() => setMatOpen(true), []);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <VisualEditorToolbar
+        numPages={numPages}
+        onMaterialize={onMaterialize}
+        hasRotatedPages={!!serverSnapshot?.hasRotatedPages}
+        sourceHasAcroForm={!!serverSnapshot?.sourceHasAcroForm}
+      />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+        <VisualCanvas formId={ed.formId} onNumPages={setNumPagesFromPdf} />
+        <aside className="flex flex-col gap-3">
+          <VisualFieldProperties />
+          <div className="rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">
+            <div className="mb-1 font-medium text-foreground">Astuce</div>
+            <p>Tapez <kbd className="rounded border bg-background px-1">T</kbd> ou <kbd className="rounded border bg-background px-1">C</kbd> puis dessinez un rectangle. <kbd className="rounded border bg-background px-1">Suppr</kbd> retire la sélection. <kbd className="rounded border bg-background px-1">Ctrl+S</kbd> sauvegarde.</p>
+          </div>
+          {doc.fields.length > 0 && (
+            <div className="rounded-md border p-3 text-xs">
+              <div className="mb-1 font-medium">Champs ({doc.fields.length})</div>
+              <ul className="flex flex-col gap-1">
+                {doc.fields.map((f) => (
+                  <li key={f.id} className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      className={`flex-1 truncate text-left hover:underline ${ed.ui.selectedId === f.id ? "font-medium text-foreground" : "text-muted-foreground"}`}
+                      onClick={() => {
+                        ed.selectField(f.id);
+                        ed.setPage(f.page);
+                      }}
+                    >
+                      {f.name}
+                    </button>
+                    <span className="text-[10px] text-muted-foreground">p{f.page + 1}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </aside>
+      </div>
+
+      <VisualMaterializeDialog
+        open={matOpen}
+        onOpenChange={setMatOpen}
+        onApplied={() => {
+          /* le provider recharge déjà via reload() */
+        }}
+      />
+    </div>
+  );
+}

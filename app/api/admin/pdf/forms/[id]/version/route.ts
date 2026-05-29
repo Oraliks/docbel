@@ -98,6 +98,9 @@ export async function POST(
       version: form.version + 1,
       // Repasse en draft : re-valider/publier après changement de source.
       status: "draft",
+      // Le PDF source change : les coords visuelles deviennent caduques.
+      visualFields: { version: 1, fields: [] } as unknown as Prisma.InputJsonValue,
+      visualFieldsMaterializedAt: null,
     },
   });
 

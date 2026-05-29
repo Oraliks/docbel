@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { DocumentField } from "@/lib/documents/types";
+import { pdfToHtml } from "@/lib/pdf-canvas/coords";
 import type { PageDims } from "./hooks/use-pdf-doc";
 
 interface Props {
@@ -91,10 +92,15 @@ export function PdfMiniMap({
       {fieldsOnPage.map((f) => {
         if (!f.position) return null;
         const ratio = width / dims.width;
-        const miniX = f.position.x * ratio;
-        const miniY = (dims.height - f.position.y - f.position.h) * ratio;
-        const miniW = Math.max(2, f.position.w * ratio);
-        const miniH = Math.max(2, f.position.h * ratio);
+        const mini = pdfToHtml(
+          { x: f.position.x, y: f.position.y, w: f.position.w, h: f.position.h },
+          { width: dims.width, height: dims.height, offsetX: 0, offsetY: 0 },
+          ratio
+        );
+        const miniX = mini.x;
+        const miniY = mini.y;
+        const miniW = Math.max(2, mini.w);
+        const miniH = Math.max(2, mini.h);
         const selected = f.id === selectedFieldId;
         return (
           <div

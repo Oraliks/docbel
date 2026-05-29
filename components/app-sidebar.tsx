@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon, HandshakeIcon, MapPinIcon } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon, HandshakeIcon, MapPinIcon, FileInputIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultData = {
@@ -142,10 +142,11 @@ const defaultData = {
       title: "PDF Forms",
       url: "/admin/pdf",
       icon: (
-        <FileTextIcon className="size-4" />
+        <FileInputIcon className="size-4" />
       ),
       items: [
-        { title: "Formulaires", url: "/admin/pdf" },
+        { title: "Tous les formulaires", url: "/admin/pdf" },
+        { title: "Nouveau formulaire", url: "/admin/pdf?new=1" },
         { title: "Presets de champs", url: "/admin/pdf/presets" },
       ],
     },

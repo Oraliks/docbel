@@ -9,14 +9,14 @@ au CPAS et à l'emploi.
 - **Next.js 16** (App Router, React 19)
 - **TypeScript** strict
 - **Prisma** + PostgreSQL (Neon en dev/prod)
-- **NextAuth v5** (provider Credentials, JWT)
+- **better-auth** (email/mot de passe + magic link)
 - **Tailwind CSS 4** + **shadcn/ui** (Radix)
 - **Tiptap** pour l'éditeur de pages
 
 ## Prérequis
 
 - Node.js 20+
-- pnpm 11+
+- pnpm 10+
 - Une base de données PostgreSQL accessible
 
 ## Installation
@@ -36,7 +36,7 @@ cp .env.example .env.local
 Renseigne au minimum :
 
 - `DATABASE_URL` : chaîne de connexion PostgreSQL.
-- `NEXTAUTH_SECRET` : généré avec `openssl rand -base64 32`.
+- `BETTER_AUTH_SECRET` : généré avec `openssl rand -base64 32`.
 
 ## Initialisation de la base
 
@@ -82,10 +82,10 @@ scripts/             Scripts de bootstrap
 
 ## Auth
 
-L'authentification utilise NextAuth v5 avec un provider Credentials.
+L'authentification utilise better-auth (email/mot de passe + magic link).
 Les comptes ont quatre statuts (`active`, `pending`, `disabled`, `locked`)
 et un compteur d'échecs de connexion : 5 échecs verrouillent le compte
-pour 15 minutes (voir [`auth.ts`](auth.ts)).
+pour 15 minutes (voir [`lib/auth.ts`](lib/auth.ts)).
 
 Les routes API sensibles utilisent [`requireAdminAuth`](lib/auth-check.ts)
 qui vérifie en base que l'utilisateur est encore actif.
@@ -97,7 +97,8 @@ Variables d'environnement requises côté Vercel :
 | Clé | Description |
 |-----|-------------|
 | `DATABASE_URL` | URL PostgreSQL de production |
-| `NEXTAUTH_SECRET` | Secret JWT généré aléatoirement |
-| `NEXTAUTH_URL` | URL publique de l'application |
+| `BETTER_AUTH_SECRET` | Secret de session généré aléatoirement |
+| `BETTER_AUTH_URL` | URL publique de l'application |
+| `NEXT_PUBLIC_BETTER_AUTH_URL` | URL publique exposée au client auth (navigateur) |
 
 Ne jamais committer `.env` ni `.env.local`.

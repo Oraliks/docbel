@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { sanitizeSvg } from '@/lib/sanitize-html'
 
 const schema = z.object({
   svg: z.string().max(50000).default(''),
@@ -31,7 +32,7 @@ export const svgIllustration = defineBlock({
     <div
       className="my-2 inline-flex items-center justify-center"
       style={{ width: props.width, height: props.height }}
-      dangerouslySetInnerHTML={{ __html: props.svg }}
+      dangerouslySetInnerHTML={{ __html: sanitizeSvg(props.svg) }}
     />
   ),
   Fields: ({ props, onChange }) => (

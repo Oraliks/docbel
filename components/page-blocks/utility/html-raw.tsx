@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { sanitizeHtml } from '@/lib/sanitize-html'
 
 const schema = z.object({ html: z.string().max(50000).default('') })
 
@@ -19,7 +20,10 @@ export const htmlRaw = defineBlock({
     shortcuts: ['html', 'raw'],
   },
   Render: ({ props }) => (
-    <div className="my-2 prose-tight max-w-none" dangerouslySetInnerHTML={{ __html: props.html }} />
+    <div
+      className="my-2 prose-tight max-w-none"
+      dangerouslySetInnerHTML={{ __html: sanitizeHtml(props.html) }}
+    />
   ),
   Fields: ({ props, onChange }) => (
     <Group title="Contenu" defaultOpen>

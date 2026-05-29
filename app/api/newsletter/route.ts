@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAdminAuth } from "@/lib/auth-check"
+import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit"
 
 export async function GET() {
   const authCheck = await requireAdminAuth()
@@ -21,6 +22,16 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate-limit anti-spam : 5 inscriptions / 10 min / IP
+    const ip = getClientIp(request)
+    const rl = checkRateLimit(`newsletter:${ip}`, { windowMs: 10 * 60_000, max: 5 })
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Trop de requêtes — réessayez dans quelques minutes" },
+        { status: 429, headers: { "Content-Type": "application/json; charset=utf-8" } }
+      )
+    }
+
     const body = await request.json()
     const { email } = body
 

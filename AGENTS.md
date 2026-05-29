@@ -23,8 +23,9 @@ L'app combine :
   `node_modules/next/dist/docs/` plutôt que la mémoire.
 - **React 19.2** : ne pas appeler `setState` synchrone dans un `useEffect`
   (ESLint plante via `react-hooks/set-state-in-effect`).
-- **NextAuth v5 (beta)** : configuration unique dans [`auth.ts`](auth.ts).
-  Stratégie JWT, provider Credentials, callbacks `jwt`/`session`.
+- **better-auth** : configuration unique dans [`lib/auth.ts`](lib/auth.ts).
+  Email/mot de passe (bcrypt) + magic link, OAuth Google partenaire optionnel,
+  sessions en base via l'adaptateur Prisma.
 - **Prisma 5** + PostgreSQL.
 - **Tailwind CSS 4** + **shadcn/ui v4**.
 - **TypeScript 5** strict.
@@ -52,7 +53,7 @@ des fonctions HTTP (`GET`, `POST`, `PATCH`, `PUT`, `DELETE`).
 - Statuts : `active`, `pending`, `disabled`, `locked` (enum
   `UserStatus`).
 - 5 échecs de login ⇒ verrouillage 15 minutes
-  (cf. constantes en haut de [`auth.ts`](auth.ts)).
+  (cf. constantes en haut de [`lib/auth.ts`](lib/auth.ts)).
 - Mots de passe hashés avec `bcryptjs` (10 rounds).
 - Helpers de validation dans [`lib/users.ts`](lib/users.ts) :
   `validatePassword`, `isUserRole`, `isUserStatus`,
@@ -109,8 +110,12 @@ Les barèmes officiels sont stockés dans
 
 ## Points connus à améliorer
 
-- Centraliser la couleur d'accent (`#C8102E` est dupliquée dans ~20
-  fichiers).
+- Centraliser la couleur d'accent : l'accent réel est `#7C3AED`
+  (défini comme variables CSS dans `app/globals.css`). Une ancienne
+  couleur `#C8102E` traîne encore en dur dans 4 fichiers d'icônes
+  (`components/icons/organismes/index.tsx`, `components/docbel/icons.tsx`,
+  `components/docbel/bureau-callout.tsx`, `components/docbel/bureau-card.tsx`)
+  à harmoniser.
 - Extraire un composant `<UserFormFields/>` partagé entre
   `create-user-dialog.tsx` et `edit-user-dialog.tsx`.
 - Passer la validation API à Zod plutôt que manuelle.

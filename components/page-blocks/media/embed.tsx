@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, SliderControl } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { sanitizeEmbedHtml } from '@/lib/sanitize-html'
 
 const schema = z.object({
   html: z.string().max(20000).default(''),
@@ -37,7 +38,7 @@ export const embed = defineBlock({
       <div
         className="w-full overflow-hidden rounded-lg"
         style={{ minHeight: height }}
-        dangerouslySetInnerHTML={{ __html: html }}
+        dangerouslySetInnerHTML={{ __html: sanitizeEmbedHtml(html) }}
       />
     )
   },

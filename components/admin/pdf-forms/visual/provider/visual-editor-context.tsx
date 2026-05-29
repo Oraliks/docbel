@@ -165,7 +165,7 @@ export function VisualEditorProvider({ formId, readOnly = false, children }: Pro
     const data = (await res.json()) as { updatedAt: string };
     dispatch({
       type: "REPLACE_DOC",
-      doc: state.doc,
+      savedDoc: state.doc,
       serverUpdatedAt: data.updatedAt,
     });
     toast.success("Brouillon visuel enregistré.");

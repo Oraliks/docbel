@@ -32,7 +32,14 @@ export type Action =
   | { type: "REGISTER_PAGE_DIMS"; page: number; dims: PageGeometry }
   | {
       type: "REPLACE_DOC";
-      doc: VisualFieldsDoc;
+      /// Remplacement complet (reload / matérialisation). Si omis, on conserve le
+      /// doc client courant et on se contente d'acquitter la version serveur
+      /// (chemin post-save) — voir `savedDoc`.
+      doc?: VisualFieldsDoc;
       serverUpdatedAt?: string | null;
       serverMaterializedAt?: string | null;
+      /// Chemin post-save : snapshot envoyé au PUT. Le reducer ne marque "saved"
+      /// que si le doc courant est resté identique (aucune édition concurrente
+      /// pendant la requête), sinon il reste "dirty".
+      savedDoc?: VisualFieldsDoc;
     };

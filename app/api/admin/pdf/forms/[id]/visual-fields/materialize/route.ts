@@ -46,7 +46,16 @@ export async function POST(
   }
 
   const existingTech = (form.technicalSchema as unknown as AcroFieldRaw[]) || [];
-  const collisions = findNameCollisions(v.doc, existingTech.map((t) => t.pdfFieldName));
+  // `technicalSchema` inclut les champs que NOUS avons matérialisés au tour
+  // précédent (tracés dans `materializedNames`) — la lib les nettoie avant
+  // recréation. On ne considère comme « étrangers » que les noms qui ne
+  // proviennent pas d'une matérialisation antérieure, sinon la re-matérialisation
+  // se bloquerait elle-même sur une fausse collision.
+  const previouslyMaterialized = new Set(v.doc.materializedNames ?? []);
+  const foreignNames = existingTech
+    .map((t) => t.pdfFieldName)
+    .filter((n) => !previouslyMaterialized.has(n));
+  const collisions = findNameCollisions(v.doc, foreignNames);
   if (collisions.length) {
     return NextResponse.json(
       { error: `Nom(s) déjà présent(s) dans l'AcroForm source : ${collisions.join(", ")}` },
@@ -60,7 +69,10 @@ export async function POST(
   let materialized;
   try {
     materialized = await materializeVisualFields(source, v.doc, {
-      rejectIfHasAcroForm: existingTech.length === 0,
+      // Refuser uniquement en présence d'un AcroForm ÉTRANGER (fusion out-of-scope
+      // v1). Nos propres champs précédents ne comptent pas : la lib les supprime
+      // d'abord, ce qui permet la re-matérialisation.
+      rejectIfHasAcroForm: foreignNames.length > 0,
     });
   } catch (e) {
     if (e instanceof MaterializeError) {

@@ -40,10 +40,23 @@ export function visualEditorReducer(state: VisualEditorState, action: Action): V
         pageDims: { ...state.pageDims, [action.page]: action.dims },
       };
     case "REPLACE_DOC":
+      if (action.doc) {
+        return {
+          ...state,
+          doc: action.doc,
+          saveState: "saved",
+          serverUpdatedAt: action.serverUpdatedAt ?? state.serverUpdatedAt,
+          serverMaterializedAt:
+            action.serverMaterializedAt !== undefined ? action.serverMaterializedAt : state.serverMaterializedAt,
+        };
+      }
+      // Chemin post-save : on garde le doc courant. PATCH_FIELDS crée une
+      // nouvelle référence à chaque édition, donc si le doc a changé pendant la
+      // requête PUT, `state.doc !== savedDoc` et on reste "dirty" (sinon on
+      // écraserait silencieusement les éditions concurrentes).
       return {
         ...state,
-        doc: action.doc,
-        saveState: "saved",
+        saveState: state.doc === action.savedDoc ? "saved" : "dirty",
         serverUpdatedAt: action.serverUpdatedAt ?? state.serverUpdatedAt,
         serverMaterializedAt:
           action.serverMaterializedAt !== undefined ? action.serverMaterializedAt : state.serverMaterializedAt,

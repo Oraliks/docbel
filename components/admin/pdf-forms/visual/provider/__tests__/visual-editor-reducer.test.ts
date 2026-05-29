@@ -74,6 +74,35 @@ describe("visualEditorReducer", () => {
     expect(s.serverMaterializedAt).toBe("2025-05-28T00:00:00Z");
   });
 
+  it("REPLACE_DOC post-save (sans doc) acquitte la version et marque saved si doc inchangé", () => {
+    const saved: VisualFieldsDoc = { version: 1, fields: [field("a")] };
+    const base = { ...initialState, doc: saved, saveState: "saving" as const };
+    const s = visualEditorReducer(base, {
+      type: "REPLACE_DOC",
+      savedDoc: saved,
+      serverUpdatedAt: "2025-05-29T01:00:00Z",
+    });
+    expect(s.doc).toBe(saved);
+    expect(s.saveState).toBe("saved");
+    expect(s.serverUpdatedAt).toBe("2025-05-29T01:00:00Z");
+  });
+
+  it("REPLACE_DOC post-save reste dirty si une édition a eu lieu pendant le PUT", () => {
+    const saved: VisualFieldsDoc = { version: 1, fields: [field("a")] };
+    // Édition concurrente : le doc courant a une nouvelle référence (≠ savedDoc).
+    const edited: VisualFieldsDoc = { version: 1, fields: [field("a"), field("b")] };
+    const s = visualEditorReducer(
+      { ...initialState, doc: edited, saveState: "saving" },
+      { type: "REPLACE_DOC", savedDoc: saved, serverUpdatedAt: "2025-05-29T01:00:00Z" }
+    );
+    // Les éditions concurrentes ne sont pas écrasées…
+    expect(s.doc).toBe(edited);
+    // …et l'état reste dirty pour signaler le travail non sauvegardé.
+    expect(s.saveState).toBe("dirty");
+    // La nouvelle version serveur est bien acquittée (pour le prochain If-Match).
+    expect(s.serverUpdatedAt).toBe("2025-05-29T01:00:00Z");
+  });
+
   it("PATCH_FIELDS pendant saving garde l'état saving (évite flicker)", () => {
     const s = visualEditorReducer(
       { ...initialState, saveState: "saving" },

@@ -41,9 +41,7 @@ export async function POST(
   const apply = fd.get("apply") === "true";
 
   const parsed = await parsePdf(upload.buffer);
-  if (!parsed.hasAcroForm) {
-    return NextResponse.json({ error: "Le nouveau PDF ne contient aucun champ AcroForm." }, { status: 422, headers: json });
-  }
+  // PDF plat accepté : l'admin peut reconstruire les champs via l'onglet visuel.
 
   const oldTech = (form.technicalSchema as unknown as AcroFieldRaw[]) || [];
   const oldEnriched = (form.fields as unknown as PdfFormField[]) || [];

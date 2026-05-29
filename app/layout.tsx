@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Manrope, Plus_Jakarta_Sans } from "next/font/google";
+import { Fraunces, Manrope, Plus_Jakarta_Sans, Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -35,6 +35,22 @@ const manrope = Manrope({
   display: "swap",
 });
 
+// Geist + Geist Mono — utilisés uniquement par le module PDF Forms via la
+// classe utilitaire `.font-geist` / `.font-geist-mono` (cf. globals.css).
+// Donne au nouveau module une identité visuelle distincte sans toucher au
+// reste du site (qui reste sur Plus Jakarta Sans / Fraunces).
+const geist = Geist({
+  variable: "--font-geist",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Docbel — Documents administratifs belges",
   description: "Portail officieux des documents administratifs belges (chômage)",
@@ -53,7 +69,7 @@ export default async function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${plusJakarta.variable} ${fraunces.variable} ${manrope.variable} h-full antialiased`}
+      className={`${plusJakarta.variable} ${fraunces.variable} ${manrope.variable} ${geist.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

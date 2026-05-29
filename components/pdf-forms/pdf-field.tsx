@@ -26,6 +26,10 @@ const INPUT_HINTS: Record<string, { type?: string; inputMode?: "numeric" | "tel"
   tva_be: { inputMode: "text" },
 };
 
+// Champs à valeur structurée → rendus en Geist Mono (tabular numerals,
+// lisibilité d'identifiants). Donne l'impression d'un outil pro.
+const MONO_TYPES = new Set(["niss", "iban", "bce", "tva_be", "postal_be", "phone_be", "number", "date"]);
+
 interface Props {
   field: PublicField;
   value: FieldValue;
@@ -126,6 +130,7 @@ export function PdfField({ field, value, error, locale, onChange }: Props) {
         min={field.min}
         max={field.max}
         aria-invalid={invalid}
+        className={MONO_TYPES.has(field.type) ? "font-geist-mono" : undefined}
         onChange={(e) => onChange(e.target.value)}
       />
       {help && <FieldDescription>{help}</FieldDescription>}

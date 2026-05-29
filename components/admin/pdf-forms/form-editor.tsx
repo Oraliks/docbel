@@ -5,15 +5,24 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   SaveIcon, UploadCloudIcon, FileDownIcon, HistoryIcon, RefreshCwIcon,
-  CheckCircle2Icon, AlertTriangleIcon, Loader2Icon, ExternalLinkIcon,
+  CheckCircle2Icon, AlertTriangleIcon, Loader2Icon, ExternalLinkIcon, EyeIcon,
 } from "lucide-react";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import {
+  SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion } from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FieldEditor } from "./field-editor";
+import { SortableField } from "./sortable-field";
 import { FormSettings } from "./form-settings";
+import { FormPreview } from "./form-preview";
 import { VersionDialog } from "./version-dialog";
 import { RevisionsDialog } from "./revisions-dialog";
 import { PdfFormField, Locale } from "@/lib/pdf-forms/types";
@@ -45,6 +54,22 @@ export function PdfFormEditor({ formId }: { formId: string }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [versionOpen, setVersionOpen] = useState(false);
   const [revsOpen, setRevsOpen] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !form) return;
+    const oldIndex = form.fields.findIndex((f) => f.id === active.id);
+    const newIndex = form.fields.findIndex((f) => f.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const reordered = arrayMove(form.fields, oldIndex, newIndex).map((f, i) => ({ ...f, order: i }));
+    setFields(reordered);
+  }
 
   const loadIssues = useCallback(() => {
     fetch(`/api/admin/pdf/forms/${formId}/publish`)
@@ -187,6 +212,9 @@ export function PdfFormEditor({ formId }: { formId: string }) {
             </a>
           )}
         </div>
+        <Button variant="outline" size="sm" onClick={() => setShowPreview((v) => !v)}>
+          <EyeIcon className="size-4" /> {showPreview ? "Masquer l'aperçu" : "Aperçu"}
+        </Button>
         <Button variant="outline" size="sm" onClick={testPdf} disabled={busy === "test"}>
           {busy === "test" ? <Loader2Icon className="size-4 animate-spin" /> : <FileDownIcon className="size-4" />} PDF test
         </Button>
@@ -228,24 +256,41 @@ export function PdfFormEditor({ formId }: { formId: string }) {
 
         <FormSettings form={form} onChange={patchForm} />
 
-        {/* Champs */}
-        <div>
-          <h2 className="mb-2 text-sm font-medium text-muted-foreground">
-            Champs ({form.fields.length})
-          </h2>
-          <Accordion type="multiple" className="flex flex-col gap-2">
-            {form.fields.map((field, i) => (
-              <FieldEditor
-                key={field.id}
-                field={field}
-                locales={form.locales}
-                presets={presets}
-                allFields={form.fields}
-                onChange={(next) => setFields(form.fields.map((f, j) => (j === i ? next : f)))}
-                onRemove={() => setFields(form.fields.filter((_, j) => j !== i))}
-              />
-            ))}
-          </Accordion>
+        {/* Layout : éditeur seul ou éditeur + aperçu côte-à-côte (>= xl). */}
+        <div className={showPreview ? "grid gap-4 xl:grid-cols-2" : ""}>
+          <div>
+            <h2 className="mb-2 text-sm font-medium text-muted-foreground">
+              Champs ({form.fields.length}) — glisser-déposer pour réordonner
+            </h2>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis]}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={form.fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+                <Accordion type="multiple" className="flex flex-col gap-2">
+                  {form.fields.map((field, i) => (
+                    <SortableField
+                      key={field.id}
+                      field={field}
+                      locales={form.locales}
+                      presets={presets}
+                      allFields={form.fields}
+                      onChange={(next) => setFields(form.fields.map((f, j) => (j === i ? next : f)))}
+                      onRemove={() => setFields(form.fields.filter((_, j) => j !== i))}
+                    />
+                  ))}
+                </Accordion>
+              </SortableContext>
+            </DndContext>
+          </div>
+
+          {showPreview && (
+            <div className="xl:sticky xl:top-20 xl:self-start">
+              <FormPreview fields={form.fields} locale={form.defaultLocale} />
+            </div>
+          )}
         </div>
       </div>
 

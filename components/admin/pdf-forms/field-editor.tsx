@@ -1,5 +1,6 @@
 "use client";
 
+import { HTMLAttributes } from "react";
 import { Trash2Icon, GripVerticalIcon } from "lucide-react";
 import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -35,11 +37,16 @@ interface Props {
   locales: Locale[];
   presets: PresetOpt[];
   allFields: PdfFormField[];
+  /// Props à appliquer sur la poignée de drag (fournis par useSortable).
+  /// Si absent, la poignée n'est pas activable (drag désactivé).
+  dragHandleProps?: HTMLAttributes<HTMLButtonElement>;
   onChange: (next: PdfFormField) => void;
   onRemove: () => void;
 }
 
-export function FieldEditor({ field, locales, presets, allFields, onChange, onRemove }: Props) {
+export function FieldEditor({
+  field, locales, presets, allFields, dragHandleProps, onChange, onRemove,
+}: Props) {
   const patch = (p: Partial<PdfFormField>) => onChange({ ...field, ...p });
   const setLocalized = (key: "label" | "help" | "placeholder", lng: Locale, v: string) =>
     patch({ [key]: { ...(field[key] as Localized), [lng]: v } } as Partial<PdfFormField>);
@@ -47,30 +54,64 @@ export function FieldEditor({ field, locales, presets, allFields, onChange, onRe
   const isChoice = field.type === "select" || field.type === "radio";
 
   return (
-    <AccordionItem value={field.id} className="rounded-lg border px-3">
-      <AccordionTrigger className="py-2.5 hover:no-underline">
-        <div className="flex flex-1 items-center gap-2 text-left">
-          <GripVerticalIcon className="size-4 shrink-0 text-muted-foreground" />
-          <span className="font-medium">{field.label.fr || field.id}</span>
-          <Badge variant="outline" className="text-[10px]">{field.type}</Badge>
-          {field.required && <Badge variant="secondary" className="text-[10px]">requis</Badge>}
-          <code className="ml-auto truncate text-[11px] text-muted-foreground">{field.pdfFieldName}</code>
-        </div>
-      </AccordionTrigger>
+    <AccordionItem value={field.id} className="rounded-lg border bg-card pl-1 pr-3">
+      <div className="flex items-stretch">
+        <button
+          type="button"
+          aria-label="Réordonner"
+          {...dragHandleProps}
+          // Stop propagation pour ne pas déclencher l'ouverture de l'accordéon au mousedown.
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center px-1.5 cursor-grab text-muted-foreground hover:text-foreground touch-none"
+        >
+          <GripVerticalIcon className="size-4" />
+        </button>
+        <AccordionTrigger className="flex-1 py-2.5 hover:no-underline">
+          <div className="flex flex-1 items-center gap-2 text-left">
+            <span className="font-medium">{field.label.fr || field.id}</span>
+            <Badge variant="outline" className="text-[10px]">{field.type}</Badge>
+            {field.required && <Badge variant="secondary" className="text-[10px]">requis</Badge>}
+            <code className="ml-auto truncate font-geist-mono text-[11px] text-muted-foreground">{field.pdfFieldName}</code>
+          </div>
+        </AccordionTrigger>
+      </div>
       <AccordionContent className="pb-4">
         <div className="flex flex-col gap-4">
-          {/* Libellés multilingues */}
-          <div className="grid gap-2 sm:grid-cols-3">
+          {/* Contenu localisé (tabs par locale) */}
+          <Tabs defaultValue={locales[0]}>
+            <TabsList>
+              {locales.map((lng) => (
+                <TabsTrigger key={lng} value={lng} className="uppercase">{lng}</TabsTrigger>
+              ))}
+            </TabsList>
             {locales.map((lng) => (
-              <div key={lng} className="flex flex-col gap-1">
-                <Label className="text-xs uppercase text-muted-foreground">Libellé {lng}</Label>
-                <Input
-                  value={field.label[lng] ?? ""}
-                  onChange={(e) => setLocalized("label", lng, e.target.value)}
-                />
-              </div>
+              <TabsContent key={lng} value={lng} className="mt-2 flex flex-col gap-2">
+                <div className="flex flex-col gap-1">
+                  <Label className="text-xs text-muted-foreground">Libellé</Label>
+                  <Input
+                    value={field.label[lng] ?? ""}
+                    onChange={(e) => setLocalized("label", lng, e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs text-muted-foreground">Aide</Label>
+                    <Input
+                      value={field.help?.[lng] ?? ""}
+                      onChange={(e) => setLocalized("help", lng, e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs text-muted-foreground">Placeholder</Label>
+                    <Input
+                      value={field.placeholder?.[lng] ?? ""}
+                      onChange={(e) => setLocalized("placeholder", lng, e.target.value)}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
             ))}
-          </div>
+          </Tabs>
 
           {/* Type / requis / section */}
           <div className="grid items-end gap-3 sm:grid-cols-3">
@@ -91,12 +132,6 @@ export function FieldEditor({ field, locales, presets, allFields, onChange, onRe
               <Switch checked={field.required} onCheckedChange={(c) => patch({ required: c })} />
               Champ obligatoire
             </label>
-          </div>
-
-          {/* Aide (FR) */}
-          <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Aide (FR)</Label>
-            <Input value={field.help?.fr ?? ""} onChange={(e) => setLocalized("help", "fr", e.target.value)} />
           </div>
 
           {/* Options pour select/radio */}

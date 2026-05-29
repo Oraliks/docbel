@@ -851,3 +851,16 @@ body,
   text-decoration-color: var(--primary);
   background-color: color-mix(in oklab, var(--primary) 10%, transparent);
 }
+
+/* PDF Forms — identité typographique scopée au nouveau module.
+   Appliquée via `.font-geist` sur le wrapper de page (admin/pdf, /pdf/[slug])
+   et `.font-geist-mono` sur les inputs techniques (NISS, IBAN, BCE…). */
+.font-geist {
+  font-family: var(--font-geist), "Plus Jakarta Sans", system-ui, sans-serif;
+  font-feature-settings: "ss01", "ss02";
+}
+.font-geist-mono {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}

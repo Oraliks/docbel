@@ -12,11 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion } from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FieldEditor } from "./field-editor";
 import { FormSettings } from "./form-settings";
 import { VersionDialog } from "./version-dialog";
 import { RevisionsDialog } from "./revisions-dialog";
-import { PdfFormField, Locale } from "@/lib/pdf-forms/types";
+import { VisualEditor } from "./visual/visual-editor";
+import { PdfFormField, Locale, AcroFieldRaw } from "@/lib/pdf-forms/types";
 import type { PublishIssue } from "@/lib/pdf-forms/publish-checks";
 
 interface EditorForm {
@@ -34,6 +36,7 @@ interface EditorForm {
   allowItsme: boolean;
   fields: PdfFormField[];
   pageCount: number;
+  technicalSchema?: AcroFieldRaw[];
 }
 
 export function PdfFormEditor({ formId }: { formId: string }) {
@@ -228,25 +231,43 @@ export function PdfFormEditor({ formId }: { formId: string }) {
 
         <FormSettings form={form} onChange={patchForm} />
 
-        {/* Champs */}
-        <div>
-          <h2 className="mb-2 text-sm font-medium text-muted-foreground">
-            Champs ({form.fields.length})
-          </h2>
-          <Accordion type="multiple" className="flex flex-col gap-2">
-            {form.fields.map((field, i) => (
-              <FieldEditor
-                key={field.id}
-                field={field}
-                locales={form.locales}
-                presets={presets}
-                allFields={form.fields}
-                onChange={(next) => setFields(form.fields.map((f, j) => (j === i ? next : f)))}
-                onRemove={() => setFields(form.fields.filter((_, j) => j !== i))}
-              />
-            ))}
-          </Accordion>
-        </div>
+        {/* Tabs : schéma enrichi vs éditeur visuel d'AcroForms */}
+        <Tabs defaultValue="schema" className="w-full">
+          <TabsList variant="line">
+            <TabsTrigger value="schema">Schéma ({form.fields.length})</TabsTrigger>
+            <TabsTrigger
+              value="visual"
+              disabled={(form.technicalSchema?.length ?? 0) > 0}
+              title={
+                (form.technicalSchema?.length ?? 0) > 0
+                  ? "Désactivé : le PDF source contient déjà un AcroForm (édition out-of-scope v1)."
+                  : "Éditeur visuel d'AcroForms (Text + Checkbox)"
+              }
+            >
+              Visuel
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="schema">
+            <Accordion type="multiple" className="flex flex-col gap-2">
+              {form.fields.map((field, i) => (
+                <FieldEditor
+                  key={field.id}
+                  field={field}
+                  locales={form.locales}
+                  presets={presets}
+                  allFields={form.fields}
+                  onChange={(next) => setFields(form.fields.map((f, j) => (j === i ? next : f)))}
+                  onRemove={() => setFields(form.fields.filter((_, j) => j !== i))}
+                />
+              ))}
+            </Accordion>
+          </TabsContent>
+
+          <TabsContent value="visual">
+            <VisualEditor formId={formId} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <VersionDialog

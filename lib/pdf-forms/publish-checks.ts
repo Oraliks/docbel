@@ -1,5 +1,7 @@
 import { AcroFieldRaw, PdfFormField, Locale, loc } from "./types";
 import { anchoredRegex } from "./validation";
+import { parseVisualFieldsDoc } from "./visual/types";
+import { isDocDirtyVsMaterialized } from "./visual/validation";
 
 export interface PublishIssue {
   level: "error" | "warning";
@@ -7,12 +9,23 @@ export interface PublishIssue {
   message: string;
 }
 
+export interface PublishContext {
+  /// Wrapper VisualFieldsDoc lu depuis PdfForm.visualFields (Json).
+  visualFieldsRaw?: unknown;
+  /// Date de dernière matérialisation (ISO ou Date) — null si jamais.
+  visualFieldsMaterializedAt?: Date | string | null;
+  /// Date de dernière sauvegarde du form (updatedAt). Sert à détecter une
+  /// matérialisation antérieure à la dernière édition visuelle.
+  updatedAt?: Date | string;
+}
+
 /// Vérifie qu'un formulaire est publiable. Les `error` bloquent la
 /// publication ; les `warning` sont informatifs.
 export function checkPublishable(
   fields: PdfFormField[],
   technical: AcroFieldRaw[],
-  locales: Locale[]
+  locales: Locale[],
+  ctx: PublishContext = {}
 ): PublishIssue[] {
   const issues: PublishIssue[] = [];
   const techNames = new Set(technical.map((t) => t.pdfFieldName));
@@ -79,6 +92,33 @@ export function checkPublishable(
         level: "warning",
         message: `Le champ PDF requis « ${t.pdfFieldName} » n'est pas exposé dans le formulaire.`,
       });
+    }
+  }
+
+  // Éditeur visuel : champs en attente de matérialisation.
+  if (ctx.visualFieldsRaw !== undefined) {
+    const vdoc = parseVisualFieldsDoc(ctx.visualFieldsRaw);
+    if (vdoc.fields.length > 0) {
+      const matAt = ctx.visualFieldsMaterializedAt
+        ? new Date(ctx.visualFieldsMaterializedAt)
+        : null;
+      const updAt = ctx.updatedAt ? new Date(ctx.updatedAt) : null;
+      if (!matAt) {
+        issues.push({
+          level: "warning",
+          message: `${vdoc.fields.length} champ(s) visuel(s) en brouillon — cliquez sur « Appliquer au PDF » pour les matérialiser.`,
+        });
+      } else if (isDocDirtyVsMaterialized(vdoc)) {
+        issues.push({
+          level: "warning",
+          message: `Le brouillon visuel diffère du dernier PDF matérialisé — re-matérialisez pour synchroniser.`,
+        });
+      } else if (updAt && updAt.getTime() > matAt.getTime() + 1000) {
+        issues.push({
+          level: "warning",
+          message: `Modifications visuelles sauvegardées sans matérialisation depuis le ${matAt.toLocaleString("fr-BE")}.`,
+        });
+      }
     }
   }
 

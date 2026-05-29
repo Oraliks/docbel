@@ -33,7 +33,16 @@ import {
 import type { DocumentField } from "@/lib/documents/types";
 import type { ClickTarget } from "@/lib/documents/click-targets";
 import { getPreviewValue } from "@/lib/documents/preview-values";
+import { pdfToHtml, type PageGeometry } from "@/lib/pdf-canvas/coords";
 import type { PageDims } from "./hooks/use-pdf-doc";
+
+/// Adapter PageDims (front-only, sans CropBox offset) → PageGeometry pour
+/// pouvoir réutiliser pdfToHtml. Côté Documents, pdfjs ne nous expose pas la
+/// CropBox depuis le viewport → on suppose offsets = 0 (vrai sur la quasi-
+/// totalité des PDF documents qui transitent dans Docbel).
+function dimsToGeometry(dims: PageDims): PageGeometry {
+  return { width: dims.width, height: dims.height, offsetX: 0, offsetY: 0 };
+}
 
 const PDFDocument = dynamic(() => import("react-pdf").then((m) => m.Document), {
   ssr: false,
@@ -243,10 +252,15 @@ function ClickTargetButton({
   onHover,
   onClick,
 }: ClickTargetButtonProps) {
-  const htmlX = target.x * scale;
-  const htmlY = (dims.height - target.y - target.h) * scale;
-  const htmlW = Math.max(8, target.w * scale);
-  const htmlH = Math.max(8, target.h * scale);
+  const html = pdfToHtml(
+    { x: target.x, y: target.y, w: target.w, h: target.h },
+    dimsToGeometry(dims),
+    scale
+  );
+  const htmlX = html.x;
+  const htmlY = html.y;
+  const htmlW = Math.max(8, html.w);
+  const htmlH = Math.max(8, html.h);
   return (
     <button
       type="button"
@@ -313,10 +327,15 @@ function FieldRect({
   onRemove,
 }: FieldRectProps) {
   if (!field.position) return null;
-  const htmlX = field.position.x * scale;
-  const htmlY = (dims.height - field.position.y - field.position.h) * scale;
-  const htmlW = field.position.w * scale;
-  const htmlH = field.position.h * scale;
+  const html = pdfToHtml(
+    { x: field.position.x, y: field.position.y, w: field.position.w, h: field.position.h },
+    dimsToGeometry(dims),
+    scale
+  );
+  const htmlX = html.x;
+  const htmlY = html.y;
+  const htmlW = html.w;
+  const htmlH = html.h;
   // Violet primary si pulse (depuis sidebar), bleu sinon
   const accent = isPulsing ? "139, 92, 246" : "37, 99, 235";
 

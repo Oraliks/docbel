@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DocumentField, DocumentFieldType } from "@/lib/documents/types";
 import type { ClickTarget } from "@/lib/documents/click-targets";
+import { pdfToHtml, htmlToPdf, type PageGeometry } from "@/lib/pdf-canvas/coords";
 import { AnnotationPopover } from "./annotation-popover";
 import { AnnotatedFieldsSidebar } from "./annotated-fields-sidebar";
 import { PdfCanvas } from "./pdf-canvas";
@@ -26,6 +27,13 @@ import { useClickTargets } from "./hooks/use-click-targets";
 import { useOcrCorrections } from "./hooks/use-ocr-corrections";
 import { useFieldSelection } from "./hooks/use-field-selection";
 import { useKeyboardShortcuts } from "./hooks/use-keyboard-shortcuts";
+
+/// Côté Documents, pdfjs ne nous expose pas la CropBox depuis le viewport
+/// (PageDims = {width, height}). On suppose offsets = 0, ce qui est vrai sur
+/// la quasi-totalité des PDF qui transitent dans Docbel.
+function toGeo(dims: { width: number; height: number }): PageGeometry {
+  return { width: dims.width, height: dims.height, offsetX: 0, offsetY: 0 };
+}
 
 interface VisualPdfEditorProps {
   templateId: string;
@@ -184,14 +192,12 @@ export function VisualPdfEditor({
     htmlPos: { x: number; y: number; w: number; h: number }
   ) {
     if (!dims) return;
-    const pdfX = htmlPos.x / scale;
-    const pdfW = htmlPos.w / scale;
-    const pdfH = htmlPos.h / scale;
-    const pdfY = dims.height - htmlPos.y / scale - pdfH;
+    const geo = toGeo(dims);
+    const next = htmlToPdf(htmlPos, geo, scale);
     onSchemaChange(
       schema.map((f) =>
         f.id === id && f.position
-          ? { ...f, position: { ...f.position, x: pdfX, y: pdfY, w: pdfW, h: pdfH } }
+          ? { ...f, position: { ...f.position, x: next.x, y: next.y, w: next.w, h: next.h } }
           : f
       )
     );
@@ -372,15 +378,16 @@ export function VisualPdfEditor({
     if (!dims || !field.position) return null;
     const containerRect = containerRef.current?.getBoundingClientRect();
     if (!containerRect) return null;
-    const htmlX = field.position.x * scale;
-    const htmlY = (dims.height - field.position.y - field.position.h) * scale;
-    const htmlW = field.position.w * scale;
-    const htmlH = field.position.h * scale;
+    const html = pdfToHtml(
+      { x: field.position.x, y: field.position.y, w: field.position.w, h: field.position.h },
+      toGeo(dims),
+      scale
+    );
     return {
-      left: containerRect.left + htmlX,
-      top: containerRect.top + htmlY,
-      right: containerRect.left + htmlX + htmlW,
-      bottom: containerRect.top + htmlY + htmlH,
+      left: containerRect.left + html.x,
+      top: containerRect.top + html.y,
+      right: containerRect.left + html.x + html.w,
+      bottom: containerRect.top + html.y + html.h,
     };
   }
 
@@ -418,9 +425,10 @@ export function VisualPdfEditor({
     const rect = container.getBoundingClientRect();
     const screenX = e.clientX - rect.left + container.scrollLeft;
     const screenY = e.clientY - rect.top + container.scrollTop;
-    const pdfX = screenX / scale;
-    const pdfY = dims.height - screenY / scale;
-    lastRightClickPdfRef.current = { x: pdfX, y: pdfY };
+    // Clic ponctuel → on convertit via htmlToPdf en passant w=h=0 et on garde
+    // (x, y+h) = (x, y) du résultat car h=0 ⇒ pdf.y représente déjà le point.
+    const pdfPt = htmlToPdf({ x: screenX, y: screenY, w: 0, h: 0 }, toGeo(dims), scale);
+    lastRightClickPdfRef.current = { x: pdfPt.x, y: pdfPt.y };
   }
 
   function handleAddZoneAtLastClick() {
@@ -447,8 +455,9 @@ export function VisualPdfEditor({
     };
     const containerRect = containerRef.current?.getBoundingClientRect();
     if (!containerRect) return;
-    const screenX = c.x * scale + containerRect.left;
-    const screenY = (dims.height - c.y) * scale + containerRect.top;
+    const html = pdfToHtml({ x: c.x, y: c.y, w: 0, h: 0 }, toGeo(dims), scale);
+    const screenX = html.x + containerRect.left;
+    const screenY = html.y + containerRect.top;
     setActiveAnnotation({
       target,
       anchor: {

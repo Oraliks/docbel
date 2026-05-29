@@ -21,7 +21,12 @@ export async function GET(
   const issues = checkPublishable(
     (form.fields as unknown as PdfFormField[]) || [],
     (form.technicalSchema as unknown as AcroFieldRaw[]) || [],
-    (form.locales as unknown as Locale[]) || ["fr"]
+    (form.locales as unknown as Locale[]) || ["fr"],
+    {
+      visualFieldsRaw: form.visualFields,
+      visualFieldsMaterializedAt: form.visualFieldsMaterializedAt,
+      updatedAt: form.updatedAt,
+    }
   );
   return NextResponse.json({ issues, canPublish: !hasBlockingIssues(issues) }, { headers: json });
 }
@@ -41,7 +46,12 @@ export async function POST(
   const issues = checkPublishable(
     (form.fields as unknown as PdfFormField[]) || [],
     (form.technicalSchema as unknown as AcroFieldRaw[]) || [],
-    (form.locales as unknown as Locale[]) || ["fr"]
+    (form.locales as unknown as Locale[]) || ["fr"],
+    {
+      visualFieldsRaw: form.visualFields,
+      visualFieldsMaterializedAt: form.visualFieldsMaterializedAt,
+      updatedAt: form.updatedAt,
+    }
   );
   if (hasBlockingIssues(issues)) {
     return NextResponse.json(

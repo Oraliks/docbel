@@ -37,6 +37,7 @@ interface EditorForm {
   fields: PdfFormField[];
   pageCount: number;
   technicalSchema?: AcroFieldRaw[];
+  visualFields?: { version?: number; fields?: unknown[]; materializedNames?: string[] };
 }
 
 export function PdfFormEditor({ formId }: { formId: string }) {
@@ -231,43 +232,53 @@ export function PdfFormEditor({ formId }: { formId: string }) {
 
         <FormSettings form={form} onChange={patchForm} />
 
-        {/* Tabs : schéma enrichi vs éditeur visuel d'AcroForms */}
-        <Tabs defaultValue="schema" className="w-full">
-          <TabsList variant="line">
-            <TabsTrigger value="schema">Schéma ({form.fields.length})</TabsTrigger>
-            <TabsTrigger
-              value="visual"
-              disabled={(form.technicalSchema?.length ?? 0) > 0}
-              title={
-                (form.technicalSchema?.length ?? 0) > 0
-                  ? "Désactivé : le PDF source contient déjà un AcroForm (édition out-of-scope v1)."
-                  : "Éditeur visuel d'AcroForms (Text + Checkbox)"
-              }
-            >
-              Visuel
-            </TabsTrigger>
-          </TabsList>
+        {/* Tabs : schéma enrichi vs éditeur visuel d'AcroForms.
+            On distingue un AcroForm « étranger » (présent à l'upload) de celui
+            que nous matérialisons via l'éditeur visuel — seul le premier
+            désactive l'onglet (la fusion d'AcroForm tiers est out-of-scope v1). */}
+        {(() => {
+          const materialized = new Set(form.visualFields?.materializedNames ?? []);
+          const tech = form.technicalSchema ?? [];
+          const hasForeignAcroForm = tech.some((t) => !materialized.has(t.pdfFieldName));
+          return (
+            <Tabs defaultValue="schema" className="w-full">
+              <TabsList variant="line">
+                <TabsTrigger value="schema">Schéma ({form.fields.length})</TabsTrigger>
+                <TabsTrigger
+                  value="visual"
+                  disabled={hasForeignAcroForm}
+                  title={
+                    hasForeignAcroForm
+                      ? "Désactivé : le PDF contient déjà un AcroForm tiers (fusion out-of-scope v1)."
+                      : "Éditeur visuel d'AcroForms (Text + Checkbox)"
+                  }
+                >
+                  Visuel
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="schema">
-            <Accordion type="multiple" className="flex flex-col gap-2">
-              {form.fields.map((field, i) => (
-                <FieldEditor
-                  key={field.id}
-                  field={field}
-                  locales={form.locales}
-                  presets={presets}
-                  allFields={form.fields}
-                  onChange={(next) => setFields(form.fields.map((f, j) => (j === i ? next : f)))}
-                  onRemove={() => setFields(form.fields.filter((_, j) => j !== i))}
-                />
-              ))}
-            </Accordion>
-          </TabsContent>
+              <TabsContent value="schema">
+                <Accordion type="multiple" className="flex flex-col gap-2">
+                  {form.fields.map((field, i) => (
+                    <FieldEditor
+                      key={field.id}
+                      field={field}
+                      locales={form.locales}
+                      presets={presets}
+                      allFields={form.fields}
+                      onChange={(next) => setFields(form.fields.map((f, j) => (j === i ? next : f)))}
+                      onRemove={() => setFields(form.fields.filter((_, j) => j !== i))}
+                    />
+                  ))}
+                </Accordion>
+              </TabsContent>
 
-          <TabsContent value="visual">
-            <VisualEditor formId={formId} />
-          </TabsContent>
-        </Tabs>
+              <TabsContent value="visual">
+                <VisualEditor formId={formId} />
+              </TabsContent>
+            </Tabs>
+          );
+        })()}
       </div>
 
       <VersionDialog

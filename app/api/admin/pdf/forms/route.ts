@@ -61,12 +61,8 @@ export async function POST(req: NextRequest) {
   const finalLocales = locales.length ? Array.from(new Set(["fr", ...locales])) : ["fr"];
 
   const ingest = await ingestPdf(upload.buffer);
-  if (!ingest.hasAcroForm) {
-    return NextResponse.json(
-      { error: "Ce PDF ne contient aucun champ AcroForm. Seuls les PDF à champs sont supportés." },
-      { status: 422, headers: json }
-    );
-  }
+  // Les PDFs « plats » (sans AcroForm) sont acceptés : l'admin pourra leur
+  // ajouter des champs via l'onglet « Visuel » de l'éditeur.
 
   // Slug unique
   let slug = slugify(title);

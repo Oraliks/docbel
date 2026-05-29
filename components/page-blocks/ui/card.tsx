@@ -11,6 +11,7 @@ import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { RichTextInput } from '@/components/page-builder/inspector/rich-text-input'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { enrichHtmlWithAcronyms } from '@/lib/acronyms-html'
+import { sanitizeHtml } from '@/lib/sanitize-html'
 import { cn } from '@/lib/utils'
 
 const schema = z.object({
@@ -75,7 +76,7 @@ export const card = defineBlock({
           {body && (
             <div
               className="mt-3 text-sm leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: enrichHtmlWithAcronyms(body) }}
+              dangerouslySetInnerHTML={{ __html: enrichHtmlWithAcronyms(sanitizeHtml(body)) }}
             />
           )}
           {ctaText && (

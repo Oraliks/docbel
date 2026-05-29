@@ -18,7 +18,8 @@ async function resolveSessionId(): Promise<string> {
   cookieStore.set(COOKIE_NAME, fresh, {
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
-    httpOnly: false,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
   });
   return fresh;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -35,6 +36,16 @@ function cacheSet(key: string, value: unknown) {
  *  - ?lat=&lng=       → reverse geocode (lat/lng → adresse + CP)
  */
 export async function GET(req: NextRequest) {
+  // Rate-limit anti-abus du proxy Nominatim : 30 req / min / IP
+  const ip = getClientIp(req);
+  const rl = checkRateLimit(`geocode:${ip}`, { windowMs: 60_000, max: 30 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Trop de requêtes — réessayez dans une minute" },
+      { status: 429, headers: jsonHeaders }
+    );
+  }
+
   const sp = req.nextUrl.searchParams;
   const q = sp.get("q")?.trim();
   const lat = sp.get("lat")?.trim();

@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { ArrowLeftIcon, CalendarIcon, ClockIcon } from "lucide-react";
 import type { NewsItem } from "@/lib/docbel-data";
 import { enrichHtmlWithAcronyms } from "@/lib/acronyms-html";
+import { sanitizeHtml } from "@/lib/sanitize-html";
 import { AcronymText } from "@/components/docbel/acronym";
 
 interface ArticleViewProps {
@@ -20,7 +21,7 @@ export function ArticleView({ article }: ArticleViewProps) {
   // pour ne pas re-tokeniser à chaque re-render (le contenu d'un
   // article ne change pas pendant la vie de la page).
   const enrichedContent = useMemo(
-    () => (article.content ? enrichHtmlWithAcronyms(article.content) : ""),
+    () => (article.content ? enrichHtmlWithAcronyms(sanitizeHtml(article.content)) : ""),
     [article.content],
   );
 

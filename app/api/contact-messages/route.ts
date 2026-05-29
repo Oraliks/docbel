@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { logActivity } from "@/lib/activity-logger";
+import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -32,6 +33,19 @@ function escapeHtml(s: string): string {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Rate-limit anti-spam : 3 messages / 10 min / IP
+    const ip = getClientIp(request);
+    const rl = checkRateLimit(`contact-messages:${ip}`, {
+      windowMs: 10 * 60_000,
+      max: 3,
+    });
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Trop de messages envoyés — réessayez dans quelques minutes" },
+        { status: 429, headers: { "Content-Type": "application/json; charset=utf-8" } }
+      );
+    }
+
     const body = await request.json();
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";

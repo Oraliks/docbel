@@ -5,7 +5,7 @@
   "packageManager": "pnpm@10.33.2",
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "build": "prisma migrate deploy && next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",

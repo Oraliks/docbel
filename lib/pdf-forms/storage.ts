@@ -36,6 +36,18 @@ export async function saveSourcePdf(buffer: Buffer, originalName: string): Promi
     return `${BLOB_PREFIX}${url}`;
   }
 
+  // Sur Vercel le filesystem est read-only (sauf /tmp éphémère) : refuser le
+  // fallback disque avec un message actionnable plutôt que de laisser planter
+  // sur EROFS quelques lignes plus bas.
+  if (process.env.VERCEL === "1" || process.env.VERCEL === "true") {
+    throw new Error(
+      "Storage non configuré : BLOB_READ_WRITE_TOKEN absent en runtime. " +
+        "Crée un Vercel Blob store (Dashboard → Storage → Create → Blob) " +
+        "et vérifie qu'il est activé pour l'environnement Production, " +
+        "puis redéploie."
+    );
+  }
+
   const { relativeDir, absoluteDir } = getUploadDirectory(true);
   if (!existsSync(absoluteDir)) await mkdir(absoluteDir, { recursive: true });
   const fileName = `pdfform-${Date.now()}-${safe}`;

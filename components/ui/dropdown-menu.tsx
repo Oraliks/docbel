@@ -57,13 +57,20 @@ function DropdownMenuLabel({
   className,
   inset,
   ...props
-}: MenuPrimitive.GroupLabel.Props & {
+}: React.ComponentProps<"div"> & {
   inset?: boolean
 }) {
+  // Note (migration 22) : @base-ui/react ≥ 1.4.x exige que MenuPrimitive.GroupLabel
+  // soit obligatoirement wrappé dans <Menu.Group>. Sinon il throw "Base UI:
+  // MenuGroupRootContext is missing." dès l'ouverture du menu (cf. SessionModelPicker).
+  // On utilise donc un simple <div> stylé — c'est purement décoratif côté UX
+  // (en-tête de section dans le menu) et ça reste accessible via aria-hidden=false
+  // par défaut. Compatible avec tous les usages existants sans toucher aux callers.
   return (
-    <MenuPrimitive.GroupLabel
+    <div
       data-slot="dropdown-menu-label"
       data-inset={inset}
+      role="presentation"
       className={cn(
         "px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7",
         className

@@ -227,52 +227,69 @@ export async function indexKnowledgeSource(
       dimUsed = dim;
 
       // 7. Upsert chunk par chunk en raw SQL (Prisma ne sait pas écrire vector).
-      //    On utilise une transaction pour cohérence : tous les chunks d'un
-      //    batch atterrissent ensemble, ou rien.
-      await prisma.$transaction(async (tx) => {
-        for (let i = 0; i < toReindex.length; i++) {
-          const ch = toReindex[i];
-          const v = vectors[i];
-          const vecLit = vectorToSqlLiteral(v);
-          const prev = existingByIndex.get(ch.index);
-          if (prev) {
-            // Update existing chunk (même index, hash a changé).
-            await tx.$executeRawUnsafe(
-              `UPDATE "KnowledgeChunk"
-               SET "content" = $1,
-                   "contentHash" = $2,
-                   "embedding" = $3::vector,
-                   "embedDim" = $4,
-                   "embedModel" = $5,
-                   "updatedAt" = NOW()
-               WHERE "id" = $6`,
-              ch.content,
-              ch.hash,
-              vecLit,
-              dim,
-              model,
-              prev.id,
-            );
-          } else {
-            // Insert new chunk.
-            await tx.$executeRawUnsafe(
-              `INSERT INTO "KnowledgeChunk"
-                 ("id", "sourceId", "chunkIndex", "content", "contentHash",
-                  "embedding", "embedDim", "embedModel", "createdAt", "updatedAt")
-               VALUES ($1, $2, $3, $4, $5, $6::vector, $7, $8, NOW(), NOW())`,
-              cuidLite(),
-              sourceId,
-              ch.index,
-              ch.content,
-              ch.hash,
-              vecLit,
-              dim,
-              model,
-            );
-          }
-          reindexedCount++;
-        }
-      });
+      //
+      // Anciennement on wrappait toute la boucle dans prisma.$transaction(),
+      // mais avec le pooler Neon + des sources volumineuses (50+ chunks à
+      // 1000 chars), les UPDATE/INSERT cumulés dépassaient le timeout par
+      // défaut Prisma (5s) → "Transaction not found. Transaction ID is
+      // invalid, refers to an old closed transaction".
+      //
+      // Compromis pragmatique : on batch les upserts par groupes de 5 dans
+      // des micro-transactions (durée < 1s chacune). Si le run global crash,
+      // on peut avoir une source partiellement indexée — mais c'est OK car
+      // le RAG fallback prend le relai et le prochain indexing rejouera
+      // proprement (chunks inchangés sont skippés via le hash).
+      const CHUNK_BATCH_SIZE = 5;
+      for (let start = 0; start < toReindex.length; start += CHUNK_BATCH_SIZE) {
+        const slice = toReindex.slice(start, start + CHUNK_BATCH_SIZE);
+        await prisma.$transaction(
+          async (tx) => {
+            for (let j = 0; j < slice.length; j++) {
+              const ch = slice[j];
+              const v = vectors[start + j];
+              const vecLit = vectorToSqlLiteral(v);
+              const prev = existingByIndex.get(ch.index);
+              if (prev) {
+                await tx.$executeRawUnsafe(
+                  `UPDATE "KnowledgeChunk"
+                   SET "content" = $1,
+                       "contentHash" = $2,
+                       "embedding" = $3::vector,
+                       "embedDim" = $4,
+                       "embedModel" = $5,
+                       "updatedAt" = NOW()
+                   WHERE "id" = $6`,
+                  ch.content,
+                  ch.hash,
+                  vecLit,
+                  dim,
+                  model,
+                  prev.id,
+                );
+              } else {
+                await tx.$executeRawUnsafe(
+                  `INSERT INTO "KnowledgeChunk"
+                     ("id", "sourceId", "chunkIndex", "content", "contentHash",
+                      "embedding", "embedDim", "embedModel", "createdAt", "updatedAt")
+                   VALUES ($1, $2, $3, $4, $5, $6::vector, $7, $8, NOW(), NOW())`,
+                  cuidLite(),
+                  sourceId,
+                  ch.index,
+                  ch.content,
+                  ch.hash,
+                  vecLit,
+                  dim,
+                  model,
+                );
+              }
+              reindexedCount++;
+            }
+          },
+          // Garde-fou explicite : timeout 30s par batch (vs défaut 5s), maxWait
+          // 10s pour attendre une connection du pool avant d'abandonner.
+          { timeout: 30_000, maxWait: 10_000 },
+        );
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.warn(

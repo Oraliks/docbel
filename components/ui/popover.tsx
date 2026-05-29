@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
 
 interface PopoverContextValue {
@@ -109,9 +110,15 @@ function PopoverContent({
 }: PopoverContentProps) {
   const { open, setOpen, triggerRef } = usePopover()
   const contentRef = React.useRef<HTMLDivElement>(null)
-  const [position, setPosition] = React.useState<{ top: number; left: number; maxWidth: number }>({
+  const [position, setPosition] = React.useState<{
+    top: number
+    left: number | null
+    right: number | null
+    maxWidth: number
+  }>({
     top: 0,
     left: 0,
+    right: null,
     maxWidth: 0,
   })
 
@@ -150,7 +157,8 @@ function PopoverContent({
       const contentRect = cont.getBoundingClientRect()
 
       let top = 0
-      let left = 0
+      let left: number | null = 0
+      let right: number | null = null
 
       if (side === "bottom") top = triggerRect.bottom + sideOffset
       else if (side === "top") top = triggerRect.top - contentRect.height - sideOffset
@@ -163,16 +171,30 @@ function PopoverContent({
       }
 
       if (side === "top" || side === "bottom") {
-        if (align === "start") left = triggerRect.left
-        else if (align === "end") left = triggerRect.right - contentRect.width
-        else left = triggerRect.left + (triggerRect.width - contentRect.width) / 2
+        if (align === "start") {
+          left = triggerRect.left
+          right = null
+        } else if (align === "end") {
+          // Ancrage sur le `right` du viewport plutôt que sur le `left`.
+          // Évite le bug "popover déborde à droite" quand contentRect.width
+          // est mesuré 0 (CSS Tailwind pas encore appliqué) → la 1ère mesure
+          // ne contamine plus la position : le popover reste collé au bord
+          // droit du trigger même si la width finale change après le paint.
+          right = Math.max(8, vw - triggerRect.right)
+          left = null
+        } else {
+          left = triggerRect.left + (triggerRect.width - contentRect.width) / 2
+          right = null
+        }
       }
 
-      // Clamp inside viewport
-      left = Math.max(8, Math.min(left, vw - contentRect.width - 8))
+      // Clamp inside viewport (uniquement pour les positions left-based).
+      if (left !== null) {
+        left = Math.max(8, Math.min(left, vw - contentRect.width - 8))
+      }
       top = Math.max(8, Math.min(top, vh - contentRect.height - 8))
 
-      setPosition({ top, left, maxWidth: maxAllowedWidth })
+      setPosition({ top, left, right, maxWidth: maxAllowedWidth })
     }
 
     // Double rAF pour attendre que le browser ait appliqué le layout final
@@ -185,11 +207,23 @@ function PopoverContent({
     // Recalcule la position au resize fenêtre (rotation mobile, redim browser).
     window.addEventListener("resize", reposition)
 
+    // ResizeObserver permanent sur le content : si le browser applique des
+    // styles asynchrones (Tailwind JIT en dev, font loading, contenu async qui
+    // change la hauteur, etc.), la largeur mesurée par le 1er rAF peut être
+    // fausse → le popover déborde. L'observer re-calcule dès que les dims
+    // changent réellement.
+    let ro: ResizeObserver | null = null
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => reposition())
+      ro.observe(content)
+    }
+
     return () => {
       cancelAnimationFrame(raf1)
       const raf2 = (reposition as unknown as { _raf2?: number })._raf2
       if (raf2) cancelAnimationFrame(raf2)
       window.removeEventListener("resize", reposition)
+      ro?.disconnect()
     }
   }, [open, side, align, sideOffset, triggerRef])
 
@@ -215,7 +249,7 @@ function PopoverContent({
 
   if (!open) return null
 
-  return (
+  const node = (
     <div
       ref={contentRef}
       data-slot="popover-content"
@@ -224,12 +258,18 @@ function PopoverContent({
       style={{
         position: "fixed",
         top: position.top,
-        left: position.left,
+        // Soit on positionne via `left` (align="start"/"center"), soit via
+        // `right` (align="end") — le right anchor évite le débordement à
+        // droite quand contentRect.width est mesuré 0 avant le paint final.
+        left: position.left ?? undefined,
+        right: position.right ?? undefined,
         // maxWidth inline = garde-fou contre tout overflow viewport, peu
         // importe ce que le caller met en className. 0 = pas encore mesuré
         // (premier paint avant le rAF).
         maxWidth: position.maxWidth || undefined,
-        zIndex: 50,
+        // z-index élevé pour passer au-dessus des stickys/overlays courants
+        // (DropdownMenu Base UI est à 50, headers stickys vers 30).
+        zIndex: 60,
         // Garde le popover invisible avant la 1ère mesure pour éviter un
         // flash mal positionné.
         visibility: position.maxWidth === 0 ? "hidden" : undefined,
@@ -243,6 +283,13 @@ function PopoverContent({
       {children}
     </div>
   )
+
+  // Portal vers document.body — évite tout problème de stacking context
+  // parent (transform/filter/isolation) qui ferait passer le popover sous
+  // une table ou un overlay sticky. SSR-safe : `document` n'est dispo qu'en
+  // client, mais on est déjà gated par "use client" + le check open.
+  if (typeof document === "undefined") return node
+  return createPortal(node, document.body)
 }
 
 export { Popover, PopoverTrigger, PopoverContent }

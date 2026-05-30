@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
 import { VisualEditorProvider, useVisualEditor } from "./provider/visual-editor-context";
 import { VisualEditorToolbar } from "./visual-editor-toolbar";
 import { VisualCanvas } from "./visual-canvas";
@@ -12,12 +13,17 @@ interface VisualEditorProps {
   /// Indique au shell si le PDF source contient déjà un AcroForm (cf. GET
   /// /visual-fields). Sert à désactiver la matérialisation côté UI.
   sourceHasAcroForm?: boolean;
+  /// Notifié après une matérialisation réussie côté serveur. Le parent
+  /// (form-editor) en a besoin pour recharger fields/technicalSchema/issues,
+  /// que la route /materialize met à jour mais qui sont détenus en state
+  /// côté parent (cf. PdfFormEditor.load + loadIssues).
+  onMaterialized?: () => void;
 }
 
 /// Shell de l'éditeur visuel. Sur viewport mobile (md:hidden), bascule en
 /// mode read-only avec bannière d'information — l'édition de positions
 /// précises n'a pas de sens en dessous de 768px.
-export function VisualEditor({ formId }: VisualEditorProps) {
+export function VisualEditor({ formId, onMaterialized }: VisualEditorProps) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -29,7 +35,7 @@ export function VisualEditor({ formId }: VisualEditorProps) {
   }, []);
 
   return (
-    <VisualEditorProvider formId={formId} readOnly={isMobile}>
+    <VisualEditorProvider formId={formId} readOnly={isMobile} onMaterialized={onMaterialized}>
       {isMobile && (
         <div className="mb-3 rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-200">
           L’éditeur visuel est en lecture seule sous 768px. Passez en mode bureau pour modifier.
@@ -74,12 +80,20 @@ function VisualEditorShell() {
 
   return (
     <div className="flex flex-col gap-3">
-      <VisualEditorToolbar
-        numPages={numPages}
-        onMaterialize={onMaterialize}
-        hasRotatedPages={!!serverSnapshot?.hasRotatedPages}
-        sourceHasAcroForm={!!serverSnapshot?.sourceHasAcroForm}
-      />
+      {/* Toolbar sticky : reste visible lors du scroll du PDF. Décalée de
+          top-14 pour passer sous la barre d'action sticky du form-editor
+          (sticky top-0, ~56px de haut). */}
+      <Card
+        size="sm"
+        className="sticky top-14 z-20 gap-0 rounded-md py-0 ring-1 ring-foreground/10 bg-background/95 supports-[backdrop-filter]:bg-background/70 backdrop-blur"
+      >
+        <VisualEditorToolbar
+          numPages={numPages}
+          onMaterialize={onMaterialize}
+          hasRotatedPages={!!serverSnapshot?.hasRotatedPages}
+          sourceHasAcroForm={!!serverSnapshot?.sourceHasAcroForm}
+        />
+      </Card>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
         <VisualCanvas formId={ed.formId} onNumPages={setNumPagesFromPdf} />

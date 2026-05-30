@@ -105,24 +105,20 @@ const defaultData = {
     },
     {
       title: "Documents",
-      url: "/admin/documents",
+      url: "/admin/documents/config",
       icon: (
         <FileTextIcon className="size-4" />
       ),
       items: [
         {
-          title: "Modèles",
-          url: "/admin/documents",
+          // L'éditeur de templates legacy a été retiré (PR2). La gestion
+          // des PDFs se fait désormais sous « PDF Forms » dans la sidebar.
+          title: "Bundles (dossiers)",
+          url: "/admin/documents/config",
         },
         {
-          title: "Configurations",
-          url: "/admin/documents/config",
-          children: [
-            { title: "Sections", url: "/admin/documents/config" },
-            { title: "Organismes", url: "/admin/documents/config?tab=organismes" },
-            { title: "Presets validation", url: "/admin/documents/config?tab=presets" },
-            { title: "Bundles", url: "/admin/documents/config?tab=bundles" },
-          ],
+          title: "Organismes",
+          url: "/admin/documents/config?tab=organismes",
         },
         {
           title: "Documents générés",

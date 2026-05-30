@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { NissInput } from "@/components/ui/niss-input";
 import {
   GLASS_CARD,
   GLASS_INPUT,
@@ -210,12 +211,10 @@ export function ProfilePage({
             />
           </Field>
           <Field label="NISS">
-            <Input
+            <NissInput
               className={GLASS_INPUT}
               value={form.niss}
-              onChange={(e) => update("niss", e.target.value)}
-              placeholder="00.00.00-000.00"
-              inputMode="numeric"
+              onChange={(v) => update("niss", v)}
             />
           </Field>
           <Field label="Date de naissance">

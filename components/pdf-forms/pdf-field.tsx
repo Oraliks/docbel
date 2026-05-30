@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
+import { NissInput } from "@/components/ui/niss-input";
 import { loc, Locale, FieldValue } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 
@@ -108,7 +109,27 @@ export function PdfField({ field, value, error, locale, onChange }: Props) {
     );
   }
 
-  // Champs texte (text, niss, iban, date, number, email, phone…)
+  // NISS : masque automatique AAMMJJ-SSS.CC
+  if (field.type === "niss") {
+    return (
+      <Field data-invalid={invalid}>
+        <FieldLabel htmlFor={field.id}>
+          {label}
+          {field.required && <span className="text-destructive"> *</span>}
+        </FieldLabel>
+        <NissInput
+          id={field.id}
+          value={(value as string) ?? ""}
+          aria-invalid={invalid}
+          onChange={(v) => onChange(v)}
+        />
+        {help && <FieldDescription>{help}</FieldDescription>}
+        <FieldError>{error}</FieldError>
+      </Field>
+    );
+  }
+
+  // Champs texte (text, iban, date, number, email, phone…)
   const hint = INPUT_HINTS[field.type] || {};
   return (
     <Field data-invalid={invalid}>

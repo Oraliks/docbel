@@ -1,4 +1,4 @@
-import { PdfFormEditor } from "@/components/admin/pdf-forms/form-editor";
+import { PdfFormEditor } from "@/components/admin/pdf-forms/pdf-form-editor";
 
 export const dynamic = "force-dynamic";
 

@@ -91,5 +91,14 @@ export async function POST(req: NextRequest) {
     select: { id: true, slug: true, title: true, status: true },
   });
 
-  return NextResponse.json(created, { status: 201, headers: json });
+  // Réponse enrichie (additive) : alimente le récap de détection du wizard.
+  return NextResponse.json(
+    {
+      ...created,
+      hasAcroForm: ingest.hasAcroForm,
+      pageCount: ingest.pageCount,
+      fieldCount: ingest.fields.length,
+    },
+    { status: 201, headers: json }
+  );
 }

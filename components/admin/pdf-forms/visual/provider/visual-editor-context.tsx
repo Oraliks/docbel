@@ -52,7 +52,7 @@ interface ProviderProps {
   /// Mode lecture seule (ex. viewport mobile) : aucune mutation autorisée.
   readOnly?: boolean;
   /// Callback déclenché juste après un materialize() réussi (post-reload).
-  /// Sert au parent (form-editor) à recharger ses propres fields/technicalSchema
+  /// Sert au parent (useFormData) à recharger ses propres fields/technicalSchema
   /// et issues, qui sont écrits côté serveur par la route /materialize mais
   /// invisibles côté provider visuel.
   onMaterialized?: () => void;

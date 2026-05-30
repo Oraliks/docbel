@@ -146,7 +146,7 @@ const defaultData = {
       ),
       items: [
         { title: "Tous les formulaires", url: "/admin/pdf" },
-        { title: "Nouveau formulaire", url: "/admin/pdf?new=1" },
+        { title: "Nouveau formulaire", url: "/admin/pdf/new" },
         { title: "Presets de champs", url: "/admin/pdf/presets" },
       ],
     },

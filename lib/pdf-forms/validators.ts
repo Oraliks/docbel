@@ -1,15 +1,34 @@
 // Validateurs belges — copie autonome (le module pdf-forms ne dépend pas de
 // lib/documents pour pouvoir être conservé si l'ancien système est supprimé).
 
-/// NISS (numéro de registre national) — validation checksum modulo 97.
-export function isValidNISS(raw: string): boolean {
+/// Raison d'invalidité d'un NISS — sert à produire un message d'erreur
+/// pédagogique (longueur vs. erreur de frappe).
+export type NissInvalidReason = "length" | "checksum";
+
+export interface NissDiagnosis {
+  ok: boolean;
+  /// Nombre de chiffres effectivement saisis (espaces/séparateurs ignorés).
+  digitCount: number;
+  reason?: NissInvalidReason;
+}
+
+/// Diagnostique un NISS : longueur (11 chiffres) puis checksum modulo 97.
+export function diagnoseNISS(raw: string): NissDiagnosis {
   const digits = raw.replace(/[^0-9]/g, "");
-  if (digits.length !== 11) return false;
+  if (digits.length !== 11) {
+    return { ok: false, digitCount: digits.length, reason: "length" };
+  }
   const base = digits.slice(0, 9);
   const check = parseInt(digits.slice(9, 11), 10);
   const before = 97 - (parseInt(base, 10) % 97);
   const after = 97 - (parseInt("2" + base, 10) % 97);
-  return before === check || after === check;
+  const ok = before === check || after === check;
+  return { ok, digitCount: 11, reason: ok ? undefined : "checksum" };
+}
+
+/// NISS (numéro de registre national) — validation checksum modulo 97.
+export function isValidNISS(raw: string): boolean {
+  return diagnoseNISS(raw).ok;
 }
 
 function ibanChecksumValid(cleaned: string): boolean {

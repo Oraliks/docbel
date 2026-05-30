@@ -13,6 +13,33 @@ describe("buildValidator", () => {
     expect(v.safeParse({ niss: "00000000000" }).success).toBe(false);
   });
 
+  it("explique un NISS trop court (longueur) avec le nombre saisi", () => {
+    const v = buildValidator([field({ id: "niss", type: "niss", required: true })], "fr");
+    const res = v.safeParse({ niss: "850730" });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0].message).toMatch(/11 chiffres/);
+      expect(res.error.issues[0].message).toMatch(/saisi 6/);
+    }
+  });
+
+  it("explique un NISS à 11 chiffres mais mauvais checksum (erreur de frappe)", () => {
+    const v = buildValidator([field({ id: "niss", type: "niss", required: true })], "fr");
+    const res = v.safeParse({ niss: "85073003329" }); // 1 chiffre faux
+    expect(res.success).toBe(false);
+    if (!res.success) expect(res.error.issues[0].message).toMatch(/erreur de frappe/i);
+  });
+
+  it("respecte un message NISS personnalisé par l'admin", () => {
+    const v = buildValidator(
+      [field({ id: "niss", type: "niss", required: true, errorMsg: { fr: "Mon message à moi" } })],
+      "fr"
+    );
+    const res = v.safeParse({ niss: "850730" });
+    expect(res.success).toBe(false);
+    if (!res.success) expect(res.error.issues[0].message).toBe("Mon message à moi");
+  });
+
   it("exige les champs requis visibles", () => {
     const v = buildValidator([field({ id: "nom", type: "text", required: true })], "fr");
     expect(v.safeParse({ nom: "" }).success).toBe(false);

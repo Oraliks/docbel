@@ -16,7 +16,7 @@ export async function GET(
 
   const store = await cookies();
   const expectedState = store.get("itsme_state")?.value;
-  const back = (status: string) => NextResponse.redirect(new URL(`/pdf/${slug}?prefill=${status}`, req.url));
+  const back = (status: string) => NextResponse.redirect(new URL(`/document/${slug}?prefill=${status}`, req.url));
 
   if (!code || !state || state !== expectedState) {
     return back("error");

@@ -95,9 +95,8 @@ export async function POST(req: NextRequest) {
       vocabularyTags: true,
       items: {
         select: {
-          template: {
-            select: { tool: { select: { name: true } } },
-          },
+          template: { select: { tool: { select: { name: true } } } },
+          pdfForm: { select: { title: true } },
         },
       },
     },
@@ -109,7 +108,9 @@ export async function POST(req: NextRequest) {
     name: b.name,
     description: b.description,
     vocabularyTags: parseVocabularyTags(b.vocabularyTags),
-    toolNames: b.items.map((it) => it.template.tool.name),
+    toolNames: b.items
+      .map((it) => it.template?.tool.name ?? it.pdfForm?.title ?? null)
+      .filter((n): n is string => n !== null),
   }));
 
   // 1) Matching local toujours calculé en fallback

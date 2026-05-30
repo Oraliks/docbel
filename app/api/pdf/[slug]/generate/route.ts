@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { readSourcePdf } from "@/lib/pdf-forms/storage";
@@ -88,6 +89,35 @@ export async function POST(
     console.error("pdf-forms generate error:", err);
     await logSubmission(form.id, form.version, lang, validated, delivery, false, ip);
     return NextResponse.json({ error: "Échec de génération" }, { status: 500, headers: json });
+  }
+
+  // Si le PDF est ouvert dans un dossier (bundle), on persiste le payload
+  // validé dans le run pour que les PDFs suivants puissent récupérer les
+  // valeurs partagées (NISS, adresse, etc.). Clé = pdfFormId (cuid unique,
+  // cohabite avec les templateId de l'ancien module dans le même dict).
+  const bundleRunId = typeof body.bundleRunId === "string" ? body.bundleRunId : null;
+  if (bundleRunId) {
+    try {
+      const run = await prisma.bundleRun.findUnique({ where: { id: bundleRunId } });
+      if (run && run.status === "in_progress") {
+        const currentPayloads = (run.payloads as Record<string, unknown>) || {};
+        const currentCompleted = (run.completedTemplateIds as string[]) || [];
+        const newPayloads = { ...currentPayloads, [form.id]: validated };
+        const newCompleted = currentCompleted.includes(form.id)
+          ? currentCompleted
+          : [...currentCompleted, form.id];
+        await prisma.bundleRun.update({
+          where: { id: bundleRunId },
+          data: {
+            payloads: newPayloads as unknown as Prisma.InputJsonValue,
+            completedTemplateIds: newCompleted as unknown as Prisma.InputJsonValue,
+          },
+        });
+      }
+    } catch (err) {
+      // Non-bloquant : la génération du PDF a déjà réussi ; on log juste.
+      console.error("[pdf-generate] BundleRun update failed:", err);
+    }
   }
 
   const filename = renderFilename(form.slug, validated);

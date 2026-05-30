@@ -43,7 +43,9 @@ import { parseVocabularyTags } from "@/lib/bundles/vocabulary";
 
 export interface BundleEditorItem {
   id?: string;
-  templateId: string;
+  /// EXACTEMENT UN des deux est défini.
+  templateId: string | null;
+  pdfFormId: string | null;
   order: number;
   required: boolean;
   condition: BundleCondition;
@@ -53,7 +55,26 @@ export interface BundleEditorItem {
     toolName: string;
     toolSlug: string;
     organisme: { id: string; shortName: string | null; color: string } | null;
-  };
+  } | null;
+  pdfForm: {
+    id: string;
+    slug: string;
+    title: string;
+    issuer: string | null;
+  } | null;
+}
+
+/// Helpers pour traiter les deux sources uniformément.
+function itemSourceKey(it: BundleEditorItem): string {
+  return (it.templateId ?? it.pdfFormId)!;
+}
+function itemDisplayName(it: BundleEditorItem): string {
+  return it.template?.toolName ?? it.pdfForm?.title ?? "Document";
+}
+function itemSourceBadge(it: BundleEditorItem): string {
+  if (it.template?.organisme?.shortName) return it.template.organisme.shortName;
+  if (it.pdfForm?.issuer) return it.pdfForm.issuer;
+  return it.template ? "Document" : "PDF";
 }
 
 interface SchemaField {
@@ -87,14 +108,27 @@ export interface AvailableTemplate {
   organisme: { id: string; shortName: string | null; color: string } | null;
 }
 
+export interface AvailablePdfForm {
+  id: string;
+  slug: string;
+  title: string;
+  issuer: string | null;
+}
+
 interface Props {
   /// Bundle existant si en mode édition, null si création.
   initial: BundleEditorData | null;
   availableTemplates: AvailableTemplate[];
+  availablePdfForms: AvailablePdfForm[];
   templateSchemas: Record<string, SchemaField[]>;
 }
 
-export function BundleEditor({ initial, availableTemplates, templateSchemas }: Props) {
+export function BundleEditor({
+  initial,
+  availableTemplates,
+  availablePdfForms,
+  templateSchemas,
+}: Props) {
   const router = useRouter();
   const isEdit = !!initial;
 
@@ -124,27 +158,38 @@ export function BundleEditor({ initial, availableTemplates, templateSchemas }: P
     initial ? parseBundleWarnings(initial.warnings) : []
   );
 
-  function addItem(templateId: string) {
-    const tpl = availableTemplates.find((t) => t.id === templateId);
-    if (!tpl) return;
-    if (formItems.some((it) => it.templateId === templateId)) {
-      toast.warning("Document déjà dans le bundle");
-      return;
+  /// Ajoute un item à partir d'une valeur du type `tpl:<id>` ou `pdf:<id>`,
+  /// produite par le select unifié ci-dessous.
+  function addItem(sourceValue: string) {
+    const [kind, id] = sourceValue.split(":");
+    if (!kind || !id) return;
+    if (kind === "tpl") {
+      const tpl = availableTemplates.find((t) => t.id === id);
+      if (!tpl) return;
+      if (formItems.some((it) => it.templateId === id)) {
+        toast.warning("Document déjà dans le dossier");
+        return;
+      }
+      setFormItems((prev) => [
+        ...prev,
+        { templateId: id, pdfFormId: null, order: prev.length, required: true, condition: null, template: tpl, pdfForm: null },
+      ]);
+    } else if (kind === "pdf") {
+      const pdf = availablePdfForms.find((p) => p.id === id);
+      if (!pdf) return;
+      if (formItems.some((it) => it.pdfFormId === id)) {
+        toast.warning("PDF déjà dans le dossier");
+        return;
+      }
+      setFormItems((prev) => [
+        ...prev,
+        { templateId: null, pdfFormId: id, order: prev.length, required: true, condition: null, template: null, pdfForm: pdf },
+      ]);
     }
-    setFormItems((prev) => [
-      ...prev,
-      {
-        templateId,
-        order: prev.length,
-        required: true,
-        condition: null,
-        template: tpl,
-      },
-    ]);
   }
 
-  function removeItem(templateId: string) {
-    setFormItems((prev) => prev.filter((it) => it.templateId !== templateId));
+  function removeItem(key: string) {
+    setFormItems((prev) => prev.filter((it) => itemSourceKey(it) !== key));
   }
 
   function moveItem(idx: number, direction: -1 | 1) {
@@ -211,6 +256,7 @@ export function BundleEditor({ initial, availableTemplates, templateSchemas }: P
           warnings: formWarnings,
           items: formItems.map((it, idx) => ({
             templateId: it.templateId,
+            pdfFormId: it.pdfFormId,
             order: idx,
             required: it.required,
             condition: it.condition,
@@ -364,14 +410,36 @@ export function BundleEditor({ initial, availableTemplates, templateSchemas }: P
               <SelectValue placeholder="+ Ajouter un document" />
             </SelectTrigger>
             <SelectContent>
-              {availableTemplates
-                .filter((t) => !formItems.some((it) => it.templateId === t.id))
-                .map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.toolName}
-                    {t.organisme?.shortName ? ` — ${t.organisme.shortName}` : ""}
-                  </SelectItem>
-                ))}
+              {availablePdfForms.filter((p) => !formItems.some((it) => it.pdfFormId === p.id)).length > 0 && (
+                <>
+                  <div className="px-2 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    PDF Forms (AcroForm)
+                  </div>
+                  {availablePdfForms
+                    .filter((p) => !formItems.some((it) => it.pdfFormId === p.id))
+                    .map((p) => (
+                      <SelectItem key={`pdf:${p.id}`} value={`pdf:${p.id}`}>
+                        {p.title}
+                        {p.issuer ? ` — ${p.issuer}` : ""}
+                      </SelectItem>
+                    ))}
+                </>
+              )}
+              {availableTemplates.filter((t) => !formItems.some((it) => it.templateId === t.id)).length > 0 && (
+                <>
+                  <div className="px-2 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Documents (legacy)
+                  </div>
+                  {availableTemplates
+                    .filter((t) => !formItems.some((it) => it.templateId === t.id))
+                    .map((t) => (
+                      <SelectItem key={`tpl:${t.id}`} value={`tpl:${t.id}`}>
+                        {t.toolName}
+                        {t.organisme?.shortName ? ` — ${t.organisme.shortName}` : ""}
+                      </SelectItem>
+                    ))}
+                </>
+              )}
             </SelectContent>
           </Select>
 
@@ -382,14 +450,12 @@ export function BundleEditor({ initial, availableTemplates, templateSchemas }: P
           ) : (
             <div className="space-y-2 border rounded-md p-2 bg-muted/20">
               {formItems.map((it, idx) => {
+                const key = itemSourceKey(it);
                 const availableSources = formItems
-                  .filter((x) => x.templateId !== it.templateId)
-                  .map((x) => ({ id: x.templateId, name: x.template.toolName }));
+                  .filter((x) => itemSourceKey(x) !== key)
+                  .map((x) => ({ id: itemSourceKey(x), name: itemDisplayName(x) }));
                 return (
-                  <div
-                    key={it.templateId}
-                    className="bg-background rounded border p-2 space-y-2"
-                  >
+                  <div key={key} className="bg-background rounded border p-2 space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="flex flex-col">
                         <button
@@ -413,7 +479,10 @@ export function BundleEditor({ initial, availableTemplates, templateSchemas }: P
                       </div>
                       <GripVertical className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm flex-1 truncate font-medium">
-                        {idx + 1}. {it.template.toolName}
+                        {idx + 1}. {itemDisplayName(it)}
+                      </span>
+                      <span className="text-[10px] uppercase rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+                        {it.pdfFormId ? "PDF" : "Doc"} · {itemSourceBadge(it)}
                       </span>
                       <label className="flex items-center gap-1 text-xs">
                         <input
@@ -422,7 +491,7 @@ export function BundleEditor({ initial, availableTemplates, templateSchemas }: P
                           onChange={(e) =>
                             setFormItems((prev) =>
                               prev.map((x) =>
-                                x.templateId === it.templateId
+                                itemSourceKey(x) === key
                                   ? { ...x, required: e.target.checked }
                                   : x
                               )
@@ -435,7 +504,7 @@ export function BundleEditor({ initial, availableTemplates, templateSchemas }: P
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeItem(it.templateId)}
+                        onClick={() => removeItem(key)}
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -446,9 +515,7 @@ export function BundleEditor({ initial, availableTemplates, templateSchemas }: P
                         onChange={(next) =>
                           setFormItems((prev) =>
                             prev.map((x) =>
-                              x.templateId === it.templateId
-                                ? { ...x, condition: next }
-                                : x
+                              itemSourceKey(x) === key ? { ...x, condition: next } : x
                             )
                           )
                         }

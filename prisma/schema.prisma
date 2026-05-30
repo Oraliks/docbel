@@ -1021,22 +1021,31 @@ model DocumentBundle {
   @@index([lifeEventCategory])
 }
 
+/// Un item d'un bundle = une référence vers un document (ancien `DocumentTemplate`
+/// OU nouveau `PdfForm`). EXACTEMENT UN des deux IDs doit être défini.
+/// Les deux IDs sont des cuid globalement uniques → cohabitent sans collision
+/// dans `BundleRun.payloads`, lequel les indexe indifféremment.
 model DocumentBundleItem {
-  id         String           @id @default(cuid())
+  id         String            @id @default(cuid())
   bundleId   String
-  bundle     DocumentBundle   @relation(fields: [bundleId], references: [id], onDelete: Cascade)
-  templateId String
-  template   DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  order      Int              @default(0)
-  required   Boolean          @default(true)
-  // Condition d'inclusion : tableau de règles ANDées
-  // [{ sourceTemplateId, fieldId, op: "equals"|"notEquals"|"in"|"contains", value }]
-  // Si sourceTemplateId === templateId courant : auto-référence (pas utile)
-  // Si sourceTemplateId === null : champ d'un autre item du bundle (recherché par fieldId)
+  bundle     DocumentBundle    @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  /// Référence vers l'ancien module Documents (DOCX/PDF flat overlay).
+  templateId String?
+  template   DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  /// Référence vers le nouveau module PDF Forms (AcroForm).
+  pdfFormId  String?
+  pdfForm    PdfForm?          @relation(fields: [pdfFormId], references: [id], onDelete: Cascade)
+  order      Int               @default(0)
+  required   Boolean           @default(true)
+  // Condition d'inclusion : tableau de règles ANDées (V1) ou arbre AND/OR (V2).
+  // `sourceTemplateId` dans les feuilles est un nom historique — la valeur peut
+  // être soit un templateId, soit un pdfFormId (cuid globalement unique).
   condition  Json?
 
   @@unique([bundleId, templateId])
+  @@unique([bundleId, pdfFormId])
   @@index([bundleId])
+  @@index([pdfFormId])
 }
 
 /// Run d'un bundle = progression d'un utilisateur (anonyme via sessionId, ou userId).
@@ -1771,6 +1780,7 @@ model PdfForm {
   revisions   PdfFormRevision[]
   submissions PdfFormSubmissionLog[]
   drafts      PdfFormDraft[]
+  bundleItems DocumentBundleItem[]
 
   @@index([status])
   @@index([updatedAt])

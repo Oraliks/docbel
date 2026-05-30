@@ -70,11 +70,14 @@ export async function PUT(
     data.warnings = parseBundleWarnings(body.warnings) as unknown as Prisma.InputJsonValue;
   }
 
-  // Mise à jour des items (remplacement complet de la liste)
+  // Mise à jour des items (remplacement complet de la liste).
+  // Un item référence SOIT un ancien DocumentTemplate (templateId), SOIT un
+  // nouveau PdfForm (pdfFormId). Le check DB rejette tout autre combo.
   if (Array.isArray(body.items)) {
     await prisma.documentBundleItem.deleteMany({ where: { bundleId: id } });
     type IncomingItem = {
-      templateId: string;
+      templateId?: string | null;
+      pdfFormId?: string | null;
       order?: number;
       required?: boolean;
       // condition est laissé en `unknown` car deux formats coexistent :
@@ -83,12 +86,15 @@ export async function PUT(
       // Les deux sont sérialisables tels quels en JSON.
       condition?: unknown;
     };
-    const items = body.items as IncomingItem[];
+    const items = (body.items as IncomingItem[]).filter(
+      (it) => !!it.templateId !== !!it.pdfFormId // XOR
+    );
     if (items.length > 0) {
       await prisma.documentBundleItem.createMany({
         data: items.map((it, idx) => ({
           bundleId: id,
-          templateId: it.templateId,
+          templateId: it.templateId ?? null,
+          pdfFormId: it.pdfFormId ?? null,
           order: typeof it.order === "number" ? it.order : idx,
           required: it.required !== false,
           condition: (it.condition ?? Prisma.JsonNull) as Prisma.InputJsonValue,

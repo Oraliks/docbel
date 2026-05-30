@@ -13,10 +13,10 @@ interface VisualEditorProps {
   /// Indique au shell si le PDF source contient déjà un AcroForm (cf. GET
   /// /visual-fields). Sert à désactiver la matérialisation côté UI.
   sourceHasAcroForm?: boolean;
-  /// Notifié après une matérialisation réussie côté serveur. Le parent
-  /// (form-editor) en a besoin pour recharger fields/technicalSchema/issues,
-  /// que la route /materialize met à jour mais qui sont détenus en state
-  /// côté parent (cf. PdfFormEditor.load + loadIssues).
+  /// Notifié après une matérialisation réussie côté serveur. Le parent en a
+  /// besoin pour recharger fields/technicalSchema/issues, que la route
+  /// /materialize met à jour mais qui sont détenus dans useFormData
+  /// (cf. load + loadIssues passés depuis l'onglet Champs).
   onMaterialized?: () => void;
 }
 
@@ -80,12 +80,13 @@ function VisualEditorShell() {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Toolbar sticky : reste visible lors du scroll du PDF. Décalée de
-          top-14 pour passer sous la barre d'action sticky du form-editor
-          (sticky top-0, ~56px de haut). */}
+      {/* Toolbar sticky : reste visible lors du scroll du PDF. Le shell
+          d'édition empile une barre d'action (sticky top-0, ~56px) puis une
+          rangée de tabs (sticky top-14, ~46px). On décale donc à ~104px pour
+          passer sous les deux sans recouvrement ni gap, à toutes tailles. */}
       <Card
         size="sm"
-        className="sticky top-14 z-20 gap-0 rounded-md py-0 ring-1 ring-foreground/10 bg-background/95 supports-[backdrop-filter]:bg-background/70 backdrop-blur"
+        className="sticky top-[6.25rem] z-10 gap-0 rounded-md py-0 ring-1 ring-foreground/10 bg-background/95 supports-[backdrop-filter]:bg-background/70 backdrop-blur"
       >
         <VisualEditorToolbar
           numPages={numPages}

@@ -6,6 +6,7 @@ import {
   VisibleIf,
   loc,
   DEFAULT_LOCALE,
+  isFullNameValue,
 } from "./types";
 import {
   isValidNISS,
@@ -74,6 +75,12 @@ function fieldToZod(field: PdfFormField, lang: Locale): ZodTypeAny {
       return z.string().refine((v) => empty(v) || isValidBelgianPhone(v), { message: errMsg(field, lang, "phone_be") });
     case "email":
       return z.string().refine((v) => empty(v) || isValidEmail(v), { message: errMsg(field, lang, "email") });
+    case "fullname":
+      // Valeur composite { first, last }. Le format est toujours valide ;
+      // l'obligation des deux sous-champs est gérée dans superRefine.
+      return z
+        .object({ first: z.string().optional(), last: z.string().optional() })
+        .or(z.literal("").transform(() => ({ first: "", last: "" })));
     case "select":
     case "radio": {
       const allowed = (field.options || []).map((o) => o.value);
@@ -125,11 +132,16 @@ export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LO
       if (!f.required) continue;
       if (!isFieldVisible(f.visibleIf, payload)) continue;
       const v = payload[f.id];
+      // Un champ `fullname` requis exige ses deux sous-parties (prénom + nom).
+      const fullNameIncomplete =
+        f.type === "fullname" &&
+        (!isFullNameValue(v) || !(v.first ?? "").trim() || !(v.last ?? "").trim());
       const isEmpty =
         v === null ||
         v === undefined ||
         (typeof v === "string" && v.trim() === "") ||
-        (f.type === "checkbox" && v === false);
+        (f.type === "checkbox" && v === false) ||
+        fullNameIncomplete;
       if (isEmpty) {
         ctx.addIssue({ code: "custom", path: [f.id], message: errMsg(f, lang, "required") });
       }

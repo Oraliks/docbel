@@ -10,6 +10,7 @@ import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
 import { PdfFormField, FormPayload } from "./types";
+import { assembleFullName } from "./system-values";
 
 /// Chemin d'une police TTF Unicode optionnelle. Si présente, elle est
 /// embarquée et utilisée pour réécrire les apparences des champs → support
@@ -69,8 +70,10 @@ export async function fillForm(
 
   for (const field of fields) {
     if (!field.pdfFieldName) continue;
-    const value = payload[field.id];
-    if (value === null || value === undefined) continue;
+    const raw = payload[field.id];
+    if (raw === null || raw === undefined) continue;
+    // Champ composite : deux sous-champs front → une seule chaîne dans le PDF.
+    const value = field.type === "fullname" ? assembleFullName(raw, field.nameOrder) : raw;
 
     let pdfField;
     try {

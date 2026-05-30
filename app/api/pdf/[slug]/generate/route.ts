@@ -8,6 +8,7 @@ import { buildValidator } from "@/lib/pdf-forms/validation";
 import { renderFilename } from "@/lib/pdf-forms/filename";
 import { sha256Hex, checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
 import { sendToDoccle, isDoccleConfigured } from "@/lib/pdf-forms/integrations/doccle";
+import { todayISO } from "@/lib/pdf-forms/system-values";
 import { PdfFormField, FormPayload, Locale, isLocale } from "@/lib/pdf-forms/types";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
@@ -53,8 +54,17 @@ export async function POST(
   }
 
   const fields = (form.fields as unknown as PdfFormField[]) || [];
+
+  // Dates auto (`system.today`) : la valeur est imposée par le serveur (date de
+  // génération, fuseau Bruxelles) et écrase toute valeur envoyée par le client.
+  const incoming = ((body.payload as FormPayload) || {});
+  const today = todayISO();
+  for (const f of fields) {
+    if (f.prefillFrom === "system.today") incoming[f.id] = today;
+  }
+
   const validator = buildValidator(fields, lang);
-  const result = validator.safeParse((body.payload as FormPayload) || {});
+  const result = validator.safeParse(incoming);
   if (!result.success) {
     return NextResponse.json(
       {

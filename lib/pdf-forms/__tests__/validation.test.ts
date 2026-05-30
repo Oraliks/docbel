@@ -42,6 +42,20 @@ describe("buildValidator", () => {
     expect(res.success).toBe(false);
     if (!res.success) expect(res.error.issues[0].message).toMatch(/IBAN/i);
   });
+
+  it("fullname requis exige prénom ET nom", () => {
+    const v = buildValidator([field({ id: "name", type: "fullname", required: true })], "fr");
+    expect(v.safeParse({ name: { first: "Jean", last: "Dupont" } }).success).toBe(true);
+    expect(v.safeParse({ name: { first: "Jean", last: "" } }).success).toBe(false);
+    expect(v.safeParse({ name: { first: "", last: "Dupont" } }).success).toBe(false);
+    expect(v.safeParse({ name: {} }).success).toBe(false);
+  });
+
+  it("fullname optionnel accepte une valeur vide", () => {
+    const v = buildValidator([field({ id: "name", type: "fullname" })], "fr");
+    expect(v.safeParse({ name: { first: "", last: "" } }).success).toBe(true);
+    expect(v.safeParse({}).success).toBe(true);
+  });
 });
 
 describe("anchoredRegex", () => {

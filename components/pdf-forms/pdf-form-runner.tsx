@@ -14,6 +14,7 @@ import { PdfField } from "./pdf-field";
 import { buildValidator, isFieldVisible } from "@/lib/pdf-forms/validation";
 import { sectionLabel } from "@/lib/pdf-forms/section-labels";
 import { Locale, FieldValue, FormPayload, PdfFormField } from "@/lib/pdf-forms/types";
+import { todayISO } from "@/lib/pdf-forms/system-values";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 
 const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
@@ -21,8 +22,11 @@ const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
 function defaultValues(form: PublicForm): FormPayload {
   const v: FormPayload = {};
   for (const f of form.fields) {
-    if (f.defaultValue !== undefined) v[f.id] = f.defaultValue as FieldValue;
+    // Date auto : pré-remplie côté front (le serveur la réinjecte à la génération).
+    if (f.prefillFrom === "system.today") v[f.id] = todayISO();
+    else if (f.defaultValue !== undefined) v[f.id] = f.defaultValue as FieldValue;
     else if (f.type === "checkbox") v[f.id] = false;
+    else if (f.type === "fullname") v[f.id] = { first: "", last: "" };
   }
   return v;
 }

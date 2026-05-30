@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  PdfFormField, FieldOption, Locale, Localized, SEMANTIC_FIELD_TYPES, PrefillSource, ConditionOp,
+  PdfFormField, FieldOption, Locale, Localized, SEMANTIC_FIELD_TYPES, PrefillSource, ConditionOp, NameOrder,
 } from "@/lib/pdf-forms/types";
 
 interface PresetOpt {
@@ -22,6 +22,7 @@ interface PresetOpt {
 }
 
 const PREFILL_SOURCES: PrefillSource[] = [
+  "system.today",
   "itsme.firstName", "itsme.lastName", "itsme.niss", "itsme.birthDate", "itsme.gender",
   "itsme.street", "itsme.postalCode", "itsme.city",
   "profile.firstName", "profile.lastName", "profile.niss", "profile.email", "profile.phone",
@@ -105,6 +106,25 @@ export function FieldEditor({ field, locales, presets, allFields, onChange, onRe
               options={field.options ?? []}
               onChange={(options) => patch({ options })}
             />
+          )}
+
+          {/* Ordre d'affichage pour le champ nom complet (fullname) */}
+          {field.type === "fullname" && (
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">
+                Ordre des sous-champs (2 inputs front → 1 champ PDF)
+              </Label>
+              <Select
+                value={field.nameOrder ?? "first-last"}
+                onValueChange={(v) => patch({ nameOrder: v as NameOrder })}
+              >
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="first-last">Prénom puis Nom</SelectItem>
+                  <SelectItem value="last-first">Nom puis Prénom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
           <Separator />

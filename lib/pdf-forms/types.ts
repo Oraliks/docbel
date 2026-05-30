@@ -62,6 +62,7 @@ export type FieldType =
   | "checkbox"
   | "select"
   | "radio"
+  | "fullname"
   | "niss"
   | "iban"
   | "postal_be"
@@ -72,12 +73,17 @@ export type FieldType =
 
 export const SEMANTIC_FIELD_TYPES: FieldType[] = [
   "text", "textarea", "number", "date", "checkbox", "select", "radio",
-  "niss", "iban", "postal_be", "tva_be", "bce", "phone_be", "email",
+  "fullname", "niss", "iban", "postal_be", "tva_be", "bce", "phone_be", "email",
 ];
+
+/// Ordre d'assemblage d'un champ `fullname` (deux sous-champs côté front,
+/// un seul champ texte côté PDF).
+export type NameOrder = "first-last" | "last-first";
 
 /// Source de pré-remplissage. `itsme.*` = claims OIDC itsme ;
 /// `profile.*` = profil utilisateur connecté.
 export type PrefillSource =
+  | "system.today"
   | "itsme.firstName"
   | "itsme.lastName"
   | "itsme.niss"
@@ -138,6 +144,9 @@ export interface PdfFormField {
   defaultValue?: string | number | boolean;
   visibleIf?: VisibleIf;
   prefillFrom?: PrefillSource;
+  /// Pour les champs `fullname` : ordre d'assemblage des deux sous-champs.
+  /// Défaut "first-last" (Prénom Nom).
+  nameOrder?: NameOrder;
   /// Regroupement visuel ("identite", "adresse", "employeur"…).
   section?: string;
   order?: number;
@@ -149,8 +158,20 @@ export interface PdfFormField {
   readOnly?: boolean;
 }
 
-export type FieldValue = string | number | boolean | null;
+/// Valeur d'un champ `fullname` : deux sous-parties éditées côté front,
+/// fusionnées en une seule chaîne au remplissage du PDF.
+export interface FullNameValue {
+  first?: string;
+  last?: string;
+}
+
+export type FieldValue = string | number | boolean | null | FullNameValue;
 export type FormPayload = Record<string, FieldValue>;
+
+/// Garde de type pour distinguer une valeur composite `fullname`.
+export function isFullNameValue(v: unknown): v is FullNameValue {
+  return typeof v === "object" && v !== null && !Array.isArray(v) && ("first" in v || "last" in v);
+}
 
 export interface ParsedPdf {
   fields: AcroFieldRaw[];

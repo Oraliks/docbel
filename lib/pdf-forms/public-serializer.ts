@@ -21,6 +21,7 @@ export interface PublicField {
   defaultValue?: PdfFormField["defaultValue"];
   visibleIf?: PdfFormField["visibleIf"];
   prefillFrom?: PdfFormField["prefillFrom"];
+  nameOrder?: PdfFormField["nameOrder"];
   section?: string;
   order?: number;
 }
@@ -43,6 +44,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     defaultValue: f.defaultValue,
     visibleIf: f.visibleIf,
     prefillFrom: f.prefillFrom,
+    nameOrder: f.nameOrder,
     section: f.section,
     order: f.order,
   };

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import { NissInput } from "@/components/ui/niss-input";
-import { loc, Locale, FieldValue } from "@/lib/pdf-forms/types";
+import { loc, Locale, FieldValue, FullNameValue, isFullNameValue } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 
 // Type HTML + inputMode adaptés au type sémantique (clavier mobile pertinent).
@@ -109,6 +109,49 @@ export function PdfField({ field, value, error, locale, onChange }: Props) {
     );
   }
 
+  // Nom complet : deux inputs côté front (prénom + nom), une seule valeur PDF.
+  if (field.type === "fullname") {
+    const v: FullNameValue = isFullNameValue(value) ? value : {};
+    const lastFirst = field.nameOrder === "last-first";
+    const firstInput = (
+      <div className="flex flex-1 flex-col gap-1">
+        <span className="text-xs text-muted-foreground">Prénom</span>
+        <Input
+          value={v.first ?? ""}
+          placeholder={placeholder}
+          aria-invalid={invalid}
+          aria-label={`${label} — prénom`}
+          onChange={(e) => onChange({ ...v, first: e.target.value })}
+        />
+      </div>
+    );
+    const lastInput = (
+      <div className="flex flex-1 flex-col gap-1">
+        <span className="text-xs text-muted-foreground">Nom</span>
+        <Input
+          value={v.last ?? ""}
+          aria-invalid={invalid}
+          aria-label={`${label} — nom`}
+          onChange={(e) => onChange({ ...v, last: e.target.value })}
+        />
+      </div>
+    );
+    return (
+      <Field data-invalid={invalid}>
+        <FieldLabel htmlFor={field.id}>
+          {label}
+          {field.required && <span className="text-destructive"> *</span>}
+        </FieldLabel>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {lastFirst ? lastInput : firstInput}
+          {lastFirst ? firstInput : lastInput}
+        </div>
+        {help && <FieldDescription>{help}</FieldDescription>}
+        <FieldError>{error}</FieldError>
+      </Field>
+    );
+  }
+
   // NISS : masque automatique AAMMJJ-SSS.CC
   if (field.type === "niss") {
     return (
@@ -131,6 +174,8 @@ export function PdfField({ field, value, error, locale, onChange }: Props) {
 
   // Champs texte (text, iban, date, number, email, phone…)
   const hint = INPUT_HINTS[field.type] || {};
+  // Date auto (date de génération) : pré-remplie et non éditable.
+  const autoToday = field.prefillFrom === "system.today";
   return (
     <Field data-invalid={invalid}>
       <FieldLabel htmlFor={field.id}>
@@ -147,9 +192,14 @@ export function PdfField({ field, value, error, locale, onChange }: Props) {
         min={field.min}
         max={field.max}
         aria-invalid={invalid}
+        disabled={autoToday}
+        readOnly={autoToday}
         onChange={(e) => onChange(e.target.value)}
       />
       {help && <FieldDescription>{help}</FieldDescription>}
+      {autoToday && !help && (
+        <FieldDescription>Date de génération du document (automatique).</FieldDescription>
+      )}
       <FieldError>{error}</FieldError>
     </Field>
   );

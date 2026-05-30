@@ -67,7 +67,39 @@ const FALLBACK: Record<string, Record<Locale, string>> = {
   format: { fr: "Ce que vous avez saisi n'a pas le bon format.", nl: "Wat u hebt ingevuld heeft niet het juiste formaat.", de: "Ihre Eingabe hat nicht das richtige Format." },
   select: { fr: "Veuillez choisir une valeur dans la liste.", nl: "Kies een waarde uit de lijst.", de: "Bitte wählen Sie einen Wert aus der Liste." },
   required: { fr: "Ce champ est obligatoire, merci de le remplir.", nl: "Dit veld is verplicht, gelieve het in te vullen.", de: "Dieses Feld ist erforderlich, bitte füllen Sie es aus." },
+  number: { fr: "Veuillez saisir un nombre (chiffres uniquement).", nl: "Vul een getal in (alleen cijfers).", de: "Bitte geben Sie eine Zahl ein (nur Ziffern)." },
 };
+
+// Messages dynamiques pour les contraintes de longueur (texte) et de plage
+// (nombre). On insère la valeur attendue avec {n} et la valeur reçue avec {v}.
+const LENGTH_MESSAGES = {
+  tooShort: {
+    fr: "C'est un peu court : il faut au moins {n} caractères (vous en avez écrit {v}).",
+    nl: "Dit is een beetje kort: minstens {n} tekens nodig (u hebt er {v} ingevuld).",
+    de: "Das ist etwas zu kurz: mindestens {n} Zeichen nötig (Sie haben {v} eingegeben).",
+  },
+  tooLong: {
+    fr: "C'est un peu long : maximum {n} caractères (vous en avez écrit {v}).",
+    nl: "Dit is een beetje lang: maximaal {n} tekens (u hebt er {v} ingevuld).",
+    de: "Das ist etwas zu lang: maximal {n} Zeichen (Sie haben {v} eingegeben).",
+  },
+  tooLow: {
+    fr: "Le nombre doit être au moins égal à {n}.",
+    nl: "Het getal moet minstens {n} zijn.",
+    de: "Die Zahl muss mindestens {n} betragen.",
+  },
+  tooHigh: {
+    fr: "Le nombre ne peut pas dépasser {n}.",
+    nl: "Het getal mag niet hoger zijn dan {n}.",
+    de: "Die Zahl darf nicht höher als {n} sein.",
+  },
+} as const;
+
+function fmt(template: string, n: string | number, v?: string | number): string {
+  let out = template.replace("{n}", String(n));
+  if (v !== undefined) out = out.replace("{v}", String(v));
+  return out;
+}
 
 // Messages NISS dynamiques : on distingue « pas le bon nombre de chiffres »
 // d'une « erreur de frappe » (checksum), car l'action corrective diffère.
@@ -115,10 +147,17 @@ function fieldToZod(field: PdfFormField, lang: Locale): ZodTypeAny {
     case "checkbox":
       return z.coerce.boolean();
     case "number": {
-      let n = z.coerce.number();
-      if (typeof field.min === "number") n = n.min(field.min);
-      if (typeof field.max === "number") n = n.max(field.max);
-      return n.or(z.literal("").transform(() => null));
+      const customMsg = loc(field.errorMsg, lang);
+      const tooLowMsg = customMsg || fmt(LENGTH_MESSAGES.tooLow[lang], field.min ?? 0);
+      const tooHighMsg = customMsg || fmt(LENGTH_MESSAGES.tooHigh[lang], field.max ?? 0);
+      let n = z.coerce.number({ error: customMsg || FALLBACK.number[lang] });
+      if (typeof field.min === "number") n = n.min(field.min, { error: tooLowMsg });
+      if (typeof field.max === "number") n = n.max(field.max, { error: tooHighMsg });
+      // Important : `z.coerce.number("")` produit `0`, ce qui camouflerait un
+      // champ requis vide. On normalise donc la chaîne vide en `null` AVANT la
+      // coercition pour que le check "required" du superRefine puisse signaler
+      // l'erreur correctement.
+      return z.preprocess((v) => (v === "" ? null : v), n.nullable());
     }
     case "date":
       return z.string().refine((v) => empty(v) || isValidISODate(v), { message: errMsg(field, lang, "date") });
@@ -155,9 +194,22 @@ function fieldToZod(field: PdfFormField, lang: Locale): ZodTypeAny {
     case "text":
     case "textarea":
     default: {
+      const customMsg = loc(field.errorMsg, lang);
       let s = z.string();
-      if (field.maxLength) s = s.max(field.maxLength);
-      if (field.minLength) s = s.min(field.minLength);
+      if (field.minLength) {
+        const n = field.minLength;
+        s = s.refine((v) => empty(v) || v.length >= n, {
+          error: (issue) =>
+            customMsg || fmt(LENGTH_MESSAGES.tooShort[lang], n, String(issue.input ?? "").length),
+        });
+      }
+      if (field.maxLength) {
+        const n = field.maxLength;
+        s = s.refine((v) => v.length <= n, {
+          error: (issue) =>
+            customMsg || fmt(LENGTH_MESSAGES.tooLong[lang], n, String(issue.input ?? "").length),
+        });
+      }
       if (field.regex) {
         const rx = anchoredRegex(field.regex);
         if (rx) s = s.refine((v) => empty(v) || rx.test(v), { message: errMsg(field, lang, "format") });

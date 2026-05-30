@@ -83,6 +83,70 @@ describe("buildValidator", () => {
     expect(v.safeParse({ name: { first: "", last: "" } }).success).toBe(true);
     expect(v.safeParse({}).success).toBe(true);
   });
+
+  it.each([
+    ["text", "", false],
+    ["text", "x", true],
+    ["textarea", "", false],
+    ["textarea", "hello", true],
+    ["niss", "", false],
+    ["iban", "", false],
+    ["postal_be", "", false],
+    ["tva_be", "", false],
+    ["bce", "", false],
+    ["phone_be", "", false],
+    ["email", "", false],
+    ["date", "", false],
+    ["number", "", false],
+    ["number", "0", true],
+    ["select", "", false],
+    ["radio", "", false],
+  ] as const)("required '%s' avec input %p → success=%s", (type, input, expected) => {
+    const f = field({
+      id: "x",
+      type: type as never,
+      required: true,
+      options: type === "select" || type === "radio" ? [{ value: "x", label: { fr: "X" } }] : undefined,
+    });
+    const v = buildValidator([f], "fr");
+    expect(v.safeParse({ x: input }).success).toBe(expected);
+  });
+
+  it("required: checkbox non cochée échoue, cochée passe", () => {
+    const v = buildValidator([field({ id: "c", type: "checkbox", required: true })], "fr");
+    expect(v.safeParse({ c: false }).success).toBe(false);
+    expect(v.safeParse({ c: true }).success).toBe(true);
+  });
+
+  it("texte trop court : message pédagogique avec les deux nombres", () => {
+    const v = buildValidator([field({ id: "t", type: "text", minLength: 5 })], "fr");
+    const res = v.safeParse({ t: "abc" });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0].message).toMatch(/au moins 5/);
+      expect(res.error.issues[0].message).toMatch(/écrit 3/);
+    }
+  });
+
+  it("texte trop long : message pédagogique avec les deux nombres", () => {
+    const v = buildValidator([field({ id: "t", type: "text", maxLength: 3 })], "fr");
+    const res = v.safeParse({ t: "abcdef" });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0].message).toMatch(/maximum 3/);
+      expect(res.error.issues[0].message).toMatch(/écrit 6/);
+    }
+  });
+
+  it("nombre hors plage : messages clairs en français", () => {
+    const v = buildValidator([field({ id: "n", type: "number", min: 18, max: 65 })], "fr");
+    const tooLow = v.safeParse({ n: 10 });
+    expect(tooLow.success).toBe(false);
+    if (!tooLow.success) expect(tooLow.error.issues[0].message).toMatch(/au moins.*18/);
+    const tooHigh = v.safeParse({ n: 99 });
+    expect(tooHigh.success).toBe(false);
+    if (!tooHigh.success) expect(tooHigh.error.issues[0].message).toMatch(/pas dépasser 65/);
+  });
 });
 
 describe("anchoredRegex", () => {

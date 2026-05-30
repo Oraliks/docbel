@@ -76,6 +76,27 @@ export const SEMANTIC_FIELD_TYPES: FieldType[] = [
   "fullname", "niss", "iban", "postal_be", "tva_be", "bce", "phone_be", "email",
 ];
 
+/// Libellés lisibles (FR) pour le sélecteur de type côté admin. Le public ne
+/// voit jamais ces libellés (il voit le `label` du champ) — c'est uniquement
+/// pour que l'admin reconnaisse chaque type sans connaître l'anglais.
+export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
+  text: "Texte (court)",
+  textarea: "Texte (long, multiligne)",
+  number: "Nombre",
+  date: "Date",
+  checkbox: "Case à cocher",
+  select: "Liste déroulante",
+  radio: "Boutons radio",
+  fullname: "Nom complet (Prénom + Nom)",
+  niss: "NISS (registre national)",
+  iban: "IBAN (compte bancaire)",
+  postal_be: "Code postal (Belgique)",
+  tva_be: "Numéro de TVA",
+  bce: "Numéro d'entreprise (BCE)",
+  phone_be: "Téléphone (Belgique)",
+  email: "Adresse e-mail",
+};
+
 /// Ordre d'assemblage d'un champ `fullname` (deux sous-champs côté front,
 /// un seul champ texte côté PDF).
 export type NameOrder = "first-last" | "last-first";

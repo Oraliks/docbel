@@ -14,22 +14,41 @@ import { PdfField } from "./pdf-field";
 import { buildValidator, isFieldVisible } from "@/lib/pdf-forms/validation";
 import { sectionLabel } from "@/lib/pdf-forms/section-labels";
 import { Locale, FieldValue, FormPayload, PdfFormField } from "@/lib/pdf-forms/types";
+import { todayISO } from "@/lib/pdf-forms/system-values";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 
 const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
 
-function defaultValues(form: PublicForm): FormPayload {
+function defaultValues(form: PublicForm, bundlePrefill?: Record<string, string>): FormPayload {
   const v: FormPayload = {};
   for (const f of form.fields) {
-    if (f.defaultValue !== undefined) v[f.id] = f.defaultValue as FieldValue;
+    // Priorité : prefill bundle (valeur déjà saisie ailleurs dans le dossier)
+    // > system.today > defaultValue > defaults par type. Le prefill bundle
+    // l'emporte parce qu'il représente une saisie utilisateur explicite déjà
+    // faite ; un éventuel `system.today` est de toute façon ré-imposé par le
+    // serveur à la génération.
+    if (bundlePrefill && bundlePrefill[f.id] !== undefined && bundlePrefill[f.id] !== "") {
+      v[f.id] = bundlePrefill[f.id];
+    } else if (f.prefillFrom === "system.today") v[f.id] = todayISO();
+    else if (f.defaultValue !== undefined) v[f.id] = f.defaultValue as FieldValue;
     else if (f.type === "checkbox") v[f.id] = false;
+    else if (f.type === "fullname") v[f.id] = { first: "", last: "" };
   }
   return v;
 }
 
-export function PdfFormRunner({ form }: { form: PublicForm }) {
+interface PdfFormRunnerProps {
+  form: PublicForm;
+  /// Contexte bundle (optionnel) : si le PDF est ouvert dans un dossier,
+  /// les valeurs déjà saisies dans les PDFs précédents sont injectées ici
+  /// (clé = `f.id` du PDF courant), et l'envoi est associé au `bundleRunId`.
+  bundlePrefill?: Record<string, string>;
+  bundleRunId?: string;
+}
+
+export function PdfFormRunner({ form, bundlePrefill, bundleRunId }: PdfFormRunnerProps) {
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
-  const [values, setValues] = useState<FormPayload>(() => defaultValues(form));
+  const [values, setValues] = useState<FormPayload>(() => defaultValues(form, bundlePrefill));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
   const [delivery, setDelivery] = useState<"download" | "doccle">(
@@ -142,6 +161,10 @@ export function PdfFormRunner({ form }: { form: PublicForm }) {
           delivery,
           consent: true,
           doccleRecipient: delivery === "doccle" ? { reference: doccleRef.trim() } : undefined,
+          // Si le PDF est ouvert dans le contexte d'un dossier (bundle), on
+          // associe la génération à ce run pour que le serveur stocke le
+          // payload dans BundleRun.payloads et propage aux PDFs suivants.
+          bundleRunId,
         }),
       });
 

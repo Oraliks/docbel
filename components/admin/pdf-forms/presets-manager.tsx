@@ -17,7 +17,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SEMANTIC_FIELD_TYPES } from "@/lib/pdf-forms/types";
+import { SEMANTIC_FIELD_TYPES, FIELD_TYPE_LABELS } from "@/lib/pdf-forms/types";
 
 interface Preset {
   id: string;
@@ -153,7 +153,7 @@ function NewPresetDialog({
               <Select value={fieldType} onValueChange={(v) => setFieldType(v ?? "text")}>
                 <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {SEMANTIC_FIELD_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {SEMANTIC_FIELD_TYPES.map((t) => <SelectItem key={t} value={t}>{FIELD_TYPE_LABELS[t]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

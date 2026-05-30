@@ -10,10 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  PdfFormField, FieldOption, Locale, Localized, SEMANTIC_FIELD_TYPES, PrefillSource, ConditionOp,
+  PdfFormField, FieldOption, Locale, Localized, SEMANTIC_FIELD_TYPES, FIELD_TYPE_LABELS, PrefillSource, ConditionOp, NameOrder,
 } from "@/lib/pdf-forms/types";
 
 interface PresetOpt {
@@ -21,14 +21,67 @@ interface PresetOpt {
   label: string;
 }
 
-const PREFILL_SOURCES: PrefillSource[] = [
-  "itsme.firstName", "itsme.lastName", "itsme.niss", "itsme.birthDate", "itsme.gender",
-  "itsme.street", "itsme.postalCode", "itsme.city",
-  "profile.firstName", "profile.lastName", "profile.niss", "profile.email", "profile.phone",
-  "profile.iban", "profile.street", "profile.postalCode", "profile.city",
+/// Sources de pré-remplissage groupées et libellées, pour qu'on identifie
+/// chaque source au premier coup d'œil dans le select admin.
+const PREFILL_GROUPS: Array<{
+  label: string;
+  sources: Array<{ value: PrefillSource; label: string; hint?: string }>;
+}> = [
+  {
+    label: "Automatique (généré par le système)",
+    sources: [
+      {
+        value: "system.today",
+        label: "Date du jour (date de génération)",
+        hint: "Le champ sera pré-rempli automatiquement et en lecture seule côté utilisateur.",
+      },
+    ],
+  },
+  {
+    label: "Identité vérifiée (itsme)",
+    sources: [
+      { value: "itsme.firstName", label: "Prénom (itsme)" },
+      { value: "itsme.lastName", label: "Nom (itsme)" },
+      { value: "itsme.niss", label: "NISS (itsme)" },
+      { value: "itsme.birthDate", label: "Date de naissance (itsme)" },
+      { value: "itsme.gender", label: "Sexe (itsme)" },
+      { value: "itsme.street", label: "Rue (itsme)" },
+      { value: "itsme.postalCode", label: "Code postal (itsme)" },
+      { value: "itsme.city", label: "Ville (itsme)" },
+    ],
+  },
+  {
+    label: "Profil utilisateur",
+    sources: [
+      { value: "profile.firstName", label: "Prénom (profil)" },
+      { value: "profile.lastName", label: "Nom (profil)" },
+      { value: "profile.niss", label: "NISS (profil)" },
+      { value: "profile.email", label: "E-mail (profil)" },
+      { value: "profile.phone", label: "Téléphone (profil)" },
+      { value: "profile.iban", label: "IBAN (profil)" },
+      { value: "profile.street", label: "Rue (profil)" },
+      { value: "profile.postalCode", label: "Code postal (profil)" },
+      { value: "profile.city", label: "Ville (profil)" },
+    ],
+  },
 ];
 
+function findPrefillSource(value: PrefillSource | undefined) {
+  if (!value) return undefined;
+  for (const g of PREFILL_GROUPS) {
+    const f = g.sources.find((s) => s.value === value);
+    if (f) return f;
+  }
+  return undefined;
+}
+
 const OPS: ConditionOp[] = ["equals", "notEquals", "in", "notIn"];
+const OP_LABELS: Record<ConditionOp, string> = {
+  equals: "est égal à",
+  notEquals: "est différent de",
+  in: "fait partie de",
+  notIn: "ne fait pas partie de",
+};
 
 interface Props {
   field: PdfFormField;
@@ -52,7 +105,7 @@ export function FieldEditor({ field, locales, presets, allFields, onChange, onRe
         <div className="flex flex-1 items-center gap-2 text-left">
           <GripVerticalIcon className="size-4 shrink-0 text-muted-foreground" />
           <span className="font-medium">{field.label.fr || field.id}</span>
-          <Badge variant="outline" className="text-[10px]">{field.type}</Badge>
+          <Badge variant="outline" className="text-[10px]">{FIELD_TYPE_LABELS[field.type]}</Badge>
           {field.required && <Badge variant="secondary" className="text-[10px]">requis</Badge>}
           <code className="ml-auto truncate text-[11px] text-muted-foreground">{field.pdfFieldName}</code>
         </div>
@@ -79,7 +132,7 @@ export function FieldEditor({ field, locales, presets, allFields, onChange, onRe
               <Select value={field.type} onValueChange={(v) => patch({ type: v as PdfFormField["type"] })}>
                 <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {SEMANTIC_FIELD_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {SEMANTIC_FIELD_TYPES.map((t) => <SelectItem key={t} value={t}>{FIELD_TYPE_LABELS[t]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -87,10 +140,15 @@ export function FieldEditor({ field, locales, presets, allFields, onChange, onRe
               <Label className="text-xs text-muted-foreground">Section</Label>
               <Input value={field.section ?? ""} placeholder="identite, adresse…" onChange={(e) => patch({ section: e.target.value || undefined })} />
             </div>
-            <label className="flex items-center gap-2 pb-2 text-sm">
-              <Switch checked={field.required} onCheckedChange={(c) => patch({ required: c })} />
-              Champ obligatoire
-            </label>
+            <div className="flex flex-col gap-1 pb-1">
+              <label className="flex items-center gap-2 text-sm">
+                <Switch checked={field.required} onCheckedChange={(c) => patch({ required: c })} />
+                Champ obligatoire
+              </label>
+              <p className="text-[11px] text-muted-foreground">
+                Si activé, le formulaire ne pourra pas être envoyé tant que ce champ est vide.
+              </p>
+            </div>
           </div>
 
           {/* Aide (FR) */}
@@ -107,9 +165,28 @@ export function FieldEditor({ field, locales, presets, allFields, onChange, onRe
             />
           )}
 
+          {/* Ordre d'affichage pour le champ nom complet (fullname) */}
+          {field.type === "fullname" && (
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">
+                Ordre des sous-champs (2 inputs front → 1 champ PDF)
+              </Label>
+              <Select
+                value={field.nameOrder ?? "first-last"}
+                onValueChange={(v) => patch({ nameOrder: v as NameOrder })}
+              >
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="first-last">Prénom puis Nom</SelectItem>
+                  <SelectItem value="last-first">Nom puis Prénom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <Separator />
 
-          {/* Validation */}
+          {/* Validation : preset + regex + contraintes de longueur / plage */}
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="flex flex-col gap-1">
               <Label className="text-xs text-muted-foreground">Preset</Label>
@@ -125,26 +202,72 @@ export function FieldEditor({ field, locales, presets, allFields, onChange, onRe
               <Label className="text-xs text-muted-foreground">Regex (ancrée)</Label>
               <Input value={field.regex ?? ""} placeholder="\d{4}" onChange={(e) => patch({ regex: e.target.value || undefined })} />
             </div>
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Longueur max</Label>
-              <Input
-                type="number"
-                value={field.maxLength ?? ""}
-                onChange={(e) => patch({ maxLength: e.target.value ? Number(e.target.value) : undefined })}
-              />
-            </div>
+            {field.type === "number" ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <Label className="text-xs text-muted-foreground">Min</Label>
+                  <Input
+                    type="number"
+                    value={field.min ?? ""}
+                    onChange={(e) => patch({ min: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label className="text-xs text-muted-foreground">Max</Label>
+                  <Input
+                    type="number"
+                    value={field.max ?? ""}
+                    onChange={(e) => patch({ max: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <Label className="text-xs text-muted-foreground">Longueur min</Label>
+                  <Input
+                    type="number"
+                    value={field.minLength ?? ""}
+                    onChange={(e) => patch({ minLength: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label className="text-xs text-muted-foreground">Longueur max</Label>
+                  <Input
+                    type="number"
+                    value={field.maxLength ?? ""}
+                    onChange={(e) => patch({ maxLength: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Prefill */}
+          {/* Prefill — groupé + libellé lisible + hint contextuel */}
           <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Pré-remplissage (itsme / profil)</Label>
-            <Select value={field.prefillFrom ?? ""} onValueChange={(v) => patch({ prefillFrom: (v || undefined) as PrefillSource | undefined })}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="Aucun" /></SelectTrigger>
+            <Label className="text-xs text-muted-foreground">Pré-remplissage automatique</Label>
+            <Select
+              value={field.prefillFrom ?? ""}
+              onValueChange={(v) => patch({ prefillFrom: (v || undefined) as PrefillSource | undefined })}
+            >
+              <SelectTrigger className="w-full"><SelectValue placeholder="Aucun (l'utilisateur saisit)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Aucun</SelectItem>
-                {PREFILL_SOURCES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                <SelectItem value="">Aucun (l&apos;utilisateur saisit)</SelectItem>
+                {PREFILL_GROUPS.map((group) => (
+                  <SelectGroup key={group.label}>
+                    <SelectLabel>{group.label}</SelectLabel>
+                    {group.sources.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
               </SelectContent>
             </Select>
+            {findPrefillSource(field.prefillFrom)?.hint && (
+              <p className="text-[11px] text-muted-foreground">
+                {findPrefillSource(field.prefillFrom)?.hint}
+              </p>
+            )}
           </div>
 
           {/* Visibilité conditionnelle */}
@@ -230,7 +353,7 @@ function VisibleIfEditor({
           <Select value={cond.op} onValueChange={(v) => onChange({ ...field, visibleIf: { ...cond, op: v as ConditionOp } })}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {OPS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+              {OPS.map((o) => <SelectItem key={o} value={o}>{OP_LABELS[o]}</SelectItem>)}
             </SelectContent>
           </Select>
           <Input

@@ -74,7 +74,7 @@ export function PdfFormEditor({ formId }: { formId: string }) {
           </Badge>
           <span className="text-xs text-muted-foreground">v{form.version}</span>
           {form.status === "published" && (
-            <a href={`/pdf/${form.slug}`} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground">
+            <a href={`/document/${form.slug}`} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground">
               <ExternalLinkIcon className="size-4" />
             </a>
           )}

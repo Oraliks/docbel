@@ -1,4 +1,5 @@
 import { PdfFormField, FormPayload, PrefillSource } from "./types";
+import { todayISO } from "./system-values";
 
 /// Données disponibles pour le pré-remplissage. Toutes optionnelles.
 export interface PrefillData {
@@ -18,6 +19,9 @@ export interface PrefillData {
 /// Mappe une source de prefill vers la donnée correspondante.
 function resolve(source: PrefillSource, data: PrefillData): string | undefined {
   switch (source) {
+    case "system.today":
+      // Indépendant des données utilisateur : date de génération (Bruxelles).
+      return todayISO();
     case "itsme.firstName":
     case "profile.firstName":
       return data.firstName;

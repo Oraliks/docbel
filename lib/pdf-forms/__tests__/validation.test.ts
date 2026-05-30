@@ -13,6 +13,33 @@ describe("buildValidator", () => {
     expect(v.safeParse({ niss: "00000000000" }).success).toBe(false);
   });
 
+  it("explique un NISS trop court (longueur) avec le nombre saisi", () => {
+    const v = buildValidator([field({ id: "niss", type: "niss", required: true })], "fr");
+    const res = v.safeParse({ niss: "850730" });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0].message).toMatch(/11 chiffres/);
+      expect(res.error.issues[0].message).toMatch(/saisi 6/);
+    }
+  });
+
+  it("explique un NISS à 11 chiffres mais mauvais checksum (erreur de frappe)", () => {
+    const v = buildValidator([field({ id: "niss", type: "niss", required: true })], "fr");
+    const res = v.safeParse({ niss: "85073003329" }); // 1 chiffre faux
+    expect(res.success).toBe(false);
+    if (!res.success) expect(res.error.issues[0].message).toMatch(/erreur de frappe/i);
+  });
+
+  it("respecte un message NISS personnalisé par l'admin", () => {
+    const v = buildValidator(
+      [field({ id: "niss", type: "niss", required: true, errorMsg: { fr: "Mon message à moi" } })],
+      "fr"
+    );
+    const res = v.safeParse({ niss: "850730" });
+    expect(res.success).toBe(false);
+    if (!res.success) expect(res.error.issues[0].message).toBe("Mon message à moi");
+  });
+
   it("exige les champs requis visibles", () => {
     const v = buildValidator([field({ id: "nom", type: "text", required: true })], "fr");
     expect(v.safeParse({ nom: "" }).success).toBe(false);
@@ -41,6 +68,84 @@ describe("buildValidator", () => {
     const res = v.safeParse({ iban: "BE00" });
     expect(res.success).toBe(false);
     if (!res.success) expect(res.error.issues[0].message).toMatch(/IBAN/i);
+  });
+
+  it("fullname requis exige prénom ET nom", () => {
+    const v = buildValidator([field({ id: "name", type: "fullname", required: true })], "fr");
+    expect(v.safeParse({ name: { first: "Jean", last: "Dupont" } }).success).toBe(true);
+    expect(v.safeParse({ name: { first: "Jean", last: "" } }).success).toBe(false);
+    expect(v.safeParse({ name: { first: "", last: "Dupont" } }).success).toBe(false);
+    expect(v.safeParse({ name: {} }).success).toBe(false);
+  });
+
+  it("fullname optionnel accepte une valeur vide", () => {
+    const v = buildValidator([field({ id: "name", type: "fullname" })], "fr");
+    expect(v.safeParse({ name: { first: "", last: "" } }).success).toBe(true);
+    expect(v.safeParse({}).success).toBe(true);
+  });
+
+  it.each([
+    ["text", "", false],
+    ["text", "x", true],
+    ["textarea", "", false],
+    ["textarea", "hello", true],
+    ["niss", "", false],
+    ["iban", "", false],
+    ["postal_be", "", false],
+    ["tva_be", "", false],
+    ["bce", "", false],
+    ["phone_be", "", false],
+    ["email", "", false],
+    ["date", "", false],
+    ["number", "", false],
+    ["number", "0", true],
+    ["select", "", false],
+    ["radio", "", false],
+  ] as const)("required '%s' avec input %p → success=%s", (type, input, expected) => {
+    const f = field({
+      id: "x",
+      type: type as never,
+      required: true,
+      options: type === "select" || type === "radio" ? [{ value: "x", label: { fr: "X" } }] : undefined,
+    });
+    const v = buildValidator([f], "fr");
+    expect(v.safeParse({ x: input }).success).toBe(expected);
+  });
+
+  it("required: checkbox non cochée échoue, cochée passe", () => {
+    const v = buildValidator([field({ id: "c", type: "checkbox", required: true })], "fr");
+    expect(v.safeParse({ c: false }).success).toBe(false);
+    expect(v.safeParse({ c: true }).success).toBe(true);
+  });
+
+  it("texte trop court : message pédagogique avec les deux nombres", () => {
+    const v = buildValidator([field({ id: "t", type: "text", minLength: 5 })], "fr");
+    const res = v.safeParse({ t: "abc" });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0].message).toMatch(/au moins 5/);
+      expect(res.error.issues[0].message).toMatch(/écrit 3/);
+    }
+  });
+
+  it("texte trop long : message pédagogique avec les deux nombres", () => {
+    const v = buildValidator([field({ id: "t", type: "text", maxLength: 3 })], "fr");
+    const res = v.safeParse({ t: "abcdef" });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.issues[0].message).toMatch(/maximum 3/);
+      expect(res.error.issues[0].message).toMatch(/écrit 6/);
+    }
+  });
+
+  it("nombre hors plage : messages clairs en français", () => {
+    const v = buildValidator([field({ id: "n", type: "number", min: 18, max: 65 })], "fr");
+    const tooLow = v.safeParse({ n: 10 });
+    expect(tooLow.success).toBe(false);
+    if (!tooLow.success) expect(tooLow.error.issues[0].message).toMatch(/au moins.*18/);
+    const tooHigh = v.safeParse({ n: 99 });
+    expect(tooHigh.success).toBe(false);
+    if (!tooHigh.success) expect(tooHigh.error.issues[0].message).toMatch(/pas dépasser 65/);
   });
 });
 

@@ -38,7 +38,9 @@ import { ResumeCodeBanner } from "./onboarding/resume-code-banner";
 
 interface BundleItem {
   id: string;
-  templateId: string;
+  /// EXACTEMENT UN des deux est défini (mirror de la contrainte DB).
+  templateId: string | null;
+  pdfFormId: string | null;
   order: number;
   required: boolean;
   condition: BundleCondition;
@@ -49,7 +51,34 @@ interface BundleItem {
     toolDescription: string;
     organisme: { shortName: string | null; name: string; color: string } | null;
     requiresSignature: boolean;
-  };
+  } | null;
+  pdfForm: {
+    id: string;
+    slug: string;
+    title: string;
+    description: string | null;
+    issuer: string | null;
+  } | null;
+}
+
+/// Helpers pour ne pas écrire `item.template?.foo ?? item.pdfForm?.bar` partout.
+function itemSourceId(item: BundleItem): string {
+  return (item.templateId ?? item.pdfFormId)!;
+}
+function itemTitle(item: BundleItem): string {
+  return item.template?.toolName ?? item.pdfForm?.title ?? "Document";
+}
+function itemDescription(item: BundleItem): string | null {
+  return item.template?.toolDescription ?? item.pdfForm?.description ?? null;
+}
+function itemOrganismeLabel(item: BundleItem): { label: string; color: string } | null {
+  if (item.template?.organisme)
+    return {
+      label: item.template.organisme.shortName ?? item.template.organisme.name,
+      color: item.template.organisme.color,
+    };
+  if (item.pdfForm?.issuer) return { label: item.pdfForm.issuer, color: "#666" };
+  return null;
 }
 
 interface Bundle {
@@ -152,7 +181,13 @@ export function BundleRunner({
   async function handleStart(item: BundleItem) {
     const id = await ensureRun();
     if (!id) return;
-    const url = `/outils/${item.template.toolSlug}?bundleRun=${encodeURIComponent(id)}&bundleSlug=${encodeURIComponent(bundle.slug)}`;
+    // Route différente selon le type de source :
+    // - Ancien DocumentTemplate → /outils/{toolSlug} (page legacy)
+    // - Nouveau PdfForm        → /document/{slug}   (page publique unifiée)
+    const base = item.template
+      ? `/outils/${item.template.toolSlug}`
+      : `/document/${item.pdfForm!.slug}`;
+    const url = `${base}?bundleRun=${encodeURIComponent(id)}&bundleSlug=${encodeURIComponent(bundle.slug)}`;
     router.push(url);
   }
 
@@ -195,9 +230,11 @@ export function BundleRunner({
     }
   }
 
-  // Calculer le statut de chaque item
+  // Calculer le statut de chaque item.
+  // `completedTemplateIds` peut contenir indifféremment des templateId (ancien)
+  // ou des pdfFormId (nouveau) — cuids globalement uniques.
   const itemStatuses = bundle.items.map((item) => {
-    const completed = completedTemplateIds.includes(item.templateId);
+    const completed = completedTemplateIds.includes(itemSourceId(item));
     const eligibility = evaluateCondition(item.condition, payloads);
     return { item, completed, eligibility };
   });
@@ -335,35 +372,35 @@ export function BundleRunner({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium">
-                          {idx + 1}. {item.template.toolName}
+                          {idx + 1}. {itemTitle(item)}
                         </span>
-                        {item.template.organisme && (
-                          <Badge
-                            variant="outline"
-                            className="text-xs"
-                            style={{
-                              borderColor: item.template.organisme.color,
-                              color: item.template.organisme.color,
-                            }}
-                          >
-                            {item.template.organisme.shortName}
-                          </Badge>
-                        )}
+                        {(() => {
+                          const org = itemOrganismeLabel(item);
+                          return org ? (
+                            <Badge
+                              variant="outline"
+                              className="text-xs"
+                              style={{ borderColor: org.color, color: org.color }}
+                            >
+                              {org.label}
+                            </Badge>
+                          ) : null;
+                        })()}
                         {!item.required && (
                           <Badge variant="secondary" className="text-xs">
                             Optionnel
                           </Badge>
                         )}
-                        {item.template.requiresSignature && (
+                        {item.template?.requiresSignature && (
                           <Badge variant="outline" className="text-xs gap-1">
                             <PenTool className="w-3 h-3" />
                             Signature
                           </Badge>
                         )}
                       </div>
-                      {item.template.toolDescription && (
+                      {itemDescription(item) && (
                         <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                          {item.template.toolDescription}
+                          {itemDescription(item)}
                         </p>
                       )}
                       {item.condition && (
@@ -412,7 +449,7 @@ export function BundleRunner({
                     className="text-xs text-muted-foreground flex items-center gap-2"
                   >
                     <Circle className="w-3 h-3" />
-                    <span>{item.template.toolName}</span>
+                    <span>{itemTitle(item)}</span>
                     {item.condition && (
                       <span className="italic">
                         (requis si : {describeCondition(item.condition, templateNames, fieldLabels)})

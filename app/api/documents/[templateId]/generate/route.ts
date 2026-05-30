@@ -6,7 +6,6 @@ import { auth } from "@/lib/auth";
 import { getFileBuffer, saveGeneratedDocument } from "@/lib/documents/storage";
 import { fillAcroForm } from "@/lib/documents/pdf-acroform-filler";
 import { overlayPdfFlat } from "@/lib/documents/pdf-flat-overlay";
-import { fillDocxTemplate } from "@/lib/documents/docx-filler";
 import { buildPayloadValidator } from "@/lib/documents/schema-zod";
 import { sanitizeFieldValue } from "@/lib/documents/sanitize";
 import { renderFilename } from "@/lib/documents/filename";
@@ -161,16 +160,11 @@ export async function POST(
       outFileType = "pdf";
       extension = ".pdf";
     } else if (template.sourceType === "docx") {
-      // DOCX : pas de signature image (limitation actuelle, à faire en Phase 7+)
-      if (template.requiresSignature) {
-        return NextResponse.json(
-          { error: "La signature n'est pas supportée pour les documents DOCX (uniquement PDF pour l'instant)" },
-          { status: 415 }
-        );
-      }
-      outputBuffer = fillDocxTemplate(sourceBuffer, fields, validated);
-      outFileType = "docx";
-      extension = ".docx";
+      // Support DOCX retiré (PR2 cleanup) — aucun template DOCX en prod.
+      return NextResponse.json(
+        { error: "Les modèles DOCX ne sont plus supportés." },
+        { status: 410 }
+      );
     } else {
       return NextResponse.json(
         { error: `sourceType inconnu: ${template.sourceType}` },

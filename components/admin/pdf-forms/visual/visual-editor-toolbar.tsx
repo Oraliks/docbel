@@ -37,7 +37,7 @@ export function VisualEditorToolbar({ numPages, onMaterialize, hasRotatedPages, 
   const blockMaterialize = sourceHasAcroForm || hasRotatedPages || doc.fields.length === 0 || saveState === "dirty" || saveState === "saving";
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-md border bg-background p-2">
+    <div className="flex flex-wrap items-center gap-2 p-2">
       {/* Palette d'outils */}
       <div className="flex items-center rounded border p-0.5">
         {TOOLS.map(({ value, label, Icon, shortcut }) => (

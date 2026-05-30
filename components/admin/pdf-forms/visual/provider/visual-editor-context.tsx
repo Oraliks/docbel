@@ -51,10 +51,15 @@ interface ProviderProps {
   formId: string;
   /// Mode lecture seule (ex. viewport mobile) : aucune mutation autorisée.
   readOnly?: boolean;
+  /// Callback déclenché juste après un materialize() réussi (post-reload).
+  /// Sert au parent (form-editor) à recharger ses propres fields/technicalSchema
+  /// et issues, qui sont écrits côté serveur par la route /materialize mais
+  /// invisibles côté provider visuel.
+  onMaterialized?: () => void;
   children: ReactNode;
 }
 
-export function VisualEditorProvider({ formId, readOnly = false, children }: ProviderProps) {
+export function VisualEditorProvider({ formId, readOnly = false, onMaterialized, children }: ProviderProps) {
   const [state, dispatch] = useReducer(visualEditorReducer, initialState);
   const [serverSnapshot, setServerSnapshot] = useState<ServerSnapshot | null>(null);
 
@@ -193,8 +198,9 @@ export function VisualEditorProvider({ formId, readOnly = false, children }: Pro
     }
     toast.success("Champs matérialisés dans le PDF.");
     await reload();
+    onMaterialized?.();
     return { ok: true };
-  }, [formId, readOnly, reload, state.saveState, state.serverUpdatedAt]);
+  }, [formId, readOnly, reload, state.saveState, state.serverUpdatedAt, onMaterialized]);
 
   const selectedField = useMemo(
     () => state.doc.fields.find((f) => f.id === state.ui.selectedId) ?? null,

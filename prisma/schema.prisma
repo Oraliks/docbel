@@ -1857,3 +1857,103 @@ model PdfFormDraft {
   @@unique([formId, userId])
   @@index([expiresAt])
 }
+
+// ---------------------------------------------------------------------------
+// KBO / BCE — Banque-Carrefour des Entreprises (registre belge ouvert).
+// Données ouvertes officielles, ingérées mensuellement depuis les CSV publics
+// (cf. lib/be-companies/kbo-etl.ts). Utilisé pour autocomplétion en saisie de
+// formulaires (BCE → nom + adresse + forme juridique + NACE).
+// ---------------------------------------------------------------------------
+
+/// Une entreprise belge enregistrée à la BCE. Identifiée par son numéro
+/// d'entreprise (10 chiffres, le BCE = la TVA sans le préfixe BE).
+model KboEnterprise {
+  /// Numéro BCE sans préfixe (ex. "0123456789"). C'est aussi la TVA sans "BE".
+  enterpriseNumber   String    @id
+  /// Statut BCE (AC = active, ST = stopped, …).
+  status             String?
+  /// Situation juridique (000 = normale, 010 = liquidation, …).
+  juridicalSituation String?
+  /// Type d'entreprise (1 = personne physique, 2 = personne morale).
+  typeOfEnterprise   String?
+  /// Code forme juridique (017 = SRL, 014 = SA, …).
+  juridicalForm      String?
+  startDate          DateTime?
+
+  denominations KboDenomination[]
+  addresses     KboAddress[]
+  activities    KboActivity[]
+
+  updatedAt DateTime @updatedAt
+}
+
+/// Dénominations (noms commerciaux, raisons sociales, abréviations) — un
+/// même `entityNumber` peut en avoir plusieurs (multilingue + types).
+model KboDenomination {
+  id                 String  @id @default(cuid())
+  enterpriseNumber   String
+  /// Langue (0 = sans, 1 = FR, 2 = NL, 3 = DE, 4 = EN).
+  language           String?
+  /// Type de dénomination (001 = sociale, 002 = abréviation, 003 = commerciale).
+  typeOfDenomination String?
+  denomination       String
+
+  enterprise KboEnterprise @relation(fields: [enterpriseNumber], references: [enterpriseNumber], onDelete: Cascade)
+
+  @@index([enterpriseNumber])
+  @@index([denomination])
+}
+
+/// Adresses (siège, succursale). Bilingues FR/NL.
+model KboAddress {
+  id               String    @id @default(cuid())
+  enterpriseNumber String
+  /// REGO = siège social, OABR = adresse à l'étranger.
+  typeOfAddress    String?
+  countryFR        String?
+  countryNL        String?
+  zipcode          String?
+  municipalityFR   String?
+  municipalityNL   String?
+  streetFR         String?
+  streetNL         String?
+  houseNumber      String?
+  box              String?
+  extraAddressInfo String?
+  dateStrikingOff  DateTime?
+
+  enterprise KboEnterprise @relation(fields: [enterpriseNumber], references: [enterpriseNumber], onDelete: Cascade)
+
+  @@index([enterpriseNumber])
+  @@index([zipcode])
+}
+
+/// Activités NACE.
+model KboActivity {
+  id               String  @id @default(cuid())
+  enterpriseNumber String
+  activityGroup    String?
+  naceVersion      String?
+  naceCode         String?
+  /// MAIN = principale, SECO = secondaire, ANCI = auxiliaire.
+  classification   String?
+
+  enterprise KboEnterprise @relation(fields: [enterpriseNumber], references: [enterpriseNumber], onDelete: Cascade)
+
+  @@index([enterpriseNumber])
+  @@index([naceCode])
+}
+
+/// Audit des ingestions KBO (état, durée, métriques).
+model KboEtlRun {
+  id                  String    @id @default(cuid())
+  startedAt           DateTime  @default(now())
+  finishedAt          DateTime?
+  /// "running" | "success" | "error"
+  status              String
+  fileName            String?
+  enterprisesUpserted Int       @default(0)
+  errorMessage        String?
+
+  @@index([startedAt])
+}

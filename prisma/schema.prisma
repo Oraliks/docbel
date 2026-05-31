@@ -1781,6 +1781,7 @@ model PdfForm {
   submissions PdfFormSubmissionLog[]
   drafts      PdfFormDraft[]
   bundleItems DocumentBundleItem[]
+  validationReports FormValidationReport[]
 
   @@index([status])
   @@index([updatedAt])
@@ -1966,4 +1967,49 @@ model KboEtlRun {
   errorMessage        String?
 
   @@index([startedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Signalements de validation de champ — quand un utilisateur pense qu'un
+// message d'erreur est un faux positif (ex. NISS rejeté à tort).
+// Anonyme par défaut, RGPD-friendly. Modèle inspiré de BureauReport.
+// ---------------------------------------------------------------------------
+
+model FormValidationReport {
+  id            String   @id @default(cuid())
+  /// Réf. au PdfForm si connu (peut être null si saisi hors contexte form).
+  formId        String?
+  form          PdfForm? @relation(fields: [formId], references: [id], onDelete: SetNull)
+  /// Slug du formulaire au moment du report (utile si le PdfForm est supprimé).
+  formSlug      String?
+  /// Identifiant du champ dans le schéma du formulaire (cf. PdfFormField.id).
+  fieldId       String
+  /// Type sémantique du champ : "niss" | "iban" | "tva_be" | "bce" | …
+  fieldType     String
+  /// Valeur exacte que l'utilisateur a saisie et qui a été rejetée.
+  /// L'utilisateur a explicitement consenti (case à cocher dans la dialog).
+  rejectedValue String
+  /// Message d'erreur affiché à l'utilisateur (déjà localisé).
+  errorMessage  String
+  /// Locale active au moment du report ("fr" | "nl" | "de").
+  locale        String?
+  /// Message libre de l'utilisateur (optionnel, max 1000 chars).
+  userMessage   String?
+  /// Email de contact pour suivi (optionnel).
+  reporterEmail String?
+  /// Métadonnées non-PII pour debug + anti-abus.
+  ipHash        String?
+  userAgent     String?
+  /// Workflow admin.
+  status        String   @default("pending") // pending | resolved | dismissed
+  resolvedBy    String?
+  resolvedAt    DateTime?
+  adminNotes    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([formId])
+  @@index([status])
+  @@index([fieldType])
+  @@index([createdAt(sort: Desc)])
 }

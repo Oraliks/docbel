@@ -21,6 +21,10 @@ export async function POST(req: NextRequest) {
   }
 
   const to = (body as { to?: string }).to?.trim().toLowerCase() ?? "";
+  const segment =
+    (body as { segment?: string }).segment === "employeur"
+      ? "employeur"
+      : "partenaire";
   if (!to || !EMAIL_REGEX.test(to)) {
     return NextResponse.json(
       { error: "Email destinataire invalide" },
@@ -39,6 +43,7 @@ export async function POST(req: NextRequest) {
       recipientName: authCheck.user.name || "Admin (test)",
       organizationName: "Organisation de test",
       confirmationUrl: `${baseUrl}/auth/confirm?token=PREVIEW_TOKEN_NON_FONCTIONNEL`,
+      segment,
     });
     return NextResponse.json(
       {

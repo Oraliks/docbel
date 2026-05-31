@@ -58,8 +58,12 @@ export default async function EmployeursAdminPage() {
       billingEnabled={false}
       title="Espace Employeurs"
       showBilling={false}
-      showExport={false}
-      headerLinks={[]}
+      showExport={true}
+      exportHref="/api/admin/partner-users/export?segment=employeur"
+      headerLinks={[
+        { href: "/admin/employeurs/stats", label: "Statistiques", icon: "stats" },
+        { href: "/admin/employeurs/email", label: "Email d'invitation", icon: "mail" },
+      ]}
       createDefaultSegment="employeur"
     />
   );

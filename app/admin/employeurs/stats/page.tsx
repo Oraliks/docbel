@@ -3,7 +3,7 @@ import { SegmentStatsView } from "@/components/admin/partenaires/segment-stats-v
 
 export const dynamic = "force-dynamic";
 
-export default async function PartnerStatsPage() {
-  const stats = await getPartnerStats("partenaire");
-  return <SegmentStatsView stats={stats} variant="partenaire" />;
+export default async function EmployerStatsPage() {
+  const stats = await getPartnerStats("employeur");
+  return <SegmentStatsView stats={stats} variant="employeur" />;
 }

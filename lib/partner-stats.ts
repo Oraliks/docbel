@@ -22,46 +22,51 @@ export interface PartnerStats {
   }>;
 }
 
-export async function getPartnerStats(): Promise<PartnerStats> {
+/**
+ * Statistiques d'un segment pro (partenaire par défaut, ou employeur).
+ * Filtre les entrées d'allowlist sur `segment` et les comptes sur le rôle
+ * correspondant (partenaire→partner, employeur→employer).
+ */
+export async function getPartnerStats(
+  segment: "partenaire" | "employeur" = "partenaire",
+): Promise<PartnerStats> {
+  const role = segment === "employeur" ? "employer" : "partner";
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  const [
-    domains,
-    distinctOrgs,
-    users,
-    recentSignups,
-    recentLogins,
-  ] = await Promise.all([
-    prisma.partnerDomain.findMany({
-      select: { isActive: true, isTest: true },
-    }),
-    prisma.partnerDomain.findMany({
-      distinct: ["organizationName"],
-      select: { organizationName: true },
-    }),
-    prisma.user.findMany({
-      where: { role: "partner" },
-      select: {
-        status: true,
-        emailVerified: true,
-        createdAt: true,
-        partnerOrganization: true,
-      },
-    }),
-    prisma.user.count({
-      where: {
-        role: "partner",
-        createdAt: { gte: sevenDaysAgo },
-      },
-    }),
-    prisma.user.count({
-      where: {
-        role: "partner",
-        lastLoginAt: { gte: sevenDaysAgo },
-      },
-    }),
-  ]);
+  const [domains, distinctOrgs, users, recentSignups, recentLogins] =
+    await Promise.all([
+      prisma.partnerDomain.findMany({
+        where: { segment },
+        select: { isActive: true, isTest: true },
+      }),
+      prisma.partnerDomain.findMany({
+        where: { segment },
+        distinct: ["organizationName"],
+        select: { organizationName: true },
+      }),
+      prisma.user.findMany({
+        where: { role },
+        select: {
+          status: true,
+          emailVerified: true,
+          createdAt: true,
+          partnerOrganization: true,
+        },
+      }),
+      prisma.user.count({
+        where: {
+          role,
+          createdAt: { gte: sevenDaysAgo },
+        },
+      }),
+      prisma.user.count({
+        where: {
+          role,
+          lastLoginAt: { gte: sevenDaysAgo },
+        },
+      }),
+    ]);
 
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => u.status === "active").length;

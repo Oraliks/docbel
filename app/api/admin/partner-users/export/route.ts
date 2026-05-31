@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 
@@ -11,12 +11,20 @@ function csvEscape(value: string | null | undefined): string {
   return str;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const authCheck = await requireAdminAuth();
   if (!authCheck.isAuthorized) return authCheck.error;
 
+  // Segment via ?segment=employeur (défaut partenaire). Sépare l'export des
+  // deux publics pros : role "employer" vs "partner".
+  const segment =
+    req.nextUrl.searchParams.get("segment") === "employeur"
+      ? "employeur"
+      : "partenaire";
+  const role = segment === "employeur" ? "employer" : "partner";
+
   const users = await prisma.user.findMany({
-    where: { role: "partner" },
+    where: { role },
     select: {
       id: true,
       name: true,
@@ -59,11 +67,12 @@ export async function GET() {
   const csv = [header.join(","), ...rows].join("\n");
 
   const today = new Date().toISOString().slice(0, 10);
+  const filenamePrefix = segment === "employeur" ? "employeurs" : "partenaires";
   return new NextResponse(`﻿${csv}`, {
     status: 200,
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="partenaires-${today}.csv"`,
+      "Content-Disposition": `attachment; filename="${filenamePrefix}-${today}.csv"`,
     },
   });
 }

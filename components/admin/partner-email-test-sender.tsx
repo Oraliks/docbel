@@ -14,7 +14,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export function PartnerEmailTestSender() {
+export function PartnerEmailTestSender({
+  segment = "partenaire",
+}: {
+  segment?: "partenaire" | "employeur";
+} = {}) {
   const [email, setEmail] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -27,7 +31,7 @@ export function PartnerEmailTestSender() {
         const res = await fetch("/api/admin/partenaires/email/test", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to }),
+          body: JSON.stringify({ to, segment }),
         });
         const data = await res.json();
         if (!res.ok) {

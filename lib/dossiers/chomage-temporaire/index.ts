@@ -80,13 +80,16 @@ export const chomageTemporaire: DossierDefinition = {
       issuer: "ONEM",
       required: true,
       fields: [
+        // Identité = Nom + NISS dans la même section.
         { field: "fullName", required: true, section: "identite" },
         { field: "niss", required: true, section: "identite" },
+        // Adresse.
         { field: "street", section: "adresse" },
         { field: "postalCode", section: "adresse" },
         { field: "city", section: "adresse" },
-        { field: "creationDate", section: "declaration" },
-        { field: "signature", required: true, section: "signature" },
+        // creationDate + signature sont injectés automatiquement à la
+        // génération du PDF (date du jour + bloc "Signé numériquement par X").
+        // → Pas de champ visible côté formulaire.
       ],
     },
     {
@@ -99,8 +102,6 @@ export const chomageTemporaire: DossierDefinition = {
         { field: "niss", required: true, section: "identite" },
         { field: "employerName", required: true, section: "employeur" },
         { field: "employerBce", section: "employeur" },
-        { field: "creationDate", section: "declaration" },
-        { field: "signature", required: true, section: "signature" },
       ],
     },
     {
@@ -122,8 +123,6 @@ export const chomageTemporaire: DossierDefinition = {
           required: true,
           section: "declaration",
         },
-        { field: "creationDate", section: "declaration" },
-        { field: "signature", required: true, section: "signature" },
       ],
     },
     {
@@ -145,8 +144,6 @@ export const chomageTemporaire: DossierDefinition = {
           required: true,
           section: "declaration",
         },
-        { field: "creationDate", section: "declaration" },
-        { field: "signature", required: true, section: "signature" },
       ],
     },
   ],

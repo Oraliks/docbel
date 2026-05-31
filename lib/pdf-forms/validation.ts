@@ -258,10 +258,10 @@ export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LO
       const fullNameIncomplete =
         f.type === "fullname" &&
         (!isFullNameValue(v) || !(v.first ?? "").trim() || !(v.last ?? "").trim());
-      // Une signature valide doit être un data URL PNG ; "lol" ou du texte
-      // ne compte pas comme une signature.
+      // Signature numérique : confirmée = valeur non vide (le nom du
+      // signataire ou un marqueur de confirmation). Un champ vide = pas signé.
       const signatureMissing =
-        f.type === "signature" && (typeof v !== "string" || !v.startsWith("data:image/"));
+        f.type === "signature" && (typeof v !== "string" || v.trim() === "");
       const isEmpty =
         v === null ||
         v === undefined ||

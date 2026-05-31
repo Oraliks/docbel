@@ -21,11 +21,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { PdfField } from "./pdf-field";
+import { FieldErrorReport } from "./field-error-report";
 import { buildValidator, isFieldVisible } from "@/lib/pdf-forms/validation";
 import { sectionLabel } from "@/lib/pdf-forms/section-labels";
 import { Locale, FieldValue, FormPayload, PdfFormField, loc } from "@/lib/pdf-forms/types";
 import { todayISO } from "@/lib/pdf-forms/system-values";
+import { resolveSignerName, signatureTimestamp } from "@/lib/pdf-forms/signature";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 
 const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
@@ -105,7 +108,10 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
   // Puis une étape "Signature" si le form a des champs signature, puis "Résumé".
   const steps = useMemo<Step[]>(() => {
     const visible = form.fields.filter((f) => isFieldVisible(f.visibleIf, values));
-    const dataFields = visible.filter((f) => f.type !== "signature");
+    // Les champs auto (date de génération via system.today) ne sont PAS saisis
+    // par l'utilisateur : injectés au moment de la génération. On les masque
+    // donc du formulaire (ils restent dans `values` et dans le résumé).
+    const dataFields = visible.filter((f) => f.type !== "signature" && f.prefillFrom !== "system.today");
     const signatureFields = visible.filter((f) => f.type === "signature");
 
     const groups: Array<{ key: string | undefined; fields: PublicField[] }> = [];
@@ -135,6 +141,10 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     out.push({ kind: "summary", id: "summary", title: "Résumé", subtitle: "Prévisualiser le document" });
     return out;
   }, [form.fields, values, locale]);
+
+  // Nom du signataire résolu depuis les champs saisis (pour la signature
+  // numérique). "" si aucun nom exploitable.
+  const signerName = useMemo(() => resolveSignerName(form.fields, values), [form.fields, values]);
 
   // Clamp dérivé (le nombre d'étapes peut diminuer via visibleIf).
   const activeIndex = Math.min(active, steps.length - 1);
@@ -359,7 +369,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                   {current.kind === "summary"
                     ? "Vérifiez puis générez votre document."
                     : current.kind === "signature"
-                    ? "Signez dans le cadre ci-dessous."
+                    ? "Votre document sera signé numériquement. Confirmez ci-dessous."
                     : "Renseignez les informations nécessaires pour générer le document."}
                 </p>
               </div>
@@ -371,8 +381,26 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
               )}
             </div>
 
-            {/* Contenu : champs (grille 2 col) ou résumé */}
-            {current.kind !== "summary" ? (
+            {/* Contenu : signature (confirmation) / champs (grille 2 col) / résumé */}
+            {current.kind === "summary" ? (
+              <SummaryStep form={form} values={values} locale={locale} signerName={signerName} />
+            ) : current.kind === "signature" ? (
+              <div className="flex flex-col gap-4">
+                {current.fields.map((f) => (
+                  <SignatureConfirm
+                    key={f.id}
+                    field={f}
+                    value={typeof values[f.id] === "string" ? (values[f.id] as string) : ""}
+                    error={errors[f.id]}
+                    signerName={signerName}
+                    locale={locale}
+                    formId={form.id}
+                    formSlug={form.slug}
+                    onChange={(v) => setValue(f.id, v)}
+                  />
+                ))}
+              </div>
+            ) : (
               <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
                 {current.fields.map((f) => (
                   <div key={f.id} className={FULL_WIDTH_TYPES.has(f.type) ? "sm:col-span-2" : ""}>
@@ -388,8 +416,6 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                   </div>
                 ))}
               </div>
-            ) : (
-              <SummaryStep form={form} values={values} locale={locale} />
             )}
 
             {/* Pied d'étape */}
@@ -456,14 +482,25 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
 }
 
 /// Récap lecture-seule affiché dans l'étape Résumé (en plus de la sidebar).
-function SummaryStep({ form, values, locale }: { form: PublicForm; values: FormPayload; locale: Locale }) {
+function SummaryStep({
+  form,
+  values,
+  locale,
+  signerName,
+}: {
+  form: PublicForm;
+  values: FormPayload;
+  locale: Locale;
+  signerName: string;
+}) {
   return (
     <div className="flex flex-col divide-y rounded-xl border">
       {form.fields.map((f) => {
         const raw = values[f.id];
         let display = "";
         if (f.type === "checkbox") display = raw === true ? "Oui" : "Non";
-        else if (f.type === "signature") display = typeof raw === "string" && raw.startsWith("data:image/") ? "✓ Signée" : "—";
+        else if (f.type === "signature")
+          display = typeof raw === "string" && raw.trim() ? `Signé numériquement${signerName ? ` — ${signerName}` : ""}` : "—";
         else if (f.type === "fullname" && raw && typeof raw === "object") {
           const o = raw as { first?: string; last?: string };
           display = [o.first, o.last].filter(Boolean).join(" ");
@@ -478,5 +515,74 @@ function SummaryStep({ form, values, locale }: { form: PublicForm; values: FormP
         );
       })}
     </div>
+  );
+}
+
+/// Bloc de confirmation de signature numérique (remplace le pad dessiné).
+/// Affiche un aperçu "façon Adobe" (nom + mention + horodatage) et une case
+/// de confirmation. La valeur stockée = "confirmed" (le nom réel est résolu
+/// à la génération côté serveur, pour rester cohérent si le nom change).
+function SignatureConfirm({
+  field,
+  value,
+  error,
+  signerName,
+  locale,
+  formId,
+  formSlug,
+  onChange,
+}: {
+  field: PublicField;
+  value: string;
+  error?: string;
+  signerName: string;
+  locale: Locale;
+  formId: string;
+  formSlug: string;
+  onChange: (v: string) => void;
+}) {
+  const label = loc(field.label, locale);
+  const confirmed = typeof value === "string" && value.trim() !== "";
+  const stamp = signatureTimestamp();
+
+  return (
+    <Field data-invalid={!!error}>
+      <FieldLabel>
+        {label}
+        {field.required && <span className="text-destructive"> *</span>}
+      </FieldLabel>
+
+      {signerName ? (
+        <>
+          <div className="rounded-lg border border-dashed bg-muted/30 p-3">
+            <div className="font-serif text-lg italic text-[color:var(--glass-ink,inherit)]">{signerName}</div>
+            <div className="mt-1 text-[11px] text-muted-foreground">Signé numériquement par {signerName}</div>
+            <div className="text-[11px] text-muted-foreground">Date : {stamp}</div>
+          </div>
+          <label className="mt-2 flex items-start gap-2.5 text-sm text-muted-foreground">
+            <Checkbox checked={confirmed} onCheckedChange={(c) => onChange(c === true ? "confirmed" : "")} className="mt-0.5" />
+            <span>
+              Je confirme signer numériquement ce document au nom de{" "}
+              <strong className="text-foreground">{signerName}</strong>.
+            </span>
+          </label>
+        </>
+      ) : (
+        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+          Renseignez d&apos;abord votre nom dans l&apos;étape « Informations » pour pouvoir signer
+          numériquement.
+        </p>
+      )}
+
+      <FieldErrorReport
+        error={error}
+        fieldId={field.id}
+        fieldType="signature"
+        rejectedValue={value}
+        formId={formId}
+        formSlug={formSlug}
+        locale={locale}
+      />
+    </Field>
   );
 }

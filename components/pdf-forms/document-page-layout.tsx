@@ -246,7 +246,7 @@ function renderValue(field: PublicField, raw: unknown): string {
       : [first, last].filter(Boolean).join(" ");
   }
   if (field.type === "signature") {
-    return typeof raw === "string" && raw.startsWith("data:image/") ? "✓ Signature enregistrée" : "";
+    return typeof raw === "string" && raw.trim() ? "✓ Signé numériquement" : "";
   }
   return typeof raw === "string" || typeof raw === "number" ? String(raw) : "";
 }

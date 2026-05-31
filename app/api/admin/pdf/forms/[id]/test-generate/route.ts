@@ -5,6 +5,7 @@ import { readSourcePdf } from "@/lib/pdf-forms/storage";
 import { fillForm } from "@/lib/pdf-forms/filler";
 import { generateSeedPayload } from "@/lib/pdf-forms/seed-payload";
 import { PdfFormField, FormPayload } from "@/lib/pdf-forms/types";
+import { sanitizeFields } from "@/lib/pdf-forms/sanitize-fields";
 
 /// POST — génère un PDF de test (données seed ou payload fourni). Admin only.
 /// Stream direct, AUCUN stockage. Accepte `{ schema?, payload? }` pour tester
@@ -29,7 +30,7 @@ export async function POST(
 
   const fields: PdfFormField[] =
     Array.isArray(body.schema) && body.schema.length
-      ? body.schema.filter((f) => f && f.id && f.pdfFieldName && f.type)
+      ? sanitizeFields(body.schema)
       : (form.fields as unknown as PdfFormField[]) || [];
 
   const payload = (body.payload as FormPayload) || generateSeedPayload(fields);

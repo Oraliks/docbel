@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { deleteSourcePdf } from "@/lib/pdf-forms/storage";
 import { isLocale, Locale, PdfFormField } from "@/lib/pdf-forms/types";
+import { sanitizeFields } from "@/lib/pdf-forms/sanitize-fields";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -57,7 +58,7 @@ export async function PATCH(
 
   let createRevision = false;
   if (Array.isArray(body.fields)) {
-    const clean = (body.fields as PdfFormField[]).filter((f) => f && f.id && f.pdfFieldName && f.type);
+    const clean = sanitizeFields(body.fields);
     const old = (existing.fields as unknown as PdfFormField[]) || [];
     if (JSON.stringify(old) !== JSON.stringify(clean)) {
       createRevision = true;

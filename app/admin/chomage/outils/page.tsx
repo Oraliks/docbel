@@ -38,6 +38,7 @@ export default async function OutilsPage() {
         order: t.order,
         active: raw.active ?? true,
         audience,
+        access: Array.isArray(raw.access) ? raw.access : [],
       };
     }),
   }));

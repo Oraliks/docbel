@@ -25,6 +25,8 @@ export async function GET(req: NextRequest) {
       recognized: true,
       organizationName: result.organizationName,
       isTest: Boolean(result.isTest),
+      segment: result.segment ?? "partenaire",
+      partnerType: result.partnerType ?? null,
     },
     { headers: jsonHeaders },
   );

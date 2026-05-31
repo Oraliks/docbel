@@ -25,6 +25,11 @@ export const SETTING_KEYS = {
   /// Migration 22 — toggle Web search. Si "false", le toggle UI 🌐 reste
   /// désactivé même si BRAVE_SEARCH_API_KEY est présent.
   CHOMAGE_IA_WEB_SEARCH_ENABLED: "chomage_ia_web_search_enabled",
+  /// Toggle "true" / "false". Verrou de facturation global. Tant que "false"
+  /// (beta), tout membre d'un segment accède aux outils de son segment. Quand
+  /// "true", canUseTool() consultera le plan du compte (cf. lib/entitlements.ts).
+  /// Le processeur de paiement (Mollie/Stripe) se branchera plus tard sur ce flag.
+  BILLING_ENABLED: "billing_enabled",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
@@ -80,6 +85,7 @@ L'équipe DocBel`,
   chomage_ia_voice_enabled: "false",
   chomage_ia_ingestion_enabled: "false",
   chomage_ia_web_search_enabled: "false",
+  billing_enabled: "false",
 };
 
 export async function getSetting(key: SettingKey): Promise<string> {

@@ -15,9 +15,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-type AuthAudience = "citoyen" | "partenaire";
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   invalid_credentials: "Email ou mot de passe incorrect.",
@@ -35,10 +32,10 @@ function getAuthErrorMessage(
   return "Connexion impossible. Vérifiez vos identifiants.";
 }
 
-function LoginForm({ audience }: { audience: AuthAudience }) {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? (audience === "partenaire" ? "/partenaire" : "/");
+  const next = searchParams.get("next") ?? "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -221,18 +218,16 @@ function LoginForm({ audience }: { audience: AuthAudience }) {
         </>
       ) : null}
 
-      {audience === "partenaire" ? (
-        <p className="mt-2 text-center text-[12.5px] text-[color:var(--glass-ink-soft)]">
-          Pas encore inscrit ?{" "}
-          <Link
-            href="/inscription/partenaire"
-            className="inline-flex items-center gap-1 font-bold text-[color:var(--glass-accent-deep)] hover:underline"
-          >
-            <UserPlusIcon className="size-3.5" />
-            S&apos;inscrire
-          </Link>
-        </p>
-      ) : null}
+      <p className="mt-2 text-center text-[12.5px] text-[color:var(--glass-ink-soft)]">
+        Pas encore inscrit ?{" "}
+        <Link
+          href="/inscription/partenaire"
+          className="inline-flex items-center gap-1 font-bold text-[color:var(--glass-accent-deep)] hover:underline"
+        >
+          <UserPlusIcon className="size-3.5" />
+          S&apos;inscrire
+        </Link>
+      </p>
     </form>
   );
 }
@@ -329,31 +324,7 @@ function LoginPageContent() {
             </p>
           </header>
 
-          <Tabs defaultValue="citoyen" className="flex flex-col gap-6">
-            <TabsList
-              className="grid w-full grid-cols-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-1"
-            >
-              <TabsTrigger
-                value="citoyen"
-                className="rounded-full text-[13px] font-bold data-[selected]:bg-[color:var(--glass-ink)] data-[selected]:text-[color:var(--glass-bg-a)]"
-              >
-                Citoyens
-              </TabsTrigger>
-              <TabsTrigger
-                value="partenaire"
-                className="rounded-full text-[13px] font-bold data-[selected]:bg-[color:var(--glass-ink)] data-[selected]:text-[color:var(--glass-bg-a)]"
-              >
-                Partenaires
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="citoyen">
-              <LoginForm audience="citoyen" />
-            </TabsContent>
-            <TabsContent value="partenaire">
-              <LoginForm audience="partenaire" />
-            </TabsContent>
-          </Tabs>
+          <LoginForm />
         </div>
       </main>
     </div>

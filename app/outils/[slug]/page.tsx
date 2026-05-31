@@ -1,9 +1,19 @@
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
 import { getToolBySlug, type Tool } from "@/lib/docbel-data";
 import { DocumentForm } from "@/components/docbel/document-form/document-form";
 import { LegacyToolView } from "./legacy-tool-view";
 import { DisabledToolView } from "./disabled-tool-view";
+import { RestrictedToolView } from "@/components/docbel/restricted-tool-view";
 import { deriveAudiences, isAudienceId } from "@/lib/audience";
+import {
+  canUseTool,
+  effectiveRules,
+  toViewerAccount,
+  type ViewerAccount,
+} from "@/lib/entitlements";
 
 export const dynamic = "force-dynamic";
 // Pas de cache : le statut "actif/désactivé" doit refléter la DB en temps
@@ -57,6 +67,21 @@ export default async function ToolRoute({
 }) {
   const { slug } = await params;
 
+  // Compte courant (null si anonyme) + flag billing, pour l'enforcement d'accès.
+  const session = await auth.api
+    .getSession({ headers: await headers() })
+    .catch(() => null);
+  let viewer: ViewerAccount | null = null;
+  if (session?.user?.id) {
+    const u = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true, segment: true, partnerType: true },
+    });
+    viewer = toViewerAccount(u);
+  }
+  const billingEnabled =
+    (await getSetting(SETTING_KEYS.BILLING_ENABLED)) === "true";
+
   // 1) Cherche le Tool DB. Avec select explicite pour récupérer aussi
   // `active` (le client Prisma le supporte depuis la migration).
   const dbTool = await prisma.tool.findUnique({
@@ -72,6 +97,7 @@ export default async function ToolRoute({
       timeMin: true,
       active: true,
       audience: true,
+      access: true,
       section: { select: { name: true } },
       documentTemplate: { select: { status: true } },
     },
@@ -83,6 +109,28 @@ export default async function ToolRoute({
   // catalogue.
   if (dbTool && dbTool.active === false) {
     return <DisabledToolView toolName={dbTool.name} />;
+  }
+
+  // 2.5) Enforcement d'accès par ensemble {segment, partnerType}. Un outil
+  // "citoyen" reste public (canUseTool renvoie true même pour un anonyme) ;
+  // sinon, seul un compte du bon segment/sous-type passe.
+  if (
+    dbTool &&
+    !canUseTool(
+      viewer,
+      { access: dbTool.access, audience: dbTool.audience },
+      { billingEnabled },
+    )
+  ) {
+    const segments = [
+      ...new Set(
+        effectiveRules({
+          access: dbTool.access,
+          audience: dbTool.audience,
+        }).map((rule) => rule.segment),
+      ),
+    ];
+    return <RestrictedToolView toolName={dbTool.name} segments={segments} />;
   }
 
   // 3) doc_generator publié → form dynamique
@@ -108,5 +156,20 @@ export default async function ToolRoute({
   //    Si même là le slug est introuvable, LegacyToolView affiche son
   //    propre message "Outil introuvable" (pas un 404 brut).
   const staticTool = getToolBySlug(slug);
+  if (
+    staticTool &&
+    !canUseTool(
+      viewer,
+      { access: staticTool.audiences.map((segment) => ({ segment })) },
+      { billingEnabled },
+    )
+  ) {
+    return (
+      <RestrictedToolView
+        toolName={staticTool.title}
+        segments={staticTool.audiences}
+      />
+    );
+  }
   return <LegacyToolView tool={staticTool || null} />;
 }

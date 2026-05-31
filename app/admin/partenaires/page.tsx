@@ -2,6 +2,7 @@ import {
   listExistingOrganizationNames,
   listOrganizations,
 } from "@/lib/partner-domains";
+import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
 import { PartnerOverviewShell } from "@/components/admin/partenaires/overview/partner-overview-shell";
 
 /**
@@ -24,16 +25,30 @@ import { PartnerOverviewShell } from "@/components/admin/partenaires/overview/pa
 export const dynamic = "force-dynamic";
 
 export default async function PartenairesAdminPage() {
-  const [initialOrganizations, existingOrgNames] = await Promise.all([
-    listOrganizations(),
-    listExistingOrganizationNames(),
-  ]);
+  const [initialOrganizations, existingOrgNames, billingValue] =
+    await Promise.all([
+      listOrganizations(),
+      listExistingOrganizationNames(),
+      getSetting(SETTING_KEYS.BILLING_ENABLED),
+    ]);
 
-  // Sérialisation des dates (Date → ISO string) pour passer au client.
+  // Sérialisation des dates (Date → ISO string) pour passer au client. Les
+  // champs kind/email/segment/partnerType sont déjà fournis par
+  // listOrganizations() et threadés via le spread `...d`.
   const serialized = initialOrganizations.map((org) => ({
     ...org,
     domains: org.domains.map((d) => ({
-      ...d,
+      id: d.id,
+      kind: (d.kind === "email" ? "email" : "domain") as "domain" | "email",
+      domain: d.domain,
+      email: d.email,
+      segment: (d.segment === "employeur" ? "employeur" : "partenaire") as
+        | "partenaire"
+        | "employeur",
+      partnerType: d.partnerType,
+      notes: d.notes,
+      isTest: d.isTest,
+      isActive: d.isActive,
       createdAt: d.createdAt.toISOString(),
     })),
     users: org.users.map((u) => ({
@@ -47,6 +62,7 @@ export default async function PartenairesAdminPage() {
     <PartnerOverviewShell
       initialOrganizations={serialized}
       existingOrganizationNames={existingOrgNames}
+      billingEnabled={billingValue === "true"}
     />
   );
 }

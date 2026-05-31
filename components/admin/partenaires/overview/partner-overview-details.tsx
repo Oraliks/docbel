@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AtSignIcon,
   CheckCircle2Icon,
   FlaskConicalIcon,
   GlobeIcon,
@@ -25,10 +26,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type {
-  OrganizationGroup,
-  PartnerDomain,
-  PartnerUser,
+import {
+  PARTNER_TYPE_LABELS,
+  SEGMENT_LABELS,
+  type OrganizationGroup,
+  type PartnerDomain,
+  type PartnerUser,
 } from "./types";
 
 interface PartnerOverviewDetailsProps {
@@ -74,12 +77,13 @@ export function PartnerOverviewDetails({
       <section>
         <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <GlobeIcon className="size-3.5" />
-          Domaines ({org.domains.length})
+          Accès autorisés ({org.domains.length})
         </h3>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Domaine</TableHead>
+              <TableHead>Domaine / Email</TableHead>
+              <TableHead>Segment</TableHead>
               <TableHead>Notes</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -88,7 +92,35 @@ export function PartnerOverviewDetails({
           <TableBody>
             {org.domains.map((d) => (
               <TableRow key={d.id}>
-                <TableCell className="font-mono text-sm">@{d.domain}</TableCell>
+                <TableCell className="font-mono text-sm">
+                  <span className="inline-flex items-center gap-1.5">
+                    {d.kind === "email" ? (
+                      <AtSignIcon className="size-3 text-muted-foreground" />
+                    ) : (
+                      <GlobeIcon className="size-3 text-muted-foreground" />
+                    )}
+                    {d.kind === "email"
+                      ? (d.email ?? "—")
+                      : d.domain
+                        ? `@${d.domain}`
+                        : "—"}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge variant="outline" className="gap-1 text-[11px]">
+                      {SEGMENT_LABELS[d.segment] ?? d.segment}
+                    </Badge>
+                    {d.segment === "partenaire" && d.partnerType ? (
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-violet-200 bg-violet-50 text-[11px] text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300"
+                      >
+                        {PARTNER_TYPE_LABELS[d.partnerType] ?? d.partnerType}
+                      </Badge>
+                    ) : null}
+                  </div>
+                </TableCell>
                 <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
                   {d.notes || "—"}
                 </TableCell>

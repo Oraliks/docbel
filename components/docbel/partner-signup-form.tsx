@@ -37,12 +37,20 @@ type LookupResult = {
   recognized: boolean;
   organizationName?: string;
   isTest?: boolean;
+  segment?: string;
+  partnerType?: string | null;
 };
 
 type LookupState =
   | { status: "idle" }
   | { status: "checking" }
-  | { status: "recognized"; organizationName: string; isTest: boolean }
+  | {
+      status: "recognized";
+      organizationName: string;
+      isTest: boolean;
+      segment: string;
+      partnerType: string | null;
+    }
   | { status: "unknown" };
 
 function isLookupCandidate(email: string): boolean {
@@ -71,6 +79,8 @@ export function PartnerSignupForm() {
             status: "recognized",
             organizationName: lookupResult.organizationName ?? "",
             isTest: lookupResult.isTest ?? false,
+            segment: lookupResult.segment ?? "partenaire",
+            partnerType: lookupResult.partnerType ?? null,
           }
         : { status: "unknown" };
 
@@ -97,6 +107,8 @@ export function PartnerSignupForm() {
           recognized: Boolean(data.recognized),
           organizationName: data.organizationName,
           isTest: data.isTest,
+          segment: data.segment,
+          partnerType: data.partnerType,
         });
       } catch {
         if (seq !== lookupSeqRef.current) return;
@@ -250,7 +262,12 @@ export function PartnerSignupForm() {
                       </span>
                     ) : null}
                   </div>
-                  <p className="opacity-80">Organisation reconnue.</p>
+                  <p className="opacity-80">
+                    {lookup.segment === "employeur"
+                      ? "Espace employeur"
+                      : "Espace partenaire"}{" "}
+                    — organisation reconnue.
+                  </p>
                 </div>
               </div>
             ) : null}

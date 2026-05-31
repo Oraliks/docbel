@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table"
 import { Trash2, Edit2, Plus, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { CreateUserDialog } from "@/components/users/create-user-dialog"
+import Link from "next/link"
 import { EditUserDialog } from "@/components/users/edit-user-dialog"
 import { DeleteUserDialog } from "@/components/users/delete-user-dialog"
 
@@ -52,7 +52,6 @@ const PARTNER_TYPE_LABELS: Record<string, string> = {
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
 
@@ -74,12 +73,6 @@ export default function UsersPage() {
     async function load() { await fetchUsers() }
     void load()
   }, [])
-
-  const handleUserCreated = (newUser: User) => {
-    setUsers([newUser, ...users])
-    setShowCreateDialog(false)
-    toast.success("Utilisateur créé avec succès")
-  }
 
   const handleUserUpdated = (updatedUser: User) => {
     setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u))
@@ -167,20 +160,11 @@ export default function UsersPage() {
           <h1 className="text-3xl font-bold">Utilisateurs</h1>
           <p className="text-muted-foreground mt-1">Gérez les utilisateurs du système</p>
         </div>
-        <Button
-          onClick={() => setShowCreateDialog(true)}
-          className="gap-2"
-        >
+        <Button render={<Link href="/admin/users/new" />} className="gap-2">
           <Plus className="size-4" />
           Nouvel utilisateur
         </Button>
       </div>
-
-      <CreateUserDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        onUserCreated={handleUserCreated}
-      />
 
       <EditUserDialog
         user={editingUser}

@@ -63,6 +63,7 @@ export type FieldType =
   | "select"
   | "radio"
   | "fullname"
+  | "signature"
   | "niss"
   | "iban"
   | "postal_be"
@@ -73,7 +74,8 @@ export type FieldType =
 
 export const SEMANTIC_FIELD_TYPES: FieldType[] = [
   "text", "textarea", "number", "date", "checkbox", "select", "radio",
-  "fullname", "niss", "iban", "postal_be", "tva_be", "bce", "phone_be", "email",
+  "fullname", "signature",
+  "niss", "iban", "postal_be", "tva_be", "bce", "phone_be", "email",
 ];
 
 /// Libellés lisibles (FR) pour le sélecteur de type côté admin. Le public ne
@@ -88,6 +90,7 @@ export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   select: "Liste déroulante",
   radio: "Boutons radio",
   fullname: "Nom complet (Prénom + Nom)",
+  signature: "Signature (dessinée à la main)",
   niss: "NISS (registre national)",
   iban: "IBAN (compte bancaire)",
   postal_be: "Code postal (Belgique)",

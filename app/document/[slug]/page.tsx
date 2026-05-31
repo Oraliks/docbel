@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { toPublicForm } from "@/lib/pdf-forms/public-serializer";
 import { isDoccleConfigured } from "@/lib/pdf-forms/integrations/doccle";
 import { isItsmeConfigured } from "@/lib/pdf-forms/integrations/itsme";
-import { PdfFormRunner } from "@/components/pdf-forms/pdf-form-runner";
+import { DocumentPageLayout } from "@/components/pdf-forms/document-page-layout";
 import type { PdfFormField } from "@/lib/pdf-forms/types";
 import {
   applySharedValuesToForm,
@@ -100,28 +100,11 @@ export default async function PdfFormPage({
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
-      <header className="mb-6 flex flex-col gap-1">
-        {bundleSlug && (
-          <a
-            href={`/outils/bundles/${bundleSlug}`}
-            className="text-xs text-muted-foreground hover:underline"
-          >
-            ← Retour au dossier
-          </a>
-        )}
-        {form.issuer && (
-          <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            {form.issuer}
-          </span>
-        )}
-        <h1 className="text-xl font-semibold sm:text-2xl">{form.title}</h1>
-        {form.description && (
-          <p className="text-sm text-muted-foreground">{form.description}</p>
-        )}
-      </header>
-
-      <PdfFormRunner form={form} bundlePrefill={bundlePrefill} bundleRunId={validBundleRunId} />
-    </main>
+    <DocumentPageLayout
+      form={form}
+      bundlePrefill={bundlePrefill}
+      bundleRunId={validBundleRunId}
+      bundleSlug={bundleSlug}
+    />
   );
 }

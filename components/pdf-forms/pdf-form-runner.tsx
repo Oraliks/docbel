@@ -33,6 +33,7 @@ function defaultValues(form: PublicForm, bundlePrefill?: Record<string, string>)
     else if (f.defaultValue !== undefined) v[f.id] = f.defaultValue as FieldValue;
     else if (f.type === "checkbox") v[f.id] = false;
     else if (f.type === "fullname") v[f.id] = { first: "", last: "" };
+    else if (f.type === "signature") v[f.id] = "";
   }
   return v;
 }
@@ -44,11 +45,25 @@ interface PdfFormRunnerProps {
   /// (clé = `f.id` du PDF courant), et l'envoi est associé au `bundleRunId`.
   bundlePrefill?: Record<string, string>;
   bundleRunId?: string;
+  /// Callback appelée à chaque changement de valeur — sert au layout parent
+  /// pour afficher un résumé live dans la sidebar droite.
+  onValuesChange?: (values: FormPayload) => void;
+  onLocaleChange?: (locale: Locale) => void;
 }
 
-export function PdfFormRunner({ form, bundlePrefill, bundleRunId }: PdfFormRunnerProps) {
+export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange, onLocaleChange }: PdfFormRunnerProps) {
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
   const [values, setValues] = useState<FormPayload>(() => defaultValues(form, bundlePrefill));
+
+  // Pousse les valeurs au parent (résumé live). Effet plutôt qu'appel
+  // synchrone dans setValue pour éviter de re-render le parent à chaque
+  // keystroke côté React 19.
+  useEffect(() => {
+    onValuesChange?.(values);
+  }, [values, onValuesChange]);
+  useEffect(() => {
+    onLocaleChange?.(locale);
+  }, [locale, onLocaleChange]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
   const [delivery, setDelivery] = useState<"download" | "doccle">(

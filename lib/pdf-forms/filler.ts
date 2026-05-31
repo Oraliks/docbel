@@ -9,7 +9,7 @@ import {
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
-import { PdfFormField, FormPayload } from "./types";
+import { PdfFormField, FormPayload, AcroFieldRaw } from "./types";
 import { assembleFullName } from "./system-values";
 
 /// Chemin d'une police TTF Unicode optionnelle. Si présente, elle est
@@ -41,11 +41,14 @@ export interface FillResult {
 /// - Mappe chaque champ via `pdfFieldName` (ancre).
 /// - Embarque une police Unicode si disponible (fontkit requis).
 /// - Aplatit le formulaire par défaut (PDF non ré-éditable).
+/// - Pour les champs `signature` : embarque l'image PNG (data URL) à l'endroit
+///   du widget AcroForm correspondant. Nécessite `technicalSchema` pour
+///   retrouver le rectangle + la page du widget.
 export async function fillForm(
   source: Buffer,
   fields: PdfFormField[],
   payload: FormPayload,
-  opts: { flatten?: boolean } = {}
+  opts: { flatten?: boolean; technicalSchema?: AcroFieldRaw[] } = {}
 ): Promise<FillResult> {
   const flatten = opts.flatten !== false;
   const doc = await PDFDocument.load(source, { ignoreEncryption: true });
@@ -83,6 +86,27 @@ export async function fillForm(
     }
 
     try {
+      // Signature : data URL → image embarquée à la position du widget.
+      if (field.type === "signature") {
+        const dataUrl = typeof value === "string" ? value : "";
+        const m = dataUrl.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/);
+        if (!m) continue;
+        const tech = (opts.technicalSchema ?? []).find(
+          (t) => t.pdfFieldName === field.pdfFieldName
+        );
+        if (!tech?.rect) continue;
+        // Vide le texte du widget (cas où c'était un PDFTextField : on évite
+        // d'afficher le data URL en clair par-dessus la signature).
+        if (pdfField instanceof PDFTextField) pdfField.setText("");
+        const bytes = Buffer.from(m[2], "base64");
+        const img = m[1] === "png" ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+        const pageIdx = Math.max(0, Math.min(doc.getPageCount() - 1, tech.page ?? 0));
+        const page = doc.getPage(pageIdx);
+        const [x, y, w, h] = tech.rect;
+        page.drawImage(img, { x, y, width: w, height: h });
+        continue;
+      }
+
       if (pdfField instanceof PDFTextField) {
         pdfField.setText(value === false ? "" : String(value));
         if (unicodeFont) pdfField.updateAppearances(font);

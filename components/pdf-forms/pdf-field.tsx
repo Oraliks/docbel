@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { NissInput } from "@/components/ui/niss-input";
+import { SignaturePad } from "@/components/ui/signature-pad";
 import { FieldErrorReport } from "./field-error-report";
 import { loc, Locale, FieldValue, FullNameValue, isFullNameValue } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
@@ -164,6 +165,26 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
           {lastFirst ? lastInput : firstInput}
           {lastFirst ? firstInput : lastInput}
         </div>
+        {help && <FieldDescription>{help}</FieldDescription>}
+        {errorReport}
+      </Field>
+    );
+  }
+
+  // Signature : pad dessinable (tactile + souris), sortie data URL PNG.
+  if (field.type === "signature") {
+    return (
+      <Field data-invalid={invalid}>
+        <FieldLabel htmlFor={field.id}>
+          {label}
+          {field.required && <span className="text-destructive"> *</span>}
+        </FieldLabel>
+        <SignaturePad
+          value={typeof value === "string" ? value : ""}
+          onChange={(dataUrl) => onChange(dataUrl)}
+          ariaInvalid={invalid}
+          ariaLabel={label}
+        />
         {help && <FieldDescription>{help}</FieldDescription>}
         {errorReport}
       </Field>

@@ -191,6 +191,11 @@ function fieldToZod(field: PdfFormField, lang: Locale): ZodTypeAny {
       if (!allowed.length) return z.string();
       return z.string().refine((v) => empty(v) || allowed.includes(v), { message: errMsg(field, lang, "select") });
     }
+    case "signature":
+      // La valeur est un data URL PNG. Vide = pas signé. Le check "required"
+      // dans superRefine gère le cas "signature manquante". Ici on accepte
+      // simplement une chaîne (vide ou data URL).
+      return z.string();
     case "text":
     case "textarea":
     default: {
@@ -253,14 +258,25 @@ export function buildValidator(fields: PdfFormField[], lang: Locale = DEFAULT_LO
       const fullNameIncomplete =
         f.type === "fullname" &&
         (!isFullNameValue(v) || !(v.first ?? "").trim() || !(v.last ?? "").trim());
+      // Une signature valide doit être un data URL PNG ; "lol" ou du texte
+      // ne compte pas comme une signature.
+      const signatureMissing =
+        f.type === "signature" && (typeof v !== "string" || !v.startsWith("data:image/"));
       const isEmpty =
         v === null ||
         v === undefined ||
         (typeof v === "string" && v.trim() === "") ||
         (f.type === "checkbox" && v === false) ||
-        fullNameIncomplete;
+        fullNameIncomplete ||
+        signatureMissing;
       if (isEmpty) {
-        ctx.addIssue({ code: "custom", path: [f.id], message: errMsg(f, lang, "required") });
+        const customMsg = loc(f.errorMsg, lang);
+        const message =
+          f.type === "signature"
+            ? customMsg ||
+              "Veuillez signer dans le cadre (au doigt sur tablette/téléphone, ou à la souris)."
+            : errMsg(f, lang, "required");
+        ctx.addIssue({ code: "custom", path: [f.id], message });
       }
     }
   });

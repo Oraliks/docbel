@@ -82,9 +82,14 @@ export async function POST(
     return NextResponse.json({ error: "PDF source introuvable" }, { status: 500, headers: json });
   }
 
+  // technicalSchema sert au filler pour les champs `signature` : il y trouve
+  // le rectangle + l'index de page de chaque widget à habiller d'une image.
+  const technicalSchema =
+    (form.technicalSchema as unknown as import("@/lib/pdf-forms/types").AcroFieldRaw[]) || [];
+
   let pdfBytes: Buffer;
   try {
-    pdfBytes = (await fillForm(source, fields, validated)).bytes;
+    pdfBytes = (await fillForm(source, fields, validated, { technicalSchema })).bytes;
   } catch (err) {
     console.error("pdf-forms generate error:", err);
     await logSubmission(form.id, form.version, lang, validated, delivery, false, ip);

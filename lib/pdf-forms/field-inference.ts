@@ -22,6 +22,9 @@ function humanize(name: string): string {
 }
 
 /// Indices (nom + tooltip) → type sémantique probable.
+/// Ordre = priorité (le 1er match gagne). Les types qui ont aussi un sens
+/// "auto-injecté" (signature, date de création) sont gérés en plus dans
+/// `inferAutoPrefill` ci-dessous pour positionner `prefillFrom`.
 const TYPE_HINTS: Array<{ re: RegExp; type: FieldType }> = [
   { re: /\b(niss|rrn|rijksregister|registre.?national|national.?number)\b/i, type: "niss" },
   { re: /\b(iban|compte|rekening|bank.?account)\b/i, type: "iban" },
@@ -30,8 +33,15 @@ const TYPE_HINTS: Array<{ re: RegExp; type: FieldType }> = [
   { re: /\b(code.?postal|postcode|cp|plz)\b/i, type: "postal_be" },
   { re: /\b(t[ée]l|gsm|phone|telefoon|mobile)\b/i, type: "phone_be" },
   { re: /\b(e?.?mail|courriel)\b/i, type: "email" },
+  { re: /\b(signature|handtekening|unterschrift|signed?.?by|signer)\b/i, type: "signature" },
   { re: /\b(date|datum|naissance|geboorte|jour)\b/i, type: "date" },
 ];
+
+/// Reconnaissance des patterns de "date de création / génération" : un champ
+/// qui doit être pré-rempli automatiquement par la date du jour à la
+/// génération, et masqué du formulaire utilisateur.
+const CREATION_DATE_RE =
+  /(date.{0,5}(cr[ée]ation|g[ée]n[ée]ration|jour|today|edit)|aanmaakdatum|datum.{0,5}aanmaak|erstellungsdatum)/i;
 
 /// Indices → section de regroupement.
 const SECTION_HINTS: Array<{ re: RegExp; section: string }> = [
@@ -66,8 +76,17 @@ export function buildEnrichedSchema(raw: AcroFieldRaw[]): PdfFormField[] {
     while (usedIds.has(id)) id = `${makeId(r.pdfFieldName)}_${n++}`;
     usedIds.add(id);
 
-    const type = inferType(r);
+    let type = inferType(r);
     const labelFr = r.tooltip ? r.tooltip : humanize(r.pdfFieldName);
+    const hay = `${r.pdfFieldName} ${r.tooltip ?? ""}`;
+
+    // "Date de création / génération" : type date + prefill system.today,
+    // ce qui masque le champ du formulaire (rempli auto à la génération).
+    let prefillFrom: PdfFormField["prefillFrom"] | undefined;
+    if (CREATION_DATE_RE.test(hay)) {
+      type = "date";
+      prefillFrom = "system.today";
+    }
 
     const field: PdfFormField = {
       id,
@@ -79,6 +98,7 @@ export function buildEnrichedSchema(raw: AcroFieldRaw[]): PdfFormField[] {
       acroType: r.acroType,
       readOnly: r.readOnly,
     };
+    if (prefillFrom) field.prefillFrom = prefillFrom;
     if (r.maxLen) field.maxLength = r.maxLen;
     if (r.defaultValue) field.defaultValue = r.defaultValue;
     if (r.options && (type === "select" || type === "radio")) {

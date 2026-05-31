@@ -18,6 +18,8 @@ import { PdfFormRunner } from "./pdf-form-runner";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 import type { FormPayload, Locale } from "@/lib/pdf-forms/types";
 import { isFullNameValue, loc } from "@/lib/pdf-forms/types";
+import { isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
+import { todayISO } from "@/lib/pdf-forms/system-values";
 
 interface Props {
   /// Si le PDF est ouvert dans le contexte d'un dossier codé, les "types"
@@ -325,6 +327,11 @@ function KV({ label, value, highlight }: { label: string; value: string; highlig
 }
 
 function renderValue(field: PublicField, raw: unknown): string {
+  // Champs auto-injectés à la génération : on les affiche comme tels dans la
+  // sidebar même s'ils n'ont pas de valeur saisie (signature → "Auto à la
+  // génération", date de création → date du jour).
+  if (isSignatureField(field)) return "Auto à la génération";
+  if (isCreationDateField(field)) return todayISO();
   if (raw === undefined || raw === null) return "";
   if (field.type === "checkbox") return raw === true ? "Oui" : "Non";
   if (field.type === "fullname") {
@@ -334,9 +341,6 @@ function renderValue(field: PublicField, raw: unknown): string {
     return field.nameOrder === "last-first"
       ? [last, first].filter(Boolean).join(" ")
       : [first, last].filter(Boolean).join(" ");
-  }
-  if (field.type === "signature") {
-    return typeof raw === "string" && raw.trim() ? "✓ Signé numériquement" : "";
   }
   return typeof raw === "string" || typeof raw === "number" ? String(raw) : "";
 }

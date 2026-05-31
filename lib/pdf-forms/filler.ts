@@ -13,6 +13,7 @@ import { join } from "path";
 import { PdfFormField, FormPayload, AcroFieldRaw } from "./types";
 import { assembleFullName } from "./system-values";
 import { resolveSignerName, buildSignatureBlock } from "./signature";
+import { isSignatureField } from "./auto-fields";
 
 /// Chemin d'une police TTF Unicode optionnelle. Si présente, elle est
 /// embarquée et utilisée pour réécrire les apparences des champs → support
@@ -94,7 +95,7 @@ export async function fillForm(
       // Signature numérique "façon Adobe" : si le champ est confirmé (valeur
       // non vide), on dessine un bloc texte (nom + mention + horodatage) à la
       // position du widget AcroForm. Le nom est résolu depuis le payload.
-      if (field.type === "signature") {
+      if (isSignatureField(field)) {
         const confirmed = typeof value === "string" && value.trim() !== "";
         if (!confirmed) continue;
         const tech = (opts.technicalSchema ?? []).find((t) => t.pdfFieldName === field.pdfFieldName);

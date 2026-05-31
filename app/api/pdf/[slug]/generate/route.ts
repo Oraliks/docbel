@@ -10,6 +10,7 @@ import { renderFilename } from "@/lib/pdf-forms/filename";
 import { sha256Hex, checkRateLimit, getClientIp } from "@/lib/pdf-forms/security";
 import { sendToDoccle, isDoccleConfigured } from "@/lib/pdf-forms/integrations/doccle";
 import { todayISO } from "@/lib/pdf-forms/system-values";
+import { isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
 import { PdfFormField, FormPayload, Locale, isLocale } from "@/lib/pdf-forms/types";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
@@ -56,12 +57,15 @@ export async function POST(
 
   const fields = (form.fields as unknown as PdfFormField[]) || [];
 
-  // Dates auto (`system.today`) : la valeur est imposée par le serveur (date de
-  // génération, fuseau Bruxelles) et écrase toute valeur envoyée par le client.
+  // Dates auto (date de création) + signatures : valeurs imposées par le
+  // serveur, qui écrasent toute valeur envoyée par le client. On utilise les
+  // helpers (label + type) pour rattraper aussi les PdfForms en DB qui n'ont
+  // pas le bon marqueur sémantique (anciens uploads).
   const incoming = ((body.payload as FormPayload) || {});
   const today = todayISO();
   for (const f of fields) {
-    if (f.prefillFrom === "system.today") incoming[f.id] = today;
+    if (isCreationDateField(f)) incoming[f.id] = today;
+    if (isSignatureField(f) && !incoming[f.id]) incoming[f.id] = "confirmed";
   }
 
   const validator = buildValidator(fields, lang);

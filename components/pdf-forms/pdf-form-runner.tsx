@@ -26,6 +26,7 @@ import { sectionLabel } from "@/lib/pdf-forms/section-labels";
 import { Locale, FieldValue, FormPayload, PdfFormField, loc } from "@/lib/pdf-forms/types";
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { resolveSignerName } from "@/lib/pdf-forms/signature";
+import { isAutoField, isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
 import type { PublicForm, PublicField } from "@/lib/pdf-forms/public-serializer";
 
 const LOCALE_NAMES: Record<Locale, string> = { fr: "FR", nl: "NL", de: "DE" };
@@ -38,11 +39,11 @@ function defaultValues(form: PublicForm, bundlePrefill?: Record<string, string>)
   for (const f of form.fields) {
     if (bundlePrefill && bundlePrefill[f.id] !== undefined && bundlePrefill[f.id] !== "") {
       v[f.id] = bundlePrefill[f.id];
-    } else if (f.prefillFrom === "system.today") v[f.id] = todayISO();
+    } else if (isCreationDateField(f)) v[f.id] = todayISO();
     else if (f.defaultValue !== undefined) v[f.id] = f.defaultValue as FieldValue;
     else if (f.type === "checkbox") v[f.id] = false;
     else if (f.type === "fullname") v[f.id] = { first: "", last: "" };
-    else if (f.type === "signature") v[f.id] = "";
+    else if (isSignatureField(f)) v[f.id] = "";
   }
   return v;
 }
@@ -107,7 +108,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
   // formulaire). Le bouton final unique = "Signer et générer le document".
   const steps = useMemo<Step[]>(() => {
     const visible = form.fields.filter((f) => isFieldVisible(f.visibleIf, values));
-    const dataFields = visible.filter((f) => f.type !== "signature" && f.prefillFrom !== "system.today");
+    const dataFields = visible.filter((f) => !isAutoField(f));
 
     const groups: Array<{ key: string | undefined; fields: PublicField[] }> = [];
     for (const f of dataFields) {
@@ -181,7 +182,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     const signedValues: FormPayload = { ...values };
     if (signerName) {
       for (const f of form.fields) {
-        if (f.type === "signature") signedValues[f.id] = "confirmed";
+        if (isSignatureField(f)) signedValues[f.id] = "confirmed";
       }
     } else {
       // Pas de nom exploitable : on annule pour ne pas générer un document
@@ -425,7 +426,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                 )}
                 <Separator />
                 {/* Aperçu de la signature numérique qui sera apposée. */}
-                {form.fields.some((f) => f.type === "signature") && (
+                {form.fields.some(isSignatureField) && (
                   <div className="rounded-lg border border-dashed bg-muted/30 p-3 text-sm">
                     <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
                       Signature numérique
@@ -506,8 +507,10 @@ function SummaryStep({
         const raw = values[f.id];
         let display = "";
         if (f.type === "checkbox") display = raw === true ? "Oui" : "Non";
-        else if (f.type === "signature")
-          display = typeof raw === "string" && raw.trim() ? `Signé numériquement${signerName ? ` — ${signerName}` : ""}` : "—";
+        else if (isSignatureField(f))
+          display = `Signé numériquement${signerName ? ` — ${signerName}` : ""}`;
+        else if (isCreationDateField(f))
+          display = todayISO();
         else if (f.type === "fullname" && raw && typeof raw === "object") {
           const o = raw as { first?: string; last?: string };
           display = [o.first, o.last].filter(Boolean).join(" ");

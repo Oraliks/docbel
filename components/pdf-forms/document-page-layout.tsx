@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ClockIcon,
@@ -102,8 +102,21 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
           </div>
         </div>
 
-        {/* Illustration décorative — masquée sur mobile */}
-        <DocIllustration abbrev={docAbbrev} />
+        {/* Illustration décorative — masquée sur mobile.
+            Les libellés cyclés correspondent aux types de chômage temporaire
+            du dossier actif ; ils seront un jour pilotés par la config du dossier. */}
+        <DocIllustration
+          abbrev={docAbbrev}
+          cyclingLabels={[
+            "Économique",
+            "Action sociale",
+            "Vacances annuelles",
+            "Repos compensatoire",
+            "Intempéries",
+            "Accident technique",
+            "Force majeure",
+          ]}
+        />
       </header>
 
       {/* Layout 2 colonnes */}
@@ -126,25 +139,105 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
   );
 }
 
-function DocIllustration({ abbrev }: { abbrev: string }) {
+// Libellés cyclés par défaut : les types de chômage temporaire du dossier
+// actif. Exposés en prop pour rester génériques (futurs dossiers) et seront
+// à terme pilotés par la config du dossier plutôt que codés en dur.
+const DEFAULT_CYCLING_LABELS = [
+  "Économique",
+  "Action sociale",
+  "Vacances annuelles",
+  "Repos compensatoire",
+  "Intempéries",
+  "Accident technique",
+  "Force majeure",
+];
+
+// Cadence : on commence rapide (~3,5 s) pour attirer l'œil, puis on ralentit
+// à 5 s après quelques transitions "pour pas que ça charge trop le site".
+const FAST_INTERVAL_MS = 3500;
+const SLOW_INTERVAL_MS = 5000;
+const FAST_TRANSITIONS = 3;
+
+function DocIllustration({
+  abbrev,
+  cyclingLabels = DEFAULT_CYCLING_LABELS,
+}: {
+  abbrev: string;
+  cyclingLabels?: string[];
+}) {
+  const [index, setIndex] = useState(0);
+  // Nombre de swaps déjà effectués (sert à basculer rapide → lent).
+  const swapsRef = useRef(0);
+
+  useEffect(() => {
+    if (cyclingLabels.length <= 1) return;
+
+    // Respect de prefers-reduced-motion : pas de cycle, libellé statique.
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) return;
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const schedule = () => {
+      const delay = swapsRef.current < FAST_TRANSITIONS ? FAST_INTERVAL_MS : SLOW_INTERVAL_MS;
+      timeoutId = setTimeout(() => {
+        swapsRef.current += 1;
+        setIndex((i) => (i + 1) % cyclingLabels.length);
+        schedule();
+      }, delay);
+    };
+
+    schedule();
+    return () => clearTimeout(timeoutId);
+  }, [cyclingLabels.length]);
+
+  const label = cyclingLabels[index] ?? cyclingLabels[0] ?? "";
+
   return (
-    <div className="pointer-events-none absolute -top-2 right-0 hidden h-52 w-64 lg:block" aria-hidden>
-      <SparklesIcon className="absolute left-6 top-6 size-5 text-[color:var(--glass-accent-deep)] opacity-60" />
-      <SparklesIcon className="absolute left-16 top-28 size-3.5 text-[color:var(--glass-accent-deep)] opacity-40" />
-      <SparklesIcon className="absolute right-2 top-2 size-3 text-[color:var(--glass-accent-deep)] opacity-50" />
-      {/* Grande feuille de document inclinée */}
-      <div className="absolute right-16 top-4 flex h-44 w-36 rotate-6 flex-col gap-2 rounded-3xl bg-white p-5 shadow-xl ring-1 ring-black/5">
-        <span className="h-2 w-20 rounded-full bg-[color:var(--glass-ink-faint)]" />
-        <span className="h-2 w-14 rounded-full bg-[color:var(--glass-ink-faint)]" />
-        <span className="h-2 w-16 rounded-full bg-[color:var(--glass-ink-faint)]" />
-        <span className="mt-auto w-fit rounded-xl bg-[color:var(--glass-accent-deep)] px-3 py-1.5 text-sm font-bold text-white">
-          {abbrev}
-        </span>
+    <div className="pointer-events-none absolute -top-2 right-0 hidden h-36 w-44 lg:block" aria-hidden>
+      <SparklesIcon className="absolute left-4 top-4 size-4 text-[color:var(--glass-accent-deep)] opacity-60" />
+      <SparklesIcon className="absolute left-11 top-20 size-3 text-[color:var(--glass-accent-deep)] opacity-40" />
+      <SparklesIcon className="absolute right-1 top-1 size-2.5 text-[color:var(--glass-accent-deep)] opacity-50" />
+      {/* Feuille de document inclinée */}
+      <div className="absolute right-11 top-3 flex h-32 w-28 rotate-6 flex-col gap-1.5 rounded-2xl bg-white p-3.5 shadow-xl ring-1 ring-black/5">
+        <span className="h-1.5 w-16 rounded-full bg-[color:var(--glass-ink-faint)]" />
+        <span className="h-1.5 w-11 rounded-full bg-[color:var(--glass-ink-faint)]" />
+        <span className="h-1.5 w-12 rounded-full bg-[color:var(--glass-ink-faint)]" />
+        {/* Badge abréviation + libellé cyclé du type de dossier */}
+        <div className="mt-auto flex flex-col gap-1">
+          <span className="w-fit rounded-lg bg-[color:var(--glass-accent-deep)] px-2 py-1 text-xs font-bold text-white">
+            {abbrev}
+          </span>
+          {/* Crossfade : conteneur de hauteur fixe → aucun layout shift. */}
+          <span className="relative block h-3 w-full overflow-hidden">
+            <span
+              key={index}
+              className="glass-cycling-label absolute inset-0 truncate text-[10px] font-semibold leading-3 text-[color:var(--glass-accent-deep)]"
+            >
+              {label}
+            </span>
+          </span>
+        </div>
       </div>
       {/* Pastille "personne" en bas à droite, en superposition */}
-      <div className="absolute bottom-4 right-6 flex size-16 items-center justify-center rounded-3xl bg-[color:var(--glass-accent-deep)] shadow-xl">
-        <UserIcon className="size-7 text-white" />
+      <div className="absolute bottom-2 right-4 flex size-11 items-center justify-center rounded-2xl bg-[color:var(--glass-accent-deep)] shadow-xl">
+        <UserIcon className="size-5 text-white" />
       </div>
+      {/* Animation de crossfade ; désactivée si prefers-reduced-motion. */}
+      <style>{`
+        @keyframes glass-cycling-fade {
+          from { opacity: 0; transform: translateY(3px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .glass-cycling-label {
+          animation: glass-cycling-fade 360ms ease-out both;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .glass-cycling-label { animation: none; }
+        }
+      `}</style>
     </div>
   );
 }

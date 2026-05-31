@@ -5,12 +5,14 @@ import {
   PDFDropdown,
   PDFRadioGroup,
   StandardFonts,
+  rgb,
 } from "pdf-lib";
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
 import { PdfFormField, FormPayload, AcroFieldRaw } from "./types";
 import { assembleFullName } from "./system-values";
+import { resolveSignerName, buildSignatureBlock } from "./signature";
 
 /// Chemin d'une police TTF Unicode optionnelle. Si présente, elle est
 /// embarquée et utilisée pour réécrire les apparences des champs → support
@@ -71,6 +73,9 @@ export async function fillForm(
     font = await doc.embedFont(StandardFonts.Helvetica);
   }
 
+  // Police oblique pour la ligne "nom" du bloc de signature (effet manuscrit).
+  const obliqueFont = await doc.embedFont(StandardFonts.HelveticaOblique);
+
   for (const field of fields) {
     if (!field.pdfFieldName) continue;
     const raw = payload[field.id];
@@ -86,24 +91,45 @@ export async function fillForm(
     }
 
     try {
-      // Signature : data URL → image embarquée à la position du widget.
+      // Signature numérique "façon Adobe" : si le champ est confirmé (valeur
+      // non vide), on dessine un bloc texte (nom + mention + horodatage) à la
+      // position du widget AcroForm. Le nom est résolu depuis le payload.
       if (field.type === "signature") {
-        const dataUrl = typeof value === "string" ? value : "";
-        const m = dataUrl.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/);
-        if (!m) continue;
-        const tech = (opts.technicalSchema ?? []).find(
-          (t) => t.pdfFieldName === field.pdfFieldName
-        );
+        const confirmed = typeof value === "string" && value.trim() !== "";
+        if (!confirmed) continue;
+        const tech = (opts.technicalSchema ?? []).find((t) => t.pdfFieldName === field.pdfFieldName);
         if (!tech?.rect) continue;
-        // Vide le texte du widget (cas où c'était un PDFTextField : on évite
-        // d'afficher le data URL en clair par-dessus la signature).
         if (pdfField instanceof PDFTextField) pdfField.setText("");
-        const bytes = Buffer.from(m[2], "base64");
-        const img = m[1] === "png" ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+
+        const signerName = resolveSignerName(fields, payload) || (typeof value === "string" ? value : "");
+        if (!signerName) continue;
+        const block = buildSignatureBlock(signerName);
+
         const pageIdx = Math.max(0, Math.min(doc.getPageCount() - 1, tech.page ?? 0));
         const page = doc.getPage(pageIdx);
-        const [x, y, w, h] = tech.rect;
-        page.drawImage(img, { x, y, width: w, height: h });
+        const [bx, by, bw, bh] = tech.rect;
+        const pad = 4;
+
+        // Cadre léger.
+        page.drawRectangle({
+          x: bx,
+          y: by,
+          width: bw,
+          height: bh,
+          color: rgb(0.96, 0.95, 1),
+          opacity: 0.5,
+          borderColor: rgb(0.42, 0.4, 0.62),
+          borderWidth: 0.5,
+        });
+
+        const nameSize = Math.min(13, Math.max(8, bh / 3.2));
+        const small = Math.max(5.5, Math.min(7.5, bh / 6));
+        let cy = by + bh - pad - nameSize;
+        page.drawText(block.name, { x: bx + pad, y: cy, size: nameSize, font: obliqueFont, color: rgb(0.1, 0.1, 0.3) });
+        cy -= small + 4;
+        page.drawText(block.by, { x: bx + pad, y: cy, size: small, font, color: rgb(0.32, 0.32, 0.42) });
+        cy -= small + 2;
+        page.drawText(block.date, { x: bx + pad, y: cy, size: small, font, color: rgb(0.32, 0.32, 0.42) });
         continue;
       }
 

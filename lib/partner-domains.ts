@@ -15,13 +15,27 @@ export async function isEmailAuthorized(email: string): Promise<{
   authorized: boolean;
   organizationName?: string;
   isTest?: boolean;
+  segment?: string;
+  partnerType?: string | null;
 }> {
-  const domain = extractDomainFromEmail(email);
-  if (!domain) return { authorized: false };
+  const normalized = email.trim().toLowerCase();
+  const domain = extractDomainFromEmail(normalized);
 
+  // Priorité à une autorisation par EMAIL exact (entrées kind="email", ex. privé
+  // en gmail/hotmail), sinon par DOMAINE (entrées kind="domain", ex. @cpas.be).
   const match = await prisma.partnerDomain.findFirst({
-    where: { domain, isActive: true },
-    select: { organizationName: true, isTest: true },
+    where: {
+      isActive: true,
+      OR: [{ email: normalized }, ...(domain ? [{ domain }] : [])],
+    },
+    // email non-null d'abord → l'entrée email exacte gagne sur l'entrée domaine.
+    orderBy: { email: { sort: "desc", nulls: "last" } },
+    select: {
+      organizationName: true,
+      isTest: true,
+      segment: true,
+      partnerType: true,
+    },
   });
 
   if (!match) return { authorized: false };
@@ -29,6 +43,8 @@ export async function isEmailAuthorized(email: string): Promise<{
     authorized: true,
     organizationName: match.organizationName,
     isTest: match.isTest,
+    segment: match.segment,
+    partnerType: match.partnerType,
   };
 }
 
@@ -42,7 +58,11 @@ export interface PartnerOrganizationGroup {
   organizationName: string;
   domains: Array<{
     id: string;
-    domain: string;
+    kind: string;
+    domain: string | null;
+    email: string | null;
+    segment: string;
+    partnerType: string | null;
     notes: string | null;
     isTest: boolean;
     isActive: boolean;
@@ -102,7 +122,11 @@ export async function listOrganizations(): Promise<PartnerOrganizationGroup[]> {
     const group = groups.get(key)!;
     group.domains.push({
       id: d.id,
+      kind: d.kind,
       domain: d.domain,
+      email: d.email,
+      segment: d.segment,
+      partnerType: d.partnerType,
       notes: d.notes,
       isTest: d.isTest,
       isActive: d.isActive,
@@ -145,15 +169,24 @@ export async function listExistingOrganizationNames(): Promise<string[]> {
 }
 
 export async function createPartnerDomain(input: {
-  domain: string;
+  kind?: string; // "domain" | "email" — défaut "domain"
+  domain?: string | null;
+  email?: string | null;
+  segment?: string; // "employeur" | "partenaire" — défaut "partenaire"
+  partnerType?: string | null;
   organizationName: string;
   notes?: string | null;
   isTest?: boolean;
   createdBy?: string | null;
 }) {
+  const kind = input.kind === "email" ? "email" : "domain";
   return prisma.partnerDomain.create({
     data: {
-      domain: normalizeDomain(input.domain),
+      kind,
+      domain: kind === "domain" ? normalizeDomain(input.domain ?? "") : null,
+      email: kind === "email" ? (input.email ?? "").trim().toLowerCase() : null,
+      segment: input.segment === "employeur" ? "employeur" : "partenaire",
+      partnerType: input.partnerType ?? null,
       organizationName: input.organizationName.trim(),
       notes: input.notes?.trim() || null,
       isTest: input.isTest ?? false,
@@ -166,7 +199,11 @@ export async function createPartnerDomain(input: {
 export async function updatePartnerDomain(
   id: string,
   input: {
-    domain?: string;
+    kind?: string;
+    domain?: string | null;
+    email?: string | null;
+    segment?: string;
+    partnerType?: string | null;
     organizationName?: string;
     notes?: string | null;
     isTest?: boolean;
@@ -176,13 +213,24 @@ export async function updatePartnerDomain(
   return prisma.partnerDomain.update({
     where: { id },
     data: {
+      kind: input.kind,
       domain:
-        input.domain === undefined ? undefined : normalizeDomain(input.domain),
+        input.domain === undefined
+          ? undefined
+          : input.domain
+            ? normalizeDomain(input.domain)
+            : null,
+      email:
+        input.email === undefined
+          ? undefined
+          : input.email
+            ? input.email.trim().toLowerCase()
+            : null,
+      segment: input.segment,
+      partnerType: input.partnerType,
       organizationName: input.organizationName?.trim(),
       notes:
-        input.notes === undefined
-          ? undefined
-          : input.notes?.trim() || null,
+        input.notes === undefined ? undefined : input.notes?.trim() || null,
       isTest: input.isTest,
       isActive: input.isActive,
     },

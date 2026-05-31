@@ -14,6 +14,7 @@ generator client {
 enum UserRole {
   user
   partner
+  employer
   moderator
   admin
 }
@@ -65,6 +66,12 @@ model User {
   failedLoginAttempts Int        @default(0)
   lockedUntil         DateTime?
   partnerOrganization String?
+  /// Segment d'accès du compte : "employeur" | "partenaire" (les citoyens n'ont
+  /// pas de compte). null = comptes legacy/admin. Validé via isAudienceId().
+  segment             String?
+  /// Sous-type partenaire : "onem" | "organisme_paiement" | "service_public" |
+  /// "prive_asbl". null pour les employeurs et comptes non-partenaires.
+  partnerType         String?
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
   sessions            Session[]
@@ -73,6 +80,7 @@ model User {
   @@index([role])
   @@index([status])
   @@index([partnerOrganization])
+  @@index([segment])
 }
 
 model Session {
@@ -250,6 +258,12 @@ model Tool {
   /// (/outils, /employeur, /partenaire) via canViewAudience() dans lib/audience.
   /// Valeurs : "citoyen" | "employeur" | "partenaire".
   audience       String      @default("citoyen")
+  /// Accès par ENSEMBLE {segment, partnerType?} — remplace à terme la hiérarchie
+  /// de `audience`. Array JSON, ex : [{ "segment": "employeur" }, { "segment":
+  /// "partenaire", "partnerType": "service_public" }]. Une règle { "segment":
+  /// "citoyen" } rend l'outil public (accessible aux anonymes). Tableau vide =
+  /// on retombe sur `audience` (legacy) le temps de la migration. Lu via canUseTool().
+  access         Json        @default("[]")
   // Vérification annuelle de la fiabilité des chiffres / formules. L'admin
   // appuie sur "Marquer comme revu" via /api/admin/calculators/[slug]/review
   // → lastReviewedAt = now, nextReviewDue = now + 12 mois. Un bandeau
@@ -806,9 +820,25 @@ model CommissionParitaire {
   @@index([code])
 }
 
+/// Liste d'autorisations d'inscription, curée par l'admin. Une entrée autorise
+/// soit un domaine email entier (kind="domain", ex "cpas.be"), soit une adresse
+/// précise (kind="email", ex "jean@gmail.com" pour le privé sans domaine pro).
+/// Chaque entrée porte le segment + le sous-type partenaire à appliquer au
+/// compte créé. (Nom historique "PartnerDomain" — couvre désormais aussi les
+/// employeurs et les entrées par email.)
 model PartnerDomain {
   id               String   @id @default(cuid())
-  domain           String   @unique // ex: "cpas.brussels" (sans le @)
+  // "domain" | "email" — granularité du match
+  kind             String   @default("domain")
+  // Domaine (kind="domain"), ex "cpas.brussels" sans le @. null si kind="email".
+  domain           String?  @unique // ex: "cpas.brussels" (sans le @)
+  // Adresse email exacte (kind="email"). null si kind="domain".
+  email            String?  @unique
+  // Segment appliqué au compte créé : "employeur" | "partenaire".
+  segment          String   @default("partenaire")
+  // Sous-type partenaire (si segment="partenaire") : "onem" | "organisme_paiement"
+  // | "service_public" | "prive_asbl". null pour les employeurs.
+  partnerType      String?
   organizationName String
   notes            String?
   isTest           Boolean  @default(false)
@@ -818,6 +848,7 @@ model PartnerDomain {
   updatedAt        DateTime @updatedAt
 
   @@index([isActive])
+  @@index([segment])
 }
 
 model U1Institution {

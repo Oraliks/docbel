@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { setToolActive } from '@/lib/tools-active'
+import { PARTNER_TYPES, parseAccessRules } from '@/lib/entitlements'
 import { z } from 'zod'
 
 export async function GET(
@@ -43,8 +44,20 @@ const patchSchema = z.object({
   // borne déjà à des valeurs sensées.
   icon: z.string().trim().min(1).max(64).nullable().optional(),
   // Audience minimale qui peut voir l'outil. Cf. lib/audience.ts pour la
-  // hiérarchie (citoyen < employeur < partenaire).
+  // hiérarchie (citoyen < employeur < partenaire). Reste le fallback legacy
+  // quand `access` est vide (cf. lib/entitlements.ts → effectiveRules).
   audience: z.enum(['citoyen', 'employeur', 'partenaire']).optional(),
+  // Modèle d'accès set-based : tableau de règles { segment, partnerType? }.
+  // Validation de forme ici, puis re-sanitisation via parseAccessRules avant
+  // persistance (filtre les segments/sous-types inconnus, normalise null).
+  access: z
+    .array(
+      z.object({
+        segment: z.enum(['citoyen', 'employeur', 'partenaire']),
+        partnerType: z.enum(PARTNER_TYPES).nullish(),
+      })
+    )
+    .optional(),
 })
 
 /**
@@ -115,16 +128,28 @@ export async function PATCH(
     // `active` n'est pas dans le client Prisma tant que db:generate n'a pas
     // tourné après la migration. On le passe en raw SQL pour s'assurer que
     // le toggle persiste vraiment. Les autres champs vont par la voie normale.
-    const { active, ...rest } = parsed.data
+    const { active, access, ...rest } = parsed.data
     if (typeof active === 'boolean') {
       await setToolActive(slug, active)
     }
 
+    // `access` (Json) : re-sanitise via parseAccessRules pour ne persister que
+    // des règles valides (segments connus, partnerType normalisé en null si
+    // absent/invalide). `audience` legacy reste géré tel quel dans `rest` —
+    // c'est le fallback quand `access` est vide.
+    const data: Record<string, unknown> = { ...rest }
+    if (access !== undefined) {
+      data.access = parseAccessRules(access)
+    }
+
     let updated = null
-    if (Object.keys(rest).length > 0) {
+    if (Object.keys(data).length > 0) {
       updated = await prisma.tool.update({
         where: { slug },
-        data: rest,
+        // Cast : le client Prisma régénéré peut ne pas encore typer `access`
+        // (Json) tant que db:generate n'a pas tourné (cf. tools-active.ts).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: data as any,
       })
     }
 

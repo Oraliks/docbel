@@ -23,13 +23,27 @@ import {
   Pencil,
   MoreVertical,
   Wrench,
+  Users,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   IconDisplay,
   IconPicker,
 } from "@/components/admin/documents/icon-picker";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { AUDIENCES, type AudienceId } from "@/lib/audience";
+import {
+  PARTNER_TYPES,
+  parseAccessRules,
+  type AccessRule,
+  type PartnerType,
+} from "@/lib/entitlements";
 import { cn } from "@/lib/utils";
 import type { Tool } from "./types";
 
@@ -103,12 +117,59 @@ const AUDIENCE_TONE: Record<
 };
 
 /**
+ * Libellés FR des sous-types partenaire (cf. lib/entitlements.ts → PARTNER_TYPES).
+ * Aucun sous-type coché = tout le segment partenaire.
+ */
+const PARTNER_TYPE_LABEL: Record<PartnerType, string> = {
+  onem: "ONEM",
+  organisme_paiement: "Organisme de paiement",
+  service_public: "Service public",
+  prive_asbl: "Privé-ASBL",
+};
+
+/**
+ * Ordre d'affichage des segments dans l'éditeur d'accès (citoyen → partenaire),
+ * aligné sur la hiérarchie historique de lib/audience.ts.
+ */
+const SEGMENTS: readonly AudienceId[] = ["citoyen", "employeur", "partenaire"];
+
+/**
+ * Résumé textuel court d'un AccessRule[] pour le pill de l'éditeur.
+ * Ex : "Citoyen", "Employeur + Partenaire", "Partenaire (ONEM, Service public)".
+ */
+function summarizeAccess(rules: AccessRule[]): string {
+  if (rules.length === 0) return "Hérité (audience)";
+  const parts: string[] = [];
+  for (const segment of SEGMENTS) {
+    const segmentRules = rules.filter((r) => r.segment === segment);
+    if (segmentRules.length === 0) continue;
+    const label = AUDIENCE_TONE[segment].label;
+    if (segment === "partenaire") {
+      const types = segmentRules
+        .map((r) => r.partnerType)
+        .filter((t): t is PartnerType => Boolean(t));
+      if (types.length > 0) {
+        parts.push(
+          `${label} (${types.map((t) => PARTNER_TYPE_LABEL[t]).join(", ")})`,
+        );
+        continue;
+      }
+    }
+    parts.push(label);
+  }
+  return parts.join(" + ") || "Hérité (audience)";
+}
+
+/**
  * Card horizontale compacte d'un outil dans la liste admin /outils.
  *
  * Layout (left to right) :
  *   - Tile icône (size-9, teintée audience) — clique pour ouvrir IconPicker
  *   - Bloc texte : nom (éditable inline) + sub-label (type + durée éventuelle)
- *   - Badges : Populaire (si applicable) + Audience (cliquable → menu)
+ *   - Badges : Populaire (si applicable) + Accès set-based (popover segments /
+ *              sous-types partenaire) + Audience legacy (cliquable → menu).
+ *              L'accès set-based prime ; l'audience reste le fallback quand
+ *              l'accès est vide (cf. lib/entitlements.ts → effectiveRules).
  *   - Switch on/off (PATCH /api/tools/[slug])
  *   - Bouton lien externe → /outils/[slug] (nouvelle tab)
  *   - Menu kebab : éditer description, méthodologie (si calc_*), config,
@@ -127,6 +188,11 @@ export function ToolCard({ tool }: { tool: Tool }) {
   const [description, setDescription] = useState(tool.description);
   const [icon, setIcon] = useState<string | null>(tool.icon ?? null);
   const [audience, setAudience] = useState<AudienceId>(tool.audience);
+  // Set-based access. `tool.access` peut être brut/undefined (cf. types.ts) →
+  // on le normalise en AccessRule[] via le même parseur que le serveur.
+  const [access, setAccess] = useState<AccessRule[]>(() =>
+    parseAccessRules(tool.access),
+  );
   const [saving, setSaving] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
@@ -142,6 +208,7 @@ export function ToolCard({ tool }: { tool: Tool }) {
     description?: string;
     icon?: string | null;
     audience?: AudienceId;
+    access?: AccessRule[];
   }) {
     setSaving(true);
     try {
@@ -236,6 +303,22 @@ export function ToolCard({ tool }: { tool: Tool }) {
     }
   }
 
+  async function saveAccess(next: AccessRule[]) {
+    const previous = access;
+    setAccess(next);
+    try {
+      await patch({ access: next });
+      toast.success(
+        next.length === 0
+          ? "Accès réinitialisé (hérite de l'audience)"
+          : `Accès : ${summarizeAccess(next)}`,
+      );
+      router.refresh();
+    } catch {
+      setAccess(previous);
+    }
+  }
+
   async function handleDelete() {
     const ok = await confirm({
       title: `Supprimer "${tool.name}" ?`,
@@ -315,7 +398,7 @@ export function ToolCard({ tool }: { tool: Tool }) {
           </p>
         </div>
 
-        {/* Badges (populaire + audience) ------------------------------- */}
+        {/* Badges (populaire + accès + audience) ----------------------- */}
         <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
           {popular ? (
             <span
@@ -326,6 +409,7 @@ export function ToolCard({ tool }: { tool: Tool }) {
               Populaire
             </span>
           ) : null}
+          <AccessPicker value={access} onChange={saveAccess} disabled={saving} />
           <AudiencePicker
             value={audience}
             onChange={saveAudience}
@@ -419,13 +503,14 @@ export function ToolCard({ tool }: { tool: Tool }) {
       </div>
 
       {/* Badges mobiles ------------------------------------------------ */}
-      <div className="flex items-center gap-1.5 sm:hidden">
+      <div className="flex flex-wrap items-center gap-1.5 sm:hidden">
         {popular ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
             <Star className="size-2.5 fill-current" />
             Populaire
           </span>
         ) : null}
+        <AccessPicker value={access} onChange={saveAccess} disabled={saving} />
         <AudiencePicker
           value={audience}
           onChange={saveAudience}
@@ -583,6 +668,184 @@ function audienceHint(id: AudienceId): string {
     case "partenaire":
       return "Partenaire uniquement";
   }
+}
+
+/* ------------------------------------------------------------------ */
+/*  AccessPicker — éditeur du modèle d'accès set-based (AccessRule[])  */
+/* ------------------------------------------------------------------ */
+
+/** Sous-types partenaire sélectionnés (non-null) dans un AccessRule[]. */
+function selectedPartnerTypes(rules: AccessRule[]): PartnerType[] {
+  return rules
+    .filter((r) => r.segment === "partenaire" && r.partnerType)
+    .map((r) => r.partnerType as PartnerType);
+}
+
+/** Ajoute/retire un segment "simple" (citoyen / employeur) sans toucher au reste. */
+function toggleSimpleSegment(
+  rules: AccessRule[],
+  segment: Extract<AudienceId, "citoyen" | "employeur">,
+): AccessRule[] {
+  const present = rules.some((r) => r.segment === segment);
+  if (present) return rules.filter((r) => r.segment !== segment);
+  return [...rules, { segment }];
+}
+
+/**
+ * Active/désactive tout le segment partenaire. On = règle "tout le segment"
+ * ({ segment: "partenaire" } sans partnerType). Off = retire toute règle
+ * partenaire (sous-types inclus).
+ */
+function togglePartnerSegment(rules: AccessRule[]): AccessRule[] {
+  const present = rules.some((r) => r.segment === "partenaire");
+  const others = rules.filter((r) => r.segment !== "partenaire");
+  if (present) return others;
+  return [...others, { segment: "partenaire" }];
+}
+
+/**
+ * Active/désactive un sous-type partenaire. Cocher un premier sous-type
+ * remplace la règle "tout le segment" par des règles ciblées ; décocher le
+ * dernier sous-type retombe sur "tout le segment".
+ */
+function togglePartnerType(
+  rules: AccessRule[],
+  type: PartnerType,
+): AccessRule[] {
+  const others = rules.filter((r) => r.segment !== "partenaire");
+  const current = selectedPartnerTypes(rules);
+  const next = current.includes(type)
+    ? current.filter((t) => t !== type)
+    : [...current, type];
+  if (next.length === 0) {
+    // Plus aucun sous-type : tout le segment partenaire.
+    return [...others, { segment: "partenaire" }];
+  }
+  return [
+    ...others,
+    ...next.map((t) => ({ segment: "partenaire" as const, partnerType: t })),
+  ];
+}
+
+/**
+ * Pill + popover pour éditer l'accès set-based d'un outil. Cohabite avec
+ * l'AudiencePicker legacy (qui sert de fallback quand l'accès est vide).
+ */
+function AccessPicker({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: AccessRule[];
+  onChange: (next: AccessRule[]) => void;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const summary = summarizeAccess(value);
+  const partnerOn = value.some((r) => r.segment === "partenaire");
+  const partnerTypes = selectedPartnerTypes(value);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        disabled={disabled}
+        title={`Accès (segments) : ${summary} — clic pour modifier.`}
+        aria-label={`Accès actuel : ${summary}`}
+        className={cn(
+          "inline-flex max-w-[200px] items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-foreground/80 transition hover:opacity-80 disabled:opacity-50",
+        )}
+      >
+        <Users className="size-2.5 shrink-0" />
+        <span className="truncate normal-case">{summary}</span>
+        <ChevronDown className="size-2.5 shrink-0 opacity-60" />
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[260px] p-2">
+        <p className="px-1 pb-1 text-[11px] font-semibold text-foreground">
+          Accès (segments)
+        </p>
+        <p className="px-1 pb-2 text-[10px] leading-snug text-muted-foreground">
+          Qui peut utiliser cet outil. Aucun segment coché = l&apos;outil
+          retombe sur l&apos;audience legacy ci-contre.
+        </p>
+
+        <div className="flex flex-col gap-0.5">
+          {SEGMENTS.map((segment) => {
+            const tone = AUDIENCE_TONE[segment];
+            const checked = value.some((r) => r.segment === segment);
+            return (
+              <label
+                key={segment}
+                className="flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-[12px] hover:bg-accent/60"
+              >
+                <Checkbox
+                  checked={checked}
+                  disabled={disabled}
+                  onCheckedChange={() => {
+                    if (segment === "partenaire") {
+                      onChange(togglePartnerSegment(value));
+                    } else {
+                      onChange(toggleSimpleSegment(value, segment));
+                    }
+                  }}
+                />
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                    tone.badge,
+                  )}
+                >
+                  {tone.label}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+
+        {/* Sous-multiselect des sous-types partenaire (révélé si partenaire coché) */}
+        {partnerOn ? (
+          <div className="mt-1 border-t border-border pt-2">
+            <p className="px-1 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Sous-types partenaire
+            </p>
+            <p className="px-1 pb-1.5 text-[10px] leading-snug text-muted-foreground">
+              Aucun coché = tout le segment partenaire.
+            </p>
+            <div className="flex flex-col gap-0.5">
+              {PARTNER_TYPES.map((type) => {
+                const checked = partnerTypes.includes(type);
+                return (
+                  <label
+                    key={type}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-[12px] hover:bg-accent/60"
+                  >
+                    <Checkbox
+                      checked={checked}
+                      disabled={disabled}
+                      onCheckedChange={() =>
+                        onChange(togglePartnerType(value, type))
+                      }
+                    />
+                    <span>{PARTNER_TYPE_LABEL[type]}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {value.length > 0 ? (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange([])}
+            className="mt-2 w-full rounded-md px-1.5 py-1 text-left text-[10px] text-muted-foreground transition hover:bg-accent/60 hover:text-foreground disabled:opacity-50"
+          >
+            Réinitialiser (hériter de l&apos;audience)
+          </button>
+        ) : null}
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 /* ------------------------------------------------------------------ */

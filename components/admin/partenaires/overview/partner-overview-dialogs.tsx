@@ -26,7 +26,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { PartnerDomain } from "./types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  PARTNER_TYPE_OPTIONS,
+  type PartnerDomain,
+  type PartnerDomainKind,
+  type PartnerSegment,
+} from "./types";
 
 /**
  * Famille de dialogs pour la page d'overview admin /admin/partenaires.
@@ -64,7 +76,11 @@ export function PartnerCreateDialog({
   onCreate,
 }: PartnerCreateDialogProps) {
   const [form, setForm] = useState({
+    kind: "domain" as PartnerDomainKind,
     domains: "",
+    email: "",
+    segment: "partenaire" as PartnerSegment,
+    partnerType: "" as string,
     organizationName: "",
     notes: "",
     isTest: false,
@@ -73,32 +89,73 @@ export function PartnerCreateDialog({
   // Reset à chaque réouverture pour éviter un formulaire pré-rempli.
   useEffect(() => {
     if (!open) {
-      setForm({ domains: "", organizationName: "", notes: "", isTest: false });
+      setForm({
+        kind: "domain",
+        domains: "",
+        email: "",
+        segment: "partenaire",
+        partnerType: "",
+        organizationName: "",
+        notes: "",
+        isTest: false,
+      });
     }
   }, [open]);
 
+  const isEmailKind = form.kind === "email";
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const parsedDomains = form.domains
-      .split(/[\s,;]+/)
-      .map((d) => d.trim().toLowerCase().replace(/^@/, ""))
-      .filter((d) => d.length > 0);
 
-    if (parsedDomains.length === 0) {
-      toast.error("Saisissez au moins un domaine");
-      return;
+    // partnerType n'a de sens que pour le segment "partenaire".
+    const partnerType =
+      form.segment === "partenaire" && form.partnerType
+        ? form.partnerType
+        : null;
+
+    let payload: Record<string, unknown>;
+
+    if (isEmailKind) {
+      const email = form.email.trim().toLowerCase();
+      if (!email) {
+        toast.error("Saisissez une adresse email");
+        return;
+      }
+      payload = {
+        kind: "email",
+        email,
+        segment: form.segment,
+        partnerType,
+        organizationName: form.organizationName,
+        notes: form.notes,
+        isTest: form.isTest,
+      };
+    } else {
+      const parsedDomains = form.domains
+        .split(/[\s,;]+/)
+        .map((d) => d.trim().toLowerCase().replace(/^@/, ""))
+        .filter((d) => d.length > 0);
+
+      if (parsedDomains.length === 0) {
+        toast.error("Saisissez au moins un domaine");
+        return;
+      }
+      payload = {
+        kind: "domain",
+        domains: parsedDomains,
+        segment: form.segment,
+        partnerType,
+        organizationName: form.organizationName,
+        notes: form.notes,
+        isTest: form.isTest,
+      };
     }
 
     try {
       const res = await fetch("/api/admin/partner-domains", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          domains: parsedDomains,
-          organizationName: form.organizationName,
-          notes: form.notes,
-          isTest: form.isTest,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -109,7 +166,11 @@ export function PartnerCreateDialog({
       const created = (data.items ?? [data.item]).map(
         (i: {
           id: string;
-          domain: string;
+          kind: PartnerDomainKind;
+          domain: string | null;
+          email: string | null;
+          segment: PartnerSegment;
+          partnerType: string | null;
           notes: string | null;
           isTest: boolean;
           isActive: boolean;
@@ -117,7 +178,11 @@ export function PartnerCreateDialog({
           organizationName: string;
         }) => ({
           id: i.id,
+          kind: i.kind,
           domain: i.domain,
+          email: i.email,
+          segment: i.segment,
+          partnerType: i.partnerType,
           notes: i.notes,
           isTest: i.isTest,
           isActive: i.isActive,
@@ -138,33 +203,123 @@ export function PartnerCreateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Ajouter un ou plusieurs domaines</DialogTitle>
+          <DialogTitle>Ajouter une entrée d&apos;accès</DialogTitle>
           <DialogDescription>
-            Saisissez les domaines sans le @ (ex : <code>cpas.brussels</code>).
-            Pour rattacher plusieurs domaines à la même organisation (FGTB
-            et ABVV par exemple), tapez-les sur des lignes différentes ou
-            séparés par des virgules.
+            Autorisez un <strong>domaine entier</strong> (ex :{" "}
+            <code>cpas.brussels</code>) ou une <strong>adresse email</strong>{" "}
+            précise (utile pour un privé en gmail/hotmail).
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="create-domains">Domaine(s)</Label>
-            <Textarea
-              id="create-domains"
-              placeholder={"fgtb.be\nabvv.be\n…"}
-              rows={3}
-              value={form.domains}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, domains: e.target.value }))
-              }
-              required
-              autoFocus
-            />
-            <p className="text-xs text-muted-foreground">
-              Un domaine par ligne (ou séparés par virgule / espace). Les
-              doublons sont ignorés.
-            </p>
+          {/* Type d'entrée : domaine entier vs adresse email --------- */}
+          <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
+            <Label htmlFor="create-kind" className="cursor-pointer">
+              {isEmailKind ? "Adresse email" : "Domaine entier"}
+            </Label>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className={isEmailKind ? "" : "font-semibold text-foreground"}>
+                Domaine
+              </span>
+              <Switch
+                id="create-kind"
+                checked={isEmailKind}
+                onCheckedChange={(v) =>
+                  setForm((f) => ({ ...f, kind: v ? "email" : "domain" }))
+                }
+              />
+              <span className={isEmailKind ? "font-semibold text-foreground" : ""}>
+                Email
+              </span>
+            </div>
           </div>
+
+          {isEmailKind ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="create-email">Adresse email</Label>
+              <Input
+                id="create-email"
+                type="email"
+                placeholder="prenom.nom@gmail.com"
+                value={form.email}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, email: e.target.value }))
+                }
+                required
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                Seule cette adresse exacte sera autorisée.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Label htmlFor="create-domains">Domaine(s)</Label>
+              <Textarea
+                id="create-domains"
+                placeholder={"fgtb.be\nabvv.be\n…"}
+                rows={3}
+                value={form.domains}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, domains: e.target.value }))
+                }
+                required
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                Un domaine par ligne (ou séparés par virgule / espace). Les
+                doublons sont ignorés.
+              </p>
+            </div>
+          )}
+
+          {/* Segment + sous-type partenaire --------------------------- */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="create-segment">Segment</Label>
+              <Select
+                value={form.segment}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    segment: (v as PartnerSegment) ?? "partenaire",
+                    // partnerType n'a de sens que pour "partenaire".
+                    partnerType: v === "partenaire" ? f.partnerType : "",
+                  }))
+                }
+              >
+                <SelectTrigger id="create-segment" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="partenaire">Partenaire</SelectItem>
+                  <SelectItem value="employeur">Employeur</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {form.segment === "partenaire" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="create-partnerType">Sous-type</Label>
+                <Select
+                  value={form.partnerType || undefined}
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, partnerType: v ?? "" }))
+                  }
+                >
+                  <SelectTrigger id="create-partnerType" className="w-full">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PARTNER_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="create-organizationName">Organisation</Label>
             <Input
@@ -207,7 +362,7 @@ export function PartnerCreateDialog({
               }
             />
             <Label htmlFor="create-isTest" className="cursor-pointer">
-              Domaine(s) de test
+              Entrée de test
             </Label>
           </div>
           <DialogFooter>
@@ -240,7 +395,11 @@ interface PartnerEditDomainDialogProps {
   orgNames: string[];
   isPending: boolean;
   onSave: (input: {
+    kind: PartnerDomainKind;
     domain: string;
+    email: string;
+    segment: PartnerSegment;
+    partnerType: string | null;
     organizationName: string;
     notes: string;
     isTest: boolean;
@@ -256,7 +415,11 @@ export function PartnerEditDomainDialog({
   onSave,
 }: PartnerEditDomainDialogProps) {
   const [form, setForm] = useState({
+    kind: "domain" as PartnerDomainKind,
     domain: "",
+    email: "",
+    segment: "partenaire" as PartnerSegment,
+    partnerType: "" as string,
     organizationName: "",
     notes: "",
     isTest: false,
@@ -266,7 +429,11 @@ export function PartnerEditDomainDialog({
   useEffect(() => {
     if (target) {
       setForm({
-        domain: target.domain.domain,
+        kind: target.domain.kind,
+        domain: target.domain.domain ?? "",
+        email: target.domain.email ?? "",
+        segment: target.domain.segment,
+        partnerType: target.domain.partnerType ?? "",
         organizationName: target.organizationName,
         notes: target.domain.notes ?? "",
         isTest: target.domain.isTest,
@@ -275,27 +442,132 @@ export function PartnerEditDomainDialog({
     }
   }, [target]);
 
+  const isEmailKind = form.kind === "email";
+
+  function handleSave() {
+    onSave({
+      kind: form.kind,
+      domain: form.domain,
+      email: form.email,
+      segment: form.segment,
+      partnerType:
+        form.segment === "partenaire" && form.partnerType
+          ? form.partnerType
+          : null,
+      organizationName: form.organizationName,
+      notes: form.notes,
+      isTest: form.isTest,
+      isActive: form.isActive,
+    });
+  }
+
   return (
     <Dialog open={!!target} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Modifier le domaine</DialogTitle>
+          <DialogTitle>Modifier l&apos;entrée</DialogTitle>
           <DialogDescription>
-            Vous pouvez aussi déplacer ce domaine vers une autre organisation
+            Vous pouvez aussi déplacer cette entrée vers une autre organisation
             en changeant son nom.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-domain">Domaine</Label>
-            <Input
-              id="edit-domain"
-              value={form.domain}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, domain: e.target.value }))
-              }
-            />
+          {/* Type d'entrée : domaine entier vs adresse email --------- */}
+          <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
+            <Label htmlFor="edit-kind" className="cursor-pointer">
+              {isEmailKind ? "Adresse email" : "Domaine entier"}
+            </Label>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className={isEmailKind ? "" : "font-semibold text-foreground"}>
+                Domaine
+              </span>
+              <Switch
+                id="edit-kind"
+                checked={isEmailKind}
+                onCheckedChange={(v) =>
+                  setForm((f) => ({ ...f, kind: v ? "email" : "domain" }))
+                }
+              />
+              <span className={isEmailKind ? "font-semibold text-foreground" : ""}>
+                Email
+              </span>
+            </div>
           </div>
+
+          {isEmailKind ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-email">Adresse email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                placeholder="prenom.nom@gmail.com"
+                value={form.email}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, email: e.target.value }))
+                }
+              />
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-domain">Domaine</Label>
+              <Input
+                id="edit-domain"
+                placeholder="cpas.brussels"
+                value={form.domain}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, domain: e.target.value }))
+                }
+              />
+            </div>
+          )}
+
+          {/* Segment + sous-type partenaire --------------------------- */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-segment">Segment</Label>
+              <Select
+                value={form.segment}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    segment: (v as PartnerSegment) ?? "partenaire",
+                    partnerType: v === "partenaire" ? f.partnerType : "",
+                  }))
+                }
+              >
+                <SelectTrigger id="edit-segment" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="partenaire">Partenaire</SelectItem>
+                  <SelectItem value="employeur">Employeur</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {form.segment === "partenaire" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-partnerType">Sous-type</Label>
+                <Select
+                  value={form.partnerType || undefined}
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, partnerType: v ?? "" }))
+                  }
+                >
+                  <SelectTrigger id="edit-partnerType" className="w-full">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PARTNER_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="edit-org">Organisation</Label>
             <Input
@@ -360,7 +632,7 @@ export function PartnerEditDomainDialog({
           >
             Annuler
           </Button>
-          <Button onClick={() => onSave(form)} disabled={isPending}>
+          <Button onClick={handleSave} disabled={isPending}>
             Enregistrer
           </Button>
         </DialogFooter>
@@ -456,10 +728,17 @@ export function PartnerDeleteDomainDialog({
     <AlertDialog open={!!target} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Supprimer ce domaine ?</AlertDialogTitle>
+          <AlertDialogTitle>Supprimer cette entrée ?</AlertDialogTitle>
           <AlertDialogDescription>
-            Le domaine <strong>@{target?.domain}</strong> sera définitivement
-            retiré. Cette action est irréversible.
+            L&apos;entrée{" "}
+            <strong>
+              {target?.kind === "email"
+                ? target?.email
+                : target?.domain
+                  ? `@${target.domain}`
+                  : "—"}
+            </strong>{" "}
+            sera définitivement retirée. Cette action est irréversible.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

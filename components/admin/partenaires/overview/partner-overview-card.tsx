@@ -100,7 +100,7 @@ export function PartnerOverviewCard({
         <p className="flex items-center gap-3 text-[11.5px] text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <Globe className="size-2.5" />
-            {org.domainCount} domaine{org.domainCount > 1 ? "s" : ""}
+            {org.domainCount} accès
           </span>
           <span className="inline-flex items-center gap-1">
             <Users className="size-2.5" />

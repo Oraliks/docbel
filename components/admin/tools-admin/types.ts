@@ -15,7 +15,18 @@ export interface Tool {
   timeMin?: number;
   order: number;
   active: boolean;
+  /**
+   * Audience hiérarchique legacy. Reste le fallback de `canUseTool` quand
+   * `access` est vide (cf. lib/entitlements.ts → effectiveRules).
+   */
   audience: AudienceId;
+  /**
+   * Modèle d'accès set-based (cf. lib/entitlements.ts → AccessRule[]). Un
+   * tableau de règles { segment, partnerType? }. Optionnel car le client
+   * Prisma régénéré peut ne pas l'exposer tant que db:generate n'a pas tourné,
+   * et la page server ne le projette pas encore systématiquement.
+   */
+  access?: { segment: string; partnerType?: string | null }[];
 }
 
 /**

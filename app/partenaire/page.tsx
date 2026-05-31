@@ -58,7 +58,9 @@ export default async function PartenaireRoute() {
           organizationName={user.partnerOrganization}
           currentUserId={user.id}
           colleagues={colleagues}
-          domains={domains}
+          domains={domains.flatMap((d) =>
+            d.domain ? [{ domain: d.domain, isActive: d.isActive }] : [],
+          )}
         />
       );
     }

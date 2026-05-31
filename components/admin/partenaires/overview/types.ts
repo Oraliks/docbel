@@ -6,9 +6,19 @@
  * string) pour pouvoir traverser la frontière server/client.
  */
 
+/** "domain" = autorisation par domaine entier ; "email" = adresse exacte. */
+export type PartnerDomainKind = "domain" | "email";
+
+/** Segment d'accès d'une entrée d'allowlist. */
+export type PartnerSegment = "partenaire" | "employeur";
+
 export interface PartnerDomain {
   id: string;
-  domain: string;
+  kind: PartnerDomainKind;
+  domain: string | null;
+  email: string | null;
+  segment: PartnerSegment;
+  partnerType: string | null;
   notes: string | null;
   isTest: boolean;
   isActive: boolean;
@@ -60,3 +70,31 @@ export interface PartnerCounts {
   pending: number;
   inactive: number;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Libellés FR partagés (dialogs + listes + détails)                  */
+/* ------------------------------------------------------------------ */
+
+export const SEGMENT_LABELS: Record<PartnerSegment, string> = {
+  partenaire: "Partenaire",
+  employeur: "Employeur",
+};
+
+/**
+ * Sous-types partenaire — l'ordre/les clés suivent PARTNER_TYPES de
+ * lib/entitlements.ts. (Ré-énoncés ici pour éviter d'importer du code serveur
+ * dans des composants client.)
+ */
+export const PARTNER_TYPE_LABELS: Record<string, string> = {
+  onem: "ONEM",
+  organisme_paiement: "Organisme de paiement",
+  service_public: "Service public",
+  prive_asbl: "Privé-ASBL",
+};
+
+export const PARTNER_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "onem", label: "ONEM" },
+  { value: "organisme_paiement", label: "Organisme de paiement" },
+  { value: "service_public", label: "Service public" },
+  { value: "prive_asbl", label: "Privé-ASBL" },
+];

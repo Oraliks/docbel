@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { PARTNER_TYPES } from "@/lib/entitlements";
 import {
   createPartnerDomain,
   listPartnerDomains,
@@ -11,6 +12,25 @@ const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
 const DOMAIN_REGEX =
   /^(?!-)[a-z0-9-]+(\.[a-z0-9-]+)+$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Normalise + valide segment / partnerType (sous-type partenaire). */
+function normalizeSegment(raw: unknown): "employeur" | "partenaire" {
+  return raw === "employeur" ? "employeur" : "partenaire";
+}
+
+/**
+ * partnerType n'a de sens que pour un segment "partenaire" et doit appartenir
+ * à PARTNER_TYPES. Sinon → null.
+ */
+function normalizePartnerType(
+  raw: unknown,
+  segment: "employeur" | "partenaire",
+): string | null {
+  if (segment !== "partenaire") return null;
+  if (typeof raw !== "string") return null;
+  return (PARTNER_TYPES as readonly string[]).includes(raw) ? raw : null;
+}
 
 export async function GET() {
   const authCheck = await requireAdminAuth();
@@ -43,8 +63,12 @@ export async function POST(req: NextRequest) {
   }
 
   const input = body as {
+    kind?: string;
     domain?: string;
     domains?: string[];
+    email?: string | null;
+    segment?: string;
+    partnerType?: string | null;
     organizationName?: string;
     notes?: string | null;
     isTest?: boolean;
@@ -58,6 +82,74 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const kind = input.kind === "email" ? "email" : "domain";
+  const segment = normalizeSegment(input.segment);
+  const partnerType = normalizePartnerType(input.partnerType, segment);
+
+  /* ----------------------------------------------------------------- */
+  /*  kind = "email" → une seule entrée email (domaine optionnel)        */
+  /* ----------------------------------------------------------------- */
+  if (kind === "email") {
+    const email = (input.email ?? "").trim().toLowerCase();
+    if (!email || !EMAIL_REGEX.test(email)) {
+      return NextResponse.json(
+        { error: "Adresse email invalide (ex: prenom.nom@gmail.com)" },
+        { status: 400, headers: jsonHeaders },
+      );
+    }
+
+    // Le domaine reste optionnel pour une entrée email ; s'il est fourni on le
+    // valide quand même (cohérence avec les entrées kind="domain").
+    let domain: string | undefined;
+    const rawDomain = normalizeDomain(input.domain ?? "");
+    if (rawDomain) {
+      if (!DOMAIN_REGEX.test(rawDomain)) {
+        return NextResponse.json(
+          { error: "Domaine invalide (ex: cpas.brussels)" },
+          { status: 400, headers: jsonHeaders },
+        );
+      }
+      domain = rawDomain;
+    }
+
+    try {
+      const item = await createPartnerDomain({
+        kind: "email",
+        email,
+        domain,
+        segment,
+        partnerType,
+        organizationName,
+        notes: input.notes ?? null,
+        isTest: input.isTest ?? false,
+        createdBy: authCheck.user.id,
+      });
+      return NextResponse.json(
+        { items: [item], item },
+        { headers: jsonHeaders },
+      );
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        return NextResponse.json(
+          { error: `${email} : déjà enregistré` },
+          { status: 409, headers: jsonHeaders },
+        );
+      }
+      console.error("Error creating partner email:", error);
+      return NextResponse.json(
+        { error: "Erreur serveur" },
+        { status: 500, headers: jsonHeaders },
+      );
+    }
+  }
+
+  /* ----------------------------------------------------------------- */
+  /*  kind = "domain" → une ou plusieurs entrées domaine (comportement   */
+  /*  batch existant conservé)                                           */
+  /* ----------------------------------------------------------------- */
   const rawList = (
     input.domains?.length ? input.domains : [input.domain ?? ""]
   )
@@ -88,7 +180,10 @@ export async function POST(req: NextRequest) {
   for (const domain of uniqueList) {
     try {
       const item = await createPartnerDomain({
+        kind: "domain",
         domain,
+        segment,
+        partnerType,
         organizationName,
         notes: input.notes ?? null,
         isTest: input.isTest ?? false,

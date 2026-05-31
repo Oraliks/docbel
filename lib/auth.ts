@@ -6,6 +6,7 @@ import { createAuthMiddleware, APIError } from "better-auth/api"
 import * as bcrypt from "bcryptjs"
 import { Resend } from "resend"
 import { prisma } from "@/lib/prisma"
+import { isEmailAuthorized } from "@/lib/partner-domains"
 import { UserStatus } from "@prisma/client"
 
 const authSecret = process.env.BETTER_AUTH_SECRET
@@ -110,7 +111,7 @@ export const auth = betterAuth({
             })
 
             if (existing) {
-              if (existing.role !== "partner") {
+              if (existing.role !== "partner" && existing.role !== "employer") {
                 throw new APIError("FORBIDDEN", {
                   message:
                     "Ce compte n'est pas un compte partenaire. Connectez-vous avec votre mot de passe.",
@@ -123,13 +124,8 @@ export const auth = betterAuth({
               }
             }
 
-            const at = email.lastIndexOf("@")
-            const domain = at > 0 ? email.slice(at + 1) : ""
-            const allowed = await prisma.partnerDomain.findFirst({
-              where: { domain, isActive: true },
-              select: { organizationName: true },
-            })
-            if (!allowed) {
+            const authorization = await isEmailAuthorized(email)
+            if (!authorization.authorized || !authorization.organizationName) {
               throw new APIError("FORBIDDEN", {
                 message:
                   "Ce domaine email n'est pas autorisé pour l'inscription partenaire. Contactez DocBel.",
@@ -137,12 +133,17 @@ export const auth = betterAuth({
               })
             }
 
+            const role =
+              authorization.segment === "employeur" ? "employer" : "partner"
+
             return {
               name: profile.name ?? email,
               email,
-              role: "partner",
+              role,
+              segment: authorization.segment ?? "partenaire",
+              partnerType: authorization.partnerType ?? null,
               status: UserStatus.active,
-              partnerOrganization: allowed.organizationName,
+              partnerOrganization: authorization.organizationName,
             } as Record<string, unknown>
           },
         },
@@ -151,6 +152,8 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       role: { type: "string", input: false, defaultValue: "user" },
+      segment: { type: "string", input: false, required: false },
+      partnerType: { type: "string", input: false, required: false },
       status: { type: "string", input: false, defaultValue: "active" },
       password: { type: "string", input: false, required: false, defaultValue: "" },
       passwordChangedAt: { type: "date", input: false, required: false },

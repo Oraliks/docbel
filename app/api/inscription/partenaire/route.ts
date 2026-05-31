@@ -77,6 +77,9 @@ export async function POST(req: NextRequest) {
     );
   }
   const organizationName = authorization.organizationName;
+  const segment = authorization.segment ?? "partenaire";
+  const partnerType = authorization.partnerType ?? null;
+  const role = authorization.segment === "employeur" ? "employer" : "partner";
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -94,7 +97,9 @@ export async function POST(req: NextRequest) {
         name,
         email,
         password: passwordHash,
-        role: "partner",
+        role,
+        segment,
+        partnerType,
         status: UserStatus.pending,
         emailVerified: false,
         partnerOrganization: organizationName,

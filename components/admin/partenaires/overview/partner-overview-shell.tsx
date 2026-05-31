@@ -11,6 +11,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 import { PartnerOverviewStats } from "./partner-overview-stats";
 import { PartnerOverviewFilters } from "./partner-overview-filters";
 import { PartnerOverviewGrid } from "./partner-overview-grid";
@@ -31,6 +34,13 @@ import type {
 interface PartnerOverviewShellProps {
   initialOrganizations: OrganizationGroup[];
   existingOrganizationNames: string[];
+  billingEnabled: boolean;
+}
+
+/** Libellé affichable d'une entrée (email exact ou @domaine). */
+function entryLabel(d: Pick<PartnerDomain, "kind" | "domain" | "email">): string {
+  if (d.kind === "email") return d.email ?? "(email)";
+  return d.domain ? `@${d.domain}` : "(domaine)";
 }
 
 /**
@@ -68,6 +78,7 @@ interface PartnerOverviewShellProps {
 export function PartnerOverviewShell({
   initialOrganizations,
   existingOrganizationNames,
+  billingEnabled,
 }: PartnerOverviewShellProps) {
   const [organizations, setOrganizations] =
     useState<OrganizationGroup[]>(initialOrganizations);
@@ -84,6 +95,11 @@ export function PartnerOverviewShell({
   } | null>(null);
   const [renameTarget, setRenameTarget] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PartnerDomain | null>(null);
+
+  // Verrou de facturation global (flag SETTING_KEYS.BILLING_ENABLED). Inerte
+  // tant que le payant n'est pas branché — cf. lib/entitlements.ts.
+  const [billing, setBilling] = useState(billingEnabled);
+  const [billingSaving, setBillingSaving] = useState(false);
 
   const [isPending, startTransition] = useTransition();
 
@@ -128,7 +144,14 @@ export function PartnerOverviewShell({
 
       if (!q) return true;
       if (org.organizationName.toLowerCase().includes(q)) return true;
-      if (org.domains.some((d) => d.domain.includes(q))) return true;
+      if (
+        org.domains.some(
+          (d) =>
+            (d.domain?.includes(q) ?? false) ||
+            (d.email?.toLowerCase().includes(q) ?? false),
+        )
+      )
+        return true;
       if (
         org.users.some(
           (u) =>
@@ -298,7 +321,7 @@ export function PartnerOverviewShell({
         }
         removeDomainLocally(org.organizationName, target.id);
         setDeleteTarget(null);
-        toast.success(`Domaine ${target.domain} supprimé`);
+        toast.success(`Entrée ${entryLabel(target)} supprimée`);
       } catch (err) {
         console.error(err);
         toast.error("Erreur réseau");
@@ -307,7 +330,11 @@ export function PartnerOverviewShell({
   }
 
   function handleSaveEdit(input: {
+    kind: PartnerDomain["kind"];
     domain: string;
+    email: string;
+    segment: PartnerDomain["segment"];
+    partnerType: string | null;
     organizationName: string;
     notes: string;
     isTest: boolean;
@@ -333,7 +360,11 @@ export function PartnerOverviewShell({
 
         const updated = data.item as {
           id: string;
-          domain: string;
+          kind: PartnerDomain["kind"];
+          domain: string | null;
+          email: string | null;
+          segment: PartnerDomain["segment"];
+          partnerType: string | null;
           notes: string | null;
           isTest: boolean;
           isActive: boolean;
@@ -364,7 +395,11 @@ export function PartnerOverviewShell({
 
             const movedDomain: PartnerDomain = {
               id: updated.id,
+              kind: updated.kind,
               domain: updated.domain,
+              email: updated.email,
+              segment: updated.segment,
+              partnerType: updated.partnerType,
               notes: updated.notes,
               isTest: updated.isTest,
               isActive: updated.isActive,
@@ -397,7 +432,11 @@ export function PartnerOverviewShell({
                 d.id === target.domain.id
                   ? {
                       ...d,
+                      kind: updated.kind,
                       domain: updated.domain,
+                      email: updated.email,
+                      segment: updated.segment,
+                      partnerType: updated.partnerType,
                       notes: updated.notes,
                       isTest: updated.isTest,
                       isActive: updated.isActive,
@@ -599,6 +638,43 @@ export function PartnerOverviewShell({
   }
 
   /* ---------------------------------------------------------------- */
+  /*  Billing flag                                                     */
+  /* ---------------------------------------------------------------- */
+
+  function handleToggleBilling(next: boolean) {
+    const prev = billing;
+    setBilling(next); // optimiste
+    setBillingSaving(true);
+    startTransition(async () => {
+      try {
+        const res = await fetch(
+          "/api/admin/settings/billing_enabled",
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ value: next ? "true" : "false" }),
+          },
+        );
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          setBilling(prev); // rollback
+          toast.error(data?.error || "Echec de l'enregistrement");
+          return;
+        }
+        toast.success(
+          next ? "Verrou payant activé" : "Verrou payant désactivé",
+        );
+      } catch (err) {
+        console.error(err);
+        setBilling(prev);
+        toast.error("Erreur réseau");
+      } finally {
+        setBillingSaving(false);
+      }
+    });
+  }
+
+  /* ---------------------------------------------------------------- */
   /*  UI helpers                                                       */
   /* ---------------------------------------------------------------- */
 
@@ -662,6 +738,28 @@ export function PartnerOverviewShell({
         </div>
       </header>
 
+      {/* Verrou de facturation (inerte pendant la beta) ------------- */}
+      <Card size="sm">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col gap-0.5">
+            <Label htmlFor="billing-enabled" className="cursor-pointer text-sm font-medium">
+              Facturation / verrou payant — désactivé pendant la beta
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Sans effet pour l&apos;instant : tant qu&apos;il est désactivé,
+              tout membre d&apos;un segment accède aux outils de son segment. Le
+              branchement du paiement (Mollie/Stripe) viendra plus tard.
+            </p>
+          </div>
+          <Switch
+            id="billing-enabled"
+            checked={billing}
+            disabled={billingSaving}
+            onCheckedChange={handleToggleBilling}
+          />
+        </CardContent>
+      </Card>
+
       {/* Stats + filtres + grille ---------------------------------- */}
       <PartnerOverviewStats counts={counts} />
       <PartnerOverviewFilters
@@ -705,10 +803,10 @@ export function PartnerOverviewShell({
                 .join(", ")}`,
             );
           } else if (created.length === 1) {
-            toast.success(`Domaine ${created[0].domain} ajouté`);
+            toast.success(`Entrée ${entryLabel(created[0])} ajoutée`);
           } else {
             toast.success(
-              `${created.length} domaines ajoutés à ${created[0].organizationName}`,
+              `${created.length} entrées ajoutées à ${created[0].organizationName}`,
             );
           }
         }}

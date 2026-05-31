@@ -59,6 +59,8 @@ export interface SendPartnerConfirmationInput {
   recipientName: string;
   organizationName: string;
   confirmationUrl: string;
+  /** Segment du compte pro — sélectionne le couple de templates. Défaut "partenaire". */
+  segment?: "partenaire" | "employeur";
 }
 
 export async function sendPartnerConfirmationEmail(
@@ -72,9 +74,18 @@ export async function sendPartnerConfirmationEmail(
     );
   }
 
+  const isEmployer = input.segment === "employeur";
   const [subjectTpl, bodyTpl] = await Promise.all([
-    getSetting(SETTING_KEYS.PARTNER_INVITE_SUBJECT),
-    getSetting(SETTING_KEYS.PARTNER_INVITE_BODY),
+    getSetting(
+      isEmployer
+        ? SETTING_KEYS.EMPLOYER_INVITE_SUBJECT
+        : SETTING_KEYS.PARTNER_INVITE_SUBJECT,
+    ),
+    getSetting(
+      isEmployer
+        ? SETTING_KEYS.EMPLOYER_INVITE_BODY
+        : SETTING_KEYS.PARTNER_INVITE_BODY,
+    ),
   ]);
 
   const vars = {

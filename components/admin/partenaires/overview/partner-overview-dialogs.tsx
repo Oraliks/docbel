@@ -62,6 +62,8 @@ interface PartnerCreateDialogProps {
   onOpenChange: (open: boolean) => void;
   orgNames: string[];
   isPending: boolean;
+  /** Segment pré-sélectionné (et appliqué au reset). Défaut "partenaire". */
+  defaultSegment?: PartnerSegment;
   onCreate: (
     created: Array<PartnerDomain & { organizationName: string }>,
     errors: Array<{ domain: string; error: string }>,
@@ -73,13 +75,14 @@ export function PartnerCreateDialog({
   onOpenChange,
   orgNames,
   isPending,
+  defaultSegment = "partenaire",
   onCreate,
 }: PartnerCreateDialogProps) {
   const [form, setForm] = useState({
     kind: "domain" as PartnerDomainKind,
     domains: "",
     email: "",
-    segment: "partenaire" as PartnerSegment,
+    segment: defaultSegment as PartnerSegment,
     partnerType: "" as string,
     organizationName: "",
     notes: "",
@@ -93,14 +96,14 @@ export function PartnerCreateDialog({
         kind: "domain",
         domains: "",
         email: "",
-        segment: "partenaire",
+        segment: defaultSegment,
         partnerType: "",
         organizationName: "",
         notes: "",
         isTest: false,
       });
     }
-  }, [open]);
+  }, [open, defaultSegment]);
 
   const isEmailKind = form.kind === "email";
 

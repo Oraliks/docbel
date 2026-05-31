@@ -27,6 +27,8 @@ interface User {
   email: string
   role: string
   status: string
+  segment: string | null
+  partnerType: string | null
   lastLoginAt: string | null
   createdAt: string
   updatedAt: string
@@ -248,6 +250,7 @@ export function EditUserDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="user">Utilisateur</SelectItem>
+                <SelectItem value="employer">Employeur</SelectItem>
                 <SelectItem value="moderator">Modérateur</SelectItem>
                 <SelectItem value="admin">Administrateur</SelectItem>
               </SelectContent>

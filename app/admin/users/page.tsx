@@ -22,9 +22,31 @@ interface User {
   email: string
   role: string
   status: string
+  segment: string | null
+  partnerType: string | null
   lastLoginAt: string | null
   createdAt: string
   updatedAt: string
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  user: "Utilisateur",
+  partner: "Partenaire",
+  employer: "Employeur",
+  moderator: "Modérateur",
+  admin: "Administrateur",
+}
+
+const SEGMENT_LABELS: Record<string, string> = {
+  partenaire: "Partenaire",
+  employeur: "Employeur",
+}
+
+const PARTNER_TYPE_LABELS: Record<string, string> = {
+  onem: "ONEM",
+  organisme_paiement: "Organisme de paiement",
+  service_public: "Service public",
+  prive_asbl: "Privé-ASBL",
 }
 
 export default function UsersPage() {
@@ -99,6 +121,10 @@ export default function UsersPage() {
         return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200"
       case "moderator":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
+      case "partner":
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200"
+      case "employer":
+        return "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200"
       default:
         return "bg-muted text-muted-foreground"
     }
@@ -186,6 +212,7 @@ export default function UsersPage() {
                 <TableHead className="font-semibold">Nom</TableHead>
                 <TableHead className="font-semibold">Email</TableHead>
                 <TableHead className="font-semibold">Rôle</TableHead>
+                <TableHead className="font-semibold">Segment</TableHead>
                 <TableHead className="font-semibold">Statut</TableHead>
                 <TableHead className="font-semibold">Dernière connexion</TableHead>
                 <TableHead className="font-semibold">Créé le</TableHead>
@@ -203,8 +230,24 @@ export default function UsersPage() {
                         user.role
                       )}`}
                     >
-                      {user.role}
+                      {ROLE_LABELS[user.role] ?? user.role}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    {user.segment ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-medium">
+                          {SEGMENT_LABELS[user.segment] ?? user.segment}
+                        </span>
+                        {user.partnerType && (
+                          <span className="text-xs text-muted-foreground">
+                            {PARTNER_TYPE_LABELS[user.partnerType] ?? user.partnerType}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <span

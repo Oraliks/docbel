@@ -9,6 +9,8 @@ export const SETTING_KEYS = {
   U1_INSTITUTIONS_LAST_UPDATED: "u1_institutions_last_updated",
   PARTNER_INVITE_SUBJECT: "partner_invite_subject",
   PARTNER_INVITE_BODY: "partner_invite_body",
+  EMPLOYER_INVITE_SUBJECT: "employer_invite_subject",
+  EMPLOYER_INVITE_BODY: "employer_invite_body",
   CONTACT_SIGNATURE: "contact_signature",
   /// Toggle "true" / "false". Quand true, le bouton Aide IA apparaît à côté
   /// de chaque champ du formulaire public (nécessite ANTHROPIC_API_KEY côté serveur).
@@ -71,6 +73,19 @@ L'équipe beldoc`,
   partner_invite_body: `Bonjour {{name}},
 
 Merci de votre demande d'inscription à l'espace partenaire DocBel pour {{organizationName}}.
+
+Pour activer votre compte, cliquez sur le lien ci-dessous (valide 24 heures) :
+
+{{confirmationLink}}
+
+Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.
+
+Cordialement,
+L'équipe DocBel`,
+  employer_invite_subject: "Confirmez votre inscription employeur DocBel",
+  employer_invite_body: `Bonjour {{name}},
+
+Merci de votre demande d'inscription à l'espace employeur DocBel pour {{organizationName}}.
 
 Pour activer votre compte, cliquez sur le lien ci-dessous (valide 24 heures) :
 

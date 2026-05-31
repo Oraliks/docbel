@@ -27,6 +27,7 @@ import type {
   OrganizationGroup,
   PartnerCounts,
   PartnerDomain,
+  PartnerSegment,
   PartnerStatusFilter,
   PartnerUser,
 } from "./types";
@@ -35,6 +36,25 @@ interface PartnerOverviewShellProps {
   initialOrganizations: OrganizationGroup[];
   existingOrganizationNames: string[];
   billingEnabled: boolean;
+  /**
+   * Personnalisation pour réutiliser le shell sur /admin/employeurs.
+   * Valeurs par défaut = comportement historique de /admin/partenaires.
+   */
+  title?: string;
+  /** Affiche le verrou de facturation (toggle GLOBAL → partenaires uniquement). */
+  showBilling?: boolean;
+  /** Segment pré-sélectionné dans le dialog de création d'entrée. */
+  createDefaultSegment?: PartnerSegment;
+  /**
+   * Affiche le bouton d'export CSV. L'endpoint actuel ne sort que les
+   * partenaires (role:"partner"), donc on le masque côté employeurs tant
+   * qu'aucun export dédié n'existe.
+   */
+  showExport?: boolean;
+  /** URL de l'export CSV des utilisateurs (partenaires par défaut). */
+  exportHref?: string;
+  /** Liens "page adjacente" du header (Statistiques, Email…). Défaut = liens partenaires. */
+  headerLinks?: Array<{ href: string; label: string; icon: "stats" | "mail" }>;
 }
 
 /** Libellé affichable d'une entrée (email exact ou @domaine). */
@@ -79,6 +99,15 @@ export function PartnerOverviewShell({
   initialOrganizations,
   existingOrganizationNames,
   billingEnabled,
+  title = "Partenaires",
+  showBilling = true,
+  createDefaultSegment = "partenaire",
+  showExport = true,
+  exportHref = "/api/admin/partner-users/export",
+  headerLinks = [
+    { href: "/admin/partenaires/stats", label: "Statistiques", icon: "stats" },
+    { href: "/admin/partenaires/email", label: "Email d'invitation", icon: "mail" },
+  ],
 }: PartnerOverviewShellProps) {
   const [organizations, setOrganizations] =
     useState<OrganizationGroup[]>(initialOrganizations);
@@ -696,7 +725,7 @@ export function PartnerOverviewShell({
             <Building2 className="size-5" />
           </span>
           <div className="flex flex-col">
-            <h1 className="text-2xl font-bold leading-tight">Partenaires</h1>
+            <h1 className="text-2xl font-bold leading-tight">{title}</h1>
             <p className="text-sm text-muted-foreground">
               {counts.total} organisation{counts.total > 1 ? "s" : ""} —
               gérez les domaines email autorisés et les utilisateurs inscrits.
@@ -704,33 +733,34 @@ export function PartnerOverviewShell({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            render={<Link href="/admin/partenaires/stats" prefetch={false} />}
-            variant="outline"
-            size="sm"
-          >
-            <BarChart3 className="size-4" />
-            Statistiques
-          </Button>
-          <Button
-            render={<Link href="/admin/partenaires/email" prefetch={false} />}
-            variant="outline"
-            size="sm"
-          >
-            <MailIcon className="size-4" />
-            Email d&apos;invitation
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              window.location.href = "/api/admin/partner-users/export";
-            }}
-            title="Télécharger un CSV de tous les utilisateurs partenaires"
-          >
-            <Download className="size-4" />
-            Export CSV
-          </Button>
+          {headerLinks.map((link) => (
+            <Button
+              key={link.href}
+              render={<Link href={link.href} prefetch={false} />}
+              variant="outline"
+              size="sm"
+            >
+              {link.icon === "stats" ? (
+                <BarChart3 className="size-4" />
+              ) : (
+                <MailIcon className="size-4" />
+              )}
+              {link.label}
+            </Button>
+          ))}
+          {showExport && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                window.location.href = exportHref;
+              }}
+              title="Télécharger un CSV de tous les utilisateurs"
+            >
+              <Download className="size-4" />
+              Export CSV
+            </Button>
+          )}
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="size-4" />
             Ajouter un domaine
@@ -738,27 +768,30 @@ export function PartnerOverviewShell({
         </div>
       </header>
 
-      {/* Verrou de facturation (inerte pendant la beta) ------------- */}
-      <Card size="sm">
-        <CardContent className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            <Label htmlFor="billing-enabled" className="cursor-pointer text-sm font-medium">
-              Facturation / verrou payant — désactivé pendant la beta
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Sans effet pour l&apos;instant : tant qu&apos;il est désactivé,
-              tout membre d&apos;un segment accède aux outils de son segment. Le
-              branchement du paiement (Mollie/Stripe) viendra plus tard.
-            </p>
-          </div>
-          <Switch
-            id="billing-enabled"
-            checked={billing}
-            disabled={billingSaving}
-            onCheckedChange={handleToggleBilling}
-          />
-        </CardContent>
-      </Card>
+      {/* Verrou de facturation (inerte pendant la beta) — toggle GLOBAL,
+          affiché uniquement côté partenaires (showBilling). --------- */}
+      {showBilling && (
+        <Card size="sm">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-col gap-0.5">
+              <Label htmlFor="billing-enabled" className="cursor-pointer text-sm font-medium">
+                Facturation / verrou payant — désactivé pendant la beta
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Sans effet pour l&apos;instant : tant qu&apos;il est désactivé,
+                tout membre d&apos;un segment accède aux outils de son segment. Le
+                branchement du paiement (Mollie/Stripe) viendra plus tard.
+              </p>
+            </div>
+            <Switch
+              id="billing-enabled"
+              checked={billing}
+              disabled={billingSaving}
+              onCheckedChange={handleToggleBilling}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats + filtres + grille ---------------------------------- */}
       <PartnerOverviewStats counts={counts} />
@@ -794,6 +827,7 @@ export function PartnerOverviewShell({
         onOpenChange={setCreateOpen}
         orgNames={orgNames}
         isPending={isPending}
+        defaultSegment={createDefaultSegment}
         onCreate={(created, errors) => {
           upsertCreatedDomains(created);
           if (errors.length > 0) {

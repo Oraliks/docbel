@@ -32,10 +32,25 @@ function getAuthErrorMessage(
   return "Connexion impossible. Vérifiez vos identifiants.";
 }
 
+/** Destination post-connexion selon le rôle (utilisée s'il n'y a pas de ?next= explicite). */
+function destForRole(role: string | null | undefined): string {
+  switch (role) {
+    case "partner":
+      return "/partenaire";
+    case "employer":
+      return "/employeur";
+    case "admin":
+    case "moderator":
+      return "/admin";
+    default:
+      return "/";
+  }
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/";
+  const explicitNext = searchParams.get("next");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -62,7 +77,8 @@ function LoginForm() {
         return;
       }
       toast.success("Connexion réussie");
-      router.push(next);
+      const role = (data.user as { role?: string | null }).role ?? null;
+      router.push(explicitNext ?? destForRole(role));
       router.refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erreur inconnue";
@@ -75,7 +91,7 @@ function LoginForm() {
 
   const handleGoogle = async () => {
     try {
-      await authClient.signIn.social({ provider: "google", callbackURL: next });
+      await authClient.signIn.social({ provider: "google", callbackURL: explicitNext ?? "/" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erreur inconnue";
       setError(msg);

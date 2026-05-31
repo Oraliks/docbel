@@ -27,7 +27,7 @@ export const dynamic = "force-dynamic";
 export default async function PartenairesAdminPage() {
   const [initialOrganizations, existingOrgNames, billingValue] =
     await Promise.all([
-      listOrganizations(),
+      listOrganizations("partenaire"),
       listExistingOrganizationNames(),
       getSetting(SETTING_KEYS.BILLING_ENABLED),
     ]);

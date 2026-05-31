@@ -5,52 +5,52 @@ import { auth } from "@/lib/auth";
 import { SignupForm } from "@/components/docbel/partner-signup-form";
 
 export const metadata: Metadata = {
-  title: "Inscription partenaire | DocBel",
+  title: "Inscription employeur | DocBel",
   description:
-    "Inscrivez votre organisation (CPAS, syndicat, mutuelle, ONEM, organisme de paiement) à l'espace partenaire DocBel.",
+    "Gérez vos attestations sociales (C4, déclarations) et automatisez vos documents RH avec DocBel — l'alternative moderne au secrétariat social.",
 };
 
-export default async function PartnerSignupRoute() {
+export default async function EmployerSignupRoute() {
   const session = await auth.api
     .getSession({ headers: await headers() })
     .catch(() => null);
 
   if (session?.user) {
-    redirect("/partenaire");
+    redirect("/employeur");
   }
 
   return (
     <section className="mx-auto flex w-full max-w-xl flex-col gap-6">
       <header className="flex flex-col gap-2 px-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-          Espace Partenaire
+          Espace Employeur
         </p>
         <h1 className="glass-display text-[36px] font-semibold leading-[1.05] sm:text-[44px]">
-          Inscription <em>partenaire.</em>
+          Inscription <em>employeur.</em>
         </h1>
         <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-          Réservé aux organisations qui accompagnent les citoyens dans leurs
-          démarches : CPAS, syndicats, mutuelles, ONEM et organismes de
-          paiement. L&apos;inscription se fait avec une adresse email
-          professionnelle autorisée (ex :{" "}
+          Gérez les attestations sociales de vos travailleurs (C4, déclarations
+          ONEM) et automatisez la production de vos documents RH. DocBel se veut
+          l&apos;alternative moderne au secrétariat social : rapide, en libre
+          accès, sans dossier papier. L&apos;inscription se fait avec une
+          adresse email professionnelle de votre entreprise (ex :{" "}
           <code className="rounded-md bg-[color:var(--glass-surface)] px-1.5 py-0.5 font-mono text-[12.5px]">
-            @cpas.brussels
+            prenom.nom@votre-entreprise.be
           </code>
-          ). Si votre organisation n&apos;est pas encore référencée,
-          contactez-nous.
+          ).
         </p>
         <p className="text-[12.5px] text-[color:var(--glass-ink-faint)]">
-          Vous êtes un employeur (gestion RH, attestations sociales) ?{" "}
+          Vous représentez un CPAS, un syndicat ou une mutuelle ?{" "}
           <a
-            href="/inscription/employeur"
+            href="/inscription/partenaire"
             className="font-bold underline underline-offset-2"
           >
-            Inscrivez-vous sur l&apos;espace employeur
+            Inscrivez-vous sur l&apos;espace partenaire
           </a>
           .
         </p>
       </header>
-      <SignupForm expectedSegment="partenaire" />
+      <SignupForm expectedSegment="employeur" />
     </section>
   );
 }

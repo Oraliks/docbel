@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon, HandshakeIcon, MapPinIcon, FileInputIcon } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon, HandshakeIcon, Building2Icon, MapPinIcon, FileInputIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultData = {
@@ -166,6 +166,13 @@ const defaultData = {
           url: "/admin/partenaires/email",
         },
       ],
+    },
+    {
+      title: "Employeurs",
+      url: "/admin/employeurs",
+      icon: (
+        <Building2Icon className="size-4" />
+      ),
     },
     {
       title: "Bureaux",

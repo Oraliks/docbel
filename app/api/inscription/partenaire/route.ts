@@ -128,6 +128,7 @@ export async function POST(req: NextRequest) {
       recipientName: name,
       organizationName,
       confirmationUrl,
+      segment: segment === "employeur" ? "employeur" : "partenaire",
     });
 
     return NextResponse.json(

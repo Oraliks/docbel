@@ -74,15 +74,20 @@ export async function requireAdminAuth(): Promise<AdminAuthResult> {
 }
 
 /**
- * Auth pour les pages/routes "Espace Partenaire". Autorise :
+ * Helper interne : auth pour un espace professionnel (Partenaire OU Employeur).
+ * Autorise :
  *   - les admins (role=admin, active) → accès complet
- *   - les partners avec une organisation rattachée (role=partner + partnerOrganization)
+ *   - les comptes du rôle attendu, actifs, avec une organisation rattachée
+ *     (role=`proRole` + partnerOrganization)
  *
- * Renvoie un AuthorizedUser enrichi avec `partnerOrganization` et `isAdmin` pour
- * que les routes/pages puissent adapter leur logique (ex: scoper les données par org
- * partenaire, ou exposer tout pour les admins).
+ * Volontairement NON exporté : on expose des guards dédiés par segment
+ * (`requirePartnerOrAdminAuth`, `requireEmployerOrAdminAuth`) afin de garder des
+ * espaces séparés plutôt qu'un guard fourre-tout.
  */
-export async function requirePartnerOrAdminAuth(): Promise<PartnerAuthResult> {
+async function requireProOrAdminAuth(
+  proRole: "partner" | "employer",
+  forbiddenMessage: string
+): Promise<PartnerAuthResult> {
   const headerList = await headers();
   const session = await withDbRetry(() =>
     auth.api.getSession({ headers: headerList })
@@ -123,14 +128,14 @@ export async function requirePartnerOrAdminAuth(): Promise<PartnerAuthResult> {
   }
 
   const isAdmin = dbUser.role === "admin";
-  const isPartnerWithOrg =
-    dbUser.role === "partner" && !!dbUser.partnerOrganization;
+  const isProWithOrg =
+    dbUser.role === proRole && !!dbUser.partnerOrganization;
 
-  if (!isAdmin && !isPartnerWithOrg) {
+  if (!isAdmin && !isProWithOrg) {
     return {
       isAuthorized: false,
       error: NextResponse.json(
-        { error: "Forbidden - Partner or Admin access required" },
+        { error: forbiddenMessage },
         { status: 403, headers: jsonHeaders }
       ),
     };
@@ -148,4 +153,41 @@ export async function requirePartnerOrAdminAuth(): Promise<PartnerAuthResult> {
       isAdmin,
     },
   };
+}
+
+/**
+ * Auth pour les pages/routes "Espace Partenaire". Autorise :
+ *   - les admins (role=admin, active) → accès complet
+ *   - les partners avec une organisation rattachée (role=partner + partnerOrganization)
+ *
+ * STRICTEMENT réservé aux partenaires (les employeurs n'y ont PAS accès) — voir
+ * `requireEmployerOrAdminAuth` pour l'espace employeur.
+ *
+ * Renvoie un AuthorizedUser enrichi avec `partnerOrganization` et `isAdmin` pour
+ * que les routes/pages puissent adapter leur logique (ex: scoper les données par org
+ * partenaire, ou exposer tout pour les admins).
+ */
+export async function requirePartnerOrAdminAuth(): Promise<PartnerAuthResult> {
+  return requireProOrAdminAuth(
+    "partner",
+    "Forbidden - Partner or Admin access required"
+  );
+}
+
+/**
+ * Auth pour les pages/routes "Espace Employeur". Autorise :
+ *   - les admins (role=admin, active) → accès complet
+ *   - les employeurs avec une organisation rattachée (role=employer + partnerOrganization)
+ *
+ * STRICTEMENT réservé aux employeurs (les partenaires n'y ont PAS accès) — voir
+ * `requirePartnerOrAdminAuth` pour l'espace partenaire.
+ *
+ * Même forme de retour que `requirePartnerOrAdminAuth` (`partnerOrganization` +
+ * `isAdmin`) pour que les routes/pages employeur scopent leurs données par org.
+ */
+export async function requireEmployerOrAdminAuth(): Promise<PartnerAuthResult> {
+  return requireProOrAdminAuth(
+    "employer",
+    "Forbidden - Employer or Admin access required"
+  );
 }

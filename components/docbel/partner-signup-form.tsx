@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
   AlertCircleIcon,
+  ArrowRightIcon,
   Building2Icon,
   CheckCircle2Icon,
   Loader2Icon,
   MailCheckIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +18,10 @@ import {
   GLASS_CARD,
   GLASS_INPUT,
   GLASS_LABEL,
+  GLASS_PRIMARY_STYLE,
 } from "@/lib/glass-classes";
+
+export type ExpectedSegment = "partenaire" | "employeur";
 
 type FormState = {
   name: string;
@@ -51,7 +56,55 @@ type LookupState =
       segment: string;
       partnerType: string | null;
     }
+  // L'email est reconnu dans l'allowlist mais pour l'AUTRE segment :
+  // on ne propose pas l'inscription ici, on renvoie vers la bonne page.
+  | {
+      status: "mismatch";
+      organizationName: string;
+      segment: string;
+    }
   | { status: "unknown" };
+
+/**
+ * Copie et cibles dépendantes du segment attendu par la page hôte. Le segment
+ * réel reste posé côté serveur depuis l'allowlist — ici on ne fait qu'adapter
+ * les libellés et savoir vers quelle autre page renvoyer en cas de mismatch.
+ */
+const SEGMENT_COPY: Record<
+  ExpectedSegment,
+  {
+    recognizedLabel: string;
+    emailPlaceholder: string;
+    submitLabel: string;
+    submitPendingLabel: string;
+    unknownDomain: string;
+  }
+> = {
+  partenaire: {
+    recognizedLabel: "Espace partenaire",
+    emailPlaceholder: "prenom.nom@cpas.brussels",
+    submitLabel: "Créer mon compte partenaire",
+    submitPendingLabel: "Envoi…",
+    unknownDomain:
+      "Ce domaine n'est pas autorisé pour l'espace partenaire. Contactez DocBel pour référencer votre organisation (CPAS, syndicat, mutuelle…).",
+  },
+  employeur: {
+    recognizedLabel: "Espace employeur",
+    emailPlaceholder: "prenom.nom@votre-entreprise.be",
+    submitLabel: "Créer mon compte employeur",
+    submitPendingLabel: "Envoi…",
+    unknownDomain:
+      "Ce domaine n'est pas encore autorisé pour l'espace employeur. Contactez DocBel pour activer votre entreprise.",
+  },
+};
+
+const OTHER_SEGMENT: Record<
+  ExpectedSegment,
+  { label: string; href: string }
+> = {
+  partenaire: { label: "espace employeur", href: "/inscription/employeur" },
+  employeur: { label: "espace partenaire", href: "/inscription/partenaire" },
+};
 
 function isLookupCandidate(email: string): boolean {
   if (!email.includes("@")) return false;
@@ -59,7 +112,14 @@ function isLookupCandidate(email: string): boolean {
   return Boolean(domain && domain.includes("."));
 }
 
-export function PartnerSignupForm() {
+export function SignupForm({
+  expectedSegment,
+}: {
+  expectedSegment: ExpectedSegment;
+}) {
+  const copy = SEGMENT_COPY[expectedSegment];
+  const other = OTHER_SEGMENT[expectedSegment];
+
   const [form, setForm] = useState<FormState>(INITIAL);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ email: string } | null>(null);
@@ -74,15 +134,21 @@ export function PartnerSignupForm() {
     ? { status: "idle" }
     : lookupResult?.emailQueried !== normalizedEmail
       ? { status: "checking" }
-      : lookupResult.recognized
-        ? {
-            status: "recognized",
-            organizationName: lookupResult.organizationName ?? "",
-            isTest: lookupResult.isTest ?? false,
-            segment: lookupResult.segment ?? "partenaire",
-            partnerType: lookupResult.partnerType ?? null,
-          }
-        : { status: "unknown" };
+      : !lookupResult.recognized
+        ? { status: "unknown" }
+        : (lookupResult.segment ?? "partenaire") !== expectedSegment
+          ? {
+              status: "mismatch",
+              organizationName: lookupResult.organizationName ?? "",
+              segment: lookupResult.segment ?? "partenaire",
+            }
+          : {
+              status: "recognized",
+              organizationName: lookupResult.organizationName ?? "",
+              isTest: lookupResult.isTest ?? false,
+              segment: lookupResult.segment ?? "partenaire",
+              partnerType: lookupResult.partnerType ?? null,
+            };
 
   useEffect(() => {
     if (!lookupEligible) return;
@@ -136,10 +202,14 @@ export function PartnerSignupForm() {
       setError("Le mot de passe doit faire au moins 8 caractères.");
       return;
     }
-    if (lookup.status !== "recognized") {
+    if (lookup.status === "mismatch") {
       setError(
-        "Le domaine de votre email n'est pas reconnu. Contactez DocBel pour autoriser votre organisation.",
+        `Cette adresse correspond à un ${other.label}. Inscrivez-vous sur la page dédiée.`,
       );
+      return;
+    }
+    if (lookup.status !== "recognized") {
+      setError(copy.unknownDomain);
       return;
     }
 
@@ -195,6 +265,8 @@ export function PartnerSignupForm() {
     );
   }
 
+  // Le submit n'est actif que si le domaine est reconnu ET appartient au
+  // segment attendu par cette page (garde anti-mismatch côté client).
   const submitDisabled = isPending || lookup.status !== "recognized";
 
   return (
@@ -224,7 +296,7 @@ export function PartnerSignupForm() {
               type="email"
               autoComplete="email"
               required
-              placeholder="prenom.nom@cpas.brussels"
+              placeholder={copy.emailPlaceholder}
               value={form.email}
               onChange={handleChange("email")}
               className={GLASS_INPUT}
@@ -262,12 +334,36 @@ export function PartnerSignupForm() {
                       </span>
                     ) : null}
                   </div>
-                  <p className="opacity-80">
-                    {lookup.segment === "employeur"
-                      ? "Espace employeur"
-                      : "Espace partenaire"}{" "}
-                    — organisation reconnue.
+                  <p className="opacity-80">{copy.recognizedLabel} — organisation reconnue.</p>
+                </div>
+              </div>
+            ) : null}
+
+            {lookup.status === "mismatch" ? (
+              <div
+                className="flex items-start gap-2 rounded-2xl p-3 text-[12.5px]"
+                style={{
+                  background: "rgba(255, 200, 140, 0.18)",
+                  color: "#8a4f0a",
+                }}
+              >
+                <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
+                <div className="flex-1">
+                  <p>
+                    Cette adresse correspond à un{" "}
+                    <strong>{other.label}</strong>
+                    {lookup.organizationName
+                      ? ` (${lookup.organizationName})`
+                      : ""}
+                    .
                   </p>
+                  <Link
+                    href={other.href}
+                    className="mt-1 inline-flex items-center gap-1 font-bold underline underline-offset-2"
+                  >
+                    Inscrivez-vous ici
+                    <ArrowRightIcon className="size-3.5" />
+                  </Link>
                 </div>
               </div>
             ) : null}
@@ -281,10 +377,7 @@ export function PartnerSignupForm() {
                 }}
               >
                 <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
-                <div className="flex-1">
-                  Ce domaine n&apos;est pas autorisé. Contactez DocBel pour
-                  ajouter votre organisation.
-                </div>
+                <div className="flex-1">{copy.unknownDomain}</div>
               </div>
             ) : null}
           </div>
@@ -344,12 +437,9 @@ export function PartnerSignupForm() {
               type="submit"
               disabled={submitDisabled}
               className="rounded-full px-5 py-3 text-[13px] font-bold disabled:opacity-50"
-              style={{
-                background: "var(--glass-ink)",
-                color: "var(--glass-bg-a)",
-              }}
+              style={GLASS_PRIMARY_STYLE}
             >
-              {isPending ? "Envoi…" : "Créer mon compte"}
+              {isPending ? copy.submitPendingLabel : copy.submitLabel}
               {!isPending ? <CheckCircle2Icon className="size-4" /> : null}
             </Button>
           </div>
@@ -357,4 +447,13 @@ export function PartnerSignupForm() {
       </CardContent>
     </Card>
   );
+}
+
+/**
+ * Alias rétro-compatible. Conserve l'API historique `<PartnerSignupForm />`
+ * (segment partenaire par défaut) tout en exposant le composant neutre
+ * `SignupForm` pour les nouvelles pages segmentées.
+ */
+export function PartnerSignupForm() {
+  return <SignupForm expectedSegment="partenaire" />;
 }

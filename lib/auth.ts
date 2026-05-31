@@ -238,9 +238,9 @@ export const auth = betterAuth({
           where: { email: email.trim().toLowerCase() },
           select: { role: true, status: true },
         })
-        if (!user || user.role !== "partner") {
+        if (!user || (user.role !== "partner" && user.role !== "employer")) {
           throw new APIError("FORBIDDEN", {
-            message: "Magic link réservé aux comptes partenaires actifs",
+            message: "Magic link réservé aux comptes professionnels actifs",
             code: "magic_link_not_allowed",
           })
         }

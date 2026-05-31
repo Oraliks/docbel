@@ -83,13 +83,31 @@ export interface PartnerOrganizationGroup {
   userCount: number;
 }
 
-export async function listOrganizations(): Promise<PartnerOrganizationGroup[]> {
+/**
+ * Liste les organisations (groupées par organizationName) avec leurs entrées
+ * d'allowlist + utilisateurs rattachés.
+ *
+ * @param segment  Optionnel. Si fourni ("partenaire" | "employeur") :
+ *   - filtre les entrées d'allowlist (`PartnerDomain.segment`) sur ce segment ;
+ *   - filtre les utilisateurs sur le rôle correspondant
+ *     (partenaire → role "partner", employeur → role "employer").
+ *   Sans paramètre = comportement historique : toutes les entrées + les users
+ *   de rôle "partner".
+ */
+export async function listOrganizations(
+  segment?: "partenaire" | "employeur",
+): Promise<PartnerOrganizationGroup[]> {
+  // Rôle user attendu pour ce segment (partenaire↔partner, employeur↔employer).
+  const userRole =
+    segment === "employeur" ? "employer" : segment === "partenaire" ? "partner" : "partner";
+
   const [domains, users] = await Promise.all([
     prisma.partnerDomain.findMany({
+      where: segment ? { segment } : undefined,
       orderBy: [{ isActive: "desc" }, { domain: "asc" }],
     }),
     prisma.user.findMany({
-      where: { role: "partner" },
+      where: { role: userRole },
       select: {
         id: true,
         name: true,

@@ -2,6 +2,8 @@ import { UserRole, UserStatus } from "@prisma/client"
 
 export const USER_ROLES: readonly UserRole[] = [
   UserRole.user,
+  UserRole.partner,
+  UserRole.employer,
   UserRole.moderator,
   UserRole.admin,
 ]
@@ -19,6 +21,8 @@ export const SAFE_USER_SELECT = {
   email: true,
   role: true,
   status: true,
+  segment: true,
+  partnerType: true,
   emailVerifiedAt: true,
   lastLoginAt: true,
   passwordChangedAt: true,

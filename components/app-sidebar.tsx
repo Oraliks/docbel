@@ -144,6 +144,7 @@ const defaultData = {
         { title: "Tous les formulaires", url: "/admin/pdf" },
         { title: "Nouveau formulaire", url: "/admin/pdf/new" },
         { title: "Presets de champs", url: "/admin/pdf/presets" },
+        { title: "Sources AcroForm", url: "/admin/pdf-sources" },
       ],
     },
     {

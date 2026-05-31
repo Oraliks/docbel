@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon, HandshakeIcon, Building2Icon, MapPinIcon, FileInputIcon } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon, MapPinIcon, FileInputIcon, UsersIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultData = {
@@ -147,32 +147,35 @@ const defaultData = {
       ],
     },
     {
-      title: "Partenaires",
-      url: "/admin/partenaires",
+      title: "Comptes & accès",
+      url: "/admin/users",
       icon: (
-        <HandshakeIcon className="size-4" />
+        <UsersIcon className="size-4" />
       ),
       items: [
         {
-          title: "Domaines autorisés",
+          title: "Utilisateurs",
+          url: "/admin/users",
+        },
+        {
+          title: "Partenaires",
           url: "/admin/partenaires",
+          children: [
+            { title: "Domaines autorisés", url: "/admin/partenaires" },
+            { title: "Statistiques", url: "/admin/partenaires/stats" },
+            { title: "Email d'invitation", url: "/admin/partenaires/email" },
+          ],
         },
         {
-          title: "Statistiques",
-          url: "/admin/partenaires/stats",
-        },
-        {
-          title: "Email d'invitation",
-          url: "/admin/partenaires/email",
+          title: "Employeurs",
+          url: "/admin/employeurs",
+          children: [
+            { title: "Accès autorisés", url: "/admin/employeurs" },
+            { title: "Statistiques", url: "/admin/employeurs/stats" },
+            { title: "Email d'invitation", url: "/admin/employeurs/email" },
+          ],
         },
       ],
-    },
-    {
-      title: "Employeurs",
-      url: "/admin/employeurs",
-      icon: (
-        <Building2Icon className="size-4" />
-      ),
     },
     {
       title: "Bureaux",

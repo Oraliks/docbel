@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -10,11 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Trash2, Edit2, Plus, Loader2 } from "lucide-react"
+import { Edit2, Plus, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import Link from "next/link"
-import { EditUserDialog } from "@/components/users/edit-user-dialog"
-import { DeleteUserDialog } from "@/components/users/delete-user-dialog"
 
 interface User {
   id: string
@@ -52,8 +50,6 @@ const PARTNER_TYPE_LABELS: Record<string, string> = {
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [editingUser, setEditingUser] = useState<User | null>(null)
-  const [deletingUser, setDeletingUser] = useState<User | null>(null)
 
   const fetchUsers = async () => {
     try {
@@ -70,33 +66,11 @@ export default function UsersPage() {
   }
 
   useEffect(() => {
-    async function load() { await fetchUsers() }
+    async function load() {
+      await fetchUsers()
+    }
     void load()
   }, [])
-
-  const handleUserUpdated = (updatedUser: User) => {
-    setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u))
-    setEditingUser(null)
-    toast.success("Utilisateur mis à jour avec succès")
-  }
-
-  const handleUserDeleted = async () => {
-    if (!deletingUser) return
-
-    try {
-      const response = await fetch(`/api/users/${deletingUser.id}`, {
-        method: "DELETE",
-      })
-      if (!response.ok) throw new Error("Failed to delete user")
-
-      setUsers(users.filter(u => u.id !== deletingUser.id))
-      setDeletingUser(null)
-      toast.success("Utilisateur supprimé avec succès")
-    } catch (error) {
-      toast.error("Erreur lors de la suppression de l'utilisateur")
-      console.error(error)
-    }
-  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("fr-FR", {
@@ -158,27 +132,15 @@ export default function UsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Utilisateurs</h1>
-          <p className="text-muted-foreground mt-1">Gérez les utilisateurs du système</p>
+          <p className="text-muted-foreground mt-1">
+            Gérez les utilisateurs du système
+          </p>
         </div>
         <Button render={<Link href="/admin/users/new" />} className="gap-2">
           <Plus className="size-4" />
           Nouvel utilisateur
         </Button>
       </div>
-
-      <EditUserDialog
-        user={editingUser}
-        open={!!editingUser}
-        onOpenChange={(open) => !open && setEditingUser(null)}
-        onUserUpdated={handleUserUpdated}
-      />
-
-      <DeleteUserDialog
-        user={deletingUser}
-        open={!!deletingUser}
-        onOpenChange={(open) => !open && setDeletingUser(null)}
-        onConfirm={handleUserDeleted}
-      />
 
       <div className="rounded-lg border bg-card overflow-hidden">
         {loading ? (
@@ -207,11 +169,13 @@ export default function UsersPage() {
               {users.map((user) => (
                 <TableRow key={user.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {user.email}
+                  </TableCell>
                   <TableCell>
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(
-                        user.role
+                        user.role,
                       )}`}
                     >
                       {ROLE_LABELS[user.role] ?? user.role}
@@ -225,7 +189,8 @@ export default function UsersPage() {
                         </span>
                         {user.partnerType && (
                           <span className="text-xs text-muted-foreground">
-                            {PARTNER_TYPE_LABELS[user.partnerType] ?? user.partnerType}
+                            {PARTNER_TYPE_LABELS[user.partnerType] ??
+                              user.partnerType}
                           </span>
                         )}
                       </div>
@@ -236,7 +201,7 @@ export default function UsersPage() {
                   <TableCell>
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(
-                        user.status
+                        user.status,
                       )}`}
                     >
                       {getStatusLabel(user.status)}
@@ -249,24 +214,15 @@ export default function UsersPage() {
                     {formatDate(user.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingUser(user)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      >
-                        <Edit2 className="size-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeletingUser(user)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      render={<Link href={`/admin/users/${user.id}`} />}
+                      className="gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400"
+                    >
+                      <Edit2 className="size-4" />
+                      Éditer
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

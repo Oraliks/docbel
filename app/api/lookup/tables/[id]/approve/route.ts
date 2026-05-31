@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma, withDbRetry } from '@/lib/prisma'
 import { requireAdminAuth } from '@/lib/auth-check'
+import { REQUIRED_APPROVALS } from '@/lib/lookup/approvals'
 
 export const runtime = 'nodejs'
 const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
-
-export const REQUIRED_APPROVALS = 2
 
 /**
  * Enregistre une approbation pour une LookupTable sensible (requiresApproval=true).

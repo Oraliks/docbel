@@ -3,7 +3,7 @@ import { requireAdminAuth } from '@/lib/auth-check'
 import { importLookupCsv } from '@/lib/lookup/importLookupCsv'
 import { logActivity } from '@/lib/activity-logger'
 import { prisma, withDbRetry } from '@/lib/prisma'
-import { REQUIRED_APPROVALS } from '../approve/route'
+import { REQUIRED_APPROVALS } from '@/lib/lookup/approvals'
 
 export const runtime = 'nodejs'
 const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }

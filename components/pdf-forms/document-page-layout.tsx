@@ -20,6 +20,10 @@ import type { FormPayload, Locale } from "@/lib/pdf-forms/types";
 import { isFullNameValue, loc } from "@/lib/pdf-forms/types";
 
 interface Props {
+  /// Si le PDF est ouvert dans le contexte d'un dossier codé, les "types"
+  /// du dossier alimentent l'illustration animée. Sans valeur, fallback sur
+  /// la liste par défaut côté composant.
+  dossierTypes?: readonly string[];
   form: PublicForm;
   bundlePrefill?: Record<string, string>;
   bundleRunId?: string;
@@ -30,7 +34,7 @@ interface Props {
 /// du reste du site (fond dégradé hérité de .glass-root, surfaces translucides)
 /// et le layout du mockup : header riche avec illustration décorative, pills
 /// meta, puis 2 colonnes (formulaire à gauche, résumé live à droite).
-export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug }: Props) {
+export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes }: Props) {
   const [values, setValues] = useState<FormPayload>({});
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
 
@@ -103,19 +107,12 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
         </div>
 
         {/* Illustration décorative — masquée sur mobile.
-            Les libellés cyclés correspondent aux types de chômage temporaire
-            du dossier actif ; ils seront un jour pilotés par la config du dossier. */}
+            Si on est dans le contexte d'un dossier codé, les libellés cyclés
+            viennent des `types` du dossier (ex. les 7 motifs de chômage
+            temporaire). Sinon, le composant garde sa liste par défaut. */}
         <DocIllustration
           abbrev={docAbbrev}
-          cyclingLabels={[
-            "Économique",
-            "Action sociale",
-            "Vacances annuelles",
-            "Repos compensatoire",
-            "Intempéries",
-            "Accident technique",
-            "Force majeure",
-          ]}
+          cyclingLabels={dossierTypes ? [...dossierTypes] : undefined}
         />
       </header>
 

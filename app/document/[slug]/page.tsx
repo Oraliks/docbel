@@ -5,6 +5,7 @@ import { toPublicForm } from "@/lib/pdf-forms/public-serializer";
 import { isDoccleConfigured } from "@/lib/pdf-forms/integrations/doccle";
 import { isItsmeConfigured } from "@/lib/pdf-forms/integrations/itsme";
 import { DocumentPageLayout } from "@/components/pdf-forms/document-page-layout";
+import { getDossier } from "@/lib/dossiers/registry";
 import type { PdfFormField } from "@/lib/pdf-forms/types";
 import {
   applySharedValuesToForm,
@@ -99,12 +100,19 @@ export default async function PdfFormPage({
     }
   }
 
+  // Si le PDF est ouvert dans le contexte d'un dossier codé, on alimente
+  // l'illustration animée avec les "types" déclarés par le dossier (ex. les
+  // 7 motifs de chômage temporaire). Sinon : illustration sans cycle.
+  const dossier = bundleSlug ? getDossier(bundleSlug) : null;
+  const dossierTypes = dossier?.types;
+
   return (
     <DocumentPageLayout
       form={form}
       bundlePrefill={bundlePrefill}
       bundleRunId={validBundleRunId}
       bundleSlug={bundleSlug}
+      dossierTypes={dossierTypes}
     />
   );
 }

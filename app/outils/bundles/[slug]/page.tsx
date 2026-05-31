@@ -7,6 +7,8 @@ import { DocumentField } from "@/lib/documents/types";
 import type { PdfFormField } from "@/lib/pdf-forms/types";
 import type { BundleCondition } from "@/lib/documents/bundle-conditions";
 import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
+import { getDossier } from "@/lib/dossiers/registry";
+import { selectDocuments, type DossierAnswers } from "@/lib/dossiers/types";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +114,18 @@ export default async function BundleRoute({
     })),
   };
 
+  // Si le dossier est piloté par code, on calcule la liste des documents
+  // applicables aux réponses d'orientation actuelles via selectDocuments().
+  // Tant que les questions ne sont pas répondues, on n'inclut que les docs
+  // sans includeWhen (inconditionnels) → l'utilisateur voit dès l'arrivée
+  // les documents toujours requis, et les conditionnels apparaissent au fur
+  // et à mesure qu'il répond aux questions.
+  const dossier = getDossier(slug);
+  const eligibilityAnswers = parseEligibilityAnswers(run?.eligibilityAnswers);
+  const applicableSlugs = dossier
+    ? selectDocuments(dossier, eligibilityAnswers as unknown as DossierAnswers).map((d) => d.slug)
+    : null;
+
   return (
     <div className="container max-w-3xl mx-auto py-6 px-4">
       <BundleRunner
@@ -120,11 +134,12 @@ export default async function BundleRoute({
         resumeCode={run?.resumeCode ?? null}
         resumeCodeExpiresAt={run?.resumeCodeExpiresAt?.toISOString() ?? null}
         resumeEmail={run?.resumeEmail ?? null}
-        eligibilityAnswers={parseEligibilityAnswers(run?.eligibilityAnswers)}
+        eligibilityAnswers={eligibilityAnswers}
         completedTemplateIds={(run?.completedTemplateIds as string[]) || []}
         payloads={(run?.payloads as Record<string, Record<string, unknown>>) || {}}
         templateNames={templateNames}
         fieldLabels={fieldLabels}
+        applicableSlugs={applicableSlugs}
       />
     </div>
   );

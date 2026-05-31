@@ -104,6 +104,10 @@ interface BundleRunnerProps {
   payloads: CollectedPayloads;
   templateNames: Record<string, string>;
   fieldLabels: Record<string, string>;
+  /// Si le dossier est piloté par un module de code, contient la liste des
+  /// slugs des documents applicables aux réponses d'orientation actuelles.
+  /// `null` = pas de filtrage par module (dossier piloté par config DB).
+  applicableSlugs?: string[] | null;
 }
 
 export function BundleRunner({
@@ -117,6 +121,7 @@ export function BundleRunner({
   payloads,
   templateNames,
   fieldLabels,
+  applicableSlugs = null,
 }: BundleRunnerProps) {
   const router = useRouter();
   const confirm = useConfirm();
@@ -233,9 +238,16 @@ export function BundleRunner({
   // Calculer le statut de chaque item.
   // `completedTemplateIds` peut contenir indifféremment des templateId (ancien)
   // ou des pdfFormId (nouveau) — cuids globalement uniques.
+  // `applicableSlugs` (si fourni par un dossier codé) écrase la visibilité :
+  // un item dont le slug n'est pas applicable aux réponses d'orientation est
+  // caché, peu importe la condition JSON V1/V2.
+  const applicableSet = applicableSlugs ? new Set(applicableSlugs) : null;
   const itemStatuses = bundle.items.map((item) => {
     const completed = completedTemplateIds.includes(itemSourceId(item));
-    const eligibility = evaluateCondition(item.condition, payloads);
+    const slug = item.pdfForm?.slug ?? item.template?.toolSlug ?? null;
+    const inDossier = applicableSet === null || (slug !== null && applicableSet.has(slug));
+    const conditionRes = evaluateCondition(item.condition, payloads);
+    const eligibility = inDossier ? conditionRes : false;
     return { item, completed, eligibility };
   });
 

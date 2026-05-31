@@ -56,6 +56,27 @@ describe("chômage temporaire — sélection de documents", () => {
   });
 });
 
+describe("filtrage des items du bundle (intégration runner)", () => {
+  it("sans motif, seuls les documents inconditionnels sont applicables", () => {
+    const slugs = selectDocuments(chomageTemporaire, {}).map((d) => d.slug);
+    expect(slugs).toEqual(["c32a-carte-controle", "c32-employeur"]);
+  });
+  it("motif = Force majeure → FMM ajouté, Intempéries non", () => {
+    const slugs = selectDocuments(chomageTemporaire, { motif: "Force majeure" }).map((d) => d.slug);
+    expect(slugs).toContain("c32a-force-majeure");
+    expect(slugs).not.toContain("c32a-intemperies");
+  });
+  it("motif = Intempéries → Intempéries ajouté, FMM non", () => {
+    const slugs = selectDocuments(chomageTemporaire, { motif: "Intempéries" }).map((d) => d.slug);
+    expect(slugs).toContain("c32a-intemperies");
+    expect(slugs).not.toContain("c32a-force-majeure");
+  });
+  it("motif = Économique → aucun document conditionnel", () => {
+    const slugs = selectDocuments(chomageTemporaire, { motif: "Économique" }).map((d) => d.slug);
+    expect(slugs).toEqual(["c32a-carte-controle", "c32-employeur"]);
+  });
+});
+
 describe("résolution des champs depuis le catalogue", () => {
   it("résout une référence canonique (NISS) avec ses métadonnées", () => {
     const doc = chomageTemporaire.documents[0];

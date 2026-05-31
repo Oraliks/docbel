@@ -92,11 +92,13 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
             </p>
           )}
 
-          {/* Pills meta */}
-          <div className="mt-1 flex flex-wrap gap-3">
-            <MetaPill icon={<ClockIcon className="size-4" />} label="Temps estimé" value={timeEstimate} />
-            <MetaPill icon={<ShieldCheckIcon className="size-4" />} label="Sécurité" value="Vos données sont protégées" />
-            <MetaPill icon={<HelpCircleIcon className="size-4" />} label="Besoin d'aide ?" value="Voir le guide" href="#aide" />
+          {/* Barre meta : une seule barre blanche avec 3 segments (cf. mockup) */}
+          <div className="glass-surface mt-1 flex w-fit max-w-full flex-wrap items-center gap-1 rounded-2xl px-2 py-1.5">
+            <MetaSegment icon={<ClockIcon className="size-4" />} label="Temps estimé" value={timeEstimate} />
+            <span className="mx-1 hidden h-8 w-px bg-[color:var(--glass-border)] sm:block" />
+            <MetaSegment icon={<ShieldCheckIcon className="size-4" />} label="Sécurité" value="Vos données sont protégées" />
+            <span className="mx-1 hidden h-8 w-px bg-[color:var(--glass-border)] sm:block" />
+            <MetaSegment icon={<HelpCircleIcon className="size-4" />} label="Besoin d'aide ?" value="Voir le guide" href="#aide" accent />
           </div>
         </div>
 
@@ -126,48 +128,64 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
 
 function DocIllustration({ abbrev }: { abbrev: string }) {
   return (
-    <div className="pointer-events-none absolute right-0 top-0 hidden h-40 w-44 lg:block" aria-hidden>
-      <SparklesIcon className="absolute right-2 top-1 size-4 text-[color:var(--glass-accent-deep)] opacity-60" />
-      <SparklesIcon className="absolute left-4 top-16 size-3 text-[color:var(--glass-accent-deep)] opacity-40" />
-      {/* Feuille de document inclinée */}
-      <div className="glass-surface absolute right-10 top-4 flex h-32 w-24 rotate-6 flex-col gap-1.5 rounded-2xl p-3 shadow-lg">
-        <span className="h-1.5 w-12 rounded-full bg-[color:var(--glass-ink-faint)]" />
-        <span className="h-1.5 w-8 rounded-full bg-[color:var(--glass-ink-faint)]" />
-        <span className="mt-auto rounded-lg bg-[color:var(--glass-accent-deep)] px-2 py-1 text-center text-[11px] font-bold text-white">
+    <div className="pointer-events-none absolute -top-2 right-0 hidden h-52 w-64 lg:block" aria-hidden>
+      <SparklesIcon className="absolute left-6 top-6 size-5 text-[color:var(--glass-accent-deep)] opacity-60" />
+      <SparklesIcon className="absolute left-16 top-28 size-3.5 text-[color:var(--glass-accent-deep)] opacity-40" />
+      <SparklesIcon className="absolute right-2 top-2 size-3 text-[color:var(--glass-accent-deep)] opacity-50" />
+      {/* Grande feuille de document inclinée */}
+      <div className="absolute right-16 top-4 flex h-44 w-36 rotate-6 flex-col gap-2 rounded-3xl bg-white p-5 shadow-xl ring-1 ring-black/5">
+        <span className="h-2 w-20 rounded-full bg-[color:var(--glass-ink-faint)]" />
+        <span className="h-2 w-14 rounded-full bg-[color:var(--glass-ink-faint)]" />
+        <span className="h-2 w-16 rounded-full bg-[color:var(--glass-ink-faint)]" />
+        <span className="mt-auto w-fit rounded-xl bg-[color:var(--glass-accent-deep)] px-3 py-1.5 text-sm font-bold text-white">
           {abbrev}
         </span>
       </div>
-      {/* Pastille "personne" */}
-      <div className="absolute right-2 top-24 flex size-11 items-center justify-center rounded-2xl bg-[color:var(--glass-accent-deep)] shadow-lg">
-        <UserIcon className="size-5 text-white" />
+      {/* Pastille "personne" en bas à droite, en superposition */}
+      <div className="absolute bottom-4 right-6 flex size-16 items-center justify-center rounded-3xl bg-[color:var(--glass-accent-deep)] shadow-xl">
+        <UserIcon className="size-7 text-white" />
       </div>
     </div>
   );
 }
 
-function MetaPill({
+function MetaSegment({
   icon,
   label,
   value,
   href,
+  accent,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   href?: string;
+  accent?: boolean;
 }) {
   const inner = (
-    <div className="glass-surface flex items-center gap-2.5 rounded-2xl px-3.5 py-2">
-      <span className="flex size-7 items-center justify-center rounded-full bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]">
+    <div className="flex items-center gap-2.5 rounded-xl px-3 py-1.5">
+      <span className="flex size-8 items-center justify-center rounded-full bg-[color:var(--glass-pop-bg)] text-[color:var(--glass-accent-deep)]">
         {icon}
       </span>
       <span className="flex flex-col leading-tight">
-        <span className="text-[10px] uppercase tracking-wide text-[color:var(--glass-ink-faint)]">{label}</span>
-        <span className="text-xs font-semibold text-[color:var(--glass-ink)]">{value}</span>
+        <span className="text-[11px] text-[color:var(--glass-ink-faint)]">{label}</span>
+        <span
+          className={`text-[13px] font-semibold ${
+            accent ? "text-[color:var(--glass-accent-deep)]" : "text-[color:var(--glass-ink)]"
+          }`}
+        >
+          {value}
+        </span>
       </span>
     </div>
   );
-  return href ? <a href={href}>{inner}</a> : inner;
+  return href ? (
+    <a href={href} className="rounded-xl hover:bg-[color:var(--glass-pop-bg)]/40">
+      {inner}
+    </a>
+  ) : (
+    inner
+  );
 }
 
 function SummarySidebar({ form, values, locale }: { form: PublicForm; values: FormPayload; locale: Locale }) {

@@ -10,8 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
+import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { NissInput } from "@/components/ui/niss-input";
+import { FieldErrorReport } from "./field-error-report";
 import { loc, Locale, FieldValue, FullNameValue, isFullNameValue } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 
@@ -33,13 +34,30 @@ interface Props {
   error?: string;
   locale: Locale;
   onChange: (value: FieldValue) => void;
+  /// Contexte (optionnel) pour permettre le signalement d'un faux positif
+  /// avec la traçabilité du formulaire d'origine.
+  formId?: string;
+  formSlug?: string;
 }
 
-export function PdfField({ field, value, error, locale, onChange }: Props) {
+export function PdfField({ field, value, error, locale, onChange, formId, formSlug }: Props) {
   const label = loc(field.label, locale);
   const help = loc(field.help, locale);
   const placeholder = loc(field.placeholder, locale);
   const invalid = !!error;
+
+  // Helper local : évite de répéter les mêmes props 6 fois.
+  const errorReport = (
+    <FieldErrorReport
+      error={error}
+      fieldId={field.id}
+      fieldType={field.type}
+      rejectedValue={value}
+      formId={formId}
+      formSlug={formSlug}
+      locale={locale}
+    />
+  );
 
   // Checkbox : disposition horizontale (case + libellé).
   if (field.type === "checkbox") {
@@ -55,7 +73,7 @@ export function PdfField({ field, value, error, locale, onChange }: Props) {
           {field.required && <span className="text-destructive"> *</span>}
         </FieldLabel>
         {help && <FieldDescription>{help}</FieldDescription>}
-        <FieldError>{error}</FieldError>
+        {errorReport}
       </Field>
     );
   }
@@ -82,7 +100,7 @@ export function PdfField({ field, value, error, locale, onChange }: Props) {
           </SelectContent>
         </Select>
         {help && <FieldDescription>{help}</FieldDescription>}
-        <FieldError>{error}</FieldError>
+        {errorReport}
       </Field>
     );
   }
@@ -104,7 +122,7 @@ export function PdfField({ field, value, error, locale, onChange }: Props) {
           onChange={(e) => onChange(e.target.value)}
         />
         {help && <FieldDescription>{help}</FieldDescription>}
-        <FieldError>{error}</FieldError>
+        {errorReport}
       </Field>
     );
   }
@@ -147,7 +165,7 @@ export function PdfField({ field, value, error, locale, onChange }: Props) {
           {lastFirst ? firstInput : lastInput}
         </div>
         {help && <FieldDescription>{help}</FieldDescription>}
-        <FieldError>{error}</FieldError>
+        {errorReport}
       </Field>
     );
   }
@@ -167,7 +185,7 @@ export function PdfField({ field, value, error, locale, onChange }: Props) {
           onChange={(v) => onChange(v)}
         />
         {help && <FieldDescription>{help}</FieldDescription>}
-        <FieldError>{error}</FieldError>
+        {errorReport}
       </Field>
     );
   }
@@ -200,7 +218,7 @@ export function PdfField({ field, value, error, locale, onChange }: Props) {
       {autoToday && !help && (
         <FieldDescription>Date de génération du document (automatique).</FieldDescription>
       )}
-      <FieldError>{error}</FieldError>
+      {errorReport}
     </Field>
   );
 }

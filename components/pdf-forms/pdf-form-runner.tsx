@@ -283,6 +283,8 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId }: PdfFormRunne
                     error={errors[f.id]}
                     locale={locale}
                     onChange={(v) => setValue(f.id, v)}
+                    formId={form.id}
+                    formSlug={form.slug}
                   />
                 ))}
               </FieldGroup>

@@ -10,6 +10,10 @@ import { redirect } from 'next/navigation'
  * si non autorisé.
  *
  * Cette redirection préserve les bookmarks et liens externes pré-existants.
+ * Depuis la refonte, la racine `/outils/lookup-onem` sert la landing par
+ * catégories ; la recherche transverse (qui consomme ?q= / ?cat=) vit sous
+ * `/recherche`. On route donc vers /recherche dès qu'un critère est présent,
+ * pour ne pas perdre les anciens liens de recherche.
  */
 export default async function PartnerLookupOnemRedirect({
   searchParams,
@@ -23,5 +27,7 @@ export default async function PartnerLookupOnemRedirect({
   if (q) search.set('q', q)
   if (cat) search.set('cat', cat)
   const qs = search.toString()
-  redirect(`/outils/lookup-onem${qs ? `?${qs}` : ''}`)
+  // Avec critère → recherche transverse ; sinon → landing.
+  const target = qs ? `/outils/lookup-onem/recherche?${qs}` : '/outils/lookup-onem'
+  redirect(target)
 }

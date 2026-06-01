@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma, withDbRetry } from '@/lib/prisma'
 import { requireAdminAuth } from '@/lib/auth-check'
 import { invalidateLookupCache } from '@/lib/lookup/getLookupEntry'
+import { buildEntryWhere, extractEntryFilters } from '@/lib/lookup/entryFilters'
 
 export const runtime = 'nodejs'
 const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
@@ -13,11 +14,15 @@ const MAX_LIMIT = 1000
  * Détail d'une table de lookup avec ses entrées paginées.
  *
  * Query params :
- *   - q          : recherche full-text dans code + labelFr + labelNl
- *   - validOn    : ISO date — filtre les entrées valides à cette date
- *   - limit      : max d'entrées renvoyées (défaut 100, max 1000)
- *   - offset     : pour pagination
- *   - includeAll : "true" pour inclure les entrées expirées (défaut: false)
+ *   - q             : recherche full-text dans code + labelFr + labelNl
+ *   - code          : filtre ciblé sur le code (préfixe, insensible à la casse)
+ *   - desc          : filtre ciblé sur la description (FR/NL/DE/EN, substring)
+ *   - validOn       : ISO date — filtre les entrées valides à cette date
+ *   - endDate       : "none" (validUntil null) | "filled" (validUntil non null)
+ *   - modifiedSince : ISO date — entrées dont updatedAt >= cette date (édition Beldoc)
+ *   - limit         : max d'entrées renvoyées (défaut 100, max 1000)
+ *   - offset        : pour pagination
+ *   - includeAll    : "true" pour inclure les entrées expirées (défaut: false)
  */
 export async function GET(
   req: NextRequest,
@@ -26,14 +31,11 @@ export async function GET(
   try {
     const { id } = await params
     const { searchParams } = new URL(req.url)
-    const q = searchParams.get('q')?.trim() ?? ''
-    const validOnParam = searchParams.get('validOn')
     const limit = Math.min(
       MAX_LIMIT,
       parseInt(searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT
     )
     const offset = Math.max(0, parseInt(searchParams.get('offset') ?? '0', 10) || 0)
-    const includeAll = searchParams.get('includeAll') === 'true'
 
     const table = await withDbRetry(() =>
       prisma.lookupTable.findUnique({
@@ -54,37 +56,9 @@ export async function GET(
       )
     }
 
-    // Type Prisma where (kept simple — using `any` avoided)
-    const where: {
-      tableId: string
-      OR?: Array<Record<string, unknown>>
-      AND?: Array<Record<string, unknown>>
-    } = { tableId: id }
-
-    if (q) {
-      where.OR = [
-        { code: { contains: q, mode: 'insensitive' } },
-        { labelFr: { contains: q, mode: 'insensitive' } },
-        { labelNl: { contains: q, mode: 'insensitive' } },
-      ]
-    }
-
-    if (validOnParam && !includeAll) {
-      const validOn = new Date(validOnParam)
-      if (!Number.isNaN(validOn.getTime())) {
-        where.AND = [
-          { OR: [{ validFrom: null }, { validFrom: { lte: validOn } }] },
-          { OR: [{ validUntil: null }, { validUntil: { gte: validOn } }] },
-        ]
-      }
-    } else if (!includeAll) {
-      // Par défaut : valides aujourd'hui
-      const now = new Date()
-      where.AND = [
-        { OR: [{ validFrom: null }, { validFrom: { lte: now } }] },
-        { OR: [{ validUntil: null }, { validUntil: { gte: now } }] },
-      ]
-    }
+    // Filtres (code, desc, validOn, endDate, modifiedSince, includeAll) construits
+    // par le helper partagé — même logique que l'export CSV.
+    const where = buildEntryWhere(id, extractEntryFilters(searchParams))
 
     const [entries, total] = await Promise.all([
       withDbRetry(() =>

@@ -29,8 +29,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Database,
-  Download,
-  ExternalLink,
   Filter,
   ListChecks,
   Loader2,
@@ -54,6 +52,7 @@ export interface TableViewTable {
   group: string | null
   sourcePath: string | null
   entriesCount: number
+  updatedLabel: string | null
   category: { slug: string; labelFr: string }
 }
 
@@ -233,7 +232,6 @@ export function LookupTableView({ table }: Props) {
     },
   ]
 
-  const exportHref = `/api/lookup/tables/${table.id}/export?${buildQuery(applied, 0, 0).replace(/&?(limit|offset)=\d+/g, '')}`
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   const toggleRow = (id: string) =>
@@ -265,6 +263,12 @@ export function LookupTableView({ table }: Props) {
             <p className="text-sm text-muted-foreground">
               {table.entriesCount.toLocaleString('fr-BE')} entrées · catégorie {table.category.labelFr}
             </p>
+            {table.updatedLabel && (
+              <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <CalendarClock className="size-3.5" />
+                Mise à jour le {table.updatedLabel}
+              </p>
+            )}
           </div>
         </div>
       </header>
@@ -510,24 +514,11 @@ export function LookupTableView({ table }: Props) {
 
       {/* ── Actions bas de page ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button variant="outline" nativeButton={false} render={<a href={exportHref} />}>
-          <Download className="size-4" />
-          Exporter ({total.toLocaleString('fr-BE')})
+        <span className="text-xs text-muted-foreground">Source : ONEM</span>
+        <Button variant="ghost" nativeButton={false} render={<Link href="/outils/lookup-onem" />}>
+          <ArrowLeft className="size-4" />
+          Retour aux catégories
         </Button>
-        <div className="flex items-center gap-3">
-          <a
-            href="https://services.onem.be/lookupweb/"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground underline"
-          >
-            Référentiel ONEM officiel <ExternalLink className="size-3" />
-          </a>
-          <Button variant="ghost" nativeButton={false} render={<Link href="/outils/lookup-onem" />}>
-            <ArrowLeft className="size-4" />
-            Retour aux catégories
-          </Button>
-        </div>
       </div>
     </div>
   )

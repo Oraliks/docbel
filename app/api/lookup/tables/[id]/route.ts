@@ -93,6 +93,7 @@ const patchTableSchema = z.object({
   labelFr: z.string().min(1).optional(),
   labelNl: z.string().min(1).optional(),
   notes: z.string().nullable().optional(),
+  updatedLabel: z.string().nullable().optional(),
   requiresApproval: z.boolean().optional(),
 })
 
@@ -129,6 +130,7 @@ export async function PATCH(
           ...(parsed.labelFr !== undefined ? { labelFr: parsed.labelFr } : {}),
           ...(parsed.labelNl !== undefined ? { labelNl: parsed.labelNl } : {}),
           ...(parsed.notes !== undefined ? { notes: parsed.notes } : {}),
+          ...(parsed.updatedLabel !== undefined ? { updatedLabel: parsed.updatedLabel } : {}),
           ...(parsed.requiresApproval !== undefined
             ? { requiresApproval: parsed.requiresApproval }
             : {}),

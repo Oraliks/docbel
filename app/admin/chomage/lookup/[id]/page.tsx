@@ -42,6 +42,7 @@ interface LookupTableData {
   lastImportedBy: string | null
   lastImportSource: string | null
   notes: string | null
+  updatedLabel: string | null
   requiresApproval: boolean
   category: { slug: string; labelFr: string; labelNl: string }
 }
@@ -382,12 +383,14 @@ function TableHeaderEdit({
   const [labelFr, setLabelFr] = useState(table.labelFr)
   const [labelNl, setLabelNl] = useState(table.labelNl)
   const [notes, setNotes] = useState(table.notes ?? '')
+  const [updatedLabel, setUpdatedLabel] = useState(table.updatedLabel ?? '')
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLabelFr(table.labelFr)
     setLabelNl(table.labelNl)
     setNotes(table.notes ?? '')
+    setUpdatedLabel(table.updatedLabel ?? '')
   }, [table])
 
   if (editing) {
@@ -399,6 +402,11 @@ function TableHeaderEdit({
         </div>
         <Input value={labelNl} onChange={(e) => setLabelNl(e.target.value)} placeholder="Label NL" />
         <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes admin (interne)" />
+        <Input
+          value={updatedLabel}
+          onChange={(e) => setUpdatedLabel(e.target.value)}
+          placeholder='Mise à jour le… (affiché en public, ex: "08/12/2025" — vide = masqué)'
+        />
         <div className="flex gap-2">
           <Button
             size="sm"
@@ -407,6 +415,7 @@ function TableHeaderEdit({
                 labelFr,
                 labelNl,
                 notes: notes || null,
+                updatedLabel: updatedLabel.trim() || null,
               })
             }
           >

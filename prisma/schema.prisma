@@ -525,6 +525,12 @@ model LookupTable {
 
   notes String? // annotations admin libres
 
+  // Libellé "Mise à jour le …" affiché en haut de la vue table publique.
+  // Saisi manuellement par l'admin (ex: "08/12/2025" ou "décembre 2025").
+  // Texte libre volontaire : laisse le choix du format à l'admin, et reste
+  // vide tant que non renseigné (la mention est alors masquée côté public).
+  updatedLabel String?
+
   // Workflow 4 yeux : si true, les modifications nécessitent 2 approbations.
   requiresApproval Boolean @default(false)
 

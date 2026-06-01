@@ -66,6 +66,7 @@ export default async function LookupTablePage({
         group: true,
         sourcePath: true,
         entriesCount: true,
+        updatedLabel: true,
         category: { select: { slug: true, labelFr: true } },
       },
     })

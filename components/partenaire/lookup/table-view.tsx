@@ -427,15 +427,15 @@ export function LookupTableView({ table }: Props) {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="table-fixed">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-9" aria-label="Détails" />
-                    <TableHead className="w-32">Code</TableHead>
-                    <TableHead className="w-28">Date de début</TableHead>
-                    <TableHead className="w-32">Date de fin</TableHead>
-                    <TableHead>Description française</TableHead>
-                    <TableHead>Description néerlandaise</TableHead>
+                    <TableHead className="w-24">Code</TableHead>
+                    <TableHead className="w-24">Date de début</TableHead>
+                    <TableHead className="w-24">Date de fin</TableHead>
+                    <TableHead className="w-[34%]">Description française</TableHead>
+                    <TableHead className="w-[34%]">Description néerlandaise</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -637,7 +637,7 @@ function EntryTableRow({
             <span className="text-green-700">—</span>
           )}
         </TableCell>
-        <TableCell className="text-sm align-top">
+        <TableCell className="text-sm align-top whitespace-normal break-words leading-snug">
           <FlagPrefix tableSlug={tableSlug} label={row.labelFr} />
           {row.labelFr || <span className="text-muted-foreground/40">—</span>}
           {isExpired && (
@@ -649,7 +649,7 @@ function EntryTableRow({
             </Badge>
           )}
         </TableCell>
-        <TableCell className="text-sm align-top text-muted-foreground">
+        <TableCell className="text-sm align-top whitespace-normal break-words leading-snug text-muted-foreground">
           {row.labelNl || '—'}
         </TableCell>
       </TableRow>

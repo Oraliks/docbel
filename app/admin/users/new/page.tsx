@@ -110,7 +110,7 @@ export default function NewUserPage() {
   }
 
   return (
-    <div className="flex max-w-2xl flex-col gap-6 py-6 px-4 md:px-6">
+    <div className="flex flex-col gap-6 py-6 px-4 md:px-6">
       <div>
         <Button
           render={<Link href="/admin/users" />}

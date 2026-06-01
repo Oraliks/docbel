@@ -49,7 +49,10 @@ des fonctions HTTP (`GET`, `POST`, `PATCH`, `PUT`, `DELETE`).
 
 ## Modèle utilisateur
 
-- Rôles : `user`, `moderator`, `admin` (enum Prisma `UserRole`).
+- Rôles : `user`, `partner`, `employer`, `moderator`, `admin` (enum Prisma
+  `UserRole`). Le compte porte aussi un `segment` (`citoyen`/`employeur`/
+  `partenaire`) + `partnerType` ; l'accès aux outils passe par `canUseTool`
+  ([`lib/entitlements.ts`](lib/entitlements.ts)).
 - Statuts : `active`, `pending`, `disabled`, `locked` (enum
   `UserStatus`).
 - 5 échecs de login ⇒ verrouillage 15 minutes
@@ -107,6 +110,14 @@ Les barèmes officiels sont stockés dans
   `declare module "next-auth"` quand on y touche.
 - ❌ Ajouter du `useEffect` qui fait `setState` synchrone — ESLint
   refuse.
+- ❌ Rétrécir les pages/cards du **back-office** avec un `max-w-*` étroit
+  (`max-w-md/lg/xl/2xl`) sur le conteneur de page. Les pages admin, cards et
+  formulaires doivent occuper **toute la largeur de contenu** (modèle :
+  `/admin/users` → `flex flex-col gap-6 py-6 px-4 md:px-6`, sans `max-w`). Pour
+  un formulaire à peu de champs, remplir la largeur via une grille
+  multi-colonnes (`grid sm:grid-cols-2 lg:grid-cols-3`) plutôt qu'une colonne
+  étroite. (Exception voulue : les pages publiques `login` / `inscription`,
+  volontairement centrées et étroites.)
 
 ## Points connus à améliorer
 
@@ -117,7 +128,8 @@ Les barèmes officiels sont stockés dans
   `components/docbel/bureau-callout.tsx`, `components/docbel/bureau-card.tsx`)
   à harmoniser.
 - Extraire un composant `<UserFormFields/>` partagé entre
-  `create-user-dialog.tsx` et `edit-user-dialog.tsx`.
+  `app/admin/users/new/page.tsx` et `components/users/edit-user-form.tsx`
+  (création / édition d'utilisateur sont désormais des pages, plus des modals).
 - Passer la validation API à Zod plutôt que manuelle.
 - Ajouter du rate-limit sur les endpoints publics
   (`contact-messages`, `newsletter`).

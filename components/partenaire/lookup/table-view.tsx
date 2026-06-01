@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -28,6 +28,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Copy,
   Database,
   Filter,
   ListChecks,
@@ -36,9 +37,12 @@ import {
   Plus,
   RotateCcw,
   Search,
+  Star,
 } from 'lucide-react'
 import { getModuleInfo } from '@/lib/lookup/modules'
 import { cleanTableLabel } from '@/lib/lookup/cleanTableLabel'
+import { resolveLookupLocale, pickLabel, type LookupLocale } from '@/lib/lookup/locale'
+import { useLookupFavorites } from '@/hooks/useLookupFavorites'
 import { FlagPrefix } from './flag-prefix'
 
 // ─── Types (forme renvoyée par GET /api/lookup/tables/[id]) ──────────────────
@@ -59,6 +63,17 @@ export interface TableViewTable {
 interface EntryRow {
   id: string
   code: string
+  labelFr: string
+  labelNl: string
+  labelDe: string | null
+  labelEn: string | null
+  validFrom: string | null
+  validUntil: string | null
+  metadata: Record<string, string> | null
+}
+
+/** Une version d'un code renvoyée par GET /api/lookup/tables/[id]/history. */
+interface HistoryVersion {
   labelFr: string
   labelNl: string
   labelDe: string | null
@@ -92,6 +107,10 @@ const PAGE_SIZES = [10, 25, 50, 100]
 
 interface Props {
   table: TableViewTable
+  /** Locale active du Lookup (descriptions FR/NL). Défaut: FR. */
+  locale?: LookupLocale
+  /** Deep-link ?code= : pré-remplit le filtre Code, lance la recherche et déplie la 1ère ligne correspondante. */
+  initialCode?: string
 }
 
 /**
@@ -99,15 +118,25 @@ interface Props {
  * services.onem.be/lookupweb, adaptée au thème DocBel.
  *
  * Panneau de filtres + recherches prédéfinies + tableau d'entrées dépliables
- * + pagination + export CSV. Tout passe par `/api/lookup/tables/[id]`.
+ * + pagination. Tout passe par `/api/lookup/tables/[id]`.
+ *
+ * Features : locale FR/NL, copie du code, deep-link ?code=, favoris/récents,
+ * historique des versions, badges de statut, raccourci clavier « / ».
  */
-export function LookupTableView({ table }: Props) {
+export function LookupTableView({ table, locale = resolveLookupLocale(), initialCode }: Props) {
   const moduleInfo = getModuleInfo(table.prefix)
   const displayLabel = cleanTableLabel(table.labelFr, table.prefix)
 
+  // Favoris + récents (localStorage, partagé avec le reste du Lookup).
+  const fav = useLookupFavorites()
+
   // Filtres en cours d'édition (formulaire) vs filtres appliqués (requête).
-  const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS)
-  const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS)
+  // Si un deep-link ?code= est présent, on pré-remplit le filtre Code.
+  const initialFilters: Filters = initialCode
+    ? { ...EMPTY_FILTERS, code: initialCode }
+    : EMPTY_FILTERS
+  const [draft, setDraft] = useState<Filters>(initialFilters)
+  const [applied, setApplied] = useState<Filters>(initialFilters)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
@@ -115,6 +144,11 @@ export function LookupTableView({ table }: Props) {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  // Champ Code (cible du raccourci « / » et du focus au deep-link).
+  const codeInputRef = useRef<HTMLInputElement>(null)
+  // Garde-fou : on ne déplie la ligne du deep-link qu'une seule fois.
+  const deepLinkDone = useRef(false)
 
   const buildQuery = useCallback(
     (f: Filters, limit: number, offset: number) => {
@@ -156,6 +190,30 @@ export function LookupTableView({ table }: Props) {
       cancelled = true
     }
   }, [table.id, applied, page, pageSize, buildQuery])
+
+  // Deep-link ?code= : une fois les lignes chargées, déplier la 1ère dont le code === initialCode.
+  useEffect(() => {
+    if (!initialCode || deepLinkDone.current || loading) return
+    const match = rows.find((r) => r.code === initialCode)
+    if (!match) return
+    deepLinkDone.current = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setExpanded((prev) => new Set(prev).add(match.id))
+  }, [initialCode, rows, loading])
+
+  // Raccourci global « / » : focus le champ Code (hors saisie dans un input/textarea).
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return
+      const el = e.target as HTMLElement | null
+      const tag = el?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || el?.isContentEditable) return
+      e.preventDefault()
+      codeInputRef.current?.focus()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   const apply = (f: Filters) => {
     setApplied(f)
@@ -290,8 +348,9 @@ export function LookupTableView({ table }: Props) {
               className="space-y-4"
             >
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Code">
+                <Field label="Code" hint="tapez « / » pour cibler ce champ">
                   <Input
+                    ref={codeInputRef}
                     value={draft.code}
                     onChange={(e) => setDraft({ ...draft, code: e.target.value })}
                     placeholder="Ex. 27, 2A, 27SP…"
@@ -435,11 +494,11 @@ export function LookupTableView({ table }: Props) {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-9" aria-label="Détails" />
-                    <TableHead className="w-24">Code</TableHead>
+                    <TableHead className="w-9" aria-label="Favori" />
+                    <TableHead className="w-28">Code</TableHead>
                     <TableHead className="w-24">Date de début</TableHead>
                     <TableHead className="w-24">Date de fin</TableHead>
-                    <TableHead className="w-[34%]">Description française</TableHead>
-                    <TableHead className="w-[34%]">Description néerlandaise</TableHead>
+                    <TableHead className="w-[48%]">Description</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -449,7 +508,10 @@ export function LookupTableView({ table }: Props) {
                       row={r}
                       open={expanded.has(r.id)}
                       onToggle={() => toggleRow(r.id)}
+                      tableId={table.id}
                       tableSlug={table.slug}
+                      locale={locale}
+                      fav={fav}
                     />
                   ))}
                 </TableBody>
@@ -573,49 +635,195 @@ function RadioPill({
   )
 }
 
+/** Statut de validité d'une entrée à l'instant T. */
+type EntryStatus = 'current' | 'expired' | 'upcoming'
+
+/** Calcule le statut d'une entrée à partir de ses bornes de validité. */
+function entryStatus(
+  validFrom: string | null,
+  validUntil: string | null,
+  now = new Date()
+): EntryStatus {
+  if (validUntil && new Date(validUntil) < now) return 'expired'
+  if (validFrom && new Date(validFrom) > now) return 'upcoming'
+  return 'current'
+}
+
+/** Badge de statut « en vigueur » (vert) / « historique » (orange) / « à venir » (muted). */
+function StatusBadge({
+  validFrom,
+  validUntil,
+  className,
+}: {
+  validFrom: string | null
+  validUntil: string | null
+  className?: string
+}) {
+  const status = entryStatus(validFrom, validUntil)
+  const map = {
+    current: { label: 'en vigueur', cls: 'border-green-300 text-green-800' },
+    expired: { label: 'historique', cls: 'border-orange-300 text-orange-800' },
+    upcoming: { label: 'à venir', cls: 'border-input text-muted-foreground' },
+  } as const
+  const { label, cls } = map[status]
+  return (
+    <Badge variant="outline" className={`text-[10px] ${cls}${className ? ` ${className}` : ''}`}>
+      {label}
+    </Badge>
+  )
+}
+
+/** Petit bouton icône pour copier le code dans le presse-papiers (Copy → Check 1.2 s). */
+function CopyCodeButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (timer.current) clearTimeout(timer.current)
+    }
+  }, [])
+
+  const copy = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    void navigator.clipboard
+      .writeText(code)
+      .then(() => {
+        setCopied(true)
+        if (timer.current) clearTimeout(timer.current)
+        timer.current = setTimeout(() => setCopied(false), 1200)
+      })
+      .catch(() => {
+        // Presse-papiers indisponible (permissions, contexte non sécurisé) : on ignore.
+      })
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      aria-label="Copier le code"
+      title="Copier le code"
+      className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+    >
+      {copied ? (
+        <Check className="size-3 text-green-700" />
+      ) : (
+        <Copy className="size-3" />
+      )}
+    </button>
+  )
+}
+
 function EntryTableRow({
   row,
   open,
   onToggle,
+  tableId,
   tableSlug,
+  locale,
+  fav,
 }: {
   row: EntryRow
   open: boolean
   onToggle: () => void
+  tableId: string
   tableSlug: string
+  locale: LookupLocale
+  fav: ReturnType<typeof useLookupFavorites>
 }) {
   const metaEntries = row.metadata ? Object.entries(row.metadata) : []
-  const detailCount =
-    metaEntries.length + (row.labelDe ? 1 : 0) + (row.labelEn ? 1 : 0)
-  const hasDetails = detailCount > 0
-  const isExpired = row.validUntil && new Date(row.validUntil) < new Date()
+  // Libellé principal (locale) + libellé secondaire (l'autre langue de FR/NL).
+  const primaryLabel = pickLabel(locale, row)
+  const secondaryLabel = locale === 'nl' ? row.labelFr : row.labelNl
+  const secondaryLangName = locale === 'nl' ? 'Français' : 'Néerlandais'
+  const hasSecondary = Boolean(secondaryLabel && secondaryLabel !== primaryLabel)
+
+  // Toujours dépliable : on a au minimum la section Historique + les traductions.
+  const isFav = fav.isFavorite(tableSlug, row.code)
+
+  // ── Historique (lazy : fetch au 1er dépli) ──
+  const [history, setHistory] = useState<HistoryVersion[] | null>(null)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const historyRequested = useRef(false)
+
+  useEffect(() => {
+    if (!open) return
+    // Pousse l'entrée dans les récents à chaque ouverture.
+    fav.pushRecent({ tableSlug, code: row.code, label: primaryLabel })
+    // Charge l'historique une seule fois.
+    if (historyRequested.current) return
+    historyRequested.current = true
+    setHistoryLoading(true)
+    let cancelled = false
+    fetch(`/api/lookup/tables/${tableId}/history?code=${encodeURIComponent(row.code)}`)
+      .then((r) => r.json())
+      .then((data: { versions?: HistoryVersion[] }) => {
+        if (!cancelled) setHistory(data.versions ?? [])
+      })
+      .catch(() => {
+        if (!cancelled) setHistory([])
+      })
+      .finally(() => {
+        if (!cancelled) setHistoryLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+    // On ne dépend que de `open` : le fetch ne doit partir qu'à l'ouverture, une fois.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  const toggleFav = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    fav.toggleFavorite({ tableSlug, code: row.code, label: primaryLabel })
+  }
 
   return (
     <Fragment>
       <TableRow
-        onClick={() => hasDetails && onToggle()}
-        className={hasDetails ? 'cursor-pointer' : ''}
-        aria-expanded={hasDetails ? open : undefined}
+        onClick={onToggle}
+        className="cursor-pointer"
+        aria-expanded={open}
       >
         <TableCell className="align-top">
-          {hasDetails ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onToggle()
-              }}
-              className="inline-flex size-6 items-center justify-center rounded border border-input bg-background transition-colors hover:bg-muted"
-              aria-label={open ? 'Réduire' : `${detailCount} info(s) supplémentaire(s)`}
-              title={open ? 'Réduire' : `${detailCount} info(s) supplémentaire(s)`}
-            >
-              {open ? <Minus className="size-3" /> : <Plus className="size-3" />}
-            </button>
-          ) : (
-            <span className="text-xs text-muted-foreground/30">—</span>
-          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggle()
+            }}
+            className="inline-flex size-6 items-center justify-center rounded border border-input bg-background transition-colors hover:bg-muted"
+            aria-label={open ? 'Réduire' : 'Afficher le détail'}
+            title={open ? 'Réduire' : 'Afficher le détail'}
+          >
+            {open ? <Minus className="size-3" /> : <Plus className="size-3" />}
+          </button>
         </TableCell>
-        <TableCell className="font-mono text-xs align-top">{row.code}</TableCell>
+        <TableCell className="align-top">
+          <button
+            type="button"
+            onClick={toggleFav}
+            aria-label={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            aria-pressed={isFav}
+            title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            className="inline-flex size-6 items-center justify-center rounded transition-colors hover:bg-muted"
+          >
+            <Star
+              className={
+                isFav
+                  ? 'size-3.5 fill-amber-400 text-amber-500'
+                  : 'size-3.5 text-muted-foreground/50'
+              }
+            />
+          </button>
+        </TableCell>
+        <TableCell className="align-top">
+          <span className="inline-flex items-center gap-1">
+            <span className="font-mono text-xs">{row.code}</span>
+            <CopyCodeButton code={row.code} />
+          </span>
+        </TableCell>
         <TableCell className="text-xs text-muted-foreground align-top tabular-nums">
           {row.validFrom ? new Date(row.validFrom).toLocaleDateString('fr-BE') : '—'}
         </TableCell>
@@ -629,31 +837,28 @@ function EntryTableRow({
           )}
         </TableCell>
         <TableCell className="text-sm align-top whitespace-normal break-words leading-snug">
-          <FlagPrefix tableSlug={tableSlug} label={row.labelFr} />
-          {row.labelFr || <span className="text-muted-foreground/40">—</span>}
-          {isExpired && (
-            <Badge
-              variant="outline"
-              className="ml-2 border-orange-300 text-[10px] text-orange-800"
-            >
-              historique
-            </Badge>
-          )}
-        </TableCell>
-        <TableCell className="text-sm align-top whitespace-normal break-words leading-snug text-muted-foreground">
-          {row.labelNl || '—'}
+          <FlagPrefix tableSlug={tableSlug} label={primaryLabel} />
+          {primaryLabel || <span className="text-muted-foreground/40">—</span>}
+          <StatusBadge
+            validFrom={row.validFrom}
+            validUntil={row.validUntil}
+            className="ml-2 align-middle"
+          />
         </TableCell>
       </TableRow>
 
-      {open && hasDetails && (
+      {open && (
         <TableRow className="bg-muted/30 hover:bg-muted/30">
           <TableCell />
           <TableCell colSpan={5} className="py-3">
             <div className="space-y-3 text-xs">
-              {(row.labelDe || row.labelEn) && (
+              {(hasSecondary || row.labelDe || row.labelEn) && (
                 <DetailGrid
                   title="Traductions"
                   entries={[
+                    ...(hasSecondary && secondaryLabel
+                      ? [{ label: secondaryLangName, value: secondaryLabel }]
+                      : []),
                     ...(row.labelDe ? [{ label: 'Allemand', value: row.labelDe }] : []),
                     ...(row.labelEn ? [{ label: 'Anglais', value: row.labelEn }] : []),
                   ]}
@@ -665,11 +870,59 @@ function EntryTableRow({
                   entries={metaEntries.map(([label, value]) => ({ label, value }))}
                 />
               )}
+              <HistorySection
+                loading={historyLoading}
+                versions={history}
+                locale={locale}
+              />
             </div>
           </TableCell>
         </TableRow>
       )}
     </Fragment>
+  )
+}
+
+/** Section « Historique » du panneau détail : liste les versions d'un code (lazy). */
+function HistorySection({
+  loading,
+  versions,
+  locale,
+}: {
+  loading: boolean
+  versions: HistoryVersion[] | null
+  locale: LookupLocale
+}) {
+  return (
+    <div>
+      <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Historique
+      </div>
+      {loading || versions === null ? (
+        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <Loader2 className="size-3 animate-spin" />
+          Chargement…
+        </span>
+      ) : versions.length <= 1 ? (
+        <span className="text-muted-foreground">Version unique</span>
+      ) : (
+        <ol className="space-y-1.5">
+          {versions.map((v, i) => (
+            <li key={i} className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2">
+              <span className="inline-flex shrink-0 items-center gap-1.5 tabular-nums text-muted-foreground">
+                <span>
+                  {v.validFrom ? new Date(v.validFrom).toLocaleDateString('fr-BE') : '—'}
+                  {' → '}
+                  {v.validUntil ? new Date(v.validUntil).toLocaleDateString('fr-BE') : '—'}
+                </span>
+                <StatusBadge validFrom={v.validFrom} validUntil={v.validUntil} />
+              </span>
+              <span className="break-words text-foreground">{pickLabel(locale, v)}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
   )
 }
 

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/breadcrumb'
 import { prisma, withDbRetry } from '@/lib/prisma'
 import { cleanTableLabel } from '@/lib/lookup/cleanTableLabel'
+import { resolveLookupLocale } from '@/lib/lookup/locale'
 import {
   LookupTableView,
   type TableViewTable,
@@ -45,8 +46,10 @@ export async function generateMetadata({
  */
 export default async function LookupTablePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ tableSlug: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const { disabledToolName } = await guardLookupAccess()
   if (disabledToolName) {
@@ -54,6 +57,11 @@ export default async function LookupTablePage({
   }
 
   const { tableSlug } = await params
+  const sp = await searchParams
+  // Deep-link ?code= : on ne garde qu'une valeur scalaire (ignore les répétitions).
+  const codeParam = Array.isArray(sp.code) ? sp.code[0] : sp.code
+  const initialCode = codeParam?.trim() || undefined
+  const locale = resolveLookupLocale()
   const table = await withDbRetry(() =>
     prisma.lookupTable.findFirst({
       where: { slug: tableSlug },
@@ -103,7 +111,11 @@ export default async function LookupTablePage({
         </BreadcrumbList>
       </Breadcrumb>
 
-      <LookupTableView table={table as TableViewTable} />
+      <LookupTableView
+        table={table as TableViewTable}
+        locale={locale}
+        initialCode={initialCode}
+      />
     </div>
   )
 }

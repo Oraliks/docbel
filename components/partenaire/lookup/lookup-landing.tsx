@@ -10,7 +10,9 @@ import {
   Briefcase,
   Building2,
   CalendarCheck,
+  ChevronDown,
   ChevronRight,
+  Clock,
   Database,
   ExternalLink,
   Globe,
@@ -18,10 +20,20 @@ import {
   Search,
   Shapes,
   ShieldCheck,
+  Sparkles,
+  Star,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { getModuleInfo } from '@/lib/lookup/modules'
 import { cleanTableLabel } from '@/lib/lookup/cleanTableLabel'
+import { cn } from '@/lib/utils'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import { CodeDecoder } from '@/components/partenaire/lookup/code-decoder'
+import { useLookupFavorites, type LookupRef } from '@/hooks/useLookupFavorites'
 
 export interface LandingTable {
   id: string
@@ -78,6 +90,8 @@ export function LookupLanding({ categories, initialCat }: Props) {
   const [activeCat, setActiveCat] = useState<string>(
     initialCat && categories.some((c) => c.slug === initialCat) ? initialCat : ''
   )
+  // Favoris + consultés récemment (localStorage, hydratés au montage côté client).
+  const fav = useLookupFavorites()
 
   // Tables alimentées uniquement (les shells du seed manuel ne servent à rien).
   const fedCategories = useMemo(
@@ -144,6 +158,25 @@ export function LookupLanding({ categories, initialCat }: Props) {
         </div>
       </header>
 
+      {/* ── Décodeur de code ONEM (repliable, discret) ── */}
+      <Collapsible className="rounded-xl border border-border bg-card">
+        <CollapsibleTrigger className="group flex w-full items-center gap-2.5 px-4 py-3 text-left">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Sparkles className="size-4" />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-medium leading-tight">Décoder un code ONEM</span>
+            <span className="block text-xs text-muted-foreground">
+              Décomposez un code structuré (01/43AA1, S04, 1000…) sans le chercher dans une table.
+            </span>
+          </span>
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="px-4 pb-4">
+          <CodeDecoder />
+        </CollapsibleContent>
+      </Collapsible>
+
       {/* ── Recherche libre de table (transcende le drill-down) ── */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
@@ -154,6 +187,28 @@ export function LookupLanding({ categories, initialCat }: Props) {
           className="pl-9"
         />
       </div>
+
+      {/* ── Favoris + consultés récemment (rien si les deux listes sont vides) ── */}
+      {!searching && (fav.favorites.length > 0 || fav.recents.length > 0) && (
+        <div className="flex flex-col gap-4">
+          {fav.favorites.length > 0 && (
+            <RefChips
+              title="Favoris"
+              icon={Star}
+              iconClassName="fill-amber-400 text-amber-500"
+              refs={fav.favorites}
+            />
+          )}
+          {fav.recents.length > 0 && (
+            <RefChips
+              title="Consultés récemment"
+              icon={Clock}
+              iconClassName="text-muted-foreground"
+              refs={fav.recents}
+            />
+          )}
+        </div>
+      )}
 
       {searching ? (
         /* ── Mode recherche : résultats à plat, toutes catégories ── */
@@ -271,6 +326,47 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div className="flex flex-col gap-3">
       <h2 className="text-sm font-semibold text-muted-foreground">{title}</h2>
       {children}
+    </div>
+  )
+}
+
+/**
+ * Bandeau de puces cliquables (favoris ou récents). Chaque puce mène
+ * directement à la table avec le code pré-sélectionné (?code=…).
+ */
+function RefChips({
+  title,
+  icon: Icon,
+  iconClassName,
+  refs,
+}: {
+  title: string
+  icon: LucideIcon
+  iconClassName?: string
+  refs: LookupRef[]
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+        <Icon className={cn('size-3.5', iconClassName)} />
+        {title}
+      </h2>
+      <div className="flex flex-wrap gap-2">
+        {refs.map((r) => (
+          <Link
+            key={`${r.tableSlug}::${r.code}`}
+            href={`/outils/lookup-onem/${r.tableSlug}?code=${encodeURIComponent(r.code)}`}
+            className="group inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-background py-1 pl-2.5 pr-3 text-xs transition-colors hover:border-primary/40 hover:bg-muted"
+          >
+            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] font-semibold text-foreground">
+              {r.code}
+            </span>
+            <span className="truncate text-muted-foreground group-hover:text-foreground">
+              {r.label}
+            </span>
+          </Link>
+        ))}
+      </div>
     </div>
   )
 }

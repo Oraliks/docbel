@@ -237,11 +237,11 @@ export default function BaremesAdminPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold">Barèmes officiels</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Barèmes officiels</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Workflow d’import : upload .xlsx → brouillon → validation → publication versionnée.
           </p>

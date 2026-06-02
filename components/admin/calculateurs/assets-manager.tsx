@@ -26,6 +26,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 /* ------------------------------------------------------------------ */
 /*  Types & constantes                                                */
@@ -412,7 +419,7 @@ function CreateAssetDialog({ slug, open, onOpenChange, onCreated }: CreateProps)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Ajouter une source</DialogTitle>
           <DialogDescription>
@@ -516,18 +523,18 @@ function CreateAssetDialog({ slug, open, onOpenChange, onCreated }: CreateProps)
               <Label htmlFor="asset-cat" className="text-[12.5px]">
                 Catégorie
               </Label>
-              <select
-                id="asset-cat"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="mt-1 h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-[13px] dark:bg-input/30"
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={category} onValueChange={(v) => v && setCategory(v)}>
+                <SelectTrigger id="asset-cat" className="mt-1 h-9 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="asset-year" className="text-[12.5px]">
@@ -628,7 +635,7 @@ function EditAssetDialog({ slug, asset, onClose, onSaved }: EditProps) {
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Modifier la source</DialogTitle>
           <DialogDescription>
@@ -666,18 +673,18 @@ function EditAssetDialog({ slug, asset, onClose, onSaved }: EditProps) {
               <Label htmlFor="edit-cat" className="text-[12.5px]">
                 Catégorie
               </Label>
-              <select
-                id="edit-cat"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="mt-1 h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-[13px] dark:bg-input/30"
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={category} onValueChange={(v) => v && setCategory(v)}>
+                <SelectTrigger id="edit-cat" className="mt-1 h-9 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="edit-year" className="text-[12.5px]">

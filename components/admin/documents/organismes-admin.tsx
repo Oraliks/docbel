@@ -401,7 +401,7 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
 
       {/* Dialog create/edit */}
       <Dialog open={creating || !!editing} onOpenChange={(v) => !v && closeDialog()}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editing ? "Modifier l'organisme" : "Nouvel organisme"}</DialogTitle>
             <DialogDescription>

@@ -481,7 +481,7 @@ export function U1InstitutionsManager() {
 
       {/* Form dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editing ? "Modifier l'institution" : "Nouvelle institution"}
@@ -648,12 +648,12 @@ export function U1InstitutionsManager() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
             <AlertDialogAction
+              variant="destructive"
               onClick={(e) => {
                 e.preventDefault();
                 void performDelete();
               }}
               disabled={deleting}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             >
               {deleting && <Loader2 className="animate-spin" size={16} />}
               Supprimer

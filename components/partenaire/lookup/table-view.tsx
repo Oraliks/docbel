@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import {
   Select,
@@ -425,13 +426,11 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
                   Réinitialiser
                 </Button>
                 <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={draft.includeAll}
-                    onChange={(e) => setDraft({ ...draft, includeAll: e.target.checked })}
-                    className="size-3.5 accent-[var(--primary)]"
+                    onCheckedChange={(c) => setDraft({ ...draft, includeAll: c === true })}
                   />
-                  Inclure l’historique (entrées expirées)
+                  <span>Inclure l’historique (entrées expirées)</span>
                 </label>
               </div>
             </form>
@@ -699,19 +698,21 @@ function CopyCodeButton({ code }: { code: string }) {
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon-sm"
       onClick={copy}
       aria-label="Copier le code"
       title="Copier le code"
-      className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+      className="shrink-0 text-muted-foreground/60"
     >
       {copied ? (
         <Check className="size-3 text-green-700" />
       ) : (
         <Copy className="size-3" />
       )}
-    </button>
+    </Button>
   )
 }
 
@@ -787,27 +788,29 @@ function EntryTableRow({
         aria-expanded={open}
       >
         <TableCell className="align-top">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon-sm"
             onClick={(e) => {
               e.stopPropagation()
               onToggle()
             }}
-            className="inline-flex size-6 items-center justify-center rounded border border-input bg-background transition-colors hover:bg-muted"
             aria-label={open ? 'Réduire' : 'Afficher le détail'}
             title={open ? 'Réduire' : 'Afficher le détail'}
           >
             {open ? <Minus className="size-3" /> : <Plus className="size-3" />}
-          </button>
+          </Button>
         </TableCell>
         <TableCell className="align-top">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={toggleFav}
             aria-label={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
             aria-pressed={isFav}
             title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-            className="inline-flex size-6 items-center justify-center rounded transition-colors hover:bg-muted"
           >
             <Star
               className={
@@ -816,7 +819,7 @@ function EntryTableRow({
                   : 'size-3.5 text-muted-foreground/50'
               }
             />
-          </button>
+          </Button>
         </TableCell>
         <TableCell className="align-top">
           <span className="inline-flex items-center gap-1">

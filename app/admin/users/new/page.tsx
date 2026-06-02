@@ -110,7 +110,7 @@ export default function NewUserPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-6 px-4 md:px-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <div>
         <Button
           render={<Link href="/admin/users" />}
@@ -151,10 +151,10 @@ export default function NewUserPage() {
                     setFormData({ ...formData, name: e.target.value })
                   }
                   disabled={loading}
-                  className={errors.name ? "border-red-500" : ""}
+                  className={errors.name ? "border-destructive" : ""}
                 />
                 {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name}</p>
+                  <p className="text-sm text-destructive">{errors.name}</p>
                 )}
               </div>
 
@@ -169,10 +169,10 @@ export default function NewUserPage() {
                     setFormData({ ...formData, email: e.target.value })
                   }
                   disabled={loading}
-                  className={errors.email ? "border-red-500" : ""}
+                  className={errors.email ? "border-destructive" : ""}
                 />
                 {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email}</p>
+                  <p className="text-sm text-destructive">{errors.email}</p>
                 )}
               </div>
 
@@ -187,10 +187,10 @@ export default function NewUserPage() {
                     setFormData({ ...formData, password: e.target.value })
                   }
                   disabled={loading}
-                  className={errors.password ? "border-red-500" : ""}
+                  className={errors.password ? "border-destructive" : ""}
                 />
                 {errors.password && (
-                  <p className="text-sm text-red-500">{errors.password}</p>
+                  <p className="text-sm text-destructive">{errors.password}</p>
                 )}
               </div>
 
@@ -205,10 +205,10 @@ export default function NewUserPage() {
                     setFormData({ ...formData, confirmPassword: e.target.value })
                   }
                   disabled={loading}
-                  className={errors.confirmPassword ? "border-red-500" : ""}
+                  className={errors.confirmPassword ? "border-destructive" : ""}
                 />
                 {errors.confirmPassword && (
-                  <p className="text-sm text-red-500">{errors.confirmPassword}</p>
+                  <p className="text-sm text-destructive">{errors.confirmPassword}</p>
                 )}
               </div>
 

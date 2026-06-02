@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableBody,
@@ -207,7 +208,7 @@ export default function LookupTableDetailPage() {
     : 'https://services.onem.be/lookupweb/'
 
   return (
-    <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0 flex-1">
           <Link
@@ -271,11 +272,9 @@ export default function LookupTableDetailPage() {
             />
           </div>
           <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={includeAll}
-              onChange={(e) => setIncludeAll(e.target.checked)}
-              className="h-4 w-4 rounded border-input"
+              onCheckedChange={(checked) => setIncludeAll(checked === true)}
             />
             Inclure les entrées expirées
           </label>

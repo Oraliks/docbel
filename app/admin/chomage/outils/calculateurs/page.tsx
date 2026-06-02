@@ -26,7 +26,7 @@ export default function CalculateursOverviewPage() {
   const methodologies = getMethodologies();
 
   return (
-    <div className="flex flex-col gap-5 px-4 py-6 lg:px-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       {/* Breadcrumb / retour ---------------------------------------- */}
       <nav className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
         <Link

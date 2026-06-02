@@ -293,7 +293,7 @@ export default function BaremeImportPreviewPage() {
   const statusInfo = statusLabel[file.status] ?? { label: file.status, tone: 'bg-muted' }
 
   return (
-    <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       {/* Header sticky avec actions */}
       <div className="sticky top-0 z-20 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 bg-background/95 backdrop-blur border-b">
         <div className="flex items-start justify-between gap-4 flex-wrap">

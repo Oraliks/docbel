@@ -94,7 +94,7 @@ export function BureauReportDialog({
         if (!v) reset();
       }}
     >
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Signaler une erreur</DialogTitle>
           <DialogDescription>

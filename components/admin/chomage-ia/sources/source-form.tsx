@@ -23,6 +23,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { KIND_LABELS } from "../_shared";
 
 interface SourceFormDialogProps {
@@ -172,7 +180,7 @@ export function SourceFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             {mode === "create"
@@ -209,20 +217,23 @@ export function SourceFormDialog({
             {!lockedKind ? (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="ks-kind">Type *</Label>
-                <select
-                  id="ks-kind"
+                <Select
                   value={state.kind}
-                  onChange={(e) =>
-                    setState((s) => ({ ...s, kind: e.target.value }))
+                  onValueChange={(v) =>
+                    v && setState((s) => ({ ...s, kind: v }))
                   }
-                  className="h-9 rounded-md border border-border bg-background px-2 text-[13px]"
                 >
-                  {(EDITABLE_KINDS as readonly string[]).map((k) => (
-                    <option key={k} value={k}>
-                      {KIND_LABELS[k]}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="ks-kind" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(EDITABLE_KINDS as readonly string[]).map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {KIND_LABELS[k]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-[11px] text-muted-foreground">
                   PDF / image : utilise le bouton « Upload » de la page.
                 </p>
@@ -296,13 +307,11 @@ export function SourceFormDialog({
 
             {/* Enabled */}
             <label className="inline-flex items-center gap-2 text-[12.5px] font-medium">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={state.enabled}
-                onChange={(e) =>
-                  setState((s) => ({ ...s, enabled: e.target.checked }))
+                onCheckedChange={(checked) =>
+                  setState((s) => ({ ...s, enabled: checked === true }))
                 }
-                className="size-3.5"
               />
               Activée (envoyée à l&apos;IA)
             </label>

@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -332,19 +339,23 @@ export function ChangelogManager() {
               </div>
               <div>
                 <FieldLabel required>Type</FieldLabel>
-                <select
-                  className="w-full px-3 py-2 border rounded-md bg-background"
+                <Select
                   value={form.type}
-                  onChange={(e) =>
-                    setForm({ ...form, type: e.target.value as ChangelogType })
+                  onValueChange={(v) =>
+                    v && setForm({ ...form, type: v as ChangelogType })
                   }
                 >
-                  {CHANGELOG_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {typeConfig[t].label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CHANGELOG_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {typeConfig[t].label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

@@ -64,7 +64,7 @@ export function SignatureDialog() {
           </Button>
         }
       />
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Signature</DialogTitle>
           <DialogDescription>

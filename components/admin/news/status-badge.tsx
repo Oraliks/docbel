@@ -32,7 +32,7 @@ export function StatusBadge({ status, onClick }: StatusBadgeProps) {
         return {
           label: 'Archivé',
           variant: 'destructive' as const,
-          className: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200'
+          className: ''
         };
       default:
         return {

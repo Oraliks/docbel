@@ -66,18 +66,18 @@ export default function NewsStatsPage() {
   }, [fetchStats]);
 
   if (loading) {
-    return <div className="flex-1 space-y-6 p-6"><div className="text-center py-12 text-muted-foreground">Chargement...</div></div>;
+    return <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6"><div className="text-center py-12 text-muted-foreground">Chargement...</div></div>;
   }
 
   if (!stats) {
-    return <div className="flex-1 space-y-6 p-6"><div className="text-center py-12 text-muted-foreground">Erreur au chargement</div></div>;
+    return <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6"><div className="text-center py-12 text-muted-foreground">Erreur au chargement</div></div>;
   }
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Statistiques des articles</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Statistiques des articles</h1>
         <p className="text-muted-foreground mt-1">Vue d&apos;ensemble de vos articles et performances</p>
       </div>
 

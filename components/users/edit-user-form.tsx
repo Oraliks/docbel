@@ -194,7 +194,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
                   className={errors.name ? "border-red-500" : ""}
                 />
                 {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name}</p>
+                  <p className="text-sm text-destructive">{errors.name}</p>
                 )}
               </div>
 
@@ -211,7 +211,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
                   className={errors.email ? "border-red-500" : ""}
                 />
                 {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email}</p>
+                  <p className="text-sm text-destructive">{errors.email}</p>
                 )}
               </div>
 
@@ -229,7 +229,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
                   className={errors.password ? "border-red-500" : ""}
                 />
                 {errors.password && (
-                  <p className="text-sm text-red-500">{errors.password}</p>
+                  <p className="text-sm text-destructive">{errors.password}</p>
                 )}
               </div>
 
@@ -247,7 +247,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
                   className={errors.confirmPassword ? "border-red-500" : ""}
                 />
                 {errors.confirmPassword && (
-                  <p className="text-sm text-red-500">{errors.confirmPassword}</p>
+                  <p className="text-sm text-destructive">{errors.confirmPassword}</p>
                 )}
               </div>
 
@@ -353,9 +353,10 @@ export function EditUserForm({ user }: EditUserFormProps) {
                 </Button>
                 <Button
                   type="button"
+                  variant="destructive"
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="gap-2 bg-red-600 text-white hover:bg-red-700"
+                  className="gap-2"
                 >
                   {deleting && <Loader2 className="size-4 animate-spin" />}
                   Oui, supprimer définitivement

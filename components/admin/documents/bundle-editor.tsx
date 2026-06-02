@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { BundleConditionEditor } from "./bundle-condition-editor";
 import { EligibilityQuestionsEditor } from "./eligibility-questions-editor";
 import { BundleWarningsEditor } from "./bundle-warnings-editor";
@@ -485,14 +486,13 @@ export function BundleEditor({
                         {it.pdfFormId ? "PDF" : "Doc"} · {itemSourceBadge(it)}
                       </span>
                       <label className="flex items-center gap-1 text-xs">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={it.required}
-                          onChange={(e) =>
+                          onCheckedChange={(checked) =>
                             setFormItems((prev) =>
                               prev.map((x) =>
                                 itemSourceKey(x) === key
-                                  ? { ...x, required: e.target.checked }
+                                  ? { ...x, required: checked === true }
                                   : x
                               )
                             )
@@ -569,10 +569,9 @@ export function BundleEditor({
             <div className="space-y-1.5">
               <Label className="text-xs">Affichage</Label>
               <label className="flex items-center gap-2 text-sm cursor-pointer h-9 px-3 border rounded-md bg-background">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={formShowOnOnboarding}
-                  onChange={(e) => setFormShowOnOnboarding(e.target.checked)}
+                  onCheckedChange={(checked) => setFormShowOnOnboarding(checked === true)}
                 />
                 Afficher sur la page de création
               </label>

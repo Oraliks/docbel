@@ -44,10 +44,10 @@ export default function LookupAdminPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold">Lookup ONEM</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Lookup ONEM</h1>
           <p className="text-xs text-muted-foreground mt-1">
             Référentiel local des codes ONEM · 90+ tables · 11 000+ entrées
           </p>

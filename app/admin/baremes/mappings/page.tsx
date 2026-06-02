@@ -171,7 +171,7 @@ export default function MappingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <div>
         <Link
           href="/admin/baremes"
@@ -182,7 +182,7 @@ export default function MappingsPage() {
         </Link>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold">Mappings d&apos;onglets</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Mappings d&apos;onglets</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
               Override de structure pour un onglet dont la mise en page a changé.
               Si un mapping existe pour un nom d&apos;onglet, il prend le pas sur la

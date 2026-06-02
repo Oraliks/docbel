@@ -236,7 +236,7 @@ export function UploadQuickDialog({
         onOpenChange(o);
       }}
     >
-      <DialogContent className="max-w-md gap-0 p-0">
+      <DialogContent className="sm:max-w-md gap-0 p-0">
         <DialogHeader className="border-b border-border px-5 py-3">
           <DialogTitle className="text-[15px]">
             Ajouter une source à la KB

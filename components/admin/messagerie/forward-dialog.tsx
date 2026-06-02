@@ -66,7 +66,7 @@ export function ForwardDialog({ open, onOpenChange, email, signature = "" }: For
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[720px]">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Transférer</DialogTitle>
           <DialogDescription>Depuis contact@docbel.be</DialogDescription>

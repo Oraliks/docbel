@@ -138,7 +138,7 @@ export default async function AnalyticsPage() {
   const allTime = await prisma.generatedDocument.count();
 
   return (
-    <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <div className="flex items-center gap-3 flex-wrap">
         <Button render={<Link href="/admin/documents" />} variant="ghost" size="sm">
           <ArrowLeft className="w-4 h-4 mr-1" />

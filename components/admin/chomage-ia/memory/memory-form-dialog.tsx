@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -113,14 +114,14 @@ export function MemoryFormDialog({
         <div className="flex flex-col gap-3 py-1">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="memory-content">Contenu</Label>
-            <textarea
+            <Textarea
               id="memory-content"
               value={content}
               autoFocus
               onChange={(e) => setContent(e.target.value.slice(0, 2000))}
               rows={4}
               placeholder={`Ex. "ONEM = Office National de l'Emploi (autorité chômage Belgique)"`}
-              className="min-h-[96px] max-h-64 w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-[13px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="min-h-[96px] max-h-64 resize-y text-[13px] leading-relaxed"
             />
             <span className="text-[10.5px] text-muted-foreground tabular-nums text-right">
               {trimmed.length} / 2000

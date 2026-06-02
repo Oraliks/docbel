@@ -16,6 +16,7 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
@@ -321,11 +322,11 @@ export default function PagesListPage() {
   }
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Pages</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Pages</h1>
           <p className="text-muted-foreground mt-2">
             {pages.length} page{pages.length !== 1 ? 's' : ''}
             {(search || statusFilter !== 'all') && (
@@ -682,7 +683,7 @@ export default function PagesListPage() {
 
       {/* Template Selection Dialog */}
       <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Choisir un modèle</DialogTitle>
             <DialogDescription>
@@ -727,15 +728,15 @@ export default function PagesListPage() {
               Cette action est irréversible. La page et tous ses blocs seront supprimés.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex gap-4">
+          <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
+              variant="destructive"
             >
               Supprimer
             </AlertDialogAction>
-          </div>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -750,15 +751,15 @@ export default function PagesListPage() {
               Cette action est irréversible. Toutes les pages sélectionnées et leurs blocs seront supprimés.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex gap-4">
+          <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
-              className="bg-red-600 hover:bg-red-700"
+              variant="destructive"
             >
               Supprimer
             </AlertDialogAction>
-          </div>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

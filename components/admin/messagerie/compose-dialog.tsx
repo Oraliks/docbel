@@ -147,7 +147,7 @@ export function ComposeDialog({ onSent }: ComposeDialogProps) {
           </Button>
         }
       />
-      <DialogContent className="sm:max-w-[680px]">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Nouveau message</DialogTitle>
           <DialogDescription>Envoyé depuis contact@docbel.be</DialogDescription>

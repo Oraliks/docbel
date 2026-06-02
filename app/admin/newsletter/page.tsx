@@ -107,11 +107,11 @@ export default function NewsletterAdminPage() {
   const unsubCount = subscribers.filter((s) => s.status === "unsubscribed").length
 
   return (
-    <div className="space-y-6 px-4 py-6 lg:px-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Newsletter</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Newsletter</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Gestion des abonnés à la newsletter de la page Actualités
           </p>

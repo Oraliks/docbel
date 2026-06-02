@@ -79,10 +79,10 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="flex-1 space-y-6 px-6 py-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Catégories d&apos;articles</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Catégories d&apos;articles</h1>
           <p className="text-muted-foreground mt-1">Gérez les catégories et leurs couleurs</p>
         </div>
         <Button onClick={() => setShowDialog(true)} className="gap-2">

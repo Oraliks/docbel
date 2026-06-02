@@ -1500,7 +1500,7 @@ export function FileManager() {
       </Dialog>
 
       <Dialog open={!!usageWarning} onOpenChange={() => setUsageWarning(null)}>
-        <DialogContent className="max-w-[640px]">
+        <DialogContent className="sm:max-w-[640px]">
           <DialogHeader>
             <DialogTitle>Fichier en cours d&apos;utilisation</DialogTitle>
           </DialogHeader>
@@ -1701,7 +1701,7 @@ export function FileManager() {
       </Dialog>
 
       <Dialog open={!!previewFileId} onOpenChange={() => setPreviewFileId(null)}>
-        <DialogContent className="max-w-[900px] max-h-[80vh]">
+        <DialogContent className="max-h-[80vh] sm:max-w-[900px]">
           <DialogHeader>
             <DialogTitle>
               {files.find((f) => f.id === previewFileId)?.name || "Aperçu"}

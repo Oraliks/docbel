@@ -210,10 +210,10 @@ export function AnalyticsTabs({ funnels, genTotals, allTime, perTemplate, perDay
                               variant="outline"
                               className={
                                 conv >= 60
-                                  ? "bg-green-50 text-green-700 border-green-300"
+                                  ? "bg-green-500/10 dark:bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30"
                                   : conv >= 30
-                                    ? "bg-amber-50 text-amber-700 border-amber-300"
-                                    : "bg-red-50 text-red-700 border-red-300"
+                                    ? "bg-amber-500/10 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                                    : "bg-red-500/10 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30"
                               }
                             >
                               {conv.toFixed(0)}%
@@ -228,7 +228,7 @@ export function AnalyticsTabs({ funnels, genTotals, allTime, perTemplate, perDay
                                   <Badge
                                     key={e.fieldId}
                                     variant="outline"
-                                    className="text-[10px] gap-1 bg-red-50 text-red-700 border-red-300"
+                                    className="text-[10px] gap-1 bg-red-500/10 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30"
                                   >
                                     <AlertTriangle className="w-2.5 h-2.5" />
                                     <code>{e.fieldId}</code> ({e.count})

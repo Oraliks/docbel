@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Upload,
   ArrowLeft,
@@ -72,7 +73,7 @@ export default function ImportBaremePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
@@ -83,7 +84,7 @@ export default function ImportBaremePage() {
             <ArrowLeft className="w-4 h-4" />
             Retour aux barèmes
           </Link>
-          <h1 className="text-2xl font-bold">Nouvel import de barème</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Nouvel import de barème</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Upload d’un fichier Excel officiel (.xlsx). L’import est créé en{' '}
             <strong>brouillon</strong>: aperçu et validation manuelle avant publication.
@@ -149,13 +150,12 @@ export default function ImportBaremePage() {
 
               {/* Options avant upload */}
               <div className="mt-4 flex items-start gap-3 p-3 rounded-md border bg-muted/30">
-                <input
+                <Checkbox
                   id="requiresApproval"
-                  type="checkbox"
                   checked={requiresApproval}
-                  onChange={(e) => setRequiresApproval(e.target.checked)}
+                  onCheckedChange={(checked) => setRequiresApproval(checked === true)}
                   disabled={uploading}
-                  className="mt-0.5 h-4 w-4 rounded border-input"
+                  className="mt-0.5"
                 />
                 <label htmlFor="requiresApproval" className="text-sm cursor-pointer flex-1">
                   <span className="font-medium">Exiger une double approbation</span>

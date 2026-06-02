@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { RichTextEditor } from '@/components/docbel/rich-text-editor';
 import { Folder, CheckCircle2, ImagePlus, X, Loader2 } from 'lucide-react';
 
@@ -341,11 +342,10 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
             <Card className="border bg-card p-5 shadow-none gap-0">
               <label className="block text-sm font-semibold mb-3">Options</label>
               <label className="flex items-start gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={form.featured}
-                  onChange={(e) => onFieldChange('featured', e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-input"
+                  onCheckedChange={(checked) => onFieldChange('featured', checked === true)}
+                  className="mt-0.5"
                 />
                 <span className="text-sm">Mettre en avant</span>
               </label>

@@ -100,7 +100,7 @@ export function RgpdConsent({ notice, onContinue }: RgpdConsentProps) {
       </CardContent>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="flex max-h-[80vh] max-w-2xl flex-col">
+        <DialogContent className="flex max-h-[80vh] flex-col sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShieldCheckIcon

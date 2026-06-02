@@ -267,7 +267,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
 
   if (done) {
     return (
-      <Card className="rounded-2xl border-0 bg-white shadow-sm dark:bg-card">
+      <Card className="rounded-2xl border-0 bg-card shadow-sm">
         <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
           <CheckCircle2Icon className="size-10 text-primary" />
           <p className="text-sm text-muted-foreground">
@@ -317,7 +317,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
       )}
 
       {/* Carte blanche contenant les tabs + le contenu de l'étape */}
-      <Card className="overflow-hidden rounded-2xl border-0 bg-white shadow-sm dark:bg-card">
+      <Card className="overflow-hidden rounded-2xl border-0 bg-card shadow-sm">
         {/* Barre de tabs */}
         <div className="flex overflow-x-auto border-b">
           {steps.map((s, i) => {

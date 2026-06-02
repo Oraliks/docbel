@@ -244,7 +244,7 @@ export default async function MethodologyDetailPage({
   }
 
   return (
-    <div className="flex flex-col gap-5 px-4 py-6 lg:px-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       {/* Zone 1 : Header (breadcrumb + titre + badges + actions) */}
       <MethodologyHeader
         data={methodology}

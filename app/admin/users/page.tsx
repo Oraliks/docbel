@@ -128,10 +128,10 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-6 px-4 md:px-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Utilisateurs</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Utilisateurs</h1>
           <p className="text-muted-foreground mt-1">
             Gérez les utilisateurs du système
           </p>

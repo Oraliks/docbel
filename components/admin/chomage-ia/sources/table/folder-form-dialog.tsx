@@ -32,6 +32,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Folder,
   BookOpen,
   FileText,
@@ -269,19 +276,24 @@ export function FolderFormDialog({
             <Label htmlFor="folder-parent" className="text-[12px]">
               Dossier parent
             </Label>
-            <select
-              id="folder-parent"
-              value={parentId ?? ""}
-              onChange={(e) => setParentId(e.target.value || null)}
-              className="h-9 rounded-md border border-border bg-background px-2 text-[12.5px]"
+            <Select
+              value={parentId ?? "__root__"}
+              onValueChange={(v) =>
+                setParentId(!v || v === "__root__" ? null : v)
+              }
             >
-              <option value="">— Racine (pas de parent)</option>
-              {parentOptions.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="folder-parent" className="h-9 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__root__">— Racine (pas de parent)</SelectItem>
+                {parentOptions.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <p className="text-[10.5px] text-muted-foreground">
               Profondeur max : 3 niveaux. L&apos;API refuse les déplacements qui
               dépassent cette limite.

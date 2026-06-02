@@ -15,9 +15,17 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { Plus, Loader2 } from 'lucide-react'
+import { Plus, Loader2, ClipboardPaste, Undo2, Redo2 } from 'lucide-react'
 import { BlockWrapper } from './block-wrapper'
 import { ThemeProvider } from './theme-tokens'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
 import { usePageBuilderStore, getRootBlocks } from '@/lib/page-builder/store'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -38,6 +46,12 @@ export function Canvas() {
   const selectBlock = usePageBuilderStore((s) => s.selectBlock)
   const insertBlock = usePageBuilderStore((s) => s.insertBlock)
   const openPicker = usePageBuilderStore((s) => s.openPicker)
+  const pasteBlock = usePageBuilderStore((s) => s.pasteBlock)
+  const undo = usePageBuilderStore((s) => s.undo)
+  const redo = usePageBuilderStore((s) => s.redo)
+  const canUndo = usePageBuilderStore((s) => s.past.length > 0)
+  const canRedo = usePageBuilderStore((s) => s.future.length > 0)
+  const hasClipboard = usePageBuilderStore((s) => s.clipboard !== null)
 
   const rootBlocks = React.useMemo(() => getRootBlocks(blocks), [blocks])
 
@@ -164,6 +178,8 @@ export function Canvas() {
               items={blocks.map((b) => b.id)}
               strategy={verticalListSortingStrategy}
             >
+              <ContextMenu>
+              <ContextMenuTrigger>
               <div
                 className={cn(
                   'min-h-[calc(100vh-12rem)] bg-background',
@@ -206,6 +222,31 @@ export function Canvas() {
                   </ThemeProvider>
                 )}
               </div>
+              </ContextMenuTrigger>
+              <ContextMenuContent className="w-56">
+                <ContextMenuItem onClick={() => openPicker()}>
+                  <Plus />
+                  Ajouter un bloc
+                  <ContextMenuShortcut>⌘/</ContextMenuShortcut>
+                </ContextMenuItem>
+                <ContextMenuItem disabled={!hasClipboard} onClick={() => pasteBlock()}>
+                  <ClipboardPaste />
+                  Coller
+                  <ContextMenuShortcut>⌘V</ContextMenuShortcut>
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem disabled={!canUndo} onClick={() => undo()}>
+                  <Undo2 />
+                  Annuler
+                  <ContextMenuShortcut>⌘Z</ContextMenuShortcut>
+                </ContextMenuItem>
+                <ContextMenuItem disabled={!canRedo} onClick={() => redo()}>
+                  <Redo2 />
+                  Rétablir
+                  <ContextMenuShortcut>⌘⇧Z</ContextMenuShortcut>
+                </ContextMenuItem>
+              </ContextMenuContent>
+              </ContextMenu>
             </SortableContext>
           </DndContext>
 

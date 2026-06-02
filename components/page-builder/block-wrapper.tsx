@@ -127,7 +127,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
 
   return (
     <ContextMenu>
-      <ContextMenuTrigger render={
+      <ContextMenuTrigger>
     <div
       ref={setNodeRef}
       style={wrapperStyle}
@@ -340,7 +340,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
         </button>
       )}
     </div>
-      } />
+      </ContextMenuTrigger>
       <ContextMenuContent className="w-60">
         <ContextMenuItem
           onClick={() => {

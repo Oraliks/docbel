@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 
-/// La page « Modèles » a été retirée en PR2 (l'édition de DocumentTemplate
-/// passe désormais par « PDF Forms »). On redirige vers la config Bundles
-/// pour ne pas casser les liens existants.
+/// L'espace "Documents" a été consolidé sous "PDF Forms" (`/admin/pdf`).
+/// Redirection permanente pour ne pas casser les anciens favoris admin.
 export default function LegacyAdminDocumentsRedirect() {
-  redirect("/admin/documents/config");
+  redirect("/admin/pdf");
 }

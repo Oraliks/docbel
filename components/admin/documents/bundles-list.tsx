@@ -157,7 +157,7 @@ export function BundlesList({ initialBundles }: Props) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
-        <Button render={<Link href="/admin/documents" />} variant="ghost" size="sm">
+        <Button render={<Link href="/admin/pdf" />} variant="ghost" size="sm">
           <ArrowLeft className="w-4 h-4 mr-1" />
           Retour
         </Button>
@@ -171,7 +171,7 @@ export function BundlesList({ initialBundles }: Props) {
             plusieurs documents en un parcours.
           </p>
         </div>
-        <Button render={<Link href="/admin/documents/bundles/new" />} size="sm">
+        <Button render={<Link href="/admin/pdf/dossiers/new" />} size="sm">
           <Plus className="w-4 h-4 mr-2" />
           Nouveau bundle
         </Button>
@@ -230,7 +230,7 @@ export function BundlesList({ initialBundles }: Props) {
           <Package className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
           <p className="text-muted-foreground">Aucun bundle pour l&apos;instant.</p>
           <Button
-            render={<Link href="/admin/documents/bundles/new" />}
+            render={<Link href="/admin/pdf/dossiers/new" />}
             className="mt-3"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -263,7 +263,7 @@ export function BundlesList({ initialBundles }: Props) {
                   >
                     <TableCell>
                       <Link
-                        href={`/admin/documents/bundles/${b.id}`}
+                        href={`/admin/pdf/dossiers/${b.id}`}
                         className="flex items-center gap-2 group min-w-0"
                       >
                         <div
@@ -345,7 +345,7 @@ export function BundlesList({ initialBundles }: Props) {
                         <Button
                           render={
                             <Link
-                              href={`/admin/documents/bundles/${b.id}`}
+                              href={`/admin/pdf/dossiers/${b.id}`}
                             />
                           }
                           variant="ghost"

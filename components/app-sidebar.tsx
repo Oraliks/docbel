@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, FileTextIcon, MapPinIcon, FileInputIcon, UsersIcon } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, FileInputIcon, UsersIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultData = {
@@ -104,37 +104,9 @@ const defaultData = {
       ],
     },
     {
-      title: "Documents",
-      url: "/admin/documents/config",
-      icon: (
-        <FileTextIcon className="size-4" />
-      ),
-      items: [
-        {
-          // L'éditeur de templates legacy a été retiré (PR2). La gestion
-          // des PDFs se fait désormais sous « PDF Forms » dans la sidebar.
-          title: "Bundles (dossiers)",
-          url: "/admin/documents/config",
-        },
-        {
-          title: "Organismes",
-          url: "/admin/documents/config?tab=organismes",
-        },
-        {
-          title: "Documents générés",
-          url: "/admin/documents/generated",
-        },
-        {
-          title: "Analytics",
-          url: "/admin/documents/analytics",
-        },
-        {
-          title: "Paramètres système",
-          url: "/admin/documents/settings",
-        },
-      ],
-    },
-    {
+      // Consolidation : tout ce qui touche aux formulaires PDF + dossiers
+      // vit désormais sous /admin/pdf/. L'ancien groupe "Documents" a été
+      // retiré (legacy DocumentTemplate dégage progressivement).
       title: "PDF Forms",
       url: "/admin/pdf",
       icon: (
@@ -143,8 +115,13 @@ const defaultData = {
       items: [
         { title: "Tous les formulaires", url: "/admin/pdf" },
         { title: "Nouveau formulaire", url: "/admin/pdf/new" },
+        { title: "Dossiers", url: "/admin/pdf/dossiers" },
+        { title: "Organismes", url: "/admin/pdf/organismes" },
         { title: "Presets de champs", url: "/admin/pdf/presets" },
         { title: "Sources AcroForm", url: "/admin/pdf-sources" },
+        { title: "Documents générés", url: "/admin/pdf/generated" },
+        { title: "Analytics", url: "/admin/pdf/analytics" },
+        { title: "Paramètres système", url: "/admin/pdf/settings" },
       ],
     },
     {

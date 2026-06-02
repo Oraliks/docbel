@@ -11,6 +11,7 @@ export interface EditorForm {
   title: string;
   description: string | null;
   issuer: string | null;
+  organismeId: string | null;
   status: "draft" | "published" | "archived";
   version: number;
   defaultLocale: Locale;
@@ -90,7 +91,8 @@ export function useFormData(formId: string): UseFormData {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: form.title, description: form.description, issuer: form.issuer,
+          title: form.title, description: form.description,
+          issuer: form.issuer, organismeId: form.organismeId,
           locales: form.locales, defaultLocale: form.defaultLocale,
           allowDownload: form.allowDownload, allowDoccle: form.allowDoccle, allowItsme: form.allowItsme,
           fields: form.fields,

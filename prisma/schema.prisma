@@ -903,6 +903,7 @@ model Organisme {
 
   templates DocumentTemplate[]
   bureaus   Bureau[]
+  pdfForms  PdfForm[] @relation("OrganismePdfForms")
 
   @@index([type])
   @@index([active])
@@ -1772,9 +1773,14 @@ model PdfForm {
   slug        String        @unique
   title       String
   description String?
-  /// Organisme émetteur en texte libre (ONEM, CPAS, SPF…). Pas de FK pour
-  /// rester découplé ; un référentiel viendra plus tard si besoin.
+  /// Organisme émetteur en texte libre (fallback historique : ONEM, CPAS,
+  /// SPF…). Conservé pour les PdfForms importés avant la FK organismeId.
   issuer      String?
+  /// Organisme émetteur (référence au modèle Organisme partagé).
+  /// Nullable pour ne pas casser les PdfForms existants — l'admin peut
+  /// rattacher progressivement les anciens.
+  organismeId String?
+  organisme   Organisme? @relation("OrganismePdfForms", fields: [organismeId], references: [id], onDelete: SetNull)
   status      PdfFormStatus @default(draft)
   version     Int           @default(1)
 
@@ -1823,6 +1829,7 @@ model PdfForm {
 
   @@index([status])
   @@index([updatedAt])
+  @@index([organismeId])
 }
 
 /// Historique de versions. Snapshot créé avant chaque changement de schéma

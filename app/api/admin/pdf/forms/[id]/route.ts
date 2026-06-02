@@ -46,6 +46,13 @@ export async function PATCH(
   if (typeof body.title === "string") data.title = body.title.trim();
   if (typeof body.description === "string" || body.description === null) data.description = (body.description as string) ?? null;
   if (typeof body.issuer === "string" || body.issuer === null) data.issuer = (body.issuer as string) ?? null;
+  if (typeof body.organismeId === "string" || body.organismeId === null) {
+    // Connect / disconnect explicite (Prisma typing pour FK nullable).
+    data.organisme =
+      body.organismeId === null || body.organismeId === ""
+        ? { disconnect: true }
+        : { connect: { id: body.organismeId as string } };
+  }
   if (typeof body.allowDownload === "boolean") data.allowDownload = body.allowDownload;
   if (typeof body.allowDoccle === "boolean") data.allowDoccle = body.allowDoccle;
   if (typeof body.allowItsme === "boolean") data.allowItsme = body.allowItsme;

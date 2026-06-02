@@ -26,6 +26,7 @@ import { navigationSchemas } from '@/components/page-blocks/navigation/schemas'
 import { editorialSchemas } from '@/components/page-blocks/editorial/schemas'
 import { utilitySchemas } from '@/components/page-blocks/utility/schemas'
 import { flexibleSchemas } from '@/components/page-blocks/flexible/schemas'
+import { globalSchemas } from '@/components/page-blocks/global/schemas'
 
 /** Block type → Zod schema for that block's `props`. */
 export const BLOCK_SCHEMAS: Record<string, ZodTypeAny> = {
@@ -45,4 +46,5 @@ export const BLOCK_SCHEMAS: Record<string, ZodTypeAny> = {
   ...editorialSchemas,
   ...utilitySchemas,
   ...flexibleSchemas,
+  ...globalSchemas,
 }

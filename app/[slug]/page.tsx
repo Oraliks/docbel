@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { PublicRenderer } from "@/components/page-builder/public-renderer";
+import { GlobalBlocksProvider } from "@/components/page-builder/global-blocks-context";
 import { ThemeProvider } from "@/components/page-builder/theme-tokens";
 import { BlockProps, ThemeTokens } from "@/lib/page-builder/types";
 import { buildPageJsonLd } from "@/lib/page-builder/schema-org";
@@ -87,6 +88,30 @@ export default async function PublicPage({
     ? (page.content as unknown as BlockProps[])
     : [];
 
+  // Resolve global blocks referenced by `globalRef` blocks (SSR), so the
+  // GlobalBlocksProvider can hand the map to BlockRenderer.
+  const globalBlockIds = Array.from(
+    new Set(
+      blocks
+        .filter((b) => b.type === "globalRef")
+        .map(
+          (b) => (b.props as { globalBlockId?: string }).globalBlockId,
+        )
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+
+  let globalMap: Record<string, BlockProps> = {};
+  if (globalBlockIds.length > 0) {
+    const globals = await prisma.globalBlock.findMany({
+      where: { id: { in: globalBlockIds } },
+      select: { id: true, block: true },
+    });
+    globalMap = Object.fromEntries(
+      globals.map((g) => [g.id, g.block as unknown as BlockProps]),
+    );
+  }
+
   const jsonLd = buildPageJsonLd(blocks, {
     title: page.title,
     metaTitle: page.metaTitle,
@@ -107,17 +132,19 @@ export default async function PublicPage({
       ))}
 
       <ThemeProvider tokens={page.themeTokens as ThemeTokens | null}>
-        <PublicRenderer
-          blocks={blocks}
-          context={{
-            site: { name: "Docbel" },
-            page: {
-              title: page.title,
-              slug: page.slug,
-              description: page.metaDesc ?? undefined,
-            },
-          }}
-        />
+        <GlobalBlocksProvider value={globalMap}>
+          <PublicRenderer
+            blocks={blocks}
+            context={{
+              site: { name: "Docbel" },
+              page: {
+                title: page.title,
+                slug: page.slug,
+                description: page.metaDesc ?? undefined,
+              },
+            }}
+          />
+        </GlobalBlocksProvider>
       </ThemeProvider>
     </>
   );

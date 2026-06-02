@@ -18,6 +18,7 @@ import {
 import { Plus, Loader2, ClipboardPaste, Undo2, Redo2 } from 'lucide-react'
 import { BlockWrapper } from './block-wrapper'
 import { ThemeProvider } from './theme-tokens'
+import { GlobalBlocksProvider } from '@/components/page-builder/global-blocks-context'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -52,6 +53,29 @@ export function Canvas() {
   const canUndo = usePageBuilderStore((s) => s.past.length > 0)
   const canRedo = usePageBuilderStore((s) => s.future.length > 0)
   const hasClipboard = usePageBuilderStore((s) => s.clipboard !== null)
+  const globalBlocks = usePageBuilderStore((s) => s.globalBlocks)
+  const setGlobalBlocks = usePageBuilderStore((s) => s.setGlobalBlocks)
+
+  // Charge une fois la liste des blocs globaux → map id→contenu pour que les
+  // `globalRef` se résolvent dans le canvas via GlobalBlocksProvider.
+  React.useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch('/api/page-builder/global-blocks')
+        if (!res.ok) return
+        const data = await res.json()
+        const items: Array<{ id: string; block: BlockProps }> = data.items ?? []
+        if (cancelled) return
+        setGlobalBlocks(Object.fromEntries(items.map((g) => [g.id, g.block])))
+      } catch {
+        // Non-bloquant : un échec de chargement ne doit pas casser l'éditeur.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [setGlobalBlocks])
 
   const rootBlocks = React.useMemo(() => getRootBlocks(blocks), [blocks])
 
@@ -206,19 +230,21 @@ export function Canvas() {
                   </button>
                 ) : (
                   <ThemeProvider tokens={themeTokens}>
-                    {/* Top padding leaves room for the first block's hover toolbar
-                       (which sits at -top-7 = -28px outside the wrapper). */}
-                    <div className="pt-10 pb-3 space-y-6">
-                      {rootBlocks.map((block, idx) => (
-                        <div key={block.id} className="px-3">
-                          <BlockWrapper
-                            block={block}
-                            siblingIndex={idx}
-                            siblingCount={rootBlocks.length}
-                          />
-                        </div>
-                      ))}
-                    </div>
+                    <GlobalBlocksProvider value={globalBlocks}>
+                      {/* Top padding leaves room for the first block's hover toolbar
+                         (which sits at -top-7 = -28px outside the wrapper). */}
+                      <div className="pt-10 pb-3 space-y-6">
+                        {rootBlocks.map((block, idx) => (
+                          <div key={block.id} className="px-3">
+                            <BlockWrapper
+                              block={block}
+                              siblingIndex={idx}
+                              siblingCount={rootBlocks.length}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </GlobalBlocksProvider>
                   </ThemeProvider>
                 )}
               </div>

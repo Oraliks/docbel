@@ -9,6 +9,7 @@ import {
 } from '@/lib/page-builder/block-styles'
 import { interpolateBlock, type InterpolationContext } from '@/lib/page-builder/interpolate'
 import { getBlockDef } from '@/lib/page-builder/registry'
+import { useGlobalBlocks } from './global-blocks-context'
 import { cn } from '@/lib/utils'
 
 interface BlockRendererProps {
@@ -94,7 +95,29 @@ function useEnterViewport(enabled: boolean) {
   return { ref, visible: !enabled || seen }
 }
 
-export function BlockRenderer({
+export function BlockRenderer(props: BlockRendererProps) {
+  // `globalRef` blocks are live references — resolve their target from context
+  // and render that instead. One unconditional hook here keeps hook order stable.
+  const globalBlocks = useGlobalBlocks()
+  if (props.block.type === 'globalRef') {
+    const id = (props.block.props as { globalBlockId?: string }).globalBlockId
+    const resolved = id ? globalBlocks[id] : undefined
+    if (resolved && resolved.type !== 'globalRef') {
+      return <RegularBlockRenderer {...props} block={resolved} />
+    }
+    if (!props.editorMode) return null
+    return (
+      <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+        {resolved
+          ? 'Bloc global imbriqué non supporté.'
+          : 'Bloc global introuvable ou non sélectionné.'}
+      </div>
+    )
+  }
+  return <RegularBlockRenderer {...props} />
+}
+
+function RegularBlockRenderer({
   block,
   device = 'desktop',
   slot,

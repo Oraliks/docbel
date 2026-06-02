@@ -22,6 +22,7 @@ import {
   Undo2,
   Redo2,
   BookmarkPlus,
+  Boxes,
 } from 'lucide-react'
 import type { BlockProps } from '@/lib/page-builder/types'
 import { BLOCK_REGISTRY } from '@/lib/page-builder/registry'
@@ -88,6 +89,9 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const canUndo = usePageBuilderStore((s) => s.past.length > 0)
   const canRedo = usePageBuilderStore((s) => s.future.length > 0)
   const hasClipboard = usePageBuilderStore((s) => s.clipboard !== null)
+  const globalBlocks = usePageBuilderStore((s) => s.globalBlocks)
+  const setGlobalBlocks = usePageBuilderStore((s) => s.setGlobalBlocks)
+  const replaceBlock = usePageBuilderStore((s) => s.replaceBlock)
 
   // ── "Save as snippet" dialog ──
   const [snippetDialogOpen, setSnippetDialogOpen] = React.useState(false)
@@ -118,6 +122,45 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
       setSavingSnippet(false)
     }
   }, [snippetName, snippetDescription, block])
+
+  // ── "Convertir en bloc global" ──
+  // Persiste le bloc comme GlobalBlock, l'ajoute à la map (résolution immédiate)
+  // puis remplace le bloc courant par un `globalRef` pointant dessus.
+  const [converting, setConverting] = React.useState(false)
+
+  const handleConvertToGlobal = React.useCallback(async () => {
+    if (converting) return
+    setConverting(true)
+    try {
+      const res = await fetch('/api/page-builder/global-blocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: BLOCK_REGISTRY[block.type]?.name ?? block.type,
+          block,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Échec de la conversion')
+      }
+      const { id } = (await res.json()) as { id: string }
+      // Ajoute au map pour que le globalRef se résolve immédiatement.
+      setGlobalBlocks({ ...globalBlocks, [id]: block })
+      replaceBlock(block.id, {
+        id: block.id,
+        type: 'globalRef',
+        props: { globalBlockId: id },
+      })
+      toast.success('Converti en bloc global')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Échec de la conversion')
+    } finally {
+      setConverting(false)
+    }
+  }, [converting, block, globalBlocks, setGlobalBlocks, replaceBlock])
+
+  const canConvertToGlobal = !isContainerType(block.type) && block.type !== 'globalRef'
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id, disabled: !!block.meta?.locked })

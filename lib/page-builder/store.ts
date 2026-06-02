@@ -47,6 +47,9 @@ interface PageBuilderStore {
   // Theme tokens (per-page palette)
   themeTokens: ThemeTokens | null
 
+  // Resolved global blocks (id → block content) for live globalRef resolution.
+  globalBlocks: Record<string, BlockProps>
+
   // Save state
   isSaving: boolean
   isDirty: boolean
@@ -82,6 +85,10 @@ interface PageBuilderStore {
   setIsSaving: (saving: boolean) => void
   setIsDirty: (dirty: boolean) => void
   setThemeTokens: (tokens: ThemeTokens | null) => void
+  setGlobalBlocks: (map: Record<string, BlockProps>) => void
+  updateGlobalBlockProps: (globalBlockId: string, props: Record<string, unknown>) => void
+  /** Replace a block in place (same id) — used to convert a block into a globalRef. */
+  replaceBlock: (id: string, block: BlockProps) => void
 
   // Block CRUD
   addBlock: (
@@ -197,6 +204,7 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
   pickerSlotIndex: null,
 
   themeTokens: null,
+  globalBlocks: {},
   isSaving: false,
   isDirty: false,
 
@@ -253,6 +261,28 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
   setIsSaving: (saving) => set({ isSaving: saving }),
   setIsDirty: (dirty) => set({ isDirty: dirty }),
   setThemeTokens: (tokens) => set({ themeTokens: tokens, isDirty: true }),
+  setGlobalBlocks: (map) => set({ globalBlocks: map }),
+  updateGlobalBlockProps: (globalBlockId, props) =>
+    set((state) => {
+      const current = state.globalBlocks[globalBlockId]
+      if (!current) return state
+      return {
+        globalBlocks: {
+          ...state.globalBlocks,
+          [globalBlockId]: {
+            ...current,
+            props: { ...current.props, ...props },
+          } as BlockProps,
+        },
+      }
+    }),
+  replaceBlock: (id, block) =>
+    set((state) =>
+      pushHistory(
+        state,
+        state.blocks.map((b) => (b.id === id ? block : b))
+      )
+    ),
 
   // ── CRUD ─────────────────────────────────────────────────────────
   addBlock: (type, opts) => {
@@ -587,6 +617,7 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
       pickerParentId: null,
       pickerSlotIndex: null,
       themeTokens: null,
+      globalBlocks: {},
       isSaving: false,
       isDirty: false,
       past: [],

@@ -21,6 +21,7 @@ import { navigationBlocks } from '@/components/page-blocks/navigation'
 import { editorialBlocks } from '@/components/page-blocks/editorial'
 import { utilityBlocks } from '@/components/page-blocks/utility'
 import { flexibleBlocks } from '@/components/page-blocks/flexible'
+import { globalBlocks } from '@/components/page-blocks/global'
 
 export const REGISTRY = {
   ...textBlocks,
@@ -39,6 +40,7 @@ export const REGISTRY = {
   ...editorialBlocks,
   ...utilityBlocks,
   ...flexibleBlocks,
+  ...globalBlocks,
 } as const satisfies Record<string, BlockDefinition>
 
 export type RegistryKey = keyof typeof REGISTRY

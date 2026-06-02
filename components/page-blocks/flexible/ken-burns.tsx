@@ -34,6 +34,8 @@ export const kenBurns = defineBlock({
           <img
             src={image}
             alt=""
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
             style={{ animation: `kenburns ${duration}s ease-in-out infinite alternate` }}
           />

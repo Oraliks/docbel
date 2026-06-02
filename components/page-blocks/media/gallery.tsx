@@ -61,7 +61,7 @@ export const gallery = defineBlock({
           {items.map((item, idx) => (
             <figure key={idx} className="mb-4 break-inside-avoid">
               {item.url ? (
-                <img src={item.url} alt={item.alt} className="w-full rounded-lg" />
+                <img src={item.url} alt={item.alt} loading="lazy" decoding="async" className="w-full rounded-lg" />
               ) : (
                 <div className="aspect-square rounded-lg bg-muted" />
               )}
@@ -81,7 +81,7 @@ export const gallery = defineBlock({
           <figure key={idx}>
             <div className="aspect-square overflow-hidden rounded-lg bg-muted">
               {item.url ? (
-                <img src={item.url} alt={item.alt} className="w-full h-full object-cover" />
+                <img src={item.url} alt={item.alt} loading="lazy" decoding="async" className="w-full h-full object-cover" />
               ) : null}
             </div>
             {item.caption && (

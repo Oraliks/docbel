@@ -41,7 +41,7 @@ export const pressMentions = defineBlock({
         <div className="flex flex-wrap items-center justify-center gap-8 opacity-60">
           {props.logos.map((logo, i) =>
             logo.url ? (
-              <img key={i} src={logo.url} alt={logo.alt} className="h-7 object-contain" />
+              <img key={i} src={logo.url} alt={logo.alt} loading="lazy" decoding="async" className="h-7 object-contain" />
             ) : (
               <span key={i} className="text-base font-serif italic">
                 {logo.alt}

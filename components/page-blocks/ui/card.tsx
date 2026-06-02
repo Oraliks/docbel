@@ -59,7 +59,7 @@ export const card = defineBlock({
           VARIANT_CLASS[variant]
         )}
       >
-        {image && <img src={image} alt="" className="w-full aspect-video object-cover" />}
+        {image && <img src={image} alt="" loading="lazy" decoding="async" className="w-full aspect-video object-cover" />}
         <div className="p-6">
           {title && <h3 className="text-lg font-semibold tracking-tight">{title}</h3>}
           {description && (

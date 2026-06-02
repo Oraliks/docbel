@@ -46,7 +46,7 @@ export const imageHotspots = defineBlock({
     }
     return (
       <figure className="relative my-2 rounded-2xl overflow-hidden">
-        <img src={image} alt={alt || ''} className="w-full block" />
+        <img src={image} alt={alt || ''} loading="lazy" decoding="async" className="w-full block" />
         {hotspots.map((h, i) => (
           <button
             key={i}

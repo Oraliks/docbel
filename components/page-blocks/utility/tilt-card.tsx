@@ -56,6 +56,8 @@ export const tiltCard = defineBlock({
           <img
             src={image}
             alt=""
+            loading="lazy"
+            decoding="async"
             className="w-full aspect-video object-cover rounded-lg mb-4"
             style={{ transform: 'translateZ(20px)' }}
           />

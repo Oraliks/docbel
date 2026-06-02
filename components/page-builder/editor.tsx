@@ -5,10 +5,12 @@ import { Outline } from './outline'
 import { Canvas } from './canvas'
 import { Inspector } from './inspector/inspector'
 import { BlockPicker } from './block-picker'
+import { CommandPalette } from './command-palette'
 import { PreviewMode } from './preview-mode'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
 
 export function Editor() {
+  const [cmdkOpen, setCmdkOpen] = React.useState(false)
   const previewMode = usePageBuilderStore((s) => s.previewMode)
   const openPicker = usePageBuilderStore((s) => s.openPicker)
   const togglePreviewMode = usePageBuilderStore((s) => s.togglePreviewMode)
@@ -38,6 +40,12 @@ export function Editor() {
         tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable
       const meta = e.ctrlKey || e.metaKey
 
+      // ⌘K → command palette
+      if (meta && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setCmdkOpen(true)
+        return
+      }
       // ⌘/  → block picker
       if (meta && e.key === '/') {
         e.preventDefault()
@@ -177,6 +185,7 @@ export function Editor() {
 
       {/* Floating overlays */}
       <BlockPicker />
+      <CommandPalette open={cmdkOpen} onOpenChange={setCmdkOpen} />
     </div>
   )
 }

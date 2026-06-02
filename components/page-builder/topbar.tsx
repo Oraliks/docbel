@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge'
 import { Pills } from './inspector/controls'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
-import type { BlockProps, BlockPropsMap } from '@/lib/page-builder/types'
+import { detectIssues, type Issue, type IssueSeverity } from '@/lib/page-builder/page-health'
 import { cn } from '@/lib/utils'
 
 interface TopbarProps {
@@ -129,42 +129,7 @@ export function Topbar({
           <div className="h-6 w-px bg-border mx-1" />
 
           {issues.length > 0 && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  className="relative text-amber-500 hover:text-amber-500"
-                  title={`${issues.length} problème(s) d'accessibilité`}
-                >
-                  <ShieldAlert className="size-4" />
-                  <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-amber-500 text-white text-[9px] font-semibold px-1">
-                    {issues.length}
-                  </span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-3" align="end">
-                <div className="text-xs font-semibold mb-2 flex items-center gap-1.5">
-                  <ShieldAlert className="size-3.5 text-amber-500" />
-                  Accessibilité &amp; SEO
-                </div>
-                <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
-                  {issues.map((iss, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => selectBlock(iss.blockId)}
-                      className="w-full text-left rounded-md border bg-card p-2 hover:border-primary transition text-xs"
-                    >
-                      <div className="font-medium">{iss.message}</div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {iss.blockType}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
+            <PageHealth issues={issues} onSelect={selectBlock} />
           )}
 
           <Button
@@ -247,56 +212,116 @@ export function Topbar({
   )
 }
 
-// ─────────────────────────── Issue detection ───────────────────────────
+// ─────────────────────────── Page health (a11y / SEO) ───────────────────────────
 
-interface Issue {
-  blockId: string
-  blockType: string
-  message: string
-  severity: 'warning' | 'error'
+const SEVERITY_LABEL: Record<IssueSeverity, string> = {
+  error: 'Erreurs',
+  warning: 'Avertissements',
+  info: 'Suggestions',
 }
 
-function detectIssues(blocks: BlockProps[]): Issue[] {
-  const issues: Issue[] = []
-  let h1Count = 0
-  for (const b of blocks) {
-    if (b.type === 'image') {
-      const p = b.props as BlockPropsMap['image']
-      if (!p.alt || p.alt.trim().length < 3) {
-        issues.push({
-          blockId: b.id,
-          blockType: 'Image',
-          message: 'Image sans texte alternatif (alt)',
-          severity: 'warning',
-        })
-      }
-    }
-    if (b.type === 'gallery') {
-      const p = b.props as BlockPropsMap['gallery']
-      const missing = p.items.filter((it) => !it.alt || it.alt.trim().length < 3).length
-      if (missing > 0) {
-        issues.push({
-          blockId: b.id,
-          blockType: 'Galerie',
-          message: `${missing} image(s) sans alt`,
-          severity: 'warning',
-        })
-      }
-    }
-    if (b.type === 'heading') {
-      const lvl = (b.props as { level: number }).level
-      if (lvl === 1) h1Count++
-    }
-  }
-  if (h1Count > 1) {
-    issues.push({
-      blockId: blocks.find((b) => b.type === 'heading')?.id ?? '',
-      blockType: 'Heading',
-      message: `${h1Count} titres H1 trouvés (un seul recommandé)`,
-      severity: 'warning',
-    })
-  }
-  return issues
+const SEVERITY_TEXT: Record<IssueSeverity, string> = {
+  error: 'text-destructive',
+  warning: 'text-amber-600 dark:text-amber-400',
+  info: 'text-muted-foreground',
+}
+
+// Couleur du déclencheur dans la topbar (classes statiques pour Tailwind).
+const TRIGGER_TONE: Record<'error' | 'warning', string> = {
+  error: 'text-destructive hover:text-destructive',
+  warning: 'text-amber-600 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-400',
+}
+
+const SEVERITY_DOT: Record<IssueSeverity, string> = {
+  error: 'bg-destructive',
+  warning: 'bg-amber-500',
+  info: 'bg-muted-foreground',
+}
+
+function PageHealth({
+  issues,
+  onSelect,
+}: {
+  issues: Issue[]
+  onSelect: (id: string | null) => void
+}) {
+  const hasError = issues.some((i) => i.severity === 'error')
+  // Couleur du badge : rouge si au moins une erreur, sinon ambre.
+  const tone = hasError ? 'error' : 'warning'
+  const order: IssueSeverity[] = ['error', 'warning', 'info']
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          className={cn('relative', TRIGGER_TONE[tone])}
+          title={`${issues.length} point(s) à vérifier (accessibilité & SEO)`}
+        >
+          <ShieldAlert className="size-4" />
+          <span
+            className={cn(
+              'absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full text-white text-[9px] font-semibold px-1',
+              SEVERITY_DOT[tone]
+            )}
+          >
+            {issues.length}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-3" align="end">
+        <div className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+          <ShieldAlert className="size-3.5 text-amber-500" />
+          Santé de la page
+          <span className="ml-auto font-normal text-muted-foreground">
+            {issues.length} point{issues.length > 1 ? 's' : ''}
+          </span>
+        </div>
+        <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+          {order.map((sev) => {
+            const group = issues.filter((i) => i.severity === sev)
+            if (group.length === 0) return null
+            return (
+              <div key={sev} className="space-y-1">
+                <div
+                  className={cn(
+                    'flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide',
+                    SEVERITY_TEXT[sev]
+                  )}
+                >
+                  <span className={cn('size-1.5 rounded-full', SEVERITY_DOT[sev])} />
+                  {SEVERITY_LABEL[sev]} ({group.length})
+                </div>
+                {group.map((iss, i) => {
+                  const clickable = !!iss.blockId
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      disabled={!clickable}
+                      onClick={() => iss.blockId && onSelect(iss.blockId)}
+                      className={cn(
+                        'w-full text-left rounded-md border bg-card p-2 text-xs transition',
+                        clickable
+                          ? 'hover:border-primary cursor-pointer'
+                          : 'cursor-default opacity-90'
+                      )}
+                    >
+                      <div className={cn('font-medium', SEVERITY_TEXT[sev])}>{iss.message}</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {iss.blockType}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 function SaveStatus({

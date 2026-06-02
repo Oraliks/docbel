@@ -66,7 +66,7 @@ export const carousel = defineBlock({
       <div className="relative w-full overflow-hidden rounded-2xl bg-muted my-2">
         <div className="aspect-video">
           {slide.image ? (
-            <img src={slide.image} alt={slide.alt || ''} className="w-full h-full object-cover" />
+            <img src={slide.image} alt={slide.alt || ''} loading="lazy" decoding="async" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-muted" />
           )}

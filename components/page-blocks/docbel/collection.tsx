@@ -123,6 +123,8 @@ export const collection = defineBlock({
                   <img
                     src={item.image}
                     alt=""
+                    loading="lazy"
+                    decoding="async"
                     className="w-full aspect-video object-cover group-hover/coll:scale-105 transition-transform"
                   />
                 )}

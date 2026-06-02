@@ -33,6 +33,8 @@ function BeforeImage({
     <img
       src={src}
       alt={alt}
+      loading="lazy"
+      decoding="async"
       className="w-full h-full object-cover absolute inset-0"
       style={width ? { width: `${width}px` } : undefined}
       draggable={false}
@@ -100,7 +102,7 @@ export const beforeAfter = defineBlock({
           updateFromEvent(e.clientX)
         }}
       >
-        <img src={afterUrl} alt={afterLabel} className="w-full block" draggable={false} />
+        <img src={afterUrl} alt={afterLabel} loading="lazy" decoding="async" className="w-full block" draggable={false} />
         <div className="absolute inset-0 overflow-hidden" style={{ width: `${position}%` }}>
           <BeforeImage src={beforeUrl} alt={beforeLabel} containerRef={containerRef} />
         </div>

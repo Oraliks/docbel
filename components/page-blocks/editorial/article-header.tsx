@@ -47,6 +47,8 @@ export const articleHeader = defineBlock({
             <img
               src={authorAvatar}
               alt={authorName || ''}
+              loading="lazy"
+              decoding="async"
               className="size-9 rounded-full object-cover"
             />
           )}
@@ -70,6 +72,8 @@ export const articleHeader = defineBlock({
           <img
             src={image}
             alt=""
+            loading="lazy"
+            decoding="async"
             className="mt-6 w-full aspect-video object-cover rounded-2xl"
           />
         )}

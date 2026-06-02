@@ -63,6 +63,8 @@ export const logoWall = defineBlock({
                       key={i}
                       src={logo.url}
                       alt={logo.alt}
+                      loading="lazy"
+                      decoding="async"
                       className="h-10 object-contain shrink-0"
                     />
                   ) : null
@@ -84,7 +86,7 @@ export const logoWall = defineBlock({
                     href={safeHref(logo.href)}
                     className="flex items-center justify-center transition"
                   >
-                    <img src={logo.url} alt={logo.alt} className="h-10 object-contain" />
+                    <img src={logo.url} alt={logo.alt} loading="lazy" decoding="async" className="h-10 object-contain" />
                   </a>
                 ) : (
                   <div

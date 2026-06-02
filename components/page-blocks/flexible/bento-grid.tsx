@@ -63,6 +63,8 @@ export const bentoGrid = defineBlock({
                   <img
                     src={cell.image}
                     alt=""
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover opacity-40"
                   />
                 )}

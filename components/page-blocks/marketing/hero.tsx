@@ -136,6 +136,8 @@ export const hero = defineBlock({
               <img
                 src={image}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 className="w-full rounded-2xl object-cover aspect-[4/3] md:aspect-square"
               />
             ) : (
@@ -230,7 +232,7 @@ export const hero = defineBlock({
             secondLink={ctaSecondaryLink}
             align="center"
           />
-          {image && <img src={image} alt="" className="mt-12 w-full rounded-2xl shadow-2xl" />}
+          {image && <img src={image} alt="" loading="lazy" decoding="async" className="mt-12 w-full rounded-2xl shadow-2xl" />}
         </div>
       </div>
     )

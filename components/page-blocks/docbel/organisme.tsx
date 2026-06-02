@@ -89,7 +89,7 @@ export const organisme = defineBlock({
       return (
         <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
           {logo ? (
-            <img src={logo} alt="" className="size-10 rounded object-cover shrink-0" />
+            <img src={logo} alt="" loading="lazy" decoding="async" className="size-10 rounded object-cover shrink-0" />
           ) : (
             <div className="size-10 rounded bg-primary/10 flex items-center justify-center shrink-0">
               <MapPin className="size-4 text-primary" />
@@ -112,7 +112,7 @@ export const organisme = defineBlock({
       <div className="rounded-2xl border bg-card p-6">
         <div className="flex gap-4 items-start">
           {logo ? (
-            <img src={logo} alt="" className="size-14 rounded-lg object-cover shrink-0" />
+            <img src={logo} alt="" loading="lazy" decoding="async" className="size-14 rounded-lg object-cover shrink-0" />
           ) : (
             <div className="size-14 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <MapPin className="size-6 text-primary" />

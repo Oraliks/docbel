@@ -36,6 +36,8 @@ export const authorBio = defineBlock({
           <img
             src={avatar}
             alt={name}
+            loading="lazy"
+            decoding="async"
             className="size-14 rounded-full object-cover shrink-0"
           />
         ) : (

@@ -22,7 +22,7 @@ function Card({ quote, author, role, avatar }: Item) {
       <p className="text-sm leading-relaxed">“{quote}”</p>
       <div className="mt-4 flex items-center gap-3">
         {avatar ? (
-          <img src={avatar} alt="" className="size-10 rounded-full object-cover" />
+          <img src={avatar} alt="" loading="lazy" decoding="async" className="size-10 rounded-full object-cover" />
         ) : (
           <div className="size-10 rounded-full bg-muted" />
         )}
@@ -97,7 +97,7 @@ export const testimonial = defineBlock({
             “{t.quote}”
           </blockquote>
           <div className="mt-6 flex items-center justify-center gap-3">
-            {t.avatar && <img src={t.avatar} alt="" className="size-12 rounded-full object-cover" />}
+            {t.avatar && <img src={t.avatar} alt="" loading="lazy" decoding="async" className="size-12 rounded-full object-cover" />}
             <div className="text-left">
               <div className="font-semibold">{t.author}</div>
               {t.role && <div className="text-sm text-muted-foreground">{t.role}</div>}

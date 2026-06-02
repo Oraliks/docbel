@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
         title: true,
         slug: true,
         status: true,
+        scheduledAt: true,
         metaTitle: true,
         metaDesc: true,
         ogImage: true,

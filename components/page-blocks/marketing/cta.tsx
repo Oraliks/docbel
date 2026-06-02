@@ -5,6 +5,7 @@ import { ArrowRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
+import { LinkInput } from '@/components/page-builder/inspector/link-input'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
@@ -159,9 +160,9 @@ export const cta = defineBlock({
           <Input value={props.text} onChange={(e) => onChange({ text: e.target.value })} />
         </Field>
         <Field label="Bouton — lien">
-          <Input
+          <LinkInput
             value={props.link}
-            onChange={(e) => onChange({ link: e.target.value })}
+            onChange={(link) => onChange({ link })}
             placeholder="/cible ou https://…"
           />
         </Field>
@@ -172,9 +173,9 @@ export const cta = defineBlock({
           />
         </Field>
         <Field label="Lien secondaire — URL">
-          <Input
+          <LinkInput
             value={props.secondaryLink ?? ''}
-            onChange={(e) => onChange({ secondaryLink: e.target.value })}
+            onChange={(secondaryLink) => onChange({ secondaryLink })}
           />
         </Field>
       </Group>

@@ -68,6 +68,11 @@ export async function PATCH(
     if (validated.title !== undefined) updateData.title = validated.title
     if (validated.slug !== undefined) updateData.slug = validated.slug
     if (validated.status !== undefined) updateData.status = validated.status
+    if (validated.scheduledAt !== undefined) {
+      updateData.scheduledAt = validated.scheduledAt
+        ? new Date(validated.scheduledAt)
+        : null
+    }
     if (validated.metaTitle !== undefined) updateData.metaTitle = validated.metaTitle
     if (validated.metaDesc !== undefined) updateData.metaDesc = validated.metaDesc
     if (validated.ogImage !== undefined) updateData.ogImage = validated.ogImage

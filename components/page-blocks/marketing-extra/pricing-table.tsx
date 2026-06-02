@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
+import { LinkInput } from '@/components/page-builder/inspector/link-input'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { safeHref } from '@/lib/page-builder/url-utils'
@@ -214,20 +215,17 @@ export const pricingTable = defineBlock({
                 rows={4}
                 className="text-xs resize-y"
               />
-              <div className="grid grid-cols-2 gap-1.5">
-                <Input
-                  value={it.ctaText}
-                  onChange={(e) => set({ ctaText: e.target.value })}
-                  placeholder="Texte CTA"
-                  className="h-8 text-xs"
-                />
-                <Input
-                  value={it.ctaLink}
-                  onChange={(e) => set({ ctaLink: e.target.value })}
-                  placeholder="Lien"
-                  className="h-8 text-xs"
-                />
-              </div>
+              <Input
+                value={it.ctaText}
+                onChange={(e) => set({ ctaText: e.target.value })}
+                placeholder="Texte CTA"
+                className="h-8 text-xs"
+              />
+              <LinkInput
+                value={it.ctaLink}
+                onChange={(ctaLink) => set({ ctaLink })}
+                placeholder="Lien CTA"
+              />
               <Input
                 value={it.badge ?? ''}
                 onChange={(e) => set({ badge: e.target.value })}

@@ -140,6 +140,7 @@ model Page {
   metaDesc  String?
   ogImage   String?
   themeTokens Json?
+  scheduledAt DateTime?
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -164,6 +165,19 @@ model PageRevision {
   createdAt DateTime @default(now())
 
   @@index([pageId])
+  @@index([createdAt])
+}
+
+/// Reusable page-builder block saved by an admin (was localStorage, now shared in DB).
+model Snippet {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  block       Json
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   @@index([createdAt])
 }
 

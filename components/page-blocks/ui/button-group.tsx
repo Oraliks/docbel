@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
+import { LinkInput } from '@/components/page-builder/inspector/link-input'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { safeHref } from '@/lib/page-builder/url-utils'
@@ -102,11 +103,10 @@ export const buttonGroup = defineBlock({
                 placeholder="Texte"
                 className="h-8 text-xs"
               />
-              <Input
+              <LinkInput
                 value={item.link}
-                onChange={(e) => set({ link: e.target.value })}
+                onChange={(link) => set({ link })}
                 placeholder="Lien"
-                className="h-8 text-xs"
               />
               <Pills
                 value={item.variant ?? 'primary'}

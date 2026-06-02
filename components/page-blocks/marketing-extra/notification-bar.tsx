@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
+import { LinkInput } from '@/components/page-builder/inspector/link-input'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
@@ -84,9 +85,9 @@ export const notificationBar = defineBlock({
         />
       </Field>
       <Field label="Lien CTA">
-        <Input
+        <LinkInput
           value={props.ctaLink ?? ''}
-          onChange={(e) => onChange({ ctaLink: e.target.value })}
+          onChange={(ctaLink) => onChange({ ctaLink })}
         />
       </Field>
       <Field label="Variante">

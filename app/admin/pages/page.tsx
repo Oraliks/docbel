@@ -52,6 +52,19 @@ const ITEMS_PER_PAGE = 10
 
 type StatusFilter = 'all' | 'published' | 'draft'
 
+/**
+ * `scheduledAt` lives on the API payload but isn't on the shared `PageData`
+ * type (lib/page-builder/types.ts, out of scope here), so read it via a local
+ * cast and format it for the "Planifié" badge.
+ */
+function formatScheduledAt(page: PageData): string {
+  const iso = (page as { scheduledAt?: string | null }).scheduledAt
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })
+}
+
 export default function PagesListPage() {
   const router = useRouter()
   const [pages, setPages] = useState<PageData[]>([])
@@ -510,13 +523,19 @@ export default function PagesListPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge
-                        variant={
-                          page.status === 'published' ? 'default' : 'secondary'
-                        }
-                      >
-                        {page.status === 'published' ? '✓ Publié' : '- Brouillon'}
-                      </Badge>
+                      {page.status === 'scheduled' ? (
+                        <Badge variant="info" title={formatScheduledAt(page)}>
+                          🕒 Planifié{formatScheduledAt(page) ? ` · ${formatScheduledAt(page)}` : ''}
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant={
+                            page.status === 'published' ? 'default' : 'secondary'
+                          }
+                        >
+                          {page.status === 'published' ? '✓ Publié' : '- Brouillon'}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">

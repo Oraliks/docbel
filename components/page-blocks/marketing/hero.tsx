@@ -12,6 +12,7 @@ import {
   Group,
 } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
+import { LinkInput } from '@/components/page-builder/inspector/link-input'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
@@ -270,9 +271,9 @@ export const hero = defineBlock({
           />
         </Field>
         <Field label="Bouton principal — lien">
-          <Input
+          <LinkInput
             value={props.ctaLink ?? ''}
-            onChange={(e) => onChange({ ctaLink: e.target.value })}
+            onChange={(ctaLink) => onChange({ ctaLink })}
             placeholder="/page-cible ou https://…"
           />
         </Field>
@@ -283,9 +284,9 @@ export const hero = defineBlock({
           />
         </Field>
         <Field label="Bouton secondaire — lien">
-          <Input
+          <LinkInput
             value={props.ctaSecondaryLink ?? ''}
-            onChange={(e) => onChange({ ctaSecondaryLink: e.target.value })}
+            onChange={(ctaSecondaryLink) => onChange({ ctaSecondaryLink })}
           />
         </Field>
       </Group>

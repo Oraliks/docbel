@@ -40,7 +40,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const page = await prisma.page.findFirst({
-    where: { slug, status: "published", deletedAt: null },
+    where: {
+      slug,
+      deletedAt: null,
+      OR: [
+        { status: "published" },
+        { status: "scheduled", scheduledAt: { lte: new Date() } },
+      ],
+    },
   });
 
   if (!page) return {};
@@ -64,7 +71,14 @@ export default async function PublicPage({
   const { slug } = await params;
 
   const page = await prisma.page.findFirst({
-    where: { slug, status: "published", deletedAt: null },
+    where: {
+      slug,
+      deletedAt: null,
+      OR: [
+        { status: "published" },
+        { status: "scheduled", scheduledAt: { lte: new Date() } },
+      ],
+    },
   });
 
   if (!page) notFound();

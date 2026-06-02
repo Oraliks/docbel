@@ -163,7 +163,8 @@ export const UpdatePageSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   slug: SlugSchema.optional(),
   content: BlocksSchema.optional(),
-  status: z.enum(['draft', 'published']).optional(),
+  status: z.enum(['draft', 'published', 'scheduled']).optional(),
+  scheduledAt: z.string().datetime().nullable().optional(),
   metaTitle: NullableTrimmedString(60),
   metaDesc: NullableTrimmedString(160),
   ogImage: z

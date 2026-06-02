@@ -50,6 +50,15 @@ function slugify(value: string): string {
     .replace(/^-|-$/g, '')
 }
 
+/** ISO string → value for <input type="datetime-local"> (local time, no tz). */
+function isoToDatetimeLocal(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export default function PageEditorClient({ params }: PageEditorPageProps) {
   const router = useRouter()
 
@@ -68,6 +77,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   const [metaTitle, setMetaTitle] = useState('')
   const [metaDesc, setMetaDesc] = useState('')
   const [ogImage, setOgImage] = useState('')
+  const [scheduledAt, setScheduledAt] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
@@ -105,6 +115,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         setMetaTitle(data.metaTitle || '')
         setMetaDesc(data.metaDesc || '')
         setOgImage(data.ogImage || '')
+        setScheduledAt(isoToDatetimeLocal(data.scheduledAt))
         setThemeTokens(data.themeTokens ?? null)
         lastSavedThemeRef.current = data.themeTokens ?? null
         setLastSaved(new Date())
@@ -291,16 +302,37 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
       toast.error('Slug invalide')
       return
     }
-    const result = await persist({
+    // Schedule publication when a FUTURE date is set. A past/empty date clears
+    // the schedule (scheduledAt: null) and leaves the current status untouched.
+    const scheduledDate = scheduledAt ? new Date(scheduledAt) : null
+    const isFutureSchedule =
+      scheduledDate !== null &&
+      !Number.isNaN(scheduledDate.getTime()) &&
+      scheduledDate.getTime() > Date.now()
+
+    const payload: Record<string, unknown> = {
       title,
       slug: cleanSlug,
       metaTitle: metaTitle || null,
       metaDesc: metaDesc || null,
       ogImage: ogImage || null,
-    })
+      scheduledAt: isFutureSchedule ? scheduledDate!.toISOString() : null,
+    }
+    if (isFutureSchedule) payload.status = 'scheduled'
+
+    const result = await persist(payload)
     if (!result) return
     setSlug(cleanSlug)
-    toast.success('Paramètres sauvegardés')
+    if (isFutureSchedule) {
+      toast.success(
+        `Publication planifiée le ${scheduledDate!.toLocaleString('fr-FR', {
+          dateStyle: 'long',
+          timeStyle: 'short',
+        })}`
+      )
+    } else {
+      toast.success('Paramètres sauvegardés')
+    }
     setShowSettingsDialog(false)
   }
 
@@ -437,6 +469,30 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
                 placeholder="https://exemple.com/image.jpg"
               />
               <p className="text-xs text-muted-foreground">Recommandé : 1200×630 px</p>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Planifier la publication</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={(e) => setScheduledAt(e.target.value)}
+                  className="font-mono"
+                />
+                {scheduledAt && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setScheduledAt('')}
+                    title="Effacer la planification"
+                  >
+                    Effacer
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Une date future planifie la mise en ligne automatique. Laissez vide pour publier manuellement.
+              </p>
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t pt-4">

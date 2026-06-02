@@ -21,11 +21,23 @@ import {
   ClipboardPaste,
   Undo2,
   Redo2,
+  BookmarkPlus,
 } from 'lucide-react'
 import type { BlockProps } from '@/lib/page-builder/types'
 import { BLOCK_REGISTRY } from '@/lib/page-builder/registry'
+import { saveSnippet } from '@/lib/page-builder/snippets'
 import { BlockRenderer } from './block-renderer'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,6 +89,36 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const canRedo = usePageBuilderStore((s) => s.future.length > 0)
   const hasClipboard = usePageBuilderStore((s) => s.clipboard !== null)
 
+  // ── "Save as snippet" dialog ──
+  const [snippetDialogOpen, setSnippetDialogOpen] = React.useState(false)
+  const [snippetName, setSnippetName] = React.useState('')
+  const [snippetDescription, setSnippetDescription] = React.useState('')
+  const [savingSnippet, setSavingSnippet] = React.useState(false)
+
+  const openSnippetDialog = React.useCallback(() => {
+    setSnippetName(BLOCK_REGISTRY[block.type]?.name ?? '')
+    setSnippetDescription('')
+    setSnippetDialogOpen(true)
+  }, [block.type])
+
+  const handleSaveSnippet = React.useCallback(async () => {
+    const name = snippetName.trim()
+    if (!name) {
+      toast.error('Un nom est requis')
+      return
+    }
+    setSavingSnippet(true)
+    try {
+      await saveSnippet(name, block, snippetDescription.trim() || undefined)
+      toast.success('Snippet enregistré')
+      setSnippetDialogOpen(false)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Échec de l'enregistrement")
+    } finally {
+      setSavingSnippet(false)
+    }
+  }, [snippetName, snippetDescription, block])
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id, disabled: !!block.meta?.locked })
 
@@ -126,6 +168,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   }
 
   return (
+    <>
     <ContextMenu>
       <ContextMenuTrigger>
     <div
@@ -245,6 +288,10 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
               >
                 <Scissors className="mr-2 size-4" />
                 Couper
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={openSnippetDialog}>
+                <BookmarkPlus className="mr-2 size-4" />
+                Enregistrer comme snippet
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -372,6 +419,10 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
           Coller
           <ContextMenuShortcut>⌘V</ContextMenuShortcut>
         </ContextMenuItem>
+        <ContextMenuItem onClick={openSnippetDialog}>
+          <BookmarkPlus />
+          Enregistrer comme snippet
+        </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem disabled={isFirst} onClick={() => moveBlock(block.id, 'up')}>
           <ArrowUp />
@@ -461,6 +512,61 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
+
+    <Dialog open={snippetDialogOpen} onOpenChange={setSnippetDialogOpen}>
+      <DialogContent
+        className="sm:max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <DialogHeader>
+          <DialogTitle>Enregistrer comme snippet</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 py-1">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="snippet-name">Nom</Label>
+            <Input
+              id="snippet-name"
+              autoFocus
+              value={snippetName}
+              onChange={(e) => setSnippetName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !savingSnippet) {
+                  e.preventDefault()
+                  void handleSaveSnippet()
+                }
+              }}
+              placeholder="Nom du snippet"
+              maxLength={120}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="snippet-description">Description (optionnel)</Label>
+            <Textarea
+              id="snippet-description"
+              value={snippetDescription}
+              onChange={(e) => setSnippetDescription(e.target.value)}
+              placeholder="À quoi sert ce bloc réutilisable ?"
+              rows={3}
+              maxLength={500}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setSnippetDialogOpen(false)}
+            disabled={savingSnippet}
+          >
+            Annuler
+          </Button>
+          <Button onClick={handleSaveSnippet} disabled={savingSnippet}>
+            <BookmarkPlus className="mr-2 size-4" />
+            {savingSnippet ? 'Enregistrement…' : 'Enregistrer'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
 

@@ -20,6 +20,8 @@ import {
   HelpCircle,
   MessageSquareQuote,
   BarChart3,
+  Bookmark,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react'
 import {
@@ -37,6 +39,13 @@ import {
 } from '@/lib/page-builder/registry'
 import type { BlockType, BlockCategory } from '@/lib/page-builder/types'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
+import {
+  listSnippets,
+  deleteSnippet,
+  cloneSnippetBlock,
+  type Snippet,
+} from '@/lib/page-builder/snippets'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -67,9 +76,53 @@ export function BlockPicker() {
   const slotIndex = usePageBuilderStore((s) => s.pickerSlotIndex)
   const closePicker = usePageBuilderStore((s) => s.closePicker)
   const addBlock = usePageBuilderStore((s) => s.addBlock)
+  const insertBlock = usePageBuilderStore((s) => s.insertBlock)
 
   const [query, setQuery] = React.useState('')
   const [activeIdx, setActiveIdx] = React.useState(0)
+
+  // ── "Mes snippets" — loaded from the DB when the picker opens ──
+  const [snippets, setSnippets] = React.useState<Snippet[]>([])
+  const [snippetsLoading, setSnippetsLoading] = React.useState(false)
+
+  const loadSnippets = React.useCallback(async () => {
+    setSnippetsLoading(true)
+    try {
+      setSnippets(await listSnippets())
+    } catch {
+      // Non-blocking: a snippet load failure shouldn't break the picker.
+      setSnippets([])
+    } finally {
+      setSnippetsLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lazy-load des snippets à l'ouverture (flux async)
+    if (open) void loadSnippets()
+  }, [open, loadSnippets])
+
+  const handleInsertSnippet = (snippet: Snippet) => {
+    insertBlock(cloneSnippetBlock(snippet), {
+      insertAfter,
+      parentId,
+      slotIndex,
+    })
+    closePicker()
+    setQuery('')
+    setActiveIdx(0)
+  }
+
+  const handleDeleteSnippet = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    try {
+      await deleteSnippet(id)
+      setSnippets((prev) => prev.filter((s) => s.id !== id))
+      toast.success('Snippet supprimé')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Échec de la suppression')
+    }
+  }
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {
@@ -204,6 +257,58 @@ export function BlockPicker() {
               </div>
             )
           })}
+
+          {/* Mes snippets — sections réutilisables enregistrées en DB. */}
+          {!query.trim() && (snippetsLoading || snippets.length > 0) && (
+            <div className="mt-4">
+              <div className="px-2 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Mes snippets
+              </div>
+              {snippetsLoading ? (
+                <div className="px-2 py-3 text-xs text-muted-foreground">
+                  Chargement…
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {snippets.map((snippet) => {
+                    const blockMeta = BLOCK_REGISTRY[snippet.block?.type]
+                    const Icon = blockMeta ? ICON_MAP[blockMeta.icon] ?? Bookmark : Bookmark
+                    return (
+                      <div
+                        key={snippet.id}
+                        className="group/snip flex items-center gap-3 rounded-lg border border-transparent bg-card p-3 text-left transition hover:border-border hover:bg-muted/50"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleInsertSnippet(snippet)}
+                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted">
+                            <Icon className="size-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate">{snippet.name}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {snippet.description || blockMeta?.name || 'Bloc'}
+                            </div>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteSnippet(e, snippet.id)}
+                          className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover/snip:opacity-100"
+                          title="Supprimer le snippet"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {flat.length === 0 && (
             <div className="py-12 text-center text-sm text-muted-foreground">
               Aucun bloc ne correspond à « {query} »

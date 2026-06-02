@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { RichTextInput } from '@/components/page-builder/inspector/rich-text-input'
+import { LinkInput } from '@/components/page-builder/inspector/link-input'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { safeHref } from '@/lib/page-builder/url-utils'
 import { enrichHtmlWithAcronyms } from '@/lib/acronyms-html'
@@ -115,9 +116,9 @@ export const card = defineBlock({
         />
       </Field>
       <Field label="Lien">
-        <Input
+        <LinkInput
           value={props.ctaLink ?? ''}
-          onChange={(e) => onChange({ ctaLink: e.target.value })}
+          onChange={(ctaLink) => onChange({ ctaLink })}
         />
       </Field>
     </Group>

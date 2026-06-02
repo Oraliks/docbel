@@ -5,6 +5,7 @@ import { Heart } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
+import { LinkInput } from '@/components/page-builder/inspector/link-input'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
@@ -110,9 +111,10 @@ export const donation = defineBlock({
         />
       </Field>
       <Field label="Lien (paiement / mailto)">
-        <Input
+        <LinkInput
           value={props.link ?? ''}
-          onChange={(e) => onChange({ link: e.target.value })}
+          onChange={(link) => onChange({ link })}
+          placeholder="https://… ou mailto:"
         />
       </Field>
     </Group>

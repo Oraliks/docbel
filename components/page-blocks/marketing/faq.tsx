@@ -2,11 +2,13 @@
 
 import { useState } from 'react'
 import { z } from 'zod'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Sparkles, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
+import { toast } from 'sonner'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
 import { faqSchema as schema } from './schemas'
@@ -52,6 +54,112 @@ function FaqItem({
         </div>
       )}
     </div>
+  )
+}
+
+function FaqFields({
+  props,
+  onChange,
+}: {
+  props: Props
+  onChange: (partial: Partial<Props>) => void
+}) {
+  const [topic, setTopic] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+
+  async function generate() {
+    const t = topic.trim()
+    if (!t) {
+      toast.error('Indique un sujet')
+      return
+    }
+    setAiLoading(true)
+    try {
+      const res = await fetch('/api/page-builder/ai-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'faq', topic: t }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (data.aiDisabled) {
+        toast.error(data.error || 'Assistant IA non configuré')
+        return
+      }
+      if (!res.ok || !Array.isArray(data.items) || data.items.length === 0) {
+        toast.error(data.error || 'Aucune question générée')
+        return
+      }
+      onChange({ items: [...props.items, ...(data.items as FaqItemData[])] })
+      toast.success(`${data.items.length} question(s) ajoutée(s)`)
+      setTopic('')
+    } catch {
+      toast.error("Échec de l'appel IA")
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  return (
+    <>
+      <Group title="En-tête" defaultOpen>
+        <Field label="Titre de section">
+          <Input
+            value={props.title ?? ''}
+            onChange={(e) => onChange({ title: e.target.value })}
+          />
+        </Field>
+      </Group>
+      <Group title="Générer avec l'IA" defaultOpen>
+        <Field label="Sujet (ancré dans la base de connaissances chômage)">
+          <div className="flex gap-1.5">
+            <Input
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="Ex : allocations après une démission"
+              className="h-8 text-xs"
+              disabled={aiLoading}
+            />
+            <Button
+              size="sm"
+              onClick={generate}
+              disabled={aiLoading}
+              className="shrink-0 gap-1.5"
+            >
+              {aiLoading ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="size-3.5" />
+              )}
+              Générer
+            </Button>
+          </div>
+        </Field>
+      </Group>
+      <Group title={`Questions (${props.items.length})`} defaultOpen>
+        <RepeaterList<FaqItemData>
+          items={props.items}
+          onChange={(items) => onChange({ items })}
+          render={(item, set) => (
+            <>
+              <Input
+                value={item.question}
+                onChange={(e) => set({ question: e.target.value })}
+                placeholder="Question"
+                className="h-8 text-xs"
+              />
+              <Textarea
+                value={item.answer}
+                onChange={(e) => set({ answer: e.target.value })}
+                placeholder="Réponse"
+                rows={2}
+                className="resize-y text-xs"
+              />
+            </>
+          )}
+          addItem={() => ({ question: 'Nouvelle question ?', answer: 'Réponse…' })}
+        />
+      </Group>
+    </>
   )
 }
 
@@ -108,40 +216,5 @@ export const faq = defineBlock({
       </div>
     )
   },
-  Fields: ({ props, onChange }) => (
-    <>
-      <Group title="En-tête" defaultOpen>
-        <Field label="Titre de section">
-          <Input
-            value={props.title ?? ''}
-            onChange={(e) => onChange({ title: e.target.value })}
-          />
-        </Field>
-      </Group>
-      <Group title={`Questions (${props.items.length})`} defaultOpen>
-        <RepeaterList<FaqItemData>
-          items={props.items}
-          onChange={(items) => onChange({ items })}
-          render={(item, set) => (
-            <>
-              <Input
-                value={item.question}
-                onChange={(e) => set({ question: e.target.value })}
-                placeholder="Question"
-                className="h-8 text-xs"
-              />
-              <Textarea
-                value={item.answer}
-                onChange={(e) => set({ answer: e.target.value })}
-                placeholder="Réponse"
-                rows={2}
-                className="resize-y text-xs"
-              />
-            </>
-          )}
-          addItem={() => ({ question: 'Nouvelle question ?', answer: 'Réponse…' })}
-        />
-      </Group>
-    </>
-  ),
+  Fields: FaqFields,
 })

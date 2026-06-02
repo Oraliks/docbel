@@ -19,9 +19,18 @@ import {
   Heading3,
   Undo,
   Redo,
+  Sparkles,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { toast } from 'sonner'
 
 interface RichTextInputProps {
   value: string
@@ -57,6 +66,8 @@ export function RichTextInput({
     immediatelyRender: false,
   })
 
+  const [aiLoading, setAiLoading] = React.useState(false)
+
   // Keep editor in sync if external value changes (undo/redo, template apply)
   React.useEffect(() => {
     if (!editor) return
@@ -66,6 +77,37 @@ export function RichTextInput({
   }, [editor, value])
 
   if (!editor) return null
+
+  async function runAi(action: string) {
+    if (!editor || aiLoading) return
+    if (!editor.getText().trim()) {
+      toast.error('Le bloc est vide')
+      return
+    }
+    setAiLoading(true)
+    try {
+      const res = await fetch('/api/page-builder/ai-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, text: editor.getHTML() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (data.aiDisabled) {
+        toast.error(data.error || 'Assistant IA non configuré')
+        return
+      }
+      if (!res.ok || !data.text) {
+        toast.error(data.error || "Échec de l'assistant IA")
+        return
+      }
+      editor.commands.setContent(data.text as string, true)
+      toast.success('Texte mis à jour par l’IA')
+    } catch {
+      toast.error("Échec de l'appel IA")
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   const tools: {
     icon: React.ElementType
@@ -180,6 +222,42 @@ export function RichTextInput({
             )
           })}
         <div className="ml-auto flex items-center gap-0.5">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="h-6 w-6"
+                  title="Assistant IA"
+                  disabled={aiLoading}
+                >
+                  {aiLoading ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-3.5 text-primary" />
+                  )}
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => runAi('rewrite')}>
+                Réécrire (plus clair)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => runAi('simplify')}>
+                Simplifier (français simple)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => runAi('shorten')}>
+                Raccourcir / résumer
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => runAi('lengthen')}>
+                Développer
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => runAi('fix')}>
+                Corriger l’orthographe
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             size="icon-sm"
             variant="ghost"

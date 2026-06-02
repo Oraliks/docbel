@@ -18,6 +18,9 @@ import {
   Eye,
   EyeOff,
   Group,
+  ClipboardPaste,
+  Undo2,
+  Redo2,
 } from 'lucide-react'
 import type { BlockProps } from '@/lib/page-builder/types'
 import { BLOCK_REGISTRY } from '@/lib/page-builder/registry'
@@ -30,6 +33,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
 import { usePageBuilderStore, getChildrenOf } from '@/lib/page-builder/store'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -59,6 +70,12 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const updateBlockMeta = usePageBuilderStore((s) => s.updateBlockMeta)
   const wrapInSection = usePageBuilderStore((s) => s.wrapInSection)
   const removeMany = usePageBuilderStore((s) => s.removeMany)
+  const pasteBlock = usePageBuilderStore((s) => s.pasteBlock)
+  const undo = usePageBuilderStore((s) => s.undo)
+  const redo = usePageBuilderStore((s) => s.redo)
+  const canUndo = usePageBuilderStore((s) => s.past.length > 0)
+  const canRedo = usePageBuilderStore((s) => s.future.length > 0)
+  const hasClipboard = usePageBuilderStore((s) => s.clipboard !== null)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id, disabled: !!block.meta?.locked })
@@ -109,6 +126,8 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   }
 
   return (
+    <ContextMenu>
+      <ContextMenuTrigger render={
     <div
       ref={setNodeRef}
       style={wrapperStyle}
@@ -321,6 +340,127 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
         </button>
       )}
     </div>
+      } />
+      <ContextMenuContent className="w-60">
+        <ContextMenuItem
+          onClick={() => {
+            duplicateBlock(block.id)
+            toast.success('Bloc dupliqué')
+          }}
+        >
+          <Copy />
+          Dupliquer
+          <ContextMenuShortcut>⌘D</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => copyBlock(block.id)}>
+          <ClipboardCopy />
+          Copier
+          <ContextMenuShortcut>⌘C</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem
+          onClick={() => {
+            cutBlock(block.id)
+            toast.success('Bloc coupé')
+          }}
+        >
+          <Scissors />
+          Couper
+          <ContextMenuShortcut>⌘X</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem disabled={!hasClipboard} onClick={() => pasteBlock(block.id)}>
+          <ClipboardPaste />
+          Coller
+          <ContextMenuShortcut>⌘V</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem disabled={isFirst} onClick={() => moveBlock(block.id, 'up')}>
+          <ArrowUp />
+          Monter
+          <ContextMenuShortcut>⌥↑</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem disabled={isLast} onClick={() => moveBlock(block.id, 'down')}>
+          <ArrowDown />
+          Descendre
+          <ContextMenuShortcut>⌥↓</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem
+          onClick={() =>
+            openPicker(block.id, block.parentId ?? null, block.slotIndex ?? null)
+          }
+        >
+          <Plus />
+          Insérer un bloc
+          <ContextMenuShortcut>⌘/</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          onClick={() => {
+            updateBlockMeta(block.id, { locked: !isLocked })
+            toast.success(isLocked ? 'Bloc déverrouillé' : 'Bloc verrouillé')
+          }}
+        >
+          {isLocked ? <Unlock /> : <Lock />}
+          {isLocked ? 'Déverrouiller' : 'Verrouiller'}
+        </ContextMenuItem>
+        <ContextMenuItem
+          onClick={() => {
+            updateBlockMeta(block.id, { hidden: !isHidden })
+            toast.success(isHidden ? 'Bloc affiché' : 'Bloc masqué')
+          }}
+        >
+          {isHidden ? <Eye /> : <EyeOff />}
+          {isHidden ? 'Afficher' : 'Masquer'}
+        </ContextMenuItem>
+        {isInMultiSelection && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              onClick={() => {
+                wrapInSection(selectedIds)
+                toast.success(`${selectedIds.length} blocs groupés dans une section`)
+              }}
+            >
+              <Group />
+              Grouper dans une Section
+              <ContextMenuShortcut>⌘G</ContextMenuShortcut>
+            </ContextMenuItem>
+            <ContextMenuItem
+              variant="destructive"
+              onClick={() => {
+                removeMany(selectedIds)
+                toast.success(`${selectedIds.length} blocs supprimés`)
+              }}
+            >
+              <Trash2 />
+              Supprimer la sélection
+            </ContextMenuItem>
+          </>
+        )}
+        <ContextMenuSeparator />
+        <ContextMenuItem disabled={!canUndo} onClick={() => undo()}>
+          <Undo2 />
+          Annuler
+          <ContextMenuShortcut>⌘Z</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem disabled={!canRedo} onClick={() => redo()}>
+          <Redo2 />
+          Rétablir
+          <ContextMenuShortcut>⌘⇧Z</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          variant="destructive"
+          onClick={() => {
+            removeBlock(block.id)
+            toast.success('Bloc supprimé')
+          }}
+        >
+          <Trash2 />
+          Supprimer
+          <ContextMenuShortcut>⌫</ContextMenuShortcut>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   )
 }
 

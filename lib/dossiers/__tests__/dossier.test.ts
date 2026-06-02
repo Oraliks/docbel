@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { CATALOG } from "@/lib/fields/catalog";
 import { getDossier, isCodeDossier, listDossiers } from "../registry";
-import { selectDocuments } from "../types";
+import { filterMotifOptions, selectDocuments } from "../types";
 import { resolveDocumentFields } from "../resolve";
-import { chomageTemporaire, MOTIFS } from "../chomage-temporaire";
+import { chomageTemporaire, MOTIFS, WHO_CONCERNED, natureDA } from "../chomage-temporaire";
+import { interpolateTheoryBody, visibleTheorySections } from "../theory";
 
 describe("catalogue de champs", () => {
   it("chaque entrée a une clé cohérente avec son index", () => {
@@ -36,63 +37,153 @@ describe("registre des dossiers", () => {
   });
 });
 
-describe("chômage temporaire — sélection de documents", () => {
-  it("inclut les 2 documents toujours requis sans motif particulier", () => {
-    const docs = selectDocuments(chomageTemporaire, { motif: "Économique" });
-    expect(docs.map((d) => d.slug)).toEqual(["c32-travailleur", "c32-employeur"]);
+describe("chômage temporaire — 11 motifs officiels", () => {
+  it("expose exactement 11 motifs (nomenclature ONEM)", () => {
+    expect(MOTIFS).toHaveLength(11);
   });
-  it("ajoute le document Force majeure quand motif = Force majeure", () => {
-    const docs = selectDocuments(chomageTemporaire, { motif: "Force majeure" });
-    expect(docs.map((d) => d.slug)).toContain("c32a-force-majeure");
-    expect(docs.map((d) => d.slug)).not.toContain("c32a-intemperies");
-  });
-  it("ajoute le document Intempéries quand motif = Intempéries", () => {
-    const docs = selectDocuments(chomageTemporaire, { motif: "Intempéries" });
-    expect(docs.map((d) => d.slug)).toContain("c32a-intemperies");
-  });
-  it("expose les 7 motifs", () => {
-    expect(chomageTemporaire.types).toHaveLength(7);
+  it("contient les motifs phares", () => {
+    expect(MOTIFS).toContain("Économique");
     expect(MOTIFS).toContain("Force majeure");
+    expect(MOTIFS).toContain("Force majeure médicale");
+    expect(MOTIFS).toContain("Suspension employés");
+  });
+  it("ne contient plus le faux motif \"Action sociale\"", () => {
+    expect(MOTIFS as readonly string[]).not.toContain("Action sociale");
+  });
+  it("est aligné avec chomageTemporaire.types", () => {
+    expect(chomageTemporaire.types).toEqual([...MOTIFS]);
   });
 });
 
-describe("filtrage des items du bundle (intégration runner)", () => {
-  it("sans motif, seuls les documents inconditionnels sont applicables", () => {
-    const slugs = selectDocuments(chomageTemporaire, {}).map((d) => d.slug);
-    expect(slugs).toEqual(["c32-travailleur", "c32-employeur"]);
+describe("matrice qui est concerné", () => {
+  it("économique exclut les employés (qui passent par Suspension employés)", () => {
+    expect(WHO_CONCERNED["Économique"]).toEqual(["ouvrier", "interimaire"]);
   });
-  it("motif = Force majeure → FMM ajouté, Intempéries non", () => {
-    const slugs = selectDocuments(chomageTemporaire, { motif: "Force majeure" }).map((d) => d.slug);
-    expect(slugs).toContain("c32a-force-majeure");
-    expect(slugs).not.toContain("c32a-intemperies");
+  it("suspension employés est exclusivement employé", () => {
+    expect(WHO_CONCERNED["Suspension employés"]).toEqual(["employe"]);
   });
-  it("motif = Intempéries → Intempéries ajouté, FMM non", () => {
-    const slugs = selectDocuments(chomageTemporaire, { motif: "Intempéries" }).map((d) => d.slug);
-    expect(slugs).toContain("c32a-intemperies");
-    expect(slugs).not.toContain("c32a-force-majeure");
+  it("force majeure médicale exclut les intérimaires", () => {
+    expect(WHO_CONCERNED["Force majeure médicale"]).toEqual(["ouvrier", "employe"]);
   });
-  it("motif = Économique → aucun document conditionnel", () => {
+  it("filterMotifOptions filtre selon le statut répondu", () => {
+    const all = [...MOTIFS];
+    const ouvrier = filterMotifOptions(chomageTemporaire, all, "ouvrier");
+    expect(ouvrier).toContain("Économique");
+    expect(ouvrier).not.toContain("Suspension employés");
+    const employe = filterMotifOptions(chomageTemporaire, all, "employe");
+    expect(employe).not.toContain("Économique");
+    expect(employe).toContain("Suspension employés");
+    const interim = filterMotifOptions(chomageTemporaire, all, "interimaire");
+    expect(interim).toContain("Force majeure");
+    expect(interim).not.toContain("Force majeure médicale");
+  });
+  it("sans statut → la liste n'est pas filtrée", () => {
+    expect(filterMotifOptions(chomageTemporaire, [...MOTIFS], undefined)).toEqual([...MOTIFS]);
+  });
+});
+
+describe("nature de DA (code ONEM dérivé)", () => {
+  it("transfert prioritaire", () => {
+    expect(natureDA({ transfertEnCours: true, motif: "Économique" })?.code).toBe("TFT");
+  });
+  it("66+ détecté avant TPL", () => {
+    expect(natureDA({ age66Plus: true, premiereDemande: true })?.code).toBe("CTP");
+  });
+  it("première demande → TPL", () => {
+    expect(natureDA({ premiereDemande: true, motif: "Économique" })?.code).toBe("TPL");
+  });
+  it("économique récurrent (pas première) → INT", () => {
+    expect(natureDA({ motif: "Économique", statut: "ouvrier" })?.code).toBe("INT");
+  });
+  it("force majeure récurrent → TEM", () => {
+    expect(natureDA({ motif: "Force majeure" })?.code).toBe("TEM");
+  });
+  it("vacances annuelles récurrent → VAC", () => {
+    expect(natureDA({ motif: "Vacances annuelles" })?.code).toBe("VAC");
+  });
+  it("aucun signal → null", () => {
+    expect(natureDA({})).toBeNull();
+  });
+});
+
+describe("sélection des documents (nouvelle règle)", () => {
+  it("économique récurrent → seul le C32 travailleur", () => {
     const slugs = selectDocuments(chomageTemporaire, { motif: "Économique" }).map((d) => d.slug);
-    expect(slugs).toEqual(["c32-travailleur", "c32-employeur"]);
+    expect(slugs).toEqual(["c32-travailleur"]);
+  });
+  it("première demande → C32 + C1", () => {
+    const slugs = selectDocuments(chomageTemporaire, {
+      motif: "Économique",
+      premiereDemande: true,
+    }).map((d) => d.slug);
+    expect(slugs).toContain("c32-travailleur");
+    expect(slugs).toContain("c1-travailleur");
+  });
+  it("modificationC1 sans première demande → C32 + C1", () => {
+    const slugs = selectDocuments(chomageTemporaire, {
+      motif: "Économique",
+      modificationC1: true,
+    }).map((d) => d.slug);
+    expect(slugs).toContain("c1-travailleur");
+  });
+  it("66+ → C1 même sans première demande", () => {
+    const slugs = selectDocuments(chomageTemporaire, {
+      motif: "Économique",
+      age66Plus: true,
+    }).map((d) => d.slug);
+    expect(slugs).toContain("c1-travailleur");
+  });
+  it("force majeure médicale → C32 remplacé par C6 (pas de C32)", () => {
+    const slugs = selectDocuments(chomageTemporaire, { motif: "Force majeure médicale" }).map((d) => d.slug);
+    expect(slugs).not.toContain("c32-travailleur");
+    expect(slugs).toContain("c6-fmm");
+  });
+  it("FMM + trajet de réintégration → C27R en plus", () => {
+    const slugs = selectDocuments(chomageTemporaire, {
+      motif: "Force majeure médicale",
+      trajetReintegration: true,
+    }).map((d) => d.slug);
+    expect(slugs).toContain("c6-fmm");
+    expect(slugs).toContain("c27r-fmm");
   });
 });
 
 describe("résolution des champs depuis le catalogue", () => {
-  it("résout une référence canonique (NISS) avec ses métadonnées", () => {
-    const doc = chomageTemporaire.documents[0];
-    const fields = resolveDocumentFields(doc);
+  it("résout NISS sur le C32", () => {
+    const c32 = chomageTemporaire.documents.find((d) => d.slug === "c32-travailleur")!;
+    const fields = resolveDocumentFields(c32);
     const niss = fields.find((f) => f.key === "niss");
-    expect(niss).toBeTruthy();
     expect(niss?.type).toBe("niss");
     expect(niss?.pdfFieldName).toBe("NISS");
     expect(niss?.prefillFrom).toBe("profile.niss");
-    expect(niss?.required).toBe(true);
   });
-  it("résout un champ custom (évènement de force majeure)", () => {
-    const fmm = chomageTemporaire.documents.find((d) => d.slug === "c32a-force-majeure")!;
-    const fields = resolveDocumentFields(fmm);
-    const ev = fields.find((f) => f.key === "evenement");
-    expect(ev?.type).toBe("textarea");
-    expect(ev?.pdfFieldName).toBe("Event");
+});
+
+describe("espace théorique", () => {
+  it("expose plusieurs sections", () => {
+    expect((chomageTemporaire.theory ?? []).length).toBeGreaterThan(3);
+  });
+  it("filtre par audience", () => {
+    const partner = visibleTheorySections(chomageTemporaire, "partner");
+    const publicSecs = visibleTheorySections(chomageTemporaire, "public");
+    expect(partner.length).toBeGreaterThan(0);
+    expect(publicSecs.length).toBe(0); // aucune section publique pour l'instant
+  });
+  it("interpole {{ motifs }} en liste à puces des 11 motifs", () => {
+    const sec = chomageTemporaire.theory!.find((s) => s.id === "motifs")!;
+    const rendered = interpolateTheoryBody(sec, chomageTemporaire);
+    for (const m of MOTIFS) expect(rendered).toContain(`- ${m}`);
+  });
+  it("interpole {{ qui-est-concerne }} en tableau Markdown", () => {
+    const sec = chomageTemporaire.theory!.find((s) => s.id === "qui-est-concerne")!;
+    const rendered = interpolateTheoryBody(sec, chomageTemporaire);
+    expect(rendered).toContain("| Motif | Ouvrier | Employé | Intérimaire |");
+    expect(rendered).toContain("Économique");
+  });
+  it("interpole {{ documents }} avec tous les documents listés", () => {
+    const sec = chomageTemporaire.theory!.find((s) => s.id === "documents")!;
+    const rendered = interpolateTheoryBody(sec, chomageTemporaire);
+    expect(rendered).toContain("**C3.2 — Travailleur**");
+    expect(rendered).toContain("**C1 — Demande d'allocations**");
   });
 });

@@ -1,24 +1,276 @@
 // Dossier "Chômage temporaire" — module autonome.
 //
-// Décrit ses 7 motifs, ses questions d'orientation, ses documents (avec leur
-// logique d'inclusion conditionnelle) et ses avertissements. Les champs
-// référencent le catalogue partagé. Aucun lien avec les autres dossiers.
+// Décrit ses 11 motifs officiels (nomenclature ONEM), ses questions
+// d'orientation, ses documents (avec leur logique d'inclusion conditionnelle)
+// et son espace théorique. Les champs référencent le catalogue partagé.
+// Aucun lien avec les autres dossiers.
 
-import type { DossierDefinition } from "../types";
+import type {
+  DossierDefinition,
+  DossierTheorySection,
+  NatureDAResolver,
+  WhoConcernedMatrix,
+} from "../types";
 
-/// Les 7 motifs de chômage temporaire (source de l'animation de la page +
-/// des options de la question d'orientation).
+/// Les 11 motifs officiels de chômage temporaire (nomenclature ONEM).
+/// Le code numérique + la lettre figurent en commentaire pour traçabilité.
 export const MOTIFS = [
-  "Économique",
-  "Action sociale",
-  "Vacances annuelles",
-  "Repos compensatoire",
-  "Intempéries",
-  "Accident technique",
-  "Force majeure",
+  "Économique",                        // 5.1 / E
+  "Intempéries",                       // 5.2 / I
+  "Accident technique",                // 5.3 / T
+  "Force majeure",                     // 5.4 / F
+  "Force majeure médicale",            // 5.5 / FM
+  "Vacances annuelles",                // 5.6 / V (fermeture collective)
+  "Vacances complémentaires",          // ex. VACANTEX dans le textile
+  "Repos compensatoire",               // jours RC groupés
+  "Grève ou lock-out",
+  "Travailleur protégé",               // délégués syndicaux
+  "Suspension employés",               // entreprise en difficulté
 ] as const;
 
 export type Motif = (typeof MOTIFS)[number];
+
+/// Identifiant slug d'un motif (pour usage dans les conditions / matrices).
+const MOTIF_IDS = {
+  economique: "Économique",
+  intemperies: "Intempéries",
+  accidentTechnique: "Accident technique",
+  forceMajeure: "Force majeure",
+  forceMajeureMedicale: "Force majeure médicale",
+  vacancesAnnuelles: "Vacances annuelles",
+  vacancesComplementaires: "Vacances complémentaires",
+  reposCompensatoire: "Repos compensatoire",
+  greve: "Grève ou lock-out",
+  travailleurProtege: "Travailleur protégé",
+  suspensionEmployes: "Suspension employés",
+} as const;
+
+/// Matrice "qui peut bénéficier de tel motif" — sert à filtrer les options
+/// de motif selon le statut (ouvrier / employé / intérimaire) du répondant.
+export const WHO_CONCERNED: WhoConcernedMatrix = {
+  [MOTIF_IDS.economique]:             ["ouvrier", "interimaire"], // pas employé : voir Suspension employés
+  [MOTIF_IDS.intemperies]:            ["ouvrier"],
+  [MOTIF_IDS.accidentTechnique]:      ["ouvrier"],
+  [MOTIF_IDS.forceMajeure]:           ["ouvrier", "employe", "interimaire"],
+  [MOTIF_IDS.forceMajeureMedicale]:   ["ouvrier", "employe"],
+  [MOTIF_IDS.vacancesAnnuelles]:      ["ouvrier", "employe", "interimaire"],
+  [MOTIF_IDS.vacancesComplementaires]:["ouvrier", "employe", "interimaire"],
+  [MOTIF_IDS.reposCompensatoire]:     ["ouvrier", "employe", "interimaire"],
+  [MOTIF_IDS.greve]:                  ["ouvrier", "employe", "interimaire"],
+  [MOTIF_IDS.travailleurProtege]:     ["ouvrier", "employe"],
+  [MOTIF_IDS.suspensionEmployes]:     ["employe"],
+};
+
+/// Calcule la nature de DA (code ONEM) à partir des réponses d'orientation.
+/// Règle approximative dérivée des règles ONEM connues — à raffiner avec
+/// l'évolution des questions d'orientation.
+export const natureDA: NatureDAResolver = (a) => {
+  const motif = typeof a.motif === "string" ? a.motif : "";
+  // Le statut (ouvrier/employé/intérimaire) n'affecte pas le code de nature
+  // DA dans les règles actuelles. Il pourra être consommé si on ajoute des
+  // règles plus fines plus tard.
+  const premiere = a.premiereDemande === true;
+  const transfert = a.transfertEnCours === true;
+  const senior = a.age66Plus === true;
+
+  // Situations indépendantes du motif (prioritaires).
+  if (transfert) return { code: "TFT", label: "Transfert en cours de chômage temporaire" };
+  if (senior) return { code: "CTP", label: "1er jour de chômage temporaire à 66 ans ou plus" };
+  if (premiere) return { code: "TPL", label: "Première demande (jamais eu de dossier chômage)" };
+
+  // Catégorisation par motif (cas de DA récurrentes).
+  if (
+    motif === MOTIF_IDS.economique ||
+    motif === MOTIF_IDS.suspensionEmployes ||
+    motif === MOTIF_IDS.intemperies
+  ) return { code: "INT", label: "Intempéries / Économique ouvrier / Suspension employés" };
+
+  if (
+    motif === MOTIF_IDS.accidentTechnique ||
+    motif === MOTIF_IDS.forceMajeure ||
+    motif === MOTIF_IDS.forceMajeureMedicale ||
+    motif === MOTIF_IDS.travailleurProtege
+  ) return { code: "TEM", label: "Force majeure / Accident technique / Travailleur protégé" };
+
+  if (
+    motif === MOTIF_IDS.vacancesAnnuelles ||
+    motif === MOTIF_IDS.vacancesComplementaires
+  ) return { code: "VAC", label: "Vacances annuelles ou complémentaires" };
+
+  return null;
+};
+
+/// Sections de l'espace théorique. Paraphrasées en interne, jamais de citation
+/// verbatim d'une source non publique. Les bindings `{{ … }}` sont interpolés
+/// au rendu depuis la structure du dossier.
+const THEORY: DossierTheorySection[] = [
+  {
+    id: "introduction",
+    title: "Introduction",
+    body: `
+Le chômage temporaire (CT) est une suspension provisoire totale ou partielle
+du contrat de travail, pendant laquelle le travailleur peut percevoir des
+allocations versées par l'ONEM via son organisme de paiement.
+
+À la différence du chômage complet, le contrat de travail n'est pas rompu —
+l'occupation reprend dès que la cause de la suspension a disparu.
+
+Onze motifs officiels existent, chacun avec ses conditions propres,
+ses formalités employeur et ses documents.
+    `.trim(),
+    audience: ["admin", "partner"],
+    lastReviewedAt: "2026-06-02",
+  },
+  {
+    id: "motifs",
+    title: "Les onze motifs",
+    body: `
+Les motifs reconnus de chômage temporaire sont :
+
+{{ motifs }}
+
+Chaque motif obéit à des règles d'admissibilité distinctes et n'est ouvert
+qu'à certaines catégories de travailleurs (ouvrier, employé, intérimaire).
+    `.trim(),
+    audience: ["admin", "partner"],
+    bindings: ["motifs"],
+    lastReviewedAt: "2026-06-02",
+  },
+  {
+    id: "qui-est-concerne",
+    title: "Qui peut bénéficier de quel motif",
+    body: `
+Les motifs ne sont pas tous ouverts à tous les statuts. La matrice ci-dessous
+récapitule les ouvertures.
+
+{{ qui-est-concerne }}
+
+Quelques cas particuliers :
+
+- **Économique** : l'employé classique n'y a pas accès — il bascule vers la
+  *Suspension employés*, qui suppose que l'entreprise prouve à l'ONEM qu'elle
+  remplit les conditions (entreprise en difficulté).
+- **Force majeure médicale** : ne concerne pas les intérimaires.
+- **Travailleur protégé** : réservé aux délégués syndicaux (ouvrier ou employé).
+- **Suspension employés** : exclusivement employé.
+
+Pour les intérimaires en chômage temporaire économique, la situation reste
+strictement encadrée (ancienneté requise, procédure CT en cours pour les
+travailleurs fixes du même département, etc.).
+    `.trim(),
+    audience: ["admin", "partner"],
+    bindings: ["qui-est-concerne"],
+    lastReviewedAt: "2026-06-02",
+  },
+  {
+    id: "conditions",
+    title: "Conditions d'admissibilité et d'octroi",
+    body: `
+Deux niveaux de conditions s'appliquent :
+
+1. **Admissibilité** — le travailleur doit avoir, sur une période de référence
+   précédant la demande, suffisamment de journées de travail prouvées. Les
+   exigences varient selon l'âge et la nature du contrat.
+2. **Octroi** — il faut, au moment où l'allocation est versée, satisfaire
+   plusieurs conditions personnelles : disponibilité pour le marché du travail,
+   absence d'autre revenu de remplacement, absence de sanction, etc.
+
+Une sanction ou une exclusion active à un autre titre (chômage complet, par
+exemple) peut impacter directement l'indemnisation du chômage temporaire.
+    `.trim(),
+    audience: ["admin", "partner"],
+    lastReviewedAt: "2026-06-02",
+  },
+  {
+    id: "documents",
+    title: "Documents à constituer",
+    body: `
+Les documents que **le travailleur** dépose dans le cadre d'une demande de
+chômage temporaire :
+
+{{ documents }}
+
+En parallèle, l'**employeur** transmet à l'ONEM, par voie électronique, sa
+propre déclaration (DRS / WECH) ainsi que les notifications et communications
+selon le motif. Ces flux ne transitent pas par le présent dossier — ils sont
+filés directement par l'employeur via les portails ONSS/ONEM.
+
+Le C32 travailleur est le pivot du dossier dans la quasi-totalité des cas. Il
+peut être remplacé par d'autres formulaires (C6) dans certaines situations
+particulières comme la force majeure médicale.
+    `.trim(),
+    audience: ["admin", "partner"],
+    bindings: ["documents"],
+    lastReviewedAt: "2026-06-02",
+  },
+  {
+    id: "nature-da",
+    title: "Nature de la demande d'allocation (DA)",
+    body: `
+La « nature de DA » est un code ONEM qui résume le contexte de la demande
+(transfert en cours, première demande jamais perçue, 66 ans et plus, type
+de chômage temporaire applicable, etc.).
+
+Elle se déduit des réponses aux questions d'orientation et de la situation
+personnelle du demandeur — ce n'est pas une question que l'on pose à
+l'utilisateur, mais une **valeur calculée**.
+
+Les principales natures rencontrées en CT :
+
+- **TPL / TPV** — première demande (jamais eu de dossier chômage)
+- **TFT** — transfert en cours de CT
+- **CTP** — 1er jour de CT à 66 ans ou plus
+- **INT** — économique ouvrier, suspension employés, intempéries
+- **TEM** — accident technique, force majeure, force majeure médicale, travailleur protégé
+- **VAC** — vacances annuelles ou complémentaires
+    `.trim(),
+    audience: ["admin", "partner"],
+    lastReviewedAt: "2026-06-02",
+  },
+  {
+    id: "delais",
+    title: "Délais d'introduction",
+    body: `
+Le délai d'introduction d'une demande dépend du type de demande et du motif :
+
+| Type de DA | Délai standard | Exceptions notables |
+| --- | --- | --- |
+| Obligatoire | mois en cours + 2 mois | Changement Q/S : + 36 mois · Grève : + 6 mois · 66+ : aucun délai |
+| Facultative | mois en cours + 36 mois | — |
+
+Les outils internes (AS400) n'appliquent pas toujours les exceptions
+automatiquement et retombent sur le délai standard le plus court — d'où
+l'importance, pour le partenaire, de connaître la règle exacte du motif.
+    `.trim(),
+    audience: ["admin", "partner"],
+    lastReviewedAt: "2026-06-02",
+  },
+  {
+    id: "demarches-employeur",
+    title: "Démarches employeur — vue d'ensemble",
+    body: `
+Côté employeur, les obligations dépendent du motif :
+
+- **Notification** (procédure préalable) : exigée pour économique, accident
+  technique et suspension employés. Elle s'effectue par voie électronique
+  avant le début de la période de chômage temporaire.
+- **Communication du 1er jour effectif** : à transmettre chaque mois pour
+  économique, intempéries, accident technique et suspension employés.
+- **DRS / WECH** : déclaration sociale électronique transmise par
+  l'employeur via le portail ONSS. Un seul concept, deux appellations :
+  *DRS* est le nom public côté affilié (Déclaration de Risque Social),
+  *WECH* est l'argot interne (ex. WECH 502 pour la déclaration
+  d'occurrence, WECH 505 pour le flux qui sert au paiement). Pour
+  l'affilié, ces flux ne sont pas perceptibles : il en voit le résultat
+  (allocations versées).
+
+Aucune des formalités employeur ne fait partie des PDFs que le travailleur
+remplit dans le dossier ; on les rappelle ici pour information.
+    `.trim(),
+    audience: ["admin", "partner"],
+    lastReviewedAt: "2026-06-02",
+  },
+];
 
 export const chomageTemporaire: DossierDefinition = {
   slug: "chomage-temporaire",
@@ -37,74 +289,94 @@ export const chomageTemporaire: DossierDefinition = {
     "intempéries",
     "économique",
     "fermeture temporaire",
+    "suspension employés",
+    "travailleur protégé",
   ],
   types: [...MOTIFS],
+  whoConcerned: WHO_CONCERNED,
+  natureDA,
 
   questions: [
     {
-      id: "motif",
-      label: { fr: "Quel est le motif du chômage temporaire ?" },
-      type: "select",
-      options: MOTIFS.map((m) => ({ value: m, label: { fr: m } })),
-    },
-    {
       id: "statut",
-      label: { fr: "Vous êtes ouvrier ou employé ?" },
+      label: { fr: "Quel est votre statut ?" },
       type: "select",
       options: [
         { value: "ouvrier", label: { fr: "Ouvrier" } },
         { value: "employe", label: { fr: "Employé" } },
+        { value: "interimaire", label: { fr: "Intérimaire" } },
       ],
     },
     {
+      id: "motif",
+      label: { fr: "Quel est le motif du chômage temporaire ?" },
+      type: "select",
+      // Les options sont la liste complète ; le filtrage par statut se fait
+      // au rendu via `filterMotifOptions(def, ...)` dans le runner.
+      options: MOTIFS.map((m) => ({ value: m, label: { fr: m } })),
+    },
+    {
       id: "premiereDemande",
-      label: { fr: "Est-ce votre première demande pour ce motif ?" },
+      label: { fr: "Est-ce votre première demande de chômage temporaire ?" },
+      type: "boolean",
+    },
+    {
+      // N'apparaît que si la première demande est confirmée — détermine si
+      // un nouveau formulaire C1 est attendu.
+      id: "modificationC1",
+      label: { fr: "Y a-t-il eu une modification de vos données personnelles depuis votre dernier C1 ?" },
+      type: "boolean",
+      visibleWhen: (a) => a.premiereDemande !== true,
+    },
+    {
+      id: "age66Plus",
+      label: { fr: "Avez-vous 66 ans ou plus ?" },
+      type: "boolean",
+    },
+    {
+      id: "transfertEnCours",
+      label: { fr: "S'agit-il d'un transfert en cours de chômage temporaire ?" },
       type: "boolean",
     },
   ],
 
   warnings: [
     {
-      title: "Délai légal de 7 jours",
+      title: "Délai d'introduction",
       message:
-        "Vous devez introduire votre demande dans les 7 jours calendrier qui suivent votre dernier jour effectivement presté.",
-      severity: "critical",
+        "Le délai d'introduction varie selon le type de demande : généralement mois en cours + 2 mois (obligatoire) ou + 36 mois (facultative). Certaines situations (changement Q/S, grève, 66+ ans) bénéficient d'exceptions.",
+      severity: "warning",
+    },
+    {
+      title: "Accident technique — particularité",
+      message:
+        "Pour un chômage temporaire pour accident technique, l'allocation n'est versée qu'à partir du 8ᵉ jour calendrier. Les 7 premiers jours restent à charge de l'employeur.",
+      severity: "info",
+      visibleWhen: (a) => a.motif === MOTIF_IDS.accidentTechnique,
     },
   ],
 
   documents: [
     {
-      // Document principal : C3.2 Travailleur (PDF officiel ONEM).
-      // Mapping des widgets AcroForm réels (inspecter via /admin/pdf-sources) :
-      //   • NISS                       → catalogue niss
-      //   • Nom Prénom du travailleur  → catalogue fullName (assemblé en 1 chaîne)
-      //   • date de DA                 → champ custom "date de la demande d'allocation"
-      //   • Aujourd'hui                → catalogue creationDate (auto, masqué)
-      //   • Group2                     → champ custom "statut" (select Travailleur/Apprenti)
-      //   • Signature                  → catalogue signature (auto à la génération)
+      // C3.2 Travailleur — pivot du dossier (sauf force majeure médicale).
       slug: "c32-travailleur",
       title: "C3.2 — Travailleur",
       issuer: "ONEM",
       required: true,
       sourcePdfPath: "private/pdfs/C32_Travailleur_FR.pdf",
+      internalRef: "Doc formation, section Documents de demande",
+      includeWhen: (a) => a.motif !== MOTIF_IDS.forceMajeureMedicale,
       fields: [
         // Identité.
-        {
-          field: "fullName",
-          required: true,
-          section: "identite",
-          pdfFieldName: "Nom Prénom du travailleur",
-        },
+        { field: "fullName", required: true, section: "identite", pdfFieldName: "Nom Prénom du travailleur" },
         { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
-        // Statut sur le PDF : widget radio (que l'admin AcroForm a appelé
-        // "Group2") avec 2 options Travailleur / Apprenti. Côté front on
-        // l'affiche en select.
+        // Statut sur le PDF : widget radio "Group2" (Travailleur / Apprenti).
         {
           custom: {
-            key: "statut",
+            key: "statutSurPdf",
             pdfFieldName: "Group2",
             type: "select",
-            label: { fr: "Statut" },
+            label: { fr: "Statut sur le formulaire" },
           },
           required: true,
           section: "identite",
@@ -120,66 +392,58 @@ export const chomageTemporaire: DossierDefinition = {
           required: true,
           section: "declaration",
         },
-        // creationDate (Aujourd'hui) + signature → masqués, injectés à la
-        // génération. Le mapping pdfFieldName est explicite pour matcher
-        // les widgets du PDF officiel.
+        // creationDate ("Aujourd'hui") + signature → masqués, injectés à la
+        // génération du PDF.
         { field: "creationDate", pdfFieldName: "Aujourd'hui" },
         { field: "signature", pdfFieldName: "Signature" },
       ],
     },
     {
-      slug: "c32-employeur",
-      title: "C3.2-Employeur",
+      // C1 — Demande d'allocations (travailleur).
+      // Requis si : modification C1, OU dernier jour indemnisé ≥ 1 an
+      // (équivalent à une "première demande" dans la pratique), OU 1er jour
+      // de CT à 66 ans+.
+      slug: "c1-travailleur",
+      title: "C1 — Demande d'allocations",
       issuer: "ONEM",
-      required: true,
+      sourcePdfPath: "private/pdfs/C1_FR.pdf",
+      internalRef: "Doc formation, section Documents de demande, item C1",
+      includeWhen: (a) =>
+        a.premiereDemande === true ||
+        a.modificationC1 === true ||
+        a.age66Plus === true,
       fields: [
-        { field: "fullName", required: true, section: "identite" },
-        { field: "niss", required: true, section: "identite" },
-        { field: "employerName", required: true, section: "employeur" },
-        { field: "employerBce", section: "employeur" },
+        // Mapping ciblé — les ~140 autres widgets restent en inférence par
+        // défaut tant qu'on n'a pas affiné.
+        { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
       ],
     },
     {
-      // Uniquement pour le motif "Force majeure".
-      slug: "c32a-force-majeure",
-      title: "C3.2A — Force majeure",
+      // C6 — pour Force majeure médicale (remplace le C32 travailleur).
+      slug: "c6-fmm",
+      title: "C6 — Force majeure médicale",
       issuer: "ONEM",
-      includeWhen: (a) => a.motif === "Force majeure",
+      sourcePdfPath: "private/pdfs/C6_FR.pdf",
+      internalRef: "Doc formation, section Documents supplémentaires FMM",
+      includeWhen: (a) => a.motif === MOTIF_IDS.forceMajeureMedicale,
       fields: [
-        { field: "fullName", required: true, section: "identite" },
-        { field: "niss", required: true, section: "identite" },
-        {
-          custom: {
-            key: "evenement",
-            pdfFieldName: "Event",
-            type: "textarea",
-            label: { fr: "Description de l'évènement de force majeure" },
-          },
-          required: true,
-          section: "declaration",
-        },
+        { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
       ],
     },
     {
-      // Uniquement pour le motif "Intempéries".
-      slug: "c32a-intemperies",
-      title: "C3.2A — Intempéries",
+      // C27R — pour Force majeure médicale avec trajet de réintégration.
+      slug: "c27r-fmm",
+      title: "C27R — Trajet de réintégration",
       issuer: "ONEM",
-      includeWhen: (a) => a.motif === "Intempéries",
+      sourcePdfPath: "private/pdfs/C27_R_FR.pdf",
+      internalRef: "Doc formation, section FMM avec trajet de réintégration",
+      includeWhen: (a) =>
+        a.motif === MOTIF_IDS.forceMajeureMedicale && a.trajetReintegration === true,
       fields: [
-        { field: "fullName", required: true, section: "identite" },
-        { field: "niss", required: true, section: "identite" },
-        {
-          custom: {
-            key: "natureIntemperie",
-            pdfFieldName: "WeatherKind",
-            type: "text",
-            label: { fr: "Nature de l'intempérie (gel, pluie, neige…)" },
-          },
-          required: true,
-          section: "declaration",
-        },
+        { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
       ],
     },
   ],
+
+  theory: THEORY,
 };

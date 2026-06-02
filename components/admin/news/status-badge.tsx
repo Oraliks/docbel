@@ -13,8 +13,8 @@ export function StatusBadge({ status, onClick }: StatusBadgeProps) {
       case 'published':
         return {
           label: 'Publié',
-          variant: 'default' as const,
-          className: 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-200 dark:hover:bg-green-900/60'
+          variant: 'success' as const,
+          className: ''
         };
       case 'draft':
         return {
@@ -25,8 +25,8 @@ export function StatusBadge({ status, onClick }: StatusBadgeProps) {
       case 'scheduled':
         return {
           label: 'Planifié',
-          variant: 'secondary' as const,
-          className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200'
+          variant: 'info' as const,
+          className: ''
         };
       case 'archived':
         return {

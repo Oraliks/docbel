@@ -92,37 +92,19 @@ export default async function PublicPage({
         />
       ))}
 
-      <section className="flex flex-col gap-6">
-        <header className="flex flex-col gap-2 px-2">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-            Page
-          </p>
-          <h1 className="glass-display text-[40px] font-semibold leading-[1.05] sm:text-[48px]">
-            {page.title}
-          </h1>
-          {page.metaDesc ? (
-            <p className="max-w-2xl text-[14px] text-[color:var(--glass-ink-soft)]">
-              {page.metaDesc}
-            </p>
-          ) : null}
-        </header>
-
-        <article className="glass-surface overflow-hidden p-6 sm:p-10">
-          <ThemeProvider tokens={page.themeTokens as ThemeTokens | null}>
-            <PublicRenderer
-              blocks={blocks}
-              context={{
-                site: { name: "Docbel" },
-                page: {
-                  title: page.title,
-                  slug: page.slug,
-                  description: page.metaDesc ?? undefined,
-                },
-              }}
-            />
-          </ThemeProvider>
-        </article>
-      </section>
+      <ThemeProvider tokens={page.themeTokens as ThemeTokens | null}>
+        <PublicRenderer
+          blocks={blocks}
+          context={{
+            site: { name: "Docbel" },
+            page: {
+              title: page.title,
+              slug: page.slug,
+              description: page.metaDesc ?? undefined,
+            },
+          }}
+        />
+      </ThemeProvider>
     </>
   );
 }

@@ -66,11 +66,14 @@ interface FormState {
   changes: string[];
 }
 
-const typeConfig: Record<ChangelogType, { label: string; bg: string; text: string }> = {
-  feature: { label: "Feature", bg: "bg-green-100", text: "text-green-800" },
-  fix: { label: "Fix", bg: "bg-red-100", text: "text-red-800" },
-  improvement: { label: "Amélioration", bg: "bg-blue-100", text: "text-blue-800" },
-  breaking: { label: "Breaking", bg: "bg-amber-100", text: "text-amber-800" },
+const typeConfig: Record<
+  ChangelogType,
+  { label: string; variant: "success" | "destructive" | "info" | "warning" }
+> = {
+  feature: { label: "Feature", variant: "success" },
+  fix: { label: "Fix", variant: "destructive" },
+  improvement: { label: "Amélioration", variant: "info" },
+  breaking: { label: "Breaking", variant: "warning" },
 };
 
 const emptyForm = (): FormState => {
@@ -506,7 +509,7 @@ export function ChangelogManager() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge className={`${cfg.bg} ${cfg.text}`}>
+                      <Badge variant={cfg.variant}>
                         {cfg.label}
                       </Badge>
                     </TableCell>

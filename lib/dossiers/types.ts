@@ -58,6 +58,11 @@ export interface DossierDocument {
   /// toujours inclus.
   includeWhen?: (answers: DossierAnswers) => boolean;
   fields: DossierFieldRef[];
+  /// Chemin (relatif à la racine du projet) vers le PDF source officiel.
+  /// Si fourni, le seed l'utilise comme source du PdfForm (au lieu de
+  /// générer un gabarit). Les `fields` doivent alors fournir un
+  /// `pdfFieldName` qui matche les widgets réels du PDF.
+  sourcePdfPath?: string;
 }
 
 /// Avertissement affiché au début du dossier.

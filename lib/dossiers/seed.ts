@@ -1,12 +1,10 @@
 // Seed générique d'un dossier codé → crée ses PdfForms + son DocumentBundle
 // à partir de sa DossierDefinition. Source de vérité unique : le module.
-// Idempotent au niveau des slugs.
-//
-// NB : génère des PDFs AcroForm "gabarit" (un widget par champ) pour démarrer.
-// En production, l'admin remplace le PDF source par le formulaire officiel et
-// remappe les champs — le reste (questions, propagation, signature) tient.
+// Idempotent au niveau des slugs ; option `force` pour ré-écrire.
 
 import { PDFDocument, StandardFonts } from "pdf-lib";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { saveSourcePdf } from "@/lib/pdf-forms/storage";
@@ -23,6 +21,13 @@ export interface SeedResult {
   bundleSlug: string;
   pdfFormIds: string[];
   message: string;
+}
+
+export interface SeedOptions {
+  /// Si true, supprime le bundle existant + les PdfForms publiés portés
+  /// par ce dossier avant de recréer. Permet de re-seed après une mise à
+  /// jour du module (ex. changement de mapping de widgets).
+  force?: boolean;
 }
 
 function frLabel(l: Localized): string {
@@ -47,7 +52,6 @@ async function generateTemplatePdf(doc: DossierDocument, fields: ResolvedField[]
     }
     page.drawText(`${frLabel(f.label)} :`, { x: 50, y, size: 10, font });
     const widget = form.createTextField(f.pdfFieldName);
-    // La signature a besoin d'un cadre plus haut pour le bloc "façon Adobe".
     const h = f.type === "signature" ? 40 : 18;
     widget.addToPage(page, { x: 250, y: y - (h - 14), width: 290, height: h });
     y -= h + 12;
@@ -56,34 +60,79 @@ async function generateTemplatePdf(doc: DossierDocument, fields: ResolvedField[]
   return Buffer.from(await pdf.save());
 }
 
+/// Charge le PDF source officiel (commit dans private/pdfs/) sous forme de
+/// Buffer. La présence du fichier est validée — sinon on lève une erreur
+/// claire pour que le seed n'avance pas en silence avec un stub.
+async function readOfficialPdf(relativePath: string): Promise<Buffer> {
+  const fullPath = join(process.cwd(), relativePath);
+  try {
+    return await readFile(fullPath);
+  } catch {
+    throw new Error(`PDF source introuvable : ${relativePath}`);
+  }
+}
+
 /// Crée (idempotent par slug) un PdfForm publié à partir d'un document.
+/// Si `doc.sourcePdfPath` est défini → utilise le vrai PDF officiel ; sinon
+/// génère un stub. Quand l'AcroForm officiel a plus de widgets que les
+/// champs déclarés dans le dossier, les widgets non mappés sont conservés
+/// avec leur métadonnée auto-inférée (l'admin peut les enrichir ensuite).
 async function createPdfFormForDocument(doc: DossierDocument, userId: string | null): Promise<string> {
   const existing = await prisma.pdfForm.findUnique({ where: { slug: doc.slug } });
   if (existing) return existing.id;
 
-  const fields = resolveDocumentFields(doc);
-  const buffer = await generateTemplatePdf(doc, fields);
-  const filename = `${doc.slug}.pdf`;
+  const declaredFields = resolveDocumentFields(doc);
+  const usingOfficial = !!doc.sourcePdfPath;
+  const buffer = usingOfficial
+    ? await readOfficialPdf(doc.sourcePdfPath!)
+    : await generateTemplatePdf(doc, declaredFields);
+  const filename = usingOfficial ? doc.sourcePdfPath!.split("/").pop()! : `${doc.slug}.pdf`;
   const storagePath = await saveSourcePdf(buffer, filename);
   const ingest = await ingestPdf(buffer);
 
-  // Construit le schéma enrichi à partir des champs résolus (autoritaire),
-  // en récupérant pdfFieldName/acroType depuis l'ingest (matching par nom).
-  const enriched: PdfFormField[] = fields.map((f, i) => {
-    const tech = ingest.fields.find((t) => t.pdfFieldName === f.pdfFieldName);
-    return {
-      id: f.key,
-      pdfFieldName: f.pdfFieldName,
-      type: f.type,
-      required: f.required,
-      label: f.label,
-      help: f.help,
-      prefillFrom: f.prefillFrom,
-      section: f.section,
-      order: i,
-      acroType: tech?.acroType,
-    } as PdfFormField;
-  });
+  // Index par pdfFieldName pour matcher les déclarations du module aux
+  // widgets réels du PDF.
+  const declaredByPdfName = new Map(declaredFields.map((f) => [f.pdfFieldName, f]));
+
+  let enriched: PdfFormField[];
+  if (usingOfficial) {
+    // PDF officiel = source de vérité. On part de l'inférence faite par
+    // ingestPdf (déjà un PdfFormField[]) et on applique les overrides du
+    // module pour les widgets déclarés. Les widgets non mappés gardent leur
+    // métadonnée auto-inférée.
+    enriched = ingest.fields.map((inferred, i) => {
+      const declared = declaredByPdfName.get(inferred.pdfFieldName);
+      if (!declared) return { ...inferred, order: i };
+      return {
+        ...inferred,
+        id: declared.key,
+        type: declared.type,
+        required: declared.required,
+        label: declared.label,
+        help: declared.help,
+        prefillFrom: declared.prefillFrom,
+        section: declared.section,
+        order: i,
+      } as PdfFormField;
+    });
+  } else {
+    // Stub : on prend les déclarations du module comme autorité.
+    enriched = declaredFields.map((f, i) => {
+      const tech = ingest.fields.find((t) => t.pdfFieldName === f.pdfFieldName);
+      return {
+        id: f.key,
+        pdfFieldName: f.pdfFieldName,
+        type: f.type,
+        required: f.required,
+        label: f.label,
+        help: f.help,
+        prefillFrom: f.prefillFrom,
+        section: f.section,
+        order: i,
+        acroType: tech?.acroType,
+      } as PdfFormField;
+    });
+  }
 
   const created = await prisma.pdfForm.create({
     data: {
@@ -108,20 +157,33 @@ async function createPdfFormForDocument(doc: DossierDocument, userId: string | n
 }
 
 /// Seed complet d'un dossier : PdfForms + bundle + items. Idempotent.
-export async function seedDossier(def: DossierDefinition, userId: string | null): Promise<SeedResult> {
-  const existing = await prisma.documentBundle.findUnique({
-    where: { slug: def.slug },
-    include: { items: { include: { pdfForm: { select: { id: true } } } } },
-  });
-  if (existing) {
-    return {
-      ok: true,
-      created: false,
-      bundleId: existing.id,
-      bundleSlug: existing.slug,
-      pdfFormIds: existing.items.map((i) => i.pdfForm?.id).filter((x): x is string => !!x),
-      message: `Dossier « ${def.title} » déjà présent — aucune modification.`,
-    };
+/// `force: true` ⇒ supprime le bundle + les PdfForms du dossier avant de
+/// recréer (utile quand le module change : mapping de widgets, ajout de doc).
+export async function seedDossier(
+  def: DossierDefinition,
+  userId: string | null,
+  opts: SeedOptions = {}
+): Promise<SeedResult> {
+  if (opts.force) {
+    // Drop le bundle (cascade sur les BundleItems) + les PdfForms aux slugs
+    // du dossier. Pas de cascade automatique → on supprime explicitement.
+    await prisma.documentBundle.deleteMany({ where: { slug: def.slug } });
+    await prisma.pdfForm.deleteMany({ where: { slug: { in: def.documents.map((d) => d.slug) } } });
+  } else {
+    const existing = await prisma.documentBundle.findUnique({
+      where: { slug: def.slug },
+      include: { items: { include: { pdfForm: { select: { id: true } } } } },
+    });
+    if (existing) {
+      return {
+        ok: true,
+        created: false,
+        bundleId: existing.id,
+        bundleSlug: existing.slug,
+        pdfFormIds: existing.items.map((i) => i.pdfForm?.id).filter((x): x is string => !!x),
+        message: `Dossier « ${def.title} » déjà présent — aucune modification (force=true pour ré-écrire).`,
+      };
+    }
   }
 
   // 1. PdfForms (un par document).
@@ -157,9 +219,7 @@ export async function seedDossier(def: DossierDefinition, userId: string | null)
     },
   });
 
-  // 3. Items. Les documents conditionnels (includeWhen) sont marqués optionnels
-  //    pour l'instant ; le filtrage par réponses d'orientation sera branché
-  //    quand le runner consommera selectDocuments().
+  // 3. Items.
   for (let i = 0; i < def.documents.length; i++) {
     const docDef = def.documents[i];
     await prisma.documentBundleItem.create({
@@ -178,6 +238,8 @@ export async function seedDossier(def: DossierDefinition, userId: string | null)
     bundleId: bundle.id,
     bundleSlug: bundle.slug,
     pdfFormIds,
-    message: `Dossier « ${def.title} » créé avec ${def.documents.length} documents.`,
+    message: `Dossier « ${def.title} » créé avec ${def.documents.length} documents (${
+      def.documents.filter((d) => d.sourcePdfPath).length
+    } PDF officiels).`,
   };
 }

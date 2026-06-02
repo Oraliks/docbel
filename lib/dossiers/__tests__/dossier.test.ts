@@ -39,7 +39,7 @@ describe("registre des dossiers", () => {
 describe("chômage temporaire — sélection de documents", () => {
   it("inclut les 2 documents toujours requis sans motif particulier", () => {
     const docs = selectDocuments(chomageTemporaire, { motif: "Économique" });
-    expect(docs.map((d) => d.slug)).toEqual(["c32a-carte-controle", "c32-employeur"]);
+    expect(docs.map((d) => d.slug)).toEqual(["c32-travailleur", "c32-employeur"]);
   });
   it("ajoute le document Force majeure quand motif = Force majeure", () => {
     const docs = selectDocuments(chomageTemporaire, { motif: "Force majeure" });
@@ -59,7 +59,7 @@ describe("chômage temporaire — sélection de documents", () => {
 describe("filtrage des items du bundle (intégration runner)", () => {
   it("sans motif, seuls les documents inconditionnels sont applicables", () => {
     const slugs = selectDocuments(chomageTemporaire, {}).map((d) => d.slug);
-    expect(slugs).toEqual(["c32a-carte-controle", "c32-employeur"]);
+    expect(slugs).toEqual(["c32-travailleur", "c32-employeur"]);
   });
   it("motif = Force majeure → FMM ajouté, Intempéries non", () => {
     const slugs = selectDocuments(chomageTemporaire, { motif: "Force majeure" }).map((d) => d.slug);
@@ -73,7 +73,7 @@ describe("filtrage des items du bundle (intégration runner)", () => {
   });
   it("motif = Économique → aucun document conditionnel", () => {
     const slugs = selectDocuments(chomageTemporaire, { motif: "Économique" }).map((d) => d.slug);
-    expect(slugs).toEqual(["c32a-carte-controle", "c32-employeur"]);
+    expect(slugs).toEqual(["c32-travailleur", "c32-employeur"]);
   });
 });
 

@@ -74,22 +74,57 @@ export const chomageTemporaire: DossierDefinition = {
 
   documents: [
     {
-      // Toujours requis.
-      slug: "c32a-carte-controle",
-      title: "C3.2A — Carte de contrôle",
+      // Document principal : C3.2 Travailleur (PDF officiel ONEM).
+      // Mapping des widgets AcroForm réels (inspecter via /admin/pdf-sources) :
+      //   • NISS                       → catalogue niss
+      //   • Nom Prénom du travailleur  → catalogue fullName (assemblé en 1 chaîne)
+      //   • date de DA                 → champ custom "date de la demande d'allocation"
+      //   • Aujourd'hui                → catalogue creationDate (auto, masqué)
+      //   • Group2                     → champ custom "statut" (select Travailleur/Apprenti)
+      //   • Signature                  → catalogue signature (auto à la génération)
+      slug: "c32-travailleur",
+      title: "C3.2 — Travailleur",
       issuer: "ONEM",
       required: true,
+      sourcePdfPath: "private/pdfs/C32_Travailleur_FR.pdf",
       fields: [
-        // Identité = Nom + NISS dans la même section.
-        { field: "fullName", required: true, section: "identite" },
-        { field: "niss", required: true, section: "identite" },
-        // Adresse.
-        { field: "street", section: "adresse" },
-        { field: "postalCode", section: "adresse" },
-        { field: "city", section: "adresse" },
-        // creationDate + signature sont injectés automatiquement à la
-        // génération du PDF (date du jour + bloc "Signé numériquement par X").
-        // → Pas de champ visible côté formulaire.
+        // Identité.
+        {
+          field: "fullName",
+          required: true,
+          section: "identite",
+          pdfFieldName: "Nom Prénom du travailleur",
+        },
+        { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
+        // Statut sur le PDF : widget radio (que l'admin AcroForm a appelé
+        // "Group2") avec 2 options Travailleur / Apprenti. Côté front on
+        // l'affiche en select.
+        {
+          custom: {
+            key: "statut",
+            pdfFieldName: "Group2",
+            type: "select",
+            label: { fr: "Statut" },
+          },
+          required: true,
+          section: "identite",
+        },
+        // Déclaration.
+        {
+          custom: {
+            key: "dateDemande",
+            pdfFieldName: "date de DA",
+            type: "date",
+            label: { fr: "Date de la demande d'allocation" },
+          },
+          required: true,
+          section: "declaration",
+        },
+        // creationDate (Aujourd'hui) + signature → masqués, injectés à la
+        // génération. Le mapping pdfFieldName est explicite pour matcher
+        // les widgets du PDF officiel.
+        { field: "creationDate", pdfFieldName: "Aujourd'hui" },
+        { field: "signature", pdfFieldName: "Signature" },
       ],
     },
     {

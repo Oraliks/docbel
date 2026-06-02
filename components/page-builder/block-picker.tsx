@@ -21,9 +21,11 @@ import {
   MessageSquareQuote,
   BarChart3,
   Bookmark,
+  Boxes,
   Trash2,
   type LucideIcon,
 } from 'lucide-react'
+import { nanoid } from 'nanoid'
 import {
   Dialog,
   DialogContent,
@@ -37,7 +39,7 @@ import {
   BLOCK_CATEGORY_LABELS,
   type AnyBlockRegistryEntry,
 } from '@/lib/page-builder/registry'
-import type { BlockType, BlockCategory } from '@/lib/page-builder/types'
+import type { BlockType, BlockCategory, BlockProps } from '@/lib/page-builder/types'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
 import {
   listSnippets,
@@ -77,6 +79,8 @@ export function BlockPicker() {
   const closePicker = usePageBuilderStore((s) => s.closePicker)
   const addBlock = usePageBuilderStore((s) => s.addBlock)
   const insertBlock = usePageBuilderStore((s) => s.insertBlock)
+  const globalBlocks = usePageBuilderStore((s) => s.globalBlocks)
+  const setGlobalBlocks = usePageBuilderStore((s) => s.setGlobalBlocks)
 
   const [query, setQuery] = React.useState('')
   const [activeIdx, setActiveIdx] = React.useState(0)
@@ -97,10 +101,34 @@ export function BlockPicker() {
     }
   }, [])
 
+  // ── "Blocs globaux" — chargés depuis l'API à l'ouverture du picker ──
+  const [globalItems, setGlobalItems] = React.useState<
+    Array<{ id: string; name: string; block: BlockProps }>
+  >([])
+  const [globalLoading, setGlobalLoading] = React.useState(false)
+
+  const loadGlobalBlocks = React.useCallback(async () => {
+    setGlobalLoading(true)
+    try {
+      const res = await fetch('/api/page-builder/global-blocks')
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setGlobalItems(data.items ?? [])
+    } catch {
+      // Non-bloquant : un échec ne doit pas casser le picker.
+      setGlobalItems([])
+    } finally {
+      setGlobalLoading(false)
+    }
+  }, [])
+
   React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- lazy-load des snippets à l'ouverture (flux async)
-    if (open) void loadSnippets()
-  }, [open, loadSnippets])
+    if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lazy-load à l'ouverture (flux async)
+      void loadSnippets()
+      void loadGlobalBlocks()
+    }
+  }, [open, loadSnippets, loadGlobalBlocks])
 
   const handleInsertSnippet = (snippet: Snippet) => {
     insertBlock(cloneSnippetBlock(snippet), {
@@ -124,6 +152,35 @@ export function BlockPicker() {
     }
   }
 
+  const handleInsertGlobal = (item: { id: string; block: BlockProps }) => {
+    // S'assure que la map du store contient le bloc résolu (sinon le globalRef
+    // s'afficherait comme « référence non résolue » jusqu'au prochain reload).
+    if (!globalBlocks[item.id]) {
+      setGlobalBlocks({ ...globalBlocks, [item.id]: item.block })
+    }
+    insertBlock(
+      { id: nanoid(), type: 'globalRef', props: { globalBlockId: item.id } },
+      { insertAfter, parentId, slotIndex }
+    )
+    closePicker()
+    setQuery('')
+    setActiveIdx(0)
+  }
+
+  const handleDeleteGlobal = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    try {
+      const res = await fetch(`/api/page-builder/global-blocks/${id}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error()
+      setGlobalItems((prev) => prev.filter((g) => g.id !== id))
+      toast.success('Bloc global supprimé')
+    } catch {
+      toast.error('Échec de la suppression')
+    }
+  }
+
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       closePicker()
@@ -134,7 +191,11 @@ export function BlockPicker() {
   }
 
   const allEntries = React.useMemo(
-    () => Object.values(BLOCK_REGISTRY) as AnyBlockRegistryEntry[],
+    () =>
+      (Object.values(BLOCK_REGISTRY) as AnyBlockRegistryEntry[]).filter(
+        // `globalRef` n'est pas insérable brut : il s'insère via « Blocs globaux ».
+        (entry) => entry.type !== 'globalRef'
+      ),
     []
   )
 
@@ -154,7 +215,11 @@ export function BlockPicker() {
 
   const grouped = React.useMemo(() => {
     if (query.trim()) return { all: filtered }
-    return BLOCKS_BY_CATEGORY
+    // Retire `globalRef` des catégories normales (inséré via « Blocs globaux »).
+    return {
+      ...BLOCKS_BY_CATEGORY,
+      utility: BLOCKS_BY_CATEGORY.utility.filter((e) => e.type !== 'globalRef'),
+    }
   }, [filtered, query])
 
   const flat = React.useMemo(() => {
@@ -219,7 +284,7 @@ export function BlockPicker() {
                   {label}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {entries.map((entry) => {
+                  {(entries as AnyBlockRegistryEntry[]).map((entry) => {
                     const Icon = ICON_MAP[entry.icon] ?? Box
                     const idx = flat.findIndex((e) => e.type === entry.type)
                     const isActive = idx === activeIdx
@@ -298,6 +363,57 @@ export function BlockPicker() {
                           onClick={(e) => handleDeleteSnippet(e, snippet.id)}
                           className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover/snip:opacity-100"
                           title="Supprimer le snippet"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Blocs globaux — références partagées, éditées à un seul endroit. */}
+          {!query.trim() && (globalLoading || globalItems.length > 0) && (
+            <div className="mt-4">
+              <div className="px-2 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Blocs globaux
+              </div>
+              {globalLoading ? (
+                <div className="px-2 py-3 text-xs text-muted-foreground">
+                  Chargement…
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {globalItems.map((item) => {
+                    const blockMeta = BLOCK_REGISTRY[item.block?.type]
+                    const Icon = blockMeta ? ICON_MAP[blockMeta.icon] ?? Boxes : Boxes
+                    return (
+                      <div
+                        key={item.id}
+                        className="group/glob flex items-center gap-3 rounded-lg border border-transparent bg-card p-3 text-left transition hover:border-border hover:bg-muted/50"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleInsertGlobal(item)}
+                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                            <Icon className="size-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate">{item.name}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {blockMeta?.name || 'Bloc global'}
+                            </div>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteGlobal(e, item.id)}
+                          className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover/glob:opacity-100"
+                          title="Supprimer le bloc global"
                         >
                           <Trash2 className="size-4" />
                         </button>

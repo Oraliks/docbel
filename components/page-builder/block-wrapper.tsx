@@ -65,6 +65,11 @@ interface BlockWrapperProps {
   siblingCount: number
 }
 
+/** Les conteneurs ne sont pas convertibles en bloc global (un globalRef ne porte pas d'enfants). */
+function isContainerType(type: string): boolean {
+  return type === 'section' || type === 'container' || type === 'columns'
+}
+
 export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapperProps) {
   const selectedBlockId = usePageBuilderStore((s) => s.selectedBlockId)
   const selectedIds = usePageBuilderStore((s) => s.selectedIds)
@@ -171,8 +176,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const isFirst = siblingIndex === 0
   const isLast = siblingIndex === siblingCount - 1
   const meta = BLOCK_REGISTRY[block.type]
-  const isContainer =
-    block.type === 'section' || block.type === 'container' || block.type === 'columns'
+  const isContainer = isContainerType(block.type)
   const isLocked = !!block.meta?.locked
   const isHidden = !!block.meta?.hidden
 
@@ -336,6 +340,12 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
                 <BookmarkPlus className="mr-2 size-4" />
                 Enregistrer comme snippet
               </DropdownMenuItem>
+              {canConvertToGlobal && (
+                <DropdownMenuItem disabled={converting} onClick={handleConvertToGlobal}>
+                  <Boxes className="mr-2 size-4" />
+                  Convertir en bloc global
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => {
@@ -466,6 +476,12 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
           <BookmarkPlus />
           Enregistrer comme snippet
         </ContextMenuItem>
+        {canConvertToGlobal && (
+          <ContextMenuItem disabled={converting} onClick={handleConvertToGlobal}>
+            <Boxes />
+            Convertir en bloc global
+          </ContextMenuItem>
+        )}
         <ContextMenuSeparator />
         <ContextMenuItem disabled={isFirst} onClick={() => moveBlock(block.id, 'up')}>
           <ArrowUp />

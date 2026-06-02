@@ -8,20 +8,7 @@ import { IconPicker, renderIcon } from '@/components/page-builder/inspector/icon
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const itemSchema = z.object({
-  icon: z.string().max(40).optional(),
-  title: z.string().max(200),
-  description: z.string().max(1000),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  subtitle: z.string().max(500).optional(),
-  items: z.array(itemSchema).max(24),
-  columns: z.union([z.literal(2), z.literal(3), z.literal(4)]),
-  variant: z.enum(['cards', 'icons', 'centered']).optional(),
-})
+import { featuresSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 type FeatureItem = Props['items'][number]

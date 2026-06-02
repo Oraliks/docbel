@@ -1,14 +1,9 @@
 'use client'
 
-import { z } from 'zod'
 import { Textarea } from '@/components/ui/textarea'
 import { ColorControl, Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  html: z.string().max(20000).default(''),
-  capColor: z.string().optional(),
-})
+import { dropCapSchema as schema } from './schemas'
 
 export const dropCap = defineBlock({
   type: 'dropCap',

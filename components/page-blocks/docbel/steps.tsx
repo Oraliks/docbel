@@ -8,21 +8,7 @@ import { Field, Group, Pills } from '@/components/page-builder/inspector/control
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const itemSchema = z.object({
-  title: z.string().max(200),
-  description: z.string().max(1000),
-  icon: z.string().max(40).optional(),
-  status: z.enum(['todo', 'current', 'done']).optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  subtitle: z.string().max(500).optional(),
-  items: z.array(itemSchema).max(20),
-  orientation: z.enum(['horizontal', 'vertical']).optional(),
-  variant: z.enum(['numbered', 'icons', 'compact']).optional(),
-})
+import { stepsSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 type Item = Props['items'][number]

@@ -1,12 +1,10 @@
 'use client'
 
-import { z } from 'zod'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { sanitizeHtml } from '@/lib/sanitize-html'
-
-const schema = z.object({ html: z.string().max(50000).default('') })
+import { htmlRawSchema as schema } from './schemas'
 
 export const htmlRaw = defineBlock({
   type: 'htmlRaw',

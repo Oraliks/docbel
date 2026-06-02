@@ -8,20 +8,9 @@ import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
+import { compareTableSchema as schema, compareRowSchema } from './schemas'
 
-const rowSchema = z.object({
-  feature: z.string().max(500),
-  values: z.array(z.union([z.string().max(500), z.boolean()])),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  columns: z.array(z.string().max(120)),
-  rows: z.array(rowSchema),
-  highlightColumn: z.number().optional(),
-})
-
-type Row = z.infer<typeof rowSchema>
+type Row = z.infer<typeof compareRowSchema>
 
 export const compareTable = defineBlock({
   type: 'compareTable',

@@ -73,7 +73,7 @@ export default function PagesListPage() {
 
   const fetchPages = async () => {
     try {
-      const res = await fetch('/api/pages?limit=200&includeContent=1')
+      const res = await fetch('/api/pages?limit=200')
       const data = await res.json()
       const items: PageData[] = Array.isArray(data) ? data : data.items || []
       setPages(items)
@@ -144,25 +144,20 @@ export default function PagesListPage() {
     const ids = Array.from(selectedIds)
     if (ids.length === 0) return
     try {
-      const results = await Promise.allSettled(
-        ids.map((id) => fetch(`/api/pages/${id}`, { method: 'DELETE' }))
-      )
-      const failed = results.filter(
-        (r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok)
-      ).length
-      const succeeded = ids.length - failed
-      if (succeeded > 0) {
-        setPages((prev) => prev.filter((p) => !selectedIds.has(p.id)))
+      const res = await fetch('/api/pages/bulk', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, action: 'delete' }),
+      })
+      if (!res.ok) {
+        toast.error('Erreur lors de la suppression')
+        return
       }
+      const { deleted } = await res.json()
+      setPages((prev) => prev.filter((p) => !selectedIds.has(p.id)))
       setSelectedIds(new Set())
       setBulkDeleteOpen(false)
-      if (failed === 0) {
-        toast.success(`${succeeded} page${succeeded > 1 ? 's' : ''} supprimée${succeeded > 1 ? 's' : ''}`)
-      } else if (succeeded === 0) {
-        toast.error('Erreur lors de la suppression')
-      } else {
-        toast.warning(`${succeeded} supprimée(s), ${failed} en échec`)
-      }
+      toast.success(`${deleted} page${deleted > 1 ? 's' : ''} supprimée${deleted > 1 ? 's' : ''}`)
     } catch (error) {
       console.error('Failed to bulk delete:', error)
       toast.error('Erreur lors de la suppression')
@@ -179,33 +174,28 @@ export default function PagesListPage() {
       return
     }
     try {
-      const results = await Promise.allSettled(
-        ids.map((id) => fetch(`/api/pages/${id}/publish`, { method: 'POST' }))
-      )
-      const updated = new Map<string, string>()
-      for (let i = 0; i < results.length; i++) {
-        const r = results[i]
-        if (r.status === 'fulfilled' && r.value.ok) {
-          const data = await r.value.clone().json()
-          updated.set(ids[i], data.status)
-        }
-      }
-      setPages((prev) =>
-        prev.map((p) => (updated.has(p.id) ? { ...p, status: updated.get(p.id)! as 'published' | 'draft' } : p))
-      )
-      const succeeded = updated.size
-      const failed = ids.length - succeeded
-      if (failed === 0) {
-        toast.success(
-          target === 'published'
-            ? `${succeeded} page${succeeded > 1 ? 's' : ''} publiée${succeeded > 1 ? 's' : ''}`
-            : `${succeeded} page${succeeded > 1 ? 's' : ''} dépubliée${succeeded > 1 ? 's' : ''}`
-        )
-      } else if (succeeded === 0) {
+      const res = await fetch('/api/pages/bulk', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids,
+          action: target === 'published' ? 'publish' : 'unpublish',
+        }),
+      })
+      if (!res.ok) {
         toast.error('Erreur lors de la mise à jour')
-      } else {
-        toast.warning(`${succeeded} mise(s) à jour, ${failed} en échec`)
+        return
       }
+      const { updated } = await res.json()
+      const idSet = new Set(ids)
+      setPages((prev) =>
+        prev.map((p) => (idSet.has(p.id) ? { ...p, status: target } : p))
+      )
+      toast.success(
+        target === 'published'
+          ? `${updated} page${updated > 1 ? 's' : ''} publiée${updated > 1 ? 's' : ''}`
+          : `${updated} page${updated > 1 ? 's' : ''} dépubliée${updated > 1 ? 's' : ''}`
+      )
     } catch (error) {
       console.error('Failed to bulk toggle:', error)
       toast.error('Erreur lors de la mise à jour')
@@ -515,7 +505,7 @@ export default function PagesListPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant="outline">
-                        {page.blocks?.length || 0}
+                        {page.blockCount ?? 0}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">

@@ -10,19 +10,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  name: z.string().max(200).default(''),
-  description: z.string().max(2000).optional(),
-  address: z.string().max(500).optional(),
-  phone: z.string().max(60).optional(),
-  email: z.string().max(120).optional(),
-  website: z.string().max(4096).optional(),
-  hours: z.string().max(200).optional(),
-  logo: z.string().max(4096).optional(),
-  variant: z.enum(['card', 'compact', 'detailed']).optional(),
-})
+import { organismeSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 
@@ -46,7 +36,7 @@ function InfoRow({
   if (!href) return content
   return (
     <a
-      href={href}
+      href={safeHref(href)}
       target={external ? '_blank' : undefined}
       rel={external ? 'noreferrer' : undefined}
       className="group hover:text-primary transition"

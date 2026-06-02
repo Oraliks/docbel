@@ -9,28 +9,11 @@ import { Switch } from '@/components/ui/switch'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
+import { pricingTableSchema as schema, pricingPlanSchema } from './schemas'
 
-const planSchema = z.object({
-  name: z.string().max(120),
-  price: z.string().max(40),
-  period: z.string().max(40).optional(),
-  description: z.string().max(500).optional(),
-  features: z.array(z.string().max(500)),
-  ctaText: z.string().max(120),
-  ctaLink: z.string().max(4096),
-  highlighted: z.boolean().optional(),
-  badge: z.string().max(40).optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  subtitle: z.string().max(500).optional(),
-  plans: z.array(planSchema).max(10),
-  togglePeriod: z.boolean().optional(),
-})
-
-type Plan = z.infer<typeof planSchema>
+type Plan = z.infer<typeof pricingPlanSchema>
 
 export const pricingTable = defineBlock({
   type: 'pricingTable',
@@ -147,7 +130,7 @@ export const pricingTable = defineBlock({
                   ))}
                 </ul>
                 <a
-                  href={plan.ctaLink || '#'}
+                  href={safeHref(plan.ctaLink)}
                   className={cn(
                     'mt-6 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition',
                     plan.highlighted

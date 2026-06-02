@@ -11,13 +11,7 @@ import {
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  value: z.number().min(0).max(5).default(0),
-  count: z.number().optional(),
-  showCount: z.boolean().optional(),
-  size: z.enum(['sm', 'md', 'lg']).optional(),
-})
+import { starRatingSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

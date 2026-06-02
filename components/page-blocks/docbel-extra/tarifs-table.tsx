@@ -6,22 +6,9 @@ import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
+import { tarifsTableSchema as schema } from './schemas'
 
-const rowSchema = z.object({
-  situation: z.string().max(500),
-  montant: z.string().max(120),
-  periode: z.string().max(60).optional(),
-  remarque: z.string().max(500).optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  subtitle: z.string().max(500).optional(),
-  rows: z.array(rowSchema).max(50),
-  source: z.string().max(200).optional(),
-})
-
-type Row = z.infer<typeof rowSchema>
+type Row = z.infer<typeof schema>['rows'][number]
 
 export const tarifsTable = defineBlock({
   type: 'tarifsTable',

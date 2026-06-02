@@ -7,32 +7,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { calculatorFieldSchema, calculatorSchema as schema } from './schemas'
 
-const optionSchema = z.object({
-  label: z.string(),
-  value: z.union([z.string(), z.number()]),
-})
-
-const fieldSchema = z.object({
-  name: z.string().max(60),
-  label: z.string().max(200),
-  type: z.enum(['number', 'select']),
-  defaultValue: z.union([z.string(), z.number()]).optional(),
-  unit: z.string().max(40).optional(),
-  options: z.array(optionSchema).optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  description: z.string().max(2000).optional(),
-  fields: z.array(fieldSchema).max(20),
-  formula: z.string().max(2000).default(''),
-  resultLabel: z.string().max(200).default(''),
-  resultUnit: z.string().max(40).optional(),
-  resultPrecision: z.number().min(0).max(8).optional(),
-})
-
-type FieldDef = z.infer<typeof fieldSchema>
+type FieldDef = z.infer<typeof calculatorFieldSchema>
 
 // Caractères autorisés dans une expression arithmétique une fois les variables
 // substituées : chiffres, opérateurs, parenthèses, espaces, séparateurs décimaux.

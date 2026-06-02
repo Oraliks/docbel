@@ -8,16 +8,7 @@ import { Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const itemSchema = z.object({
-  label: z.string().max(120),
-  content: z.string().max(20000),
-})
-
-const schema = z.object({
-  items: z.array(itemSchema).max(20),
-  variant: z.enum(['default', 'pills', 'underline']).optional(),
-})
+import { tabsSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

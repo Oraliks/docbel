@@ -8,19 +8,9 @@ import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { pressMentionsSchema as schema, pressMentionsLogoSchema } from './schemas'
 
-const logoSchema = z.object({
-  url: z.string().max(4096),
-  alt: z.string().max(200),
-  href: z.string().max(4096).optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  logos: z.array(logoSchema).max(20),
-})
-
-type Logo = z.infer<typeof logoSchema>
+type Logo = z.infer<typeof pressMentionsLogoSchema>
 
 export const pressMentions = defineBlock({
   type: 'pressMentions',

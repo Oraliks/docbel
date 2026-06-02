@@ -10,19 +10,11 @@ import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { RichTextInput } from '@/components/page-builder/inspector/rich-text-input'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { safeHref } from '@/lib/page-builder/url-utils'
 import { enrichHtmlWithAcronyms } from '@/lib/acronyms-html'
 import { sanitizeHtml } from '@/lib/sanitize-html'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  description: z.string().max(2000).optional(),
-  body: z.string().max(20000).optional(),
-  image: z.string().max(4096).optional(),
-  ctaText: z.string().max(120).optional(),
-  ctaLink: z.string().max(4096).optional(),
-  variant: z.enum(['default', 'bordered', 'elevated', 'gradient']).optional(),
-})
+import { cardSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 
@@ -81,7 +73,7 @@ export const card = defineBlock({
           )}
           {ctaText && (
             <a
-              href={ctaLink || '#'}
+              href={safeHref(ctaLink)}
               className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
             >
               {ctaText}

@@ -7,15 +7,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const itemSchema = z.object({
-  term: z.string().max(200),
-  definition: z.string().max(2000),
-})
-
-const schema = z.object({
-  items: z.array(itemSchema).max(100),
-})
+import {
+  definitionListItemSchema as itemSchema,
+  definitionListSchema as schema,
+} from './schemas'
 
 type Item = z.infer<typeof itemSchema>
 

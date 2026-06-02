@@ -1,18 +1,11 @@
 'use client'
 
-import { z } from 'zod'
 import { Check, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  pros: z.array(z.string().max(500)).max(50),
-  cons: z.array(z.string().max(500)).max(50),
-  prosTitle: z.string().max(120).optional(),
-  consTitle: z.string().max(120).optional(),
-})
+import { prosConsSchema as schema } from './schemas'
 
 export const prosCons = defineBlock({
   type: 'prosCons',

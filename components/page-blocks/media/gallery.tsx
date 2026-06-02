@@ -10,19 +10,7 @@ import { Field, Group, Pills } from '@/components/page-builder/inspector/control
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const itemSchema = z.object({
-  url: z.string().max(4096),
-  alt: z.string().max(500),
-  caption: z.string().max(500).optional(),
-})
-
-const schema = z.object({
-  items: z.array(itemSchema).max(50),
-  columns: z.union([z.literal(2), z.literal(3), z.literal(4)]),
-  variant: z.enum(['grid', 'masonry']).optional(),
-  gap: z.enum(['sm', 'md', 'lg']).optional(),
-})
+import { gallerySchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

@@ -4,11 +4,7 @@ import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  formula: z.string().max(2000).default(''),
-  display: z.enum(['block', 'inline']).optional(),
-})
+import { mathLatexSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

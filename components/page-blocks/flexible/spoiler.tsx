@@ -7,12 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  summary: z.string().max(500).default(''),
-  content: z.string().max(5000).default(''),
-  variant: z.enum(['default', 'subtle']).optional(),
-})
+import { spoilerSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

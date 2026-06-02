@@ -1,12 +1,8 @@
 'use client'
 
-import { z } from 'zod'
 import { Field, Group, SliderControl } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  height: z.number().min(0).max(800).default(48),
-})
+import { spacerSchema as schema } from './schemas'
 
 export const spacer = defineBlock({
   type: 'spacer',

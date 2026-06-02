@@ -5,11 +5,7 @@ import { z } from 'zod'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  count: z.union([z.literal(2), z.literal(3), z.literal(4)]),
-  gap: z.enum(['sm', 'md', 'lg']).optional(),
-})
+import { columnsSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

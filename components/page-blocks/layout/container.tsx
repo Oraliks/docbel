@@ -4,10 +4,7 @@ import { z } from 'zod'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  width: z.enum(['sm', 'md', 'lg', 'xl', 'full']).optional(),
-})
+import { containerSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

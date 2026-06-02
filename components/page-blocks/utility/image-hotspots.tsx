@@ -12,21 +12,9 @@ import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
+import { imageHotspotsHotspotSchema, imageHotspotsSchema as schema } from './schemas'
 
-const hotspotSchema = z.object({
-  x: z.number(),
-  y: z.number(),
-  title: z.string().max(200),
-  description: z.string().max(2000),
-})
-
-const schema = z.object({
-  image: z.string().max(4096).default(''),
-  alt: z.string().max(500).optional(),
-  hotspots: z.array(hotspotSchema).max(20),
-})
-
-type Hotspot = z.infer<typeof hotspotSchema>
+type Hotspot = z.infer<typeof imageHotspotsHotspotSchema>
 
 export const imageHotspots = defineBlock({
   type: 'imageHotspots',

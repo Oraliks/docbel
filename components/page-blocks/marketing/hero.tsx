@@ -13,20 +13,9 @@ import {
 } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  title: z.string().max(500).default(''),
-  subtitle: z.string().max(500).optional(),
-  description: z.string().max(2000).optional(),
-  ctaText: z.string().max(120).optional(),
-  ctaLink: z.string().max(4096).optional(),
-  ctaSecondaryText: z.string().max(120).optional(),
-  ctaSecondaryLink: z.string().max(4096).optional(),
-  image: z.string().max(4096).optional(),
-  bgColor: z.string().optional(),
-  variant: z.enum(['centered', 'split', 'minimal', 'fullbleed']).optional(),
-})
+import { heroSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 
@@ -53,7 +42,7 @@ function HeroCtas({
     >
       {ctaText && (
         <a
-          href={ctaLink || '#'}
+          href={safeHref(ctaLink)}
           className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-5 py-3 text-sm font-medium hover:opacity-90 transition"
         >
           {ctaText}
@@ -62,7 +51,7 @@ function HeroCtas({
       )}
       {secondText && (
         <a
-          href={secondLink || '#'}
+          href={safeHref(secondLink)}
           className="inline-flex items-center gap-2 rounded-lg border border-current/20 px-5 py-3 text-sm font-medium hover:bg-current/5 transition"
         >
           {secondText}

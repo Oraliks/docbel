@@ -2,8 +2,9 @@
 //  Block Registry (new) — aggregates every BlockDefinition.
 // =====================================================================
 
+import type { z } from 'zod'
 import type { BlockDefinition } from './block-definition'
-import type { BlockCategory, BlockType, BlockPropsMap } from './types'
+import type { BlockCategory } from './types'
 import { textBlocks } from '@/components/page-blocks/text'
 import { textExtraBlocks } from '@/components/page-blocks/text-extra'
 import { layoutBlocks } from '@/components/page-blocks/layout'
@@ -41,6 +42,14 @@ export const REGISTRY = {
 } as const satisfies Record<string, BlockDefinition>
 
 export type RegistryKey = keyof typeof REGISTRY
+
+/** Union de tous les types de blocs — dérivée des clés du registry. */
+export type BlockType = keyof typeof REGISTRY
+
+/** Props de chaque bloc — inférées du schéma Zod de sa définition. */
+export type BlockPropsMap = {
+  [K in BlockType]: z.infer<(typeof REGISTRY)[K]['schema']>
+}
 
 export function getBlockDef(type: string): BlockDefinition | undefined {
   return (REGISTRY as Record<string, BlockDefinition>)[type]

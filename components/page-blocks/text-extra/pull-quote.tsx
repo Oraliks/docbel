@@ -6,12 +6,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  text: z.string().max(2000).default(''),
-  author: z.string().max(200).optional(),
-  align: z.enum(['left', 'center', 'right']).optional(),
-})
+import { pullQuoteSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

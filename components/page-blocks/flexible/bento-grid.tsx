@@ -5,26 +5,9 @@
 import { z } from 'zod'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
-
-const cellSchema = z.object({
-  span: z.object({
-    col: z.number().optional(),
-    row: z.number().optional(),
-  }),
-  title: z.string().optional(),
-  description: z.string().optional(),
-  image: z.string().optional(),
-  href: z.string().optional(),
-  bgColor: z.string().optional(),
-  variant: z.enum(['default', 'highlighted', 'minimal']).optional(),
-})
-
-const schema = z.object({
-  title: z.string().optional(),
-  cells: z.array(cellSchema),
-  cols: z.union([z.literal(2), z.literal(3), z.literal(4), z.literal(6)]).optional(),
-})
+import { bentoGridSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 
@@ -104,7 +87,7 @@ export const bentoGrid = defineBlock({
                 }}
               >
                 {cell.href ? (
-                  <a href={cell.href} className="block h-full">
+                  <a href={safeHref(cell.href)} className="block h-full">
                     {Inner}
                   </a>
                 ) : (

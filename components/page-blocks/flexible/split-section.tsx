@@ -5,11 +5,7 @@ import { Switch } from '@/components/ui/switch'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  ratio: z.enum(['50-50', '60-40', '40-60', '70-30', '30-70']),
-  reverseOnMobile: z.boolean().optional(),
-})
+import { splitSectionSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

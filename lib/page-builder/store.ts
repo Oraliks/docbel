@@ -339,8 +339,9 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
       const toIdx = state.blocks.findIndex((b) => b.id === targetSibling.id)
       const next = [...state.blocks]
       const [moved] = next.splice(fromIdx, 1)
-      // After splice, recompute target index since it shifts when from < to
-      const adjustedToIdx = fromIdx < toIdx ? toIdx : toIdx
+      // After splice, the target index shifts down by one when the moved block
+      // sat before it (from < to). Mirror the adjustment used in reorderBlocks.
+      const adjustedToIdx = fromIdx < toIdx ? toIdx - 1 : toIdx
       next.splice(direction === 'up' ? adjustedToIdx : adjustedToIdx + 1, 0, moved)
       return pushHistory(state, next)
     }),

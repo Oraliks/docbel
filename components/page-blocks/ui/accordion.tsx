@@ -13,17 +13,7 @@ import { Field, Group, Pills } from '@/components/page-builder/inspector/control
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const itemSchema = z.object({
-  title: z.string().max(500),
-  content: z.string().max(5000),
-})
-
-const schema = z.object({
-  items: z.array(itemSchema).max(50),
-  type: z.enum(['single', 'multiple']).optional(),
-  variant: z.enum(['default', 'bordered', 'separated']).optional(),
-})
+import { accordionSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

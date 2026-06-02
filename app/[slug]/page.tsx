@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { PublicRenderer } from "@/components/page-builder/public-renderer";
-import { BlockProps } from "@/lib/page-builder/types";
+import { ThemeProvider } from "@/components/page-builder/theme-tokens";
+import { BlockProps, ThemeTokens } from "@/lib/page-builder/types";
 import { buildPageJsonLd } from "@/lib/page-builder/schema-org";
 
 export const dynamicParams = true;
@@ -107,17 +108,19 @@ export default async function PublicPage({
         </header>
 
         <article className="glass-surface overflow-hidden p-6 sm:p-10">
-          <PublicRenderer
-            blocks={blocks}
-            context={{
-              site: { name: "Docbel" },
-              page: {
-                title: page.title,
-                slug: page.slug,
-                description: page.metaDesc ?? undefined,
-              },
-            }}
-          />
+          <ThemeProvider tokens={page.themeTokens as ThemeTokens | null}>
+            <PublicRenderer
+              blocks={blocks}
+              context={{
+                site: { name: "Docbel" },
+                page: {
+                  title: page.title,
+                  slug: page.slug,
+                  description: page.metaDesc ?? undefined,
+                },
+              }}
+            />
+          </ThemeProvider>
         </article>
       </section>
     </>

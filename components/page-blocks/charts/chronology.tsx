@@ -7,19 +7,7 @@ import { Field, Group, Pills } from '@/components/page-builder/inspector/control
 import { IconPicker, renderIcon } from '@/components/page-builder/inspector/icon-picker'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const eventSchema = z.object({
-  date: z.string().max(120),
-  title: z.string().max(500),
-  description: z.string().max(2000).optional(),
-  icon: z.string().max(40).optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  events: z.array(eventSchema).max(50),
-  variant: z.enum(['vertical', 'horizontal']).optional(),
-})
+import { chronologySchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 type Event = Props['events'][number]

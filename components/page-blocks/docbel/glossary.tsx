@@ -6,17 +6,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const itemSchema = z.object({
-  term: z.string().max(200),
-  definition: z.string().max(2000),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  items: z.array(itemSchema).max(200),
-  variant: z.enum(['list', 'cards', 'alphabetical']).optional(),
-})
+import { glossarySchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 type Item = Props['items'][number]

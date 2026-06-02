@@ -1,17 +1,10 @@
 'use client'
 
-import { z } from 'zod'
 import { LineChart as RLineChart, Line, ResponsiveContainer } from 'recharts'
 import { Input } from '@/components/ui/input'
 import { ColorControl, Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  data: z.array(z.number()).max(500),
-  color: z.string().optional(),
-  label: z.string().max(200).optional(),
-  value: z.string().max(120).optional(),
-})
+import { sparklineSchema as schema } from './schemas'
 
 export const sparkline = defineBlock({
   type: 'sparkline',

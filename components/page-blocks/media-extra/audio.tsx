@@ -1,19 +1,11 @@
 'use client'
 
-import { z } from 'zod'
 import { Music } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { DocumentUpload } from '@/components/page-builder/inspector/document-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  url: z.string().max(4096).optional(),
-  fileId: z.string().max(64).optional(),
-  title: z.string().max(200).optional(),
-  artist: z.string().max(200).optional(),
-  caption: z.string().max(500).optional(),
-})
+import { audioSchema as schema } from './schemas'
 
 export const audio = defineBlock({
   type: 'audio',

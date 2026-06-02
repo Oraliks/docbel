@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -35,43 +35,6 @@ const ThemeDialog = dynamic(
 
 interface PageEditorPageProps {
   params: Promise<{ pageId: string }>
-}
-
-/**
- * Tiny side-effect component that loads/saves the per-page theme tokens
- * via LocalStorage. Avoids a Prisma migration for v1.
- */
-function ThemePersistence({
-  pageId,
-  tokens,
-  setTokens,
-}: {
-  pageId: string
-  tokens: ThemeTokens | null
-  setTokens: (t: ThemeTokens | null) => void
-}) {
-  const loadedRef = React.useRef(false)
-  React.useEffect(() => {
-    if (loadedRef.current) return
-    loadedRef.current = true
-    if (typeof window === 'undefined') return
-    try {
-      const raw = localStorage.getItem(`docbel.theme.${pageId}`)
-      if (raw) setTokens(JSON.parse(raw))
-    } catch {
-      // ignore
-    }
-  }, [pageId, setTokens])
-  React.useEffect(() => {
-    if (!loadedRef.current) return
-    if (typeof window === 'undefined') return
-    if (tokens) {
-      localStorage.setItem(`docbel.theme.${pageId}`, JSON.stringify(tokens))
-    } else {
-      localStorage.removeItem(`docbel.theme.${pageId}`)
-    }
-  }, [pageId, tokens])
-  return null
 }
 
 const AUTOSAVE_DELAY_MS = 1500
@@ -114,9 +77,11 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   const setThemeTokens = usePageBuilderStore((s) => s.setThemeTokens)
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const pendingPayloadRef = useRef<Record<string, unknown>>({})
   const inflightRef = useRef<AbortController | null>(null)
   const initialBlocksRef = useRef<BlockProps[]>([])
   const lastSavedBlocksRef = useRef<BlockProps[] | null>(null)
+  const lastSavedThemeRef = useRef<ThemeTokens | null>(null)
   const initialMountRef = useRef(true)
   // Stable ref so the persist callback below doesn't depend on `page` (which
   // would re-create persist on every save and re-trigger the autosave effect).
@@ -140,6 +105,8 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         setMetaTitle(data.metaTitle || '')
         setMetaDesc(data.metaDesc || '')
         setOgImage(data.ogImage || '')
+        setThemeTokens(data.themeTokens ?? null)
+        lastSavedThemeRef.current = data.themeTokens ?? null
         setLastSaved(new Date())
         setIsDirty(false)
       } catch (error) {
@@ -150,7 +117,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         setLoading(false)
       }
     },
-    [router, setBlocks, setIsDirty, setPage]
+    [router, setBlocks, setIsDirty, setPage, setThemeTokens]
   )
 
   useEffect(() => {
@@ -225,9 +192,12 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   const scheduleAutosave = useCallback(
     (payload: Record<string, unknown>) => {
       setIsDirty(true)
+      pendingPayloadRef.current = { ...pendingPayloadRef.current, ...payload }
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
       saveTimeoutRef.current = setTimeout(() => {
-        void persist(payload)
+        const merged = pendingPayloadRef.current
+        pendingPayloadRef.current = {}
+        void persist(merged)
       }, AUTOSAVE_DELAY_MS)
     },
     [persist, setIsDirty]
@@ -246,6 +216,17 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
     if (blocks === lastSavedBlocksRef.current) return
     scheduleAutosave({ content: blocks })
   }, [blocks, scheduleAutosave])
+
+  // Autosave the per-page theme when it changes. Compare against the last
+  // loaded/saved value (mirrors the blocks watcher) so we never re-save the
+  // theme we just loaded — and, crucially, so the FIRST real change on a
+  // theme-less page isn't swallowed by a one-shot guard.
+  useEffect(() => {
+    if (!pageIdRef.current) return
+    if (themeTokens === lastSavedThemeRef.current) return
+    lastSavedThemeRef.current = themeTokens
+    scheduleAutosave({ themeTokens })
+  }, [themeTokens, scheduleAutosave])
 
   // ⌘S
   useEffect(() => {
@@ -396,8 +377,6 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
       />
 
       <ThemeDialog open={showThemeDialog} onOpenChange={setShowThemeDialog} />
-
-      <ThemePersistence pageId={page.id} tokens={themeTokens} setTokens={setThemeTokens} />
 
       <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
         <DialogContent className="sm:max-w-2xl">

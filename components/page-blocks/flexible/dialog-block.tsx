@@ -7,19 +7,9 @@ import { Field, Group, Pills } from '@/components/page-builder/inspector/control
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
+import { dialogBlockSchema as schema } from './schemas'
 
-const turnSchema = z.object({
-  speaker: z.string().max(120),
-  message: z.string().max(2000),
-  side: z.enum(['left', 'right']),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  turns: z.array(turnSchema).max(50),
-})
-
-type Turn = z.infer<typeof turnSchema>
+type Turn = z.infer<typeof schema>['turns'][number]
 
 export const dialogBlock = defineBlock({
   type: 'dialogBlock',

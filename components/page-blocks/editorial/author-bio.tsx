@@ -2,22 +2,13 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  name: z.string().max(200).default(''),
-  bio: z.string().max(2000).optional(),
-  avatar: z.string().max(4096).optional(),
-  twitter: z.string().max(4096).optional(),
-  linkedin: z.string().max(4096).optional(),
-  website: z.string().max(4096).optional(),
-  email: z.string().max(200).optional(),
-})
+import { safeHref } from '@/lib/page-builder/url-utils'
+import { authorBioSchema as schema } from './schemas'
 
 export const authorBio = defineBlock({
   type: 'authorBio',
@@ -58,7 +49,7 @@ export const authorBio = defineBlock({
           <div className="mt-2 flex flex-wrap gap-3 text-xs">
             {twitter && (
               <a
-                href={twitter}
+                href={safeHref(twitter)}
                 target="_blank"
                 rel="noreferrer"
                 className="text-primary hover:underline"
@@ -68,7 +59,7 @@ export const authorBio = defineBlock({
             )}
             {linkedin && (
               <a
-                href={linkedin}
+                href={safeHref(linkedin)}
                 target="_blank"
                 rel="noreferrer"
                 className="text-primary hover:underline"
@@ -78,7 +69,7 @@ export const authorBio = defineBlock({
             )}
             {website && (
               <a
-                href={website}
+                href={safeHref(website)}
                 target="_blank"
                 rel="noreferrer"
                 className="text-primary hover:underline"

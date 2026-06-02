@@ -1,14 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { z } from 'zod'
 import { ChevronUp } from 'lucide-react'
 import { Field, Group, SliderControl } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  threshold: z.number().min(0).max(10000).optional(),
-})
+import { backToTopSchema as schema } from './schemas'
 
 export const backToTop = defineBlock({
   type: 'backToTop',

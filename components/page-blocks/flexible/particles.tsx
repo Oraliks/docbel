@@ -10,12 +10,7 @@ import {
   SliderControl,
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  count: z.number().min(5).max(200).optional(),
-  color: z.string().optional(),
-  speed: z.enum(['slow', 'normal', 'fast']).optional(),
-})
+import { particlesSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

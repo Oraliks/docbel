@@ -5,20 +5,9 @@ import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
-
-const itemSchema = z.object({
-  text: z.string().max(120),
-  link: z.string().max(4096),
-  variant: z.enum(['primary', 'secondary', 'outline', 'ghost']).optional(),
-  icon: z.string().max(40).optional(),
-})
-
-const schema = z.object({
-  items: z.array(itemSchema).max(20),
-  align: z.enum(['left', 'center', 'right']).optional(),
-  size: z.enum(['sm', 'md', 'lg']).optional(),
-})
+import { buttonGroupSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 type ButtonItem = Props['items'][number]
@@ -62,7 +51,7 @@ export const buttonGroup = defineBlock({
         {items.map((btn, i) => (
           <a
             key={i}
-            href={btn.link || '#'}
+            href={safeHref(btn.link)}
             className={cn(
               'inline-flex items-center gap-1.5 rounded-lg font-medium transition',
               VARIANT_STYLE[btn.variant ?? 'primary'],

@@ -9,24 +9,7 @@ import { Switch } from '@/components/ui/switch'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const fieldDefSchema = z.object({
-  type: z.enum(['text', 'email', 'tel', 'textarea', 'select', 'checkbox']),
-  name: z.string().max(120),
-  label: z.string().max(200),
-  placeholder: z.string().max(200).optional(),
-  required: z.boolean().optional(),
-  options: z.array(z.string().max(200)).optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  description: z.string().max(2000).optional(),
-  fields: z.array(fieldDefSchema).max(30),
-  submitText: z.string().max(120).default('Envoyer'),
-  successMessage: z.string().max(500).optional(),
-  endpoint: z.string().max(500).optional(),
-})
+import { formSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 type FieldDef = Props['fields'][number]

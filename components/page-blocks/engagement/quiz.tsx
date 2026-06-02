@@ -7,26 +7,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { quizQuestionSchema, quizSchema as schema } from './schemas'
 
-const questionSchema = z.object({
-  question: z.string().max(2000),
-  options: z.array(z.string().max(500)),
-  correct: z.number(),
-  explanation: z.string().max(2000).optional(),
-})
-
-const resultSchema = z.object({
-  min: z.number(),
-  message: z.string().max(2000),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  questions: z.array(questionSchema).max(50),
-  resultMessages: z.array(resultSchema).optional(),
-})
-
-type Question = z.infer<typeof questionSchema>
+type Question = z.infer<typeof quizQuestionSchema>
 
 export const quiz = defineBlock({
   type: 'quiz',

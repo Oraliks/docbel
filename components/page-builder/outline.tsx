@@ -50,20 +50,7 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
 import { BLOCK_REGISTRY } from '@/lib/page-builder/registry'
-import type {
-  BlockProps,
-  HeadingProps,
-  TextProps,
-  HeroProps,
-  CtaProps,
-  SectionProps,
-  ImageProps,
-  FeaturesProps,
-  FaqProps,
-  TestimonialProps,
-  StatsProps,
-  GalleryProps,
-} from '@/lib/page-builder/types'
+import type { BlockProps, BlockPropsMap } from '@/lib/page-builder/types'
 import { cn } from '@/lib/utils'
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -90,27 +77,27 @@ const ICON_MAP: Record<string, LucideIcon> = {
 function getBlockLabel(block: BlockProps): string {
   switch (block.type) {
     case 'heading':
-      return (block.props as HeadingProps).text || 'Titre'
+      return (block.props as BlockPropsMap['heading']).text || 'Titre'
     case 'text':
-      return ((block.props as TextProps).html || '').replace(/<[^>]+>/g, '').slice(0, 40) || 'Texte'
+      return ((block.props as BlockPropsMap['text']).html || '').replace(/<[^>]+>/g, '').slice(0, 40) || 'Texte'
     case 'hero':
-      return (block.props as HeroProps).title || 'Hero'
+      return (block.props as BlockPropsMap['hero']).title || 'Hero'
     case 'cta':
-      return (block.props as CtaProps).text || (block.props as CtaProps).title || 'CTA'
+      return (block.props as BlockPropsMap['cta']).text || (block.props as BlockPropsMap['cta']).title || 'CTA'
     case 'section':
-      return (block.props as SectionProps).bgType === 'image' ? 'Section (image)' : 'Section'
+      return (block.props as BlockPropsMap['section']).bgType === 'image' ? 'Section (image)' : 'Section'
     case 'image':
-      return (block.props as ImageProps).alt || 'Image'
+      return (block.props as BlockPropsMap['image']).alt || 'Image'
     case 'features':
-      return (block.props as FeaturesProps).title || 'Fonctionnalités'
+      return (block.props as BlockPropsMap['features']).title || 'Fonctionnalités'
     case 'faq':
-      return (block.props as FaqProps).title || 'FAQ'
+      return (block.props as BlockPropsMap['faq']).title || 'FAQ'
     case 'testimonial':
-      return (block.props as TestimonialProps).title || 'Témoignage'
+      return (block.props as BlockPropsMap['testimonial']).title || 'Témoignage'
     case 'stats':
-      return (block.props as StatsProps).title || 'Statistiques'
+      return (block.props as BlockPropsMap['stats']).title || 'Statistiques'
     case 'gallery':
-      return `Galerie (${(block.props as GalleryProps).items?.length || 0})`
+      return `Galerie (${(block.props as BlockPropsMap['gallery']).items?.length || 0})`
     default:
       return BLOCK_REGISTRY[block.type].name
   }

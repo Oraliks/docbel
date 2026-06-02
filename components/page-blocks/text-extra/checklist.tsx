@@ -9,17 +9,7 @@ import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const itemSchema = z.object({
-  text: z.string().max(500),
-  checked: z.boolean().optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(200).optional(),
-  items: z.array(itemSchema).max(100),
-  interactive: z.boolean().optional(),
-})
+import { checklistItemSchema as itemSchema, checklistSchema as schema } from './schemas'
 
 type Item = z.infer<typeof itemSchema>
 

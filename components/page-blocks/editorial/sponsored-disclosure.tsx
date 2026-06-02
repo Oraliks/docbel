@@ -1,13 +1,9 @@
 'use client'
 
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  sponsor: z.string().max(200).optional(),
-})
+import { sponsoredDisclosureSchema as schema } from './schemas'
 
 export const sponsoredDisclosure = defineBlock({
   type: 'sponsoredDisclosure',

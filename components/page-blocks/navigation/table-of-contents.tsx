@@ -7,12 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  title: z.string().max(200).optional(),
-  sticky: z.boolean().optional(),
-  maxLevel: z.union([z.literal(2), z.literal(3), z.literal(4)]).optional(),
-})
+import { tableOfContentsSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

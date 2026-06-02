@@ -5,19 +5,10 @@ import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { safeHref } from '@/lib/page-builder/url-utils'
+import { newsTickerSchema as schema } from './schemas'
 
-const itemSchema = z.object({
-  label: z.string(),
-  href: z.string().optional(),
-  date: z.string().optional(),
-})
-
-const schema = z.object({
-  items: z.array(itemSchema).max(50),
-  speed: z.enum(['slow', 'normal', 'fast']).optional(),
-})
-
-type Item = z.infer<typeof itemSchema>
+type Item = z.infer<typeof schema>['items'][number]
 type Props = z.infer<typeof schema>
 
 const DURATION: Record<NonNullable<Props['speed']>, string> = {
@@ -57,7 +48,7 @@ export const newsTicker = defineBlock({
               <span className="size-2 rounded-full bg-primary animate-pulse" />
               {item.date && <span className="text-xs text-muted-foreground">{item.date}</span>}
               {item.href ? (
-                <a href={item.href} className="hover:underline">
+                <a href={safeHref(item.href)} className="hover:underline">
                   {item.label}
                 </a>
               ) : (

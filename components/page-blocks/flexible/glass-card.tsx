@@ -1,18 +1,11 @@
 'use client'
 
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, SliderControl } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  description: z.string().max(2000).optional(),
-  blur: z.number().min(0).max(50).optional(),
-  bgImage: z.string().max(4096).optional(),
-})
+import { glassCardSchema as schema } from './schemas'
 
 export const glassCard = defineBlock({
   type: 'glassCard',

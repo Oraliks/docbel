@@ -22,18 +22,9 @@ import {
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { DocumentUpload } from '@/components/page-builder/inspector/document-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  fileId: z.string().max(64).optional(),
-  url: z.string().max(4096).optional(),
-  title: z.string().max(500).default(''),
-  description: z.string().max(2000).optional(),
-  fileType: z.enum(['pdf', 'docx', 'xlsx', 'image', 'archive', 'other']).optional(),
-  size: z.string().max(40).optional(),
-  date: z.string().max(120).optional(),
-  variant: z.enum(['card', 'inline', 'list']).optional(),
-})
+import { documentSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 
@@ -87,7 +78,7 @@ export const document = defineBlock({
     if (variant === 'inline') {
       return (
         <a
-          href={downloadUrl}
+          href={safeHref(downloadUrl)}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm hover:border-primary hover:bg-primary/5 transition"
@@ -102,7 +93,7 @@ export const document = defineBlock({
     if (variant === 'list') {
       return (
         <a
-          href={downloadUrl}
+          href={safeHref(downloadUrl)}
           target="_blank"
           rel="noreferrer"
           className="group/doc flex items-center gap-3 rounded-md border bg-card px-4 py-3 hover:border-primary hover:bg-primary/5 transition"
@@ -124,7 +115,7 @@ export const document = defineBlock({
     }
     return (
       <a
-        href={downloadUrl}
+        href={safeHref(downloadUrl)}
         target="_blank"
         rel="noreferrer"
         className="group/doc flex gap-4 rounded-2xl border bg-card p-5 hover:border-primary hover:shadow-md transition"

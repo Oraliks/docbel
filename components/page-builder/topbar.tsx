@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge'
 import { Pills } from './inspector/controls'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
-import type { BlockProps, ImageProps, GalleryProps } from '@/lib/page-builder/types'
+import type { BlockProps, BlockPropsMap } from '@/lib/page-builder/types'
 import { cn } from '@/lib/utils'
 
 interface TopbarProps {
@@ -261,7 +261,7 @@ function detectIssues(blocks: BlockProps[]): Issue[] {
   let h1Count = 0
   for (const b of blocks) {
     if (b.type === 'image') {
-      const p = b.props as ImageProps
+      const p = b.props as BlockPropsMap['image']
       if (!p.alt || p.alt.trim().length < 3) {
         issues.push({
           blockId: b.id,
@@ -272,7 +272,7 @@ function detectIssues(blocks: BlockProps[]): Issue[] {
       }
     }
     if (b.type === 'gallery') {
-      const p = b.props as GalleryProps
+      const p = b.props as BlockPropsMap['gallery']
       const missing = p.items.filter((it) => !it.alt || it.alt.trim().length < 3).length
       if (missing > 0) {
         issues.push({

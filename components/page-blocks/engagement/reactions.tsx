@@ -7,18 +7,9 @@ import { Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
+import { reactionsReactionSchema, reactionsSchema as schema } from './schemas'
 
-const reactionSchema = z.object({
-  emoji: z.string().max(10),
-  label: z.string().max(60),
-  count: z.number(),
-})
-
-const schema = z.object({
-  reactions: z.array(reactionSchema).max(20),
-})
-
-type Reaction = z.infer<typeof reactionSchema>
+type Reaction = z.infer<typeof reactionsReactionSchema>
 
 export const reactions = defineBlock({
   type: 'reactions',

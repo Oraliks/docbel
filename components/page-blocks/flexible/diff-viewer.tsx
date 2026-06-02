@@ -1,18 +1,11 @@
 'use client'
 
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  before: z.string().max(20000).default(''),
-  after: z.string().max(20000).default(''),
-  language: z.string().max(40).optional(),
-  filename: z.string().max(120).optional(),
-})
+import { diffViewerSchema as schema } from './schemas'
 
 export const diffViewer = defineBlock({
   type: 'diffViewer',

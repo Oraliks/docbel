@@ -10,19 +10,7 @@ import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const itemSchema = z.object({
-  quote: z.string().max(2000),
-  author: z.string().max(200),
-  role: z.string().max(200).optional(),
-  avatar: z.string().max(4096).optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  items: z.array(itemSchema).max(20),
-  variant: z.enum(['single', 'grid', 'carousel']).optional(),
-})
+import { testimonialSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 type Item = Props['items'][number]

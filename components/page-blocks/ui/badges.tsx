@@ -12,18 +12,7 @@ import {
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const itemSchema = z.object({
-  label: z.string().max(120),
-  variant: z.enum(['default', 'secondary', 'outline', 'destructive']).optional(),
-  color: z.string().optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(200).optional(),
-  items: z.array(itemSchema).max(50),
-  align: z.enum(['left', 'center']).optional(),
-})
+import { badgesSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 type BadgeItem = Props['items'][number]

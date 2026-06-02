@@ -1,13 +1,8 @@
 'use client'
 
-import { z } from 'zod'
 import { Field, Group, SliderControl } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  variant: z.enum(['solid', 'dashed', 'dotted', 'gradient']).optional(),
-  thickness: z.number().min(1).max(20).optional(),
-})
+import { dividerSchema as schema } from './schemas'
 
 export const divider = defineBlock({
   type: 'divider',

@@ -1,18 +1,12 @@
 'use client'
 
-import { z } from 'zod'
 import { Scale } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  reference: z.string().max(500).default(''),
-  text: z.string().max(5000).default(''),
-  source: z.string().max(200).optional(),
-  link: z.string().max(4096).optional(),
-})
+import { safeHref } from '@/lib/page-builder/url-utils'
+import { lawCitationSchema as schema } from './schemas'
 
 export const lawCitation = defineBlock({
   type: 'lawCitation',
@@ -48,7 +42,7 @@ export const lawCitation = defineBlock({
               <>
                 {source && ' · '}
                 <a
-                  href={link}
+                  href={safeHref(link)}
                   target="_blank"
                   rel="noreferrer"
                   className="text-primary hover:underline"

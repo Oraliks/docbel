@@ -7,12 +7,7 @@ import { defineBlock } from '@/lib/page-builder/block-definition'
 import { enrichHtmlWithAcronyms } from '@/lib/acronyms-html'
 import { sanitizeHtml } from '@/lib/sanitize-html'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  html: z.string().max(50000).default(''),
-  columns: z.union([z.literal(2), z.literal(3), z.literal(4)]),
-  gap: z.enum(['sm', 'md', 'lg']).optional(),
-})
+import { magazineColumnsSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

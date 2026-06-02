@@ -1,18 +1,11 @@
 'use client'
 
-import { z } from 'zod'
 import { FileText } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  title: z.string().max(500).default(''),
-  situation: z.string().max(2000).default(''),
-  steps: z.array(z.string().max(1000)),
-  outcome: z.string().max(1000).optional(),
-})
+import { casePracticeSchema as schema } from './schemas'
 
 export const casePractice = defineBlock({
   type: 'casePractice',

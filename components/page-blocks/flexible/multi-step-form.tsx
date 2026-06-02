@@ -1,35 +1,13 @@
 'use client'
 
 import { Fragment, useState, type FormEvent } from 'react'
-import { z } from 'zod'
 import { Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const fieldSchema = z.object({
-  type: z.enum(['text', 'email', 'tel', 'textarea', 'select']),
-  name: z.string(),
-  label: z.string(),
-  placeholder: z.string().optional(),
-  required: z.boolean().optional(),
-  options: z.array(z.string()).optional(),
-})
-
-const stepSchema = z.object({
-  title: z.string(),
-  fields: z.array(fieldSchema),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  steps: z.array(stepSchema),
-  submitText: z.string().max(120).default(''),
-  successMessage: z.string().max(500).optional(),
-  endpoint: z.string().max(500).optional(),
-})
+import { multiStepFormSchema as schema } from './schemas'
 
 export const multiStepForm = defineBlock({
   type: 'multiStepForm',

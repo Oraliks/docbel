@@ -1,16 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  defaultBrut: z.number().default(3000),
-  status: z.enum(['isolé', 'cohabitant', 'famille']).optional(),
-})
+import { salaireNetBESchema as schema } from './schemas'
 
 type Status = 'isolé' | 'cohabitant' | 'famille'
 

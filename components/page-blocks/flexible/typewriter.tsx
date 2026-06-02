@@ -1,18 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { z } from 'zod'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, SliderControl } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  texts: z.array(z.string()).default([]),
-  speed: z.number().min(20).max(500).optional(),
-  loop: z.boolean().optional(),
-  cursor: z.boolean().optional(),
-})
+import { typewriterSchema as schema } from './schemas'
 
 export const typewriter = defineBlock({
   type: 'typewriter',

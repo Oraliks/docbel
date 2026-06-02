@@ -9,17 +9,7 @@ import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const itemSchema = z.object({
-  question: z.string().max(500),
-  answer: z.string().max(2000),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  items: z.array(itemSchema).max(50),
-  variant: z.enum(['simple', 'bordered', 'card']).optional(),
-})
+import { faqSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 type FaqItemData = Props['items'][number]

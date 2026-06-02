@@ -5,14 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  text: z.string().max(500).default('Titre'),
-  level: z
-    .union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)])
-    .default(2),
-  variant: z.enum(['default', 'display', 'gradient']).optional(),
-})
+import { headingSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

@@ -2,23 +2,12 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  category: z.string().max(120).optional(),
-  title: z.string().max(500).default(''),
-  excerpt: z.string().max(2000).optional(),
-  authorName: z.string().max(200).optional(),
-  authorAvatar: z.string().max(4096).optional(),
-  date: z.string().optional(),
-  readingTime: z.number().optional(),
-  image: z.string().max(4096).optional(),
-})
+import { articleHeaderSchema as schema } from './schemas'
 
 export const articleHeader = defineBlock({
   type: 'articleHeader',

@@ -1,21 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { z } from 'zod'
 import { Heart } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  description: z.string().max(2000).optional(),
-  presets: z.array(z.number()),
-  buttonText: z.string().max(120).default('Faire un don'),
-  link: z.string().max(4096).optional(),
-})
+import { donationSchema as schema } from './schemas'
 
 export const donation = defineBlock({
   type: 'donation',
@@ -72,7 +65,7 @@ export const donation = defineBlock({
           />
         </div>
         <a
-          href={link || '#'}
+          href={safeHref(link)}
           className="mt-4 inline-block rounded-md bg-primary text-primary-foreground px-6 py-2.5 text-sm font-medium hover:opacity-90"
         >
           {buttonText} {finalAmount}€

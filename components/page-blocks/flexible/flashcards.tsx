@@ -7,18 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { flashcardsSchema as schema } from './schemas'
 
-const cardSchema = z.object({
-  front: z.string().max(500),
-  back: z.string().max(2000),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  items: z.array(cardSchema).max(100),
-})
-
-type Card = z.infer<typeof cardSchema>
+type Card = z.infer<typeof schema>['items'][number]
 
 export const flashcards = defineBlock({
   type: 'flashcards',

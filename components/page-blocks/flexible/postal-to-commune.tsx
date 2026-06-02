@@ -1,15 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  defaultCode: z.string().default('1000'),
-})
+import { postalToCommuneSchema as schema } from './schemas'
 
 const POSTAL_BE: Record<string, { commune: string; province: string }> = {
   '1000': { commune: 'Bruxelles', province: 'Bruxelles-Capitale' },

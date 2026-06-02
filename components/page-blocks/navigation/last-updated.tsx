@@ -5,12 +5,7 @@ import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  date: z.string().optional(),
-  format: z.enum(['long', 'short', 'relative']).optional(),
-  prefix: z.string().max(120).optional(),
-})
+import { lastUpdatedSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

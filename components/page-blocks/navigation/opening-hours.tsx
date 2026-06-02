@@ -7,21 +7,9 @@ import { Switch } from '@/components/ui/switch'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
+import { openingHoursDaySchema, openingHoursSchema as schema } from './schemas'
 
-const daySchema = z.object({
-  day: z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
-  open: z.string().optional(),
-  close: z.string().optional(),
-  closed: z.boolean().optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  schedule: z.array(daySchema),
-  showCurrentStatus: z.boolean().optional(),
-})
-
-type Day = z.infer<typeof daySchema>
+type Day = z.infer<typeof openingHoursDaySchema>
 
 const DAY_LABEL: Record<Day['day'], string> = {
   mon: 'Lundi',

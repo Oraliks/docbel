@@ -10,13 +10,7 @@ import {
   SliderControl,
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  variant: z.enum(['wave', 'curve', 'angle', 'mountains', 'zigzag']),
-  color: z.string().optional(),
-  flip: z.boolean().optional(),
-  height: z.number().min(20).max(400).optional(),
-})
+import { sectionDividerSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

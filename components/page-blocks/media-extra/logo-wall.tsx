@@ -9,20 +9,9 @@ import { Field, Group, Pills } from '@/components/page-builder/inspector/control
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
-
-const logoSchema = z.object({
-  url: z.string().max(4096),
-  alt: z.string().max(200),
-  href: z.string().max(4096).optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  logos: z.array(logoSchema).max(50),
-  variant: z.enum(['grid', 'marquee']).optional(),
-  grayscale: z.boolean().optional(),
-})
+import { logoWallSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 type Logo = Props['logos'][number]
@@ -92,7 +81,7 @@ export const logoWall = defineBlock({
                 logo.url ? (
                   <a
                     key={i}
-                    href={logo.href || '#'}
+                    href={safeHref(logo.href)}
                     className="flex items-center justify-center transition"
                   >
                     <img src={logo.url} alt={logo.alt} className="h-10 object-contain" />

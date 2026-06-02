@@ -18,19 +18,7 @@ import {
   SliderControl,
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const dataSchema = z.object({
-  label: z.string(),
-  value: z.number(),
-  max: z.number().optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  data: z.array(dataSchema).max(20),
-  color: z.string().optional(),
-  height: z.number().min(50).max(2000).optional(),
-})
+import { radarChartSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

@@ -16,21 +16,7 @@ import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const slideSchema = z.object({
-  image: z.string().max(4096),
-  alt: z.string().max(500).optional(),
-  caption: z.string().max(500).optional(),
-  link: z.string().max(4096).optional(),
-})
-
-const schema = z.object({
-  slides: z.array(slideSchema).max(50),
-  autoplay: z.boolean().optional(),
-  interval: z.number().min(500).max(60000).optional(),
-  showDots: z.boolean().optional(),
-  showArrows: z.boolean().optional(),
-})
+import { carouselSlideSchema as slideSchema, carouselSchema as schema } from './schemas'
 
 type Slide = z.infer<typeof slideSchema>
 

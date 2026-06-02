@@ -1,6 +1,5 @@
 'use client'
 
-import { z } from 'zod'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
@@ -11,15 +10,7 @@ import {
 import { IconPicker, renderIcon } from '@/components/page-builder/inspector/icon-picker'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  label: z.string().max(200).default(''),
-  value: z.string().max(120).default(''),
-  trendValue: z.number().optional(),
-  trendLabel: z.string().max(120).optional(),
-  color: z.string().optional(),
-  icon: z.string().max(40).optional(),
-})
+import { kpiCardSchema as schema } from './schemas'
 
 export const kpiCard = defineBlock({
   type: 'kpiCard',

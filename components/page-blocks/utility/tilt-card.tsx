@@ -3,19 +3,13 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useRef, useState, type MouseEvent } from 'react'
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  title: z.string().max(500).default(''),
-  description: z.string().max(2000).optional(),
-  image: z.string().max(4096).optional(),
-  link: z.string().max(4096).optional(),
-})
+import { safeHref } from '@/lib/page-builder/url-utils'
+import { tiltCardSchema as schema } from './schemas'
 
 export const tiltCard = defineBlock({
   type: 'tiltCard',
@@ -82,7 +76,7 @@ export const tiltCard = defineBlock({
 
     if (link) {
       return (
-        <a href={link} className="block my-2">
+        <a href={safeHref(link)} className="block my-2">
           {Inner}
         </a>
       )

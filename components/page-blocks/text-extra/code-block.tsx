@@ -1,6 +1,5 @@
 'use client'
 
-import { z } from 'zod'
 import { Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
@@ -8,13 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  code: z.string().max(50000).default(''),
-  language: z.string().max(40).optional(),
-  filename: z.string().max(120).optional(),
-  showLineNumbers: z.boolean().optional(),
-})
+import { codeBlockSchema as schema } from './schemas'
 
 export const codeBlock = defineBlock({
   type: 'codeBlock',

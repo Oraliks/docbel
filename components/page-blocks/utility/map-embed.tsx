@@ -1,17 +1,10 @@
 'use client'
 
-import { z } from 'zod'
 import { MapPin } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Field, Group, SliderControl } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  query: z.string().max(500).default(''),
-  zoom: z.number().min(1).max(19).optional(),
-  height: z.number().min(50).max(2000).optional(),
-  caption: z.string().max(500).optional(),
-})
+import { mapEmbedSchema as schema } from './schemas'
 
 export const mapEmbed = defineBlock({
   type: 'mapEmbed',

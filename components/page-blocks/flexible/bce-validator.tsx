@@ -1,16 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { z } from 'zod'
 import { Check, X as XIcon } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-})
+import { bceValidatorSchema as schema } from './schemas'
 
 export const bceValidator = defineBlock({
   type: 'bceValidator',

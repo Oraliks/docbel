@@ -1,15 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  region: z.enum(['wallonie', 'bruxelles', 'flandre']).default('wallonie'),
-})
+import { allocationsFamilialesSchema as schema } from './schemas'
 
 type Region = 'wallonie' | 'bruxelles' | 'flandre'
 

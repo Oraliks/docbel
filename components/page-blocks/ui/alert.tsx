@@ -9,14 +9,7 @@ import { Switch } from '@/components/ui/switch'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  title: z.string().max(200).optional(),
-  message: z.string().max(2000).default(''),
-  variant: z.enum(['info', 'success', 'warning', 'destructive']).optional(),
-  dismissible: z.boolean().optional(),
-  icon: z.string().max(40).optional(),
-})
+import { alertSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

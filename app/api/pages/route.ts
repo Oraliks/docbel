@@ -20,8 +20,10 @@ export async function GET(req: NextRequest) {
       Math.max(1, Number(searchParams.get('limit')) || DEFAULT_LIMIT)
     )
     const cursor = searchParams.get('cursor') || undefined
-    const includeContent = searchParams.get('includeContent') === '1'
 
+    // `content` is selected only to derive `blockCount` server-side; the full
+    // block tree is never serialized to the list response (use the detail
+    // endpoint for that). This keeps the list payload small even for 200 pages.
     const pages = await prisma.page.findMany({
       where: { deletedAt: null },
       orderBy: { createdAt: 'desc' },
@@ -37,7 +39,7 @@ export async function GET(req: NextRequest) {
         ogImage: true,
         createdAt: true,
         updatedAt: true,
-        ...(includeContent ? { content: true } : {}),
+        content: true,
       },
     })
 
@@ -45,9 +47,9 @@ export async function GET(req: NextRequest) {
     const items = hasMore ? pages.slice(0, limit) : pages
     const nextCursor = hasMore ? items[items.length - 1].id : null
 
-    const formatted = items.map((p) => ({
-      ...p,
-      blocks: includeContent && 'content' in p ? (p as { content: unknown }).content : undefined,
+    const formatted = items.map(({ content, ...rest }) => ({
+      ...rest,
+      blockCount: Array.isArray(content) ? content.length : 0,
     }))
 
     return NextResponse.json({ items: formatted, nextCursor })

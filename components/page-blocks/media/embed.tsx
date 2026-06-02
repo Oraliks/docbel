@@ -1,15 +1,10 @@
 'use client'
 
-import { z } from 'zod'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, SliderControl } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { sanitizeEmbedHtml } from '@/lib/sanitize-html'
-
-const schema = z.object({
-  html: z.string().max(20000).default(''),
-  height: z.number().min(50).max(2000).optional(),
-})
+import { embedSchema as schema } from './schemas'
 
 export const embed = defineBlock({
   type: 'embed',

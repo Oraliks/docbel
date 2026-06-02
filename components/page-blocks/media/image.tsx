@@ -16,15 +16,7 @@ import { Field, Group, Pills } from '@/components/page-builder/inspector/control
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  url: z.string().max(4096).default(''),
-  alt: z.string().max(500).default(''),
-  caption: z.string().max(500).optional(),
-  ratio: z.enum(['auto', '1:1', '4:3', '16:9', '21:9']).optional(),
-  fit: z.enum(['cover', 'contain']).optional(),
-  rounded: z.enum(['none', 'sm', 'md', 'lg', 'full']).optional(),
-})
+import { imageSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

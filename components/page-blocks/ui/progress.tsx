@@ -1,6 +1,5 @@
 'use client'
 
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -10,14 +9,7 @@ import {
   SliderControl,
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  label: z.string().max(200).optional(),
-  value: z.number().min(0).max(100).default(0),
-  showValue: z.boolean().optional(),
-  color: z.string().optional(),
-  variant: z.enum(['default', 'segmented', 'circular']).optional(),
-})
+import { progressSchema as schema } from './schemas'
 
 export const progress = defineBlock({
   type: 'progress',

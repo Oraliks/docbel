@@ -3,20 +3,12 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
-import { z } from 'zod'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  beforeUrl: z.string().max(4096).default(''),
-  afterUrl: z.string().max(4096).default(''),
-  beforeLabel: z.string().max(120).optional(),
-  afterLabel: z.string().max(120).optional(),
-  orientation: z.enum(['horizontal', 'vertical']).optional(),
-})
+import { beforeAfterSchema as schema } from './schemas'
 
 function BeforeImage({
   src,

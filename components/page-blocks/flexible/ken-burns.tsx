@@ -2,17 +2,11 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group, SliderControl } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  image: z.string().max(4096).default(''),
-  caption: z.string().max(500).optional(),
-  duration: z.number().min(5).max(120).optional(),
-})
+import { kenBurnsSchema as schema } from './schemas'
 
 export const kenBurns = defineBlock({
   type: 'kenBurns',

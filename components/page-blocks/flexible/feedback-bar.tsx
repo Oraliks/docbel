@@ -1,16 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  question: z.string().max(500).default(''),
-  thanksMessage: z.string().max(500).optional(),
-  endpoint: z.string().max(500).optional(),
-})
+import { feedbackBarSchema as schema } from './schemas'
 
 export const feedbackBar = defineBlock({
   type: 'feedbackBar',

@@ -5,13 +5,7 @@ import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  targetDate: z.string().default(''),
-  title: z.string().max(500).optional(),
-  variant: z.enum(['large', 'compact']).optional(),
-  expiredMessage: z.string().max(500).optional(),
-})
+import { countdownSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

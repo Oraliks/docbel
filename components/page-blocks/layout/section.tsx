@@ -1,7 +1,6 @@
 'use client'
 
 import type { CSSProperties } from 'react'
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -13,15 +12,7 @@ import {
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  bgType: z.enum(['none', 'color', 'gradient', 'image']).optional(),
-  bgColor: z.string().optional(),
-  bgGradient: z.string().max(500).optional(),
-  bgImage: z.string().max(4096).optional(),
-  bgOverlay: z.string().optional(),
-  fullWidth: z.boolean().optional(),
-})
+import { sectionSchema as schema } from './schemas'
 
 export const section = defineBlock({
   type: 'section',

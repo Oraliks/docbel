@@ -20,3 +20,17 @@ export function sanitizeUrl(value: unknown, fallback = ''): string {
 export function sanitizeLink(value: unknown): string {
   return sanitizeUrl(value, '#')
 }
+
+/**
+ * Hardens a user-supplied block link before it reaches a public `<a href>`.
+ * Returns the URL only when it is a safe target (http(s), mailto, tel,
+ * site-relative `/…`, or in-page `#…`); otherwise `undefined` so React drops
+ * the attribute and the element is simply not a link. Neutralises stored
+ * `javascript:` / `data:` / `vbscript:` payloads. Reuses {@link isSafeUrl}.
+ */
+export function safeHref(value?: string | null): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  if (trimmed === '') return undefined
+  return isSafeUrl(trimmed) ? trimmed : undefined
+}

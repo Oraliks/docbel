@@ -5,11 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  text: z.string().max(2000).default(''),
-  color: z.enum(['yellow', 'green', 'pink', 'blue', 'orange']).optional(),
-})
+import { highlightSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

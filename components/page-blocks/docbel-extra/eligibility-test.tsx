@@ -10,26 +10,9 @@ import { Field, Group, Pills } from '@/components/page-builder/inspector/control
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
+import { eligibilityTestSchema as schema } from './schemas'
 
-const questionSchema = z.object({
-  question: z.string().max(2000),
-  type: z.enum(['yesno', 'select']),
-  options: z.array(z.string()).optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  introText: z.string().max(2000).optional(),
-  questions: z.array(questionSchema).max(50),
-  rules: z.object({
-    allYes: z.boolean().optional(),
-    minYes: z.number().optional(),
-    resultIfPass: z.string().max(2000),
-    resultIfFail: z.string().max(2000),
-  }),
-})
-
-type Question = z.infer<typeof questionSchema>
+type Question = z.infer<typeof schema>['questions'][number]
 
 export const eligibilityTest = defineBlock({
   type: 'eligibilityTest',

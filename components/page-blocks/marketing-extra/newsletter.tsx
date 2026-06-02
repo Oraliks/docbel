@@ -1,22 +1,13 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
-import { z } from 'zod'
 import { Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  description: z.string().max(2000).optional(),
-  placeholder: z.string().max(120).optional(),
-  buttonText: z.string().max(120).default('S\'inscrire'),
-  endpoint: z.string().max(500).optional(),
-  successMessage: z.string().max(500).optional(),
-})
+import { newsletterSchema as schema } from './schemas'
 
 export const newsletter = defineBlock({
   type: 'newsletter',

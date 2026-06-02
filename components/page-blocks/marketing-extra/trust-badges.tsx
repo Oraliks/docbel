@@ -7,16 +7,7 @@ import { IconPicker, renderIcon } from '@/components/page-builder/inspector/icon
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const badgeSchema = z.object({
-  icon: z.string().max(40).optional(),
-  label: z.string().max(120),
-})
-
-const schema = z.object({
-  badges: z.array(badgeSchema).max(20),
-  align: z.enum(['left', 'center']).optional(),
-})
+import { trustBadgesSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 type Badge = Props['badges'][number]

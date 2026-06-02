@@ -1,6 +1,5 @@
 'use client'
 
-import { z } from 'zod'
 import {
   LineChart as RLineChart,
   Line,
@@ -20,19 +19,7 @@ import {
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { ChartDataEditor } from './_chart-data-editor'
-
-const dataPointSchema = z.object({
-  label: z.string(),
-  value: z.number(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  data: z.array(dataPointSchema).max(100),
-  color: z.string().optional(),
-  smooth: z.boolean().optional(),
-  height: z.number().min(50).max(2000).optional(),
-})
+import { lineChartSchema as schema } from './schemas'
 
 export const lineChart = defineBlock({
   type: 'lineChart',

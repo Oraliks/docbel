@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { z } from 'zod'
 import {
   ColorControl,
   Field,
@@ -9,11 +8,7 @@ import {
   SliderControl,
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  color: z.string().optional(),
-  height: z.number().min(1).max(20).optional(),
-})
+import { readingProgressSchema as schema } from './schemas'
 
 export const readingProgress = defineBlock({
   type: 'readingProgress',

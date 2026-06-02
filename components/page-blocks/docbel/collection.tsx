@@ -14,14 +14,7 @@ import {
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  source: z.enum(['news', 'pages']),
-  limit: z.number().min(1).max(20),
-  category: z.string().max(120).optional(),
-  layout: z.enum(['grid', 'list', 'carousel']),
-  columns: z.union([z.literal(2), z.literal(3), z.literal(4)]).optional(),
-})
+import { collectionSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

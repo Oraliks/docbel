@@ -1,17 +1,11 @@
 'use client'
 
-import { z } from 'zod'
 import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
 import { Field, Group, SliderControl } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  colors: z.array(z.string()).default([]),
-  height: z.number().min(50).max(2000).optional(),
-  animated: z.boolean().optional(),
-})
+import { gradientMeshSchema as schema } from './schemas'
 
 export const gradientMesh = defineBlock({
   type: 'gradientMesh',

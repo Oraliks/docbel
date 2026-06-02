@@ -1,17 +1,11 @@
 'use client'
 
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { sanitizeSvg } from '@/lib/sanitize-html'
-
-const schema = z.object({
-  svg: z.string().max(50000).default(''),
-  width: z.string().max(40).optional(),
-  height: z.string().max(40).optional(),
-})
+import { svgIllustrationSchema as schema } from './schemas'
 
 export const svgIllustration = defineBlock({
   type: 'svgIllustration',

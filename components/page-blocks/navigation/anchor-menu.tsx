@@ -7,18 +7,9 @@ import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
+import { anchorMenuItemSchema, anchorMenuSchema as schema } from './schemas'
 
-const itemSchema = z.object({
-  label: z.string().max(120),
-  anchor: z.string().max(120),
-})
-
-const schema = z.object({
-  items: z.array(itemSchema).max(20),
-  sticky: z.boolean().optional(),
-})
-
-type Item = z.infer<typeof itemSchema>
+type Item = z.infer<typeof anchorMenuItemSchema>
 
 export const anchorMenu = defineBlock({
   type: 'anchorMenu',

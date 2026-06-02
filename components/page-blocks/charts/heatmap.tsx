@@ -1,21 +1,10 @@
 'use client'
 
 import { useMemo } from 'react'
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { ColorControl, Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const dayPointSchema = z.object({
-  date: z.string(),
-  value: z.number(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  data: z.array(dayPointSchema).max(1000),
-  color: z.string().optional(),
-})
+import { heatmapSchema as schema } from './schemas'
 
 function generateSampleHeatmap() {
   const today = new Date()

@@ -1,15 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  defaultMonths: z.number().default(24),
-})
+import { preavisCCT109Schema as schema } from './schemas'
 
 function calcWeeks(m: number): number {
   if (m < 3) return 1

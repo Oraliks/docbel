@@ -1,19 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  message: z.string().max(2000).default(''),
-  acceptText: z.string().max(120).default('Accepter'),
-  declineText: z.string().max(120).optional(),
-  link: z.string().max(4096).optional(),
-  linkText: z.string().max(120).optional(),
-})
+import { safeHref } from '@/lib/page-builder/url-utils'
+import { gdprNoticeSchema as schema } from './schemas'
 
 const KEY = 'docbel-gdpr-consent'
 
@@ -55,7 +48,7 @@ export const gdprNotice = defineBlock({
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-xl w-[calc(100%-2rem)] rounded-2xl border bg-card shadow-2xl p-5 animate-in slide-in-from-bottom-4 duration-300">
         <p className="text-sm leading-relaxed">{message}</p>
         {link && linkText && (
-          <a href={link} className="text-xs text-primary hover:underline mt-2 inline-block">
+          <a href={safeHref(link)} className="text-xs text-primary hover:underline mt-2 inline-block">
             {linkText}
           </a>
         )}

@@ -5,13 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  text: z.string().max(2000).default('Une citation inspirante.'),
-  author: z.string().max(200).optional(),
-  role: z.string().max(200).optional(),
-  variant: z.enum(['simple', 'pull', 'card']).optional(),
-})
+import { quoteSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

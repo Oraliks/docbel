@@ -6,19 +6,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  description: z.string().max(2000).optional(),
-  text: z.string().max(120).default(''),
-  link: z.string().max(4096).default(''),
-  secondaryText: z.string().max(120).optional(),
-  secondaryLink: z.string().max(4096).optional(),
-  variant: z.enum(['inline', 'banner', 'card']).optional(),
-  buttonStyle: z.enum(['primary', 'secondary', 'outline', 'ghost']).optional(),
-  buttonSize: z.enum(['sm', 'md', 'lg']).optional(),
-})
+import { ctaSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 
@@ -82,11 +72,11 @@ export const cta = defineBlock({
     if (variant === 'inline') {
       return (
         <div className="flex flex-wrap items-center gap-3">
-          <a href={link || '#'} className={buttonClass}>
+          <a href={safeHref(link)} className={buttonClass}>
             {text} <ArrowRight className="size-4" />
           </a>
           {secondaryText && (
-            <a href={secondaryLink || '#'} className="text-sm font-medium hover:underline">
+            <a href={safeHref(secondaryLink)} className="text-sm font-medium hover:underline">
               {secondaryText}
             </a>
           )}
@@ -102,11 +92,11 @@ export const cta = defineBlock({
             <p className="mt-2 text-muted-foreground max-w-md mx-auto">{description}</p>
           )}
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <a href={link || '#'} className={buttonClass}>
+            <a href={safeHref(link)} className={buttonClass}>
               {text} <ArrowRight className="size-4" />
             </a>
             {secondaryText && (
-              <a href={secondaryLink || '#'} className="text-sm font-medium hover:underline">
+              <a href={safeHref(secondaryLink)} className="text-sm font-medium hover:underline">
                 {secondaryText}
               </a>
             )}
@@ -124,7 +114,7 @@ export const cta = defineBlock({
           </div>
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <a
-              href={link || '#'}
+              href={safeHref(link)}
               className={cn(
                 'inline-flex items-center gap-2 rounded-lg font-medium transition bg-primary-foreground text-primary hover:opacity-90',
                 BTN_SIZE[buttonSize]
@@ -134,7 +124,7 @@ export const cta = defineBlock({
             </a>
             {secondaryText && (
               <a
-                href={secondaryLink || '#'}
+                href={safeHref(secondaryLink)}
                 className="text-sm font-medium underline-offset-4 hover:underline"
               >
                 {secondaryText}

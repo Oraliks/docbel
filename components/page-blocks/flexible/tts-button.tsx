@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { z } from 'zod'
 import { Volume2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
@@ -9,12 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  text: z.string().max(20000).optional(),
-  label: z.string().max(120).optional(),
-  voice: z.string().max(20).optional(),
-})
+import { ttsButtonSchema as schema } from './schemas'
 
 export const ttsButton = defineBlock({
   type: 'ttsButton',

@@ -4,7 +4,7 @@
 //  metadata badges, etc.
 // =====================================================================
 
-import type { BlockProps, FaqProps, HeadingProps, StepsProps } from './types'
+import type { BlockProps, BlockPropsMap } from './types'
 
 interface FaqJsonLd {
   '@context': 'https://schema.org'
@@ -72,7 +72,7 @@ export function buildPageJsonLd(
   // FAQ block → FAQPage schema
   const faqs = blocks.filter((b) => b.type === 'faq')
   for (const faq of faqs) {
-    const props = faq.props as FaqProps
+    const props = faq.props as BlockPropsMap['faq']
     if (!props.items || props.items.length === 0) continue
     out.push({
       '@context': 'https://schema.org',
@@ -88,7 +88,7 @@ export function buildPageJsonLd(
   // Steps block → HowTo schema
   const steps = blocks.filter((b) => b.type === 'steps')
   for (const step of steps) {
-    const props = step.props as StepsProps
+    const props = step.props as BlockPropsMap['steps']
     if (!props.items || props.items.length === 0) continue
     out.push({
       '@context': 'https://schema.org',
@@ -105,7 +105,7 @@ export function buildPageJsonLd(
   }
 
   // Article schema (only if the page has at least one heading + text/quote)
-  const hasHeading = blocks.some((b) => b.type === 'heading' && (b.props as HeadingProps).level <= 2)
+  const hasHeading = blocks.some((b) => b.type === 'heading' && (b.props as BlockPropsMap['heading']).level <= 2)
   const hasText = blocks.some((b) => b.type === 'text' || b.type === 'quote')
   if (hasHeading && hasText) {
     out.push({

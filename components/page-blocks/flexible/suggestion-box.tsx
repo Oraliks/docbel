@@ -1,17 +1,11 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
-import { z } from 'zod'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  placeholder: z.string().max(200).optional(),
-  endpoint: z.string().max(500).optional(),
-})
+import { suggestionBoxSchema as schema } from './schemas'
 
 export const suggestionBox = defineBlock({
   type: 'suggestionBox',

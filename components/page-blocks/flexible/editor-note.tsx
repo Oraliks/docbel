@@ -1,15 +1,10 @@
 'use client'
 
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  content: z.string().max(2000).default(''),
-  signedBy: z.string().max(200).optional(),
-})
+import { editorNoteSchema as schema } from './schemas'
 
 export const editorNote = defineBlock({
   type: 'editorNote',

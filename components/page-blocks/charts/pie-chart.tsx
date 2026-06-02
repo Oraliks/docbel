@@ -1,6 +1,5 @@
 'use client'
 
-import { z } from 'zod'
 import { PieChart as RPieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -11,20 +10,9 @@ import {
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { ChartDataEditor } from './_chart-data-editor'
+import { pieChartSchema as schema } from './schemas'
 
 const COLORS = ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']
-
-const dataPointSchema = z.object({
-  label: z.string(),
-  value: z.number(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  data: z.array(dataPointSchema).max(50),
-  donut: z.boolean().optional(),
-  height: z.number().min(50).max(2000).optional(),
-})
 
 export const pieChart = defineBlock({
   type: 'pieChart',

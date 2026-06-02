@@ -1,11 +1,9 @@
 'use client'
 
-import { z } from 'zod'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({ css: z.string().max(50000).default('') })
+import { customCssSchema as schema } from './schemas'
 
 /**
  * Le contenu est du CSS injecté dans une balise <style>, PAS du HTML : on ne

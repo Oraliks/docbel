@@ -7,11 +7,7 @@ import { defineBlock } from '@/lib/page-builder/block-definition'
 import { enrichHtmlWithAcronyms } from '@/lib/acronyms-html'
 import { sanitizeHtml } from '@/lib/sanitize-html'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  html: z.string().max(50000).default('<p>Commencez à écrire…</p>'),
-  variant: z.enum(['default', 'lead', 'small']).optional(),
-})
+import { textSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

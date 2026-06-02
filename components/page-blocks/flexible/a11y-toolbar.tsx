@@ -7,13 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  position: z.enum(['top-right', 'bottom-right']).optional(),
-  enableFontSizer: z.boolean().optional(),
-  enableHighContrast: z.boolean().optional(),
-  enableDyslexiaFont: z.boolean().optional(),
-})
+import { a11yToolbarSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

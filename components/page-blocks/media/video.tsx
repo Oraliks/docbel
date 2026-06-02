@@ -7,15 +7,7 @@ import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { DocumentUpload as VideoUpload } from '@/components/page-builder/inspector/document-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  url: z.string().max(2048).default(''),
-  provider: z.enum(['youtube', 'vimeo', 'tiktok', 'dailymotion', 'loom', 'mp4']).default('youtube'),
-  caption: z.string().max(500).optional(),
-  autoplay: z.boolean().optional(),
-  controls: z.boolean().optional(),
-  fileId: z.string().max(64).optional(),
-})
+import { videoSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

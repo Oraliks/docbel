@@ -5,11 +5,7 @@ import { z } from 'zod'
 import { Field, Group, Pills, SliderControl } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  stickySide: z.enum(['left', 'right']),
-  topOffset: z.number().min(0).max(500).optional(),
-})
+import { stickyDuoSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

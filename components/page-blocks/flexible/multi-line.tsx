@@ -1,6 +1,5 @@
 'use client'
 
-import { z } from 'zod'
 import {
   LineChart,
   Line,
@@ -18,20 +17,9 @@ import {
   SliderControl,
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { multiLineSchema as schema } from './schemas'
 
 const CHART_COLORS = ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4']
-
-const dataSchema = z.object({
-  label: z.string(),
-  values: z.record(z.string(), z.number()),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  data: z.array(dataSchema).max(50),
-  series: z.array(z.string()).max(20),
-  height: z.number().min(50).max(2000).optional(),
-})
 
 export const multiLine = defineBlock({
   type: 'multiLine',

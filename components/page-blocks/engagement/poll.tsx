@@ -8,18 +8,9 @@ import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
+import { pollOptionSchema, pollSchema as schema } from './schemas'
 
-const optionSchema = z.object({
-  label: z.string().max(500),
-  votes: z.number(),
-})
-
-const schema = z.object({
-  question: z.string().max(2000).default(''),
-  options: z.array(optionSchema).max(50),
-})
-
-type Option = z.infer<typeof optionSchema>
+type Option = z.infer<typeof pollOptionSchema>
 
 export const poll = defineBlock({
   type: 'poll',

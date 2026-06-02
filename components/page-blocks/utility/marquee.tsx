@@ -10,13 +10,7 @@ import {
   Pills,
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  text: z.string().max(2000).default(''),
-  speed: z.enum(['slow', 'normal', 'fast']).optional(),
-  reverse: z.boolean().optional(),
-  color: z.string().optional(),
-})
+import { marqueeSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

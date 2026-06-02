@@ -1,6 +1,5 @@
 'use client'
 
-import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import {
   ColorControl,
@@ -8,17 +7,7 @@ import {
   Group,
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const stageSchema = z.object({
-  label: z.string(),
-  value: z.number(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  stages: z.array(stageSchema).max(20),
-  color: z.string().optional(),
-})
+import { funnelChartSchema as schema } from './schemas'
 
 export const funnelChart = defineBlock({
   type: 'funnelChart',

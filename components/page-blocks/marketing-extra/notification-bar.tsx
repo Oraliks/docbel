@@ -8,15 +8,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
+import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  message: z.string().max(2000).default(''),
-  ctaText: z.string().max(120).optional(),
-  ctaLink: z.string().max(4096).optional(),
-  variant: z.enum(['info', 'success', 'warning', 'destructive']).optional(),
-  dismissible: z.boolean().optional(),
-})
+import { notificationBarSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 
@@ -57,7 +51,7 @@ export const notificationBar = defineBlock({
       >
         <span>{message}</span>
         {ctaText && (
-          <a href={ctaLink || '#'} className="underline font-medium hover:opacity-90">
+          <a href={safeHref(ctaLink)} className="underline font-medium hover:opacity-90">
             {ctaText}
           </a>
         )}

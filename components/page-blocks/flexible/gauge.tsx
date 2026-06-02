@@ -1,6 +1,5 @@
 'use client'
 
-import { z } from 'zod'
 import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -11,13 +10,7 @@ import {
   SliderControl,
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  label: z.string().max(200).optional(),
-  value: z.number().min(0).max(100).default(0),
-  color: z.string().optional(),
-  showValue: z.boolean().optional(),
-})
+import { gaugeSchema as schema } from './schemas'
 
 export const gauge = defineBlock({
   type: 'gauge',

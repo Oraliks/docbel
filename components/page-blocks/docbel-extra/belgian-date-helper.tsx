@@ -5,13 +5,7 @@ import { Calendar } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  startDate: z.string().default(''),
-  daysToAdd: z.number().default(30),
-  countWeekendsAndHolidays: z.enum(['businessOnly', 'all']).default('businessOnly'),
-  label: z.string().max(200).optional(),
-})
+import { belgianDateHelperSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

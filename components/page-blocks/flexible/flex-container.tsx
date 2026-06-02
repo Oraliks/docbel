@@ -5,14 +5,7 @@ import { Switch } from '@/components/ui/switch'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const schema = z.object({
-  direction: z.enum(['row', 'col']),
-  gap: z.enum(['sm', 'md', 'lg', 'xl']).optional(),
-  align: z.enum(['start', 'center', 'end', 'stretch']).optional(),
-  justify: z.enum(['start', 'center', 'end', 'space-between', 'space-around']).optional(),
-  wrap: z.boolean().optional(),
-})
+import { flexContainerSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

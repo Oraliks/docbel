@@ -6,20 +6,7 @@ import { Field, Group, Pills } from '@/components/page-builder/inspector/control
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
-
-const itemSchema = z.object({
-  value: z.string().max(40),
-  label: z.string().max(200),
-  prefix: z.string().max(20).optional(),
-  suffix: z.string().max(20).optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  items: z.array(itemSchema).max(12),
-  columns: z.union([z.literal(2), z.literal(3), z.literal(4)]),
-  variant: z.enum(['simple', 'cards', 'centered']).optional(),
-})
+import { statsSchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 type Item = Props['items'][number]

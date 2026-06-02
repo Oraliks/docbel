@@ -15,15 +15,9 @@ import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
+import { shareButtonsSchema as schema } from './schemas'
 
 const PLATFORMS = ['twitter', 'linkedin', 'facebook', 'email', 'whatsapp', 'copy'] as const
-
-const schema = z.object({
-  platforms: z.array(z.enum(PLATFORMS)),
-  align: z.enum(['left', 'center', 'right']).optional(),
-  size: z.enum(['sm', 'md', 'lg']).optional(),
-  utmCampaign: z.string().max(120).optional(),
-})
 
 type Props = z.infer<typeof schema>
 

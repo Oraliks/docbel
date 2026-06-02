@@ -4,12 +4,7 @@ import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-
-const schema = z.object({
-  delay: z.string().max(120).default(''),
-  context: z.string().max(500).default(''),
-  variant: z.enum(['large', 'inline']).optional(),
-})
+import { legalDelaySchema as schema } from './schemas'
 
 type Props = z.infer<typeof schema>
 

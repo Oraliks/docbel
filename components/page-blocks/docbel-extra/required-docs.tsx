@@ -8,19 +8,9 @@ import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
+import { requiredDocsSchema as schema } from './schemas'
 
-const docSchema = z.object({
-  name: z.string().max(500),
-  description: z.string().max(1000).optional(),
-  required: z.boolean().optional(),
-})
-
-const schema = z.object({
-  title: z.string().max(500).optional(),
-  items: z.array(docSchema).max(50),
-})
-
-type Doc = z.infer<typeof docSchema>
+type Doc = z.infer<typeof schema>['items'][number]
 
 export const requiredDocs = defineBlock({
   type: 'requiredDocs',

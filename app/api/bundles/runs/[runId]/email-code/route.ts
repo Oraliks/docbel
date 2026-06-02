@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
+import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 
 const BodySchema = z.object({
   email: z.string().email("Email invalide").max(200),

@@ -1,5 +1,4 @@
-// Validateurs belges — copie autonome (le module pdf-forms ne dépend pas de
-// lib/documents pour pouvoir être conservé si l'ancien système est supprimé).
+// Validateurs belges (NISS, BCE/TVA, téléphone) utilisés par le module pdf-forms.
 
 /// Raison d'invalidité d'un NISS — sert à produire un message d'erreur
 /// pédagogique (longueur vs. erreur de frappe).
@@ -87,6 +86,18 @@ export function isValidBelgianTVA(raw: string): boolean {
 }
 
 export const isValidBelgianBCE = isValidBelgianTVA;
+
+/// Normalise un numéro BCE/TVA en `BE + 10 chiffres`, retourne null si invalide.
+export function normalizeBelgianTVA(raw: string): string | null {
+  const cleaned = raw.replace(/[\s.\-]/g, "").toUpperCase();
+  const match = cleaned.match(/^(BE)?([01]\d{9})$/);
+  if (!match) return null;
+  const digits = match[2];
+  const base = parseInt(digits.slice(0, 8), 10);
+  const check = parseInt(digits.slice(8, 10), 10);
+  if (97 - (base % 97) !== check) return null;
+  return `BE${digits}`;
+}
 
 export function isValidBelgianPhone(raw: string): boolean {
   const cleaned = raw.replace(/[\s.\-()]/g, "");

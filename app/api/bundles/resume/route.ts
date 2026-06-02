@@ -6,7 +6,7 @@ import {
   isValidResumeCodeFormat,
   normalizeResumeCode,
 } from "@/lib/bundles/resume-code";
-import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
+import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 
 const BUNDLE_COOKIE = "beldoc-bundle-session";
 

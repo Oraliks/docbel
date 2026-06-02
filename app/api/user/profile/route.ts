@@ -8,7 +8,7 @@ import {
   isValidBelgianPostalCode,
   isValidBelgianPhone,
   isValidBelgianBCE,
-} from "@/lib/documents/validators";
+} from "@/lib/pdf-forms/validators";
 
 async function getUserId(): Promise<string | null> {
   const session = await auth.api.getSession({ headers: await headers() });

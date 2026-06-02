@@ -9,7 +9,7 @@ import {
   createPartnerConfirmationToken,
   sendPartnerConfirmationEmail,
 } from "@/lib/partner-confirmation";
-import { normalizeBelgianTVA } from "@/lib/documents/validators";
+import { normalizeBelgianTVA } from "@/lib/pdf-forms/validators";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 

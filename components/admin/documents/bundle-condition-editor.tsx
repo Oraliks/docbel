@@ -22,7 +22,7 @@ import {
   isFlatAndCondition,
   emptyLeaf,
   emptyGroup,
-} from "@/lib/documents/bundle-conditions";
+} from "@/lib/bundles/conditions";
 
 interface SchemaField {
   id: string;

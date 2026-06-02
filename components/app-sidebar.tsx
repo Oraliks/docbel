@@ -104,9 +104,7 @@ const defaultData = {
       ],
     },
     {
-      // Consolidation : tout ce qui touche aux formulaires PDF + dossiers
-      // vit désormais sous /admin/pdf/. L'ancien groupe "Documents" a été
-      // retiré (legacy DocumentTemplate dégage progressivement).
+      // Tout ce qui touche aux formulaires PDF + dossiers vit sous /admin/pdf/.
       title: "PDF Forms",
       url: "/admin/pdf",
       icon: (
@@ -119,9 +117,6 @@ const defaultData = {
         { title: "Organismes", url: "/admin/pdf/organismes" },
         { title: "Presets de champs", url: "/admin/pdf/presets" },
         { title: "Sources AcroForm", url: "/admin/pdf-sources" },
-        { title: "Documents générés", url: "/admin/pdf/generated" },
-        { title: "Analytics", url: "/admin/pdf/analytics" },
-        { title: "Paramètres système", url: "/admin/pdf/settings" },
       ],
     },
     {

@@ -1,4 +1,13 @@
-import { isValidBelgianBCE } from "./validators";
+/// BCE/TVA belge : 10 chiffres dont les 2 derniers forment un check modulo 97.
+function isValidBelgianBCE(raw: string): boolean {
+  const cleaned = raw.replace(/[\s.\-]/g, "").toUpperCase();
+  const match = cleaned.match(/^(BE)?([01]\d{9})$/);
+  if (!match) return false;
+  const digits = match[2];
+  const base = parseInt(digits.slice(0, 8), 10);
+  const check = parseInt(digits.slice(8, 10), 10);
+  return 97 - (base % 97) === check;
+}
 
 /// Données structurées d'une entreprise belge récupérée via la BCE.
 /// Champs nullables car certaines entreprises ont des infos partielles.

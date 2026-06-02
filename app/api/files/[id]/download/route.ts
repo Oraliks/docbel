@@ -5,7 +5,7 @@ import { resolveStoredFilePath } from "@/lib/file-storage"
 import { prisma } from "@/lib/prisma"
 import { readFile } from "fs/promises"
 import { existsSync } from "fs"
-import { isBlobsPath, getBlob } from "@/lib/documents/blob-storage"
+import { isBlobsPath, getBlob } from "@/lib/storage/blob-storage"
 
 const MIME_BY_EXT: Record<string, string> = {
   pdf: "application/pdf",

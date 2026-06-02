@@ -3,12 +3,10 @@ import { prisma } from "@/lib/prisma";
 import {
   BundleEditor,
   type AvailablePdfForm,
-  type AvailableTemplate,
   type BundleEditorData,
   type BundleEditorItem,
 } from "@/components/admin/documents/bundle-editor";
-import type { BundleCondition } from "@/lib/documents/bundle-conditions";
-import { DocumentField } from "@/lib/documents/types";
+import type { BundleCondition } from "@/lib/bundles/conditions";
 import type { PdfFormField } from "@/lib/pdf-forms/types";
 
 export const dynamic = "force-dynamic";
@@ -20,31 +18,17 @@ export default async function EditBundlePage({
 }) {
   const { id } = await params;
 
-  const [bundle, templates, pdfForms] = await Promise.all([
+  const [bundle, pdfForms] = await Promise.all([
     prisma.documentBundle.findUnique({
       where: { id },
       include: {
         items: {
           orderBy: { order: "asc" },
           include: {
-            template: {
-              include: {
-                tool: { select: { id: true, name: true, slug: true } },
-                organisme: { select: { id: true, shortName: true, color: true } },
-              },
-            },
             pdfForm: { select: { id: true, slug: true, title: true, issuer: true } },
           },
         },
       },
-    }),
-    prisma.documentTemplate.findMany({
-      where: { status: "published" },
-      include: {
-        tool: { select: { id: true, name: true, slug: true } },
-        organisme: { select: { id: true, shortName: true, color: true } },
-      },
-      orderBy: { tool: { name: "asc" } },
     }),
     prisma.pdfForm.findMany({
       where: { status: "published" },
@@ -55,14 +39,6 @@ export default async function EditBundlePage({
 
   if (!bundle) notFound();
 
-  const availableTemplates: AvailableTemplate[] = templates.map((t) => ({
-    id: t.id,
-    toolId: t.tool.id,
-    toolName: t.tool.name,
-    toolSlug: t.tool.slug,
-    organisme: t.organisme,
-  }));
-
   const availablePdfForms: AvailablePdfForm[] = pdfForms.map((p) => ({
     id: p.id,
     slug: p.slug,
@@ -70,21 +46,11 @@ export default async function EditBundlePage({
     issuer: p.issuer,
   }));
 
+  // Schémas par PdfForm pour l'éditeur de conditions cross-form.
   const templateSchemas: Record<
     string,
     { id: string; label: string; type: string; options?: { value: string; label: string }[] }[]
   > = {};
-  for (const t of templates) {
-    const fields = (t.schema as unknown as DocumentField[]) || [];
-    templateSchemas[t.id] = fields.map((f) => ({
-      id: f.id,
-      label: f.label,
-      type: f.type,
-      options: f.options,
-    }));
-  }
-  // Les PdfForm exposent leurs champs comme source possible pour les conditions
-  // cross-form aussi. On normalise au même format que `templateSchemas`.
   for (const p of pdfForms) {
     const fields = (p.fields as unknown as PdfFormField[]) || [];
     templateSchemas[p.id] = fields.map((f) => ({
@@ -100,20 +66,12 @@ export default async function EditBundlePage({
 
   const items: BundleEditorItem[] = bundle.items.map((it) => ({
     id: it.id,
-    templateId: it.templateId,
+    templateId: null,
     pdfFormId: it.pdfFormId,
     order: it.order,
     required: it.required,
     condition: (it.condition as unknown as BundleCondition) ?? null,
-    template: it.template
-      ? {
-          id: it.template.id,
-          toolId: it.template.tool.id,
-          toolName: it.template.tool.name,
-          toolSlug: it.template.tool.slug,
-          organisme: it.template.organisme,
-        }
-      : null,
+    template: null,
     pdfForm: it.pdfForm
       ? {
           id: it.pdfForm.id,
@@ -144,7 +102,7 @@ export default async function EditBundlePage({
     <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <BundleEditor
         initial={initial}
-        availableTemplates={availableTemplates}
+        availableTemplates={[]}
         availablePdfForms={availablePdfForms}
         templateSchemas={templateSchemas}
       />

@@ -11,7 +11,7 @@ import {
   type CollectedPayloads,
   type ConditionGroup,
   type BundleConditionRule,
-} from "../bundle-conditions";
+} from "../conditions";
 
 const payloads: CollectedPayloads = {
   tplA: { firstQuestion: "yes", age: 25, city: "Bruxelles" },

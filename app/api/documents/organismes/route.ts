@@ -25,7 +25,7 @@ export async function GET() {
     prisma.organisme.findMany({
       orderBy: [{ active: "desc" }, { order: "asc" }, { name: "asc" }],
       include: {
-        _count: { select: { templates: true } },
+        _count: { select: { pdfForms: true } },
       },
     })
   );

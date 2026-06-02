@@ -239,9 +239,6 @@ model File {
   updatedAt DateTime    @updatedAt
   usage     FileUsage[]
 
-  docTemplateSources  DocumentTemplate[]  @relation("DocTemplateSource")
-  docGeneratedOutputs GeneratedDocument[] @relation("DocGeneratedOutput")
-
   @@index([parentId])
   @@index([parentId, type])
   @@index([type])
@@ -317,8 +314,6 @@ model Tool {
   nextReviewDue  DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
-
-  documentTemplate DocumentTemplate?
 
   @@index([sectionId])
   @@index([slug])
@@ -740,112 +735,11 @@ model BareSheet {
   @@index([category])
 }
 
-model DocumentTemplate {
-  id                String  @id @default(cuid())
-  toolId            String  @unique
-  tool              Tool    @relation(fields: [toolId], references: [id], onDelete: Cascade)
-  sourceFileId      String
-  sourceFile        File    @relation("DocTemplateSource", fields: [sourceFileId], references: [id])
-  sourceType        String // "pdf_acroform" | "pdf_flat" | "docx"
-  schema            Json // DocumentField[] — voir lib/documents/types.ts
-  outputFilenameTpl String  @default("document-{{date}}.pdf")
-  rgpdNotice        String?
-  retentionDays     Int     @default(30)
-  status            String  @default("draft") // draft | published | archived
-  version           Int     @default(1)
-
-  // Organisme émetteur (ONEM, CPAS, etc.)
-  organismeId String?
-  organisme   Organisme? @relation(fields: [organismeId], references: [id])
-
-  // Validité officielle du document
-  effectiveDate DateTime? // Date à partir de laquelle ce document officiel est en vigueur
-  expiresAt     DateTime? // Date connue de fin de validité (null = pas de date connue)
-  officialRef   String? // Référence officielle ("Formulaire C1", "Annexe 4-bis", etc.)
-
-  // Signature électronique
-  requiresSignature Boolean @default(false)
-  signaturePosition Json? // { page, x, y, w, h } — position de la signature sur le PDF
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  generated       GeneratedDocument[]
-  drafts          DocumentDraft[]
-  revisions       DocumentTemplateRevision[]
-  bundleItems     DocumentBundleItem[]
-  analyticsEvents FormAnalyticsEvent[]
-
-  @@index([status])
-  @@index([organismeId])
-  @@index([effectiveDate])
-  @@index([expiresAt])
-}
-
-model DocumentTemplateRevision {
-  id                String           @id @default(cuid())
-  templateId        String
-  template          DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  version           Int
-  schema            Json
-  sourceType        String
-  rgpdNotice        String?
-  retentionDays     Int
-  outputFilenameTpl String
-
-  // Notes de changement entre versions
-  changeNotes String? // Description libre des changements
-  changeType  String  @default("minor") // minor | major | hotfix | source_update (= nouveau PDF officiel)
-  diffSummary Json? // { added: [], removed: [], modified: [] } — calculé à la création
-
-  createdBy String?
-  createdAt DateTime @default(now())
-
-  @@index([templateId])
-  @@index([createdAt])
-  @@index([changeType])
-}
-
 model AppSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
   updatedBy String?
-}
-
-model GeneratedDocument {
-  id           String           @id @default(cuid())
-  templateId   String
-  template     DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  userId       String?
-  outputFileId String?
-  outputFile   File?            @relation("DocGeneratedOutput", fields: [outputFileId], references: [id])
-  payloadHash  String
-  emailSentTo  String?
-  ipHash       String?
-  bundleRunId  String? // si généré dans le cadre d'un bundle
-  createdAt    DateTime         @default(now())
-  expiresAt    DateTime
-
-  signature SignatureRecord?
-
-  @@index([templateId])
-  @@index([expiresAt])
-  @@index([userId])
-  @@index([bundleRunId])
-}
-
-model DocumentDraft {
-  id         String           @id @default(cuid())
-  templateId String
-  template   DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  userId     String
-  payload    Json
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
-
-  @@unique([templateId, userId])
-  @@index([userId])
 }
 
 model CommissionParitaire {
@@ -944,7 +838,6 @@ model Organisme {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  templates DocumentTemplate[]
   bureaus   Bureau[]
   pdfForms  PdfForm[] @relation("OrganismePdfForms")
 
@@ -1023,39 +916,6 @@ model FieldValidationPreset {
   @@index([builtin])
 }
 
-/// Trace d'audit pour une signature électronique apposée sur un document généré.
-/// Stocke la signature elle-même + métadonnées prouvant qui a signé quoi et quand.
-model SignatureRecord {
-  id                  String            @id @default(cuid())
-  generatedDocumentId String            @unique
-  generatedDocument   GeneratedDocument @relation(fields: [generatedDocumentId], references: [id], onDelete: Cascade)
-
-  // Signataire
-  signerName   String
-  signerEmail  String?
-  signerUserId String?
-
-  // Données signature (image dessinée ou tapée)
-  signatureImageData String? // data URL base64 (PNG)
-  signatureMethod    String  @default("drawn") // drawn | uploaded | typed
-
-  // Audit trail
-  ipAddress String?
-  userAgent String?
-
-  // Intégrité du document
-  pdfHashBefore String // SHA256 du PDF avant signature
-  pdfHashAfter  String // SHA256 du PDF signé
-  payloadHash   String // SHA256 du payload du formulaire
-
-  // Horodatage signé optionnel (PAdES) — null si signature simple
-  certThumbprint String?
-  signedAt       DateTime @default(now())
-
-  @@index([signerUserId])
-  @@index([signedAt])
-}
-
 /// Bundle = groupe de documents générés en cascade pour un parcours utilisateur.
 /// Ex: "Demande de chômage complète" = C1 + C4 + Annexe 27.
 ///
@@ -1103,28 +963,22 @@ model DocumentBundle {
   @@index([lifeEventCategory])
 }
 
-/// Un item d'un bundle = une référence vers un document (ancien `DocumentTemplate`
-/// OU nouveau `PdfForm`). EXACTEMENT UN des deux IDs doit être défini.
-/// Les deux IDs sont des cuid globalement uniques → cohabitent sans collision
-/// dans `BundleRun.payloads`, lequel les indexe indifféremment.
+/// Un item d'un bundle = une référence vers un `PdfForm`.
+/// La colonne historique `templateId` est conservée comme nullable
+/// pour préserver d'éventuelles lignes existantes ; les nouveaux items
+/// référencent uniquement `pdfFormId`.
 model DocumentBundleItem {
-  id         String            @id @default(cuid())
+  id         String         @id @default(cuid())
   bundleId   String
-  bundle     DocumentBundle    @relation(fields: [bundleId], references: [id], onDelete: Cascade)
-  /// Référence vers l'ancien module Documents (DOCX/PDF flat overlay).
+  bundle     DocumentBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
   templateId String?
-  template   DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  /// Référence vers le nouveau module PDF Forms (AcroForm).
   pdfFormId  String?
-  pdfForm    PdfForm?          @relation(fields: [pdfFormId], references: [id], onDelete: Cascade)
-  order      Int               @default(0)
-  required   Boolean           @default(true)
+  pdfForm    PdfForm?       @relation(fields: [pdfFormId], references: [id], onDelete: Cascade)
+  order      Int            @default(0)
+  required   Boolean        @default(true)
   // Condition d'inclusion : tableau de règles ANDées (V1) ou arbre AND/OR (V2).
-  // `sourceTemplateId` dans les feuilles est un nom historique — la valeur peut
-  // être soit un templateId, soit un pdfFormId (cuid globalement unique).
   condition  Json?
 
-  @@unique([bundleId, templateId])
   @@unique([bundleId, pdfFormId])
   @@index([bundleId])
   @@index([pdfFormId])
@@ -1241,30 +1095,6 @@ model OcrSnapshot {
 
   @@index([sha256])
   @@index([fileId])
-}
-
-/// Événements d'analytics côté formulaire utilisateur (Phase 14).
-/// Permet de mesurer abandon, temps par section, erreurs de validation fréquentes.
-/// Aucune donnée personnelle stockée — seulement l'ID du template et l'événement.
-model FormAnalyticsEvent {
-  id         String           @id @default(cuid())
-  templateId String
-  template   DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  // ID anonyme de session (cookie côté client) pour reconstituer un parcours
-  sessionId  String
-  userId     String? // si connecté
-  // started | section_completed | field_error | preview | abandoned | submitted | signature_started
-  eventType  String
-  // Pour event=field_error → id du champ. Pour section_completed → nom section.
-  contextKey String?
-  // Métadonnées libres : { sectionIdx, errorMsg, durationMs, etc. }
-  metadata   Json?
-  createdAt  DateTime         @default(now())
-
-  @@index([templateId, createdAt])
-  @@index([sessionId])
-  @@index([eventType])
-  @@index([templateId, eventType, createdAt])
 }
 
 // =====================================================================

@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function PdfOrganismesPage() {
   const organismesRaw = await prisma.organisme.findMany({
     orderBy: [{ active: "desc" }, { order: "asc" }, { name: "asc" }],
-    include: { _count: { select: { templates: true, pdfForms: true } } },
+    include: { _count: { select: { pdfForms: true } } },
   });
 
   const organismes = organismesRaw.map((o) => ({
@@ -24,9 +24,9 @@ export default async function PdfOrganismesPage() {
     description: o.description,
     active: o.active,
     order: o.order,
-    // Le composant attend un champ `templateCount` (legacy) ; on additionne
-    // anciens et nouveaux pour donner la vue globale d'usage.
-    templateCount: o._count.templates + o._count.pdfForms,
+    // Le composant attend un champ `templateCount` (legacy) — on y met le
+    // décompte de PdfForm rattachés à cet organisme.
+    templateCount: o._count.pdfForms,
     createdAt: o.createdAt.toISOString(),
     updatedAt: o.updatedAt.toISOString(),
   }));

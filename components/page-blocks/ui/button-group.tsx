@@ -4,9 +4,10 @@ import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { LinkInput } from '@/components/page-builder/inspector/link-input'
+import { ActionInput } from '@/components/page-builder/inspector/action-input'
 import { RepeaterList } from '@/components/page-builder/inspector/repeater-list'
+import { ActionButton } from '@/components/page-builder/action-button'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
 import { buttonGroupSchema as schema } from './schemas'
 
@@ -50,17 +51,18 @@ export const buttonGroup = defineBlock({
     return (
       <div className={cn('flex flex-wrap gap-2', alignClass)}>
         {items.map((btn, i) => (
-          <a
+          <ActionButton
             key={i}
-            href={safeHref(btn.link)}
+            action={btn.action}
+            href={btn.link}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg font-medium transition',
+              'inline-flex items-center gap-1.5 rounded-lg font-medium transition cursor-pointer',
               VARIANT_STYLE[btn.variant ?? 'primary'],
               SIZE_CLASS[size]
             )}
           >
             {btn.text}
-          </a>
+          </ActionButton>
         ))}
       </div>
     )
@@ -118,6 +120,7 @@ export const buttonGroup = defineBlock({
                   { value: 'ghost', label: 'Ghost' },
                 ]}
               />
+              <ActionInput value={item.action} onChange={(action) => set({ action })} />
             </>
           )}
           addItem={() => ({ text: 'Nouveau bouton', link: '#', variant: 'primary' })}

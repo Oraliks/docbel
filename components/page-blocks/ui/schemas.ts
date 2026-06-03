@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { actionSchema } from '@/lib/page-builder/action-schema'
 
 const accordionItemSchema = z.object({
   title: z.string().max(500),
@@ -46,6 +47,7 @@ const buttonGroupItemSchema = z.object({
   link: z.string().max(4096),
   variant: z.enum(['primary', 'secondary', 'outline', 'ghost']).optional(),
   icon: z.string().max(40).optional(),
+  action: actionSchema.optional(),
 })
 
 export const buttonGroupSchema = z.object({

@@ -1,10 +1,18 @@
 'use client'
 
-import { LineChart as RLineChart, Line, ResponsiveContainer } from 'recharts'
+import dynamic from 'next/dynamic'
+import { ChartBlockFallback } from '../_chart-fallback'
 import { Input } from '@/components/ui/input'
 import { ColorControl, Field, Group } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { sparklineSchema as schema } from './schemas'
+
+// recharts chargé en dynamic → hors bundle public. Le conteneur dimensionné
+// (120×40) reste rendu par le bloc (pas de CLS) ; seul le graphe est différé.
+const SparklineView = dynamic(
+  () => import('./sparkline-view').then((m) => ({ default: m.SparklineView })),
+  { ssr: false, loading: () => <ChartBlockFallback /> }
+)
 
 export const sparkline = defineBlock({
   type: 'sparkline',
@@ -23,8 +31,7 @@ export const sparkline = defineBlock({
     shortcuts: ['sparkline'],
   },
   Render: ({ props }) => {
-    const { data, color = '#7C3AED', label, value } = props
-    const chartData = data.map((v, i) => ({ i, v }))
+    const { label, value } = props
     return (
       <div className="rounded-2xl border bg-card p-4 my-2">
         <div className="flex items-end justify-between">
@@ -33,11 +40,7 @@ export const sparkline = defineBlock({
             {value && <div className="text-2xl font-bold">{value}</div>}
           </div>
           <div style={{ width: 120, height: 40 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <RLineChart data={chartData}>
-                <Line type="monotone" dataKey="v" stroke={color} strokeWidth={2} dot={false} />
-              </RLineChart>
-            </ResponsiveContainer>
+            <SparklineView {...props} />
           </div>
         </div>
       </div>

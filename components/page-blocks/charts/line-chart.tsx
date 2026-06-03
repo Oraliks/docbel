@@ -1,14 +1,7 @@
 'use client'
 
-import {
-  LineChart as RLineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from 'recharts'
+import dynamic from 'next/dynamic'
+import { ChartBlockFallback } from '../_chart-fallback'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -20,6 +13,13 @@ import {
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { ChartDataEditor } from './_chart-data-editor'
 import { lineChartSchema as schema } from './schemas'
+
+// recharts chargé en dynamic → hors bundle public. Le conteneur dimensionné
+// reste rendu par le bloc (pas de CLS) ; seul le graphe recharts est différé.
+const LineChartView = dynamic(
+  () => import('./line-chart-view').then((m) => ({ default: m.LineChartView })),
+  { ssr: false, loading: () => <ChartBlockFallback /> }
+)
 
 export const lineChart = defineBlock({
   type: 'lineChart',
@@ -45,34 +45,12 @@ export const lineChart = defineBlock({
     shortcuts: ['line'],
   },
   Render: ({ props }) => {
-    const { title, data, color = '#7C3AED', smooth = true, height = 300 } = props
+    const { title, height = 300 } = props
     return (
       <div className="w-full my-2">
         {title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}
         <div style={{ height }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <RLineChart data={data} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={12} />
-              <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
-              <Line
-                type={smooth ? 'monotone' : 'linear'}
-                dataKey="value"
-                stroke={color}
-                strokeWidth={2.5}
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </RLineChart>
-          </ResponsiveContainer>
+          <LineChartView {...props} />
         </div>
       </div>
     )

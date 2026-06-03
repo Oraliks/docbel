@@ -1,15 +1,7 @@
 'use client'
 
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts'
+import dynamic from 'next/dynamic'
+import { ChartBlockFallback } from '../_chart-fallback'
 import { Input } from '@/components/ui/input'
 import {
   Field,
@@ -19,7 +11,11 @@ import {
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { stackedBarSchema as schema } from './schemas'
 
-const CHART_COLORS = ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4']
+// recharts chargé en dynamic → hors bundle public.
+const StackedBarView = dynamic(
+  () => import('./stacked-bar-view').then((m) => ({ default: m.StackedBarView })),
+  { ssr: false, loading: () => <ChartBlockFallback /> }
+)
 
 export const stackedBar = defineBlock({
   type: 'stackedBar',
@@ -42,36 +38,12 @@ export const stackedBar = defineBlock({
     shortcuts: ['stacked'],
   },
   Render: ({ props }) => {
-    const { title, data, series, height = 300 } = props
-    const chartData = data.map((d) => ({ label: d.label, ...d.values }))
+    const { title, height = 300 } = props
     return (
       <div className="my-2">
         {title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}
         <div style={{ height }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={12} />
-              <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              {series.map((key, i) => (
-                <Bar
-                  key={key}
-                  dataKey={key}
-                  stackId="a"
-                  fill={CHART_COLORS[i % CHART_COLORS.length]}
-                />
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
+          <StackedBarView {...props} />
         </div>
       </div>
     )

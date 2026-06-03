@@ -1,6 +1,7 @@
 'use client'
 
-import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts'
+import dynamic from 'next/dynamic'
+import { ChartBlockFallback } from '../_chart-fallback'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -11,6 +12,13 @@ import {
 } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { gaugeSchema as schema } from './schemas'
+
+// recharts chargé en dynamic → hors bundle public. L'overlay valeur (%) reste
+// rendu par le bloc ; seul l'arc recharts est différé.
+const GaugeView = dynamic(
+  () => import('./gauge-view').then((m) => ({ default: m.GaugeView })),
+  { ssr: false, loading: () => <ChartBlockFallback /> }
+)
 
 export const gauge = defineBlock({
   type: 'gauge',
@@ -24,9 +32,8 @@ export const gauge = defineBlock({
     shortcuts: ['gauge', 'jauge'],
   },
   Render: ({ props }) => {
-    const { label, value, color = '#7C3AED', showValue = true } = props
+    const { label, value, showValue = true } = props
     const v = Math.max(0, Math.min(100, value))
-    const data = [{ name: 'value', value: v, fill: color }]
     return (
       <div className="my-2 inline-block w-48">
         {label && (
@@ -35,24 +42,7 @@ export const gauge = defineBlock({
           </div>
         )}
         <div className="relative" style={{ height: 130 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <RadialBarChart
-              innerRadius="65%"
-              outerRadius="100%"
-              data={data}
-              startAngle={180}
-              endAngle={0}
-              cx="50%"
-              cy="100%"
-            >
-              <RadialBar
-                dataKey="value"
-                cornerRadius={10}
-                fill={color}
-                background={{ fill: 'var(--muted)' }}
-              />
-            </RadialBarChart>
-          </ResponsiveContainer>
+          <GaugeView {...props} />
           {showValue && (
             <div className="absolute inset-x-0 bottom-2 text-center text-2xl font-bold">
               {v}%

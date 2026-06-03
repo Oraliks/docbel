@@ -1,6 +1,7 @@
 'use client'
 
-import { PieChart as RPieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import dynamic from 'next/dynamic'
+import { ChartBlockFallback } from '../_chart-fallback'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -12,7 +13,12 @@ import { defineBlock } from '@/lib/page-builder/block-definition'
 import { ChartDataEditor } from './_chart-data-editor'
 import { pieChartSchema as schema } from './schemas'
 
-const COLORS = ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']
+// recharts chargé en dynamic → hors bundle public. Le conteneur dimensionné
+// reste rendu par le bloc (pas de CLS) ; seul le graphe recharts est différé.
+const PieChartView = dynamic(
+  () => import('./pie-chart-view').then((m) => ({ default: m.PieChartView })),
+  { ssr: false, loading: () => <ChartBlockFallback /> }
+)
 
 export const pieChart = defineBlock({
   type: 'pieChart',
@@ -35,38 +41,12 @@ export const pieChart = defineBlock({
     shortcuts: ['pie', 'donut'],
   },
   Render: ({ props }) => {
-    const { title, data, donut, height = 300 } = props
+    const { title, height = 300 } = props
     return (
       <div className="w-full my-2">
         {title && <h3 className="text-lg font-semibold mb-3 text-center">{title}</h3>}
         <div style={{ height }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <RPieChart>
-              <Pie
-                data={data}
-                dataKey="value"
-                nameKey="label"
-                cx="50%"
-                cy="50%"
-                outerRadius={Math.min(height / 3, 110)}
-                innerRadius={donut ? Math.min(height / 5, 60) : 0}
-                label
-                labelLine={false}
-              >
-                {data.map((_, index) => (
-                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
-            </RPieChart>
-          </ResponsiveContainer>
+          <PieChartView {...props} />
         </div>
       </div>
     )

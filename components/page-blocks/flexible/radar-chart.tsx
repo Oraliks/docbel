@@ -1,15 +1,7 @@
 'use client'
 
-import { z } from 'zod'
-import {
-  Radar,
-  RadarChart as RechartsRadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts'
+import dynamic from 'next/dynamic'
+import { ChartBlockFallback } from '../_chart-fallback'
 import { Input } from '@/components/ui/input'
 import {
   ColorControl,
@@ -20,7 +12,11 @@ import {
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { radarChartSchema as schema } from './schemas'
 
-type Props = z.infer<typeof schema>
+// recharts chargé en dynamic → hors bundle public.
+const RadarChartView = dynamic(
+  () => import('./radar-chart-view').then((m) => ({ default: m.RadarChartView })),
+  { ssr: false, loading: () => <ChartBlockFallback /> }
+)
 
 export const radarChart = defineBlock({
   type: 'radarChart',
@@ -45,28 +41,12 @@ export const radarChart = defineBlock({
     shortcuts: ['radar', 'spider'],
   },
   Render: ({ props }) => {
-    const { title, data, color = '#7C3AED', height = 300 } = props
-    const chartData = data.map((d) => ({ subject: d.label, value: d.value, max: d.max ?? 100 }))
+    const { title, height = 300 } = props
     return (
       <div className="my-2">
         {title && <h3 className="text-lg font-semibold mb-3">{title}</h3>}
         <div style={{ height }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <RechartsRadarChart data={chartData}>
-              <PolarGrid stroke="var(--border)" />
-              <PolarAngleAxis dataKey="subject" stroke="var(--muted-foreground)" fontSize={11} />
-              <PolarRadiusAxis stroke="var(--muted-foreground)" fontSize={10} />
-              <Radar dataKey="value" stroke={color} fill={color} fillOpacity={0.3} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
-            </RechartsRadarChart>
-          </ResponsiveContainer>
+          <RadarChartView {...props} />
         </div>
       </div>
     )

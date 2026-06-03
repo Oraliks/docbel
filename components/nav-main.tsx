@@ -76,8 +76,27 @@ export function NavMain({
   items: NavItem[]
   unreadCount?: number
 }) {
-  const [openItems, setOpenItems] = useState<string[]>([])
   const isActive = useIsQuickLinkActive()
+  // Seed : ouvre d'emblée le(s) groupe(s) contenant la route active pour que
+  // l'utilisateur voie où il se trouve dès le premier rendu. Initializer lazy
+  // (s'exécute une fois au montage) → pas de setState en effect (règle ESLint
+  // react-hooks/set-state-in-effect du projet).
+  const [openItems, setOpenItems] = useState<string[]>(() => {
+    const open: string[] = []
+    for (const item of items) {
+      if (!item.items?.length) continue
+      let groupOpen = false
+      for (const sub of item.items) {
+        const childActive = sub.children?.some((leaf) => isActive(leaf.url)) ?? false
+        if (isActive(sub.url) || childActive) {
+          groupOpen = true
+          if (childActive) open.push(`${item.title}::${sub.title}`)
+        }
+      }
+      if (groupOpen) open.push(item.title)
+    }
+    return open
+  })
 
   const toggleItem = (title: string) => {
     setOpenItems((previous) =>
@@ -169,7 +188,7 @@ export function NavMain({
                                   <div className="flex items-stretch gap-0.5">
                                     <SidebarMenuSubButton
                                       render={<Link href={subItem.url} />}
-                                      isActive={false}
+                                      isActive={isActive(subItem.url)}
                                       className="flex-1"
                                     >
                                       {subItem.title}
@@ -199,7 +218,7 @@ export function NavMain({
                                         <li key={leaf.title}>
                                           <SidebarMenuSubButton
                                             render={<Link href={leaf.url} />}
-                                            isActive={false}
+                                            isActive={isActive(leaf.url)}
                                             className="text-xs"
                                           >
                                             {leaf.title}
@@ -212,7 +231,7 @@ export function NavMain({
                               ) : (
                                 <SidebarMenuSubButton
                                   render={<Link href={subItem.url} />}
-                                  isActive={false}
+                                  isActive={isActive(subItem.url)}
                                 >
                                   {subItem.title}
                                 </SidebarMenuSubButton>
@@ -228,6 +247,7 @@ export function NavMain({
                     tooltip={item.title}
                     className="flex items-center gap-2"
                     render={<Link href={item.url} />}
+                    isActive={isActive(item.url)}
                   >
                     <span className="flex items-center justify-center size-4">{item.icon}</span>
                     <span>{item.title}</span>

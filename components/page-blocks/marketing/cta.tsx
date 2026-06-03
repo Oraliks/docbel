@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { LinkInput } from '@/components/page-builder/inspector/link-input'
+import { ActionInput } from '@/components/page-builder/inspector/action-input'
+import { ActionButton } from '@/components/page-builder/action-button'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-import { safeHref } from '@/lib/page-builder/url-utils'
 import { cn } from '@/lib/utils'
 import { ctaSchema as schema } from './schemas'
 
@@ -60,27 +61,38 @@ export const cta = defineBlock({
       link,
       secondaryText,
       secondaryLink,
+      action,
+      secondaryAction,
       variant = 'banner',
       buttonStyle = 'primary',
       buttonSize = 'md',
     } = props
     const buttonClass = cn(
-      'inline-flex items-center gap-2 rounded-lg font-medium transition',
+      'inline-flex items-center gap-2 rounded-lg font-medium transition cursor-pointer',
       BTN_SIZE[buttonSize],
       BTN_STYLE[buttonStyle]
     )
 
+    const primary = (
+      <ActionButton action={action} href={link} className={buttonClass}>
+        {text} <ArrowRight className="size-4" />
+      </ActionButton>
+    )
+    const secondary = secondaryText ? (
+      <ActionButton
+        action={secondaryAction}
+        href={secondaryLink}
+        className="text-sm font-medium hover:underline cursor-pointer"
+      >
+        {secondaryText}
+      </ActionButton>
+    ) : null
+
     if (variant === 'inline') {
       return (
         <div className="flex flex-wrap items-center gap-3">
-          <a href={safeHref(link)} className={buttonClass}>
-            {text} <ArrowRight className="size-4" />
-          </a>
-          {secondaryText && (
-            <a href={safeHref(secondaryLink)} className="text-sm font-medium hover:underline">
-              {secondaryText}
-            </a>
-          )}
+          {primary}
+          {secondary}
         </div>
       )
     }
@@ -93,14 +105,8 @@ export const cta = defineBlock({
             <p className="mt-2 text-muted-foreground max-w-md mx-auto">{description}</p>
           )}
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <a href={safeHref(link)} className={buttonClass}>
-              {text} <ArrowRight className="size-4" />
-            </a>
-            {secondaryText && (
-              <a href={safeHref(secondaryLink)} className="text-sm font-medium hover:underline">
-                {secondaryText}
-              </a>
-            )}
+            {primary}
+            {secondary}
           </div>
         </div>
       )
@@ -114,22 +120,24 @@ export const cta = defineBlock({
             {description && <p className="mt-2 opacity-90">{description}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <a
-              href={safeHref(link)}
+            <ActionButton
+              action={action}
+              href={link}
               className={cn(
-                'inline-flex items-center gap-2 rounded-lg font-medium transition bg-primary-foreground text-primary hover:opacity-90',
+                'inline-flex items-center gap-2 rounded-lg font-medium transition bg-primary-foreground text-primary hover:opacity-90 cursor-pointer',
                 BTN_SIZE[buttonSize]
               )}
             >
               {text} <ArrowRight className="size-4" />
-            </a>
+            </ActionButton>
             {secondaryText && (
-              <a
-                href={safeHref(secondaryLink)}
-                className="text-sm font-medium underline-offset-4 hover:underline"
+              <ActionButton
+                action={secondaryAction}
+                href={secondaryLink}
+                className="text-sm font-medium underline-offset-4 hover:underline cursor-pointer"
               >
                 {secondaryText}
-              </a>
+              </ActionButton>
             )}
           </div>
         </div>
@@ -166,6 +174,9 @@ export const cta = defineBlock({
             placeholder="/cible ou https://…"
           />
         </Field>
+        <Field label="Bouton — action (avancé)">
+          <ActionInput value={props.action} onChange={(action) => onChange({ action })} />
+        </Field>
         <Field label="Lien secondaire — texte">
           <Input
             value={props.secondaryText ?? ''}
@@ -176,6 +187,12 @@ export const cta = defineBlock({
           <LinkInput
             value={props.secondaryLink ?? ''}
             onChange={(secondaryLink) => onChange({ secondaryLink })}
+          />
+        </Field>
+        <Field label="Lien secondaire — action (avancé)">
+          <ActionInput
+            value={props.secondaryAction}
+            onChange={(secondaryAction) => onChange({ secondaryAction })}
           />
         </Field>
       </Group>

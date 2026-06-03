@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { actionSchema } from '@/lib/page-builder/action-schema'
 
 export const heroSchema = z.object({
   title: z.string().max(500).default(''),
@@ -37,6 +38,8 @@ export const ctaSchema = z.object({
   variant: z.enum(['inline', 'banner', 'card']).optional(),
   buttonStyle: z.enum(['primary', 'secondary', 'outline', 'ghost']).optional(),
   buttonSize: z.enum(['sm', 'md', 'lg']).optional(),
+  action: actionSchema.optional(),
+  secondaryAction: actionSchema.optional(),
 })
 
 const faqItemSchema = z.object({

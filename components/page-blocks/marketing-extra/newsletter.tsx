@@ -17,6 +17,7 @@ export const newsletter = defineBlock({
     description: 'Recevez nos nouveautés une fois par semaine.',
     placeholder: 'votre@email.com',
     buttonText: 'S\'inscrire',
+    endpoint: '/api/messages',
     successMessage: 'Merci, vous êtes inscrit !',
   },
   meta: {
@@ -32,7 +33,7 @@ export const newsletter = defineBlock({
       description,
       placeholder = 'votre@email.com',
       buttonText,
-      endpoint,
+      endpoint = '/api/messages',
       successMessage = 'Merci, vous êtes inscrit !',
     } = props
     const [email, setEmail] = useState('')

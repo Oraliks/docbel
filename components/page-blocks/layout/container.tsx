@@ -5,6 +5,7 @@ import { Field, Group, Pills } from '@/components/page-builder/inspector/control
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
 import { containerSchema as schema } from './schemas'
+import { ChildLayoutFields } from './child-layout-fields'
 
 type Props = z.infer<typeof schema>
 
@@ -34,6 +35,7 @@ export const container = defineBlock({
     </div>
   ),
   Fields: ({ props, onChange }) => (
+    <>
     <Group title="Contenu" defaultOpen>
       <Field label="Largeur max">
         <Pills
@@ -49,5 +51,7 @@ export const container = defineBlock({
         />
       </Field>
     </Group>
+    <ChildLayoutFields props={props} onChange={onChange} />
+    </>
   ),
 })

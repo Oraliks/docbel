@@ -1,6 +1,7 @@
 import React from 'react'
 import type { BlockProps } from '@/lib/page-builder/types'
 import { BlockRenderer } from './block-renderer'
+import { childLayoutClass, type ChildLayout } from '@/components/page-blocks/layout/container-layout'
 import type { InterpolationContext } from '@/lib/page-builder/interpolate'
 
 interface PublicRendererProps {
@@ -28,17 +29,21 @@ function RenderBlock({
 }) {
   if (block.type === 'section' || block.type === 'container') {
     const children = childrenOf(allBlocks, block.id)
+    const layoutCls = childLayoutClass(block.props as ChildLayout)
+    const rendered = children.map((c) => (
+      <RenderBlock key={c.id} block={c} allBlocks={allBlocks} context={context} />
+    ))
     return (
       <BlockRenderer
         block={block}
         interpolationContext={context}
         slot={
           children.length > 0 ? (
-            <>
-              {children.map((c) => (
-                <RenderBlock key={c.id} block={c} allBlocks={allBlocks} context={context} />
-              ))}
-            </>
+            layoutCls ? (
+              <div className={layoutCls}>{rendered}</div>
+            ) : (
+              <>{rendered}</>
+            )
           ) : null
         }
       />

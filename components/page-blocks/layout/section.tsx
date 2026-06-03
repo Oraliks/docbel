@@ -13,6 +13,7 @@ import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { defineBlock } from '@/lib/page-builder/block-definition'
 import { cn } from '@/lib/utils'
 import { sectionSchema as schema } from './schemas'
+import { ChildLayoutFields } from './child-layout-fields'
 
 export const section = defineBlock({
   type: 'section',
@@ -53,6 +54,7 @@ export const section = defineBlock({
     )
   },
   Fields: ({ props, onChange }) => (
+    <>
     <Group title="Contenu" defaultOpen>
       <Field label="Type de fond">
         <Pills
@@ -104,5 +106,7 @@ export const section = defineBlock({
         />
       </div>
     </Group>
+    <ChildLayoutFields props={props} onChange={onChange} />
+    </>
   ),
 })

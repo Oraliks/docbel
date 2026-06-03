@@ -29,6 +29,14 @@ export interface BlockStyle {
   textColor?: string
   // Background
   bgColor?: string
+  bgGradientFrom?: string
+  bgGradientTo?: string
+  bgGradientAngle?: number // deg
+  bgImage?: string // url
+  bgImageSize?: 'cover' | 'contain' | 'auto'
+  bgImagePosition?: 'center' | 'top' | 'bottom' | 'left' | 'right'
+  bgOverlay?: string // hex overlay composited over the image
+  bgOverlayOpacity?: number // 0–1
   // Border
   borderWidth?: number
   borderColor?: string

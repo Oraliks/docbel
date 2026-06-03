@@ -27,9 +27,12 @@ import {
   Box,
   Columns3,
   RectangleHorizontal,
+  Palette,
+  Brush,
 } from 'lucide-react'
 import type { BlockProps } from '@/lib/page-builder/types'
 import { BLOCK_REGISTRY } from '@/lib/page-builder/registry'
+import { childLayoutClass, type ChildLayout } from '@/components/page-blocks/layout/container-layout'
 import { saveSnippet } from '@/lib/page-builder/snippets'
 import { BlockRenderer } from './block-renderer'
 import { Button } from '@/components/ui/button'
@@ -109,6 +112,9 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const replaceBlock = usePageBuilderStore((s) => s.replaceBlock)
   const updateBlockLayoutLive = usePageBuilderStore((s) => s.updateBlockLayoutLive)
   const pushHistoryCheckpoint = usePageBuilderStore((s) => s.pushHistoryCheckpoint)
+  const copyBlockStyle = usePageBuilderStore((s) => s.copyBlockStyle)
+  const pasteBlockStyle = usePageBuilderStore((s) => s.pasteBlockStyle)
+  const hasStyleClipboard = usePageBuilderStore((s) => s.styleClipboard !== null)
 
   // ── "Save as snippet" dialog ──
   const [snippetDialogOpen, setSnippetDialogOpen] = React.useState(false)
@@ -305,6 +311,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
         slotIndex={null}
         items={items}
         emptyLabel={block.type === 'section' ? 'Section vide' : 'Conteneur vide'}
+        layoutClass={childLayoutClass(block.props as ChildLayout)}
       />
     )
   } else if (block.type === 'columns') {
@@ -446,6 +453,25 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
               <DropdownMenuItem onClick={openSnippetDialog}>
                 <BookmarkPlus className="mr-2 size-4" />
                 Enregistrer comme snippet
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  copyBlockStyle(block.id)
+                  toast.success('Style copié')
+                }}
+              >
+                <Palette className="mr-2 size-4" />
+                Copier le style
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!hasStyleClipboard}
+                onClick={() => {
+                  pasteBlockStyle(isInMultiSelection ? selectedIds : [block.id])
+                  toast.success('Style appliqué')
+                }}
+              >
+                <Brush className="mr-2 size-4" />
+                Coller le style
               </DropdownMenuItem>
               {canConvertToGlobal && (
                 <DropdownMenuItem disabled={converting} onClick={handleConvertToGlobal}>
@@ -622,6 +648,25 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
         <ContextMenuItem onClick={openSnippetDialog}>
           <BookmarkPlus />
           Enregistrer comme snippet
+        </ContextMenuItem>
+        <ContextMenuItem
+          onClick={() => {
+            copyBlockStyle(block.id)
+            toast.success('Style copié')
+          }}
+        >
+          <Palette />
+          Copier le style
+        </ContextMenuItem>
+        <ContextMenuItem
+          disabled={!hasStyleClipboard}
+          onClick={() => {
+            pasteBlockStyle(isInMultiSelection ? selectedIds : [block.id])
+            toast.success('Style appliqué')
+          }}
+        >
+          <Brush />
+          Coller le style
         </ContextMenuItem>
         {canConvertToGlobal && (
           <ContextMenuItem disabled={converting} onClick={handleConvertToGlobal}>
@@ -803,9 +848,11 @@ interface ChildrenListProps {
   slotIndex: number | null
   items: BlockProps[]
   emptyLabel: string
+  /** When set, applied to the element wrapping the children (Flex/Grid mode). */
+  layoutClass?: string | null
 }
 
-function ChildrenList({ parentId, slotIndex, items, emptyLabel }: ChildrenListProps) {
+function ChildrenList({ parentId, slotIndex, items, emptyLabel, layoutClass }: ChildrenListProps) {
   const openPicker = usePageBuilderStore((s) => s.openPicker)
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `drop:${parentId}:${slotIndex ?? 'null'}`,
@@ -837,22 +884,24 @@ function ChildrenList({ parentId, slotIndex, items, emptyLabel }: ChildrenListPr
 
   return (
     // pt-8 leaves room for the first child's hover toolbar (-top-7 = -28px).
-    <div className="space-y-6 pt-8 pb-2 px-2 min-h-full">
-      {items.map((child, idx) => (
-        <BlockWrapper
-          key={child.id}
-          block={child}
-          siblingIndex={idx}
-          siblingCount={items.length}
-        />
-      ))}
+    <div className="pt-8 pb-2 px-2 min-h-full">
+      <div className={layoutClass ?? 'space-y-6'}>
+        {items.map((child, idx) => (
+          <BlockWrapper
+            key={child.id}
+            block={child}
+            siblingIndex={idx}
+            siblingCount={items.length}
+          />
+        ))}
+      </div>
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation()
           openPicker(items[items.length - 1]?.id ?? null, parentId, slotIndex)
         }}
-        className="w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border/50 px-3 py-1.5 text-xs text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition"
+        className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border/50 px-3 py-1.5 text-xs text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition"
       >
         <Plus className="size-3" />
         Ajouter un bloc

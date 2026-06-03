@@ -60,6 +60,8 @@ interface PageBuilderStore {
 
   // Clipboard (in-memory)
   clipboard: BlockProps | null
+  // Copied visual styling (style + layout) for "paste style"
+  styleClipboard: Pick<BlockProps, 'style' | 'layout'> | null
 
   // ── actions ────────────────────────────────────────────────────────
   setPage: (page: PageData) => void
@@ -149,6 +151,10 @@ interface PageBuilderStore {
   copyBlock: (id: string) => void
   cutBlock: (id: string) => void
   pasteBlock: (afterId?: string | null) => void
+  /** Copy a block's visual styling (style + layout). */
+  copyBlockStyle: (id: string) => void
+  /** Apply the copied styling onto one or more blocks. */
+  pasteBlockStyle: (ids: string[]) => void
 
   // History
   undo: () => void
@@ -224,6 +230,7 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
   past: [],
   future: [],
   clipboard: null,
+  styleClipboard: null,
 
   // ── basic setters ────────────────────────────────────────────────
   setPage: (page) => set({ page }),
@@ -654,6 +661,32 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
       const next = insertAt(state.blocks, copy, afterId ?? null, (b) => b.id)
       return { ...pushHistory(state, next), selectedBlockId: copy.id }
     })
+  },
+
+  copyBlockStyle: (id) => {
+    const block = get().blocks.find((b) => b.id === id)
+    if (!block) return
+    set({ styleClipboard: structuredClone({ style: block.style, layout: block.layout }) })
+  },
+
+  pasteBlockStyle: (ids) => {
+    const clip = get().styleClipboard
+    if (!clip || ids.length === 0) return
+    const target = new Set(ids)
+    set((state) =>
+      pushHistory(
+        state,
+        state.blocks.map((b) =>
+          target.has(b.id)
+            ? {
+                ...b,
+                style: clip.style ? structuredClone(clip.style) : undefined,
+                layout: clip.layout ? structuredClone(clip.layout) : undefined,
+              }
+            : b
+        )
+      )
+    )
   },
 
   // ── history ──────────────────────────────────────────────────────

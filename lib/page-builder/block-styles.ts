@@ -20,6 +20,16 @@ const SHADOW_MAP: Record<NonNullable<BlockStyle['shadow']>, string> = {
   xl: '0 24px 60px rgba(0,0,0,.18)',
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const m = hex.replace('#', '')
+  const full = m.length === 3 ? m.split('').map((c) => c + c).join('') : m
+  const r = parseInt(full.slice(0, 2), 16)
+  const g = parseInt(full.slice(2, 4), 16)
+  const b = parseInt(full.slice(4, 6), 16)
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return hex
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 export function mergeForDevice(block: BlockProps, device: DeviceType) {
   const style: BlockStyle = { ...(block.style ?? {}) }
   const layout: BlockLayout = { ...(block.layout ?? {}) }
@@ -87,8 +97,23 @@ export function blockToCSS(
   if (style.textAlign) css.textAlign = style.textAlign
   if (style.textColor) css.color = style.textColor
 
-  // Background
+  // Background — color (base) → gradient → image (image wins)
   if (style.bgColor) css.backgroundColor = style.bgColor
+  if (style.bgImage) {
+    const safeUrl = style.bgImage.replace(/["()\\]/g, '')
+    const overlay =
+      style.bgOverlay !== undefined
+        ? hexToRgba(style.bgOverlay, style.bgOverlayOpacity ?? 0.4)
+        : null
+    css.backgroundImage = overlay
+      ? `linear-gradient(${overlay}, ${overlay}), url("${safeUrl}")`
+      : `url("${safeUrl}")`
+    css.backgroundSize = style.bgImageSize ?? 'cover'
+    css.backgroundPosition = style.bgImagePosition ?? 'center'
+    css.backgroundRepeat = 'no-repeat'
+  } else if (style.bgGradientFrom && style.bgGradientTo) {
+    css.backgroundImage = `linear-gradient(${style.bgGradientAngle ?? 135}deg, ${style.bgGradientFrom}, ${style.bgGradientTo})`
+  }
 
   // Border
   if (style.borderWidth !== undefined) css.borderWidth = `${style.borderWidth}px`

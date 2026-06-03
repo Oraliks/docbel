@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ImageUpload } from './image-upload'
 
 interface DesignTabProps {
   block: BlockProps
@@ -80,12 +81,121 @@ export function DesignTab({ block, onChange }: DesignTabProps) {
             step={0.05}
           />
         </Field>
+        <Field label="Interlettrage">
+          <SliderControl
+            value={style.letterSpacing ?? 0}
+            onChange={(v) => onChange({ letterSpacing: v })}
+            min={-2}
+            max={10}
+            step={0.5}
+            suffix="px"
+          />
+        </Field>
+        <Field label="Police">
+          <Select
+            value={style.fontFamily ?? ''}
+            onValueChange={(v) => onChange({ fontFamily: v || undefined })}
+          >
+            <SelectTrigger className="h-8 w-full">
+              <SelectValue placeholder="Auto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ui-sans-serif, system-ui, sans-serif">Sans-serif</SelectItem>
+              <SelectItem value="ui-serif, Georgia, Cambria, serif">Serif</SelectItem>
+              <SelectItem value="ui-monospace, SFMono-Regular, monospace">Monospace</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
       </Group>
 
       <Group title="Fond" defaultOpen>
         <Field label="Couleur de fond">
           <ColorControl value={style.bgColor} onChange={(v) => onChange({ bgColor: v })} />
         </Field>
+      </Group>
+
+      <Group title="Fond — dégradé">
+        <p className="text-[11px] text-muted-foreground">
+          Si défini, le dégradé recouvre la couleur de fond.
+        </p>
+        <Field label="Couleur de départ">
+          <ColorControl
+            value={style.bgGradientFrom}
+            onChange={(v) => onChange({ bgGradientFrom: v })}
+          />
+        </Field>
+        <Field label="Couleur d'arrivée">
+          <ColorControl
+            value={style.bgGradientTo}
+            onChange={(v) => onChange({ bgGradientTo: v })}
+          />
+        </Field>
+        <Field label="Angle">
+          <SliderControl
+            value={style.bgGradientAngle ?? 135}
+            onChange={(v) => onChange({ bgGradientAngle: v })}
+            min={0}
+            max={360}
+            suffix="°"
+          />
+        </Field>
+      </Group>
+
+      <Group title="Fond — image">
+        <p className="text-[11px] text-muted-foreground">
+          Si définie, l’image recouvre la couleur et le dégradé.
+        </p>
+        <Field label="Image">
+          <ImageUpload
+            value={style.bgImage ?? ''}
+            onChange={(url) => onChange({ bgImage: url || undefined })}
+          />
+        </Field>
+        {style.bgImage && (
+          <>
+            <Field label="Cadrage">
+              <Pills
+                value={style.bgImageSize ?? 'cover'}
+                onChange={(v) => onChange({ bgImageSize: v })}
+                options={[
+                  { value: 'cover', label: 'Couvrir' },
+                  { value: 'contain', label: 'Contenir' },
+                  { value: 'auto', label: 'Auto' },
+                ]}
+              />
+            </Field>
+            <Field label="Position">
+              <Pills
+                value={style.bgImagePosition ?? 'center'}
+                onChange={(v) => onChange({ bgImagePosition: v })}
+                options={[
+                  { value: 'center', label: 'Centre' },
+                  { value: 'top', label: 'Haut' },
+                  { value: 'bottom', label: 'Bas' },
+                  { value: 'left', label: 'G.' },
+                  { value: 'right', label: 'D.' },
+                ]}
+              />
+            </Field>
+            <Field label="Overlay (assombrir)">
+              <ColorControl
+                value={style.bgOverlay}
+                onChange={(v) => onChange({ bgOverlay: v })}
+              />
+            </Field>
+            {style.bgOverlay && (
+              <Field label="Opacité de l'overlay">
+                <SliderControl
+                  value={style.bgOverlayOpacity ?? 0.4}
+                  onChange={(v) => onChange({ bgOverlayOpacity: v })}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                />
+              </Field>
+            )}
+          </>
+        )}
       </Group>
 
       <Group title="Bordure">

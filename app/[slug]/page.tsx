@@ -6,6 +6,7 @@ import { GlobalBlocksProvider } from "@/components/page-builder/global-blocks-co
 import { ThemeProvider } from "@/components/page-builder/theme-tokens";
 import { BlockProps, ThemeTokens } from "@/lib/page-builder/types";
 import { buildPageJsonLd } from "@/lib/page-builder/schema-org";
+import { PageViewBeacon } from "@/components/page-builder/page-view-beacon";
 
 export const dynamicParams = true;
 export const revalidate = 60;
@@ -149,6 +150,7 @@ export default async function PublicPage({
 
   return (
     <>
+      <PageViewBeacon slug={page.slug} />
       {jsonLd.map((data, i) => (
         <script
           key={i}

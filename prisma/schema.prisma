@@ -194,6 +194,18 @@ model GlobalBlock {
   @@index([createdAt])
 }
 
+/// Page-builder: lightweight page-view events for basic analytics (counts + recent trend).
+model PageView {
+  id        String   @id @default(cuid())
+  slug      String
+  referrer  String?
+  device    String?
+  createdAt DateTime @default(now())
+
+  @@index([slug, createdAt])
+  @@index([createdAt])
+}
+
 model Activity {
   id           String   @id @default(cuid())
   user         String

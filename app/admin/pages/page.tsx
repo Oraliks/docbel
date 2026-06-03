@@ -68,6 +68,7 @@ function formatScheduledAt(page: PageData): string {
 
 export default function PagesListPage() {
   const router = useRouter()
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({})
   const [pages, setPages] = useState<PageData[]>([])
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -102,6 +103,19 @@ export default function PagesListPage() {
   useEffect(() => {
     async function load() { await fetchPages() }
     void load()
+  }, [])
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch('/api/page-views')
+        if (!res.ok) return
+        const data = await res.json()
+        setViewCounts(data.counts ?? {})
+      } catch {
+        // analytics non bloquant
+      }
+    })()
   }, [])
 
   // Reset to page 1 when filters change
@@ -562,7 +576,14 @@ export default function PagesListPage() {
                         aria-label={`Sélectionner ${page.title}`}
                       />
                     </TableCell>
-                    <TableCell className="font-medium">{page.title}</TableCell>
+                    <TableCell className="font-medium">
+                      {page.title}
+                      {(viewCounts[page.slug] ?? 0) > 0 && (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          👁 {viewCounts[page.slug]}
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <code className="bg-muted px-2 py-1 rounded text-sm">
                         {page.slug}

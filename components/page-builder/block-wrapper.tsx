@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useDroppable } from '@dnd-kit/core'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
@@ -23,6 +24,9 @@ import {
   Redo2,
   BookmarkPlus,
   Boxes,
+  Box,
+  Columns3,
+  RectangleHorizontal,
 } from 'lucide-react'
 import type { BlockProps } from '@/lib/page-builder/types'
 import { BLOCK_REGISTRY } from '@/lib/page-builder/registry'
@@ -44,6 +48,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -52,6 +59,9 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuShortcut,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { usePageBuilderStore, getChildrenOf } from '@/lib/page-builder/store'
@@ -86,7 +96,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const cutBlock = usePageBuilderStore((s) => s.cutBlock)
   const openPicker = usePageBuilderStore((s) => s.openPicker)
   const updateBlockMeta = usePageBuilderStore((s) => s.updateBlockMeta)
-  const wrapInSection = usePageBuilderStore((s) => s.wrapInSection)
+  const wrapInContainer = usePageBuilderStore((s) => s.wrapInContainer)
   const removeMany = usePageBuilderStore((s) => s.removeMany)
   const pasteBlock = usePageBuilderStore((s) => s.pasteBlock)
   const undo = usePageBuilderStore((s) => s.undo)
@@ -97,6 +107,8 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const globalBlocks = usePageBuilderStore((s) => s.globalBlocks)
   const setGlobalBlocks = usePageBuilderStore((s) => s.setGlobalBlocks)
   const replaceBlock = usePageBuilderStore((s) => s.replaceBlock)
+  const updateBlockLayoutLive = usePageBuilderStore((s) => s.updateBlockLayoutLive)
+  const pushHistoryCheckpoint = usePageBuilderStore((s) => s.pushHistoryCheckpoint)
 
   // ── "Save as snippet" dialog ──
   const [snippetDialogOpen, setSnippetDialogOpen] = React.useState(false)
@@ -180,6 +192,101 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const isLocked = !!block.meta?.locked
   const isHidden = !!block.meta?.hidden
 
+  // Envelopper : seuls les blocs de premier niveau (non imbriqués) et déverrouillés.
+  const canWrap = !block.parentId && !isLocked
+  const wrapIds = isInMultiSelection ? selectedIds : [block.id]
+  const wrapLabel = isInMultiSelection
+    ? `Envelopper ${selectedIds.length} blocs dans`
+    : 'Envelopper dans'
+  function handleWrap(type: 'section' | 'container' | 'columns') {
+    wrapInContainer(wrapIds, type)
+    const names = {
+      section: 'une section',
+      container: 'un conteneur',
+      columns: 'des colonnes',
+    }
+    toast.success(`Enveloppé dans ${names[type]}`)
+  }
+
+  // ── Poignée de redimensionnement (blocs simples, non conteneurs) ──
+  const wrapperRef = React.useRef<HTMLDivElement | null>(null)
+  const innerRef = React.useRef<HTMLDivElement | null>(null)
+  const setWrapperRefs = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      setNodeRef(node)
+      wrapperRef.current = node
+    },
+    [setNodeRef]
+  )
+  const canResize = isSelected && !isLocked && !isContainer
+  const [handleX, setHandleX] = React.useState<number | null>(null)
+  const [liveWidthPct, setLiveWidthPct] = React.useState<number | null>(null)
+  const resizeStart = React.useRef<{ availPx: number; wrapLeft: number } | null>(null)
+
+  React.useLayoutEffect(() => {
+    if (!canResize) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHandleX(null)
+      return
+    }
+    const measure = () => {
+      const wrap = wrapperRef.current
+      const inner = innerRef.current?.firstElementChild as HTMLElement | null
+      if (!wrap || !inner) return
+      const wrapRect = wrap.getBoundingClientRect()
+      const blockRect = inner.getBoundingClientRect()
+      setHandleX(blockRect.right - wrapRect.left)
+    }
+    measure()
+    const wrap = wrapperRef.current
+    if (!wrap || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(wrap)
+    return () => ro.disconnect()
+  }, [canResize, block.layout?.width, block.layout?.align, device])
+
+  function onResizePointerDown(e: React.PointerEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    const wrap = wrapperRef.current
+    if (!wrap) return
+    const rect = wrap.getBoundingClientRect()
+    resizeStart.current = { availPx: rect.width, wrapLeft: rect.left }
+    pushHistoryCheckpoint()
+    try {
+      ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+    } catch {
+      // ignore
+    }
+  }
+  function onResizePointerMove(e: React.PointerEvent) {
+    const start = resizeStart.current
+    if (!start) return
+    let pct = Math.round(((e.clientX - start.wrapLeft) / start.availPx) * 100)
+    pct = Math.max(10, Math.min(100, pct))
+    for (const snap of [25, 33, 50, 66, 75, 100]) {
+      if (Math.abs(pct - snap) <= 2) {
+        pct = snap
+        break
+      }
+    }
+    setLiveWidthPct(pct)
+    updateBlockLayoutLive(block.id, {
+      width: pct >= 100 ? '100%' : `${pct}%`,
+      align: 'left',
+    })
+  }
+  function onResizePointerUp(e: React.PointerEvent) {
+    if (!resizeStart.current) return
+    resizeStart.current = null
+    setLiveWidthPct(null)
+    try {
+      ;(e.target as HTMLElement).releasePointerCapture(e.pointerId)
+    } catch {
+      // ignore
+    }
+  }
+
   const wrapperStyle: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -219,7 +326,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
     <ContextMenu>
       <ContextMenuTrigger>
     <div
-      ref={setNodeRef}
+      ref={setWrapperRefs}
       style={wrapperStyle}
       data-block-id={block.id}
       onClick={(e) => {
@@ -373,18 +480,34 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
                 )}
                 {isHidden ? 'Afficher' : 'Masquer'}
               </DropdownMenuItem>
+              {canWrap && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Group className="mr-2 size-4" />
+                      {wrapLabel}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem onClick={() => handleWrap('section')}>
+                        <RectangleHorizontal className="mr-2 size-4" />
+                        Section
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleWrap('container')}>
+                        <Box className="mr-2 size-4" />
+                        Conteneur
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleWrap('columns')}>
+                        <Columns3 className="mr-2 size-4" />
+                        Colonnes
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                </>
+              )}
               {isInMultiSelection && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => {
-                      wrapInSection(selectedIds)
-                      toast.success(`${selectedIds.length} blocs groupés dans une section`)
-                    }}
-                  >
-                    <Group className="mr-2 size-4" />
-                    Grouper dans une Section
-                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {
                       removeMany(selectedIds)
@@ -416,7 +539,10 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
       {/* The actual rendered block.
        *  For containers we DON'T set pointer-events:none so users can still
        *  click on inner children / drop zones. */}
-      <div className={cn(!isContainer && isSelected && 'pointer-events-none select-none')}>
+      <div
+        ref={innerRef}
+        className={cn(!isContainer && isSelected && 'pointer-events-none select-none')}
+      >
         <BlockRenderer
           block={block}
           device={device}
@@ -438,6 +564,27 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
         >
           <Plus className="size-3.5" />
         </button>
+      )}
+
+      {/* Poignée de redimensionnement sur le bord droit du bloc */}
+      {canResize && handleX != null && (
+        <div
+          aria-label="Largeur du bloc"
+          onPointerDown={onResizePointerDown}
+          onPointerMove={onResizePointerMove}
+          onPointerUp={onResizePointerUp}
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize touch-none"
+          style={{ left: handleX }}
+          title="Glisser pour redimensionner"
+        >
+          <div className="h-10 w-1.5 rounded-full bg-primary shadow ring-2 ring-background transition-transform hover:scale-110" />
+          {liveWidthPct != null && (
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
+              {liveWidthPct}%
+            </div>
+          )}
+        </div>
       )}
     </div>
       </ContextMenuTrigger>
@@ -521,19 +668,35 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
           {isHidden ? <Eye /> : <EyeOff />}
           {isHidden ? 'Afficher' : 'Masquer'}
         </ContextMenuItem>
+        {canWrap && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>
+                <Group />
+                {wrapLabel}
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent className="w-44">
+                <ContextMenuItem onClick={() => handleWrap('section')}>
+                  <RectangleHorizontal />
+                  Section
+                  <ContextMenuShortcut>⌘G</ContextMenuShortcut>
+                </ContextMenuItem>
+                <ContextMenuItem onClick={() => handleWrap('container')}>
+                  <Box />
+                  Conteneur
+                </ContextMenuItem>
+                <ContextMenuItem onClick={() => handleWrap('columns')}>
+                  <Columns3 />
+                  Colonnes
+                </ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+          </>
+        )}
         {isInMultiSelection && (
           <>
             <ContextMenuSeparator />
-            <ContextMenuItem
-              onClick={() => {
-                wrapInSection(selectedIds)
-                toast.success(`${selectedIds.length} blocs groupés dans une section`)
-              }}
-            >
-              <Group />
-              Grouper dans une Section
-              <ContextMenuShortcut>⌘G</ContextMenuShortcut>
-            </ContextMenuItem>
             <ContextMenuItem
               variant="destructive"
               onClick={() => {
@@ -644,19 +807,30 @@ interface ChildrenListProps {
 
 function ChildrenList({ parentId, slotIndex, items, emptyLabel }: ChildrenListProps) {
   const openPicker = usePageBuilderStore((s) => s.openPicker)
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `drop:${parentId}:${slotIndex ?? 'null'}`,
+  })
 
   if (items.length === 0) {
     return (
       <button
+        ref={setDropRef}
         type="button"
         onClick={(e) => {
           e.stopPropagation()
           openPicker(null, parentId, slotIndex)
         }}
-        className="group/dropzone w-full min-h-[88px] flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border/60 bg-card/40 text-xs text-muted-foreground hover:border-primary hover:bg-primary/5 hover:text-primary transition-all m-2 px-3 py-4"
+        className={cn(
+          'group/dropzone m-2 flex min-h-[88px] w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed px-3 py-4 text-xs transition-all',
+          isOver
+            ? 'border-primary bg-primary/10 text-primary'
+            : 'border-border/60 bg-card/40 text-muted-foreground hover:border-primary hover:bg-primary/5 hover:text-primary'
+        )}
       >
         <Plus className="size-4" />
-        <span className="font-medium">{emptyLabel} — ajouter un bloc</span>
+        <span className="font-medium">
+          {isOver ? 'Déposer ici' : `${emptyLabel} — ajouter un bloc`}
+        </span>
       </button>
     )
   }

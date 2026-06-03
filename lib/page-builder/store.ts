@@ -111,6 +111,11 @@ interface PageBuilderStore {
   duplicateBlock: (id: string) => void
   moveBlock: (id: string, direction: 'up' | 'down') => void
   reorderBlocks: (fromId: string, toId: string) => void
+  moveToContainer: (
+    id: string,
+    parentId: string | null,
+    slotIndex: number | null
+  ) => void
 
   updateBlockProps: <T extends BlockType>(
     id: string,
@@ -118,6 +123,10 @@ interface PageBuilderStore {
   ) => void
   updateBlockStyle: (id: string, style: Partial<BlockStyle>) => void
   updateBlockLayout: (id: string, layout: Partial<BlockLayout>) => void
+  /** Like updateBlockLayout but WITHOUT pushing history (for live drag). */
+  updateBlockLayoutLive: (id: string, layout: Partial<BlockLayout>) => void
+  /** Snapshots current blocks into history (call once before a live drag). */
+  pushHistoryCheckpoint: () => void
   updateBlockAdvanced: (id: string, advanced: Partial<BlockAdvanced>) => void
   updateBlockResponsive: (
     id: string,
@@ -131,6 +140,10 @@ interface PageBuilderStore {
   duplicateMany: (ids: string[]) => void
   /** Wrap one or more blocks into a Section as their parent. */
   wrapInSection: (ids: string[]) => void
+  wrapInContainer: (
+    ids: string[],
+    containerType: 'section' | 'container' | 'columns'
+  ) => void
 
   // Clipboard
   copyBlock: (id: string) => void
@@ -405,6 +418,48 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
       return pushHistory(state, next)
     }),
 
+  moveToContainer: (id, parentId, slotIndex) =>
+    set((state) => {
+      const idx = state.blocks.findIndex((b) => b.id === id)
+      if (idx === -1) return state
+      // Prevent cycles: can't drop a block into itself or its own descendants.
+      if (parentId) {
+        if (parentId === id) return state
+        if (new Set(descendantIds(state.blocks, id)).has(parentId)) return state
+      }
+      const block = state.blocks[idx]
+      const samePlace =
+        (block.parentId ?? null) === (parentId ?? null) &&
+        (block.slotIndex ?? null) === (slotIndex ?? null)
+      if (samePlace) return state
+
+      const moved: BlockProps = {
+        ...block,
+        parentId: parentId ?? null,
+        slotIndex: slotIndex ?? undefined,
+      }
+      const next = [...state.blocks]
+      next.splice(idx, 1)
+      // Land at the end of the target container/slot.
+      let insertAt = next.length
+      for (let i = next.length - 1; i >= 0; i--) {
+        const b = next[i]
+        if (
+          (b.parentId ?? null) === (parentId ?? null) &&
+          (b.slotIndex ?? null) === (slotIndex ?? null)
+        ) {
+          insertAt = i + 1
+          break
+        }
+      }
+      next.splice(insertAt, 0, moved)
+      return {
+        ...pushHistory(state, next),
+        selectedBlockId: moved.id,
+        selectedIds: [moved.id],
+      }
+    }),
+
   // ── per-layer updates ────────────────────────────────────────────
   updateBlockProps: (id, props) =>
     set((state) =>
@@ -437,6 +492,21 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
         )
       )
     ),
+
+  updateBlockLayoutLive: (id, layout) =>
+    set((state) => ({
+      blocks: state.blocks.map((b) =>
+        b.id === id ? { ...b, layout: { ...(b.layout ?? {}), ...layout } } : b
+      ),
+      isDirty: true,
+    })),
+
+  pushHistoryCheckpoint: () =>
+    set((state) => {
+      const past = [...state.past, { blocks: state.blocks }]
+      if (past.length > HISTORY_LIMIT) past.shift()
+      return { past, future: [], isDirty: true }
+    }),
 
   updateBlockAdvanced: (id, advanced) =>
     set((state) =>
@@ -522,37 +592,45 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
       return { ...pushHistory(state, blocks), selectedBlockId: newIds[0] ?? null, selectedIds: newIds }
     }),
 
-  wrapInSection: (ids) =>
+  wrapInSection: (ids) => get().wrapInContainer(ids, 'section'),
+
+  wrapInContainer: (ids, containerType) =>
     set((state) => {
       if (ids.length === 0) return state
-      // Only handles top-level blocks for now (most common case).
+      // Only top-level blocks can be wrapped (most common case).
       const targets = state.blocks.filter((b) => ids.includes(b.id) && !b.parentId)
       if (targets.length === 0) return state
 
-      const sectionDef = getBlockDef('section')
-      if (!sectionDef) return state
-      const section: BlockProps = {
+      const def = getBlockDef(containerType)
+      if (!def) return state
+      const wrapper: BlockProps = {
         id: nanoid(),
-        type: 'section',
-        props: structuredClone(sectionDef.defaults),
+        type: containerType,
+        props: structuredClone(def.defaults),
       } as BlockProps
 
-      // First target's index becomes the section's position
+      // Columns has slots → wrapped children land in the first column.
+      const childSlot = containerType === 'columns' ? 0 : undefined
+      // First target's index becomes the wrapper's position.
       const firstIdx = state.blocks.findIndex((b) => b.id === targets[0].id)
       const targetIds = new Set(targets.map((t) => t.id))
 
       const next: BlockProps[] = []
       for (let i = 0; i < state.blocks.length; i++) {
         const b = state.blocks[i]
-        if (i === firstIdx) next.push(section)
+        if (i === firstIdx) next.push(wrapper)
         if (targetIds.has(b.id)) {
-          next.push({ ...b, parentId: section.id, slotIndex: undefined })
+          next.push({ ...b, parentId: wrapper.id, slotIndex: childSlot })
         } else {
           next.push(b)
         }
       }
 
-      return { ...pushHistory(state, next), selectedBlockId: section.id, selectedIds: [section.id] }
+      return {
+        ...pushHistory(state, next),
+        selectedBlockId: wrapper.id,
+        selectedIds: [wrapper.id],
+      }
     }),
 
   // ── clipboard ────────────────────────────────────────────────────

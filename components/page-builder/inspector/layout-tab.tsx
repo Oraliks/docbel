@@ -14,6 +14,23 @@ interface LayoutTabProps {
   onChange: (layout: Partial<BlockLayout>) => void
 }
 
+// Largeurs rapides : preset → valeur CSS ('auto' = pas de largeur fixée).
+const WIDTH_PRESETS: Record<string, string | undefined> = {
+  auto: undefined,
+  '25': '25%',
+  '33': '33%',
+  '50': '50%',
+  '66': '66%',
+  '75': '75%',
+  '100': '100%',
+}
+
+function presetForWidth(width?: string): string {
+  if (!width) return 'auto'
+  const hit = Object.entries(WIDTH_PRESETS).find(([, v]) => v === width)
+  return hit ? hit[0] : '' // '' = largeur personnalisée → aucun preset actif
+}
+
 export function LayoutTab({ block, device, onChange }: LayoutTabProps) {
   const layout = block.layout ?? {}
   return (
@@ -57,7 +74,25 @@ export function LayoutTab({ block, device, onChange }: LayoutTabProps) {
       </Group>
 
       <Group title="Dimensions">
-        <Field label="Largeur" hint="Ex: 100%, 320px, auto">
+        <Field
+          label="Largeur rapide"
+          hint="Rétrécir le bloc — combinez avec l'alignement ci-dessous"
+        >
+          <Pills
+            value={presetForWidth(layout.width)}
+            onChange={(v) => onChange({ width: WIDTH_PRESETS[v] })}
+            options={[
+              { value: 'auto', label: 'Auto' },
+              { value: '25', label: '¼' },
+              { value: '33', label: '⅓' },
+              { value: '50', label: '½' },
+              { value: '66', label: '⅔' },
+              { value: '75', label: '¾' },
+              { value: '100', label: '100%' },
+            ]}
+          />
+        </Field>
+        <Field label="Largeur (précis)" hint="Ex: 320px, 100%, auto">
           <Input
             value={layout.width ?? ''}
             onChange={(e) => onChange({ width: e.target.value || undefined })}

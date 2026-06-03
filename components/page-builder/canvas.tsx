@@ -44,6 +44,7 @@ export function Canvas() {
   const device = usePageBuilderStore((s) => s.device)
   const themeTokens = usePageBuilderStore((s) => s.themeTokens)
   const reorderBlocks = usePageBuilderStore((s) => s.reorderBlocks)
+  const moveToContainer = usePageBuilderStore((s) => s.moveToContainer)
   const selectBlock = usePageBuilderStore((s) => s.selectBlock)
   const insertBlock = usePageBuilderStore((s) => s.insertBlock)
   const openPicker = usePageBuilderStore((s) => s.openPicker)
@@ -87,7 +88,22 @@ export function Canvas() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
-    reorderBlocks(String(active.id), String(over.id))
+    const overId = String(over.id)
+    // Drop on an (empty) container slot → id shaped `drop:<parentId>:<slot|null>`.
+    if (overId.startsWith('drop:')) {
+      const rest = overId.slice(5)
+      const sep = rest.lastIndexOf(':')
+      const parentId = rest.slice(0, sep)
+      const slotRaw = rest.slice(sep + 1)
+      const slot = slotRaw === 'null' ? null : Number(slotRaw)
+      moveToContainer(
+        String(active.id),
+        parentId,
+        Number.isNaN(slot as number) ? null : slot
+      )
+      return
+    }
+    reorderBlocks(String(active.id), overId)
   }
 
   // Drop image / video files directly onto the canvas → auto-insert a block

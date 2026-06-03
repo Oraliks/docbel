@@ -2,9 +2,11 @@
 
 /* eslint-disable @next/next/no-img-element */
 
+import { useState } from 'react'
 import { z } from 'zod'
 import { ImageOff } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -36,6 +38,66 @@ const ROUNDED_CLASS: Record<NonNullable<Props['rounded']>, string> = {
   full: 'rounded-full',
 }
 
+function ImageFigure({
+  url,
+  alt,
+  caption,
+  ratio = 'auto',
+  fit = 'cover',
+  rounded = 'md',
+  focalX,
+  focalY,
+  blurUp,
+}: Props) {
+  const [loaded, setLoaded] = useState(false)
+
+  if (!url) {
+    return (
+      <figure className="w-full">
+        <div
+          className={cn(
+            'flex items-center justify-center bg-muted text-muted-foreground border border-dashed',
+            RATIO_CLASS[ratio] || 'aspect-video',
+            ROUNDED_CLASS[rounded]
+          )}
+        >
+          <ImageOff className="size-8" />
+        </div>
+      </figure>
+    )
+  }
+
+  return (
+    <figure className="w-full">
+      <div className={cn('overflow-hidden bg-muted', RATIO_CLASS[ratio], ROUNDED_CLASS[rounded])}>
+        <img
+          src={url}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setLoaded(true)}
+          style={
+            fit === 'cover' && (focalX != null || focalY != null)
+              ? { objectPosition: `${focalX ?? 50}% ${focalY ?? 50}%` }
+              : undefined
+          }
+          className={cn(
+            'w-full h-full transition-[filter,transform] duration-500',
+            fit === 'cover' ? 'object-cover' : 'object-contain',
+            blurUp && !loaded && 'blur-lg scale-105',
+            blurUp && loaded && 'blur-0 scale-100'
+          )}
+        />
+      </div>
+      {caption && (
+        <figcaption className="mt-2 text-sm text-muted-foreground text-center">
+          {caption}
+        </figcaption>
+      )}
+    </figure>
+  )
+}
+
 export const image = defineBlock({
   type: 'image',
   schema,
@@ -47,39 +109,7 @@ export const image = defineBlock({
     icon: 'image',
     shortcuts: ['img', 'image', 'photo'],
   },
-  Render: ({ props }) => {
-    const { url, alt, caption, ratio = 'auto', fit = 'cover', rounded = 'md' } = props
-    return (
-      <figure className="w-full">
-        {url ? (
-          <div className={cn('overflow-hidden bg-muted', RATIO_CLASS[ratio], ROUNDED_CLASS[rounded])}>
-            <img
-              src={url}
-              alt={alt}
-              loading="lazy"
-              decoding="async"
-              className={cn('w-full h-full', fit === 'cover' ? 'object-cover' : 'object-contain')}
-            />
-          </div>
-        ) : (
-          <div
-            className={cn(
-              'flex items-center justify-center bg-muted text-muted-foreground border border-dashed',
-              RATIO_CLASS[ratio] || 'aspect-video',
-              ROUNDED_CLASS[rounded]
-            )}
-          >
-            <ImageOff className="size-8" />
-          </div>
-        )}
-        {caption && (
-          <figcaption className="mt-2 text-sm text-muted-foreground text-center">
-            {caption}
-          </figcaption>
-        )}
-      </figure>
-    )
-  },
+  Render: ({ props }) => <ImageFigure {...props} />,
   Fields: ({ props, onChange }) => (
     <Group title="Contenu" defaultOpen>
       <Field label="Image">
@@ -138,6 +168,40 @@ export const image = defineBlock({
           ]}
         />
       </Field>
+      {(props.fit ?? 'cover') === 'cover' && (
+        <Field label="Point focal" hint="Zone gardée visible au recadrage">
+          <div className="grid w-max grid-cols-3 gap-1">
+            {[0, 50, 100].map((y) =>
+              [0, 50, 100].map((x) => {
+                const active = (props.focalX ?? 50) === x && (props.focalY ?? 50) === y
+                return (
+                  <button
+                    key={`${x}-${y}`}
+                    type="button"
+                    title={`${x}% ${y}%`}
+                    onClick={() => onChange({ focalX: x, focalY: y })}
+                    className={cn(
+                      'size-6 rounded border transition',
+                      active
+                        ? 'border-primary bg-primary'
+                        : 'border-border bg-muted hover:bg-muted-foreground/20'
+                    )}
+                  />
+                )
+              })
+            )}
+          </div>
+        </Field>
+      )}
+      <div className="flex items-center justify-between gap-4 py-1">
+        <Field label="Apparition en fondu (blur-up)" className="flex-1">
+          <span className="sr-only">blur-up</span>
+        </Field>
+        <Switch
+          checked={props.blurUp ?? false}
+          onCheckedChange={(v) => onChange({ blurUp: v })}
+        />
+      </div>
     </Group>
   ),
 })

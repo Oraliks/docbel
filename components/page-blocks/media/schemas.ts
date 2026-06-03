@@ -7,6 +7,9 @@ export const imageSchema = z.object({
   ratio: z.enum(['auto', '1:1', '4:3', '16:9', '21:9']).optional(),
   fit: z.enum(['cover', 'contain']).optional(),
   rounded: z.enum(['none', 'sm', 'md', 'lg', 'full']).optional(),
+  focalX: z.number().min(0).max(100).optional(),
+  focalY: z.number().min(0).max(100).optional(),
+  blurUp: z.boolean().optional(),
 })
 
 export const videoSchema = z.object({

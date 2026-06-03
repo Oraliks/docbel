@@ -63,6 +63,7 @@ export const cardSchema = z.object({
   image: z.string().max(4096).optional(),
   ctaText: z.string().max(120).optional(),
   ctaLink: z.string().max(4096).optional(),
+  ctaAction: actionSchema.optional(),
   variant: z.enum(['default', 'bordered', 'elevated', 'gradient']).optional(),
 })
 

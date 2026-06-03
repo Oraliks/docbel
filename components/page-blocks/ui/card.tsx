@@ -10,8 +10,9 @@ import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { RichTextInput } from '@/components/page-builder/inspector/rich-text-input'
 import { LinkInput } from '@/components/page-builder/inspector/link-input'
+import { ActionInput } from '@/components/page-builder/inspector/action-input'
+import { ActionButton } from '@/components/page-builder/action-button'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-import { safeHref } from '@/lib/page-builder/url-utils'
 import { enrichHtmlWithAcronyms } from '@/lib/acronyms-html'
 import { sanitizeHtml } from '@/lib/sanitize-html'
 import { cn } from '@/lib/utils'
@@ -52,7 +53,7 @@ export const card = defineBlock({
     ],
   },
   Render: ({ props }) => {
-    const { title, description, body, image, ctaText, ctaLink, variant = 'default' } = props
+    const { title, description, body, image, ctaText, ctaLink, ctaAction, variant = 'default' } = props
     return (
       <div
         className={cn(
@@ -73,13 +74,14 @@ export const card = defineBlock({
             />
           )}
           {ctaText && (
-            <a
-              href={safeHref(ctaLink)}
-              className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            <ActionButton
+              action={ctaAction}
+              href={ctaLink}
+              className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline cursor-pointer"
             >
               {ctaText}
               <ArrowRight className="size-3.5" />
-            </a>
+            </ActionButton>
           )}
         </div>
       </div>
@@ -120,6 +122,9 @@ export const card = defineBlock({
           value={props.ctaLink ?? ''}
           onChange={(ctaLink) => onChange({ ctaLink })}
         />
+      </Field>
+      <Field label="Action du bouton (avancé)">
+        <ActionInput value={props.ctaAction} onChange={(ctaAction) => onChange({ ctaAction })} />
       </Field>
     </Group>
   ),

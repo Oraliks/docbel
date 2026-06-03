@@ -2,7 +2,6 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { z } from 'zod'
 import { ArrowRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,24 +12,28 @@ import {
 } from '@/components/page-builder/inspector/controls'
 import { ImageUpload } from '@/components/page-builder/inspector/image-upload'
 import { LinkInput } from '@/components/page-builder/inspector/link-input'
+import { ActionInput } from '@/components/page-builder/inspector/action-input'
+import { ActionButton } from '@/components/page-builder/action-button'
 import { defineBlock } from '@/lib/page-builder/block-definition'
-import { safeHref } from '@/lib/page-builder/url-utils'
+import type { PageActionConfig } from '@/lib/page-builder/action-schema'
 import { cn } from '@/lib/utils'
 import { heroSchema as schema } from './schemas'
-
-type Props = z.infer<typeof schema>
 
 function HeroCtas({
   ctaText,
   ctaLink,
+  ctaAction,
   secondText,
   secondLink,
+  secondAction,
   align = 'left',
 }: {
   ctaText?: string
   ctaLink?: string
+  ctaAction?: PageActionConfig
   secondText?: string
   secondLink?: string
+  secondAction?: PageActionConfig
   align?: 'left' | 'center'
 }) {
   if (!ctaText && !secondText) return null
@@ -42,21 +45,23 @@ function HeroCtas({
       )}
     >
       {ctaText && (
-        <a
-          href={safeHref(ctaLink)}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-5 py-3 text-sm font-medium hover:opacity-90 transition"
+        <ActionButton
+          action={ctaAction}
+          href={ctaLink}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-5 py-3 text-sm font-medium hover:opacity-90 transition cursor-pointer"
         >
           {ctaText}
           <ArrowRight className="size-4" />
-        </a>
+        </ActionButton>
       )}
       {secondText && (
-        <a
-          href={safeHref(secondLink)}
-          className="inline-flex items-center gap-2 rounded-lg border border-current/20 px-5 py-3 text-sm font-medium hover:bg-current/5 transition"
+        <ActionButton
+          action={secondAction}
+          href={secondLink}
+          className="inline-flex items-center gap-2 rounded-lg border border-current/20 px-5 py-3 text-sm font-medium hover:bg-current/5 transition cursor-pointer"
         >
           {secondText}
-        </a>
+        </ActionButton>
       )}
     </div>
   )
@@ -100,6 +105,8 @@ export const hero = defineBlock({
       ctaLink,
       ctaSecondaryText,
       ctaSecondaryLink,
+      ctaAction,
+      ctaSecondaryAction,
       image,
       bgColor,
       variant = 'centered',
@@ -129,8 +136,10 @@ export const hero = defineBlock({
               <HeroCtas
                 ctaText={ctaText}
                 ctaLink={ctaLink}
+                ctaAction={ctaAction}
                 secondText={ctaSecondaryText}
                 secondLink={ctaSecondaryLink}
+                secondAction={ctaSecondaryAction}
               />
             </div>
             {image ? (
@@ -162,8 +171,10 @@ export const hero = defineBlock({
             <HeroCtas
               ctaText={ctaText}
               ctaLink={ctaLink}
+              ctaAction={ctaAction}
               secondText={ctaSecondaryText}
               secondLink={ctaSecondaryLink}
+              secondAction={ctaSecondaryAction}
             />
           </div>
         </div>
@@ -197,8 +208,10 @@ export const hero = defineBlock({
               <HeroCtas
                 ctaText={ctaText}
                 ctaLink={ctaLink}
+                ctaAction={ctaAction}
                 secondText={ctaSecondaryText}
                 secondLink={ctaSecondaryLink}
+                secondAction={ctaSecondaryAction}
               />
             </div>
           </div>
@@ -229,8 +242,10 @@ export const hero = defineBlock({
           <HeroCtas
             ctaText={ctaText}
             ctaLink={ctaLink}
+            ctaAction={ctaAction}
             secondText={ctaSecondaryText}
             secondLink={ctaSecondaryLink}
+            secondAction={ctaSecondaryAction}
             align="center"
           />
           {image && <img src={image} alt="" loading="lazy" decoding="async" className="mt-12 w-full rounded-2xl shadow-2xl" />}
@@ -277,6 +292,9 @@ export const hero = defineBlock({
             placeholder="/page-cible ou https://…"
           />
         </Field>
+        <Field label="Bouton principal — action (avancé)">
+          <ActionInput value={props.ctaAction} onChange={(ctaAction) => onChange({ ctaAction })} />
+        </Field>
         <Field label="Bouton secondaire — texte">
           <Input
             value={props.ctaSecondaryText ?? ''}
@@ -287,6 +305,12 @@ export const hero = defineBlock({
           <LinkInput
             value={props.ctaSecondaryLink ?? ''}
             onChange={(ctaSecondaryLink) => onChange({ ctaSecondaryLink })}
+          />
+        </Field>
+        <Field label="Bouton secondaire — action (avancé)">
+          <ActionInput
+            value={props.ctaSecondaryAction}
+            onChange={(ctaSecondaryAction) => onChange({ ctaSecondaryAction })}
           />
         </Field>
       </Group>

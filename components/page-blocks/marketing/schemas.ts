@@ -9,6 +9,8 @@ export const heroSchema = z.object({
   ctaLink: z.string().max(4096).optional(),
   ctaSecondaryText: z.string().max(120).optional(),
   ctaSecondaryLink: z.string().max(4096).optional(),
+  ctaAction: actionSchema.optional(),
+  ctaSecondaryAction: actionSchema.optional(),
   image: z.string().max(4096).optional(),
   bgColor: z.string().optional(),
   variant: z.enum(['centered', 'split', 'minimal', 'fullbleed']).optional(),

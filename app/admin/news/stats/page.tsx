@@ -1,76 +1,22 @@
-'use client';
-
-import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Eye, FileText, Calendar } from 'lucide-react';
-import { toast } from 'sonner';
+import { getNewsStats } from '@/lib/news/stats';
 
-interface NewsStats {
-  total: number;
-  published: number;
-  draft: number;
-  scheduled: number;
-  archived: number;
-  totalViews: number;
-  avgViews: number;
-  mostViewed: {
-    id: string;
-    title: string;
-    views: number;
-    category: string;
-    emoji: string;
-  } | null;
-  leastViewed: {
-    id: string;
-    title: string;
-    views: number;
-    category: string;
-    emoji: string;
-  } | null;
-  byCategory: {
-    category: string;
-    count: number;
-    views: number;
-  }[];
-  recentArticles: {
-    id: string;
-    title: string;
-    status: string;
-    views: number;
-    createdAt: string;
-  }[];
-}
-
-export default function NewsStatsPage() {
-  const [stats, setStats] = useState<NewsStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchStats = useCallback(async () => {
-    try {
-      const res = await fetch('/api/news/stats');
-      if (!res.ok) throw new Error('Failed to load stats');
-      const data: NewsStats = await res.json();
-      setStats(data);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      toast.error('Erreur lors du chargement des statistiques');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    async function load() { await fetchStats() }
-    void load()
-  }, [fetchStats]);
-
-  if (loading) {
-    return <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6"><div className="text-center py-12 text-muted-foreground">Chargement...</div></div>;
-  }
-
-  if (!stats) {
-    return <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6"><div className="text-center py-12 text-muted-foreground">Erreur au chargement</div></div>;
+// Page de stats purement présentationnelle → Server Component : les agrégations
+// sont calculées côté serveur (lib partagé + micro-cache), zéro fetch client,
+// zéro état de chargement côté navigateur. L'auth est assurée par le layout admin.
+export default async function NewsStatsPage() {
+  let stats: Awaited<ReturnType<typeof getNewsStats>>;
+  try {
+    stats = await getNewsStats();
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    return (
+      <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
+        <div className="text-center py-12 text-muted-foreground">Erreur au chargement</div>
+      </div>
+    );
   }
 
   return (

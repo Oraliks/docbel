@@ -87,6 +87,27 @@ export const modalSchema = z.object({
   size: z.enum(['sm', 'md', 'lg', 'xl']).optional(),
 })
 
+export const drawerSchema = z.object({
+  triggerText: z.string().max(120).default('Ouvrir'),
+  triggerVariant: z.enum(['primary', 'secondary', 'outline', 'ghost', 'link']).optional(),
+  triggerSize: z.enum(['sm', 'md', 'lg']).optional(),
+  hideTrigger: z.boolean().optional(),
+  drawerId: z.string().max(60).optional(),
+  side: z.enum(['left', 'right', 'top', 'bottom']).optional(),
+  title: z.string().max(200).optional(),
+  description: z.string().max(500).optional(),
+  content: z.string().max(20000).optional(),
+})
+
+export const popoverSchema = z.object({
+  triggerText: z.string().max(120).default('Plus d’infos'),
+  triggerVariant: z.enum(['primary', 'secondary', 'outline', 'ghost', 'link']).optional(),
+  triggerSize: z.enum(['sm', 'md', 'lg']).optional(),
+  align: z.enum(['start', 'center', 'end']).optional(),
+  title: z.string().max(200).optional(),
+  content: z.string().max(10000).optional(),
+})
+
 export const uiSchemas = {
   accordion: accordionSchema,
   tabs: tabsSchema,
@@ -96,4 +117,6 @@ export const uiSchemas = {
   card: cardSchema,
   progress: progressSchema,
   modal: modalSchema,
+  drawer: drawerSchema,
+  popover: popoverSchema,
 } as const

@@ -6,6 +6,8 @@ import { badges } from './badges'
 import { progress } from './progress'
 import { buttonGroup } from './button-group'
 import { modal } from './modal'
+import { drawer } from './drawer'
+import { popoverBlock } from './popover-block'
 
 export const uiBlocks = {
   card,
@@ -16,4 +18,6 @@ export const uiBlocks = {
   progress,
   buttonGroup,
   modal,
+  drawer,
+  popover: popoverBlock,
 } as const

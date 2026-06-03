@@ -7,6 +7,7 @@ import { DesignTab } from './design-tab'
 import { LayoutTab } from './layout-tab'
 import { AdvancedTab } from './advanced-tab'
 import { usePageBuilderStore, selectSelectedBlock } from '@/lib/page-builder/store'
+import { mergeForDevice } from '@/lib/page-builder/block-styles'
 import { cn } from '@/lib/utils'
 import { FileText, Palette, Layout, Settings2 } from 'lucide-react'
 
@@ -25,6 +26,7 @@ export function Inspector() {
   const updateBlockStyle = usePageBuilderStore((s) => s.updateBlockStyle)
   const updateBlockLayout = usePageBuilderStore((s) => s.updateBlockLayout)
   const updateBlockAdvanced = usePageBuilderStore((s) => s.updateBlockAdvanced)
+  const updateBlockResponsive = usePageBuilderStore((s) => s.updateBlockResponsive)
 
   const [tab, setTab] = React.useState<TabId>('content')
 
@@ -48,6 +50,13 @@ export function Inspector() {
       </div>
     )
   }
+
+  // On tablet/mobile, Design & Layout edit per-device overrides (responsive),
+  // showing the merged values; Desktop edits the base (unchanged path).
+  const isResponsive = device !== 'desktop'
+  const merged = isResponsive ? mergeForDevice(block, device) : null
+  const displayBlock = merged ? { ...block, style: merged.style, layout: merged.layout } : block
+  const deviceLabel = device === 'tablet' ? 'Tablette' : 'Mobile'
 
   return (
     <div className="flex h-full flex-col">
@@ -76,6 +85,12 @@ export function Inspector() {
       </div>
 
       <ScrollArea className="flex-1">
+        {isResponsive && (tab === 'design' || tab === 'layout') && (
+          <div className="m-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] text-primary">
+            ✎ Vous éditez l’affichage <strong>{deviceLabel}</strong>. Ces réglages
+            ne s’appliquent qu’à cet écran (le Desktop reste la base).
+          </div>
+        )}
         {tab === 'content' && (
           <ContentTab
             block={block}
@@ -83,13 +98,24 @@ export function Inspector() {
           />
         )}
         {tab === 'design' && (
-          <DesignTab block={block} onChange={(s) => updateBlockStyle(block.id, s)} />
+          <DesignTab
+            block={displayBlock}
+            onChange={(s) =>
+              isResponsive
+                ? updateBlockResponsive(block.id, device as 'tablet' | 'mobile', { style: s })
+                : updateBlockStyle(block.id, s)
+            }
+          />
         )}
         {tab === 'layout' && (
           <LayoutTab
-            block={block}
+            block={displayBlock}
             device={device}
-            onChange={(l) => updateBlockLayout(block.id, l)}
+            onChange={(l) =>
+              isResponsive
+                ? updateBlockResponsive(block.id, device as 'tablet' | 'mobile', { layout: l })
+                : updateBlockLayout(block.id, l)
+            }
           />
         )}
         {tab === 'advanced' && (

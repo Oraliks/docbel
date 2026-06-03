@@ -143,12 +143,15 @@ Ce projet **n'utilise pas TanStack Query**. Équivalents en place :
   pdfjs-dist, react-pdf, pdf-lib, jspdf, xlsx, mammoth, recharts (dashboard +
   analytics), TipTap (changelog + news), carte d3-geo/topojson (bureaux),
   FloatingChatFab.
-- **Sujet ouvert (Phase 5)** : le rendu public du page-builder
-  (`lib/page-builder/registry.ts`) étale statiquement les 17 modules de blocs et
-  co-localise `Fields` (éditeur, importe TipTap) avec `Render` (public) → toute
-  page publique embarque recharts + TipTap (~500 Ko). Refactor à faire :
-  séparer `Fields`/`Render` + résolution lazy par type de bloc. **Mesurer
-  avant/après.** Touche un système cœur → branche dédiée + QA éditeur+public.
+- **Page-builder public (fait, Phase 5)** : recharts + TipTap (~500 Ko) sont
+  sortis du bundle public. Les 8 blocs graphiques délèguent leur rendu recharts
+  à une vue `<chart>-view.tsx` chargée en `dynamic({ ssr:false })` (le bloc garde
+  le conteneur dimensionné → pas de CLS, fallback `_chart-fallback.tsx`).
+  `RichTextInput` est un wrapper qui charge l'éditeur TipTap
+  (`rich-text-input-editor.tsx`) en dynamic. Le registry et les types
+  `BlockType`/`BlockPropsMap` restent **inchangés**. **Règle :** ne jamais
+  réimporter recharts/TipTap en statique dans un module de bloc — passer par une
+  vue `dynamic`.
 
 ---
 
@@ -249,16 +252,16 @@ prisma.page.findMany({ orderBy: { createdAt: "desc" } });
 - Accueil converti en Server Component (zéro fetch client).
 - DB : `select`/`take` sur requêtes chaudes ; SQL d'index additifs
   (`prisma/perf-indexes.sql`, à exécuter).
+- Page-builder : recharts + TipTap sortis du bundle public (vues recharts +
+  éditeur TipTap en `dynamic`) — cf. §8.
 - Docs : ce fichier + bloc AGENTS.md.
 
 **En suivi** (non fait ce cycle, par priorité) :
-1. **Phase 5 — page-builder** : sortir recharts + TipTap du bundle public
-   (cf. §8). Plus gros gain restant.
-2. Pages admin client-fetch → RSC : `admin/users`, `admin/news/stats`,
+1. Pages admin client-fetch → RSC : `admin/users`, `admin/news/stats`,
    `admin/news/[newsId]`, `admin/activity` (pattern `initial*` prop existant).
-3. DB : drop `content` de la liste news admin (`ADMIN_LIST_FIELDS`), fix N+1
+2. DB : drop `content` de la liste news admin (`ADMIN_LIST_FIELDS`), fix N+1
    autocomplete KBO (`lib/be-companies/kbo-lookup.ts`), cache memo sur
    `news/stats` + `lookup/stats`.
-4. Exécuter `prisma/perf-indexes.sql` sur la base + vérifier les GIN `pg_trgm`
+3. Exécuter `prisma/perf-indexes.sql` sur la base + vérifier les GIN `pg_trgm`
    du lookup ONEM.
-5. (Optionnel) top-loader de navigation global (`useLinkStatus`) sur les liens.
+4. (Optionnel) top-loader de navigation global (`useLinkStatus`) sur les liens.

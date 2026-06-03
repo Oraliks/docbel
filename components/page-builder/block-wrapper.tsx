@@ -34,6 +34,11 @@ import type { BlockProps } from '@/lib/page-builder/types'
 import { BLOCK_REGISTRY } from '@/lib/page-builder/registry'
 import { childLayoutClass, type ChildLayout } from '@/components/page-blocks/layout/container-layout'
 import { saveSnippet } from '@/lib/page-builder/snippets'
+import {
+  listStylePresets,
+  saveStylePreset,
+  type StylePreset,
+} from '@/lib/page-builder/style-presets'
 import { BlockRenderer } from './block-renderer'
 import { Button } from '@/components/ui/button'
 import {
@@ -114,7 +119,11 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const pushHistoryCheckpoint = usePageBuilderStore((s) => s.pushHistoryCheckpoint)
   const copyBlockStyle = usePageBuilderStore((s) => s.copyBlockStyle)
   const pasteBlockStyle = usePageBuilderStore((s) => s.pasteBlockStyle)
+  const applyStyle = usePageBuilderStore((s) => s.applyStyle)
   const hasStyleClipboard = usePageBuilderStore((s) => s.styleClipboard !== null)
+  const [stylePresets, setStylePresets] = React.useState<StylePreset[]>(() =>
+    listStylePresets()
+  )
 
   // ── "Save as snippet" dialog ──
   const [snippetDialogOpen, setSnippetDialogOpen] = React.useState(false)
@@ -184,6 +193,14 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   }, [converting, block, globalBlocks, setGlobalBlocks, replaceBlock])
 
   const canConvertToGlobal = !isContainerType(block.type) && block.type !== 'globalRef'
+
+  const handleSaveStylePreset = React.useCallback(() => {
+    const name = window.prompt('Nom du style à enregistrer :')?.trim()
+    if (!name) return
+    saveStylePreset(name, { style: block.style, layout: block.layout })
+    setStylePresets(listStylePresets())
+    toast.success('Style enregistré')
+  }, [block.style, block.layout])
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id, disabled: !!block.meta?.locked })
@@ -473,6 +490,40 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
                 <Brush className="mr-2 size-4" />
                 Coller le style
               </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Palette className="mr-2 size-4" />
+                  Styles enregistrés
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={handleSaveStylePreset}>
+                    <BookmarkPlus className="mr-2 size-4" />
+                    Enregistrer le style actuel…
+                  </DropdownMenuItem>
+                  {stylePresets.length > 0 ? (
+                    <>
+                      <DropdownMenuSeparator />
+                      {stylePresets.map((p) => (
+                        <DropdownMenuItem
+                          key={p.id}
+                          onClick={() => {
+                            applyStyle(isInMultiSelection ? selectedIds : [block.id], {
+                              style: p.style,
+                              layout: p.layout,
+                            })
+                            toast.success(`Style « ${p.name} » appliqué`)
+                          }}
+                        >
+                          <Palette className="mr-2 size-4" />
+                          {p.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </>
+                  ) : (
+                    <DropdownMenuItem disabled>Aucun style enregistré</DropdownMenuItem>
+                  )}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
               {canConvertToGlobal && (
                 <DropdownMenuItem disabled={converting} onClick={handleConvertToGlobal}>
                   <Boxes className="mr-2 size-4" />

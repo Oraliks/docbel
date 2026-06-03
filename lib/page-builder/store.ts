@@ -155,6 +155,8 @@ interface PageBuilderStore {
   copyBlockStyle: (id: string) => void
   /** Apply the copied styling onto one or more blocks. */
   pasteBlockStyle: (ids: string[]) => void
+  /** Apply an explicit style+layout payload onto one or more blocks (presets). */
+  applyStyle: (ids: string[], payload: Pick<BlockProps, 'style' | 'layout'>) => void
 
   // History
   undo: () => void
@@ -671,23 +673,26 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
 
   pasteBlockStyle: (ids) => {
     const clip = get().styleClipboard
-    if (!clip || ids.length === 0) return
-    const target = new Set(ids)
-    set((state) =>
-      pushHistory(
+    if (clip) get().applyStyle(ids, clip)
+  },
+
+  applyStyle: (ids, payload) =>
+    set((state) => {
+      if (ids.length === 0) return state
+      const target = new Set(ids)
+      return pushHistory(
         state,
         state.blocks.map((b) =>
           target.has(b.id)
             ? {
                 ...b,
-                style: clip.style ? structuredClone(clip.style) : undefined,
-                layout: clip.layout ? structuredClone(clip.layout) : undefined,
+                style: payload.style ? structuredClone(payload.style) : undefined,
+                layout: payload.layout ? structuredClone(payload.layout) : undefined,
               }
             : b
         )
       )
-    )
-  },
+    }),
 
   // ── history ──────────────────────────────────────────────────────
   undo: () => {

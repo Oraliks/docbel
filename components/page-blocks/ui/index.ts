@@ -8,6 +8,7 @@ import { buttonGroup } from './button-group'
 import { modal } from './modal'
 import { drawer } from './drawer'
 import { popoverBlock } from './popover-block'
+import { dataTable } from './data-table'
 
 export const uiBlocks = {
   card,
@@ -20,4 +21,5 @@ export const uiBlocks = {
   modal,
   drawer,
   popover: popoverBlock,
+  dataTable,
 } as const

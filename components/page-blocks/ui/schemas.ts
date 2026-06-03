@@ -108,6 +108,16 @@ export const popoverSchema = z.object({
   content: z.string().max(10000).optional(),
 })
 
+export const dataTableSchema = z.object({
+  columns: z.string().max(2000).optional(),
+  rows: z.string().max(20000).optional(),
+  searchable: z.boolean().optional(),
+  sortable: z.boolean().optional(),
+  pageSize: z.number().min(0).max(200).optional(),
+  striped: z.boolean().optional(),
+  compact: z.boolean().optional(),
+})
+
 export const uiSchemas = {
   accordion: accordionSchema,
   tabs: tabsSchema,
@@ -119,4 +129,5 @@ export const uiSchemas = {
   modal: modalSchema,
   drawer: drawerSchema,
   popover: popoverSchema,
+  dataTable: dataTableSchema,
 } as const

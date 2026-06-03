@@ -29,6 +29,7 @@ import {
   RectangleHorizontal,
   Palette,
   Brush,
+  Ungroup,
 } from 'lucide-react'
 import type { BlockProps } from '@/lib/page-builder/types'
 import { BLOCK_REGISTRY } from '@/lib/page-builder/registry'
@@ -105,6 +106,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const openPicker = usePageBuilderStore((s) => s.openPicker)
   const updateBlockMeta = usePageBuilderStore((s) => s.updateBlockMeta)
   const wrapInContainer = usePageBuilderStore((s) => s.wrapInContainer)
+  const moveToContainer = usePageBuilderStore((s) => s.moveToContainer)
   const removeMany = usePageBuilderStore((s) => s.removeMany)
   const pasteBlock = usePageBuilderStore((s) => s.pasteBlock)
   const undo = usePageBuilderStore((s) => s.undo)
@@ -242,6 +244,8 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
     [setNodeRef]
   )
   const canResize = isSelected && !isLocked && !isContainer
+  // Non-container blocks are draggable from their whole body (not just the grip).
+  const bodyDrag = !isContainer && !isLocked
   const [handleX, setHandleX] = React.useState<number | null>(null)
   const [liveWidthPct, setLiveWidthPct] = React.useState<number | null>(null)
   const resizeStart = React.useRef<{ availPx: number; wrapLeft: number } | null>(null)
@@ -353,6 +357,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
       ref={setWrapperRefs}
       style={wrapperStyle}
       data-block-id={block.id}
+      {...(bodyDrag ? listeners : {})}
       onClick={(e) => {
         e.stopPropagation()
         if (e.shiftKey) {
@@ -374,6 +379,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
         isInMultiSelection && !isSelected && 'outline-2 outline-amber-500 outline-offset-2 outline',
         !isSelected && !isInMultiSelection && isHovered && 'outline outline-1 outline-primary/40 outline-offset-2',
         isHidden && 'opacity-40',
+        bodyDrag && 'cursor-grab active:cursor-grabbing',
         isLocked && 'cursor-default'
       )}
     >
@@ -387,7 +393,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
               isSelected ? 'bg-primary text-primary-foreground' : 'bg-card border'
             )}
             {...(isLocked ? {} : attributes)}
-            {...(isLocked ? {} : listeners)}
+            {...(isLocked || bodyDrag ? {} : listeners)}
             onClick={(e) => e.stopPropagation()}
           >
             {isLocked ? <Lock className="size-3" /> : <GripVertical className="size-3" />}
@@ -528,6 +534,17 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
                 <DropdownMenuItem disabled={converting} onClick={handleConvertToGlobal}>
                   <Boxes className="mr-2 size-4" />
                   Convertir en bloc global
+                </DropdownMenuItem>
+              )}
+              {block.parentId && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    moveToContainer(block.id, null, null)
+                    toast.success('Bloc sorti du conteneur')
+                  }}
+                >
+                  <Ungroup className="mr-2 size-4" />
+                  Sortir du conteneur
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
@@ -745,6 +762,17 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
           Insérer un bloc
           <ContextMenuShortcut>⌘/</ContextMenuShortcut>
         </ContextMenuItem>
+        {block.parentId && (
+          <ContextMenuItem
+            onClick={() => {
+              moveToContainer(block.id, null, null)
+              toast.success('Bloc sorti du conteneur')
+            }}
+          >
+            <Ungroup />
+            Sortir du conteneur
+          </ContextMenuItem>
+        )}
         <ContextMenuSeparator />
         <ContextMenuItem
           onClick={() => {

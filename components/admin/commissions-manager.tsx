@@ -38,6 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { TypeToConfirmField, typeToConfirmMatches } from "@/components/ui/type-to-confirm-field";
 import {
   Select,
   SelectContent,
@@ -136,6 +137,7 @@ export function CommissionsManager() {
 
   const [confirmDelete, setConfirmDelete] = useState<Commission | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteTyped, setDeleteTyped] = useState("");
 
   const [lastUpdated, setLastUpdated] = useState("");
   const [lastUpdatedDraft, setLastUpdatedDraft] = useState("");
@@ -454,7 +456,10 @@ export function CommissionsManager() {
                             <Pencil size={16} />
                           </Button>
                           <Button
-                            onClick={() => setConfirmDelete(c)}
+                            onClick={() => {
+                              setConfirmDelete(c);
+                              setDeleteTyped("");
+                            }}
                             variant="ghost"
                             size="sm"
                             title="Supprimer"
@@ -623,6 +628,14 @@ export function CommissionsManager() {
                 : null}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {confirmDelete ? (
+            <TypeToConfirmField
+              requireText={confirmDelete.numero}
+              value={deleteTyped}
+              onChange={setDeleteTyped}
+              disabled={deleting}
+            />
+          ) : null}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
             <AlertDialogAction
@@ -631,7 +644,7 @@ export function CommissionsManager() {
                 e.preventDefault();
                 void performDelete();
               }}
-              disabled={deleting}
+              disabled={deleting || !typeToConfirmMatches(deleteTyped, confirmDelete?.numero ?? "")}
             >
               {deleting && <Loader2 className="animate-spin" size={16} />}
               Supprimer

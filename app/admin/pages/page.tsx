@@ -20,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { TypeToConfirmField, typeToConfirmMatches } from '@/components/ui/type-to-confirm-field'
 import {
   Dialog,
   DialogContent,
@@ -73,6 +74,11 @@ export default function PagesListPage() {
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [deleteTyped, setDeleteTyped] = useState('')
+  // Reset du champ type-to-confirm à chaque ouverture/fermeture d'un dialog de suppression.
+  useEffect(() => {
+    setDeleteTyped('')
+  }, [deleteId, bulkDeleteOpen])
   const [currentPage, setCurrentPage] = useState(1)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showTemplateDialog, setShowTemplateDialog] = useState(false)
@@ -819,11 +825,17 @@ export default function PagesListPage() {
               Cette action est irréversible. La page et tous ses blocs seront supprimés.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <TypeToConfirmField
+            requireText="supprimer"
+            value={deleteTyped}
+            onChange={setDeleteTyped}
+          />
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               variant="destructive"
+              disabled={!typeToConfirmMatches(deleteTyped, 'supprimer')}
             >
               Supprimer
             </AlertDialogAction>
@@ -842,11 +854,17 @@ export default function PagesListPage() {
               Cette action est irréversible. Toutes les pages sélectionnées et leurs blocs seront supprimés.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <TypeToConfirmField
+            requireText="supprimer"
+            value={deleteTyped}
+            onChange={setDeleteTyped}
+          />
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
               variant="destructive"
+              disabled={!typeToConfirmMatches(deleteTyped, 'supprimer')}
             >
               Supprimer
             </AlertDialogAction>

@@ -39,6 +39,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { TypeToConfirmField, typeToConfirmMatches } from "@/components/ui/type-to-confirm-field";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -124,6 +125,11 @@ export function FileManager() {
   const [dragOver, setDragOver] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [batchDeleting, setBatchDeleting] = useState(false);
+  const [deleteTyped, setDeleteTyped] = useState("");
+  // Reset du champ type-to-confirm à chaque changement de cible de suppression.
+  useEffect(() => {
+    setDeleteTyped("");
+  }, [deleteConfirmation]);
   const [batchPrivacyWarning, setBatchPrivacyWarning] = useState<{
     fileIds: string[];
     newPrivacy: boolean;
@@ -1865,11 +1871,21 @@ export function FileManager() {
               </p>
             )}
 
+            <TypeToConfirmField
+              requireText={deleteConfirmation?.fileName || "supprimer"}
+              value={deleteTyped}
+              onChange={setDeleteTyped}
+              disabled={deleting !== null}
+            />
+
             <div className="flex flex-col gap-2">
               <Button
                 variant="destructive"
                 onClick={confirmDelete}
-                disabled={deleting !== null}
+                disabled={
+                  deleting !== null ||
+                  !typeToConfirmMatches(deleteTyped, deleteConfirmation?.fileName || "supprimer")
+                }
                 className="text-sm"
               >
                 {deleting ? "Suppression..." : "🗑️ Supprimer définitivement"}
@@ -1905,11 +1921,18 @@ export function FileManager() {
               ⚠️ Cette action est irréversible.
             </p>
 
+            <TypeToConfirmField
+              requireText="supprimer"
+              value={deleteTyped}
+              onChange={setDeleteTyped}
+              disabled={batchDeleting}
+            />
+
             <div className="flex flex-col gap-2">
               <Button
                 variant="destructive"
                 onClick={confirmBatchDelete}
-                disabled={batchDeleting}
+                disabled={batchDeleting || !typeToConfirmMatches(deleteTyped, "supprimer")}
                 className="text-sm"
               >
                 {batchDeleting ? "Suppression..." : "🗑️ Supprimer définitivement"}

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { TypeToConfirmField, typeToConfirmMatches } from "@/components/ui/type-to-confirm-field"
 import {
   Select,
   SelectContent,
@@ -44,6 +45,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleteTyped, setDeleteTyped] = useState("")
   const [formData, setFormData] = useState({
     name: user.name,
     email: user.email,
@@ -330,7 +332,10 @@ export function EditUserForm({ user }: EditUserFormProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setConfirmDelete(true)}
+              onClick={() => {
+                setConfirmDelete(true)
+                setDeleteTyped("")
+              }}
               className="gap-2 border-red-300 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/30"
             >
               <Trash2Icon className="size-4" />
@@ -342,6 +347,12 @@ export function EditUserForm({ user }: EditUserFormProps) {
                 Confirmer la suppression définitive de{" "}
                 <strong>{user.name}</strong> ({user.email}) ?
               </p>
+              <TypeToConfirmField
+                requireText={user.email}
+                value={deleteTyped}
+                onChange={setDeleteTyped}
+                disabled={deleting}
+              />
               <div className="flex gap-3">
                 <Button
                   type="button"
@@ -355,7 +366,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
                   type="button"
                   variant="destructive"
                   onClick={handleDelete}
-                  disabled={deleting}
+                  disabled={deleting || !typeToConfirmMatches(deleteTyped, user.email)}
                   className="gap-2"
                 >
                   {deleting && <Loader2 className="size-4 animate-spin" />}

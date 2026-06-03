@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { TypeToConfirmField, typeToConfirmMatches } from "@/components/ui/type-to-confirm-field";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -727,6 +728,15 @@ export function PartnerDeleteDomainDialog({
   isPending,
   onConfirm,
 }: PartnerDeleteDomainDialogProps) {
+  const [typed, setTyped] = useState("");
+  // Reset du champ type-to-confirm à chaque changement de cible.
+  useEffect(() => {
+    setTyped("");
+  }, [target]);
+
+  const needle =
+    (target?.kind === "email" ? target?.email : target?.domain) || "supprimer";
+
   return (
     <AlertDialog open={!!target} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -744,9 +754,20 @@ export function PartnerDeleteDomainDialog({
             sera définitivement retirée. Cette action est irréversible.
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {target ? (
+          <TypeToConfirmField
+            requireText={needle}
+            value={typed}
+            onChange={setTyped}
+            disabled={isPending}
+          />
+        ) : null}
         <AlertDialogFooter>
           <AlertDialogCancel>Annuler</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} disabled={isPending}>
+          <AlertDialogAction
+            onClick={onConfirm}
+            disabled={isPending || !typeToConfirmMatches(typed, needle)}
+          >
             Supprimer
           </AlertDialogAction>
         </AlertDialogFooter>

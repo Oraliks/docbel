@@ -18,9 +18,12 @@ export async function GET() {
   if (!authCheck.isAuthorized) return authCheck.error
 
   try {
+    // take borné (convention AGENTS : findMany toujours borné). 1000 = marge
+    // large vs le nombre réel de comptes, sans tronquer l'affichage admin.
     const users = await prisma.user.findMany({
       select: SAFE_USER_SELECT,
       orderBy: { createdAt: "desc" },
+      take: 1000,
     })
 
     return NextResponse.json(users.map(serializeUser), { headers: jsonHeaders })

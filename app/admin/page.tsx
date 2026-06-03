@@ -17,7 +17,21 @@ export default async function AdminPage() {
   }
 
   const [rawPages, rawUsers, rawSections] = await Promise.all([
-    prisma.page.findMany({ orderBy: { createdAt: "desc" } }),
+    // select scalaire : le dashboard n'affiche que titre/slug/statut/dates.
+    // Évite de tirer la colonne `content` (arbre de blocs page-builder, lourd)
+    // pour chaque page. + take borné (convention AGENTS "findMany toujours borné").
+    prisma.page.findMany({
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    }),
     prisma.user.findMany({
       select: {
         id: true,
@@ -30,6 +44,7 @@ export default async function AdminPage() {
         updatedAt: true,
       },
       orderBy: { createdAt: "desc" },
+      take: 500,
     }),
     prisma.toolSection.findMany({
       include: {

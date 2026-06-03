@@ -250,18 +250,20 @@ prisma.page.findMany({ orderBy: { createdAt: "desc" } });
 - `dynamic()` : FloatingChatFab, recharts (dashboard + analytics), TipTap
   (news-editor), carte bureaux (d3-geo).
 - Accueil converti en Server Component (zéro fetch client).
-- DB : `select`/`take` sur requêtes chaudes ; SQL d'index additifs
-  (`prisma/perf-indexes.sql`, à exécuter).
+- DB : `select`/`take` sur requêtes chaudes ; cache mémoire sur `news/stats`
+  + `lookup/stats` ; `content` retiré de la liste news admin ; fix N+1 KBO.
+- Index DB additifs (`prisma/perf-indexes.sql`) **appliqués** : `Activity` (×2)
+  + `DocumentBundleItem.templateId`. (GIN trgm `KboDenomination` en attente :
+  table absente de cette base.)
 - Page-builder : recharts + TipTap sortis du bundle public (vues recharts +
   éditeur TipTap en `dynamic`) — cf. §8.
+- RSC : pages admin `news/stats`, `users`, `activity` en Server Components
+  (fetch serveur ; île client `activity-client.tsx` pour recherche/filtres).
 - Docs : ce fichier + bloc AGENTS.md.
 
-**En suivi** (non fait ce cycle, par priorité) :
-1. Pages admin client-fetch → RSC : `admin/users`, `admin/news/stats`,
-   `admin/news/[newsId]`, `admin/activity` (pattern `initial*` prop existant).
-2. DB : drop `content` de la liste news admin (`ADMIN_LIST_FIELDS`), fix N+1
-   autocomplete KBO (`lib/be-companies/kbo-lookup.ts`), cache memo sur
-   `news/stats` + `lookup/stats`.
-3. Exécuter `prisma/perf-indexes.sql` sur la base + vérifier les GIN `pg_trgm`
-   du lookup ONEM.
-4. (Optionnel) top-loader de navigation global (`useLinkStatus`) sur les liens.
+**En suivi** (optionnel, non bloquant) :
+1. `admin/news/[newsId]` (éditeur d'article) → RSC : laissé client ce cycle
+   (formulaire complexe, conversion à valider en QA runtime).
+2. GIN trgm `KboDenomination` : relancer la ligne dédiée de
+   `prisma/perf-indexes.sql` quand la table existera sur la base.
+3. (Optionnel) top-loader de navigation global (`useLinkStatus`) sur les liens.

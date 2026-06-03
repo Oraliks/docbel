@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, FileInputIcon, UsersIcon } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, FileInputIcon, UsersIcon, CalendarClock } from "lucide-react"
 import Link from "next/link"
 
 const defaultData = {
@@ -187,6 +187,17 @@ const defaultData = {
           url: "/admin/bureaux#reports",
         },
       ],
+    },
+    {
+      // Outil partenaire (FGTB) — colle une liste de RDV → fichier .ics.
+      // URL neutre `/rendez-vous` ; l'auth partenaire/admin est validée par
+      // la page et la route API (cf. principe Beldoc "URLs conditionnées par
+      // l'auth, pas par le path").
+      title: "Rendez-vous (.ics)",
+      url: "/rendez-vous",
+      icon: (
+        <CalendarClock className="size-4" />
+      ),
     },
     {
       title: "Newsletter",

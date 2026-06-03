@@ -1,14 +1,21 @@
+import Link from "next/link";
 import {
-  Building2Icon,
-  CalendarDaysIcon,
+  ArrowRightIcon,
+  CalendarClock,
   CheckCircle2Icon,
   ClockIcon,
   GlobeIcon,
+  type LucideIcon,
+  SearchIcon,
   UsersIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { GLASS_CARD } from "@/lib/glass-classes";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface Colleague {
   id: string;
@@ -32,6 +39,26 @@ interface PartnerDashboardProps {
   domains: DomainEntry[];
 }
 
+const PARTNER_TOOLS: {
+  title: string;
+  desc: string;
+  href: string;
+  icon: LucideIcon;
+}[] = [
+  {
+    title: "Rendez-vous → Outlook (.ics)",
+    desc: "Collez une liste de rendez-vous et téléchargez un fichier .ics importable dans Outlook, Google Agenda ou Apple Calendrier.",
+    href: "/rendez-vous",
+    icon: CalendarClock,
+  },
+  {
+    title: "Lookup ONEM",
+    desc: "Décodez les codes officiels ONEM (S01, S04, S38, Dispo, BCSS…). Recherche multilingue dans 11 000+ entrées.",
+    href: "/outils/lookup-onem",
+    icon: SearchIcon,
+  },
+];
+
 export function PartnerDashboard({
   organizationName,
   currentUserId,
@@ -39,122 +66,103 @@ export function PartnerDashboard({
   domains,
 }: PartnerDashboardProps) {
   const otherColleagues = colleagues.filter((c) => c.id !== currentUserId);
-  const activeColleagues = otherColleagues.filter(
-    (c) => c.status === "active",
-  );
+  const activeColleagues = otherColleagues.filter((c) => c.status === "active");
   const recentlyActive = otherColleagues
     .filter((c) => c.lastLoginAt)
     .sort(
       (a, b) =>
-        new Date(b.lastLoginAt!).getTime() -
-        new Date(a.lastLoginAt!).getTime(),
+        new Date(b.lastLoginAt!).getTime() - new Date(a.lastLoginAt!).getTime(),
     )
     .slice(0, 5);
 
   return (
-    <section className="flex flex-col gap-6">
-      <Card className={GLASS_CARD}>
-        <CardContent className="flex flex-col gap-5 p-7 lg:flex-row lg:items-center lg:gap-8">
-          <span
-            className="flex size-14 shrink-0 items-center justify-center rounded-2xl text-white"
-            style={{
-              backgroundImage:
-                "linear-gradient(135deg, var(--glass-accent-deep), var(--glass-accent-a))",
-            }}
-          >
-            <Building2Icon className="size-6" />
-          </span>
-          <div className="flex flex-1 flex-col gap-2">
-            <span
-              className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em]"
-              style={{
-                background: "var(--glass-ink)",
-                color: "var(--glass-bg-a)",
-              }}
+    <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {organizationName}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Espace partenaire · {activeColleagues.length} collègue
+          {activeColleagues.length > 1 ? "s" : ""} actif
+          {activeColleagues.length > 1 ? "s" : ""} · {domains.length} domaine
+          {domains.length > 1 ? "s" : ""} autorisé
+          {domains.length > 1 ? "s" : ""}
+        </p>
+      </div>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-muted-foreground">Outils</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {PARTNER_TOOLS.map((tool) => (
+            <Card
+              key={tool.href}
+              className="p-0 transition-colors hover:bg-muted/40"
             >
-              <span
-                className="size-1.5 rounded-full"
-                style={{ background: "var(--glass-accent-c)" }}
-              />
-              Espace Partenaire
-            </span>
-            <h1 className="glass-display text-[28px] font-semibold leading-[1.1] sm:text-[36px]">
-              {organizationName}
-            </h1>
-            <p className="text-[13.5px] text-[color:var(--glass-ink-soft)]">
-              {activeColleagues.length} collègue
-              {activeColleagues.length > 1 ? "s" : ""} actif
-              {activeColleagues.length > 1 ? "s" : ""} · {domains.length} domaine
-              {domains.length > 1 ? "s" : ""} autorisé
-              {domains.length > 1 ? "s" : ""}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+              <Link
+                href={tool.href}
+                className="group flex h-full items-start gap-3 p-4"
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <tool.icon className="size-5" />
+                </span>
+                <div className="flex flex-1 flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{tool.title}</span>
+                    <ArrowRightIcon className="ml-auto size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">{tool.desc}</p>
+                </div>
+              </Link>
+            </Card>
+          ))}
+        </div>
+      </section>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           icon={UsersIcon}
           label="Collègues inscrits"
           value={otherColleagues.length}
-          gradient="linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))"
         />
         <StatCard
           icon={CheckCircle2Icon}
           label="Comptes actifs"
           value={activeColleagues.length}
-          gradient="linear-gradient(135deg, #80E0C0, #40C0A0)"
         />
         <StatCard
           icon={GlobeIcon}
           label="Domaines autorisés"
           value={domains.length}
-          gradient="linear-gradient(135deg, #80B0FF, #5060FF)"
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className={GLASS_CARD}>
-          <CardHeader className="px-7 pt-7 pb-3">
-            <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
-              <UsersIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
+        <Card id="membres">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UsersIcon className="size-4 text-primary" />
               Vos collègues
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-7 pb-7">
+          <CardContent>
             {otherColleagues.length === 0 ? (
-              <p className="py-6 text-center text-[13px] text-[color:var(--glass-ink-soft)]">
+              <p className="py-4 text-center text-sm text-muted-foreground">
                 Vous êtes la seule personne de {organizationName} inscrite pour
                 l&apos;instant.
               </p>
             ) : (
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col gap-1.5">
                 {otherColleagues.slice(0, 8).map((c) => (
                   <li
                     key={c.id}
-                    className="flex items-center gap-3 rounded-2xl p-3"
-                    style={{ background: "var(--glass-surface)" }}
+                    className="flex items-center gap-3 rounded-lg bg-muted/40 p-2.5"
                   >
-                    <span
-                      className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[11px] font-bold text-white"
-                      style={{
-                        backgroundImage:
-                          "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))",
-                      }}
-                    >
-                      {c.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .filter(Boolean)
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase()}
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">
+                      {initials(c.name)}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13.5px] font-bold">
-                        {c.name}
-                      </p>
-                      <p className="truncate text-[12px] text-[color:var(--glass-ink-faint)]">
+                      <p className="truncate text-sm font-medium">{c.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
                         {c.email}
                       </p>
                     </div>
@@ -162,7 +170,7 @@ export function PartnerDashboard({
                   </li>
                 ))}
                 {otherColleagues.length > 8 ? (
-                  <li className="pt-1 text-center text-[11.5px] text-[color:var(--glass-ink-faint)]">
+                  <li className="pt-1 text-center text-xs text-muted-foreground">
                     + {otherColleagues.length - 8} autres
                   </li>
                 ) : null}
@@ -171,35 +179,32 @@ export function PartnerDashboard({
           </CardContent>
         </Card>
 
-        <Card className={GLASS_CARD}>
-          <CardHeader className="px-7 pt-7 pb-3">
-            <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
-              <CalendarDaysIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ClockIcon className="size-4 text-primary" />
               Dernières connexions
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-7 pb-7">
+          <CardContent>
             {recentlyActive.length === 0 ? (
-              <p className="py-6 text-center text-[13px] text-[color:var(--glass-ink-soft)]">
+              <p className="py-4 text-center text-sm text-muted-foreground">
                 Aucune connexion récente parmi vos collègues.
               </p>
             ) : (
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col gap-1.5">
                 {recentlyActive.map((c) => (
                   <li
                     key={c.id}
-                    className="flex items-center justify-between gap-3 rounded-2xl p-3"
-                    style={{ background: "var(--glass-surface)" }}
+                    className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 p-2.5"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13.5px] font-bold">
-                        {c.name}
-                      </p>
-                      <p className="truncate text-[12px] text-[color:var(--glass-ink-faint)]">
+                      <p className="truncate text-sm font-medium">{c.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
                         {c.email}
                       </p>
                     </div>
-                    <span className="shrink-0 text-[11.5px] font-semibold tabular-nums text-[color:var(--glass-ink-faint)]">
+                    <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
                       {new Date(c.lastLoginAt!).toLocaleDateString("fr-BE")}
                     </span>
                   </li>
@@ -210,63 +215,65 @@ export function PartnerDashboard({
         </Card>
       </div>
 
-      <Card className={GLASS_CARD}>
-        <CardHeader className="px-7 pt-7 pb-3">
-          <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
-            <GlobeIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
+      <Card id="domaines">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GlobeIcon className="size-4 text-primary" />
             Domaines autorisés pour {organizationName}
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-7 pb-7">
-          <div className="flex flex-wrap gap-2">
-            {domains.map((d) => (
-              <Badge
-                key={d.domain}
-                className={`font-mono rounded-full border-0 px-3 py-1 text-[11px] ${
-                  d.isActive ? "" : "opacity-60"
-                }`}
-                style={{
-                  background: d.isActive
-                    ? "rgba(80, 200, 140, 0.18)"
-                    : "var(--glass-surface)",
-                  color: d.isActive ? "#1d6b3e" : "var(--glass-ink-soft)",
-                }}
-              >
-                @{d.domain}
-              </Badge>
-            ))}
-          </div>
+        <CardContent>
+          {domains.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Aucun domaine configuré. Contactez DocBel pour en ajouter.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {domains.map((d) => (
+                <Badge
+                  key={d.domain}
+                  variant="secondary"
+                  className={`font-mono ${d.isActive ? "" : "opacity-60"}`}
+                >
+                  @{d.domain}
+                </Badge>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
-    </section>
+    </div>
   );
+}
+
+function initials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 function StatCard({
   icon: Icon,
   label,
   value,
-  gradient,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   label: string;
   value: number;
-  gradient: string;
 }) {
   return (
-    <Card className={GLASS_CARD}>
-      <CardContent className="flex items-start gap-3 p-5">
-        <span
-          className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-white"
-          style={{ backgroundImage: gradient }}
-        >
+    <Card>
+      <CardContent className="flex items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Icon className="size-5" />
         </span>
         <div>
-          <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
-            {label}
-          </p>
-          <p className="glass-display mt-0.5 text-[28px] font-semibold leading-none">
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-2xl font-semibold leading-none tabular-nums">
             {value}
           </p>
         </div>
@@ -279,11 +286,10 @@ function StatusBadge({ status }: { status: string }) {
   const active = status === "active";
   return (
     <Badge
-      className="gap-1 rounded-full border-0 px-2.5 py-0.5 text-[10px] font-bold uppercase"
-      style={{
-        background: active ? "rgba(80, 200, 140, 0.18)" : "var(--glass-surface)",
-        color: active ? "#1d6b3e" : "var(--glass-ink-soft)",
-      }}
+      variant="secondary"
+      className={`gap-1 text-[10px] font-semibold uppercase ${
+        active ? "text-emerald-600" : "text-muted-foreground"
+      }`}
     >
       {active ? (
         <CheckCircle2Icon className="size-3" />

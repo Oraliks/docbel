@@ -120,6 +120,7 @@ export function NewsOverviewCard({ item, onMutated }: NewsOverviewCardProps) {
         "L'article sera supprimé définitivement. Cette action est irréversible.",
       confirmText: "Supprimer définitivement",
       destructive: true,
+      requireText: item.title,
     });
     if (!ok) return;
     setBusy(true);

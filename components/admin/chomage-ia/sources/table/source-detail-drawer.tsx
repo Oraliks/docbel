@@ -561,6 +561,7 @@ export function SourceDetailDrawer({
       </Sheet>
 
       <ConfirmDeleteDialog
+        requireText="supprimer"
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title="Supprimer cette source ?"

@@ -26,6 +26,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { nanoid } from 'nanoid'
+import { useConfirm } from '@/components/ui/confirm-dialog'
 import {
   Dialog,
   DialogContent,
@@ -81,6 +82,7 @@ export function BlockPicker() {
   const insertBlock = usePageBuilderStore((s) => s.insertBlock)
   const globalBlocks = usePageBuilderStore((s) => s.globalBlocks)
   const setGlobalBlocks = usePageBuilderStore((s) => s.setGlobalBlocks)
+  const confirm = useConfirm()
 
   const [query, setQuery] = React.useState('')
   const [activeIdx, setActiveIdx] = React.useState(0)
@@ -143,6 +145,13 @@ export function BlockPicker() {
 
   const handleDeleteSnippet = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
+    const ok = await confirm({
+      title: 'Supprimer ce snippet ?',
+      description: 'Le snippet enregistré sera supprimé. Vous pourrez le recréer.',
+      confirmText: 'Supprimer',
+      destructive: true,
+    })
+    if (!ok) return
     try {
       await deleteSnippet(id)
       setSnippets((prev) => prev.filter((s) => s.id !== id))
@@ -169,6 +178,15 @@ export function BlockPicker() {
 
   const handleDeleteGlobal = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
+    const ok = await confirm({
+      title: 'Supprimer ce bloc global ?',
+      description:
+        'Ce bloc peut être référencé sur plusieurs pages (via un bloc « référence »). Sa suppression cassera ces références.',
+      confirmText: 'Supprimer définitivement',
+      destructive: true,
+      requireText: 'supprimer',
+    })
+    if (!ok) return
     try {
       const res = await fetch(`/api/page-builder/global-blocks/${id}`, {
         method: 'DELETE',

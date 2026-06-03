@@ -503,6 +503,7 @@ export function SnippetsSheet({
         </ul>
 
         <ConfirmDeleteDialog
+          requireText="supprimer"
           open={!!deleteTarget}
           onOpenChange={(v) => !v && setDeleteTargetId(null)}
           title="Supprimer ce snippet ?"

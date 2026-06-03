@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -97,6 +98,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
   const [expandedThreadIds, setExpandedThreadIds] = useState<Set<string>>(new Set());
   const [showImages, setShowImages] = useState(false);
   const [signature, setSignature] = useState("");
+  const confirm = useConfirm();
 
   // Fetch signature once
   useEffect(() => {
@@ -228,10 +230,18 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
 
   async function deleteEmail() {
     const isAlreadyTrashed = folder === "TRASH";
-    const confirmText = isAlreadyTrashed
-      ? "Supprimer définitivement cet email ?"
-      : "Mettre cet email à la corbeille ?";
-    if (!confirm(confirmText)) return;
+    const ok = await confirm({
+      title: isAlreadyTrashed
+        ? "Supprimer définitivement cet email ?"
+        : "Mettre cet email à la corbeille ?",
+      description: isAlreadyTrashed
+        ? "L'email, ses pièces jointes et le fil seront effacés définitivement. Action irréversible."
+        : "L'email sera déplacé dans la corbeille. Vous pourrez le restaurer.",
+      confirmText: isAlreadyTrashed ? "Supprimer définitivement" : "Mettre à la corbeille",
+      destructive: true,
+      requireText: isAlreadyTrashed ? "supprimer" : undefined,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const response = await fetch(`/api/inbox/${email.id}`, { method: "DELETE" });

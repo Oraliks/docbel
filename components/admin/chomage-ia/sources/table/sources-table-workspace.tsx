@@ -731,6 +731,7 @@ export function SourcesTableWorkspace({
       />
 
       <ConfirmDeleteDialog
+        requireText="supprimer"
         open={singleDeleteId !== null}
         onOpenChange={(open) => {
           if (!open) setSingleDeleteId(null);

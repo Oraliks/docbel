@@ -453,6 +453,7 @@ export function MessageBubble({
       </div>
 
       <ConfirmDeleteDialog
+        requireText="supprimer"
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title="Supprimer ce message ?"

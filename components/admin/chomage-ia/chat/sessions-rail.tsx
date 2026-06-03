@@ -459,6 +459,7 @@ export function SessionsRail({
         }}
       />
       <ConfirmDeleteDialog
+        requireText="supprimer"
         open={!!deleteTarget}
         onOpenChange={(v) => !v && setDeleteTargetId(null)}
         title="Supprimer cette conversation ?"

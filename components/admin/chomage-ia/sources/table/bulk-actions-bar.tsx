@@ -180,6 +180,7 @@ export function BulkActionsBar({
       </div>
 
       <ConfirmDeleteDialog
+        requireText="supprimer"
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title={`Supprimer ${count} source${count > 1 ? "s" : ""} ?`}

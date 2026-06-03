@@ -280,6 +280,7 @@ export function MemoryWorkspace({ domain }: Props) {
         }}
       />
       <ConfirmDeleteDialog
+        requireText="supprimer"
         open={toDelete !== null}
         onOpenChange={(open) => !open && setToDelete(null)}
         title="Supprimer ce fait permanent ?"

@@ -5,6 +5,8 @@
  *
  * - `<ConfirmDeleteDialog>` : confirme une suppression destructive.
  *   Usage : open/onOpenChange contrôlé, onConfirm async (gère pending state).
+ *   Option `requireText` : garde-fou type-to-confirm pour les suppressions
+ *   irréversibles (bouton désactivé tant que le mot exact n'est pas tapé).
  *
  * - `<RenameDialog>` : prompt avec input pour renommer une entité (session, etc).
  *   Évite les `prompt()` natifs (peu jolis, pas customisables).
@@ -15,7 +17,7 @@
  * scopé à un composant (ex: contextes complexes ou state local d'erreur).
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import {
   AlertDialog,
@@ -39,6 +41,12 @@ interface ConfirmDeleteDialogProps {
   cancelText?: string;
   /** Async callback. Le dialog reste ouvert avec spinner pendant l'exécution. */
   onConfirm: () => void | Promise<void>;
+  /**
+   * Garde-fou type-to-confirm : le bouton de suppression reste désactivé tant
+   * que l'utilisateur n'a pas tapé exactement cette chaîne (nom de l'élément, ou
+   * « supprimer » pour du bulk). À réserver aux suppressions IRRÉVERSIBLES.
+   */
+  requireText?: string;
 }
 
 export function ConfirmDeleteDialog({
@@ -49,8 +57,19 @@ export function ConfirmDeleteDialog({
   confirmText = "Supprimer",
   cancelText = "Annuler",
   onConfirm,
+  requireText,
 }: ConfirmDeleteDialogProps) {
   const [pending, setPending] = useState(false);
+  const [typed, setTyped] = useState("");
+
+  // Reset du champ type-to-confirm à chaque (ré)ouverture (même approche que
+  // components/ui/confirm-dialog.tsx).
+  useEffect(() => {
+    if (open) setTyped("");
+  }, [open]);
+
+  const needle = requireText?.trim() ?? "";
+  const matches = needle ? typed.trim() === needle : true;
 
   // Reset pending si le parent ferme via Esc/clic backdrop.
   function handleOpenChange(next: boolean) {
@@ -60,6 +79,7 @@ export function ConfirmDeleteDialog({
   }
 
   async function handleConfirm() {
+    if (!matches) return;
     setPending(true);
     try {
       await onConfirm();
@@ -80,12 +100,35 @@ export function ConfirmDeleteDialog({
             <AlertDialogDescription>{description}</AlertDialogDescription>
           ) : null}
         </AlertDialogHeader>
+
+        {needle ? (
+          <div className="space-y-2 py-1">
+            <Label htmlFor="confirm-delete-typed" className="text-sm">
+              Pour confirmer, tape{" "}
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                {needle}
+              </code>{" "}
+              ci-dessous :
+            </Label>
+            <Input
+              id="confirm-delete-typed"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              autoComplete="off"
+              autoFocus
+              disabled={pending}
+              placeholder={needle}
+              className={matches ? "border-green-400 focus-visible:ring-green-400/50" : undefined}
+            />
+          </div>
+        ) : null}
+
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>{cancelText}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
-            disabled={pending}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={pending || !matches}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
           >
             {pending ? (
               <>

@@ -215,6 +215,7 @@ export function IngestionWorkspace({ domain }: Props) {
         }}
       />
       <ConfirmDeleteDialog
+        requireText="supprimer"
         open={toDelete !== null}
         onOpenChange={(o) => !o && setToDelete(null)}
         title="Supprimer cette source de veille ?"

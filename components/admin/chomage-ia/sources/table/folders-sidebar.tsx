@@ -163,6 +163,7 @@ export function FoldersSidebar({
 
       {/* Confirm delete */}
       <ConfirmDeleteDialog
+        requireText="supprimer"
         open={pendingDelete !== null}
         onOpenChange={(open) => {
           if (!open) onCancelDelete();

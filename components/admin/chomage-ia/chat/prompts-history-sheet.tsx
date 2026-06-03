@@ -268,6 +268,7 @@ export function PromptsHistorySheet({
         </ul>
 
         <ConfirmDeleteDialog
+          requireText="supprimer"
           open={!!deleteTarget}
           onOpenChange={(v) => !v && setDeleteTargetId(null)}
           title="Supprimer ce prompt ?"

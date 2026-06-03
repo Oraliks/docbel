@@ -10,10 +10,39 @@ import { AppStateContext } from "@/lib/app-state-context";
 import { getAudienceFromPath } from "@/lib/audience";
 import { TOOLS_DATA, getToolSlug } from "@/lib/docbel-data";
 import { useInactiveTools } from "@/hooks/useInactiveTools";
+import { useAuthSession } from "@/components/auth-session-provider";
+import { ProShell } from "./pro/pro-shell";
+import type { ProSegment } from "@/lib/pro-nav";
+
+/**
+ * Espaces pros connectés (partenaire/employeur) → shell Dashboard (sidebar)
+ * au lieu du header glass. Décision par RÔLE : la session expose `role` mais
+ * pas `partnerOrganization` ; en pratique un partner/employer a toujours une
+ * org (posée à l'inscription), donc ça reflète la condition serveur des pages
+ * `/partenaire` et `/employeur`. Les visiteurs/citoyens/admins gardent la
+ * vitrine glass.
+ */
+function resolveProSegment(
+  pathname: string,
+  role: string | null,
+): ProSegment | null {
+  const under = (base: string) =>
+    pathname === base || pathname.startsWith(`${base}/`);
+  if (
+    role === "partner" &&
+    (under("/partenaire") ||
+      under("/rendez-vous") ||
+      under("/outils/lookup-onem"))
+  )
+    return "partenaire";
+  if (role === "employer" && under("/employeur")) return "employeur";
+  return null;
+}
 
 export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
+  const { data: session } = useAuthSession();
   const [toolsCat, setToolsCat] = useState("Tous");
   const [paletteOpen, setPaletteOpen] = useState(false);
   const inactiveSlugs = useInactiveTools();
@@ -23,8 +52,21 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
 
   // /admin owns its own chrome (AppSidebar inside app/admin/layout).
   // /login is a full-screen split layout — header would clash with it.
-  if (pathname.startsWith("/admin") || pathname.startsWith("/login")) {
+  if (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/login") ||
+    pathname === "/inscription"
+  ) {
     return <>{children}</>;
+  }
+
+  // Espace Dashboard pro (sidebar) — partenaires/employeurs connectés.
+  const proSegment = resolveProSegment(
+    pathname,
+    (session?.user as { role?: string } | undefined)?.role ?? null,
+  );
+  if (proSegment) {
+    return <ProShell segment={proSegment}>{children}</ProShell>;
   }
 
   // Public chrome: shared by every non-admin route. The URL drives which

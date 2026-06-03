@@ -81,7 +81,7 @@ export async function importBaremeFile(
   const normalized = normalizeBaremeData(parsed, validFromFromName, overrides)
 
   // 4) Sauvegarde disque
-  const uploadDir = path.join(process.cwd(), UPLOAD_SUBDIR)
+  const uploadDir = path.join(/* turbopackIgnore: true */ process.cwd(), UPLOAD_SUBDIR)
   await mkdir(uploadDir, { recursive: true })
   const safeName = sanitizeFileName(input.fileName)
   const storedName = `${Date.now()}-${safeName}`

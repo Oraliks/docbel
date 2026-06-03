@@ -52,7 +52,11 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
 
   // /admin owns its own chrome (AppSidebar inside app/admin/layout).
   // /login is a full-screen split layout — header would clash with it.
-  if (pathname.startsWith("/admin") || pathname.startsWith("/login")) {
+  if (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/login") ||
+    pathname === "/inscription"
+  ) {
     return <>{children}</>;
   }
 

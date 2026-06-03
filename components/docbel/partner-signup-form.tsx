@@ -117,11 +117,19 @@ function isLookupCandidate(email: string): boolean {
 
 export function SignupForm({
   expectedSegment,
+  framed = true,
+  onSwitchSegment,
 }: {
   expectedSegment: ExpectedSegment;
+  /** false = rend le <form> nu (sans la Card), pour l'embarquer dans un layout. */
+  framed?: boolean;
+  /** Si fourni, le bandeau "mismatch" bascule le segment ici au lieu de naviguer. */
+  onSwitchSegment?: (segment: ExpectedSegment) => void;
 }) {
   const copy = SEGMENT_COPY[expectedSegment];
   const other = OTHER_SEGMENT[expectedSegment];
+  const otherSegment: ExpectedSegment =
+    expectedSegment === "partenaire" ? "employeur" : "partenaire";
 
   const [form, setForm] = useState<FormState>(INITIAL);
   const [error, setError] = useState<string | null>(null);
@@ -282,10 +290,8 @@ export function SignupForm({
     lookup.status !== "recognized" ||
     (expectedSegment === "employeur" && !form.vatNumber.trim());
 
-  return (
-    <Card className={GLASS_CARD}>
-      <CardContent className="p-7 sm:p-8">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+  const formInner = (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="name" className={GLASS_LABEL}>
               Votre nom
@@ -370,13 +376,24 @@ export function SignupForm({
                       : ""}
                     .
                   </p>
-                  <Link
-                    href={other.href}
-                    className="mt-1 inline-flex items-center gap-1 font-bold underline underline-offset-2"
-                  >
-                    Inscrivez-vous ici
-                    <ArrowRightIcon className="size-3.5" />
-                  </Link>
+                  {onSwitchSegment ? (
+                    <button
+                      type="button"
+                      onClick={() => onSwitchSegment(otherSegment)}
+                      className="mt-1 inline-flex items-center gap-1 font-bold underline underline-offset-2"
+                    >
+                      Passer à l&apos;{other.label}
+                      <ArrowRightIcon className="size-3.5" />
+                    </button>
+                  ) : (
+                    <Link
+                      href={other.href}
+                      className="mt-1 inline-flex items-center gap-1 font-bold underline underline-offset-2"
+                    >
+                      Inscrivez-vous ici
+                      <ArrowRightIcon className="size-3.5" />
+                    </Link>
+                  )}
                 </div>
               </div>
             ) : null}
@@ -478,7 +495,12 @@ export function SignupForm({
             </Button>
           </div>
         </form>
-      </CardContent>
+  );
+
+  if (!framed) return formInner;
+  return (
+    <Card className={GLASS_CARD}>
+      <CardContent className="p-7 sm:p-8">{formInner}</CardContent>
     </Card>
   );
 }

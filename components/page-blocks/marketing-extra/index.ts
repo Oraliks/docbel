@@ -6,6 +6,7 @@ import { newsletter } from './newsletter'
 import { trustBadges } from './trust-badges'
 import { pressMentions } from './press-mentions'
 import { starRating } from './star-rating'
+import { leadMagnet } from './lead-magnet'
 
 export const marketingExtraBlocks = {
   pricingTable,
@@ -16,4 +17,5 @@ export const marketingExtraBlocks = {
   trustBadges,
   pressMentions,
   starRating,
+  leadMagnet,
 } as const

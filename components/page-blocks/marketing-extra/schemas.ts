@@ -83,7 +83,19 @@ export const starRatingSchema = z.object({
   size: z.enum(['sm', 'md', 'lg']).optional(),
 })
 
+export const leadMagnetSchema = z.object({
+  title: z.string().max(200).optional(),
+  description: z.string().max(1000).optional(),
+  collectName: z.boolean().optional(),
+  buttonText: z.string().max(120).default('Recevoir le document'),
+  fileUrl: z.string().max(4096).optional(),
+  fileName: z.string().max(200).optional(),
+  successMessage: z.string().max(500).optional(),
+  endpoint: z.string().max(4096).optional(),
+})
+
 export const marketingExtraSchemas = {
+  leadMagnet: leadMagnetSchema,
   pricingTable: pricingTableSchema,
   compareTable: compareTableSchema,
   countdown: countdownSchema,

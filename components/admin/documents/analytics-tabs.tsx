@@ -20,7 +20,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DocumentStatsView } from "./document-stats-view";
+import dynamic from "next/dynamic";
+import { ChartSkeleton } from "@/components/ui/skeletons";
+
+// recharts (~300 Ko) n'est utilisé que dans l'onglet "stats" (non visible au
+// 1er paint). dynamic ssr:false le sort du bundle initial de /admin/pdf/analytics.
+const DocumentStatsView = dynamic(
+  () =>
+    import("./document-stats-view").then((m) => ({
+      default: m.DocumentStatsView,
+    })),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
 
 interface TemplateFunnel {
   templateId: string;

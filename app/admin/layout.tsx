@@ -2,7 +2,7 @@ import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { AdminLayoutProvider } from "@/components/admin-layout-provider"
-import { FloatingChatFab } from "@/components/admin/chomage-ia/floating-chat/floating-chat-fab"
+import { FloatingChatFabLazy } from "@/components/admin/chomage-ia/floating-chat/floating-chat-fab-lazy"
 import { prisma, withDbRetry } from "@/lib/prisma"
 import { UserRole, UserStatus } from "@prisma/client"
 
@@ -34,7 +34,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* FAB mini-chat IA chômage — visible sur toutes les pages /admin/*.
           Stateless (réinitialisé à chaque fermeture), réutilise la KB + la
           mémoire long-terme via /api/chomage-ia/quick-chat. */}
-      <FloatingChatFab />
+      <FloatingChatFabLazy />
     </AdminLayoutProvider>
   )
 }

@@ -12,8 +12,27 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RichTextEditor } from '@/components/docbel/rich-text-editor';
+import dynamic from 'next/dynamic';
 import { Folder, CheckCircle2, ImagePlus, X, Loader2 } from 'lucide-react';
+
+// Tiptap = client-only (DOM requis). dynamic ssr:false évite l'hydratation SSR
+// et sort l'éditeur riche (~250 Ko) du bundle initial de /admin/news/[newsId].
+// Même pattern que components/admin/changelog-manager.tsx.
+const RichTextEditor = dynamic(
+  () =>
+    import('@/components/docbel/rich-text-editor').then((m) => ({
+      default: m.RichTextEditor,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-md border bg-muted/30 px-3 py-8 text-center text-sm text-muted-foreground">
+        <Loader2 className="inline size-4 animate-spin mr-2" />
+        Chargement de l&apos;éditeur…
+      </div>
+    ),
+  }
+);
 
 interface CategoryData {
   id: string;

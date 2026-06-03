@@ -2,8 +2,21 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { MapPin } from 'lucide-react'
-import { CustomBelgiumMap } from './custom-belgium-map'
+import dynamic from 'next/dynamic'
+import { Skeleton } from '@/components/ui/skeleton'
 import { displayBureauName, type BureauResult, type CommuneSummary } from './types'
+
+// Carte SVG (d3-geo + topojson, ~120 Ko) : client-only (ResizeObserver/DOM) et
+// sous la ligne de flottaison. dynamic ssr:false la sort du bundle initial de la
+// page publique /outils/bureaux. Fallback dimensionné (~420px) → pas de CLS.
+const CustomBelgiumMap = dynamic(
+  () =>
+    import('./custom-belgium-map').then((m) => ({ default: m.CustomBelgiumMap })),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[420px] w-full rounded-xl" />,
+  }
+)
 
 /** Mapping resilient des valeurs region stockées en DB (minuscules anglais
  * via le seed REFNIS) vers leur label FR. Fallback : on retourne la valeur

@@ -6,9 +6,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ActivityLog, ActivityItem } from "@/components/admin/activity-log";
-import { AdminDashboardOverview } from "@/components/admin/admin-dashboard-overview";
+import dynamic from "next/dynamic";
+import { KpiCardsSkeleton, ChartSkeleton } from "@/components/ui/skeletons";
 import { FileManager } from "@/components/docbel/file-manager";
 import { ChangelogManager } from "@/components/admin/changelog-manager";
+
+// recharts (~300 Ko) ne sert qu'à la vue dashboard par défaut. dynamic ssr:false
+// le sort du bundle initial de /admin (chargé sur toutes les pages admin via ce
+// composant), avec un skeleton de forme proche (KPI + graphique).
+const AdminDashboardOverview = dynamic(
+  () =>
+    import("@/components/admin/admin-dashboard-overview").then((m) => ({
+      default: m.AdminDashboardOverview,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex flex-col gap-6">
+        <KpiCardsSkeleton count={4} />
+        <ChartSkeleton />
+      </div>
+    ),
+  }
+);
 
 interface Page {
   id: string;

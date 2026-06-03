@@ -75,6 +75,18 @@ export const progressSchema = z.object({
   variant: z.enum(['default', 'segmented', 'circular']).optional(),
 })
 
+export const modalSchema = z.object({
+  triggerText: z.string().max(120).default('Ouvrir'),
+  triggerVariant: z.enum(['primary', 'secondary', 'outline', 'ghost', 'link']).optional(),
+  triggerSize: z.enum(['sm', 'md', 'lg']).optional(),
+  hideTrigger: z.boolean().optional(),
+  modalId: z.string().max(60).optional(),
+  title: z.string().max(200).optional(),
+  description: z.string().max(500).optional(),
+  content: z.string().max(20000).optional(),
+  size: z.enum(['sm', 'md', 'lg', 'xl']).optional(),
+})
+
 export const uiSchemas = {
   accordion: accordionSchema,
   tabs: tabsSchema,
@@ -83,4 +95,5 @@ export const uiSchemas = {
   buttonGroup: buttonGroupSchema,
   card: cardSchema,
   progress: progressSchema,
+  modal: modalSchema,
 } as const

@@ -5,6 +5,7 @@ import { alert } from './alert'
 import { badges } from './badges'
 import { progress } from './progress'
 import { buttonGroup } from './button-group'
+import { modal } from './modal'
 
 export const uiBlocks = {
   card,
@@ -14,4 +15,5 @@ export const uiBlocks = {
   badges,
   progress,
   buttonGroup,
+  modal,
 } as const

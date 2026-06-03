@@ -26,9 +26,11 @@ const PUBLIC_LIST_FIELDS = {
   updatedAt: true,
 } as const;
 
+// NB : `content` (HTML complet de l'article) est volontairement EXCLU de la
+// liste admin — la liste ne l'affiche pas, seul l'éditeur en a besoin (chargé
+// via /api/news/[newsId]). Évite de transférer le corps de chaque article.
 const ADMIN_LIST_FIELDS = {
   ...PUBLIC_LIST_FIELDS,
-  content: true,
   createdBy: true,
   updatedBy: true,
 } as const;

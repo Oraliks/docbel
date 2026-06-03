@@ -1,6 +1,7 @@
 /// Recherche d'une entreprise belge dans le miroir local KBO.
 /// Utilisé par les routes admin pour l'autofill TVA/BCE des formulaires.
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { normalizeEnterpriseNumber } from "./kbo-csv-parser";
 
@@ -32,20 +33,20 @@ const LANG_KEY: Record<string, "fr" | "nl" | "de" | "en"> = {
   "4": "en",
 };
 
-export async function lookupByEnterpriseNumber(raw: string): Promise<KboLookupResult | null> {
-  const num = normalizeEnterpriseNumber(raw);
-  if (!num) return null;
+// Include partagé entre le lookup unitaire et la recherche par nom, pour que
+// les deux chemins renvoient exactement la même forme de données.
+const ENTERPRISE_INCLUDE = {
+  denominations: true,
+  addresses: true,
+  activities: { where: { classification: "MAIN" }, take: 1 },
+} satisfies Prisma.KboEnterpriseInclude;
 
-  const enterprise = await prisma.kboEnterprise.findUnique({
-    where: { enterpriseNumber: num },
-    include: {
-      denominations: true,
-      addresses: true,
-      activities: { where: { classification: "MAIN" }, take: 1 },
-    },
-  });
-  if (!enterprise) return null;
+type EnterpriseWithRelations = Prisma.KboEnterpriseGetPayload<{
+  include: typeof ENTERPRISE_INCLUDE;
+}>;
 
+/// Transforme une entreprise (avec relations) en résultat de lookup.
+function mapEnterpriseToResult(enterprise: EnterpriseWithRelations): KboLookupResult {
   // Dénominations : on classe par type (001 = sociale prioritaire),
   // puis on renseigne `names` par langue avec la première disponible.
   const sorted = [...enterprise.denominations].sort((a, b) =>
@@ -80,16 +81,44 @@ export async function lookupByEnterpriseNumber(raw: string): Promise<KboLookupRe
   };
 }
 
+export async function lookupByEnterpriseNumber(raw: string): Promise<KboLookupResult | null> {
+  const num = normalizeEnterpriseNumber(raw);
+  if (!num) return null;
+
+  const enterprise = await prisma.kboEnterprise.findUnique({
+    where: { enterpriseNumber: num },
+    include: ENTERPRISE_INCLUDE,
+  });
+  if (!enterprise) return null;
+
+  return mapEnterpriseToResult(enterprise);
+}
+
 /// Recherche partielle par nom (préfixe). Utile pour l'autocomplete admin.
 export async function searchByName(query: string, limit = 10): Promise<KboLookupResult[]> {
   const q = query.trim();
   if (q.length < 3) return [];
+
   const matches = await prisma.kboDenomination.findMany({
     where: { denomination: { startsWith: q, mode: "insensitive" } },
     distinct: ["enterpriseNumber"],
     take: limit,
     select: { enterpriseNumber: true },
   });
-  const results = await Promise.all(matches.map((m) => lookupByEnterpriseNumber(m.enterpriseNumber)));
-  return results.filter((r): r is KboLookupResult => r !== null);
+  if (matches.length === 0) return [];
+
+  // Une SEULE requête (fix N+1 : avant, un findUnique par match sur une table
+  // multi-millions de lignes, à chaque frappe de l'autocomplete).
+  const nums = matches.map((m) => m.enterpriseNumber);
+  const enterprises = await prisma.kboEnterprise.findMany({
+    where: { enterpriseNumber: { in: nums } },
+    include: ENTERPRISE_INCLUDE,
+  });
+
+  // Préserve l'ordre des matches (pertinence du préfixe).
+  const byNum = new Map(enterprises.map((e) => [e.enterpriseNumber, e]));
+  return nums
+    .map((n) => byNum.get(n))
+    .filter((e): e is EnterpriseWithRelations => e !== undefined)
+    .map(mapEnterpriseToResult);
 }

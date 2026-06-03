@@ -90,6 +90,40 @@ export const auth = betterAuth({
       hash: async (password) => bcrypt.hash(password, 10),
       verify: async ({ password, hash }) => bcrypt.compare(password, hash),
     },
+    // Réinitialisation de mot de passe : envoie le lien (avec token) par email.
+    // Le lien pointe vers redirectTo (cf. /mot-de-passe-oublie) + ?token=…
+    sendResetPassword: async ({ user, url }) => {
+      const apiKey = process.env.RESEND_API_KEY
+      const from = process.env.EMAIL_FROM
+      if (!apiKey || !from) {
+        throw new Error(
+          "RESEND_API_KEY ou EMAIL_FROM non configurés — réinitialisation impossible",
+        )
+      }
+      const resend = new Resend(apiKey)
+      const result = await resend.emails.send({
+        from,
+        to: user.email,
+        subject: "Réinitialisation de votre mot de passe DocBel",
+        text: [
+          "Bonjour,",
+          "",
+          "Vous avez demandé à réinitialiser votre mot de passe DocBel.",
+          "Cliquez sur le lien ci-dessous (valable 1 heure) :",
+          "",
+          url,
+          "",
+          "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email — votre mot de passe reste inchangé.",
+          "",
+          "L'équipe DocBel",
+        ].join("\n"),
+      })
+      if (result.error) {
+        throw new Error(
+          result.error.message || "Échec d'envoi de l'email de réinitialisation",
+        )
+      }
+    },
   },
   socialProviders: googleEnabled
     ? {

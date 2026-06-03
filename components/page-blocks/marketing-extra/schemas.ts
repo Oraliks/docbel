@@ -94,7 +94,17 @@ export const leadMagnetSchema = z.object({
   endpoint: z.string().max(4096).optional(),
 })
 
+export const exitIntentSchema = z.object({
+  title: z.string().max(200).optional(),
+  description: z.string().max(1000).optional(),
+  ctaText: z.string().max(120).optional(),
+  ctaLink: z.string().max(4096).optional(),
+  size: z.enum(['sm', 'md', 'lg']).optional(),
+  oncePerSession: z.boolean().optional(),
+})
+
 export const marketingExtraSchemas = {
+  exitIntent: exitIntentSchema,
   leadMagnet: leadMagnetSchema,
   pricingTable: pricingTableSchema,
   compareTable: compareTableSchema,

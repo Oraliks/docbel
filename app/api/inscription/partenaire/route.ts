@@ -9,6 +9,7 @@ import {
   createPartnerConfirmationToken,
   sendPartnerConfirmationEmail,
 } from "@/lib/partner-confirmation";
+import { normalizeBelgianTVA } from "@/lib/documents/validators";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
     name?: string;
     email?: string;
     password?: string;
+    vatNumber?: string;
   };
 
   const name = input.name?.trim() ?? "";
@@ -81,6 +83,34 @@ export async function POST(req: NextRequest) {
   const partnerType = authorization.partnerType ?? null;
   const role = authorization.segment === "employeur" ? "employer" : "partner";
 
+  // Employeur : numéro de TVA obligatoire, valide (checksum mod-97) et unique.
+  let vatNumber: string | null = null;
+  if (segment === "employeur") {
+    const normalizedVat = normalizeBelgianTVA(
+      typeof input.vatNumber === "string" ? input.vatNumber : "",
+    );
+    if (!normalizedVat) {
+      return NextResponse.json(
+        {
+          error:
+            "Numéro de TVA belge invalide (format attendu : BE0123456789).",
+        },
+        { status: 400, headers: jsonHeaders },
+      );
+    }
+    const vatTaken = await prisma.user.findFirst({
+      where: { vatNumber: normalizedVat },
+      select: { id: true },
+    });
+    if (vatTaken) {
+      return NextResponse.json(
+        { error: "Ce numéro de TVA est déjà associé à un compte." },
+        { status: 409, headers: jsonHeaders },
+      );
+    }
+    vatNumber = normalizedVat;
+  }
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     return NextResponse.json(
@@ -103,6 +133,7 @@ export async function POST(req: NextRequest) {
         status: UserStatus.pending,
         emailVerified: false,
         partnerOrganization: organizationName,
+        vatNumber,
       },
     });
 
@@ -144,8 +175,16 @@ export async function POST(req: NextRequest) {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
+      const target = error.meta?.target;
+      const onVat = Array.isArray(target)
+        ? target.includes("vatNumber")
+        : typeof target === "string" && target.includes("vatNumber");
       return NextResponse.json(
-        { error: "Un compte existe déjà pour cette adresse email" },
+        {
+          error: onVat
+            ? "Ce numéro de TVA est déjà associé à un compte."
+            : "Un compte existe déjà pour cette adresse email",
+        },
         { status: 409, headers: jsonHeaders },
       );
     }

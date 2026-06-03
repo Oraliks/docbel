@@ -200,6 +200,22 @@ export function isValidBelgianTVA(raw: string): boolean {
 export const isValidBelgianBCE = isValidBelgianTVA;
 
 /**
+ * Forme canonique d'une TVA belge : "BE" + 10 chiffres (sans espaces/points),
+ * ou `null` si le numéro est invalide (mauvais format ou checksum KO).
+ * À utiliser pour stocker/comparer une TVA de façon fiable (unicité).
+ */
+export function normalizeBelgianTVA(raw: string): string | null {
+  const cleaned = raw.replace(/[\s.\-]/g, "").toUpperCase();
+  const match = cleaned.match(/^(BE)?([01]\d{9})$/);
+  if (!match) return null;
+  const digits = match[2];
+  const base = parseInt(digits.slice(0, 8), 10);
+  const check = parseInt(digits.slice(8, 10), 10);
+  if (97 - (base % 97) !== check) return null;
+  return `BE${digits}`;
+}
+
+/**
  * Numéro de téléphone belge spécifiquement.
  * Accepte : +32 X XX XX XX, 0X XX XX XX XX, etc. (fixe ou GSM)
  */

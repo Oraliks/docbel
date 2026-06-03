@@ -20,6 +20,7 @@ import {
   GLASS_LABEL,
   GLASS_PRIMARY_STYLE,
 } from "@/lib/glass-classes";
+import { isValidBelgianTVA } from "@/lib/documents/validators";
 
 export type ExpectedSegment = "partenaire" | "employeur";
 
@@ -28,6 +29,7 @@ type FormState = {
   email: string;
   password: string;
   passwordConfirm: string;
+  vatNumber: string;
 };
 
 const INITIAL: FormState = {
@@ -35,6 +37,7 @@ const INITIAL: FormState = {
   email: "",
   password: "",
   passwordConfirm: "",
+  vatNumber: "",
 };
 
 type LookupResult = {
@@ -212,6 +215,12 @@ export function SignupForm({
       setError(copy.unknownDomain);
       return;
     }
+    if (expectedSegment === "employeur" && !isValidBelgianTVA(form.vatNumber)) {
+      setError(
+        "Numéro de TVA belge invalide (format attendu : BE0123456789).",
+      );
+      return;
+    }
 
     startTransition(async () => {
       try {
@@ -222,6 +231,7 @@ export function SignupForm({
             name: form.name,
             email: form.email,
             password: form.password,
+            vatNumber: form.vatNumber,
           }),
         });
         const data = await res.json();
@@ -267,7 +277,10 @@ export function SignupForm({
 
   // Le submit n'est actif que si le domaine est reconnu ET appartient au
   // segment attendu par cette page (garde anti-mismatch côté client).
-  const submitDisabled = isPending || lookup.status !== "recognized";
+  const submitDisabled =
+    isPending ||
+    lookup.status !== "recognized" ||
+    (expectedSegment === "employeur" && !form.vatNumber.trim());
 
   return (
     <Card className={GLASS_CARD}>
@@ -381,6 +394,27 @@ export function SignupForm({
               </div>
             ) : null}
           </div>
+
+          {expectedSegment === "employeur" ? (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="vatNumber" className={GLASS_LABEL}>
+                Numéro de TVA
+              </Label>
+              <Input
+                id="vatNumber"
+                required
+                autoComplete="off"
+                placeholder="BE0123456789"
+                value={form.vatNumber}
+                onChange={handleChange("vatNumber")}
+                className={GLASS_INPUT}
+              />
+              <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
+                TVA belge de votre entreprise — validée (checksum) et unique par
+                compte.
+              </p>
+            </div>
+          ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">

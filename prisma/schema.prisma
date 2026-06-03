@@ -72,6 +72,10 @@ model User {
   /// Sous-type partenaire : "onem" | "organisme_paiement" | "service_public" |
   /// "prive_asbl". null pour les employeurs et comptes non-partenaires.
   partnerType         String?
+  /// Numéro de TVA belge (forme canonique "BE0123456789"). Obligatoire et
+  /// unique pour les comptes employeur ; null sinon. Validé via
+  /// normalizeBelgianTVA() (checksum mod-97).
+  vatNumber           String?    @unique
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
   sessions            Session[]

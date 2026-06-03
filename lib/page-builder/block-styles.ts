@@ -128,6 +128,26 @@ export function blockToCSS(
   // Opacity
   if (style.opacity !== undefined) css.opacity = style.opacity
 
+  // Text effects (applied last so they take precedence over background)
+  if (style.textEffect === 'gradient') {
+    const from = style.bgGradientFrom || '#7C3AED'
+    const to = style.bgGradientTo || '#EC4899'
+    css.backgroundImage = `linear-gradient(${style.bgGradientAngle ?? 90}deg, ${from}, ${to})`
+    css.color = 'transparent'
+    Object.assign(css, {
+      WebkitBackgroundClip: 'text',
+      backgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+    })
+  } else if (style.textEffect === 'shadow') {
+    css.textShadow = '0 2px 8px rgba(0,0,0,0.25)'
+  } else if (style.textEffect === 'glow') {
+    css.textShadow = '0 0 14px rgba(124,58,237,0.6)'
+  } else if (style.textEffect === 'outline') {
+    css.color = 'transparent'
+    Object.assign(css, { WebkitTextStroke: `1px ${style.textColor || '#111827'}` })
+  }
+
   return css
 }
 
@@ -139,6 +159,9 @@ const ANIMATION_CLASS: Record<NonNullable<BlockAdvanced['animation']>, string> =
   'slide-left': 'animate-in slide-in-from-right-8 fade-in duration-700',
   'slide-right': 'animate-in slide-in-from-left-8 fade-in duration-700',
   'zoom-in': 'animate-in zoom-in-95 fade-in duration-500',
+  'zoom-out': 'animate-in zoom-in-125 fade-in duration-500',
+  pulse: 'animate-pulse',
+  bounce: 'animate-bounce',
 }
 
 export function blockToClassName(block: BlockProps): string {

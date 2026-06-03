@@ -76,7 +76,10 @@ export function AdvancedTab({ block, onChange }: AdvancedTabProps) {
               <SelectItem value="fade-down">Fondu vers le bas</SelectItem>
               <SelectItem value="slide-left">Glisse de la droite</SelectItem>
               <SelectItem value="slide-right">Glisse de la gauche</SelectItem>
-              <SelectItem value="zoom-in">Zoom</SelectItem>
+              <SelectItem value="zoom-in">Zoom avant</SelectItem>
+              <SelectItem value="zoom-out">Zoom arrière</SelectItem>
+              <SelectItem value="pulse">Pulsation (continu)</SelectItem>
+              <SelectItem value="bounce">Rebond (continu)</SelectItem>
             </SelectContent>
           </Select>
         </Field>

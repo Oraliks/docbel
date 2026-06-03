@@ -46,6 +46,7 @@ export interface BlockStyle {
   shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl'
   // Effects
   opacity?: number
+  textEffect?: 'none' | 'gradient' | 'shadow' | 'glow' | 'outline'
 }
 
 export interface BlockLayout {
@@ -85,6 +86,9 @@ export interface BlockAdvanced {
     | 'slide-left'
     | 'slide-right'
     | 'zoom-in'
+    | 'zoom-out'
+    | 'pulse'
+    | 'bounce'
   animationDelay?: number // ms
   /** Trigger animation when entering viewport (IntersectionObserver) instead of on mount. */
   animateOnScroll?: boolean

@@ -106,6 +106,27 @@ export function DesignTab({ block, onChange }: DesignTabProps) {
             </SelectContent>
           </Select>
         </Field>
+        <Field label="Effet de texte" hint="Le dégradé reprend les couleurs du fond dégradé">
+          <Select
+            value={style.textEffect ?? 'none'}
+            onValueChange={(v) =>
+              onChange({
+                textEffect: (v === 'none' ? undefined : v) as BlockStyle['textEffect'],
+              })
+            }
+          >
+            <SelectTrigger className="h-8 w-full">
+              <SelectValue placeholder="Aucun" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Aucun</SelectItem>
+              <SelectItem value="gradient">Dégradé</SelectItem>
+              <SelectItem value="shadow">Ombre</SelectItem>
+              <SelectItem value="glow">Lueur</SelectItem>
+              <SelectItem value="outline">Contour</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
       </Group>
 
       <Group title="Fond" defaultOpen>

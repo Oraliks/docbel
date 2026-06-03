@@ -31,6 +31,7 @@ const StyleSchema = z
     borderRadius: z.number().min(0).max(200).optional(),
     shadow: z.enum(['none', 'sm', 'md', 'lg', 'xl']).optional(),
     opacity: z.number().min(0).max(1).optional(),
+    textEffect: z.enum(['none', 'gradient', 'shadow', 'glow', 'outline']).optional(),
   })
   .partial()
 
@@ -62,7 +63,18 @@ const AdvancedSchema = z
     className: z.string().max(500).optional(),
     anchor: z.string().max(120).optional(),
     animation: z
-      .enum(['none', 'fade-in', 'fade-up', 'fade-down', 'slide-left', 'slide-right', 'zoom-in'])
+      .enum([
+        'none',
+        'fade-in',
+        'fade-up',
+        'fade-down',
+        'slide-left',
+        'slide-right',
+        'zoom-in',
+        'zoom-out',
+        'pulse',
+        'bounce',
+      ])
       .optional(),
     animationDelay: z.number().min(0).max(5000).optional(),
     animateOnScroll: z.boolean().optional(),

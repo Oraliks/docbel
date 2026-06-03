@@ -133,3 +133,41 @@ Les barèmes officiels sont stockés dans
 - Passer la validation API à Zod plutôt que manuelle.
 - Ajouter du rate-limit sur les endpoints publics
   (`contact-messages`, `newsletter`).
+
+## Performance & UX App
+
+Règles courtes, **obligatoires** à relire avant toute modif importante du
+shell, d'un dashboard ou d'une route lourde. Détail + exemples dans
+[docs/performance.md](docs/performance.md).
+
+- Le shell (header public, sidebar admin, layout) reste **stable** pendant les
+  navigations : pas de spinner plein écran, pas de layout qui saute. La sidebar
+  admin highlight la route active et ouvre le bon groupe (`nav-main.tsx`).
+- Toute route lourde a un `loading.tsx` **adapté à sa vraie structure UI**, pas
+  un skeleton générique. Réutiliser les briques de
+  [`components/ui/skeletons.tsx`](components/ui/skeletons.tsx) — **interdiction
+  de dupliquer** des skeletons similaires.
+- Le premier rendu critique reste **côté serveur / RSC** quand c'est possible
+  (modèles : `app/page.tsx`, `app/actualites/page.tsx`,
+  `app/admin/employeurs/stats`). Ne pas migrer des données serveur critiques
+  vers un fetch client `useEffect`. **Pas de TanStack Query** ici : critique →
+  RSC ; secondaire/à la demande → API + cache (`lib/data-client.ts`).
+- **Zustand** (seulement `lib/page-builder/store.ts` + `confirm-dialog`) sert
+  l'état UI local (onglets, drawers, sélection, état optimiste, undo/redo
+  éditeur). Ne **jamais** y stocker de données serveur lourdes / listes /
+  analytics.
+- Les composants lourds non visibles au démarrage (dialogs, drawers, éditeurs
+  TipTap, graphiques recharts, cartes leaflet/d3, OCR, PDF) doivent être
+  `next/dynamic` (ssr:false si DOM-only) avec fallback dimensionné. Pattern de
+  référence : `components/admin/changelog-manager.tsx`.
+- Ne pas charger toutes les variantes d'une page si une seule vue est visible
+  au premier écran (onglets : ne monter/charger que l'onglet actif).
+- Listes filtrées/paginées : pousser pagination + filtres **côté DB/API**
+  (`where`, `take`/`skip`), jamais charger toute la table puis filtrer en JS.
+  `findMany` **toujours borné** par un `take` raisonnable.
+- Index DB : additifs uniquement (`CREATE INDEX CONCURRENTLY`, cf.
+  [`prisma/perf-indexes.sql`](prisma/perf-indexes.sql)). ⚠️ Base Neon partagée
+  → **jamais `db push`**.
+- Après une modif du shell / dashboard / journal / settings / route critique :
+  vérifier navigation rapide desktop **+ mobile** et l'absence d'erreurs
+  console.

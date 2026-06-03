@@ -40,6 +40,7 @@ const LayoutSchema = z
     maxWidth: z.string().max(40).optional(),
     height: z.string().max(40).optional(),
     minHeight: z.string().max(40).optional(),
+    gridColumnSpan: z.number().min(1).max(6).optional(),
     paddingTop: z.number().min(0).max(500).optional(),
     paddingRight: z.number().min(0).max(500).optional(),
     paddingBottom: z.number().min(0).max(500).optional(),

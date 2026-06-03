@@ -45,6 +45,7 @@ import {
   Copy,
   ExternalLink,
   Search,
+  Upload,
   X,
 } from 'lucide-react'
 
@@ -216,6 +217,46 @@ export default function PagesListPage() {
     }
   }
 
+  const importInputRef = React.useRef<HTMLInputElement>(null)
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-importing the same file
+    if (!file) return
+    try {
+      const text = await file.text()
+      const data = JSON.parse(text)
+      const blocks = Array.isArray(data?.blocks)
+        ? data.blocks
+        : Array.isArray(data?.content)
+          ? data.content
+          : null
+      if (!blocks) {
+        toast.error('Fichier JSON invalide (aucun bloc trouvé)')
+        return
+      }
+      const title =
+        (typeof data?.title === 'string' && data.title.trim()) ||
+        file.name.replace(/\.json$/i, '') ||
+        'Page importée'
+      const res = await fetch('/api/pages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content: blocks }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error || "Erreur lors de l'import")
+        return
+      }
+      const newPage = await res.json()
+      toast.success(`Page « ${title} » importée`)
+      router.push(`/admin/pages/${newPage.id}`)
+    } catch {
+      toast.error('Fichier JSON illisible')
+    }
+  }
+
   const handleCreatePage = async () => {
     if (!newPageTitle.trim()) {
       toast.error('Le titre de la page est requis')
@@ -347,13 +388,23 @@ export default function PagesListPage() {
             )}
           </p>
         </div>
-        <Button
-          className=""
-          onClick={() => setShowCreateDialog(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Créer une page
-        </Button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={handleImportFile}
+          />
+          <Button variant="outline" onClick={() => importInputRef.current?.click()}>
+            <Upload className="h-4 w-4 mr-2" />
+            Importer JSON
+          </Button>
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Créer une page
+          </Button>
+        </div>
       </div>
 
       {/* Filters bar */}

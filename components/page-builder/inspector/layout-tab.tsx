@@ -3,7 +3,7 @@
 import React from 'react'
 import { Eye, EyeOff, Monitor, Tablet, Smartphone } from 'lucide-react'
 import type { BlockProps, BlockLayout, DeviceType } from '@/lib/page-builder/types'
-import { Field, Group, Pills, SpacingControl } from './controls'
+import { Field, Group, Pills, SpacingControl, NumberControl } from './controls'
 import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -114,6 +114,16 @@ export function LayoutTab({ block, device, onChange }: LayoutTabProps) {
             onChange={(e) => onChange({ minHeight: e.target.value || undefined })}
             placeholder="auto"
             className="h-8"
+          />
+        </Field>
+        <Field label="Colonnes occupées (en grille)" hint="Largeur de ce bloc dans un parent en grille">
+          <NumberControl
+            value={layout.gridColumnSpan}
+            onChange={(v) => onChange({ gridColumnSpan: v })}
+            min={1}
+            max={6}
+            suffix="col"
+            placeholder="auto"
           />
         </Field>
       </Group>

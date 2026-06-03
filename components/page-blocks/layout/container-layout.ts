@@ -6,11 +6,12 @@
 import { cn } from '@/lib/utils'
 
 export interface ChildLayout {
-  layoutMode?: 'stack' | 'row' | 'grid'
+  layoutMode?: 'stack' | 'row' | 'grid' | 'autogrid' | 'masonry'
   layoutGap?: 'sm' | 'md' | 'lg' | 'xl'
   layoutJustify?: 'start' | 'center' | 'end' | 'between' | 'around'
   layoutAlign?: 'start' | 'center' | 'end' | 'stretch'
   layoutCols?: 2 | 3 | 4
+  layoutMinItem?: 'sm' | 'md' | 'lg'
   layoutWrap?: boolean
 }
 
@@ -42,6 +43,20 @@ const GRID_COLS: Record<NonNullable<ChildLayout['layoutCols']>, string> = {
   4: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4',
 }
 
+// Auto-fit : colonnes qui s'ajustent toutes seules (responsive sans breakpoint).
+const AUTOFIT: Record<NonNullable<ChildLayout['layoutMinItem']>, string> = {
+  sm: 'grid-cols-[repeat(auto-fit,minmax(160px,1fr))]',
+  md: 'grid-cols-[repeat(auto-fit,minmax(240px,1fr))]',
+  lg: 'grid-cols-[repeat(auto-fit,minmax(320px,1fr))]',
+}
+
+// Masonry via CSS multi-colonnes (les items gardent leur hauteur naturelle).
+const MASONRY: Record<NonNullable<ChildLayout['layoutCols']>, string> = {
+  2: 'columns-1 sm:columns-2',
+  3: 'columns-1 sm:columns-2 md:columns-3',
+  4: 'columns-1 sm:columns-2 md:columns-4',
+}
+
 export function childLayoutClass(props: ChildLayout): string | null {
   const mode = props.layoutMode ?? 'stack'
   if (mode === 'stack') return null
@@ -53,6 +68,17 @@ export function childLayoutClass(props: ChildLayout): string | null {
       gap,
       ALIGN[props.layoutAlign ?? 'stretch']
     )
+  }
+  if (mode === 'autogrid') {
+    return cn(
+      'grid',
+      AUTOFIT[props.layoutMinItem ?? 'md'],
+      gap,
+      ALIGN[props.layoutAlign ?? 'stretch']
+    )
+  }
+  if (mode === 'masonry') {
+    return cn(MASONRY[props.layoutCols ?? 3], gap, '[&>*]:mb-4 [&>*]:break-inside-avoid')
   }
   // row (flexbox)
   return cn(

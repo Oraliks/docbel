@@ -3,6 +3,7 @@
 import React from 'react'
 import {
   ArrowLeft,
+  Download,
   ExternalLink,
   Eye,
   Globe,
@@ -41,6 +42,7 @@ interface TopbarProps {
   onOpenSettings: () => void
   onOpenVersions: () => void
   onOpenTheme: () => void
+  onExport: () => void
   onTogglePublish: () => void
 }
 
@@ -57,6 +59,7 @@ export function Topbar({
   onOpenSettings,
   onOpenVersions,
   onOpenTheme,
+  onExport,
   onTogglePublish,
 }: TopbarProps) {
   const device = usePageBuilderStore((s) => s.device)
@@ -177,6 +180,10 @@ export function Topbar({
 
           <Button size="icon-sm" variant="ghost" onClick={onOpenSettings} title="Paramètres">
             <Settings2 className="size-4" />
+          </Button>
+
+          <Button size="icon-sm" variant="ghost" onClick={onExport} title="Exporter en JSON">
+            <Download className="size-4" />
           </Button>
 
           <div className="h-6 w-px bg-border mx-1" />

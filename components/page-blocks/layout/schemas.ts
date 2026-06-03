@@ -2,11 +2,12 @@ import { z } from 'zod'
 
 // Disposition des enfants (Flex/Grid) — partagée par section & container.
 const childLayoutShape = {
-  layoutMode: z.enum(['stack', 'row', 'grid']).optional(),
+  layoutMode: z.enum(['stack', 'row', 'grid', 'autogrid', 'masonry']).optional(),
   layoutGap: z.enum(['sm', 'md', 'lg', 'xl']).optional(),
   layoutJustify: z.enum(['start', 'center', 'end', 'between', 'around']).optional(),
   layoutAlign: z.enum(['start', 'center', 'end', 'stretch']).optional(),
   layoutCols: z.union([z.literal(2), z.literal(3), z.literal(4)]).optional(),
+  layoutMinItem: z.enum(['sm', 'md', 'lg']).optional(),
   layoutWrap: z.boolean().optional(),
 }
 

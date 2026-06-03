@@ -374,6 +374,30 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
     )
   }
 
+  const handleExport = () => {
+    const data = {
+      _type: 'beldoc-page',
+      _version: 1,
+      title,
+      slug,
+      metaTitle: metaTitle || null,
+      metaDesc: metaDesc || null,
+      ogImage: ogImage || null,
+      themeTokens: themeTokens ?? null,
+      blocks,
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${slug || 'page'}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Page exportée en JSON')
+  }
+
   const isPublished = page.status === 'published'
 
   return (
@@ -391,6 +415,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         onOpenSettings={() => setShowSettingsDialog(true)}
         onOpenVersions={() => setShowVersionsDialog(true)}
         onOpenTheme={() => setShowThemeDialog(true)}
+        onExport={handleExport}
         onTogglePublish={handleTogglePublish}
       />
 

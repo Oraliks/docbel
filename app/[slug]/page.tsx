@@ -53,13 +53,39 @@ export async function generateMetadata({
 
   if (!page) return {};
 
+  const title = page.metaTitle || page.title;
+  const description = page.metaDesc || undefined;
+  const ogImages = page.ogImage ? [{ url: page.ogImage }] : undefined;
+
+  const siteUrl =
+    process.env.NEXT_PUBLIC_BETTER_AUTH_URL ||
+    process.env.BETTER_AUTH_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+  let metadataBase: URL | undefined;
+  try {
+    if (siteUrl) metadataBase = new URL(siteUrl);
+  } catch {
+    metadataBase = undefined;
+  }
+
   return {
-    title: page.metaTitle || page.title,
-    description: page.metaDesc,
+    title,
+    description,
+    ...(metadataBase ? { metadataBase } : {}),
+    alternates: { canonical: `/${page.slug}` },
     openGraph: {
-      title: page.metaTitle || page.title,
-      description: page.metaDesc || undefined,
-      images: page.ogImage ? [{ url: page.ogImage }] : undefined,
+      type: "website",
+      title,
+      description,
+      url: `/${page.slug}`,
+      siteName: "Docbel",
+      images: ogImages,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: page.ogImage ? [page.ogImage] : undefined,
     },
   };
 }

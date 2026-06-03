@@ -67,6 +67,7 @@ export function blockToCSS(
   if (layout.maxWidth) css.maxWidth = layout.maxWidth
   if (layout.height) css.height = layout.height
   if (layout.minHeight) css.minHeight = layout.minHeight
+  if (layout.gridColumnSpan) css.gridColumn = `span ${layout.gridColumnSpan}`
 
   // Padding
   const ptop = layout.paddingTop

@@ -54,6 +54,8 @@ export interface BlockLayout {
   maxWidth?: string
   height?: string
   minHeight?: string
+  /** When this block is a child of a grid container: how many columns it spans. */
+  gridColumnSpan?: number
   // Spacing (px). undefined = inherit / default
   paddingTop?: number
   paddingRight?: number

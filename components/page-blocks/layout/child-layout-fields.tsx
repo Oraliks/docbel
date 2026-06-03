@@ -28,6 +28,8 @@ export function ChildLayoutFields({
             { value: 'stack', label: 'Empilé' },
             { value: 'row', label: 'Ligne' },
             { value: 'grid', label: 'Grille' },
+            { value: 'autogrid', label: 'Auto' },
+            { value: 'masonry', label: 'Masonry' },
           ]}
         />
       </Field>
@@ -47,15 +49,29 @@ export function ChildLayoutFields({
         </Field>
       )}
 
-      {mode === 'grid' && (
+      {(mode === 'grid' || mode === 'masonry') && (
         <Field label="Colonnes">
           <Pills
-            value={props.layoutCols ?? 2}
+            value={props.layoutCols ?? (mode === 'masonry' ? 3 : 2)}
             onChange={(v) => onChange({ layoutCols: v as ChildLayout['layoutCols'] })}
             options={[
               { value: 2, label: '2' },
               { value: 3, label: '3' },
               { value: 4, label: '4' },
+            ]}
+          />
+        </Field>
+      )}
+
+      {mode === 'autogrid' && (
+        <Field label="Taille mini des items" hint="Colonnes ajustées automatiquement">
+          <Pills
+            value={props.layoutMinItem ?? 'md'}
+            onChange={(v) => onChange({ layoutMinItem: v as ChildLayout['layoutMinItem'] })}
+            options={[
+              { value: 'sm', label: 'Petit' },
+              { value: 'md', label: 'Moyen' },
+              { value: 'lg', label: 'Grand' },
             ]}
           />
         </Field>
@@ -90,7 +106,7 @@ export function ChildLayoutFields({
         </>
       )}
 
-      {mode !== 'stack' && (
+      {mode !== 'stack' && mode !== 'masonry' && (
         <Field label="Alignement vertical">
           <Pills
             value={props.layoutAlign ?? (mode === 'row' ? 'start' : 'stretch')}

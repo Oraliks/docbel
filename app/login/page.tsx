@@ -169,7 +169,7 @@ function LoginForm() {
 
       <div className="flex justify-end">
         <Link
-          href="#"
+          href="/mot-de-passe-oublie"
           className="text-[12.5px] font-semibold text-[color:var(--glass-accent-deep)] hover:underline"
         >
           Mot de passe oublié ?
@@ -237,7 +237,7 @@ function LoginForm() {
       <p className="mt-2 text-center text-[12.5px] text-[color:var(--glass-ink-soft)]">
         Pas encore inscrit ?{" "}
         <Link
-          href="/inscription/partenaire"
+          href="/inscription"
           className="inline-flex items-center gap-1 font-bold text-[color:var(--glass-accent-deep)] hover:underline"
         >
           <UserPlusIcon className="size-3.5" />

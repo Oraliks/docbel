@@ -1,17 +1,17 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
+import { prisma } from "@/lib/prisma";
 import { LandingBottom } from "@/components/docbel/landing/bottom";
 import { LandingHero } from "@/components/docbel/landing/hero";
 import { LandingTools } from "@/components/docbel/landing/tools";
-import { type AudienceId, getAudienceFromPath } from "@/lib/audience";
+import { getAudienceFromPath } from "@/lib/audience";
 import {
   type NewsItem,
   TOOLS_DATA,
   getToolsByAudience,
   getToolSlug,
 } from "@/lib/docbel-data";
-import { useInactiveTools } from "@/hooks/useInactiveTools";
+import { fetchAllToolsActive } from "@/lib/tools-active";
+
+export const dynamic = "force-dynamic";
 
 const MONTH_LABELS = [
   "JAN",
@@ -36,75 +36,74 @@ function formatFrenchDate(value: string): string {
   } ${String(parsed.getFullYear()).slice(2)}`;
 }
 
-export default function HomePage() {
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [newsLoading, setNewsLoading] = useState(true);
+/**
+ * Accueil — Server Component.
+ *
+ * Les données critiques (news en avant + outils actifs) sont fetchées côté
+ * serveur, en parallèle, et rendues dans le HTML initial → meilleur LCP, pas
+ * de flash de chargement, zéro fetch client au premier paint (avant : page
+ * "use client" avec 2 fetch on-mount sur la route la plus visitée).
+ *
+ * `.catch(() => [])` sur chaque requête = fail-soft : si la DB hoquette, on
+ * affiche tout (outils) / rien (news) plutôt que de casser la page d'accueil.
+ * Le persona switcher / la recherche restent des îlots client (header).
+ */
+export default async function HomePage() {
+  const [articles, toolRows] = await Promise.all([
+    prisma.news
+      .findMany({
+        where: { status: "published", featured: true },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          slug: true,
+          category: true,
+          title: true,
+          excerpt: true,
+          publishedAt: true,
+          color: true,
+          readingTime: true,
+          featured: true,
+          image: true,
+        },
+      })
+      .catch(() => []),
+    fetchAllToolsActive().catch(() => []),
+  ]);
 
-  // The header (with persona switcher) lives in AppLayoutClient; this page
-  // just decides which tools to show based on the URL.
-  const persona: AudienceId = getAudienceFromPath("/");
+  const inactiveSlugs = new Set(
+    toolRows.filter((r) => !r.active).map((r) => r.slug)
+  );
 
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchNews() {
-      try {
-        const res = await fetch("/api/news?status=published&featured=true");
-        if (!res.ok) return;
-        const data = await res.json();
-        if (cancelled) return;
-        const mapped: NewsItem[] = (data.articles || []).map((article: {
-          id: string;
-          slug: string;
-          category: string;
-          title: string;
-          excerpt: string;
-          publishedAt: string;
-          color: string;
-          readingTime: number;
-          featured: boolean;
-          image?: string | null;
-        }) => ({
-          id: article.id,
-          slug: article.slug,
-          tag: article.category,
-          title: article.title,
-          desc: article.excerpt,
-          date: formatFrenchDate(article.publishedAt),
-          color: article.color,
-          readingTime: article.readingTime,
-          popular: article.featured,
-          image: article.image || undefined,
-        }));
-        setNews(mapped);
-      } catch (error) {
-        console.error("Home — fetch news failed:", error);
-      } finally {
-        if (!cancelled) setNewsLoading(false);
-      }
-    }
-    void fetchNews();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Persona figé pour "/" (citoyen) — le header gère le changement d'espace.
+  const persona = getAudienceFromPath("/");
+  const audienceTools = getToolsByAudience(persona);
+  const base = audienceTools.length ? audienceTools : TOOLS_DATA;
+  const tools = base.filter((t) => !inactiveSlugs.has(getToolSlug(t)));
 
-  const inactiveSlugs = useInactiveTools();
-
-  const tools = useMemo(() => {
-    const audienceTools = getToolsByAudience(persona);
-    const base = audienceTools.length ? audienceTools : TOOLS_DATA;
-    // Filtre les outils désactivés par l'admin (DB Tool.active=false). Les
-    // entrées sans correspondance DB (ex: lookup-onem partenaire) passent.
-    return base.filter((t) => !inactiveSlugs.has(getToolSlug(t)));
-  }, [persona, inactiveSlugs]);
+  const news: NewsItem[] = articles.map((article) => ({
+    id: article.id,
+    slug: article.slug,
+    tag: article.category,
+    title: article.title,
+    desc: article.excerpt,
+    date: article.publishedAt
+      ? formatFrenchDate(article.publishedAt.toISOString())
+      : "",
+    color: article.color,
+    readingTime: article.readingTime ?? undefined,
+    popular: article.featured,
+    image: article.image ?? undefined,
+  }));
 
   const featuredArticle = news[0] ?? null;
 
   return (
     <>
-      <LandingHero article={featuredArticle} loading={newsLoading} />
+      <LandingHero article={featuredArticle} loading={false} />
       <LandingTools tools={tools} />
-      <LandingBottom news={news} loading={newsLoading} />
+      <LandingBottom news={news} loading={false} />
     </>
   );
 }

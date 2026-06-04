@@ -89,35 +89,50 @@ export async function renderPlanningPdf(planning: Planning): Promise<Blob> {
     return top + HEADER_H;
   };
 
+  // Hauteur de ligne ADAPTATIVE : tout doit tenir sur UNE seule page A4. On
+  // répartit la place verticale restante entre les lignes (plafonnée à ROW_H
+  // pour les listes courtes), puis on dimensionne la police en conséquence.
+  const TOTAL_ROW_H = 8;
+  const CAPTION_H = 8;
+  const availH = pageH - TABLE_TOP - HEADER_H - TOTAL_ROW_H - CAPTION_H - 4;
+  const rowH =
+    planning.rowCount > 0
+      ? Math.min(ROW_H, availH / planning.rowCount)
+      : ROW_H;
+  const nameFont = Math.max(5, Math.min(7.5, rowH * 1.05));
+  const lineMm = nameFont * 0.36; // hauteur de ligne approx. (pt → mm)
+  const maxLines = rowH >= 7 ? 2 : 1;
+
   const drawBodyRow = (r: number, y: number): void => {
     if (r % 2 === 1) {
       doc.setFillColor(tr, tg, tb);
-      doc.rect(tableX, y, tableW, ROW_H, "F");
+      doc.rect(tableX, y, tableW, rowH, "F");
     }
     doc.setDrawColor(220, 220, 220);
     doc.setLineWidth(0.2);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
+    doc.setFontSize(nameFont);
     doc.setTextColor(30, 30, 30);
     for (let c = 0; c < nCols; c += 1) {
       const cx = tableX + c * colW;
-      doc.rect(cx, y, colW, ROW_H, "S");
+      doc.rect(cx, y, colW, rowH, "S");
       const name = planning.columns[c].names[r];
       if (!name) continue;
       const lines = (doc.splitTextToSize(name, colW - 3) as string[]).slice(
         0,
-        2,
+        maxLines,
       );
-      const startY = y + ROW_H / 2 - (lines.length - 1) * 1.4 + 1;
+      const startY =
+        y + rowH / 2 - ((lines.length - 1) * lineMm) / 2 + lineMm / 2;
       lines.forEach((line, i) => {
-        doc.text(line, cx + 2, startY + i * 2.8);
+        doc.text(line, cx + 2, startY + i * lineMm);
       });
     }
   };
 
   const drawTotalRow = (y: number): void => {
     doc.setFillColor(ar, ag, ab);
-    doc.rect(tableX, y, tableW, ROW_H, "F");
+    doc.rect(tableX, y, tableW, TOTAL_ROW_H, "F");
     doc.setDrawColor(255, 255, 255);
     doc.setLineWidth(0.3);
     doc.setTextColor(255, 255, 255);
@@ -125,29 +140,23 @@ export async function renderPlanningPdf(planning: Planning): Promise<Blob> {
     doc.setFontSize(9);
     for (let c = 0; c < nCols; c += 1) {
       const cx = tableX + c * colW;
-      if (c > 0) doc.line(cx, y, cx, y + ROW_H);
-      doc.text(String(planning.columns[c].names.length), cx + colW / 2, y + 5.4, {
-        align: "center",
-      });
+      if (c > 0) doc.line(cx, y, cx, y + TOTAL_ROW_H);
+      doc.text(
+        String(planning.columns[c].names.length),
+        cx + colW / 2,
+        y + 5.4,
+        { align: "center" },
+      );
     }
   };
 
   let y = drawColumnHeader(TABLE_TOP);
   for (let r = 0; r < planning.rowCount; r += 1) {
-    if (y + ROW_H > pageH - 24) {
-      doc.addPage();
-      y = drawColumnHeader(TABLE_TOP);
-    }
     drawBodyRow(r, y);
-    y += ROW_H;
-  }
-
-  if (y + ROW_H > pageH - 16) {
-    doc.addPage();
-    y = drawColumnHeader(TABLE_TOP);
+    y += rowH;
   }
   drawTotalRow(y);
-  y += ROW_H;
+  y += TOTAL_ROW_H;
 
   // Légende de pied : rappel que la ligne accentuée est le total par créneau.
   doc.setFont("helvetica", "normal");

@@ -23,6 +23,11 @@ interface PartnerOverviewGridProps {
   onResendUserConfirmation: (user: PartnerUser) => void;
   onActivateUser: (user: PartnerUser) => void;
   onSetUserStatus: (user: PartnerUser, status: string) => void;
+  onSetUserFlag: (
+    user: PartnerUser,
+    flag: "isOrgManager" | "canViewRdvHistory",
+    value: boolean,
+  ) => void;
 }
 
 /**
@@ -49,6 +54,7 @@ export function PartnerOverviewGrid({
   onResendUserConfirmation,
   onActivateUser,
   onSetUserStatus,
+  onSetUserFlag,
 }: PartnerOverviewGridProps) {
   if (organizations.length === 0) {
     return (
@@ -96,6 +102,7 @@ export function PartnerOverviewGrid({
                 onResendUserConfirmation={onResendUserConfirmation}
                 onActivateUser={onActivateUser}
                 onSetUserStatus={onSetUserStatus}
+                onSetUserFlag={onSetUserFlag}
               />
             )}
           </div>

@@ -76,6 +76,8 @@ export interface PartnerOrganizationGroup {
     emailVerified: boolean;
     createdAt: Date;
     lastLoginAt: Date | null;
+    isOrgManager: boolean;
+    canViewRdvHistory: boolean;
   }>;
   isActive: boolean;
   hasTestDomain: boolean;
@@ -117,6 +119,8 @@ export async function listOrganizations(
         createdAt: true,
         lastLoginAt: true,
         partnerOrganization: true,
+        isOrgManager: true,
+        canViewRdvHistory: true,
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -167,6 +171,8 @@ export async function listOrganizations(
       emailVerified: u.emailVerified,
       createdAt: u.createdAt,
       lastLoginAt: u.lastLoginAt,
+      isOrgManager: u.isOrgManager,
+      canViewRdvHistory: u.canViewRdvHistory,
     });
     group.userCount = group.users.length;
   }

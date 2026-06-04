@@ -6,6 +6,7 @@ import { AppointmentParseError, parseAppointments } from "@/lib/rendez-vous/ics"
 import {
   computeDuplicates,
   normalizeName,
+  resolveScope,
   toStoredRdvs,
   type StoredRdv,
 } from "@/lib/rendez-vous/history";
@@ -35,18 +36,19 @@ export async function POST(req: NextRequest) {
     return authResult.error;
   }
   const { user } = authResult;
-  // Périmètre de partage : l'org partenaire ; repli isolé pour un admin sans org.
-  const scope = user.partnerOrganization ?? `admin:${user.id}`;
 
   let action: unknown;
   let content: unknown;
+  let requestedOrg: string | null = null;
   try {
     const body = (await req.json()) as {
       action?: unknown;
       content?: unknown;
+      org?: unknown;
     } | null;
     action = body?.action;
     content = body?.content;
+    if (typeof body?.org === "string") requestedOrg = body.org;
   } catch {
     return NextResponse.json(
       { error: "Corps de requête JSON invalide.", code: "BAD_REQUEST" },
@@ -66,6 +68,21 @@ export async function POST(req: NextRequest) {
         error: "Aucun texte fourni. Collez la liste des rendez-vous.",
         code: "NO_APPOINTMENTS",
       },
+      { status: 400, headers: jsonHeaders },
+    );
+  }
+
+  // Seuls les admins peuvent cibler une autre organisation ; un partenaire est
+  // toujours cloisonné à la sienne.
+  const scope = resolveScope({
+    isAdmin: user.isAdmin,
+    partnerOrganization: user.partnerOrganization,
+    requestedOrg: user.isAdmin ? requestedOrg : null,
+    userId: user.id,
+  });
+  if (!scope) {
+    return NextResponse.json(
+      { error: "Aucune organisation rattachée à ce compte.", code: "NO_SCOPE" },
       { status: 400, headers: jsonHeaders },
     );
   }

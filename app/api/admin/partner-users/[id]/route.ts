@@ -10,7 +10,11 @@ import {
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
-type Action = "resend-confirmation" | "activate" | "set-status";
+type Action = "resend-confirmation" | "activate" | "set-status" | "set-flag";
+
+/** Indicateurs d'accès à l'historique des RDV, modifiables par un admin. */
+const ALLOWED_FLAGS = ["isOrgManager", "canViewRdvHistory"] as const;
+type UserFlag = (typeof ALLOWED_FLAGS)[number];
 
 export async function POST(
   req: NextRequest,
@@ -31,7 +35,12 @@ export async function POST(
     );
   }
 
-  const { action, status } = body as { action?: Action; status?: UserStatus };
+  const { action, status, flag, value } = body as {
+    action?: Action;
+    status?: UserStatus;
+    flag?: string;
+    value?: boolean;
+  };
 
   let user;
   try {
@@ -184,6 +193,47 @@ export async function POST(
         );
       }
       console.error("Error setting user status:", error);
+      return NextResponse.json(
+        { error: "Echec de la mise à jour" },
+        { status: 500, headers: jsonHeaders },
+      );
+    }
+  }
+
+  if (action === "set-flag") {
+    if (!flag || !ALLOWED_FLAGS.includes(flag as UserFlag)) {
+      return NextResponse.json(
+        { error: "Indicateur invalide" },
+        { status: 400, headers: jsonHeaders },
+      );
+    }
+    if (typeof value !== "boolean") {
+      return NextResponse.json(
+        { error: "Valeur invalide" },
+        { status: 400, headers: jsonHeaders },
+      );
+    }
+    try {
+      const updated = await prisma.user.update({
+        where: { id: user.id },
+        data: { [flag as UserFlag]: value },
+        select: { id: true, isOrgManager: true, canViewRdvHistory: true },
+      });
+      return NextResponse.json(
+        { ok: true, user: updated },
+        { headers: jsonHeaders },
+      );
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        return NextResponse.json(
+          { error: "Utilisateur introuvable" },
+          { status: 404, headers: jsonHeaders },
+        );
+      }
+      console.error("Error setting user flag:", error);
       return NextResponse.json(
         { error: "Echec de la mise à jour" },
         { status: 500, headers: jsonHeaders },

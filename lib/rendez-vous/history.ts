@@ -81,6 +81,26 @@ export function formatDateKey(key: string): string {
   return d && m && y ? `${d}/${m}/${y}` : key;
 }
 
+/**
+ * Résout le périmètre (`scope`) de l'historique selon le compte :
+ *   • partenaire → son organisation (partage au sein du service) ;
+ *   • admin → l'organisation qu'il a choisie (ex. « FGTB ») ; à défaut, un
+ *     espace admin isolé `admin:<id>` (rétro-compatibilité).
+ */
+export function resolveScope(opts: {
+  isAdmin: boolean;
+  partnerOrganization: string | null;
+  requestedOrg?: string | null;
+  userId: string;
+}): string | null {
+  const { isAdmin, partnerOrganization, requestedOrg, userId } = opts;
+  if (isAdmin) {
+    const org = (requestedOrg ?? "").trim();
+    return org || `admin:${userId}`;
+  }
+  return partnerOrganization;
+}
+
 function slotKey(r: StoredRdv): string {
   return `${r.date}|${r.startTime}`;
 }

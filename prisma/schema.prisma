@@ -2101,3 +2101,29 @@ model FormValidationReport {
   @@index([fieldType])
   @@index([createdAt(sort: Desc)])
 }
+
+/// Historique des rendez-vous traités via l'outil "/rendez-vous", pour détecter
+/// les doublons (une même personne qui a déjà pris un RDV). Cloisonné par
+/// `scope` = organisation partenaire (partage au sein d'un même service).
+model RendezVousHistory {
+  id             String   @id @default(cuid())
+  /// Périmètre de partage : `User.partnerOrganization` (ou `admin:<userId>`).
+  scope          String
+  /// Nom normalisé (minuscules, sans accents) — clé de comparaison.
+  nameNormalized String
+  /// Nom tel que collé (graphie d'origine), pour l'affichage.
+  name           String
+  /// Date murale du RDV au format "YYYY-MM-DD".
+  date           String
+  /// Heure de début "HH:MM".
+  startTime      String
+  /// Heure de fin "HH:MM".
+  endTime        String
+  /// Utilisateur ayant enregistré l'entrée.
+  createdById    String
+  createdAt      DateTime @default(now())
+
+  @@unique([scope, nameNormalized, date, startTime])
+  @@index([scope, nameNormalized])
+  @@index([scope, date])
+}

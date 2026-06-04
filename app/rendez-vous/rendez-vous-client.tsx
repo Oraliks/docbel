@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Download,
   Eraser,
+  FileSpreadsheet,
   Loader2,
   Sparkles,
 } from "lucide-react";
@@ -34,6 +35,8 @@ import {
   parseAppointments,
   type Appointment,
 } from "@/lib/rendez-vous/ics";
+import { buildPlanning, planningFilename } from "@/lib/rendez-vous/planning";
+import { renderPlanningPdf } from "@/lib/rendez-vous/planning-pdf";
 
 const PLACEHOLDER = `Appointments for 09/06/2026
 
@@ -87,9 +90,22 @@ function buildGroups(appointments: Appointment[]): SlotGroup[] {
   return groups;
 }
 
+/** Déclenche le téléchargement d'un blob sous le nom donné. */
+function triggerDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function RendezVousExportClient() {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
+  const [planningLoading, setPlanningLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{
     filename: string;
@@ -169,6 +185,26 @@ export function RendezVousExportClient() {
     }
   }, [content]);
 
+  const handlePlanning = useCallback(async () => {
+    setSubmitError(null);
+    setSuccess(null);
+    setPlanningLoading(true);
+    try {
+      const appointments = parseAppointments(content);
+      const planning = buildPlanning(appointments);
+      const blob = await renderPlanningPdf(planning);
+      triggerDownload(blob, planningFilename(planning));
+    } catch (err) {
+      if (err instanceof AppointmentParseError) {
+        setSubmitError(err.message);
+      } else {
+        setSubmitError("La génération du planning a échoué. Réessayez.");
+      }
+    } finally {
+      setPlanningLoading(false);
+    }
+  }, [content]);
+
   const handleClear = useCallback(() => {
     setContent("");
     setSubmitError(null);
@@ -200,8 +236,10 @@ export function RendezVousExportClient() {
           Collez la liste de rendez-vous telle qu&apos;exportée (format FGTB).
           Chaque personne devient un événement dans un fichier{" "}
           <code className="rounded bg-muted px-1 py-0.5 text-xs">.ics</code>{" "}
-          importable dans Outlook, Google Agenda ou Apple Calendrier. Fuseau{" "}
-          <strong>Europe/Bruxelles</strong>.
+          importable dans Outlook, Google Agenda ou Apple Calendrier (fuseau{" "}
+          <strong>Europe/Bruxelles</strong>). Vous pouvez aussi générer le{" "}
+          <strong>planning des shifts en PDF</strong> : le jour est déduit
+          automatiquement de la date et chaque jour a sa couleur.
         </p>
       </header>
 
@@ -231,6 +269,18 @@ export function RendezVousExportClient() {
             <Button onClick={handleGenerate} disabled={!canGenerate}>
               {loading ? <Loader2 className="animate-spin" /> : <Download />}
               Générer le fichier Outlook
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handlePlanning}
+              disabled={preview.kind !== "ok" || planningLoading}
+            >
+              {planningLoading ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <FileSpreadsheet />
+              )}
+              Générer le planning (PDF)
             </Button>
             <Button
               variant="ghost"

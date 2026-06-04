@@ -70,9 +70,9 @@ const DATE_ANYWHERE = /(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})/;
 const STANDALONE_DATE = /^\d{1,2}\s*\/\s*\d{1,2}\s*\/\s*\d{4}$/;
 
 // Lignes « bruit » à ignorer : en-tête (« Appointments for … ») et compteurs
-// (« 4 Appointments: », « 4 rendez-vous : »). Un nom de personne ne contient
-// jamais ces mots-clés.
-const NOISE_LINE = /appointments?|rendez-?vous/i;
+// (« 4 Appointments: », « 4 rendez-vous : », « 0 guichet disponible »). Un nom
+// de personne ne contient jamais ces mots-clés.
+const NOISE_LINE = /appointments?|rendez-?vous|guichets?/i;
 const HAS_LETTER = /\p{L}/u;
 
 const MAX_LINE_OCTETS = 75;

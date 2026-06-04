@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
+import {
+  requirePartnerOrAdminAuth,
+  requireRdvHistoryAccess,
+} from "@/lib/auth-check";
+import { listOrganizations } from "@/lib/partner-domains";
 import { RendezVousExportClient } from "./rendez-vous-client";
 
 export const metadata: Metadata = {
@@ -22,14 +26,31 @@ export const revalidate = 0;
  * requis. La route `/api/export-ics` applique la même garde côté serveur.
  */
 export default async function RendezVousPage() {
-  const { isAuthorized } = await requirePartnerOrAdminAuth();
-  if (!isAuthorized) {
+  const base = await requirePartnerOrAdminAuth();
+  if (!base.isAuthorized) {
     notFound();
+  }
+
+  // Accès à l'historique = responsables / personnes autorisées / admins.
+  const history = await requireRdvHistoryAccess();
+  const canViewHistory = history.isAuthorized;
+
+  // Les admins choisissent l'organisation cible (l'historique étant partagé
+  // par organisation) ; on leur fournit donc la liste des organisations.
+  let orgOptions: string[] = [];
+  if (base.user.isAdmin) {
+    const orgs = await listOrganizations("partenaire");
+    orgOptions = orgs.map((o) => o.organizationName);
   }
 
   return (
     <div className="px-4 py-6 lg:px-6">
-      <RendezVousExportClient />
+      <RendezVousExportClient
+        isAdmin={base.user.isAdmin}
+        partnerOrganization={base.user.partnerOrganization}
+        orgOptions={orgOptions}
+        canViewHistory={canViewHistory}
+      />
     </div>
   );
 }

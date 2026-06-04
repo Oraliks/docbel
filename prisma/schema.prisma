@@ -76,6 +76,12 @@ model User {
   /// unique pour les comptes employeur ; null sinon. Validé via
   /// normalizeBelgianTVA() (checksum mod-97).
   vatNumber           String?    @unique
+  /// Responsable du service partenaire : accès par défaut à l'historique des
+  /// rendez-vous de son organisation (cf. outil "/rendez-vous").
+  isOrgManager        Boolean    @default(false)
+  /// Autorisation explicite d'accès à l'historique des rendez-vous, pour un
+  /// membre non-responsable (octroyée individuellement par un admin).
+  canViewRdvHistory   Boolean    @default(false)
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
   sessions            Session[]

@@ -191,3 +191,94 @@ export async function requireEmployerOrAdminAuth(): Promise<PartnerAuthResult> {
     "Forbidden - Employer or Admin access required"
   );
 }
+
+export type RdvHistoryUser = AuthorizedUser & {
+  partnerOrganization: string | null;
+  isAdmin: boolean;
+  isOrgManager: boolean;
+  canViewRdvHistory: boolean;
+};
+
+export type RdvHistoryAuthResult =
+  | { isAuthorized: true; user: RdvHistoryUser; error?: undefined }
+  | { isAuthorized: false; error: NextResponse; user?: undefined };
+
+/**
+ * Auth pour l'HISTORIQUE des rendez-vous (consultation/gestion). Plus stricte
+ * que l'accès à l'outil de collage : autorise
+ *   - les admins (accès complet, choisissent l'organisation à consulter) ;
+ *   - les partenaires actifs, rattachés à une organisation, ET qui sont soit
+ *     **responsables** (`isOrgManager`) soit **explicitement autorisés**
+ *     (`canViewRdvHistory`).
+ *
+ * Les simples partenaires (ni responsables ni autorisés) peuvent utiliser
+ * l'outil de collage mais PAS consulter l'historique du service.
+ */
+export async function requireRdvHistoryAccess(): Promise<RdvHistoryAuthResult> {
+  const unauthorized: RdvHistoryAuthResult = {
+    isAuthorized: false,
+    error: NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: jsonHeaders }
+    ),
+  };
+
+  const headerList = await headers();
+  const session = await withDbRetry(() =>
+    auth.api.getSession({ headers: headerList })
+  ).catch(() => null);
+
+  if (!session?.user?.id) return unauthorized;
+
+  const dbUser = await withDbRetry(() =>
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        partnerOrganization: true,
+        isOrgManager: true,
+        canViewRdvHistory: true,
+      },
+    })
+  ).catch(() => null);
+
+  if (!dbUser || dbUser.status !== UserStatus.active) return unauthorized;
+
+  const isAdmin = dbUser.role === "admin";
+  const partnerHasAccess =
+    dbUser.role === "partner" &&
+    !!dbUser.partnerOrganization &&
+    (dbUser.isOrgManager || dbUser.canViewRdvHistory);
+
+  if (!isAdmin && !partnerHasAccess) {
+    return {
+      isAuthorized: false,
+      error: NextResponse.json(
+        {
+          error:
+            "Accès réservé aux responsables du service (ou aux personnes autorisées).",
+        },
+        { status: 403, headers: jsonHeaders }
+      ),
+    };
+  }
+
+  return {
+    isAuthorized: true,
+    user: {
+      id: dbUser.id,
+      name: dbUser.name,
+      email: dbUser.email,
+      role: dbUser.role,
+      status: dbUser.status,
+      partnerOrganization: dbUser.partnerOrganization,
+      isAdmin,
+      isOrgManager: dbUser.isOrgManager,
+      canViewRdvHistory: dbUser.canViewRdvHistory,
+    },
+  };
+}

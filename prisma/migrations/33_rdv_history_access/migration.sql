@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN "isOrgManager" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "canViewRdvHistory" BOOLEAN NOT NULL DEFAULT false;

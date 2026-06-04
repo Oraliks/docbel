@@ -666,6 +666,39 @@ export function PartnerOverviewShell({
     });
   }
 
+  function handleSetUserFlag(
+    user: PartnerUser,
+    flag: "isOrgManager" | "canViewRdvHistory",
+    value: boolean,
+  ) {
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/admin/partner-users/${user.id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "set-flag", flag, value }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          toast.error(data.error || "Echec");
+          return;
+        }
+        setOrganizations((prev) =>
+          prev.map((o) => ({
+            ...o,
+            users: o.users.map((u) =>
+              u.id === user.id ? { ...u, [flag]: value } : u,
+            ),
+          })),
+        );
+        toast.success(value ? "Accès accordé" : "Accès retiré");
+      } catch (err) {
+        console.error(err);
+        toast.error("Erreur réseau");
+      }
+    });
+  }
+
   /* ---------------------------------------------------------------- */
   /*  Billing flag                                                     */
   /* ---------------------------------------------------------------- */
@@ -819,6 +852,7 @@ export function PartnerOverviewShell({
         onResendUserConfirmation={handleResendUserConfirmation}
         onActivateUser={handleActivateUser}
         onSetUserStatus={handleSetUserStatus}
+        onSetUserFlag={handleSetUserFlag}
       />
 
       {/* Dialogs ----------------------------------------------------- */}

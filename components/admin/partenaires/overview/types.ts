@@ -33,6 +33,10 @@ export interface PartnerUser {
   emailVerified: boolean;
   createdAt: string;
   lastLoginAt: string | null;
+  /** Responsable du service : accès par défaut à l'historique des rendez-vous. */
+  isOrgManager: boolean;
+  /** Accès individuel à l'historique des rendez-vous (membre non-responsable). */
+  canViewRdvHistory: boolean;
 }
 
 export interface OrganizationGroup {

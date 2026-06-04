@@ -8,6 +8,7 @@ import {
   type ChangeEvent,
   type KeyboardEvent,
 } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   CalendarClock,
@@ -31,6 +32,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   AppointmentParseError,
@@ -110,7 +118,22 @@ function triggerDownload(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
-export function RendezVousExportClient() {
+type RendezVousExportClientProps = {
+  isAdmin?: boolean;
+  partnerOrganization?: string | null;
+  orgOptions?: string[];
+  canViewHistory?: boolean;
+};
+
+export function RendezVousExportClient({
+  isAdmin = false,
+  partnerOrganization = null,
+  orgOptions = [],
+  canViewHistory = false,
+}: RendezVousExportClientProps = {}) {
+  // Organisation cible (admins uniquement) : détermine le périmètre partagé de
+  // l'historique. Un partenaire utilise toujours la sienne, côté serveur.
+  const [org, setOrg] = useState<string>(isAdmin ? "" : (partnerOrganization ?? ""));
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [planningLoading, setPlanningLoading] = useState(false);
@@ -162,15 +185,22 @@ export function RendezVousExportClient() {
     [],
   );
 
+  // Un admin doit avoir choisi une organisation pour cibler le bon historique.
+  const scopeReady = !isAdmin || org !== "";
+
   // Interroge l'historique du service pour repérer les doublons. Lecture seule.
   const runCheck = useCallback(
     async (signal?: AbortSignal) => {
+      if (!scopeReady) {
+        setDuplicates(null);
+        return;
+      }
       setChecking(true);
       try {
         const res = await fetch("/api/rendez-vous/history", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "check", content }),
+          body: JSON.stringify({ action: "check", content, org }),
           signal,
         });
         if (!res.ok) {
@@ -185,7 +215,7 @@ export function RendezVousExportClient() {
         if (!signal?.aborted) setChecking(false);
       }
     },
-    [content],
+    [content, org, scopeReady],
   );
 
   // Vérification automatique (anti-rebond) dès que l'aperçu est valide.
@@ -206,7 +236,7 @@ export function RendezVousExportClient() {
       const res = await fetch("/api/rendez-vous/history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "save", content }),
+        body: JSON.stringify({ action: "save", content, org }),
       });
       const data = (await res.json().catch(() => null)) as {
         saved?: number;
@@ -224,7 +254,7 @@ export function RendezVousExportClient() {
     } finally {
       setSaving(false);
     }
-  }, [content, runCheck]);
+  }, [content, org, runCheck]);
 
   // Index normalisé → doublon, pour annoter chaque nom de l'aperçu.
   const dupMap = useMemo(() => {
@@ -338,6 +368,15 @@ export function RendezVousExportClient() {
           <strong>doublons</strong> (personnes ayant déjà un rendez-vous) sont
           détectés automatiquement et signalés.
         </p>
+        {canViewHistory ? (
+          <Link
+            href="/rendez-vous/historique"
+            className="inline-flex w-fit items-center gap-1.5 text-sm text-primary hover:underline"
+          >
+            <History className="size-4" />
+            Consulter l&apos;historique des rendez-vous
+          </Link>
+        ) : null}
       </header>
 
       <Card>
@@ -348,6 +387,36 @@ export function RendezVousExportClient() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
+          {isAdmin ? (
+            <div className="flex flex-col gap-1.5 rounded-md border bg-muted/30 p-3">
+              <Label htmlFor="rdv-org" className="text-xs font-medium">
+                Organisation (historique partagé)
+              </Label>
+              <Select value={org} onValueChange={(v) => setOrg(v ?? "")}>
+                <SelectTrigger id="rdv-org" className="w-full sm:w-[280px]">
+                  <SelectValue placeholder="Choisir une organisation…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {orgOptions.length === 0 ? (
+                    <SelectItem value="__none" disabled>
+                      Aucune organisation
+                    </SelectItem>
+                  ) : (
+                    orgOptions.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                En tant qu&apos;admin, choisissez le service dont vous gérez les
+                rendez-vous : la détection des doublons et l&apos;enregistrement
+                porteront sur son historique partagé.
+              </p>
+            </div>
+          ) : null}
           <Label htmlFor="rdv-input" className="sr-only">
             Liste des rendez-vous
           </Label>
@@ -382,7 +451,7 @@ export function RendezVousExportClient() {
             <Button
               variant="outline"
               onClick={handleSave}
-              disabled={preview.kind !== "ok" || saving}
+              disabled={preview.kind !== "ok" || saving || !scopeReady}
               title="Mémoriser ces rendez-vous pour détecter les doublons à l'avenir"
             >
               {saving ? <Loader2 className="animate-spin" /> : <Save />}

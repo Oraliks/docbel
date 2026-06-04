@@ -6,10 +6,56 @@ import {
   dateKey,
   formatDateKey,
   normalizeName,
+  resolveScope,
   timeKey,
   toStoredRdvs,
   type StoredRdv,
 } from "@/lib/rendez-vous/history";
+
+describe("resolveScope", () => {
+  it("partenaire → son organisation", () => {
+    expect(
+      resolveScope({
+        isAdmin: false,
+        partnerOrganization: "FGTB",
+        requestedOrg: "AutreChose",
+        userId: "u1",
+      }),
+    ).toBe("FGTB"); // l'org demandée est ignorée pour un partenaire
+  });
+
+  it("admin → l'organisation demandée", () => {
+    expect(
+      resolveScope({
+        isAdmin: true,
+        partnerOrganization: null,
+        requestedOrg: "FGTB",
+        userId: "u1",
+      }),
+    ).toBe("FGTB");
+  });
+
+  it("admin sans org demandée → espace admin isolé", () => {
+    expect(
+      resolveScope({
+        isAdmin: true,
+        partnerOrganization: null,
+        requestedOrg: "",
+        userId: "u1",
+      }),
+    ).toBe("admin:u1");
+  });
+
+  it("partenaire sans organisation → null", () => {
+    expect(
+      resolveScope({
+        isAdmin: false,
+        partnerOrganization: null,
+        userId: "u1",
+      }),
+    ).toBeNull();
+  });
+});
 
 describe("normalizeName", () => {
   it("ignore casse, accents et espaces multiples", () => {

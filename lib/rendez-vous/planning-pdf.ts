@@ -16,10 +16,60 @@ const TABLE_TOP = 40;
 const HEADER_H = 11;
 const ROW_H = 8;
 
+// Police DejaVu Sans (sous-ensemble latin étendu, ~40 ko) servie depuis
+// /public/fonts. Contrairement aux polices intégrées de jsPDF (WinAnsi), elle
+// couvre les caractères des noms étrangers : « ı » turc, « ş », « ğ », etc.
+const UNICODE_FONT_URL = "/fonts/DejaVuSans-Latin.ttf";
+const UNICODE_FONT_VFS = "DejaVuSans-Latin.ttf";
+const UNICODE_FONT_NAME = "DejaVuSans";
+
+// Téléchargement mémoïsé : le binaire (base64) n'est récupéré qu'une fois par
+// session, puis réenregistré sur chaque document jsPDF.
+let fontBase64Promise: Promise<string | null> | null = null;
+
+function bytesToBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  const chunk = 0x8000; // évite « Maximum call stack » sur les gros buffers
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+async function loadUnicodeFontBase64(): Promise<string | null> {
+  if (!fontBase64Promise) {
+    fontBase64Promise = (async () => {
+      const res = await fetch(UNICODE_FONT_URL);
+      if (!res.ok) throw new Error(`Police HTTP ${res.status}`);
+      return bytesToBase64(await res.arrayBuffer());
+    })();
+    // Un échec transitoire (hors-ligne) ne doit pas désactiver la police pour
+    // toute la session : on oublie la promesse rejetée pour réessayer ensuite.
+    fontBase64Promise.catch(() => {
+      fontBase64Promise = null;
+    });
+  }
+  try {
+    return await fontBase64Promise;
+  } catch {
+    return null; // repli sur Helvetica
+  }
+}
+
 /** Génère le PDF et le renvoie sous forme de `Blob` prêt au téléchargement. */
 export async function renderPlanningPdf(planning: Planning): Promise<Blob> {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+
+  // Police Unicode pour les noms (cellules) ; repli Helvetica si indisponible.
+  let bodyFont = "helvetica";
+  const fontBase64 = await loadUnicodeFontBase64();
+  if (fontBase64) {
+    doc.addFileToVFS(UNICODE_FONT_VFS, fontBase64);
+    doc.addFont(UNICODE_FONT_VFS, UNICODE_FONT_NAME, "normal");
+    bodyFont = UNICODE_FONT_NAME;
+  }
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -110,7 +160,7 @@ export async function renderPlanningPdf(planning: Planning): Promise<Blob> {
     }
     doc.setDrawColor(220, 220, 220);
     doc.setLineWidth(0.2);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(bodyFont, "normal");
     doc.setFontSize(nameFont);
     doc.setTextColor(30, 30, 30);
     for (let c = 0; c < nCols; c += 1) {

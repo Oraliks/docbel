@@ -46,6 +46,26 @@ describe("parseAppointments", () => {
     ]);
   });
 
+  it("ignore les lignes de compteur de guichets", () => {
+    const input = `Appointments for 10/06/2026
+
+08:20 – 08:40
+0 guichet disponible
+ana le doare petit
+Gürkan Gölçük
+
+08:40 – 09:00
+2 guichets disponibles
+Julie Dupont
+`;
+    const appts = parseAppointments(input);
+    expect(appts.map((a) => a.name)).toEqual([
+      "ana le doare petit",
+      "Gürkan Gölçük",
+      "Julie Dupont",
+    ]);
+  });
+
   it("rattache chaque nom au bon créneau et à la bonne date", () => {
     const appts = parseAppointments(SAMPLE);
     const first = appts[0];

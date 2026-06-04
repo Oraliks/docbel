@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
   useState,
   type ChangeEvent,
@@ -14,7 +15,9 @@ import {
   Download,
   Eraser,
   FileSpreadsheet,
+  History,
   Loader2,
+  Save,
   Sparkles,
 } from "lucide-react";
 
@@ -37,6 +40,11 @@ import {
 } from "@/lib/rendez-vous/ics";
 import { buildPlanning, planningFilename } from "@/lib/rendez-vous/planning";
 import { renderPlanningPdf } from "@/lib/rendez-vous/planning-pdf";
+import {
+  formatDateKey,
+  normalizeName,
+  type DuplicateEntry,
+} from "@/lib/rendez-vous/history";
 
 const PLACEHOLDER = `Appointments for 09/06/2026
 
@@ -112,6 +120,15 @@ export function RendezVousExportClient() {
     count: number;
   } | null>(null);
 
+  // Détection de doublons (historique partagé du service).
+  const [duplicates, setDuplicates] = useState<DuplicateEntry[] | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveInfo, setSaveInfo] = useState<{
+    saved: number;
+    total: number;
+  } | null>(null);
+
   // Aperçu live : on réutilise le MÊME parseur que le serveur (module pur).
   const preview = useMemo<Preview>(() => {
     if (content.trim() === "") return { kind: "empty" };
@@ -138,9 +155,85 @@ export function RendezVousExportClient() {
       setContent(event.target.value);
       setSubmitError(null);
       setSuccess(null);
+      setSaveInfo(null);
+      // Le contenu change → les doublons connus ne sont plus à jour.
+      setDuplicates(null);
     },
     [],
   );
+
+  // Interroge l'historique du service pour repérer les doublons. Lecture seule.
+  const runCheck = useCallback(
+    async (signal?: AbortSignal) => {
+      setChecking(true);
+      try {
+        const res = await fetch("/api/rendez-vous/history", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "check", content }),
+          signal,
+        });
+        if (!res.ok) {
+          setDuplicates(null);
+          return;
+        }
+        const data = (await res.json()) as { duplicates?: DuplicateEntry[] };
+        setDuplicates(data.duplicates ?? []);
+      } catch {
+        if (!signal?.aborted) setDuplicates(null);
+      } finally {
+        if (!signal?.aborted) setChecking(false);
+      }
+    },
+    [content],
+  );
+
+  // Vérification automatique (anti-rebond) dès que l'aperçu est valide.
+  useEffect(() => {
+    if (preview.kind !== "ok") return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => void runCheck(controller.signal), 500);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [preview.kind, runCheck]);
+
+  const handleSave = useCallback(async () => {
+    setSubmitError(null);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/rendez-vous/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save", content }),
+      });
+      const data = (await res.json().catch(() => null)) as {
+        saved?: number;
+        total?: number;
+        error?: string;
+      } | null;
+      if (!res.ok) {
+        setSubmitError(data?.error ?? "Enregistrement impossible.");
+        return;
+      }
+      setSaveInfo({ saved: data?.saved ?? 0, total: data?.total ?? 0 });
+      await runCheck();
+    } catch {
+      setSubmitError("Erreur réseau lors de l'enregistrement.");
+    } finally {
+      setSaving(false);
+    }
+  }, [content, runCheck]);
+
+  // Index normalisé → doublon, pour annoter chaque nom de l'aperçu.
+  const dupMap = useMemo(() => {
+    const map = new Map<string, DuplicateEntry>();
+    for (const entry of duplicates ?? []) map.set(entry.normalized, entry);
+    return map;
+  }, [duplicates]);
+
+  const duplicateCount = duplicates?.length ?? 0;
 
   const handleGenerate = useCallback(async () => {
     setSubmitError(null);
@@ -209,6 +302,8 @@ export function RendezVousExportClient() {
     setContent("");
     setSubmitError(null);
     setSuccess(null);
+    setSaveInfo(null);
+    setDuplicates(null);
   }, []);
 
   const handleKeyDown = useCallback(
@@ -239,7 +334,9 @@ export function RendezVousExportClient() {
           importable dans Outlook, Google Agenda ou Apple Calendrier (fuseau{" "}
           <strong>Europe/Bruxelles</strong>). Vous pouvez aussi générer le{" "}
           <strong>planning des shifts en PDF</strong> : le jour est déduit
-          automatiquement de la date et chaque jour a sa couleur.
+          automatiquement de la date et chaque jour a sa couleur. Les{" "}
+          <strong>doublons</strong> (personnes ayant déjà un rendez-vous) sont
+          détectés automatiquement et signalés.
         </p>
       </header>
 
@@ -281,6 +378,15 @@ export function RendezVousExportClient() {
                 <FileSpreadsheet />
               )}
               Générer le planning (PDF)
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleSave}
+              disabled={preview.kind !== "ok" || saving}
+              title="Mémoriser ces rendez-vous pour détecter les doublons à l'avenir"
+            >
+              {saving ? <Loader2 className="animate-spin" /> : <Save />}
+              Enregistrer dans l&apos;historique
             </Button>
             <Button
               variant="ghost"
@@ -334,6 +440,32 @@ export function RendezVousExportClient() {
         </Alert>
       ) : null}
 
+      {saveInfo ? (
+        <Alert>
+          <Save className="text-emerald-600" />
+          <AlertTitle>Enregistré dans l&apos;historique</AlertTitle>
+          <AlertDescription>
+            {saveInfo.saved > 0
+              ? `${saveInfo.saved} rendez-vous ajouté${saveInfo.saved > 1 ? "s" : ""} à l'historique du service.`
+              : "Ces rendez-vous étaient déjà enregistrés — rien à ajouter."}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      {preview.kind === "ok" && duplicateCount > 0 ? (
+        <Alert>
+          <History className="text-amber-600" />
+          <AlertTitle>
+            {duplicateCount} doublon{duplicateCount > 1 ? "s" : ""} potentiel
+            {duplicateCount > 1 ? "s" : ""}
+          </AlertTitle>
+          <AlertDescription>
+            Certaines personnes ont déjà un rendez-vous (ou apparaissent
+            plusieurs fois dans cette liste). Elles sont surlignées ci-dessous.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       {preview.kind === "ok" ? (
         <Card>
           <CardHeader>
@@ -341,10 +473,16 @@ export function RendezVousExportClient() {
               <CalendarClock className="size-4 text-primary" />
               Aperçu — {preview.filename}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="flex flex-wrap items-center gap-x-1">
               {preview.count} événement{preview.count > 1 ? "s" : ""} •{" "}
               {preview.groups.length} créneau
               {preview.groups.length > 1 ? "x" : ""} • fuseau Europe/Bruxelles
+              {checking ? (
+                <span className="ml-1 inline-flex items-center gap-1 text-xs">
+                  <Loader2 className="size-3 animate-spin" />
+                  vérification des doublons…
+                </span>
+              ) : null}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
@@ -359,15 +497,42 @@ export function RendezVousExportClient() {
                   </span>
                 </div>
                 <ul className="flex flex-col gap-1 pl-1">
-                  {group.names.map((name, nameIndex) => (
-                    <li
-                      key={nameIndex}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <span className="size-1.5 rounded-full bg-muted-foreground/40" />
-                      {name}
-                    </li>
-                  ))}
+                  {group.names.map((name, nameIndex) => {
+                    const dup = dupMap.get(normalizeName(name));
+                    const prior = dup?.history[0];
+                    return (
+                      <li
+                        key={nameIndex}
+                        className="flex flex-wrap items-center gap-2 text-sm"
+                      >
+                        <span
+                          className={
+                            dup
+                              ? "size-1.5 rounded-full bg-amber-500"
+                              : "size-1.5 rounded-full bg-muted-foreground/40"
+                          }
+                        />
+                        <span className={dup ? "font-medium" : undefined}>
+                          {name}
+                        </span>
+                        {prior ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                            <History className="size-3" />
+                            Déjà un RDV le {formatDateKey(prior.date)} à{" "}
+                            {prior.startTime}
+                            {dup && dup.history.length > 1
+                              ? ` (+${dup.history.length - 1})`
+                              : ""}
+                          </span>
+                        ) : dup && dup.inListCount > 1 ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                            <AlertTriangle className="size-3" />×{" "}
+                            {dup.inListCount} dans cette liste
+                          </span>
+                        ) : null}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}

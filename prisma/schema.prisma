@@ -1996,3 +1996,214 @@ model RendezVousHistory {
   @@index([scope, nameNormalized])
   @@index([scope, date])
 }
+
+// ===========================================================================
+// Plateforme de prise de rendez-vous (booking) — multi-tenant.
+// Un BookingTenant = une organisation qui vend/offre la prise de RDV en ligne
+// (FGTB, CSC, CGSLB, CAPAC, ou une entreprise cliente). Chaque tenant a une ou
+// plusieurs antennes (BookingLocation), des règles de créneaux hebdomadaires
+// (BookingSlotRule) avec capacité par heure, des exceptions (fériés/extra), et
+// des réservations (Booking) validées par l'équipe (BookingTenantMember).
+//
+// Choix d'architecture : aucune relation FK vers User/Bureau/Organisme — les
+// références croisées sont stockées en String brut (comme RendezVousHistory),
+// pour que la migration soit purement additive sur la base Neon partagée.
+// ===========================================================================
+
+enum BookingCategory {
+  unemployment // chômage (FGTB, CSC, CGSLB, CAPAC, ONEM)
+  social_aid // CPAS / aide sociale
+  municipal // démarches communales
+  private // entreprise privée cliente
+  other
+}
+
+enum BookingMemberRole {
+  owner // configure le tenant + approuve + gère l'équipe
+  manager // approuve + voit tout
+  agent // approuve uniquement
+}
+
+enum BookingExceptionKind {
+  closed // jour entièrement fermé
+  extra // créneaux ponctuels ajoutés (slots dans le champ Json)
+}
+
+enum BookingDedupeField {
+  email
+  name
+  nrn // numéro de registre national
+  none
+}
+
+enum BookingStatus {
+  pending_approval // en attente de validation par l'équipe
+  confirmed // validé (manuellement ou auto après délai)
+  rejected // refusé par l'équipe (motif obligatoire)
+  cancelled_citizen // annulé par le citoyen
+  cancelled_partner // annulé par l'équipe après confirmation
+  no_show // citoyen absent
+  completed // honoré
+}
+
+model BookingTenant {
+  id                    String          @id @default(cuid())
+  /// Segment d'URL public : /<slug>/rendez-vous.
+  slug                  String          @unique
+  name                  String
+  category              BookingCategory @default(other)
+  /// Référence libre vers Organisme.id (sans FK). Null pour une entreprise.
+  organismeId           String?
+  /// Pont vers User.partnerOrganization : auto-accès des partenaires de cette
+  /// organisation (ex "FGTB"). Les responsables (isOrgManager) deviennent owner.
+  partnerOrganization   String?
+  logoUrl               String?
+  /// Couleur d'accent (hex) pour la page publique et les emails.
+  brandColor            String?
+  /// Nom d'expéditeur des emails ("FGTB Bruxelles"). Défaut: name.
+  emailFromName         String?
+  /// Définition du formulaire citoyen (registre fermé, cf lib/booking/form-fields).
+  formFields            Json            @default("[]")
+  /// Validation manuelle requise avant confirmation.
+  requireApproval       Boolean         @default(true)
+  /// Délai (heures) après lequel une demande non traitée est auto-acceptée.
+  autoApproveAfterHours Int             @default(48)
+  /// Champ servant à détecter les doublons.
+  dedupeField           BookingDedupeField @default(email)
+  /// Fenêtre anti-doublon en jours (1 RDV par fenêtre).
+  dedupeWindowDays      Int             @default(30)
+  active                Boolean         @default(true)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  members   BookingTenantMember[]
+  locations BookingLocation[]
+  bookings  Booking[]
+
+  @@index([active])
+  @@index([partnerOrganization])
+}
+
+model BookingTenantMember {
+  id        String            @id @default(cuid())
+  tenantId  String
+  tenant    BookingTenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  /// Référence libre vers User.id (sans FK).
+  userId    String
+  role      BookingMemberRole @default(agent)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([tenantId, userId])
+  @@index([userId])
+}
+
+model BookingLocation {
+  id         String        @id @default(cuid())
+  tenantId   String
+  tenant     BookingTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name       String
+  /// Référence libre vers Bureau.id (sans FK), pour traçabilité.
+  bureauId   String?
+  street     String?
+  postalCode String?
+  city       String?
+  /// Centroïde pour le routage commune → antenne la plus proche.
+  lat        Float?
+  lng        Float?
+  active     Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  rules      BookingSlotRule[]
+  exceptions BookingException[]
+  bookings   Booking[]
+
+  @@index([tenantId, active])
+}
+
+model BookingSlotRule {
+  id          String          @id @default(cuid())
+  locationId  String
+  location    BookingLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  /// 0=dimanche … 6=samedi (convention getUTCDay).
+  weekday     Int
+  startTime   String // "09:00"
+  endTime     String // "10:00"
+  /// Nombre de RDV simultanés sur ce créneau.
+  capacity    Int             @default(1)
+  serviceCode String?
+  validFrom   DateTime?
+  validUntil  DateTime?
+  active      Boolean         @default(true)
+  createdById String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([locationId, weekday, active])
+}
+
+model BookingException {
+  id          String               @id @default(cuid())
+  locationId  String
+  location    BookingLocation      @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  date        String // "YYYY-MM-DD"
+  kind        BookingExceptionKind
+  /// Pour kind=extra : [{ start, end, capacity }].
+  slots       Json                 @default("[]")
+  reason      String?
+  createdById String
+  createdAt   DateTime             @default(now())
+
+  @@index([locationId, date])
+}
+
+model Booking {
+  id                   String          @id @default(cuid())
+  tenantId             String
+  tenant               BookingTenant   @relation(fields: [tenantId], references: [id])
+  locationId           String
+  location             BookingLocation @relation(fields: [locationId], references: [id])
+  date                 String // "YYYY-MM-DD"
+  startTime            String // "09:00"
+  endTime              String // "10:00"
+  serviceCode          String?
+  /// Réponses brutes au formulaire du tenant.
+  formData             Json            @default("{}")
+  citizenName          String?
+  /// Nom normalisé (anti-doublon par nom).
+  citizenNameNormalized String?
+  citizenEmail         String? // minuscules
+  citizenPhone         String?
+  /// HMAC-SHA256 du NRN (déterministe, indexable, anti-doublon par NRN).
+  citizenNrnHash       String?
+  /// 4 derniers chiffres du NRN pour l'affichage côté équipe.
+  citizenNrnLast4      String?
+  citizenPostalCode    String?
+  /// Référence libre vers Commune.id (sans FK).
+  citizenCommuneId     String?
+  /// Référence libre vers User.id si le citoyen était connecté.
+  userId               String?
+  status               BookingStatus   @default(pending_approval)
+  /// Token opaque : gestion/annulation par le citoyen + lien email.
+  confirmationToken    String          @unique
+  autoApproved         Boolean         @default(false)
+  confirmedAt          DateTime?
+  approvedById         String?
+  approvedAt           DateTime?
+  rejectedById         String?
+  rejectionReason      String?
+  cancelReason         String?
+  cancelledAt          DateTime?
+  reminderSentAt       DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  @@unique([locationId, date, startTime, citizenEmail])
+  @@index([tenantId, status, createdAt])
+  @@index([locationId, date, status])
+  @@index([status, createdAt])
+  @@index([tenantId, citizenEmail])
+  @@index([tenantId, citizenNameNormalized])
+  @@index([tenantId, citizenNrnHash])
+}

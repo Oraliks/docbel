@@ -171,10 +171,7 @@ const specs: Spec[] = [
     tier: T2, name: 'CommissionParitaire', fields: ['nom', 'label'],
     fetch: () => withDbRetry(() => prisma.commissionParitaire.findMany({ select: { nom: true, label: true } })),
   },
-  {
-    tier: T2, name: 'DocumentTemplate', fields: ['rgpdNotice', 'officialRef', 'schema'],
-    fetch: () => withDbRetry(() => prisma.documentTemplate.findMany({ select: { rgpdNotice: true, officialRef: true, schema: true } })),
-  },
+  // DocumentTemplate retiré — module legacy supprimé (migration 34), remplacé par PdfForm + DocumentBundle.
   {
     tier: T2, name: 'PdfForm', fields: ['title', 'description', 'issuer', 'fields', 'visualFields'],
     fetch: () => withDbRetry(() => prisma.pdfForm.findMany({

@@ -10,7 +10,6 @@ import {
   Clock,
   EyeOff,
   Package,
-  PenTool,
   RefreshCw,
   Pencil,
 } from "lucide-react";
@@ -24,7 +23,7 @@ import {
   describeCondition,
   type BundleCondition,
   type CollectedPayloads,
-} from "@/lib/documents/bundle-conditions";
+} from "@/lib/bundles/conditions";
 import {
   type EligibilityAnswers,
   type EligibilityQuestion,
@@ -38,20 +37,12 @@ import { ResumeCodeBanner } from "./onboarding/resume-code-banner";
 
 interface BundleItem {
   id: string;
-  /// EXACTEMENT UN des deux est défini (mirror de la contrainte DB).
   templateId: string | null;
   pdfFormId: string | null;
   order: number;
   required: boolean;
   condition: BundleCondition;
-  template: {
-    id: string;
-    toolName: string;
-    toolSlug: string;
-    toolDescription: string;
-    organisme: { shortName: string | null; name: string; color: string } | null;
-    requiresSignature: boolean;
-  } | null;
+  template: null;
   pdfForm: {
     id: string;
     slug: string;
@@ -61,22 +52,16 @@ interface BundleItem {
   } | null;
 }
 
-/// Helpers pour ne pas écrire `item.template?.foo ?? item.pdfForm?.bar` partout.
 function itemSourceId(item: BundleItem): string {
-  return (item.templateId ?? item.pdfFormId)!;
+  return item.pdfFormId ?? item.id;
 }
 function itemTitle(item: BundleItem): string {
-  return item.template?.toolName ?? item.pdfForm?.title ?? "Document";
+  return item.pdfForm?.title ?? "Document";
 }
 function itemDescription(item: BundleItem): string | null {
-  return item.template?.toolDescription ?? item.pdfForm?.description ?? null;
+  return item.pdfForm?.description ?? null;
 }
 function itemOrganismeLabel(item: BundleItem): { label: string; color: string } | null {
-  if (item.template?.organisme)
-    return {
-      label: item.template.organisme.shortName ?? item.template.organisme.name,
-      color: item.template.organisme.color,
-    };
   if (item.pdfForm?.issuer) return { label: item.pdfForm.issuer, color: "#666" };
   return null;
 }
@@ -184,15 +169,10 @@ export function BundleRunner({
   }
 
   async function handleStart(item: BundleItem) {
+    if (!item.pdfForm) return;
     const id = await ensureRun();
     if (!id) return;
-    // Route différente selon le type de source :
-    // - Ancien DocumentTemplate → /outils/{toolSlug} (page legacy)
-    // - Nouveau PdfForm        → /document/{slug}   (page publique unifiée)
-    const base = item.template
-      ? `/outils/${item.template.toolSlug}`
-      : `/document/${item.pdfForm!.slug}`;
-    const url = `${base}?bundleRun=${encodeURIComponent(id)}&bundleSlug=${encodeURIComponent(bundle.slug)}`;
+    const url = `/document/${item.pdfForm.slug}?bundleRun=${encodeURIComponent(id)}&bundleSlug=${encodeURIComponent(bundle.slug)}`;
     router.push(url);
   }
 
@@ -236,15 +216,13 @@ export function BundleRunner({
   }
 
   // Calculer le statut de chaque item.
-  // `completedTemplateIds` peut contenir indifféremment des templateId (ancien)
-  // ou des pdfFormId (nouveau) — cuids globalement uniques.
   // `applicableSlugs` (si fourni par un dossier codé) écrase la visibilité :
   // un item dont le slug n'est pas applicable aux réponses d'orientation est
   // caché, peu importe la condition JSON V1/V2.
   const applicableSet = applicableSlugs ? new Set(applicableSlugs) : null;
   const itemStatuses = bundle.items.map((item) => {
     const completed = completedTemplateIds.includes(itemSourceId(item));
-    const slug = item.pdfForm?.slug ?? item.template?.toolSlug ?? null;
+    const slug = item.pdfForm?.slug ?? null;
     const inDossier = applicableSet === null || (slug !== null && applicableSet.has(slug));
     const conditionRes = evaluateCondition(item.condition, payloads);
     const eligibility = inDossier ? conditionRes : false;
@@ -401,12 +379,6 @@ export function BundleRunner({
                         {!item.required && (
                           <Badge variant="secondary" className="text-xs">
                             Optionnel
-                          </Badge>
-                        )}
-                        {item.template?.requiresSignature && (
-                          <Badge variant="outline" className="text-xs gap-1">
-                            <PenTool className="w-3 h-3" />
-                            Signature
                           </Badge>
                         )}
                       </div>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { isLocalStoredPath, moveStoredFile } from "@/lib/file-storage";
-import { isBlobsPath, moveBlob } from "@/lib/documents/blob-storage";
+import { isBlobsPath, moveBlob } from "@/lib/storage/blob-storage";
 
 export async function PATCH(req: NextRequest) {
   const auth = await requireAdminAuth();

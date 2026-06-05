@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { buildStoredFilePath, getUploadDirectory } from "@/lib/file-storage";
-import { isBlobsEnabled, saveBlob } from "@/lib/documents/blob-storage";
+import { isBlobsEnabled, saveBlob } from "@/lib/storage/blob-storage";
 import { matchesSignature } from "@/lib/file-signatures";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";

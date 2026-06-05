@@ -11,6 +11,7 @@ import type {
   NatureDAResolver,
   WhoConcernedMatrix,
 } from "../types";
+import { PROCEDURES } from "./procedures";
 
 /// Les 11 motifs officiels de chômage temporaire (nomenclature ONEM).
 /// Le code numérique + la lettre figurent en commentaire pour traçabilité.
@@ -446,4 +447,5 @@ export const chomageTemporaire: DossierDefinition = {
   ],
 
   theory: THEORY,
+  procedures: PROCEDURES,
 };

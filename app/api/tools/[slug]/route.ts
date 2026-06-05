@@ -67,11 +67,8 @@ const patchSchema = z.object({
  */
 /**
  * DELETE /api/tools/[slug] — admin-only.
- * Supprime l'outil et cascade son DocumentTemplate (+ révisions, drafts,
- * generated docs, bundle items) via Prisma onDelete: Cascade.
- *
- * Pas de soft-delete : si l'admin veut juste cacher, il a déjà le toggle
- * active. La suppression est définitive.
+ * Supprime l'outil. Pas de soft-delete : si l'admin veut juste cacher, il a
+ * déjà le toggle active. La suppression est définitive.
  */
 export async function DELETE(
   _request: Request,

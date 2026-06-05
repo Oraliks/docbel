@@ -20,7 +20,7 @@ import {
   GLASS_LABEL,
   GLASS_PRIMARY_STYLE,
 } from "@/lib/glass-classes";
-import { isValidBelgianTVA } from "@/lib/documents/validators";
+import { isValidBelgianTVA } from "@/lib/pdf-forms/validators";
 
 export type ExpectedSegment = "partenaire" | "employeur";
 

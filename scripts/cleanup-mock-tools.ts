@@ -1,14 +1,10 @@
 // Nettoie les "faux outils" qui n'ont pas d'implémentation réelle.
 //
-// Approche : KEEP-LIST. Tout outil dont le slug n'est pas dans KEEP_SLUGS
-// est considéré comme mock et supprimé. Les DocumentTemplate associés
-// cascade automatiquement (onDelete: Cascade dans le schéma).
+// Approche : SEED_MOCKS_TO_DELETE. Tout outil dont le slug est dans cette
+// liste est supprimé. Réactiver un outil = retirer son slug d'ici et
+// re-le-créer côté admin (ou via le seed).
 //
-// Réactiver un outil = retirer son slug d'ici et re-le-créer côté admin
-// (ou via le seed). On évite donc d'avoir des coquilles vides dans la DB
-// avant que l'implémentation soit prête.
-//
-// Usage : pnpm tools:cleanup-mocks            (dry-run + détail templates)
+// Usage : pnpm tools:cleanup-mocks            (dry-run)
 //         pnpm tools:cleanup-mocks --yes      (applique)
 
 import { prisma } from '@/lib/prisma'
@@ -35,17 +31,6 @@ async function main() {
       type: true,
       description: true,
       createdAt: true,
-      documentTemplate: {
-        select: {
-          id: true,
-          version: true,
-          status: true,
-          sourceType: true,
-          officialRef: true,
-          sourceFile: { select: { name: true } },
-          _count: { select: { generated: true, revisions: true, drafts: true, bundleItems: true } },
-        },
-      },
     },
     orderBy: { slug: 'asc' },
   })
@@ -55,8 +40,7 @@ async function main() {
   for (const t of allTools) {
     const willDelete = SEED_MOCKS_TO_DELETE.includes(t.slug)
     const marker = willDelete ? '🗑 ' : '✓ '
-    const tmpl = t.documentTemplate ? ` (+template v${t.documentTemplate.version} ${t.documentTemplate.status})` : ''
-    console.log(`  ${marker} ${t.slug.padEnd(22)} ${t.type.padEnd(15)} ${t.name}${tmpl}`)
+    console.log(`  ${marker} ${t.slug.padEnd(22)} ${t.type.padEnd(15)} ${t.name}`)
   }
 
   const toDelete = allTools.filter((t) => SEED_MOCKS_TO_DELETE.includes(t.slug))

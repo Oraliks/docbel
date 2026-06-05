@@ -122,6 +122,86 @@ export interface DossierTheorySection {
   lastReviewedAt?: string;
 }
 
+/// Référence vers une entrée du catalogue lookup-onem. Sert à deep-linker
+/// depuis une procédure vers la table officielle des codes (préfixes, articles
+/// d'admissibilité, codes CAD, etc.).
+export interface LookupCodeRef {
+  /// Slug de la `LookupTable` (ex. "s04-s36-prefixe-type-chomage").
+  tableSlug: string;
+  /// Code spécifique à mettre en évidence (ex. "02"). Si absent, le lien
+  /// pointe vers la table entière.
+  code?: string;
+  /// Libellé à afficher (paraphrase métier — pas le label brut ONEM).
+  label: string;
+  /// Contexte d'usage optionnel (ex. "Temps plein", "Construction CP 124").
+  context?: string;
+}
+
+/// Une étape opérationnelle d'introduction d'une demande, paraphrasée.
+/// JAMAIS de détail des écrans/touches de l'outil interne syndical.
+export interface ProcedureStep {
+  order: number;
+  title: string;
+  /// Markdown court (1-3 phrases). Décrit l'action métier, pas la séquence
+  /// clavier. Ex. "Importer l'occupation depuis le flux WECH 502 ; le
+  /// programme calcule automatiquement le code chiffré."
+  description: string;
+  /// Moment dans le workflow ("création", "import flux", "validation finale"…).
+  when?: string;
+}
+
+/// Formulaire évoqué dans la procédure (lien vers PdfForm interne si possible).
+export interface ProcedureFormReference {
+  /// Code officiel ou interne (ex. "WECH 502", "C3.2", "C32 travailleur").
+  code: string;
+  /// Libellé métier ("Demande à déclaration de l'employeur").
+  label: string;
+  /// Rôle dans le dossier ("demande", "paiement", "support", "contrôle").
+  purpose: "demande" | "paiement" | "support" | "controle";
+  /// Slug d'un `PdfForm` géré dans Beldoc, si on en a un. Sinon null.
+  pdfFormSlug?: string;
+  /// Mention de la référence officielle ONEM (ex. "C3.2 travailleur — papier").
+  officialRef?: string;
+}
+
+/// Procédure opérationnelle d'introduction d'une demande pour une nature de DA
+/// donnée (TEM / GRE / INT / CTP / …). Visible admin & partenaires uniquement.
+/// Contenu rédigé EN INTERNE à partir de sources confidentielles (jamais de
+/// reproduction verbatim).
+export interface DossierProcedure {
+  id: string;
+  /// Code "nature de DA" ONEM (ex. "TEM"). Doit matcher `natureDA()` du dossier.
+  natureDA: string;
+  title: string;
+  /// Résumé court (1-2 phrases), affichage liste.
+  summary: string;
+  audience: TheoryAudience[];
+  /// Référence interne à la source (jamais affichée).
+  internalRef?: string;
+  /// Dernière revue (YYYY-MM-DD).
+  lastReviewedAt?: string;
+  /// Références réglementaires (articles d'AR, lois).
+  reglementation?: string[];
+  /// Conditions qui rendent la DA obligatoire (liste paraphrasée).
+  conditionsObligatoire?: string[];
+  /// Conditions qui la rendent facultative.
+  conditionsFacultative?: string[];
+  /// Délais d'introduction. Texte court, en mois.
+  delais?: {
+    obligatoire?: string;
+    facultative?: string;
+    exceptions?: string;
+  };
+  /// Formulaires à introduire (et formulaire de paiement le cas échéant).
+  formulaires?: ProcedureFormReference[];
+  /// Étapes opérationnelles, dans l'ordre. Paraphrasées.
+  steps: ProcedureStep[];
+  /// Codes ONEM référencés (deep-links vers le lookup).
+  codeReferences?: LookupCodeRef[];
+  /// Notes / remarques additionnelles (Markdown court).
+  notes?: string;
+}
+
 /// Matrice « qui peut bénéficier de tel motif ».
 /// Clé = id du motif (ex. "economique"), valeur = liste des statuts autorisés.
 export type WhoConcernedMatrix = Record<string, Array<"ouvrier" | "employe" | "interimaire">>;
@@ -155,6 +235,11 @@ export interface DossierDefinition {
   natureDA?: NatureDAResolver;
   /// Espace théorique pédagogique (admin / partenaires).
   theory?: DossierTheorySection[];
+  /// Procédures opérationnelles d'introduction de la demande (admin / partenaires).
+  /// Une procédure par "nature de DA" ONEM (TEM, GRE, INT, CTP…). Décrit ce
+  /// qu'il faut faire — formulaires, délais, ordre, codes — sans le détail
+  /// des écrans de l'outil interne syndical.
+  procedures?: DossierProcedure[];
 }
 
 /// Calcule la liste des documents applicables pour des réponses données.

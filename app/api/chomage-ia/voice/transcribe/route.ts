@@ -20,7 +20,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAuth } from "@/lib/auth-check";
-import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
+import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
 
 /** Limite serveur = 25 Mo (limite hard de Whisper). */

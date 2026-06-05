@@ -25,7 +25,7 @@ export async function GET(
 
   const organisme = await prisma.organisme.findUnique({
     where: { id },
-    include: { _count: { select: { templates: true } } },
+    include: { _count: { select: { pdfForms: true } } },
   });
   if (!organisme) {
     return NextResponse.json({ error: "Organisme introuvable" }, { status: 404 });
@@ -88,13 +88,13 @@ export async function DELETE(
 
   const existing = await prisma.organisme.findUnique({
     where: { id },
-    include: { _count: { select: { templates: true } } },
+    include: { _count: { select: { pdfForms: true } } },
   });
   if (!existing) {
     return NextResponse.json({ error: "Organisme introuvable" }, { status: 404 });
   }
 
-  if (existing._count.templates > 0) {
+  if (existing._count.pdfForms > 0) {
     // Soft delete : on désactive seulement, pour préserver les références
     const deactivated = await prisma.organisme.update({
       where: { id },
@@ -104,7 +104,7 @@ export async function DELETE(
     return NextResponse.json({
       ...deactivated,
       softDelete: true,
-      message: `Désactivé (utilisé par ${existing._count.templates} document(s))`,
+      message: `Désactivé (utilisé par ${existing._count.pdfForms} formulaire(s) PDF)`,
     });
   }
 

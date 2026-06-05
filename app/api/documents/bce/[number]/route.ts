@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { lookupBCE } from "@/lib/documents/bce-lookup";
-import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
+import { lookupBCE } from "@/lib/bundles/bce";
+import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 
 export async function GET(
   req: NextRequest,

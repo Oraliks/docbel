@@ -3,9 +3,8 @@ import { headers, cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { BundleRunner } from "@/components/docbel/bundle-runner";
-import { DocumentField } from "@/lib/documents/types";
 import type { PdfFormField } from "@/lib/pdf-forms/types";
-import type { BundleCondition } from "@/lib/documents/bundle-conditions";
+import type { BundleCondition } from "@/lib/bundles/conditions";
 import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
 import { getDossier } from "@/lib/dossiers/registry";
 import { selectDocuments, type DossierAnswers } from "@/lib/dossiers/types";
@@ -27,12 +26,6 @@ export default async function BundleRoute({
       items: {
         orderBy: { order: "asc" },
         include: {
-          template: {
-            include: {
-              tool: { select: { id: true, name: true, slug: true, description: true } },
-              organisme: { select: { shortName: true, name: true, color: true } },
-            },
-          },
           pdfForm: {
             select: { id: true, slug: true, title: true, description: true, issuer: true, fields: true },
           },
@@ -43,7 +36,6 @@ export default async function BundleRoute({
 
   if (!bundle || !bundle.active) notFound();
 
-  // Récupérer ou créer le BundleRun pour cet utilisateur
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user?.id || null;
   const cookieStore = await cookies();
@@ -57,16 +49,9 @@ export default async function BundleRoute({
     run = await prisma.bundleRun.findFirst({ where, orderBy: { startedAt: "desc" } });
   }
 
-  // Construire le mapping {templateId|pdfFormId} → labels des champs
-  // (pour describeCondition et l'éditeur de conditions admin).
   const fieldLabels: Record<string, string> = {};
   const templateNames: Record<string, string> = {};
   for (const item of bundle.items) {
-    if (item.template) {
-      templateNames[item.template.id] = item.template.tool.name;
-      const schema = (item.template.schema as unknown as DocumentField[]) || [];
-      for (const f of schema) fieldLabels[`${item.template.id}::${f.id}`] = f.label;
-    }
     if (item.pdfForm) {
       templateNames[item.pdfForm.id] = item.pdfForm.title;
       const fields = (item.pdfForm.fields as unknown as PdfFormField[]) || [];
@@ -87,21 +72,12 @@ export default async function BundleRoute({
     warnings: bundle.warnings,
     items: bundle.items.map((it) => ({
       id: it.id,
-      templateId: it.templateId,
+      templateId: null as string | null,
       pdfFormId: it.pdfFormId,
       order: it.order,
       required: it.required,
       condition: (it.condition as unknown as BundleCondition) ?? null,
-      template: it.template
-        ? {
-            id: it.template.id,
-            toolName: it.template.tool.name,
-            toolSlug: it.template.tool.slug,
-            toolDescription: it.template.tool.description,
-            organisme: it.template.organisme,
-            requiresSignature: it.template.requiresSignature,
-          }
-        : null,
+      template: null,
       pdfForm: it.pdfForm
         ? {
             id: it.pdfForm.id,
@@ -114,12 +90,6 @@ export default async function BundleRoute({
     })),
   };
 
-  // Si le dossier est piloté par code, on calcule la liste des documents
-  // applicables aux réponses d'orientation actuelles via selectDocuments().
-  // Tant que les questions ne sont pas répondues, on n'inclut que les docs
-  // sans includeWhen (inconditionnels) → l'utilisateur voit dès l'arrivée
-  // les documents toujours requis, et les conditionnels apparaissent au fur
-  // et à mesure qu'il répond aux questions.
   const dossier = getDossier(slug);
   const eligibilityAnswers = parseEligibilityAnswers(run?.eligibilityAnswers);
   const applicableSlugs = dossier

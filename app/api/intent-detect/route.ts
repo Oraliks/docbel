@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
+import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
 import { parseVocabularyTags, searchBundles } from "@/lib/bundles/vocabulary";
 
@@ -95,7 +95,6 @@ export async function POST(req: NextRequest) {
       vocabularyTags: true,
       items: {
         select: {
-          template: { select: { tool: { select: { name: true } } } },
           pdfForm: { select: { title: true } },
         },
       },
@@ -109,7 +108,7 @@ export async function POST(req: NextRequest) {
     description: b.description,
     vocabularyTags: parseVocabularyTags(b.vocabularyTags),
     toolNames: b.items
-      .map((it) => it.template?.tool.name ?? it.pdfForm?.title ?? null)
+      .map((it) => it.pdfForm?.title ?? null)
       .filter((n): n is string => n !== null),
   }));
 

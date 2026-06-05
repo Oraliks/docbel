@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { resolveStoredFilePath } from "@/lib/file-storage";
-import { isBlobsPath, deleteBlob } from "@/lib/documents/blob-storage";
+import { isBlobsPath, deleteBlob } from "@/lib/storage/blob-storage";
 import { unlink } from "fs/promises";
 import { existsSync } from "fs";
 

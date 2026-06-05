@@ -52,7 +52,7 @@ Tu connais le projet Beldoc (extrait — utilise ces patterns dans tes briefs) :
 - Layout admin : \`app/admin/...\` avec layout d'auth dans \`app/admin/layout.tsx\`.
 - Lib : \`lib/calculators/\` contient les calculateurs métiers ; chaque calc a une fonction \`compute\` + un schema Zod d'inputs.
 - Pattern UI calculateur : composants atomiques sous \`components/admin/calculateurs/sections/\` (header, sidebar, tabs, sources-list…), aucun fichier > 250 lignes.
-- Pattern d'API : routes sous \`app/api/\`, auth via \`requireAdminAuth()\` depuis \`@/lib/auth-check\`, validation Zod, rate-limit via \`@/lib/documents/rate-limit\`.
+- Pattern d'API : routes sous \`app/api/\`, auth via \`requireAdminAuth()\` depuis \`@/lib/auth-check\`, validation Zod, rate-limit via \`@/lib/utils/rate-limit\`.
 - Toggle IA via \`SETTING_KEYS.AI_HELP_ENABLED\` et \`ANTHROPIC_API_KEY\`.
 - Glass tokens et palette : voir Tailwind v4 + classes \`bg-card\`, \`text-foreground\`, \`bg-muted\`, \`text-muted-foreground\`, \`border-border\`.
 

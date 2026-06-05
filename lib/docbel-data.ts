@@ -41,9 +41,8 @@ export interface Tool {
 /**
  * Catalogue statique — sert à 2 usages :
  *
- * 1. Rendu de /outils/[slug] via LegacyToolView quand l'outil n'a pas de
- *    DocumentTemplate publié (calc, locator…). Doit donc contenir preavis,
- *    bureaux, et les outils statiques externes (lookup-onem partenaire).
+ * 1. Rendu de /outils/[slug] via LegacyToolView pour les calculateurs et
+ *    outils statiques (calc, locator, bureaux, lookup-onem partenaire).
  *
  * 2. Synthétiques pour la page /outils : entrées avec `href` absolu sont
  *    mergées avec les Tool DB actifs sur la page catalogue (cf.

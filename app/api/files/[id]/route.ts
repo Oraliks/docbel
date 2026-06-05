@@ -10,7 +10,7 @@ import {
   isBlobsPath,
   deleteBlob,
   moveBlob,
-} from "@/lib/documents/blob-storage";
+} from "@/lib/storage/blob-storage";
 import { unlink } from "fs/promises";
 import { existsSync } from "fs";
 

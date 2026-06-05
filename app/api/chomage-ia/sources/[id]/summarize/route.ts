@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
-import { checkRateLimit, getClientIp } from "@/lib/documents/rate-limit";
+import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 import { callClaude, AnthropicError, hasAnthropicKey } from "@/lib/chomage-ia/anthropic";
 import { CLAUDE_MODELS } from "@/lib/chomage-ia/models";
 import { SUMMARIZE_SYSTEM_PROMPT } from "@/lib/chomage-ia/prompts";

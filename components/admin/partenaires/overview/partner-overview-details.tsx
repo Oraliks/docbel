@@ -5,12 +5,14 @@ import {
   CheckCircle2Icon,
   FlaskConicalIcon,
   GlobeIcon,
+  HistoryIcon,
   MailCheckIcon,
   MailIcon,
   MailWarningIcon,
   PauseIcon,
   PencilIcon,
   PowerIcon,
+  ShieldCheckIcon,
   Trash2Icon,
   UsersIcon,
   XCircleIcon,
@@ -44,6 +46,11 @@ interface PartnerOverviewDetailsProps {
   onResendUserConfirmation: (user: PartnerUser) => void;
   onActivateUser: (user: PartnerUser) => void;
   onSetUserStatus: (user: PartnerUser, status: string) => void;
+  onSetUserFlag: (
+    user: PartnerUser,
+    flag: "isOrgManager" | "canViewRdvHistory",
+    value: boolean,
+  ) => void;
 }
 
 /**
@@ -71,6 +78,7 @@ export function PartnerOverviewDetails({
   onResendUserConfirmation,
   onActivateUser,
   onSetUserStatus,
+  onSetUserFlag,
 }: PartnerOverviewDetailsProps) {
   return (
     <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
@@ -262,6 +270,23 @@ export function PartnerOverviewDetails({
                             En attente
                           </Badge>
                         )}
+                        {u.isOrgManager ? (
+                          <Badge
+                            variant="outline"
+                            className="gap-1 border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300"
+                          >
+                            <ShieldCheckIcon className="size-3" />
+                            Responsable
+                          </Badge>
+                        ) : u.canViewRdvHistory ? (
+                          <Badge
+                            variant="outline"
+                            className="gap-1 border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300"
+                          >
+                            <HistoryIcon className="size-3" />
+                            Accès historique
+                          </Badge>
+                        ) : null}
                       </div>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
@@ -309,6 +334,50 @@ export function PartnerOverviewDetails({
                             <PauseIcon className="size-4" />
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            onSetUserFlag(u, "isOrgManager", !u.isOrgManager)
+                          }
+                          disabled={isPending}
+                          title={
+                            u.isOrgManager
+                              ? "Responsable (accès historique RDV) — cliquer pour retirer"
+                              : "Désigner responsable (accès historique RDV)"
+                          }
+                          className={
+                            u.isOrgManager
+                              ? "text-violet-600 hover:text-violet-700"
+                              : "text-muted-foreground"
+                          }
+                        >
+                          <ShieldCheckIcon className="size-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            onSetUserFlag(
+                              u,
+                              "canViewRdvHistory",
+                              !u.canViewRdvHistory,
+                            )
+                          }
+                          disabled={isPending}
+                          title={
+                            u.canViewRdvHistory
+                              ? "Accès historique RDV accordé — cliquer pour retirer"
+                              : "Donner accès à l'historique des RDV"
+                          }
+                          className={
+                            u.canViewRdvHistory
+                              ? "text-sky-600 hover:text-sky-700"
+                              : "text-muted-foreground"
+                          }
+                        >
+                          <HistoryIcon className="size-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>

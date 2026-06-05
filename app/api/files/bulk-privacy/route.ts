@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { isLocalStoredPath, moveStoredFile } from "@/lib/file-storage";
-import { isBlobsPath, moveBlob } from "@/lib/documents/blob-storage";
+import { isBlobsPath, moveBlob } from "@/lib/storage/blob-storage";
 
 // Toggle privacy for a flat selection of file/folder ids. For folders, the
 // recursive descent is left to the existing /bulk-update endpoint — this route

@@ -1,4 +1,4 @@
-// Types du module PDF Forms (AcroForm only). Indépendant de lib/documents.
+// Types du module PDF Forms (AcroForm only).
 
 /// Locales officielles belges supportées. FR est toujours présent.
 export type Locale = "fr" | "nl" | "de";

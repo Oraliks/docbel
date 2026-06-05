@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
 import { getToolBySlug, type Tool } from "@/lib/docbel-data";
-import { DocumentForm } from "@/components/docbel/document-form/document-form";
 import { LegacyToolView } from "./legacy-tool-view";
 import { DisabledToolView } from "./disabled-tool-view";
 import { RestrictedToolView } from "@/components/docbel/restricted-tool-view";
@@ -99,7 +98,6 @@ export default async function ToolRoute({
       audience: true,
       access: true,
       section: { select: { name: true } },
-      documentTemplate: { select: { status: true } },
     },
   });
 
@@ -133,16 +131,9 @@ export default async function ToolRoute({
     return <RestrictedToolView toolName={dbTool.name} segments={segments} />;
   }
 
-  // 3) doc_generator publié → form dynamique
-  if (
-    dbTool?.type === "doc_generator" &&
-    dbTool.documentTemplate?.status === "published"
-  ) {
-    return <DocumentForm slug={slug} />;
-  }
-
-  // 4) Tool DB actif (non-doc_generator) → LegacyToolView avec les méta DB.
-  //    Couvre les calc_* seedés via scripts/seed-calculators.ts.
+  // 3) Tool DB actif → LegacyToolView avec les méta DB.
+  //    Couvre les calc_* seedés via scripts/seed-calculators.ts. Les
+  //    doc_generator ont été supprimés au profit des PDF forms / dossiers.
   if (dbTool) {
     return (
       <LegacyToolView
@@ -151,7 +142,7 @@ export default async function ToolRoute({
     );
   }
 
-  // 5) Fallback final : catalogue statique TOOLS_DATA. Couvre les rares
+  // 4) Fallback final : catalogue statique TOOLS_DATA. Couvre les rares
   //    outils non encore migrés vers la DB (lookup-onem partenaire, etc.).
   //    Si même là le slug est introuvable, LegacyToolView affiche son
   //    propre message "Outil introuvable" (pas un 404 brut).

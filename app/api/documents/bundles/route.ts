@@ -15,12 +15,8 @@ export async function GET() {
       items: {
         orderBy: { order: "asc" },
         include: {
-          template: {
-            select: {
-              id: true,
-              tool: { select: { id: true, name: true, slug: true } },
-              status: true,
-            },
+          pdfForm: {
+            select: { id: true, slug: true, title: true, issuer: true, status: true },
           },
         },
       },

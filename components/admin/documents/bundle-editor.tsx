@@ -30,7 +30,7 @@ import { BundleConditionEditor } from "./bundle-condition-editor";
 import { EligibilityQuestionsEditor } from "./eligibility-questions-editor";
 import { BundleWarningsEditor } from "./bundle-warnings-editor";
 import { VocabularyTagsEditor } from "./vocabulary-tags-editor";
-import type { BundleCondition } from "@/lib/documents/bundle-conditions";
+import type { BundleCondition } from "@/lib/bundles/conditions";
 import {
   parseEligibilityQuestions,
   type EligibilityQuestion,
@@ -44,19 +44,12 @@ import { parseVocabularyTags } from "@/lib/bundles/vocabulary";
 
 export interface BundleEditorItem {
   id?: string;
-  /// EXACTEMENT UN des deux est défini.
   templateId: string | null;
   pdfFormId: string | null;
   order: number;
   required: boolean;
   condition: BundleCondition;
-  template: {
-    id: string;
-    toolId: string;
-    toolName: string;
-    toolSlug: string;
-    organisme: { id: string; shortName: string | null; color: string } | null;
-  } | null;
+  template: null;
   pdfForm: {
     id: string;
     slug: string;
@@ -65,17 +58,14 @@ export interface BundleEditorItem {
   } | null;
 }
 
-/// Helpers pour traiter les deux sources uniformément.
 function itemSourceKey(it: BundleEditorItem): string {
-  return (it.templateId ?? it.pdfFormId)!;
+  return it.pdfFormId ?? (it.id ?? "");
 }
 function itemDisplayName(it: BundleEditorItem): string {
-  return it.template?.toolName ?? it.pdfForm?.title ?? "Document";
+  return it.pdfForm?.title ?? "Document";
 }
 function itemSourceBadge(it: BundleEditorItem): string {
-  if (it.template?.organisme?.shortName) return it.template.organisme.shortName;
-  if (it.pdfForm?.issuer) return it.pdfForm.issuer;
-  return it.template ? "Document" : "PDF";
+  return it.pdfForm?.issuer ?? "PDF";
 }
 
 interface SchemaField {
@@ -117,16 +107,15 @@ export interface AvailablePdfForm {
 }
 
 interface Props {
-  /// Bundle existant si en mode édition, null si création.
   initial: BundleEditorData | null;
-  availableTemplates: AvailableTemplate[];
+  /// Conservé pour compat de signature — n'est plus rendu, garder `[]`.
+  availableTemplates?: AvailableTemplate[];
   availablePdfForms: AvailablePdfForm[];
   templateSchemas: Record<string, SchemaField[]>;
 }
 
 export function BundleEditor({
   initial,
-  availableTemplates,
   availablePdfForms,
   templateSchemas,
 }: Props) {
@@ -159,34 +148,19 @@ export function BundleEditor({
     initial ? parseBundleWarnings(initial.warnings) : []
   );
 
-  /// Ajoute un item à partir d'une valeur du type `tpl:<id>` ou `pdf:<id>`,
-  /// produite par le select unifié ci-dessous.
   function addItem(sourceValue: string) {
     const [kind, id] = sourceValue.split(":");
-    if (!kind || !id) return;
-    if (kind === "tpl") {
-      const tpl = availableTemplates.find((t) => t.id === id);
-      if (!tpl) return;
-      if (formItems.some((it) => it.templateId === id)) {
-        toast.warning("Document déjà dans le dossier");
-        return;
-      }
-      setFormItems((prev) => [
-        ...prev,
-        { templateId: id, pdfFormId: null, order: prev.length, required: true, condition: null, template: tpl, pdfForm: null },
-      ]);
-    } else if (kind === "pdf") {
-      const pdf = availablePdfForms.find((p) => p.id === id);
-      if (!pdf) return;
-      if (formItems.some((it) => it.pdfFormId === id)) {
-        toast.warning("PDF déjà dans le dossier");
-        return;
-      }
-      setFormItems((prev) => [
-        ...prev,
-        { templateId: null, pdfFormId: id, order: prev.length, required: true, condition: null, template: null, pdfForm: pdf },
-      ]);
+    if (kind !== "pdf" || !id) return;
+    const pdf = availablePdfForms.find((p) => p.id === id);
+    if (!pdf) return;
+    if (formItems.some((it) => it.pdfFormId === id)) {
+      toast.warning("PDF déjà dans le dossier");
+      return;
     }
+    setFormItems((prev) => [
+      ...prev,
+      { templateId: null, pdfFormId: id, order: prev.length, required: true, condition: null, template: null, pdfForm: pdf },
+    ]);
   }
 
   function removeItem(key: string) {
@@ -256,7 +230,6 @@ export function BundleEditor({
           eligibilityQuestions: formEligibilityQuestions,
           warnings: formWarnings,
           items: formItems.map((it, idx) => ({
-            templateId: it.templateId,
             pdfFormId: it.pdfFormId,
             order: idx,
             required: it.required,
@@ -411,36 +384,14 @@ export function BundleEditor({
               <SelectValue placeholder="+ Ajouter un document" />
             </SelectTrigger>
             <SelectContent>
-              {availablePdfForms.filter((p) => !formItems.some((it) => it.pdfFormId === p.id)).length > 0 && (
-                <>
-                  <div className="px-2 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                    PDF Forms (AcroForm)
-                  </div>
-                  {availablePdfForms
-                    .filter((p) => !formItems.some((it) => it.pdfFormId === p.id))
-                    .map((p) => (
-                      <SelectItem key={`pdf:${p.id}`} value={`pdf:${p.id}`}>
-                        {p.title}
-                        {p.issuer ? ` — ${p.issuer}` : ""}
-                      </SelectItem>
-                    ))}
-                </>
-              )}
-              {availableTemplates.filter((t) => !formItems.some((it) => it.templateId === t.id)).length > 0 && (
-                <>
-                  <div className="px-2 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Documents (legacy)
-                  </div>
-                  {availableTemplates
-                    .filter((t) => !formItems.some((it) => it.templateId === t.id))
-                    .map((t) => (
-                      <SelectItem key={`tpl:${t.id}`} value={`tpl:${t.id}`}>
-                        {t.toolName}
-                        {t.organisme?.shortName ? ` — ${t.organisme.shortName}` : ""}
-                      </SelectItem>
-                    ))}
-                </>
-              )}
+              {availablePdfForms
+                .filter((p) => !formItems.some((it) => it.pdfFormId === p.id))
+                .map((p) => (
+                  <SelectItem key={`pdf:${p.id}`} value={`pdf:${p.id}`}>
+                    {p.title}
+                    {p.issuer ? ` — ${p.issuer}` : ""}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
 
@@ -483,7 +434,7 @@ export function BundleEditor({
                         {idx + 1}. {itemDisplayName(it)}
                       </span>
                       <span className="text-[10px] uppercase rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
-                        {it.pdfFormId ? "PDF" : "Doc"} · {itemSourceBadge(it)}
+                        PDF · {itemSourceBadge(it)}
                       </span>
                       <label className="flex items-center gap-1 text-xs">
                         <Checkbox

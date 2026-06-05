@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, FileDown, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,10 +32,13 @@ import { STATUS_BADGE, STATUS_LABELS } from "@/lib/booking/status";
 import {
   addDaysYmd,
   brusselsNowParts,
+  combineToUtc,
   frenchDate,
   frenchDateShort,
 } from "@/lib/booking/dates";
 import type { EffectiveRole } from "@/lib/booking/access";
+import { buildPlanning, planningFilename } from "@/lib/rendez-vous/planning";
+import { renderPlanningPdf } from "@/lib/rendez-vous/planning-pdf";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -333,6 +336,45 @@ export function AgendaClient({ tenantId, role }: AgendaClientProps) {
                     <span className="text-xs text-muted-foreground">
                       ({dayBookings.length} RDV)
                     </span>
+                  )}
+                  {dayBookings.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      className="ml-auto"
+                      onClick={async () => {
+                        const appts = dayBookings
+                          .filter(
+                            (b) =>
+                              b.status === "confirmed" ||
+                              b.status === "pending_approval",
+                          )
+                          .map((b) => ({
+                            name: b.citizenName ?? "RDV",
+                            start: combineToUtc(b.date, b.startTime),
+                            end: combineToUtc(b.date, b.endTime),
+                          }));
+                        if (appts.length === 0) {
+                          toast.error("Aucun rendez-vous à imprimer ce jour");
+                          return;
+                        }
+                        try {
+                          const planning = buildPlanning(appts);
+                          const blob = await renderPlanningPdf(planning);
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = planningFilename(planning);
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        } catch {
+                          toast.error("Erreur lors de la génération du PDF");
+                        }
+                      }}
+                    >
+                      <FileDown className="size-3.5" />
+                      Planning PDF
+                    </Button>
                   )}
                 </div>
                 {dayBookings.length === 0 ? (

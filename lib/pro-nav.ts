@@ -50,7 +50,7 @@ const PARTNER_SPACE: ProSpace = {
     {
       label: "Outils",
       items: [
-        { title: "Rendez-vous → .ics", url: "/rendez-vous", icon: "calendar" },
+        { title: "Rendez-vous", url: "/partenaire/booking", icon: "calendar" },
         { title: "Lookup ONEM", url: "/outils/lookup-onem", icon: "search" },
       ],
     },

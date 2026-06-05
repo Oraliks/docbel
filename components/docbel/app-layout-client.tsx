@@ -30,9 +30,7 @@ function resolveProSegment(
     pathname === base || pathname.startsWith(`${base}/`);
   if (
     role === "partner" &&
-    (under("/partenaire") ||
-      under("/rendez-vous") ||
-      under("/outils/lookup-onem"))
+    (under("/partenaire") || under("/outils/lookup-onem"))
   )
     return "partenaire";
   if (role === "employer" && under("/employeur")) return "employeur";

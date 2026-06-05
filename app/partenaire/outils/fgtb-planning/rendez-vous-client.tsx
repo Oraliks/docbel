@@ -370,7 +370,7 @@ export function RendezVousExportClient({
         </p>
         {canViewHistory ? (
           <Link
-            href="/rendez-vous/historique"
+            href="/partenaire/outils/fgtb-planning/historique"
             className="inline-flex w-fit items-center gap-1.5 text-sm text-primary hover:underline"
           >
             <History className="size-4" />

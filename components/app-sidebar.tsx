@@ -184,12 +184,10 @@ const defaultData = {
       ],
     },
     {
-      // Outil partenaire (FGTB) — colle une liste de RDV → fichier .ics.
-      // URL neutre `/rendez-vous` ; l'auth partenaire/admin est validée par
-      // la page et la route API (cf. principe Beldoc "URLs conditionnées par
-      // l'auth, pas par le path").
-      title: "Rendez-vous (.ics)",
-      url: "/rendez-vous",
+      // Outil privé FGTB — colle une liste de RDV → fichier .ics.
+      // Accès réservé admin + partenaire FGTB (validé par la page).
+      title: "Planning FGTB (.ics)",
+      url: "/partenaire/outils/fgtb-planning",
       icon: (
         <CalendarClock className="size-4" />
       ),

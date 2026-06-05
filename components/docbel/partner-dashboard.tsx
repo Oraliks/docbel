@@ -46,9 +46,9 @@ const PARTNER_TOOLS: {
   icon: LucideIcon;
 }[] = [
   {
-    title: "Rendez-vous → Outlook (.ics)",
-    desc: "Collez une liste de rendez-vous et téléchargez un fichier .ics importable dans Outlook, Google Agenda ou Apple Calendrier.",
-    href: "/rendez-vous",
+    title: "Rendez-vous",
+    desc: "Gérez vos créneaux, validez les demandes et exportez votre agenda (.ics / PDF). Les citoyens réservent en ligne via votre page publique.",
+    href: "/partenaire/booking",
     icon: CalendarClock,
   },
   {

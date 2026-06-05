@@ -31,6 +31,11 @@ export default async function RendezVousPage() {
     notFound();
   }
 
+  // Outil privé FGTB : réservé aux admins et aux partenaires FGTB.
+  if (!base.user.isAdmin && !/fgtb/i.test(base.user.partnerOrganization ?? "")) {
+    notFound();
+  }
+
   // Accès à l'historique = responsables / personnes autorisées / admins.
   const history = await requireRdvHistoryAccess();
   const canViewHistory = history.isAuthorized;

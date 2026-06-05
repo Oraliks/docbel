@@ -5,6 +5,7 @@ import { COUNTRY_CODE_MAP } from "../lib/u1-institutions";
 import { seedOrganismes } from "./seeds/organismes";
 import { seedFieldValidationPresets } from "./seeds/field-validation-presets";
 import { seedBureaus } from "./seeds/bureaus";
+import { seedBookingTenants } from "./seeds/booking";
 
 const prisma = new PrismaClient();
 
@@ -457,6 +458,9 @@ async function main() {
 
   console.log("🌱 Seeding bureaus (communes, CPAS, ONEM)...");
   await seedBureaus(prisma);
+
+  console.log("🌱 Seeding booking tenants (FGTB, CSC, CGSLB, CAPAC)...");
+  await seedBookingTenants(prisma);
 }
 
 main()

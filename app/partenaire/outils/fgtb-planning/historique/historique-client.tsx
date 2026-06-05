@@ -201,7 +201,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
           personnes ayant déjà pris un rendez-vous.
         </p>
         <Link
-          href="/rendez-vous"
+          href="/partenaire/outils/fgtb-planning"
           className="inline-flex w-fit items-center gap-1 text-sm text-primary hover:underline"
         >
           <ArrowLeft className="size-4" />

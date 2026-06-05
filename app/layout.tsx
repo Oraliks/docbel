@@ -8,6 +8,7 @@ import { AppLayoutClient } from "@/components/docbel/app-layout-client";
 import { AcronymHydrator } from "@/components/docbel/acronym-hydrator";
 import { VersionWatcher } from "@/components/version-watcher";
 import { AuthSessionProvider } from "@/components/auth-session-provider";
+import { ImpersonationBanner } from "@/components/impersonation-banner";
 import { getServerAuthSession } from "@/lib/auth-session";
 import "./globals.css";
 
@@ -66,6 +67,7 @@ export default async function RootLayout({
       <body className="min-h-full bg-background text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
           <AuthSessionProvider initialSession={initialSession}>
+            <ImpersonationBanner />
             <AppLayoutClient>{children}</AppLayoutClient>
           </AuthSessionProvider>
           <Toaster richColors position="bottom-right" duration={3500} />

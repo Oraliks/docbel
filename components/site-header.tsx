@@ -10,6 +10,7 @@ import { HomeIcon, MoonIcon, ShieldCheckIcon, SunIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { ViewAsMenu } from "@/components/admin/view-as-menu"
 import {
   Tooltip,
   TooltipContent,
@@ -67,6 +68,8 @@ export function SiteHeader() {
 
             {session && (
               <>
+                <ViewAsMenu />
+
                 <Link
                   href="/"
                   title="Aller à l'accueil"

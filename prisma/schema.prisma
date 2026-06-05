@@ -82,10 +82,18 @@ model User {
   /// Autorisation explicite d'accès à l'historique des rendez-vous, pour un
   /// membre non-responsable (octroyée individuellement par un admin).
   canViewRdvHistory   Boolean    @default(false)
+  /// Champs Better Auth admin plugin (non utilisés dans l'UI pour l'instant —
+  /// pas de fonctionnalité "désactiver un compte partenaire" — mais le plugin
+  /// les sélectionne lors du getSession, donc ils doivent exister en DB).
+  banned              Boolean    @default(false)
+  banReason           String?
+  banExpires          DateTime?
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
   sessions            Session[]
   accounts            Account[]
+  impersonationsAsAdmin  AdminImpersonationLog[] @relation("AdminImpersonationLog_admin")
+  impersonationsAsTarget AdminImpersonationLog[] @relation("AdminImpersonationLog_target")
 
   @@index([role])
   @@index([status])
@@ -94,18 +102,23 @@ model User {
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String   @unique
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Id de l'admin qui a impersonnifié ce user (plugin admin Better Auth).
+  /// NULL = session normale. Quand non-NULL, la session expire dans
+  /// `impersonationSessionDuration` (cf. lib/auth.ts) plutôt qu'au TTL normal.
+  impersonatedBy String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([impersonatedBy])
 }
 
 model Account {
@@ -138,6 +151,26 @@ model Verification {
 
   @@index([identifier])
   @@index([expiresAt])
+}
+
+/// Audit log des impersonations admin (plugin admin Better Auth).
+/// Un enregistrement par session d'impersonation : `startedAt` à la création,
+/// `stoppedAt` rempli quand l'admin clique "Revenir admin" (ou expiration).
+/// Cf. /api/admin/impersonate et /api/admin/stop-impersonate.
+model AdminImpersonationLog {
+  id        String    @id @default(cuid())
+  adminId   String
+  admin     User      @relation("AdminImpersonationLog_admin", fields: [adminId], references: [id], onDelete: Cascade)
+  targetId  String
+  target    User      @relation("AdminImpersonationLog_target", fields: [targetId], references: [id], onDelete: Cascade)
+  ipAddress String?
+  userAgent String?
+  startedAt DateTime  @default(now())
+  stoppedAt DateTime?
+
+  @@index([adminId])
+  @@index([targetId])
+  @@index([startedAt])
 }
 
 model Page {

@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { nextCookies } from "better-auth/next-js"
 import { magicLink } from "better-auth/plugins/magic-link"
+import { admin } from "better-auth/plugins/admin"
 import { createAuthMiddleware, APIError } from "better-auth/api"
 import * as bcrypt from "bcryptjs"
 import { Resend } from "resend"
@@ -257,6 +258,20 @@ export const auth = betterAuth({
     }),
   },
   plugins: [
+    // Plugin admin — expose auth.api.impersonateUser / stopImpersonating, posé
+    // pour le bouton "Voir en tant que" du shell admin (cf. SiteHeader).
+    //   * adminRoles=["admin"] : seul role=admin peut impersonifier.
+    //   * allowImpersonatingAdmins=false (défaut) : un admin ne peut pas
+    //     impersonifier un autre admin (garde-fou).
+    //   * impersonationSessionDuration=1h : la session d'impersonation expire
+    //     dans 1h max même si la session admin a un TTL de 30j.
+    // L'audit log est géré côté API route (/api/admin/impersonate),
+    // pas par Better Auth lui-même.
+    admin({
+      adminRoles: ["admin"],
+      defaultRole: "user",
+      impersonationSessionDuration: 60 * 60,
+    }),
     magicLink({
       expiresIn: 60 * 15,
       sendMagicLink: async ({ email, url }) => {

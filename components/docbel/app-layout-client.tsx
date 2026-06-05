@@ -51,11 +51,14 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const visibleTools = TOOLS_DATA.filter((t) => !inactiveSlugs.has(getToolSlug(t)));
 
   // /admin owns its own chrome (AppSidebar inside app/admin/layout).
-  // /login is a full-screen split layout — header would clash with it.
+  // /login, /inscription, /mot-de-passe-oublie et /reinitialiser-mot-de-passe
+  // sont des écrans split full-page — le header glass collerait avec.
   if (
     pathname.startsWith("/admin") ||
     pathname.startsWith("/login") ||
-    pathname === "/inscription"
+    pathname === "/inscription" ||
+    pathname === "/mot-de-passe-oublie" ||
+    pathname === "/reinitialiser-mot-de-passe"
   ) {
     return <>{children}</>;
   }

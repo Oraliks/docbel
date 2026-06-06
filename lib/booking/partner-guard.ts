@@ -4,7 +4,7 @@
 import { NextResponse } from "next/server";
 import type { BookingTenant } from "@prisma/client";
 
-import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
+import { requireBookingActorAuth } from "@/lib/auth-check";
 import {
   canApprove,
   canConfigure,
@@ -32,7 +32,7 @@ export async function guardTenant(
   tenantId: string,
   level: GuardLevel = "view",
 ): Promise<GuardResult> {
-  const auth = await requirePartnerOrAdminAuth();
+  const auth = await requireBookingActorAuth();
   if (!auth.isAuthorized) return { ok: false, response: auth.error };
 
   const { tenant, role } = await tenantAccess(auth.user.id, auth.user.role, tenantId);

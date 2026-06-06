@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
+import { requireBookingActorAuth } from "@/lib/auth-check";
 import { tenantAccess } from "@/lib/booking/access";
 import { CreneauxClient } from "./creneaux-client";
 
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function CreneauxPage({ params }: PageProps) {
   const { tenantId } = await params;
 
-  const auth = await requirePartnerOrAdminAuth();
+  const auth = await requireBookingActorAuth();
   if (!auth.isAuthorized) notFound();
 
   const { tenant, role } = await tenantAccess(

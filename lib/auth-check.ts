@@ -175,6 +175,81 @@ export async function requirePartnerOrAdminAuth(): Promise<PartnerAuthResult> {
 }
 
 /**
+ * Auth pour la plateforme de booking : autorise les utilisateurs PRO actifs
+ * (admin, partner OU employer). L'accès à un tenant précis est ensuite décidé
+ * par `tenantAccess()` (admin → owner ; membre explicite → son rôle ; partenaire
+ * de l'organisation → owner/agent). Les employeurs accèdent uniquement aux
+ * tenants où ils sont membres.
+ */
+export async function requireBookingActorAuth(): Promise<PartnerAuthResult> {
+  const headerList = await headers();
+  const session = await withDbRetry(() =>
+    auth.api.getSession({ headers: headerList })
+  ).catch(() => null);
+
+  if (!session?.user?.id) {
+    return {
+      isAuthorized: false,
+      error: NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401, headers: jsonHeaders }
+      ),
+    };
+  }
+
+  const dbUser = await withDbRetry(() =>
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        partnerOrganization: true,
+      },
+    })
+  ).catch(() => null);
+
+  if (!dbUser || dbUser.status !== UserStatus.active) {
+    return {
+      isAuthorized: false,
+      error: NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401, headers: jsonHeaders }
+      ),
+    };
+  }
+
+  const isAdmin = dbUser.role === "admin";
+  const allowed =
+    isAdmin || dbUser.role === "partner" || dbUser.role === "employer";
+
+  if (!allowed) {
+    return {
+      isAuthorized: false,
+      error: NextResponse.json(
+        { error: "Forbidden - Pro access required" },
+        { status: 403, headers: jsonHeaders }
+      ),
+    };
+  }
+
+  return {
+    isAuthorized: true,
+    user: {
+      id: dbUser.id,
+      name: dbUser.name,
+      email: dbUser.email,
+      role: dbUser.role,
+      status: dbUser.status,
+      partnerOrganization: dbUser.partnerOrganization,
+      isAdmin,
+    },
+  };
+}
+
+/**
  * Auth pour les pages/routes "Espace Employeur". Autorise :
  *   - les admins (role=admin, active) → accès complet
  *   - les employeurs avec une organisation rattachée (role=employer + partnerOrganization)

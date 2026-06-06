@@ -3,7 +3,7 @@ import { BookingStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
-import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
+import { requireBookingActorAuth } from "@/lib/auth-check";
 import { listAccessibleTenants } from "@/lib/booking/access";
 import { tenantCreateSchema } from "@/lib/booking/schemas";
 
@@ -13,7 +13,7 @@ const json = { "Content-Type": "application/json; charset=utf-8" };
 
 /** Liste les tenants accessibles, avec le nombre de demandes en attente. */
 export async function GET() {
-  const auth = await requirePartnerOrAdminAuth();
+  const auth = await requireBookingActorAuth();
   if (!auth.isAuthorized) return auth.error;
 
   const tenants = await listAccessibleTenants(auth.user.id, auth.user.role);
@@ -46,7 +46,7 @@ export async function GET() {
 
 /** Création d'un tenant — réservée aux admins. */
 export async function POST(req: NextRequest) {
-  const auth = await requirePartnerOrAdminAuth();
+  const auth = await requireBookingActorAuth();
   if (!auth.isAuthorized) return auth.error;
   if (!auth.user.isAdmin) {
     return NextResponse.json({ error: "Réservé aux administrateurs" }, { status: 403, headers: json });

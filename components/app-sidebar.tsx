@@ -184,13 +184,16 @@ const defaultData = {
       ],
     },
     {
-      // Outil privé FGTB — colle une liste de RDV → fichier .ics.
-      // Accès réservé admin + partenaire FGTB (validé par la page).
-      title: "Planning FGTB (.ics)",
-      url: "/partenaire/outils/fgtb-planning",
+      // Plateforme de prise de RDV (multi-tenant) + outil privé FGTB (.ics).
+      title: "Rendez-vous",
+      url: "/partenaire/booking",
       icon: (
         <CalendarClock className="size-4" />
       ),
+      items: [
+        { title: "Plateforme de booking", url: "/partenaire/booking" },
+        { title: "Planning FGTB (.ics)", url: "/partenaire/outils/fgtb-planning" },
+      ],
     },
     {
       title: "Newsletter",

@@ -48,9 +48,14 @@ const PARTNER_SPACE: ProSpace = {
       ],
     },
     {
+      label: "Rendez-vous",
+      items: [
+        { title: "Agenda & demandes", url: "/partenaire/booking", icon: "calendar" },
+      ],
+    },
+    {
       label: "Outils",
       items: [
-        { title: "Rendez-vous", url: "/partenaire/booking", icon: "calendar" },
         { title: "Lookup ONEM", url: "/outils/lookup-onem", icon: "search" },
       ],
     },
@@ -73,6 +78,12 @@ const EMPLOYER_SPACE: ProSpace = {
       label: "Tableau de bord",
       items: [
         { title: "Vue d'ensemble", url: "/employeur", icon: "dashboard", exact: true },
+      ],
+    },
+    {
+      label: "Rendez-vous",
+      items: [
+        { title: "Agenda & demandes", url: "/partenaire/booking", icon: "calendar" },
       ],
     },
     {

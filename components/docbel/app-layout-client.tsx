@@ -33,7 +33,11 @@ function resolveProSegment(
     (under("/partenaire") || under("/outils/lookup-onem"))
   )
     return "partenaire";
-  if (role === "employer" && under("/employeur")) return "employeur";
+  if (
+    role === "employer" &&
+    (under("/employeur") || under("/partenaire/booking"))
+  )
+    return "employeur";
   return null;
 }
 

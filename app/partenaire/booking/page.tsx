@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ExternalLink, CalendarDays, Clock } from "lucide-react";
-import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
+import { requireBookingActorAuth } from "@/lib/auth-check";
 import { listAccessibleTenants } from "@/lib/booking/access";
 import { CATEGORY_LABELS } from "@/lib/booking/status";
 import {
@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 
 export default async function BookingIndexPage() {
-  const auth = await requirePartnerOrAdminAuth();
+  const auth = await requireBookingActorAuth();
   if (!auth.isAuthorized) notFound();
 
   const tenants = await listAccessibleTenants(auth.user.id, auth.user.role);

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
+import { requireBookingActorAuth } from "@/lib/auth-check";
 import { tenantAccess } from "@/lib/booking/access";
 import { BookingTabs } from "./booking-tabs";
 
@@ -13,7 +13,7 @@ interface LayoutProps {
 export default async function TenantLayout({ params, children }: LayoutProps) {
   const { tenantId } = await params;
 
-  const auth = await requirePartnerOrAdminAuth();
+  const auth = await requireBookingActorAuth();
   if (!auth.isAuthorized) notFound();
 
   const { tenant, role } = await tenantAccess(

@@ -704,7 +704,7 @@ export function BookingFlow({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className={`${GLASS_CARD} glass-surface rounded-2xl p-4`}>
+        <form onSubmit={handleSubmit} noValidate className={`${GLASS_CARD} glass-surface rounded-2xl p-4`}>
           <div className="flex flex-col gap-4">
             <p className={GLASS_LABEL}>Vos informations</p>
             {fields.map((f) => renderField(f))}

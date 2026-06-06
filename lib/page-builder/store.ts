@@ -129,6 +129,9 @@ interface PageBuilderStore {
   updateBlockLayoutLive: (id: string, layout: Partial<BlockLayout>) => void
   /** Snapshots current blocks into history (call once before a live drag). */
   pushHistoryCheckpoint: () => void
+  /** Merge a style/layout patch onto MANY blocks at once (group editing). */
+  updateManyBlocksStyle: (ids: string[], style: Partial<BlockStyle>) => void
+  updateManyBlocksLayout: (ids: string[], layout: Partial<BlockLayout>) => void
   updateBlockAdvanced: (id: string, advanced: Partial<BlockAdvanced>) => void
   updateBlockResponsive: (
     id: string,
@@ -515,6 +518,28 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
       const past = [...state.past, { blocks: state.blocks }]
       if (past.length > HISTORY_LIMIT) past.shift()
       return { past, future: [], isDirty: true }
+    }),
+
+  updateManyBlocksStyle: (ids, style) =>
+    set((state) => {
+      const t = new Set(ids)
+      return pushHistory(
+        state,
+        state.blocks.map((b) =>
+          t.has(b.id) ? { ...b, style: { ...(b.style ?? {}), ...style } } : b
+        )
+      )
+    }),
+
+  updateManyBlocksLayout: (ids, layout) =>
+    set((state) => {
+      const t = new Set(ids)
+      return pushHistory(
+        state,
+        state.blocks.map((b) =>
+          t.has(b.id) ? { ...b, layout: { ...(b.layout ?? {}), ...layout } } : b
+        )
+      )
     }),
 
   updateBlockAdvanced: (id, advanced) =>

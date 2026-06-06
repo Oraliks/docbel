@@ -27,6 +27,9 @@ export function Inspector() {
   const updateBlockLayout = usePageBuilderStore((s) => s.updateBlockLayout)
   const updateBlockAdvanced = usePageBuilderStore((s) => s.updateBlockAdvanced)
   const updateBlockResponsive = usePageBuilderStore((s) => s.updateBlockResponsive)
+  const updateManyBlocksStyle = usePageBuilderStore((s) => s.updateManyBlocksStyle)
+  const updateManyBlocksLayout = usePageBuilderStore((s) => s.updateManyBlocksLayout)
+  const selectedIds = usePageBuilderStore((s) => s.selectedIds)
 
   const [tab, setTab] = React.useState<TabId>('content')
 
@@ -53,7 +56,9 @@ export function Inspector() {
 
   // On tablet/mobile, Design & Layout edit per-device overrides (responsive),
   // showing the merged values; Desktop edits the base (unchanged path).
-  const isResponsive = device !== 'desktop'
+  const isMulti = selectedIds.length > 1
+  // Per-device editing only in single-selection; multi-edit applies to the base.
+  const isResponsive = device !== 'desktop' && !isMulti
   const merged = isResponsive ? mergeForDevice(block, device) : null
   const displayBlock = merged ? { ...block, style: merged.style, layout: merged.layout } : block
   const deviceLabel = device === 'tablet' ? 'Tablette' : 'Mobile'
@@ -85,6 +90,12 @@ export function Inspector() {
       </div>
 
       <ScrollArea className="flex-1">
+        {isMulti && (tab === 'design' || tab === 'layout') && (
+          <div className="m-2 rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-400">
+            ✎ Édition groupée — <strong>{selectedIds.length} blocs</strong>. Les
+            réglages Design/Layout s’appliquent à tous.
+          </div>
+        )}
         {isResponsive && (tab === 'design' || tab === 'layout') && (
           <div className="m-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] text-primary">
             ✎ Vous éditez l’affichage <strong>{deviceLabel}</strong>. Ces réglages
@@ -101,9 +112,11 @@ export function Inspector() {
           <DesignTab
             block={displayBlock}
             onChange={(s) =>
-              isResponsive
-                ? updateBlockResponsive(block.id, device as 'tablet' | 'mobile', { style: s })
-                : updateBlockStyle(block.id, s)
+              isMulti
+                ? updateManyBlocksStyle(selectedIds, s)
+                : isResponsive
+                  ? updateBlockResponsive(block.id, device as 'tablet' | 'mobile', { style: s })
+                  : updateBlockStyle(block.id, s)
             }
           />
         )}
@@ -112,9 +125,11 @@ export function Inspector() {
             block={displayBlock}
             device={device}
             onChange={(l) =>
-              isResponsive
-                ? updateBlockResponsive(block.id, device as 'tablet' | 'mobile', { layout: l })
-                : updateBlockLayout(block.id, l)
+              isMulti
+                ? updateManyBlocksLayout(selectedIds, l)
+                : isResponsive
+                  ? updateBlockResponsive(block.id, device as 'tablet' | 'mobile', { layout: l })
+                  : updateBlockLayout(block.id, l)
             }
           />
         )}

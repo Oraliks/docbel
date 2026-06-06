@@ -73,6 +73,7 @@ interface Booking {
   formData: Record<string, unknown> | null;
   locationName: string | null;
   autoApproved: boolean;
+  presenceConfirmedAt: string | null;
   rejectionReason: string | null;
   cancelReason: string | null;
   createdAt: string;
@@ -716,6 +717,9 @@ function BookingDetail({
         <Row label="Horaire" value={`${b.startTime} – ${b.endTime}`} />
         <Row label="Antenne" value={b.locationName ?? "—"} />
         <Row label="Statut" value={statusLabel} />
+        {b.presenceConfirmedAt && (
+          <Row label="Présence" value="Confirmée par le citoyen ✓" />
+        )}
       </dl>
 
       <Section title="Demandeur">

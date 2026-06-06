@@ -26,6 +26,10 @@ export function manageUrl(token: string): string {
   return `${APP_URL}/rendez-vous/gestion/${token}`;
 }
 
+function presenceUrl(token: string): string {
+  return `${APP_URL}/api/booking/manage/${token}/confirm-presence`;
+}
+
 export interface BookingEmailCtx {
   to: string;
   citizenName: string | null;
@@ -50,15 +54,30 @@ function whenWhere(ctx: BookingEmailCtx): string {
   return `Le ${frenchDate(ctx.date)} à ${ctx.startTime}\n${where}`;
 }
 
-function htmlShell(ctx: BookingEmailCtx, title: string, paragraphs: string[], cta?: { label: string; href: string }): string {
+type CtaDef = { label: string; href: string };
+
+function htmlShell(
+  ctx: BookingEmailCtx,
+  title: string,
+  paragraphs: string[],
+  cta?: CtaDef | CtaDef[],
+): string {
   const accent = ctx.brandColor || "#7C3AED";
   const body = paragraphs.map((p) => `<p style="margin:0 0 12px">${p}</p>`).join("");
-  const button = cta
-    ? `<p style="margin:20px 0"><a href="${cta.href}" style="background:${accent};color:#fff;text-decoration:none;padding:10px 18px;border-radius:10px;display:inline-block;font-weight:600">${cta.label}</a></p>`
+  const ctas = cta ? (Array.isArray(cta) ? cta : [cta]) : [];
+  // 1er bouton = principal (fond accent), suivants = secondaires (contour).
+  const buttons = ctas.length
+    ? `<p style="margin:20px 0">${ctas
+        .map((c, i) =>
+          i === 0
+            ? `<a href="${c.href}" style="background:${accent};color:#fff;text-decoration:none;padding:10px 18px;border-radius:10px;display:inline-block;font-weight:600;margin:0 8px 8px 0">${c.label}</a>`
+            : `<a href="${c.href}" style="border:1px solid ${accent};color:${accent};text-decoration:none;padding:9px 17px;border-radius:10px;display:inline-block;font-weight:600;margin:0 8px 8px 0">${c.label}</a>`,
+        )
+        .join("")}</p>`
     : "";
   return `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1f2937;font-size:15px;line-height:1.5">
   <h2 style="color:${accent};font-size:18px;margin:0 0 16px">${title}</h2>
-  ${body}${button}
+  ${body}${buttons}
   <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0" />
   <p style="font-size:12px;color:#6b7280;margin:0">${ctx.tenantName} · via DocBel</p>
 </div>`;
@@ -173,17 +192,21 @@ Vous pouvez reprendre rendez-vous : ${APP_URL}/rendez-vous`;
   });
 }
 
-/** Rappel la veille du rendez-vous. */
+/** Rappel la veille du rendez-vous, avec confirmation de présence en 1 clic. */
 export async function sendBookingReminder(ctx: BookingEmailCtx): Promise<void> {
   const subject = `Rappel : rendez-vous demain — ${ctx.startTime}`;
   const intro = `Petit rappel : vous avez rendez-vous avec ${ctx.tenantName} demain.`;
+  const ask = `Merci de confirmer votre présence en un clic — ou de prévenir si vous ne pouvez pas venir, pour libérer le créneau.`;
   const text = `${hello(ctx.citizenName)}
 
 ${intro}
 
 ${whenWhere(ctx)}
 
-Annuler si empêchement : ${manageUrl(ctx.token)}`;
+${ask}
+
+Confirmer ma présence : ${presenceUrl(ctx.token)}
+Gérer / annuler : ${manageUrl(ctx.token)}`;
   await send({
     from: brandedFrom(ctx.fromName),
     to: ctx.to,
@@ -192,9 +215,33 @@ Annuler si empêchement : ${manageUrl(ctx.token)}`;
     html: htmlShell(
       ctx,
       "Rappel de rendez-vous",
-      [intro, whenWhere(ctx).replace("\n", "<br/>")],
-      { label: "Gérer mon rendez-vous", href: manageUrl(ctx.token) },
+      [intro, whenWhere(ctx).replace("\n", "<br/>"), ask],
+      [
+        { label: "Confirmer ma présence", href: presenceUrl(ctx.token) },
+        { label: "Gérer / annuler", href: manageUrl(ctx.token) },
+      ],
     ),
+  });
+}
+
+/** Relance après une absence (no-show) : invite à reprendre rendez-vous. */
+export async function sendNoShowFollowUp(ctx: BookingEmailCtx): Promise<void> {
+  const subject = `Vous avez manqué votre rendez-vous — ${ctx.tenantName}`;
+  const intro = `Vous n'avez pas pu vous présenter à votre rendez-vous avec ${ctx.tenantName} du ${frenchDate(ctx.date)}. Pas d'inquiétude : vous pouvez en reprendre un nouveau quand vous le souhaitez.`;
+  const text = `${hello(ctx.citizenName)}
+
+${intro}
+
+Reprendre rendez-vous : ${APP_URL}/rendez-vous`;
+  await send({
+    from: brandedFrom(ctx.fromName),
+    to: ctx.to,
+    subject,
+    text,
+    html: htmlShell(ctx, "Reprenez votre rendez-vous", [intro], {
+      label: "Reprendre rendez-vous",
+      href: `${APP_URL}/rendez-vous`,
+    }),
   });
 }
 

@@ -55,6 +55,7 @@ export async function GET(
         formData: b.formData,
         locationName: b.location.name,
         autoApproved: b.autoApproved,
+        presenceConfirmedAt: b.presenceConfirmedAt,
         rejectionReason: b.rejectionReason,
         cancelReason: b.cancelReason,
         createdAt: b.createdAt,

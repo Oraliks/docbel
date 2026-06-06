@@ -4,6 +4,7 @@ import { BookingStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { brusselsNowParts, isSlotPast } from "@/lib/booking/dates";
+import { notifyNextWaiter } from "@/lib/booking/waitlist";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,14 @@ export async function POST(
   const { token } = await ctx.params;
   const booking = await prisma.booking.findUnique({
     where: { confirmationToken: token },
-    select: { id: true, status: true, date: true, startTime: true, tenantId: true },
+    select: {
+      id: true,
+      status: true,
+      date: true,
+      startTime: true,
+      tenantId: true,
+      locationId: true,
+    },
   });
   if (!booking) {
     return NextResponse.json({ error: "Rendez-vous introuvable" }, { status: 404, headers: json });
@@ -42,6 +50,9 @@ export async function POST(
       cancelReason: "Annulé par le citoyen",
     },
   });
+
+  // Une place se libère → prévenir le 1er citoyen en liste d'attente.
+  await notifyNextWaiter(booking.locationId, booking.date, booking.startTime);
 
   await logActivity(
     "Citoyen",

@@ -171,7 +171,10 @@ export async function POST(
     });
     if (!created) {
       return NextResponse.json(
-        { error: "Ce créneau vient d'être complété — choisissez-en un autre" },
+        {
+          error: "Ce créneau vient d'être complété — choisissez-en un autre",
+          slotFull: true,
+        },
         { status: 409, headers: json },
       );
     }

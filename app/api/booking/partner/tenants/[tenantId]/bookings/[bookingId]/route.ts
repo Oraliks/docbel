@@ -11,6 +11,7 @@ import {
   sendBookingCancelled,
   sendBookingConfirmed,
 } from "@/lib/booking/emails";
+import { notifyNextWaiter } from "@/lib/booking/waitlist";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -109,6 +110,7 @@ export async function PATCH(
           rejectionReason: action.reason,
         },
       });
+      await notifyNextWaiter(booking.locationId, booking.date, booking.startTime);
       if (hasEmail) await sendBookingCancelled({ ...emailCtx, reason: action.reason, byPartner: false });
       break;
     }
@@ -124,6 +126,7 @@ export async function PATCH(
           cancelReason: action.reason,
         },
       });
+      await notifyNextWaiter(booking.locationId, booking.date, booking.startTime);
       if (hasEmail) await sendBookingCancelled({ ...emailCtx, reason: action.reason, byPartner: true });
       break;
     }

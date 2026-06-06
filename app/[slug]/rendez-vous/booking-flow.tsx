@@ -53,6 +53,7 @@ interface BookResponse {
   blocked?: boolean;
   lastBookingDate?: string;
   manageToken?: string;
+  slotFull?: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
 }
@@ -92,7 +93,15 @@ type Screen =
       lastBookingDate: string;
       address: string;
       manageToken?: string;
-    };
+    }
+  | {
+      type: "waitlist";
+      locationId: string;
+      date: string;
+      startTime: string;
+      endTime: string;
+    }
+  | { type: "waitlistDone"; date: string; startTime: string };
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -181,6 +190,7 @@ export function BookingFlow({
     buildInitialFormData(fields, prefill),
   );
   const [submitting, setSubmitting] = useState(false);
+  const [joiningWaitlist, setJoiningWaitlist] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [dedupeBlocked, setDedupeBlocked] = useState<{
     lastBookingDate: string;
@@ -351,9 +361,20 @@ export function BookingFlow({
         return;
       }
 
+      if (res.status === 409 && data.slotFull) {
+        // Créneau complet : proposer la liste d'attente (formulaire déjà rempli).
+        setScreen({
+          type: "waitlist",
+          locationId: screen.locationId,
+          date: screen.date,
+          startTime: screen.startTime,
+          endTime: screen.endTime,
+        });
+        return;
+      }
+
       if (res.status === 409 && data.error) {
         toast.error(data.error);
-        // Créneau complet : revenir au calendrier et refetch
         setScreen({ type: "calendar" });
         fetchAvailability(from, locationId);
         return;
@@ -373,6 +394,40 @@ export function BookingFlow({
       toast.error("Erreur réseau. Veuillez réessayer.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  // --- Liste d'attente (créneau complet) ---
+  async function handleJoinWaitlist() {
+    if (screen.type !== "waitlist") return;
+    setJoiningWaitlist(true);
+    try {
+      const res = await fetch(`/api/booking/${slug}/waitlist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          locationId: screen.locationId,
+          date: screen.date,
+          startTime: screen.startTime,
+          formData,
+        }),
+      });
+      const data: { ok?: boolean; available?: boolean; error?: string } = await res
+        .json()
+        .catch(() => ({}));
+      if (res.ok && data.ok) {
+        setScreen({ type: "waitlistDone", date: screen.date, startTime: screen.startTime });
+      } else if (data.available) {
+        toast.info("Une place est de nouveau disponible — choisissez votre créneau.");
+        setScreen({ type: "calendar" });
+        fetchAvailability(from, locationId);
+      } else {
+        toast.error(data.error ?? "Impossible de rejoindre la liste d'attente.");
+      }
+    } catch {
+      toast.error("Erreur réseau. Veuillez réessayer.");
+    } finally {
+      setJoiningWaitlist(false);
     }
   }
 
@@ -553,6 +608,82 @@ export function BookingFlow({
             Gérer ma demande
             <ChevronRight size={14} />
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen.type === "waitlistDone") {
+    return (
+      <div className={`${GLASS_CARD} glass-surface mx-auto w-full max-w-xl rounded-2xl p-6`}>
+        <div className="flex flex-col gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+            <Clock className="text-amber-600" size={24} />
+          </div>
+          <div>
+            <h2 className="text-[20px] font-semibold text-[color:var(--glass-ink)]">
+              Vous êtes sur la liste d&apos;attente
+            </h2>
+            <p className="mt-1 text-[14px] text-[color:var(--glass-ink-soft)]">
+              Si une place se libère pour le {frenchDate(screen.date)} à{" "}
+              {screen.startTime}, vous recevrez un email pour réserver en priorité.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setScreen({ type: "calendar" });
+              fetchAvailability(from, locationId);
+            }}
+            className="flex items-center gap-1 self-start text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
+          >
+            <ChevronLeft size={14} />
+            Retour au calendrier
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen.type === "waitlist") {
+    const canJoin = !!emailFromForm(fields, formData).trim();
+    return (
+      <div className={`${GLASS_CARD} glass-surface mx-auto w-full max-w-xl rounded-2xl p-6`}>
+        <div className="flex flex-col gap-4">
+          <h2 className="text-[18px] font-semibold text-[color:var(--glass-ink)]">
+            Ce créneau vient d&apos;être complété
+          </h2>
+          <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
+            Le créneau du <strong>{frenchDate(screen.date)}</strong> à{" "}
+            <strong>{screen.startTime}</strong> est complet. Rejoignez la liste
+            d&apos;attente&nbsp;: si une place se libère, vous serez prévenu·e par
+            email pour réserver en priorité.
+          </p>
+          {!canJoin && (
+            <p className="text-[13px] text-amber-700">
+              Une adresse email est nécessaire pour vous prévenir. Revenez au
+              formulaire pour la renseigner.
+            </p>
+          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleJoinWaitlist}
+              disabled={joiningWaitlist || !canJoin}
+              style={GLASS_PRIMARY_STYLE}
+              className="flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-60"
+            >
+              {joiningWaitlist ? "Inscription…" : "Rejoindre la liste d'attente"}
+            </button>
+            <button
+              onClick={() => {
+                setScreen({ type: "calendar" });
+                fetchAvailability(from, locationId);
+              }}
+              className="flex items-center gap-1 text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
+            >
+              <ChevronLeft size={14} />
+              Choisir un autre créneau
+            </button>
+          </div>
         </div>
       </div>
     );

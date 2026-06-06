@@ -245,6 +245,55 @@ Reprendre rendez-vous : ${APP_URL}/rendez-vous`;
   });
 }
 
+/** Une place s'est libérée pour un citoyen en liste d'attente (C). */
+export async function sendWaitlistOpening(ctx: {
+  to: string;
+  citizenName: string | null;
+  tenantName: string;
+  fromName?: string | null;
+  brandColor?: string | null;
+  locationName: string;
+  locationAddress?: string | null;
+  slug: string;
+  date: string;
+  startTime: string;
+}): Promise<void> {
+  const shell: BookingEmailCtx = {
+    to: ctx.to,
+    citizenName: ctx.citizenName,
+    tenantName: ctx.tenantName,
+    fromName: ctx.fromName,
+    brandColor: ctx.brandColor,
+    locationName: ctx.locationName,
+    locationAddress: ctx.locationAddress,
+    date: ctx.date,
+    startTime: ctx.startTime,
+    token: "",
+  };
+  const href = `${APP_URL}/${ctx.slug}/rendez-vous`;
+  const subject = `Une place s'est libérée — ${frenchDate(ctx.date)}`;
+  const intro = `Bonne nouvelle ! Une place vient de se libérer chez ${ctx.tenantName} pour le créneau qui vous intéressait. Réservez vite, avant qu'elle ne reparte.`;
+  const text = `${hello(ctx.citizenName)}
+
+${intro}
+
+${whenWhere(shell)}
+
+Réserver maintenant : ${href}`;
+  await send({
+    from: brandedFrom(ctx.fromName),
+    to: ctx.to,
+    subject,
+    text,
+    html: htmlShell(
+      shell,
+      "Une place s'est libérée",
+      [intro, whenWhere(shell).replace("\n", "<br/>")],
+      { label: "Réserver maintenant", href },
+    ),
+  });
+}
+
 /** Renvoi du lien de gestion (déplacer/annuler) à l'adresse enregistrée. */
 export async function sendManagementLink(ctx: BookingEmailCtx): Promise<void> {
   const subject = `Votre lien de gestion de rendez-vous — ${ctx.tenantName}`;

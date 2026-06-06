@@ -7,6 +7,7 @@ import { brusselsNowParts, isHm, isSlotPast, isYmd } from "@/lib/booking/dates";
 import { icsForBooking } from "@/lib/booking/ics-adapter";
 import { locationAddress } from "@/lib/booking/route-bureau";
 import { sendBookingConfirmed, sendBookingReceived } from "@/lib/booking/emails";
+import { notifyNextWaiter } from "@/lib/booking/waitlist";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -98,6 +99,9 @@ export async function POST(
     }
     throw e;
   }
+
+  // L'ancien créneau se libère → prévenir le 1er en liste d'attente.
+  await notifyNextWaiter(booking.locationId, booking.date, booking.startTime);
 
   if (booking.citizenEmail) {
     const ctxEmail = {

@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { EyeIcon } from "lucide-react"
+import { EyeIcon, EyeOffIcon } from "lucide-react"
 
 /// Liste des comptes demo récupérés depuis /api/admin/demo-accounts.
 /// Forme intentionnellement réduite (UI uniquement).
@@ -57,6 +57,26 @@ export function ViewAsMenu() {
     }
   }
 
+  /// "Visiteur anonyme" : POST /api/admin/view-as-visitor — stash la session
+  /// admin et déconnecte l'admin côté navigateur. Pas une vraie impersonation
+  /// (Better Auth ne sait pas "impersonifier rien"), donc flow dédié.
+  const goVisitor = async () => {
+    setPending("__visitor__")
+    try {
+      const res = await fetch("/api/admin/view-as-visitor", { method: "POST" })
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as { error?: string }
+        toast.error(error.error || "Bascule visiteur impossible")
+        return
+      }
+      window.location.href = "/"
+    } catch {
+      toast.error("Erreur réseau")
+    } finally {
+      setPending(null)
+    }
+  }
+
   const impersonate = async (account: DemoAccount) => {
     setPending(account.id)
     try {
@@ -98,6 +118,27 @@ export function ViewAsMenu() {
         }
       />
       <DropdownMenuContent align="end" className="w-72">
+        <DropdownMenuLabel>Modes</DropdownMenuLabel>
+        <DropdownMenuItem
+          disabled={pending !== null}
+          onClick={(e) => {
+            e.preventDefault()
+            void goVisitor()
+          }}
+          className="flex flex-col items-start gap-0.5"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <EyeOffIcon className="size-3.5" />
+            Visiteur anonyme
+            {pending === "__visitor__" && (
+              <span className="text-xs text-muted-foreground">…</span>
+            )}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            Te déconnecte avec retour 1-clic en admin
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuLabel>Comptes demo</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {loading && (

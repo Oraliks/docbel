@@ -6,6 +6,7 @@ import { loadPublicAvailability } from "@/lib/booking/public-availability";
 import { brusselsNowParts } from "@/lib/booking/dates";
 import { getServerAuthSession } from "@/lib/auth-session";
 import { BookingFlow } from "./booking-flow";
+import { BookingUnavailable } from "@/components/booking/booking-unavailable";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const tenant = await prisma.bookingTenant.findFirst({
-    where: { slug, active: true },
+    where: { slug },
     select: { name: true },
   });
   if (!tenant) return {};
@@ -34,7 +35,7 @@ export default async function TenantBookingPage({
   const { cp } = await searchParams;
 
   const tenant = await prisma.bookingTenant.findFirst({
-    where: { slug, active: true },
+    where: { slug },
     select: {
       id: true,
       slug: true,
@@ -42,10 +43,21 @@ export default async function TenantBookingPage({
       brandColor: true,
       formFields: true,
       dedupeField: true,
+      active: true,
     },
   });
 
   if (!tenant) notFound();
+
+  // Guichet désactivé (pas encore lancé / en pause) → page « bientôt disponible »
+  // plutôt que le formulaire. La réservation reste impossible (APIs gardées).
+  if (!tenant.active) {
+    return (
+      <section className="mx-auto w-full max-w-6xl">
+        <BookingUnavailable variant="soon" tenantName={tenant.name} />
+      </section>
+    );
+  }
 
   const fields = parseFormFields(tenant.formFields);
 

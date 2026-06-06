@@ -59,6 +59,7 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [slugEdited, setSlugEdited] = useState(false);
+  const [toggling, setToggling] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     slug: "",
@@ -68,6 +69,26 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
 
   function update(patch: Partial<typeof form>) {
     setForm((f) => ({ ...f, ...patch }));
+  }
+
+  async function toggleActive(t: TenantRow) {
+    setToggling(t.id);
+    try {
+      const res = await fetch(`/api/booking/partner/tenants/${t.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !t.active }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Erreur");
+        return;
+      }
+      toast.success(t.active ? "Guichet désactivé (invisible au public)" : "Guichet activé");
+      router.refresh();
+    } finally {
+      setToggling(null);
+    }
   }
 
   async function create() {
@@ -232,6 +253,18 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-2">
+                      <Button
+                        variant={t.active ? "outline" : "default"}
+                        size="sm"
+                        disabled={toggling === t.id}
+                        onClick={() => toggleActive(t)}
+                      >
+                        {toggling === t.id
+                          ? "…"
+                          : t.active
+                            ? "Désactiver"
+                            : "Activer"}
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

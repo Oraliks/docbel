@@ -41,6 +41,7 @@ interface PickedSlot {
 // ---------------------------------------------------------------------------
 
 const STATUS_CHIP: Record<BookingStatus, string> = {
+  pending_verification: "bg-slate-100 text-slate-700",
   pending_approval: "bg-amber-100 text-amber-800",
   confirmed: "bg-emerald-100 text-emerald-800",
   rejected: "bg-rose-100 text-rose-800",

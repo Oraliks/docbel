@@ -2048,6 +2048,7 @@ enum BookingStatus {
   cancelled_partner // annulé par l'équipe après confirmation
   no_show // citoyen absent
   completed // honoré
+  pending_verification // email non encore vérifié (double opt-in, F)
 }
 
 model BookingTenant {
@@ -2068,6 +2069,8 @@ model BookingTenant {
   emailFromName         String?
   /// Email de l'équipe notifié à chaque nouvelle demande (optionnel).
   notifyEmail           String?
+  /// F : exiger une vérification de l'email (double opt-in) avant prise en compte.
+  requireEmailVerification Boolean      @default(false)
   /// Définition du formulaire citoyen (registre fermé, cf lib/booking/form-fields).
   formFields            Json            @default("[]")
   /// Validation manuelle requise avant confirmation.
@@ -2205,6 +2208,19 @@ model Booking {
   cancelReason         String?
   cancelledAt          DateTime?
   reminderSentAt       DateTime?
+  /// B : relance après absence (no-show) — horodatage d'envoi.
+  noShowFollowupSentAt DateTime?
+  /// B : le citoyen a confirmé sa présence via l'email de rappel.
+  presenceConfirmedAt  DateTime?
+  /// F : double opt-in — horodatage de vérification de l'email.
+  verifiedAt           DateTime?
+  /// D : note interne de l'équipe (non visible du citoyen).
+  internalNote         String?
+  /// D : agent assigné (référence libre vers User.id, sans FK) + nom affiché.
+  assignedToUserId     String?
+  assignedToName       String?
+  /// G : langue choisie par le citoyen (fr|nl|en|de) pour les emails.
+  locale               String?
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
 
@@ -2215,4 +2231,32 @@ model Booking {
   @@index([tenantId, citizenEmail])
   @@index([tenantId, citizenNameNormalized])
   @@index([tenantId, citizenNrnHash])
+}
+
+/// C : liste d'attente — citoyens en attente qu'une place se libère sur un
+/// créneau précis. Références (tenant/location/user) en String brut, sans FK
+/// (cf. convention d'isolation ci-dessus).
+model BookingWaitlist {
+  id                    String    @id @default(cuid())
+  tenantId              String
+  locationId            String
+  date                  String // "YYYY-MM-DD"
+  startTime             String // "09:00"
+  citizenName           String?
+  citizenNameNormalized String?
+  citizenEmail          String?
+  citizenPhone          String?
+  citizenNrnHash        String?
+  citizenNrnLast4       String?
+  citizenPostalCode     String?
+  userId                String?
+  /// waiting | notified | converted | expired | cancelled
+  status                String    @default("waiting")
+  notifiedAt            DateTime?
+  /// Token opaque pour le lien email « une place s'est libérée ».
+  notifyToken           String?   @unique
+  createdAt             DateTime  @default(now())
+
+  @@index([locationId, date, startTime, status])
+  @@index([tenantId])
 }

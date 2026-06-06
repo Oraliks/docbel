@@ -40,6 +40,7 @@ export const tenantSettingsSchema = z.object({
     .optional(),
   emailFromName: z.string().max(80).nullable().optional(),
   notifyEmail: z.string().max(160).nullable().optional(),
+  requireEmailVerification: z.boolean().optional(),
   formFields: bookingFormFieldsSchema.optional(),
   requireApproval: z.boolean().optional(),
   autoApproveAfterHours: z.number().int().min(1).max(720).optional(),

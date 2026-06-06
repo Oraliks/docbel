@@ -30,6 +30,14 @@ async function run(req: NextRequest) {
   const today = brusselsNowParts().ymd;
   const nowMs = Date.now();
 
+  // 0) F : purge des demandes non vérifiées (double opt-in) de plus de 24 h.
+  const purgedVerif = await prisma.booking.deleteMany({
+    where: {
+      status: BookingStatus.pending_verification,
+      createdAt: { lt: new Date(nowMs - 24 * H) },
+    },
+  });
+
   // 1) Expirer les notifications de plus de 48 h.
   const notifs = await prisma.bookingWaitlist.findMany({
     where: { status: "notified" },
@@ -84,7 +92,7 @@ async function run(req: NextRequest) {
   }
 
   return NextResponse.json(
-    { ok: true, expired, purged: purged.count, notified },
+    { ok: true, purgedVerif: purgedVerif.count, expired, purged: purged.count, notified },
     { headers: json },
   );
 }

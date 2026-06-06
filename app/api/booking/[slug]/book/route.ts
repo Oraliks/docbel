@@ -21,6 +21,7 @@ import { locationAddress } from "@/lib/booking/route-bureau";
 import {
   sendBookingConfirmed,
   sendBookingReceived,
+  sendBookingVerify,
   sendTeamNewBooking,
 } from "@/lib/booking/emails";
 
@@ -125,7 +126,14 @@ export async function POST(
 
   const token = randomBytes(32).toString("base64url");
   const confirmed = !tenant.requireApproval;
-  const status = confirmed ? BookingStatus.confirmed : BookingStatus.pending_approval;
+  // F : double opt-in — la demande reste "pending_verification" tant que le
+  // citoyen n'a pas confirmé son email (uniquement si un email est fourni).
+  const needsVerification = tenant.requireEmailVerification && !!identity.email;
+  const status = needsVerification
+    ? BookingStatus.pending_verification
+    : confirmed
+      ? BookingStatus.confirmed
+      : BookingStatus.pending_approval;
 
   // RGPD : ne jamais persister le NRN en clair dans formData — il est conservé
   // haché (citizenNrnHash) + 4 derniers chiffres (citizenNrnLast4).
@@ -164,7 +172,7 @@ export async function POST(
           userId,
           status,
           confirmationToken: token,
-          confirmedAt: confirmed ? new Date() : null,
+          confirmedAt: confirmed && !needsVerification ? new Date() : null,
         },
         select: { id: true },
       });
@@ -212,7 +220,9 @@ export async function POST(
       startTime,
       token,
     };
-    if (confirmed) {
+    if (needsVerification) {
+      await sendBookingVerify(ctxEmail);
+    } else if (confirmed) {
       const ics = icsForBooking(
         { date, startTime, endTime: slot.endTime },
         `${tenant.name} — Rendez-vous`,
@@ -223,8 +233,9 @@ export async function POST(
     }
   }
 
-  // Notif équipe (n'échoue jamais la requête).
-  if (tenant.notifyEmail) {
+  // Notif équipe — seulement une fois la demande réellement active (pas en
+  // attente de vérification email).
+  if (!needsVerification && tenant.notifyEmail) {
     await sendTeamNewBooking({
       to: tenant.notifyEmail,
       tenantId: tenant.id,
@@ -246,8 +257,16 @@ export async function POST(
     "booking",
     identity.name ?? identity.email ?? "Citoyen",
     createdId,
-    `RDV ${date} ${startTime} — ${confirmed ? "confirmé" : "en attente"}`,
+    `RDV ${date} ${startTime} — ${needsVerification ? "à vérifier" : confirmed ? "confirmé" : "en attente"}`,
   );
 
-  return NextResponse.json({ ok: true, token, confirmed }, { status: 201, headers: json });
+  return NextResponse.json(
+    {
+      ok: true,
+      token,
+      confirmed: confirmed && !needsVerification,
+      pendingVerification: needsVerification,
+    },
+    { status: 201, headers: json },
+  );
 }

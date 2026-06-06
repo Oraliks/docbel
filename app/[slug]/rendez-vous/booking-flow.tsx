@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Clock,
   HelpCircle,
+  Mail,
   MapPin,
   UserRound,
 } from "lucide-react";
@@ -54,6 +55,7 @@ interface BookResponse {
   lastBookingDate?: string;
   manageToken?: string;
   slotFull?: boolean;
+  pendingVerification?: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
 }
@@ -87,7 +89,13 @@ interface Props {
 type Screen =
   | { type: "calendar" }
   | { type: "form"; locationId: string; date: string; startTime: string; endTime: string }
-  | { type: "success"; token: string; confirmed: boolean; address: string }
+  | {
+      type: "success";
+      token: string;
+      confirmed: boolean;
+      address: string;
+      pendingVerification?: boolean;
+    }
   | {
       type: "blocked";
       lastBookingDate: string;
@@ -342,6 +350,7 @@ export function BookingFlow({
           token: data.token,
           confirmed: data.confirmed ?? false,
           address,
+          pendingVerification: data.pendingVerification,
         });
         return;
       }
@@ -582,32 +591,47 @@ export function BookingFlow({
   // ---------------------------------------------------------------------------
 
   if (screen.type === "success") {
+    const pv = screen.pendingVerification;
     return (
       <div className={`${GLASS_CARD} glass-surface mx-auto w-full max-w-xl rounded-2xl p-6`}>
         <div className="flex flex-col gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
-            <CalendarDays className="text-emerald-600" size={24} />
+          <div
+            className={`flex h-12 w-12 items-center justify-center rounded-full ${
+              pv ? "bg-amber-100" : "bg-emerald-100"
+            }`}
+          >
+            {pv ? (
+              <Mail className="text-amber-600" size={24} />
+            ) : (
+              <CalendarDays className="text-emerald-600" size={24} />
+            )}
           </div>
           <div>
             <h2 className="text-[20px] font-semibold text-[color:var(--glass-ink)]">
-              {screen.confirmed
-                ? "Votre rendez-vous est confirmé"
-                : "Votre demande est enregistrée"}
+              {pv
+                ? "Vérifiez votre adresse email"
+                : screen.confirmed
+                  ? "Votre rendez-vous est confirmé"
+                  : "Votre demande est enregistrée"}
             </h2>
-            {!screen.confirmed && (
-              <p className="mt-1 text-[14px] text-[color:var(--glass-ink-soft)]">
-                Votre demande est en cours de validation. Vous recevrez un email de confirmation.
-              </p>
-            )}
+            <p className="mt-1 text-[14px] text-[color:var(--glass-ink-soft)]">
+              {pv
+                ? "Nous venons de vous envoyer un email. Cliquez sur le lien qu'il contient pour confirmer votre demande — sans quoi elle ne sera pas prise en compte."
+                : screen.confirmed
+                  ? "Vous recevrez un email avec tous les détails."
+                  : "Votre demande est en cours de validation. Vous recevrez un email de confirmation."}
+            </p>
           </div>
-          <Link
-            href={`/rendez-vous/gestion/${screen.token}`}
-            className="inline-flex w-fit items-center gap-2 rounded-full px-5 py-2 text-[14px] font-semibold transition-opacity hover:opacity-80"
-            style={GLASS_PRIMARY_STYLE}
-          >
-            Gérer ma demande
-            <ChevronRight size={14} />
-          </Link>
+          {!pv && (
+            <Link
+              href={`/rendez-vous/gestion/${screen.token}`}
+              className="inline-flex w-fit items-center gap-2 rounded-full px-5 py-2 text-[14px] font-semibold transition-opacity hover:opacity-80"
+              style={GLASS_PRIMARY_STYLE}
+            >
+              Gérer ma demande
+              <ChevronRight size={14} />
+            </Link>
+          )}
         </div>
       </div>
     );

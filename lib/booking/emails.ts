@@ -30,6 +30,10 @@ function presenceUrl(token: string): string {
   return `${APP_URL}/api/booking/manage/${token}/confirm-presence`;
 }
 
+function verifyUrl(token: string): string {
+  return `${APP_URL}/api/booking/manage/${token}/verify`;
+}
+
 export interface BookingEmailCtx {
   to: string;
   citizenName: string | null;
@@ -290,6 +294,31 @@ Réserver maintenant : ${href}`;
       "Une place s'est libérée",
       [intro, whenWhere(shell).replace("\n", "<br/>")],
       { label: "Réserver maintenant", href },
+    ),
+  });
+}
+
+/** Double opt-in : vérifier l'adresse email avant prise en compte (F). */
+export async function sendBookingVerify(ctx: BookingEmailCtx): Promise<void> {
+  const subject = `Confirmez votre demande de rendez-vous — ${ctx.tenantName}`;
+  const intro = `Pour finaliser votre demande de rendez-vous avec ${ctx.tenantName}, merci de confirmer votre adresse email. Sans confirmation, la demande ne sera pas prise en compte.`;
+  const text = `${hello(ctx.citizenName)}
+
+${intro}
+
+${whenWhere(ctx)}
+
+Confirmer mon email : ${verifyUrl(ctx.token)}`;
+  await send({
+    from: brandedFrom(ctx.fromName),
+    to: ctx.to,
+    subject,
+    text,
+    html: htmlShell(
+      ctx,
+      "Confirmez votre adresse email",
+      [intro, whenWhere(ctx).replace("\n", "<br/>")],
+      { label: "Confirmer mon email", href: verifyUrl(ctx.token) },
     ),
   });
 }

@@ -64,6 +64,7 @@ interface TenantDetail {
   brandColor: string | null;
   emailFromName: string | null;
   notifyEmail: string | null;
+  requireEmailVerification: boolean;
   formFields: BookingField[];
   active: boolean;
 }
@@ -183,6 +184,7 @@ function ParamsSection({
     brandColor: tenant.brandColor ?? "#7C3AED",
     emailFromName: tenant.emailFromName ?? "",
     notifyEmail: tenant.notifyEmail ?? "",
+    requireEmailVerification: tenant.requireEmailVerification,
     active: tenant.active,
   });
   const [saving, setSaving] = useState(false);
@@ -204,6 +206,7 @@ function ParamsSection({
         brandColor: form.brandColor || null,
         emailFromName: form.emailFromName || null,
         notifyEmail: form.notifyEmail || null,
+        requireEmailVerification: form.requireEmailVerification,
         active: form.active,
       }),
     });
@@ -347,6 +350,23 @@ function ParamsSection({
           <p className="text-xs text-muted-foreground">
             Notifié à chaque nouvelle demande de rendez-vous.
           </p>
+        </div>
+
+        {/* requireEmailVerification (double opt-in) */}
+        <div className="flex items-center justify-between">
+          <div>
+            <Label>Vérification de l&apos;email (double opt-in)</Label>
+            <p className="text-xs text-muted-foreground">
+              Le citoyen doit cliquer un lien reçu par email pour confirmer sa
+              demande. Réduit les fausses réservations.
+            </p>
+          </div>
+          <Switch
+            checked={form.requireEmailVerification}
+            onCheckedChange={(v) =>
+              setForm((s) => ({ ...s, requireEmailVerification: v }))
+            }
+          />
         </div>
 
         <Separator />

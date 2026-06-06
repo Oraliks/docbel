@@ -38,6 +38,8 @@ export async function GET(
       rejectionReason: booking.rejectionReason,
       cancelReason: booking.cancelReason,
       tenant: { name: booking.tenant.name, brandColor: booking.tenant.brandColor },
+      tenantSlug: booking.tenant.slug,
+      locationId: booking.locationId,
       location: {
         name: booking.location.name,
         address: locationAddress({
@@ -51,6 +53,7 @@ export async function GET(
         }),
       },
       canCancel: cancellable,
+      canReschedule: cancellable,
       canDownloadIcs: booking.status === BookingStatus.confirmed,
     },
     { headers: json },

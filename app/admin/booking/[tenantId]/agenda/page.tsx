@@ -8,5 +8,5 @@ export default async function AdminAgendaPage({
   params: Promise<{ tenantId: string }>;
 }) {
   const { tenantId } = await params;
-  return <AgendaClient tenantId={tenantId} role="owner" />;
+  return <AgendaClient tenantId={tenantId} role="owner" isAdmin />;
 }

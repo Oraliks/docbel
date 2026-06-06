@@ -1,10 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, Download, FileDown, RefreshCw } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FileDown,
+  FileSpreadsheet,
+  RefreshCw,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -94,9 +103,10 @@ function getWeekStart(ymd: string): string {
 interface AgendaClientProps {
   tenantId: string;
   role: EffectiveRole;
+  isAdmin?: boolean;
 }
 
-export function AgendaClient({ tenantId, role }: AgendaClientProps) {
+export function AgendaClient({ tenantId, role, isAdmin = false }: AgendaClientProps) {
   const today = brusselsNowParts().ymd;
   const [weekStart, setWeekStart] = useState(() => getWeekStart(today));
   const weekEnd = addDaysYmd(weekStart, 6);
@@ -107,6 +117,7 @@ export function AgendaClient({ tenantId, role }: AgendaClientProps) {
   const [formFields, setFormFields] = useState<BookingField[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   // Action dialog state
   const [actionDialog, setActionDialog] = useState<{
@@ -158,8 +169,27 @@ export function AgendaClient({ tenantId, role }: AgendaClientProps) {
     loadBookings();
   }, [loadBookings]);
 
+  // Recherche plein-texte (nom / email / code postal / NRN) sur la semaine chargée.
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? bookings.filter((b) =>
+        [b.citizenName, b.citizenEmail, b.citizenPostalCode, b.citizenNrnLast4]
+          .filter(Boolean)
+          .some((v) => (v as string).toLowerCase().includes(q)),
+      )
+    : bookings;
+
+  // Mini-stats de la semaine (sur l'ensemble chargé, indépendant de la recherche).
+  const stats = {
+    total: bookings.length,
+    confirmed: bookings.filter((b) => b.status === "confirmed").length,
+    pending: bookings.filter((b) => b.status === "pending_approval").length,
+    noShow: bookings.filter((b) => b.status === "no_show").length,
+    completed: bookings.filter((b) => b.status === "completed").length,
+  };
+
   // Group by date
-  const byDate = bookings.reduce<Record<string, Booking[]>>((acc, b) => {
+  const byDate = filtered.reduce<Record<string, Booking[]>>((acc, b) => {
     (acc[b.date] ??= []).push(b);
     return acc;
   }, {});
@@ -294,6 +324,16 @@ export function AgendaClient({ tenantId, role }: AgendaClientProps) {
           </Select>
         )}
 
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher (nom, email, CP, NRN)…"
+            className="w-64 pl-8"
+          />
+        </div>
+
         <div className="ml-auto flex gap-2">
           <Button variant="outline" size="sm" onClick={loadBookings}>
             <RefreshCw className="size-4" />
@@ -311,8 +351,34 @@ export function AgendaClient({ tenantId, role }: AgendaClientProps) {
             <Download className="size-4" />
             Exporter .ics
           </Button>
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const params = new URLSearchParams({ from: weekStart, to: weekEnd });
+                if (statusFilter !== "all") params.set("status", statusFilter);
+                if (locationFilter !== "all") params.set("locationId", locationFilter);
+                window.location.href = `/api/booking/partner/tenants/${tenantId}/export-csv?${params}`;
+              }}
+            >
+              <FileSpreadsheet className="size-4" />
+              Exporter CSV
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Mini-stats de la semaine */}
+      {!loading && stats.total > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <StatChip label="Total" value={stats.total} />
+          <StatChip label="Confirmés" value={stats.confirmed} className="bg-emerald-100 text-emerald-800" />
+          <StatChip label="En attente" value={stats.pending} className="bg-amber-100 text-amber-800" />
+          <StatChip label="Absents" value={stats.noShow} className="bg-orange-100 text-orange-800" />
+          <StatChip label="Honorés" value={stats.completed} className="bg-violet-100 text-violet-800" />
+        </div>
+      )}
 
       {/* Calendar days */}
       {loading ? (
@@ -323,8 +389,14 @@ export function AgendaClient({ tenantId, role }: AgendaClientProps) {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
+          {q && filtered.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Aucun rendez-vous ne correspond à « {search.trim()} » cette semaine.
+            </p>
+          )}
           {days.map((day) => {
             const dayBookings = byDate[day] ?? [];
+            if (q && dayBookings.length === 0) return null;
             return (
               <div key={day}>
                 <div className="mb-2 flex items-center gap-2">
@@ -697,5 +769,26 @@ function Row({ label, value }: { label: string; value: string }) {
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="font-medium break-words">{value}</dd>
     </>
+  );
+}
+
+// ─── StatChip ───────────────────────────────────────────────────────────────
+
+function StatChip({
+  label,
+  value,
+  className = "bg-muted text-foreground",
+}: {
+  label: string;
+  value: number;
+  className?: string;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium ${className}`}
+    >
+      {label}
+      <span className="font-semibold tabular-nums">{value}</span>
+    </span>
   );
 }

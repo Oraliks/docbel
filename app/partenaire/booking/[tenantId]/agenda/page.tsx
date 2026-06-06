@@ -22,5 +22,11 @@ export default async function AgendaPage({ params }: PageProps) {
   );
   if (!tenant || !role) notFound();
 
-  return <AgendaClient tenantId={tenantId} role={role} />;
+  return (
+    <AgendaClient
+      tenantId={tenantId}
+      role={role}
+      isAdmin={auth.user.role === "admin"}
+    />
+  );
 }

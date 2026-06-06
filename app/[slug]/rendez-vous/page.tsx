@@ -53,15 +53,7 @@ export default async function TenantBookingPage({
       : null;
 
   return (
-    <section className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-          Prise de rendez-vous
-        </p>
-        <h1 className="glass-display text-[32px] font-semibold leading-[1.05] sm:text-[40px]">
-          {tenant.name}
-        </h1>
-      </div>
+    <section className="mx-auto w-full max-w-6xl">
       <BookingFlow
         slug={tenant.slug}
         tenantName={tenant.name}

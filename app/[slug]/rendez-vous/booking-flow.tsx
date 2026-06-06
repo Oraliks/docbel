@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  HelpCircle,
+  MapPin,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { BookingField, DayAvailability } from "@/lib/booking/types";
 import {
@@ -10,6 +19,7 @@ import {
   brusselsNowParts,
   frenchDate,
   frenchDateShort,
+  weekdayLabel,
 } from "@/lib/booking/dates";
 import { validateFormFields } from "@/lib/booking/form-fields";
 import {
@@ -79,8 +89,14 @@ type Screen =
 // Helpers
 // ---------------------------------------------------------------------------
 
-function slotLabel(startTime: string, remaining: number): string {
-  return `${startTime}${remaining > 1 ? ` (${remaining} places)` : ""}`;
+const MONTHS_ABBR = [
+  "janv.", "févr.", "mars", "avr.", "mai", "juin",
+  "juil.", "août", "sept.", "oct.", "nov.", "déc.",
+];
+
+function dayHeaderLabel(ymd: string): string {
+  const [, m, d] = ymd.split("-");
+  return `${Number(d)} ${MONTHS_ABBR[Number(m) - 1]}`;
 }
 
 function buildInitialFormData(
@@ -120,6 +136,7 @@ function buildInitialFormData(
 
 export function BookingFlow({
   slug,
+  tenantName,
   fields,
   dedupeField,
   initialCp,
@@ -480,7 +497,7 @@ export function BookingFlow({
 
   if (screen.type === "success") {
     return (
-      <div className={`${GLASS_CARD} glass-surface rounded-2xl p-6`}>
+      <div className={`${GLASS_CARD} glass-surface mx-auto w-full max-w-xl rounded-2xl p-6`}>
         <div className="flex flex-col gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
             <CalendarDays className="text-emerald-600" size={24} />
@@ -512,7 +529,7 @@ export function BookingFlow({
 
   if (screen.type === "blocked") {
     return (
-      <div className={`${GLASS_CARD} glass-surface rounded-2xl p-6`}>
+      <div className={`${GLASS_CARD} glass-surface mx-auto w-full max-w-xl rounded-2xl p-6`}>
         <div className="flex flex-col gap-3">
           <h2 className="text-[18px] font-semibold text-[color:var(--glass-ink)]">
             Rendez-vous existant
@@ -542,119 +559,245 @@ export function BookingFlow({
   if (screen.type === "calendar") {
     const daysWithSlots =
       availability?.days.filter((d) => d.slots.length > 0) ?? [];
-    const allDaysInWindow = availability?.days ?? [];
     const isPrevDisabled = from <= todayYmd;
+    const loc = availability?.location ?? null;
+
+    // Matrice heures × jours (lignes = heures, colonnes = jours).
+    const allTimes = [
+      ...new Set(daysWithSlots.flatMap((d) => d.slots.map((s) => s.startTime))),
+    ].sort();
+    const slotAt = (day: DayAvailability, time: string) =>
+      day.slots.find((s) => s.startTime === time);
+
+    const steps = [
+      {
+        Icon: CalendarDays,
+        title: "Sélectionnez un créneau",
+        desc: "Choisissez le jour et l'heure qui vous conviennent.",
+      },
+      {
+        Icon: UserRound,
+        title: "Vos coordonnées",
+        desc: "Indiquez vos informations pour confirmer le rendez-vous.",
+      },
+      {
+        Icon: CheckCircle2,
+        title: "Confirmation par email",
+        desc: "Vous recevez un email avec tous les détails.",
+      },
+    ];
+
+    const weekRange = `${frenchDateShort(from)} → ${frenchDateShort(addDaysYmd(from, 6))}`;
 
     return (
-      <div className="flex flex-col gap-4">
-        {/* Location selector */}
-        {availability && availability.allLocations.length > 1 && (
-          <div className={`${GLASS_CARD} glass-surface flex flex-col gap-2 rounded-2xl p-4`}>
-            <label htmlFor="location-select" className={GLASS_LABEL}>
-              Antenne
-            </label>
-            <select
-              id="location-select"
-              value={locationId || availability.location?.id || ""}
-              onChange={(e) => handleLocationChange(e.target.value)}
-              className={`${GLASS_INPUT} h-10 rounded-2xl border px-3 text-[14px] outline-none focus:ring-2 focus:ring-[color:var(--glass-accent-deep)]`}
-            >
-              {availability.allLocations.map((loc) => (
-                <option key={loc.id} value={loc.id}>
-                  {loc.name}
-                </option>
-              ))}
-            </select>
-            {availability.location?.address && (
-              <div className="flex items-start gap-1.5 text-[12px] text-[color:var(--glass-ink-faint)]">
-                <MapPin size={12} className="mt-0.5 flex-shrink-0" />
-                {availability.location.address}
-              </div>
-            )}
+      <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
+        {/* ── Carte d'info ── */}
+        <aside className={`${GLASS_CARD} glass-surface flex flex-col gap-5 rounded-2xl p-5`}>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
+              Prise de rendez-vous
+            </p>
+            <h1 className="glass-display mt-1 text-[30px] font-semibold leading-none">
+              {tenantName}
+            </h1>
           </div>
-        )}
 
-        {/* Single location info */}
-        {availability &&
-          availability.allLocations.length <= 1 &&
-          availability.location && (
+          {loc && (
             <div className="flex items-start gap-2 text-[13px] text-[color:var(--glass-ink-soft)]">
-              <MapPin size={14} className="mt-0.5 flex-shrink-0" />
+              <MapPin
+                size={15}
+                className="mt-0.5 flex-shrink-0 text-[color:var(--glass-accent-deep)]"
+              />
               <span>
-                <strong>{availability.location.name}</strong>
-                {" — "}
-                {availability.location.address}
+                <strong className="text-[color:var(--glass-ink)]">{loc.name}</strong>
+                {loc.address && (
+                  <>
+                    <br />
+                    {loc.address}
+                  </>
+                )}
               </span>
             </div>
           )}
 
-        {/* Week navigation */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={handleWeekPrev}
-            disabled={isPrevDisabled || loadingAvail}
-            className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)] transition-colors hover:text-[color:var(--glass-ink)] disabled:pointer-events-none disabled:opacity-40"
-          >
-            <ChevronLeft size={14} />
-            Sem. précédente
-          </button>
-          <span className="text-[13px] font-medium text-[color:var(--glass-ink)]">
-            {frenchDateShort(from)} →{" "}
-            {frenchDateShort(addDaysYmd(from, 6))}
-          </span>
-          <button
-            onClick={handleWeekNext}
-            disabled={loadingAvail}
-            className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)] transition-colors hover:text-[color:var(--glass-ink)] disabled:pointer-events-none disabled:opacity-40"
-          >
-            Sem. suivante
-            <ChevronRight size={14} />
-          </button>
-        </div>
+          {availability && availability.allLocations.length > 1 && (
+            <select
+              aria-label="Antenne"
+              value={locationId || loc?.id || ""}
+              onChange={(e) => handleLocationChange(e.target.value)}
+              className={`${GLASS_INPUT} h-9 rounded-xl border px-2 text-[13px] outline-none focus:ring-2 focus:ring-[color:var(--glass-accent-deep)]`}
+            >
+              {availability.allLocations.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+          )}
 
-        {/* Slots grid */}
-        {loadingAvail && (
-          <div className="py-8 text-center text-[14px] text-[color:var(--glass-ink-faint)]">
-            Chargement des disponibilités…
-          </div>
-        )}
+          <div className="h-px bg-[color:var(--glass-border)]" />
 
-        {!loadingAvail && allDaysInWindow.length > 0 && daysWithSlots.length === 0 && (
-          <div className={`${GLASS_CARD} glass-surface rounded-2xl p-6 text-center`}>
-            <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-              Aucun créneau disponible cette semaine.
-            </p>
-            <p className="mt-1 text-[12px] text-[color:var(--glass-ink-faint)]">
-              Essayez la semaine suivante.
-            </p>
-          </div>
-        )}
-
-        {!loadingAvail && daysWithSlots.length > 0 && (
           <div className="flex flex-col gap-3">
-            {daysWithSlots.map((day) => (
-              <div
-                key={day.date}
-                className={`${GLASS_CARD} glass-surface rounded-2xl p-4`}
-              >
-                <p className="mb-3 text-[13px] font-semibold text-[color:var(--glass-ink)]">
-                  {frenchDate(day.date)}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {day.slots.map((slot) => (
-                    <button
-                      key={`${slot.startTime}-${slot.serviceCode ?? ""}`}
-                      onClick={() => handleSlotSelect(day, slot)}
-                      className="rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-1.5 text-[13px] font-medium text-[color:var(--glass-ink)] transition-all hover:border-[color:var(--glass-accent-deep)] hover:text-[color:var(--glass-accent-deep)]"
-                    >
-                      {slotLabel(slot.startTime, slot.remaining)}
-                    </button>
-                  ))}
+            <p className="text-[13px] font-semibold text-[color:var(--glass-ink)]">
+              Comment ça fonctionne&nbsp;?
+            </p>
+            {steps.map((s) => (
+              <div key={s.title} className="flex items-start gap-3">
+                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-[color:var(--glass-border)] text-[color:var(--glass-accent-deep)]">
+                  <s.Icon size={15} />
+                </span>
+                <div>
+                  <p className="text-[13px] font-medium text-[color:var(--glass-ink)]">
+                    {s.title}
+                  </p>
+                  <p className="text-[12px] leading-snug text-[color:var(--glass-ink-faint)]">
+                    {s.desc}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
-        )}
+
+          <div className="h-px bg-[color:var(--glass-border)]" />
+
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
+              Semaine sélectionnée
+            </p>
+            <p className="mt-1.5 flex items-center gap-2 text-[14px] font-medium text-[color:var(--glass-ink)]">
+              <CalendarDays size={15} className="text-[color:var(--glass-accent-deep)]" />
+              {weekRange}
+            </p>
+          </div>
+
+          <Link
+            href="/aidez-moi"
+            className="mt-auto flex items-center gap-2 rounded-xl border border-[color:var(--glass-border)] p-3 text-[13px] text-[color:var(--glass-ink-soft)] transition-colors hover:text-[color:var(--glass-ink)]"
+          >
+            <HelpCircle size={16} className="flex-shrink-0 text-[color:var(--glass-accent-deep)]" />
+            <span>
+              Besoin d&apos;aide&nbsp;?{" "}
+              <span className="text-[color:var(--glass-accent-deep)]">
+                Consulter notre guide
+              </span>
+            </span>
+          </Link>
+        </aside>
+
+        {/* ── Calendrier ── */}
+        <div className={`${GLASS_CARD} glass-surface flex flex-col gap-4 rounded-2xl p-5`}>
+          {/* Navigation semaine */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={handleWeekPrev}
+              disabled={isPrevDisabled || loadingAvail}
+              className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)] transition-colors hover:text-[color:var(--glass-ink)] disabled:pointer-events-none disabled:opacity-40"
+            >
+              <ChevronLeft size={15} />
+              <span className="hidden sm:inline">Semaine précédente</span>
+            </button>
+            <span className="text-[15px] font-semibold text-[color:var(--glass-ink)]">
+              {weekRange}
+            </span>
+            <button
+              onClick={handleWeekNext}
+              disabled={loadingAvail}
+              className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)] transition-colors hover:text-[color:var(--glass-ink)] disabled:pointer-events-none disabled:opacity-40"
+            >
+              <span className="hidden sm:inline">Semaine suivante</span>
+              <ChevronRight size={15} />
+            </button>
+          </div>
+
+          {loadingAvail && (
+            <div className="py-12 text-center text-[14px] text-[color:var(--glass-ink-faint)]">
+              Chargement des disponibilités…
+            </div>
+          )}
+
+          {!loadingAvail && daysWithSlots.length === 0 && (
+            <div className="py-12 text-center">
+              <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
+                Aucun créneau disponible cette semaine.
+              </p>
+              <p className="mt-1 text-[12px] text-[color:var(--glass-ink-faint)]">
+                Essayez la semaine suivante.
+              </p>
+            </div>
+          )}
+
+          {!loadingAvail && daysWithSlots.length > 0 && (
+            <>
+              <div className="flex items-center justify-between border-b border-[color:var(--glass-border)] pb-2">
+                <span className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)]">
+                  <Clock size={14} />
+                  Créneaux disponibles
+                </span>
+                <span className="text-[12px] text-[color:var(--glass-ink-faint)]">
+                  GMT+2
+                </span>
+              </div>
+
+              <div className="overflow-x-auto pb-1">
+                <div
+                  className="grid min-w-max gap-2"
+                  style={{
+                    gridTemplateColumns: `repeat(${daysWithSlots.length}, minmax(130px, 1fr))`,
+                  }}
+                >
+                  {/* En-têtes jours */}
+                  {daysWithSlots.map((day) => {
+                    const isToday = day.date === todayYmd;
+                    return (
+                      <div
+                        key={`h-${day.date}`}
+                        className={`flex flex-col items-center rounded-xl border px-2 py-2 text-center ${
+                          isToday
+                            ? "border-[color:var(--glass-accent-deep)]"
+                            : "border-transparent"
+                        }`}
+                      >
+                        <span className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--glass-ink-faint)]">
+                          {weekdayLabel(day.weekday, true)}.
+                        </span>
+                        <span className="mt-0.5 flex items-center gap-1 text-[13px] font-semibold text-[color:var(--glass-ink)]">
+                          {dayHeaderLabel(day.date)}
+                          {isToday && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--glass-accent-deep)]" />
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
+
+                  {/* Cellules heures × jours */}
+                  {allTimes.map((time) =>
+                    daysWithSlots.map((day) => {
+                      const slot = slotAt(day, time);
+                      if (!slot) {
+                        return <div key={`${day.date}-${time}`} aria-hidden />;
+                      }
+                      return (
+                        <button
+                          key={`${day.date}-${time}`}
+                          onClick={() => handleSlotSelect(day, slot)}
+                          className="flex items-center justify-between gap-2 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2 text-left transition-all hover:border-[color:var(--glass-accent-deep)] hover:shadow-sm"
+                        >
+                          <span className="text-[13px] font-semibold text-[color:var(--glass-ink)]">
+                            {slot.startTime}
+                          </span>
+                          <span className="text-[11px] text-[color:var(--glass-ink-faint)]">
+                            {slot.remaining} {slot.remaining > 1 ? "places" : "place"}
+                          </span>
+                        </button>
+                      );
+                    }),
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     );
   }
@@ -664,7 +807,7 @@ export function BookingFlow({
     // If dedupe live-check came back blocked, show block screen
     if (dedupeBlocked) {
       return (
-        <div className={`${GLASS_CARD} glass-surface rounded-2xl p-6`}>
+        <div className={`${GLASS_CARD} glass-surface mx-auto w-full max-w-xl rounded-2xl p-6`}>
           <div className="flex flex-col gap-3">
             <h2 className="text-[18px] font-semibold text-[color:var(--glass-ink)]">
               Rendez-vous existant
@@ -692,7 +835,7 @@ export function BookingFlow({
     }
 
     return (
-      <div className="flex flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
         {/* Selected slot summary */}
         <div className={`${GLASS_CARD} glass-surface rounded-2xl p-4`}>
           <div className="flex items-center gap-2">

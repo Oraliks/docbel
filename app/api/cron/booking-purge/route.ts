@@ -38,6 +38,7 @@ async function run(req: NextRequest) {
       citizenPhone: null,
       citizenNrnHash: null,
       citizenNrnLast4: null,
+      citizenNrnEnc: null,
       citizenPostalCode: null,
       citizenCommuneId: null,
       formData: {},

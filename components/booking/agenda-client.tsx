@@ -472,7 +472,11 @@ export function AgendaClient({ tenantId, role }: AgendaClientProps) {
             <SheetTitle>Détail du rendez-vous</SheetTitle>
           </SheetHeader>
           {detailSheet.booking && (
-            <BookingDetail booking={detailSheet.booking} fields={formFields} />
+            <BookingDetail
+              booking={detailSheet.booking}
+              fields={formFields}
+              tenantId={tenantId}
+            />
           )}
         </SheetContent>
       </Sheet>
@@ -602,9 +606,11 @@ function formValue(v: unknown): string {
 function BookingDetail({
   booking: b,
   fields,
+  tenantId,
 }: {
   booking: Booking;
   fields: BookingField[];
+  tenantId: string;
 }) {
   const data = (b.formData ?? {}) as Record<string, unknown>;
   const extras = fields
@@ -614,6 +620,22 @@ function BookingDetail({
 
   const statusLabel =
     STATUS_LABELS[b.status as keyof typeof STATUS_LABELS] ?? b.status;
+
+  // NRN déchiffré à la demande (chiffré au repos) pour vérification du dossier.
+  const [fullNrn, setFullNrn] = useState<string | null>(null);
+  useEffect(() => {
+    if (!b.citizenNrnLast4) return;
+    let active = true;
+    fetch(`/api/booking/partner/tenants/${tenantId}/bookings/${b.id}/nrn`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (active && d?.formatted) setFullNrn(d.formatted as string);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [b.id, b.citizenNrnLast4, tenantId]);
 
   return (
     <div className="flex flex-col gap-5 px-4 pb-6 text-sm">
@@ -631,7 +653,9 @@ function BookingDetail({
         {b.citizenPostalCode && (
           <Row label="Code postal" value={b.citizenPostalCode} />
         )}
-        {b.citizenNrnLast4 && <Row label="NRN" value={`••• ${b.citizenNrnLast4}`} />}
+        {b.citizenNrnLast4 && (
+          <Row label="NRN" value={fullNrn ?? `••• ${b.citizenNrnLast4}`} />
+        )}
       </Section>
 
       {extras.length > 0 && (

@@ -2177,8 +2177,11 @@ model Booking {
   citizenPhone         String?
   /// HMAC-SHA256 du NRN (déterministe, indexable, anti-doublon par NRN).
   citizenNrnHash       String?
-  /// 4 derniers chiffres du NRN pour l'affichage côté équipe.
+  /// 4 derniers chiffres du NRN pour l'affichage compact côté équipe.
   citizenNrnLast4      String?
+  /// NRN chiffré (AES-256-GCM) — déchiffré à la demande pour l'affichage aux
+  /// agents autorisés (vérification du dossier). Jamais stocké en clair.
+  citizenNrnEnc        String?
   citizenPostalCode    String?
   /// Référence libre vers Commune.id (sans FK).
   citizenCommuneId     String?

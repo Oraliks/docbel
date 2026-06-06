@@ -14,6 +14,7 @@ import {
   validateFormData,
 } from "@/lib/booking/form-fields";
 import { findRecentBooking, hashNrn, nrnLast4 } from "@/lib/booking/dedupe";
+import { encryptNrn } from "@/lib/booking/crypto-nrn";
 import { findSlot } from "@/lib/booking/availability-data";
 import { icsForBooking } from "@/lib/booking/ics-adapter";
 import { locationAddress } from "@/lib/booking/route-bureau";
@@ -142,6 +143,7 @@ export async function POST(
           citizenPhone: identity.phone,
           citizenNrnHash: identity.nrn ? hashNrn(identity.nrn) : null,
           citizenNrnLast4: identity.nrn ? nrnLast4(identity.nrn) : null,
+          citizenNrnEnc: identity.nrn ? encryptNrn(identity.nrn) : null,
           citizenPostalCode: identity.postalCode,
           citizenCommuneId: communeId,
           userId,

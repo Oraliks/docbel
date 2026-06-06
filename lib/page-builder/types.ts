@@ -86,6 +86,10 @@ export interface BlockLayout {
   minHeight?: string
   /** When this block is a child of a grid container: how many columns it spans. */
   gridColumnSpan?: number
+  // Position
+  sticky?: boolean
+  stickyOffset?: number
+  zIndex?: number
   // Spacing (px). undefined = inherit / default
   paddingTop?: number
   paddingRight?: number

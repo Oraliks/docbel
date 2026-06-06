@@ -77,6 +77,12 @@ export function blockToCSS(
   if (layout.height) css.height = layout.height
   if (layout.minHeight) css.minHeight = layout.minHeight
   if (layout.gridColumnSpan) css.gridColumn = `span ${layout.gridColumnSpan}`
+  if (layout.sticky) {
+    css.position = 'sticky'
+    css.top = `${layout.stickyOffset ?? 0}px`
+    if (layout.zIndex === undefined) css.zIndex = 10
+  }
+  if (layout.zIndex !== undefined) css.zIndex = layout.zIndex
 
   // Padding
   const ptop = layout.paddingTop

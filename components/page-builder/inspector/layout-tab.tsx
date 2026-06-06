@@ -143,6 +143,39 @@ export function LayoutTab({ block, device, onChange }: LayoutTabProps) {
         </Field>
       </Group>
 
+      <Group title="Position">
+        <div className="flex items-center justify-between gap-4 py-1">
+          <Field label="Coller au défilement (sticky)" className="flex-1">
+            <span className="sr-only">sticky</span>
+          </Field>
+          <Switch
+            checked={layout.sticky ?? false}
+            onCheckedChange={(v) => onChange({ sticky: v })}
+          />
+        </div>
+        {layout.sticky && (
+          <Field label="Décalage haut (sticky)">
+            <NumberControl
+              value={layout.stickyOffset}
+              onChange={(v) => onChange({ stickyOffset: v })}
+              min={0}
+              max={300}
+              suffix="px"
+              placeholder="0"
+            />
+          </Field>
+        )}
+        <Field label="Profondeur (z-index)" hint="Plus élevé = passe au-dessus des autres blocs">
+          <NumberControl
+            value={layout.zIndex}
+            onChange={(v) => onChange({ zIndex: v })}
+            min={0}
+            max={1000}
+            placeholder="auto"
+          />
+        </Field>
+      </Group>
+
       <Group title="Visibilité par appareil">
         <p className="text-[11px] text-muted-foreground mb-2">
           Masquer ce bloc sur certains appareils.

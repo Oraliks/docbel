@@ -74,9 +74,17 @@ interface Booking {
   locationName: string | null;
   autoApproved: boolean;
   presenceConfirmedAt: string | null;
+  internalNote: string | null;
+  assignedToUserId: string | null;
+  assignedToName: string | null;
   rejectionReason: string | null;
   cancelReason: string | null;
   createdAt: string;
+}
+
+interface Member {
+  userId: string;
+  name: string;
 }
 
 type BookingStatus =
@@ -115,6 +123,7 @@ export function AgendaClient({ tenantId, role, isAdmin = false }: AgendaClientPr
   const [statusFilter, setStatusFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
   const [locations, setLocations] = useState<Location[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [formFields, setFormFields] = useState<BookingField[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,13 +144,26 @@ export function AgendaClient({ tenantId, role, isAdmin = false }: AgendaClientPr
     booking: Booking | null;
   }>({ open: false, booking: null });
 
-  // Load locations once
+  // Load locations + team members once
   useEffect(() => {
     fetch(`/api/booking/partner/tenants/${tenantId}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.locations) setLocations(d.locations);
         if (d.tenant?.formFields) setFormFields(d.tenant.formFields);
+      })
+      .catch(() => {});
+    fetch(`/api/booking/partner/tenants/${tenantId}/members`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d.members)) {
+          setMembers(
+            d.members.map((m: { userId: string; name: string }) => ({
+              userId: m.userId,
+              name: m.name,
+            })),
+          );
+        }
       })
       .catch(() => {});
   }, [tenantId]);
@@ -549,6 +571,8 @@ export function AgendaClient({ tenantId, role, isAdmin = false }: AgendaClientPr
               booking={detailSheet.booking}
               fields={formFields}
               tenantId={tenantId}
+              members={members}
+              onUpdated={loadBookings}
             />
           )}
         </SheetContent>
@@ -624,6 +648,11 @@ function BookingRow({
               auto
             </span>
           )}
+          {b.assignedToName && (
+            <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-violet-100 text-violet-800">
+              {b.assignedToName}
+            </span>
+          )}
         </div>
       </div>
 
@@ -680,10 +709,14 @@ function BookingDetail({
   booking: b,
   fields,
   tenantId,
+  members,
+  onUpdated,
 }: {
   booking: Booking;
   fields: BookingField[];
   tenantId: string;
+  members: Member[];
+  onUpdated?: () => void;
 }) {
   const data = (b.formData ?? {}) as Record<string, unknown>;
   const extras = fields
@@ -709,6 +742,55 @@ function BookingDetail({
       active = false;
     };
   }, [b.id, b.citizenNrnLast4, tenantId]);
+
+  // Suivi interne (note + attribution) — équipe uniquement.
+  const [noteVal, setNoteVal] = useState(b.internalNote ?? "");
+  const [savingNote, setSavingNote] = useState(false);
+  const [assignVal, setAssignVal] = useState<string>(b.assignedToUserId ?? "none");
+  const [savingAssign, setSavingAssign] = useState(false);
+
+  async function patchAction(payload: Record<string, unknown>): Promise<boolean> {
+    const res = await fetch(
+      `/api/booking/partner/tenants/${tenantId}/bookings/${b.id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
+    return res.ok;
+  }
+
+  async function saveNote() {
+    setSavingNote(true);
+    try {
+      if (await patchAction({ action: "note", note: noteVal })) {
+        toast.success("Note enregistrée");
+        onUpdated?.();
+      } else {
+        toast.error("Échec de l'enregistrement de la note");
+      }
+    } finally {
+      setSavingNote(false);
+    }
+  }
+
+  async function assignTo(userId: string) {
+    const name =
+      userId === "none" ? null : members.find((m) => m.userId === userId)?.name ?? null;
+    setAssignVal(userId);
+    setSavingAssign(true);
+    try {
+      if (await patchAction({ action: "assign", userId: userId === "none" ? null : userId, name })) {
+        toast.success(userId === "none" ? "Attribution retirée" : `Assigné à ${name}`);
+        onUpdated?.();
+      } else {
+        toast.error("Échec de l'attribution");
+      }
+    } finally {
+      setSavingAssign(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-5 px-4 pb-6 text-sm">
@@ -748,6 +830,54 @@ function BookingDetail({
           {b.cancelReason && <Row label="Annulation" value={b.cancelReason} />}
         </Section>
       )}
+
+      {/* Suivi interne : attribution + note (non visibles du citoyen) */}
+      <div className="flex flex-col gap-3 border-t pt-4">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Suivi interne
+        </p>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs text-muted-foreground">Assigné à</Label>
+          <Select
+            value={assignVal}
+            onValueChange={(v) => assignTo(v ?? "none")}
+            disabled={savingAssign}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Non assigné" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Non assigné</SelectItem>
+              {members.map((m) => (
+                <SelectItem key={m.userId} value={m.userId}>
+                  {m.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="internal-note" className="text-xs text-muted-foreground">
+            Note interne (non visible du citoyen)
+          </Label>
+          <Textarea
+            id="internal-note"
+            rows={3}
+            value={noteVal}
+            onChange={(e) => setNoteVal(e.target.value)}
+            placeholder="Ex : dossier incomplet, demander le C4…"
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            className="self-start"
+            onClick={saveNote}
+            disabled={savingNote}
+          >
+            {savingNote ? "Enregistrement…" : "Enregistrer la note"}
+          </Button>
+        </div>
+      </div>
 
       <p className="text-xs text-muted-foreground">
         Créé le {new Date(b.createdAt).toLocaleString("fr-BE")}

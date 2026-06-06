@@ -150,6 +150,20 @@ export async function PATCH(
       });
       break;
     }
+    case "note": {
+      await prisma.booking.update({
+        where: { id: bookingId },
+        data: { internalNote: action.note.trim() || null },
+      });
+      break;
+    }
+    case "assign": {
+      await prisma.booking.update({
+        where: { id: bookingId },
+        data: { assignedToUserId: action.userId, assignedToName: action.name },
+      });
+      break;
+    }
   }
 
   await logActivity(

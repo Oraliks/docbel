@@ -119,6 +119,13 @@ export const bookingActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("cancel"), reason: z.string().min(1).max(300) }),
   z.object({ action: z.literal("no_show") }),
   z.object({ action: z.literal("complete") }),
+  // D : note interne (équipe) + attribution à un agent.
+  z.object({ action: z.literal("note"), note: z.string().max(2000) }),
+  z.object({
+    action: z.literal("assign"),
+    userId: z.string().max(40).nullable(),
+    name: z.string().max(160).nullable(),
+  }),
 ]);
 
 // --- Public ------------------------------------------------------------------

@@ -27,9 +27,9 @@ export function OpHelpModal({ open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        // Force la largeur au-delà du sm:max-w-sm par défaut. Le ! prefix
-        // override la classe baseline du composant.
-        className="!sm:max-w-3xl !max-w-[min(calc(100%-2rem),720px)] max-h-[85vh] overflow-y-auto"
+        // Élargit au-delà du défaut sm:max-w-lg. Le préfixe doit être sm: (avec
+        // ! pour la priorité), sinon le défaut responsive recoiffe à ≥640px.
+        className="sm:!max-w-[min(calc(100%-2rem),720px)] max-h-[85vh] overflow-y-auto"
       >
         <DialogHeader>
           <DialogTitle>Quel organisme de paiement choisir&nbsp;?</DialogTitle>

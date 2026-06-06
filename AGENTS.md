@@ -119,6 +119,28 @@ Les barèmes officiels sont stockés dans
   étroite. (Exception voulue : les pages publiques `login` / `inscription`,
   volontairement centrées et étroites.)
 
+## Mise en page : modales, sheets & largeurs (⚠️ erreurs récurrentes)
+
+Les overlays de `components/ui/` n'ont pas le même padding interne — le **contenu**
+doit s'adapter, sinon il est collé aux bords (effet « formaté sans CSS ») :
+
+- **`DialogContent`** porte déjà `p-4` → ne PAS re-padder le corps ; structurer
+  avec `DialogHeader` / `DialogFooter`.
+- **`SheetContent` n'a AUCUN padding** (`p-0`) ; seuls `SheetHeader` / `SheetFooter`
+  ont `p-4`. Le **corps** d'un Sheet DOIT porter son propre padding (`px-4 pb-6`).
+  Modèle correct : `BookingDetail` dans `components/booking/agenda-client.tsx`.
+- **Élargir** un `*Content` exige le préfixe `sm:` (`sm:max-w-2xl`), sinon le défaut
+  responsive (dialog `sm:max-w-lg`, sheet `sm:max-w-md`) le recoiffe à ≥640px.
+- **Aligner** des paires label/valeur : grille 2 colonnes
+  (`grid grid-cols-[7rem_1fr]` + `dt`/`dd`), pas une suite de `flex` à largeurs
+  variables (sinon les valeurs ne s'alignent pas).
+- Pages : le back-office occupe **toute la largeur** (cf. « Ne pas faire » :
+  `flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6`, jamais de `max-w-*` étroit sur le
+  conteneur de page) ; remplir via grilles multi-colonnes, pas une colonne centrée.
+
+**Avant de livrer une modale / sheet / page** : vérifier au navigateur (desktop
+large) que rien n'est collé aux bords ni coincé dans une colonne centrée étroite.
+
 ## Points connus à améliorer
 
 - Centraliser la couleur d'accent : l'accent réel est `#7C3AED`

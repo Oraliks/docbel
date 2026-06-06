@@ -47,7 +47,7 @@ export default async function DossierTheoriePage({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-4 lg:p-6">
+    <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <header className="flex flex-col gap-1">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <BookOpenIcon className="size-3.5" />

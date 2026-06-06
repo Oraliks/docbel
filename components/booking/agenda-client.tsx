@@ -616,7 +616,7 @@ function BookingDetail({
     STATUS_LABELS[b.status as keyof typeof STATUS_LABELS] ?? b.status;
 
   return (
-    <div className="flex flex-col gap-5 text-sm">
+    <div className="flex flex-col gap-5 px-4 pb-6 text-sm">
       <dl className="grid grid-cols-[7rem_1fr] gap-x-4 gap-y-2.5">
         <Row label="Date" value={frenchDate(b.date)} />
         <Row label="Horaire" value={`${b.startTime} – ${b.endTime}`} />

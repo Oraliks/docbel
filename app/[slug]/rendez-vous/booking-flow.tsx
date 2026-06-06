@@ -73,6 +73,8 @@ interface Props {
   dedupeField: string; // "email" | "name" | "nrn"
   initialCp: string | null;
   prefill: { name: string; email: string } | null;
+  initialFrom: string;
+  initialAvailability: AvailabilityResponse | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -141,14 +143,20 @@ export function BookingFlow({
   dedupeField,
   initialCp,
   prefill,
+  initialFrom,
+  initialAvailability,
 }: Props) {
   const todayYmd = brusselsNowParts().ymd;
   const [screen, setScreen] = useState<Screen>({ type: "calendar" });
 
   // --- Calendar state ---
-  const [from, setFrom] = useState(todayYmd);
-  const [locationId, setLocationId] = useState<string>("");
-  const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
+  const [from, setFrom] = useState(initialFrom);
+  const [locationId, setLocationId] = useState<string>(
+    initialAvailability?.location?.id ?? "",
+  );
+  const [availability, setAvailability] = useState<AvailabilityResponse | null>(
+    initialAvailability,
+  );
   const [loadingAvail, setLoadingAvail] = useState(false);
 
   // --- Form state ---
@@ -188,8 +196,8 @@ export function BookingFlow({
     [slug, initialCp],
   );
 
-  // Initial fetch
-  const initialFetchDone = useRef(false);
+  // 1re semaine chargée en SSR → pas de fetch client au montage.
+  const initialFetchDone = useRef(!!initialAvailability);
   useEffect(() => {
     if (!initialFetchDone.current) {
       initialFetchDone.current = true;
@@ -710,8 +718,33 @@ export function BookingFlow({
           </div>
 
           {loadingAvail && (
-            <div className="py-12 text-center text-[14px] text-[color:var(--glass-ink-faint)]">
-              Chargement des disponibilités…
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between border-b border-[color:var(--glass-border)] pb-2">
+                <span className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)]">
+                  <Clock size={14} />
+                  Créneaux disponibles
+                </span>
+                <span className="text-[12px] text-[color:var(--glass-ink-faint)]">
+                  GMT+2
+                </span>
+              </div>
+              <div
+                className="grid animate-pulse gap-2"
+                style={{ gridTemplateColumns: "repeat(5, minmax(130px, 1fr))" }}
+              >
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={`sk-h-${i}`}
+                    className="h-10 rounded-xl bg-[color:var(--glass-border)] opacity-50"
+                  />
+                ))}
+                {Array.from({ length: 25 }).map((_, i) => (
+                  <div
+                    key={`sk-c-${i}`}
+                    className="h-11 rounded-xl bg-[color:var(--glass-border)] opacity-30"
+                  />
+                ))}
+              </div>
             </div>
           )}
 

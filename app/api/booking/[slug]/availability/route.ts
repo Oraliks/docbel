@@ -2,17 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
-import { loadDayRange } from "@/lib/booking/availability-data";
-import { resolveLocation, locationAddress } from "@/lib/booking/route-bureau";
 import { brusselsNowParts, isYmd } from "@/lib/booking/dates";
+import { loadPublicAvailability } from "@/lib/booking/public-availability";
 
 export const dynamic = "force-dynamic";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
 /**
- * Disponibilité publique d'un tenant. Résout l'antenne à partir du code postal
- * (`cp`) ou d'un `locationId` explicite, puis renvoie les créneaux libres.
+ * Disponibilité publique d'un tenant (navigation semaine côté client). Le 1er
+ * rendu est fait en SSR par la page ; cette route sert les semaines suivantes.
  */
 export async function GET(
   req: NextRequest,
@@ -33,44 +32,19 @@ export async function GET(
   }
 
   const url = new URL(req.url);
-  const cp = url.searchParams.get("cp");
-  const locationId = url.searchParams.get("locationId");
   const from = url.searchParams.get("from") || brusselsNowParts().ymd;
   if (!isYmd(from)) {
     return NextResponse.json({ error: "Date invalide" }, { status: 400, headers: json });
   }
   const days = Math.min(42, Math.max(1, Number(url.searchParams.get("days")) || 28));
 
-  const resolved = await resolveLocation(tenant.id, cp);
-  let location = resolved.location;
-  if (locationId) {
-    const explicit = resolved.all.find((l) => l.id === locationId);
-    if (explicit) location = explicit;
-  }
-
-  const allLocations = resolved.all.map((l) => ({ ...l, address: locationAddress(l) }));
-
-  if (!location) {
-    return NextResponse.json(
-      { location: null, allLocations, communeName: resolved.communeName, days: [] },
-      { headers: json },
-    );
-  }
-
-  const daysData = await loadDayRange({
-    locationId: location.id,
+  const result = await loadPublicAvailability({
+    tenantId: tenant.id,
+    cp: url.searchParams.get("cp"),
+    locationId: url.searchParams.get("locationId"),
     from,
     days,
-    onlyAvailable: true,
   });
 
-  return NextResponse.json(
-    {
-      location: { ...location, address: locationAddress(location) },
-      allLocations,
-      communeName: resolved.communeName,
-      days: daysData,
-    },
-    { headers: json },
-  );
+  return NextResponse.json(result, { headers: json });
 }

@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { parseFormFields } from "@/lib/booking/form-fields";
+import { loadPublicAvailability } from "@/lib/booking/public-availability";
+import { brusselsNowParts } from "@/lib/booking/dates";
 import { getServerAuthSession } from "@/lib/auth-session";
 import { BookingFlow } from "./booking-flow";
 
@@ -34,6 +36,7 @@ export default async function TenantBookingPage({
   const tenant = await prisma.bookingTenant.findFirst({
     where: { slug, active: true },
     select: {
+      id: true,
       slug: true,
       name: true,
       brandColor: true,
@@ -52,6 +55,16 @@ export default async function TenantBookingPage({
       ? { name: (s.user.name as string) ?? "", email: (s.user.email as string) ?? "" }
       : null;
 
+  // 1er rendu en SSR : on charge la semaine courante côté serveur (pas de flash
+  // de chargement). La navigation entre semaines reste un fetch client.
+  const initialFrom = brusselsNowParts().ymd;
+  const initialAvailability = await loadPublicAvailability({
+    tenantId: tenant.id,
+    cp: cp ?? null,
+    from: initialFrom,
+    days: 7,
+  }).catch(() => null);
+
   return (
     <section className="mx-auto w-full max-w-6xl">
       <BookingFlow
@@ -62,6 +75,8 @@ export default async function TenantBookingPage({
         dedupeField={tenant.dedupeField}
         initialCp={cp ?? null}
         prefill={prefill}
+        initialFrom={initialFrom}
+        initialAvailability={initialAvailability}
       />
     </section>
   );

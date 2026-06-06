@@ -100,6 +100,14 @@ export const exceptionSchema = z.object({
   reason: z.string().max(160).nullable().optional(),
 });
 
+// Fermeture en masse sur une plage de dates (congés annuels, D).
+export const exceptionBulkSchema = z.object({
+  locationId: z.string().min(1).max(40),
+  from: YMD,
+  to: YMD,
+  reason: z.string().max(160).nullable().optional(),
+});
+
 // --- Équipe ------------------------------------------------------------------
 
 export const memberCreateSchema = z.object({

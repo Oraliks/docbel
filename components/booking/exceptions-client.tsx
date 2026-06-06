@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { CalendarOff, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,6 +94,15 @@ export function ExceptionsClient({ tenantId, role }: ExceptionsClientProps) {
     saving: false,
   });
 
+  const [bulk, setBulk] = useState<{
+    open: boolean;
+    locationId: string;
+    from: string;
+    to: string;
+    reason: string;
+    saving: boolean;
+  }>({ open: false, locationId: "", from: "", to: "", reason: "", saving: false });
+
   // Load locations
   useEffect(() => {
     fetch(`/api/booking/partner/tenants/${tenantId}`)
@@ -185,6 +194,53 @@ export function ExceptionsClient({ tenantId, role }: ExceptionsClientProps) {
     loadExceptions();
   }
 
+  function openBulk() {
+    setBulk({
+      open: true,
+      locationId: locationId !== "all" ? locationId : "",
+      from: "",
+      to: "",
+      reason: "",
+      saving: false,
+    });
+  }
+
+  async function handleBulkSave() {
+    if (!bulk.locationId || !bulk.from || !bulk.to) {
+      toast.error("Antenne et dates obligatoires");
+      return;
+    }
+    if (bulk.to < bulk.from) {
+      toast.error("La date de fin doit suivre la date de début");
+      return;
+    }
+    setBulk((s) => ({ ...s, saving: true }));
+    const res = await fetch(
+      `/api/booking/partner/tenants/${tenantId}/exceptions/bulk`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          locationId: bulk.locationId,
+          from: bulk.from,
+          to: bulk.to,
+          reason: bulk.reason || undefined,
+        }),
+      },
+    );
+    const data = await res.json();
+    setBulk((s) => ({ ...s, saving: false }));
+    if (!res.ok) {
+      toast.error(data.error ?? "Erreur");
+      return;
+    }
+    toast.success(
+      `${data.created} jour(s) fermé(s)${data.skipped ? ` · ${data.skipped} déjà fermé(s)` : ""}`,
+    );
+    setBulk((s) => ({ ...s, open: false }));
+    loadExceptions();
+  }
+
   async function handleDelete(exId: string) {
     const res = await fetch(
       `/api/booking/partner/tenants/${tenantId}/exceptions/${exId}`,
@@ -253,10 +309,16 @@ export function ExceptionsClient({ tenantId, role }: ExceptionsClientProps) {
           </Select>
         )}
         {canEdit && (
-          <Button onClick={openAdd} className="ml-auto">
-            <Plus className="size-4" />
-            Ajouter une exception
-          </Button>
+          <div className="ml-auto flex flex-wrap gap-2">
+            <Button variant="outline" onClick={openBulk}>
+              <CalendarOff className="size-4" />
+              Fermer une période
+            </Button>
+            <Button onClick={openAdd}>
+              <Plus className="size-4" />
+              Ajouter une exception
+            </Button>
+          </div>
         )}
       </div>
 
@@ -462,6 +524,81 @@ export function ExceptionsClient({ tenantId, role }: ExceptionsClientProps) {
             </Button>
             <Button onClick={handleSave} disabled={dialog.saving}>
               {dialog.saving ? "Enregistrement…" : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk close (congés) dialog */}
+      <Dialog
+        open={bulk.open}
+        onOpenChange={(o) => !bulk.saving && setBulk((s) => ({ ...s, open: o }))}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Fermer une période (congés)</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label>Antenne</Label>
+              <Select
+                value={bulk.locationId}
+                onValueChange={(v) => setBulk((s) => ({ ...s, locationId: v ?? "" }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Du</Label>
+                <Input
+                  type="date"
+                  value={bulk.from}
+                  onChange={(e) => setBulk((s) => ({ ...s, from: e.target.value }))}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Au</Label>
+                <Input
+                  type="date"
+                  value={bulk.to}
+                  onChange={(e) => setBulk((s) => ({ ...s, to: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Motif (optionnel)</Label>
+              <Textarea
+                rows={2}
+                placeholder="ex: Congés annuels"
+                value={bulk.reason}
+                onChange={(e) => setBulk((s) => ({ ...s, reason: e.target.value }))}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Chaque jour de la période sera marqué comme fermé. Les jours déjà
+              fermés sont ignorés.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setBulk((s) => ({ ...s, open: false }))}
+              disabled={bulk.saving}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleBulkSave} disabled={bulk.saving}>
+              {bulk.saving ? "Fermeture…" : "Fermer la période"}
             </Button>
           </DialogFooter>
         </DialogContent>

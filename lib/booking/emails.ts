@@ -198,6 +198,31 @@ Annuler si empêchement : ${manageUrl(ctx.token)}`;
   });
 }
 
+/** Renvoi du lien de gestion (déplacer/annuler) à l'adresse enregistrée. */
+export async function sendManagementLink(ctx: BookingEmailCtx): Promise<void> {
+  const subject = `Votre lien de gestion de rendez-vous — ${ctx.tenantName}`;
+  const intro = `Voici le lien pour gérer votre rendez-vous avec ${ctx.tenantName}. Vous pouvez le déplacer ou l'annuler — par exemple pour en reprendre un autre.`;
+  const text = `${hello(ctx.citizenName)}
+
+${intro}
+
+${whenWhere(ctx)}
+
+Gérer mon rendez-vous : ${manageUrl(ctx.token)}`;
+  await send({
+    from: brandedFrom(ctx.fromName),
+    to: ctx.to,
+    subject,
+    text,
+    html: htmlShell(
+      ctx,
+      "Votre lien de gestion",
+      [intro, whenWhere(ctx).replace("\n", "<br/>")],
+      { label: "Gérer mon rendez-vous", href: manageUrl(ctx.token) },
+    ),
+  });
+}
+
 /** Notifie l'équipe (notifyEmail du guichet) d'une nouvelle demande. */
 export async function sendTeamNewBooking(ctx: {
   to: string;

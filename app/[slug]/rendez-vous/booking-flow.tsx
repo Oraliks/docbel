@@ -52,6 +52,7 @@ interface BookResponse {
   confirmed?: boolean;
   blocked?: boolean;
   lastBookingDate?: string;
+  manageToken?: string;
   error?: string;
   fieldErrors?: Record<string, string>;
 }
@@ -59,6 +60,7 @@ interface BookResponse {
 interface DedupeResponse {
   blocked: boolean;
   lastBookingDate?: string;
+  manageToken?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -85,7 +87,12 @@ type Screen =
   | { type: "calendar" }
   | { type: "form"; locationId: string; date: string; startTime: string; endTime: string }
   | { type: "success"; token: string; confirmed: boolean; address: string }
-  | { type: "blocked"; lastBookingDate: string; address: string };
+  | {
+      type: "blocked";
+      lastBookingDate: string;
+      address: string;
+      manageToken?: string;
+    };
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -132,6 +139,16 @@ function buildInitialFormData(
   return data;
 }
 
+/** Récupère la valeur du champ email du formulaire (pré-remplit le renvoi de lien). */
+function emailFromForm(
+  fields: BookingField[],
+  formData: Record<string, string | boolean>,
+): string {
+  const f = fields.find((x) => x.role === "email" || x.type === "email");
+  const v = f ? formData[f.key] : "";
+  return typeof v === "string" ? v : "";
+}
+
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
@@ -168,6 +185,7 @@ export function BookingFlow({
   const [dedupeBlocked, setDedupeBlocked] = useState<{
     lastBookingDate: string;
     address: string;
+    manageToken?: string;
   } | null>(null);
 
   // --- Fetch availability ---
@@ -261,7 +279,11 @@ export function BookingFlow({
           availability?.location?.address ??
           availability?.allLocations[0]?.address ??
           "";
-        setDedupeBlocked({ lastBookingDate: data.lastBookingDate, address });
+        setDedupeBlocked({
+          lastBookingDate: data.lastBookingDate,
+          address,
+          manageToken: data.manageToken,
+        });
       }
     } catch {
       // silent — dedupe check is best-effort
@@ -324,6 +346,7 @@ export function BookingFlow({
           type: "blocked",
           lastBookingDate: data.lastBookingDate,
           address,
+          manageToken: data.manageToken,
         });
         return;
       }
@@ -537,29 +560,17 @@ export function BookingFlow({
 
   if (screen.type === "blocked") {
     return (
-      <div className={`${GLASS_CARD} glass-surface mx-auto w-full max-w-xl rounded-2xl p-6`}>
-        <div className="flex flex-col gap-3">
-          <h2 className="text-[18px] font-semibold text-[color:var(--glass-ink)]">
-            Rendez-vous existant
-          </h2>
-          <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-            Vous avez déjà un rendez-vous récent (le{" "}
-            <strong>{frenchDateShort(screen.lastBookingDate)}</strong>). Veuillez
-            vous présenter directement au bureau&nbsp;:{" "}
-            <strong>{screen.address}</strong>.
-          </p>
-          <button
-            onClick={() => {
-              setScreen({ type: "calendar" });
-              fetchAvailability(from, locationId);
-            }}
-            className="flex items-center gap-1 self-start text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
-          >
-            <ChevronLeft size={14} />
-            Retour au calendrier
-          </button>
-        </div>
-      </div>
+      <BlockedExisting
+        slug={slug}
+        lastBookingDate={screen.lastBookingDate}
+        address={screen.address}
+        manageToken={screen.manageToken}
+        defaultEmail={emailFromForm(fields, formData)}
+        onBack={() => {
+          setScreen({ type: "calendar" });
+          fetchAvailability(from, locationId);
+        }}
+      />
     );
   }
 
@@ -840,30 +851,18 @@ export function BookingFlow({
     // If dedupe live-check came back blocked, show block screen
     if (dedupeBlocked) {
       return (
-        <div className={`${GLASS_CARD} glass-surface mx-auto w-full max-w-xl rounded-2xl p-6`}>
-          <div className="flex flex-col gap-3">
-            <h2 className="text-[18px] font-semibold text-[color:var(--glass-ink)]">
-              Rendez-vous existant
-            </h2>
-            <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-              Vous avez déjà un rendez-vous récent (le{" "}
-              <strong>{frenchDateShort(dedupeBlocked.lastBookingDate)}</strong>).
-              Veuillez vous présenter directement au bureau&nbsp;:{" "}
-              <strong>{dedupeBlocked.address}</strong>.
-            </p>
-            <button
-              onClick={() => {
-                setDedupeBlocked(null);
-                setScreen({ type: "calendar" });
-                fetchAvailability(from, locationId);
-              }}
-              className="flex items-center gap-1 self-start text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
-            >
-              <ChevronLeft size={14} />
-              Retour au calendrier
-            </button>
-          </div>
-        </div>
+        <BlockedExisting
+          slug={slug}
+          lastBookingDate={dedupeBlocked.lastBookingDate}
+          address={dedupeBlocked.address}
+          manageToken={dedupeBlocked.manageToken}
+          defaultEmail={emailFromForm(fields, formData)}
+          onBack={() => {
+            setDedupeBlocked(null);
+            setScreen({ type: "calendar" });
+            fetchAvailability(from, locationId);
+          }}
+        />
       );
     }
 
@@ -910,4 +909,121 @@ export function BookingFlow({
   }
 
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Écran « rendez-vous existant » : ne plus être un cul-de-sac. Le propriétaire
+// connecté gère/déplace en direct ; sinon on renvoie le lien par email.
+// ---------------------------------------------------------------------------
+
+function BlockedExisting({
+  slug,
+  lastBookingDate,
+  address,
+  manageToken,
+  defaultEmail,
+  onBack,
+}: {
+  slug: string;
+  lastBookingDate: string;
+  address: string;
+  manageToken?: string;
+  defaultEmail: string;
+  onBack: () => void;
+}) {
+  const [email, setEmail] = useState(defaultEmail);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  async function sendLink() {
+    if (!email.trim()) {
+      toast.error("Indiquez votre adresse email.");
+      return;
+    }
+    setSending(true);
+    try {
+      await fetch(`/api/booking/${slug}/resend-link`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+    } catch {
+      // réponse toujours générique — on ne révèle jamais l'existence d'un RDV
+    } finally {
+      setSent(true);
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className={`${GLASS_CARD} glass-surface mx-auto w-full max-w-xl rounded-2xl p-6`}>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-[18px] font-semibold text-[color:var(--glass-ink)]">
+            Vous avez déjà un rendez-vous
+          </h2>
+          <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
+            Un rendez-vous récent existe à votre nom (le{" "}
+            <strong>{frenchDateShort(lastBookingDate)}</strong>). Pour en
+            reprendre un autre, vous devez d&apos;abord{" "}
+            <strong>déplacer</strong> ou <strong>annuler</strong> celui-ci.
+          </p>
+        </div>
+
+        {manageToken ? (
+          <Link
+            href={`/rendez-vous/gestion/${manageToken}`}
+            className="inline-flex w-fit items-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-semibold transition-opacity hover:opacity-80"
+            style={GLASS_PRIMARY_STYLE}
+          >
+            Gérer mon rendez-vous (déplacer ou annuler)
+            <ChevronRight size={14} />
+          </Link>
+        ) : sent ? (
+          <div className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 text-[13px] text-[color:var(--glass-ink-soft)]">
+            Si un rendez-vous existe pour cette adresse, un email contenant le
+            lien de gestion vient d&apos;être envoyé. Pensez à vérifier vos
+            courriers indésirables.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
+              Recevez le lien de gestion par email pour déplacer ou annuler votre
+              rendez-vous&nbsp;:
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="votre@email.be"
+                className={`${GLASS_INPUT} h-10 flex-1 rounded-2xl border px-3 text-[14px] outline-none focus:ring-2 focus:ring-[color:var(--glass-accent-deep)]`}
+              />
+              <button
+                onClick={sendLink}
+                disabled={sending}
+                style={GLASS_PRIMARY_STYLE}
+                className="flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-60"
+              >
+                {sending ? "Envoi…" : "Recevoir le lien"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <p className="text-[13px] text-[color:var(--glass-ink-faint)]">
+          Vous pouvez aussi vous présenter directement au bureau&nbsp;:{" "}
+          <strong>{address}</strong>.
+        </p>
+
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1 self-start text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
+        >
+          <ChevronLeft size={14} />
+          Retour au calendrier
+        </button>
+      </div>
+    </div>
+  );
 }

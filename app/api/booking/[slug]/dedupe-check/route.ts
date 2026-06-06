@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
+import { getServerAuthSession } from "@/lib/auth-session";
 import { normalizeName } from "@/lib/rendez-vous/history";
 import { isValidNrn } from "@/lib/booking/form-fields";
 import { findRecentBooking } from "@/lib/booking/dedupe";
@@ -64,8 +65,20 @@ export async function POST(
     identity,
   });
 
+  // Propriétaire connecté → on renvoie le token pour gérer/déplacer en direct.
+  let manageToken: string | undefined;
+  if (recent) {
+    const session = await getServerAuthSession().catch(() => null);
+    const uid = (session?.user as { id?: string } | undefined)?.id ?? null;
+    if (uid && recent.userId === uid) manageToken = recent.confirmationToken;
+  }
+
   return NextResponse.json(
-    { blocked: !!recent, lastBookingDate: recent?.date ?? null },
+    {
+      blocked: !!recent,
+      lastBookingDate: recent?.date ?? null,
+      ...(manageToken ? { manageToken } : {}),
+    },
     { headers: json },
   );
 }

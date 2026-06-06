@@ -38,6 +38,8 @@ export interface RecentBooking {
   date: string;
   startTime: string;
   locationId: string;
+  userId: string | null;
+  confirmationToken: string;
 }
 
 /** Renvoie la réservation récente bloquante, ou null si la voie est libre. */
@@ -71,6 +73,13 @@ export async function findRecentBooking(opts: {
   return prisma.booking.findFirst({
     where,
     orderBy: { createdAt: "desc" },
-    select: { id: true, date: true, startTime: true, locationId: true },
+    select: {
+      id: true,
+      date: true,
+      startTime: true,
+      locationId: true,
+      userId: true,
+      confirmationToken: true,
+    },
   });
 }

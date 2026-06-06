@@ -82,6 +82,10 @@ export async function POST(
   }
   const identity = extractIdentity(fields, validation.data);
 
+  // Session (pré-remplissage + détection du propriétaire du RDV existant).
+  const session = await getServerAuthSession().catch(() => null);
+  const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
+
   // Anti-doublon (1 RDV par fenêtre) — re-vérifié côté serveur.
   const recent = await findRecentBooking({
     tenantId: tenant.id,
@@ -90,8 +94,15 @@ export async function POST(
     identity,
   });
   if (recent) {
+    // Le propriétaire connecté reçoit le token pour gérer/déplacer en direct ;
+    // sinon le lien de gestion s'envoie par email (anti-énumération).
+    const owner = !!userId && recent.userId === userId;
     return NextResponse.json(
-      { blocked: true, lastBookingDate: recent.date },
+      {
+        blocked: true,
+        lastBookingDate: recent.date,
+        ...(owner ? { manageToken: recent.confirmationToken } : {}),
+      },
       { status: 409, headers: json },
     );
   }
@@ -111,9 +122,6 @@ export async function POST(
     });
     communeId = pc?.communeId ?? null;
   }
-
-  const session = await getServerAuthSession().catch(() => null);
-  const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
 
   const token = randomBytes(32).toString("base64url");
   const confirmed = !tenant.requireApproval;

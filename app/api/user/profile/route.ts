@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import {
   isValidNISS,
   isValidBelgianIBAN,
@@ -26,6 +27,12 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Garde lecture seule (Phase C #8 + #17) : refuse les mutations si l'admin
+  // est en mode "lecture seule" sous impersonation, ou si le user actif est
+  // un compte demo+xxx@docbel.local.
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
 
   let body;
   try {

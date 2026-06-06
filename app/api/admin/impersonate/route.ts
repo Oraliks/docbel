@@ -37,6 +37,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "userId requis" }, { status: 400 })
   }
 
+  // Raison (Phase C #11) : obligatoire en prod, optionnelle ailleurs.
+  const rawReason =
+    typeof body === "object" && body && "reason" in body && typeof body.reason === "string"
+      ? body.reason.trim()
+      : ""
+  const reason = rawReason.length > 0 ? rawReason : null
+  if (process.env.NODE_ENV === "production" && (!reason || reason.length < 10)) {
+    return NextResponse.json(
+      {
+        error: "Raison requise en production (10 caractères minimum)",
+        code: "reason_required",
+      },
+      { status: 400 }
+    )
+  }
+
   const target = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true, role: true, status: true, email: true },
@@ -73,6 +89,7 @@ export async function POST(req: NextRequest) {
       targetId: target.id,
       ipAddress: reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || null,
       userAgent: reqHeaders.get("user-agent"),
+      reason,
     },
   })
 

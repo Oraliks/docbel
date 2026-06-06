@@ -18,7 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { ChevronDownIcon, EyeIcon } from "lucide-react"
+import { ChevronDownIcon, EyeIcon, LockIcon, UnlockIcon } from "lucide-react"
 
 /// Durée d'une session d'impersonation (cf. impersonationSessionDuration dans
 /// lib/auth.ts). Si tu la changes là-bas, change-la ici aussi.
@@ -89,6 +89,21 @@ function readVisitorMarker(): boolean {
     .some((c) => c.trim().startsWith("docbel_view_as_visitor=1"))
 }
 
+/// Lit le cookie de préférence lecture seule (cf. lib/admin/readonly-guard.ts).
+/// Renvoie null si pas posé → l'appelant applique le default selon NODE_ENV.
+function readReadOnlyCookie(): boolean | null {
+  if (typeof document === "undefined") return null
+  const entry = document.cookie
+    .split(";")
+    .map((c) => c.trim())
+    .find((c) => c.startsWith("docbel_impersonation_readonly="))
+  if (!entry) return null
+  const value = entry.split("=")[1]
+  if (value === "1") return true
+  if (value === "0") return false
+  return null
+}
+
 /// Convertit le nombre de secondes restantes en chaîne courte ("42 min",
 /// "8 min", "expire bientôt"). Volontairement sobre, on évite le tic-tac
 /// anxiogène à la seconde près.
@@ -138,6 +153,16 @@ export function ImpersonationBanner() {
     if (session) return
     setIsVisitor(readVisitorMarker())
   }, [session])
+
+  // Toggle lecture seule (Phase C #8). Etat initial = cookie posé, sinon
+  // default selon NODE_ENV (ON en prod, OFF en dev). Lu au mount uniquement.
+  const [readOnly, setReadOnly] = useState(false)
+  const [togglingRO, setTogglingRO] = useState(false)
+  useEffect(() => {
+    if (!isImpersonating) return
+    const cookie = readReadOnlyCookie()
+    setReadOnly(cookie ?? process.env.NODE_ENV === "production")
+  }, [isImpersonating])
 
   // Tick toutes les 30s pour mettre à jour le countdown sans surconsommer.
   useEffect(() => {
@@ -238,6 +263,28 @@ export function ImpersonationBanner() {
     }
   }
 
+  const toggleReadOnly = async () => {
+    const next = !readOnly
+    setTogglingRO(true)
+    try {
+      const res = await fetch("/api/admin/impersonation-readonly", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: next }),
+      })
+      if (!res.ok) {
+        toast.error("Bascule lecture/écriture impossible")
+        return
+      }
+      setReadOnly(next)
+      toast.success(next ? "Lecture seule activée" : "Écriture autorisée")
+    } catch {
+      toast.error("Erreur réseau")
+    } finally {
+      setTogglingRO(false)
+    }
+  }
+
   /// Switcher : stop l'impersonation courante puis lance une nouvelle
   /// impersonation. Enchaîné côté client en 2 requêtes parce que Better Auth
   /// admin plugin exige une session admin pour appeler impersonateUser, et
@@ -300,6 +347,30 @@ export function ImpersonationBanner() {
             {startDate
               ? `Démarrée à ${formatStartTime(startDate)} · expire après 1h`
               : "Session d'impersonation"}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                size="sm"
+                variant="outline"
+                className={`shrink-0 ${theme.button}`}
+                onClick={toggleReadOnly}
+                disabled={togglingRO}
+                aria-label={readOnly ? "Désactiver la lecture seule" : "Activer la lecture seule"}
+              >
+                {readOnly ? <LockIcon className="size-4" /> : <UnlockIcon className="size-4" />}
+              </Button>
+            }
+          />
+          <TooltipContent side="bottom">
+            {readOnly
+              ? "Lecture seule active — clic pour autoriser l'écriture"
+              : "Écriture autorisée — clic pour passer en lecture seule"}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

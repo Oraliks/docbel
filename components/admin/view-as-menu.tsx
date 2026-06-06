@@ -78,12 +78,27 @@ export function ViewAsMenu() {
   }
 
   const impersonate = async (account: DemoAccount) => {
+    // En prod, on exige une raison (>=10 chars) saisie par l'admin pour la
+    // tracer dans l'audit log (cf. AdminImpersonationLog.reason, migration 39).
+    // En dev, raison optionnelle — on n'embête pas le solo dev pour ses tests.
+    let reason: string | null = null
+    if (process.env.NODE_ENV === "production") {
+      const input = window.prompt(
+        `Raison de l'impersonation de ${ROLE_LABELS[account.role] || account.role} (${account.email}) ?\n\nMinimum 10 caractères. Sera tracée dans l'audit log.`
+      )
+      if (input === null) return // annulation
+      reason = input.trim()
+      if (reason.length < 10) {
+        toast.error("Raison trop courte (10 caractères minimum)")
+        return
+      }
+    }
     setPending(account.id)
     try {
       const res = await fetch("/api/admin/impersonate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: account.id }),
+        body: JSON.stringify({ userId: account.id, reason }),
       })
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as { error?: string }

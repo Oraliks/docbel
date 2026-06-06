@@ -167,6 +167,10 @@ model AdminImpersonationLog {
   userAgent String?
   startedAt DateTime  @default(now())
   stoppedAt DateTime?
+  /// Raison saisie par l'admin (obligatoire en prod via la modal de
+  /// confirmation dans ViewAsMenu, optionnel en dev). Null pour les logs
+  /// historiques anterieurs a la migration 39.
+  reason    String?
 
   @@index([adminId])
   @@index([targetId])

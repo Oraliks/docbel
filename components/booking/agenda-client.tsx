@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Download, FileDown, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ import {
   frenchDateShort,
 } from "@/lib/booking/dates";
 import type { EffectiveRole } from "@/lib/booking/access";
+import type { BookingField } from "@/lib/booking/types";
 import { buildPlanning, planningFilename } from "@/lib/rendez-vous/planning";
 import { renderPlanningPdf } from "@/lib/rendez-vous/planning-pdf";
 
@@ -103,6 +104,7 @@ export function AgendaClient({ tenantId, role }: AgendaClientProps) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
   const [locations, setLocations] = useState<Location[]>([]);
+  const [formFields, setFormFields] = useState<BookingField[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -127,6 +129,7 @@ export function AgendaClient({ tenantId, role }: AgendaClientProps) {
       .then((r) => r.json())
       .then((d) => {
         if (d.locations) setLocations(d.locations);
+        if (d.tenant?.formFields) setFormFields(d.tenant.formFields);
       })
       .catch(() => {});
   }, [tenantId]);
@@ -469,7 +472,7 @@ export function AgendaClient({ tenantId, role }: AgendaClientProps) {
             <SheetTitle>Détail du rendez-vous</SheetTitle>
           </SheetHeader>
           {detailSheet.booking && (
-            <BookingDetail booking={detailSheet.booking} />
+            <BookingDetail booking={detailSheet.booking} fields={formFields} />
           )}
         </SheetContent>
       </Sheet>
@@ -586,53 +589,89 @@ function BookingRow({
 
 // ─── BookingDetail ────────────────────────────────────────────────────────────
 
-function BookingDetail({ booking: b }: { booking: Booking }) {
+// Rôles déjà résumés dans la section « Demandeur » → exclus des réponses brutes
+// (évite la redondance ; le NRN n'est jamais affiché en clair).
+const IDENTITY_ROLES = new Set(["name", "email", "phone", "nrn", "postal_code"]);
+
+function formValue(v: unknown): string {
+  if (v === true) return "Oui";
+  if (v === false) return "Non";
+  return String(v ?? "").trim();
+}
+
+function BookingDetail({
+  booking: b,
+  fields,
+}: {
+  booking: Booking;
+  fields: BookingField[];
+}) {
+  const data = (b.formData ?? {}) as Record<string, unknown>;
+  const extras = fields
+    .filter((f) => !IDENTITY_ROLES.has(f.role ?? ""))
+    .map((f) => ({ label: f.label, value: formValue(data[f.key]) }))
+    .filter((x) => x.value !== "");
+
+  const statusLabel =
+    STATUS_LABELS[b.status as keyof typeof STATUS_LABELS] ?? b.status;
+
   return (
-    <div className="flex flex-col gap-3 text-sm">
-      <Row label="Date" value={frenchDate(b.date)} />
-      <Row label="Horaire" value={`${b.startTime} – ${b.endTime}`} />
-      <Row label="Antenne" value={b.locationName ?? "—"} />
-      <Row label="Statut" value={STATUS_LABELS[b.status as keyof typeof STATUS_LABELS] ?? b.status} />
-      <Row label="Nom" value={b.citizenName ?? "—"} />
-      <Row label="Email" value={b.citizenEmail ?? "—"} />
-      <Row label="Téléphone" value={b.citizenPhone ?? "—"} />
-      {b.citizenNrnLast4 && (
-        <Row label="NRN (4 dern.)" value={`…${b.citizenNrnLast4}`} />
-      )}
-      {b.citizenPostalCode && (
-        <Row label="Code postal" value={b.citizenPostalCode} />
-      )}
-      {b.rejectionReason && (
-        <Row label="Motif de refus" value={b.rejectionReason} />
-      )}
-      {b.cancelReason && (
-        <Row label="Motif d'annulation" value={b.cancelReason} />
+    <div className="flex flex-col gap-5 text-sm">
+      <dl className="grid grid-cols-[7rem_1fr] gap-x-4 gap-y-2.5">
+        <Row label="Date" value={frenchDate(b.date)} />
+        <Row label="Horaire" value={`${b.startTime} – ${b.endTime}`} />
+        <Row label="Antenne" value={b.locationName ?? "—"} />
+        <Row label="Statut" value={statusLabel} />
+      </dl>
+
+      <Section title="Demandeur">
+        <Row label="Nom" value={b.citizenName ?? "—"} />
+        <Row label="Email" value={b.citizenEmail ?? "—"} />
+        <Row label="Téléphone" value={b.citizenPhone ?? "—"} />
+        {b.citizenPostalCode && (
+          <Row label="Code postal" value={b.citizenPostalCode} />
+        )}
+        {b.citizenNrnLast4 && <Row label="NRN" value={`••• ${b.citizenNrnLast4}`} />}
+      </Section>
+
+      {extras.length > 0 && (
+        <Section title="Réponses au formulaire">
+          {extras.map((e) => (
+            <Row key={e.label} label={e.label} value={e.value} />
+          ))}
+        </Section>
       )}
 
-      {b.formData && Object.keys(b.formData).length > 0 && (
-        <div className="mt-2">
-          <p className="font-medium mb-2">Réponses au formulaire</p>
-          <div className="rounded-lg border bg-muted/40 p-3 flex flex-col gap-2">
-            {Object.entries(b.formData).map(([k, v]) => (
-              <Row key={k} label={k} value={String(v ?? "—")} />
-            ))}
-          </div>
-        </div>
+      {(b.rejectionReason || b.cancelReason) && (
+        <Section title="Motif">
+          {b.rejectionReason && <Row label="Refus" value={b.rejectionReason} />}
+          {b.cancelReason && <Row label="Annulation" value={b.cancelReason} />}
+        </Section>
       )}
 
-      <Row
-        label="Créé le"
-        value={new Date(b.createdAt).toLocaleString("fr-BE")}
-      />
+      <p className="text-xs text-muted-foreground">
+        Créé le {new Date(b.createdAt).toLocaleString("fr-BE")}
+      </p>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </p>
+      <dl className="grid grid-cols-[7rem_1fr] gap-x-4 gap-y-2.5">{children}</dl>
     </div>
   );
 }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex gap-2">
-      <span className="text-muted-foreground min-w-32 shrink-0">{label}</span>
-      <span className="font-medium break-all">{value}</span>
-    </div>
+    <>
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-medium break-words">{value}</dd>
+    </>
   );
 }

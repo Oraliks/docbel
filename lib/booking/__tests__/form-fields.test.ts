@@ -6,6 +6,7 @@ import {
   extractIdentity,
   isValidNrn,
   parseFormFields,
+  redactSensitiveFormData,
   validateFormData,
 } from "@/lib/booking/form-fields";
 import type { BookingField } from "@/lib/booking/types";
@@ -96,5 +97,28 @@ describe("parseFormFields", () => {
   it("accepte une config valide", () => {
     const custom = [{ key: "x", label: "X", type: "text" as const }];
     expect(parseFormFields(custom)).toHaveLength(1);
+  });
+});
+
+describe("redactSensitiveFormData", () => {
+  it("retire les champs de type nrn et garde le reste", () => {
+    const out = redactSensitiveFormData(DEFAULT_BOOKING_FORM, {
+      lastName: "Dupont",
+      email: "x@y.be",
+      nrn: VALID_NRN,
+      postalCode: "1000",
+    });
+    expect("nrn" in out).toBe(false); // NRN jamais conservé en clair
+    expect(out.lastName).toBe("Dupont");
+    expect(out.email).toBe("x@y.be");
+    expect(out.postalCode).toBe("1000");
+  });
+
+  it("ne touche rien si aucun champ nrn", () => {
+    const fields: BookingField[] = [
+      { key: "name", label: "Nom", type: "text" },
+    ];
+    const data = { name: "Dupont" };
+    expect(redactSensitiveFormData(fields, data)).toEqual(data);
   });
 });

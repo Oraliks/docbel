@@ -10,6 +10,7 @@ import { publicBookSchema } from "@/lib/booking/schemas";
 import {
   extractIdentity,
   parseFormFields,
+  redactSensitiveFormData,
   validateFormData,
 } from "@/lib/booking/form-fields";
 import { findRecentBooking, hashNrn, nrnLast4 } from "@/lib/booking/dedupe";
@@ -110,6 +111,10 @@ export async function POST(
   const confirmed = !tenant.requireApproval;
   const status = confirmed ? BookingStatus.confirmed : BookingStatus.pending_approval;
 
+  // RGPD : ne jamais persister le NRN en clair dans formData — il est conservé
+  // haché (citizenNrnHash) + 4 derniers chiffres (citizenNrnLast4).
+  const safeFormData = redactSensitiveFormData(fields, validation.data);
+
   let createdId: string;
   try {
     const created = await prisma.$transaction(async (tx) => {
@@ -130,7 +135,7 @@ export async function POST(
           startTime,
           endTime: slot.endTime,
           serviceCode: slot.serviceCode ?? null,
-          formData: validation.data as object,
+          formData: safeFormData as object,
           citizenName: identity.name,
           citizenNameNormalized: identity.nameNormalized,
           citizenEmail: identity.email,

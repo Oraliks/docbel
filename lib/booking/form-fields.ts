@@ -147,6 +147,26 @@ export function extractIdentity(
   };
 }
 
+/**
+ * Retire les valeurs des champs sensibles (type "nrn") du formData brut avant
+ * stockage. Le NRN est conservé séparément, haché (HMAC) + 4 derniers chiffres.
+ * RGPD : on ne garde jamais le NRN en clair dans `Booking.formData`.
+ */
+export function redactSensitiveFormData(
+  fields: BookingField[],
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  const sensitiveKeys = new Set(
+    fields.filter((f) => f.type === "nrn").map((f) => f.key),
+  );
+  if (sensitiveKeys.size === 0) return data;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (!sensitiveKeys.has(k)) out[k] = v;
+  }
+  return out;
+}
+
 // --- Validation de la configuration (ce qu'un tenant peut enregistrer) -------
 
 export const bookingFieldDefSchema = z.object({

@@ -19,6 +19,7 @@ export function BookingTabs({ tenantId, role, basePath }: BookingTabsProps) {
     { label: "Agenda", href: `${base}/agenda` },
     { label: "Créneaux", href: `${base}/creneaux` },
     { label: "Exceptions", href: `${base}/exceptions` },
+    { label: "Statistiques", href: `${base}/stats` },
     ...(role === "owner"
       ? [
           { label: "Configuration", href: `${base}/configuration` },

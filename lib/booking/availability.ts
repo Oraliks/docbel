@@ -3,6 +3,13 @@
 
 import type { AvailableSlot, DayAvailability, SlotDef } from "./types";
 import { addDaysYmd, isSlotPast, weekdayOf } from "./dates";
+import { getBelgianHolidayName } from "@/lib/bureaus/holidays";
+
+/** Vrai si la date (heure murale) est un jour férié belge légal. */
+function isBelgianHolidayYmd(ymd: string): boolean {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return getBelgianHolidayName(new Date(y, m - 1, d)) !== null;
+}
 
 export interface RuleLite {
   weekday: number;
@@ -37,19 +44,23 @@ export function computeDay(
   const weekday = weekdayOf(ymd);
   if (exception?.kind === "closed") return { date: ymd, weekday, slots: [] };
 
-  let defs: SlotDef[] = rules
-    .filter(
-      (r) =>
-        r.active &&
-        r.weekday === weekday &&
-        dayInRange(ymd, r.validFrom, r.validUntil),
-    )
-    .map((r) => ({
-      startTime: r.startTime,
-      endTime: r.endTime,
-      capacity: r.capacity,
-      serviceCode: r.serviceCode,
-    }));
+  // Jours fériés belges : les créneaux récurrents sont supprimés. Un admin peut
+  // tout de même ouvrir via une exception 'extra' (override explicite).
+  let defs: SlotDef[] = isBelgianHolidayYmd(ymd)
+    ? []
+    : rules
+        .filter(
+          (r) =>
+            r.active &&
+            r.weekday === weekday &&
+            dayInRange(ymd, r.validFrom, r.validUntil),
+        )
+        .map((r) => ({
+          startTime: r.startTime,
+          endTime: r.endTime,
+          capacity: r.capacity,
+          serviceCode: r.serviceCode,
+        }));
 
   if (exception?.kind === "extra") defs = defs.concat(exception.slots);
 

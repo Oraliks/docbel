@@ -63,6 +63,7 @@ interface TenantDetail {
   dedupeWindowDays: number | null;
   brandColor: string | null;
   emailFromName: string | null;
+  notifyEmail: string | null;
   formFields: BookingField[];
   active: boolean;
 }
@@ -181,6 +182,7 @@ function ParamsSection({
     dedupeWindowDays: String(tenant.dedupeWindowDays ?? ""),
     brandColor: tenant.brandColor ?? "#7C3AED",
     emailFromName: tenant.emailFromName ?? "",
+    notifyEmail: tenant.notifyEmail ?? "",
     active: tenant.active,
   });
   const [saving, setSaving] = useState(false);
@@ -195,12 +197,13 @@ function ParamsSection({
         autoApproveAfterHours: form.autoApproveAfterHours
           ? Number(form.autoApproveAfterHours)
           : null,
-        dedupeField: form.dedupeField === "none" ? null : form.dedupeField,
+        dedupeField: form.dedupeField,
         dedupeWindowDays: form.dedupeWindowDays
           ? Number(form.dedupeWindowDays)
           : null,
         brandColor: form.brandColor || null,
         emailFromName: form.emailFromName || null,
+        notifyEmail: form.notifyEmail || null,
         active: form.active,
       }),
     });
@@ -327,6 +330,23 @@ function ParamsSection({
             placeholder="ex: FGTB Bruxelles"
             className="max-w-xs"
           />
+        </div>
+
+        {/* notifyEmail */}
+        <div className="flex flex-col gap-1.5">
+          <Label>Email de notification (équipe)</Label>
+          <Input
+            type="email"
+            value={form.notifyEmail}
+            onChange={(e) =>
+              setForm((s) => ({ ...s, notifyEmail: e.target.value }))
+            }
+            placeholder="ex: rdv@fgtb-bruxelles.be"
+            className="max-w-xs"
+          />
+          <p className="text-xs text-muted-foreground">
+            Notifié à chaque nouvelle demande de rendez-vous.
+          </p>
         </div>
 
         <Separator />

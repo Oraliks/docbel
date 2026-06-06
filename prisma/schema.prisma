@@ -2062,6 +2062,8 @@ model BookingTenant {
   brandColor            String?
   /// Nom d'expéditeur des emails ("FGTB Bruxelles"). Défaut: name.
   emailFromName         String?
+  /// Email de l'équipe notifié à chaque nouvelle demande (optionnel).
+  notifyEmail           String?
   /// Définition du formulaire citoyen (registre fermé, cf lib/booking/form-fields).
   formFields            Json            @default("[]")
   /// Validation manuelle requise avant confirmation.

@@ -39,6 +39,7 @@ export const tenantSettingsSchema = z.object({
     .nullable()
     .optional(),
   emailFromName: z.string().max(80).nullable().optional(),
+  notifyEmail: z.string().max(160).nullable().optional(),
   formFields: bookingFormFieldsSchema.optional(),
   requireApproval: z.boolean().optional(),
   autoApproveAfterHours: z.number().int().min(1).max(720).optional(),
@@ -77,6 +78,17 @@ export const ruleSchema = z.object({
   validFrom: YMD.nullable().optional(),
   validUntil: YMD.nullable().optional(),
   active: z.boolean().optional(),
+});
+
+// Génération en masse : plage horaire découpée en créneaux, pour N jours.
+export const ruleBulkSchema = z.object({
+  locationId: z.string().min(1).max(40),
+  weekdays: z.array(z.number().int().min(0).max(6)).min(1).max(7),
+  startTime: HM,
+  endTime: HM,
+  slotDuration: z.number().int().min(5).max(480),
+  capacity: z.number().int().min(1).max(500),
+  serviceCode: z.string().max(60).nullable().optional(),
 });
 
 // --- Exceptions --------------------------------------------------------------

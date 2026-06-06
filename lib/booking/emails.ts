@@ -197,3 +197,40 @@ Annuler si empêchement : ${manageUrl(ctx.token)}`;
     ),
   });
 }
+
+/** Notifie l'équipe (notifyEmail du guichet) d'une nouvelle demande. */
+export async function sendTeamNewBooking(ctx: {
+  to: string;
+  tenantId: string;
+  tenantName: string;
+  fromName?: string | null;
+  brandColor?: string | null;
+  citizenName: string | null;
+  citizenEmail: string | null;
+  locationName: string;
+  date: string;
+  startTime: string;
+  pending: boolean;
+}): Promise<void> {
+  const who = ctx.citizenName ?? ctx.citizenEmail ?? "Un citoyen";
+  const agendaUrl = `${APP_URL}/partenaire/booking/${ctx.tenantId}/agenda`;
+  const accent = ctx.brandColor || "#7C3AED";
+  const lines = [
+    `${who} a demandé un rendez-vous chez ${ctx.tenantName}.`,
+    `Le ${frenchDate(ctx.date)} à ${ctx.startTime} — ${ctx.locationName}.`,
+    ctx.pending
+      ? "Cette demande est en attente de validation."
+      : "Elle a été confirmée automatiquement.",
+    ctx.citizenEmail ? `Contact : ${ctx.citizenEmail}` : "",
+  ].filter(Boolean);
+  const subject = `Nouvelle demande de RDV — ${frenchDate(ctx.date)} ${ctx.startTime}`;
+  const text = `${lines.join("\n")}\n\nVoir l'agenda : ${agendaUrl}`;
+  const html = `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1f2937;font-size:15px;line-height:1.5">
+  <h2 style="color:${accent};font-size:18px;margin:0 0 16px">Nouvelle demande de rendez-vous</h2>
+  ${lines.map((l) => `<p style="margin:0 0 10px">${l}</p>`).join("")}
+  <p style="margin:20px 0"><a href="${agendaUrl}" style="background:${accent};color:#fff;text-decoration:none;padding:10px 18px;border-radius:10px;display:inline-block;font-weight:600">Voir l'agenda</a></p>
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0" />
+  <p style="font-size:12px;color:#6b7280;margin:0">${ctx.tenantName} · via DocBel</p>
+</div>`;
+  await send({ from: brandedFrom(ctx.fromName), to: ctx.to, subject, text, html });
+}

@@ -21,6 +21,7 @@ import { locationAddress } from "@/lib/booking/route-bureau";
 import {
   sendBookingConfirmed,
   sendBookingReceived,
+  sendTeamNewBooking,
 } from "@/lib/booking/emails";
 
 export const runtime = "nodejs";
@@ -209,6 +210,23 @@ export async function POST(
     } else {
       await sendBookingReceived(ctxEmail);
     }
+  }
+
+  // Notif équipe (n'échoue jamais la requête).
+  if (tenant.notifyEmail) {
+    await sendTeamNewBooking({
+      to: tenant.notifyEmail,
+      tenantId: tenant.id,
+      tenantName: tenant.name,
+      fromName: tenant.emailFromName ?? tenant.name,
+      brandColor: tenant.brandColor,
+      citizenName: identity.name,
+      citizenEmail: identity.email,
+      locationName: location.name,
+      date,
+      startTime,
+      pending: !confirmed,
+    });
   }
 
   await logActivity(

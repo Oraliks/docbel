@@ -4,6 +4,7 @@ import {
   addDaysYmd,
   combineToUtc,
   frenchDateShort,
+  generateTimeSlots,
   isHm,
   isSlotPast,
   isYmd,
@@ -52,5 +53,19 @@ describe("dates", () => {
     // 2026-06-07 est un dimanche.
     expect(weekdayOf("2026-06-07")).toBe(0);
     expect(weekdayOf("2026-06-08")).toBe(1);
+  });
+
+  it("génère des créneaux par durée", () => {
+    expect(generateTimeSlots("09:00", "11:00", 30)).toEqual([
+      { startTime: "09:00", endTime: "09:30" },
+      { startTime: "09:30", endTime: "10:00" },
+      { startTime: "10:00", endTime: "10:30" },
+      { startTime: "10:30", endTime: "11:00" },
+    ]);
+    // tronque le dernier créneau incomplet
+    expect(generateTimeSlots("09:00", "10:10", 30)).toHaveLength(2);
+    // plage invalide
+    expect(generateTimeSlots("11:00", "09:00", 30)).toEqual([]);
+    expect(generateTimeSlots("09:00", "10:00", 0)).toEqual([]);
   });
 });

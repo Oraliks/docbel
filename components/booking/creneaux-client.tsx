@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +75,8 @@ const EMPTY_FORM: RuleForm = {
   validUntil: "",
 };
 
+const WEEKDAYS = [1, 2, 3, 4, 5, 6, 0]; // lun → dim
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface CreneauxClientProps {
@@ -96,6 +98,17 @@ export function CreneauxClient({ tenantId, role }: CreneauxClientProps) {
     form: RuleForm;
     saving: boolean;
   }>({ open: false, editing: null, form: EMPTY_FORM, saving: false });
+
+  const [gen, setGen] = useState({
+    open: false,
+    saving: false,
+    weekdays: [1, 2, 3, 4, 5] as number[],
+    startTime: "09:00",
+    endTime: "17:00",
+    slotDuration: "30",
+    capacity: "1",
+    serviceCode: "",
+  });
 
   // Load locations
   useEffect(() => {
@@ -211,6 +224,44 @@ export function CreneauxClient({ tenantId, role }: CreneauxClientProps) {
     loadRules();
   }
 
+  async function handleGenerate() {
+    if (gen.weekdays.length === 0) {
+      toast.error("Choisissez au moins un jour");
+      return;
+    }
+    const targetLoc = locationId !== "all" ? locationId : locations[0]?.id;
+    if (!targetLoc) {
+      toast.error("Choisissez d'abord une antenne");
+      return;
+    }
+    setGen((s) => ({ ...s, saving: true }));
+    const res = await fetch(
+      `/api/booking/partner/tenants/${tenantId}/rules/bulk`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          locationId: targetLoc,
+          weekdays: gen.weekdays,
+          startTime: gen.startTime,
+          endTime: gen.endTime,
+          slotDuration: Number(gen.slotDuration) || 30,
+          capacity: Number(gen.capacity) || 1,
+          serviceCode: gen.serviceCode || undefined,
+        }),
+      },
+    );
+    const data = await res.json();
+    setGen((s) => ({ ...s, saving: false }));
+    if (!res.ok) {
+      toast.error(data.error ?? "Erreur");
+      return;
+    }
+    toast.success(`${data.count} créneaux générés`);
+    setGen((s) => ({ ...s, open: false }));
+    loadRules();
+  }
+
   function setField(key: keyof RuleForm, value: string) {
     setDialog((s) => ({ ...s, form: { ...s.form, [key]: value } }));
   }
@@ -241,10 +292,19 @@ export function CreneauxClient({ tenantId, role }: CreneauxClientProps) {
           </Select>
         )}
         {canEdit && (
-          <Button onClick={openAdd} className="ml-auto">
-            <Plus className="size-4" />
-            Ajouter un créneau
-          </Button>
+          <div className="ml-auto flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setGen((s) => ({ ...s, open: true }))}
+            >
+              <Wand2 className="size-4" />
+              Générer
+            </Button>
+            <Button onClick={openAdd}>
+              <Plus className="size-4" />
+              Ajouter
+            </Button>
+          </div>
         )}
       </div>
 
@@ -435,6 +495,121 @@ export function CreneauxClient({ tenantId, role }: CreneauxClientProps) {
             </Button>
             <Button onClick={handleSave} disabled={dialog.saving}>
               {dialog.saving ? "Enregistrement…" : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Generator dialog */}
+      <Dialog
+        open={gen.open}
+        onOpenChange={(o) => !gen.saving && setGen((s) => ({ ...s, open: o }))}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Générer des créneaux</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="flex flex-col gap-1.5">
+              <Label>Jours</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {WEEKDAYS.map((wd) => {
+                  const on = gen.weekdays.includes(wd);
+                  return (
+                    <button
+                      key={wd}
+                      type="button"
+                      onClick={() =>
+                        setGen((s) => ({
+                          ...s,
+                          weekdays: on
+                            ? s.weekdays.filter((x) => x !== wd)
+                            : [...s.weekdays, wd],
+                        }))
+                      }
+                      className={`rounded-lg border px-2.5 py-1 text-sm transition-colors ${
+                        on
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-input text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {weekdayLabel(wd, true)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>De</Label>
+                <Input
+                  type="time"
+                  value={gen.startTime}
+                  onChange={(e) => setGen((s) => ({ ...s, startTime: e.target.value }))}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>À</Label>
+                <Input
+                  type="time"
+                  value={gen.endTime}
+                  onChange={(e) => setGen((s) => ({ ...s, endTime: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Durée / créneau</Label>
+                <Select
+                  value={gen.slotDuration}
+                  onValueChange={(v) =>
+                    setGen((s) => ({ ...s, slotDuration: v ?? "30" }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["15", "20", "30", "45", "60"].map((d) => (
+                      <SelectItem key={d} value={d}>
+                        {d} min
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Places / créneau</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={gen.capacity}
+                  onChange={(e) => setGen((s) => ({ ...s, capacity: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Code service (optionnel)</Label>
+              <Input
+                placeholder="ex: CHOMAGE_A"
+                value={gen.serviceCode}
+                onChange={(e) => setGen((s) => ({ ...s, serviceCode: e.target.value }))}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Les créneaux existants ne sont pas remplacés — les nouveaux s&apos;ajoutent.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setGen((s) => ({ ...s, open: false }))}
+              disabled={gen.saving}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleGenerate} disabled={gen.saving}>
+              {gen.saving ? "Génération…" : "Générer"}
             </Button>
           </DialogFooter>
         </DialogContent>

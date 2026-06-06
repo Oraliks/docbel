@@ -78,6 +78,26 @@ describe("computeDay", () => {
     const day = computeDay(DATE, [rule({ validUntil: new Date("2020-01-01") })], null, {});
     expect(day.slots).toHaveLength(0);
   });
+
+  it("ferme un jour férié belge (créneaux de règle supprimés)", () => {
+    const holiday = "2026-07-21"; // Fête nationale
+    const wd = weekdayOf(holiday);
+    expect(
+      computeDay(holiday, [rule({ weekday: wd })], null, {}).slots,
+    ).toHaveLength(0);
+  });
+
+  it("autorise un override via exception 'extra' un jour férié", () => {
+    const holiday = "2026-07-21";
+    const wd = weekdayOf(holiday);
+    const ex: ExceptionLite = {
+      date: holiday,
+      kind: "extra",
+      slots: [{ startTime: "10:00", endTime: "11:00", capacity: 2 }],
+    };
+    const day = computeDay(holiday, [rule({ weekday: wd })], ex, {});
+    expect(day.slots.map((s) => s.startTime)).toEqual(["10:00"]);
+  });
 });
 
 describe("computeRange", () => {

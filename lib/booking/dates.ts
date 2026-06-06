@@ -105,3 +105,31 @@ export function isSlotPast(
 ): boolean {
   return ymd < now.ymd || (ymd === now.ymd && hm <= now.hm);
 }
+
+function hmToMin(hm: string): number {
+  const [h, m] = hm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minToHm(min: number): string {
+  return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+}
+
+/**
+ * Découpe une plage horaire en créneaux de `durationMin` minutes.
+ * Ex: ("09:00", "11:00", 30) → 09:00-09:30, 09:30-10:00, 10:00-10:30, 10:30-11:00.
+ */
+export function generateTimeSlots(
+  start: string,
+  end: string,
+  durationMin: number,
+): { startTime: string; endTime: string }[] {
+  const s = hmToMin(start);
+  const e = hmToMin(end);
+  const out: { startTime: string; endTime: string }[] = [];
+  if (durationMin <= 0 || s >= e) return out;
+  for (let t = s; t + durationMin <= e; t += durationMin) {
+    out.push({ startTime: minToHm(t), endTime: minToHm(t + durationMin) });
+  }
+  return out;
+}

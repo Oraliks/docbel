@@ -4,6 +4,7 @@ import React from 'react'
 import type { BlockProps, BlockAdvanced } from '@/lib/page-builder/types'
 import { Field, Group, SliderControl } from './controls'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import {
@@ -123,6 +124,21 @@ export function AdvancedTab({ block, onChange }: AdvancedTabProps) {
               <SelectItem value="loggedOut">Utilisateur déconnecté</SelectItem>
             </SelectContent>
           </Select>
+        </Field>
+      </Group>
+
+      <Group title="CSS personnalisé">
+        <Field
+          label="CSS avancé"
+          hint="Cible ce bloc avec « .self » — ex : .self { letter-spacing: 2px } ou .self:hover { … }"
+        >
+          <Textarea
+            value={adv.customCss ?? ''}
+            onChange={(e) => onChange({ customCss: e.target.value || undefined })}
+            rows={5}
+            placeholder=".self { }"
+            className="resize-y font-mono text-xs"
+          />
         </Field>
       </Group>
 

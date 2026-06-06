@@ -6,6 +6,7 @@ import {
   blockToCSS,
   blockToClassName,
   blockAttrs,
+  blockScopedCss,
 } from '@/lib/page-builder/block-styles'
 import { interpolateBlock, type InterpolationContext } from '@/lib/page-builder/interpolate'
 import { getBlockDef } from '@/lib/page-builder/registry'
@@ -133,6 +134,7 @@ function RegularBlockRenderer({
   const css = blockToCSS(resolvedBlock, device)
   const className = blockToClassName(resolvedBlock)
   const attrs = blockAttrs(resolvedBlock)
+  const scoped = blockScopedCss(resolvedBlock, device)
   const animOnScroll = !!resolvedBlock.advanced?.animateOnScroll
   const { ref, visible } = useEnterViewport(animOnScroll && !editorMode)
 
@@ -144,8 +146,11 @@ function RegularBlockRenderer({
   }
 
   return (
+    <>
+    {scoped && <style dangerouslySetInnerHTML={{ __html: scoped }} />}
     <div
       ref={ref}
+      data-pb-id={resolvedBlock.id}
       className={cn(
         'block-renderer',
         className,
@@ -166,5 +171,6 @@ function RegularBlockRenderer({
         <BlockContent block={resolvedBlock} slot={slot} slotByIndex={slotByIndex} />
       </BlockBoundary>
     </div>
+    </>
   )
 }

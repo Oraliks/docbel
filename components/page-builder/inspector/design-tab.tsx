@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import type { BlockProps, BlockStyle } from '@/lib/page-builder/types'
 import { Field, Group, Pills, ColorControl, SliderControl, NumberControl } from './controls'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -25,6 +27,7 @@ interface DesignTabProps {
 
 export function DesignTab({ block, onChange }: DesignTabProps) {
   const style = block.style ?? {}
+  const hv = style.hoverState ?? {}
   return (
     <div>
       <Group title="Typographie" defaultOpen>
@@ -251,6 +254,27 @@ export function DesignTab({ block, onChange }: DesignTabProps) {
             suffix="px"
           />
         </Field>
+        <Field label="Bordure dégradée — départ" hint="Définir départ + arrivée pour activer">
+          <ColorControl
+            value={style.borderGradientFrom}
+            onChange={(v) => onChange({ borderGradientFrom: v })}
+          />
+        </Field>
+        <Field label="Bordure dégradée — arrivée">
+          <ColorControl
+            value={style.borderGradientTo}
+            onChange={(v) => onChange({ borderGradientTo: v })}
+          />
+        </Field>
+        <Field label="Bordure dégradée — angle">
+          <SliderControl
+            value={style.borderGradientAngle ?? 90}
+            onChange={(v) => onChange({ borderGradientAngle: v })}
+            min={0}
+            max={360}
+            suffix="°"
+          />
+        </Field>
       </Group>
 
       <Group title="Effets">
@@ -267,6 +291,21 @@ export function DesignTab({ block, onChange }: DesignTabProps) {
             ]}
           />
         </Field>
+        <Field label="Couleur de l'ombre">
+          <ColorControl
+            value={style.shadowColor}
+            onChange={(v) => onChange({ shadowColor: v })}
+          />
+        </Field>
+        <div className="flex items-center justify-between gap-4 py-1">
+          <Field label="Ombre intérieure" className="flex-1">
+            <span className="sr-only">Ombre intérieure (inset)</span>
+          </Field>
+          <Switch
+            checked={style.shadowInset ?? false}
+            onCheckedChange={(v) => onChange({ shadowInset: v })}
+          />
+        </div>
         <Field label="Opacité">
           <SliderControl
             value={style.opacity ?? 1}
@@ -274,6 +313,114 @@ export function DesignTab({ block, onChange }: DesignTabProps) {
             min={0}
             max={1}
             step={0.05}
+          />
+        </Field>
+      </Group>
+
+      <Group title="Effets avancés">
+        <Field label="Flou d'arrière-plan" hint="Effet verre dépoli (backdrop-blur)">
+          <SliderControl
+            value={style.backdropBlur ?? 0}
+            onChange={(v) => onChange({ backdropBlur: v })}
+            min={0}
+            max={30}
+            suffix="px"
+          />
+        </Field>
+        <Field label="Mode de fusion">
+          <Select
+            value={style.mixBlendMode ?? 'normal'}
+            onValueChange={(v) =>
+              onChange({
+                mixBlendMode: v === 'normal' ? undefined : (v as BlockStyle['mixBlendMode']),
+              })
+            }
+          >
+            <SelectTrigger className="h-8 w-full">
+              <SelectValue placeholder="Normal" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="normal">Normal</SelectItem>
+              <SelectItem value="multiply">Multiply</SelectItem>
+              <SelectItem value="screen">Screen</SelectItem>
+              <SelectItem value="overlay">Overlay</SelectItem>
+              <SelectItem value="darken">Darken</SelectItem>
+              <SelectItem value="lighten">Lighten</SelectItem>
+              <SelectItem value="difference">Difference</SelectItem>
+              <SelectItem value="soft-light">Soft light</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label="Forme (clip-path)" hint="Ex : circle(50%) ou polygon(0 0,100% 0,100% 80%,0 100%)">
+          <Input
+            value={style.clipPath ?? ''}
+            onChange={(e) => onChange({ clipPath: e.target.value || undefined })}
+            placeholder="circle(50%)"
+            className="font-mono text-xs"
+          />
+        </Field>
+      </Group>
+
+      <Group title="Effets au survol">
+        <p className="text-[11px] text-muted-foreground">
+          Style appliqué quand la souris passe sur le bloc (transition douce auto).
+        </p>
+        <Field label="Couleur du texte">
+          <ColorControl
+            value={hv.textColor}
+            onChange={(v) => onChange({ hoverState: { ...hv, textColor: v } })}
+          />
+        </Field>
+        <Field label="Couleur de fond">
+          <ColorControl
+            value={hv.bgColor}
+            onChange={(v) => onChange({ hoverState: { ...hv, bgColor: v } })}
+          />
+        </Field>
+        <Field label="Couleur de bordure">
+          <ColorControl
+            value={hv.borderColor}
+            onChange={(v) => onChange({ hoverState: { ...hv, borderColor: v } })}
+          />
+        </Field>
+        <Field label="Échelle (zoom)">
+          <SliderControl
+            value={hv.scale ?? 1}
+            onChange={(v) => onChange({ hoverState: { ...hv, scale: v } })}
+            min={0.9}
+            max={1.2}
+            step={0.01}
+          />
+        </Field>
+        <Field label="Élévation">
+          <SliderControl
+            value={hv.lift ?? 0}
+            onChange={(v) => onChange({ hoverState: { ...hv, lift: v } })}
+            min={0}
+            max={24}
+            suffix="px"
+          />
+        </Field>
+        <Field label="Opacité">
+          <SliderControl
+            value={hv.opacity ?? 1}
+            onChange={(v) => onChange({ hoverState: { ...hv, opacity: v } })}
+            min={0}
+            max={1}
+            step={0.05}
+          />
+        </Field>
+        <Field label="Ombre">
+          <Pills
+            value={hv.shadow ?? 'none'}
+            onChange={(v) => onChange({ hoverState: { ...hv, shadow: v } })}
+            options={[
+              { value: 'none', label: 'Aucune' },
+              { value: 'sm', label: 'Sm' },
+              { value: 'md', label: 'Md' },
+              { value: 'lg', label: 'Lg' },
+              { value: 'xl', label: 'XL' },
+            ]}
           />
         </Field>
       </Group>

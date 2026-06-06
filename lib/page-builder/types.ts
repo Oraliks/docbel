@@ -47,6 +47,35 @@ export interface BlockStyle {
   // Effects
   opacity?: number
   textEffect?: 'none' | 'gradient' | 'shadow' | 'glow' | 'outline'
+  /** Styles appliqués au survol (rendus via un <style> scopé [data-pb-id]). */
+  hoverState?: {
+    textColor?: string
+    bgColor?: string
+    borderColor?: string
+    opacity?: number
+    scale?: number
+    lift?: number
+    shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl'
+  }
+  // Border gradient + advanced visual effects
+  borderGradientFrom?: string
+  borderGradientTo?: string
+  borderGradientAngle?: number
+  shadowColor?: string
+  shadowInset?: boolean
+  clipPath?: string
+  mixBlendMode?:
+    | 'normal'
+    | 'multiply'
+    | 'screen'
+    | 'overlay'
+    | 'darken'
+    | 'lighten'
+    | 'color-dodge'
+    | 'soft-light'
+    | 'difference'
+    | 'luminosity'
+  backdropBlur?: number
 }
 
 export interface BlockLayout {
@@ -94,6 +123,8 @@ export interface BlockAdvanced {
   animateOnScroll?: boolean
   /** Conditional rendering. */
   showIf?: 'always' | 'loggedIn' | 'loggedOut'
+  /** CSS libre scopé à ce bloc — `.self` est réécrit en [data-pb-id="..."]. */
+  customCss?: string
 }
 
 /** Editor-only flags. Saved with the block but ignored by the public renderer's logic. */

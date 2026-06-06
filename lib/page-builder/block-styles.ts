@@ -20,6 +20,15 @@ const SHADOW_MAP: Record<NonNullable<BlockStyle['shadow']>, string> = {
   xl: '0 24px 60px rgba(0,0,0,.18)',
 }
 
+// Géométrie d'ombre sans couleur (pour ombre custom : couleur / intérieure).
+const SHADOW_GEOM: Record<NonNullable<BlockStyle['shadow']>, string> = {
+  none: 'none',
+  sm: '0 1px 2px 0',
+  md: '0 4px 12px 0',
+  lg: '0 12px 32px 0',
+  xl: '0 24px 60px 0',
+}
+
 function hexToRgba(hex: string, alpha: number): string {
   const m = hex.replace('#', '')
   const full = m.length === 3 ? m.split('').map((c) => c + c).join('') : m
@@ -121,12 +130,34 @@ export function blockToCSS(
   if (style.borderColor) css.borderColor = style.borderColor
   if (style.borderStyle) css.borderStyle = style.borderStyle
   if (style.borderRadius !== undefined) css.borderRadius = `${style.borderRadius}px`
+  if (style.borderGradientFrom && style.borderGradientTo) {
+    if (css.borderStyle === undefined) css.borderStyle = 'solid'
+    if (css.borderWidth === undefined) css.borderWidth = '2px'
+    css.borderImage = `linear-gradient(${style.borderGradientAngle ?? 90}deg, ${style.borderGradientFrom}, ${style.borderGradientTo}) 1`
+  }
 
-  // Shadow
-  if (style.shadow && style.shadow !== 'none') css.boxShadow = SHADOW_MAP[style.shadow]
+  // Shadow (couleur custom / intérieure si définies, sinon le preset)
+  if (style.shadow && style.shadow !== 'none') {
+    if (style.shadowColor || style.shadowInset) {
+      const color = style.shadowColor ? hexToRgba(style.shadowColor, 0.45) : 'rgba(0,0,0,.15)'
+      css.boxShadow = `${style.shadowInset ? 'inset ' : ''}${SHADOW_GEOM[style.shadow]} ${color}`
+    } else {
+      css.boxShadow = SHADOW_MAP[style.shadow]
+    }
+  }
 
   // Opacity
   if (style.opacity !== undefined) css.opacity = style.opacity
+
+  // Advanced visual effects
+  if (style.clipPath) css.clipPath = style.clipPath
+  if (style.mixBlendMode && style.mixBlendMode !== 'normal') {
+    css.mixBlendMode = style.mixBlendMode
+  }
+  if (style.backdropBlur) {
+    css.backdropFilter = `blur(${style.backdropBlur}px)`
+    Object.assign(css, { WebkitBackdropFilter: `blur(${style.backdropBlur}px)` })
+  }
 
   // Text effects (applied last so they take precedence over background)
   if (style.textEffect === 'gradient') {
@@ -149,6 +180,54 @@ export function blockToCSS(
   }
 
   return css
+}
+
+function sanitizeCustomCss(css: string): string {
+  return css
+    .replace(/<\/?\s*style/gi, '')
+    .replace(/@import[^;]*;?/gi, '')
+    .replace(/expression\s*\(/gi, '(')
+    .replace(/javascript:/gi, '')
+    .slice(0, 4000)
+}
+
+/**
+ * CSS scopé à un seul bloc via [data-pb-id="..."] : états au survol (hoverState)
+ * + CSS personnalisé (`.self` → sélecteur du bloc). Renvoie le contenu d'un
+ * <style> ou null. Émis par block-renderer à côté du bloc.
+ */
+export function blockScopedCss(
+  block: BlockProps,
+  device: DeviceType = 'desktop'
+): string | null {
+  const { style } = mergeForDevice(block, device)
+  const sel = `[data-pb-id="${block.id}"]`
+  const rules: string[] = []
+
+  const h = style.hoverState
+  if (h) {
+    const decls: string[] = []
+    if (h.textColor) decls.push(`color:${h.textColor}`)
+    if (h.bgColor) decls.push(`background-color:${h.bgColor}`)
+    if (h.borderColor) decls.push(`border-color:${h.borderColor}`)
+    if (h.opacity !== undefined) decls.push(`opacity:${h.opacity}`)
+    if (h.shadow && h.shadow !== 'none') decls.push(`box-shadow:${SHADOW_MAP[h.shadow]}`)
+    const tf: string[] = []
+    if (h.scale !== undefined) tf.push(`scale(${h.scale})`)
+    if (h.lift) tf.push(`translateY(-${h.lift}px)`)
+    if (tf.length) decls.push(`transform:${tf.join(' ')}`)
+    if (decls.length) {
+      rules.push(`${sel}{transition:all .25s ease}`)
+      rules.push(`${sel}:hover{${decls.join(';')}}`)
+    }
+  }
+
+  if (block.advanced?.customCss) {
+    const safe = sanitizeCustomCss(block.advanced.customCss)
+    if (safe.trim()) rules.push(safe.replace(/\.self\b/g, sel))
+  }
+
+  return rules.length ? rules.join('\n') : null
 }
 
 const ANIMATION_CLASS: Record<NonNullable<BlockAdvanced['animation']>, string> = {

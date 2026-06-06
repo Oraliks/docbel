@@ -32,6 +32,43 @@ const StyleSchema = z
     shadow: z.enum(['none', 'sm', 'md', 'lg', 'xl']).optional(),
     opacity: z.number().min(0).max(1).optional(),
     textEffect: z.enum(['none', 'gradient', 'shadow', 'glow', 'outline']).optional(),
+    hoverState: z
+      .object({
+        textColor: HexColor,
+        bgColor: HexColor,
+        borderColor: HexColor,
+        opacity: z.number().min(0).max(1).optional(),
+        scale: z.number().min(0.5).max(2).optional(),
+        lift: z.number().min(0).max(40).optional(),
+        shadow: z.enum(['none', 'sm', 'md', 'lg', 'xl']).optional(),
+      })
+      .partial()
+      .optional(),
+    borderGradientFrom: HexColor,
+    borderGradientTo: HexColor,
+    borderGradientAngle: z.number().min(0).max(360).optional(),
+    shadowColor: HexColor,
+    shadowInset: z.boolean().optional(),
+    clipPath: z
+      .string()
+      .max(300)
+      .regex(/^[a-zA-Z0-9()%,.\s/_-]*$/)
+      .optional(),
+    mixBlendMode: z
+      .enum([
+        'normal',
+        'multiply',
+        'screen',
+        'overlay',
+        'darken',
+        'lighten',
+        'color-dodge',
+        'soft-light',
+        'difference',
+        'luminosity',
+      ])
+      .optional(),
+    backdropBlur: z.number().min(0).max(40).optional(),
   })
   .partial()
 
@@ -79,6 +116,7 @@ const AdvancedSchema = z
     animationDelay: z.number().min(0).max(5000).optional(),
     animateOnScroll: z.boolean().optional(),
     showIf: z.enum(['always', 'loggedIn', 'loggedOut']).optional(),
+    customCss: z.string().max(4000).optional(),
   })
   .partial()
 

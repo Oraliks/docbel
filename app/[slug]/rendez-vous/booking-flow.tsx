@@ -18,10 +18,15 @@ import type { BookingField, DayAvailability } from "@/lib/booking/types";
 import {
   addDaysYmd,
   brusselsNowParts,
-  frenchDate,
-  frenchDateShort,
-  weekdayLabel,
 } from "@/lib/booking/dates";
+import {
+  bookingUI,
+  localeDate,
+  BOOKING_LOCALES,
+  BOOKING_LOCALE_LABELS,
+  fillTemplate,
+  type BookingLocale,
+} from "@/lib/booking/i18n";
 import { validateFormFields } from "@/lib/booking/form-fields";
 import {
   GLASS_CARD,
@@ -80,6 +85,7 @@ interface Props {
   prefill: { name: string; email: string } | null;
   initialFrom: string;
   initialAvailability: AvailabilityResponse | null;
+  locale: BookingLocale;
 }
 
 // ---------------------------------------------------------------------------
@@ -115,14 +121,14 @@ type Screen =
 // Helpers
 // ---------------------------------------------------------------------------
 
-const MONTHS_ABBR = [
-  "janv.", "févr.", "mars", "avr.", "mai", "juin",
-  "juil.", "août", "sept.", "oct.", "nov.", "déc.",
-];
+const INTL_TAG: Record<BookingLocale, string> = { fr: "fr-BE", nl: "nl-BE", en: "en-GB", de: "de-DE" };
 
-function dayHeaderLabel(ymd: string): string {
-  const [, m, d] = ymd.split("-");
-  return `${Number(d)} ${MONTHS_ABBR[Number(m) - 1]}`;
+function shortDate(ymd: string, locale: BookingLocale): string {
+  return new Intl.DateTimeFormat(INTL_TAG[locale], { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${ymd}T00:00:00Z`));
+}
+
+function weekdayShort(ymd: string, locale: BookingLocale): string {
+  return new Intl.DateTimeFormat(INTL_TAG[locale], { weekday: "short", timeZone: "UTC" }).format(new Date(`${ymd}T00:00:00Z`));
 }
 
 function buildInitialFormData(
@@ -179,7 +185,9 @@ export function BookingFlow({
   prefill,
   initialFrom,
   initialAvailability,
+  locale,
 }: Props) {
+  const t = bookingUI(locale);
   const todayYmd = brusselsNowParts().ymd;
   const [screen, setScreen] = useState<Screen>({ type: "calendar" });
 
@@ -334,6 +342,7 @@ export function BookingFlow({
           date: screen.date,
           startTime: screen.startTime,
           formData,
+          locale,
         }),
       });
 
@@ -419,6 +428,7 @@ export function BookingFlow({
           date: screen.date,
           startTime: screen.startTime,
           formData,
+          locale,
         }),
       });
       const data: { ok?: boolean; available?: boolean; error?: string } = await res
@@ -609,17 +619,17 @@ export function BookingFlow({
           <div>
             <h2 className="text-[20px] font-semibold text-[color:var(--glass-ink)]">
               {pv
-                ? "Vérifiez votre adresse email"
+                ? t("verifyTitle")
                 : screen.confirmed
-                  ? "Votre rendez-vous est confirmé"
-                  : "Votre demande est enregistrée"}
+                  ? t("successConfirmedTitle")
+                  : t("successPendingTitle")}
             </h2>
             <p className="mt-1 text-[14px] text-[color:var(--glass-ink-soft)]">
               {pv
-                ? "Nous venons de vous envoyer un email. Cliquez sur le lien qu'il contient pour confirmer votre demande — sans quoi elle ne sera pas prise en compte."
+                ? t("verifyDesc")
                 : screen.confirmed
-                  ? "Vous recevrez un email avec tous les détails."
-                  : "Votre demande est en cours de validation. Vous recevrez un email de confirmation."}
+                  ? t("successConfirmedDesc")
+                  : t("successPendingDesc")}
             </p>
           </div>
           {!pv && (
@@ -628,7 +638,7 @@ export function BookingFlow({
               className="inline-flex w-fit items-center gap-2 rounded-full px-5 py-2 text-[14px] font-semibold transition-opacity hover:opacity-80"
               style={GLASS_PRIMARY_STYLE}
             >
-              Gérer ma demande
+              {t("successManage")}
               <ChevronRight size={14} />
             </Link>
           )}
@@ -646,11 +656,10 @@ export function BookingFlow({
           </div>
           <div>
             <h2 className="text-[20px] font-semibold text-[color:var(--glass-ink)]">
-              Vous êtes sur la liste d&apos;attente
+              {t("waitlistDoneTitle")}
             </h2>
             <p className="mt-1 text-[14px] text-[color:var(--glass-ink-soft)]">
-              Si une place se libère pour le {frenchDate(screen.date)} à{" "}
-              {screen.startTime}, vous recevrez un email pour réserver en priorité.
+              {fillTemplate(t("waitlistDoneDesc"), { date: localeDate(screen.date, locale), time: screen.startTime })}
             </p>
           </div>
           <button
@@ -661,7 +670,7 @@ export function BookingFlow({
             className="flex items-center gap-1 self-start text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
           >
             <ChevronLeft size={14} />
-            Retour au calendrier
+            {t("backToCalendar")}
           </button>
         </div>
       </div>
@@ -674,18 +683,14 @@ export function BookingFlow({
       <div className={`${GLASS_CARD} glass-surface mx-auto w-full max-w-xl rounded-2xl p-6`}>
         <div className="flex flex-col gap-4">
           <h2 className="text-[18px] font-semibold text-[color:var(--glass-ink)]">
-            Ce créneau vient d&apos;être complété
+            {t("waitlistFullTitle")}
           </h2>
           <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-            Le créneau du <strong>{frenchDate(screen.date)}</strong> à{" "}
-            <strong>{screen.startTime}</strong> est complet. Rejoignez la liste
-            d&apos;attente&nbsp;: si une place se libère, vous serez prévenu·e par
-            email pour réserver en priorité.
+            {fillTemplate(t("waitlistFullDesc"), { date: localeDate(screen.date, locale), time: screen.startTime })}
           </p>
           {!canJoin && (
             <p className="text-[13px] text-amber-700">
-              Une adresse email est nécessaire pour vous prévenir. Revenez au
-              formulaire pour la renseigner.
+              {t("waitlistNeedEmail")}
             </p>
           )}
           <div className="flex flex-wrap items-center gap-3">
@@ -695,7 +700,7 @@ export function BookingFlow({
               style={GLASS_PRIMARY_STYLE}
               className="flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-60"
             >
-              {joiningWaitlist ? "Inscription…" : "Rejoindre la liste d'attente"}
+              {joiningWaitlist ? t("waitlistJoining") : t("waitlistJoin")}
             </button>
             <button
               onClick={() => {
@@ -705,7 +710,7 @@ export function BookingFlow({
               className="flex items-center gap-1 text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
             >
               <ChevronLeft size={14} />
-              Choisir un autre créneau
+              {t("chooseOther")}
             </button>
           </div>
         </div>
@@ -717,6 +722,7 @@ export function BookingFlow({
     return (
       <BlockedExisting
         slug={slug}
+        locale={locale}
         lastBookingDate={screen.lastBookingDate}
         address={screen.address}
         manageToken={screen.manageToken}
@@ -746,22 +752,22 @@ export function BookingFlow({
     const steps = [
       {
         Icon: CalendarDays,
-        title: "Sélectionnez un créneau",
-        desc: "Choisissez le jour et l'heure qui vous conviennent.",
+        title: t("step1Title"),
+        desc: t("step1Desc"),
       },
       {
         Icon: UserRound,
-        title: "Vos coordonnées",
-        desc: "Indiquez vos informations pour confirmer le rendez-vous.",
+        title: t("step2Title"),
+        desc: t("step2Desc"),
       },
       {
         Icon: CheckCircle2,
-        title: "Confirmation par email",
-        desc: "Vous recevez un email avec tous les détails.",
+        title: t("step3Title"),
+        desc: t("step3Desc"),
       },
     ];
 
-    const weekRange = `${frenchDateShort(from)} → ${frenchDateShort(addDaysYmd(from, 6))}`;
+    const weekRange = `${shortDate(from, locale)} → ${shortDate(addDaysYmd(from, 6), locale)}`;
 
     return (
       <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
@@ -769,12 +775,27 @@ export function BookingFlow({
         <aside className={`${GLASS_CARD} glass-surface flex flex-col gap-5 rounded-2xl p-5`}>
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-              Prise de rendez-vous
+              {t("sidebarKicker")}
             </p>
             <h1 className="glass-display mt-1 text-[30px] font-semibold leading-none">
               {tenantName}
             </h1>
           </div>
+
+          <select
+            aria-label={t("langLabel")}
+            value={locale}
+            onChange={(e) => {
+              const url = new URL(window.location.href);
+              url.searchParams.set("lang", e.target.value);
+              window.location.href = url.toString();
+            }}
+            className={`${GLASS_INPUT} h-9 rounded-xl border px-2 text-[13px] outline-none focus:ring-2 focus:ring-[color:var(--glass-accent-deep)]`}
+          >
+            {BOOKING_LOCALES.map((l) => (
+              <option key={l} value={l}>{BOOKING_LOCALE_LABELS[l]}</option>
+            ))}
+          </select>
 
           {loc && (
             <div className="flex items-start gap-2 text-[13px] text-[color:var(--glass-ink-soft)]">
@@ -813,7 +834,7 @@ export function BookingFlow({
 
           <div className="flex flex-col gap-3">
             <p className="text-[13px] font-semibold text-[color:var(--glass-ink)]">
-              Comment ça fonctionne&nbsp;?
+              {t("how")}
             </p>
             {steps.map((s) => (
               <div key={s.title} className="flex items-start gap-3">
@@ -836,7 +857,7 @@ export function BookingFlow({
 
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
-              Semaine sélectionnée
+              {t("weekSelected")}
             </p>
             <p className="mt-1.5 flex items-center gap-2 text-[14px] font-medium text-[color:var(--glass-ink)]">
               <CalendarDays size={15} className="text-[color:var(--glass-accent-deep)]" />
@@ -850,9 +871,9 @@ export function BookingFlow({
           >
             <HelpCircle size={16} className="flex-shrink-0 text-[color:var(--glass-accent-deep)]" />
             <span>
-              Besoin d&apos;aide&nbsp;?{" "}
+              {t("needHelp")}{" "}
               <span className="text-[color:var(--glass-accent-deep)]">
-                Consulter notre guide
+                {t("consultGuide")}
               </span>
             </span>
           </Link>
@@ -868,7 +889,7 @@ export function BookingFlow({
               className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)] transition-colors hover:text-[color:var(--glass-ink)] disabled:pointer-events-none disabled:opacity-40"
             >
               <ChevronLeft size={15} />
-              <span className="hidden sm:inline">Semaine précédente</span>
+              <span className="hidden sm:inline">{t("weekPrev")}</span>
             </button>
             <span className="text-[15px] font-semibold text-[color:var(--glass-ink)]">
               {weekRange}
@@ -878,7 +899,7 @@ export function BookingFlow({
               disabled={loadingAvail}
               className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)] transition-colors hover:text-[color:var(--glass-ink)] disabled:pointer-events-none disabled:opacity-40"
             >
-              <span className="hidden sm:inline">Semaine suivante</span>
+              <span className="hidden sm:inline">{t("weekNext")}</span>
               <ChevronRight size={15} />
             </button>
           </div>
@@ -888,7 +909,7 @@ export function BookingFlow({
               <div className="flex items-center justify-between border-b border-[color:var(--glass-border)] pb-2">
                 <span className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)]">
                   <Clock size={14} />
-                  Créneaux disponibles
+                  {t("slotsAvailable")}
                 </span>
                 <span className="text-[12px] text-[color:var(--glass-ink-faint)]">
                   GMT+2
@@ -917,10 +938,10 @@ export function BookingFlow({
           {!loadingAvail && daysWithSlots.length === 0 && (
             <div className="py-12 text-center">
               <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-                Aucun créneau disponible cette semaine.
+                {t("noSlots")}
               </p>
               <p className="mt-1 text-[12px] text-[color:var(--glass-ink-faint)]">
-                Essayez la semaine suivante.
+                {t("tryNext")}
               </p>
             </div>
           )}
@@ -930,7 +951,7 @@ export function BookingFlow({
               <div className="flex items-center justify-between border-b border-[color:var(--glass-border)] pb-2">
                 <span className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)]">
                   <Clock size={14} />
-                  Créneaux disponibles
+                  {t("slotsAvailable")}
                 </span>
                 <span className="text-[12px] text-[color:var(--glass-ink-faint)]">
                   GMT+2
@@ -957,10 +978,10 @@ export function BookingFlow({
                         }`}
                       >
                         <span className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--glass-ink-faint)]">
-                          {weekdayLabel(day.weekday, true)}.
+                          {weekdayShort(day.date, locale)}
                         </span>
                         <span className="mt-0.5 flex items-center gap-1 text-[13px] font-semibold text-[color:var(--glass-ink)]">
-                          {dayHeaderLabel(day.date)}
+                          {shortDate(day.date, locale)}
                           {isToday && (
                             <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--glass-accent-deep)]" />
                           )}
@@ -986,7 +1007,7 @@ export function BookingFlow({
                             {slot.startTime}
                           </span>
                           <span className="text-[11px] text-[color:var(--glass-ink-faint)]">
-                            {slot.remaining} {slot.remaining > 1 ? "places" : "place"}
+                            {slot.remaining} {slot.remaining > 1 ? t("places") : t("place")}
                           </span>
                         </button>
                       );
@@ -1008,6 +1029,7 @@ export function BookingFlow({
       return (
         <BlockedExisting
           slug={slug}
+          locale={locale}
           lastBookingDate={dedupeBlocked.lastBookingDate}
           address={dedupeBlocked.address}
           manageToken={dedupeBlocked.manageToken}
@@ -1028,7 +1050,7 @@ export function BookingFlow({
           <div className="flex items-center gap-2">
             <CalendarDays size={16} className="text-[color:var(--glass-accent-deep)]" />
             <span className="text-[14px] font-semibold text-[color:var(--glass-ink)]">
-              {frenchDate(screen.date)}, {screen.startTime}–{screen.endTime}
+              {localeDate(screen.date, locale)}, {screen.startTime}–{screen.endTime}
             </span>
           </div>
         </div>
@@ -1036,7 +1058,7 @@ export function BookingFlow({
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate className={`${GLASS_CARD} glass-surface rounded-2xl p-4`}>
           <div className="flex flex-col gap-4">
-            <p className={GLASS_LABEL}>Vos informations</p>
+            <p className={GLASS_LABEL}>{t("yourInfo")}</p>
             {fields.map((f) => renderField(f))}
 
             <div className="flex items-center gap-3 pt-2">
@@ -1046,7 +1068,7 @@ export function BookingFlow({
                 className="flex items-center gap-1 text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
               >
                 <ChevronLeft size={14} />
-                Modifier le créneau
+                {t("editSlot")}
               </button>
               <button
                 type="submit"
@@ -1054,7 +1076,7 @@ export function BookingFlow({
                 style={GLASS_PRIMARY_STYLE}
                 className="flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-2.5 text-[14px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-60"
               >
-                {submitting ? "Envoi en cours…" : "Confirmer la demande"}
+                {submitting ? t("submitting") : t("submit")}
               </button>
             </div>
           </div>
@@ -1073,6 +1095,7 @@ export function BookingFlow({
 
 function BlockedExisting({
   slug,
+  locale,
   lastBookingDate,
   address,
   manageToken,
@@ -1080,12 +1103,14 @@ function BlockedExisting({
   onBack,
 }: {
   slug: string;
+  locale: BookingLocale;
   lastBookingDate: string;
   address: string;
   manageToken?: string;
   defaultEmail: string;
   onBack: () => void;
 }) {
+  const t = bookingUI(locale);
   const [email, setEmail] = useState(defaultEmail);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -1115,13 +1140,10 @@ function BlockedExisting({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <h2 className="text-[18px] font-semibold text-[color:var(--glass-ink)]">
-            Vous avez déjà un rendez-vous
+            {t("blockedTitle")}
           </h2>
           <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-            Un rendez-vous récent existe à votre nom (le{" "}
-            <strong>{frenchDateShort(lastBookingDate)}</strong>). Pour en
-            reprendre un autre, vous devez d&apos;abord{" "}
-            <strong>déplacer</strong> ou <strong>annuler</strong> celui-ci.
+            {fillTemplate(t("blockedDesc"), { date: localeDate(lastBookingDate, locale) })}
           </p>
         </div>
 
@@ -1131,20 +1153,17 @@ function BlockedExisting({
             className="inline-flex w-fit items-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-semibold transition-opacity hover:opacity-80"
             style={GLASS_PRIMARY_STYLE}
           >
-            Gérer mon rendez-vous (déplacer ou annuler)
+            {t("blockedManage")}
             <ChevronRight size={14} />
           </Link>
         ) : sent ? (
           <div className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4 text-[13px] text-[color:var(--glass-ink-soft)]">
-            Si un rendez-vous existe pour cette adresse, un email contenant le
-            lien de gestion vient d&apos;être envoyé. Pensez à vérifier vos
-            courriers indésirables.
+            {t("blockedSent")}
           </div>
         ) : (
           <div className="flex flex-col gap-2">
             <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
-              Recevez le lien de gestion par email pour déplacer ou annuler votre
-              rendez-vous&nbsp;:
+              {t("blockedEmailPrompt")}
             </p>
             <div className="flex flex-col gap-2 sm:flex-row">
               <input
@@ -1160,15 +1179,14 @@ function BlockedExisting({
                 style={GLASS_PRIMARY_STYLE}
                 className="flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-60"
               >
-                {sending ? "Envoi…" : "Recevoir le lien"}
+                {sending ? t("blockedSending") : t("blockedSend")}
               </button>
             </div>
           </div>
         )}
 
         <p className="text-[13px] text-[color:var(--glass-ink-faint)]">
-          Vous pouvez aussi vous présenter directement au bureau&nbsp;:{" "}
-          <strong>{address}</strong>.
+          {fillTemplate(t("blockedOffice"), { address })}
         </p>
 
         <button
@@ -1176,7 +1194,7 @@ function BlockedExisting({
           className="flex items-center gap-1 self-start text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
         >
           <ChevronLeft size={14} />
-          Retour au calendrier
+          {t("backToCalendar")}
         </button>
       </div>
     </div>

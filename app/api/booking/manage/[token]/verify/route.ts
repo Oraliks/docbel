@@ -92,6 +92,7 @@ async function run(token: string): Promise<NextResponse> {
       date: booking.date,
       startTime: booking.startTime,
       token,
+      locale: booking.locale,
     };
     if (confirmed) {
       const ics = icsForBooking(

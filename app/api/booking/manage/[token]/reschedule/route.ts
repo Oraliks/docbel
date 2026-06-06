@@ -115,6 +115,7 @@ export async function POST(
       date,
       startTime,
       token,
+      locale: booking.locale,
     };
     if (booking.status === BookingStatus.confirmed) {
       const ics = icsForBooking(

@@ -72,6 +72,7 @@ export async function PATCH(
     date: booking.date,
     startTime: booking.startTime,
     token: booking.confirmationToken,
+    locale: booking.locale,
   };
   const hasEmail = !!booking.citizenEmail;
 

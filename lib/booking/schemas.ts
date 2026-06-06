@@ -144,6 +144,7 @@ export const publicBookSchema = z.object({
   date: YMD,
   startTime: HM,
   formData: z.record(z.string(), z.unknown()),
+  locale: z.enum(["fr", "nl", "en", "de"]).optional(),
 });
 
 export const dedupeCheckSchema = z.object({

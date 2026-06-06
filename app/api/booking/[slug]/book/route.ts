@@ -169,6 +169,7 @@ export async function POST(
           citizenNrnEnc: identity.nrn ? encryptNrn(identity.nrn) : null,
           citizenPostalCode: identity.postalCode,
           citizenCommuneId: communeId,
+          locale: parsed.data.locale ?? null,
           userId,
           status,
           confirmationToken: token,
@@ -219,6 +220,7 @@ export async function POST(
       date,
       startTime,
       token,
+      locale: parsed.data.locale ?? null,
     };
     if (needsVerification) {
       await sendBookingVerify(ctxEmail);

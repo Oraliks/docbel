@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { parseFormFields } from "@/lib/booking/form-fields";
 import { loadPublicAvailability } from "@/lib/booking/public-availability";
 import { brusselsNowParts } from "@/lib/booking/dates";
+import { normalizeLocale } from "@/lib/booking/i18n";
 import { getServerAuthSession } from "@/lib/auth-session";
 import { BookingFlow } from "./booking-flow";
 import { BookingUnavailable } from "@/components/booking/booking-unavailable";
@@ -29,10 +30,10 @@ export default async function TenantBookingPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ cp?: string }>;
+  searchParams: Promise<{ cp?: string; lang?: string }>;
 }) {
   const { slug } = await params;
-  const { cp } = await searchParams;
+  const { cp, lang } = await searchParams;
 
   const tenant = await prisma.bookingTenant.findFirst({
     where: { slug },
@@ -89,6 +90,7 @@ export default async function TenantBookingPage({
         prefill={prefill}
         initialFrom={initialFrom}
         initialAvailability={initialAvailability}
+        locale={normalizeLocale(lang)}
       />
     </section>
   );

@@ -65,6 +65,7 @@ export async function POST(
       date: booking.date,
       startTime: booking.startTime,
       token: booking.confirmationToken,
+      locale: booking.locale,
     });
   }
 

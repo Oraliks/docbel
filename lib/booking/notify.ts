@@ -21,6 +21,7 @@ export function emailCtx(
     date: b.date,
     startTime: b.startTime,
     token: b.confirmationToken,
+    locale: b.locale,
   };
 }
 

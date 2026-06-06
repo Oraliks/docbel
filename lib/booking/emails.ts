@@ -1,11 +1,17 @@
-// Emails transactionnels de booking (Resend). Trois moments clés demandés :
-// demande reçue (en cours de validation), confirmation (+ .ics), annulation
-// (avec motif). Plus un rappel J-1. Les envois n'échouent jamais la requête
-// appelante : erreurs loggées, retour silencieux si Resend n'est pas configuré.
+// Emails transactionnels de booking (Resend). Localisés (FR/NL/EN/DE) via
+// lib/booking/i18n selon ctx.locale (défaut FR). Les envois n'échouent jamais
+// la requête appelante : erreurs loggées, retour silencieux si Resend absent.
 
 import { Resend } from "resend";
 import { frenchDate } from "./dates";
 import { icsFilename } from "./ics-adapter";
+import {
+  bookingEmail,
+  fillTemplate,
+  localeDate,
+  normalizeLocale,
+  type BookingLocale,
+} from "./i18n";
 
 const EMAIL_FROM = process.env.EMAIL_FROM || "DocBel <noreply@docbel.be>";
 const APP_URL =
@@ -45,17 +51,25 @@ export interface BookingEmailCtx {
   date: string; // "YYYY-MM-DD"
   startTime: string;
   token: string;
+  locale?: string | null; // fr | nl | en | de (défaut fr)
 }
 
-function hello(name: string | null): string {
-  return name ? `Bonjour ${name},` : "Bonjour,";
+function localeOf(ctx: { locale?: string | null }): BookingLocale {
+  return normalizeLocale(ctx.locale);
+}
+
+function hello(ctx: BookingEmailCtx): string {
+  const e = bookingEmail(localeOf(ctx));
+  return ctx.citizenName ? fillTemplate(e.helloName, { name: ctx.citizenName }) : e.hello;
 }
 
 function whenWhere(ctx: BookingEmailCtx): string {
+  const loc = localeOf(ctx);
+  const e = bookingEmail(loc);
   const where = ctx.locationAddress
     ? `${ctx.locationName} — ${ctx.locationAddress}`
     : ctx.locationName;
-  return `Le ${frenchDate(ctx.date)} à ${ctx.startTime}\n${where}`;
+  return `${fillTemplate(e.when, { date: localeDate(ctx.date, loc), time: ctx.startTime })}\n${where}`;
 }
 
 type CtaDef = { label: string; href: string };
@@ -111,26 +125,26 @@ async function send(args: {
 
 /** Demande reçue, en cours de validation par l'équipe. */
 export async function sendBookingReceived(ctx: BookingEmailCtx): Promise<void> {
-  const subject = `Demande de rendez-vous reçue — ${frenchDate(ctx.date)}`;
-  const intro = `Votre demande de rendez-vous est bien enregistrée et en cours de validation par ${ctx.tenantName}. Vous recevrez un email dès qu'elle est confirmée.`;
-  const text = `${hello(ctx.citizenName)}
+  const loc = localeOf(ctx);
+  const e = bookingEmail(loc);
+  const subject = fillTemplate(e.receivedSubject, { date: localeDate(ctx.date, loc) });
+  const intro = fillTemplate(e.receivedIntro, { tenant: ctx.tenantName });
+  const text = `${hello(ctx)}
 
 ${intro}
 
 ${whenWhere(ctx)}
 
-Gérer ou annuler votre demande : ${manageUrl(ctx.token)}`;
+${e.receivedCta} : ${manageUrl(ctx.token)}`;
   await send({
     from: brandedFrom(ctx.fromName),
     to: ctx.to,
     subject,
     text,
-    html: htmlShell(
-      ctx,
-      "Demande de rendez-vous reçue",
-      [intro, whenWhere(ctx).replace("\n", "<br/>")],
-      { label: "Gérer ma demande", href: manageUrl(ctx.token) },
-    ),
+    html: htmlShell(ctx, e.receivedTitle, [intro, whenWhere(ctx).replace("\n", "<br/>")], {
+      label: e.receivedCta,
+      href: manageUrl(ctx.token),
+    }),
   });
 }
 
@@ -138,26 +152,26 @@ Gérer ou annuler votre demande : ${manageUrl(ctx.token)}`;
 export async function sendBookingConfirmed(
   ctx: BookingEmailCtx & { icsContent: string },
 ): Promise<void> {
-  const subject = `Rendez-vous confirmé — ${frenchDate(ctx.date)}`;
-  const intro = `Votre rendez-vous avec ${ctx.tenantName} est confirmé. Ajoutez-le à votre agenda grâce à la pièce jointe (.ics).`;
-  const text = `${hello(ctx.citizenName)}
+  const loc = localeOf(ctx);
+  const e = bookingEmail(loc);
+  const subject = fillTemplate(e.confirmedSubject, { date: localeDate(ctx.date, loc) });
+  const intro = fillTemplate(e.confirmedIntro, { tenant: ctx.tenantName });
+  const text = `${hello(ctx)}
 
 ${intro}
 
 ${whenWhere(ctx)}
 
-Annuler si besoin : ${manageUrl(ctx.token)}`;
+${e.confirmedCta} : ${manageUrl(ctx.token)}`;
   await send({
     from: brandedFrom(ctx.fromName),
     to: ctx.to,
     subject,
     text,
-    html: htmlShell(
-      ctx,
-      "Rendez-vous confirmé",
-      [intro, whenWhere(ctx).replace("\n", "<br/>")],
-      { label: "Gérer mon rendez-vous", href: manageUrl(ctx.token) },
-    ),
+    html: htmlShell(ctx, e.confirmedTitle, [intro, whenWhere(ctx).replace("\n", "<br/>")], {
+      label: e.confirmedCta,
+      href: manageUrl(ctx.token),
+    }),
     attachments: [
       { filename: icsFilename(ctx.date), content: Buffer.from(ctx.icsContent, "utf-8") },
     ],
@@ -168,12 +182,16 @@ Annuler si besoin : ${manageUrl(ctx.token)}`;
 export async function sendBookingCancelled(
   ctx: BookingEmailCtx & { reason: string; byPartner?: boolean },
 ): Promise<void> {
-  const subject = `Rendez-vous annulé — ${frenchDate(ctx.date)}`;
-  const lead = ctx.byPartner
-    ? `Votre rendez-vous avec ${ctx.tenantName} a été annulé.`
-    : `Votre demande de rendez-vous avec ${ctx.tenantName} n'a pas pu être retenue.`;
-  const motif = `Motif : ${ctx.reason}`;
-  const text = `${hello(ctx.citizenName)}
+  const loc = localeOf(ctx);
+  const e = bookingEmail(loc);
+  const subject = fillTemplate(e.cancelledSubject, { date: localeDate(ctx.date, loc) });
+  const lead = fillTemplate(
+    ctx.byPartner ? e.cancelledLeadPartner : e.cancelledLeadCitizen,
+    { tenant: ctx.tenantName },
+  );
+  const motif = fillTemplate(e.cancelledMotif, { reason: ctx.reason });
+  const rebook = `${APP_URL}/rendez-vous`;
+  const text = `${hello(ctx)}
 
 ${lead}
 
@@ -181,7 +199,7 @@ ${whenWhere(ctx)}
 
 ${motif}
 
-Vous pouvez reprendre rendez-vous : ${APP_URL}/rendez-vous`;
+${e.cancelledCta} : ${rebook}`;
   await send({
     from: brandedFrom(ctx.fromName),
     to: ctx.to,
@@ -189,28 +207,28 @@ Vous pouvez reprendre rendez-vous : ${APP_URL}/rendez-vous`;
     text,
     html: htmlShell(
       ctx,
-      "Rendez-vous annulé",
+      e.cancelledTitle,
       [lead, whenWhere(ctx).replace("\n", "<br/>"), `<strong>${motif}</strong>`],
-      { label: "Reprendre rendez-vous", href: `${APP_URL}/rendez-vous` },
+      { label: e.cancelledCta, href: rebook },
     ),
   });
 }
 
 /** Rappel la veille du rendez-vous, avec confirmation de présence en 1 clic. */
 export async function sendBookingReminder(ctx: BookingEmailCtx): Promise<void> {
-  const subject = `Rappel : rendez-vous demain — ${ctx.startTime}`;
-  const intro = `Petit rappel : vous avez rendez-vous avec ${ctx.tenantName} demain.`;
-  const ask = `Merci de confirmer votre présence en un clic — ou de prévenir si vous ne pouvez pas venir, pour libérer le créneau.`;
-  const text = `${hello(ctx.citizenName)}
+  const e = bookingEmail(localeOf(ctx));
+  const subject = fillTemplate(e.reminderSubject, { time: ctx.startTime });
+  const intro = fillTemplate(e.reminderIntro, { tenant: ctx.tenantName });
+  const text = `${hello(ctx)}
 
 ${intro}
 
 ${whenWhere(ctx)}
 
-${ask}
+${e.reminderAsk}
 
-Confirmer ma présence : ${presenceUrl(ctx.token)}
-Gérer / annuler : ${manageUrl(ctx.token)}`;
+${e.reminderConfirm} : ${presenceUrl(ctx.token)}
+${e.reminderManage} : ${manageUrl(ctx.token)}`;
   await send({
     from: brandedFrom(ctx.fromName),
     to: ctx.to,
@@ -218,11 +236,11 @@ Gérer / annuler : ${manageUrl(ctx.token)}`;
     text,
     html: htmlShell(
       ctx,
-      "Rappel de rendez-vous",
-      [intro, whenWhere(ctx).replace("\n", "<br/>"), ask],
+      e.reminderTitle,
+      [intro, whenWhere(ctx).replace("\n", "<br/>"), e.reminderAsk],
       [
-        { label: "Confirmer ma présence", href: presenceUrl(ctx.token) },
-        { label: "Gérer / annuler", href: manageUrl(ctx.token) },
+        { label: e.reminderConfirm, href: presenceUrl(ctx.token) },
+        { label: e.reminderManage, href: manageUrl(ctx.token) },
       ],
     ),
   });
@@ -230,22 +248,25 @@ Gérer / annuler : ${manageUrl(ctx.token)}`;
 
 /** Relance après une absence (no-show) : invite à reprendre rendez-vous. */
 export async function sendNoShowFollowUp(ctx: BookingEmailCtx): Promise<void> {
-  const subject = `Vous avez manqué votre rendez-vous — ${ctx.tenantName}`;
-  const intro = `Vous n'avez pas pu vous présenter à votre rendez-vous avec ${ctx.tenantName} du ${frenchDate(ctx.date)}. Pas d'inquiétude : vous pouvez en reprendre un nouveau quand vous le souhaitez.`;
-  const text = `${hello(ctx.citizenName)}
+  const loc = localeOf(ctx);
+  const e = bookingEmail(loc);
+  const subject = fillTemplate(e.noShowSubject, { tenant: ctx.tenantName });
+  const intro = fillTemplate(e.noShowIntro, {
+    tenant: ctx.tenantName,
+    date: localeDate(ctx.date, loc),
+  });
+  const rebook = `${APP_URL}/rendez-vous`;
+  const text = `${hello(ctx)}
 
 ${intro}
 
-Reprendre rendez-vous : ${APP_URL}/rendez-vous`;
+${e.noShowCta} : ${rebook}`;
   await send({
     from: brandedFrom(ctx.fromName),
     to: ctx.to,
     subject,
     text,
-    html: htmlShell(ctx, "Reprenez votre rendez-vous", [intro], {
-      label: "Reprendre rendez-vous",
-      href: `${APP_URL}/rendez-vous`,
-    }),
+    html: htmlShell(ctx, e.noShowTitle, [intro], { label: e.noShowCta, href: rebook }),
   });
 }
 
@@ -261,6 +282,7 @@ export async function sendWaitlistOpening(ctx: {
   slug: string;
   date: string;
   startTime: string;
+  locale?: string | null;
 }): Promise<void> {
   const shell: BookingEmailCtx = {
     to: ctx.to,
@@ -273,82 +295,82 @@ export async function sendWaitlistOpening(ctx: {
     date: ctx.date,
     startTime: ctx.startTime,
     token: "",
+    locale: ctx.locale,
   };
+  const loc = localeOf(shell);
+  const e = bookingEmail(loc);
   const href = `${APP_URL}/${ctx.slug}/rendez-vous`;
-  const subject = `Une place s'est libérée — ${frenchDate(ctx.date)}`;
-  const intro = `Bonne nouvelle ! Une place vient de se libérer chez ${ctx.tenantName} pour le créneau qui vous intéressait. Réservez vite, avant qu'elle ne reparte.`;
-  const text = `${hello(ctx.citizenName)}
+  const subject = fillTemplate(e.waitlistSubject, { date: localeDate(ctx.date, loc) });
+  const intro = fillTemplate(e.waitlistIntro, { tenant: ctx.tenantName });
+  const text = `${hello(shell)}
 
 ${intro}
 
 ${whenWhere(shell)}
 
-Réserver maintenant : ${href}`;
+${e.waitlistCta} : ${href}`;
   await send({
     from: brandedFrom(ctx.fromName),
     to: ctx.to,
     subject,
     text,
-    html: htmlShell(
-      shell,
-      "Une place s'est libérée",
-      [intro, whenWhere(shell).replace("\n", "<br/>")],
-      { label: "Réserver maintenant", href },
-    ),
+    html: htmlShell(shell, e.waitlistTitle, [intro, whenWhere(shell).replace("\n", "<br/>")], {
+      label: e.waitlistCta,
+      href,
+    }),
   });
 }
 
 /** Double opt-in : vérifier l'adresse email avant prise en compte (F). */
 export async function sendBookingVerify(ctx: BookingEmailCtx): Promise<void> {
-  const subject = `Confirmez votre demande de rendez-vous — ${ctx.tenantName}`;
-  const intro = `Pour finaliser votre demande de rendez-vous avec ${ctx.tenantName}, merci de confirmer votre adresse email. Sans confirmation, la demande ne sera pas prise en compte.`;
-  const text = `${hello(ctx.citizenName)}
+  const e = bookingEmail(localeOf(ctx));
+  const subject = fillTemplate(e.verifySubject, { tenant: ctx.tenantName });
+  const intro = fillTemplate(e.verifyIntro, { tenant: ctx.tenantName });
+  const text = `${hello(ctx)}
 
 ${intro}
 
 ${whenWhere(ctx)}
 
-Confirmer mon email : ${verifyUrl(ctx.token)}`;
+${e.verifyCta} : ${verifyUrl(ctx.token)}`;
   await send({
     from: brandedFrom(ctx.fromName),
     to: ctx.to,
     subject,
     text,
-    html: htmlShell(
-      ctx,
-      "Confirmez votre adresse email",
-      [intro, whenWhere(ctx).replace("\n", "<br/>")],
-      { label: "Confirmer mon email", href: verifyUrl(ctx.token) },
-    ),
+    html: htmlShell(ctx, e.verifyTitle, [intro, whenWhere(ctx).replace("\n", "<br/>")], {
+      label: e.verifyCta,
+      href: verifyUrl(ctx.token),
+    }),
   });
 }
 
 /** Renvoi du lien de gestion (déplacer/annuler) à l'adresse enregistrée. */
 export async function sendManagementLink(ctx: BookingEmailCtx): Promise<void> {
-  const subject = `Votre lien de gestion de rendez-vous — ${ctx.tenantName}`;
-  const intro = `Voici le lien pour gérer votre rendez-vous avec ${ctx.tenantName}. Vous pouvez le déplacer ou l'annuler — par exemple pour en reprendre un autre.`;
-  const text = `${hello(ctx.citizenName)}
+  const e = bookingEmail(localeOf(ctx));
+  const subject = fillTemplate(e.managementSubject, { tenant: ctx.tenantName });
+  const intro = fillTemplate(e.managementIntro, { tenant: ctx.tenantName });
+  const text = `${hello(ctx)}
 
 ${intro}
 
 ${whenWhere(ctx)}
 
-Gérer mon rendez-vous : ${manageUrl(ctx.token)}`;
+${e.managementCta} : ${manageUrl(ctx.token)}`;
   await send({
     from: brandedFrom(ctx.fromName),
     to: ctx.to,
     subject,
     text,
-    html: htmlShell(
-      ctx,
-      "Votre lien de gestion",
-      [intro, whenWhere(ctx).replace("\n", "<br/>")],
-      { label: "Gérer mon rendez-vous", href: manageUrl(ctx.token) },
-    ),
+    html: htmlShell(ctx, e.managementTitle, [intro, whenWhere(ctx).replace("\n", "<br/>")], {
+      label: e.managementCta,
+      href: manageUrl(ctx.token),
+    }),
   });
 }
 
-/** Notifie l'équipe (notifyEmail du guichet) d'une nouvelle demande. */
+/** Notifie l'équipe (notifyEmail du guichet) d'une nouvelle demande. En FR
+ *  (destinataire = personnel du guichet, pas le citoyen). */
 export async function sendTeamNewBooking(ctx: {
   to: string;
   tenantId: string;

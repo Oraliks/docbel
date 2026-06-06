@@ -1,8 +1,6 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { requireBookingActorAuth } from "@/lib/auth-check";
-import { tenantAccess } from "@/lib/booking/access";
+import { prisma } from "@/lib/prisma";
 import { BookingTabs } from "@/components/booking/booking-tabs";
 
 interface LayoutProps {
@@ -10,18 +8,15 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-export default async function TenantLayout({ params, children }: LayoutProps) {
+// Gestion admin d'un guichet (chrome admin via app/admin/layout). L'admin a
+// tous les droits → role="owner" pour les composants partagés.
+export default async function AdminTenantLayout({ params, children }: LayoutProps) {
   const { tenantId } = await params;
-
-  const auth = await requireBookingActorAuth();
-  if (!auth.isAuthorized) notFound();
-
-  const { tenant, role } = await tenantAccess(
-    auth.user.id,
-    auth.user.role,
-    tenantId
-  );
-  if (!tenant || !role) notFound();
+  const tenant = await prisma.bookingTenant.findUnique({
+    where: { id: tenantId },
+    select: { name: true, slug: true },
+  });
+  if (!tenant) notFound();
 
   return (
     <div className="flex flex-1 flex-col">
@@ -30,7 +25,7 @@ export default async function TenantLayout({ params, children }: LayoutProps) {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{tenant.name}</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Espace de gestion du guichet
+              Gestion admin du guichet
             </p>
           </div>
           <a
@@ -45,7 +40,7 @@ export default async function TenantLayout({ params, children }: LayoutProps) {
         </div>
       </div>
 
-      <BookingTabs tenantId={tenantId} role={role} basePath="/partenaire/booking" />
+      <BookingTabs tenantId={tenantId} role="owner" basePath="/admin/booking" />
 
       <div className="flex flex-1 flex-col">{children}</div>
     </div>

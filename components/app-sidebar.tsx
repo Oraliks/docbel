@@ -186,12 +186,12 @@ const defaultData = {
     {
       // Plateforme de prise de RDV (multi-tenant) + outil privé FGTB (.ics).
       title: "Rendez-vous",
-      url: "/partenaire/booking",
+      url: "/admin/booking",
       icon: (
         <CalendarClock className="size-4" />
       ),
       items: [
-        { title: "Plateforme de booking", url: "/partenaire/booking" },
+        { title: "Plateforme de booking", url: "/admin/booking" },
         { title: "Planning FGTB (.ics)", url: "/partenaire/outils/fgtb-planning" },
       ],
     },

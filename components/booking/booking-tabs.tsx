@@ -7,11 +7,13 @@ import { cn } from "@/lib/utils";
 interface BookingTabsProps {
   tenantId: string;
   role: "owner" | "manager" | "agent";
+  /** Préfixe d'URL : "/partenaire/booking" (pro) ou "/admin/booking" (admin). */
+  basePath: string;
 }
 
-export function BookingTabs({ tenantId, role }: BookingTabsProps) {
+export function BookingTabs({ tenantId, role, basePath }: BookingTabsProps) {
   const pathname = usePathname();
-  const base = `/partenaire/booking/${tenantId}`;
+  const base = `${basePath}/${tenantId}`;
 
   const tabs = [
     { label: "Agenda", href: `${base}/agenda` },

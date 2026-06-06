@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireBookingActorAuth } from "@/lib/auth-check";
 import { tenantAccess } from "@/lib/booking/access";
-import { CreneauxClient } from "./creneaux-client";
+import { CreneauxClient } from "@/components/booking/creneaux-client";
 
 interface PageProps {
   params: Promise<{ tenantId: string }>;

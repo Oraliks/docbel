@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireBookingActorAuth } from "@/lib/auth-check";
 import { tenantAccess } from "@/lib/booking/access";
-import { ExceptionsClient } from "./exceptions-client";
+import { ExceptionsClient } from "@/components/booking/exceptions-client";
 
 interface PageProps {
   params: Promise<{ tenantId: string }>;

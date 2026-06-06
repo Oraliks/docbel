@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireBookingActorAuth } from "@/lib/auth-check";
 import { tenantAccess } from "@/lib/booking/access";
-import { AgendaClient } from "./agenda-client";
+import { AgendaClient } from "@/components/booking/agenda-client";
 
 interface PageProps {
   params: Promise<{ tenantId: string }>;

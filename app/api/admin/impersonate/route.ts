@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { headers } from "next/headers"
+import { headers, cookies } from "next/headers"
 import { auth } from "@/lib/auth"
 import { requireAdminAuth } from "@/lib/auth-check"
 import { prisma } from "@/lib/prisma"
+import { isDemoEmail } from "@/lib/admin/demo-users"
+import { READONLY_COOKIE } from "@/lib/admin/readonly-guard"
 
 /// POST /api/admin/impersonate
 /// Body : { userId: string }
@@ -92,6 +94,21 @@ export async function POST(req: NextRequest) {
       reason,
     },
   })
+
+  // Phase D #7 garde-fou : si on impersonifie un VRAI user (pas un compte
+  // demo), on force le mode lecture seule a ON par defaut, peu importe l'env.
+  // L'admin peut le desactiver via le cadenas de la banniere s'il a vraiment
+  // besoin d'ecrire (rare, et c'est trace dans le toggle).
+  if (!isDemoEmail(target.email)) {
+    const c = await cookies()
+    c.set(READONLY_COOKIE, "1", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    })
+  }
 
   return NextResponse.json({ ok: true, targetEmail: target.email })
 }

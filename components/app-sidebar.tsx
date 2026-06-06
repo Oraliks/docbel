@@ -148,6 +148,12 @@ const defaultData = {
             { title: "Email d'invitation", url: "/admin/employeurs/email" },
           ],
         },
+        {
+          // Audit des impersonations admin (cf. AdminImpersonationLog,
+          // alimenté par /api/admin/impersonate et /api/admin/view-as-visitor).
+          title: "Audit impersonations",
+          url: "/admin/impersonation",
+        },
       ],
     },
     {

@@ -35,6 +35,12 @@ export default async function RdvDiscoveryPage() {
         </p>
       </div>
       <RdvStepper tenants={tenants} />
+      <a
+        href="/rendez-vous/guichets"
+        className="text-[13px] text-[color:var(--glass-ink-soft)] underline-offset-2 hover:text-[color:var(--glass-ink)] hover:underline"
+      >
+        Ou parcourez tous les guichets disponibles →
+      </a>
     </section>
   );
 }

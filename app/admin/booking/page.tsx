@@ -18,6 +18,18 @@ export default async function AdminBookingPage() {
     : [];
   const pendingMap = new Map(pending.map((p) => [p.tenantId, p._count._all]));
 
+  // Réservations créées ce mois calendaire (suivi facturation / freemium).
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const monthly = ids.length
+    ? await prisma.booking.groupBy({
+        by: ["tenantId"],
+        where: { tenantId: { in: ids }, createdAt: { gte: monthStart } },
+        _count: { _all: true },
+      })
+    : [];
+  const monthlyMap = new Map(monthly.map((m) => [m.tenantId, m._count._all]));
+
   const rows = tenants.map((t) => ({
     id: t.id,
     slug: t.slug,
@@ -26,6 +38,7 @@ export default async function AdminBookingPage() {
     partnerOrganization: t.partnerOrganization,
     active: t.active,
     pendingCount: pendingMap.get(t.id) ?? 0,
+    monthCount: monthlyMap.get(t.id) ?? 0,
   }));
 
   return (

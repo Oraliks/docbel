@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Plus, Settings } from "lucide-react";
+import { ExternalLink, Plus, Settings, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,7 @@ interface TenantRow {
   partnerOrganization: string | null;
   active: boolean;
   pendingCount: number;
+  monthCount: number;
 }
 
 const CATEGORIES = ["unemployment", "social_aid", "municipal", "private", "other"];
@@ -123,7 +124,11 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={() => router.push("/admin/booking/nouveau")}>
+          <Wand2 className="size-4" />
+          Assistant guidé
+        </Button>
         <Button onClick={() => setOpen(true)}>
           <Plus className="size-4" />
           Créer un guichet
@@ -221,6 +226,7 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
                 <TableHead>Organisation</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>En attente</TableHead>
+                <TableHead>Ce mois</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -250,6 +256,9 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
                     ) : (
                       <span className="text-muted-foreground">0</span>
                     )}
+                  </TableCell>
+                  <TableCell className="text-sm tabular-nums text-muted-foreground">
+                    {t.monthCount}
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-2">

@@ -11,6 +11,7 @@ import {
   frenchDate,
   frenchDateShort,
 } from "@/lib/booking/dates";
+import { validateFormFields } from "@/lib/booking/form-fields";
 import {
   GLASS_CARD,
   GLASS_INPUT,
@@ -42,6 +43,7 @@ interface BookResponse {
   blocked?: boolean;
   lastBookingDate?: string;
   error?: string;
+  fieldErrors?: Record<string, string>;
 }
 
 interface DedupeResponse {
@@ -137,6 +139,7 @@ export function BookingFlow({
     buildInitialFormData(fields, prefill),
   );
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [dedupeBlocked, setDedupeBlocked] = useState<{
     lastBookingDate: string;
     address: string;
@@ -245,22 +248,16 @@ export function BookingFlow({
     e.preventDefault();
     if (screen.type !== "form") return;
 
-    // Client-side required check
-    for (const f of fields) {
-      if (!f.required) continue;
-      const val = formData[f.key];
-      if (f.type === "checkbox") {
-        if (!val) {
-          toast.error(`Veuillez cocher : ${f.label}`);
-          return;
-        }
-      } else {
-        if (!val || (typeof val === "string" && !val.trim())) {
-          toast.error(`Champ obligatoire : ${f.label}`);
-          return;
-        }
-      }
+    // Validation client complète (mêmes règles Zod que le serveur) → erreurs
+    // par champ, affichées en rouge sous chaque champ concerné.
+    const validation = validateFormFields(fields, formData);
+    if (!validation.ok) {
+      setFieldErrors(validation.errors);
+      toast.error("Veuillez corriger les champs indiqués en rouge.");
+      focusFirstError(validation.errors);
+      return;
     }
+    setFieldErrors({});
 
     setSubmitting(true);
     try {
@@ -314,8 +311,12 @@ export function BookingFlow({
         return;
       }
 
-      if (res.status === 400 && data.error) {
-        toast.error(data.error);
+      if (res.status === 400) {
+        if (data.fieldErrors) {
+          setFieldErrors(data.fieldErrors);
+          focusFirstError(data.fieldErrors);
+        }
+        toast.error(data.error ?? "Formulaire invalide. Vérifiez les champs.");
         return;
       }
 
@@ -331,10 +332,25 @@ export function BookingFlow({
   // Render helpers
   // ---------------------------------------------------------------------------
 
+  function focusFirstError(errs: Record<string, string>) {
+    const firstKey = Object.keys(errs)[0];
+    if (!firstKey) return;
+    const el = document.getElementById(firstKey);
+    el?.focus();
+    el?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+
+  function updateField(key: string, value: string | boolean) {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+    setFieldErrors((prev) => (prev[key] ? { ...prev, [key]: "" } : prev));
+  }
+
   function renderField(f: BookingField) {
     const val = formData[f.key];
     const strVal = typeof val === "string" ? val : "";
     const boolVal = typeof val === "boolean" ? val : false;
+    const err = fieldErrors[f.key];
+    const errBorder = err ? " !border-rose-400 focus:!ring-rose-300" : "";
 
     // Determine if this field triggers dedupe check on blur
     const isDedupeField =
@@ -346,20 +362,21 @@ export function BookingFlow({
 
     if (f.type === "checkbox") {
       return (
-        <label key={f.key} className="flex cursor-pointer items-start gap-3">
-          <input
-            type="checkbox"
-            checked={boolVal}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, [f.key]: e.target.checked }))
-            }
-            className="mt-0.5 h-4 w-4 rounded accent-[color:var(--glass-accent-deep)]"
-          />
-          <span className="text-[14px] text-[color:var(--glass-ink-soft)]">
-            {f.label}
-            {f.required && <span className="ml-1 text-rose-500">*</span>}
-          </span>
-        </label>
+        <div key={f.key} className="flex flex-col gap-1">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={boolVal}
+              onChange={(e) => updateField(f.key, e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded accent-[color:var(--glass-accent-deep)]"
+            />
+            <span className="text-[14px] text-[color:var(--glass-ink-soft)]">
+              {f.label}
+              {f.required && <span className="ml-1 text-rose-500">*</span>}
+            </span>
+          </label>
+          {err && <p className="text-[12px] font-medium text-rose-600">{err}</p>}
+        </div>
       );
     }
 
@@ -373,10 +390,8 @@ export function BookingFlow({
           <select
             id={f.key}
             value={strVal}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, [f.key]: e.target.value }))
-            }
-            className={`${commonInputClass}`}
+            onChange={(e) => updateField(f.key, e.target.value)}
+            className={`${commonInputClass}${errBorder}`}
           >
             <option value="">Choisir…</option>
             {(f.options ?? []).map((opt) => (
@@ -385,6 +400,7 @@ export function BookingFlow({
               </option>
             ))}
           </select>
+          {err && <p className="text-[12px] font-medium text-rose-600">{err}</p>}
         </div>
       );
     }
@@ -401,12 +417,11 @@ export function BookingFlow({
             value={strVal}
             maxLength={f.maxLength ?? 2000}
             placeholder={f.placeholder}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, [f.key]: e.target.value }))
-            }
+            onChange={(e) => updateField(f.key, e.target.value)}
             rows={3}
-            className={`${GLASS_INPUT} w-full rounded-2xl border px-3 py-2 text-[14px] outline-none focus:ring-2 focus:ring-[color:var(--glass-accent-deep)]`}
+            className={`${GLASS_INPUT} w-full rounded-2xl border px-3 py-2 text-[14px] outline-none focus:ring-2 focus:ring-[color:var(--glass-accent-deep)]${errBorder}`}
           />
+          {err && <p className="text-[12px] font-medium text-rose-600">{err}</p>}
         </div>
       );
     }
@@ -450,12 +465,11 @@ export function BookingFlow({
           maxLength={maxLen}
           inputMode={inputMode}
           placeholder={placeholder}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, [f.key]: e.target.value }))
-          }
+          onChange={(e) => updateField(f.key, e.target.value)}
           onBlur={isDedupeField ? () => handleDedupeBlur(strVal) : undefined}
-          className={commonInputClass}
+          className={`${commonInputClass}${errBorder}`}
         />
+        {err && <p className="text-[12px] font-medium text-rose-600">{err}</p>}
       </div>
     );
   }

@@ -11,7 +11,7 @@ import {
   extractIdentity,
   parseFormFields,
   redactSensitiveFormData,
-  validateFormData,
+  validateFormFields,
 } from "@/lib/booking/form-fields";
 import { findRecentBooking, hashNrn, nrnLast4 } from "@/lib/booking/dedupe";
 import { encryptNrn } from "@/lib/booking/crypto-nrn";
@@ -69,9 +69,15 @@ export async function POST(
   }
 
   const fields = parseFormFields(tenant.formFields);
-  const validation = validateFormData(fields, formData);
+  const validation = validateFormFields(fields, formData);
   if (!validation.ok) {
-    return NextResponse.json({ error: validation.message }, { status: 400, headers: json });
+    return NextResponse.json(
+      {
+        error: Object.values(validation.errors)[0] ?? "Formulaire invalide",
+        fieldErrors: validation.errors,
+      },
+      { status: 400, headers: json },
+    );
   }
   const identity = extractIdentity(fields, validation.data);
 

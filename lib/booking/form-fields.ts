@@ -102,6 +102,28 @@ export function validateFormData(
   return { ok: true, data: result.data as Record<string, unknown> };
 }
 
+/**
+ * Variante de validateFormData qui renvoie une erreur PAR champ (clé → message),
+ * pour un affichage inline sous chaque champ du formulaire.
+ */
+export function validateFormFields(
+  fields: BookingField[],
+  data: unknown,
+):
+  | { ok: true; data: Record<string, unknown> }
+  | { ok: false; errors: Record<string, string> } {
+  const result = buildFormSchema(fields).safeParse(data);
+  if (result.success) {
+    return { ok: true, data: result.data as Record<string, unknown> };
+  }
+  const errors: Record<string, string> = {};
+  for (const issue of result.error.issues) {
+    const key = issue.path[0];
+    if (typeof key === "string" && !errors[key]) errors[key] = issue.message;
+  }
+  return { ok: false, errors };
+}
+
 function str(v: unknown): string | null {
   if (typeof v !== "string") return v == null ? null : String(v);
   const t = v.trim();

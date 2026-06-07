@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { LandingBottom } from "@/components/docbel/landing/bottom";
 import { LandingHero } from "@/components/docbel/landing/hero";
-import { LandingTools } from "@/components/docbel/landing/tools";
+import { LandingToolsRow } from "@/components/docbel/landing/tools-row";
 import { getAudienceFromPath } from "@/lib/audience";
 import {
   type NewsItem,
@@ -102,7 +102,7 @@ export default async function HomePage() {
   return (
     <>
       <LandingHero article={featuredArticle} loading={false} />
-      <LandingTools tools={tools} />
+      <LandingToolsRow tools={tools} />
       <LandingBottom news={news} loading={false} />
     </>
   );

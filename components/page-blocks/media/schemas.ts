@@ -40,9 +40,18 @@ export const embedSchema = z.object({
   height: z.number().min(50).max(2000).optional(),
 })
 
+export const iconSchema = z.object({
+  name: z.string().max(60).default('star'),
+  size: z.number().min(8).max(400).optional(),
+  color: z.string().max(64).optional(),
+  strokeWidth: z.number().min(0.5).max(4).optional(),
+  align: z.enum(['left', 'center', 'right']).optional(),
+})
+
 export const mediaSchemas = {
   image: imageSchema,
   video: videoSchema,
   gallery: gallerySchema,
   embed: embedSchema,
+  icon: iconSchema,
 } as const

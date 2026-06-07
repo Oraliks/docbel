@@ -174,6 +174,39 @@ export function LayoutTab({ block, device, onChange }: LayoutTabProps) {
             placeholder="auto"
           />
         </Field>
+        <div className="flex items-center justify-between gap-4 py-1">
+          <Field
+            label="Position libre (X/Y)"
+            className="flex-1"
+            hint="Le conteneur parent doit être en « disposition libre »"
+          >
+            <span className="sr-only">Position absolue</span>
+          </Field>
+          <Switch
+            checked={layout.absolute ?? false}
+            onCheckedChange={(v) => onChange({ absolute: v })}
+          />
+        </div>
+        {layout.absolute && (
+          <div className="grid grid-cols-2 gap-1.5">
+            <NumberControl
+              value={layout.left}
+              onChange={(v) => onChange({ left: v })}
+              suffix="X"
+              placeholder="0"
+              min={-2000}
+              max={5000}
+            />
+            <NumberControl
+              value={layout.top}
+              onChange={(v) => onChange({ top: v })}
+              suffix="Y"
+              placeholder="0"
+              min={-2000}
+              max={5000}
+            />
+          </div>
+        )}
       </Group>
 
       <Group title="Visibilité par appareil">

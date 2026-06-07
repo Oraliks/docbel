@@ -204,8 +204,16 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
     toast.success('Style enregistré')
   }, [block.style, block.layout])
 
+  const parentBlock = block.parentId
+    ? allBlocks.find((b) => b.id === block.parentId)
+    : null
+  const parentFree = !!(
+    parentBlock && (parentBlock.props as { freeLayout?: boolean }).freeLayout
+  )
+  const freeAbsolute = parentFree && !!block.layout?.absolute && !block.meta?.locked
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: block.id, disabled: !!block.meta?.locked })
+    useSortable({ id: block.id, disabled: !!block.meta?.locked || freeAbsolute })
 
   const isSelected = selectedBlockId === block.id
   const isInMultiSelection = selectedIds.includes(block.id) && selectedIds.length > 1
@@ -245,7 +253,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   )
   const canResize = isSelected && !isLocked && !isContainer
   // Non-container blocks are draggable from their whole body (not just the grip).
-  const bodyDrag = !isContainer && !isLocked
+  const bodyDrag = !isContainer && !isLocked && !freeAbsolute
   const [handleX, setHandleX] = React.useState<number | null>(null)
   const [liveWidthPct, setLiveWidthPct] = React.useState<number | null>(null)
   const resizeStart = React.useRef<{ availPx: number; wrapLeft: number } | null>(null)
@@ -314,11 +322,19 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
     }
   }
 
-  const wrapperStyle: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  }
+  const wrapperStyle: React.CSSProperties = freeAbsolute
+    ? {
+        position: 'absolute',
+        left: block.layout?.left ?? 0,
+        top: block.layout?.top ?? 0,
+        zIndex: block.layout?.zIndex,
+        opacity: isDragging ? 0.4 : 1,
+      }
+    : {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+      }
 
   // Build children slots for containers
   let slot: React.ReactNode = null
@@ -642,6 +658,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
           device={device}
           slot={slot}
           slotByIndex={slotByIndex}
+          skipSelfPosition={freeAbsolute}
         />
       </div>
 

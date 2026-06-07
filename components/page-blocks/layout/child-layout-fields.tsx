@@ -34,6 +34,20 @@ export function ChildLayoutFields({
         />
       </Field>
 
+      <div className="flex items-center justify-between gap-4 py-1">
+        <Field
+          label="Disposition libre (X/Y)"
+          className="flex-1"
+          hint="Place les enfants librement (position absolue par bloc)"
+        >
+          <span className="sr-only">Disposition libre</span>
+        </Field>
+        <Switch
+          checked={props.freeLayout ?? false}
+          onCheckedChange={(v) => onChange({ freeLayout: v })}
+        />
+      </div>
+
       {mode !== 'stack' && (
         <Field label="Espacement">
           <Pills

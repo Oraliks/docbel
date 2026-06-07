@@ -9,6 +9,7 @@ const childLayoutShape = {
   layoutCols: z.union([z.literal(2), z.literal(3), z.literal(4)]).optional(),
   layoutMinItem: z.enum(['sm', 'md', 'lg']).optional(),
   layoutWrap: z.boolean().optional(),
+  freeLayout: z.boolean().optional(),
 }
 
 export const sectionSchema = z.object({

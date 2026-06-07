@@ -13,6 +13,8 @@ export interface ChildLayout {
   layoutCols?: 2 | 3 | 4
   layoutMinItem?: 'sm' | 'md' | 'lg'
   layoutWrap?: boolean
+  /** Free canvas: children are absolutely positioned (X/Y) inside this container. */
+  freeLayout?: boolean
 }
 
 const GAP: Record<NonNullable<ChildLayout['layoutGap']>, string> = {
@@ -58,6 +60,8 @@ const MASONRY: Record<NonNullable<ChildLayout['layoutCols']>, string> = {
 }
 
 export function childLayoutClass(props: ChildLayout): string | null {
+  // Free canvas: relative positioning context for absolutely-placed children.
+  if (props.freeLayout) return 'relative min-h-[400px]'
   const mode = props.layoutMode ?? 'stack'
   if (mode === 'stack') return null
   const gap = GAP[props.layoutGap ?? 'md']

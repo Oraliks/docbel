@@ -26,6 +26,8 @@ interface BlockRendererProps {
   loggedIn?: boolean
   /** Variable interpolation context — `{{page.title}}`, `{{today}}`, etc. */
   interpolationContext?: InterpolationContext
+  /** In the editor, the wrapper handles absolute positioning → strip it from self. */
+  skipSelfPosition?: boolean
 }
 
 function BlockContent({
@@ -126,12 +128,19 @@ function RegularBlockRenderer({
   editorMode = false,
   loggedIn = false,
   interpolationContext,
+  skipSelfPosition = false,
 }: BlockRendererProps) {
   const resolvedBlock = React.useMemo(() => {
     if (!interpolationContext) return block
     return interpolateBlock(block, interpolationContext)
   }, [block, interpolationContext])
   const css = blockToCSS(resolvedBlock, device)
+  if (skipSelfPosition) {
+    const c = css as Record<string, unknown>
+    delete c.position
+    delete c.left
+    delete c.top
+  }
   const className = blockToClassName(resolvedBlock)
   const attrs = blockAttrs(resolvedBlock)
   const scoped = blockScopedCss(resolvedBlock, device)

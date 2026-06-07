@@ -82,6 +82,11 @@ export function blockToCSS(
     css.top = `${layout.stickyOffset ?? 0}px`
     if (layout.zIndex === undefined) css.zIndex = 10
   }
+  if (layout.absolute) {
+    css.position = 'absolute'
+    if (layout.left !== undefined) css.left = `${layout.left}px`
+    if (layout.top !== undefined) css.top = `${layout.top}px`
+  }
   if (layout.zIndex !== undefined) css.zIndex = layout.zIndex
 
   // Padding

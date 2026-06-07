@@ -90,6 +90,10 @@ export interface BlockLayout {
   sticky?: boolean
   stickyOffset?: number
   zIndex?: number
+  /** Free positioning inside a `freeLayout` container (px from the container's top-left). */
+  absolute?: boolean
+  left?: number
+  top?: number
   // Spacing (px). undefined = inherit / default
   paddingTop?: number
   paddingRight?: number

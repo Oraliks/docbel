@@ -50,6 +50,38 @@ function RenderBlock({
     )
   }
 
+  if (block.type === 'repeater') {
+    const children = childrenOf(allBlocks, block.id)
+    const rprops = block.props as {
+      items?: Array<Record<string, string | number | boolean>>
+      emptyText?: string
+    }
+    const items = Array.isArray(rprops.items) ? rprops.items : []
+    const layoutCls = childLayoutClass(block.props as ChildLayout)
+    const slot =
+      items.length === 0 ? (
+        rprops.emptyText ? (
+          <p className="text-muted-foreground text-sm">{rprops.emptyText}</p>
+        ) : null
+      ) : (
+        <div className={layoutCls || undefined}>
+          {items.map((item, i) => (
+            <div key={i}>
+              {children.map((c) => (
+                <RenderBlock
+                  key={c.id}
+                  block={c}
+                  allBlocks={allBlocks}
+                  context={{ ...context, item }}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      )
+    return <BlockRenderer block={block} interpolationContext={context} slot={slot} />
+  }
+
   if (block.type === 'columns') {
     return (
       <BlockRenderer

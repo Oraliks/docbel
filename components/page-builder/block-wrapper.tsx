@@ -86,7 +86,7 @@ interface BlockWrapperProps {
 
 /** Les conteneurs ne sont pas convertibles en bloc global (un globalRef ne porte pas d'enfants). */
 function isContainerType(type: string): boolean {
-  return type === 'section' || type === 'container' || type === 'columns'
+  return type === 'section' || type === 'container' || type === 'columns' || type === 'repeater'
 }
 
 export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapperProps) {
@@ -349,6 +349,16 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
         items={items}
         emptyLabel={block.type === 'section' ? 'Section vide' : 'Conteneur vide'}
         layoutClass={childLayoutClass(block.props as ChildLayout)}
+      />
+    )
+  } else if (block.type === 'repeater') {
+    const items = getChildrenOf(allBlocks, block.id)
+    slot = (
+      <ChildrenList
+        parentId={block.id}
+        slotIndex={null}
+        items={items}
+        emptyLabel="Modèle du répéteur — glissez les blocs à répéter ici"
       />
     )
   } else if (block.type === 'columns') {

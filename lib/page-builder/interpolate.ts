@@ -24,6 +24,8 @@ export interface InterpolationContext {
   custom?: Record<string, string | number | boolean | undefined | null>
   /** User-defined page variables, referenced as {{key}}. */
   vars?: Record<string, string | number | null | undefined>
+  /** Current row inside a repeater, referenced as {{item.field}}. */
+  item?: Record<string, string | number | boolean | null | undefined>
 }
 
 const TOKEN_REGEX = /\{\{\s*([\w.]+)\s*\}\}/g

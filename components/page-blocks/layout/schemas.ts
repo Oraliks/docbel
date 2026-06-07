@@ -37,8 +37,18 @@ export const columnsSchema = z.object({
   reverseMobile: z.boolean().optional(),
 })
 
+export const repeaterSchema = z.object({
+  items: z
+    .array(z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])))
+    .max(200)
+    .optional(),
+  emptyText: z.string().max(200).optional(),
+  ...childLayoutShape,
+})
+
 export const layoutSchemas = {
   section: sectionSchema,
   container: containerSchema,
   columns: columnsSchema,
+  repeater: repeaterSchema,
 } as const

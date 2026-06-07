@@ -123,6 +123,8 @@ const AdvancedSchema = z
     animateOnScroll: z.boolean().optional(),
     showIf: z.enum(['always', 'loggedIn', 'loggedOut']).optional(),
     customCss: z.string().max(4000).optional(),
+    scheduleStart: z.string().max(40).optional(),
+    scheduleEnd: z.string().max(40).optional(),
   })
   .partial()
 

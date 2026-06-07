@@ -133,6 +133,9 @@ export interface BlockAdvanced {
   showIf?: 'always' | 'loggedIn' | 'loggedOut'
   /** CSS libre scopé à ce bloc — `.self` est réécrit en [data-pb-id="..."]. */
   customCss?: string
+  /** Planification d'affichage (public uniquement) — datetime-local. */
+  scheduleStart?: string
+  scheduleEnd?: string
 }
 
 /** Editor-only flags. Saved with the block but ignored by the public renderer's logic. */

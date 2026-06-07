@@ -125,6 +125,22 @@ export function AdvancedTab({ block, onChange }: AdvancedTabProps) {
             </SelectContent>
           </Select>
         </Field>
+        <Field label="Affichée à partir de" hint="Planification (optionnel)">
+          <Input
+            type="datetime-local"
+            value={adv.scheduleStart ?? ''}
+            onChange={(e) => onChange({ scheduleStart: e.target.value || undefined })}
+            className="h-8 text-xs"
+          />
+        </Field>
+        <Field label="Affichée jusqu'à">
+          <Input
+            type="datetime-local"
+            value={adv.scheduleEnd ?? ''}
+            onChange={(e) => onChange({ scheduleEnd: e.target.value || undefined })}
+            className="h-8 text-xs"
+          />
+        </Field>
       </Group>
 
       <Group title="CSS personnalisé">

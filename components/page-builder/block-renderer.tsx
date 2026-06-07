@@ -98,6 +98,35 @@ function useEnterViewport(enabled: boolean) {
   return { ref, visible: !enabled || seen }
 }
 
+/** Listens for `beldoc:toggle-block` events matching this block's htmlId → flips visibility. */
+function useToggleVisibility(htmlId?: string): boolean {
+  const [hidden, setHidden] = React.useState(false)
+  React.useEffect(() => {
+    if (!htmlId) return
+    const handler = (e: Event) => {
+      if ((e as CustomEvent<{ id?: string }>).detail?.id === htmlId) {
+        setHidden((v) => !v)
+      }
+    }
+    window.addEventListener('beldoc:toggle-block', handler as EventListener)
+    return () => window.removeEventListener('beldoc:toggle-block', handler as EventListener)
+  }, [htmlId])
+  return hidden
+}
+
+/** Hides a block outside its scheduled window (evaluated client-side after mount). */
+function useScheduledHidden(start?: string, end?: string): boolean {
+  const [hidden, setHidden] = React.useState(false)
+  React.useEffect(() => {
+    if (!start && !end) return
+    const now = Date.now()
+    const off = (!!start && now < Date.parse(start)) || (!!end && now > Date.parse(end))
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHidden(off)
+  }, [start, end])
+  return hidden
+}
+
 export function BlockRenderer(props: BlockRendererProps) {
   // `globalRef` blocks are live references — resolve their target from context
   // and render that instead. One unconditional hook here keeps hook order stable.
@@ -146,9 +175,15 @@ function RegularBlockRenderer({
   const scoped = blockScopedCss(resolvedBlock, device)
   const animOnScroll = !!resolvedBlock.advanced?.animateOnScroll
   const { ref, visible } = useEnterViewport(animOnScroll && !editorMode)
+  const toggledOff = useToggleVisibility(resolvedBlock.advanced?.htmlId)
+  const scheduledOff = useScheduledHidden(
+    resolvedBlock.advanced?.scheduleStart,
+    resolvedBlock.advanced?.scheduleEnd
+  )
 
   if (!editorMode) {
     if (resolvedBlock.meta?.hidden) return null
+    if (toggledOff || scheduledOff) return null
     const cond = resolvedBlock.advanced?.showIf
     if (cond === 'loggedIn' && !loggedIn) return null
     if (cond === 'loggedOut' && loggedIn) return null

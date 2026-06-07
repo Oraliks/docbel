@@ -45,6 +45,7 @@ export function ActionInput({
           <SelectItem value="checkout">Paiement Stripe</SelectItem>
           <SelectItem value="submit">Soumettre le formulaire</SelectItem>
           <SelectItem value="modal">Ouvrir une modale</SelectItem>
+          <SelectItem value="toggle-visibility">Afficher / masquer un bloc</SelectItem>
         </SelectContent>
       </Select>
 
@@ -110,6 +111,14 @@ export function ActionInput({
           value={value?.target ?? ''}
           onChange={(e) => set({ target: e.target.value })}
           placeholder="id de la modale"
+          className="h-8 text-xs"
+        />
+      )}
+      {type === 'toggle-visibility' && (
+        <Input
+          value={value?.target ?? ''}
+          onChange={(e) => set({ target: e.target.value })}
+          placeholder="ID HTML du bloc cible (onglet Avancé)"
           className="h-8 text-xs"
         />
       )}

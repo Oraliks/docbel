@@ -14,6 +14,7 @@ export const ACTION_TYPES = [
   'checkout', // lancer un checkout Stripe
   'submit', // soumettre le formulaire parent
   'modal', // ouvrir une modale (par id)
+  'toggle-visibility', // afficher/masquer un bloc (par son id HTML)
 ] as const
 
 export const actionSchema = z.object({

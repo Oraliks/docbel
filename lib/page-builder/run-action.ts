@@ -96,5 +96,13 @@ export async function runAction(
       node?.closest('form')?.requestSubmit()
       break
     }
+    case 'toggle-visibility': {
+      if (action.target) {
+        window.dispatchEvent(
+          new CustomEvent('beldoc:toggle-block', { detail: { id: action.target } })
+        )
+      }
+      break
+    }
   }
 }

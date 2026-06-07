@@ -4,6 +4,7 @@ import React from 'react'
 import { Boxes } from 'lucide-react'
 import type { BlockProps } from '@/lib/page-builder/types'
 import { Field, Group, Pills } from './controls'
+import { Switch } from '@/components/ui/switch'
 import { getBlockDef } from '@/lib/page-builder/registry'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
 
@@ -53,6 +54,13 @@ function GlobalRefEditor({ block }: { block: BlockProps }) {
   const globalBlockId = (block.props as { globalBlockId?: string }).globalBlockId ?? ''
   const resolved = usePageBuilderStore((s) => s.globalBlocks[globalBlockId])
   const updateGlobalBlockProps = usePageBuilderStore((s) => s.updateGlobalBlockProps)
+  const updateBlockProps = usePageBuilderStore((s) => s.updateBlockProps)
+
+  const overrides =
+    (block.props as { overrides?: Record<string, unknown> }).overrides ?? {}
+  const [perInstance, setPerInstance] = React.useState(
+    () => Object.keys(overrides).length > 0
+  )
 
   // PATCH débouncé (~600ms). On garde la dernière version résolue dans une ref
   // pour envoyer le bloc complet { ...resolved, props: { ...resolved.props, ...partial } }.
@@ -94,12 +102,23 @@ function GlobalRefEditor({ block }: { block: BlockProps }) {
     [globalBlockId, updateGlobalBlockProps]
   )
 
+  // Per-instance override: writes to THIS globalRef's `overrides`, leaving the
+  // shared global block (and every other instance) untouched.
+  const handleInstanceChange = React.useCallback(
+    (partial: Record<string, unknown>) => {
+      const prev =
+        (block.props as { overrides?: Record<string, unknown> }).overrides ?? {}
+      updateBlockProps(block.id, { overrides: { ...prev, ...partial } })
+    },
+    [block.id, block.props, updateBlockProps]
+  )
+
   const banner = (
     <div className="flex items-start gap-2 border-b bg-primary/5 px-4 py-3 text-xs text-primary">
       <Boxes className="mt-0.5 size-4 shrink-0" />
       <span>
-        <span className="font-medium">Bloc global</span> — les modifications
-        s’appliquent partout où ce bloc est utilisé.
+        <span className="font-medium">Bloc global</span> — réutilisable sur
+        plusieurs pages.
       </span>
     </div>
   )
@@ -132,12 +151,35 @@ function GlobalRefEditor({ block }: { block: BlockProps }) {
     onChange: (partial: Record<string, unknown>) => void
   }>
 
+  const activeChange = perInstance ? handleInstanceChange : handleChange
+  const editedProps = perInstance
+    ? { ...resolved.props, ...overrides }
+    : resolved.props
+
   return (
     <div>
       {banner}
+      <div className="flex items-center justify-between gap-3 border-b px-4 py-2.5">
+        <div className="text-xs">
+          <div className="font-medium">Personnaliser cette instance</div>
+          <div className="text-muted-foreground">
+            Modifie ce bloc ici sans changer les autres pages
+          </div>
+        </div>
+        <Switch checked={perInstance} onCheckedChange={setPerInstance} />
+      </div>
+      {perInstance && Object.keys(overrides).length > 0 && (
+        <button
+          type="button"
+          onClick={() => updateBlockProps(block.id, { overrides: undefined })}
+          className="w-full px-4 py-2 text-left text-xs text-muted-foreground hover:text-destructive"
+        >
+          ↺ Réinitialiser cette instance
+        </button>
+      )}
       <PropsHeader block={resolved} />
-      <VariantPicker block={resolved} onPropChange={handleChange} />
-      <Fields props={resolved.props} onChange={handleChange} />
+      <VariantPicker block={resolved} onPropChange={activeChange} />
+      <Fields props={editedProps} onChange={activeChange} />
     </div>
   )
 }

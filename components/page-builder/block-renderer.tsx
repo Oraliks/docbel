@@ -217,10 +217,19 @@ export function BlockRenderer(props: BlockRendererProps) {
   // and render that instead. One unconditional hook here keeps hook order stable.
   const globalBlocks = useGlobalBlocks()
   if (props.block.type === 'globalRef') {
-    const id = (props.block.props as { globalBlockId?: string }).globalBlockId
+    const refProps = props.block.props as {
+      globalBlockId?: string
+      overrides?: Record<string, unknown>
+    }
+    const id = refProps.globalBlockId
     const resolved = id ? globalBlocks[id] : undefined
     if (resolved && resolved.type !== 'globalRef') {
-      return <RegularBlockRenderer {...props} block={resolved} />
+      const ov = refProps.overrides
+      const target =
+        ov && Object.keys(ov).length > 0
+          ? ({ ...resolved, props: { ...resolved.props, ...ov } } as BlockProps)
+          : resolved
+      return <RegularBlockRenderer {...props} block={target} />
     }
     if (!props.editorMode) return null
     return (

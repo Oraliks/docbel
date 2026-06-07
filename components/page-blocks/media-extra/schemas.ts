@@ -50,10 +50,18 @@ export const svgIllustrationSchema = z.object({
   height: z.string().max(40).optional(),
 })
 
+export const lottieSchema = z.object({
+  src: z.string().max(4096).default(''),
+  loop: z.boolean().optional(),
+  autoplay: z.boolean().optional(),
+  speed: z.number().min(0.1).max(3).optional(),
+})
+
 export const mediaExtraSchemas = {
   audio: audioSchema,
   carousel: carouselSchema,
   beforeAfter: beforeAfterSchema,
   logoWall: logoWallSchema,
   svgIllustration: svgIllustrationSchema,
+  lottie: lottieSchema,
 } as const

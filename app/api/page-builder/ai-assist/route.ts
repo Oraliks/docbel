@@ -41,6 +41,7 @@ const AiAssistSchema = z.object({
     "fix",
     "generate",
     "faq",
+    "meta",
   ]),
   text: z.string().max(20000).optional().default(""),
   topic: z.string().max(500).optional().default(""),
@@ -73,6 +74,26 @@ const FAQ_SYSTEM = `Tu es un assistant rédactionnel pour un site d'information 
 Tu génères une FAQ sur un sujet, en t'appuyant STRICTEMENT sur le contexte fourni s'il existe.
 Règles : français clair ; n'invente aucun fait précis (montant/délai/loi) hors contexte ; 4 à 6 questions pertinentes et concrètes.
 Réponds UNIQUEMENT avec un tableau JSON valide [{"question":"…","answer":"…"}], sans texte autour ni bloc de code.`;
+
+const META_SYSTEM = `Tu génères les métadonnées SEO d'une page d'un site d'information administrative belge (chômage, ONEM, CPAS…).
+À partir du contenu fourni, produis un titre SEO (50-60 caractères) et une méta-description (140-160 caractères), en français, accrocheurs et fidèles au contenu — sans inventer de faits.
+Réponds UNIQUEMENT avec un JSON valide {"title":"…","desc":"…"}, sans texte autour ni bloc de code.`;
+
+function parseMetaJson(raw: string): { title: string; desc: string } | null {
+  let s = raw.trim();
+  const start = s.indexOf("{");
+  const end = s.lastIndexOf("}");
+  if (start >= 0 && end > start) s = s.slice(start, end + 1);
+  try {
+    const obj = JSON.parse(s);
+    if (obj && typeof obj.title === "string" && typeof obj.desc === "string") {
+      return { title: obj.title.slice(0, 70), desc: obj.desc.slice(0, 180) };
+    }
+  } catch {
+    /* invalide */
+  }
+  return null;
+}
 
 function parseFaqJson(raw: string): Array<{ question: string; answer: string }> {
   let s = raw.trim();
@@ -169,6 +190,29 @@ export async function POST(req: NextRequest) {
         timeoutMs: 30_000,
       });
       return NextResponse.json({ text: out });
+    }
+
+    if (action === "meta") {
+      if (!text.trim()) {
+        return NextResponse.json({ error: "Aucun contenu" }, { status: 400 });
+      }
+      const { text: raw } = await callClaude({
+        model: CLAUDE_MODELS.haiku,
+        systemPrompt: META_SYSTEM,
+        messages: [
+          { role: "user", content: `Contenu de la page :\n${text.slice(0, 8000)}` },
+        ],
+        maxTokens: 400,
+        timeoutMs: 30_000,
+      });
+      const meta = parseMetaJson(raw);
+      if (!meta) {
+        return NextResponse.json(
+          { error: "Métadonnées générées invalides" },
+          { status: 502 }
+        );
+      }
+      return NextResponse.json(meta);
     }
 
     // Génératif (generate | faq) → ancré dans la KB chômage.

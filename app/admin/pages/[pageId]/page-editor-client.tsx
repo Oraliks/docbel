@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Sparkles } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
 import type { BlockProps, PageVariable, ThemeTokens } from '@/lib/page-builder/types'
@@ -42,6 +43,28 @@ interface PageEditorPageProps {
 }
 
 const AUTOSAVE_DELAY_MS = 1500
+
+const META_TEXT_KEYS = [
+  'text', 'html', 'title', 'subtitle', 'description', 'content', 'quote',
+  'caption', 'answer', 'question',
+]
+/** Flatten a page's blocks to plain text for the AI meta generator. */
+function extractBlocksText(blocks: BlockProps[]): string {
+  const parts: string[] = []
+  for (const b of blocks) {
+    const p = b.props as Record<string, unknown>
+    for (const k of META_TEXT_KEYS) {
+      const v = p[k]
+      if (typeof v === 'string' && v.trim()) parts.push(v)
+    }
+  }
+  return parts
+    .join('\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 8000)
+}
 
 function slugify(value: string): string {
   return value
@@ -81,6 +104,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   const [metaTitle, setMetaTitle] = useState('')
   const [metaDesc, setMetaDesc] = useState('')
   const [ogImage, setOgImage] = useState('')
+  const [aiMetaLoading, setAiMetaLoading] = useState(false)
   const [scheduledAt, setScheduledAt] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
@@ -424,6 +448,38 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
     toast.success('Page exportée en JSON')
   }
 
+  const handleAiMeta = async () => {
+    const content = extractBlocksText(blocks)
+    if (!content) {
+      toast.error('Ajoutez du contenu à la page d’abord')
+      return
+    }
+    setAiMetaLoading(true)
+    try {
+      const res = await fetch('/api/page-builder/ai-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'meta', text: content }),
+      })
+      const data = await res.json()
+      if (data?.aiDisabled) {
+        toast.error('Assistant IA non configuré')
+        return
+      }
+      if (!res.ok || data?.error) {
+        toast.error(data?.error || 'Échec de la génération')
+        return
+      }
+      if (data.title) setMetaTitle(String(data.title).slice(0, 60))
+      if (data.desc) setMetaDesc(String(data.desc).slice(0, 160))
+      toast.success('Métadonnées générées')
+    } catch {
+      toast.error('Échec de la génération')
+    } finally {
+      setAiMetaLoading(false)
+    }
+  }
+
   const isPublished = page.status === 'published'
 
   return (
@@ -487,6 +543,18 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
                   <span className="ml-2 italic">(normalisé à la sauvegarde)</span>
                 )}
               </p>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAiMeta}
+                disabled={aiMetaLoading}
+              >
+                <Sparkles className="mr-1.5 size-3.5" />
+                {aiMetaLoading ? 'Génération…' : 'Générer titre + description (IA)'}
+              </Button>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Meta title (SEO)</label>

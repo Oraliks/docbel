@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import type { BlockProps, BlockAdvanced } from '@/lib/page-builder/types'
+import type { BlockProps, BlockAdvanced, AudienceCondition } from '@/lib/page-builder/types'
 import { Field, Group, SliderControl } from './controls'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Wand2 } from 'lucide-react'
+import { Wand2, Trash2, Plus } from 'lucide-react'
 
 interface AdvancedTabProps {
   block: BlockProps
@@ -32,6 +32,15 @@ interface AdvancedTabProps {
 
 export function AdvancedTab({ block, onChange }: AdvancedTabProps) {
   const adv = block.advanced ?? {}
+  const conds = adv.conditions ?? []
+  const addCond = () =>
+    onChange({ conditions: [...conds, { type: 'param', op: 'exists' }] })
+  const updateCond = (i: number, patch: Partial<AudienceCondition>) =>
+    onChange({
+      conditions: conds.map((c, idx) => (idx === i ? { ...c, ...patch } : c)),
+    })
+  const removeCond = (i: number) =>
+    onChange({ conditions: conds.filter((_, idx) => idx !== i) })
   return (
     <div>
       <Group title="Identifiants" defaultOpen>
@@ -140,6 +149,78 @@ export function AdvancedTab({ block, onChange }: AdvancedTabProps) {
             onChange={(e) => onChange({ scheduleEnd: e.target.value || undefined })}
             className="h-8 text-xs"
           />
+        </Field>
+
+        <Field
+          label="Conditions d'audience"
+          hint="Affiche le bloc seulement si TOUTES sont vraies (URL ?param= ou langue du navigateur)"
+        >
+          <div className="w-full space-y-2">
+            {conds.map((c, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <Select
+                  value={c.type}
+                  onValueChange={(v) =>
+                    updateCond(i, { type: v as AudienceCondition['type'] })
+                  }
+                >
+                  <SelectTrigger className="h-8 w-[5.5rem] shrink-0 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="param">Paramètre</SelectItem>
+                    <SelectItem value="lang">Langue</SelectItem>
+                  </SelectContent>
+                </Select>
+                {c.type === 'param' && (
+                  <Input
+                    value={c.key ?? ''}
+                    onChange={(e) => updateCond(i, { key: e.target.value })}
+                    placeholder="utm_source"
+                    className="h-8 w-24 shrink-0 text-xs"
+                  />
+                )}
+                <Select
+                  value={c.op}
+                  onValueChange={(v) =>
+                    updateCond(i, { op: v as AudienceCondition['op'] })
+                  }
+                >
+                  <SelectTrigger className="h-8 w-[4.5rem] shrink-0 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="eq">=</SelectItem>
+                    <SelectItem value="neq">≠</SelectItem>
+                    <SelectItem value="contains">contient</SelectItem>
+                    <SelectItem value="exists">existe</SelectItem>
+                  </SelectContent>
+                </Select>
+                {c.op !== 'exists' && (
+                  <Input
+                    value={c.value ?? ''}
+                    onChange={(e) => updateCond(i, { value: e.target.value })}
+                    placeholder="valeur"
+                    className="h-8 min-w-0 flex-1 text-xs"
+                  />
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeCond(i)}
+                  title="Supprimer"
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </div>
+            ))}
+            <Button type="button" variant="outline" size="sm" onClick={addCond}>
+              <Plus className="mr-1 size-3.5" />
+              Condition
+            </Button>
+          </div>
         </Field>
       </Group>
 

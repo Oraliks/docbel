@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import type { BlockProps, DeviceType } from '@/lib/page-builder/types'
+import type { AudienceCondition, BlockProps, DeviceType } from '@/lib/page-builder/types'
 import {
   blockToCSS,
   blockToClassName,
@@ -127,6 +127,58 @@ function useScheduledHidden(start?: string, end?: string): boolean {
   return hidden
 }
 
+/** Evaluates one audience condition against the current request (browser-side). */
+function evalAudienceCondition(
+  c: AudienceCondition,
+  params: URLSearchParams,
+  lang: string
+): boolean {
+  if (c.type === 'param') {
+    const v = params.get(c.key ?? '')
+    switch (c.op) {
+      case 'exists':
+        return v !== null
+      case 'eq':
+        return v === (c.value ?? '')
+      case 'neq':
+        return v !== (c.value ?? '')
+      case 'contains':
+        return v !== null && v.includes(c.value ?? '')
+      default:
+        return true
+    }
+  }
+  // type === 'lang' — match the start of the browser language (e.g. "fr" ⊃ "fr-BE").
+  const l = lang.toLowerCase()
+  const val = (c.value ?? '').toLowerCase()
+  switch (c.op) {
+    case 'eq':
+      return l.startsWith(val)
+    case 'neq':
+      return !l.startsWith(val)
+    case 'contains':
+      return l.includes(val)
+    case 'exists':
+      return l.length > 0
+    default:
+      return true
+  }
+}
+
+/** Hides a block when its audience conditions aren't all met (client-side after mount). */
+function useAudienceHidden(conditions?: AudienceCondition[]): boolean {
+  const [hidden, setHidden] = React.useState(false)
+  React.useEffect(() => {
+    if (!conditions || conditions.length === 0) return
+    const params = new URLSearchParams(window.location.search)
+    const lang = navigator.language || ''
+    const fail = conditions.some((c) => !evalAudienceCondition(c, params, lang))
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHidden(fail)
+  }, [conditions])
+  return hidden
+}
+
 export function BlockRenderer(props: BlockRendererProps) {
   // `globalRef` blocks are live references — resolve their target from context
   // and render that instead. One unconditional hook here keeps hook order stable.
@@ -180,10 +232,11 @@ function RegularBlockRenderer({
     resolvedBlock.advanced?.scheduleStart,
     resolvedBlock.advanced?.scheduleEnd
   )
+  const audienceOff = useAudienceHidden(resolvedBlock.advanced?.conditions)
 
   if (!editorMode) {
     if (resolvedBlock.meta?.hidden) return null
-    if (toggledOff || scheduledOff) return null
+    if (toggledOff || scheduledOff || audienceOff) return null
     const cond = resolvedBlock.advanced?.showIf
     if (cond === 'loggedIn' && !loggedIn) return null
     if (cond === 'loggedOut' && loggedIn) return null

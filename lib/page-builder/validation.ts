@@ -122,6 +122,17 @@ const AdvancedSchema = z
     animationDelay: z.number().min(0).max(5000).optional(),
     animateOnScroll: z.boolean().optional(),
     showIf: z.enum(['always', 'loggedIn', 'loggedOut']).optional(),
+    conditions: z
+      .array(
+        z.object({
+          type: z.enum(['param', 'lang']),
+          key: z.string().max(60).optional(),
+          op: z.enum(['eq', 'neq', 'contains', 'exists']),
+          value: z.string().max(200).optional(),
+        })
+      )
+      .max(10)
+      .optional(),
     customCss: z.string().max(4000).optional(),
     scheduleStart: z.string().max(40).optional(),
     scheduleEnd: z.string().max(40).optional(),

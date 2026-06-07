@@ -111,6 +111,15 @@ export interface BlockLayout {
   hideOnMobile?: boolean
 }
 
+export interface AudienceCondition {
+  /** What to test: a URL query param, or the visitor's browser language. */
+  type: 'param' | 'lang'
+  /** Param name (only for type 'param'). */
+  key?: string
+  op: 'eq' | 'neq' | 'contains' | 'exists'
+  value?: string
+}
+
 export interface BlockAdvanced {
   htmlId?: string
   className?: string
@@ -131,6 +140,8 @@ export interface BlockAdvanced {
   animateOnScroll?: boolean
   /** Conditional rendering. */
   showIf?: 'always' | 'loggedIn' | 'loggedOut'
+  /** Audience conditions (ALL must pass) — evaluated client-side after mount. */
+  conditions?: AudienceCondition[]
   /** CSS libre scopé à ce bloc — `.self` est réécrit en [data-pb-id="..."]. */
   customCss?: string
   /** Planification d'affichage (public uniquement) — datetime-local. */

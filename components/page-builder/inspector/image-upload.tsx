@@ -10,6 +10,7 @@ import {
   Trash2,
   Check,
   X,
+  Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,6 +28,13 @@ interface ImageUploadProps {
 const MAX_SIZE = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']
 
+interface UnsplashResult {
+  thumb: string
+  url: string
+  alt: string
+  credit: string
+}
+
 export function ImageUpload({ value, onChange, compact = false }: ImageUploadProps) {
   const [uploading, setUploading] = React.useState(false)
   const [dragOver, setDragOver] = React.useState(false)
@@ -34,6 +42,49 @@ export function ImageUpload({ value, onChange, compact = false }: ImageUploadPro
   const [urlMode, setUrlMode] = React.useState(false)
   const [urlInput, setUrlInput] = React.useState('')
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  // ────── Unsplash search ──────
+  const [unsplashMode, setUnsplashMode] = React.useState(false)
+  const [unsplashQuery, setUnsplashQuery] = React.useState('')
+  const [unsplashLoading, setUnsplashLoading] = React.useState(false)
+  const [unsplashResults, setUnsplashResults] = React.useState<UnsplashResult[]>([])
+  const [unsplashSearched, setUnsplashSearched] = React.useState(false)
+
+  const searchUnsplash = React.useCallback(async () => {
+    const q = unsplashQuery.trim()
+    if (!q) return
+    setUnsplashLoading(true)
+    try {
+      const res = await fetch(`/api/page-builder/unsplash?q=${encodeURIComponent(q)}`)
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data.error || 'Erreur lors de la recherche')
+        return
+      }
+      if (data.disabled) {
+        toast.message('Unsplash non configuré')
+        setUnsplashResults([])
+        setUnsplashSearched(true)
+        return
+      }
+      setUnsplashResults(Array.isArray(data.results) ? data.results : [])
+      setUnsplashSearched(true)
+    } catch (e) {
+      console.error(e)
+      toast.error('Erreur lors de la recherche')
+    } finally {
+      setUnsplashLoading(false)
+    }
+  }, [unsplashQuery])
+
+  const pickUnsplash = (r: UnsplashResult) => {
+    onChange(r.url)
+    setUnsplashMode(false)
+    setUnsplashQuery('')
+    setUnsplashResults([])
+    setUnsplashSearched(false)
+    toast.success(r.credit ? `Photo de ${r.credit} · Unsplash` : 'Image Unsplash ajoutée')
+  }
 
   const upload = React.useCallback(
     async (file: File) => {
@@ -255,8 +306,91 @@ export function ImageUpload({ value, onChange, compact = false }: ImageUploadPro
             <X className="size-3.5" />
           </Button>
         </div>
+      ) : unsplashMode ? (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1">
+            <Input
+              autoFocus
+              value={unsplashQuery}
+              onChange={(e) => setUnsplashQuery(e.target.value)}
+              placeholder="Rechercher sur Unsplash…"
+              className="h-8 text-xs"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void searchUnsplash()
+                if (e.key === 'Escape') {
+                  setUnsplashMode(false)
+                  setUnsplashQuery('')
+                  setUnsplashResults([])
+                  setUnsplashSearched(false)
+                }
+              }}
+            />
+            <Button
+              size="icon-sm"
+              className="h-8 w-8 shrink-0"
+              disabled={unsplashLoading || !unsplashQuery.trim()}
+              onClick={() => void searchUnsplash()}
+              title="Rechercher"
+            >
+              {unsplashLoading ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Search className="size-3.5" />
+              )}
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              className="h-8 w-8 shrink-0"
+              onClick={() => {
+                setUnsplashMode(false)
+                setUnsplashQuery('')
+                setUnsplashResults([])
+                setUnsplashSearched(false)
+              }}
+              title="Fermer"
+            >
+              <X className="size-3.5" />
+            </Button>
+          </div>
+
+          {unsplashLoading ? (
+            <div className="flex h-24 items-center justify-center text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+            </div>
+          ) : unsplashResults.length > 0 ? (
+            <>
+              <div className="grid max-h-56 grid-cols-3 gap-1 overflow-y-auto">
+                {unsplashResults.map((r, i) => (
+                  <button
+                    key={`${r.url}-${i}`}
+                    type="button"
+                    onClick={() => pickUnsplash(r)}
+                    title={r.credit ? `Photo de ${r.credit}` : r.alt || 'Image Unsplash'}
+                    className="group/u relative aspect-square overflow-hidden rounded border bg-muted transition hover:ring-2 hover:ring-primary"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={r.thumb}
+                      alt={r.alt}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition group-hover/u:scale-105"
+                    />
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground/80">
+                Photos via Unsplash · crédit photographe appliqué
+              </p>
+            </>
+          ) : unsplashSearched ? (
+            <p className="py-4 text-center text-[11px] text-muted-foreground">
+              Aucun résultat
+            </p>
+          ) : null}
+        </div>
       ) : (
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
           <Button
             type="button"
             variant="outline"
@@ -265,7 +399,17 @@ export function ImageUpload({ value, onChange, compact = false }: ImageUploadPro
             onClick={() => setPickerOpen(true)}
           >
             <FolderOpen className="size-3 mr-1" />
-            Bibliothèque
+            Biblio.
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => setUnsplashMode(true)}
+          >
+            <Search className="size-3 mr-1" />
+            Unsplash
           </Button>
           <Button
             type="button"
@@ -275,7 +419,7 @@ export function ImageUpload({ value, onChange, compact = false }: ImageUploadPro
             onClick={() => setUrlMode(true)}
           >
             <LinkIcon className="size-3 mr-1" />
-            URL externe
+            URL
           </Button>
         </div>
       )}

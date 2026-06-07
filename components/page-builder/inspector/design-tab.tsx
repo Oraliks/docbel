@@ -30,6 +30,7 @@ export function DesignTab({ block, onChange }: DesignTabProps) {
   const hv = style.hoverState ?? {}
   const fs = style.focusState ?? {}
   const as = style.activeState ?? {}
+  const iv = style.inViewState ?? {}
   return (
     <div>
       <Group title="Typographie" defaultOpen>
@@ -416,6 +417,70 @@ export function DesignTab({ block, onChange }: DesignTabProps) {
           <Pills
             value={hv.shadow ?? 'none'}
             onChange={(v) => onChange({ hoverState: { ...hv, shadow: v } })}
+            options={[
+              { value: 'none', label: 'Aucune' },
+              { value: 'sm', label: 'Sm' },
+              { value: 'md', label: 'Md' },
+              { value: 'lg', label: 'Lg' },
+              { value: 'xl', label: 'XL' },
+            ]}
+          />
+        </Field>
+      </Group>
+
+      <Group title="Effets à l'apparition (scroll)">
+        <p className="text-[11px] text-muted-foreground">
+          Style appliqué une fois que le bloc entre dans le viewport (révélation au scroll).
+        </p>
+        <Field label="Couleur du texte">
+          <ColorControl
+            value={iv.textColor}
+            onChange={(v) => onChange({ inViewState: { ...iv, textColor: v } })}
+          />
+        </Field>
+        <Field label="Couleur de fond">
+          <ColorControl
+            value={iv.bgColor}
+            onChange={(v) => onChange({ inViewState: { ...iv, bgColor: v } })}
+          />
+        </Field>
+        <Field label="Couleur de bordure">
+          <ColorControl
+            value={iv.borderColor}
+            onChange={(v) => onChange({ inViewState: { ...iv, borderColor: v } })}
+          />
+        </Field>
+        <Field label="Échelle (zoom)">
+          <SliderControl
+            value={iv.scale ?? 1}
+            onChange={(v) => onChange({ inViewState: { ...iv, scale: v } })}
+            min={0.9}
+            max={1.2}
+            step={0.01}
+          />
+        </Field>
+        <Field label="Élévation">
+          <SliderControl
+            value={iv.lift ?? 0}
+            onChange={(v) => onChange({ inViewState: { ...iv, lift: v } })}
+            min={0}
+            max={24}
+            suffix="px"
+          />
+        </Field>
+        <Field label="Opacité">
+          <SliderControl
+            value={iv.opacity ?? 1}
+            onChange={(v) => onChange({ inViewState: { ...iv, opacity: v } })}
+            min={0}
+            max={1}
+            step={0.05}
+          />
+        </Field>
+        <Field label="Ombre">
+          <Pills
+            value={iv.shadow ?? 'none'}
+            onChange={(v) => onChange({ inViewState: { ...iv, shadow: v } })}
             options={[
               { value: 'none', label: 'Aucune' },
               { value: 'sm', label: 'Sm' },

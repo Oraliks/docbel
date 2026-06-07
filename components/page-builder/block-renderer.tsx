@@ -4,6 +4,7 @@ import React from 'react'
 import type {
   AudienceCondition,
   BlockAdvanced,
+  BlockInteractionState,
   BlockProps,
   DeviceType,
 } from '@/lib/page-builder/types'
@@ -102,6 +103,35 @@ function useEnterViewport(enabled: boolean) {
     return () => obs.disconnect()
   }, [enabled, seen])
   return { ref, visible: !enabled || seen }
+}
+
+/** Box-shadow presets — mirror of SHADOW_MAP in block-styles.ts (kept local to avoid a new export). */
+const IN_VIEW_SHADOW: Record<NonNullable<BlockInteractionState['shadow']>, string> = {
+  none: 'none',
+  sm: '0 1px 2px rgba(0,0,0,.06)',
+  md: '0 4px 12px rgba(0,0,0,.08)',
+  lg: '0 12px 32px rgba(0,0,0,.12)',
+  xl: '0 24px 60px rgba(0,0,0,.18)',
+}
+
+/**
+ * Converts an interaction state into inline CSS — same mapping as the hoverState
+ * conversion in block-styles.ts `blockScopedCss` (textColor→color, bgColor→
+ * backgroundColor, borderColor, opacity, shadow→boxShadow, scale/lift→transform).
+ * Used for `inViewState`, applied once the block enters the viewport.
+ */
+function interactionStateToCSS(state: BlockInteractionState): React.CSSProperties {
+  const out: React.CSSProperties = {}
+  if (state.textColor) out.color = state.textColor
+  if (state.bgColor) out.backgroundColor = state.bgColor
+  if (state.borderColor) out.borderColor = state.borderColor
+  if (state.opacity !== undefined) out.opacity = state.opacity
+  if (state.shadow && state.shadow !== 'none') out.boxShadow = IN_VIEW_SHADOW[state.shadow]
+  const tf: string[] = []
+  if (state.scale !== undefined) tf.push(`scale(${state.scale})`)
+  if (state.lift) tf.push(`translateY(-${state.lift}px)`)
+  if (tf.length) out.transform = tf.join(' ')
+  return out
 }
 
 /** Listens for `beldoc:toggle-block` events matching this block's htmlId → flips visibility. */
@@ -297,7 +327,9 @@ function RegularBlockRenderer({
   const attrs = blockAttrs(resolvedBlock)
   const scoped = blockScopedCss(resolvedBlock, device)
   const animOnScroll = !!resolvedBlock.advanced?.animateOnScroll
-  const { ref, visible } = useEnterViewport(animOnScroll && !editorMode)
+  const inViewState = resolvedBlock.style?.inViewState
+  const hasInView = !!inViewState && Object.keys(inViewState).length > 0
+  const { ref, visible } = useEnterViewport((animOnScroll || hasInView) && !editorMode)
   const toggledOff = useToggleVisibility(resolvedBlock.advanced?.htmlId)
   const scheduledOff = useScheduledHidden(
     resolvedBlock.advanced?.scheduleStart,
@@ -334,11 +366,18 @@ function RegularBlockRenderer({
       )}
       style={{
         ...css,
+        // Once the block enters the viewport, layer its in-view styles over the base
+        // ones (override). Before entry → base styles only, so the change animates.
+        ...(hasInView && visible ? interactionStateToCSS(inViewState!) : null),
         animationDelay:
           resolvedBlock.advanced?.animationDelay !== undefined
             ? `${resolvedBlock.advanced.animationDelay}ms`
             : undefined,
-        transition: animOnScroll ? 'opacity 0.7s ease-out' : undefined,
+        transition: hasInView
+          ? 'all .6s ease'
+          : animOnScroll
+            ? 'opacity 0.7s ease-out'
+            : undefined,
       }}
       {...attrs}
     >

@@ -68,6 +68,18 @@ const StyleSchema = z
       })
       .partial()
       .optional(),
+    inViewState: z
+      .object({
+        textColor: HexColor,
+        bgColor: HexColor,
+        borderColor: HexColor,
+        opacity: z.number().min(0).max(1).optional(),
+        scale: z.number().min(0.5).max(2).optional(),
+        lift: z.number().min(0).max(40).optional(),
+        shadow: z.enum(['none', 'sm', 'md', 'lg', 'xl']).optional(),
+      })
+      .partial()
+      .optional(),
     borderGradientFrom: HexColor,
     borderGradientTo: HexColor,
     borderGradientAngle: z.number().min(0).max(360).optional(),

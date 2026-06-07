@@ -64,6 +64,8 @@ export interface BlockStyle {
   focusState?: BlockInteractionState
   /** Styles appliqués pendant le clic actif (`:active`). */
   activeState?: BlockInteractionState
+  /** Styles appliqués une fois que le bloc entre dans le viewport (révélation au scroll). */
+  inViewState?: BlockInteractionState
   // Border gradient + advanced visual effects
   borderGradientFrom?: string
   borderGradientTo?: string

@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Calculator,
   CheckCircle2,
+  Download,
   FileUp,
   Loader2,
   Plus,
@@ -43,6 +44,7 @@ import {
   type OccupationInput,
   type ParsedWech506,
 } from "@/lib/agr";
+import { exportAgrPdf } from "@/lib/agr/export-pdf";
 
 const MAX_OCC = 4;
 
@@ -143,6 +145,25 @@ export function CalculAgrClient() {
     () => calculerAgr({ ...global, occupations }),
     [global, occupations],
   );
+  const hasData = occupations.some((o) => o.q > 0);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    setExporting(true);
+    try {
+      await exportAgrPdf({
+        global,
+        occupations,
+        metas: metas.map((m) => ({ filename: m.filename, nom: m.nom, periode: m.periode })),
+        result,
+      });
+      toast.success("PDF généré.");
+    } catch {
+      toast.error("Échec de la génération du PDF.");
+    } finally {
+      setExporting(false);
+    }
+  }, [global, occupations, metas, result]);
 
   const patchOcc = useCallback((i: number, patch: Partial<OccupationInput>) => {
     setOccupations((prev) => prev.map((o, j) => (j === i ? { ...o, ...patch } : o)));
@@ -430,6 +451,9 @@ export function CalculAgrClient() {
             result={result}
             showDetails={showDetails}
             onToggleDetails={() => setShowDetails((s) => !s)}
+            onExport={handleExport}
+            exporting={exporting}
+            canExport={hasData}
           />
         </div>
       </div>
@@ -625,10 +649,16 @@ function ResultPanel({
   result,
   showDetails,
   onToggleDetails,
+  onExport,
+  exporting,
+  canExport,
 }: {
   result: ReturnType<typeof calculerAgr>;
   showDetails: boolean;
   onToggleDetails: () => void;
+  onExport: () => void;
+  exporting: boolean;
+  canExport: boolean;
 }) {
   const i = result.intermediaires;
   return (
@@ -689,6 +719,18 @@ function ResultPanel({
             <Detail k="Formule 2B" v={eur(i.formule2B)} />
           </div>
         )}
+        <Button
+          onClick={onExport}
+          disabled={!canExport || exporting}
+          className="w-full bg-violet-600 hover:bg-violet-700"
+        >
+          {exporting ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Download className="size-4" />
+          )}
+          Télécharger le PDF
+        </Button>
         <p className="text-[11px] text-muted-foreground">
           Montants bruts. L’AGR doit être au moins égale à la ½ allocation. Vérifiez toujours
           les données extraites avant validation.

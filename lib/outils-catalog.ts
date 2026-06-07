@@ -56,6 +56,7 @@ function dbToolToDisplay(t: {
   timeMin: number | null
   order: number
   audience?: string | null
+  createdAt?: Date | null
 }): Tool {
   // Hiérarchie : t.audience = "citoyen" → visible par tous, etc.
   // Cf. lib/audience.ts → deriveAudiences().
@@ -74,6 +75,8 @@ function dbToolToDisplay(t: {
     type: t.type,
     slug: t.slug,
     audiences: deriveAudiences(toolAudience),
+    // Présent uniquement côté DB → permet le tri "récemment ajoutés".
+    createdAt: t.createdAt ? t.createdAt.toISOString() : undefined,
   }
 }
 

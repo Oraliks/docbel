@@ -1,60 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import {
-  ArrowRightIcon,
-  BanknoteIcon,
-  CalculatorIcon,
-  CarIcon,
-  ClockIcon,
-  EuroIcon,
-  FileTextIcon,
-  type LucideIcon,
-  MapPinIcon,
-  PercentIcon,
-  ScaleIcon,
-  ShieldIcon,
-  UmbrellaIcon,
-  UsersIcon,
-  ZapIcon,
-} from "lucide-react";
+import { ArrowRightIcon, ClockIcon } from "lucide-react";
 import { type Tool, getToolSlug } from "@/lib/docbel-data";
-
-interface ToolGlyph {
-  Icon: LucideIcon;
-  /** Teinte unique : sert d'icône (pleine) ET de fond (mix translucide). */
-  hue: string;
-}
-
-/**
- * Icône + teinte par outil, calquées sur la maquette de la home (≠
- * `pickToolVisual` qui sert la grille /outils avec des dégradés saturés).
- * Ici : pastille douce (teinte mixée en translucide → s'adapte clair/sombre)
- * + icône pleine teinte. Clé = slug stable ; fallback générique pour tout
- * outil hors maquette (la rangée reste cohérente si le catalogue évolue).
- */
-const TOOL_GLYPHS: Record<string, ToolGlyph> = {
-  preavis: { Icon: ScaleIcon, hue: "#F97316" },
-  bureaux: { Icon: MapPinIcon, hue: "#8B5CF6" },
-  "brut-net": { Icon: CalculatorIcon, hue: "#EC4899" },
-  "pecule-vacances": { Icon: UmbrellaIcon, hue: "#FB923C" },
-  "indemnite-rupture": { Icon: ShieldIcon, hue: "#7C3AED" },
-  "pension-estimation": { Icon: EuroIcon, hue: "#10B981" },
-  "allocations-familiales": { Icon: UsersIcon, hue: "#3B82F6" },
-  "ipp-simulateur": { Icon: PercentIcon, hue: "#F59E0B" },
-  "allocations-chomage": { Icon: BanknoteIcon, hue: "#14B8A6" },
-  "tarif-social-energie": { Icon: ZapIcon, hue: "#EAB308" },
-  "frais-kilometriques": { Icon: CarIcon, hue: "#06B6D4" },
-};
-
-const FALLBACK_GLYPH: ToolGlyph = {
-  Icon: FileTextIcon,
-  hue: "var(--glass-accent-deep)",
-};
-
-function glyphFor(tool: Tool): ToolGlyph {
-  return TOOL_GLYPHS[getToolSlug(tool)] ?? FALLBACK_GLYPH;
-}
+import { glyphForTool } from "@/lib/tool-glyphs";
 
 interface LandingToolsRowProps {
   tools: Tool[];
@@ -92,7 +41,7 @@ export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
 
       <div className="-mx-6 flex items-stretch gap-1 overflow-x-auto px-6 pb-1 lg:mx-0 lg:flex-1 lg:gap-2 lg:overflow-visible lg:px-0 lg:pb-0">
         {visible.map((tool) => {
-          const { Icon, hue } = glyphFor(tool);
+          const { Icon, hue } = glyphForTool(tool);
           const href = tool.href ?? `/outils/${getToolSlug(tool)}`;
           return (
             <button

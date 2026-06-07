@@ -36,6 +36,11 @@ export interface Tool {
    * dans /partenaire/...).
    */
   href?: string;
+  /**
+   * Date de création ISO — présente pour les outils issus de la DB uniquement
+   * (les entrées statiques n'en ont pas). Sert au tri "récemment ajoutés".
+   */
+  createdAt?: string;
 }
 
 /**

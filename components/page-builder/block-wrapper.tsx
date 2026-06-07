@@ -89,6 +89,12 @@ function isContainerType(type: string): boolean {
   return type === 'section' || type === 'container' || type === 'columns' || type === 'repeater'
 }
 
+/** Blocks whose primary text can be edited in place (double-click on canvas). */
+const INLINE_TEXT_FIELD: Record<string, string> = {
+  heading: 'text',
+  quote: 'text',
+}
+
 export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapperProps) {
   const selectedBlockId = usePageBuilderStore((s) => s.selectedBlockId)
   const selectedIds = usePageBuilderStore((s) => s.selectedIds)
@@ -96,6 +102,7 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const device = usePageBuilderStore((s) => s.device)
   const allBlocks = usePageBuilderStore((s) => s.blocks)
   const selectBlock = usePageBuilderStore((s) => s.selectBlock)
+  const updateBlockProps = usePageBuilderStore((s) => s.updateBlockProps)
   const toggleSelection = usePageBuilderStore((s) => s.toggleSelection)
   const hoverBlock = usePageBuilderStore((s) => s.hoverBlock)
   const removeBlock = usePageBuilderStore((s) => s.removeBlock)
@@ -222,6 +229,8 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
   const isLast = siblingIndex === siblingCount - 1
   const meta = BLOCK_REGISTRY[block.type]
   const isContainer = isContainerType(block.type)
+  const inlineField = INLINE_TEXT_FIELD[block.type]
+  const [editing, setEditing] = React.useState(false)
   const isLocked = !!block.meta?.locked
   const isHidden = !!block.meta?.hidden
 
@@ -449,6 +458,13 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
           toggleSelection(block.id)
         } else {
           selectBlock(block.id)
+        }
+      }}
+      onDoubleClick={(e) => {
+        if (inlineField && !isLocked) {
+          e.stopPropagation()
+          selectBlock(block.id)
+          setEditing(true)
         }
       }}
       onMouseEnter={(e) => {
@@ -726,15 +742,36 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
        *  click on inner children / drop zones. */}
       <div
         ref={innerRef}
-        className={cn(!isContainer && isSelected && 'pointer-events-none select-none')}
+        className={cn(
+          !isContainer && isSelected && !editing && 'pointer-events-none select-none'
+        )}
       >
-        <BlockRenderer
-          block={block}
-          device={device}
-          slot={slot}
-          slotByIndex={slotByIndex}
-          skipSelfPosition={freeAbsolute}
-        />
+        {editing && inlineField ? (
+          <textarea
+            autoFocus
+            value={String((block.props as Record<string, unknown>)[inlineField] ?? '')}
+            onChange={(e) => updateBlockProps(block.id, { [inlineField]: e.target.value })}
+            onBlur={() => setEditing(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' || (e.key === 'Enter' && block.type === 'heading')) {
+                e.preventDefault()
+                setEditing(false)
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            rows={block.type === 'heading' ? 2 : 4}
+            className="w-full resize-none rounded-md border-2 border-primary bg-background p-2 text-base font-medium text-foreground outline-none"
+          />
+        ) : (
+          <BlockRenderer
+            block={block}
+            device={device}
+            slot={slot}
+            slotByIndex={slotByIndex}
+            skipSelfPosition={freeAbsolute}
+          />
+        )}
       </div>
 
       {/* Bottom "+" button to insert a sibling after this block */}

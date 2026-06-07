@@ -322,6 +322,58 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
     }
   }
 
+  // ── Drag-to-move for free (absolute) blocks — mirrors the resize handler. ──
+  const moveStart = React.useRef<{
+    x: number
+    y: number
+    left: number
+    top: number
+    moved: boolean
+  } | null>(null)
+  const [movePos, setMovePos] = React.useState<{ left: number; top: number } | null>(null)
+
+  function onMovePointerDown(e: React.PointerEvent) {
+    if (!freeAbsolute || isLocked) return
+    // Only when pressing the block body itself (overlay controls are children).
+    if (e.target !== e.currentTarget) return
+    moveStart.current = {
+      x: e.clientX,
+      y: e.clientY,
+      left: block.layout?.left ?? 0,
+      top: block.layout?.top ?? 0,
+      moved: false,
+    }
+    try {
+      ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    } catch {
+      // ignore
+    }
+  }
+  function onMovePointerMove(e: React.PointerEvent) {
+    const s = moveStart.current
+    if (!s) return
+    if (!s.moved) {
+      if (Math.abs(e.clientX - s.x) < 3 && Math.abs(e.clientY - s.y) < 3) return
+      s.moved = true
+      pushHistoryCheckpoint() // one undo step per drag, only once movement starts
+    }
+    // Snap to an 8px grid for tidy alignment.
+    const left = Math.max(0, Math.round((s.left + (e.clientX - s.x)) / 8) * 8)
+    const top = Math.max(0, Math.round((s.top + (e.clientY - s.y)) / 8) * 8)
+    setMovePos({ left, top })
+    updateBlockLayoutLive(block.id, { left, top })
+  }
+  function onMovePointerUp(e: React.PointerEvent) {
+    if (!moveStart.current) return
+    moveStart.current = null
+    setMovePos(null)
+    try {
+      ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
+    } catch {
+      // ignore
+    }
+  }
+
   const wrapperStyle: React.CSSProperties = freeAbsolute
     ? {
         position: 'absolute',
@@ -384,6 +436,13 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
       style={wrapperStyle}
       data-block-id={block.id}
       {...(bodyDrag ? listeners : {})}
+      {...(freeAbsolute
+        ? {
+            onPointerDown: onMovePointerDown,
+            onPointerMove: onMovePointerMove,
+            onPointerUp: onMovePointerUp,
+          }
+        : {})}
       onClick={(e) => {
         e.stopPropagation()
         if (e.shiftKey) {
@@ -406,9 +465,15 @@ export function BlockWrapper({ block, siblingIndex, siblingCount }: BlockWrapper
         !isSelected && !isInMultiSelection && isHovered && 'outline outline-1 outline-primary/40 outline-offset-2',
         isHidden && 'opacity-40',
         bodyDrag && 'cursor-grab active:cursor-grabbing',
+        freeAbsolute && !isLocked && 'cursor-move',
         isLocked && 'cursor-default'
       )}
     >
+      {movePos && (
+        <div className="absolute -top-7 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground pointer-events-none">
+          {movePos.left} × {movePos.top}
+        </div>
+      )}
       {/* Block label tag (top-left) */}
       {(isHovered || isSelected) && (
         <div className="absolute -top-7 left-0 z-20 flex items-center gap-2 pointer-events-none animate-in fade-in-0 slide-in-from-bottom-1 duration-150">

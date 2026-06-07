@@ -14,6 +14,13 @@
  *   image (base64) — les modèles Claude 4.5 (Sonnet/Haiku) sont multimodaux. On
  *   réutilise la même clé/version/URL que le wrapper, sans modifier `anthropic.ts`.
  *
+ * SÉCURITÉ (FIX-3) : le téléchargement de l'image est durci contre le SSRF —
+ *   - les hôtes IP privés/loopback/link-local (127/8, 10/8, 172.16/12,
+ *     192.168/16, 169.254/16, ::1, localhost) sont rejetés ;
+ *   - le cookie de session n'est transmis QUE si l'URL résolue est same-origin
+ *     (`absolute.startsWith(req.nextUrl.origin)`) ; une URL externe est fetchée
+ *     SANS cookie (pas de fuite de session vers un tiers).
+ *
  * FAIL-SOFT à chaque étape : si la clé manque → `{ aiDisabled: true }` (200) ;
  * si le téléchargement de l'image, l'appel modèle ou le parsing échoue → on
  * renvoie le centre `{ focalX: 50, focalY: 50, fallback: true }` (200) afin de
@@ -22,14 +29,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminAuth } from "@/lib/auth-check";
-import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
-import { hasAnthropicKey } from "@/lib/chomage-ia/anthropic";
 import {
   ANTHROPIC_API_URL,
   ANTHROPIC_API_VERSION,
   CLAUDE_MODELS,
 } from "@/lib/chomage-ia/models";
+import { withAiRoute, extractJson } from "@/lib/page-builder/ai-route";
 
 const AiFocalSchema = z.object({
   imageUrl: z.string().min(1).max(4096),
@@ -78,20 +83,11 @@ function clampPercent(n: unknown): number | null {
 }
 
 /**
- * Extrait `{ focalX, focalY }` de la réponse texte du modèle. Tolère un
- * préambule / des fences Markdown malgré la consigne. Renvoie `null` si rien
- * d'exploitable.
+ * Extrait `{ focalX, focalY }` de la réponse texte du modèle (via `extractJson`).
+ * Renvoie `null` si rien d'exploitable.
  */
 function parseFocal(raw: string): { focalX: number; focalY: number } | null {
-  const start = raw.indexOf("{");
-  const end = raw.lastIndexOf("}");
-  if (start < 0 || end <= start) return null;
-  let obj: unknown;
-  try {
-    obj = JSON.parse(raw.slice(start, end + 1));
-  } catch {
-    return null;
-  }
+  const obj = extractJson(raw, "object");
   if (!obj || typeof obj !== "object") return null;
   const focalX = clampPercent((obj as Record<string, unknown>).focalX);
   const focalY = clampPercent((obj as Record<string, unknown>).focalY);
@@ -100,9 +96,36 @@ function parseFocal(raw: string): { focalX: number; focalY: number } | null {
 }
 
 /**
+ * Détecte un hôte interdit (loopback / IP privée / link-local) pour bloquer le
+ * SSRF (FIX-3). On rejette `localhost`, IPv6 loopback `::1`, et les plages IPv4
+ * privées/loopback/link-local : 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12,
+ * 192.168.0.0/16, 169.254.0.0/16. (Le DNS rebinding reste hors périmètre — on
+ * filtre l'hôte littéral de l'URL.)
+ */
+function isBlockedHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, ""); // dé-bracket IPv6
+  if (host === "localhost" || host === "::1" || host === "0.0.0.0") return true;
+  // IPv6 mapped/loopback approximatif.
+  if (host.startsWith("fe80:") || host.startsWith("::ffff:127.")) return true;
+
+  const m = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!m) return false; // nom de domaine → autorisé (résolution non vérifiée ici)
+  const [a, b] = [Number(m[1]), Number(m[2])];
+  if (a === 127) return true; // 127.0.0.0/8 (loopback)
+  if (a === 10) return true; // 10.0.0.0/8
+  if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+  if (a === 192 && b === 168) return true; // 192.168.0.0/16
+  if (a === 169 && b === 254) return true; // 169.254.0.0/16 (link-local)
+  return false;
+}
+
+/**
  * Télécharge l'image (URL absolue OU chemin relatif de l'app) et la renvoie en
  * base64 avec son media-type. Renvoie `null` en cas d'échec / type non supporté
- * / taille excessive — l'appelant retombera alors au centre.
+ * / taille excessive / hôte interdit — l'appelant retombera alors au centre.
+ *
+ * FIX-3 : le cookie de session n'est propagé QUE pour les URL same-origin ; les
+ * URL externes sont fetchées sans cookie. Les hôtes privés/loopback sont rejetés.
  */
 async function fetchImageAsBase64(
   imageUrl: string,
@@ -110,21 +133,32 @@ async function fetchImageAsBase64(
 ): Promise<{ data: string; mediaType: string } | null> {
   // Les images de la bibliothèque sont servies en relatif (ex.
   // /api/files/<id>/download) : on les résout sur l'origine de la requête.
-  let absolute: string;
+  let url: URL;
   try {
-    absolute = new URL(imageUrl, req.nextUrl.origin).toString();
+    url = new URL(imageUrl, req.nextUrl.origin);
   } catch {
     return null;
   }
+  const absolute = url.toString();
 
   // On n'accepte que http(s) (pas de file://, data: déjà géré côté client, etc.).
-  if (!/^https?:\/\//i.test(absolute)) return null;
+  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+
+  // FIX-3 : rejette les hôtes privés/loopback/link-local (anti-SSRF).
+  if (isBlockedHost(url.hostname)) return null;
+
+  // FIX-3 : on ne transmet le cookie de session QUE si l'URL est same-origin
+  // (image privée servie par l'app). Une URL externe est fetchée sans cookie.
+  const sameOrigin = absolute.startsWith(req.nextUrl.origin);
+  const headers: Record<string, string> = {};
+  if (sameOrigin) {
+    headers.cookie = req.headers.get("cookie") ?? "";
+  }
 
   let res: Response;
   try {
     res = await fetch(absolute, {
-      // Propager le cookie de session pour les images privées servies par l'app.
-      headers: { cookie: req.headers.get("cookie") ?? "" },
+      headers,
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
   } catch {
@@ -148,114 +182,81 @@ async function fetchImageAsBase64(
   };
 }
 
-export async function POST(req: NextRequest) {
-  const auth = await requireAdminAuth();
-  if (!auth.isAuthorized) return auth.error;
+export const POST = withAiRoute(
+  {
+    name: "ai-focal",
+    schema: AiFocalSchema,
+    rateLimit: { windowMs: 60_000, max: 20 },
+  },
+  async ({ input, req }) => {
+    // Téléchargement de l'image. Échec → centre (fallback gracieux, 200).
+    const image = await fetchImageAsBase64(input.imageUrl, req);
+    if (!image) {
+      return NextResponse.json({ ...CENTER, fallback: true }, { status: 200 });
+    }
 
-  const ip = getClientIp(req);
-  const rl = checkRateLimit(`pagebuilder:ai-focal:${ip}`, {
-    windowMs: 60_000,
-    max: 20,
-  });
-  if (!rl.ok) {
-    return NextResponse.json(
-      { error: "Trop de requêtes — réessayez dans une minute" },
-      { status: 429 }
-    );
-  }
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-
-  let parsed: z.infer<typeof AiFocalSchema>;
-  try {
-    parsed = AiFocalSchema.parse(body);
-  } catch (err) {
-    return NextResponse.json(
-      {
-        error:
-          err instanceof z.ZodError
-            ? err.issues[0]?.message || "Validation error"
-            : "Validation error",
-      },
-      { status: 400 }
-    );
-  }
-
-  // Fail-soft : pas de clé → l'IA est désactivée (le client masque/désactive le bouton).
-  if (!hasAnthropicKey()) {
-    return NextResponse.json({ aiDisabled: true }, { status: 200 });
-  }
-
-  // Téléchargement de l'image. Échec → centre (fallback gracieux, 200).
-  const image = await fetchImageAsBase64(parsed.imageUrl, req);
-  if (!image) {
-    return NextResponse.json({ ...CENTER, fallback: true }, { status: 200 });
-  }
-
-  // Appel vision DIRECT à l'API Anthropic (callClaude est texte seul).
-  try {
-    const res = await fetch(ANTHROPIC_API_URL, {
-      method: "POST",
-      headers: {
-        "x-api-key": process.env.ANTHROPIC_API_KEY as string,
-        "anthropic-version": ANTHROPIC_API_VERSION,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODELS.haiku,
-        max_tokens: 60,
-        system: FOCAL_SYSTEM,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: image.mediaType,
-                  data: image.data,
+    // Appel vision DIRECT à l'API Anthropic (callClaude est texte seul). On
+    // catch TOUT ici pour renvoyer le fallback centre (200) et ne jamais casser
+    // l'éditeur — comportement identique à l'implémentation d'origine.
+    try {
+      const res = await fetch(ANTHROPIC_API_URL, {
+        method: "POST",
+        headers: {
+          "x-api-key": process.env.ANTHROPIC_API_KEY as string,
+          "anthropic-version": ANTHROPIC_API_VERSION,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: CLAUDE_MODELS.haiku,
+          max_tokens: 60,
+          system: FOCAL_SYSTEM,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "image",
+                  source: {
+                    type: "base64",
+                    media_type: image.mediaType,
+                    data: image.data,
+                  },
                 },
-              },
-              {
-                type: "text",
-                text: "Donne le point focal (sujet principal) de cette image au format JSON {\"focalX\":…,\"focalY\":…}.",
-              },
-            ],
-          },
-        ],
-      }),
-      signal: AbortSignal.timeout(VISION_TIMEOUT_MS),
-    });
+                {
+                  type: "text",
+                  text: "Donne le point focal (sujet principal) de cette image au format JSON {\"focalX\":…,\"focalY\":…}.",
+                },
+              ],
+            },
+          ],
+        }),
+        signal: AbortSignal.timeout(VISION_TIMEOUT_MS),
+      });
 
-    if (!res.ok) {
-      // API saturée / erreur amont : on ne casse rien, on retombe au centre.
-      console.warn("[ai-focal] anthropic vision HTTP", res.status);
+      if (!res.ok) {
+        // API saturée / erreur amont : on ne casse rien, on retombe au centre.
+        console.warn("[ai-focal] anthropic vision HTTP", res.status);
+        return NextResponse.json({ ...CENTER, fallback: true }, { status: 200 });
+      }
+
+      const data = (await res.json()) as {
+        content?: Array<{ type: string; text?: string }>;
+      };
+      const text = (data.content ?? [])
+        .filter((b) => b.type === "text")
+        .map((b) => b.text ?? "")
+        .join("")
+        .trim();
+
+      const focal = parseFocal(text);
+      if (!focal) {
+        return NextResponse.json({ ...CENTER, fallback: true }, { status: 200 });
+      }
+
+      return NextResponse.json(focal, { status: 200 });
+    } catch (err) {
+      console.error("[ai-focal] error:", err);
       return NextResponse.json({ ...CENTER, fallback: true }, { status: 200 });
     }
-
-    const data = (await res.json()) as {
-      content?: Array<{ type: string; text?: string }>;
-    };
-    const text = (data.content ?? [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text ?? "")
-      .join("")
-      .trim();
-
-    const focal = parseFocal(text);
-    if (!focal) {
-      return NextResponse.json({ ...CENTER, fallback: true }, { status: 200 });
-    }
-
-    return NextResponse.json(focal, { status: 200 });
-  } catch (err) {
-    console.error("[ai-focal] error:", err);
-    return NextResponse.json({ ...CENTER, fallback: true }, { status: 200 });
   }
-}
+);

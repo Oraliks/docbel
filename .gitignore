@@ -57,3 +57,8 @@ ONBOARDING_IMPLEMENTATION.md
 .agents/
 .codex/
 skills-lock.json
+
+# Playwright E2E
+playwright-report/
+test-results/
+playwright/.cache/

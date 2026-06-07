@@ -37,7 +37,8 @@
     "bureaux:geocode": "dotenv -e .env.local -- tsx scripts/bureaux-geocode.ts",
     "tools:cleanup-mocks": "dotenv -e .env.local -- tsx scripts/cleanup-mock-tools.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -126,6 +127,7 @@
     "zustand": "^4.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/adm-zip": "^0.5.8",
     "@types/dompurify": "^3.2.0",

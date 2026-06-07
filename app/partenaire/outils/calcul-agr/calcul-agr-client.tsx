@@ -70,6 +70,7 @@ interface ParseResult {
   filename: string;
   parsed?: ParsedWech506;
   error?: string;
+  detail?: string;
 }
 
 function emptyOccupation(): OccupationInput {
@@ -194,7 +195,7 @@ export function CalculAgrClient() {
         const errors: string[] = [];
         for (const r of results) {
           if (r.error || !r.parsed) {
-            errors.push(`${r.filename} : ${r.error ?? "échec"}`);
+            errors.push(`${r.filename} : ${r.error ?? "échec"}${r.detail ? ` — ${r.detail}` : ""}`);
             continue;
           }
           newOccs.push(parsedToOccupation(r.parsed));

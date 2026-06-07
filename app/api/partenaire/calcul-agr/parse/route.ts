@@ -63,8 +63,13 @@ export async function POST(req: NextRequest) {
       const parsed = parseWech506(text);
       results.push({ filename: file.name, parsed });
     } catch (err) {
+      const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
       console.error("[calcul-agr parse] échec extraction:", err);
-      results.push({ filename: file.name, error: "Échec de l'extraction du PDF." });
+      results.push({
+        filename: file.name,
+        error: "Échec de l'extraction du PDF.",
+        detail,
+      });
     }
   }
 

@@ -242,6 +242,15 @@ model GlobalBlock {
   @@index([createdAt])
 }
 
+model FormSubmission {
+  id        String   @id @default(cuid())
+  source    String?
+  data      Json
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 /// Page-builder: lightweight page-view events for basic analytics (counts + recent trend).
 model PageView {
   id        String   @id @default(cuid())

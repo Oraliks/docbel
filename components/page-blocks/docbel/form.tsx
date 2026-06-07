@@ -66,6 +66,7 @@ export const form = defineBlock({
       formData.forEach((value, key) => {
         payload[key] = value
       })
+      payload._source = window.location.pathname
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
@@ -97,6 +98,15 @@ export const form = defineBlock({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            {/* Honeypot anti-spam : caché aux humains, souvent rempli par les bots. */}
+            <input
+              type="text"
+              name="_hp"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="absolute -left-[9999px] h-px w-px opacity-0"
+            />
             {fields.map((field, i) => (
               <div key={i} className="space-y-1.5">
                 <label className="text-sm font-medium">

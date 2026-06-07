@@ -18,6 +18,11 @@ export const ACTION_TYPES = [
   'set-tab', // activer un onglet d'un bloc Onglets (par id de contrôle)
   'play-video', // lire une vidéo mp4 (par id de contrôle)
   'pause-video', // mettre en pause une vidéo mp4 (par id de contrôle)
+  'share', // partager (Web Share API + repli copie du lien)
+  'print', // imprimer la page
+  'scroll-top', // remonter en haut de la page
+  'iframe-modal', // ouvrir une URL dans une modale iframe
+  'animate', // (re)jouer l'animation d'un autre bloc (par id de contrôle)
 ] as const
 
 export const actionSchema = z.object({

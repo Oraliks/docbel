@@ -1,12 +1,18 @@
 'use client'
 
 import React from 'react'
-import type { AudienceCondition, BlockProps, DeviceType } from '@/lib/page-builder/types'
+import type {
+  AudienceCondition,
+  BlockAdvanced,
+  BlockProps,
+  DeviceType,
+} from '@/lib/page-builder/types'
 import {
   blockToCSS,
   blockToClassName,
   blockAttrs,
   blockScopedCss,
+  ANIMATION_CLASS,
 } from '@/lib/page-builder/block-styles'
 import { interpolateBlock, type InterpolationContext } from '@/lib/page-builder/interpolate'
 import { getBlockDef } from '@/lib/page-builder/registry'
@@ -212,6 +218,29 @@ function useParallax(
   }, [ref, enabled, intensity])
 }
 
+/** Replays the block's entrance animation when a matching beldoc:animate fires. */
+function useAnimateOnCommand(
+  ref: React.RefObject<HTMLDivElement | null>,
+  htmlId?: string,
+  animation?: BlockAdvanced['animation']
+) {
+  React.useEffect(() => {
+    if (!htmlId || !animation || animation === 'none') return
+    const handler = (e: Event) => {
+      if ((e as CustomEvent<{ id?: string }>).detail?.id !== htmlId) return
+      const el = ref.current
+      if (!el) return
+      const classes = ANIMATION_CLASS[animation].split(' ').filter(Boolean)
+      if (!classes.length) return
+      el.classList.remove(...classes)
+      void el.offsetWidth // force reflow → restart the CSS animation
+      el.classList.add(...classes)
+    }
+    window.addEventListener('beldoc:animate', handler as EventListener)
+    return () => window.removeEventListener('beldoc:animate', handler as EventListener)
+  }, [ref, htmlId, animation])
+}
+
 export function BlockRenderer(props: BlockRendererProps) {
   // `globalRef` blocks are live references — resolve their target from context
   // and render that instead. One unconditional hook here keeps hook order stable.
@@ -277,6 +306,11 @@ function RegularBlockRenderer({
   const audienceOff = useAudienceHidden(resolvedBlock.advanced?.conditions)
   const parallaxIntensity = resolvedBlock.advanced?.parallax ?? 0
   useParallax(ref, !editorMode && parallaxIntensity !== 0, parallaxIntensity)
+  useAnimateOnCommand(
+    ref,
+    !editorMode ? resolvedBlock.advanced?.htmlId : undefined,
+    resolvedBlock.advanced?.animation
+  )
 
   if (!editorMode) {
     if (resolvedBlock.meta?.hidden) return null

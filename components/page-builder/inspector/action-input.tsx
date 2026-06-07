@@ -49,14 +49,28 @@ export function ActionInput({
           <SelectItem value="set-tab">Activer un onglet</SelectItem>
           <SelectItem value="play-video">Lire une vidéo (mp4)</SelectItem>
           <SelectItem value="pause-video">Mettre en pause une vidéo (mp4)</SelectItem>
+          <SelectItem value="animate">Rejouer l&apos;animation d&apos;un bloc</SelectItem>
+          <SelectItem value="share">Partager</SelectItem>
+          <SelectItem value="iframe-modal">Ouvrir une URL en modale</SelectItem>
+          <SelectItem value="print">Imprimer la page</SelectItem>
+          <SelectItem value="scroll-top">Remonter en haut</SelectItem>
         </SelectContent>
       </Select>
 
-      {(type === 'url' || type === 'download' || type === 'calendly') && (
+      {(type === 'url' ||
+        type === 'download' ||
+        type === 'calendly' ||
+        type === 'iframe-modal') && (
         <LinkInput
           value={value?.href ?? ''}
           onChange={(href) => set({ href })}
-          placeholder={type === 'calendly' ? 'Lien Calendly' : 'URL / fichier'}
+          placeholder={
+            type === 'calendly'
+              ? 'Lien Calendly'
+              : type === 'iframe-modal'
+                ? 'URL à afficher en modale'
+                : 'URL / fichier'
+          }
         />
       )}
       {type === 'url' && (
@@ -146,6 +160,22 @@ export function ActionInput({
           value={value?.target ?? ''}
           onChange={(e) => set({ target: e.target.value })}
           placeholder="ID de contrôle de la vidéo"
+          className="h-8 text-xs"
+        />
+      )}
+      {type === 'animate' && (
+        <Input
+          value={value?.target ?? ''}
+          onChange={(e) => set({ target: e.target.value })}
+          placeholder="ID de contrôle du bloc à animer"
+          className="h-8 text-xs"
+        />
+      )}
+      {type === 'share' && (
+        <Input
+          value={value?.text ?? ''}
+          onChange={(e) => set({ text: e.target.value })}
+          placeholder="Titre à partager (optionnel)"
           className="h-8 text-xs"
         />
       )}

@@ -241,7 +241,7 @@ export function blockScopedCss(
   return rules.length ? rules.join('\n') : null
 }
 
-const ANIMATION_CLASS: Record<NonNullable<BlockAdvanced['animation']>, string> = {
+export const ANIMATION_CLASS: Record<NonNullable<BlockAdvanced['animation']>, string> = {
   none: '',
   'fade-in': 'animate-in fade-in duration-700',
   'fade-up': 'animate-in fade-in slide-in-from-bottom-4 duration-700',

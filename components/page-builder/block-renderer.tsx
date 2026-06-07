@@ -179,6 +179,39 @@ function useAudienceHidden(conditions?: AudienceCondition[]): boolean {
   return hidden
 }
 
+/** Translates a block on scroll for a parallax effect (rAF-throttled, client-side). */
+function useParallax(
+  ref: React.RefObject<HTMLDivElement | null>,
+  enabled: boolean,
+  intensity: number
+) {
+  React.useEffect(() => {
+    if (!enabled) return
+    const el = ref.current
+    if (!el) return
+    let raf = 0
+    const update = () => {
+      raf = 0
+      const rect = el.getBoundingClientRect()
+      const vh = window.innerHeight || 1
+      // progress ≈ -0.5 (entering bottom) → +0.5 (leaving top), 0 at center.
+      const progress = (rect.top + rect.height / 2 - vh / 2) / vh
+      el.style.transform = `translate3d(0, ${(-progress * intensity).toFixed(1)}px, 0)`
+    }
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update)
+    }
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [ref, enabled, intensity])
+}
+
 export function BlockRenderer(props: BlockRendererProps) {
   // `globalRef` blocks are live references — resolve their target from context
   // and render that instead. One unconditional hook here keeps hook order stable.
@@ -233,6 +266,8 @@ function RegularBlockRenderer({
     resolvedBlock.advanced?.scheduleEnd
   )
   const audienceOff = useAudienceHidden(resolvedBlock.advanced?.conditions)
+  const parallaxIntensity = resolvedBlock.advanced?.parallax ?? 0
+  useParallax(ref, !editorMode && parallaxIntensity !== 0, parallaxIntensity)
 
   if (!editorMode) {
     if (resolvedBlock.meta?.hidden) return null

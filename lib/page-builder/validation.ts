@@ -121,6 +121,7 @@ const AdvancedSchema = z
       .optional(),
     animationDelay: z.number().min(0).max(5000).optional(),
     animateOnScroll: z.boolean().optional(),
+    parallax: z.number().min(-200).max(200).optional(),
     showIf: z.enum(['always', 'loggedIn', 'loggedOut']).optional(),
     conditions: z
       .array(

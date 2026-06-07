@@ -138,6 +138,8 @@ export interface BlockAdvanced {
   animationDelay?: number // ms
   /** Trigger animation when entering viewport (IntersectionObserver) instead of on mount. */
   animateOnScroll?: boolean
+  /** Parallax scroll intensity (≈px offset across the viewport; 0 = none). */
+  parallax?: number
   /** Conditional rendering. */
   showIf?: 'always' | 'loggedIn' | 'loggedOut'
   /** Audience conditions (ALL must pass) — evaluated client-side after mount. */

@@ -116,6 +116,15 @@ export function AdvancedTab({ block, onChange }: AdvancedTabProps) {
             </Field>
           </>
         )}
+        <Field label="Parallaxe" hint="Déplace le bloc au défilement (0 = aucun)">
+          <SliderControl
+            value={adv.parallax ?? 0}
+            onChange={(v) => onChange({ parallax: v })}
+            min={-100}
+            max={100}
+            step={5}
+          />
+        </Field>
       </Group>
 
       <Group title="Affichage conditionnel">

@@ -15,6 +15,9 @@ export const ACTION_TYPES = [
   'submit', // soumettre le formulaire parent
   'modal', // ouvrir une modale (par id)
   'toggle-visibility', // afficher/masquer un bloc (par son id HTML)
+  'set-tab', // activer un onglet d'un bloc Onglets (par id de contrôle)
+  'play-video', // lire une vidéo mp4 (par id de contrôle)
+  'pause-video', // mettre en pause une vidéo mp4 (par id de contrôle)
 ] as const
 
 export const actionSchema = z.object({
@@ -25,6 +28,7 @@ export const actionSchema = z.object({
   filename: z.string().max(200).optional(),
   event: z.string().max(120).optional(),
   priceId: z.string().max(120).optional(),
+  value: z.string().max(200).optional(),
   newTab: z.boolean().optional(),
 })
 

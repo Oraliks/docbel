@@ -104,5 +104,26 @@ export async function runAction(
       }
       break
     }
+    case 'set-tab': {
+      if (action.target) {
+        window.dispatchEvent(
+          new CustomEvent('beldoc:set-tab', {
+            detail: { id: action.target, value: action.value },
+          })
+        )
+      }
+      break
+    }
+    case 'play-video':
+    case 'pause-video': {
+      if (action.target) {
+        window.dispatchEvent(
+          new CustomEvent('beldoc:video-control', {
+            detail: { id: action.target, playing: action.type === 'play-video' },
+          })
+        )
+      }
+      break
+    }
   }
 }

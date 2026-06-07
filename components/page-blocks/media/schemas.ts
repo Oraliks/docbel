@@ -19,6 +19,7 @@ export const videoSchema = z.object({
   autoplay: z.boolean().optional(),
   controls: z.boolean().optional(),
   fileId: z.string().max(64).optional(),
+  controlId: z.string().max(60).optional(),
 })
 
 export const galleryItemSchema = z.object({

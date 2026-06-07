@@ -20,6 +20,7 @@ const tabItemSchema = z.object({
 export const tabsSchema = z.object({
   items: z.array(tabItemSchema).max(20),
   variant: z.enum(['default', 'pills', 'underline']).optional(),
+  controlId: z.string().max(60).optional(),
 })
 
 export const alertSchema = z.object({

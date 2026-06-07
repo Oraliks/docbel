@@ -46,6 +46,9 @@ export function ActionInput({
           <SelectItem value="submit">Soumettre le formulaire</SelectItem>
           <SelectItem value="modal">Ouvrir une modale</SelectItem>
           <SelectItem value="toggle-visibility">Afficher / masquer un bloc</SelectItem>
+          <SelectItem value="set-tab">Activer un onglet</SelectItem>
+          <SelectItem value="play-video">Lire une vidéo (mp4)</SelectItem>
+          <SelectItem value="pause-video">Mettre en pause une vidéo (mp4)</SelectItem>
         </SelectContent>
       </Select>
 
@@ -119,6 +122,30 @@ export function ActionInput({
           value={value?.target ?? ''}
           onChange={(e) => set({ target: e.target.value })}
           placeholder="ID HTML du bloc cible (onglet Avancé)"
+          className="h-8 text-xs"
+        />
+      )}
+      {type === 'set-tab' && (
+        <>
+          <Input
+            value={value?.target ?? ''}
+            onChange={(e) => set({ target: e.target.value })}
+            placeholder="ID de contrôle du bloc Onglets"
+            className="h-8 text-xs"
+          />
+          <Input
+            value={value?.value ?? ''}
+            onChange={(e) => set({ value: e.target.value })}
+            placeholder="N° d'onglet (0 = premier)"
+            className="h-8 text-xs"
+          />
+        </>
+      )}
+      {(type === 'play-video' || type === 'pause-video') && (
+        <Input
+          value={value?.target ?? ''}
+          onChange={(e) => set({ target: e.target.value })}
+          placeholder="ID de contrôle de la vidéo"
           className="h-8 text-xs"
         />
       )}

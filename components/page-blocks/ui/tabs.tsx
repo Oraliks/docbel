@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -36,8 +36,18 @@ export const tabs = defineBlock({
     ],
   },
   Render: ({ props }) => {
-    const { items, variant = 'default' } = props
+    const { items, variant = 'default', controlId } = props
     const [active, setActive] = useState('0')
+
+    useEffect(() => {
+      if (!controlId) return
+      const handler = (e: Event) => {
+        const d = (e as CustomEvent<{ id?: string; value?: string }>).detail
+        if (d?.id === controlId && d.value != null) setActive(String(d.value))
+      }
+      window.addEventListener('beldoc:set-tab', handler as EventListener)
+      return () => window.removeEventListener('beldoc:set-tab', handler as EventListener)
+    }, [controlId])
 
     if (items.length === 0) {
       return (
@@ -143,6 +153,12 @@ export const tabs = defineBlock({
           </>
         )}
         addItem={() => ({ label: 'Nouvel onglet', content: '' })}
+      />
+      <Input
+        value={props.controlId ?? ''}
+        onChange={(e) => onChange({ controlId: e.target.value || undefined })}
+        placeholder="ID de contrôle (action « Activer un onglet »)"
+        className="mt-2 h-8 text-xs"
       />
     </Group>
   ),

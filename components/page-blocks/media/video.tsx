@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef, useEffect } from 'react'
 import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -53,7 +54,21 @@ export const video = defineBlock({
     shortcuts: ['video', 'youtube'],
   },
   Render: ({ props }) => {
-    const { url, provider, caption, autoplay, controls = true, fileId } = props
+    const { url, provider, caption, autoplay, controls = true, fileId, controlId } = props
+    const videoRef = useRef<HTMLVideoElement>(null)
+    useEffect(() => {
+      if (!controlId || provider !== 'mp4') return
+      const handler = (e: Event) => {
+        const d = (e as CustomEvent<{ id?: string; playing?: boolean }>).detail
+        if (d?.id !== controlId) return
+        const v = videoRef.current
+        if (!v) return
+        if (d.playing) void v.play().catch(() => {})
+        else v.pause()
+      }
+      window.addEventListener('beldoc:video-control', handler as EventListener)
+      return () => window.removeEventListener('beldoc:video-control', handler as EventListener)
+    }, [controlId, provider])
     const sourceUrl = fileId && provider === 'mp4' ? `/api/files/${fileId}/download` : url
     let embedUrl: string | null = null
     if (provider === 'youtube') embedUrl = youtubeEmbed(url)
@@ -78,6 +93,7 @@ export const video = defineBlock({
         <div className={cn('overflow-hidden rounded-lg bg-black', aspectClass)}>
           {provider === 'mp4' ? (
             <video
+              ref={videoRef}
               src={sourceUrl}
               className="w-full h-full"
               controls={controls}
@@ -186,6 +202,13 @@ export const video = defineBlock({
           onCheckedChange={(v) => onChange({ controls: v })}
         />
       </div>
+      <Field label="ID de contrôle" hint="Pour les actions « Lire / Pause » (mp4 uniquement)">
+        <Input
+          value={props.controlId ?? ''}
+          onChange={(e) => onChange({ controlId: e.target.value || undefined })}
+          placeholder="ex. promo-video"
+        />
+      </Field>
     </Group>
   ),
 })

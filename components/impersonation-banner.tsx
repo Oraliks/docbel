@@ -19,6 +19,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { ChevronDownIcon, EyeIcon, LockIcon, UnlockIcon } from "lucide-react"
+import {
+  ImpersonationReasonDialog,
+  type ImpersonationTarget,
+} from "@/components/admin/impersonation-reason-dialog"
 
 /// Durée d'une session d'impersonation (cf. impersonationSessionDuration dans
 /// lib/auth.ts). Si tu la changes là-bas, change-la ici aussi.
@@ -285,14 +289,19 @@ export function ImpersonationBanner() {
     }
   }
 
+  // Dialog raison (cf. ImpersonationReasonDialog) — ouvert quand on switche
+  // en prod. En dev, le switcher exécute direct sans demander.
+  const [reasonTarget, setReasonTarget] = useState<ImpersonationTarget | null>(
+    null
+  )
+
   /// Switcher : stop l'impersonation courante puis lance une nouvelle
   /// impersonation. Enchaîné côté client en 2 requêtes parce que Better Auth
   /// admin plugin exige une session admin pour appeler impersonateUser, et
   /// celle-ci n'est récupérée qu'après le stop. Si la 2ème échoue, l'admin
   /// se retrouve simplement déconnecté de l'impersonation (état cohérent),
   /// et le shell admin redevient accessible.
-  const switchTo = async (target: DemoAccount) => {
-    if (target.id === session.user.id) return
+  const runSwitch = async (target: ImpersonationTarget, reason: string | null) => {
     setSwitching(target.id)
     try {
       const stopRes = await fetch("/api/admin/stop-impersonate", { method: "POST" })
@@ -304,7 +313,7 @@ export function ImpersonationBanner() {
       const impRes = await fetch("/api/admin/impersonate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: target.id }),
+        body: JSON.stringify({ userId: target.id, reason }),
       })
       if (!impRes.ok) {
         const error = (await impRes.json().catch(() => ({}))) as { error?: string }
@@ -321,7 +330,17 @@ export function ImpersonationBanner() {
     }
   }
 
+  const switchTo = async (target: DemoAccount) => {
+    if (target.id === session.user.id) return
+    if (process.env.NODE_ENV === "production") {
+      setReasonTarget(target)
+      return
+    }
+    await runSwitch(target, null)
+  }
+
   return (
+    <>
     <div
       className={`sticky top-0 z-[60] flex w-full items-center justify-center gap-3 border-b px-4 py-2 text-sm ${theme.wrap}`}
     >
@@ -441,5 +460,19 @@ export function ImpersonationBanner() {
         {stopping ? "Retour…" : "Revenir admin"}
       </Button>
     </div>
+
+    <ImpersonationReasonDialog
+      target={reasonTarget}
+      onOpenChange={(open) => {
+        if (!open) setReasonTarget(null)
+      }}
+      onConfirm={async (reason) => {
+        const target = reasonTarget
+        if (!target) return
+        await runSwitch(target, reason)
+        setReasonTarget(null)
+      }}
+    />
+    </>
   )
 }

@@ -13,6 +13,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { EyeIcon, EyeOffIcon, SearchIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import {
+  ImpersonationReasonDialog,
+  type ImpersonationTarget,
+} from "@/components/admin/impersonation-reason-dialog"
 
 /// Liste des comptes demo récupérés depuis /api/admin/demo-accounts.
 /// Forme intentionnellement réduite (UI uniquement).
@@ -111,22 +115,18 @@ export function ViewAsMenu() {
     }
   }
 
-  const impersonate = async (account: DemoAccount) => {
-    // En prod, on exige une raison (>=10 chars) saisie par l'admin pour la
-    // tracer dans l'audit log (cf. AdminImpersonationLog.reason, migration 39).
-    // En dev, raison optionnelle — on n'embête pas le solo dev pour ses tests.
-    let reason: string | null = null
-    if (process.env.NODE_ENV === "production") {
-      const input = window.prompt(
-        `Raison de l'impersonation de ${ROLE_LABELS[account.role] || account.role} (${account.email}) ?\n\nMinimum 10 caractères. Sera tracée dans l'audit log.`
-      )
-      if (input === null) return // annulation
-      reason = input.trim()
-      if (reason.length < 10) {
-        toast.error("Raison trop courte (10 caractères minimum)")
-        return
-      }
-    }
+  // En prod, on passe par un dialog shadcn pour saisir la raison
+  // (cf. AdminImpersonationLog.reason, migration 39) au lieu du window.prompt
+  // d'origine. En dev, l'impersonation est immédiate — on n'embête pas le
+  // solo dev pour ses tests.
+  const [reasonTarget, setReasonTarget] = useState<ImpersonationTarget | null>(
+    null
+  )
+
+  const runImpersonate = async (
+    account: ImpersonationTarget,
+    reason: string | null
+  ) => {
     setPending(account.id)
     try {
       const res = await fetch("/api/admin/impersonate", {
@@ -149,8 +149,17 @@ export function ViewAsMenu() {
     }
   }
 
+  const impersonate = async (account: DemoAccount) => {
+    if (process.env.NODE_ENV === "production") {
+      setReasonTarget(account)
+      return
+    }
+    await runImpersonate(account, null)
+  }
+
   return (
-    <DropdownMenu>
+    <>
+      <DropdownMenu>
       <DropdownMenuTrigger
         render={
           <Button
@@ -276,6 +285,23 @@ export function ViewAsMenu() {
             </DropdownMenuItem>
           ))}
       </DropdownMenuContent>
-    </DropdownMenu>
+      </DropdownMenu>
+
+      <ImpersonationReasonDialog
+        target={reasonTarget}
+        onOpenChange={(open) => {
+          if (!open) setReasonTarget(null)
+        }}
+        onConfirm={async (reason) => {
+          const target = reasonTarget
+          if (!target) return
+          // On laisse le dialog visible (submitting) pendant le fetch ;
+          // runImpersonate redirige via window.location à la réussite, ce qui
+          // remplace le rendu. En cas d'erreur, on ferme manuellement.
+          await runImpersonate(target, reason)
+          setReasonTarget(null)
+        }}
+      />
+    </>
   )
 }

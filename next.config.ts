@@ -6,6 +6,10 @@ const buildId =
   "dev";
 
 const nextConfig: NextConfig = {
+  // pdf-parse / pdfjs-dist embarquent un « worker » que le bundler serveur de
+  // Next ne sait pas résoudre (« Cannot find module pdf.worker.mjs »). On les
+  // externalise pour qu'ils soient chargés depuis node_modules à l'exécution.
+  serverExternalPackages: ["pdf-parse", "pdfjs-dist"],
   logging: {
     fetches: {
       fullUrl: false,

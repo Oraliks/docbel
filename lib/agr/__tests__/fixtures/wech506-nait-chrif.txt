@@ -1,0 +1,193 @@
+pages=6
+
+===== PAGE 1 =====
+PRINT FGTB - WECH506 14/11/2024
+FORMULAIRE C131B
+DECLARATION MENSUELLE DE TRAVAIL A TEMPS PARTIEL AVEC
+MAINTIEN DES DROITS AVEC ALLOCATION DE GARANTIE DE REVENUS
+Mois de référence : 01/12/2023 - 31/12/2023
+Les données d’une déclaration
+Date de création Heure de création DRS (version) Sous-risque
+2024-01-03 16:34:22.084 WECH506 ( WECH506_20234.xsd ) 001
+Statut Numéro de ticket Numéro d’occupation
+0 ( Original ) 034071K2BBFWZ
+Les données du travailleur
+NISS Nom, Prénom
+770725054-86 NAIT CHRIF, HASSNA
+Les données de l’employeur
+n° ONSS n° ONSS-APL n° unique
+082921322 / 0207471716
+Nom
+STAD DILSEN-STOKKEM
+Adresse
+EUROPALAAN 25 , - 3650 DILSEN STOKKEM ( 150 )
+Categorie Com PAR Code travailleur Code NACE
+751 999 015 841.14
+WECH506 - p. 1
+
+===== PAGE 2 =====
+PRINT FGTB - WECH506 14/11/2024
+FORMULAIRE C131B
+DECLARATION MENSUELLE DE TRAVAIL A TEMPS PARTIEL AVEC
+MAINTIEN DES DROITS AVEC ALLOCATION DE GARANTIE DE REVENUS
+Les données du travail
+Date de début de l’occupation Date de fin de l’occupation Facteur Q Facteur S
+01/12/2023 31/12/2023 19,00 38,00
+Grille T
+/
+Commentaire
+/
+Statut du travailleur
+/
+Nbre jrs / semaine règime de Interruption de l'occupation
+travail
+5,00 2 ( occupation avec le même facteur Q pour le mois complet )
+Schema de travail
+10 ( Horaire fixe avec chaque semaine un nombre fixe de jours de travail (temps partiel) )
+Secteur de vacances
+/ (1=secteur privé;2=service publique;3=néant)
+Y-Brut Salaire mensuel brut/mois Salaire brut/heure (Théorique)
+(Théorique)
+1221,38 1221,38 /
+Indicateur de refus d’occupation supplémentaire dans le courant du mois
+0 - ( 0=Non / 1=Oui )
+Commentaire sur la déclaration
+/
+WECH506 - p. 2
+
+===== PAGE 3 =====
+PRINT FGTB - WECH506 14/11/2024
+FORMULAIRE C131B
+DECLARATION MENSUELLE DE TRAVAIL A TEMPS PARTIEL AVEC
+MAINTIEN DES DROITS AVEC ALLOCATION DE GARANTIE DE REVENUS
+Coordonnées de la personne de contact
+Nom Prénom
+D'Haene Veerle
+Communication
+N° téléphone N° GSM Adresse email Fax
+089 790 822 / /
+Adresse
+Pas d'adresse présente dans la DRS
+Coordonnées déclarant
+Qualité du déclarant Dénomination
+10 Stad Dilsen-Stokkem
+Communication
+N° téléphone N° GSM Adresse email Fax
+/ / / /
+WECH506 - p. 3
+
+===== PAGE 4 =====
+PRINT FGTB - WECH506 14/11/2024
+FORMULAIRE C131B
+DECLARATION MENSUELLE DE TRAVAIL A TEMPS PARTIEL AVEC
+MAINTIEN DES DROITS AVEC ALLOCATION DE GARANTIE DE REVENUS
+Grille de travail
+Jours Code Heure Jours Code Heure
+01/12 1 3,00
+04/12 1 4,00
+05/12 1 4,00
+06/12 1 4,00
+07/12 1 4,00
+08/12 1 3,00
+11/12 1 4,00
+12/12 1 4,00
+13/12 1 4,00
+14/12 1 4,00
+15/12 2.4 3,00
+18/12 1 4,00
+19/12 1 4,00
+20/12 1 4,00
+21/12 1 4,00
+22/12 1 3,00
+25/12 1 4,00
+26/12 1 4,00
+27/12 1 4,00
+28/12 1 4,00
+29/12 1 3,00
+WECH506 - p. 4
+
+===== PAGE 5 =====
+PRINT FGTB - WECH506 14/11/2024
+FORMULAIRE C131B
+DECLARATION MENSUELLE DE TRAVAIL A TEMPS PARTIEL AVEC
+MAINTIEN DES DROITS AVEC ALLOCATION DE GARANTIE DE REVENUS
+CODES POUR LES JOURS DE PRESTATIONS DE TRAVAIL EFFECTUEES (ANNEXE)
+1 Jours rémunérés à l'exception des jours rémunérés visés ci-dessous (l'exception pour les codes 1.x n'est pas autorisée pour les secteurs Chômage et Accidents du Travail, le cas échéant le
+code 1 sera mentionné)
+1.1 Reprise du travail durant la période de salaire garanti suivi d'une rechute - uniquement autorisé pour le secteur Indemnités
+1.3 Incapacité de travail payée par le secteur de l’enseignement
+1.4 Heures en dehors de l’horaire
+1.5 Récupération d’heures en dehors de l’horaire
+2.1 Rémunération journalière garantie pour cause d'incapacité de travail
+2.2 Rémunération journalière garantie pour une raison autre que l'incapacité de travail
+2.3 Absence premier jour par suite d'intempéries - secteur de la construction
+2.4 Rémunération garantie première semaine
+2.5 Rémunération garantie deuxième semaine
+2.6 Rémunération mensuelle garantie
+2.7 Indemnité CCT 12bis/13bis suite à une maladie ou un accident de droit commun
+2.8 Jour de carence
+2.9 Indemnité CCT 12bis/13bis suite à un accident du travail ou une maladie professionnelle
+3.1 Vacances légales
+3.2 Vacances complémentaires
+3.3 Vacances en vertu d'une convention collective de travail rendue obligatoire
+3.4 Vacances jeunes et vacances seniors
+3.5 Jours de vacances supplémentaires en cas de début ou de reprise d'activité (art. 17bis Loi 28.06.1971)
+4 Jours de remplacement de jours fériés
+5.1 Chômage temporaire par suite de manque de travail résultant de causes économiques
+5.10 Chômage temporaire en cas de licenciement d'un travailleur protégé
+5.11 Jours de suspension employés pour manque de travail
+5.2 Chômage temporaire par suite d'intempéries
+5.3 Chômage temporaire par suite d'un accident technique
+5.4 Chômage temporaire par suite de force majeure
+5.5 Chômage temporaire par suite de force majeure à caractère médical
+5.6 Chômage temporaire par suite de fermeture de l'entreprise pour cause de vacances annuelles
+5.7 Chômage temporaire par suite de fermeture de l'entreprise pour cause de vacances en vertu d'une CCT rendue obligatoire
+5.8 Chômage temporaire par suite de fermeture de l'entreprise pour cause de repos compensatoire dans le cadre d'une réduction de la durée du travail
+5.9 Chômage temporaire par suite de grève ou de lock-out
+6.1 Incapacité de travail avec indemnité d'accidents du travail en application de l'article 54 de la loi sur les accidents du travail
+6.10 Congé de naissance visé par la loi du 3 juillet 1978 relative aux contrats de travail et par la loi du 1er avril 1936 sur les contrats d'engagement pour le service des bâtiments de navigation
+intérieure (seulement les jours à charge du secteur "indemnités") et pause d'allaitement
+6.11 Congé d'adoption (seulement les jours à charge du secteur "indemnités")
+6.2 Toute absence non rémunérée pour maladie et accident, incapacité de travail par suite de congé prophylactique
+6.3 Travail adapté avec perte de salaire dans le cadre d'une incapacité de travail, travail adapté avec perte de salaire en tant que mesure de protection de la maternité
+6.4 Ecartement complet du travail en tant que mesure de protection de la maternité, repos de maternité, congé de paternité visé par la loi du 16 mars 1971 sur le travail
+6.5 Absence pour incapacité de travail pour laquelle le salaire garanti n'est pas payé en raison de chômage temporaire
+6.6 Absence pour incapacité de travail pour laquelle le salaire garanti n'est pas payé pour cause de rechute
+6.7 Absence pour incapacité de travail pour laquelle le salaire garanti n'est pas payé pour cause de vacances annuelles collectives
+6.8 Absence pour incapacité de travail pour laquelle le salaire garanti n'est pas payé pour des raisons imputables au travailleur (absence injustifiée ou refus de se soumettre au contrôle)
+6.9 Absence pour incapacité de travail pour laquelle le salaire garanti n'est pas payé à cause d'une ancienneté insuffisante
+7 Absence ou congé sans solde
+8 Jours habituels d'inactivité dans l'occupation
+9 Jours d'absence pour soins d'accueil
+10.1 Port - Chômage
+10.2 Port - Chômage soumis à l'approbation
+10.3 Port - AR 225
+10.4 Port - Jour férié payé
+10.5 Port - Jour férié sur lequel sont effectuées des prestations de travail
+10.6 Port - Jour férié de remplacement sur lequel sont effectuées des prestations de travail
+10.7 Port - Accident de travail - jour férié accident de travail
+WECH506 - p. 5
+
+===== PAGE 6 =====
+PRINT FGTB - WECH506 14/11/2024
+FORMULAIRE C131B
+DECLARATION MENSUELLE DE TRAVAIL A TEMPS PARTIEL AVEC
+MAINTIEN DES DROITS AVEC ALLOCATION DE GARANTIE DE REVENUS
+CODES POUR LES JOURS DE PRESTATIONS DE TRAVAIL EFFECTUEES (ANNEXE)
+10.8 Port - Maladie - jour férié payé
+10.9 Port - Congés d'ancieneté
+10.10 Port - Vacances supplémentaires avec sécurité d'existence / sécurité d'existence double
+10.11 Port - Dispense contrôle de chômage / vacances pendant une période de chômage / vacances supplémentaires
+10.12 Port - Congé familial
+10.13 Port - Petit chômage
+10.14 Port - Jour de solidarité
+10.15 Port - Congé syndical
+10.16 Port - Cours / formation d'initiation
+10.17 Port - Formation (professionnelle)
+10.18 Port - Capacité de travail partiellement réduite
+10.19 Port - Capacité de travail réduite
+10.20 Port - Examen médical
+10.21 Port - Dispense médicale contrôle de chômage
+10.22 Port - Congé non utilisé
+Mois de référence : 01/12/2023 - 31/12/2023
+WECH506 - p. 6

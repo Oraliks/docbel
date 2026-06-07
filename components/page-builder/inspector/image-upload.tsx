@@ -11,6 +11,7 @@ import {
   Check,
   X,
   Search,
+  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,6 +24,12 @@ interface ImageUploadProps {
   onChange: (url: string) => void
   /** Compact mode: smaller preview, used inside repeating items (gallery, testimonials). */
   compact?: boolean
+  /**
+   * Optionnel — appelé pour appliquer un point focal suggéré par l'IA (0-100).
+   * Fourni par les contrôles d'image qui gèrent un point focal (object-position).
+   * Si absent, le bouton « Point focal auto (IA) » n'est pas rendu.
+   */
+  onFocalChange?: (focal: { focalX: number; focalY: number }) => void
 }
 
 const MAX_SIZE = 5 * 1024 * 1024 // 5 MB
@@ -35,9 +42,15 @@ interface UnsplashResult {
   credit: string
 }
 
-export function ImageUpload({ value, onChange, compact = false }: ImageUploadProps) {
+export function ImageUpload({
+  value,
+  onChange,
+  compact = false,
+  onFocalChange,
+}: ImageUploadProps) {
   const [uploading, setUploading] = React.useState(false)
   const [dragOver, setDragOver] = React.useState(false)
+  const [focalLoading, setFocalLoading] = React.useState(false)
   const [pickerOpen, setPickerOpen] = React.useState(false)
   const [urlMode, setUrlMode] = React.useState(false)
   const [urlInput, setUrlInput] = React.useState('')
@@ -142,6 +155,43 @@ export function ImageUpload({ value, onChange, compact = false }: ImageUploadPro
     setUrlMode(false)
   }
 
+  // ────── Point focal auto (IA vision) ──────
+  const suggestFocal = React.useCallback(async () => {
+    if (!value || !onFocalChange) return
+    setFocalLoading(true)
+    try {
+      const res = await fetch('/api/page-builder/ai-focal', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ imageUrl: value }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data.error || 'Échec de la suggestion de point focal')
+        return
+      }
+      if (data.aiDisabled) {
+        toast.message("L'assistant IA n'est pas configuré")
+        return
+      }
+      if (typeof data.focalX !== 'number' || typeof data.focalY !== 'number') {
+        toast.error('Réponse IA invalide')
+        return
+      }
+      onFocalChange({ focalX: data.focalX, focalY: data.focalY })
+      toast.success(
+        data.fallback
+          ? 'Sujet non détecté — point focal centré'
+          : 'Point focal suggéré par l’IA'
+      )
+    } catch (e) {
+      console.error(e)
+      toast.error('Échec de la suggestion de point focal')
+    } finally {
+      setFocalLoading(false)
+    }
+  }, [value, onFocalChange])
+
   // ────── With value: preview + actions ──────
   if (value) {
     return (
@@ -205,6 +255,25 @@ export function ImageUpload({ value, onChange, compact = false }: ImageUploadPro
             </div>
           )}
         </div>
+
+        {onFocalChange && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2 h-7 w-full text-xs"
+            disabled={focalLoading}
+            onClick={() => void suggestFocal()}
+            title="Détecter le sujet principal et placer le point focal"
+          >
+            {focalLoading ? (
+              <Loader2 className="size-3 mr-1 animate-spin" />
+            ) : (
+              <Sparkles className="size-3 mr-1" />
+            )}
+            {focalLoading ? 'Analyse…' : 'Point focal auto (IA)'}
+          </Button>
+        )}
 
         <input
           ref={fileInputRef}

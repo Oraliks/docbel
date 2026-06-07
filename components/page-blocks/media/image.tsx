@@ -113,7 +113,11 @@ export const image = defineBlock({
   Fields: ({ props, onChange }) => (
     <Group title="Contenu" defaultOpen>
       <Field label="Image">
-        <ImageUpload value={props.url} onChange={(url) => onChange({ url })} />
+        <ImageUpload
+          value={props.url}
+          onChange={(url) => onChange({ url })}
+          onFocalChange={({ focalX, focalY }) => onChange({ focalX, focalY })}
+        />
       </Field>
       <Field label="Texte alternatif">
         <Input

@@ -42,6 +42,10 @@ const AuditDialog = dynamic(
   () => import('@/components/page-builder/audit-dialog').then((m) => ({ default: m.AuditDialog })),
   { ssr: false }
 )
+const GenerateDialog = dynamic(
+  () => import('@/components/page-builder/generate-dialog').then((m) => ({ default: m.GenerateDialog })),
+  { ssr: false }
+)
 
 interface PageEditorPageProps {
   params: Promise<{ pageId: string }>
@@ -118,6 +122,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   const [showThemeDialog, setShowThemeDialog] = useState(false)
   const [showVariablesDialog, setShowVariablesDialog] = useState(false)
   const [showAuditDialog, setShowAuditDialog] = useState(false)
+  const [showGenerateDialog, setShowGenerateDialog] = useState(false)
   const [auditLoading, setAuditLoading] = useState(false)
   const [auditResult, setAuditResult] = useState<AuditResult | null>(null)
   const themeTokens = usePageBuilderStore((s) => s.themeTokens)
@@ -542,6 +547,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         onOpenTheme={() => setShowThemeDialog(true)}
         onOpenVariables={() => setShowVariablesDialog(true)}
         onOpenAudit={handleAudit}
+        onOpenGenerate={() => setShowGenerateDialog(true)}
         onExport={handleExport}
         onTogglePublish={handleTogglePublish}
       />
@@ -572,6 +578,11 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         onOpenChange={setShowAuditDialog}
         loading={auditLoading}
         result={auditResult}
+      />
+
+      <GenerateDialog
+        open={showGenerateDialog}
+        onOpenChange={setShowGenerateDialog}
       />
 
       <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>

@@ -18,6 +18,7 @@ import {
   Smartphone,
   Tablet,
   Undo2,
+  Wand2,
   CircleCheck,
   CircleAlert,
   Loader2,
@@ -46,6 +47,7 @@ interface TopbarProps {
   onOpenTheme: () => void
   onOpenVariables: () => void
   onOpenAudit: () => void
+  onOpenGenerate: () => void
   onExport: () => void
   onTogglePublish: () => void
 }
@@ -65,6 +67,7 @@ export function Topbar({
   onOpenTheme,
   onOpenVariables,
   onOpenAudit,
+  onOpenGenerate,
   onExport,
   onTogglePublish,
 }: TopbarProps) {
@@ -133,6 +136,19 @@ export function Topbar({
             title="Rétablir (⌘⇧Z)"
           >
             <Redo2 className="size-4" />
+          </Button>
+
+          <div className="h-6 w-px bg-border mx-1" />
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onOpenGenerate}
+            className="gap-1.5"
+            title="Générer une section avec l'IA"
+          >
+            <Wand2 className="size-4" />
+            <span className="hidden lg:inline">Générer (IA)</span>
           </Button>
 
           <div className="h-6 w-px bg-border mx-1" />

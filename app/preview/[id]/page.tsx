@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { PublicRenderer } from "@/components/page-builder/public-renderer";
-import { GlobalBlocksProvider } from "@/components/page-builder/global-blocks-context";
-import { ThemeProvider } from "@/components/page-builder/theme-tokens";
-import { BlockProps, ThemeTokens } from "@/lib/page-builder/types";
+import { BlockProps } from "@/lib/page-builder/types";
 import { verifyPreviewToken } from "@/lib/page-builder/preview-token";
+import { RenderedPage, resolveGlobalBlocks } from "@/lib/page-builder/render-page";
 
 // Aperçu d'un brouillon : pas de cache, pas d'indexation.
 export const dynamic = "force-dynamic";
@@ -36,33 +34,7 @@ export default async function PreviewPage({
     : [];
 
   // Résolution des blocs globaux référencés (SSR), comme sur la page publique.
-  const globalBlockIds = Array.from(
-    new Set(
-      blocks
-        .filter((b) => b.type === "globalRef")
-        .map((b) => (b.props as { globalBlockId?: string }).globalBlockId)
-        .filter((gid): gid is string => Boolean(gid)),
-    ),
-  );
-
-  let globalMap: Record<string, BlockProps> = {};
-  if (globalBlockIds.length > 0) {
-    const globals = await prisma.globalBlock.findMany({
-      where: { id: { in: globalBlockIds } },
-      select: { id: true, block: true },
-    });
-    globalMap = Object.fromEntries(
-      globals.map((g) => [g.id, g.block as unknown as BlockProps]),
-    );
-  }
-
-  const pageVars = Array.isArray(page.variables)
-    ? Object.fromEntries(
-        (page.variables as Array<{ key?: string; value?: string }>)
-          .filter((v) => v && typeof v.key === "string" && v.key)
-          .map((v) => [v.key as string, v.value ?? ""]),
-      )
-    : {};
+  const globalMap = await resolveGlobalBlocks(blocks);
 
   return (
     <>
@@ -91,22 +63,7 @@ export default async function PreviewPage({
         </span>
       </div>
 
-      <ThemeProvider tokens={page.themeTokens as ThemeTokens | null}>
-        <GlobalBlocksProvider value={globalMap}>
-          <PublicRenderer
-            blocks={blocks}
-            context={{
-              site: { name: "Docbel" },
-              page: {
-                title: page.title,
-                slug: page.slug,
-                description: page.metaDesc ?? undefined,
-              },
-              vars: pageVars,
-            }}
-          />
-        </GlobalBlocksProvider>
-      </ThemeProvider>
+      <RenderedPage page={page} blocks={blocks} globalMap={globalMap} />
     </>
   );
 }

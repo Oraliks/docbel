@@ -15,6 +15,7 @@ import type {
   BlockMeta,
   DeviceType,
   PageData,
+  PageVariable,
   ResponsiveOverride,
   ThemeTokens,
 } from './types'
@@ -46,6 +47,9 @@ interface PageBuilderStore {
 
   // Theme tokens (per-page palette)
   themeTokens: ThemeTokens | null
+
+  // User-defined page variables ({{key}} interpolation)
+  variables: PageVariable[]
 
   // Resolved global blocks (id → block content) for live globalRef resolution.
   globalBlocks: Record<string, BlockProps>
@@ -87,6 +91,7 @@ interface PageBuilderStore {
   setIsSaving: (saving: boolean) => void
   setIsDirty: (dirty: boolean) => void
   setThemeTokens: (tokens: ThemeTokens | null) => void
+  setVariables: (vars: PageVariable[]) => void
   setGlobalBlocks: (map: Record<string, BlockProps>) => void
   updateGlobalBlockProps: (globalBlockId: string, props: Record<string, unknown>) => void
   /** Replace a block in place (same id) — used to convert a block into a globalRef. */
@@ -228,6 +233,7 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
   pickerSlotIndex: null,
 
   themeTokens: null,
+  variables: [],
   globalBlocks: {},
   isSaving: false,
   isDirty: false,
@@ -286,6 +292,7 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
   setIsSaving: (saving) => set({ isSaving: saving }),
   setIsDirty: (dirty) => set({ isDirty: dirty }),
   setThemeTokens: (tokens) => set({ themeTokens: tokens, isDirty: true }),
+  setVariables: (vars) => set({ variables: vars, isDirty: true }),
   setGlobalBlocks: (map) => set({ globalBlocks: map }),
   updateGlobalBlockProps: (globalBlockId, props) =>
     set((state) => {
@@ -758,6 +765,7 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
       pickerParentId: null,
       pickerSlotIndex: null,
       themeTokens: null,
+      variables: [],
       globalBlocks: {},
       isSaving: false,
       isDirty: false,

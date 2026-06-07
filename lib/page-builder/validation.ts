@@ -240,6 +240,19 @@ export const UpdatePageSchema = z.object({
     .nullable()
     .transform((v) => (v === '' || v == null ? null : v)),
   themeTokens: ThemeTokensSchema.nullable().optional(),
+  variables: z
+    .array(
+      z.object({
+        key: z
+          .string()
+          .max(40)
+          .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, 'Clé invalide (lettres, chiffres, _)'),
+        value: z.string().max(2000),
+      })
+    )
+    .max(50)
+    .nullable()
+    .optional(),
 })
 
 export type CreatePageInput = z.infer<typeof CreatePageSchema>

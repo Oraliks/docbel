@@ -139,6 +139,14 @@ export default async function PublicPage({
     );
   }
 
+  const pageVars = Array.isArray(page.variables)
+    ? Object.fromEntries(
+        (page.variables as Array<{ key?: string; value?: string }>)
+          .filter((v) => v && typeof v.key === 'string' && v.key)
+          .map((v) => [v.key as string, v.value ?? ''])
+      )
+    : {}
+
   const jsonLd = buildPageJsonLd(blocks, {
     title: page.title,
     metaTitle: page.metaTitle,
@@ -170,6 +178,7 @@ export default async function PublicPage({
                 slug: page.slug,
                 description: page.metaDesc ?? undefined,
               },
+              vars: pageVars,
             }}
           />
         </GlobalBlocksProvider>

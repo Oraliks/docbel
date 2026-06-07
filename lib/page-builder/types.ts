@@ -200,3 +200,13 @@ export interface ThemeTokens {
   fontFamily?: string
   radius?: number
 }
+
+/**
+ * A reusable, page-level variable. Define once in the page settings, then
+ * reference anywhere in text props via `{{key}}` — resolved at render time on
+ * the public page (see interpolate.ts `vars`).
+ */
+export interface PageVariable {
+  key: string
+  value: string
+}

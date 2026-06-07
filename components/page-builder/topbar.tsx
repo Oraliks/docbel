@@ -3,6 +3,7 @@
 import React from 'react'
 import {
   ArrowLeft,
+  Braces,
   Download,
   ExternalLink,
   Eye,
@@ -42,6 +43,7 @@ interface TopbarProps {
   onOpenSettings: () => void
   onOpenVersions: () => void
   onOpenTheme: () => void
+  onOpenVariables: () => void
   onExport: () => void
   onTogglePublish: () => void
 }
@@ -59,6 +61,7 @@ export function Topbar({
   onOpenSettings,
   onOpenVersions,
   onOpenTheme,
+  onOpenVariables,
   onExport,
   onTogglePublish,
 }: TopbarProps) {
@@ -176,6 +179,10 @@ export function Topbar({
 
           <Button size="icon-sm" variant="ghost" onClick={onOpenTheme} title="Thème de la page">
             <Palette className="size-4" />
+          </Button>
+
+          <Button size="icon-sm" variant="ghost" onClick={onOpenVariables} title="Variables de la page">
+            <Braces className="size-4" />
           </Button>
 
           <Button size="icon-sm" variant="ghost" onClick={onOpenSettings} title="Paramètres">

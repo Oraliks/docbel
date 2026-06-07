@@ -187,6 +187,7 @@ model Page {
   metaDesc  String?
   ogImage   String?
   themeTokens Json?
+  variables Json?
   scheduledAt DateTime?
   deletedAt DateTime?
   createdAt DateTime  @default(now())

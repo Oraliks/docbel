@@ -22,6 +22,8 @@ export interface InterpolationContext {
   }
   /** Arbitrary additional variables. */
   custom?: Record<string, string | number | boolean | undefined | null>
+  /** User-defined page variables, referenced as {{key}}. */
+  vars?: Record<string, string | number | null | undefined>
 }
 
 const TOKEN_REGEX = /\{\{\s*([\w.]+)\s*\}\}/g
@@ -41,6 +43,12 @@ function lookup(path: string, ctx: InterpolationContext): string | undefined {
   }
   if (path === 'month') {
     return new Intl.DateTimeFormat('fr-FR', { month: 'long' }).format(new Date())
+  }
+
+  // User-defined page variables (bare name): {{maVariable}}
+  if (ctx.vars && Object.prototype.hasOwnProperty.call(ctx.vars, path)) {
+    const v = ctx.vars[path]
+    return v === undefined || v === null ? undefined : String(v)
   }
 
   // Walk the context

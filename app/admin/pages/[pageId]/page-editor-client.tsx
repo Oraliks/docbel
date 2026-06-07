@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
-import type { BlockProps, ThemeTokens } from '@/lib/page-builder/types'
+import type { BlockProps, PageVariable, ThemeTokens } from '@/lib/page-builder/types'
 
 const Editor = dynamic(
   () => import('@/components/page-builder/editor').then((m) => ({ default: m.Editor })),
@@ -30,6 +30,10 @@ const VersionsDialog = dynamic(
 )
 const ThemeDialog = dynamic(
   () => import('@/components/page-builder/theme-dialog').then((m) => ({ default: m.ThemeDialog })),
+  { ssr: false }
+)
+const VariablesDialog = dynamic(
+  () => import('@/components/page-builder/variables-dialog').then((m) => ({ default: m.VariablesDialog })),
   { ssr: false }
 )
 
@@ -83,8 +87,11 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [showVersionsDialog, setShowVersionsDialog] = useState(false)
   const [showThemeDialog, setShowThemeDialog] = useState(false)
+  const [showVariablesDialog, setShowVariablesDialog] = useState(false)
   const themeTokens = usePageBuilderStore((s) => s.themeTokens)
   const setThemeTokens = usePageBuilderStore((s) => s.setThemeTokens)
+  const variables = usePageBuilderStore((s) => s.variables)
+  const setVariables = usePageBuilderStore((s) => s.setVariables)
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pendingPayloadRef = useRef<Record<string, unknown>>({})
@@ -92,6 +99,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   const initialBlocksRef = useRef<BlockProps[]>([])
   const lastSavedBlocksRef = useRef<BlockProps[] | null>(null)
   const lastSavedThemeRef = useRef<ThemeTokens | null>(null)
+  const lastSavedVarsRef = useRef<PageVariable[] | null>(null)
   const initialMountRef = useRef(true)
   // Stable ref so the persist callback below doesn't depend on `page` (which
   // would re-create persist on every save and re-trigger the autosave effect).
@@ -118,6 +126,11 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         setScheduledAt(isoToDatetimeLocal(data.scheduledAt))
         setThemeTokens(data.themeTokens ?? null)
         lastSavedThemeRef.current = data.themeTokens ?? null
+        const loadedVars: PageVariable[] = Array.isArray(data.variables)
+          ? data.variables
+          : []
+        setVariables(loadedVars)
+        lastSavedVarsRef.current = loadedVars
         setLastSaved(new Date())
         setIsDirty(false)
       } catch (error) {
@@ -128,7 +141,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         setLoading(false)
       }
     },
-    [router, setBlocks, setIsDirty, setPage, setThemeTokens]
+    [router, setBlocks, setIsDirty, setPage, setThemeTokens, setVariables]
   )
 
   useEffect(() => {
@@ -238,6 +251,18 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
     lastSavedThemeRef.current = themeTokens
     scheduleAutosave({ themeTokens })
   }, [themeTokens, scheduleAutosave])
+
+  // Autosave page variables when they change (mirrors the theme watcher).
+  // Only well-formed keys are persisted, so a half-typed row never 400s the
+  // whole patch.
+  useEffect(() => {
+    if (!pageIdRef.current) return
+    if (variables === lastSavedVarsRef.current) return
+    lastSavedVarsRef.current = variables
+    scheduleAutosave({
+      variables: variables.filter((v) => /^[a-zA-Z][a-zA-Z0-9_]*$/.test(v.key)),
+    })
+  }, [variables, scheduleAutosave])
 
   // ⌘S
   useEffect(() => {
@@ -384,6 +409,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
       metaDesc: metaDesc || null,
       ogImage: ogImage || null,
       themeTokens: themeTokens ?? null,
+      variables,
       blocks,
     }
     const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -415,6 +441,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         onOpenSettings={() => setShowSettingsDialog(true)}
         onOpenVersions={() => setShowVersionsDialog(true)}
         onOpenTheme={() => setShowThemeDialog(true)}
+        onOpenVariables={() => setShowVariablesDialog(true)}
         onExport={handleExport}
         onTogglePublish={handleTogglePublish}
       />
@@ -434,6 +461,11 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
       />
 
       <ThemeDialog open={showThemeDialog} onOpenChange={setShowThemeDialog} />
+
+      <VariablesDialog
+        open={showVariablesDialog}
+        onOpenChange={setShowVariablesDialog}
+      />
 
       <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
         <DialogContent className="sm:max-w-2xl">

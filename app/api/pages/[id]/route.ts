@@ -83,6 +83,12 @@ export async function PATCH(
       updateData.themeTokens =
         validated.themeTokens === null ? Prisma.DbNull : validated.themeTokens
     }
+    if (validated.variables !== undefined) {
+      updateData.variables =
+        validated.variables === null
+          ? Prisma.DbNull
+          : (validated.variables as Prisma.InputJsonValue)
+    }
 
     const actor = authCheck.user.email || authCheck.user.name || 'Admin'
 

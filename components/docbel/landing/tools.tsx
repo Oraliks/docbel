@@ -48,8 +48,8 @@ export function LandingTools({
                 onClick={() => setActiveCat(cat)}
                 className={`rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition ${
                   active
-                    ? "border-transparent text-[color:var(--glass-bg-a)]"
-                    : "border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-white/55"
+                    ? "border-transparent text-[color:var(--glass-bg-a)] shadow-[0_4px_14px_rgba(42,15,77,0.22)]"
+                    : "border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] hover:bg-white/55 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10"
                 }`}
                 style={active ? { background: "var(--glass-ink)" } : undefined}
               >
@@ -60,7 +60,7 @@ export function LandingTools({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5 xl:grid-cols-4">
         {visible.map((tool, index) => (
           <LandingToolCard key={tool.id} tool={tool} index={index} />
         ))}

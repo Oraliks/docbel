@@ -142,7 +142,7 @@ export function LandingBottom({ news, loading = false }: LandingBottomProps) {
                   onClick={() =>
                     router.push(`/actualites/${item.slug ?? item.id}`)
                   }
-                  className={`grid grid-cols-[60px_1fr_auto] items-center gap-4 rounded-xl py-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
+                  className={`-mx-3 grid grid-cols-[60px_1fr_auto] items-center gap-4 rounded-xl px-3 py-3.5 text-left outline-none transition-colors hover:bg-white/45 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:hover:bg-white/[0.05] ${
                     index < visibleNews.length - 1
                       ? "border-b border-[color:var(--glass-ink-line)]"
                       : ""
@@ -188,7 +188,7 @@ export function LandingBottom({ news, loading = false }: LandingBottomProps) {
             onClick={() => router.push("/outils")}
             className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
           >
-            Tout
+            Voir tout
             <ArrowRightIcon className="size-3.5" />
           </button>
         </div>
@@ -199,7 +199,7 @@ export function LandingBottom({ news, loading = false }: LandingBottomProps) {
               key={res.title}
               type="button"
               onClick={() => res.href && router.push(res.href)}
-              className="flex items-center gap-3.5 rounded-2xl p-3 text-left outline-none transition hover:translate-x-0.5 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              className="group flex items-center gap-3.5 rounded-2xl p-3 text-left outline-none transition-colors hover:bg-white/60 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:hover:bg-white/[0.08]"
               style={{ background: "var(--glass-surface)" }}
             >
               <span
@@ -215,7 +215,7 @@ export function LandingBottom({ news, loading = false }: LandingBottomProps) {
                 </div>
               </div>
               <ArrowRightIcon
-                className="size-3.5 shrink-0"
+                className="size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5"
                 style={{ color: "var(--glass-ink-faint)" }}
               />
             </button>

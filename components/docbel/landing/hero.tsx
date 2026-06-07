@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { NewsItem } from "@/lib/docbel-data";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRightIcon, TrendingUpIcon } from "lucide-react";
+import { ArrowRightIcon, CalculatorIcon, TrendingUpIcon } from "lucide-react";
 
 interface LandingHeroProps {
   article: NewsItem | null;
@@ -89,8 +89,14 @@ function FeaturedArtwork() {
 function FeaturedArticle({ article }: { article: NewsItem }) {
   const router = useRouter();
   return (
-    <article className="glass-surface relative grid min-h-[340px] gap-9 overflow-hidden p-9 lg:grid-cols-[1.2fr_1fr] lg:items-center">
-      <div className="flex flex-col">
+    <article className="glass-surface relative flex min-h-[340px] flex-col gap-7 overflow-hidden p-7 sm:p-9">
+      {/*
+        Masthead — tag (gauche) + référence éditoriale (droite) posés sur une
+        vraie ligne d'en-tête séparée par un filet. Remplace le label VOL.
+        absolument positionné (top-9 right-10) qui chevauchait le titre et
+        l'artwork sous le breakpoint lg. Donne une hiérarchie de "une".
+      */}
+      <div className="flex items-center justify-between gap-4 border-b border-[color:var(--glass-ink-line)] pb-5">
         <span
           className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em]"
           style={{
@@ -104,50 +110,55 @@ function FeaturedArticle({ article }: { article: NewsItem }) {
           />
           {article.tag}
         </span>
-
-        <h1 className="glass-display mt-5 text-[44px] font-semibold leading-[1.04] lg:text-[46px]">
-          {formatHeadline(article.title)}
-        </h1>
-
-        <p className="mt-4 max-w-[480px] text-[14.5px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
-          {article.desc}
-        </p>
-
-        <div className="mt-6 flex flex-wrap items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => article.slug && router.push(`/actualites/${article.slug}`)}
-            className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13.5px] font-bold transition hover:opacity-90"
-            style={{
-              background: "var(--glass-ink)",
-              color: "var(--glass-bg-a)",
-            }}
-          >
-            Lire l&apos;article
-            <ArrowRightIcon className="size-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push("/outils")}
-            className="inline-flex items-center gap-1.5 rounded-full px-4 py-3 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
-          >
-            Calculer mes droits
-          </button>
-        </div>
+        <span className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)] sm:text-[11px]">
+          VOL. III · N°12 · {article.date}
+        </span>
       </div>
 
-      <FeaturedArtwork />
+      <div className="grid gap-9 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+        <div className="flex flex-col">
+          <h1 className="glass-display text-[34px] font-semibold leading-[1.06] sm:text-[44px] lg:text-[46px] lg:leading-[1.04]">
+            {formatHeadline(article.title)}
+          </h1>
 
-      <span className="absolute top-9 right-10 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-        VOL. III · N°12 · {article.date}
-      </span>
+          <p className="mt-4 max-w-[480px] text-[14.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
+            {article.desc}
+          </p>
+
+          <div className="mt-7 flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => article.slug && router.push(`/actualites/${article.slug}`)}
+              className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13.5px] font-bold transition hover:opacity-90"
+              style={{
+                background: "var(--glass-ink)",
+                color: "var(--glass-bg-a)",
+              }}
+            >
+              Lire l&apos;article
+              <ArrowRightIcon className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/outils")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-3 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10"
+            >
+              <CalculatorIcon className="size-4" />
+              Calculer mes droits
+            </button>
+          </div>
+        </div>
+
+        <FeaturedArtwork />
+      </div>
     </article>
   );
 }
 
 function StatusCard() {
+  const router = useRouter();
   return (
-    <aside className="glass-surface flex flex-col gap-4 p-7">
+    <aside className="glass-surface flex flex-col gap-5 p-7">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
           Mon estimation actuelle
@@ -189,7 +200,9 @@ function StatusCard() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 text-[12px]">
+      {/* Méta de l'estimation, détachée du bloc chiffré par un filet pour la
+          hiérarchie. Données encore placeholder (cf. redesign : mock conservé). */}
+      <div className="flex flex-col gap-2 border-t border-[color:var(--glass-ink-line)] pt-4 text-[12px]">
         <div className="flex justify-between">
           <span className="text-[color:var(--glass-ink-faint)]">Mise à jour</span>
           <span className="font-bold">il y a 2 jours</span>
@@ -202,13 +215,14 @@ function StatusCard() {
 
       <button
         type="button"
-        className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-[13.5px] font-bold transition hover:opacity-90"
+        onClick={() => router.push("/outils")}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[13.5px] font-bold transition hover:opacity-90"
         style={{
           background: "var(--glass-ink)",
           color: "var(--glass-bg-a)",
         }}
       >
-        Recalculer
+        Recalculer mon estimation
         <ArrowRightIcon className="size-4" />
       </button>
     </aside>

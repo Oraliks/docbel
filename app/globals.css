@@ -54,8 +54,8 @@
   --glass-bg-c: #f8e8dc;
   --glass-bg-d: #d8c8ff;
   --glass-ink: #2a0f4d;
-  --glass-ink-soft: rgba(42, 15, 77, 0.65);
-  --glass-ink-faint: rgba(42, 15, 77, 0.45);
+  --glass-ink-soft: rgba(42, 15, 77, 0.68);
+  --glass-ink-faint: rgba(42, 15, 77, 0.52);
   --glass-ink-line: rgba(42, 15, 77, 0.12);
   --glass-surface: rgba(255, 255, 255, 0.5);
   --glass-surface-strong: rgba(255, 255, 255, 0.62);
@@ -123,8 +123,8 @@
   --glass-bg-c: #15131e;
   --glass-bg-d: #26222f;
   --glass-ink: #ece6f2;
-  --glass-ink-soft: rgba(236, 230, 242, 0.68);
-  --glass-ink-faint: rgba(236, 230, 242, 0.42);
+  --glass-ink-soft: rgba(236, 230, 242, 0.74);
+  --glass-ink-faint: rgba(236, 230, 242, 0.52);
   --glass-ink-line: rgba(255, 255, 255, 0.07);
   --glass-surface: rgba(255, 255, 255, 0.04);
   --glass-surface-strong: rgba(255, 255, 255, 0.08);
@@ -202,6 +202,62 @@
   border: 1.5px solid var(--glass-border);
   border-radius: 18px;
   box-shadow: 0 16px 50px rgba(40, 15, 80, 0.18);
+}
+
+/* ============================================================
+   .glass-interactive — couche d'interaction des surfaces CLIQUABLES
+   ------------------------------------------------------------
+   Compagnon opt-in de .glass-surface pour les surfaces que l'on
+   clique (cartes outils, lignes actus/ressources). Centralise le
+   lift au survol + le bloom d'ombre + l'anneau de focus pour que
+   TOUTES les cartes du landing partagent UN seul langage de mouvement
+   et d'élévation, au lieu que chaque composant bricole son propre
+   translate/ring. À poser sur le même élément que .glass-surface
+   (cartes) ou seul sur un bouton nu (lignes).
+   ============================================================ */
+.glass-interactive {
+  transition:
+    transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 200ms ease,
+    background-color 200ms ease;
+  outline: none;
+}
+
+.glass-interactive:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 18px 44px rgba(80, 40, 140, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.glass-interactive:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--glass-bg-a),
+    0 0 0 4px var(--glass-accent-deep);
+}
+
+.dark .glass-interactive:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.dark .glass-interactive:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--glass-bg-c),
+    0 0 0 4px var(--glass-accent-deep);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-interactive {
+    transition: none;
+  }
+  .glass-interactive:hover {
+    transform: none;
+  }
 }
 
 .glass-display {

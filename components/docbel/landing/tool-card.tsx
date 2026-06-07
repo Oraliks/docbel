@@ -86,7 +86,7 @@ export function LandingToolCard({ tool, index = 0 }: LandingToolCardProps) {
     <button
       type="button"
       onClick={() => router.push(targetHref)}
-      className="glass-surface relative flex min-h-[210px] flex-col gap-3.5 p-5 text-left transition-transform outline-none hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+      className="glass-surface glass-interactive relative flex min-h-[210px] flex-col gap-3.5 p-5 text-left"
     >
       <span
         className="flex size-12 items-center justify-center rounded-2xl text-white"

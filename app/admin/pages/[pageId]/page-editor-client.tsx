@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
+import type { AuditResult } from '@/components/page-builder/audit-dialog'
 import type { BlockProps, PageVariable, ThemeTokens } from '@/lib/page-builder/types'
 
 const Editor = dynamic(
@@ -35,6 +36,10 @@ const ThemeDialog = dynamic(
 )
 const VariablesDialog = dynamic(
   () => import('@/components/page-builder/variables-dialog').then((m) => ({ default: m.VariablesDialog })),
+  { ssr: false }
+)
+const AuditDialog = dynamic(
+  () => import('@/components/page-builder/audit-dialog').then((m) => ({ default: m.AuditDialog })),
   { ssr: false }
 )
 
@@ -112,6 +117,9 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   const [showVersionsDialog, setShowVersionsDialog] = useState(false)
   const [showThemeDialog, setShowThemeDialog] = useState(false)
   const [showVariablesDialog, setShowVariablesDialog] = useState(false)
+  const [showAuditDialog, setShowAuditDialog] = useState(false)
+  const [auditLoading, setAuditLoading] = useState(false)
+  const [auditResult, setAuditResult] = useState<AuditResult | null>(null)
   const themeTokens = usePageBuilderStore((s) => s.themeTokens)
   const setThemeTokens = usePageBuilderStore((s) => s.setThemeTokens)
   const variables = usePageBuilderStore((s) => s.variables)
@@ -480,6 +488,41 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
     }
   }
 
+  const handleAudit = async () => {
+    const content = extractBlocksText(blocks)
+    if (!content) {
+      toast.error('Ajoutez du contenu à la page d’abord')
+      return
+    }
+    setAuditResult(null)
+    setAuditLoading(true)
+    setShowAuditDialog(true)
+    try {
+      const res = await fetch('/api/page-builder/ai-audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: content }),
+      })
+      const data = await res.json()
+      if (data?.aiDisabled) {
+        setShowAuditDialog(false)
+        toast.error('IA non configurée')
+        return
+      }
+      if (!res.ok || data?.error) {
+        setShowAuditDialog(false)
+        toast.error(data?.error || 'Échec de l’audit')
+        return
+      }
+      setAuditResult(data as AuditResult)
+    } catch {
+      setShowAuditDialog(false)
+      toast.error('Échec de l’audit')
+    } finally {
+      setAuditLoading(false)
+    }
+  }
+
   const isPublished = page.status === 'published'
 
   return (
@@ -498,6 +541,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         onOpenVersions={() => setShowVersionsDialog(true)}
         onOpenTheme={() => setShowThemeDialog(true)}
         onOpenVariables={() => setShowVariablesDialog(true)}
+        onOpenAudit={handleAudit}
         onExport={handleExport}
         onTogglePublish={handleTogglePublish}
       />
@@ -521,6 +565,13 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
       <VariablesDialog
         open={showVariablesDialog}
         onOpenChange={setShowVariablesDialog}
+      />
+
+      <AuditDialog
+        open={showAuditDialog}
+        onOpenChange={setShowAuditDialog}
+        loading={auditLoading}
+        result={auditResult}
       />
 
       <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>

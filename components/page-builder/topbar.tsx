@@ -9,6 +9,7 @@ import {
   Eye,
   Globe,
   History,
+  ListChecks,
   Monitor,
   Palette,
   Redo2,
@@ -44,6 +45,7 @@ interface TopbarProps {
   onOpenVersions: () => void
   onOpenTheme: () => void
   onOpenVariables: () => void
+  onOpenAudit: () => void
   onExport: () => void
   onTogglePublish: () => void
 }
@@ -62,6 +64,7 @@ export function Topbar({
   onOpenVersions,
   onOpenTheme,
   onOpenVariables,
+  onOpenAudit,
   onExport,
   onTogglePublish,
 }: TopbarProps) {
@@ -183,6 +186,10 @@ export function Topbar({
 
           <Button size="icon-sm" variant="ghost" onClick={onOpenVariables} title="Variables de la page">
             <Braces className="size-4" />
+          </Button>
+
+          <Button size="icon-sm" variant="ghost" onClick={onOpenAudit} title="Audit IA de la page">
+            <ListChecks className="size-4" />
           </Button>
 
           <Button size="icon-sm" variant="ghost" onClick={onOpenSettings} title="Paramètres">

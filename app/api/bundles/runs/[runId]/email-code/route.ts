@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
 const BodySchema = z.object({
   email: z.string().email("Email invalide").max(200),
@@ -20,6 +21,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ runId: string }> }
 ) {
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
+
   const { runId } = await params;
 
   // Rate limit

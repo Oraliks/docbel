@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
 /**
  * Stripe Checkout session creator for the page-builder "checkout" action.
@@ -9,6 +10,9 @@ import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
  * configured, so the action degrades cleanly (the client shows a toast).
  */
 export async function POST(request: NextRequest) {
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
+
   const ip = getClientIp(request);
   const rl = checkRateLimit(`pagebuilder:checkout:${ip}`, {
     windowMs: 60_000,

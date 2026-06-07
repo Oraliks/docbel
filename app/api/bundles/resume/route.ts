@@ -7,6 +7,7 @@ import {
   normalizeResumeCode,
 } from "@/lib/bundles/resume-code";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
 const BUNDLE_COOKIE = "beldoc-bundle-session";
 
@@ -28,6 +29,9 @@ const BodySchema = z.object({
 ///
 /// Rate-limit : 10 tentatives / 5 min / IP pour limiter le brute-force.
 export async function POST(req: NextRequest) {
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
+
   const ip = getClientIp(req);
   const rl = checkRateLimit(`bundle-resume:${ip}`, {
     windowMs: 5 * 60_000,

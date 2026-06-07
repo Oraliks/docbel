@@ -12,6 +12,7 @@ import { sendToDoccle, isDoccleConfigured } from "@/lib/pdf-forms/integrations/d
 import { todayISO } from "@/lib/pdf-forms/system-values";
 import { isCreationDateField, isSignatureField } from "@/lib/pdf-forms/auto-fields";
 import { PdfFormField, FormPayload, Locale, isLocale } from "@/lib/pdf-forms/types";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -23,6 +24,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
+
   const { slug } = await params;
   const ip = getClientIp(req);
   const rl = checkRateLimit(`pdf-generate:${ip}:${slug}`, { windowMs: 60_000, max: 5 });

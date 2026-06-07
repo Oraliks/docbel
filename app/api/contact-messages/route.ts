@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { logActivity } from "@/lib/activity-logger";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -32,6 +33,9 @@ function escapeHtml(s: string): string {
  * single source of truth for messagerie.
  */
 export async function POST(request: NextRequest) {
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
+
   try {
     // Rate-limit anti-spam : 3 messages / 10 min / IP
     const ip = getClientIp(request);

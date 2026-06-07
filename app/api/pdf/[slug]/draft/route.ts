@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 const DRAFT_TTL_DAYS = 7;
@@ -31,6 +32,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
   const c = await ctx(slug);
   if ("error" in c) return c.error;
 
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
+
   let body;
   try {
     body = await req.json();
@@ -55,6 +59,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const { slug } = await params;
   const c = await ctx(slug);
   if ("error" in c) return c.error;
+
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
+
   await prisma.pdfFormDraft
     .delete({ where: { formId_userId: { formId: c.formId, userId: c.userId } } })
     .catch(() => {});

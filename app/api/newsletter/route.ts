@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAdminAuth } from "@/lib/auth-check"
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit"
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard"
 
 export async function GET() {
   const authCheck = await requireAdminAuth()
@@ -21,6 +22,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const writeBlock = await ensureWriteAllowed()
+  if (writeBlock) return writeBlock
+
   try {
     // Rate-limit anti-spam : 5 inscriptions / 10 min / IP
     const ip = getClientIp(request)

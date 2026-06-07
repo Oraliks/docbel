@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { logActivity } from "@/lib/activity-logger";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,6 +24,9 @@ function escapeHtml(s: string): string {
  * Graceful 503 if email isn't configured.
  */
 export async function POST(request: NextRequest) {
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
+
   try {
     const ip = getClientIp(request);
     const rl = checkRateLimit(`pagebuilder:messages:${ip}`, {

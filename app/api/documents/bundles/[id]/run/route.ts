@@ -7,6 +7,7 @@ import {
   defaultResumeCodeExpiresAt,
 } from "@/lib/bundles/resume-code";
 import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
+import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
 const COOKIE_NAME = "beldoc-bundle-session";
 
@@ -51,6 +52,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
+
   const { id } = await params;
   const bundle = await prisma.documentBundle.findUnique({ where: { id } });
   if (!bundle || !bundle.active) {
@@ -113,6 +117,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const writeBlock = await ensureWriteAllowed();
+  if (writeBlock) return writeBlock;
+
   const { id } = await params;
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user?.id || null;

@@ -5,6 +5,19 @@ const HEX_COLOR_REGEX = /^#([0-9a-fA-F]{3,8})$/
 
 const HexColor = z.string().regex(HEX_COLOR_REGEX).optional()
 
+// État d'interaction (hover / focus / active / in-view) — schéma partagé.
+const InteractionStateSchema = z
+  .object({
+    textColor: HexColor,
+    bgColor: HexColor,
+    borderColor: HexColor,
+    opacity: z.number().min(0).max(1).optional(),
+    scale: z.number().min(0.5).max(2).optional(),
+    lift: z.number().min(0).max(40).optional(),
+    shadow: z.enum(['none', 'sm', 'md', 'lg', 'xl']).optional(),
+  })
+  .partial()
+
 // ────────────────────────── Style / Layout / Advanced ──────────────────────────
 
 const StyleSchema = z
@@ -32,54 +45,10 @@ const StyleSchema = z
     shadow: z.enum(['none', 'sm', 'md', 'lg', 'xl']).optional(),
     opacity: z.number().min(0).max(1).optional(),
     textEffect: z.enum(['none', 'gradient', 'shadow', 'glow', 'outline']).optional(),
-    hoverState: z
-      .object({
-        textColor: HexColor,
-        bgColor: HexColor,
-        borderColor: HexColor,
-        opacity: z.number().min(0).max(1).optional(),
-        scale: z.number().min(0.5).max(2).optional(),
-        lift: z.number().min(0).max(40).optional(),
-        shadow: z.enum(['none', 'sm', 'md', 'lg', 'xl']).optional(),
-      })
-      .partial()
-      .optional(),
-    focusState: z
-      .object({
-        textColor: HexColor,
-        bgColor: HexColor,
-        borderColor: HexColor,
-        opacity: z.number().min(0).max(1).optional(),
-        scale: z.number().min(0.5).max(2).optional(),
-        lift: z.number().min(0).max(40).optional(),
-        shadow: z.enum(['none', 'sm', 'md', 'lg', 'xl']).optional(),
-      })
-      .partial()
-      .optional(),
-    activeState: z
-      .object({
-        textColor: HexColor,
-        bgColor: HexColor,
-        borderColor: HexColor,
-        opacity: z.number().min(0).max(1).optional(),
-        scale: z.number().min(0.5).max(2).optional(),
-        lift: z.number().min(0).max(40).optional(),
-        shadow: z.enum(['none', 'sm', 'md', 'lg', 'xl']).optional(),
-      })
-      .partial()
-      .optional(),
-    inViewState: z
-      .object({
-        textColor: HexColor,
-        bgColor: HexColor,
-        borderColor: HexColor,
-        opacity: z.number().min(0).max(1).optional(),
-        scale: z.number().min(0.5).max(2).optional(),
-        lift: z.number().min(0).max(40).optional(),
-        shadow: z.enum(['none', 'sm', 'md', 'lg', 'xl']).optional(),
-      })
-      .partial()
-      .optional(),
+    hoverState: InteractionStateSchema.optional(),
+    focusState: InteractionStateSchema.optional(),
+    activeState: InteractionStateSchema.optional(),
+    inViewState: InteractionStateSchema.optional(),
     borderGradientFrom: HexColor,
     borderGradientTo: HexColor,
     borderGradientAngle: z.number().min(0).max(360).optional(),
@@ -354,6 +323,7 @@ export function generateSlug(title: string): string {
       .normalize('NFD')
       .replace(/[̀-ͯ]/g, '')
       .replace(/[^\w\s-]/g, '')
+      .replace(/_/g, '-')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '')

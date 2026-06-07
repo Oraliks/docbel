@@ -78,6 +78,10 @@ const formFieldDefSchema = z.object({
   placeholder: z.string().max(200).optional(),
   required: z.boolean().optional(),
   options: z.array(z.string().max(200)).optional(),
+  pattern: z.string().max(300).optional(),
+  minLength: z.number().min(0).max(5000).optional(),
+  maxLength: z.number().min(1).max(5000).optional(),
+  helpText: z.string().max(500).optional(),
 })
 
 export const formSchema = z.object({

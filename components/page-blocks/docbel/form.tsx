@@ -118,6 +118,8 @@ export const form = defineBlock({
                     name={field.name}
                     placeholder={field.placeholder}
                     required={field.required}
+                    minLength={field.minLength}
+                    maxLength={field.maxLength}
                     rows={4}
                     className="w-full resize-y rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
                   />
@@ -150,8 +152,14 @@ export const form = defineBlock({
                     name={field.name}
                     placeholder={field.placeholder}
                     required={field.required}
+                    pattern={field.pattern}
+                    minLength={field.minLength}
+                    maxLength={field.maxLength}
                     className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
                   />
+                )}
+                {field.helpText && (
+                  <p className="text-xs text-muted-foreground">{field.helpText}</p>
                 )}
               </div>
             ))}
@@ -226,12 +234,66 @@ export const form = defineBlock({
                 field.type === 'email' ||
                 field.type === 'tel' ||
                 field.type === 'textarea') && (
-                <Input
-                  value={field.placeholder ?? ''}
-                  onChange={(e) => set({ placeholder: e.target.value })}
-                  placeholder="Placeholder"
-                  className="h-8 text-xs"
-                />
+                <>
+                  <Input
+                    value={field.placeholder ?? ''}
+                    onChange={(e) => set({ placeholder: e.target.value })}
+                    placeholder="Placeholder"
+                    className="h-8 text-xs"
+                  />
+                  {field.type !== 'textarea' && (
+                    <Input
+                      value={field.pattern ?? ''}
+                      onChange={(e) =>
+                        set({ pattern: e.target.value || undefined })
+                      }
+                      placeholder="Pattern (regex HTML5)"
+                      className="h-8 text-xs font-mono"
+                    />
+                  )}
+                  <div className="flex gap-1.5">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={5000}
+                      value={field.minLength ?? ''}
+                      onChange={(e) =>
+                        set({
+                          minLength:
+                            e.target.value === ''
+                              ? undefined
+                              : Number(e.target.value),
+                        })
+                      }
+                      placeholder="Min."
+                      className="h-8 text-xs"
+                    />
+                    <Input
+                      type="number"
+                      min={1}
+                      max={5000}
+                      value={field.maxLength ?? ''}
+                      onChange={(e) =>
+                        set({
+                          maxLength:
+                            e.target.value === ''
+                              ? undefined
+                              : Number(e.target.value),
+                        })
+                      }
+                      placeholder="Max."
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <Input
+                    value={field.helpText ?? ''}
+                    onChange={(e) =>
+                      set({ helpText: e.target.value || undefined })
+                    }
+                    placeholder="Texte d'aide"
+                    className="h-8 text-xs"
+                  />
+                </>
               )}
               {field.type === 'select' && (
                 <Textarea

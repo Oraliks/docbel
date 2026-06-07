@@ -46,6 +46,10 @@ const GenerateDialog = dynamic(
   () => import('@/components/page-builder/generate-dialog').then((m) => ({ default: m.GenerateDialog })),
   { ssr: false }
 )
+const CopilotPanel = dynamic(
+  () => import('@/components/page-builder/copilot-panel').then((m) => ({ default: m.CopilotPanel })),
+  { ssr: false }
+)
 
 interface PageEditorPageProps {
   params: Promise<{ pageId: string }>
@@ -123,6 +127,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   const [showVariablesDialog, setShowVariablesDialog] = useState(false)
   const [showAuditDialog, setShowAuditDialog] = useState(false)
   const [showGenerateDialog, setShowGenerateDialog] = useState(false)
+  const [showCopilot, setShowCopilot] = useState(false)
   const [auditLoading, setAuditLoading] = useState(false)
   const [auditResult, setAuditResult] = useState<AuditResult | null>(null)
   const themeTokens = usePageBuilderStore((s) => s.themeTokens)
@@ -570,6 +575,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         onOpenVariables={() => setShowVariablesDialog(true)}
         onOpenAudit={handleAudit}
         onOpenGenerate={() => setShowGenerateDialog(true)}
+        onOpenCopilot={() => setShowCopilot(true)}
         onCopyPreviewLink={handleCopyPreviewLink}
         onExport={handleExport}
         onTogglePublish={handleTogglePublish}
@@ -607,6 +613,8 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         open={showGenerateDialog}
         onOpenChange={setShowGenerateDialog}
       />
+
+      <CopilotPanel open={showCopilot} onOpenChange={setShowCopilot} />
 
       <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
         <DialogContent className="sm:max-w-2xl">

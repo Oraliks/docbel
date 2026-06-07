@@ -3,6 +3,7 @@
 import React from 'react'
 import {
   ArrowLeft,
+  Bot,
   Braces,
   Download,
   ExternalLink,
@@ -49,6 +50,7 @@ interface TopbarProps {
   onOpenVariables: () => void
   onOpenAudit: () => void
   onOpenGenerate: () => void
+  onOpenCopilot: () => void
   onCopyPreviewLink: () => void
   onExport: () => void
   onTogglePublish: () => void
@@ -70,6 +72,7 @@ export function Topbar({
   onOpenVariables,
   onOpenAudit,
   onOpenGenerate,
+  onOpenCopilot,
   onCopyPreviewLink,
   onExport,
   onTogglePublish,
@@ -142,6 +145,17 @@ export function Topbar({
           </Button>
 
           <div className="h-6 w-px bg-border mx-1" />
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onOpenCopilot}
+            className="gap-1.5"
+            title="Copilote IA — chat qui répond et insère des sections"
+          >
+            <Bot className="size-4" />
+            <span className="hidden lg:inline">Copilote IA</span>
+          </Button>
 
           <Button
             size="sm"

@@ -6,11 +6,13 @@ import { Canvas } from './canvas'
 import { Inspector } from './inspector/inspector'
 import { BlockPicker } from './block-picker'
 import { CommandPalette } from './command-palette'
+import { FindReplaceDialog } from './find-replace-dialog'
 import { PreviewMode } from './preview-mode'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
 
 export function Editor() {
   const [cmdkOpen, setCmdkOpen] = React.useState(false)
+  const [findOpen, setFindOpen] = React.useState(false)
   const previewMode = usePageBuilderStore((s) => s.previewMode)
   const openPicker = usePageBuilderStore((s) => s.openPicker)
   const togglePreviewMode = usePageBuilderStore((s) => s.togglePreviewMode)
@@ -45,6 +47,12 @@ export function Editor() {
       if (meta && e.key.toLowerCase() === 'k') {
         e.preventDefault()
         setCmdkOpen(true)
+        return
+      }
+      // ⌘F → rechercher & remplacer (sauf dans un champ éditable)
+      if (meta && e.key.toLowerCase() === 'f' && !editing) {
+        e.preventDefault()
+        setFindOpen(true)
         return
       }
       // ⌘/  → block picker
@@ -224,6 +232,7 @@ export function Editor() {
       {/* Floating overlays */}
       <BlockPicker />
       <CommandPalette open={cmdkOpen} onOpenChange={setCmdkOpen} />
+      <FindReplaceDialog open={findOpen} onOpenChange={setFindOpen} />
     </div>
   )
 }

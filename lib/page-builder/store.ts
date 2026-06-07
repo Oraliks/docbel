@@ -170,6 +170,14 @@ interface PageBuilderStore {
   /** Apply an explicit style+layout payload onto one or more blocks (presets). */
   applyStyle: (ids: string[], payload: Pick<BlockProps, 'style' | 'layout'>) => void
 
+  // Find & replace
+  /**
+   * Replace every literal, case-sensitive occurrence of `find` with `replace`
+   * across all string values inside every block's `props` (recursively).
+   * One undo step. No-op when `find` is empty.
+   */
+  replaceText: (find: string, replace: string) => void
+
   // History
   undo: () => void
   redo: () => void
@@ -203,6 +211,54 @@ function insertAt<T>(arr: T[], item: T, afterId: string | null | undefined, getI
   const next = [...arr]
   next.splice(idx + 1, 0, item)
   return next
+}
+
+/**
+ * Recursively clones `value`, replacing every literal (non-regex), case-sensitive
+ * occurrence of `find` with `replace` inside every string it contains. Walks into
+ * arrays and plain objects; leaves numbers/booleans/null/undefined untouched.
+ * Returns the (possibly new) value plus how many replacements were made so the
+ * caller can avoid a history entry when nothing changed.
+ */
+function deepReplaceText(
+  value: unknown,
+  find: string,
+  replace: string
+): { value: unknown; count: number } {
+  if (typeof value === 'string') {
+    if (!value.includes(find)) return { value, count: 0 }
+    // split/join = literal replace of ALL occurrences (no regex interpretation of `find`).
+    const occurrences = value.split(find).length - 1
+    return { value: value.split(find).join(replace), count: occurrences }
+  }
+  if (Array.isArray(value)) {
+    let count = 0
+    let changed = false
+    const next = value.map((item) => {
+      const r = deepReplaceText(item, find, replace)
+      count += r.count
+      if (r.count > 0) changed = true
+      return r.value
+    })
+    return changed ? { value: next, count } : { value, count }
+  }
+  // Plain objects only — never touch class instances (e.g. Date) so we don't corrupt them.
+  if (value !== null && typeof value === 'object') {
+    const proto = Object.getPrototypeOf(value)
+    if (proto === Object.prototype || proto === null) {
+      let count = 0
+      let changed = false
+      const next: Record<string, unknown> = {}
+      for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+        const r = deepReplaceText(child, find, replace)
+        count += r.count
+        if (r.count > 0) changed = true
+        next[key] = r.value
+      }
+      return changed ? { value: next, count } : { value, count }
+    }
+  }
+  return { value, count: 0 }
 }
 
 /** Returns ids of `id` plus all descendants (children, grand-children…) */
@@ -753,6 +809,22 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
             : b
         )
       )
+    }),
+
+  // ── find & replace ───────────────────────────────────────────────
+  replaceText: (find, replace) =>
+    set((state) => {
+      if (!find) return state
+      let total = 0
+      const next = state.blocks.map((b) => {
+        const r = deepReplaceText(b.props, find, replace)
+        if (r.count === 0) return b
+        total += r.count
+        return { ...b, props: r.value } as BlockProps
+      })
+      // Nothing matched → don't pollute the undo stack.
+      if (total === 0) return state
+      return pushHistory(state, next)
     }),
 
   // ── history ──────────────────────────────────────────────────────

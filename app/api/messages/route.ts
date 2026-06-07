@@ -19,10 +19,11 @@ function escapeHtml(s: string): string {
 /**
  * Generic page-builder form endpoint (default target of the `form` block).
  *
- * Receives an arbitrary `{ field: value }` object from any builder form and
- * forwards it as an email (Resend) to the site inbox (CONTACT_EMAIL_FROM).
- * Nothing is stored in the DB — consistent with /api/contact-messages.
- * Graceful 503 if email isn't configured.
+ * Receives an arbitrary `{ field: value }` object from any builder form.
+ * Primary capture: the submission is persisted in the DB (FormSubmission).
+ * Best-effort secondary: it's also forwarded as an email (Resend) to the site
+ * inbox (CONTACT_EMAIL_FROM) when email is configured. The request only fails
+ * (502) if BOTH the DB store and the email delivery fail.
  */
 export async function POST(request: NextRequest) {
   const writeBlock = await ensureWriteAllowed();

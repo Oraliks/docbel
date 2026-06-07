@@ -214,18 +214,48 @@ function insertAt<T>(arr: T[], item: T, afterId: string | null | undefined, getI
 }
 
 /**
+ * Editorial text keys. Find & replace only rewrites strings whose *parent object
+ * key* is one of these — so we never mangle structural strings like `url`, `link`,
+ * `src`, `icon`, `name`, etc. `html` is included on purpose: it's rich editorial
+ * content. The walk still recurses through every object/array to reach nested text
+ * keys (e.g. faq/tabs/repeater items carrying question/answer/label/content).
+ */
+const TEXT_KEYS = [
+  'text',
+  'title',
+  'subtitle',
+  'description',
+  'content',
+  'quote',
+  'caption',
+  'label',
+  'answer',
+  'question',
+  'html',
+] as const
+const TEXT_KEY_SET = new Set<string>(TEXT_KEYS)
+
+/**
  * Recursively clones `value`, replacing every literal (non-regex), case-sensitive
- * occurrence of `find` with `replace` inside every string it contains. Walks into
- * arrays and plain objects; leaves numbers/booleans/null/undefined untouched.
+ * occurrence of `find` with `replace` — but ONLY inside strings whose parent object
+ * key is in {@link TEXT_KEYS}. Walks into arrays and plain objects to reach nested
+ * text keys; leaves numbers/booleans/null/undefined untouched. `parentKey` is the
+ * key of the object property currently being visited (undefined at the root and for
+ * array elements, which inherit their array's key via the recursion).
  * Returns the (possibly new) value plus how many replacements were made so the
  * caller can avoid a history entry when nothing changed.
  */
 function deepReplaceText(
   value: unknown,
   find: string,
-  replace: string
+  replace: string,
+  parentKey?: string
 ): { value: unknown; count: number } {
   if (typeof value === 'string') {
+    // Only rewrite strings sitting under an editorial text key.
+    if (parentKey === undefined || !TEXT_KEY_SET.has(parentKey)) {
+      return { value, count: 0 }
+    }
     if (!value.includes(find)) return { value, count: 0 }
     // split/join = literal replace of ALL occurrences (no regex interpretation of `find`).
     const occurrences = value.split(find).length - 1
@@ -234,8 +264,10 @@ function deepReplaceText(
   if (Array.isArray(value)) {
     let count = 0
     let changed = false
+    // Array elements inherit the array's key (parentKey) so e.g. a `text: string[]`
+    // is rewritten, while elements that are objects/arrays recurse to their own keys.
     const next = value.map((item) => {
-      const r = deepReplaceText(item, find, replace)
+      const r = deepReplaceText(item, find, replace, parentKey)
       count += r.count
       if (r.count > 0) changed = true
       return r.value
@@ -250,7 +282,7 @@ function deepReplaceText(
       let changed = false
       const next: Record<string, unknown> = {}
       for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-        const r = deepReplaceText(child, find, replace)
+        const r = deepReplaceText(child, find, replace, key)
         count += r.count
         if (r.count > 0) changed = true
         next[key] = r.value
@@ -896,7 +928,5 @@ export function getRootBlocks(blocks: BlockProps[]): BlockProps[] {
 }
 
 // ── selectors ────────────────────────────────────────────────────────
-export const selectBlocks = (s: PageBuilderStore) => s.blocks
-export const selectSelectedId = (s: PageBuilderStore) => s.selectedBlockId
 export const selectSelectedBlock = (s: PageBuilderStore) =>
   s.blocks.find((b) => b.id === s.selectedBlockId) ?? null

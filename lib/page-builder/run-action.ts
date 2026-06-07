@@ -186,6 +186,16 @@ export async function runAction(
         'position:relative;width:100%;max-width:960px;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)'
       const iframe = document.createElement('iframe')
       iframe.src = href
+      // Sécurité : l'iframe est créée dynamiquement à partir d'une URL fournie
+      // par l'éditeur de page. On la confine via `sandbox` (scripts/same-origin
+      // nécessaires aux players type YouTube/Vimeo, + popups/forms pour les CTA
+      // internes) et on coupe la fuite de Referer.
+      iframe.setAttribute(
+        'sandbox',
+        'allow-scripts allow-same-origin allow-popups allow-forms'
+      )
+      iframe.setAttribute('referrerpolicy', 'no-referrer')
+      // `allow` restreint au strict utile pour un lecteur vidéo embarqué.
       iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture')
       iframe.style.cssText = 'width:100%;height:100%;border:0'
       const btn = document.createElement('button')

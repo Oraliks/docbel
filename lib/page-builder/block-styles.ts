@@ -9,10 +9,11 @@ import type {
   BlockStyle,
   BlockLayout,
   BlockAdvanced,
+  BlockInteractionState,
   DeviceType,
 } from './types'
 
-const SHADOW_MAP: Record<NonNullable<BlockStyle['shadow']>, string> = {
+export const SHADOW_MAP: Record<NonNullable<BlockStyle['shadow']>, string> = {
   none: 'none',
   sm: '0 1px 2px rgba(0,0,0,.06)',
   md: '0 4px 12px rgba(0,0,0,.08)',
@@ -37,6 +38,27 @@ function hexToRgba(hex: string, alpha: number): string {
   const b = parseInt(full.slice(4, 6), 16)
   if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return hex
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+/**
+ * Source unique de la conversion d'un état d'interaction en styles inline :
+ * textColor→color, bgColor→backgroundColor, borderColor, opacity,
+ * shadow→boxShadow (via SHADOW_MAP), scale/lift→transform.
+ * Utilisé à la fois par le rendu in-view (block-renderer) et — sous forme de
+ * déclarations CSS — par `blockScopedCss` (hover/focus/active).
+ */
+export function interactionStateToStyle(state: BlockInteractionState): React.CSSProperties {
+  const out: React.CSSProperties = {}
+  if (state.textColor) out.color = state.textColor
+  if (state.bgColor) out.backgroundColor = state.bgColor
+  if (state.borderColor) out.borderColor = state.borderColor
+  if (state.opacity !== undefined) out.opacity = state.opacity
+  if (state.shadow && state.shadow !== 'none') out.boxShadow = SHADOW_MAP[state.shadow]
+  const tf: string[] = []
+  if (state.scale !== undefined) tf.push(`scale(${state.scale})`)
+  if (state.lift) tf.push(`translateY(-${state.lift}px)`)
+  if (tf.length) out.transform = tf.join(' ')
+  return out
 }
 
 export function mergeForDevice(block: BlockProps, device: DeviceType) {
@@ -194,12 +216,21 @@ export function blockToCSS(
 }
 
 function sanitizeCustomCss(css: string): string {
-  return css
-    .replace(/<\/?\s*style/gi, '')
-    .replace(/@import[^;]*;?/gi, '')
+  let out = css
+  // Neutralise toute tentative d'ouvrir/fermer une balise (sortir du <style>).
+  // Encoder < et > est robuste par construction — aucune balise ne peut survivre,
+  // même imbriquée (« <<style>style> »), donc pas de risque de point fixe manqué.
+  out = out.replace(/</g, '\\3c ').replace(/>/g, '\\3e ')
+  // Vecteurs CSS dangereux.
+  out = out
+    .replace(/@import/gi, '')
     .replace(/expression\s*\(/gi, '(')
+    .replace(/behavior\s*:/gi, '')
+    // url(javascript:…) et url(data:…) — y compris avec espaces / guillemets.
+    .replace(/url\(\s*['"]?\s*javascript:/gi, 'url(')
+    .replace(/url\(\s*['"]?\s*data:/gi, 'url(')
     .replace(/javascript:/gi, '')
-    .slice(0, 4000)
+  return out.slice(0, 4000)
 }
 
 /**
@@ -223,16 +254,15 @@ export function blockScopedCss(
     [style.activeState, ':active'],
   ] as const) {
     if (!state) continue
+    // Même source que le rendu in-view : on convertit les styles inline en
+    // déclarations CSS (camelCase → kebab-case).
+    const inline = interactionStateToStyle(state)
     const decls: string[] = []
-    if (state.textColor) decls.push(`color:${state.textColor}`)
-    if (state.bgColor) decls.push(`background-color:${state.bgColor}`)
-    if (state.borderColor) decls.push(`border-color:${state.borderColor}`)
-    if (state.opacity !== undefined) decls.push(`opacity:${state.opacity}`)
-    if (state.shadow && state.shadow !== 'none') decls.push(`box-shadow:${SHADOW_MAP[state.shadow]}`)
-    const tf: string[] = []
-    if (state.scale !== undefined) tf.push(`scale(${state.scale})`)
-    if (state.lift) tf.push(`translateY(-${state.lift}px)`)
-    if (tf.length) decls.push(`transform:${tf.join(' ')}`)
+    for (const [k, v] of Object.entries(inline)) {
+      if (v === undefined || v === null) continue
+      const prop = k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
+      decls.push(`${prop}:${v}`)
+    }
     if (decls.length) {
       if (!transitionEmitted) {
         rules.push(`${sel}{transition:all .25s ease}`)

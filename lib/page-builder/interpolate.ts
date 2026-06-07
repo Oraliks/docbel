@@ -69,7 +69,7 @@ function lookup(path: string, ctx: InterpolationContext): string | undefined {
   return undefined
 }
 
-export function interpolateString(input: string, ctx: InterpolationContext): string {
+function interpolateString(input: string, ctx: InterpolationContext): string {
   if (!input || !input.includes('{{')) return input
   return input.replace(TOKEN_REGEX, (match, path: string) => {
     const value = lookup(path, ctx)
@@ -78,7 +78,7 @@ export function interpolateString(input: string, ctx: InterpolationContext): str
 }
 
 /** Recursively walks a value, replacing strings via interpolation. */
-export function interpolateDeep<T>(value: T, ctx: InterpolationContext): T {
+function interpolateDeep<T>(value: T, ctx: InterpolationContext): T {
   if (typeof value === 'string') {
     return interpolateString(value, ctx) as T
   }

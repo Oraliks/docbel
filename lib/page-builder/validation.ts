@@ -242,6 +242,45 @@ export const BlockSchema = z.union([StrictBlockSchema, PermissiveBlockSchema])
 
 export const BlocksSchema = z.array(BlockSchema).max(500)
 
+/** Bloc validé par la variante STRICTE (registry-derived) — sans fallback permissif. */
+export type StrictValidatedBlock = z.infer<typeof StrictBlockSchema>
+
+/**
+ * Valide des blocs PRODUITS PAR L'IA avec la variante STRICTE uniquement
+ * (registry-derived), JAMAIS le fallback permissif. Pensé pour les sorties des
+ * routes IA du page-builder (`ai-generate`, `ai-copilot`) : un modèle ne doit
+ * pouvoir insérer que des blocs dont la forme correspond EXACTEMENT au schéma du
+ * type, contrairement au chargement legacy qui tolère des types inconnus.
+ *
+ * - Chaque bloc est validé INDIVIDUELLEMENT : un bloc malformé est ÉCARTÉ (pas
+ *   renvoyé), il ne fait pas échouer les blocs valides voisins.
+ * - Si `allowedTypes` est fourni, seuls les blocs de ces types sont conservés
+ *   (whitelist appliquée AVANT la validation de forme).
+ * - Renvoie le tableau (éventuellement vide) des blocs valides, props normalisées
+ *   par leurs schémas (defaults appliqués), comme `BlocksSchema` le ferait.
+ *
+ * N'altère PAS `BlockSchema` / `BlocksSchema` (chargement legacy permissif).
+ */
+export function validateAiBlocks(
+  data: unknown,
+  allowedTypes?: string[]
+): StrictValidatedBlock[] {
+  if (!Array.isArray(data)) return []
+  const allow = allowedTypes ? new Set(allowedTypes) : null
+
+  const valid: StrictValidatedBlock[] = []
+  for (const candidate of data) {
+    // Whitelist de type appliquée avant la validation de forme.
+    if (allow) {
+      const type = (candidate as { type?: unknown } | null)?.type
+      if (typeof type !== 'string' || !allow.has(type)) continue
+    }
+    const result = StrictBlockSchema.safeParse(candidate)
+    if (result.success) valid.push(result.data)
+  }
+  return valid
+}
+
 const SlugSchema = z
   .string()
   .min(1)

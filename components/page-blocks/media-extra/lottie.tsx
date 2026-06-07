@@ -13,8 +13,14 @@ import { lottieSchema as schema } from './schemas'
 // JSX standard, sans déclaration de type globale ni augmentation de JSX.
 const LottiePlayer = 'lottie-player' as unknown as ElementType
 
+// Version ÉPINGLÉE (et non `@latest`) pour éviter qu'une compromission de la
+// chaîne d'appro. (publication malveillante d'une nouvelle version) ne soit
+// servie automatiquement. `2.0.12` = dernière stable publiée au moment de
+// l'épinglage. TODO sécurité : ajouter un `integrity` (SRI) calculé hors-ligne
+// (`openssl dgst -sha384 -binary lottie-player.js | openssl base64 -A`) et le
+// poser via `script.integrity` — non fait ici faute d'un hash vérifié hors-ligne.
 const PLAYER_SRC =
-  'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js'
+  'https://unpkg.com/@lottiefiles/lottie-player@2.0.12/dist/lottie-player.js'
 
 export const lottie = defineBlock({
   type: 'lottie',
@@ -36,6 +42,9 @@ export const lottie = defineBlock({
       if (document.querySelector('script[data-lottie-player]')) return
       const s = document.createElement('script')
       s.src = PLAYER_SRC
+      // CORS anonyme : pré-requis pour un futur contrôle d'intégrité (SRI) et
+      // évite d'envoyer des credentials au CDN tiers.
+      s.crossOrigin = 'anonymous'
       s.setAttribute('data-lottie-player', '')
       s.async = true
       document.body.appendChild(s)

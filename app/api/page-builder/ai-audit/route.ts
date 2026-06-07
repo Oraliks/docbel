@@ -7,20 +7,17 @@
  * catégorisées et hiérarchisées.
  *
  * Admin-only, rate-limité, fail-soft si ANTHROPIC_API_KEY absente (→ aiDisabled
- * en 200). Le JSON renvoyé par le modèle est parsé défensivement (extraction de
- * l'objet `{…}`, try/catch, bornage de taille). Calque sur `ai-assist/route.ts`.
+ * en 200). Plomberie factorisée par `withAiRoute` (lib/page-builder/ai-route.ts) ;
+ * le JSON renvoyé par le modèle est parsé défensivement (`extractJson` + bornage,
+ * normalisation des champs).
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminAuth } from "@/lib/auth-check";
-import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
-import {
-  callClaude,
-  hasAnthropicKey,
-  AnthropicError,
-} from "@/lib/chomage-ia/anthropic";
+import { callClaude } from "@/lib/chomage-ia/anthropic";
 import { CLAUDE_MODELS } from "@/lib/chomage-ia/models";
+import { withAiRoute, extractJson } from "@/lib/page-builder/ai-route";
+import { BELGIAN_ADMIN_PERSONA } from "@/lib/page-builder/ai-prompts";
 
 const AiAuditSchema = z.object({
   text: z.string().max(20000).optional().default(""),
@@ -43,7 +40,7 @@ interface AuditResult {
   issues: AuditIssue[];
 }
 
-const AUDIT_SYSTEM = `Tu es un expert en qualité de contenu web pour un site d'information administrative belge (chômage, ONEM, CPAS, mutuelles…).
+const AUDIT_SYSTEM = `Tu es un expert en qualité de contenu web pour ${BELGIAN_ADMIN_PERSONA}.
 On te fournit le contenu texte d'une page. Tu réalises un audit structuré sur 4 axes :
 - lisibilité : clarté, phrases courtes, jargon, niveau de langue (cible grand public B1), structure logique.
 - accessibilité : titres hiérarchisés, libellés de liens explicites, contenu compréhensible hors contexte visuel.
@@ -59,23 +56,11 @@ Règles STRICTES :
 - Réponds UNIQUEMENT avec un JSON valide de la forme {"score":number,"issues":[{"category":"…","severity":"…","message":"…"}]}, sans texte autour ni bloc de code.`;
 
 /**
- * Parse défensif de la réponse du modèle : extraction de l'objet `{…}`,
- * try/catch, normalisation/bornage des champs. Renvoie `null` si inexploitable.
+ * Parse défensif de la réponse du modèle : extraction de l'objet `{…}` via
+ * `extractJson`, normalisation/bornage des champs. Renvoie `null` si inexploitable.
  */
 function parseAuditJson(raw: string): AuditResult | null {
-  let s = raw.trim();
-  const start = s.indexOf("{");
-  const end = s.lastIndexOf("}");
-  if (start >= 0 && end > start) s = s.slice(start, end + 1);
-  // Borne dure pour éviter de parser une sortie aberrante.
-  if (s.length > 20000) s = s.slice(0, 20000);
-
-  let obj: unknown;
-  try {
-    obj = JSON.parse(s);
-  } catch {
-    return null;
-  }
+  const obj = extractJson(raw, "object");
   if (!obj || typeof obj !== "object") return null;
 
   const o = obj as Record<string, unknown>;
@@ -108,63 +93,21 @@ function parseAuditJson(raw: string): AuditResult | null {
   return { score, issues };
 }
 
-export async function POST(req: NextRequest) {
-  const auth = await requireAdminAuth();
-  if (!auth.isAuthorized) return auth.error;
+export const POST = withAiRoute(
+  {
+    name: "ai-audit",
+    schema: AiAuditSchema,
+    rateLimit: { windowMs: 60_000, max: 20 },
+  },
+  async ({ input }) => {
+    const text = input.text.trim();
+    if (!text) {
+      return NextResponse.json(
+        { error: "Aucun contenu à auditer" },
+        { status: 400 }
+      );
+    }
 
-  const ip = getClientIp(req);
-  const rl = checkRateLimit(`pagebuilder:ai-audit:${ip}`, {
-    windowMs: 60_000,
-    max: 20,
-  });
-  if (!rl.ok) {
-    return NextResponse.json(
-      { error: "Trop de requêtes — réessayez dans une minute" },
-      { status: 429 }
-    );
-  }
-
-  let body;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-
-  let parsed;
-  try {
-    parsed = AiAuditSchema.parse(body);
-  } catch (err) {
-    return NextResponse.json(
-      {
-        error:
-          err instanceof z.ZodError
-            ? err.issues[0]?.message || "Validation error"
-            : "Validation error",
-      },
-      { status: 400 }
-    );
-  }
-
-  if (!hasAnthropicKey()) {
-    return NextResponse.json(
-      {
-        aiDisabled: true,
-        error: "L'audit IA n'est pas configuré (ANTHROPIC_API_KEY).",
-      },
-      { status: 200 }
-    );
-  }
-
-  const text = parsed.text.trim();
-  if (!text) {
-    return NextResponse.json(
-      { error: "Aucun contenu à auditer" },
-      { status: 400 }
-    );
-  }
-
-  try {
     const { text: raw } = await callClaude({
       model: CLAUDE_MODELS.haiku,
       systemPrompt: AUDIT_SYSTEM,
@@ -174,6 +117,7 @@ export async function POST(req: NextRequest) {
       maxTokens: 1200,
       timeoutMs: 30_000,
     });
+
     const result = parseAuditJson(raw);
     if (!result) {
       return NextResponse.json(
@@ -182,19 +126,5 @@ export async function POST(req: NextRequest) {
       );
     }
     return NextResponse.json(result);
-  } catch (err) {
-    if (err instanceof AnthropicError) {
-      return NextResponse.json(
-        {
-          error:
-            err.status === 429
-              ? "L'API Claude est saturée, réessayez dans un instant."
-              : `Erreur Anthropic (HTTP ${err.status})`,
-        },
-        { status: 502 }
-      );
-    }
-    console.error("[ai-audit] error:", err);
-    return NextResponse.json({ error: "Échec de l'appel IA" }, { status: 502 });
   }
-}
+);

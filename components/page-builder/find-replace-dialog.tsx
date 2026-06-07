@@ -20,27 +20,50 @@ interface FindReplaceDialogProps {
 }
 
 /**
- * Counts literal (non-regex), case-sensitive occurrences of `find` inside every
- * string contained in `value` — walking arrays and plain objects recursively.
- * Mirrors the store's `deepReplaceText` walk so the preview count matches the
- * number of replacements `replaceText` will actually perform.
+ * Editorial text keys — MUST stay in sync with `TEXT_KEYS` in
+ * `lib/page-builder/store.ts`. Find & replace only touches strings sitting under
+ * one of these keys, so structural strings (url, link, src, icon…) are left alone.
  */
-function countOccurrences(value: unknown, find: string): number {
+const TEXT_KEYS = [
+  'text',
+  'title',
+  'subtitle',
+  'description',
+  'content',
+  'quote',
+  'caption',
+  'label',
+  'answer',
+  'question',
+  'html',
+]
+const TEXT_KEY_SET = new Set<string>(TEXT_KEYS)
+
+/**
+ * Counts literal (non-regex), case-sensitive occurrences of `find` inside strings
+ * whose parent object key is an editorial text key — walking arrays and plain
+ * objects recursively. Mirrors the store's `deepReplaceText` scoping EXACTLY so the
+ * preview count matches the number of replacements `replaceText` will perform.
+ * `parentKey` is the key of the property being visited (undefined at the root and
+ * for array elements, which inherit their array's key via the recursion).
+ */
+function countOccurrences(value: unknown, find: string, parentKey?: string): number {
   if (!find) return 0
   if (typeof value === 'string') {
+    if (parentKey === undefined || !TEXT_KEY_SET.has(parentKey)) return 0
     return value.split(find).length - 1
   }
   if (Array.isArray(value)) {
     let total = 0
-    for (const item of value) total += countOccurrences(item, find)
+    for (const item of value) total += countOccurrences(item, find, parentKey)
     return total
   }
   if (value !== null && typeof value === 'object') {
     const proto = Object.getPrototypeOf(value)
     if (proto === Object.prototype || proto === null) {
       let total = 0
-      for (const child of Object.values(value as Record<string, unknown>)) {
-        total += countOccurrences(child, find)
+      for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+        total += countOccurrences(child, find, key)
       }
       return total
     }

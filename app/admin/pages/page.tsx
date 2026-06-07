@@ -332,14 +332,15 @@ export default function PagesListPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: `${pageToDuplicate.title} (Copie)`,
+          title: `${full.title ?? pageToDuplicate.title} (copie)`,
           content: full.blocks ?? [],
         }),
       })
       if (!res.ok) throw new Error('Failed to duplicate')
 
-      await fetchPages()
+      const newPage = await res.json()
       toast.success('Page dupliquée')
+      router.push(`/admin/pages/${newPage.id}`)
     } catch (error) {
       console.error('Failed to duplicate page:', error)
       toast.error('Erreur lors de la duplication de la page')

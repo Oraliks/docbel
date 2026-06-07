@@ -13,7 +13,7 @@ Statut Numéro de ticket Numéro d’occupation
 0 ( Original ) 034071K2BBFWZ
 Les données du travailleur
 NISS Nom, Prénom
-770725054-86 NAIT CHRIF, HASSNA
+000000000-00 SPECIMEN, EXEMPLE
 Les données de l’employeur
 n° ONSS n° ONSS-APL n° unique
 082921322 / 0207471716
@@ -62,7 +62,7 @@ DECLARATION MENSUELLE DE TRAVAIL A TEMPS PARTIEL AVEC
 MAINTIEN DES DROITS AVEC ALLOCATION DE GARANTIE DE REVENUS
 Coordonnées de la personne de contact
 Nom Prénom
-D'Haene Veerle
+Exemple Specimen
 Communication
 N° téléphone N° GSM Adresse email Fax
 089 790 822 / /

@@ -62,3 +62,6 @@ skills-lock.json
 playwright-report/
 test-results/
 playwright/.cache/
+
+# WECH 506 réels (données personnelles) — fixtures de test locales uniquement
+lib/agr/__tests__/fixtures/*.pdf

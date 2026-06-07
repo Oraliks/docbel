@@ -5,17 +5,17 @@ import { parseWech506 } from "../parse-wech506";
 import { deriverCategorieTravailleur } from "../categorie-travailleur";
 
 const TEXT = readFileSync(
-  join(__dirname, "fixtures", "wech506-nait-chrif.txt"),
+  join(__dirname, "fixtures", "wech506-specimen.txt"),
   "utf8",
 );
 
-describe("parseWech506 — DRS réelle (NAIT CHRIF, déc. 2023)", () => {
+describe("parseWech506 — WECH 506 spécimen (identité anonymisée, déc. 2023)", () => {
   const r = parseWech506(TEXT);
 
   it("extrait l'identité et l'employeur", () => {
     expect(r.moisReference).toEqual({ debut: "01/12/2023", fin: "31/12/2023" });
-    expect(r.niss).toBe("770725054-86");
-    expect(r.nomTravailleur).toBe("NAIT CHRIF, HASSNA");
+    expect(r.niss).toBe("000000000-00");
+    expect(r.nomTravailleur).toBe("SPECIMEN, EXEMPLE");
     expect(r.employeurOnss).toBe("082921322");
     expect(r.employeurNom).toBe("STAD DILSEN-STOKKEM");
     expect(r.categorieEmployeur).toBe("751");

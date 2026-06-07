@@ -1,21 +1,24 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { extractWechText } from "../extract-pdf-text";
 import { parseWech506 } from "../parse-wech506";
 import { calculerAgr } from "../calcul";
 import type { OccupationInput } from "../types";
 
-const PDF = readFileSync(join(__dirname, "fixtures", "wech506-nait-chrif.pdf"));
+// PDF WECH 506 réel = données personnelles → non commité (cf. .gitignore).
+// Test local uniquement ; il est ignoré (skip) si la fixture est absente (CI).
+const PDF_PATH = join(__dirname, "fixtures", "wech506-specimen.pdf");
+const HAS_PDF = existsSync(PDF_PATH);
 
 /**
- * Bout-en-bout depuis le VRAI PDF WECH 506 (NAIT CHRIF, déc. 2023) :
- * extraction pdfjs → parseur → moteur. Le résultat est validé contre l'Excel
- * FGTB recalculé (Excel COM) avec les mêmes entrées et le barème avril 2026.
+ * Bout-en-bout depuis un vrai PDF WECH 506 (déc. 2023) : extraction pdf-parse →
+ * parseur → moteur. Le résultat est validé contre l'Excel FGTB recalculé
+ * (Excel COM) avec les mêmes entrées et le barème avril 2026.
  */
-describe("Intégration : PDF réel → extraction → parse → calcul", () => {
+describe.skipIf(!HAS_PDF)("Intégration : PDF réel → extraction → parse → calcul", () => {
   it("extrait la DRS et calcule l'AGR (identique à l'Excel : 689,77 / 850,71)", async () => {
-    const text = await extractWechText(new Uint8Array(PDF));
+    const text = await extractWechText(new Uint8Array(readFileSync(PDF_PATH)));
     const p = parseWech506(text);
 
     expect(p.q).toBe(19);

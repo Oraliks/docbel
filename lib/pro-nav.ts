@@ -57,6 +57,7 @@ const PARTNER_SPACE: ProSpace = {
       label: "Outils",
       items: [
         { title: "Lookup ONEM", url: "/outils/lookup-onem", icon: "search" },
+        { title: "Calcul AGR", url: "/partenaire/outils/calcul-agr", icon: "file" },
       ],
     },
     {

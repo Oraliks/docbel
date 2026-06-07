@@ -13,10 +13,11 @@ const childLayoutShape = {
 }
 
 export const sectionSchema = z.object({
-  bgType: z.enum(['none', 'color', 'gradient', 'image']).optional(),
+  bgType: z.enum(['none', 'color', 'gradient', 'image', 'video']).optional(),
   bgColor: z.string().optional(),
   bgGradient: z.string().max(500).optional(),
   bgImage: z.string().max(4096).optional(),
+  bgVideo: z.string().max(4096).optional(),
   bgOverlay: z.string().optional(),
   fullWidth: z.boolean().optional(),
   ...childLayoutShape,

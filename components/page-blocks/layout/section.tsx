@@ -28,7 +28,7 @@ export const section = defineBlock({
     canHaveChildren: true,
   },
   Render: ({ props, slot }) => {
-    const { bgType = 'color', bgColor, bgGradient, bgImage, bgOverlay, fullWidth = true } = props
+    const { bgType = 'color', bgColor, bgGradient, bgImage, bgVideo, bgOverlay, fullWidth = true } = props
     const bgStyle: CSSProperties = {}
     if (bgType === 'color' && bgColor) bgStyle.backgroundColor = bgColor
     if (bgType === 'gradient' && bgGradient) bgStyle.backgroundImage = bgGradient
@@ -39,9 +39,20 @@ export const section = defineBlock({
     }
     return (
       <section
-        className={cn('relative w-full', fullWidth ? '' : 'rounded-2xl overflow-hidden')}
+        className={cn('relative w-full', fullWidth ? '' : 'rounded-2xl', 'overflow-hidden')}
         style={bgStyle}
       >
+        {bgType === 'video' && bgVideo && (
+          <video
+            src={bgVideo}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 -z-10 h-full w-full object-cover pointer-events-none"
+            aria-hidden
+          />
+        )}
         {bgOverlay && (
           <div
             className="absolute inset-0 pointer-events-none"
@@ -65,6 +76,7 @@ export const section = defineBlock({
             { value: 'color', label: 'Couleur' },
             { value: 'gradient', label: 'Dégradé' },
             { value: 'image', label: 'Image' },
+            { value: 'video', label: 'Vidéo' },
           ]}
         />
       </Field>
@@ -89,6 +101,21 @@ export const section = defineBlock({
             <ImageUpload
               value={props.bgImage ?? ''}
               onChange={(url) => onChange({ bgImage: url })}
+            />
+          </Field>
+          <Field label="Overlay (assombrir)">
+            <ColorControl value={props.bgOverlay} onChange={(v) => onChange({ bgOverlay: v })} />
+          </Field>
+        </>
+      )}
+      {props.bgType === 'video' && (
+        <>
+          <Field label="Vidéo de fond (URL mp4)" hint="Lue en boucle, sans son">
+            <Input
+              value={props.bgVideo ?? ''}
+              onChange={(e) => onChange({ bgVideo: e.target.value })}
+              placeholder="https://…/video.mp4"
+              className="font-mono text-xs"
             />
           </Field>
           <Field label="Overlay (assombrir)">

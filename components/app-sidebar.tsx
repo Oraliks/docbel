@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { authClient } from "@/lib/auth-client"
+import { useAuthSession } from "@/components/auth-session-provider"
 import { useState, useEffect } from "react"
 
 import { NavMain } from "@/components/nav-main"
@@ -214,7 +214,10 @@ const defaultData = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { data: session } = authClient.useSession()
+  // useAuthSession() (vs authClient.useSession direct) garde initialSession
+  // en fallback quand le re-fetch client échoue — sinon le footer affiche
+  // "Utilisateur user@example.com" à chaque refresh rapide / cold-start Neon.
+  const { data: session } = useAuthSession()
   const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {

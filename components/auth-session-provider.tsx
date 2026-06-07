@@ -38,10 +38,24 @@ export function AuthSessionProvider({
  * shape mais avec isPending=false dès le 1er render quand on a une
  * session SSR (qu'elle soit null ou pleine — null veut dire "vérifié,
  * pas connecté", c'est une réponse valide).
+ *
+ * Ordre de priorité :
+ *   1. data client présent → c'est la vérité la plus fraîche (signIn dans un
+ *      autre onglet, ré-hydratation post-refetch).
+ *   2. data client null mais isPending → 1er render, on sert initialSession
+ *      pour éviter le flash "Invité → Compte".
+ *   3. data client null + pas pending + erreur de fetch → on garde
+ *      initialSession comme filet (cf. bug "actualise trop vite" : un re-fetch
+ *      raté pendant un cold-start Neon faisait passer un user connecté
+ *      en "Invité" côté UI alors que la session DB était toujours valide).
+ *   4. data client null légitime (signOut explicite, pas de session) → on
+ *      laisse passer null.
  */
 export function useAuthSession() {
   const { initialSession } = useContext(SessionContext);
   const sessionState = authClient.useSession();
+
+  if (sessionState.data) return sessionState;
 
   if (sessionState.isPending) {
     return {
@@ -50,5 +64,19 @@ export function useAuthSession() {
       isPending: false,
     };
   }
+
+  // Pas pending, pas de data client. Si initialSession existe ET qu'on a
+  // une erreur de fetch ou une indication de refetch en cours, on garde
+  // l'initialSession plutôt que d'afficher "Invité" à tort. C'est correct
+  // tant que l'user n'a pas signOut (auquel cas le cookie a disparu et le
+  // prochain refresh montrera bien null).
+  if (
+    initialSession &&
+    ((sessionState as { error?: unknown }).error ||
+      (sessionState as { isRefetching?: boolean }).isRefetching)
+  ) {
+    return { ...sessionState, data: initialSession };
+  }
+
   return sessionState;
 }

@@ -16,11 +16,11 @@ export async function POST() {
 
   const impersonatedBy = (session?.session as { impersonatedBy?: string | null } | undefined)
     ?.impersonatedBy
+  // Idempotent : si on est déjà revenu admin (ou jamais impersonné), on
+  // renvoie 200 ok plutôt que 400 — un double-clic frontal ne montre plus
+  // d'erreur trompeuse, et l'UI peut retry sans bricolage.
   if (!session || !impersonatedBy) {
-    return NextResponse.json(
-      { error: "Pas de session d'impersonation en cours" },
-      { status: 400 }
-    )
+    return NextResponse.json({ ok: true, alreadyStopped: true })
   }
 
   await auth.api.stopImpersonating({ headers: reqHeaders })

@@ -4,6 +4,7 @@ import { headers } from "next/headers"
 import { auth } from "@/lib/auth"
 import { withDbRetry } from "@/lib/prisma"
 import { isDemoEmail } from "@/lib/admin/demo-users"
+import { COOKIE_NAMES } from "@/lib/admin/cookies"
 
 /// Cookie qui pilote le mode lecture seule pour les sessions d'impersonation.
 /// Lisible client (la bannière affiche le toggle) + posé par
@@ -11,7 +12,7 @@ import { isDemoEmail } from "@/lib/admin/demo-users"
 ///   "1" = mutations bloquées
 ///   "0" = mutations autorisées
 /// Si absent : default ON en prod, OFF en dev (decideReadOnlyDefault).
-export const READONLY_COOKIE = "docbel_impersonation_readonly"
+export const READONLY_COOKIE = COOKIE_NAMES.IMPERSONATION_READONLY
 
 export function decideReadOnlyDefault(): boolean {
   return process.env.NODE_ENV === "production"

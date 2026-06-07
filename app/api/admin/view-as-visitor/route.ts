@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { requireAdminAuth } from "@/lib/auth-check"
 import { prisma } from "@/lib/prisma"
@@ -18,10 +18,32 @@ import {
 ///      (convention : targetId == adminId signifie mode visiteur).
 ///
 /// Réservé aux admins (vrais admins, pas en impersonation).
-export async function POST() {
+export async function POST(req: NextRequest) {
   const authResult = await requireAdminAuth()
   if (!authResult.isAuthorized) return authResult.error
   const adminUser = authResult.user
+
+  // Raison (optionnelle en dev, obligatoire >=10 chars en prod — meme
+  // garde-fou que /api/admin/impersonate pour rester cohérent dans l'audit).
+  let reason: string | null = null
+  try {
+    const body = (await req.json()) as { reason?: unknown }
+    if (typeof body.reason === "string") {
+      const t = body.reason.trim()
+      if (t.length > 0) reason = t
+    }
+  } catch {
+    // pas de body = ok (compat clients qui ne posteraient rien)
+  }
+  if (process.env.NODE_ENV === "production" && (!reason || reason.length < 10)) {
+    return NextResponse.json(
+      {
+        error: "Raison requise en production (10 caractères minimum)",
+        code: "reason_required",
+      },
+      { status: 400 }
+    )
+  }
 
   const sessionCookie = await readBetterAuthSessionCookie()
   if (!sessionCookie) {
@@ -47,6 +69,7 @@ export async function POST() {
       ipAddress:
         reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || null,
       userAgent: reqHeaders.get("user-agent"),
+      reason,
     },
   })
 

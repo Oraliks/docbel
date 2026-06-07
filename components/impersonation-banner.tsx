@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { useAuthSession } from "@/components/auth-session-provider"
 import { Button } from "@/components/ui/button"
@@ -18,11 +19,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { ChevronDownIcon, EyeIcon, LockIcon, UnlockIcon } from "lucide-react"
+import { ChevronDownIcon, ClockIcon, EyeIcon, LockIcon, UnlockIcon } from "lucide-react"
 import {
   ImpersonationReasonDialog,
   type ImpersonationTarget,
 } from "@/components/admin/impersonation-reason-dialog"
+import { COOKIE_NAMES } from "@/lib/admin/cookies"
 
 /// Durée d'une session d'impersonation (cf. impersonationSessionDuration dans
 /// lib/auth.ts). Si tu la changes là-bas, change-la ici aussi.
@@ -90,7 +92,7 @@ function readVisitorMarker(): boolean {
   if (typeof document === "undefined") return false
   return document.cookie
     .split(";")
-    .some((c) => c.trim().startsWith("docbel_view_as_visitor=1"))
+    .some((c) => c.trim().startsWith(`${COOKIE_NAMES.VIEW_AS_VISITOR}=1`))
 }
 
 /// Lit le cookie de préférence lecture seule (cf. lib/admin/readonly-guard.ts).
@@ -100,7 +102,7 @@ function readReadOnlyCookie(): boolean | null {
   const entry = document.cookie
     .split(";")
     .map((c) => c.trim())
-    .find((c) => c.startsWith("docbel_impersonation_readonly="))
+    .find((c) => c.startsWith(`${COOKIE_NAMES.IMPERSONATION_READONLY}=`))
   if (!entry) return null
   const value = entry.split("=")[1]
   if (value === "1") return true
@@ -136,9 +138,11 @@ function formatStartTime(date: Date): string {
 ///     repasser par le shell admin (enchaîne stop + impersonate côté client)
 ///   - le bouton "Revenir admin"
 export function ImpersonationBanner() {
+  const router = useRouter()
   const { data: session } = useAuthSession()
   const [stopping, setStopping] = useState(false)
   const [switching, setSwitching] = useState<string | null>(null)
+  const [extending, setExtending] = useState(false)
   const [accounts, setAccounts] = useState<DemoAccount[] | null>(null)
   const [now, setNow] = useState<number>(() =>
     typeof window === "undefined" ? 0 : Date.now()
@@ -197,11 +201,40 @@ export function ImpersonationBanner() {
     return Number.isNaN(d.getTime()) ? null : d
   }, [session])
 
+  /// Expiration officielle de la session côté serveur. Plus précis que
+  /// `createdAt + IMPERSONATION_SESSION_SECONDS` car le bouton "Prolonger
+  /// +30 min" (#15) update Session.expiresAt en DB ; le countdown doit
+  /// suivre. Fallback createdAt + 1h si expiresAt absent (cas legacy).
+  const expiresDate = useMemo(() => {
+    const raw = (session?.session as { expiresAt?: string | Date } | undefined)?.expiresAt
+    if (!raw) {
+      if (!startDate) return null
+      return new Date(startDate.getTime() + IMPERSONATION_SESSION_SECONDS * 1000)
+    }
+    const d = raw instanceof Date ? raw : new Date(raw)
+    return Number.isNaN(d.getTime()) ? null : d
+  }, [session, startDate])
+
   const secondsLeft = useMemo(() => {
-    if (!startDate || !now) return null
-    const elapsed = Math.floor((now - startDate.getTime()) / 1000)
-    return IMPERSONATION_SESSION_SECONDS - elapsed
-  }, [startDate, now])
+    if (!expiresDate || !now) return null
+    return Math.floor((expiresDate.getTime() - now) / 1000)
+  }, [expiresDate, now])
+
+  /// Auto-redirect (#4) quand la session impersonée expire. On évite le
+  /// reload "en arrière-plan" si l'admin n'a pas la page active — on déclenche
+  /// seulement à la 1ère détection d'expiration et on POST stop-impersonate
+  /// (idempotent, cf. #5) pour que le serveur ferme proprement l'audit log.
+  const [redirected, setRedirected] = useState(false)
+  useEffect(() => {
+    if (!isImpersonating || redirected) return
+    if (secondsLeft === null || secondsLeft > 0) return
+    setRedirected(true)
+    toast.info("Session d'impersonation expirée — retour admin")
+    void fetch("/api/admin/stop-impersonate", { method: "POST" }).finally(() => {
+      router.push("/admin")
+      router.refresh()
+    })
+  }, [secondsLeft, isImpersonating, redirected, router])
 
   /// Branche dédiée au mode visiteur anonyme (session=null + cookie marqueur).
   /// UI plus minimale : pas de countdown (le stash dure 1h max mais la session
@@ -218,7 +251,8 @@ export function ImpersonationBanner() {
           setStopping(false)
           return
         }
-        window.location.href = "/admin"
+        router.push("/admin")
+        router.refresh()
       } catch {
         toast.error("Erreur réseau")
         setStopping(false)
@@ -260,10 +294,40 @@ export function ImpersonationBanner() {
         setStopping(false)
         return
       }
-      window.location.href = "/admin"
+      // Navigation soft (#12) : push + refresh re-fetch les Server Components
+      // (root layout relit getServerAuthSession), tout en gardant le scroll
+      // et l'état des Client Components non-affectés.
+      router.push("/admin")
+      router.refresh()
     } catch {
       toast.error("Erreur réseau")
       setStopping(false)
+    }
+  }
+
+  /// Étend la session impersonation (#15). Délègue à
+  /// /api/admin/extend-impersonation qui update Session.expiresAt. router.refresh()
+  /// re-fetch la session côté serveur → le countdown reflète la nouvelle date.
+  const extend = async () => {
+    setExtending(true)
+    try {
+      const res = await fetch("/api/admin/extend-impersonation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ minutes: 30 }),
+      })
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string }
+        toast.error(err.error || "Prolongation impossible")
+        return
+      }
+      const data = (await res.json()) as { minutesAdded: number }
+      toast.success(`Session prolongée de ${data.minutesAdded} min`)
+      router.refresh()
+    } catch {
+      toast.error("Erreur réseau")
+    } finally {
+      setExtending(false)
     }
   }
 
@@ -320,10 +384,12 @@ export function ImpersonationBanner() {
         toast.error(error.error || "Bascule impossible")
         // Pas de rollback : on est de retour en admin, l'UI va recharger
         // proprement vers /admin et l'utilisateur peut retenter via le menu.
-        window.location.href = "/admin"
+        router.push("/admin")
+        router.refresh()
         return
       }
-      window.location.href = "/"
+      router.push("/")
+      router.refresh()
     } catch {
       toast.error("Erreur réseau")
       setSwitching(null)
@@ -357,14 +423,26 @@ export function ImpersonationBanner() {
         <Tooltip>
           <TooltipTrigger
             render={
-              <span className="hidden shrink-0 rounded-full bg-white/40 px-2 py-0.5 font-mono text-xs tabular-nums sm:inline-flex dark:bg-black/20">
-                {secondsLeft === null ? "—" : formatRemaining(secondsLeft)}
-              </span>
+              <button
+                type="button"
+                onClick={extend}
+                disabled={extending}
+                className="hidden shrink-0 items-center gap-1 rounded-full bg-white/40 px-2 py-0.5 font-mono text-xs tabular-nums sm:inline-flex dark:bg-black/20 disabled:opacity-50"
+              >
+                {extending ? (
+                  <span>+30 min…</span>
+                ) : (
+                  <>
+                    <ClockIcon className="size-3" />
+                    {secondsLeft === null ? "—" : formatRemaining(secondsLeft)}
+                  </>
+                )}
+              </button>
             }
           />
           <TooltipContent side="bottom">
             {startDate
-              ? `Démarrée à ${formatStartTime(startDate)} · expire après 1h`
+              ? `Démarrée à ${formatStartTime(startDate)} · clic pour prolonger +30 min`
               : "Session d'impersonation"}
           </TooltipContent>
         </Tooltip>

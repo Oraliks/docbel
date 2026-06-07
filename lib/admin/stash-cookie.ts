@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto"
 import { cookies } from "next/headers"
+import { COOKIE_NAMES, defaultCookieAttrs } from "@/lib/admin/cookies"
 
 /// Cookie stash signé HMAC utilisé pour le mode "visiteur anonyme" (admin
 /// déconnecté avec retour 1-clic). Stocke le sessionToken admin pour pouvoir
@@ -8,11 +9,11 @@ import { cookies } from "next/headers"
 /// La session DB de l'admin reste **valide** pendant le mode visiteur — on
 /// efface uniquement le cookie côté navigateur. Restaurer = re-set ce cookie.
 
-const STASH_COOKIE = "docbel_admin_stash"
+const STASH_COOKIE = COOKIE_NAMES.ADMIN_STASH
 /// Cookie marqueur (lisible client) qui dit "tu es en mode visiteur, montre
 /// la bannière". HttpOnly=false pour que la bannière puisse le lire sans
 /// fetch supplémentaire.
-const VISITOR_MARKER_COOKIE = "docbel_view_as_visitor"
+const VISITOR_MARKER_COOKIE = COOKIE_NAMES.VIEW_AS_VISITOR
 
 /// Nom du cookie Better Auth (cf. convention BA — default name "better-auth.session_token",
 /// préfixé "__Secure-" en HTTPS). On gère les deux pour être robuste.
@@ -97,20 +98,16 @@ export async function stashAdminSessionAndGoVisitor(opts: {
     adminId: opts.adminId,
     exp: Math.floor(Date.now() / 1000) + STASH_TTL_SECONDS,
   }
-  const secure = process.env.NODE_ENV === "production"
+  const attrs = defaultCookieAttrs()
   c.set(STASH_COOKIE, sign(payload), {
     httpOnly: true,
-    secure,
-    sameSite: "lax",
-    path: "/",
+    ...attrs,
     maxAge: STASH_TTL_SECONDS,
   })
   // Marqueur lisible client (la bannière le détecte pour s'afficher).
   c.set(VISITOR_MARKER_COOKIE, "1", {
     httpOnly: false,
-    secure,
-    sameSite: "lax",
-    path: "/",
+    ...attrs,
     maxAge: STASH_TTL_SECONDS,
   })
   // Supprime les deux variantes du cookie session BA (préfixée ou pas) —
@@ -128,13 +125,10 @@ export async function readAdminStash(): Promise<StashPayload | null> {
 /// Restaure le cookie session admin et nettoie le stash + marqueur visiteur.
 export async function restoreAdminSession(payload: StashPayload): Promise<void> {
   const c = await cookies()
-  const secure = process.env.NODE_ENV === "production"
   // Best-effort : on repose le cookie au nom exact qu'il avait avant.
   c.set(payload.cookieName, payload.cookieValue, {
     httpOnly: true,
-    secure,
-    sameSite: "lax",
-    path: "/",
+    ...defaultCookieAttrs(),
     // On ne connaît pas exactement le maxAge restant côté BA, on laisse 30j
     // (TTL session BA par défaut) — la DB tranchera si la session est trop
     // vieille (auth.api.getSession refusera).

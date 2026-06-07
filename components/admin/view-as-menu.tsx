@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -40,6 +41,7 @@ const ROLE_LABELS: Record<string, string> = {
 /// impersonation côté serveur, puis recharge la page pour que tous les
 /// Server Components soient re-rendus avec la nouvelle session.
 export function ViewAsMenu() {
+  const router = useRouter()
   const [accounts, setAccounts] = useState<DemoAccount[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [pending, setPending] = useState<string | null>(null)
@@ -48,6 +50,25 @@ export function ViewAsMenu() {
   const [query, setQuery] = useState("")
   const [searchResults, setSearchResults] = useState<DemoAccount[]>([])
   const [searching, setSearching] = useState(false)
+
+  // MRU "Récemment vu comme" (#6). Lazy-fetch comme accounts.
+  const [recent, setRecent] = useState<DemoAccount[] | null>(null)
+  const ensureRecent = async () => {
+    if (recent !== null) return
+    try {
+      const res = await fetch("/api/admin/recent-impersonations", {
+        cache: "no-store",
+      })
+      if (!res.ok) {
+        setRecent([])
+        return
+      }
+      const data = (await res.json()) as { recent: DemoAccount[] }
+      setRecent(data.recent)
+    } catch {
+      setRecent([])
+    }
+  }
   useEffect(() => {
     const q = query.trim()
     if (q.length < 2) {
@@ -95,24 +116,38 @@ export function ViewAsMenu() {
     }
   }
 
-  /// "Visiteur anonyme" : POST /api/admin/view-as-visitor — stash la session
-  /// admin et déconnecte l'admin côté navigateur. Pas une vraie impersonation
-  /// (Better Auth ne sait pas "impersonifier rien"), donc flow dédié.
-  const goVisitor = async () => {
+  /// "Visiteur anonyme" : ouvre toujours le dialog de confirmation (#7) —
+  /// en prod la raison est obligatoire (>=10 chars), en dev elle est
+  /// facultative mais la confirmation explicite évite les clics accidentels.
+  const [visitorDialogOpen, setVisitorDialogOpen] = useState(false)
+
+  /// Exécution effective du basculement visiteur. POST /api/admin/view-as-visitor
+  /// stash la session admin et déconnecte côté navigateur (la session DB reste
+  /// vivante pour le restore 1-clic).
+  const runVisitor = async (reason: string | null) => {
     setPending("__visitor__")
     try {
-      const res = await fetch("/api/admin/view-as-visitor", { method: "POST" })
+      const res = await fetch("/api/admin/view-as-visitor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      })
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as { error?: string }
         toast.error(error.error || "Bascule visiteur impossible")
         return
       }
-      window.location.href = "/"
+      router.push("/")
+      router.refresh()
     } catch {
       toast.error("Erreur réseau")
     } finally {
       setPending(null)
     }
+  }
+
+  const goVisitor = () => {
+    setVisitorDialogOpen(true)
   }
 
   // En prod, on passe par un dialog shadcn pour saisir la raison
@@ -139,9 +174,11 @@ export function ViewAsMenu() {
         toast.error(error.error || "Impersonation impossible")
         return
       }
-      // Hard reload : Server Components et middlewares relisent la session.
-      // Redirige vers / (l'admin perd l'accès à /admin sous impersonation).
-      window.location.href = "/"
+      // Navigation soft (#12) : router.refresh() force le re-fetch des
+      // Server Components qui lisent getServerAuthSession() (root layout,
+      // shell). Redirige vers / (l'admin perd l'accès à /admin sous impersonation).
+      router.push("/")
+      router.refresh()
     } catch {
       toast.error("Erreur réseau")
     } finally {
@@ -167,6 +204,7 @@ export function ViewAsMenu() {
             size="sm"
             onClick={() => {
               void ensureLoaded()
+              void ensureRecent()
             }}
           >
             <EyeIcon className="mr-1.5 size-4" />
@@ -176,6 +214,33 @@ export function ViewAsMenu() {
         }
       />
       <DropdownMenuContent align="end" className="w-80">
+        {recent !== null && recent.length > 0 && (
+          <>
+            <DropdownMenuLabel>Récemment vu comme</DropdownMenuLabel>
+            {recent.map((account) => (
+              <DropdownMenuItem
+                key={`recent_${account.id}`}
+                disabled={pending !== null}
+                onClick={(e) => {
+                  e.preventDefault()
+                  void impersonate(account)
+                }}
+                className="flex flex-col items-start gap-0.5"
+              >
+                <span className="text-sm font-medium">
+                  {ROLE_LABELS[account.role] || account.role}
+                  {pending === account.id && (
+                    <span className="ml-2 text-xs text-muted-foreground">…</span>
+                  )}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {account.partnerOrganization || account.email}
+                </span>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuLabel>Rechercher un user</DropdownMenuLabel>
         <div className="px-2 pb-2">
           <div className="relative">
@@ -300,6 +365,21 @@ export function ViewAsMenu() {
           // remplace le rendu. En cas d'erreur, on ferme manuellement.
           await runImpersonate(target, reason)
           setReasonTarget(null)
+        }}
+      />
+
+      <ImpersonationReasonDialog
+        target={null}
+        visitorMode={visitorDialogOpen}
+        // Dev : raison facultative (confirm simple) ; prod : >=10 chars
+        // requis comme pour l'impersonation classique.
+        reasonOptional={process.env.NODE_ENV !== "production"}
+        onOpenChange={(open) => {
+          if (!open) setVisitorDialogOpen(false)
+        }}
+        onConfirm={async (reason) => {
+          await runVisitor(reason || null)
+          setVisitorDialogOpen(false)
         }}
       />
     </>

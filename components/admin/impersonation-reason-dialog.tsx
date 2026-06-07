@@ -44,26 +44,38 @@ const MIN_REASON_LENGTH = 10
 ///     via onOpenChange après son fetch).
 export function ImpersonationReasonDialog({
   target,
+  visitorMode = false,
+  reasonOptional = false,
   onOpenChange,
   onConfirm,
 }: {
   target: ImpersonationTarget | null
+  /// true = dialog en mode "visiteur anonyme" (#3 + #7) : pas de target
+  /// (l'admin va se déconnecter), header dédié, confirmation explicite +
+  /// raison. Si visitorMode=true et target=null, le dialog est OUVERT.
+  visitorMode?: boolean
+  /// true = saisie de raison facultative (dev uniquement). Confirmer reste
+  /// actif même avec un textarea vide. Sert pour le confirm simple "Visiteur"
+  /// en dev sans encombrer le solo dev.
+  reasonOptional?: boolean
   onOpenChange: (open: boolean) => void
   onConfirm: (reason: string) => Promise<void> | void
 }) {
   const [reason, setReason] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
+  const isOpen = target !== null || visitorMode === true
+
   // Reset le champ quand on change de target (ou quand on rouvre).
   useEffect(() => {
-    if (target) setReason("")
-  }, [target?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (isOpen) setReason("")
+  }, [target?.id, visitorMode, isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const trimmed = reason.trim()
-  const isValid = trimmed.length >= MIN_REASON_LENGTH
+  const isValid = reasonOptional || trimmed.length >= MIN_REASON_LENGTH
 
   const handleSubmit = async () => {
-    if (!isValid || !target) return
+    if (!isValid || !isOpen) return
     setSubmitting(true)
     try {
       await onConfirm(trimmed)
@@ -74,7 +86,7 @@ export function ImpersonationReasonDialog({
 
   return (
     <Dialog
-      open={target !== null}
+      open={isOpen}
       onOpenChange={(open) => {
         if (submitting) return // empêche fermeture pendant le fetch
         onOpenChange(open)
@@ -82,9 +94,20 @@ export function ImpersonationReasonDialog({
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Confirmer l&apos;impersonation</DialogTitle>
+          <DialogTitle>
+            {visitorMode
+              ? "Basculer en visiteur anonyme"
+              : "Confirmer l’impersonation"}
+          </DialogTitle>
           <DialogDescription>
-            {target && (
+            {visitorMode ? (
+              <>
+                Tu vas être <strong>déconnecté</strong> du shell admin pour
+                voir le site comme un visiteur public. La session admin
+                reste vivante (cookie stash) — un clic sur «&nbsp;Revenir
+                admin&nbsp;» te ramène sans saisir ton mot de passe.
+              </>
+            ) : target ? (
               <>
                 Tu vas voir le site comme{" "}
                 <strong>{target.name || target.email}</strong>{" "}
@@ -97,7 +120,7 @@ export function ImpersonationReasonDialog({
                 </span>
                 .
               </>
-            )}
+            ) : null}
             <br />
             Indique brièvement pourquoi — la raison est tracée dans l&apos;audit
             log.
@@ -113,12 +136,18 @@ export function ImpersonationReasonDialog({
             autoFocus
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Ex: Debug bug #1234 remonté par le user…"
+            placeholder={
+              reasonOptional
+                ? "Optionnel en dev — laisse vide ou note pourquoi…"
+                : "Ex: Debug bug #1234 remonté par le user…"
+            }
             rows={3}
             disabled={submitting}
           />
           <p className="text-xs text-muted-foreground">
-            {trimmed.length} / {MIN_REASON_LENGTH} caractères minimum
+            {reasonOptional
+              ? "Facultatif (dev)"
+              : `${trimmed.length} / ${MIN_REASON_LENGTH} caractères minimum`}
           </p>
         </div>
 

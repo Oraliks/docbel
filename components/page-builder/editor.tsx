@@ -28,6 +28,7 @@ export function Editor() {
   const clearSelection = usePageBuilderStore((s) => s.clearSelection)
   const selectBlock = usePageBuilderStore((s) => s.selectBlock)
   const moveBlock = usePageBuilderStore((s) => s.moveBlock)
+  const updateBlockLayoutLive = usePageBuilderStore((s) => s.updateBlockLayoutLive)
   const wrapInSection = usePageBuilderStore((s) => s.wrapInSection)
   const blocks = usePageBuilderStore((s) => s.blocks)
 
@@ -84,6 +85,42 @@ export function Editor() {
       if (!selectedBlockId || editing) return
 
       const hasMulti = selectedIds.length > 1
+      const sel = blocks.find((b) => b.id === selectedBlockId)
+      const isAbsolute = !!sel?.layout?.absolute
+
+      // ⌘] / ⌘[ → z-index avant/arrière
+      if (meta && (e.key === ']' || e.key === '[')) {
+        e.preventDefault()
+        const z = sel?.layout?.zIndex ?? 0
+        updateBlockLayoutLive(selectedBlockId, {
+          zIndex: e.key === ']' ? z + 1 : Math.max(0, z - 1),
+        })
+        return
+      }
+
+      // Flèches → nudge des blocs en position absolue (1px, 10px avec ⇧)
+      if (
+        isAbsolute &&
+        !e.altKey &&
+        !meta &&
+        (e.key === 'ArrowUp' ||
+          e.key === 'ArrowDown' ||
+          e.key === 'ArrowLeft' ||
+          e.key === 'ArrowRight')
+      ) {
+        e.preventDefault()
+        const step = e.shiftKey ? 10 : 1
+        const left = sel?.layout?.left ?? 0
+        const top = sel?.layout?.top ?? 0
+        if (e.key === 'ArrowLeft')
+          updateBlockLayoutLive(selectedBlockId, { left: Math.max(0, left - step) })
+        else if (e.key === 'ArrowRight')
+          updateBlockLayoutLive(selectedBlockId, { left: left + step })
+        else if (e.key === 'ArrowUp')
+          updateBlockLayoutLive(selectedBlockId, { top: Math.max(0, top - step) })
+        else updateBlockLayoutLive(selectedBlockId, { top: top + step })
+        return
+      }
 
       // ⌘G → wrap selection in a section
       if (meta && e.key.toLowerCase() === 'g') {
@@ -150,6 +187,7 @@ export function Editor() {
     duplicateBlock,
     duplicateMany,
     moveBlock,
+    updateBlockLayoutLive,
     openPicker,
     pasteBlock,
     redo,

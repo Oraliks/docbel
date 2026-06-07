@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
+import { flattenBlocksText } from '@/lib/page-builder/block-text'
 import type { BlockProps } from '@/lib/page-builder/types'
 import { cn } from '@/lib/utils'
 
@@ -26,42 +27,6 @@ interface ChatMessage {
   content: string
   /** Number of blocks inserted by this assistant turn (for the badge). */
   inserted?: number
-}
-
-/**
- * Keys whose string values hold human-readable text on a block's props.
- * Kept local & in sync with the editor's own extractor — we only need a rough
- * snapshot of the page to give the copilot context, not a perfect dump.
- */
-const TEXT_KEYS = [
-  'text',
-  'html',
-  'title',
-  'subtitle',
-  'description',
-  'content',
-  'quote',
-  'caption',
-  'answer',
-  'question',
-]
-
-/** Flatten the current page's blocks to plain text for the copilot context. */
-function extractPageText(blocks: BlockProps[]): string {
-  const parts: string[] = []
-  for (const b of blocks) {
-    const p = b.props as Record<string, unknown>
-    for (const k of TEXT_KEYS) {
-      const v = p[k]
-      if (typeof v === 'string' && v.trim()) parts.push(v)
-    }
-  }
-  return parts
-    .join('\n')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 12000)
 }
 
 const EXAMPLES = [
@@ -89,7 +54,7 @@ export function CopilotPanel({ open, onOpenChange }: CopilotPanelProps) {
 
     // Snapshot the page text + history BEFORE mutating local state.
     const blocks = usePageBuilderStore.getState().blocks
-    const pageText = extractPageText(blocks)
+    const pageText = flattenBlocksText(blocks, 12000)
     const history = messages.map((m) => ({ role: m.role, content: m.content }))
 
     setMessages((prev) => [...prev, { role: 'user', content: text }])

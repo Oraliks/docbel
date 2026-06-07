@@ -4,18 +4,21 @@ import { BlockRenderer } from './block-renderer'
 import { childLayoutClass, type ChildLayout } from '@/components/page-blocks/layout/container-layout'
 import type { InterpolationContext } from '@/lib/page-builder/interpolate'
 
-interface PublicRendererProps {
-  blocks: BlockProps[]
-  /** Optional context — page metadata + site name + user — for {{...}} interpolation. */
-  context?: InterpolationContext
-}
-
+/** Local children lookup — intentionally NOT imported from the Zustand store, to
+ *  keep this server-rendered module out of the store/registry import graph
+ *  (pulling it in breaks /[slug] page-data collection at build). */
 function childrenOf(blocks: BlockProps[], parentId: string, slotIndex?: number) {
   return blocks.filter((b) => {
     if (b.parentId !== parentId) return false
     if (slotIndex == null) return true
     return (b.slotIndex ?? 0) === slotIndex
   })
+}
+
+interface PublicRendererProps {
+  blocks: BlockProps[]
+  /** Optional context — page metadata + site name + user — for {{...}} interpolation. */
+  context?: InterpolationContext
 }
 
 function RenderBlock({

@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
+import { flattenBlocksText } from '@/lib/page-builder/block-text'
+import { generateSlug } from '@/lib/page-builder/validation'
 import type { AuditResult } from '@/components/page-builder/audit-dialog'
 import type { BlockProps, PageVariable, ThemeTokens } from '@/lib/page-builder/types'
 
@@ -56,39 +58,6 @@ interface PageEditorPageProps {
 }
 
 const AUTOSAVE_DELAY_MS = 1500
-
-const META_TEXT_KEYS = [
-  'text', 'html', 'title', 'subtitle', 'description', 'content', 'quote',
-  'caption', 'answer', 'question',
-]
-/** Flatten a page's blocks to plain text for the AI meta generator. */
-function extractBlocksText(blocks: BlockProps[]): string {
-  const parts: string[] = []
-  for (const b of blocks) {
-    const p = b.props as Record<string, unknown>
-    for (const k of META_TEXT_KEYS) {
-      const v = p[k]
-      if (typeof v === 'string' && v.trim()) parts.push(v)
-    }
-  }
-  return parts
-    .join('\n')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 8000)
-}
-
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-}
 
 /** ISO string → value for <input type="datetime-local"> (local time, no tz). */
 function isoToDatetimeLocal(iso: string | null | undefined): string {
@@ -364,7 +333,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
 
   const handleSaveSettings = async () => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    const cleanSlug = slugify(slug.startsWith('/') ? slug.slice(1) : slug)
+    const cleanSlug = generateSlug(slug.startsWith('/') ? slug.slice(1) : slug)
     if (!cleanSlug) {
       toast.error('Slug invalide')
       return
@@ -489,7 +458,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   }
 
   const handleAiMeta = async () => {
-    const content = extractBlocksText(blocks)
+    const content = flattenBlocksText(blocks)
     if (!content) {
       toast.error('Ajoutez du contenu à la page d’abord')
       return
@@ -521,7 +490,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   }
 
   const handleAudit = async () => {
-    const content = extractBlocksText(blocks)
+    const content = flattenBlocksText(blocks)
     if (!content) {
       toast.error('Ajoutez du contenu à la page d’abord')
       return
@@ -631,8 +600,8 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
                 className="font-mono"
               />
               <p className="text-xs text-muted-foreground">
-                URL : /{slugify(slug) || '…'}
-                {slug && slugify(slug) !== slug && (
+                URL : /{slug ? generateSlug(slug) : '…'}
+                {slug && generateSlug(slug) !== slug && (
                   <span className="ml-2 italic">(normalisé à la sauvegarde)</span>
                 )}
               </p>

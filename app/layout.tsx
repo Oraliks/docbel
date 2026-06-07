@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope, Plus_Jakarta_Sans } from "next/font/google";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -57,14 +58,21 @@ export default async function RootLayout({
       className={`${plusJakarta.variable} ${fraunces.variable} ${manrope.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        <script
+      <body className="min-h-full bg-background text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        {/*
+          Pré-applique la classe "dark" et color-scheme AVANT l'hydratation
+          React pour éviter le flash de thème clair sur un user en dark mode.
+          Next.js 16 refuse un <script> inline à l'intérieur d'un composant
+          React (overlay devtools bloquant en dev). next/script gère
+          l'injection proprement.
+        */}
+        <Script
+          id="docbel-theme-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('docbel-theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}else{document.documentElement.style.colorScheme='light';}}catch(e){}})();`,
           }}
         />
-      </head>
-      <body className="min-h-full bg-background text-foreground" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
           <AuthSessionProvider initialSession={initialSession}>
             <ImpersonationBanner />

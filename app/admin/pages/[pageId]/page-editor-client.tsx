@@ -436,6 +436,28 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
     )
   }
 
+  const handleCopyPreviewLink = async () => {
+    try {
+      const res = await fetch(
+        `/api/page-builder/preview-token?id=${encodeURIComponent(page.id)}`
+      )
+      if (!res.ok) {
+        toast.error('Impossible de générer le lien d’aperçu')
+        return
+      }
+      const data = await res.json()
+      if (!data?.token) {
+        toast.error('Lien d’aperçu indisponible (secret non configuré)')
+        return
+      }
+      const url = `${window.location.origin}/preview/${page.id}?token=${data.token}`
+      await navigator.clipboard.writeText(url)
+      toast.success('Lien d’aperçu copié 🔗')
+    } catch {
+      toast.error('Impossible de copier le lien d’aperçu')
+    }
+  }
+
   const handleExport = () => {
     const data = {
       _type: 'beldoc-page',
@@ -548,6 +570,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         onOpenVariables={() => setShowVariablesDialog(true)}
         onOpenAudit={handleAudit}
         onOpenGenerate={() => setShowGenerateDialog(true)}
+        onCopyPreviewLink={handleCopyPreviewLink}
         onExport={handleExport}
         onTogglePublish={handleTogglePublish}
       />

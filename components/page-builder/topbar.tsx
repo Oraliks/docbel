@@ -14,6 +14,7 @@ import {
   Palette,
   Redo2,
   Settings2,
+  Share2,
   ShieldAlert,
   Smartphone,
   Tablet,
@@ -48,6 +49,7 @@ interface TopbarProps {
   onOpenVariables: () => void
   onOpenAudit: () => void
   onOpenGenerate: () => void
+  onCopyPreviewLink: () => void
   onExport: () => void
   onTogglePublish: () => void
 }
@@ -68,6 +70,7 @@ export function Topbar({
   onOpenVariables,
   onOpenAudit,
   onOpenGenerate,
+  onCopyPreviewLink,
   onExport,
   onTogglePublish,
 }: TopbarProps) {
@@ -186,6 +189,15 @@ export function Topbar({
               <ExternalLink className="size-4" />
             </Button>
           )}
+
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={onCopyPreviewLink}
+            title="Copier le lien d'aperçu (brouillon partageable)"
+          >
+            <Share2 className="size-4" />
+          </Button>
 
           <Button
             size="icon-sm"

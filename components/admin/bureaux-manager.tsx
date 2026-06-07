@@ -20,12 +20,22 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Loader2, Download } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { SerializedBureau, BureauTypeCode } from "@/lib/bureaus/types";
 import { dayLabelFr } from "@/lib/bureaus/types";
 import { BureauRevisionsDialog } from "./bureaux/revisions-dialog";
 import { BureauFormDialog } from "./bureaux/bureau-form-dialog";
 import { BureauxFilters } from "./bureaux/bureaux-filters";
 import { BureauxTable } from "./bureaux/bureaux-table";
+import {
+  IMPERSONATION_READ_ONLY_REASON,
+  useImpersonationReadOnly,
+} from "./use-impersonation-read-only";
 import {
   type FormState,
   EMPTY_FORM,
@@ -43,6 +53,7 @@ type Organisme = {
 };
 
 export function BureausManager() {
+  const readOnly = useImpersonationReadOnly();
   const [items, setItems] = useState<SerializedBureau[]>([]);
   const [organismes, setOrganismes] = useState<Organisme[]>([]);
   const [loading, setLoading] = useState(true);
@@ -237,9 +248,28 @@ export function BureausManager() {
             </Button>
             {/* Import CSV admin retiré : on utilise les scripts/ pour les
                 imports en masse, l'UI ligne par ligne n'était pas utilisée. */}
-            <Button onClick={openCreate}>
-              <Plus className="mr-2 h-4 w-4" /> Nouveau bureau
-            </Button>
+            {readOnly ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      // Span wrapper : un <Button disabled> ne déclenche pas
+                      // les events souris → le tooltip ne s'ouvrirait pas.
+                      <span tabIndex={0}>
+                        <Button disabled>
+                          <Plus className="mr-2 h-4 w-4" /> Nouveau bureau
+                        </Button>
+                      </span>
+                    }
+                  />
+                  <TooltipContent>{IMPERSONATION_READ_ONLY_REASON}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <Button onClick={openCreate}>
+                <Plus className="mr-2 h-4 w-4" /> Nouveau bureau
+              </Button>
+            )}
           </div>
         </div>
 
@@ -264,6 +294,7 @@ export function BureausManager() {
           onDelete={setConfirmDelete}
           onToggleVerify={toggleVerify}
           onShowRevisions={setRevisionsFor}
+          readOnly={readOnly}
         />
       </CardContent>
 

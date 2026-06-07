@@ -19,6 +19,7 @@ import {
   History,
   AlertTriangle,
 } from "lucide-react";
+import { IMPERSONATION_READ_ONLY_REASON } from "../use-impersonation-read-only";
 import type { SerializedBureau, BureauTypeCode } from "@/lib/bureaus/types";
 import { displayBureauName } from "@/lib/bureaus/format";
 
@@ -49,6 +50,10 @@ type Props = {
   onDelete: (bureau: SerializedBureau) => void;
   onToggleVerify: (bureau: SerializedBureau) => void;
   onShowRevisions: (bureau: SerializedBureau) => void;
+  /// Si true, les actions mutantes (Modifier / Désactiver / Toggle vérif)
+  /// sont rendues mais désactivées. L'historique reste cliquable car c'est
+  /// une lecture. Passé par `BureausManager` qui possède l'instance du hook.
+  readOnly?: boolean;
 };
 
 export function BureauxTable({
@@ -58,6 +63,7 @@ export function BureauxTable({
   onDelete,
   onToggleVerify,
   onShowRevisions,
+  readOnly = false,
 }: Props) {
   if (loading) {
     return (
@@ -147,7 +153,14 @@ export function BureauxTable({
                   variant="ghost"
                   size="icon"
                   onClick={() => onToggleVerify(b)}
-                  title={b.verified ? "Retirer la vérification" : "Marquer vérifié"}
+                  disabled={readOnly}
+                  title={
+                    readOnly
+                      ? IMPERSONATION_READ_ONLY_REASON
+                      : b.verified
+                        ? "Retirer la vérification"
+                        : "Marquer vérifié"
+                  }
                 >
                   {b.verified ? (
                     <ShieldCheck className="h-4 w-4 text-green-600" />
@@ -163,10 +176,22 @@ export function BureauxTable({
                 >
                   <History className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => onEdit(b)} title="Modifier">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEdit(b)}
+                  disabled={readOnly}
+                  title={readOnly ? IMPERSONATION_READ_ONLY_REASON : "Modifier"}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => onDelete(b)} title="Désactiver">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDelete(b)}
+                  disabled={readOnly}
+                  title={readOnly ? IMPERSONATION_READ_ONLY_REASON : "Désactiver"}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>

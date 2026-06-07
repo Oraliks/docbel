@@ -29,6 +29,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
+  IMPERSONATION_READ_ONLY_REASON,
+  useImpersonationReadOnly,
+} from "@/components/admin/use-impersonation-read-only"
 
 interface EditUserFormProps {
   user: {
@@ -42,6 +52,7 @@ interface EditUserFormProps {
 
 export function EditUserForm({ user }: EditUserFormProps) {
   const router = useRouter()
+  const readOnly = useImpersonationReadOnly()
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -304,14 +315,34 @@ export function EditUserForm({ user }: EditUserFormProps) {
               >
                 Annuler
               </Button>
-              <Button type="submit" disabled={loading} className="gap-2">
-                {loading ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <SaveIcon className="size-4" />
-                )}
-                Enregistrer
-              </Button>
+              {readOnly ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        // Span wrapper : un <Button disabled> ne déclenche pas
+                        // les events souris/focus → le tooltip ne s'ouvre jamais.
+                        <span tabIndex={0}>
+                          <Button type="button" disabled className="gap-2">
+                            <SaveIcon className="size-4" />
+                            Enregistrer
+                          </Button>
+                        </span>
+                      }
+                    />
+                    <TooltipContent>{IMPERSONATION_READ_ONLY_REASON}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <Button type="submit" disabled={loading} className="gap-2">
+                  {loading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <SaveIcon className="size-4" />
+                  )}
+                  Enregistrer
+                </Button>
+              )}
             </div>
           </form>
         </CardContent>
@@ -329,18 +360,41 @@ export function EditUserForm({ user }: EditUserFormProps) {
         </CardHeader>
         <CardContent>
           {!confirmDelete ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setConfirmDelete(true)
-                setDeleteTyped("")
-              }}
-              className="gap-2 border-red-300 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/30"
-            >
-              <Trash2Icon className="size-4" />
-              Supprimer cet utilisateur
-            </Button>
+            readOnly ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <span tabIndex={0}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled
+                          className="gap-2 border-red-300 text-red-600 dark:border-red-900/50 dark:text-red-400"
+                        >
+                          <Trash2Icon className="size-4" />
+                          Supprimer cet utilisateur
+                        </Button>
+                      </span>
+                    }
+                  />
+                  <TooltipContent>{IMPERSONATION_READ_ONLY_REASON}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setConfirmDelete(true)
+                  setDeleteTyped("")
+                }}
+                className="gap-2 border-red-300 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/30"
+              >
+                <Trash2Icon className="size-4" />
+                Supprimer cet utilisateur
+              </Button>
+            )
           ) : (
             <div className="flex flex-col gap-3 rounded-lg border border-red-300 bg-red-50/60 p-4 dark:border-red-900/50 dark:bg-red-950/20">
               <p className="text-sm">

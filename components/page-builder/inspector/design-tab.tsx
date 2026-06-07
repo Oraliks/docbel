@@ -28,6 +28,8 @@ interface DesignTabProps {
 export function DesignTab({ block, onChange }: DesignTabProps) {
   const style = block.style ?? {}
   const hv = style.hoverState ?? {}
+  const fs = style.focusState ?? {}
+  const as = style.activeState ?? {}
   return (
     <div>
       <Group title="Typographie" defaultOpen>
@@ -414,6 +416,134 @@ export function DesignTab({ block, onChange }: DesignTabProps) {
           <Pills
             value={hv.shadow ?? 'none'}
             onChange={(v) => onChange({ hoverState: { ...hv, shadow: v } })}
+            options={[
+              { value: 'none', label: 'Aucune' },
+              { value: 'sm', label: 'Sm' },
+              { value: 'md', label: 'Md' },
+              { value: 'lg', label: 'Lg' },
+              { value: 'xl', label: 'XL' },
+            ]}
+          />
+        </Field>
+      </Group>
+
+      <Group title="Effets au focus">
+        <p className="text-[11px] text-muted-foreground">
+          Style appliqué quand le bloc (ou un élément à l’intérieur) reçoit le focus clavier.
+        </p>
+        <Field label="Couleur du texte">
+          <ColorControl
+            value={fs.textColor}
+            onChange={(v) => onChange({ focusState: { ...fs, textColor: v } })}
+          />
+        </Field>
+        <Field label="Couleur de fond">
+          <ColorControl
+            value={fs.bgColor}
+            onChange={(v) => onChange({ focusState: { ...fs, bgColor: v } })}
+          />
+        </Field>
+        <Field label="Couleur de bordure">
+          <ColorControl
+            value={fs.borderColor}
+            onChange={(v) => onChange({ focusState: { ...fs, borderColor: v } })}
+          />
+        </Field>
+        <Field label="Échelle (zoom)">
+          <SliderControl
+            value={fs.scale ?? 1}
+            onChange={(v) => onChange({ focusState: { ...fs, scale: v } })}
+            min={0.9}
+            max={1.2}
+            step={0.01}
+          />
+        </Field>
+        <Field label="Élévation">
+          <SliderControl
+            value={fs.lift ?? 0}
+            onChange={(v) => onChange({ focusState: { ...fs, lift: v } })}
+            min={0}
+            max={24}
+            suffix="px"
+          />
+        </Field>
+        <Field label="Opacité">
+          <SliderControl
+            value={fs.opacity ?? 1}
+            onChange={(v) => onChange({ focusState: { ...fs, opacity: v } })}
+            min={0}
+            max={1}
+            step={0.05}
+          />
+        </Field>
+        <Field label="Ombre">
+          <Pills
+            value={fs.shadow ?? 'none'}
+            onChange={(v) => onChange({ focusState: { ...fs, shadow: v } })}
+            options={[
+              { value: 'none', label: 'Aucune' },
+              { value: 'sm', label: 'Sm' },
+              { value: 'md', label: 'Md' },
+              { value: 'lg', label: 'Lg' },
+              { value: 'xl', label: 'XL' },
+            ]}
+          />
+        </Field>
+      </Group>
+
+      <Group title="Effets au clic">
+        <p className="text-[11px] text-muted-foreground">
+          Style appliqué pendant que le bloc est cliqué/pressé (état actif).
+        </p>
+        <Field label="Couleur du texte">
+          <ColorControl
+            value={as.textColor}
+            onChange={(v) => onChange({ activeState: { ...as, textColor: v } })}
+          />
+        </Field>
+        <Field label="Couleur de fond">
+          <ColorControl
+            value={as.bgColor}
+            onChange={(v) => onChange({ activeState: { ...as, bgColor: v } })}
+          />
+        </Field>
+        <Field label="Couleur de bordure">
+          <ColorControl
+            value={as.borderColor}
+            onChange={(v) => onChange({ activeState: { ...as, borderColor: v } })}
+          />
+        </Field>
+        <Field label="Échelle (zoom)">
+          <SliderControl
+            value={as.scale ?? 1}
+            onChange={(v) => onChange({ activeState: { ...as, scale: v } })}
+            min={0.9}
+            max={1.2}
+            step={0.01}
+          />
+        </Field>
+        <Field label="Élévation">
+          <SliderControl
+            value={as.lift ?? 0}
+            onChange={(v) => onChange({ activeState: { ...as, lift: v } })}
+            min={0}
+            max={24}
+            suffix="px"
+          />
+        </Field>
+        <Field label="Opacité">
+          <SliderControl
+            value={as.opacity ?? 1}
+            onChange={(v) => onChange({ activeState: { ...as, opacity: v } })}
+            min={0}
+            max={1}
+            step={0.05}
+          />
+        </Field>
+        <Field label="Ombre">
+          <Pills
+            value={as.shadow ?? 'none'}
+            onChange={(v) => onChange({ activeState: { ...as, shadow: v } })}
             options={[
               { value: 'none', label: 'Aucune' },
               { value: 'sm', label: 'Sm' },

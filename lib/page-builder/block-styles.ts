@@ -215,21 +215,30 @@ export function blockScopedCss(
   const sel = `[data-pb-id="${block.id}"]`
   const rules: string[] = []
 
-  const h = style.hoverState
-  if (h) {
+  // États d'interaction (survol / focus / clic) — mêmes déclarations, sélecteurs différents.
+  let transitionEmitted = false
+  for (const [state, pseudo] of [
+    [style.hoverState, ':hover'],
+    [style.focusState, ':focus-within'],
+    [style.activeState, ':active'],
+  ] as const) {
+    if (!state) continue
     const decls: string[] = []
-    if (h.textColor) decls.push(`color:${h.textColor}`)
-    if (h.bgColor) decls.push(`background-color:${h.bgColor}`)
-    if (h.borderColor) decls.push(`border-color:${h.borderColor}`)
-    if (h.opacity !== undefined) decls.push(`opacity:${h.opacity}`)
-    if (h.shadow && h.shadow !== 'none') decls.push(`box-shadow:${SHADOW_MAP[h.shadow]}`)
+    if (state.textColor) decls.push(`color:${state.textColor}`)
+    if (state.bgColor) decls.push(`background-color:${state.bgColor}`)
+    if (state.borderColor) decls.push(`border-color:${state.borderColor}`)
+    if (state.opacity !== undefined) decls.push(`opacity:${state.opacity}`)
+    if (state.shadow && state.shadow !== 'none') decls.push(`box-shadow:${SHADOW_MAP[state.shadow]}`)
     const tf: string[] = []
-    if (h.scale !== undefined) tf.push(`scale(${h.scale})`)
-    if (h.lift) tf.push(`translateY(-${h.lift}px)`)
+    if (state.scale !== undefined) tf.push(`scale(${state.scale})`)
+    if (state.lift) tf.push(`translateY(-${state.lift}px)`)
     if (tf.length) decls.push(`transform:${tf.join(' ')}`)
     if (decls.length) {
-      rules.push(`${sel}{transition:all .25s ease}`)
-      rules.push(`${sel}:hover{${decls.join(';')}}`)
+      if (!transitionEmitted) {
+        rules.push(`${sel}{transition:all .25s ease}`)
+        transitionEmitted = true
+      }
+      rules.push(`${sel}${pseudo}{${decls.join(';')}}`)
     }
   }
 

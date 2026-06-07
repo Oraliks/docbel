@@ -16,6 +16,17 @@ export type BlockCategory = 'text' | 'media' | 'layout' | 'marketing' | 'ui' | '
 
 export type DeviceType = 'desktop' | 'tablet' | 'mobile'
 
+/** Surcharges visuelles appliquées sur un état d'interaction (survol / focus / clic). */
+export interface BlockInteractionState {
+  textColor?: string
+  bgColor?: string
+  borderColor?: string
+  opacity?: number
+  scale?: number
+  lift?: number
+  shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl'
+}
+
 // ──────────────────────────── Style / Layout / Advanced ────────────────────────────
 
 export interface BlockStyle {
@@ -48,15 +59,11 @@ export interface BlockStyle {
   opacity?: number
   textEffect?: 'none' | 'gradient' | 'shadow' | 'glow' | 'outline'
   /** Styles appliqués au survol (rendus via un <style> scopé [data-pb-id]). */
-  hoverState?: {
-    textColor?: string
-    bgColor?: string
-    borderColor?: string
-    opacity?: number
-    scale?: number
-    lift?: number
-    shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl'
-  }
+  hoverState?: BlockInteractionState
+  /** Styles appliqués au focus clavier/dans le bloc (`:focus-within`). */
+  focusState?: BlockInteractionState
+  /** Styles appliqués pendant le clic actif (`:active`). */
+  activeState?: BlockInteractionState
   // Border gradient + advanced visual effects
   borderGradientFrom?: string
   borderGradientTo?: string

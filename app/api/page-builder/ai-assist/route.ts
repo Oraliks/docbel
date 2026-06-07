@@ -30,6 +30,9 @@ const TRANSFORM_ACTIONS = [
   "shorten",
   "lengthen",
   "fix",
+  "level-a2",
+  "tone-pro",
+  "tone-warm",
 ] as const;
 
 const AiAssistSchema = z.object({
@@ -39,6 +42,9 @@ const AiAssistSchema = z.object({
     "shorten",
     "lengthen",
     "fix",
+    "level-a2",
+    "tone-pro",
+    "tone-warm",
     "generate",
     "faq",
     "meta",
@@ -56,6 +62,12 @@ const ACTION_INSTRUCTION: Record<string, string> = {
   lengthen:
     "Développe ce contenu avec des précisions utiles et des exemples concrets, sans inventer de faits.",
   fix: "Corrige uniquement l'orthographe, la grammaire et la typographie, sans changer le sens ni le style.",
+  "level-a2":
+    "Réécris ce contenu en français très simple (niveau A2), phrases très courtes, vocabulaire courant, sans perdre les faits.",
+  "tone-pro":
+    "Réécris ce contenu avec un ton professionnel, sobre et institutionnel, sans changer les faits.",
+  "tone-warm":
+    "Réécris ce contenu avec un ton chaleureux et rassurant, sans changer les faits.",
 };
 
 const TRANSFORM_SYSTEM = `Tu es un assistant rédactionnel pour un site d'information administrative belge (chômage, ONEM, CPAS, mutuelles…).

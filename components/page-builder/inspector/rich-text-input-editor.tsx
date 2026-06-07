@@ -256,6 +256,15 @@ export function RichTextInputEditor({
               <DropdownMenuItem onClick={() => runAi('fix')}>
                 Corriger l’orthographe
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => runAi('level-a2')}>
+                Simplifier (A2)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => runAi('tone-pro')}>
+                Ton pro
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => runAi('tone-warm')}>
+                Ton chaleureux
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button

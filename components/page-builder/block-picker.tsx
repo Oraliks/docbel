@@ -22,6 +22,7 @@ import {
   BarChart3,
   Bookmark,
   Boxes,
+  LayoutTemplate,
   Trash2,
   type LucideIcon,
 } from 'lucide-react'
@@ -42,6 +43,10 @@ import {
 } from '@/lib/page-builder/registry'
 import type { BlockType, BlockCategory, BlockProps } from '@/lib/page-builder/types'
 import { usePageBuilderStore } from '@/lib/page-builder/store'
+import {
+  SECTION_TEMPLATES,
+  type SectionTemplate,
+} from '@/lib/page-builder/section-templates'
 import {
   listSnippets,
   deleteSnippet,
@@ -80,6 +85,7 @@ export function BlockPicker() {
   const closePicker = usePageBuilderStore((s) => s.closePicker)
   const addBlock = usePageBuilderStore((s) => s.addBlock)
   const insertBlock = usePageBuilderStore((s) => s.insertBlock)
+  const insertTemplate = usePageBuilderStore((s) => s.insertTemplate)
   const globalBlocks = usePageBuilderStore((s) => s.globalBlocks)
   const setGlobalBlocks = usePageBuilderStore((s) => s.setGlobalBlocks)
   const confirm = useConfirm()
@@ -256,6 +262,13 @@ export function BlockPicker() {
     setActiveIdx(0)
   }
 
+  const handleInsertTemplate = (tpl: SectionTemplate) => {
+    insertTemplate(tpl.blocks, { insertAfter })
+    closePicker()
+    setQuery('')
+    setActiveIdx(0)
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -340,6 +353,35 @@ export function BlockPicker() {
               </div>
             )
           })}
+
+          {/* Modèles de section — compositions pré-remplies prêtes à éditer. */}
+          {!query.trim() && (
+            <div className="mt-4">
+              <div className="px-2 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Modèles de section
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {SECTION_TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => handleInsertTemplate(tpl)}
+                    className="flex items-center gap-3 rounded-lg border border-transparent bg-card p-3 text-left transition hover:border-border hover:bg-muted/50"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      <LayoutTemplate className="size-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium truncate">{tpl.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {tpl.description}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Mes snippets — sections réutilisables enregistrées en DB. */}
           {!query.trim() && (snippetsLoading || snippets.length > 0) && (

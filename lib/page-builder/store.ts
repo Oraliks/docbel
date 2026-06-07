@@ -114,6 +114,10 @@ interface PageBuilderStore {
       slotIndex?: number | null
     }
   ) => void
+  insertTemplate: (
+    templateBlocks: BlockProps[],
+    opts?: { insertAfter?: string | null }
+  ) => void
   removeBlock: (id: string) => void
   duplicateBlock: (id: string) => void
   moveBlock: (id: string, direction: 'up' | 'down') => void
@@ -340,6 +344,31 @@ export const usePageBuilderStore = create<PageBuilderStore>((set, get) => ({
       return { ...pushHistory(state, next), selectedBlockId: toInsert.id }
     })
   },
+
+  insertTemplate: (templateBlocks, opts) =>
+    set((state) => {
+      if (!templateBlocks.length) return state
+      // Remap every template-local id to a fresh one, keeping parent links.
+      const idMap = new Map<string, string>()
+      for (const b of templateBlocks) idMap.set(b.id, nanoid())
+      const cloned: BlockProps[] = templateBlocks.map((b) => {
+        const copy = structuredClone(b)
+        copy.id = idMap.get(b.id)!
+        copy.parentId = b.parentId ? idMap.get(b.parentId) ?? null : null
+        return copy
+      })
+      const rootId = cloned[0].id
+      const next = [...state.blocks]
+      const after = opts?.insertAfter ?? null
+      const idx = after ? next.findIndex((b) => b.id === after) : -1
+      if (idx !== -1) next.splice(idx + 1, 0, ...cloned)
+      else next.push(...cloned)
+      return {
+        ...pushHistory(state, next),
+        selectedBlockId: rootId,
+        selectedIds: [rootId],
+      }
+    }),
 
   removeBlock: (id) =>
     set((state) => {

@@ -135,10 +135,10 @@ export function EligibilityPrequalifier({
           <div
             className={`rounded-md border p-3 text-sm flex items-start gap-2 ${
               result.verdict === "eligible"
-                ? "bg-green-50 border-green-300 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-200"
+                ? "bg-emerald-500/10 border-emerald-500/20 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-200"
                 : result.verdict === "ineligible"
-                  ? "bg-red-50 border-red-300 text-red-900 dark:bg-red-950 dark:border-red-800 dark:text-red-200"
-                  : "bg-amber-50 border-amber-300 text-amber-900 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200"
+                  ? "bg-red-500/10 border-red-500/20 text-red-900 dark:bg-red-950 dark:border-red-800 dark:text-red-200"
+                  : "bg-amber-500/10 border-amber-500/20 text-amber-900 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200"
             }`}
             role="status"
           >

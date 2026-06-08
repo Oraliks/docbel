@@ -161,7 +161,7 @@ function FeaturedArticle({ article }: { article: NewsItem }) {
             <button
               type="button"
               onClick={() => router.push("/outils")}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-3 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-3 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10 dark:border-[color:var(--glass-accent-deep)]/40 dark:hover:shadow-[0_0_18px_rgba(139,92,246,0.3)]"
             >
               <CalculatorIcon className="size-4" />
               Calculer mes droits

@@ -5,46 +5,46 @@
 
 :root {
   /* DocBel Light Colors */
-  --background: #F5F5F3;
+  --background: #F4EEFF;
   --foreground: #1A1A24;
-  --card: #FFFFFF;
+  --card: #FAF7FF;
   --card-foreground: #1A1A24;
-  --popover: #FFFFFF;
+  --popover: #FDFBFF;
   --popover-foreground: #1A1A24;
-  --primary: #7C3AED;
+  --primary: #5B46E5;
   --primary-foreground: #FFFFFF;
-  --secondary: #F9F9F7;
+  --secondary: #ECE6FB;
   --secondary-foreground: #1A1A24;
-  --muted: #F9F9F7;
-  --muted-foreground: #6B6B7B;
-  --accent: #7C3AED;
+  --muted: #ECE6FB;
+  --muted-foreground: #6E6586;
+  --accent: #5B46E5;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #D9D9D2;
-  --input: #CFCFC7;
-  --ring: #7C3AED;
+  --border: #E7E3EF;
+  --input: #DDD6EC;
+  --ring: #5B46E5;
   --chart-1: #F59E0B;
   --chart-2: #3B82F6;
   --chart-3: #10B981;
   --chart-4: #8B5CF6;
   --chart-5: #EC4899;
-  --radius: 0.625rem;
-  --sidebar: #FFFFFF;
+  --radius: 0.875rem;
+  --sidebar: #FAF7FF;
   --sidebar-foreground: #1A1A24;
-  --sidebar-primary: #7C3AED;
+  --sidebar-primary: #5B46E5;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F9F9F7;
+  --sidebar-accent: #ECE6FB;
   --sidebar-accent-foreground: #1A1A24;
-  --sidebar-border: #EBEBEA;
-  --sidebar-ring: #7C3AED;
+  --sidebar-border: #E7E3EF;
+  --sidebar-ring: #5B46E5;
   /* Custom DocBel vars */
-  --surface: #FFFFFF;
-  --surface-2: #F9F9F7;
+  --surface: #FAF7FF;
+  --surface-2: #ECE6FB;
   --text-muted: #6B6B7B;
   --text-faint: #A8A8B3;
-  --nav-bg: #FFFFFF;
-  --nav-border: #EBEBEA;
+  --nav-bg: #FAF7FF;
+  --nav-border: #E7E3EF;
 
   /* Landing (glass) tokens — LIGHT mode. Promoted from the prototype
      route at /glass so the home page (and any other page that opts in
@@ -66,7 +66,7 @@
   --glass-accent-b: #d08cff;
   --glass-accent-c: #ff8cc0;
   --glass-accent-d: #ffb070;
-  --glass-accent-deep: #7C3AED;
+  --glass-accent-deep: #5B46E5;
   --glass-pop-bg: rgba(255, 80, 144, 0.16);
   --glass-pop-fg: #c03070;
   --glass-status-from: #8b6cf5;
@@ -82,19 +82,19 @@
   --card-foreground: #F0F2F7;
   --popover: #1C1F26;
   --popover-foreground: #F0F2F7;
-  --primary: #8B5CF6;
+  --primary: #7C6BF0;
   --primary-foreground: #FFFFFF;
   --secondary: #252830;
   --secondary-foreground: #F0F2F7;
   --muted: #252830;
   --muted-foreground: #8B92A5;
-  --accent: #8B5CF6;
+  --accent: #7C6BF0;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
   --border: #3A3F4C;
   --input: #424857;
-  --ring: #8B5CF6;
+  --ring: #7C6BF0;
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -102,12 +102,12 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: #161920;
   --sidebar-foreground: #F0F2F7;
-  --sidebar-primary: #8B5CF6;
+  --sidebar-primary: #7C6BF0;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #252830;
   --sidebar-accent-foreground: #F0F2F7;
   --sidebar-border: #252830;
-  --sidebar-ring: #8B5CF6;
+  --sidebar-ring: #7C6BF0;
   /* Custom DocBel vars */
   --surface: #1C1F26;
   --surface-2: #252830;
@@ -231,9 +231,6 @@
   --border: var(--glass-ink-line);
   --input: color-mix(in oklab, var(--glass-ink) 22%, transparent);
   --ring: var(--glass-accent-deep);
-  /* Coins plus arrondis sur le front (charte : 12–24px). Scopé à
-     .glass-root → l'admin/pro garde son --radius par défaut. */
-  --radius: 0.875rem;
 }
 
 /* Surfaces shadcn (cartes + menus déroulants/dialogs) → verre dépoli. */

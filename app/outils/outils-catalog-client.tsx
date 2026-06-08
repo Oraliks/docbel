@@ -419,7 +419,7 @@ export function OutilsCatalogClient({ tools }: Props) {
                       background: `color-mix(in oklab, ${domain.hue} 18%, transparent)`,
                       color: domain.hue,
                       "--tile-hue": domain.hue,
-                    }}
+                    } as React.CSSProperties}
                   >
                     <domain.Icon className="size-[18px]" strokeWidth={1.9} />
                   </span>

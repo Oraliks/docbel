@@ -101,7 +101,7 @@ export function IntentSearch() {
       </form>
 
       {error && (
-        <div className="rounded-2xl border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-950 dark:border-red-800 dark:text-red-200">
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-900 dark:bg-red-950 dark:border-red-800 dark:text-red-200">
           {error}
         </div>
       )}
@@ -109,7 +109,7 @@ export function IntentSearch() {
       {response && (
         <div className="glass-surface space-y-3 rounded-3xl p-4">
           {response.aiUsed && response.aiMessage && (
-            <div className="flex items-start gap-2 rounded-2xl bg-[color:var(--glass-surface-2,#f3f0fa)] p-3">
+            <div className="flex items-start gap-2 rounded-2xl bg-[color:var(--glass-surface)] p-3">
               <MessageCircle className="size-4 mt-0.5 flex-shrink-0 text-[color:var(--glass-ink-soft)]" />
               <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
                 <span className="font-medium text-[color:var(--glass-ink)]">

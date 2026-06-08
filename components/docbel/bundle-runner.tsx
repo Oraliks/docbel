@@ -324,7 +324,7 @@ export function BundleRunner({
           )}
 
           {allRequiredDone && requiredVisible.length > 0 && (
-            <Alert className="bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-800">
+            <Alert className="bg-emerald-500/10 border-emerald-500/20 dark:bg-green-950 dark:border-green-800">
               <CheckCircle2 className="w-4 h-4 text-green-600" />
               <AlertDescription className="text-sm text-green-700 dark:text-green-400">
                 Tous les documents obligatoires de ce parcours sont complétés.
@@ -344,10 +344,10 @@ export function BundleRunner({
                     key={item.id}
                     className={`flex items-start gap-3 p-3 border rounded-md transition-colors ${
                       completed
-                        ? "bg-green-50/50 border-green-300 dark:bg-green-950/20"
+                        ? "bg-emerald-500/10 border-emerald-500/20 dark:bg-green-950/20"
                         : isPending
-                          ? "bg-muted/30 border-dashed opacity-70"
-                          : "hover:bg-muted/40"
+                          ? "bg-white/[0.06] border-dashed opacity-70"
+                          : "hover:bg-white/10"
                     }`}
                   >
                     <div className="w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm flex-shrink-0">
@@ -419,7 +419,7 @@ export function BundleRunner({
           </Card>
 
           {hiddenItems.length > 0 && (
-            <Card className="border-dashed bg-muted/20">
+            <Card className="border-dashed bg-white/5">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
                   <EyeOff className="w-4 h-4" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -38,10 +38,15 @@ import {
 import { Separator } from "@/components/ui/separator";
 import {
   calculerAgr,
+  ctEntriesOf,
+  planCtMerge,
   type AgrGlobalInput,
   type CategorieFamiliale,
   type CategorieTravailleur,
+  type CtOccupationRef,
+  type GrilleEntry,
   type OccupationInput,
+  type ParsedWech505,
   type ParsedWech506,
 } from "@/lib/agr";
 import { exportAgrPdf } from "@/lib/agr/export-pdf";
@@ -59,18 +64,25 @@ const BUCKETS: { label: string; field: NumericOccField }[] = [
   { label: "Fermeture", field: "fermetureTotal" },
 ];
 
-/** Métadonnées d'affichage par occupation (issues de la DRS). */
+/** Métadonnées d'affichage + rapprochement par occupation (issues de la DRS). */
 interface OccMeta {
   filename?: string;
   niss?: string | null;
   nom?: string | null;
+  employeurOnss?: string | null;
   periode?: string | null;
+  moisDebut?: string | null;
+  moisFin?: string | null;
+  /** Entrées CT (codes 5.x) déjà comptées — pour dédupliquer un WECH 505. */
+  ctEntries?: GrilleEntry[];
   codesAVerifier?: { code: string; heures: number; libelle: string }[];
 }
 
 interface ParseResult {
   filename: string;
-  parsed?: ParsedWech506;
+  /** "506" = C131B (AGR) ; "505" = C3.2 (chômage temporaire). */
+  kind?: "506" | "505";
+  parsed?: ParsedWech506 | ParsedWech505;
   error?: string;
   detail?: string;
 }
@@ -105,6 +117,21 @@ function parsedToOccupation(p: ParsedWech506): OccupationInput {
     pr: p.buckets.pr,
     fermetureTotal: p.buckets.fermetureTotal,
     joursNI: 0,
+  };
+}
+
+/** Construit les métadonnées d'occupation (identité + CT déjà comptées). */
+function metaFromWech506(filename: string, p: ParsedWech506): OccMeta {
+  return {
+    filename,
+    niss: p.niss,
+    nom: p.nomTravailleur,
+    employeurOnss: p.employeurOnss,
+    periode: p.moisReference ? `${p.moisReference.debut} – ${p.moisReference.fin}` : null,
+    moisDebut: p.moisReference?.debut ?? null,
+    moisFin: p.moisReference?.fin ?? null,
+    ctEntries: ctEntriesOf(p.grille),
+    codesAVerifier: p.codesAVerifier,
   };
 }
 
@@ -145,6 +172,16 @@ export function CalculAgrClient() {
   const [showDetails, setShowDetails] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  // Miroirs de l'état courant : la fusion d'un WECH 505 a besoin de lire
+  // occupations ET metas ensemble après l'await de l'upload.
+  const occRef = useRef(occupations);
+  const metaRef = useRef(metas);
+  useEffect(() => {
+    occRef.current = occupations;
+  }, [occupations]);
+  useEffect(() => {
+    metaRef.current = metas;
+  }, [metas]);
 
   const result = useMemo(
     () => calculerAgr({ ...global, occupations }),
@@ -198,7 +235,7 @@ export function CalculAgrClient() {
     async (fileList: FileList | File[]) => {
       const files = Array.from(fileList).filter((f) => f.type === "application/pdf" || /\.pdf$/i.test(f.name));
       if (files.length === 0) {
-        setUploadError("Veuillez déposer des fichiers PDF (WECH 506).");
+        setUploadError("Veuillez déposer des fichiers PDF (WECH 506 / 505).");
         return;
       }
       setUploadError(null);
@@ -216,40 +253,35 @@ export function CalculAgrClient() {
         }
         const { results } = (await res.json()) as { results: ParseResult[] };
 
+        // On sépare les WECH 506 (deviennent des occupations) des WECH 505
+        // (chômage temporaire : fusionnés dans l'occupation correspondante).
         const newOccs: OccupationInput[] = [];
         const newMetas: OccMeta[] = [];
-        const errors: string[] = [];
+        const drs505: { filename: string; parsed: ParsedWech505 }[] = [];
+        const parseErrors: string[] = [];
+        const warnings: string[] = [];
         for (const r of results) {
           if (r.error || !r.parsed) {
-            errors.push(`${r.filename} : ${r.error ?? "échec"}${r.detail ? ` — ${r.detail}` : ""}`);
+            parseErrors.push(`${r.filename} : ${r.error ?? "échec"}${r.detail ? ` — ${r.detail}` : ""}`);
             continue;
           }
-          newOccs.push(parsedToOccupation(r.parsed));
-          newMetas.push({
-            filename: r.filename,
-            niss: r.parsed.niss,
-            nom: r.parsed.nomTravailleur,
-            periode: r.parsed.moisReference
-              ? `${r.parsed.moisReference.debut} – ${r.parsed.moisReference.fin}`
-              : null,
-            codesAVerifier: r.parsed.codesAVerifier,
-          });
-        }
-        if (errors.length) {
-          setUploadError(errors.join(" · "));
-          errors.forEach((e) => toast.error(e));
+          if (r.kind === "505") {
+            drs505.push({ filename: r.filename, parsed: r.parsed as ParsedWech505 });
+            continue;
+          }
+          const p = r.parsed as ParsedWech506;
+          newOccs.push(parsedToOccupation(p));
+          newMetas.push(metaFromWech506(r.filename, p));
         }
 
+        // Base = occupations existantes + nouveaux 506 (remplace la 1ʳᵉ si vierge).
+        let occs = occRef.current;
+        let mets = metaRef.current;
         if (newOccs.length) {
-          // Remplace si la 1ʳᵉ occupation est encore vierge, sinon ajoute.
-          setOccupations((prev) => {
-            const base = prev.length === 1 && prev[0].q === 0 ? [] : prev;
-            return [...base, ...newOccs].slice(0, MAX_OCC);
-          });
-          setMetas((prev) => {
-            const base = prev.length === 1 && !prev[0].filename ? [] : prev;
-            return [...base, ...newMetas].slice(0, MAX_OCC);
-          });
+          const baseOcc = occs.length === 1 && occs[0].q === 0 ? [] : occs;
+          const baseMeta = mets.length === 1 && !mets[0].filename ? [] : mets;
+          occs = [...baseOcc, ...newOccs].slice(0, MAX_OCC);
+          mets = [...baseMeta, ...newMetas].slice(0, MAX_OCC);
           newMetas.forEach((m) => {
             toast.success(`DRS chargée : ${m.nom ?? m.filename ?? "occupation"}`, {
               description: m.periode ?? undefined,
@@ -260,6 +292,49 @@ export function CalculAgrClient() {
               );
             }
           });
+        }
+
+        // Fusion des WECH 505 : rapprochement par identité + mois, déduplication.
+        for (const { filename, parsed } of drs505) {
+          const refs: CtOccupationRef[] = mets.map((m) => ({
+            niss: m.niss ?? null,
+            nom: m.nom ?? null,
+            employeurOnss: m.employeurOnss ?? null,
+            moisDebut: m.moisDebut ?? null,
+            moisFin: m.moisFin ?? null,
+            ctEntries: m.ctEntries ?? [],
+          }));
+          const plan = planCtMerge(parsed, refs);
+          if (plan.status === "merged" && plan.matchedIndex !== null) {
+            const idx = plan.matchedIndex;
+            occs = occs.map((o, i) =>
+              i === idx
+                ? {
+                    ...o,
+                    pw1: Math.round((o.pw1 + plan.addPw) * 100) / 100,
+                    fermetureTotal: Math.round((o.fermetureTotal + plan.addFermeture) * 100) / 100,
+                  }
+                : o,
+            );
+            mets = mets.map((m, i) =>
+              i === idx ? { ...m, ctEntries: [...(m.ctEntries ?? []), ...plan.newEntries] } : m,
+            );
+            toast.success(`${filename} : ${plan.message}`);
+          } else if (plan.status === "duplicate") {
+            toast.info(`${filename} : ${plan.message}`);
+          } else {
+            toast.warning(`${filename} : ${plan.message}`);
+            warnings.push(`${filename} : ${plan.message}`);
+          }
+        }
+
+        parseErrors.forEach((e) => toast.error(e));
+        const banner = [...parseErrors, ...warnings];
+        if (banner.length) setUploadError(banner.join(" · "));
+
+        if (newOccs.length || drs505.length) {
+          setOccupations(occs);
+          setMetas(mets);
           // Défile en douceur vers le résultat.
           requestAnimationFrame(() =>
             resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
@@ -341,9 +416,11 @@ export function CalculAgrClient() {
               <Upload className="size-8 text-violet-600" />
             )}
             <p className="text-sm font-medium">
-              {uploading ? "Extraction en cours…" : "Glissez les WECH 506 ici, ou cliquez pour parcourir"}
+              {uploading ? "Extraction en cours…" : "Glissez les WECH 506 (AGR) et 505 (chômage temp.) ici, ou cliquez"}
             </p>
-            <p className="text-xs text-muted-foreground">PDF · 1 fichier par occupation · max {MAX_OCC}</p>
+            <p className="text-xs text-muted-foreground">
+              PDF · 506 = 1 occupation · 505 = chômage temporaire rattaché à son occupation · max {MAX_OCC}
+            </p>
             <input
               ref={fileInput}
               type="file"

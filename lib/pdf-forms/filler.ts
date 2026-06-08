@@ -34,6 +34,18 @@ function isTruthy(v: unknown): boolean {
   return !!v && v !== "false" && v !== "0" && v !== 0;
 }
 
+/// Récupère un widget checkbox par son nom. Renvoie null si introuvable ou
+/// si le widget existe mais n'est pas une PDFCheckBox (le caller décide quoi
+/// faire — souvent ignorer silencieusement).
+function safeCheckbox(form: ReturnType<PDFDocument["getForm"]>, name: string): PDFCheckBox | null {
+  try {
+    const f = form.getField(name);
+    return f instanceof PDFCheckBox ? f : null;
+  } catch {
+    return null;
+  }
+}
+
 export interface FillResult {
   bytes: Buffer;
   /// true si la police Unicode a été embarquée.
@@ -83,6 +95,33 @@ export async function fillForm(
     if (raw === null || raw === undefined) continue;
     // Champ composite : deux sous-champs front → une seule chaîne dans le PDF.
     const value = field.type === "fullname" ? assembleFullName(raw, field.nameOrder) : raw;
+
+    // Paire de checkboxes oui/non du genre "oui_8|non_8" — fréquent sur les
+    // formulaires ONEM où chaque question est rendue par 2 cases distinctes
+    // plutôt qu'un PDFRadioGroup. Le `radio` côté schéma capture le choix
+    // mutuellement exclusif et on coche la bonne au remplissage.
+    if (
+      field.pdfFieldName.includes("|") &&
+      field.type === "radio" &&
+      field.options &&
+      field.options.length === 2
+    ) {
+      const [posName, negName] = field.pdfFieldName.split("|").map((s) => s.trim());
+      const posValue = field.options[0].value;
+      const negValue = field.options[1].value;
+      const strValue = String(value);
+      const posBox = safeCheckbox(form, posName);
+      const negBox = safeCheckbox(form, negName);
+      if (posBox && negBox) {
+        try {
+          if (strValue === posValue) { posBox.check(); negBox.uncheck(); }
+          else if (strValue === negValue) { posBox.uncheck(); negBox.check(); }
+        } catch {
+          /* readonly / incompatible */
+        }
+      }
+      continue;
+    }
 
     let pdfField;
     try {

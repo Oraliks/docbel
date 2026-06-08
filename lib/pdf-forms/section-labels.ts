@@ -6,6 +6,8 @@ const LABELS: Record<string, Record<Locale, string>> = {
   adresse: { fr: "Adresse", nl: "Adres", de: "Adresse" },
   employeur: { fr: "Employeur", nl: "Werkgever", de: "Arbeitgeber" },
   banque: { fr: "Coordonnées bancaires", nl: "Bankgegevens", de: "Bankverbindung" },
+  "mes-activites": { fr: "Mes activités", nl: "Mijn activiteiten", de: "Meine Tätigkeiten" },
+  "mes-revenus": { fr: "Mes revenus", nl: "Mijn inkomsten", de: "Meine Einkünfte" },
 };
 
 const DEFAULT: Record<Locale, string> = {

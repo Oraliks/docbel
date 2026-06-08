@@ -19,6 +19,10 @@ export interface EditorForm {
   allowDownload: boolean;
   allowDoccle: boolean;
   allowItsme: boolean;
+  /// Disponibilité publique (publié mais "en pause" si false).
+  active: boolean;
+  /// Message custom affiché aux utilisateurs quand active=false. null = message générique.
+  disabledMessage: string | null;
   fields: PdfFormField[];
   pageCount: number;
   technicalSchema?: AcroFieldRaw[];
@@ -95,6 +99,7 @@ export function useFormData(formId: string): UseFormData {
           issuer: form.issuer, organismeId: form.organismeId,
           locales: form.locales, defaultLocale: form.defaultLocale,
           allowDownload: form.allowDownload, allowDoccle: form.allowDoccle, allowItsme: form.allowItsme,
+          active: form.active, disabledMessage: form.disabledMessage,
           fields: form.fields,
         }),
       });

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ChevronLeftIcon, ChevronRightIcon, FileTextIcon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, FileTextIcon, FilePlus2Icon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { pdfToHtml, type PageGeometry, type PdfRect } from "@/lib/pdf-canvas/coords";
@@ -210,6 +211,15 @@ export function PdfSourceInspector() {
                 {data.widgets.length} widget{data.widgets.length > 1 ? "s" : ""} total
                 {data.pageCount > 1 ? ` · ${widgetsOnPage.length} sur cette page` : ""}
               </span>
+              <Button
+                size="sm"
+                variant="default"
+                className="gap-1.5"
+                render={<Link href={`/admin/pdf/new?source=${encodeURIComponent(selected)}`} />}
+              >
+                <FilePlus2Icon className="size-4" />
+                Créer un formulaire
+              </Button>
             </div>
 
             <div className="min-h-0 flex-1 overflow-auto p-4">

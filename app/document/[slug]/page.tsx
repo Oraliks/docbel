@@ -5,6 +5,7 @@ import { toPublicForm } from "@/lib/pdf-forms/public-serializer";
 import { isDoccleConfigured } from "@/lib/pdf-forms/integrations/doccle";
 import { isItsmeConfigured } from "@/lib/pdf-forms/integrations/itsme";
 import { DocumentPageLayout } from "@/components/pdf-forms/document-page-layout";
+import { DisabledFormView } from "./disabled-form-view";
 import { getDossier } from "@/lib/dossiers/registry";
 import type { PdfFormField } from "@/lib/pdf-forms/types";
 import {
@@ -16,14 +17,28 @@ import {
 
 export const dynamic = "force-dynamic";
 
-async function loadForm(slug: string) {
+type LoadFormResult =
+  | { kind: "missing" }
+  | { kind: "disabled"; title: string; disabledMessage: string | null }
+  | {
+      kind: "ok";
+      form: ReturnType<typeof toPublicForm> & { allowDoccle: boolean; allowItsme: boolean };
+    };
+
+async function loadForm(slug: string): Promise<LoadFormResult> {
   const form = await prisma.pdfForm.findUnique({ where: { slug } });
-  if (!form || form.status !== "published") return null;
+  if (!form || form.status !== "published") return { kind: "missing" };
+  if (form.active === false) {
+    return { kind: "disabled", title: form.title, disabledMessage: form.disabledMessage };
+  }
   const pub = toPublicForm(form);
   return {
-    ...pub,
-    allowDoccle: pub.allowDoccle && isDoccleConfigured(),
-    allowItsme: pub.allowItsme && isItsmeConfigured(),
+    kind: "ok",
+    form: {
+      ...pub,
+      allowDoccle: pub.allowDoccle && isDoccleConfigured(),
+      allowItsme: pub.allowItsme && isItsmeConfigured(),
+    },
   };
 }
 
@@ -70,9 +85,10 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const form = await loadForm(slug);
-  if (!form) return { title: "Formulaire indisponible" };
-  return { title: `${form.title} — DocBel`, description: form.description ?? undefined };
+  const res = await loadForm(slug);
+  if (res.kind === "missing") return { title: "Formulaire indisponible" };
+  if (res.kind === "disabled") return { title: `${res.title} — indisponible` };
+  return { title: `${res.form.title} — DocBel`, description: res.form.description ?? undefined };
 }
 
 export default async function PdfFormPage({
@@ -84,8 +100,16 @@ export default async function PdfFormPage({
 }) {
   const { slug } = await params;
   const { bundleRun, bundleSlug } = await searchParams;
-  const form = await loadForm(slug);
-  if (!form) notFound();
+  const res = await loadForm(slug);
+  if (res.kind === "missing") notFound();
+  if (res.kind === "disabled") {
+    return (
+      <div className="mx-auto w-full max-w-3xl p-4 lg:p-6">
+        <DisabledFormView formTitle={res.title} customMessage={res.disabledMessage} />
+      </div>
+    );
+  }
+  const form = res.form;
 
   // Contexte bundle : si on a un `bundleRun`, on récupère les valeurs déjà
   // saisies par l'utilisateur dans les autres PDFs du dossier (NISS, adresse…)

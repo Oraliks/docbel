@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2Icon, CheckIcon, XIcon, ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
+import { Loader2Icon, CheckIcon, XIcon, ArrowLeftIcon, ArrowRightIcon, FileTextIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,8 @@ interface CreatedRecap {
 
 export function NewFormWizard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const presetSource = searchParams.get("source");
   const [step, setStep] = useState(0);
   const [created, setCreated] = useState<CreatedRecap | null>(null);
 
@@ -43,6 +45,7 @@ export function NewFormWizard() {
 
       {step === 0 ? (
         <SourceStep
+          presetSource={presetSource}
           created={created}
           onCreated={(c) => setCreated(c)}
           onNext={() => setStep(1)}
@@ -61,14 +64,18 @@ export function NewFormWizard() {
 }
 
 function SourceStep({
+  presetSource,
   created, onCreated, onNext,
 }: {
+  /// Si fourni (via ?source=…), le wizard utilise une source déjà déposée
+  /// dans private/pdfs/ au lieu d'un upload manuel.
+  presetSource: string | null;
   created: CreatedRecap | null;
   onCreated: (c: CreatedRecap) => void;
   onNext: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(presetSource ? presetSource.replace(/\.pdf$/i, "") : "");
   const [issuer, setIssuer] = useState("");
   const [locales, setLocales] = useState<Locale[]>(["fr"]);
   const [submitting, setSubmitting] = useState(false);
@@ -79,11 +86,18 @@ function SourceStep({
   }
 
   async function submit() {
-    if (!file) { toast.error("Sélectionnez un PDF."); return; }
+    if (!presetSource && !file) {
+      toast.error("Sélectionnez un PDF.");
+      return;
+    }
     setSubmitting(true);
     try {
       const fd = new FormData();
-      fd.set("file", file);
+      if (presetSource) {
+        fd.set("sourceFile", presetSource);
+      } else if (file) {
+        fd.set("file", file);
+      }
       if (title.trim()) fd.set("title", title.trim());
       if (issuer.trim()) fd.set("issuer", issuer.trim());
       fd.set("locales", locales.join(","));
@@ -108,13 +122,29 @@ function SourceStep({
     <div className="flex max-w-xl flex-col gap-4">
       <Card>
         <CardContent className="flex flex-col gap-4 py-5">
-          <p className="text-sm text-muted-foreground">
-            Importez un PDF officiel <strong>à champs (AcroForm)</strong> ou plat. Les champs sont extraits et pré-enrichis.
-          </p>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="pdf-file">Fichier PDF</Label>
-            <Input id="pdf-file" type="file" accept="application/pdf" disabled={!!created} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-          </div>
+          {presetSource ? (
+            <div className="flex items-start gap-3 rounded-md border bg-muted/30 p-3 text-sm">
+              <FileTextIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+              <div className="flex flex-col gap-0.5">
+                <p>
+                  Source pré-sélectionnée : <code className="rounded bg-background px-1.5 py-0.5 font-mono text-xs">{presetSource}</code>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Le PDF est déjà déposé dans <code>private/pdfs/</code>. Aucun upload nécessaire.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Importez un PDF officiel <strong>à champs (AcroForm)</strong> ou plat. Les champs sont extraits et pré-enrichis.
+            </p>
+          )}
+          {!presetSource && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="pdf-file">Fichier PDF</Label>
+              <Input id="pdf-file" type="file" accept="application/pdf" disabled={!!created} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="pdf-title">Titre (optionnel)</Label>
             <Input id="pdf-title" value={title} placeholder="Déduit du nom du fichier" disabled={!!created} onChange={(e) => setTitle(e.target.value)} />

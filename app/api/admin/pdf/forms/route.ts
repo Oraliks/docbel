@@ -1,10 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
+import { readFile } from "node:fs/promises";
+import { basename, join } from "node:path";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
-import { ingestPdf, readPdfUpload, slugify } from "@/lib/pdf-forms/ingest";
+import { ingestPdf, MAX_PDF_BYTES, readPdfUpload, slugify } from "@/lib/pdf-forms/ingest";
 import { saveSourcePdf } from "@/lib/pdf-forms/storage";
 import { isLocale, Locale } from "@/lib/pdf-forms/types";
+
+const PDF_SOURCES_DIR = join(process.cwd(), "private", "pdfs");
+
+/// Lit un PDF depuis le répertoire `private/pdfs/` (les sources AcroForm
+/// inspectables via /admin/pdf-sources). Sécurisé contre la traversal :
+/// `basename()` garantit qu'on reste dans le dossier, et on rejette tout ce
+/// qui n'est pas un .pdf.
+async function readPdfFromSources(
+  rawName: string
+): Promise<{ buffer: Buffer; name: string } | { error: string }> {
+  const name = basename(rawName);
+  if (!name || name.startsWith(".") || !name.toLowerCase().endsWith(".pdf")) {
+    return { error: "Nom de source invalide" };
+  }
+  try {
+    const buffer = await readFile(join(PDF_SOURCES_DIR, name));
+    if (buffer.byteLength > MAX_PDF_BYTES) {
+      return { error: "PDF trop volumineux (25 Mo max)" };
+    }
+    if (buffer.subarray(0, 5).toString("latin1") !== "%PDF-") {
+      return { error: "Fichier PDF invalide" };
+    }
+    return { buffer, name };
+  } catch {
+    return { error: `Source introuvable: ${name}` };
+  }
+}
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -46,7 +75,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "multipart/form-data attendu" }, { status: 400, headers: json });
   }
 
-  const upload = await readPdfUpload(form.get("file"));
+  // Deux modes :
+  //   1) `file` (multipart) → upload classique
+  //   2) `sourceFile` (string) → réutilisation d'un PDF déjà déposé dans
+  //      private/pdfs/ via /admin/pdf-sources (pas de double upload).
+  const sourceFileField = form.get("sourceFile");
+  const upload =
+    typeof sourceFileField === "string" && sourceFileField.length > 0
+      ? await readPdfFromSources(sourceFileField)
+      : await readPdfUpload(form.get("file"));
   if ("error" in upload) {
     return NextResponse.json({ error: upload.error }, { status: 400, headers: json });
   }

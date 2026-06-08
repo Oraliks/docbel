@@ -26,6 +26,11 @@ function resolveProSegment(
   pathname: string,
   role: string | null,
 ): ProSegment | null {
+  // Landings marketing publiques `/p/*` (ex: /p/partenaire, /p/employeur) :
+  // toujours servir le LandingHeader, même si l'utilisateur est connecté
+  // partner/employer. Ces pages vendent l'espace pro à des prospects et
+  // proposent une bannière informative "déjà connecté → accéder à mon espace".
+  if (pathname.startsWith("/p/")) return null;
   const under = (base: string) =>
     pathname === base || pathname.startsWith(`${base}/`);
   if (

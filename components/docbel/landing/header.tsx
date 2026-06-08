@@ -29,8 +29,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-  CheckIcon,
-  ChevronDownIcon,
+  Building2Icon,
+  HandshakeIcon,
   LifeBuoyIcon,
   type LucideIcon,
   LogOutIcon,
@@ -57,6 +57,18 @@ const NAV_ITEMS: ReadonlyArray<{
   { id: "actualites", label: "Actualités", href: "/actualites" },
   { id: "outils", label: "Outils", href: "/outils" },
   { id: "aide", label: "Aidez-moi", href: "/contact", icon: LifeBuoyIcon },
+] as const;
+
+// Liens directs vers les landings marketing des segments employeur/partenaire.
+// Le citoyen est l'espace par défaut (`/`) et n'a pas de landing dédiée.
+const AUDIENCE_NAV_ITEMS: ReadonlyArray<{
+  id: string;
+  label: string;
+  href: string;
+  icon: LucideIcon;
+}> = [
+  { id: "partenaires", label: "Partenaires", href: "/p/partenaire", icon: HandshakeIcon },
+  { id: "employeurs", label: "Employeurs", href: "/p/employeur", icon: Building2Icon },
 ] as const;
 
 // Pick the nav item whose href is the longest prefix of the current pathname.
@@ -172,15 +184,14 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
           </nav>
           <div className="border-t border-[color:var(--glass-ink-line)] p-3">
             <p className="px-3 pb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-              Espaces
+              Découvrir
             </p>
-            {AUDIENCES.map((aud) => {
-              const AudIcon = aud.Icon;
-              const isActive = aud.id === persona;
+            {AUDIENCE_NAV_ITEMS.map((item) => {
+              const ItemIcon = item.icon;
               return (
                 <Link
-                  key={aud.id}
-                  href={aud.path}
+                  key={item.id}
+                  href={item.href}
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-white/40 dark:hover:bg-white/8"
                 >
@@ -188,22 +199,14 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
                     className="flex size-8 items-center justify-center rounded-lg text-[#2a0f4d] dark:text-white"
                     style={{
                       backgroundImage:
-                        aud.id === "citoyen"
-                          ? "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))"
-                          : aud.id === "employeur"
-                            ? "linear-gradient(135deg, var(--glass-accent-c), var(--glass-accent-d))"
-                            : "linear-gradient(135deg, var(--glass-accent-deep), var(--glass-accent-a))",
+                        item.id === "employeurs"
+                          ? "linear-gradient(135deg, var(--glass-accent-c), var(--glass-accent-d))"
+                          : "linear-gradient(135deg, var(--glass-accent-deep), var(--glass-accent-a))",
                     }}
                   >
-                    <AudIcon className="size-4" strokeWidth={2.2} />
+                    <ItemIcon className="size-4" strokeWidth={2.2} />
                   </span>
-                  <span className="flex-1 text-[13px] font-semibold">{aud.label}</span>
-                  {isActive ? (
-                    <CheckIcon
-                      className="size-4 text-[color:var(--glass-accent-deep)]"
-                      aria-hidden
-                    />
-                  ) : null}
+                  <span className="flex-1 text-[13px] font-semibold">{item.label}</span>
                 </Link>
               );
             })}
@@ -224,68 +227,21 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
           <Icon className="size-5" />
         </Link>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger className="group flex items-center gap-2 rounded-2xl px-2 py-1 text-left transition hover:bg-white/40 dark:hover:bg-white/5">
-            <span className="hidden flex-col leading-tight sm:flex">
-              <span className="text-[18px] font-extrabold tracking-tight">Docbel</span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-soft)]">
-                <span
-                  className="mr-1.5 inline-block size-1.5 rounded-full align-middle"
-                  style={{ background: "var(--glass-accent-a)" }}
-                />
-                {current.label}
-              </span>
+        <Link
+          href="/"
+          className="flex items-center gap-2 rounded-2xl px-2 py-1 text-left transition hover:bg-white/40 dark:hover:bg-white/5"
+        >
+          <span className="hidden flex-col leading-tight sm:flex">
+            <span className="text-[18px] font-extrabold tracking-tight">Docbel</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-soft)]">
+              <span
+                className="mr-1.5 inline-block size-1.5 rounded-full align-middle"
+                style={{ background: "var(--glass-accent-a)" }}
+              />
+              {current.label}
             </span>
-            <ChevronDownIcon className="size-3.5 text-[color:var(--glass-ink-faint)] transition group-hover:text-[color:var(--glass-ink)]" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="glass-popup glass-surface-strong min-w-[290px] border-0 p-2 text-[color:var(--glass-ink)]"
-          >
-          <DropdownMenuGroup>
-            <DropdownMenuLabel className="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-              Changer d&apos;espace
-            </DropdownMenuLabel>
-          </DropdownMenuGroup>
-          {AUDIENCES.map((aud) => {
-            const AudIcon = aud.Icon;
-            const isActive = aud.id === persona;
-            return (
-              <DropdownMenuItem
-                key={aud.id}
-                render={<Link href={aud.path} />}
-                className={ITEM_BASE}
-              >
-                <span
-                  className="flex size-9 items-center justify-center rounded-xl text-[#2a0f4d] dark:text-white"
-                  style={{
-                    backgroundImage:
-                      aud.id === "citoyen"
-                        ? "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-deep))"
-                        : aud.id === "employeur"
-                          ? "linear-gradient(135deg, var(--glass-accent-c), var(--glass-accent-d))"
-                          : "linear-gradient(135deg, var(--glass-accent-deep), var(--glass-accent-a))",
-                  }}
-                >
-                  <AudIcon className="size-4" strokeWidth={2.2} />
-                </span>
-                <span className="flex flex-1 flex-col leading-tight">
-                  <span className="text-[13px] font-bold">{aud.label}</span>
-                  <span className="text-[11px] text-[color:var(--glass-ink-soft)]">
-                    {aud.description}
-                  </span>
-                </span>
-                {isActive ? (
-                  <CheckIcon
-                    className="size-4 text-[color:var(--glass-accent-deep)]"
-                    aria-hidden
-                  />
-                ) : null}
-              </DropdownMenuItem>
-            );
-          })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </span>
+        </Link>
       </div>
 
       <nav className="ml-2 hidden items-center gap-1 lg:flex">
@@ -308,6 +264,21 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
           return (
             <Link key={item.id} href={item.href} className={className}>
               {ItemIcon ? <ItemIcon className="size-4" /> : null}
+              {item.label}
+            </Link>
+          );
+        })}
+        {AUDIENCE_NAV_ITEMS.map((item) => {
+          const ItemIcon = item.icon;
+          const active = pathname.startsWith(item.href);
+          const className = `inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-[13.5px] font-semibold transition-colors ${
+            active
+              ? "bg-white/60 text-[color:var(--glass-ink)] shadow-[inset_0_0_0_1px_var(--glass-border)] dark:bg-white/10"
+              : "text-[color:var(--glass-ink-soft)] hover:bg-white/40 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/8"
+          }`;
+          return (
+            <Link key={item.id} href={item.href} className={className}>
+              <ItemIcon className="size-4" />
               {item.label}
             </Link>
           );

@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { SpaceLanding } from "@/components/docbel/space-landing";
-import { PartnerDashboard } from "@/components/docbel/partner-dashboard";
-import { filterByAudience, getPublicCatalog } from "@/lib/outils-catalog";
+import { UnderConstructionPanel } from "@/components/docbel/under-construction-panel";
 
 export const metadata: Metadata = {
   title: "Espace Partenaire | DocBel",
-  description:
-    "Espace partenaire DocBel : CPAS, syndicats, mutuelles. Suivi de dossiers et tableau de bord.",
+  description: "Espace partenaire DocBel — en construction.",
 };
 
 export const dynamic = "force-dynamic";
@@ -19,57 +16,12 @@ export default async function PartenaireRoute() {
     .getSession({ headers: await headers() })
     .catch(() => null);
 
-  if (session?.user) {
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, role: true, partnerOrganization: true },
-    });
-
-    if (
-      user?.role === "partner" &&
-      user.partnerOrganization
-    ) {
-      const [colleagues, domains] = await Promise.all([
-        prisma.user.findMany({
-          where: {
-            role: "partner",
-            partnerOrganization: user.partnerOrganization,
-          },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            status: true,
-            emailVerified: true,
-            lastLoginAt: true,
-            createdAt: true,
-          },
-          orderBy: { lastLoginAt: { sort: "desc", nulls: "last" } },
-        }),
-        prisma.partnerDomain.findMany({
-          where: { organizationName: user.partnerOrganization },
-          select: { domain: true, isActive: true },
-          orderBy: { domain: "asc" },
-        }),
-      ]);
-
-      return (
-        <PartnerDashboard
-          organizationName={user.partnerOrganization}
-          currentUserId={user.id}
-          colleagues={colleagues}
-          domains={domains.flatMap((d) =>
-            d.domain ? [{ domain: d.domain, isActive: d.isActive }] : [],
-          )}
-        />
-      );
-    }
+  // Anonyme ou rôle non-partenaire → vers la landing marketing publique.
+  if (!session?.user || session.user.role !== "partner") {
+    redirect("/p/partenaire");
   }
 
-  // Catalogue serveur filtré par audience. Un partenaire voit tous les
-  // outils (citoyen, employeur, partenaire) car niveau hiérarchique le plus
-  // haut. Cf. lib/audience.ts pour la règle.
-  const all = await getPublicCatalog();
-  const tools = filterByAudience(all, "partenaire");
-  return <SpaceLanding audience="partenaire" tools={tools} />;
+  // Partenaire connecté → page "en construction". Le vrai tableau de bord
+  // sera refait dans une session ultérieure, hors front website.
+  return <UnderConstructionPanel space="partenaire" />;
 }

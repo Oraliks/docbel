@@ -13,6 +13,12 @@ export interface Audience {
   description: string;
   Icon: LucideIcon;
   path: string;
+  /**
+   * Chemin vers la landing marketing dédiée à ce segment (hors espace privé).
+   * `undefined` pour le citoyen, qui n'a pas de landing marketing distincte
+   * puisqu'il s'agit de l'espace par défaut sur `/`.
+   */
+  marketingPath?: string;
   dotClass: string;
   iconBgClass: string;
   logoMarkClass: string;
@@ -36,6 +42,7 @@ export const AUDIENCES: readonly Audience[] = [
     description: "Gestion RH et attestations",
     Icon: Building2Icon,
     path: "/employeur",
+    marketingPath: "/p/employeur",
     dotClass: "bg-violet-800",
     iconBgClass:
       "bg-violet-200 text-violet-800 dark:bg-violet-500/20 dark:text-violet-200",
@@ -47,6 +54,7 @@ export const AUDIENCES: readonly Audience[] = [
     description: "CPAS, syndicats, mutuelles",
     Icon: HandshakeIcon,
     path: "/partenaire",
+    marketingPath: "/p/partenaire",
     dotClass: "bg-violet-600",
     iconBgClass:
       "bg-gradient-to-br from-violet-200 to-violet-500 text-white dark:from-violet-500/30 dark:to-violet-800/40 dark:text-violet-100",

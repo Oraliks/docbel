@@ -116,31 +116,35 @@
   --nav-bg: #161920;
   --nav-border: #252830;
 
-  /* Landing (glass) tokens — DARK mode overrides. Used by the home
-     landing and any future page that opts into the .glass-root wrapper. */
-  --glass-bg-a: #1c1a28;
-  --glass-bg-b: #23202e;
-  --glass-bg-c: #15131e;
-  --glass-bg-d: #26222f;
-  --glass-ink: #ece6f2;
-  --glass-ink-soft: rgba(236, 230, 242, 0.74);
-  --glass-ink-faint: rgba(236, 230, 242, 0.52);
-  --glass-ink-line: rgba(255, 255, 255, 0.07);
-  --glass-surface: rgba(255, 255, 255, 0.04);
-  --glass-surface-strong: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 36px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --glass-accent-a: #9a86c8;
-  --glass-accent-b: #b89fd4;
-  --glass-accent-c: #c09ebe;
-  --glass-accent-d: #c4a89e;
-  --glass-accent-deep: #8B5CF6;
-  --glass-pop-bg: rgba(192, 158, 190, 0.14);
-  --glass-pop-fg: #c8aac4;
-  --glass-status-from: #2a2438;
-  --glass-status-to: #1a1424;
-  --glass-noise-opacity: 0.12;
+  /* Landing (glass) tokens — DARK premium « néon glassmorphism » (cf.
+     AGENTS.md › Design dark). Fond noir-violet profond, accents vifs
+     (violet/rose/corail), surfaces glassmorphism + ombre profonde + glow.
+     Fidèle à la planche DARKMODE fournie. */
+  --glass-bg-a: #0d0a22;
+  --glass-bg-b: #14102b;
+  --glass-bg-c: #070617;
+  --glass-bg-d: #120b2e;
+  --glass-ink: #f7f2ff;
+  --glass-ink-soft: rgba(247, 242, 255, 0.72);
+  --glass-ink-faint: rgba(247, 242, 255, 0.5);
+  --glass-ink-line: rgba(170, 140, 255, 0.12);
+  /* Glassmorphism : léger voile violet translucide sur le fond sombre. */
+  --glass-surface: rgba(140, 110, 245, 0.07);
+  --glass-surface-strong: rgba(150, 120, 250, 0.13);
+  --glass-border: rgba(170, 132, 255, 0.18);
+  --glass-shadow: 0 18px 50px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(170, 132, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --glass-accent-a: #8b5cf6;
+  --glass-accent-b: #c084fc;
+  --glass-accent-c: #ff5fa2;
+  --glass-accent-d: #ff7a7a;
+  --glass-accent-deep: #a78bfa;
+  --glass-pop-bg: rgba(255, 95, 162, 0.16);
+  --glass-pop-fg: #ff8fbe;
+  --glass-status-from: #7c3aed;
+  --glass-status-to: #ff5fa2;
+  --glass-noise-opacity: 0.05;
 }
 
 /* ============================================================
@@ -173,6 +177,25 @@
     radial-gradient(ellipse 80% 60% at 100% 100%, var(--glass-bg-c) 0%, transparent 60%),
     radial-gradient(ellipse 90% 70% at 0% 100%, var(--glass-bg-d) 0%, transparent 60%),
     linear-gradient(135deg, var(--glass-bg-a) 0%, var(--glass-bg-b) 50%, var(--glass-bg-d) 100%);
+}
+
+/* Dark : fond noir-violet profond + halos violet/rose ambiants (premium néon).
+   Override complet du dégradé clair (on ne réutilise pas les blobs pastel). */
+.dark .glass-root::before {
+  background:
+    radial-gradient(ellipse 65% 50% at 12% -5%, rgba(124, 58, 237, 0.28) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 45% at 100% 8%, rgba(255, 95, 162, 0.14) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 55% at 88% 105%, rgba(139, 92, 246, 0.2) 0%, transparent 55%),
+    radial-gradient(circle at 50% 130%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+    linear-gradient(165deg, #0b0820 0%, #070617 55%, #0d0a22 100%);
+}
+
+/* Dark : mots accentués des titres en dégradé violet→rose (cf. hero maquette). */
+.dark .glass-display em {
+  background: linear-gradient(100deg, #a78bfa 0%, #c084fc 45%, #ff5fa2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .glass-root::after {
@@ -281,10 +304,72 @@
   animation: soft-sheen 7s ease-in-out infinite;
 }
 
+/* Pastille d'icône : glow teinté (var --tile-hue) ; doux en clair, néon en dark. */
+.glass-icon-tile {
+  transition:
+    box-shadow 200ms ease,
+    transform 200ms ease;
+  box-shadow: 0 4px 14px
+    color-mix(in oklab, var(--tile-hue, var(--glass-accent-deep)) 20%, transparent);
+}
+.dark .glass-icon-tile {
+  border: 1px solid
+    color-mix(in oklab, var(--tile-hue, var(--glass-accent-deep)) 35%, transparent);
+  box-shadow:
+    0 0 16px
+      color-mix(in oklab, var(--tile-hue, var(--glass-accent-deep)) 50%, transparent),
+    0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+/* CTA principal : encre en clair ; dégradé violet + glow néon en dark (charte). */
+.glass-cta {
+  background: var(--glass-ink);
+  color: var(--glass-bg-a);
+  transition:
+    box-shadow 220ms ease,
+    opacity 200ms ease;
+}
+.glass-cta:hover {
+  opacity: 0.92;
+}
+.dark .glass-cta {
+  background: linear-gradient(
+    135deg,
+    var(--glass-accent-deep) 0%,
+    var(--glass-accent-c) 100%
+  );
+  color: #fff;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    0 0 22px color-mix(in oklab, var(--glass-accent-deep) 50%, transparent);
+}
+.dark .glass-cta:hover {
+  opacity: 1;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 0 32px color-mix(in oklab, var(--glass-accent-deep) 70%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .glass-icon-tile,
+  .glass-cta {
+    transition: none;
+  }
+}
+
+/* Flottement lent des bulles d'icônes du hero. */
+@keyframes hero-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.hero-float {
+  animation: hero-float 5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .outils-rise,
   .animate-heart-pop,
-  .animate-soft-sheen {
+  .animate-soft-sheen,
+  .hero-float {
     animation: none;
   }
   .search-glow {
@@ -345,9 +430,10 @@
 }
 
 .dark .glass-interactive:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(170, 132, 255, 0.45);
   box-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.55),
+    0 18px 48px rgba(0, 0, 0, 0.6),
+    0 0 28px rgba(139, 92, 246, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 

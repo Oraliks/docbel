@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { NewsItem } from "@/lib/docbel-data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRightIcon, CalculatorIcon, TrendingUpIcon } from "lucide-react";
+import { Buildings, CalendarBlank, Phone, Scales } from "@phosphor-icons/react";
 
 interface LandingHeroProps {
   article: NewsItem | null;
@@ -27,6 +28,26 @@ function formatHeadline(title: string) {
   );
 }
 
+// Bulles d'icônes flottantes (glassmorphism + glow néon), façon hero maquette.
+// Icônes Phosphor (duotone) — rendu plus riche que le mono-trait pour le décor.
+const HERO_BUBBLES: {
+  Icon: typeof Scales;
+  hue: string;
+  cls: string;
+  delay: string;
+}[] = [
+  { Icon: Scales, hue: "#FF7A7A", cls: "left-[5%] top-[13%]", delay: "0s" },
+  { Icon: Phone, hue: "#FF5FA2", cls: "right-[7%] top-[7%]", delay: "1s" },
+  { Icon: Buildings, hue: "#8B5CF6", cls: "left-[3%] bottom-[15%]", delay: "2s" },
+  { Icon: CalendarBlank, hue: "#C084FC", cls: "right-[6%] bottom-[10%]", delay: "1.5s" },
+];
+
+/**
+ * Illustration du hero — reproduction « différente » de la maquette dark :
+ * pile de cartes en verre dépoli (document/dossier abstrait) + halo lumineux
+ * + bulles d'icônes flottantes glassmorphism qui glow. Aucun asset 3D requis ;
+ * tout est en CSS + icônes Phosphor → s'adapte clair/sombre via les tokens.
+ */
 function FeaturedArtwork() {
   return (
     <div
@@ -36,52 +57,55 @@ function FeaturedArtwork() {
           "radial-gradient(ellipse at 30% 30%, var(--glass-accent-d) 0%, transparent 60%), linear-gradient(135deg, var(--glass-accent-c) 0%, var(--glass-accent-a) 60%, var(--glass-accent-deep) 100%)",
       }}
     >
+      {/* Halo lumineux central (glow) — respire. */}
       <div
-        className="hero-breath absolute inset-0"
+        className="hero-breath absolute top-1/2 left-1/2 size-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           background:
-            "radial-gradient(circle at 80% 80%, rgba(255,255,255,0.5) 0%, transparent 40%)",
+            "radial-gradient(circle, rgba(255,255,255,0.55) 0%, transparent 70%)",
+          filter: "blur(26px)",
         }}
       />
-      <div
-        className="relative flex h-[78%] w-[65%] -rotate-6 flex-col gap-2.5 rounded-2xl bg-white/95 p-4 shadow-[0_18px_50px_rgba(40,15,80,0.30)] dark:bg-[rgba(40,36,52,0.96)]"
-      >
-        <div className="mb-1 flex items-center justify-between">
-          <span
-            className="text-[9px] font-extrabold tracking-[0.12em]"
-            style={{ color: "var(--glass-accent-a)" }}
-          >
-            FORMULAIRE C1
-          </span>
-          <span
-            className="text-[9px] font-bold"
-            style={{ color: "var(--glass-accent-a)" }}
-          >
-            ● ● ●
-          </span>
+
+      {/* Pile de cartes verre dépoli (document/dossier abstrait, profondeur). */}
+      <div className="relative">
+        <div className="absolute top-4 -left-7 h-[118px] w-[140px] -rotate-12 rounded-2xl border border-white/20 bg-white/10 shadow-[0_20px_50px_rgba(20,10,45,0.4)] backdrop-blur-md" />
+        <div className="relative flex h-[132px] w-[158px] -rotate-3 flex-col gap-2 rounded-2xl border border-white/30 bg-white/15 p-4 shadow-[0_26px_60px_rgba(20,10,45,0.45),inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-xl">
+          <div
+            className="h-2 w-1/2 rounded-full"
+            style={{
+              background:
+                "linear-gradient(90deg, var(--glass-accent-b), var(--glass-accent-c))",
+            }}
+          />
+          <div className="h-1.5 w-full rounded-full bg-white/30" />
+          <div className="h-1.5 w-4/5 rounded-full bg-white/30" />
+          <div className="h-1.5 w-full rounded-full bg-white/30" />
+          <div
+            className="mt-auto size-8 self-end rounded-xl"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-c))",
+              boxShadow:
+                "0 8px 20px color-mix(in oklab, var(--glass-accent-c) 55%, transparent)",
+            }}
+          />
         </div>
-        <div className="h-[5px] w-3/4 rounded-full bg-[rgba(159,124,255,0.20)] dark:bg-white/10" />
-        <div className="h-[5px] rounded-full bg-[rgba(159,124,255,0.20)] dark:bg-white/10" />
-        <div className="h-[5px] w-1/2 rounded-full bg-[rgba(159,124,255,0.20)] dark:bg-white/10" />
-        <div className="h-[5px] rounded-full bg-[rgba(159,124,255,0.20)] dark:bg-white/10" />
-        <div className="h-[5px] w-3/4 rounded-full bg-[rgba(159,124,255,0.20)] dark:bg-white/10" />
-        <div className="h-[5px] w-1/2 rounded-full bg-[rgba(159,124,255,0.20)] dark:bg-white/10" />
-        <div
-          className="absolute right-3.5 bottom-3.5 size-[38px] rounded-xl"
+      </div>
+
+      {/* Bulles d'icônes flottantes (glassmorphism + glow néon). */}
+      {HERO_BUBBLES.map(({ Icon, hue, cls, delay }) => (
+        <span
+          key={cls}
+          className={`hero-float absolute ${cls} flex size-11 items-center justify-center rounded-2xl border border-white/30 bg-white/10 backdrop-blur-md`}
           style={{
-            backgroundImage:
-              "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-c))",
+            animationDelay: delay,
+            boxShadow: `0 8px 22px rgba(20,10,45,0.35), 0 0 18px ${hue}55`,
           }}
-        />
-      </div>
-      <div
-        className="absolute top-[58%] left-[55%] flex w-[120px] flex-col gap-1.5 rotate-[8deg] rounded-xl bg-white/95 p-2.5 shadow-[0_12px_30px_rgba(40,15,80,0.25)] dark:bg-[rgba(40,36,52,0.96)]"
-      >
-        <div className="h-1 rounded-full bg-[rgba(159,124,255,0.20)] dark:bg-white/10" />
-        <div className="h-1 w-1/2 rounded-full bg-[rgba(159,124,255,0.20)] dark:bg-white/10" />
-        <div className="h-1 w-3/4 rounded-full bg-[rgba(159,124,255,0.20)] dark:bg-white/10" />
-        <div className="h-1 rounded-full bg-[rgba(159,124,255,0.20)] dark:bg-white/10" />
-      </div>
+        >
+          <Icon weight="duotone" size={22} color={hue} />
+        </span>
+      ))}
     </div>
   );
 }
@@ -129,11 +153,7 @@ function FeaturedArticle({ article }: { article: NewsItem }) {
             <button
               type="button"
               onClick={() => article.slug && router.push(`/actualites/${article.slug}`)}
-              className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13.5px] font-bold transition hover:opacity-90"
-              style={{
-                background: "var(--glass-ink)",
-                color: "var(--glass-bg-a)",
-              }}
+              className="glass-cta inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13.5px] font-bold"
             >
               Lire l&apos;article
               <ArrowRightIcon className="size-4" />
@@ -216,11 +236,7 @@ function StatusCard() {
       <button
         type="button"
         onClick={() => router.push("/outils")}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[13.5px] font-bold transition hover:opacity-90"
-        style={{
-          background: "var(--glass-ink)",
-          color: "var(--glass-bg-a)",
-        }}
+        className="glass-cta inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[13.5px] font-bold"
       >
         Recalculer mon estimation
         <ArrowRightIcon className="size-4" />

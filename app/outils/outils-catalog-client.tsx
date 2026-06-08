@@ -44,12 +44,13 @@ function ToolIconTile({ tool, size = 40 }: { tool: Tool; size?: number }) {
   const { Icon, hue } = glyphForTool(tool);
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-[1.06] group-hover:-translate-y-px motion-reduce:transform-none"
+      className="glass-icon-tile flex shrink-0 items-center justify-center rounded-xl group-hover:scale-[1.06] group-hover:-translate-y-px motion-reduce:transform-none"
       style={{
         width: size,
         height: size,
         background: `color-mix(in oklab, ${hue} 18%, transparent)`,
         color: hue,
+        "--tile-hue": hue,
       }}
     >
       <Icon style={{ width: size * 0.5, height: size * 0.5 }} strokeWidth={1.9} />
@@ -725,11 +726,7 @@ export function OutilsCatalogClient({ tools }: Props) {
                           <button
                             type="button"
                             onClick={() => openTool(tool)}
-                            className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[12.5px] font-bold transition hover:opacity-90"
-                            style={{
-                              background: "var(--glass-ink)",
-                              color: "var(--glass-bg-a)",
-                            }}
+                            className="glass-cta inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[12.5px] font-bold"
                           >
                             Ouvrir
                           </button>

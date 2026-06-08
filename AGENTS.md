@@ -196,6 +196,29 @@ mémoire projet) :
 - **Admin / espaces pro** (hors `.glass-root`) gardent shadcn blanc+violet —
   **ne pas** leur appliquer le verre.
 
+**Dark mode — premium « néon glassmorphism »** (planche DARKMODE fournie ;
+toggle thème dans le header). Ce n'est PAS un simple inverse du clair, c'est une
+ambiance à part entière :
+
+- Fond **noir-violet profond** (Bg Main `#070617`, Soft `#0D0A22`, Card
+  `#14102B`) avec **halos violet/rose ambiants** (`.dark .glass-root::before`).
+- Accents **vifs** : Purple `#8B5CF6`, Purple Light `#C084FC`, Pink `#FF5FA2`,
+  Coral `#FF7A7A` ; texte `#F7F2FF`.
+- **Glassmorphism** : surfaces translucides violettes, **bordure violette
+  discrète**, **ombre profonde + glow** (intensifié au hover via
+  `.dark .glass-interactive:hover`).
+- Titres : mots accentués en **dégradé violet→rose** (`.dark .glass-display em`).
+- Dégradé primaire (CTA / cartes « featured ») violet→rose (`--glass-status-*`).
+- Transitions douces 200-300ms, glow plus intense au hover/focus, flottement
+  d'icônes lent. **À éviter (dark)** : couleurs criardes, cartes plates, ombres
+  dures, style enfantin.
+- Tout passe par `.dark { --glass-* }` + quelques règles `.dark .glass-*` dans
+  `app/globals.css` → tout le front en hérite, rien à faire par composant.
+- ⏳ Pour coller à 100% au hero de la maquette (étape suivante) : CTA principaux
+  en **dégradé violet + glow** (aujourd'hui fond `--glass-ink`), tuiles d'icônes
+  glassmorphism avec glow, illustration 3D (livre/dossiers) + bulles d'icônes
+  flottantes.
+
 **Règles « going forward »** :
 
 1. Sur le front, **ne jamais** poser `bg-white`/`bg-[#fff]`/`#FFFFFF` en dur sur

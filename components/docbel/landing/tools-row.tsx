@@ -51,10 +51,11 @@ export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
               className={itemBase}
             >
               <span
-                className="flex size-[52px] items-center justify-center rounded-2xl transition-transform group-hover:-translate-y-0.5"
+                className="glass-icon-tile flex size-[52px] items-center justify-center rounded-2xl group-hover:-translate-y-0.5"
                 style={{
                   background: `color-mix(in oklab, ${hue} 18%, transparent)`,
                   color: hue,
+                  "--tile-hue": hue,
                 }}
               >
                 <Icon className="size-6" strokeWidth={1.9} />

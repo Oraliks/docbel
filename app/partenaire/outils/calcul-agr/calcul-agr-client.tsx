@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -70,7 +70,6 @@ const BUCKETS: { label: string; field: BucketField }[] = [
   { label: "Fermeture", field: "fermetureTotal" },
 ];
 
-<<<<<<< HEAD
 /** Lignes du tableau des occupations (ordre d'affichage = façon Excel). */
 type RowSpec =
   | { kind: "ident" }
@@ -102,9 +101,7 @@ const ROWS: RowSpec[] = [
   { kind: "requalif" },
 ];
 
-=======
 /** Métadonnées d'affichage + rapprochement par occupation (issues de la DRS). */
->>>>>>> 5ddcbc63dd8ebf455816972225d0a5d517dc0e31
 interface OccMeta {
   filename?: string;
   niss?: string | null;
@@ -177,14 +174,12 @@ function toNum(s: string): number {
   return Number.isFinite(v) ? v : 0;
 }
 
-<<<<<<< HEAD
 const fourEmpty = <T,>(make: () => T): T[] => Array.from({ length: MAX_OCC }, make);
-=======
+
 /** Représentation texte (FR, virgule décimale) d'une valeur numérique. */
 function fmtNum(v: number): string {
   return v === 0 ? "" : String(v).replace(".", ",");
 }
->>>>>>> 5ddcbc63dd8ebf455816972225d0a5d517dc0e31
 
 export function CalculAgrClient() {
   const [occupations, setOccupations] = useState<OccupationInput[]>(() => fourEmpty(emptyOccupation));
@@ -201,16 +196,6 @@ export function CalculAgrClient() {
   const [exporting, setExporting] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
-  // Miroirs de l'état courant : la fusion d'un WECH 505 a besoin de lire
-  // occupations ET metas ensemble après l'await de l'upload.
-  const occRef = useRef(occupations);
-  const metaRef = useRef(metas);
-  useEffect(() => {
-    occRef.current = occupations;
-  }, [occupations]);
-  useEffect(() => {
-    metaRef.current = metas;
-  }, [metas]);
 
   const result = useMemo(() => calculerAgr({ ...global, occupations }), [global, occupations]);
   const hasData = occupations.some((o) => o.q > 0);
@@ -266,17 +251,11 @@ export function CalculAgrClient() {
         setUploadError("Veuillez déposer des fichiers PDF (WECH 506 / 505).");
         return;
       }
-      // Colonnes libres (Q ≤ 0), dans l'ordre.
-      const slots = occupations.map((o, i) => (o.q <= 0 ? i : -1)).filter((i) => i >= 0);
-      if (slots.length === 0) {
-        toast.warning("Les 4 occupations sont déjà renseignées.");
-        return;
-      }
       setUploadError(null);
       setUploading(true);
       try {
         const fd = new FormData();
-        files.slice(0, slots.length).forEach((f) => fd.append("files", f));
+        files.slice(0, MAX_OCC).forEach((f) => fd.append("files", f));
         const res = await fetch("/api/partenaire/calcul-agr/parse", { method: "POST", body: fd });
         if (!res.ok) {
           const j = await res.json().catch(() => ({}));
@@ -284,74 +263,46 @@ export function CalculAgrClient() {
         }
         const { results } = (await res.json()) as { results: ParseResult[] };
 
-        // On sépare les WECH 506 (deviennent des occupations) des WECH 505
-        // (chômage temporaire : fusionnés dans l'occupation correspondante).
-        const newOccs: OccupationInput[] = [];
-        const newMetas: OccMeta[] = [];
+        // Copies de travail (modèle à 4 colonnes). Les WECH 506 remplissent les
+        // colonnes libres (Q ≤ 0) ; les WECH 505 (chômage temporaire) sont
+        // fusionnés dans l'occupation correspondante (NISS + nom + ONSS + mois).
+        const occs = [...occupations];
+        const mets = [...metas];
+        const freeSlots = occs.map((o, i) => (o.q <= 0 ? i : -1)).filter((i) => i >= 0);
         const drs505: { filename: string; parsed: ParsedWech505 }[] = [];
         const parseErrors: string[] = [];
         const warnings: string[] = [];
+        let loaded = 0;
+
         for (const r of results) {
           if (r.error || !r.parsed) {
             parseErrors.push(`${r.filename} : ${r.error ?? "échec"}${r.detail ? ` — ${r.detail}` : ""}`);
             continue;
           }
-<<<<<<< HEAD
-          newOccs.push(parsedToOccupation(r.parsed));
-          newMetas.push({
-            filename: r.filename, niss: r.parsed.niss, nom: r.parsed.nomTravailleur,
-            periode: r.parsed.moisReference
-              ? `${r.parsed.moisReference.debut} – ${r.parsed.moisReference.fin}` : null,
-            codesAVerifier: r.parsed.codesAVerifier,
-          });
-        }
-        if (errors.length) {
-          setUploadError(errors.join(" · "));
-          errors.forEach((e) => toast.error(e));
-        }
-        if (newOccs.length) {
-          setOccupations((prev) => {
-            const n = [...prev];
-            slots.forEach((s, idx) => { if (newOccs[idx]) n[s] = newOccs[idx]; });
-            return n;
-          });
-          setMetas((prev) => {
-            const n = [...prev];
-            slots.forEach((s, idx) => { if (newMetas[idx]) n[s] = newMetas[idx]; });
-            return n;
-          });
-=======
           if (r.kind === "505") {
             drs505.push({ filename: r.filename, parsed: r.parsed as ParsedWech505 });
             continue;
           }
+          // WECH 506 → occupation, dans la 1ʳᵉ colonne libre.
           const p = r.parsed as ParsedWech506;
-          newOccs.push(parsedToOccupation(p));
-          newMetas.push(metaFromWech506(r.filename, p));
-        }
-
-        // Base = occupations existantes + nouveaux 506 (remplace la 1ʳᵉ si vierge).
-        let occs = occRef.current;
-        let mets = metaRef.current;
-        if (newOccs.length) {
-          const baseOcc = occs.length === 1 && occs[0].q === 0 ? [] : occs;
-          const baseMeta = mets.length === 1 && !mets[0].filename ? [] : mets;
-          occs = [...baseOcc, ...newOccs].slice(0, MAX_OCC);
-          mets = [...baseMeta, ...newMetas].slice(0, MAX_OCC);
->>>>>>> 5ddcbc63dd8ebf455816972225d0a5d517dc0e31
-          newMetas.forEach((m) => {
-            toast.success(`DRS chargée : ${m.nom ?? m.filename ?? "occupation"}`, {
-              description: m.periode ?? undefined,
-            });
-            if (m.codesAVerifier && m.codesAVerifier.length > 0) {
-              toast.warning(`${m.filename ?? "DRS"} : ${m.codesAVerifier.length} code(s) à classer`);
-            }
+          const slot = freeSlots.shift();
+          if (slot === undefined) {
+            warnings.push(`${r.filename} : aucune colonne libre (max ${MAX_OCC} occupations).`);
+            continue;
+          }
+          occs[slot] = parsedToOccupation(p);
+          mets[slot] = metaFromWech506(r.filename, p);
+          loaded++;
+          toast.success(`DRS chargée : ${mets[slot].nom ?? r.filename}`, {
+            description: mets[slot].periode ?? undefined,
           });
-<<<<<<< HEAD
-=======
+          if (p.codesAVerifier.length > 0) {
+            toast.warning(`${r.filename} : ${p.codesAVerifier.length} code(s) à classer`);
+          }
         }
 
-        // Fusion des WECH 505 : rapprochement par identité + mois, déduplication.
+        // Fusion des WECH 505 : rapprochement par identité + mois, déduplication
+        // (pas de double comptage si le 506 contient déjà les codes 5.x).
         for (const { filename, parsed } of drs505) {
           const refs: CtOccupationRef[] = mets.map((m) => ({
             niss: m.niss ?? null,
@@ -364,18 +315,13 @@ export function CalculAgrClient() {
           const plan = planCtMerge(parsed, refs);
           if (plan.status === "merged" && plan.matchedIndex !== null) {
             const idx = plan.matchedIndex;
-            occs = occs.map((o, i) =>
-              i === idx
-                ? {
-                    ...o,
-                    pw1: Math.round((o.pw1 + plan.addPw) * 100) / 100,
-                    fermetureTotal: Math.round((o.fermetureTotal + plan.addFermeture) * 100) / 100,
-                  }
-                : o,
-            );
-            mets = mets.map((m, i) =>
-              i === idx ? { ...m, ctEntries: [...(m.ctEntries ?? []), ...plan.newEntries] } : m,
-            );
+            occs[idx] = {
+              ...occs[idx],
+              pw1: Math.round((occs[idx].pw1 + plan.addPw) * 100) / 100,
+              fermetureTotal: Math.round((occs[idx].fermetureTotal + plan.addFermeture) * 100) / 100,
+            };
+            mets[idx] = { ...mets[idx], ctEntries: [...(mets[idx].ctEntries ?? []), ...plan.newEntries] };
+            loaded++;
             toast.success(`${filename} : ${plan.message}`);
           } else if (plan.status === "duplicate") {
             toast.info(`${filename} : ${plan.message}`);
@@ -389,11 +335,10 @@ export function CalculAgrClient() {
         const banner = [...parseErrors, ...warnings];
         if (banner.length) setUploadError(banner.join(" · "));
 
-        if (newOccs.length || drs505.length) {
+        if (loaded > 0) {
           setOccupations(occs);
           setMetas(mets);
           // Défile en douceur vers le résultat.
->>>>>>> 5ddcbc63dd8ebf455816972225d0a5d517dc0e31
           requestAnimationFrame(() =>
             resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
           );
@@ -407,7 +352,7 @@ export function CalculAgrClient() {
         if (fileInput.current) fileInput.current.value = "";
       }
     },
-    [occupations],
+    [occupations, metas],
   );
 
   const reset = () => {
@@ -440,11 +385,10 @@ export function CalculAgrClient() {
       </div>
 
       {/* Zone d'upload */}
-<<<<<<< HEAD
       <Card className="overflow-hidden">
         <CardContent className="flex flex-col gap-0 p-0 sm:flex-row sm:items-stretch">
           <div className="flex items-center gap-2 px-5 py-4 text-sm font-medium text-muted-foreground sm:w-44 sm:border-r">
-            <FileUp className="size-4 text-violet-600" /> WECH 506
+            <FileUp className="size-4 text-violet-600" /> WECH 506 / 505
           </div>
           <div className="flex-1 p-3">
             <div
@@ -465,54 +409,14 @@ export function CalculAgrClient() {
                 <Upload className="size-7 text-violet-600" />
               )}
               <p className="text-sm font-medium">
-                {uploading ? "Extraction en cours…" : "Glissez les WECH 506 ici, ou cliquez pour parcourir"}
+                {uploading ? "Extraction en cours…" : "Glissez les WECH 506 (AGR) et 505 (chômage temp.) ici, ou cliquez"}
               </p>
-              <p className="text-xs text-muted-foreground">PDF · 1 fichier par occupation · max {MAX_OCC}</p>
+              <p className="text-xs text-muted-foreground">
+                PDF · 506 = 1 occupation · 505 = chômage temporaire rattaché · max {MAX_OCC}
+              </p>
               <input ref={fileInput} type="file" accept="application/pdf" multiple hidden
                 onChange={(e) => e.target.files && handleFiles(e.target.files)} />
             </div>
-=======
-      <Card>
-        <CardContent className="pt-6">
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => fileInput.current?.click()}
-            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && fileInput.current?.click()}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
-            }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragOver(false);
-              handleFiles(e.dataTransfer.files);
-            }}
-            className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
-              dragOver ? "border-violet-500 bg-violet-50" : "border-muted-foreground/25 hover:border-violet-400"
-            }`}
-          >
-            {uploading ? (
-              <Loader2 className="size-8 animate-spin text-violet-600" />
-            ) : (
-              <Upload className="size-8 text-violet-600" />
-            )}
-            <p className="text-sm font-medium">
-              {uploading ? "Extraction en cours…" : "Glissez les WECH 506 (AGR) et 505 (chômage temp.) ici, ou cliquez"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              PDF · 506 = 1 occupation · 505 = chômage temporaire rattaché à son occupation · max {MAX_OCC}
-            </p>
-            <input
-              ref={fileInput}
-              type="file"
-              accept="application/pdf"
-              multiple
-              hidden
-              onChange={(e) => e.target.files && handleFiles(e.target.files)}
-            />
->>>>>>> 5ddcbc63dd8ebf455816972225d0a5d517dc0e31
           </div>
         </CardContent>
       </Card>
@@ -777,16 +681,48 @@ function Cell({
       );
     case "num":
       return (
-        <input
-          inputMode="decimal"
+        <NumCell
           className={cellInput}
-          value={occ[row.field] === 0 ? "" : String(occ[row.field])}
-          placeholder="—"
-          onFocus={(e) => e.target.select()}
-          onChange={(e) => onChange({ [row.field]: toNum(e.target.value) } as Partial<OccupationInput>)}
+          value={occ[row.field]}
+          onChange={(v) => onChange({ [row.field]: v } as Partial<OccupationInput>)}
         />
       );
   }
+}
+
+/** Saisie numérique d'une cellule du tableau : virgule décimale autorisée. */
+function NumCell({
+  value,
+  onChange,
+  className,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  className?: string;
+}) {
+  // Texte saisi conservé tel quel (« 66, », « 1,5 ») pour ne pas avaler la
+  // virgule ; resynchronisé si la valeur change de l'extérieur (upload, reset).
+  const [text, setText] = useState(() => fmtNum(value));
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    if (toNum(text) !== value) setText(fmtNum(value));
+  }
+  return (
+    <input
+      inputMode="decimal"
+      className={className}
+      value={text}
+      placeholder="—"
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => {
+        const raw = e.target.value;
+        if (raw !== "" && !/^-?\d*[.,]?\d*$/.test(raw)) return;
+        setText(raw);
+        onChange(toNum(raw));
+      }}
+    />
+  );
 }
 
 /* ─────────────────────────── champs paramètres ─────────────────────────── */
@@ -815,15 +751,10 @@ function NumField({
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">{label}</Label>
-<<<<<<< HEAD
-      <Input inputMode="decimal" value={value === 0 ? "" : String(value)} placeholder="0"
-        onFocus={(e) => e.target.select()} onChange={(e) => onChange(toNum(e.target.value))} />
-=======
       <Input
         inputMode="decimal"
         value={text}
         placeholder="0"
-        step={step}
         onFocus={(e) => e.target.select()}
         onChange={(e) => {
           const raw = e.target.value;
@@ -833,7 +764,6 @@ function NumField({
           onChange(toNum(raw));
         }}
       />
->>>>>>> 5ddcbc63dd8ebf455816972225d0a5d517dc0e31
     </div>
   );
 }

@@ -56,7 +56,7 @@ export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
                   background: `color-mix(in oklab, ${hue} 18%, transparent)`,
                   color: hue,
                   "--tile-hue": hue,
-                }}
+                } as React.CSSProperties}
               >
                 <Icon className="size-6" strokeWidth={1.9} />
               </span>

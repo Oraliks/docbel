@@ -51,7 +51,7 @@ function ToolIconTile({ tool, size = 40 }: { tool: Tool; size?: number }) {
         background: `color-mix(in oklab, ${hue} 18%, transparent)`,
         color: hue,
         "--tile-hue": hue,
-      }}
+      } as React.CSSProperties}
     >
       <Icon style={{ width: size * 0.5, height: size * 0.5 }} strokeWidth={1.9} />
     </span>
@@ -302,7 +302,7 @@ export function OutilsCatalogClient({ tools }: Props) {
         {/* Nouveau (featured) */}
         {featured ? (
           <section
-            className="group relative flex min-h-[230px] flex-col justify-between overflow-hidden rounded-3xl p-7 text-white transition-transform duration-300 hover:-translate-y-1 motion-reduce:transform-none"
+            className="group relative flex min-h-[230px] flex-col justify-between overflow-hidden rounded-3xl p-7 text-white transition-transform duration-300 hover:-translate-y-1 motion-reduce:transform-none dark:shadow-[0_0_40px_rgba(124,58,237,0.35)]"
             style={{
               backgroundImage:
                 "linear-gradient(135deg, var(--glass-status-from) 0%, var(--glass-status-to) 100%)",
@@ -414,10 +414,11 @@ export function OutilsCatalogClient({ tools }: Props) {
                   }}
                 >
                   <span
-                    className="flex size-9 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-[1.06] group-hover:-translate-y-px motion-reduce:transform-none"
+                    className="glass-icon-tile flex size-9 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-[1.06] group-hover:-translate-y-px motion-reduce:transform-none"
                     style={{
                       background: `color-mix(in oklab, ${domain.hue} 18%, transparent)`,
                       color: domain.hue,
+                      "--tile-hue": domain.hue,
                     }}
                   >
                     <domain.Icon className="size-[18px]" strokeWidth={1.9} />
@@ -458,7 +459,7 @@ export function OutilsCatalogClient({ tools }: Props) {
                       : "var(--glass-surface)",
                   }}
                 >
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-accent-deep)] transition-transform duration-200 group-hover:scale-[1.06] group-hover:-translate-y-px motion-reduce:transform-none">
+                  <span className="glass-icon-tile flex size-10 items-center justify-center rounded-xl bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-accent-deep)] transition-transform duration-200 group-hover:scale-[1.06] group-hover:-translate-y-px motion-reduce:transform-none">
                     <tile.Icon className="size-[18px]" strokeWidth={1.9} />
                   </span>
                   <span className="text-[11.5px] font-semibold leading-tight">
@@ -470,7 +471,7 @@ export function OutilsCatalogClient({ tools }: Props) {
           </section>
 
           <section
-            className="group relative flex flex-1 flex-col justify-center overflow-hidden rounded-3xl p-6 text-white transition-transform duration-300 hover:-translate-y-1 motion-reduce:transform-none"
+            className="group relative flex flex-1 flex-col justify-center overflow-hidden rounded-3xl p-6 text-white transition-transform duration-300 hover:-translate-y-1 motion-reduce:transform-none dark:shadow-[0_0_40px_rgba(124,58,237,0.35)]"
             style={{
               backgroundImage:
                 "linear-gradient(135deg, var(--glass-accent-a) 0%, var(--glass-accent-deep) 100%)",

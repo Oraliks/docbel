@@ -6,7 +6,6 @@ import { Tool } from "@/lib/docbel-data";
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
 import { pickToolVisual } from "@/components/docbel/landing/tool-card";
 import {
-  CalcAGR,
   CalcCP,
   FormFlow,
   InfoPanel,
@@ -126,7 +125,6 @@ export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
 
         <div>
           {type === "calc_preavis" && <CalcPreavis accent={accent} />}
-          {type === "calc_agr" && <CalcAGR accent={accent} />}
           {type === "calc_cp" && <CalcCP accent={accent} />}
           {/* Batch calculateurs citoyens 2026-05 — cf. components/docbel/calculators/ */}
           {type === "calc_brut_net" && <CalcBrutNet accent={accent} />}

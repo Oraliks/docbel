@@ -4,7 +4,7 @@
  * Building blocks partagés par tous les calculateurs sous /outils/calc-*.
  *
  * Pourquoi ce fichier : sans lui, chaque calc dupliquait les inputs glassy,
- * la carte de résultat, l'alerte "indicatif", etc. (cf. CalcAGR/CalcCP dans
+ * la carte de résultat, l'alerte "indicatif", etc. (cf. CalcCP dans
  * tool-views.tsx). Avec ces primitives, ajouter un calc = écrire la logique
  * pure + un composant qui assemble les blocs.
  *

@@ -101,7 +101,7 @@ export function IntentSearch() {
       </form>
 
       {error && (
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-900 dark:bg-red-950 dark:border-red-800 dark:text-red-200">
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-900 dark:text-red-200">
           {error}
         </div>
       )}

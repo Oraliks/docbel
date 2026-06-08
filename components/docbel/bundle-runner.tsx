@@ -324,7 +324,7 @@ export function BundleRunner({
           )}
 
           {allRequiredDone && requiredVisible.length > 0 && (
-            <Alert className="bg-emerald-500/10 border-emerald-500/20 dark:bg-green-950 dark:border-green-800">
+            <Alert className="bg-emerald-500/10 border-emerald-500/20">
               <CheckCircle2 className="w-4 h-4 text-green-600" />
               <AlertDescription className="text-sm text-green-700 dark:text-green-400">
                 Tous les documents obligatoires de ce parcours sont complétés.
@@ -344,7 +344,7 @@ export function BundleRunner({
                     key={item.id}
                     className={`flex items-start gap-3 p-3 border rounded-md transition-colors ${
                       completed
-                        ? "bg-emerald-500/10 border-emerald-500/20 dark:bg-green-950/20"
+                        ? "bg-emerald-500/10 border-emerald-500/20"
                         : isPending
                           ? "bg-white/[0.06] border-dashed opacity-70"
                           : "hover:bg-white/10"

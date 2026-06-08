@@ -62,19 +62,19 @@ function stylesForSeverity(s: BundleWarning["severity"]) {
     return {
       Icon: AlertOctagon,
       container:
-        "bg-red-500/10 border-red-500/20 text-red-900 dark:bg-red-950 dark:border-red-800 dark:text-red-200",
+        "bg-red-500/10 border-red-500/20 text-red-900 dark:text-red-200",
     };
   }
   if (s === "warning") {
     return {
       Icon: AlertTriangle,
       container:
-        "bg-amber-500/10 border-amber-500/20 text-amber-900 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200",
+        "bg-amber-500/10 border-amber-500/20 text-amber-900 dark:text-amber-200",
     };
   }
   return {
     Icon: Info,
     container:
-      "bg-sky-500/10 border-sky-500/20 text-sky-900 dark:bg-sky-950 dark:border-sky-800 dark:text-sky-200",
+      "bg-sky-500/10 border-sky-500/20 text-sky-900 dark:text-sky-200",
   };
 }

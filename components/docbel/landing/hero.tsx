@@ -67,31 +67,19 @@ function FeaturedArtwork() {
         }}
       />
 
-      {/* Pile de cartes verre dépoli (document/dossier abstrait, profondeur). */}
-      <div className="relative">
-        <div className="absolute top-4 -left-7 h-[118px] w-[140px] -rotate-12 rounded-2xl border border-white/20 bg-white/10 shadow-[0_20px_50px_rgba(20,10,45,0.4)] backdrop-blur-md" />
-        <div className="relative flex h-[132px] w-[158px] -rotate-3 flex-col gap-2 rounded-2xl border border-white/30 bg-white/15 p-4 shadow-[0_26px_60px_rgba(20,10,45,0.45),inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-xl">
-          <div
-            className="h-2 w-1/2 rounded-full"
-            style={{
-              background:
-                "linear-gradient(90deg, var(--glass-accent-b), var(--glass-accent-c))",
-            }}
-          />
-          <div className="h-1.5 w-full rounded-full bg-white/30" />
-          <div className="h-1.5 w-4/5 rounded-full bg-white/30" />
-          <div className="h-1.5 w-full rounded-full bg-white/30" />
-          <div
-            className="mt-auto size-8 self-end rounded-xl"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--glass-accent-a), var(--glass-accent-c))",
-              boxShadow:
-                "0 8px 20px color-mix(in oklab, var(--glass-accent-c) 55%, transparent)",
-            }}
-          />
-        </div>
-      </div>
+      {/* Illustration 3D (livre) — asset CC0 Fluent Emoji ; drop-shadow violet
+          pour l'harmoniser au thème mauve (cf. AGENTS.md › Design). */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/3d/book.png"
+        alt=""
+        aria-hidden
+        className="relative h-[160px] w-[160px] object-contain"
+        style={{
+          filter:
+            "drop-shadow(0 18px 28px rgba(20,10,45,0.5)) drop-shadow(0 0 26px color-mix(in oklab, var(--glass-accent-deep) 60%, transparent))",
+        }}
+      />
 
       {/* Bulles d'icônes flottantes (glassmorphism + glow néon). */}
       {HERO_BUBBLES.map(({ Icon, hue, cls, delay }) => (

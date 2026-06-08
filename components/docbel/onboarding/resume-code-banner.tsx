@@ -79,7 +79,7 @@ export function ResumeCodeBanner({
     : "30 jours";
 
   return (
-    <div className="rounded-md border border-amber-500/20 bg-amber-500/10 dark:bg-amber-950 dark:border-amber-800 p-3 text-sm space-y-3">
+    <div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-3 text-sm space-y-3">
       <div className="flex items-start gap-2">
         <KeyRound className="size-4 mt-0.5 text-amber-700 dark:text-amber-300 flex-shrink-0" />
         <div className="flex-1 space-y-1 min-w-0">
@@ -105,14 +105,14 @@ export function ResumeCodeBanner({
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <code className="bg-amber-500/20 dark:bg-amber-900 px-3 py-1.5 rounded font-mono text-base tracking-[0.12em] font-semibold text-amber-900 dark:text-amber-100 select-all">
+        <code className="bg-amber-500/20 px-3 py-1.5 rounded font-mono text-base tracking-[0.12em] font-semibold text-amber-900 dark:text-amber-100 select-all">
           {resumeCode}
         </code>
         <Button
           size="sm"
           variant="outline"
           onClick={copyCode}
-          className="bg-white/10 dark:bg-amber-900/40"
+          className="bg-white/10"
         >
           {copied ? (
             <>
@@ -129,7 +129,7 @@ export function ResumeCodeBanner({
             size="sm"
             variant="outline"
             onClick={() => setShowEmailField(true)}
-            className="bg-white/10 dark:bg-amber-900/40"
+            className="bg-white/10"
           >
             <Mail className="size-3.5" /> Recevoir par email
           </Button>

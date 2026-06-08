@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { CategoriesDialog } from '@/components/admin/categories-dialog';
 
 interface Category {
@@ -24,6 +25,7 @@ interface Category {
 }
 
 export default function CategoriesPage() {
+  const t = useTranslations('admin.news');
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
@@ -41,7 +43,7 @@ export default function CategoriesPage() {
       } catch (error) {
         if (cancelled) return;
         console.error('Error fetching categories:', error);
-        toast.error('Erreur lors du chargement des catégories');
+        toast.error(t('catLoadError'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -49,12 +51,12 @@ export default function CategoriesPage() {
     return () => {
       cancelled = true;
     };
-  }, [refreshTick]);
+  }, [refreshTick, t]);
 
   const refreshCategories = useCallback(() => setRefreshTick((t) => t + 1), []);
 
   const handleDeleteCategory = async (id: string, name: string) => {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${name}" ?`)) {
+    if (!confirm(t('catDeleteConfirm', { name }))) {
       return;
     }
 
@@ -62,14 +64,14 @@ export default function CategoriesPage() {
       const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setCategories((prev) => prev.filter((c) => c.id !== id));
-        toast.success('Catégorie supprimée');
+        toast.success(t('catDeleted'));
       } else {
         const data = await res.json().catch(() => ({}));
-        toast.error(data.error || 'Erreur lors de la suppression');
+        toast.error(data.error || t('catDeleteError'));
       }
     } catch (error) {
       console.error('Error deleting category:', error);
-      toast.error('Erreur lors de la suppression');
+      toast.error(t('catDeleteError'));
     }
   };
 
@@ -82,41 +84,40 @@ export default function CategoriesPage() {
     <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Catégories d&apos;articles</h1>
-          <p className="text-muted-foreground mt-1">Gérez les catégories et leurs couleurs</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('catTitle')}</h1>
+          <p className="text-muted-foreground mt-1">{t('catSubtitle')}</p>
         </div>
         <Button onClick={() => setShowDialog(true)} className="gap-2">
           <Plus className="w-4 h-4" />
-          Créer une catégorie
+          {t('catCreate')}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Catégories existantes</CardTitle>
+          <CardTitle>{t('catExistingTitle')}</CardTitle>
           <CardDescription>
-            {categories.length} catégorie{categories.length !== 1 ? 's' : ''} créée
-            {categories.length !== 1 ? 's' : ''}
+            {t('catCreatedCount', { n: categories.length })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Chargement...</div>
+            <div className="text-center py-8 text-muted-foreground">{t('loading')}</div>
           ) : categories.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">Aucune catégorie pour le moment</p>
+              <p className="text-muted-foreground mb-4">{t('catEmpty')}</p>
               <Button onClick={() => setShowDialog(true)} variant="outline" size="sm">
-                Créer la première
+                {t('catCreateFirst')}
               </Button>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Couleur</TableHead>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Créée le</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('catColColor')}</TableHead>
+                  <TableHead>{t('catColName')}</TableHead>
+                  <TableHead>{t('catColCreatedAt')}</TableHead>
+                  <TableHead className="text-right">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -142,7 +143,7 @@ export default function CategoriesPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => setShowDialog(true)}
-                          title="Modifier"
+                          title={t('edit')}
                         >
                           <Edit2 className="w-4 h-4" />
                         </Button>
@@ -151,7 +152,7 @@ export default function CategoriesPage() {
                           size="sm"
                           onClick={() => handleDeleteCategory(category.id, category.name)}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          title="Supprimer"
+                          title={t('delete')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

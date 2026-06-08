@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import { headers } from "next/headers"
+import { getTranslations } from "next-intl/server"
 import { auth } from "@/lib/auth"
 import { prisma, withDbRetry } from "@/lib/prisma"
 import { UserRole, UserStatus, Prisma } from "@prisma/client"
@@ -50,6 +51,7 @@ export default async function ImpersonationAuditPage({
     notFound()
   }
 
+  const t = await getTranslations("admin.impersonation")
   const params = await searchParams
   const page = Math.max(1, parseInt(params.page || "1", 10) || 1)
   const skip = (page - 1) * PAGE_SIZE
@@ -156,11 +158,10 @@ export default async function ImpersonationAuditPage({
     <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:px-6">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">
-          Audit impersonations
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Historique des sessions « Voir en tant que » et « Visiteur anonyme ».
-          {total} entrée{total > 1 ? "s" : ""} (sur les filtres actifs).
+          {t("subtitle")} {t("entriesCount", { count: total })}
         </p>
       </header>
 
@@ -168,33 +169,33 @@ export default async function ImpersonationAuditPage({
       <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-lg border bg-card px-4 py-3">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">
-            7 derniers jours
+            {t("statsLast7Days")}
           </div>
           <div className="mt-1 text-2xl font-semibold">{weekCount}</div>
           <div className="text-xs text-muted-foreground">
-            session{weekCount > 1 ? "s" : ""} démarrée{weekCount > 1 ? "s" : ""}
+            {t("statsSessionsStarted", { count: weekCount })}
           </div>
         </div>
         <div className="rounded-lg border bg-card px-4 py-3">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">
-            Durée moyenne (closes)
+            {t("statsAvgDuration")}
           </div>
           <div className="mt-1 text-2xl font-semibold">
             {avgDurationMs === null ? "—" : formatDuration(avgDurationMs)}
           </div>
           <div className="text-xs text-muted-foreground">
-            sur {weekClosed.length} session{weekClosed.length > 1 ? "s" : ""} fermée{weekClosed.length > 1 ? "s" : ""}
+            {t("statsClosedSessions", { count: weekClosed.length })}
           </div>
         </div>
         <div className="rounded-lg border bg-card px-4 py-3">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">
-            Top admin (7j)
+            {t("statsTopAdmin")}
           </div>
           <div className="mt-1 truncate text-sm font-semibold">
             {topAdminLabel || "—"}
           </div>
           <div className="text-xs text-muted-foreground">
-            par nombre d&apos;impersonations
+            {t("statsTopAdminCaption")}
           </div>
         </div>
       </section>
@@ -203,14 +204,14 @@ export default async function ImpersonationAuditPage({
       <form className="mb-4 grid grid-cols-1 gap-3 rounded-lg border bg-card p-4 sm:grid-cols-5">
         <div className="sm:col-span-2">
           <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Admin
+            {t("filterAdmin")}
           </label>
           <select
             name="adminId"
             defaultValue={params.adminId || ""}
             className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm"
           >
-            <option value="">Tous les admins</option>
+            <option value="">{t("filterAllAdmins")}</option>
             {adminOptions.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.name || a.email}
@@ -220,19 +221,19 @@ export default async function ImpersonationAuditPage({
         </div>
         <div className="sm:col-span-2">
           <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Email cible (contient)
+            {t("filterTargetEmail")}
           </label>
           <input
             name="targetEmail"
             type="text"
             defaultValue={params.targetEmail || ""}
-            placeholder="ex: demo+"
+            placeholder={t("filterTargetEmailPlaceholder")}
             className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm"
           />
         </div>
         <div>
           <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Depuis
+            {t("filterDateFrom")}
           </label>
           <input
             name="dateFrom"
@@ -243,7 +244,7 @@ export default async function ImpersonationAuditPage({
         </div>
         <div>
           <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Jusqu&apos;au
+            {t("filterDateTo")}
           </label>
           <input
             name="dateTo"
@@ -257,13 +258,13 @@ export default async function ImpersonationAuditPage({
             type="submit"
             className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
-            Filtrer
+            {t("filterSubmit")}
           </button>
           <a
             href="?"
             className="h-9 rounded-md border px-4 py-1.5 text-sm hover:bg-muted"
           >
-            Réinitialiser
+            {t("filterReset")}
           </a>
         </div>
       </form>
@@ -272,13 +273,13 @@ export default async function ImpersonationAuditPage({
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="px-3 py-2 font-medium">Admin</th>
-              <th className="px-3 py-2 font-medium">Cible</th>
-              <th className="px-3 py-2 font-medium">Mode</th>
-              <th className="px-3 py-2 font-medium">Démarrée</th>
-              <th className="px-3 py-2 font-medium">Durée</th>
-              <th className="px-3 py-2 font-medium">Raison</th>
-              <th className="px-3 py-2 font-medium">IP</th>
+              <th className="px-3 py-2 font-medium">{t("colAdmin")}</th>
+              <th className="px-3 py-2 font-medium">{t("colTarget")}</th>
+              <th className="px-3 py-2 font-medium">{t("colMode")}</th>
+              <th className="px-3 py-2 font-medium">{t("colStarted")}</th>
+              <th className="px-3 py-2 font-medium">{t("colDuration")}</th>
+              <th className="px-3 py-2 font-medium">{t("colReason")}</th>
+              <th className="px-3 py-2 font-medium">{t("colIp")}</th>
               <th className="px-3 py-2 font-medium"></th>
             </tr>
           </thead>
@@ -289,7 +290,7 @@ export default async function ImpersonationAuditPage({
                   colSpan={8}
                   className="px-3 py-8 text-center text-muted-foreground"
                 >
-                  Aucune impersonation pour ces filtres.
+                  {t("emptyState")}
                 </td>
               </tr>
             )}
@@ -311,7 +312,7 @@ export default async function ImpersonationAuditPage({
                   <td className="px-3 py-2">
                     {isVisitor ? (
                       <span className="italic text-muted-foreground">
-                        (visiteur anonyme)
+                        {t("anonymousVisitor")}
                       </span>
                     ) : (
                       <>
@@ -325,7 +326,7 @@ export default async function ImpersonationAuditPage({
                     )}
                   </td>
                   <td className="px-3 py-2">
-                    {isVisitor ? "visiteur" : "impersonation"}
+                    {isVisitor ? t("modeVisitor") : t("modeImpersonation")}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-xs">
                     {log.startedAt.toLocaleString("fr-BE")}
@@ -333,7 +334,7 @@ export default async function ImpersonationAuditPage({
                   <td className="px-3 py-2 whitespace-nowrap text-xs">
                     {durationMs === null ? (
                       <span className="text-amber-700 dark:text-amber-300">
-                        en cours
+                        {t("durationOngoing")}
                       </span>
                     ) : (
                       formatDuration(durationMs)
@@ -369,10 +370,10 @@ export default async function ImpersonationAuditPage({
             }
             href={buildPageHref(page - 1)}
           >
-            ← Précédent
+            {t("paginationPrevious")}
           </a>
           <span className="text-muted-foreground">
-            Page {page} / {totalPages}
+            {t("paginationPageOf", { page, total: totalPages })}
           </span>
           <a
             className={
@@ -382,7 +383,7 @@ export default async function ImpersonationAuditPage({
             }
             href={buildPageHref(page + 1)}
           >
-            Suivant →
+            {t("paginationNext")}
           </a>
         </nav>
       )}

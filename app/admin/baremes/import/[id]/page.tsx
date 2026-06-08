@@ -18,6 +18,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 
 interface FileRecord {
   id: string
@@ -114,6 +115,7 @@ interface PreviewData {
 }
 
 export default function BaremeImportPreviewPage() {
+  const t = useTranslations('admin.baremes')
   const params = useParams<{ id: string }>()
   const id = params?.id
 
@@ -128,16 +130,16 @@ export default function BaremeImportPreviewPage() {
       const res = await fetch(`/api/baremes/import/${id}`)
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error ?? 'Chargement impossible')
+        throw new Error(err.error ?? t('loadError'))
       }
       setData(await res.json())
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erreur'
+      const message = err instanceof Error ? err.message : t('error')
       toast.error(message)
     } finally {
       setLoading(false)
     }
-  }, [id])
+  }, [id, t])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -149,8 +151,8 @@ export default function BaremeImportPreviewPage() {
     if (
       !confirm(
         force
-          ? 'Publier malgré les alertes d’erreur ? Cette version deviendra la source utilisée par les calculateurs.'
-          : 'Publier cet import ? L’ancienne version sera archivée.'
+          ? t('previewPublishForceConfirm')
+          : t('previewPublishConfirm')
       )
     )
       return
@@ -162,11 +164,11 @@ export default function BaremeImportPreviewPage() {
         body: JSON.stringify({ force }),
       })
       const body = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(body.error ?? 'Publication échouée')
-      toast.success('Import publié')
+      if (!res.ok) throw new Error(body.error ?? t('previewPublishFailed'))
+      toast.success(t('publishSuccess'))
       await load()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erreur'
+      const message = err instanceof Error ? err.message : t('error')
       toast.error(message)
     } finally {
       setActing(false)
@@ -175,17 +177,17 @@ export default function BaremeImportPreviewPage() {
 
   const reject = async () => {
     if (!id) return
-    if (!confirm('Rejeter cet import ? Il sera marqué "rejected" et ne pourra plus être publié.'))
+    if (!confirm(t('previewRejectConfirm')))
       return
     setActing(true)
     try {
       const res = await fetch(`/api/baremes/import/${id}/reject`, { method: 'POST' })
       const body = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(body.error ?? 'Rejet échoué')
-      toast.success('Import rejeté')
+      if (!res.ok) throw new Error(body.error ?? t('previewRejectFailed'))
+      toast.success(t('rejectSuccess'))
       await load()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erreur'
+      const message = err instanceof Error ? err.message : t('error')
       toast.error(message)
     } finally {
       setActing(false)
@@ -194,7 +196,7 @@ export default function BaremeImportPreviewPage() {
 
   const approve = async () => {
     if (!id) return
-    const comment = window.prompt('Commentaire d\'approbation (optionnel) :') ?? ''
+    const comment = window.prompt(t('approvePrompt')) ?? ''
     setActing(true)
     try {
       const res = await fetch(`/api/baremes/import/${id}/approve`, {
@@ -204,18 +206,18 @@ export default function BaremeImportPreviewPage() {
       })
       const body = await res.json().catch(() => ({}))
       if (res.status === 409) {
-        toast.info('Vous avez déjà approuvé cet import')
+        toast.info(t('alreadyApproved'))
         return
       }
-      if (!res.ok) throw new Error(body.error ?? 'Approbation échouée')
+      if (!res.ok) throw new Error(body.error ?? t('approveFailed'))
       if (body.autoPublished) {
-        toast.success(`Import auto-publié (${body.approvalsCount}/${body.requiredCount})`)
+        toast.success(t('approveAutoPublished', { count: body.approvalsCount, required: body.requiredCount }))
       } else {
-        toast.success(`Approbation enregistrée (${body.approvalsCount}/${body.requiredCount})`)
+        toast.success(t('approveRecorded', { count: body.approvalsCount, required: body.requiredCount }))
       }
       await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur')
+      toast.error(err instanceof Error ? err.message : t('error'))
     } finally {
       setActing(false)
     }
@@ -225,7 +227,7 @@ export default function BaremeImportPreviewPage() {
     if (!id) return
     if (
       !confirm(
-        'Restaurer cette version archivée ? La version actuellement publiée sera archivée à son tour.'
+        t('rollbackConfirm')
       )
     )
       return
@@ -233,11 +235,11 @@ export default function BaremeImportPreviewPage() {
     try {
       const res = await fetch(`/api/baremes/import/${id}/rollback`, { method: 'POST' })
       const body = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(body.error ?? 'Rollback échoué')
-      toast.success('Version restaurée et publiée')
+      if (!res.ok) throw new Error(body.error ?? t('rollbackFailed'))
+      toast.success(t('rollbackSuccess'))
       await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur')
+      toast.error(err instanceof Error ? err.message : t('error'))
     } finally {
       setActing(false)
     }
@@ -247,7 +249,7 @@ export default function BaremeImportPreviewPage() {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
-        Chargement…
+        {t('loading')}
       </div>
     )
   }
@@ -260,9 +262,9 @@ export default function BaremeImportPreviewPage() {
           className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
         >
           <ArrowLeft className="w-4 h-4" />
-          Barèmes
+          {t('title')}
         </Link>
-        <p className="mt-6">Import introuvable.</p>
+        <p className="mt-6">{t('previewNotFound')}</p>
       </div>
     )
   }
@@ -280,15 +282,15 @@ export default function BaremeImportPreviewPage() {
   const infoCount = alerts.filter((a) => a.level === 'info').length
 
   const statusLabel: Record<string, { label: string; tone: string }> = {
-    draft: { label: 'Brouillon', tone: 'bg-yellow-100 text-yellow-900 border-yellow-200' },
+    draft: { label: t('statusDraft'), tone: 'bg-yellow-100 text-yellow-900 border-yellow-200' },
     pending_approval: {
-      label: 'En attente d\'approbation',
+      label: t('statusPendingApproval'),
       tone: 'bg-orange-100 text-orange-900 border-orange-300',
     },
-    published: { label: 'Publié', tone: 'bg-green-100 text-green-900 border-green-200' },
-    archived: { label: 'Archivé', tone: 'bg-muted text-muted-foreground' },
-    rejected: { label: 'Rejeté', tone: 'bg-red-100 text-red-900 border-red-200' },
-    active: { label: 'Legacy (avant nouveau workflow)', tone: 'bg-muted text-muted-foreground' },
+    published: { label: t('statusPublished'), tone: 'bg-green-100 text-green-900 border-green-200' },
+    archived: { label: t('statusArchived'), tone: 'bg-muted text-muted-foreground' },
+    rejected: { label: t('statusRejected'), tone: 'bg-red-100 text-red-900 border-red-200' },
+    active: { label: t('statusLegacyLong'), tone: 'bg-muted text-muted-foreground' },
   }
   const statusInfo = statusLabel[file.status] ?? { label: file.status, tone: 'bg-muted' }
 
@@ -303,7 +305,7 @@ export default function BaremeImportPreviewPage() {
               className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-1"
             >
               <ArrowLeft className="w-3 h-3" />
-              Barèmes
+              {t('title')}
             </Link>
             <div className="flex items-center gap-2 flex-wrap">
               <FileSpreadsheet className="w-5 h-5 text-muted-foreground shrink-0" />
@@ -318,16 +320,16 @@ export default function BaremeImportPreviewPage() {
               <span className="inline-flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 {file.validFrom
-                  ? `Valide depuis ${new Date(file.validFrom).toLocaleDateString('fr-BE')}`
-                  : `Date brute: ${file.effectiveDate}`}
+                  ? t('validSince', { date: new Date(file.validFrom).toLocaleDateString('fr-BE') })
+                  : t('rawDate', { date: file.effectiveDate })}
               </span>
               {file.multiplicateur && <span>×{file.multiplicateur.toFixed(4)}</span>}
               <span className="font-mono">
-                Hash: {file.fileHash ? file.fileHash.slice(0, 10) + '…' : '— legacy'}
+                {t('hashLabel', { hash: file.fileHash ? file.fileHash.slice(0, 10) + '…' : t('hashLegacy') })}
               </span>
-              {file.createdBy && <span>par {file.createdBy}</span>}
+              {file.createdBy && <span>{t('byActor', { actor: file.createdBy })}</span>}
               {file.publishedAt && (
-                <span>publié {new Date(file.publishedAt).toLocaleDateString('fr-BE')}</span>
+                <span>{t('publishedOn', { date: new Date(file.publishedAt).toLocaleDateString('fr-BE') })}</span>
               )}
             </div>
           </div>
@@ -340,7 +342,7 @@ export default function BaremeImportPreviewPage() {
                 type="button"
                 size="sm"
               >
-                Source .xlsx
+                {t('sourceXlsx')}
               </Button>
             )}
             {isDraftOrPending && (
@@ -352,28 +354,28 @@ export default function BaremeImportPreviewPage() {
                   className="text-red-600 hover:text-red-700"
                   size="sm"
                 >
-                  Rejeter
+                  {t('reject')}
                 </Button>
                 {requiresApproval ? (
                   <Button onClick={approve} disabled={acting} size="sm">
                     <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Approuver ({approvals.length}/2)
+                    {t('approveWithCount', { count: approvals.length })}
                   </Button>
                 ) : errorCount > 0 ? (
                   <Button onClick={() => publish(true)} disabled={acting} variant="outline" size="sm">
-                    Publier ({errorCount} erreur{errorCount > 1 ? 's' : ''})
+                    {t('publishWithErrors', { count: errorCount })}
                   </Button>
                 ) : (
                   <Button onClick={() => publish(false)} disabled={acting} size="sm">
                     <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Publier
+                    {t('publish')}
                   </Button>
                 )}
               </>
             )}
             {isArchived && (
               <Button onClick={rollback} disabled={acting} variant="outline" size="sm">
-                Restaurer cette version
+                {t('restoreVersion')}
               </Button>
             )}
           </div>
@@ -383,19 +385,19 @@ export default function BaremeImportPreviewPage() {
       {/* KPI grid — pleine largeur */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <Stat label="Onglets détectés" value={summary.sheetsDetected} />
-          <Stat label="Onglets parsés" value={summary.sheetsParsed} tone="success" />
-          <Stat label="Onglets ignorés" value={summary.sheetsIgnored} tone="muted" />
-          <Stat label="Montants extraits" value={summary.amountsExtracted} tone="primary" />
-          <Stat label="Erreurs" value={errorCount} tone={errorCount > 0 ? 'error' : 'muted'} />
-          <Stat label="Avertissements" value={warnCount} tone={warnCount > 0 ? 'warn' : 'muted'} />
+          <Stat label={t('statSheetsDetected')} value={summary.sheetsDetected} />
+          <Stat label={t('statSheetsParsed')} value={summary.sheetsParsed} tone="success" />
+          <Stat label={t('statSheetsIgnored')} value={summary.sheetsIgnored} tone="muted" />
+          <Stat label={t('kpiAmountsExtracted')} value={summary.amountsExtracted} tone="primary" />
+          <Stat label={t('statErrors')} value={errorCount} tone={errorCount > 0 ? 'error' : 'muted'} />
+          <Stat label={t('statWarnings')} value={warnCount} tone={warnCount > 0 ? 'warn' : 'muted'} />
         </div>
       )}
 
       <Tabs defaultValue="diff" className="space-y-4">
         <TabsList>
           <TabsTrigger value="diff">
-            Changements
+            {t('tabChanges')}
             {diff && diff.changes.length > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {diff.changes.length}
@@ -403,23 +405,23 @@ export default function BaremeImportPreviewPage() {
             )}
           </TabsTrigger>
           <TabsTrigger value="alerts">
-            Alertes
+            {t('tabAlerts')}
             {alerts.length > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {alerts.length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="sheets">Onglets</TabsTrigger>
+          <TabsTrigger value="sheets">{t('tabSheets')}</TabsTrigger>
           <TabsTrigger value="preview">
-            Aperçu montants
+            {t('tabAmountsPreview')}
             <Badge variant="secondary" className="ml-2">
               {totalAmounts}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="raw">Grille brute</TabsTrigger>
+          <TabsTrigger value="raw">{t('tabRawGrid')}</TabsTrigger>
           <TabsTrigger value="workflow">
-            Workflow
+            {t('tabWorkflow')}
             {(approvals.length > 0 || history.length > 0) && (
               <Badge variant="secondary" className="ml-2">
                 {approvals.length + history.length}
@@ -491,11 +493,12 @@ function Stat({
 }
 
 function DiffPanel({ diff, status }: { diff: Diff | null; status: string }) {
+  const t = useTranslations('admin.baremes')
   if (status !== 'draft') {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          La comparaison vs version publiée n’est calculée que pour les brouillons.
+          {t('diffOnlyDrafts')}
         </CardContent>
       </Card>
     )
@@ -504,7 +507,7 @@ function DiffPanel({ diff, status }: { diff: Diff | null; status: string }) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          Aucun diff disponible.
+          {t('diffNone')}
         </CardContent>
       </Card>
     )
@@ -513,7 +516,7 @@ function DiffPanel({ diff, status }: { diff: Diff | null; status: string }) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          Aucune version publiée antérieure — toutes les entrées sont nouvelles.
+          {t('diffNoPrevious')}
         </CardContent>
       </Card>
     )
@@ -528,24 +531,24 @@ function DiffPanel({ diff, status }: { diff: Diff | null; status: string }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
-        <Stat label="Modifiés" value={groups.amount_changed.length} tone="warn" />
-        <Stat label="Nouveaux" value={groups.new_entry.length} tone="success" />
-        <Stat label="Supprimés" value={groups.removed_entry.length} tone="error" />
+        <Stat label={t('diffModified')} value={groups.amount_changed.length} tone="warn" />
+        <Stat label={t('diffNew')} value={groups.new_entry.length} tone="success" />
+        <Stat label={t('diffRemoved')} value={groups.removed_entry.length} tone="error" />
       </div>
 
       {groups.amount_changed.length > 0 && (
-        <DiffSection title="Montants modifiés" items={groups.amount_changed.slice(0, 100)} />
+        <DiffSection title={t('diffSectionModified')} items={groups.amount_changed.slice(0, 100)} />
       )}
       {groups.new_entry.length > 0 && (
-        <DiffSection title="Nouvelles entrées" items={groups.new_entry.slice(0, 100)} />
+        <DiffSection title={t('diffSectionNew')} items={groups.new_entry.slice(0, 100)} />
       )}
       {groups.removed_entry.length > 0 && (
-        <DiffSection title="Entrées supprimées" items={groups.removed_entry.slice(0, 100)} />
+        <DiffSection title={t('diffSectionRemoved')} items={groups.removed_entry.slice(0, 100)} />
       )}
 
       {diff.changes.length > 300 && (
         <p className="text-xs text-muted-foreground">
-          Affichage limité aux 100 premiers changements par catégorie.
+          {t('diffLimited')}
         </p>
       )}
     </div>
@@ -553,6 +556,7 @@ function DiffPanel({ diff, status }: { diff: Diff | null; status: string }) {
 }
 
 function DiffSection({ title, items }: { title: string; items: DiffChange[] }) {
+  const t = useTranslations('admin.baremes')
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -563,10 +567,10 @@ function DiffSection({ title, items }: { title: string; items: DiffChange[] }) {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs text-muted-foreground">
               <tr>
-                <th className="text-left px-3 py-2">Clé</th>
-                <th className="text-left px-3 py-2">Source</th>
-                <th className="text-right px-3 py-2">Ancien</th>
-                <th className="text-right px-3 py-2">Nouveau</th>
+                <th className="text-left px-3 py-2">{t('diffColKey')}</th>
+                <th className="text-left px-3 py-2">{t('diffColSource')}</th>
+                <th className="text-right px-3 py-2">{t('diffColOld')}</th>
+                <th className="text-right px-3 py-2">{t('diffColNew')}</th>
                 <th className="text-right px-3 py-2">Δ</th>
               </tr>
             </thead>
@@ -620,11 +624,12 @@ function AlertsPanel({
   alerts: FileRecord['alerts']
   counts: { error: number; warn: number; info: number }
 }) {
+  const t = useTranslations('admin.baremes')
   if (!alerts || alerts.length === 0) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          Aucune alerte. Tout s’est bien passé.
+          {t('alertsNone')}
         </CardContent>
       </Card>
     )
@@ -642,12 +647,12 @@ function AlertsPanel({
         <CardTitle className="text-sm flex items-center gap-3">
           <span>
             {counts.error > 0 && (
-              <span className="text-red-600 mr-2">{counts.error} erreur(s)</span>
+              <span className="text-red-600 mr-2">{t('alertsErrorCount', { count: counts.error })}</span>
             )}
             {counts.warn > 0 && (
-              <span className="text-yellow-600 mr-2">{counts.warn} avertissement(s)</span>
+              <span className="text-yellow-600 mr-2">{t('alertsWarnCount', { count: counts.warn })}</span>
             )}
-            {counts.info > 0 && <span className="text-blue-600">{counts.info} info(s)</span>}
+            {counts.info > 0 && <span className="text-blue-600">{t('alertsInfoCount', { count: counts.info })}</span>}
           </span>
         </CardTitle>
       </CardHeader>
@@ -660,9 +665,9 @@ function AlertsPanel({
                 <div>{a.message}</div>
                 {(a.sheet || a.cell) && (
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    {a.sheet && <span>Onglet: {a.sheet}</span>}
+                    {a.sheet && <span>{t('alertSheet', { sheet: a.sheet })}</span>}
                     {a.sheet && a.cell && <span> · </span>}
-                    {a.cell && <span>Cellule: {a.cell}</span>}
+                    {a.cell && <span>{t('alertCell', { cell: a.cell })}</span>}
                   </div>
                 )}
               </div>
@@ -679,11 +684,12 @@ function SheetsPanel({
 }: {
   sheets: { name: string; parsed: boolean; amountsCount: number; reason?: string }[]
 }) {
+  const t = useTranslations('admin.baremes')
   if (sheets.length === 0) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          Aucun onglet détecté.
+          {t('sheetsNone')}
         </CardContent>
       </Card>
     )
@@ -694,10 +700,10 @@ function SheetsPanel({
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-xs text-muted-foreground">
             <tr>
-              <th className="text-left px-3 py-2">Onglet</th>
-              <th className="text-left px-3 py-2">Statut</th>
-              <th className="text-right px-3 py-2">Montants</th>
-              <th className="text-left px-3 py-2">Raison</th>
+              <th className="text-left px-3 py-2">{t('sheetsColSheet')}</th>
+              <th className="text-left px-3 py-2">{t('sheetsColStatus')}</th>
+              <th className="text-right px-3 py-2">{t('sheetsColAmounts')}</th>
+              <th className="text-left px-3 py-2">{t('sheetsColReason')}</th>
             </tr>
           </thead>
           <tbody>
@@ -707,10 +713,10 @@ function SheetsPanel({
                 <td className="px-3 py-2">
                   {s.parsed ? (
                     <span className="inline-flex items-center gap-1 text-green-700">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Parsé
+                      <CheckCircle2 className="w-3.5 h-3.5" /> {t('sheetParsed')}
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">Ignoré</span>
+                    <span className="text-muted-foreground">{t('sheetIgnored')}</span>
                   )}
                 </td>
                 <td className="px-3 py-2 text-right font-mono">{s.amountsCount}</td>
@@ -733,11 +739,12 @@ function AmountsPreviewPanel({
   total: number
   limit: number
 }) {
+  const t = useTranslations('admin.baremes')
   if (amounts.length === 0) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          Aucun montant extrait.
+          {t('amountsNone')}
         </CardContent>
       </Card>
     )
@@ -746,8 +753,8 @@ function AmountsPreviewPanel({
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm">
-          Aperçu — {amounts.length} sur {total.toLocaleString('fr-BE')}
-          {total > limit && ` (limite: ${limit})`}
+          {t('amountsPreviewHeader', { shown: amounts.length, total: total.toLocaleString('fr-BE') })}
+          {total > limit && ` ${t('amountsLimit', { limit })}`}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
@@ -755,14 +762,14 @@ function AmountsPreviewPanel({
           <table className="w-full text-xs">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
-                <th className="text-left px-3 py-2">Catégorie</th>
-                <th className="text-left px-3 py-2">Onglet</th>
-                <th className="text-left px-3 py-2">Code alloc</th>
-                <th className="text-left px-3 py-2">Tranche</th>
-                <th className="text-left px-3 py-2">Article</th>
-                <th className="text-left px-3 py-2">Libellé</th>
-                <th className="text-right px-3 py-2">Montant</th>
-                <th className="text-left px-3 py-2">Unité</th>
+                <th className="text-left px-3 py-2">{t('amountsColCategory')}</th>
+                <th className="text-left px-3 py-2">{t('amountsColSheet')}</th>
+                <th className="text-left px-3 py-2">{t('amountsColAllocCode')}</th>
+                <th className="text-left px-3 py-2">{t('amountsColBracket')}</th>
+                <th className="text-left px-3 py-2">{t('amountsColArticle')}</th>
+                <th className="text-left px-3 py-2">{t('amountsColLabel')}</th>
+                <th className="text-right px-3 py-2">{t('amountsColAmount')}</th>
+                <th className="text-left px-3 py-2">{t('amountsColUnit')}</th>
               </tr>
             </thead>
             <tbody>
@@ -806,6 +813,7 @@ interface RawSheetData {
 }
 
 function RawSheetsPanel({ fileId }: { fileId: string }) {
+  const t = useTranslations('admin.baremes')
   const [sheets, setSheets] = useState<RawSheetData[] | null>(null)
   const [activeId, setActiveId] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -817,13 +825,13 @@ function RawSheetsPanel({ fileId }: { fileId: string }) {
       setLoading(true)
       try {
         const res = await fetch(`/api/baremes?fileId=${fileId}`)
-        if (!res.ok) throw new Error('Chargement impossible')
+        if (!res.ok) throw new Error(t('loadError'))
         const data = await res.json()
         if (cancelled) return
         setSheets(data.sheets ?? [])
         if (data.sheets?.[0]) setActiveId(data.sheets[0].id)
       } catch (err) {
-        if (!cancelled) toast.error(err instanceof Error ? err.message : 'Erreur')
+        if (!cancelled) toast.error(err instanceof Error ? err.message : t('error'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -832,14 +840,14 @@ function RawSheetsPanel({ fileId }: { fileId: string }) {
     return () => {
       cancelled = true
     }
-  }, [fileId])
+  }, [fileId, t])
 
   if (loading) {
     return (
       <Card>
         <CardContent className="py-12 text-center text-muted-foreground">
           <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
-          Chargement des grilles…
+          {t('rawLoadingGrids')}
         </CardContent>
       </Card>
     )
@@ -849,7 +857,7 @@ function RawSheetsPanel({ fileId }: { fileId: string }) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          Aucune feuille disponible.
+          {t('rawNoSheets')}
         </CardContent>
       </Card>
     )
@@ -862,15 +870,15 @@ function RawSheetsPanel({ fileId }: { fileId: string }) {
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center gap-3 justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Grille brute</span>
+            <span className="text-sm font-medium">{t('tabRawGrid')}</span>
             <span className="text-xs text-muted-foreground">
-              ({sheets.length} feuille{sheets.length > 1 ? 's' : ''})
+              ({t('rawSheetCount', { count: sheets.length })})
             </span>
           </div>
           <div className="relative w-72 max-w-full">
             <input
               type="search"
-              placeholder="Filtrer les cellules…"
+              placeholder={t('rawFilterCells')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full text-sm border rounded-md px-3 py-1.5 bg-background"
@@ -905,6 +913,7 @@ function RawSheetsPanel({ fileId }: { fileId: string }) {
 }
 
 function ExcelGrid({ cellData, searchTerm }: { cellData: string[][]; searchTerm: string }) {
+  const t = useTranslations('admin.baremes')
   const search = searchTerm.toLowerCase().trim()
 
   const highlightCell = (val: string): React.ReactNode => {
@@ -929,7 +938,7 @@ function ExcelGrid({ cellData, searchTerm }: { cellData: string[][]; searchTerm:
   }
 
   if (!cellData || cellData.length === 0) {
-    return <p className="text-center py-8 text-muted-foreground">Pas de données</p>
+    return <p className="text-center py-8 text-muted-foreground">{t('rawNoData')}</p>
   }
 
   return (
@@ -981,15 +990,16 @@ function WorkflowPanel({
   requiresApproval: boolean
   status: string
 }) {
+  const t = useTranslations('admin.baremes')
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            Approbations
+            {t('workflowApprovals')}
             {requiresApproval && (
               <Badge variant="outline" className="text-[10px]">
-                4 yeux requis
+                {t('workflowFourEyes')}
               </Badge>
             )}
           </CardTitle>
@@ -997,12 +1007,12 @@ function WorkflowPanel({
         <CardContent>
           {!requiresApproval && (
             <p className="text-xs text-muted-foreground mb-3">
-              Ce barème ne requiert pas de double approbation — la publication directe est autorisée.
+              {t('workflowNoApprovalNeeded')}
             </p>
           )}
           {approvals.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Aucune approbation enregistrée pour le moment.
+              {t('workflowNoApprovals')}
             </p>
           ) : (
             <ul className="space-y-3">
@@ -1032,11 +1042,13 @@ function WorkflowPanel({
           {requiresApproval && (status === 'draft' || status === 'pending_approval') && (
             <div className="mt-4 p-3 rounded-md bg-muted/40 text-xs">
               <p>
-                <strong>{Math.max(0, 2 - approvals.length)}</strong> approbation(s)
-                supplémentaire(s) requise(s) pour publication automatique.
+                {t.rich('workflowRemaining', {
+                  count: Math.max(0, 2 - approvals.length),
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </p>
               <p className="text-muted-foreground mt-1">
-                Un approbateur ne peut approuver qu&apos;une fois. Il faut deux admins distincts.
+                {t('workflowApproverNote')}
               </p>
             </div>
           )}
@@ -1045,12 +1057,12 @@ function WorkflowPanel({
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Historique</CardTitle>
+          <CardTitle className="text-base">{t('workflowHistory')}</CardTitle>
         </CardHeader>
         <CardContent>
           {history.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Aucun événement enregistré.
+              {t('workflowNoHistory')}
             </p>
           ) : (
             <ul className="space-y-2 text-sm">
@@ -1075,7 +1087,7 @@ function WorkflowPanel({
                       )}
                     </div>
                     {h.actorEmail && (
-                      <p className="text-xs text-muted-foreground mt-0.5">par {h.actorEmail}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('byActor', { actor: h.actorEmail })}</p>
                     )}
                   </div>
                 </li>

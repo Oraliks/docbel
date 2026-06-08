@@ -16,8 +16,10 @@ import {
   Shield,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 
 export default function ImportBaremePage() {
+  const t = useTranslations('admin.baremes')
   const router = useRouter()
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
@@ -27,16 +29,16 @@ export default function ImportBaremePage() {
   const handleFile = async (file: File | null) => {
     if (!file) return
     if (!file.name.toLowerCase().endsWith('.xlsx')) {
-      toast.error('Seuls les fichiers .xlsx sont acceptés')
+      toast.error(t('onlyXlsx'))
       return
     }
     if (file.size > 20 * 1024 * 1024) {
-      toast.error('Fichier trop volumineux (max 20 MB)')
+      toast.error(t('fileTooLarge'))
       return
     }
 
     setUploading(true)
-    setProgress('Calcul du hash + analyse du workbook…')
+    setProgress(t('progressHashing'))
     try {
       const formData = new FormData()
       formData.append('file', file)
@@ -50,21 +52,21 @@ export default function ImportBaremePage() {
       const data = await res.json()
 
       if (res.status === 409 && data.fileId) {
-        toast.info(data.message ?? 'Fichier déjà importé')
+        toast.info(data.message ?? t('alreadyImported'))
         router.push(`/admin/baremes/import/${data.fileId}`)
         return
       }
 
       if (!res.ok) {
-        throw new Error(data.error ?? 'Échec de l’import')
+        throw new Error(data.error ?? t('importFailed'))
       }
 
       toast.success(
-        `Import créé en brouillon — ${data.summary?.amountsExtracted ?? 0} montants extraits`
+        t('importCreated', { count: data.summary?.amountsExtracted ?? 0 })
       )
       router.push(`/admin/baremes/import/${data.fileId}`)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Échec de l’import'
+      const message = err instanceof Error ? err.message : t('importFailed')
       toast.error(message)
     } finally {
       setUploading(false)
@@ -82,12 +84,11 @@ export default function ImportBaremePage() {
             className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Retour aux barèmes
+            {t('backToBaremes')}
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">Nouvel import de barème</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('importTitle')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Upload d’un fichier Excel officiel (.xlsx). L’import est créé en{' '}
-            <strong>brouillon</strong>: aperçu et validation manuelle avant publication.
+            {t.rich('importIntro', { strong: (chunks) => <strong>{chunks}</strong> })}
           </p>
         </div>
       </div>
@@ -98,7 +99,7 @@ export default function ImportBaremePage() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Fichier source</CardTitle>
+              <CardTitle>{t('sourceFile')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div
@@ -119,10 +120,10 @@ export default function ImportBaremePage() {
               >
                 <FileSpreadsheet className="mx-auto w-16 h-16 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium mb-2">
-                  {uploading ? 'Analyse en cours…' : 'Glissez votre fichier .xlsx ici'}
+                  {uploading ? t('analyzing') : t('dropHere')}
                 </p>
                 <p className="text-sm text-muted-foreground mb-6">
-                  {progress ?? 'ou sélectionnez un fichier depuis votre disque'}
+                  {progress ?? t('orSelectFile')}
                 </p>
                 <label className="inline-block cursor-pointer">
                   <input
@@ -143,7 +144,7 @@ export default function ImportBaremePage() {
                     render={<span />}
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    Choisir un fichier
+                    {t('chooseFile')}
                   </Button>
                 </label>
               </div>
@@ -158,10 +159,9 @@ export default function ImportBaremePage() {
                   className="mt-0.5"
                 />
                 <label htmlFor="requiresApproval" className="text-sm cursor-pointer flex-1">
-                  <span className="font-medium">Exiger une double approbation</span>
+                  <span className="font-medium">{t('requireApprovalLabel')}</span>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Workflow 4 yeux : 2 administrateurs distincts devront approuver avant publication.
-                    Recommandé pour les barèmes pilotant des génération de documents officiels.
+                    {t('requireApprovalDescription')}
                   </p>
                 </label>
               </div>
@@ -169,18 +169,18 @@ export default function ImportBaremePage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-xs">
                 <InfoTile
                   icon={<Shield className="w-4 h-4" />}
-                  title="Hash sha256"
-                  body="Calculé automatiquement pour détecter les doublons. Un fichier identique ne peut être ré-importé."
+                  title={t('tileHashTitle')}
+                  body={t('tileHashBody')}
                 />
                 <InfoTile
                   icon={<CheckCircle2 className="w-4 h-4" />}
-                  title="Statut draft"
-                  body="L’import démarre en brouillon. Rien n’est exposé aux calculateurs avant publication explicite."
+                  title={t('tileDraftTitle')}
+                  body={t('tileDraftBody')}
                 />
                 <InfoTile
                   icon={<AlertTriangle className="w-4 h-4" />}
-                  title="Alertes non bloquantes"
-                  body="Les onglets non gérés ou cellules suspectes sont signalés mais l’import continue."
+                  title={t('tileAlertsTitle')}
+                  body={t('tileAlertsBody')}
                 />
               </div>
             </CardContent>
@@ -193,26 +193,26 @@ export default function ImportBaremePage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Info className="w-4 h-4 text-blue-600" />
-                Pipeline d’import
+                {t('pipelineTitle')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ol className="space-y-3 text-sm">
-                <Step n={1} label="Vérification du type .xlsx (max 20 MB)" />
-                <Step n={2} label="Calcul du hash sha256 → détection doublon" />
-                <Step n={3} label="Lecture du workbook (SheetJS)" />
-                <Step n={4} label="Dispatch vers les parsers dédiés selon l’onglet" />
-                <Step n={5} label="Normalisation des montants (virgules, espaces, codes)" />
-                <Step n={6} label="Stockage en transaction (BaremeFile + BaremeAmount)" />
-                <Step n={7} label="Comparaison automatique vs dernier publié" />
-                <Step n={8} label="Redirection vers la preview pour validation" />
+                <Step n={1} label={t('pipelineStep1')} />
+                <Step n={2} label={t('pipelineStep2')} />
+                <Step n={3} label={t('pipelineStep3')} />
+                <Step n={4} label={t('pipelineStep4')} />
+                <Step n={5} label={t('pipelineStep5')} />
+                <Step n={6} label={t('pipelineStep6')} />
+                <Step n={7} label={t('pipelineStep7')} />
+                <Step n={8} label={t('pipelineStep8')} />
               </ol>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Onglets gérés en V1</CardTitle>
+              <CardTitle className="text-base">{t('managedSheetsTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-xs font-mono">
@@ -234,7 +234,7 @@ export default function ImportBaremePage() {
                 </li>
               </ul>
               <p className="text-xs text-muted-foreground mt-3">
-                Les autres onglets sont conservés en vue grille brute et signalés en alerte info.
+                {t('managedSheetsFooter')}
               </p>
             </CardContent>
           </Card>

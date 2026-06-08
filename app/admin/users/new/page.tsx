@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { ArrowLeftIcon, Loader2, UserPlusIcon } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -25,6 +26,7 @@ import {
 
 export default function NewUserPage() {
   const router = useRouter()
+  const t = useTranslations("admin.users")
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
@@ -40,30 +42,29 @@ export default function NewUserPage() {
     const newErrors: Record<string, string> = {}
 
     if (!formData.name.trim()) {
-      newErrors.name = "Le nom est requis"
+      newErrors.name = t("errorNameRequired")
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "L'email est requis"
+      newErrors.email = t("errorEmailRequired")
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Email invalide"
+      newErrors.email = t("errorEmailInvalid")
     }
 
     if (!formData.password) {
-      newErrors.password = "Le mot de passe est requis"
+      newErrors.password = t("errorPasswordRequired")
     } else if (formData.password.length < 10) {
-      newErrors.password = "Le mot de passe doit contenir au moins 10 caractères"
+      newErrors.password = t("errorPasswordTooShort")
     } else if (
       !/[a-z]/.test(formData.password) ||
       !/[A-Z]/.test(formData.password) ||
       !/\d/.test(formData.password)
     ) {
-      newErrors.password =
-        "Le mot de passe doit contenir une minuscule, une majuscule et un chiffre"
+      newErrors.password = t("errorPasswordComplexity")
     }
 
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Les mots de passe ne correspondent pas"
+      newErrors.confirmPassword = t("errorPasswordMismatch")
     }
 
     setErrors(newErrors)
@@ -93,16 +94,15 @@ export default function NewUserPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(
-          error.error || "Erreur lors de la création de l'utilisateur",
-        )
+        throw new Error(error.error || t("errorCreateFailed"))
       }
 
-      toast.success("Utilisateur créé avec succès")
+      toast.success(t("toastCreated"))
       router.push("/admin/users")
       router.refresh()
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erreur inconnue"
+      const message =
+        error instanceof Error ? error.message : t("errorUnknown")
       toast.error(message)
     } finally {
       setLoading(false)
@@ -119,11 +119,11 @@ export default function NewUserPage() {
           className="mb-3 gap-2 -ml-2"
         >
           <ArrowLeftIcon className="size-4" />
-          Retour aux utilisateurs
+          {t("backToUsers")}
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">Nouvel utilisateur</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("newUser")}</h1>
         <p className="text-muted-foreground mt-1">
-          Créez un compte et définissez son rôle et son statut.
+          {t("newUserSubtitle")}
         </p>
       </div>
 
@@ -131,21 +131,20 @@ export default function NewUserPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <UserPlusIcon className="size-4" />
-            Informations du compte
+            {t("accountInfo")}
           </CardTitle>
           <CardDescription>
-            Le mot de passe doit faire au moins 10 caractères, avec une
-            minuscule, une majuscule et un chiffre.
+            {t("passwordHint")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="name">Nom complet</Label>
+                <Label htmlFor="name">{t("labelFullName")}</Label>
                 <Input
                   id="name"
-                  placeholder="Jean Dupont"
+                  placeholder={t("placeholderFullName")}
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
@@ -159,11 +158,11 @@ export default function NewUserPage() {
               </div>
 
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("colEmail")}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="jean@example.com"
+                  placeholder={t("placeholderEmail")}
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
@@ -177,7 +176,7 @@ export default function NewUserPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
+                <Label htmlFor="password">{t("labelPassword")}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -195,7 +194,7 @@ export default function NewUserPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                <Label htmlFor="confirmPassword">{t("labelConfirmPassword")}</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -213,7 +212,7 @@ export default function NewUserPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="role">Rôle</Label>
+                <Label htmlFor="role">{t("colRole")}</Label>
                 <Select
                   value={formData.role}
                   onValueChange={(value: string | null) =>
@@ -225,16 +224,16 @@ export default function NewUserPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">Utilisateur</SelectItem>
-                    <SelectItem value="employer">Employeur</SelectItem>
-                    <SelectItem value="moderator">Modérateur</SelectItem>
-                    <SelectItem value="admin">Administrateur</SelectItem>
+                    <SelectItem value="user">{t("roleUser")}</SelectItem>
+                    <SelectItem value="employer">{t("roleEmployer")}</SelectItem>
+                    <SelectItem value="moderator">{t("roleModerator")}</SelectItem>
+                    <SelectItem value="admin">{t("roleAdmin")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status">Statut</Label>
+                <Label htmlFor="status">{t("colStatus")}</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value: string | null) =>
@@ -246,10 +245,10 @@ export default function NewUserPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Actif</SelectItem>
-                    <SelectItem value="pending">En attente</SelectItem>
-                    <SelectItem value="disabled">Désactivé</SelectItem>
-                    <SelectItem value="locked">Verrouillé</SelectItem>
+                    <SelectItem value="active">{t("statusActive")}</SelectItem>
+                    <SelectItem value="pending">{t("statusPending")}</SelectItem>
+                    <SelectItem value="disabled">{t("statusDisabled")}</SelectItem>
+                    <SelectItem value="locked">{t("statusLocked")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -261,11 +260,11 @@ export default function NewUserPage() {
                 variant="outline"
                 render={<Link href="/admin/users" />}
               >
-                Annuler
+                {t("cancel")}
               </Button>
               <Button type="submit" disabled={loading} className="gap-2">
                 {loading && <Loader2 className="size-4 animate-spin" />}
-                Créer l&apos;utilisateur
+                {t("createUser")}
               </Button>
             </div>
           </form>

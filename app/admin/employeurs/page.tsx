@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { listExistingOrganizationNames, listOrganizations } from "@/lib/partner-domains";
 import { PartnerOverviewShell } from "@/components/admin/partenaires/overview/partner-overview-shell";
 
@@ -21,6 +22,7 @@ import { PartnerOverviewShell } from "@/components/admin/partenaires/overview/pa
 export const dynamic = "force-dynamic";
 
 export default async function EmployeursAdminPage() {
+  const t = await getTranslations("admin.employeurs");
   const [initialOrganizations, existingOrgNames] = await Promise.all([
     listOrganizations("employeur"),
     listExistingOrganizationNames(),
@@ -56,13 +58,13 @@ export default async function EmployeursAdminPage() {
       existingOrganizationNames={existingOrgNames}
       // billingEnabled non pertinent ici (verrou global masqué via showBilling).
       billingEnabled={false}
-      title="Espace Employeurs"
+      title={t("spaceTitle")}
       showBilling={false}
       showExport={true}
       exportHref="/api/admin/partner-users/export?segment=employeur"
       headerLinks={[
-        { href: "/admin/employeurs/stats", label: "Statistiques", icon: "stats" },
-        { href: "/admin/employeurs/email", label: "Email d'invitation", icon: "mail" },
+        { href: "/admin/employeurs/stats", label: t("linkStats"), icon: "stats" },
+        { href: "/admin/employeurs/email", label: t("linkEmail"), icon: "mail" },
       ]}
       createDefaultSegment="employeur"
     />

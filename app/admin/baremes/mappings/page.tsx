@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select'
 import { ArrowLeft, Plus, Trash2, Save, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 
 interface Mapping {
   id: string
@@ -83,6 +84,7 @@ const EMPTY_DRAFT: NewMappingDraft = {
 }
 
 export default function MappingsPage() {
+  const t = useTranslations('admin.baremes')
   const [mappings, setMappings] = useState<Mapping[]>([])
   const [loading, setLoading] = useState(true)
   const [draft, setDraft] = useState<NewMappingDraft>(EMPTY_DRAFT)
@@ -95,11 +97,11 @@ export default function MappingsPage() {
       const data = await res.json()
       setMappings(data.mappings ?? [])
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Chargement impossible')
+      toast.error(err instanceof Error ? err.message : t('loadError'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -108,7 +110,7 @@ export default function MappingsPage() {
 
   const save = async () => {
     if (!draft.sheetName.trim()) {
-      toast.error("Renseigne le nom de l'onglet")
+      toast.error(t('mappingSheetNameRequired'))
       return
     }
     setSaving(true)
@@ -124,27 +126,27 @@ export default function MappingsPage() {
         }),
       })
       const body = await res.json()
-      if (!res.ok) throw new Error(body.error ?? 'Échec sauvegarde')
-      toast.success('Mapping enregistré')
+      if (!res.ok) throw new Error(body.error ?? t('mappingSaveFailed'))
+      toast.success(t('mappingSaved'))
       setDraft(EMPTY_DRAFT)
       await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur')
+      toast.error(err instanceof Error ? err.message : t('error'))
     } finally {
       setSaving(false)
     }
   }
 
   const remove = async (id: string) => {
-    if (!confirm('Supprimer ce mapping ? Les prochains imports utiliseront la détection auto.'))
+    if (!confirm(t('mappingDeleteConfirm')))
       return
     try {
       const res = await fetch(`/api/baremes/mappings/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Échec')
-      toast.success('Mapping supprimé')
+      if (!res.ok) throw new Error(t('failed'))
+      toast.success(t('mappingDeleted'))
       await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur')
+      toast.error(err instanceof Error ? err.message : t('error'))
     }
   }
 
@@ -163,10 +165,10 @@ export default function MappingsPage() {
           enabled: !m.enabled,
         }),
       })
-      if (!res.ok) throw new Error('Échec')
+      if (!res.ok) throw new Error(t('failed'))
       await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur')
+      toast.error(err instanceof Error ? err.message : t('error'))
     }
   }
 
@@ -178,20 +180,18 @@ export default function MappingsPage() {
           className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          Barèmes
+          {t('title')}
         </Link>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Mappings d&apos;onglets</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('sheetMappings')}</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-              Override de structure pour un onglet dont la mise en page a changé.
-              Si un mapping existe pour un nom d&apos;onglet, il prend le pas sur la
-              détection automatique au moment de l&apos;import suivant.
+              {t('mappingIntro')}
             </p>
           </div>
           <Button variant="outline" onClick={load} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Actualiser
+            {t('refresh')}
           </Button>
         </div>
       </div>
@@ -202,26 +202,26 @@ export default function MappingsPage() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Plus className="w-4 h-4" />
-              Nouveau mapping
+              {t('mappingNew')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
               <label className="text-xs font-medium block mb-1">
-                Nom de l&apos;onglet Excel
+                {t('mappingSheetNameLabel')}
               </label>
               <Input
-                placeholder="ex: A_N_B_vol_plein"
+                placeholder={t('mappingSheetNamePlaceholder')}
                 value={draft.sheetName}
                 onChange={(e) => setDraft({ ...draft, sheetName: e.target.value })}
               />
               <p className="text-[10px] text-muted-foreground mt-1">
-                Exact, espaces inclus. Existant remplacé.
+                {t('mappingSheetNameHint')}
               </p>
             </div>
 
             <div>
-              <label className="text-xs font-medium block mb-1">Type de parser</label>
+              <label className="text-xs font-medium block mb-1">{t('mappingParserType')}</label>
               <Select
                 value={draft.parserType}
                 onValueChange={(v) => setDraft({ ...draft, parserType: v ?? 'allocation_matrix' })}
@@ -240,7 +240,7 @@ export default function MappingsPage() {
             </div>
 
             <div>
-              <label className="text-xs font-medium block mb-1">Catégorie produite</label>
+              <label className="text-xs font-medium block mb-1">{t('mappingCategory')}</label>
               <Select
                 value={draft.category}
                 onValueChange={(v) => setDraft({ ...draft, category: v ?? 'full_unemployment' })}
@@ -259,9 +259,9 @@ export default function MappingsPage() {
             </div>
 
             <div>
-              <label className="text-xs font-medium block mb-1">Notes (optionnel)</label>
+              <label className="text-xs font-medium block mb-1">{t('mappingNotesLabel')}</label>
               <Input
-                placeholder="ex: ONEM a modifié la structure le 03/2026"
+                placeholder={t('mappingNotesPlaceholder')}
                 value={draft.notes}
                 onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
               />
@@ -269,7 +269,7 @@ export default function MappingsPage() {
 
             <Button onClick={save} disabled={saving} className="w-full">
               <Save className="w-4 h-4 mr-2" />
-              {saving ? 'Sauvegarde…' : 'Enregistrer'}
+              {saving ? t('saving') : t('save')}
             </Button>
           </CardContent>
         </Card>
@@ -278,32 +278,35 @@ export default function MappingsPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-base">
-              Mappings actifs ({mappings.filter((m) => m.enabled).length}/{mappings.length})
+              {t('mappingActiveCount', {
+                active: mappings.filter((m) => m.enabled).length,
+                total: mappings.length,
+              })}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Onglet</TableHead>
-                  <TableHead>Parser</TableHead>
-                  <TableHead>Catégorie</TableHead>
-                  <TableHead>Notes</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('mappingColSheet')}</TableHead>
+                  <TableHead>{t('mappingColParser')}</TableHead>
+                  <TableHead>{t('mappingColCategory')}</TableHead>
+                  <TableHead>{t('mappingColNotes')}</TableHead>
+                  <TableHead className="text-right">{t('colActions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      Chargement…
+                      {t('loading')}
                     </TableCell>
                   </TableRow>
                 )}
                 {!loading && mappings.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      Aucun mapping. La détection automatique s&apos;applique pour tous les onglets.
+                      {t('mappingEmpty')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -314,7 +317,7 @@ export default function MappingsPage() {
                         {m.sheetName}
                         {!m.enabled && (
                           <Badge variant="secondary" className="ml-2 text-[10px]">
-                            désactivé
+                            {t('mappingDisabled')}
                           </Badge>
                         )}
                       </TableCell>
@@ -330,7 +333,7 @@ export default function MappingsPage() {
                           onClick={() => toggleEnabled(m)}
                           className="mr-1"
                         >
-                          {m.enabled ? 'Désactiver' : 'Activer'}
+                          {m.enabled ? t('mappingDeactivate') : t('mappingActivate')}
                         </Button>
                         <Button
                           variant="ghost"
@@ -351,16 +354,12 @@ export default function MappingsPage() {
 
       <Card className="bg-muted/30">
         <CardContent className="p-4 text-xs text-muted-foreground space-y-2">
-          <div className="font-medium text-foreground">Comment ça marche ?</div>
+          <div className="font-medium text-foreground">{t('mappingHowItWorksTitle')}</div>
           <p>
-            Les mappings prennent le pas sur la table par défaut au moment du prochain import.
-            Utilise-les si ONEM publie un fichier avec un onglet renommé ou réorganisé : tu peux
-            forcer un parser existant à traiter un nouvel onglet sans déployer de code.
+            {t('mappingHowItWorksBody1')}
           </p>
           <p>
-            Pour un changement structurel profond (positions de colonnes), V2.1 ajoutera un éditeur
-            de configuration JSON par mapping. Pour l&apos;instant, le mapping route uniquement le
-            choix parser+catégorie.
+            {t('mappingHowItWorksBody2')}
           </p>
         </CardContent>
       </Card>

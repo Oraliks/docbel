@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Eye, Save, Send, ChevronDown, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { NewsEditor } from '@/components/admin/news/news-editor';
 import { PublishDialog } from '@/components/admin/news/publish-dialog';
 import {
@@ -44,26 +45,30 @@ const calculateReadingTime = (content: string) => {
 };
 
 // Validation function that returns field-specific errors
-const validateForm = (form: { title: string; excerpt: string; content: string; category: string }): Record<string, string> => {
+const validateForm = (
+  form: { title: string; excerpt: string; content: string; category: string },
+  t: (key: string) => string
+): Record<string, string> => {
   const newErrors: Record<string, string> = {};
 
   if (!form.title?.trim()) {
-    newErrors.title = 'Le titre est obligatoire';
+    newErrors.title = t('errTitleRequired');
   }
   if (!form.excerpt?.trim()) {
-    newErrors.excerpt = 'La description courte est obligatoire';
+    newErrors.excerpt = t('errExcerptRequired');
   }
   if (!form.content?.trim()) {
-    newErrors.content = 'Le contenu est obligatoire';
+    newErrors.content = t('errContentRequired');
   }
   if (!form.category?.trim()) {
-    newErrors.category = 'La catégorie est obligatoire';
+    newErrors.category = t('errCategoryRequired');
   }
 
   return newErrors;
 };
 
 export default function NewsEditorPage() {
+  const t = useTranslations('admin.news');
   const params = useParams();
   const router = useRouter();
   const newsId = params.newsId as string;
@@ -115,14 +120,14 @@ export default function NewsEditorPage() {
         setCurrentId(data.id);
       } catch (error) {
         console.error('Error fetching article:', error);
-        toast.error('Erreur lors du chargement de l\'article');
+        toast.error(t('toastLoadError'));
         router.push('/admin/news');
       } finally {
         setIsLoading(false);
       }
     };
     fetchArticle();
-  }, [newsId, isNew, router]);
+  }, [newsId, isNew, router, t]);
 
   const handleFieldChange = useCallback((field: string, value: unknown) => {
     setForm((prev) => {
@@ -148,7 +153,7 @@ export default function NewsEditorPage() {
 
   // Save (create or update)
   const handleSave = useCallback(async (): Promise<NewsArticle | null> => {
-    const newErrors = validateForm(form);
+    const newErrors = validateForm(form, t);
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -158,7 +163,7 @@ export default function NewsEditorPage() {
     setErrors({});
 
     setIsSaving(true);
-    const loadingToast = toast.loading('Enregistrement de l\'article...');
+    const loadingToast = toast.loading(t('toastSaving'));
     try {
       const url = currentId ? `/api/news/${currentId}` : '/api/news';
       const method = currentId ? 'PATCH' : 'POST';
@@ -174,7 +179,7 @@ export default function NewsEditorPage() {
         const issueDetail = Array.isArray(errData.issues) && errData.issues.length > 0
           ? ` (${errData.issues.map((i: { path?: (string | number)[]; message?: string }) => `${i.path?.join('.') ?? ''}: ${i.message ?? ''}`).join('; ')})`
           : '';
-        throw new Error(`${errData.error || 'Impossible d\'enregistrer l\'article'}${issueDetail}`);
+        throw new Error(`${errData.error || t('toastSaveError')}${issueDetail}`);
       }
 
       const saved: NewsArticle = await res.json();
@@ -182,7 +187,7 @@ export default function NewsEditorPage() {
       setLastSavedAt(new Date());
 
       toast.dismiss(loadingToast);
-      toast.success(currentId ? 'Article sauvegardé' : 'Article créé avec succès');
+      toast.success(currentId ? t('toastSaved') : t('toastCreated'));
 
       if (!currentId) {
         // First save: navigate to the new article URL
@@ -200,44 +205,44 @@ export default function NewsEditorPage() {
     } catch (error) {
       console.error('Error saving article:', error);
       toast.dismiss(loadingToast);
-      toast.error(error instanceof Error ? error.message : 'Impossible d\'enregistrer l\'article');
+      toast.error(error instanceof Error ? error.message : t('toastSaveError'));
       return null;
     } finally {
       setIsSaving(false);
     }
-  }, [form, currentId]);
+  }, [form, currentId, t]);
 
   // Actually publish (called from PublishDialog)
   const publishArticle = useCallback(async (idOverride?: string) => {
     const articleId = idOverride ?? currentId;
     if (!articleId) {
-      toast.error('Impossible de publier : article non sauvegardé');
+      toast.error(t('toastPublishNotSaved'));
       return;
     }
-    const loadingToast = toast.loading('Publication de l\'article...');
+    const loadingToast = toast.loading(t('toastPublishing'));
     try {
       const res = await fetch(`/api/news/${articleId}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!res.ok) throw new Error('Impossible de publier l\'article');
+      if (!res.ok) throw new Error(t('toastPublishFailed'));
       await res.json();
       setForm((prev) => ({ ...prev, status: 'published' }));
       setLastSavedAt(new Date());
       toast.dismiss(loadingToast);
-      toast.success('Article publié avec succès');
+      toast.success(t('toastPublished'));
       setShowPublishDialog(false);
     } catch (error) {
       console.error('Error publishing:', error);
       toast.dismiss(loadingToast);
-      toast.error('Erreur lors de la publication');
+      toast.error(t('toastPublishError'));
       throw error;
     }
-  }, [currentId]);
+  }, [currentId, t]);
 
   // Publish now (directly without dialog)
   const handlePublishNow = useCallback(async () => {
-    const newErrors = validateForm(form);
+    const newErrors = validateForm(form, t);
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -257,7 +262,7 @@ export default function NewsEditorPage() {
 
   // Open schedule dialog
   const handleOpenSchedule = useCallback(async () => {
-    const newErrors = validateForm(form);
+    const newErrors = validateForm(form, t);
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -276,10 +281,10 @@ export default function NewsEditorPage() {
   // Schedule (called from PublishDialog) — uses dedicated /schedule endpoint
   const scheduleArticle = useCallback(async (date: string, time: string) => {
     if (!currentId) {
-      toast.error('Impossible de planifier : article non sauvegardé');
+      toast.error(t('toastScheduleNotSaved'));
       return;
     }
-    const loadingToast = toast.loading('Planification de l\'article...');
+    const loadingToast = toast.loading(t('toastScheduling'));
     try {
       const scheduledAt = new Date(`${date}T${time}`).toISOString();
       const res = await fetch(`/api/news/${currentId}/schedule`, {
@@ -287,63 +292,63 @@ export default function NewsEditorPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scheduledAt }),
       });
-      if (!res.ok) throw new Error('Impossible de planifier l\'article');
+      if (!res.ok) throw new Error(t('toastScheduleFailed'));
       const updated: NewsArticle = await res.json();
       setForm((prev) => ({ ...prev, status: updated.status }));
       setLastSavedAt(new Date());
       toast.dismiss(loadingToast);
-      toast.success(`Article planifié pour ${new Date(scheduledAt).toLocaleString('fr-FR')}`);
+      toast.success(t('toastScheduled', { date: new Date(scheduledAt).toLocaleString('fr-FR') }));
       setShowPublishDialog(false);
     } catch (error) {
       console.error('Error scheduling:', error);
       toast.dismiss(loadingToast);
-      toast.error('Erreur lors de la planification');
+      toast.error(t('toastScheduleError'));
       throw error;
     }
-  }, [currentId]);
+  }, [currentId, t]);
 
   // Unpublish (revert to draft) — uses dedicated /unpublish endpoint
   const handleUnpublish = useCallback(async () => {
     if (!currentId) return;
-    const loadingToast = toast.loading('Remise en brouillon...');
+    const loadingToast = toast.loading(t('toastUnpublishing'));
     try {
       const res = await fetch(`/api/news/${currentId}/unpublish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!res.ok) throw new Error('Impossible de retirer la publication');
+      if (!res.ok) throw new Error(t('toastUnpublishFailed'));
       setForm((prev) => ({ ...prev, status: 'draft' }));
       toast.dismiss(loadingToast);
-      toast.success('Article remis en brouillon');
+      toast.success(t('toastUnpublished'));
     } catch (error) {
       console.error('Error unpublishing:', error);
       toast.dismiss(loadingToast);
-      toast.error('Erreur lors de la dépublication');
+      toast.error(t('toastUnpublishError'));
     }
-  }, [currentId]);
+  }, [currentId, t]);
 
   const handlePreview = useCallback(() => {
     if (!currentId || !form.slug) {
-      toast.error('Sauvegardez l\'article avant de le prévisualiser');
+      toast.error(t('toastPreviewNotSaved'));
       return;
     }
     try {
       window.open(`/actualites/${form.slug}`, '_blank');
-      toast.success('Ouverture de l\'aperçu...');
+      toast.success(t('toastPreviewOpening'));
     } catch {
-      toast.error('Erreur lors de l\'ouverture de l\'aperçu');
+      toast.error(t('toastPreviewError'));
     }
-  }, [currentId, form.slug]);
+  }, [currentId, form.slug, t]);
 
   // Format last saved time
   const lastSavedLabel = lastSavedAt
-    ? `Sauvegardé à ${lastSavedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+    ? t('savedAt', { time: lastSavedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) })
     : null;
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-muted-foreground">Chargement...</div>
+        <div className="text-muted-foreground">{t('loading')}</div>
       </div>
     );
   }
@@ -359,7 +364,7 @@ export default function NewsEditorPage() {
               variant="outline"
               size="sm"
               onClick={() => {
-                if (unsavedChanges && !confirm('Vous avez des modifications non sauvegardées. Quitter quand même ?')) {
+                if (unsavedChanges && !confirm(t('leaveConfirm'))) {
                   return;
                 }
                 router.push('/admin/news');
@@ -367,16 +372,16 @@ export default function NewsEditorPage() {
               className="gap-2 h-9"
             >
               <ArrowLeft className="w-4 h-4" />
-              Retour
+              {t('back')}
             </Button>
             <div>
               <h1 className="text-2xl font-bold leading-tight">
-                {isNew && !currentId ? 'Nouvel article' : 'Éditer l\'article'}
+                {isNew && !currentId ? t('newArticle') : t('editArticle')}
               </h1>
               <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
-                {form.title || (isNew ? 'Créez un nouvel article' : 'Article')}
+                {form.title || (isNew ? t('newArticleSubtitle') : t('articleSubtitle'))}
                 {unsavedChanges && (
-                  <span className="text-orange-600 font-medium">• Modifications non enregistrées</span>
+                  <span className="text-orange-600 font-medium">• {t('unsavedChanges')}</span>
                 )}
                 {!unsavedChanges && lastSavedLabel && (
                   <span className="text-green-600 font-medium flex items-center gap-1">
@@ -397,7 +402,7 @@ export default function NewsEditorPage() {
               onClick={handlePreview}
             >
               <Eye className="w-4 h-4" />
-              Prévisualiser
+              {t('preview')}
             </Button>
             <Button
               variant="outline"
@@ -407,7 +412,7 @@ export default function NewsEditorPage() {
               disabled={isSaving}
             >
               <Save className="w-4 h-4" />
-              {isSaving ? 'Enregistrement...' : 'Enregistrer le brouillon'}
+              {isSaving ? t('savingShort') : t('saveDraft')}
             </Button>
             <div className="flex">
               <Button
@@ -417,7 +422,7 @@ export default function NewsEditorPage() {
                 disabled={isSaving}
               >
                 <Send className="w-4 h-4" />
-                Publier
+                {t('publish')}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger className="h-9 px-2 bg-red-600 hover:bg-red-700 rounded-r-md inline-flex items-center justify-center text-white transition-colors">
@@ -426,12 +431,12 @@ export default function NewsEditorPage() {
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem onClick={handleOpenSchedule}>
                     <Eye className="w-4 h-4 mr-2" />
-                    Planifier la publication
+                    {t('schedulePublication')}
                   </DropdownMenuItem>
                   {form.status === 'published' && (
                     <DropdownMenuItem onClick={handleUnpublish}>
                       <ArrowLeft className="w-4 h-4 mr-2" />
-                      Remettre en brouillon
+                      {t('revertToDraft')}
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>

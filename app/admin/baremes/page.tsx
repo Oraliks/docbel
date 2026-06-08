@@ -41,6 +41,7 @@ import {
   ArrowUpDown,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslations } from 'next-intl'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 
 interface BareFile {
@@ -60,24 +61,35 @@ interface BareFile {
 type SortKey = 'name' | 'status' | 'validFrom' | 'uploadedAt' | 'amountsCount'
 type SortDir = 'asc' | 'desc'
 
-const STATUS_INFO: Record<string, { label: string; tone: string; order: number }> = {
-  draft: { label: 'Brouillon', tone: 'bg-yellow-100 text-yellow-900 border-yellow-300', order: 0 },
-  published: { label: 'Publié', tone: 'bg-green-100 text-green-900 border-green-300', order: 1 },
-  archived: { label: 'Archivé', tone: 'bg-muted text-muted-foreground', order: 3 },
-  rejected: { label: 'Rejeté', tone: 'bg-red-100 text-red-900 border-red-300', order: 4 },
-  active: { label: 'Legacy', tone: 'bg-blue-100 text-blue-900 border-blue-300', order: 2 },
+const STATUS_INFO: Record<string, { tone: string; order: number }> = {
+  draft: { tone: 'bg-yellow-100 text-yellow-900 border-yellow-300', order: 0 },
+  published: { tone: 'bg-green-100 text-green-900 border-green-300', order: 1 },
+  archived: { tone: 'bg-muted text-muted-foreground', order: 3 },
+  rejected: { tone: 'bg-red-100 text-red-900 border-red-300', order: 4 },
+  active: { tone: 'bg-blue-100 text-blue-900 border-blue-300', order: 2 },
+}
+
+const STATUS_LABEL_KEY: Record<string, string> = {
+  draft: 'statusDraft',
+  published: 'statusPublished',
+  archived: 'statusArchived',
+  rejected: 'statusRejected',
+  active: 'statusLegacy',
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const info = STATUS_INFO[status] ?? { label: status, tone: 'bg-muted', order: 99 }
+  const t = useTranslations('admin.baremes')
+  const info = STATUS_INFO[status] ?? { tone: 'bg-muted', order: 99 }
+  const labelKey = STATUS_LABEL_KEY[status]
   return (
     <span className={`inline-block text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border ${info.tone}`}>
-      {info.label}
+      {labelKey ? t(labelKey) : status}
     </span>
   )
 }
 
 export default function BaremesAdminPage() {
+  const t = useTranslations('admin.baremes')
   const confirm = useConfirm()
   const [files, setFiles] = useState<BareFile[]>([])
   const [loading, setLoading] = useState(true)
@@ -95,11 +107,11 @@ export default function BaremesAdminPage() {
       setFiles(data.files ?? [])
     } catch (err) {
       console.error(err)
-      toast.error('Chargement impossible')
+      toast.error(t('loadError'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -163,11 +175,11 @@ export default function BaremesAdminPage() {
 
   const handlePublish = async (id: string, hasErrors: boolean) => {
     const ok = await confirm({
-      title: hasErrors ? 'Publier malgré les alertes d’erreur ?' : 'Publier cet import ?',
+      title: hasErrors ? t('publishConfirmErrorsTitle') : t('publishConfirmTitle'),
       description: hasErrors
-        ? 'Des erreurs ont été détectées dans la dernière analyse. La publication forcée passera outre — assure-toi d’avoir vérifié manuellement.'
-        : 'La version actuellement publiée sera archivée et remplacée par celle-ci.',
-      confirmText: hasErrors ? 'Publier quand même' : 'Publier',
+        ? t('publishConfirmErrorsDescription')
+        : t('publishConfirmDescription'),
+      confirmText: hasErrors ? t('publishAnyway') : t('publish'),
       destructive: hasErrors,
     })
     if (!ok) return
@@ -179,11 +191,11 @@ export default function BaremesAdminPage() {
         body: JSON.stringify({ force: hasErrors }),
       })
       const body = await res.json()
-      if (!res.ok) throw new Error(body.error ?? 'Échec')
-      toast.success('Import publié')
+      if (!res.ok) throw new Error(body.error ?? t('failed'))
+      toast.success(t('publishSuccess'))
       await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur')
+      toast.error(err instanceof Error ? err.message : t('error'))
     } finally {
       setActing(null)
     }
@@ -191,9 +203,9 @@ export default function BaremesAdminPage() {
 
   const handleReject = async (id: string) => {
     const ok = await confirm({
-      title: 'Rejeter cet import ?',
-      description: 'Il sera marqué "rejeté" et ne pourra plus être publié. Tu pourras toujours réuploader le fichier.',
-      confirmText: 'Rejeter',
+      title: t('rejectConfirmTitle'),
+      description: t('rejectConfirmDescription'),
+      confirmText: t('reject'),
       destructive: true,
     })
     if (!ok) return
@@ -201,11 +213,11 @@ export default function BaremesAdminPage() {
     try {
       const res = await fetch(`/api/baremes/import/${id}/reject`, { method: 'POST' })
       const body = await res.json()
-      if (!res.ok) throw new Error(body.error ?? 'Échec')
-      toast.success('Import rejeté')
+      if (!res.ok) throw new Error(body.error ?? t('failed'))
+      toast.success(t('rejectSuccess'))
       await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur')
+      toast.error(err instanceof Error ? err.message : t('error'))
     } finally {
       setActing(null)
     }
@@ -215,10 +227,9 @@ export default function BaremesAdminPage() {
     const file = files.find((f) => f.id === id)
     const fileName = file?.name ?? id.slice(0, 8)
     const ok = await confirm({
-      title: `Supprimer le fichier "${fileName}" ?`,
-      description:
-        "Le BaremeFile et tous ses BaremeAmount associés seront effacés définitivement. Si le fichier est actif, les montants publics rendus depuis cette source ne seront plus résolvables.",
-      confirmText: 'Supprimer définitivement',
+      title: t('deleteConfirmTitle', { name: fileName }),
+      description: t('deleteConfirmDescription'),
+      confirmText: t('deleteConfirm'),
       destructive: true,
       requireText: fileName,
     })
@@ -226,11 +237,11 @@ export default function BaremesAdminPage() {
     setActing(id)
     try {
       const res = await fetch(`/api/baremes/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Échec suppression')
-      toast.success('Fichier supprimé')
+      if (!res.ok) throw new Error(t('deleteFailed'))
+      toast.success(t('deleteSuccess'))
       await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur')
+      toast.error(err instanceof Error ? err.message : t('error'))
     } finally {
       setActing(null)
     }
@@ -241,9 +252,9 @@ export default function BaremesAdminPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Barèmes officiels</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Workflow d’import : upload .xlsx → brouillon → validation → publication versionnée.
+            {t('subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -251,16 +262,16 @@ export default function BaremesAdminPage() {
             href="/admin/baremes/mappings"
             className="text-sm text-muted-foreground hover:text-foreground"
           >
-            Mappings d&apos;onglets
+            {t('sheetMappings')}
           </Link>
           <Button variant="outline" onClick={() => load()} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Actualiser
+            {t('refresh')}
           </Button>
           <Link href="/admin/baremes/import">
             <Button>
               <Plus className="w-4 h-4 mr-2" />
-              Nouvel import
+              {t('newImport')}
             </Button>
           </Link>
         </div>
@@ -268,32 +279,32 @@ export default function BaremesAdminPage() {
 
       {/* KPI */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <KpiCard label="Total fichiers" value={counts.total} />
+        <KpiCard label={t('kpiTotalFiles')} value={counts.total} />
         <KpiCard
-          label="Brouillons"
+          label={t('kpiDrafts')}
           value={counts.byStatus.draft ?? 0}
           tone={counts.byStatus.draft ? 'warn' : 'muted'}
           onClick={() => setStatusFilter('draft')}
         />
         <KpiCard
-          label="Publiés"
+          label={t('kpiPublished')}
           value={counts.byStatus.published ?? 0}
           tone="success"
           onClick={() => setStatusFilter('published')}
         />
         <KpiCard
-          label="Archivés"
+          label={t('kpiArchived')}
           value={counts.byStatus.archived ?? 0}
           tone="muted"
           onClick={() => setStatusFilter('archived')}
         />
         <KpiCard
-          label="Legacy"
+          label={t('kpiLegacy')}
           value={counts.byStatus.active ?? 0}
           tone="info"
           onClick={() => setStatusFilter('active')}
         />
-        <KpiCard label="Montants extraits" value={counts.totalAmounts} tone="primary" />
+        <KpiCard label={t('kpiAmountsExtracted')} value={counts.totalAmounts} tone="primary" />
       </div>
 
       {/* Filtres */}
@@ -302,7 +313,7 @@ export default function BaremesAdminPage() {
           <div className="relative flex-1 min-w-[240px]">
             <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher par nom de fichier…"
+              placeholder={t('searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -310,15 +321,15 @@ export default function BaremesAdminPage() {
           </div>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? 'all')}>
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filtrer par statut" />
+              <SelectValue placeholder={t('filterByStatus')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous les statuts</SelectItem>
-              <SelectItem value="draft">Brouillons</SelectItem>
-              <SelectItem value="published">Publiés</SelectItem>
-              <SelectItem value="archived">Archivés</SelectItem>
-              <SelectItem value="rejected">Rejetés</SelectItem>
-              <SelectItem value="active">Legacy</SelectItem>
+              <SelectItem value="all">{t('statusAll')}</SelectItem>
+              <SelectItem value="draft">{t('kpiDrafts')}</SelectItem>
+              <SelectItem value="published">{t('kpiPublished')}</SelectItem>
+              <SelectItem value="archived">{t('kpiArchived')}</SelectItem>
+              <SelectItem value="rejected">{t('statusRejectedPlural')}</SelectItem>
+              <SelectItem value="active">{t('kpiLegacy')}</SelectItem>
             </SelectContent>
           </Select>
           {(statusFilter !== 'all' || search) && (
@@ -330,11 +341,11 @@ export default function BaremesAdminPage() {
                 setStatusFilter('all')
               }}
             >
-              Réinitialiser
+              {t('reset')}
             </Button>
           )}
           <div className="ml-auto text-sm text-muted-foreground">
-            {filtered.length} / {files.length} fichiers
+            {t('fileCount', { shown: filtered.length, total: files.length })}
           </div>
         </CardContent>
       </Card>
@@ -344,49 +355,49 @@ export default function BaremesAdminPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <SortHead label="Fichier" active={sortKey === 'name'} dir={sortDir} onClick={() => toggleSort('name')} />
-              <SortHead label="Statut" active={sortKey === 'status'} dir={sortDir} onClick={() => toggleSort('status')} />
+              <SortHead label={t('colFile')} active={sortKey === 'name'} dir={sortDir} onClick={() => toggleSort('name')} />
+              <SortHead label={t('colStatus')} active={sortKey === 'status'} dir={sortDir} onClick={() => toggleSort('status')} />
               <SortHead
-                label="Valide à partir du"
+                label={t('colValidFrom')}
                 active={sortKey === 'validFrom'}
                 dir={sortDir}
                 onClick={() => toggleSort('validFrom')}
               />
               <SortHead
-                label="Montants"
+                label={t('colAmounts')}
                 active={sortKey === 'amountsCount'}
                 dir={sortDir}
                 onClick={() => toggleSort('amountsCount')}
                 align="right"
               />
-              <TableHead>Feuilles</TableHead>
-              <TableHead>Mult.</TableHead>
+              <TableHead>{t('colSheets')}</TableHead>
+              <TableHead>{t('colMultiplier')}</TableHead>
               <SortHead
-                label="Uploadé"
+                label={t('colUploaded')}
                 active={sortKey === 'uploadedAt'}
                 dir={sortDir}
                 onClick={() => toggleSort('uploadedAt')}
               />
-              <TableHead className="w-12 text-right">Actions</TableHead>
+              <TableHead className="w-12 text-right">{t('colActions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading && (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
-                  Chargement…
+                  {t('loading')}
                 </TableCell>
               </TableRow>
             )}
             {!loading && filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-12">
-                  <p className="text-muted-foreground mb-3">Aucun fichier ne correspond.</p>
+                  <p className="text-muted-foreground mb-3">{t('noFilesMatch')}</p>
                   {files.length === 0 && (
                     <Link href="/admin/baremes/import">
                       <Button variant="outline" size="sm">
                         <Plus className="w-4 h-4 mr-2" />
-                        Faire le premier import
+                        {t('firstImport')}
                       </Button>
                     </Link>
                   )}
@@ -402,7 +413,7 @@ export default function BaremesAdminPage() {
                     </Link>
                     {f.isLegacy && (
                       <div className="text-[10px] text-muted-foreground mt-0.5">
-                        Sans hash — uploadé avant le nouveau workflow
+                        {t('legacyHint')}
                       </div>
                     )}
                   </TableCell>
@@ -522,31 +533,32 @@ function RowActions({
   onReject: () => void
   onDelete: () => void
 }) {
+  const t = useTranslations('admin.baremes')
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
           <Button variant="ghost" size="sm" disabled={acting} className="h-8 w-8 p-0">
             <MoreHorizontal className="w-4 h-4" />
-            <span className="sr-only">Actions</span>
+            <span className="sr-only">{t('colActions')}</span>
           </Button>
         }
       />
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem render={<Link href={`/admin/baremes/import/${file.id}`} />}>
           <Eye className="w-4 h-4 mr-2" />
-          Voir les détails
+          {t('viewDetails')}
         </DropdownMenuItem>
         {file.status === 'draft' && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onPublish}>
               <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
-              Publier
+              {t('publish')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onReject}>
               <XCircle className="w-4 h-4 mr-2 text-red-600" />
-              Rejeter
+              {t('reject')}
             </DropdownMenuItem>
           </>
         )}
@@ -557,14 +569,14 @@ function RowActions({
           }
         >
           <Download className="w-4 h-4 mr-2" />
-          Télécharger JSON
+          {t('downloadJson')}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={onDelete}
           className="text-red-600 focus:text-red-700"
         >
           <Trash2 className="w-4 h-4 mr-2" />
-          Supprimer
+          {t('delete')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

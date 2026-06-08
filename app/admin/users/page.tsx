@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { getTranslations } from "next-intl/server"
 import { prisma } from "@/lib/prisma"
 import { SAFE_USER_SELECT, serializeUser } from "@/lib/users"
 import { Button } from "@/components/ui/button"
@@ -12,24 +13,25 @@ import {
 } from "@/components/ui/table"
 import { Edit2, Plus } from "lucide-react"
 
-const ROLE_LABELS: Record<string, string> = {
-  user: "Utilisateur",
-  partner: "Partenaire",
-  employer: "Employeur",
-  moderator: "Modérateur",
-  admin: "Administrateur",
+// Maps DB value → clé i18n (sous admin.users). Le libellé FR vit dans messages.
+const ROLE_LABEL_KEYS: Record<string, string> = {
+  user: "roleUser",
+  partner: "rolePartner",
+  employer: "roleEmployer",
+  moderator: "roleModerator",
+  admin: "roleAdmin",
 }
 
-const SEGMENT_LABELS: Record<string, string> = {
-  partenaire: "Partenaire",
-  employeur: "Employeur",
+const SEGMENT_LABEL_KEYS: Record<string, string> = {
+  partenaire: "segmentPartenaire",
+  employeur: "segmentEmployeur",
 }
 
-const PARTNER_TYPE_LABELS: Record<string, string> = {
-  onem: "ONEM",
-  organisme_paiement: "Organisme de paiement",
-  service_public: "Service public",
-  prive_asbl: "Privé-ASBL",
+const PARTNER_TYPE_LABEL_KEYS: Record<string, string> = {
+  onem: "partnerTypeOnem",
+  organisme_paiement: "partnerTypeOrganismePaiement",
+  service_public: "partnerTypeServicePublic",
+  prive_asbl: "partnerTypePriveAsbl",
 }
 
 function formatDate(dateString: string) {
@@ -72,16 +74,19 @@ function getStatusBadgeColor(status: string) {
   }
 }
 
-function getStatusLabel(status: string) {
+function getStatusLabel(
+  status: string,
+  t: (key: string) => string,
+) {
   switch (status) {
     case "active":
-      return "Actif"
+      return t("statusActive")
     case "pending":
-      return "En attente"
+      return t("statusPending")
     case "locked":
-      return "Verrouillé"
+      return t("statusLocked")
     case "disabled":
-      return "Désactivé"
+      return t("statusDisabled")
     default:
       return status
   }
@@ -91,6 +96,7 @@ function getStatusLabel(status: string) {
 // côté serveur. `take: 1000` (convention AGENTS) + SAFE_USER_SELECT partagé avec
 // /api/users. L'attente est couverte par app/admin/loading.tsx (skeleton table).
 export default async function UsersPage() {
+  const t = await getTranslations("admin.users")
   const rows = await prisma.user.findMany({
     select: SAFE_USER_SELECT,
     orderBy: { createdAt: "desc" },
@@ -102,34 +108,34 @@ export default async function UsersPage() {
     <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Utilisateurs</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground mt-1">
-            Gérez les utilisateurs du système
+            {t("subtitle")}
           </p>
         </div>
         <Button render={<Link href="/admin/users/new" />} className="gap-2">
           <Plus className="size-4" />
-          Nouvel utilisateur
+          {t("newUser")}
         </Button>
       </div>
 
       <div className="rounded-lg border bg-card overflow-hidden">
         {users.length === 0 ? (
           <div className="flex items-center justify-center h-64 text-muted-foreground">
-            <p>Aucun utilisateur trouvé</p>
+            <p>{t("emptyState")}</p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">Nom</TableHead>
-                <TableHead className="font-semibold">Email</TableHead>
-                <TableHead className="font-semibold">Rôle</TableHead>
-                <TableHead className="font-semibold">Segment</TableHead>
-                <TableHead className="font-semibold">Statut</TableHead>
-                <TableHead className="font-semibold">Dernière connexion</TableHead>
-                <TableHead className="font-semibold">Créé le</TableHead>
-                <TableHead className="font-semibold text-right">Actions</TableHead>
+                <TableHead className="font-semibold">{t("colName")}</TableHead>
+                <TableHead className="font-semibold">{t("colEmail")}</TableHead>
+                <TableHead className="font-semibold">{t("colRole")}</TableHead>
+                <TableHead className="font-semibold">{t("colSegment")}</TableHead>
+                <TableHead className="font-semibold">{t("colStatus")}</TableHead>
+                <TableHead className="font-semibold">{t("colLastLogin")}</TableHead>
+                <TableHead className="font-semibold">{t("colCreatedAt")}</TableHead>
+                <TableHead className="font-semibold text-right">{t("colActions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -145,19 +151,24 @@ export default async function UsersPage() {
                         user.role,
                       )}`}
                     >
-                      {ROLE_LABELS[user.role] ?? user.role}
+                      {ROLE_LABEL_KEYS[user.role]
+                        ? t(ROLE_LABEL_KEYS[user.role])
+                        : user.role}
                     </span>
                   </TableCell>
                   <TableCell>
                     {user.segment ? (
                       <div className="flex flex-col gap-0.5">
                         <span className="text-sm font-medium">
-                          {SEGMENT_LABELS[user.segment] ?? user.segment}
+                          {SEGMENT_LABEL_KEYS[user.segment]
+                            ? t(SEGMENT_LABEL_KEYS[user.segment])
+                            : user.segment}
                         </span>
                         {user.partnerType && (
                           <span className="text-xs text-muted-foreground">
-                            {PARTNER_TYPE_LABELS[user.partnerType] ??
-                              user.partnerType}
+                            {PARTNER_TYPE_LABEL_KEYS[user.partnerType]
+                              ? t(PARTNER_TYPE_LABEL_KEYS[user.partnerType])
+                              : user.partnerType}
                           </span>
                         )}
                       </div>
@@ -171,11 +182,13 @@ export default async function UsersPage() {
                         user.status,
                       )}`}
                     >
-                      {getStatusLabel(user.status)}
+                      {getStatusLabel(user.status, t)}
                     </span>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {user.lastLoginAt ? formatDate(user.lastLoginAt) : "Jamais"}
+                    {user.lastLoginAt
+                      ? formatDate(user.lastLoginAt)
+                      : t("never")}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {formatDate(user.createdAt)}
@@ -188,7 +201,7 @@ export default async function UsersPage() {
                       className="gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400"
                     >
                       <Edit2 className="size-4" />
-                      Éditer
+                      {t("edit")}
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -1,40 +1,41 @@
+import { getTranslations } from "next-intl/server";
 import { SettingEditor } from "@/components/admin/documents/setting-editor";
 import { PartnerEmailTestSender } from "@/components/admin/partner-email-test-sender";
 
 export const dynamic = "force-dynamic";
 
-export default function EmployerEmailSettingsPage() {
+export default async function EmployerEmailSettingsPage() {
+  const t = await getTranslations("admin.employeurs");
   const placeholders = [
-    { token: "{{name}}", description: "Nom de la personne qui s'inscrit" },
+    { token: "{{name}}", description: t("placeholderTokenName") },
     {
       token: "{{organizationName}}",
-      description: "Nom de l'organisation saisi à l'inscription",
+      description: t("placeholderTokenOrganizationName"),
     },
     {
       token: "{{confirmationLink}}",
-      description: "Lien de confirmation (avec token, valide 24 heures)",
+      description: t("placeholderTokenConfirmationLink"),
     },
   ];
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <PartnerEmailTestSender segment="employeur" />
       <SettingEditor
-        title="Email d'invitation employeur"
-        subtitle="Personnalisez le sujet et le corps de l'email envoyé après l'inscription d'un nouvel employeur."
+        title={t("emailInviteTitle")}
+        subtitle={t("emailInviteSubtitle")}
         backHref="/admin/employeurs"
         fields={[
           {
             key: "employer_invite_subject",
-            label: "Sujet de l'email",
-            description: "Une seule ligne. Variables disponibles ci-dessous.",
+            label: t("emailSubjectLabel"),
+            description: t("emailSubjectDescription"),
             type: "input",
             placeholders,
           },
           {
             key: "employer_invite_body",
-            label: "Corps de l'email",
-            description:
-              "Texte brut. Le lien de confirmation doit obligatoirement apparaître via {{confirmationLink}}.",
+            label: t("emailBodyLabel"),
+            description: t("emailBodyDescription"),
             type: "textarea",
             rows: 14,
             placeholders,

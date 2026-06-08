@@ -1709,6 +1709,14 @@ model PdfForm {
   organisme   Organisme? @relation("OrganismePdfForms", fields: [organismeId], references: [id], onDelete: SetNull)
   status      PdfFormStatus @default(draft)
   version     Int           @default(1)
+  /// Disponibilité publique du formulaire publié. Permet de mettre en pause
+  /// un PdfForm (correction d'erreur, mise à jour d'un document officiel)
+  /// sans le dépublier — la page publique affiche un message dédié. Sans
+  /// effet sur les drafts/archived (de toute façon non publics).
+  active           Boolean @default(true)
+  /// Message affiché aux utilisateurs quand `active=false`. Si null, un
+  /// message générique est utilisé.
+  disabledMessage  String?
 
   // --- Localisation ---
   /// Locale par défaut (toujours présente). Valeurs : "fr" | "nl" | "de".

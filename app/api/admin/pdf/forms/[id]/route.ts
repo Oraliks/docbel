@@ -56,6 +56,10 @@ export async function PATCH(
   if (typeof body.allowDownload === "boolean") data.allowDownload = body.allowDownload;
   if (typeof body.allowDoccle === "boolean") data.allowDoccle = body.allowDoccle;
   if (typeof body.allowItsme === "boolean") data.allowItsme = body.allowItsme;
+  if (typeof body.active === "boolean") data.active = body.active;
+  if (typeof body.disabledMessage === "string" || body.disabledMessage === null) {
+    data.disabledMessage = (body.disabledMessage as string | null) ?? null;
+  }
   if (body.status === "draft" || body.status === "archived") data.status = body.status;
   if (typeof body.defaultLocale === "string" && isLocale(body.defaultLocale)) data.defaultLocale = body.defaultLocale;
   if (Array.isArray(body.locales)) {

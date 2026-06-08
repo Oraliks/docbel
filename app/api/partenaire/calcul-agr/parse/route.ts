@@ -1,8 +1,10 @@
 /**
  * POST /api/partenaire/calcul-agr/parse
  *
- * Reçoit 1 à 4 fichiers WECH 506 (PDF), extrait le texte (pdfjs) et le parse
- * en données structurées prêtes pour le moteur de calcul AGR.
+ * Reçoit 1 à 4 DRS (PDF) — WECH 506 (C131B, AGR) ou WECH 505 (C3.2, chômage
+ * temporaire) — extrait le texte (pdfjs) et le parse en données structurées
+ * prêtes pour le moteur de calcul AGR. Le type est détecté automatiquement et
+ * remonté via `kind` ("506" | "505").
  *
  * Réservé aux agents FGTB et aux admins (même garde que l'outil fgtb-planning).
  */
@@ -11,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
 import { extractWechText } from "@/lib/agr/extract-pdf-text";
 import { parseWech506 } from "@/lib/agr/parse-wech506";
+import { parseWech505, isWech505 } from "@/lib/agr/parse-wech505";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,8 +63,11 @@ export async function POST(req: NextRequest) {
         });
         continue;
       }
-      const parsed = parseWech506(text);
-      results.push({ filename: file.name, parsed });
+      if (isWech505(text)) {
+        results.push({ filename: file.name, kind: "505", parsed: parseWech505(text) });
+      } else {
+        results.push({ filename: file.name, kind: "506", parsed: parseWech506(text) });
+      }
     } catch (err) {
       const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
       console.error("[calcul-agr parse] échec extraction:", err);

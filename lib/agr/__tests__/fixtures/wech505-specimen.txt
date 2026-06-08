@@ -1,0 +1,98 @@
+PRINT FGTB - WECH505 08/06/2026
+FORMULAIRE C3-2 paiements
+DECLARATION MENSUELLE D’HEURES DE CHOMAGE TEMPORAIRE
+Mois de référence : 01/05/2026 - 31/05/2026
+Les données d’une déclaration
+Date de création Heure de création DRS (version) Sous-risque
+2026-06-04 12:20:52.656 WECH505 ( WECH505_20261.xsd ) 001
+Statut Numéro de ticket Numéro d’occupation
+0 ( Original ) 034000SPECIMEN
+Les données du travailleur
+NISS Nom, Prénom
+000000000-00 SPECIMEN, EXEMPLE
+Les données de l’employeur
+n° ONSS n° ONSS-APL n° unique
+000000000 / 0000000000
+Nom
+EXEMPLE SA
+Adresse
+RUE DE L’EXEMPLE , 1 - 1000 BRUXELLES ( 150 )
+Categorie Com PAR Code travailleur Code NACE
+066 121 015 812.10
+WECH505 - p. 1
+PRINT FGTB - WECH505 08/06/2026
+FORMULAIRE C3-2 paiements
+DECLARATION MENSUELLE D’HEURES DE CHOMAGE TEMPORAIRE
+Les données du travail
+Date de début de l’occupation Date de fin de l’occupation Facteur Q Facteur S
+01/05/2026 31/05/2026 18,50 36,50
+Grille T
+/
+Commentaire
+/
+Statut du travailleur
+/
+Nbre jrs / semaine règime de Interruption de l'occupation
+travail
+5,00 2 ( occupation avec le même facteur Q pour le mois complet )
+Schema de travail
+10 ( Horaire fixe avec chaque semaine un nombre fixe de jours de travail (temps partiel) )
+Montant salaire unité de temps
+/ 1 (1=heures;2=jour;3=semaine;4=mois;5=trim;6=année)
+nombre d’unité de temps montant sal.hor
+/ 16,8410
+Jour(s) de remplacement d’un/des jour(s) ferie(s)
+/
+Numero(s) de réception accordés par l’onem aux communications de chômage temporaire par section
+/
+Période(s) de fermeture pour vacances annuelles
+/
+Formation Hivernale
+/
+Raison donnee pour la demande de force majeure
+/
+Numéro d’entreprise utilisatrice
+/
+Base calcul - Situations Particulières
+Nbre moyen heure/sem. / Nbre jours/sem. du regime de Travail /
+Commentaire sur la déclaration
+/
+WECH505 - p. 2
+PRINT FGTB - WECH505 08/06/2026
+FORMULAIRE C3-2 paiements
+DECLARATION MENSUELLE D’HEURES DE CHOMAGE TEMPORAIRE
+Coordonnées de la personne de contact
+Nom Prénom
+NOM PRENOM
+Communication
+N° téléphone N° GSM Adresse email Fax
+/ / / /
+Adresse
+Pas d'adresse présente dans la DRS
+Coordonnées déclarant
+Qualité du déclarant Dénomination
+12 EXEMPLE GROUP
+Communication
+N° téléphone N° GSM Adresse email Fax
+/ / / /
+Grille de travail
+Jours Code Heure Jours Code Heure
+15/05 5.1 3,75
+WECH505 - p. 3
+PRINT FGTB - WECH505 08/06/2026
+FORMULAIRE C3-2 paiements
+DECLARATION MENSUELLE D’HEURES DE CHOMAGE TEMPORAIRE
+CODES POUR LES JOURS DE PRESTATIONS DE TRAVAIL EFFECTUEES (ANNEXE)
+5.1 Chômage temporaire par suite de manque de travail résultant de causes économiques
+5.10 Chômage temporaire en cas de licenciement d'un travailleur protégé
+5.11 Jours de suspension employés pour manque de travail
+5.2 Chômage temporaire par suite d'intempéries
+5.3 Chômage temporaire par suite d'un accident technique
+5.4 Chômage temporaire par suite de force majeure
+5.5 Chômage temporaire par suite de force majeure à caractère médical
+5.6 Chômage temporaire par suite de fermeture de l'entreprise pour cause de vacances annuelles
+5.7 Chômage temporaire par suite de fermeture de l'entreprise pour cause de vacances en vertu d'une CCT rendue obligatoire
+5.8 Chômage temporaire par suite de fermeture de l'entreprise pour cause de repos compensatoire dans le cadre d'une réduction de la durée du travail
+5.9 Chômage temporaire par suite de grève ou de lock-out
+Mois de référence : 01/05/2026 - 31/05/2026
+WECH505 - p. 4

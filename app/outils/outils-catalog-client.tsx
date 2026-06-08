@@ -44,7 +44,7 @@ function ToolIconTile({ tool, size = 40 }: { tool: Tool; size?: number }) {
   const { Icon, hue } = glyphForTool(tool);
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-xl"
+      className="flex shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-[1.06] group-hover:-translate-y-px motion-reduce:transform-none"
       style={{
         width: size,
         height: size,
@@ -221,7 +221,10 @@ export function OutilsCatalogClient({ tools }: Props) {
   return (
     <div className="flex flex-col gap-6">
       {/* ───────── HERO + RECHERCHE ───────── */}
-      <section className="glass-surface grid gap-8 p-7 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:p-9">
+      <section
+        className="glass-surface outils-rise grid gap-8 p-7 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:p-9"
+        style={{ animationDelay: "0ms" }}
+      >
         <header className="flex flex-col gap-3">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
             Catalogue
@@ -244,7 +247,7 @@ export function OutilsCatalogClient({ tools }: Props) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher un outil…"
-              className="glass-surface-strong h-14 w-full rounded-2xl border-0 pr-5 pl-14 text-[15px] text-[color:var(--glass-ink)] shadow-none placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+              className="search-glow glass-surface-strong h-14 w-full rounded-2xl border-0 pr-5 pl-14 text-[15px] text-[color:var(--glass-ink)] shadow-none placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none"
             />
           </div>
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 pl-1 text-[12px] text-[color:var(--glass-ink-faint)]">
@@ -264,9 +267,9 @@ export function OutilsCatalogClient({ tools }: Props) {
       </section>
 
       {/* ───────── RANGÉE 1 : Populaire · Nouveau · Récemment ───────── */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="outils-rise grid gap-6 lg:grid-cols-3" style={{ animationDelay: "80ms" }}>
         {/* Populaire */}
-        <section className="glass-surface flex flex-col p-6">
+        <section className="glass-surface glass-interactive flex flex-col p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-[15px] font-bold tracking-tight">
               <SparklesIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
@@ -278,9 +281,10 @@ export function OutilsCatalogClient({ tools }: Props) {
                 resetFilters();
                 setSort("pertinents");
               }}
-              className="text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
+              className="group inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
             >
               Voir tout
+              <ArrowRightIcon className="size-3.5 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transform-none" />
             </button>
           </div>
           <div className="flex flex-col gap-0.5">
@@ -297,7 +301,7 @@ export function OutilsCatalogClient({ tools }: Props) {
         {/* Nouveau (featured) */}
         {featured ? (
           <section
-            className="relative flex min-h-[230px] flex-col justify-between overflow-hidden rounded-3xl p-7 text-white"
+            className="group relative flex min-h-[230px] flex-col justify-between overflow-hidden rounded-3xl p-7 text-white transition-transform duration-300 hover:-translate-y-1 motion-reduce:transform-none"
             style={{
               backgroundImage:
                 "linear-gradient(135deg, var(--glass-status-from) 0%, var(--glass-status-to) 100%)",
@@ -307,10 +311,17 @@ export function OutilsCatalogClient({ tools }: Props) {
               className="absolute -top-12 -right-10 size-44 rounded-full bg-white/20"
               style={{ filter: "blur(30px)" }}
             />
+            <span
+              className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-soft-sheen"
+              aria-hidden
+            />
             {(() => {
               const { Icon } = glyphForTool(featured);
               return (
-                <Icon className="absolute right-5 bottom-5 size-28 text-white/15" strokeWidth={1.4} />
+                <Icon
+                  className="absolute right-5 bottom-5 size-28 text-white/15 transition-transform duration-500 group-hover:-translate-x-1.5 group-hover:-translate-y-1 motion-reduce:transform-none"
+                  strokeWidth={1.4}
+                />
               );
             })()}
             <span className="relative inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em]">
@@ -328,16 +339,16 @@ export function OutilsCatalogClient({ tools }: Props) {
             <button
               type="button"
               onClick={() => openTool(featured)}
-              className="relative mt-5 inline-flex w-fit items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-status-to)] transition hover:bg-white"
+              className="group relative mt-5 inline-flex w-fit items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-status-to)] transition hover:bg-white"
             >
               Ouvrir l&apos;outil
-              <ArrowRightIcon className="size-4" />
+              <ArrowRightIcon className="size-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
             </button>
           </section>
         ) : null}
 
         {/* Récemment ajoutés */}
-        <section className="glass-surface flex flex-col p-6">
+        <section className="glass-surface glass-interactive flex flex-col p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-[15px] font-bold tracking-tight">
               <SparklesIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
@@ -349,9 +360,10 @@ export function OutilsCatalogClient({ tools }: Props) {
                 resetFilters();
                 setSort("recent");
               }}
-              className="text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
+              className="group inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
             >
               Voir tout
+              <ArrowRightIcon className="size-3.5 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transform-none" />
             </button>
           </div>
           <div className="flex flex-col gap-0.5">
@@ -367,17 +379,18 @@ export function OutilsCatalogClient({ tools }: Props) {
       </div>
 
       {/* ───────── RANGÉE 2 : Catégories · Accès rapide+Aide · Enregistrés ───────── */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="outils-rise grid gap-6 lg:grid-cols-3" style={{ animationDelay: "160ms" }}>
         {/* Catégories */}
-        <section className="glass-surface flex flex-col p-6">
+        <section className="glass-surface glass-interactive flex flex-col p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[15px] font-bold tracking-tight">Catégories</h2>
             <button
               type="button"
               onClick={() => setSelectedDomain(null)}
-              className="text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
+              className="group inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
             >
               Voir tout
+              <ArrowRightIcon className="size-3.5 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transform-none" />
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -391,7 +404,7 @@ export function OutilsCatalogClient({ tools }: Props) {
                   onClick={() =>
                     setSelectedDomain(active ? null : domain.id)
                   }
-                  className="glass-interactive flex flex-col gap-2 rounded-2xl border p-3 text-left"
+                  className="group glass-interactive flex flex-col gap-2 rounded-2xl border p-3 text-left"
                   style={{
                     borderColor: active ? domain.hue : "transparent",
                     background: active
@@ -400,7 +413,7 @@ export function OutilsCatalogClient({ tools }: Props) {
                   }}
                 >
                   <span
-                    className="flex size-9 items-center justify-center rounded-xl"
+                    className="flex size-9 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-[1.06] group-hover:-translate-y-px motion-reduce:transform-none"
                     style={{
                       background: `color-mix(in oklab, ${domain.hue} 18%, transparent)`,
                       color: domain.hue,
@@ -424,7 +437,7 @@ export function OutilsCatalogClient({ tools }: Props) {
 
         {/* Accès rapide + Aide */}
         <div className="flex flex-col gap-6">
-          <section className="glass-surface flex flex-col p-6">
+          <section className="glass-surface glass-interactive flex flex-col p-6">
             <h2 className="mb-3 text-[15px] font-bold tracking-tight">
               Accès rapide
             </h2>
@@ -434,7 +447,7 @@ export function OutilsCatalogClient({ tools }: Props) {
                   key={tile.id}
                   type="button"
                   onClick={tile.onClick}
-                  className="glass-interactive flex flex-col items-center gap-2 rounded-2xl border p-3 text-center"
+                  className="group glass-interactive flex flex-col items-center gap-2 rounded-2xl border p-3 text-center"
                   style={{
                     borderColor: tile.active
                       ? "var(--glass-accent-deep)"
@@ -444,7 +457,7 @@ export function OutilsCatalogClient({ tools }: Props) {
                       : "var(--glass-surface)",
                   }}
                 >
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-accent-deep)]">
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-accent-deep)] transition-transform duration-200 group-hover:scale-[1.06] group-hover:-translate-y-px motion-reduce:transform-none">
                     <tile.Icon className="size-[18px]" strokeWidth={1.9} />
                   </span>
                   <span className="text-[11.5px] font-semibold leading-tight">
@@ -456,13 +469,20 @@ export function OutilsCatalogClient({ tools }: Props) {
           </section>
 
           <section
-            className="relative flex flex-1 flex-col justify-center overflow-hidden rounded-3xl p-6 text-white"
+            className="group relative flex flex-1 flex-col justify-center overflow-hidden rounded-3xl p-6 text-white transition-transform duration-300 hover:-translate-y-1 motion-reduce:transform-none"
             style={{
               backgroundImage:
                 "linear-gradient(135deg, var(--glass-accent-a) 0%, var(--glass-accent-deep) 100%)",
             }}
           >
-            <SparklesIcon className="absolute right-5 top-5 size-20 text-white/15" strokeWidth={1.4} />
+            <SparklesIcon
+              className="absolute right-5 top-5 size-20 text-white/15 transition-transform duration-500 group-hover:-translate-x-1.5 group-hover:-translate-y-1 motion-reduce:transform-none"
+              strokeWidth={1.4}
+            />
+            <span
+              className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-soft-sheen"
+              aria-hidden
+            />
             <h3 className="relative flex items-center gap-2 text-[16px] font-bold">
               <SparklesIcon className="size-4" />
               Besoin d&apos;aide pour choisir ?
@@ -474,16 +494,16 @@ export function OutilsCatalogClient({ tools }: Props) {
             <button
               type="button"
               onClick={() => router.push("/creer-ma-demande")}
-              className="relative mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-accent-deep)] transition hover:bg-white"
+              className="group relative mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-accent-deep)] transition hover:bg-white"
             >
               Commencer
-              <ArrowRightIcon className="size-4" />
+              <ArrowRightIcon className="size-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
             </button>
           </section>
         </div>
 
         {/* Mes outils enregistrés */}
-        <section className="glass-surface flex flex-col p-6">
+        <section className="glass-surface glass-interactive flex flex-col p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[15px] font-bold tracking-tight">
               Mes outils enregistrés
@@ -491,9 +511,10 @@ export function OutilsCatalogClient({ tools }: Props) {
             <button
               type="button"
               onClick={() => setView("favorites")}
-              className="text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
+              className="group inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
             >
               Voir tout
+              <ArrowRightIcon className="size-3.5 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transform-none" />
             </button>
           </div>
           {favoriteTools.length === 0 ? (
@@ -533,7 +554,10 @@ export function OutilsCatalogClient({ tools }: Props) {
                     aria-label="Retirer des favoris"
                     className="shrink-0 rounded-full p-1.5 text-[color:var(--glass-accent-c)] transition hover:bg-white/45 dark:hover:bg-white/[0.06]"
                   >
-                    <HeartIcon className="size-4 fill-current" />
+                    <HeartIcon
+                      key={`${getToolSlug(tool)}-true`}
+                      className="size-4 fill-current animate-heart-pop"
+                    />
                   </button>
                 </div>
               ))}
@@ -543,7 +567,10 @@ export function OutilsCatalogClient({ tools }: Props) {
       </div>
 
       {/* ───────── TABLE : Tous les outils ───────── */}
-      <section className="glass-surface flex flex-col gap-4 p-6 lg:p-7">
+      <section
+        className="glass-surface outils-rise flex flex-col gap-4 p-6 lg:p-7"
+        style={{ animationDelay: "240ms" }}
+      >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-[18px] font-bold tracking-tight">
             {VIEW_LABEL[view]}{" "}
@@ -628,7 +655,7 @@ export function OutilsCatalogClient({ tools }: Props) {
                   return (
                     <tr
                       key={tool.id}
-                      className="border-b border-[color:var(--glass-ink-line)] align-middle transition-colors last:border-0 hover:bg-white/40 dark:hover:bg-white/[0.04]"
+                      className="group border-b border-[color:var(--glass-ink-line)] align-middle transition-colors last:border-0 hover:bg-white/40 dark:hover:bg-white/[0.04]"
                     >
                       <td className="py-3 pr-3">
                         <button
@@ -691,7 +718,8 @@ export function OutilsCatalogClient({ tools }: Props) {
                             }}
                           >
                             <HeartIcon
-                              className={`size-4 ${fav ? "fill-current" : ""}`}
+                              key={`${slug}-${fav}`}
+                              className={`size-4 ${fav ? "fill-current animate-heart-pop" : ""}`}
                             />
                           </button>
                           <button

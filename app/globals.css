@@ -186,6 +186,112 @@
   mix-blend-mode: soft-light;
 }
 
+/* ============================================================
+   Intégration shadcn → glass (contexte public uniquement)
+   ------------------------------------------------------------
+   Sous .glass-root, les composants shadcn (cards, selects, inputs,
+   popovers…) rendaient avec leurs tokens clairs (blanc/gris pâle) et
+   paraissaient « délavés » sur le fond mauve. On remappe ici les tokens
+   shadcn vers les variables VERRE existantes (pas de nouvelle couleur)
+   + on givre les surfaces shadcn + on donne un fond aux champs qui sont
+   `bg-transparent`. Tout est scopé à .glass-root → l'admin et les
+   espaces pro (hors .glass-root) gardent leurs composants shadcn
+   intacts. S'adapte clair/sombre car les var(--glass-*) basculent via
+   .dark. Tuner : ajuster les --glass-* (déjà définis plus haut).
+   ============================================================ */
+.glass-root {
+  --card: var(--glass-surface);
+  --card-foreground: var(--glass-ink);
+  --popover: var(--glass-surface-strong);
+  --popover-foreground: var(--glass-ink);
+  --muted-foreground: var(--glass-ink-soft);
+  --border: var(--glass-ink-line);
+  --input: color-mix(in oklab, var(--glass-ink) 22%, transparent);
+  --ring: var(--glass-accent-deep);
+  /* Coins plus arrondis sur le front (charte : 12–24px). Scopé à
+     .glass-root → l'admin/pro garde son --radius par défaut. */
+  --radius: 0.875rem;
+}
+
+/* Surfaces shadcn (cartes + menus déroulants/dialogs) → verre dépoli. */
+.glass-root :is(
+    [data-slot="card"],
+    [data-slot="popover-content"],
+    [data-slot="select-content"],
+    [data-slot="dropdown-menu-content"],
+    [data-slot="dialog-content"]
+  ) {
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  backdrop-filter: blur(28px) saturate(150%);
+  border: 1.5px solid var(--glass-border);
+}
+
+/* Champs (input / select / textarea — shadcn ET natifs) sous .glass-root :
+   fond verre + FROST (backdrop-filter). Sans le flou, le fond blanc-50%
+   tranchait en blanc dur sur le coin clair du dégradé (les inputs du
+   calculateur préavis « qui font mal aux yeux »). Le flou les rend dépolis,
+   cohérents avec les cartes. On exclut checkbox/radio/range. */
+.glass-root :is([data-slot="input"], [data-slot="select-trigger"]),
+.glass-root
+  :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not(
+    [type="range"]
+  ) {
+  background: var(--glass-surface);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+/* ── Polish /outils — micro-interactions douces (cf. AGENTS.md › Design) ── */
+/* Entrée échelonnée des sections (réutilise @keyframes fadeInUp). */
+.outils-rise {
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Halo de focus diffus sur la recherche (au lieu d'un anneau dur). */
+.search-glow {
+  transition:
+    box-shadow 260ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 260ms ease;
+}
+.search-glow:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--glass-accent-deep) 22%, transparent),
+    0 8px 28px rgba(80, 40, 140, 0.16);
+}
+
+/* Pop du cœur favori. */
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.32); }
+  70% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.animate-heart-pop {
+  animation: heart-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Reflet lent et discret sur les cartes dégradées (Nouveau / Aide). */
+@keyframes soft-sheen {
+  0% { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
+  18% { opacity: 0.5; }
+  40%, 100% { transform: translateX(220%) skewX(-12deg); opacity: 0; }
+}
+.animate-soft-sheen {
+  animation: soft-sheen 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .outils-rise,
+  .animate-heart-pop,
+  .animate-soft-sheen {
+    animation: none;
+  }
+  .search-glow {
+    transition: none;
+  }
+}
+
 .glass-surface {
   background: var(--glass-surface);
   -webkit-backdrop-filter: blur(28px) saturate(150%);

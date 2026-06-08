@@ -11,3 +11,5 @@ export * from "./baremes";
 export * from "./calcul";
 export * from "./categorie-travailleur";
 export * from "./parse-wech506";
+export * from "./parse-wech505";
+export * from "./merge-ct";

@@ -141,14 +141,86 @@ doit s'adapter, sinon il est collé aux bords (effet « formaté sans CSS ») :
 **Avant de livrer une modale / sheet / page** : vérifier au navigateur (desktop
 large) que rien n'est collé aux bords ni coincé dans une colonne centrée étroite.
 
+## Design — charte visuelle (front public) ⭐
+
+**La direction artistique de référence est la planche moodboard fournie par
+le propriétaire** (« Comment recréer ce style visuel »). Toute UI **publique**
+(accueil, actualités, outils, calculateurs, contact, profil, démarches) DOIT
+s'y conformer pour rester uniforme. Mot-clé : **douceur, clarté, confiance,
+accessibilité**.
+
+**Esprit** : pastel premium, UI moderne + illustrations 3D douces, calme,
+léger, rassurant ; administratif mais chaleureux.
+
+**Palette officielle** (déclinée en variables `--glass-*` dans
+[`app/globals.css`](app/globals.css)) :
+
+| Rôle | Hex |
+|------|-----|
+| Lavande | `#CDBBFF` |
+| Violet CTA | `#5B46E5` |
+| Rose pâle | `#FFD6E8` |
+| Lilas | `#E9E0FF` |
+| Blanc cassé | `#FAF7FF` |
+| Gris doux | `#E7E3EF` |
+
+**UI details** : boutons d'action violets ; badges/pastilles pastel ; **coins
+très arrondis (12–24px)** ; **fines bordures (1px)** ; **ombres diffuses et
+profondes** (jamais dures) ; icônes simples et cohérentes.
+
+**À ÉVITER absolument** :
+
+- ❌ **Blanc pur (`#FFFFFF`) sur une surface du front** → utiliser Blanc cassé
+  `#FAF7FF` / Lilas / le verre translucide. Le blanc pur « fait mal aux yeux »
+  sur le fond mauve.
+- ❌ Couleurs trop saturées / criardes (y compris re-teinter les cartes verre en
+  violet vif — elles sont volontairement pâles).
+- ❌ Ombres dures, rendu plat sans profondeur, angles droits / cartes lourdes,
+  style corporate froid et impersonnel.
+
+**Comment c'est câblé dans le code** (2 langages de design — cf.
+mémoire projet) :
+
+- **Front = « glass mauve »**. Tout vit sous `.glass-root` (posé par
+  [`components/docbel/app-layout-client.tsx`](components/docbel/app-layout-client.tsx)).
+  Primitives dans `app/globals.css` : `.glass-surface` (carte dépolie),
+  `.glass-interactive` (lift + ombre diffuse + focus, respecte
+  `prefers-reduced-motion`), `.glass-display`, tokens `--glass-*`.
+- **Composants shadcn rendus sous `.glass-root`** héritent automatiquement du
+  verre : un bloc `.glass-root { --card/--popover/--input/--border/--ring/--radius… }`
+  remappe les tokens shadcn vers les variables verre, et des règles givrent les
+  surfaces (`[data-slot="card"|"popover-content"|…]`) et les **champs**
+  (`input/select/textarea`, shadcn **et** natifs → `background: var(--glass-surface)`
+  + `backdrop-filter`). ⇒ un nouveau composant shadcn sur le front est déjà
+  on-charte sans rien faire.
+- **Admin / espaces pro** (hors `.glass-root`) gardent shadcn blanc+violet —
+  **ne pas** leur appliquer le verre.
+
+**Règles « going forward »** :
+
+1. Sur le front, **ne jamais** poser `bg-white`/`bg-[#fff]`/`#FFFFFF` en dur sur
+   une carte, un panneau ou un champ. Utiliser `.glass-surface`, les helpers
+   [`lib/glass-classes.ts`](lib/glass-classes.ts) (`GLASS_CARD`/`GLASS_INPUT`),
+   ou laisser les composants shadcn hériter via `.glass-root`.
+2. Tout champ de formulaire du front doit être **dépoli** (fond verre +
+   `backdrop-filter`), jamais blanc plat.
+3. Coins 12–24px, bordures 1px, ombres diffuses ; mouvement **doux** et
+   `prefers-reduced-motion`-safe (réutiliser `.glass-interactive`, `fadeInUp`,
+   `.outils-rise`, `.animate-heart-pop`, `.animate-soft-sheen`).
+4. Avant de livrer : vérifier au navigateur qu'**aucune** surface du front ne
+   ressort en blanc dur sur le mauve.
+
 ## Points connus à améliorer
 
-- Centraliser la couleur d'accent : l'accent réel est `#7C3AED`
-  (défini comme variables CSS dans `app/globals.css`). Une ancienne
-  couleur `#C8102E` traîne encore en dur dans 4 fichiers d'icônes
-  (`components/icons/organismes/index.tsx`, `components/docbel/icons.tsx`,
-  `components/docbel/bureau-callout.tsx`, `components/docbel/bureau-card.tsx`)
-  à harmoniser.
+- Centraliser la couleur d'accent : l'accent actuel est `#7C3AED`
+  (variables CSS dans `app/globals.css`). **Cible charte = Violet CTA
+  `#5B46E5`** (légèrement plus bleuté/calme) — migration à faire sur
+  `--primary` / `--accent` / `--ring` / `--glass-accent-deep` (light + dark)
+  pour coller à la planche. Changement visible partout (chaque CTA) → à valider
+  visuellement. Une ancienne couleur `#C8102E` traîne aussi en dur dans 4
+  fichiers d'icônes (`components/icons/organismes/index.tsx`,
+  `components/docbel/icons.tsx`, `components/docbel/bureau-callout.tsx`,
+  `components/docbel/bureau-card.tsx`) à harmoniser.
 - Extraire un composant `<UserFormFields/>` partagé entre
   `app/admin/users/new/page.tsx` et `components/users/edit-user-form.tsx`
   (création / édition d'utilisateur sont désormais des pages, plus des modals).

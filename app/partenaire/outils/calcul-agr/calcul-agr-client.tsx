@@ -119,6 +119,11 @@ function toNum(s: string): number {
   return Number.isFinite(v) ? v : 0;
 }
 
+/** Représentation texte (FR, virgule décimale) d'une valeur numérique. */
+function fmtNum(v: number): string {
+  return v === 0 ? "" : String(v).replace(".", ",");
+}
+
 export function CalculAgrClient() {
   const [occupations, setOccupations] = useState<OccupationInput[]>([emptyOccupation()]);
   const [metas, setMetas] = useState<OccMeta[]>([{}]);
@@ -474,16 +479,36 @@ function NumField({
   onChange: (v: number) => void;
   step?: string;
 }) {
+  // Texte saisi conservé tel quel, pour autoriser les états transitoires
+  // (« 66, », « 0, », « 1,5 ») sans que la virgule soit avalée par un
+  // reformatage immédiat du nombre contrôlé.
+  const [text, setText] = useState(() => fmtNum(value));
+
+  // Resynchronise pendant le rendu quand la valeur change de l'extérieur
+  // (upload DRS, reset, code « à vérifier »…) sans écraser la saisie en cours.
+  // Pattern React « ajuster l'état à partir d'une prop » (sans useEffect).
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    if (toNum(text) !== value) setText(fmtNum(value));
+  }
+
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">{label}</Label>
       <Input
         inputMode="decimal"
-        value={value === 0 ? "" : String(value)}
+        value={text}
         placeholder="0"
         step={step}
         onFocus={(e) => e.target.select()}
-        onChange={(e) => onChange(toNum(e.target.value))}
+        onChange={(e) => {
+          const raw = e.target.value;
+          // N'accepte que chiffres, un séparateur décimal (, ou .) et un signe.
+          if (raw !== "" && !/^-?\d*[.,]?\d*$/.test(raw)) return;
+          setText(raw);
+          onChange(toNum(raw));
+        }}
       />
     </div>
   );

@@ -274,8 +274,22 @@ export function calculerAgr(g: AgrGlobalInput): AgrResult {
   const total57 = (bareme57 ?? 0) + chomageTemporaire + ccAmount; // E59
   const total05 = (bareme05 ?? 0) + chomageTemporaire + ccAmount; // E60
 
-  const motifFor = (v: number | null) =>
-    salaireRefAtteint ? "Salaire de référence atteint" : v !== null && v < demiMin ? "N'atteint pas P/2" : "";
+  // Explique pourquoi un barème vaut 0 €. N'affiche rien tant que le résultat
+  // est positif. L'ordre des tests va du plus « donnée manquante » (le plus
+  // courant) vers le plus « calculé ».
+  const fmtEur = (x: number) => `${x.toFixed(2).replace(".", ",")} €`;
+  const motifFor = (v: number | null): string => {
+    if (v !== null && v > 0) return "";
+    if (nbOcc === 0) return "Aucune occupation renseignée (facteur Q manquant).";
+    if (g.allocationJournaliere <= 0) return "Allocation journalière non renseignée.";
+    if (inc) return "Incapacité ou sanction sur la totalité du mois : pas d'AGR.";
+    if (salaireRefAtteint)
+      return "Salaire de référence atteint : le salaire dépasse le plafond, plus de droit à l'AGR.";
+    if (f1 <= 0) return "Aucun jour indemnisable ce mois (déductions ≥ 26 jours).";
+    if (v !== null && v < demiMin)
+      return `Inférieure à la ½ allocation minimum (${fmtEur(demiMin)}) : ramenée à 0.`;
+    return "Le salaire atteint déjà le revenu garanti : aucun complément AGR dû.";
+  };
 
   const occupations: OccupationResult[] = w.map((o, i) => ({
     f6: o.f6, f7: o.f7, f8: o.f8, vtl: o.vtl, bonusFt: o.bft,

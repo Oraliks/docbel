@@ -141,7 +141,7 @@ doit s'adapter, sinon il est collé aux bords (effet « formaté sans CSS ») :
 **Avant de livrer une modale / sheet / page** : vérifier au navigateur (desktop
 large) que rien n'est collé aux bords ni coincé dans une colonne centrée étroite.
 
-## Design — charte visuelle (front public) ⭐
+## Design — charte visuelle (SITE ENTIER) ⭐
 
 **La direction artistique de référence est la planche moodboard fournie par
 le propriétaire** (« Comment recréer ce style visuel »). Toute UI **publique**
@@ -187,14 +187,34 @@ mémoire projet) :
   `.glass-interactive` (lift + ombre diffuse + focus, respecte
   `prefers-reduced-motion`), `.glass-display`, tokens `--glass-*`.
 - **Composants shadcn rendus sous `.glass-root`** héritent automatiquement du
-  verre : un bloc `.glass-root { --card/--popover/--input/--border/--ring/--radius… }`
+  verre : un bloc `.glass-root { --card/--popover/--input/--border/--ring… }`
   remappe les tokens shadcn vers les variables verre, et des règles givrent les
   surfaces (`[data-slot="card"|"popover-content"|…]`) et les **champs**
   (`input/select/textarea`, shadcn **et** natifs → `background: var(--glass-surface)`
   + `backdrop-filter`). ⇒ un nouveau composant shadcn sur le front est déjà
   on-charte sans rien faire.
-- **Admin / espaces pro** (hors `.glass-root`) gardent shadcn blanc+violet —
-  **ne pas** leur appliquer le verre.
+- **Admin / espaces pro / auth** (hors `.glass-root`) = **shadcn aligné sur la
+  MÊME palette** (PAS de verre). Les tokens shadcn `:root`/`.dark` sont déjà
+  migrés sur la charte : `--card #FAF7FF`, `--popover #FAF7FF`, `--background
+  #F4EEFF`, `--primary`/`--accent`/`--ring #5B46E5`, `--border #E7E3EF`,
+  `--radius 0.875rem`. Règles : **jamais** de hex en dur ni `bg-white` → utiliser
+  `bg-card` / `border-border` / `text-muted-foreground` / `bg-primary` /
+  `bg-sidebar` ; cartes via `<Card>` (`rounded-xl` + `ring-1` + ombre douce) ;
+  pages/tables/formulaires **pleine largeur** ; **inputs shadcn standard** (NON
+  dépolis — le frost est réservé au glass) ; charts : couleurs via `--chart-*` /
+  `var(--primary)`. **Ne JAMAIS** mettre `.glass-*` / `backdrop-filter` sur
+  l'admin (tables denses → lisibilité WCAG + perf de scroll). Dark admin/pro =
+  simple bascule `.dark` (slate shadcn), **pas** le néon glass du front.
+
+**Quel langage où ?** (source de vérité : `resolveProSegment` +
+early-returns dans `app-layout-client.tsx`) :
+
+| Zone | Routes | Langage |
+|------|--------|---------|
+| Front public | `/`, `/actualites`, `/outils*`, calculateurs, `/contact`, `/profil`, `/p/*` | **Glass mauve** (`.glass-root`) |
+| Pro connecté | `/partenaire*`, `/employeur*` (rôle partner/employer) | **shadcn palette** (`ProShell`) |
+| Back-office | `/admin/**` | **shadcn palette** (`AppSidebar`) |
+| Auth | `/login`, `/inscription*`, `/mot-de-passe-oublie`, `/reinitialiser-mot-de-passe` | shadcn split full-page |
 
 **Dark mode — premium « néon glassmorphism »** (planche DARKMODE fournie ;
 toggle thème dans le header). Ce n'est PAS un simple inverse du clair, c'est une
@@ -214,10 +234,9 @@ ambiance à part entière :
   dures, style enfantin.
 - Tout passe par `.dark { --glass-* }` + quelques règles `.dark .glass-*` dans
   `app/globals.css` → tout le front en hérite, rien à faire par composant.
-- ⏳ Pour coller à 100% au hero de la maquette (étape suivante) : CTA principaux
-  en **dégradé violet + glow** (aujourd'hui fond `--glass-ink`), tuiles d'icônes
-  glassmorphism avec glow, illustration 3D (livre/dossiers) + bulles d'icônes
-  flottantes.
+- ✅ Implémenté : CTA `.glass-cta` (dégradé violet + glow en dark), tuiles
+  `.glass-icon-tile` (glow néon), bulles d'icônes flottantes Phosphor +
+  illustration 3D (`public/3d/`, asset CC0) dans le hero.
 
 **Règles « going forward »** :
 
@@ -235,15 +254,15 @@ ambiance à part entière :
 
 ## Points connus à améliorer
 
-- Centraliser la couleur d'accent : l'accent actuel est `#7C3AED`
-  (variables CSS dans `app/globals.css`). **Cible charte = Violet CTA
-  `#5B46E5`** (légèrement plus bleuté/calme) — migration à faire sur
-  `--primary` / `--accent` / `--ring` / `--glass-accent-deep` (light + dark)
-  pour coller à la planche. Changement visible partout (chaque CTA) → à valider
-  visuellement. Une ancienne couleur `#C8102E` traîne aussi en dur dans 4
-  fichiers d'icônes (`components/icons/organismes/index.tsx`,
-  `components/docbel/icons.tsx`, `components/docbel/bureau-callout.tsx`,
-  `components/docbel/bureau-card.tsx`) à harmoniser.
+- Accent : migration vers Violet CTA `#5B46E5` **faite** (commit `1ac88c3` :
+  `--primary`/`--accent`/`--ring`/`--glass-accent-deep` en clair, `#7C6BF0` en
+  dark). Restent 3 incohérences : (a) défaut codé en dur `#7C3AED` (ancien
+  accent) dans les graphiques `components/page-blocks/charts/*-chart-view.tsx`
+  → mettre `var(--primary)` / `--chart-*` ; (b) `#C8102E` en dur dans 4 fichiers
+  d'icônes (`components/icons/organismes/index.tsx`, `components/docbel/icons.tsx`,
+  `components/docbel/bureau-callout.tsx`, `components/docbel/bureau-card.tsx`) ;
+  (c) CTA `.glass-cta`/auth en encre dark-violet en **clair** (décision à
+  trancher : garder le sobre, ou passer Violet `#5B46E5`).
 - Extraire un composant `<UserFormFields/>` partagé entre
   `app/admin/users/new/page.tsx` et `components/users/edit-user-form.tsx`
   (création / édition d'utilisateur sont désormais des pages, plus des modals).

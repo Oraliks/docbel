@@ -143,6 +143,54 @@ Refuser`;
     ]);
   });
 
+  it("parse le format « Liste d'attente » (NOM → DATE → HEURE par bloc)", () => {
+    const input = `Rendez-vous en attente
+
+Approve AllAnnuler tout
+
+approuverAnnulerGabriel Niesen
+  SCHAERBEEK (P200) - Pl. de la Reine 5, 1030 Schaerbeek: jeudi, 18/06/2026
+  09:40–10:00
+
+approuverAnnulerHamza Ouazehari
+  SCHAERBEEK (P200) - Pl. de la Reine 5, 1030 Schaerbeek: jeudi, 18/06/2026
+  10:30–11:00`;
+    const appts = parseAppointments(input);
+    expect(appts).toHaveLength(2);
+    expect(appts.map((a) => a.name)).toEqual([
+      "Gabriel Niesen",
+      "Hamza Ouazehari",
+    ]);
+    // Gabriel : 18/06/2026 09:40-10:00.
+    expect(appts[0].start.getUTCDate()).toBe(18);
+    expect(appts[0].start.getUTCMonth()).toBe(5); // juin (0-indexé)
+    expect(appts[0].start.getUTCHours()).toBe(9);
+    expect(appts[0].start.getUTCMinutes()).toBe(40);
+    expect(appts[0].end.getUTCHours()).toBe(10);
+    expect(appts[0].end.getUTCMinutes()).toBe(0);
+    // Hamza : son créneau spécifique (pas celui de Gabriel).
+    expect(appts[1].start.getUTCHours()).toBe(10);
+    expect(appts[1].start.getUTCMinutes()).toBe(30);
+    expect(appts[1].end.getUTCHours()).toBe(11);
+  });
+
+  it("supporte plusieurs jours en liste d'attente", () => {
+    const input = `approuverAnnulerAlice Un
+  Antenne X: lundi, 15/06/2026
+  09:00–09:20
+
+approuverAnnulerBob Deux
+  Antenne Y: mardi, 16/06/2026
+  14:00–14:30`;
+    const appts = parseAppointments(input);
+    expect(appts).toHaveLength(2);
+    expect(appts[0].name).toBe("Alice Un");
+    expect(appts[0].start.getUTCDate()).toBe(15);
+    expect(appts[1].name).toBe("Bob Deux");
+    expect(appts[1].start.getUTCDate()).toBe(16);
+    expect(appts[1].start.getUTCHours()).toBe(14);
+  });
+
   it("accepte plusieurs variantes de tirets et d'espaces", () => {
     const appts = parseAppointments(
       "Appointments for 1/2/2026\n9:00-9:30\nJean Test\n10:00 — 10:30\nMarie Test",

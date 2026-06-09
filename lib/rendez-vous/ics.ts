@@ -88,6 +88,19 @@ const TRAILING_ACTION = new RegExp(
   "i",
 );
 
+// Préfixe de boutons collés en début de nom dans le format « Liste d'attente »
+// (« approuverAnnulerGabriel Niesen »). On strippe UNE OU PLUSIEURS occurrences
+// de boutons d'action en début de ligne (avec espaces facultatifs entre eux).
+const ACTION_PREFIX = new RegExp(
+  `^(?:(?:approuver|approuvé|approuvée|approve|approved|refuser|refusé|refusée|rejeter|reject|rejected|annuler|annulé|annulée|cancel|cancelled)\\s*)+`,
+  "i",
+);
+
+// Cluster de boutons d'action en masse (« Approve AllAnnuler tout », « Annuler
+// tout », « Tout approuver », etc.) — ligne entière à ignorer.
+const BULK_ACTIONS_LINE =
+  /^(?:approve\s*all(?:\s*annuler\s*tout)?|annuler\s*tout(?:\s*approve\s*all)?|approuver\s*(?:tous|toutes?)|tout\s*(?:approuver|annuler))$/i;
+
 const MAX_LINE_OCTETS = 75;
 const TZID = "Europe/Brussels";
 const PRODID = "-//DocBel//Rendez-vous Export//FR";
@@ -167,11 +180,16 @@ function wallClock(date: YMD, h: number, m: number): Date {
 }
 
 /**
- * Transforme le texte collé en liste de rendez-vous. **Multi-journées** : un
- * même collage peut contenir plusieurs jours. Chaque en-tête « Appointments for
- * JJ/MM/AAAA » (ou « pour le … », ou une date seule sur sa ligne) ouvre un
- * nouveau jour ; les créneaux et noms qui suivent s'y rattachent jusqu'au
- * prochain en-tête.
+ * Transforme le texte collé en liste de rendez-vous. Deux formats acceptés :
+ *
+ *  • **FGTB historique** (ordre DATE → HEURE → NOMS) — multi-journées : chaque
+ *    en-tête « Appointments for JJ/MM/AAAA » (ou date seule) ouvre un jour ;
+ *    les créneaux et noms qui suivent s'y rattachent.
+ *
+ *  • **Liste d'attente FGTB** (ordre NOM → DATE → HEURE, un bloc par RDV) :
+ *    chaque ligne nom est préfixée des boutons « approuverAnnuler… » à retirer,
+ *    la date est en ligne dans une adresse, l'heure suit. Le nom est mémorisé
+ *    jusqu'à la lecture du créneau horaire.
  *
  * @throws {AppointmentParseError} `DATE_MISSING` si aucune date exploitable,
  *   `INVALID_TIME` sur un créneau mal formé, `NO_APPOINTMENTS` si aucun nom.
@@ -185,20 +203,44 @@ export function parseAppointments(input: string): Appointment[] {
   }
 
   const appointments: Appointment[] = [];
+  const pendingNames: string[] = []; // noms en attente d'un date+slot (Liste d'attente)
   let currentDate: YMD | null = null;
   let slot: Slot | null = null;
   let sawDate = false;
+
+  /** Émet les noms en attente dès qu'on a date + créneau. */
+  const flush = () => {
+    if (!currentDate || !slot || pendingNames.length === 0) return;
+    for (const name of pendingNames) {
+      appointments.push({
+        name,
+        start: wallClock(currentDate, slot.startH, slot.startM),
+        end: wallClock(currentDate, slot.endH, slot.endM),
+      });
+    }
+    pendingNames.length = 0;
+  };
 
   for (const rawLine of input.split(/\r\n|\r|\n/)) {
     const line = rawLine.trim();
     if (line === "") continue;
 
+    // 0) Clusters de boutons en masse (« Approve AllAnnuler tout »…).
+    if (BULK_ACTIONS_LINE.test(line)) continue;
+
     // 1) Ligne porteuse d'une date → ouvre un nouveau jour. Testée AVANT le
     //    filtre « bruit » car l'en-tête « Appointments for … » contient le
-    //    mot-clé bruit tout en portant la date du jour.
+    //    mot-clé bruit tout en portant la date. Trois sources possibles :
+    //    après « for »/« pour », date seule, ou date inline (adresse + date).
     const dateMatch =
       DATE_AFTER_KEYWORD.exec(line) ??
-      (STANDALONE_DATE.test(line) ? DATE_ANYWHERE.exec(line) : null);
+      (STANDALONE_DATE.test(line) ? DATE_ANYWHERE.exec(line) : null) ??
+      // Date intégrée à une ligne plus longue (adresse + date dans la liste
+      // d'attente). Exige `:` pour ne pas confondre avec un nom qui contiendrait
+      // une date entre parenthèses ; exclut les lignes qui sont un créneau.
+      (!LOOSE_TIME_RANGE.test(line) && line.includes(":")
+        ? DATE_ANYWHERE.exec(line)
+        : null);
     if (dateMatch) {
       const d = Number(dateMatch[1]);
       const m = Number(dateMatch[2]);
@@ -210,7 +252,7 @@ export function parseAppointments(input: string): Appointment[] {
         );
       }
       currentDate = { y, m, d };
-      slot = null; // un nouveau jour repart sans créneau actif
+      slot = null; // un nouveau jour/bloc repart sans créneau actif
       sawDate = true;
       continue;
     }
@@ -219,21 +261,34 @@ export function parseAppointments(input: string): Appointment[] {
     //    l'interface source copiés par mégarde (« Approuver », « Refuser »…).
     if (NOISE_LINE.test(line) || ACTION_BUTTON_LINE.test(line)) continue;
 
-    // 3) Nouveau créneau horaire.
+    // 3) Nouveau créneau horaire — déclenche le flush des noms en attente.
     if (LOOSE_TIME_RANGE.test(line)) {
       slot = parseTimeRange(line);
+      flush();
       continue;
     }
 
-    // 4) Sinon, un nom — uniquement après une date ET un créneau valides. On
-    //    retire un éventuel bouton collé en fin de ligne (« Dupont Approuver »).
-    const name = line.replace(TRAILING_ACTION, "").trim();
-    if (!currentDate || !slot || !HAS_LETTER.test(name)) continue;
-    appointments.push({
-      name,
-      start: wallClock(currentDate, slot.startH, slot.startM),
-      end: wallClock(currentDate, slot.endH, slot.endM),
-    });
+    // 4) Sinon, un nom. Retire les boutons collés (préfixe « approuverAnnuler »
+    //    pour la liste d'attente, ou bouton en fin de ligne).
+    const hasPrefix = ACTION_PREFIX.test(line);
+    const name = line
+      .replace(ACTION_PREFIX, "")
+      .replace(TRAILING_ACTION, "")
+      .trim();
+    if (!HAS_LETTER.test(name)) continue;
+
+    if (hasPrefix) {
+      // Format liste d'attente : la date et l'heure suivent → bufferiser.
+      pendingNames.push(name);
+    } else if (currentDate && slot) {
+      // Format FGTB classique : date+slot déjà connus → émettre tout de suite.
+      appointments.push({
+        name,
+        start: wallClock(currentDate, slot.startH, slot.startM),
+        end: wallClock(currentDate, slot.endH, slot.endM),
+      });
+    }
+    // Sinon (pas de préfixe ET pas de contexte) → ignorer (bruit non détecté).
   }
 
   if (!sawDate) {

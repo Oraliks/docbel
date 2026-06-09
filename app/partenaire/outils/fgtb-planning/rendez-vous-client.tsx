@@ -495,9 +495,9 @@ export function RendezVousExportClient({
           </p>
           <p className="text-xs text-muted-foreground">
             Vous pouvez coller votre <strong>liste d&apos;attente</strong> (RDV à
-            approuver) juste pour vérifier les doublons : rien n&apos;est
-            enregistré tant que vous ne cliquez pas sur «&nbsp;Enregistrer dans
-            l&apos;historique&nbsp;».
+            approuver, avec les boutons «&nbsp;approuverAnnuler…&nbsp;») juste pour
+            vérifier les doublons : rien n&apos;est enregistré tant que vous ne
+            cliquez pas sur «&nbsp;Enregistrer dans l&apos;historique&nbsp;».
           </p>
         </CardContent>
       </Card>

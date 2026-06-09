@@ -239,6 +239,29 @@ export function RendezVousExportClient({
 
   const handleSave = useCallback(async () => {
     setSubmitError(null);
+    setSaveInfo(null);
+    // Pré-validations claires AVANT l'appel réseau : on évite un bouton
+    // silencieusement disabled qui laisse l'utilisateur perplexe.
+    if (content.trim() === "") {
+      setSubmitError("Collez d'abord une liste de rendez-vous.");
+      return;
+    }
+    if (preview.kind === "error") {
+      setSubmitError(`Format du texte non reconnu : ${preview.message}`);
+      return;
+    }
+    if (preview.kind !== "ok") {
+      setSubmitError("Aucun rendez-vous détecté dans le texte collé.");
+      return;
+    }
+    if (!scopeReady) {
+      setSubmitError(
+        isAdmin
+          ? "Choisissez d'abord une organisation dans le menu ci-dessus."
+          : "Aucune organisation rattachée à votre compte — contactez un admin.",
+      );
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch("/api/rendez-vous/history", {
@@ -269,7 +292,7 @@ export function RendezVousExportClient({
     } finally {
       setSaving(false);
     }
-  }, [content, org, runCheck]);
+  }, [content, org, preview, scopeReady, isAdmin, runCheck]);
 
   // Index normalisé → doublon, pour annoter chaque nom de l'aperçu.
   const dupMap = useMemo(() => {
@@ -475,7 +498,7 @@ export function RendezVousExportClient({
             <Button
               variant="outline"
               onClick={handleSave}
-              disabled={preview.kind !== "ok" || saving || !scopeReady}
+              disabled={saving}
               title="Synchroniser l'historique sur les journées du collage (ajoute les nouveaux, retire ceux absents)"
             >
               {saving ? <Loader2 className="animate-spin" /> : <Save />}

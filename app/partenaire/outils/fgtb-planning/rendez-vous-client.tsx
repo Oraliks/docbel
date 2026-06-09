@@ -46,7 +46,7 @@ import {
   parseAppointments,
   type Appointment,
 } from "@/lib/rendez-vous/ics";
-import { buildPlanning, planningFilename } from "@/lib/rendez-vous/planning";
+import { buildPlannings, planningsFilename } from "@/lib/rendez-vous/planning";
 import { renderPlanningPdf } from "@/lib/rendez-vous/planning-pdf";
 import {
   formatDateKey,
@@ -57,11 +57,17 @@ import {
 const PLACEHOLDER = `Appointments for 09/06/2026
 
 08:20 – 08:40
-4 Appointments:
+3 Appointments:
 Patrick Jyambere
 Sevil Sarıgöz
 Ajazi Indrit
-Mohammadi Mohammad yasin`;
+
+Appointments for 10/06/2026
+
+09:00 – 09:20
+2 Appointments:
+Julie Dupont
+Mohammad Yasin`;
 
 type SlotGroup = { label: string; dateLabel: string; names: string[] };
 
@@ -314,9 +320,9 @@ export function RendezVousExportClient({
     setPlanningLoading(true);
     try {
       const appointments = parseAppointments(content);
-      const planning = buildPlanning(appointments);
-      const blob = await renderPlanningPdf(planning);
-      triggerDownload(blob, planningFilename(planning));
+      const plannings = buildPlannings(appointments);
+      const blob = await renderPlanningPdf(plannings);
+      triggerDownload(blob, planningsFilename(plannings));
     } catch (err) {
       if (err instanceof AppointmentParseError) {
         setSubmitError(err.message);
@@ -384,6 +390,8 @@ export function RendezVousExportClient({
           <CardTitle>Coller les rendez-vous</CardTitle>
           <CardDescription>
             Collez le texte tel quel — pas besoin de reformater quoi que ce soit.
+            Vous pouvez coller <strong>plusieurs journées d&apos;un coup</strong> :
+            chaque jour est enregistré séparément et obtient sa page de planning.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">

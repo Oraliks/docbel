@@ -117,27 +117,6 @@ function isValidYMD(y: number, m: number, d: number): boolean {
   );
 }
 
-/** Extrait la date du dossier (« Appointments for JJ/MM/AAAA »). */
-function extractDate(input: string): YMD {
-  const match = DATE_AFTER_KEYWORD.exec(input) ?? DATE_ANYWHERE.exec(input);
-  if (!match) {
-    throw new AppointmentParseError(
-      "DATE_MISSING",
-      "Date absente : ajoutez une ligne « Appointments for JJ/MM/AAAA ».",
-    );
-  }
-  const d = Number(match[1]);
-  const m = Number(match[2]);
-  const y = Number(match[3]);
-  if (!isValidYMD(y, m, d)) {
-    throw new AppointmentParseError(
-      "DATE_MISSING",
-      `Date illisible ou invalide : « ${match[1]}/${match[2]}/${match[3]} ».`,
-    );
-  }
-  return { y, m, d };
-}
-
 /** Valide et normalise une ligne de créneau « HH:MM – HH:MM ». */
 function parseTimeRange(line: string): Slot {
   const match = STRICT_TIME_RANGE.exec(line);
@@ -175,7 +154,11 @@ function wallClock(date: YMD, h: number, m: number): Date {
 }
 
 /**
- * Transforme le texte collé en liste de rendez-vous.
+ * Transforme le texte collé en liste de rendez-vous. **Multi-journées** : un
+ * même collage peut contenir plusieurs jours. Chaque en-tête « Appointments for
+ * JJ/MM/AAAA » (ou « pour le … », ou une date seule sur sa ligne) ouvre un
+ * nouveau jour ; les créneaux et noms qui suivent s'y rattachent jusqu'au
+ * prochain en-tête.
  *
  * @throws {AppointmentParseError} `DATE_MISSING` si aucune date exploitable,
  *   `INVALID_TIME` sur un créneau mal formé, `NO_APPOINTMENTS` si aucun nom.
@@ -188,32 +171,61 @@ export function parseAppointments(input: string): Appointment[] {
     );
   }
 
-  // La date est résolue d'abord : « date absente » est l'erreur la plus utile
-  // à remonter en premier. (Cas mono-journée de l'export FGTB.)
-  const date = extractDate(input);
-
   const appointments: Appointment[] = [];
+  let currentDate: YMD | null = null;
   let slot: Slot | null = null;
+  let sawDate = false;
 
   for (const rawLine of input.split(/\r\n|\r|\n/)) {
     const line = rawLine.trim();
     if (line === "") continue;
-    // En-têtes, compteurs et lignes purement « date » → ignorés.
-    if (NOISE_LINE.test(line) || STANDALONE_DATE.test(line)) continue;
-    // Nouveau créneau horaire.
+
+    // 1) Ligne porteuse d'une date → ouvre un nouveau jour. Testée AVANT le
+    //    filtre « bruit » car l'en-tête « Appointments for … » contient le
+    //    mot-clé bruit tout en portant la date du jour.
+    const dateMatch =
+      DATE_AFTER_KEYWORD.exec(line) ??
+      (STANDALONE_DATE.test(line) ? DATE_ANYWHERE.exec(line) : null);
+    if (dateMatch) {
+      const d = Number(dateMatch[1]);
+      const m = Number(dateMatch[2]);
+      const y = Number(dateMatch[3]);
+      if (!isValidYMD(y, m, d)) {
+        throw new AppointmentParseError(
+          "DATE_MISSING",
+          `Date illisible ou invalide : « ${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]} ».`,
+        );
+      }
+      currentDate = { y, m, d };
+      slot = null; // un nouveau jour repart sans créneau actif
+      sawDate = true;
+      continue;
+    }
+
+    // 2) Autres lignes « bruit » (compteurs « 4 Appointments: », « guichet »…).
+    if (NOISE_LINE.test(line)) continue;
+
+    // 3) Nouveau créneau horaire.
     if (LOOSE_TIME_RANGE.test(line)) {
       slot = parseTimeRange(line);
       continue;
     }
-    // Avant tout créneau, ou ligne sans la moindre lettre → ce n'est pas un nom.
-    if (!slot || !HAS_LETTER.test(line)) continue;
+
+    // 4) Sinon, un nom — uniquement après une date ET un créneau valides.
+    if (!currentDate || !slot || !HAS_LETTER.test(line)) continue;
     appointments.push({
       name: line,
-      start: wallClock(date, slot.startH, slot.startM),
-      end: wallClock(date, slot.endH, slot.endM),
+      start: wallClock(currentDate, slot.startH, slot.startM),
+      end: wallClock(currentDate, slot.endH, slot.endM),
     });
   }
 
+  if (!sawDate) {
+    throw new AppointmentParseError(
+      "DATE_MISSING",
+      "Date absente : ajoutez une ligne « Appointments for JJ/MM/AAAA ».",
+    );
+  }
   if (appointments.length === 0) {
     throw new AppointmentParseError(
       "NO_APPOINTMENTS",
@@ -319,10 +331,21 @@ export function generateICS(appointments: Appointment[]): string {
   return lines.map(foldLine).join("\r\n") + "\r\n";
 }
 
-/** Nom de fichier déduit de la date des rendez-vous : `RDV_JJ_MM_AAAA.ics`. */
+/**
+ * Nom de fichier déduit des dates : `RDV_JJ_MM_AAAA.ics`, ou une plage
+ * `RDV_JJ_MM_AAAA-JJ_MM_AAAA.ics` quand le collage couvre plusieurs jours.
+ */
 export function appointmentsFilename(appointments: Appointment[]): string {
-  const first = appointments[0];
-  if (!first) return "rendez-vous.ics";
-  const d = first.start;
-  return `RDV_${pad(d.getUTCDate())}_${pad(d.getUTCMonth() + 1)}_${d.getUTCFullYear()}.ics`;
+  if (appointments.length === 0) return "rendez-vous.ics";
+  const stamp = (d: Date) =>
+    `${pad(d.getUTCDate())}_${pad(d.getUTCMonth() + 1)}_${d.getUTCFullYear()}`;
+  let min = appointments[0].start;
+  let max = appointments[0].start;
+  for (const a of appointments) {
+    if (a.start.getTime() < min.getTime()) min = a.start;
+    if (a.start.getTime() > max.getTime()) max = a.start;
+  }
+  const a = stamp(min);
+  const b = stamp(max);
+  return a === b ? `RDV_${a}.ics` : `RDV_${a}-${b}.ics`;
 }

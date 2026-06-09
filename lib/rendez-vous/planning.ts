@@ -123,3 +123,35 @@ export function buildPlanning(appointments: Appointment[]): Planning {
 export function planningFilename(planning: Planning): string {
   return `Planning_${planning.theme.name}_${planning.dateLabel.replace(/\//g, "_")}.pdf`;
 }
+
+/** Découpe les rendez-vous par journée (clé date), en préservant l'ordre d'apparition. */
+export function splitByDay(appointments: Appointment[]): Appointment[][] {
+  const groups = new Map<string, Appointment[]>();
+  const order: string[] = [];
+  for (const a of appointments) {
+    const key = `${a.start.getUTCFullYear()}-${pad(a.start.getUTCMonth() + 1)}-${pad(a.start.getUTCDate())}`;
+    let list = groups.get(key);
+    if (!list) {
+      list = [];
+      groups.set(key, list);
+      order.push(key);
+    }
+    list.push(a);
+  }
+  return order.map((k) => groups.get(k) as Appointment[]);
+}
+
+/** Un `Planning` par journée présente dans la liste (collage multi-jours). */
+export function buildPlannings(appointments: Appointment[]): Planning[] {
+  return splitByDay(appointments).map((day) => buildPlanning(day));
+}
+
+/** Nom de fichier pour un planning multi-jours : `Planning_09_06_2026-11_06_2026.pdf`. */
+export function planningsFilename(plannings: Planning[]): string {
+  if (plannings.length <= 1) {
+    return plannings[0] ? planningFilename(plannings[0]) : "Planning.pdf";
+  }
+  const first = plannings[0].dateLabel.replace(/\//g, "_");
+  const last = plannings[plannings.length - 1].dateLabel.replace(/\//g, "_");
+  return `Planning_${first}-${last}.pdf`;
+}

@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import { parseAppointments } from "@/lib/rendez-vous/ics";
 import {
   buildPlanning,
+  buildPlannings,
   dayTheme,
   planningFilename,
+  planningsFilename,
 } from "@/lib/rendez-vous/planning";
 
 const SAMPLE = `Appointments for 10/06/2026
@@ -32,6 +34,35 @@ describe("dayTheme", () => {
       accents.add(dayTheme(new Date(Date.UTC(2026, 5, 7 + i))).accent.join(","));
     }
     expect(accents.size).toBe(7);
+  });
+});
+
+describe("buildPlannings (multi-jours)", () => {
+  const MULTI = `Appointments for 09/06/2026
+08:00 – 08:20
+Alice Un
+
+Appointments for 11/06/2026
+09:00 – 09:20
+Bob Deux
+Carla Trois`;
+
+  it("produit un planning par journée, daté et thématisé séparément", () => {
+    const plannings = buildPlannings(parseAppointments(MULTI));
+    expect(plannings).toHaveLength(2);
+    expect(plannings[0].dateLabel).toBe("09/06/2026");
+    expect(plannings[0].total).toBe(1);
+    expect(plannings[1].dateLabel).toBe("11/06/2026");
+    expect(plannings[1].total).toBe(2);
+    // Jours différents → thèmes (couleurs) différents.
+    expect(plannings[0].theme.name).not.toBe(plannings[1].theme.name);
+  });
+
+  it("nomme le fichier multi-jours avec une plage", () => {
+    const plannings = buildPlannings(parseAppointments(MULTI));
+    expect(planningsFilename(plannings)).toBe(
+      "Planning_09_06_2026-11_06_2026.pdf",
+    );
   });
 });
 

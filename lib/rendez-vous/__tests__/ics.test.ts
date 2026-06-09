@@ -86,6 +86,39 @@ Julie Dupont
     expect(fifth.end.getUTCMinutes()).toBe(0);
   });
 
+  it("gère plusieurs journées dans un même collage", () => {
+    const input = `Appointments for 09/06/2026
+08:20 – 08:40
+2 Appointments:
+Alice Un
+Bob Deux
+
+Appointments for 10/06/2026
+09:00 – 09:20
+1 Appointments:
+Carla Trois`;
+    const appts = parseAppointments(input);
+    expect(appts).toHaveLength(3);
+    // Jour 1 (09/06).
+    expect(appts[0].name).toBe("Alice Un");
+    expect(appts[0].start.getUTCDate()).toBe(9);
+    expect(appts[1].start.getUTCDate()).toBe(9);
+    // Jour 2 (10/06) : date ET créneau distincts — pas de fusion avec le jour 1.
+    expect(appts[2].name).toBe("Carla Trois");
+    expect(appts[2].start.getUTCDate()).toBe(10);
+    expect(appts[2].start.getUTCHours()).toBe(9);
+    expect(appts[2].start.getUTCMinutes()).toBe(0);
+  });
+
+  it("nomme le fichier .ics avec une plage quand plusieurs jours", () => {
+    const single = parseAppointments("Appointments for 09/06/2026\n08:00 – 08:20\nX");
+    expect(appointmentsFilename(single)).toBe("RDV_09_06_2026.ics");
+    const multi = parseAppointments(
+      "Appointments for 09/06/2026\n08:00 – 08:20\nX\nAppointments for 11/06/2026\n08:00 – 08:20\nY",
+    );
+    expect(appointmentsFilename(multi)).toBe("RDV_09_06_2026-11_06_2026.ics");
+  });
+
   it("accepte plusieurs variantes de tirets et d'espaces", () => {
     const appts = parseAppointments(
       "Appointments for 1/2/2026\n9:00-9:30\nJean Test\n10:00 — 10:30\nMarie Test",

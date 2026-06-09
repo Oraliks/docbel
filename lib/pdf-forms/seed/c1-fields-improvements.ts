@@ -79,6 +79,153 @@ function dejaDeclare(opts: {
 /// leur définition existante — voir applyC1Improvements() pour l'overlay.
 export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
+  // SECTION 0 — IDENTITÉ & ADRESSE (page 1, en haut du PDF)
+  // Ces champs étaient auparavant inférés automatiquement à l'import :
+  // libellés laids ("nationalité 3", "numéro de boîte"…) et tous typés
+  // "text" sans validation. On les enrichit ici avec libellés FR propres,
+  // types sémantiques (niss, postal_be, phone_be, email, date) et prefill
+  // depuis le profil utilisateur quand c'est pertinent.
+  //
+  // Les `id` reprennent ceux que `field-inference.ts#makeId` produit à
+  // partir du `pdfFieldName` officiel — ainsi `applyC1Improvements()`
+  // remplace l'entrée inférée par cette version enrichie (et n'en duplique
+  // pas une seconde).
+  // ====================================================================
+  {
+    id: "nom",
+    pdfFieldName: "Nom",
+    type: "text",
+    required: true,
+    label: { fr: "Nom", nl: "", de: "" },
+    prefillFrom: "profile.lastName",
+    section: SECTION_IDENTITE,
+    order: -100,
+  },
+  {
+    id: "pr_nom",
+    pdfFieldName: "Prénom",
+    type: "text",
+    required: true,
+    label: { fr: "Prénom", nl: "", de: "" },
+    prefillFrom: "profile.firstName",
+    section: SECTION_IDENTITE,
+    order: -99,
+  },
+  {
+    id: "niss",
+    pdfFieldName: "NISS",
+    type: "niss",
+    required: true,
+    label: { fr: "Numéro NISS (registre national)", nl: "", de: "" },
+    help: {
+      fr: "11 chiffres au dos de ta carte d'identité (eID), au-dessus du code-barres.",
+      nl: "", de: "",
+    },
+    placeholder: { fr: "00.00.00-000.00", nl: "", de: "" },
+    prefillFrom: "profile.niss",
+    section: SECTION_IDENTITE,
+    order: -98,
+  },
+  {
+    id: "date_de_naissance",
+    pdfFieldName: "Date de naissance",
+    type: "date",
+    required: true,
+    label: { fr: "Date de naissance", nl: "", de: "" },
+    prefillFrom: "itsme.birthDate",
+    section: SECTION_IDENTITE,
+    order: -97,
+  },
+  {
+    id: "nationalit_3",
+    pdfFieldName: "nationalité 3",
+    type: "text",
+    required: true,
+    label: { fr: "Nationalité", nl: "", de: "" },
+    help: {
+      fr: "Indique ta nationalité (ex. « Belge »). Si tu es hors EEE/Suisse, complète aussi la rubrique dédiée plus bas.",
+      nl: "", de: "",
+    },
+    section: SECTION_IDENTITE,
+    order: -96,
+  },
+  {
+    id: "adresse_rue",
+    pdfFieldName: "Adresse - Rue",
+    type: "text",
+    required: true,
+    label: { fr: "Rue", nl: "", de: "" },
+    prefillFrom: "profile.street",
+    section: SECTION_IDENTITE,
+    order: -90,
+  },
+  {
+    id: "num_ro",
+    pdfFieldName: "numéro",
+    type: "text",
+    required: true,
+    label: { fr: "Numéro", nl: "", de: "" },
+    section: SECTION_IDENTITE,
+    order: -89,
+  },
+  {
+    id: "num_ro_de_bo_te",
+    pdfFieldName: "numéro de boîte",
+    type: "text",
+    required: false,
+    label: { fr: "Boîte", nl: "", de: "" },
+    help: { fr: "Numéro de boîte si applicable (laisser vide sinon).", nl: "", de: "" },
+    section: SECTION_IDENTITE,
+    order: -88,
+  },
+  {
+    id: "code_postal",
+    pdfFieldName: "code postal",
+    type: "postal_be",
+    required: true,
+    label: { fr: "Code postal", nl: "", de: "" },
+    placeholder: { fr: "1000", nl: "", de: "" },
+    prefillFrom: "profile.postalCode",
+    section: SECTION_IDENTITE,
+    order: -87,
+  },
+  {
+    id: "pays",
+    pdfFieldName: "pays",
+    type: "text",
+    required: true,
+    label: { fr: "Pays", nl: "", de: "" },
+    defaultValue: "Belgique",
+    section: SECTION_IDENTITE,
+    order: -86,
+  },
+  // Remarque : la ville n'a pas de widget dédié sur le C1 (le code postal
+  // suffit côté ONEM). On la prefill quand même via profile.city si l'admin
+  // ajoute un champ « ville » manuellement plus tard.
+  {
+    id: "adresse_email_facultatif",
+    pdfFieldName: "adresse email  facultatif",
+    type: "email",
+    required: false,
+    label: { fr: "Adresse e-mail (facultatif)", nl: "", de: "" },
+    placeholder: { fr: "nom@exemple.be", nl: "", de: "" },
+    prefillFrom: "profile.email",
+    section: SECTION_IDENTITE,
+    order: -85,
+  },
+  {
+    id: "num_ro_de_t_l_phone_facultatif",
+    pdfFieldName: "numéro de téléphone facultatif",
+    type: "phone_be",
+    required: false,
+    label: { fr: "Numéro de téléphone (facultatif)", nl: "", de: "" },
+    placeholder: { fr: "0470 12 34 56", nl: "", de: "" },
+    prefillFrom: "profile.phone",
+    section: SECTION_IDENTITE,
+    order: -84,
+  },
+
+  // ====================================================================
   // SECTION 1 — DEMANDE (motifs d'introduction)
   // ====================================================================
   {
@@ -821,6 +968,41 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "titulaireCompte", op: "equals", value: "autre-nom" },
     section: SECTION_PAIEMENT,
     order: 604,
+  },
+  // Compte SEPA étranger : alternative au compte belge (BE…). Si renseigné,
+  // l'utilisateur doit aussi fournir le BIC de sa banque (obligatoire hors
+  // BE). On garde les deux champs facultatifs côté schéma — la cohérence
+  // « IBAN belge OU IBAN étranger + BIC » sera vérifiée par la logique
+  // applicative en aval.
+  {
+    id: "sepa_tranger_iban_bic",
+    pdfFieldName: "SEPA étranger IBAN  BIC",
+    type: "iban",
+    required: false,
+    label: { fr: "IBAN étranger (SEPA hors Belgique)", nl: "", de: "" },
+    help: {
+      fr: "À remplir uniquement si ton compte n'est pas un compte belge (BE…). Indique aussi le BIC ci-dessous.",
+      nl: "", de: "",
+    },
+    placeholder: { fr: "FR76 0000 0000 0000 0000 0000 000", nl: "", de: "" },
+    visibleIf: { fieldId: "modePaiement", op: "equals", value: "virement" },
+    section: SECTION_PAIEMENT,
+    order: 605,
+  },
+  {
+    id: "bic",
+    pdfFieldName: "BIC",
+    type: "text",
+    required: false,
+    label: { fr: "BIC (code SWIFT de la banque)", nl: "", de: "" },
+    help: {
+      fr: "Obligatoire si tu utilises un IBAN étranger. Le BIC se trouve sur tes extraits de compte (8 ou 11 caractères, ex. BNPAFRPP).",
+      nl: "", de: "",
+    },
+    placeholder: { fr: "BNPAFRPP", nl: "", de: "" },
+    visibleIf: { fieldId: "modePaiement", op: "equals", value: "virement" },
+    section: SECTION_PAIEMENT,
+    order: 606,
   },
 
   // ====================================================================

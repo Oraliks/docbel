@@ -13,6 +13,7 @@ import {
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { NissInput } from "@/components/ui/niss-input";
 import { FieldErrorReport } from "./field-error-report";
+import { ArrayField } from "./array-field";
 import { loc, Locale, FieldValue, FullNameValue, isFullNameValue } from "@/lib/pdf-forms/types";
 import type { PublicField } from "@/lib/pdf-forms/public-serializer";
 
@@ -58,6 +59,20 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
       locale={locale}
     />
   );
+
+  // Tableau de lignes (cohabitants etc.) — composant dédié.
+  if (field.type === "array") {
+    return (
+      <ArrayField
+        field={field}
+        value={value}
+        locale={locale}
+        onChange={onChange}
+        formId={formId}
+        formSlug={formSlug}
+      />
+    );
+  }
 
   // Checkbox : disposition horizontale (case + libellé).
   if (field.type === "checkbox") {

@@ -250,10 +250,181 @@ export const C1_QUESTIONS: PdfFormField[] = [
     section: SECTION_SITUATION_FAMILIALE,
     order: 103,
   },
-  // TODO (prochain commit) : grille cohabitants dynamique (nom, prénom,
-  // lien, date naissance, allocations familiales, revenu pro, revenu de
-  // remplacement, remarque, déclaration C1-PARTENAIRE si FAC). Nécessite
-  // un nouveau type de champ `array` dans PdfFormField.
+  // Grille cohabitants — visible seulement si l'utilisateur a indiqué
+  // cohabiter. Pour chaque ligne : identité, lien familial, date naissance,
+  // allocations familiales perçues (auto-non si > 35 ans), type & montant
+  // de revenu professionnel (Indépendant → 999999.99 par défaut), revenus
+  // de remplacement, remarque, et statut C1-PARTENAIRE si FAC.
+  {
+    id: "cohabitants",
+    pdfFieldName: "",
+    type: "array",
+    required: false,
+    label: { fr: "Personnes avec qui je cohabite", nl: "", de: "" },
+    help: {
+      fr: "Ajoute toutes les personnes qui font partie de ton ménage, même si elles sont domiciliées ailleurs. Une personne emprisonnée ou en institution psychiatrique compte toujours.",
+      nl: "", de: "",
+    },
+    addRowLabel: { fr: "Ajouter un cohabitant", nl: "", de: "" },
+    visibleIf: { fieldId: "statutFamilial", op: "equals", value: "cohabite" },
+    section: SECTION_SITUATION_FAMILIALE,
+    order: 110,
+    itemFields: [
+      {
+        id: "prenom",
+        pdfFieldName: "",
+        type: "text",
+        required: true,
+        label: { fr: "Prénom", nl: "", de: "" },
+        order: 1,
+      },
+      {
+        id: "nom",
+        pdfFieldName: "",
+        type: "text",
+        required: true,
+        label: { fr: "Nom", nl: "", de: "" },
+        order: 2,
+      },
+      {
+        id: "lien",
+        pdfFieldName: "",
+        type: "select",
+        required: true,
+        label: { fr: "Lien familial", nl: "", de: "" },
+        help: { fr: "FAC = financièrement à charge. NFAC = non financièrement à charge.", nl: "", de: "" },
+        options: [
+          { value: "epoux", label: { fr: "Époux/se", nl: "", de: "" } },
+          { value: "partenaire", label: { fr: "Partenaire", nl: "", de: "" } },
+          { value: "FAC", label: { fr: "Financièrement à charge (FAC)", nl: "", de: "" } },
+          { value: "NFAC", label: { fr: "Non financièrement à charge (NFAC)", nl: "", de: "" } },
+          { value: "enfant", label: { fr: "Enfant", nl: "", de: "" } },
+          { value: "pere", label: { fr: "Père", nl: "", de: "" } },
+          { value: "mere", label: { fr: "Mère", nl: "", de: "" } },
+          { value: "frere", label: { fr: "Frère", nl: "", de: "" } },
+          { value: "soeur", label: { fr: "Sœur", nl: "", de: "" } },
+          { value: "neveu", label: { fr: "Neveu", nl: "", de: "" } },
+          { value: "niece", label: { fr: "Nièce", nl: "", de: "" } },
+          { value: "oncle", label: { fr: "Oncle", nl: "", de: "" } },
+          { value: "tante", label: { fr: "Tante", nl: "", de: "" } },
+          { value: "cousin", label: { fr: "Cousin", nl: "", de: "" } },
+          { value: "cousine", label: { fr: "Cousine", nl: "", de: "" } },
+          { value: "aucun-lien", label: { fr: "Aucun lien de parenté", nl: "", de: "" } },
+        ],
+        order: 3,
+      },
+      {
+        id: "dateNaissance",
+        pdfFieldName: "",
+        type: "date",
+        required: true,
+        label: { fr: "Date de naissance", nl: "", de: "" },
+        order: 4,
+      },
+      {
+        id: "allocationsFamiliales",
+        pdfFieldName: "",
+        type: "radio",
+        required: false,
+        label: { fr: "Je perçois des allocations familiales pour cette personne", nl: "", de: "" },
+        help: {
+          fr: "Au-delà de 35 ans, la réponse est automatiquement « non ». Tu peux la rectifier si besoin.",
+          nl: "", de: "",
+        },
+        options: YN,
+        order: 5,
+      },
+      {
+        id: "typeRevenuPro",
+        pdfFieldName: "",
+        type: "select",
+        required: false,
+        label: { fr: "Type de revenu professionnel", nl: "", de: "" },
+        options: [
+          { value: "aucun", label: { fr: "Aucun", nl: "", de: "" } },
+          { value: "salarie-employe", label: { fr: "Employé", nl: "", de: "" } },
+          { value: "salarie-ouvrier", label: { fr: "Ouvrier", nl: "", de: "" } },
+          { value: "independant", label: { fr: "Indépendant", nl: "", de: "" } },
+        ],
+        order: 6,
+      },
+      {
+        id: "montantRevenuPro",
+        pdfFieldName: "",
+        type: "number",
+        required: false,
+        label: { fr: "Montant brut mensuel (€)", nl: "", de: "" },
+        help: {
+          fr: "Pour un indépendant, valeur par défaut 999999,99 € — le statut indépendant rend la personne « cohabitante » sans plafond de revenu pour conjoint/partenaire.",
+          nl: "", de: "",
+        },
+        visibleIf: { fieldId: "typeRevenuPro", op: "notEquals", value: "aucun" },
+        order: 7,
+      },
+      {
+        id: "revenuRemplacement",
+        pdfFieldName: "",
+        type: "select",
+        required: false,
+        label: { fr: "Revenu de remplacement", nl: "", de: "" },
+        help: { fr: "Mutuelle (maladie-invalidité), CPAS, pension, allocations chômage, etc.", nl: "", de: "" },
+        options: [
+          { value: "aucun", label: { fr: "Aucun", nl: "", de: "" } },
+          { value: "mutuelle", label: { fr: "Mutuelle (maladie-invalidité)", nl: "", de: "" } },
+          { value: "cpas", label: { fr: "CPAS (revenu d'intégration)", nl: "", de: "" } },
+          { value: "pension", label: { fr: "Pension", nl: "", de: "" } },
+          { value: "chomage", label: { fr: "Allocations de chômage", nl: "", de: "" } },
+          { value: "autre", label: { fr: "Autre", nl: "", de: "" } },
+        ],
+        order: 8,
+      },
+      {
+        id: "montantRevenuRemplacement",
+        pdfFieldName: "",
+        type: "number",
+        required: false,
+        label: { fr: "Montant brut mensuel du revenu de remplacement (€)", nl: "", de: "" },
+        visibleIf: { fieldId: "revenuRemplacement", op: "notEquals", value: "aucun" },
+        order: 9,
+      },
+      {
+        id: "remarque",
+        pdfFieldName: "",
+        type: "textarea",
+        required: false,
+        label: { fr: "Remarque", nl: "", de: "" },
+        order: 10,
+      },
+      // Statut C1-PARTENAIRE : visible uniquement si lien = FAC. Choix
+      // mutuellement exclusif entre « 1ʳᵉ fois / modification » et
+      // « déjà déclaré ». La logique de trigger pour ajouter le formulaire
+      // C1-PARTENAIRE lit la valeur « premiere-fois » sur n'importe quelle
+      // ligne FAC.
+      {
+        id: "c1PartenaireStatus",
+        pdfFieldName: "",
+        type: "radio",
+        required: false,
+        label: { fr: "Déclaration C1-PARTENAIRE", nl: "", de: "" },
+        help: {
+          fr: "Auto-pré-sélectionné sur « 1ʳᵉ fois / modification » dès que le lien devient FAC — tu peux changer si la situation a déjà été déclarée.",
+          nl: "", de: "",
+        },
+        options: [
+          {
+            value: "premiere-fois",
+            label: { fr: "Première fois (ou modification) — joindre un FORMULAIRE C1-PARTENAIRE", nl: "", de: "" },
+          },
+          {
+            value: "deja-declare",
+            label: { fr: "Ma déclaration C1-PARTENAIRE précédente reste inchangée", nl: "", de: "" },
+          },
+        ],
+        visibleIf: { fieldId: "lien", op: "equals", value: "FAC" },
+        order: 11,
+      },
+    ],
+  },
 
   // ---------- MES ACTIVITÉS (10 questions, page 2) ----------
   {
@@ -844,6 +1015,15 @@ export const C1_QUESTIONS: PdfFormField[] = [
 ///
 /// Référence : feuille d'information C1 (version 01.01.2024/831.10.000).
 export const C1_TRIGGERS: PdfFormTrigger[] = [
+  {
+    // Au moins une personne FAC déclarée « 1ʳᵉ fois » dans la grille des
+    // cohabitants → joindre un C1-PARTENAIRE. Notation tableau [*] —
+    // cf. lib/pdf-forms/triggers.ts#evaluateTrigger.
+    whenFieldId: "cohabitants[*].c1PartenaireStatus",
+    whenValue: "premiere-fois",
+    requiresFormSlug: "c1-partenaire",
+    reason: { fr: "Personne financièrement à charge à déclarer", nl: "", de: "" },
+  },
   {
     whenFieldId: "mandatArtistique",
     whenValue: "oui",

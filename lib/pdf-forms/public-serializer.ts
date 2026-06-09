@@ -27,6 +27,11 @@ export interface PublicField {
   readOnly?: boolean;
   section?: string;
   order?: number;
+  // ---- Champ `array` ----
+  itemFields?: PublicField[];
+  addRowLabel?: PdfFormField["addRowLabel"];
+  minRows?: number;
+  maxRows?: number;
 }
 
 export function toPublicField(f: PdfFormField): PublicField {
@@ -51,6 +56,10 @@ export function toPublicField(f: PdfFormField): PublicField {
     readOnly: f.readOnly,
     section: f.section,
     order: f.order,
+    itemFields: f.itemFields ? f.itemFields.map(toPublicField) : undefined,
+    addRowLabel: f.addRowLabel,
+    minRows: f.minRows,
+    maxRows: f.maxRows,
   };
 }
 

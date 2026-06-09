@@ -91,6 +91,10 @@ export async function fillForm(
 
   for (const field of fields) {
     if (!field.pdfFieldName) continue;
+    // Les champs `array` (tableaux de lignes) n'ont pas de stamping direct
+    // dans cette passe — leur valeur est capturée dans le payload mais ne
+    // se déverse pas sur un widget unique. Le mapping fin viendra plus tard.
+    if (field.type === "array") continue;
     const raw = payload[field.id];
     if (raw === null || raw === undefined) continue;
     // Champ composite : deux sous-champs front → une seule chaîne dans le PDF.

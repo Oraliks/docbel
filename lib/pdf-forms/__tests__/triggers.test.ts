@@ -77,6 +77,67 @@ describe("activeTriggers", () => {
   });
 });
 
+describe("evaluateTrigger — notation tableau [*]", () => {
+  it("matche quand au moins une ligne a la valeur attendue", () => {
+    const t: PdfFormTrigger = {
+      whenFieldId: "cohabitants[*].lien",
+      whenValue: "FAC",
+      requiresFormSlug: "c1-partenaire",
+    };
+    const payload = {
+      cohabitants: [
+        { lien: "enfant" },
+        { lien: "FAC" },
+        { lien: "epoux" },
+      ],
+    };
+    expect(evaluateTrigger(t, payload)).toBe(true);
+  });
+
+  it("ne matche pas si aucune ligne ne satisfait la règle", () => {
+    const t: PdfFormTrigger = {
+      whenFieldId: "cohabitants[*].lien",
+      whenValue: "FAC",
+      requiresFormSlug: "c1-partenaire",
+    };
+    expect(
+      evaluateTrigger(t, { cohabitants: [{ lien: "epoux" }, { lien: "enfant" }] })
+    ).toBe(false);
+  });
+
+  it("renvoie false si le tableau est absent ou vide", () => {
+    const t: PdfFormTrigger = {
+      whenFieldId: "cohabitants[*].lien",
+      whenValue: "FAC",
+      requiresFormSlug: "c1-partenaire",
+    };
+    expect(evaluateTrigger(t, {})).toBe(false);
+    expect(evaluateTrigger(t, { cohabitants: [] })).toBe(false);
+  });
+
+  it("exclusion fonctionne sur la notation tableau", () => {
+    const t: PdfFormTrigger = {
+      whenFieldId: "cohabitants[*].lien",
+      whenValue: "FAC",
+      unlessFieldId: "cohabitants[*].c1PartenaireStatus",
+      unlessValue: "deja-declare",
+      requiresFormSlug: "c1-partenaire",
+    };
+    // 1 FAC avec « déjà déclaré » → trigger éteint.
+    expect(
+      evaluateTrigger(t, {
+        cohabitants: [{ lien: "FAC", c1PartenaireStatus: "deja-declare" }],
+      })
+    ).toBe(false);
+    // 1 FAC sans déclaration → trigger actif.
+    expect(
+      evaluateTrigger(t, {
+        cohabitants: [{ lien: "FAC", c1PartenaireStatus: "premiere-fois" }],
+      })
+    ).toBe(true);
+  });
+});
+
 describe("parseTriggers", () => {
   it("filtre les éléments mal formés sans crasher", () => {
     const raw = [

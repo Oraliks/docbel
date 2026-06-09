@@ -24,21 +24,43 @@ function looseEquals(a: unknown, b: unknown): boolean {
   return false;
 }
 
+/// Lit un champ du payload en supportant la notation `field[*].sub` qui
+/// renvoie la liste des valeurs `sub` de toutes les lignes du tableau `field`.
+/// Pour les chemins plats classiques (`"foo"`), renvoie la valeur unique
+/// dans un tableau de 1 élément (uniformisation côté caller).
+function readFieldPath(payload: FormPayload, path: string): unknown[] {
+  const arrayMatch = path.match(/^([^[]+)\[\*\]\.(.+)$/);
+  if (!arrayMatch) {
+    const v = payload[path];
+    return v === undefined ? [] : [v];
+  }
+  const [, arrayField, subField] = arrayMatch;
+  const rows = payload[arrayField];
+  if (!Array.isArray(rows)) return [];
+  return rows.map((r) => (r as Record<string, unknown>)[subField]).filter((v) => v !== undefined);
+}
+
 /// Évalue un trigger contre un payload. Renvoie true si le trigger doit
 /// matérialiser son `requiresFormSlug`.
+///
+/// Supporte la notation tableau `whenFieldId: "cohabitants[*].lien"` : le
+/// trigger se déclenche si AU MOINS UNE ligne satisfait la règle.
 export function evaluateTrigger(trigger: PdfFormTrigger, payload: FormPayload): boolean {
-  const whenValue = payload[trigger.whenFieldId];
-  if (whenValue === undefined || whenValue === null) return false;
-  if (!looseEquals(whenValue, trigger.whenValue)) return false;
+  const whenValues = readFieldPath(payload, trigger.whenFieldId);
+  const whenMatched = whenValues.some(
+    (v) => v !== null && v !== undefined && looseEquals(v, trigger.whenValue)
+  );
+  if (!whenMatched) return false;
 
   // Exclusion : si le champ d'exclusion est égal à la valeur d'exclusion,
   // le trigger ne se déclenche pas. Permet de modéliser le follow-up
   // « déjà déclaré ? » qui annule le besoin du sous-formulaire.
   if (trigger.unlessFieldId) {
-    const unlessValue = payload[trigger.unlessFieldId];
-    if (unlessValue !== undefined && unlessValue !== null) {
-      if (looseEquals(unlessValue, trigger.unlessValue)) return false;
-    }
+    const unlessValues = readFieldPath(payload, trigger.unlessFieldId);
+    const unlessMatched = unlessValues.some(
+      (v) => v !== null && v !== undefined && looseEquals(v, trigger.unlessValue)
+    );
+    if (unlessMatched) return false;
   }
   return true;
 }

@@ -70,12 +70,17 @@ export type FieldType =
   | "tva_be"
   | "bce"
   | "phone_be"
-  | "email";
+  | "email"
+  /// Tableau de lignes structurées (ex. grille des cohabitants du C1).
+  /// Le champ porte `itemFields: PdfFormField[]` qui décrit le schéma de
+  /// chaque ligne. Valeur dans le payload = `FieldValueRecord[]`.
+  | "array";
 
 export const SEMANTIC_FIELD_TYPES: FieldType[] = [
   "text", "textarea", "number", "date", "checkbox", "select", "radio",
   "fullname", "signature",
   "niss", "iban", "postal_be", "tva_be", "bce", "phone_be", "email",
+  "array",
 ];
 
 /// Libellés lisibles (FR) pour le sélecteur de type côté admin. Le public ne
@@ -98,6 +103,7 @@ export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   bce: "Numéro d'entreprise (BCE)",
   phone_be: "Téléphone (Belgique)",
   email: "Adresse e-mail",
+  array: "Tableau (lignes répétables)",
 };
 
 /// Ordre d'assemblage d'un champ `fullname` (deux sous-champs côté front,
@@ -180,6 +186,16 @@ export interface PdfFormField {
   internalNote?: string;
   acroType?: AcroFieldType;
   readOnly?: boolean;
+
+  // ---- Champ `array` (lignes répétables) ----
+  /// Schéma des champs d'une ligne. Seulement utilisé quand `type === "array"`.
+  /// Les sous-champs ne supportent pas eux-mêmes le type "array" (1 seul niveau).
+  itemFields?: PdfFormField[];
+  /// Libellé affiché sur le bouton « + Ajouter ».
+  addRowLabel?: Localized;
+  /// Nombre minimum / maximum de lignes acceptées. Défaut : 0 / illimité.
+  minRows?: number;
+  maxRows?: number;
 }
 
 /// Valeur d'un champ `fullname` : deux sous-parties éditées côté front,
@@ -189,12 +205,20 @@ export interface FullNameValue {
   last?: string;
 }
 
-export type FieldValue = string | number | boolean | null | FullNameValue;
+/// Valeur d'une ligne d'un champ `array` — sous-payload.
+export type FieldValueRecord = Record<string, FieldValueScalar>;
+type FieldValueScalar = string | number | boolean | null | FullNameValue;
+export type FieldValue = FieldValueScalar | FieldValueRecord[];
 export type FormPayload = Record<string, FieldValue>;
 
 /// Garde de type pour distinguer une valeur composite `fullname`.
 export function isFullNameValue(v: unknown): v is FullNameValue {
   return typeof v === "object" && v !== null && !Array.isArray(v) && ("first" in v || "last" in v);
+}
+
+/// Garde de type pour distinguer une valeur composite `array`.
+export function isFieldValueRecordArray(v: unknown): v is FieldValueRecord[] {
+  return Array.isArray(v) && v.every((row) => typeof row === "object" && row !== null && !Array.isArray(row));
 }
 
 export interface ParsedPdf {

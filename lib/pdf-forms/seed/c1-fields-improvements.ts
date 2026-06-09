@@ -1,19 +1,20 @@
-// Améliorations du schéma C1 — sections "MES ACTIVITÉS" + "MES REVENUS".
+// Schéma enrichi du formulaire C1 — couvre l'ensemble du PDF officiel ONEM.
 //
-// Le PDF C1 officiel ONEM rend chaque question oui/non par DEUX checkboxes
-// séparées (oui_N et non_N) plutôt qu'un PDFRadioGroup. Pour une UX claire,
-// on regroupe chaque paire en un champ `radio` avec options [oui, non] et
-// `pdfFieldName: "oui_N|non_N"` — le filler coche la bonne case selon la
-// réponse (cf. lib/pdf-forms/filler.ts).
+// Patterns de mapping pdfFieldName utilisés ici :
+//   - "widget"               → champ texte, date, checkbox simple
+//   - "oui_N|non_N"          → radio à 2 options sur paire de checkboxes ONEM
+//   - "wA|wB|wC|wD"          → radio à N options sur N checkboxes distincts
+//                              (ex. motifIntroduction : 4 cases mutuellement
+//                              exclusives sur le PDF, cf. filler.ts pour la
+//                              généralisation à N).
+//   - "widget|"              → option « oui » seule a une case sur le PDF
+//                              (l'option « non » ne coche rien).
+//   - ""                     → champ virtuel : capturé dans le payload mais
+//                              pas stampé sur le PDF (ex. follow-ups
+//                              pédagogiques, ou champs sans widget officiel).
 //
-// Pour les questions qui déclenchent un sous-formulaire ONEM (C1A, C1B, C1C),
-// on ajoute une question follow-up "déjà déclaré ?" virtuelle (sans widget
-// PDF associé) qui s'affiche conditionnellement. Si la réponse est "non",
-// le sous-formulaire sera ajouté au parcours par la logique du dossier
-// (à wirer plus tard côté CT — pour l'instant on capture la donnée).
-//
-// Référence : feuille d'information C1 (version 01.01.2024/831.10.000).
-// Mapping AcroForm vérifié sur private/pdfs/C1_FR.pdf (page 2).
+// Mapping AcroForm vérifié sur private/pdfs/C1_FR.pdf via scripts/dump-c1.ts.
+// Référence métier : feuille d'information C1 (version 01.01.2024/831.10.000).
 
 import type { PdfFormField, PdfFormTrigger } from "../types";
 
@@ -42,18 +43,21 @@ const YN_DECLARE = [
   { value: "non", label: { fr: "Non, à compléter maintenant", nl: "", de: "" } },
 ];
 
-/// Construit un champ radio "déjà déclaré ?" virtuel (pas de widget PDF
-/// correspondant). Le payload capture la réponse pour la logique de dossier.
+/// Construit un champ radio "déjà déclaré ?" virtuel par défaut (pas de widget
+/// PDF correspondant). Si `pdfFieldName` est fourni (paire dejaDeclareWidget|
+/// declareWidget), on stamp les deux cases : "oui = déjà déclaré" coche la 1ʳᵉ,
+/// "non = à compléter" coche la 2ᵉ.
 function dejaDeclare(opts: {
   id: string;
   parentId: string;
   helpText: string;
   section: string;
   order: number;
+  pdfFieldName?: string;
 }): PdfFormField {
   return {
     id: opts.id,
-    pdfFieldName: "", // virtuel : pas stampé sur le PDF
+    pdfFieldName: opts.pdfFieldName ?? "",
     type: "radio",
     required: false,
     label: { fr: "Avais-tu déjà déclaré cette situation à ton organisme de paiement ?", nl: "", de: "" },
@@ -75,12 +79,10 @@ function dejaDeclare(opts: {
 export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
   // SECTION 1 — DEMANDE (motifs d'introduction)
-  // Tous virtuels pour l'instant (pdfFieldName vide) — à mapper sur les
-  // widgets réels du C1 page 1 dans une 2e passe.
   // ====================================================================
   {
     id: "dateDemande",
-    pdfFieldName: "",
+    pdfFieldName: "Date9_af_date",
     type: "date",
     required: true,
     label: { fr: "Je demande des allocations à partir du", nl: "", de: "" },
@@ -91,7 +93,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "chomeurTemporaireAlternance",
-    pdfFieldName: "",
+    pdfFieldName: "oui|non",
     type: "radio",
     required: true,
     label: {
@@ -109,7 +111,8 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "motifIntroduction",
-    pdfFieldName: "",
+    pdfFieldName:
+      "pour la première fois 5|après une interruption de mes allocations 5|je déclare une modification concernant|je change dorganisme de paiement à partir du 5",
     type: "radio",
     required: true,
     label: { fr: "Motif d'introduction de cette demande", nl: "", de: "" },
@@ -140,7 +143,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // Si « modification », l'utilisateur peut cocher plusieurs natures.
   {
     id: "modificationAdresse",
-    pdfFieldName: "",
+    pdfFieldName: "mon adresse à partir du",
     type: "checkbox",
     required: false,
     label: { fr: "Modification d'adresse", nl: "", de: "" },
@@ -150,7 +153,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "modificationCompte",
-    pdfFieldName: "",
+    pdfFieldName: "le mode de paiement de mes allocations ou mon numéro de compte6",
     type: "checkbox",
     required: false,
     label: { fr: "Modification du compte bancaire", nl: "", de: "" },
@@ -160,7 +163,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "modificationSituationFamiliale",
-    pdfFieldName: "",
+    pdfFieldName: "ma situation personnelle ou celle des membres de mon ménage 7",
     type: "checkbox",
     required: false,
     label: { fr: "Modification de situation familiale", nl: "", de: "" },
@@ -170,7 +173,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "modificationPermisSejour",
-    pdfFieldName: "",
+    pdfFieldName: "mon permis de séjour ou mon permis de travail",
     type: "checkbox",
     required: false,
     label: { fr: "Modification du permis de séjour", nl: "", de: "" },
@@ -180,7 +183,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "modificationCotisationSyndicale",
-    pdfFieldName: "",
+    pdfFieldName: "la retenue des cotisations syndicales",
     type: "checkbox",
     required: false,
     label: { fr: "Modification de la cotisation syndicale", nl: "", de: "" },
@@ -198,7 +201,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
   {
     id: "statutFamilial",
-    pdfFieldName: "",
+    pdfFieldName: "jhabite seul 9|je cohabite avec 11",
     type: "radio",
     required: true,
     label: { fr: "Ma situation familiale", nl: "", de: "" },
@@ -212,7 +215,8 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "pensionAlimentaire",
-    pdfFieldName: "",
+    pdfFieldName:
+      "je paie une pension alimentaire en exécution dune décision judiciaire ou dun acte notarié 10|",
     type: "radio",
     required: false,
     label: { fr: "Je paie une pension alimentaire (jugement, acte notarié, garde alternée)", nl: "", de: "" },
@@ -227,7 +231,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "pensionAlimentaireDejaDeclare",
-    pdfFieldName: "",
+    pdfFieldName: "jai déjà introduit une copie|je joins une copie",
     type: "radio",
     required: false,
     label: { fr: "Le jugement / acte notarié a-t-il déjà été transmis dans un dossier précédent ?", nl: "", de: "" },
@@ -242,7 +246,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "remarqueSituationFamiliale",
-    pdfFieldName: "",
+    pdfFieldName: "Remarques 1",
     type: "textarea",
     required: false,
     label: { fr: "Remarque (situation familiale)", nl: "", de: "" },
@@ -516,6 +520,8 @@ export const C1_QUESTIONS: PdfFormField[] = [
     helpText: "Si non, tu devras compléter le FORMULAIRE C46 — il sera ajouté à ton parcours.",
     section: SECTION_ACTIVITES,
     order: 231,
+    pdfFieldName:
+      "ma déclaration précédente sur le FORMULAIRE C46 reste inchangée|je le déclare pour la première fois ou je déclare une modification et je joins",
   }),
   {
     id: "mandatPolitique",
@@ -566,6 +572,8 @@ export const C1_QUESTIONS: PdfFormField[] = [
       "Si non, tu devras compléter le FORMULAIRE C1C — il sera ajouté à ton parcours.",
     section: SECTION_ACTIVITES,
     order: 271,
+    pdfFieldName:
+      "ma déclaration précédente sur le FORMULAIRE C1C reste inchangée|je sollicite pour la première fois le bénéfice de lavantage  Tremplin",
   }),
   {
     id: "activiteAccessoireOuAide",
@@ -584,6 +592,8 @@ export const C1_QUESTIONS: PdfFormField[] = [
     helpText: "Si non, tu devras compléter le FORMULAIRE C1A — il sera ajouté à ton parcours.",
     section: SECTION_ACTIVITES,
     order: 281,
+    pdfFieldName:
+      "ma déclaration précédente sur le FORMULAIRE C1A reste inchangée_2|je le déclare pour la première fois ou je déclare une modification et je joins_3",
   }),
   {
     id: "administrateurSociete",
@@ -602,6 +612,12 @@ export const C1_QUESTIONS: PdfFormField[] = [
     helpText: "Si non, tu devras compléter le FORMULAIRE C1A — il sera ajouté à ton parcours.",
     section: SECTION_ACTIVITES,
     order: 291,
+    // Le PDF officiel mutualise une seule paire C1A pour les questions 9-11
+    // (accessoire / administrateur / indép. accessoire-principal). On pointe
+    // donc sur la même paire que les autres follow-ups C1A — le dernier
+    // remplissage gagne.
+    pdfFieldName:
+      "ma déclaration précédente sur le FORMULAIRE C1A reste inchangée_2|je le déclare pour la première fois ou je déclare une modification et je joins_3",
   }),
   {
     id: "independantAccessoireOuPrincipal",
@@ -624,6 +640,8 @@ export const C1_QUESTIONS: PdfFormField[] = [
       "Pour une activité accessoire : si non déclarée, tu devras compléter le FORMULAIRE C1A.",
     section: SECTION_ACTIVITES,
     order: 501,
+    pdfFieldName:
+      "ma déclaration précédente sur le FORMULAIRE C1A reste inchangée_2|je le déclare pour la première fois ou je déclare une modification et je joins_3",
   }),
 
   // ---------- MES REVENUS (5 questions, page 2) ----------
@@ -664,6 +682,8 @@ export const C1_QUESTIONS: PdfFormField[] = [
     helpText: "Si non, tu devras compléter le FORMULAIRE C1B — il sera ajouté à ton parcours.",
     section: SECTION_REVENUS,
     order: 521,
+    pdfFieldName:
+      "ma déclaration précédente sur le FORMULAIRE C1B reste inchangée|je le déclare pour la première fois ou je déclare une modification et je",
   }),
   {
     id: "indemniteMaladieInvalidite",
@@ -710,7 +730,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
   {
     id: "modePaiement",
-    pdfFieldName: "",
+    pdfFieldName: "dun virement bancaire Ce compte est à mon nom|dun chèque circulaire envoyé à ladresse mentionnée à la rubrique  MON IDENTITÉ  voir p 1",
     type: "radio",
     required: true,
     label: { fr: "Comment souhaites-tu recevoir tes allocations ?", nl: "", de: "" },
@@ -738,7 +758,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "titulaireCompte",
-    pdfFieldName: "",
+    pdfFieldName: "oui_17|non au nom de",
     type: "radio",
     required: false,
     label: { fr: "Le compte est…", nl: "", de: "" },
@@ -753,7 +773,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "iban",
-    pdfFieldName: "",
+    pdfFieldName: "IBAN",
     type: "iban",
     required: false,
     label: { fr: "IBAN (compte belge SEPA)", nl: "", de: "" },
@@ -764,7 +784,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "titulaireCompteNom",
-    pdfFieldName: "",
+    pdfFieldName: "Nom du titulaire",
     type: "text",
     required: false,
     label: { fr: "Nom du titulaire du compte", nl: "", de: "" },
@@ -782,7 +802,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
   {
     id: "autoriseCotisationSyndicale",
-    pdfFieldName: "",
+    pdfFieldName: "Jautorise la retenue de la cotisation syndicale sur mes allocations à partir du mois de chômage de",
     type: "checkbox",
     required: false,
     label: { fr: "J'autorise la retenue de la cotisation syndicale sur mes allocations", nl: "", de: "" },
@@ -796,7 +816,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "retireCotisationSyndicale",
-    pdfFieldName: "",
+    pdfFieldName: "Je nautorise plus la retenue de la cotisation syndicale sur mes allocations à partir du mois de chômage de",
     type: "checkbox",
     required: false,
     label: { fr: "Je n'autorise plus la retenue de la cotisation syndicale", nl: "", de: "" },
@@ -814,7 +834,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
   {
     id: "nationaliteHorsEEE",
-    pdfFieldName: "",
+    pdfFieldName: "oui_18|non_19",
     type: "radio",
     required: true,
     label: {
@@ -832,7 +852,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "accesMarcheTravail",
-    pdfFieldName: "",
+    pdfFieldName: "je dispose dun accès illimité au marché de lemploi|je dispose dun accès limité au marché de lemploi et jajoute une copie de mon document|Je ne dispose pas dun accès au marché de lemploi",
     type: "radio",
     required: false,
     label: { fr: "Mention au verso de mon permis de séjour quant à l'accès au marché du travail", nl: "", de: "" },
@@ -855,7 +875,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
   {
     id: "congeSansSolde",
-    pdfFieldName: "",
+    pdfFieldName: "oui du|non_20",
     type: "radio",
     required: true,
     label: { fr: "Je suis actuellement dans une période de congé sans solde", nl: "", de: "" },
@@ -866,7 +886,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "congeSansSoldeDate",
-    pdfFieldName: "",
+    pdfFieldName: "Date11_af_date",
     type: "date",
     required: false,
     label: { fr: "À partir du", nl: "", de: "" },
@@ -876,7 +896,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "incapacite33",
-    pdfFieldName: "",
+    pdfFieldName: "oui_19|non_21",
     type: "radio",
     required: true,
     label: {
@@ -902,7 +922,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
   {
     id: "affirmationSincerite",
-    pdfFieldName: "",
+    pdfFieldName: "Jaffirme sur lhonneur que la présente déclaration est sincère et complète",
     type: "checkbox",
     required: true,
     label: {
@@ -914,7 +934,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "affirmationLectureNotice",
-    pdfFieldName: "",
+    pdfFieldName: "Jai lu la feuille dinformations",
     type: "checkbox",
     required: true,
     label: { fr: "J'ai lu la feuille d'informations C1", nl: "", de: "" },
@@ -923,7 +943,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "affirmationModifications",
-    pdfFieldName: "",
+    pdfFieldName: "Je sais que je dois communiquer toute modification à mon organisme de paiement et si je ne le fais pas je peux être sanctionnée",
     type: "checkbox",
     required: true,
     label: {
@@ -939,7 +959,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // ====================================================================
   {
     id: "annexeHandicap",
-    pdfFieldName: "",
+    pdfFieldName: "une attestation de la DG Personnes handicapées du SPF Sécurité sociale",
     type: "checkbox",
     required: false,
     label: { fr: "J'ai joint une attestation de la DG Personnes handicapées du SPF Sécurité sociale", nl: "", de: "" },
@@ -948,7 +968,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "annexeExtraitPension",
-    pdfFieldName: "",
+    pdfFieldName: "une copie de l'extrait de la pension",
     type: "checkbox",
     required: false,
     label: { fr: "J'ai joint une copie de l'extrait de la pension", nl: "", de: "" },
@@ -957,7 +977,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "annexeC1Regis",
-    pdfFieldName: "",
+    pdfFieldName: "un FORMULAIRE C1 ANNEXE REGIS",
     type: "checkbox",
     required: false,
     label: { fr: "J'ai joint un FORMULAIRE C1 ANNEXE REGIS", nl: "", de: "" },
@@ -966,7 +986,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "annexePermisSejour",
-    pdfFieldName: "",
+    pdfFieldName: "une copie du permis de séjour et/ou du permis de travail",
     type: "checkbox",
     required: false,
     label: { fr: "J'ai joint une copie du permis de séjour et/ou du permis de travail", nl: "", de: "" },
@@ -975,12 +995,22 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "annexeAutre",
-    pdfFieldName: "",
-    type: "textarea",
+    pdfFieldName: "autre",
+    type: "checkbox",
     required: false,
-    label: { fr: "Autres pièces jointes (préciser)", nl: "", de: "" },
+    label: { fr: "J'ai joint un autre document (préciser ci-dessous)", nl: "", de: "" },
     section: SECTION_ANNEXES,
     order: 1104,
+  },
+  {
+    id: "annexeAutreDescription",
+    pdfFieldName: "Texte18",
+    type: "text",
+    required: false,
+    label: { fr: "Description du document joint", nl: "", de: "" },
+    visibleIf: { fieldId: "annexeAutre", op: "equals", value: true },
+    section: SECTION_ANNEXES,
+    order: 1105,
   },
 
   // ====================================================================

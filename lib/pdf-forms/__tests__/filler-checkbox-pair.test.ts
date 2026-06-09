@@ -73,3 +73,60 @@ describe("fillForm — paire de checkboxes oui_N|non_N", () => {
     await expect(fillForm(pdf, [field], { q: "oui" }, { flatten: false })).resolves.toBeDefined();
   });
 });
+
+/// PDF minimal : 4 checkboxes nommées opt_A, opt_B, opt_C, opt_D
+/// (simulation radio à 4 options sur 4 cases distinctes, eg. `motifIntroduction`
+/// du C1 avec premiere/interruption/modification/changement-op).
+async function makeQuadPdf(): Promise<Buffer> {
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([400, 400]);
+  const form = doc.getForm();
+  for (const n of ["opt_A", "opt_B", "opt_C", "opt_D"]) {
+    const c = form.createCheckBox(n);
+    c.addToPage(page, { x: 20, y: 200, width: 14, height: 14 });
+  }
+  return Buffer.from(await doc.save());
+}
+
+function quadField(): PdfFormField {
+  return {
+    id: "motif",
+    pdfFieldName: "opt_A|opt_B|opt_C|opt_D",
+    type: "radio",
+    required: true,
+    label: { fr: "Motif" },
+    options: [
+      { value: "A", label: { fr: "A" } },
+      { value: "B", label: { fr: "B" } },
+      { value: "C", label: { fr: "C" } },
+      { value: "D", label: { fr: "D" } },
+    ],
+  };
+}
+
+async function readQuad(pdf: Uint8Array): Promise<{ A: boolean; B: boolean; C: boolean; D: boolean }> {
+  const doc = await PDFDocument.load(pdf);
+  const form = doc.getForm();
+  return {
+    A: (form.getField("opt_A") as PDFCheckBox).isChecked(),
+    B: (form.getField("opt_B") as PDFCheckBox).isChecked(),
+    C: (form.getField("opt_C") as PDFCheckBox).isChecked(),
+    D: (form.getField("opt_D") as PDFCheckBox).isChecked(),
+  };
+}
+
+describe("fillForm — radio à N options sur N checkboxes (généralisation)", () => {
+  it("coche celle correspondant à la valeur et décoche les autres", async () => {
+    const pdf = await makeQuadPdf();
+    const res = await fillForm(pdf, [quadField()], { motif: "C" }, { flatten: false });
+    const state = await readQuad(res.bytes);
+    expect(state).toEqual({ A: false, B: false, C: true, D: false });
+  });
+
+  it("ne touche aucune case si la valeur ne matche aucune option", async () => {
+    const pdf = await makeQuadPdf();
+    const res = await fillForm(pdf, [quadField()], { motif: "Z" }, { flatten: false });
+    const state = await readQuad(res.bytes);
+    expect(state).toEqual({ A: false, B: false, C: false, D: false });
+  });
+});

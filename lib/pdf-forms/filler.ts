@@ -100,31 +100,36 @@ export async function fillForm(
     // Champ composite : deux sous-champs front → une seule chaîne dans le PDF.
     const value = field.type === "fullname" ? assembleFullName(raw, field.nameOrder) : raw;
 
-    // Paire de checkboxes oui/non du genre "oui_8|non_8" — fréquent sur les
-    // formulaires ONEM où chaque question est rendue par 2 cases distinctes
-    // plutôt qu'un PDFRadioGroup. Le `radio` côté schéma capture le choix
-    // mutuellement exclusif et on coche la bonne au remplissage.
+    // Radio dont la valeur sélectionne UNE case parmi N : la convention
+    // `pdfFieldName` est un pipe-séparateur listant les noms des widgets
+    // dans le même ordre que `options`. Le widget correspondant à l'option
+    // sélectionnée est coché, les autres décochés. Cas typique sur les
+    // formulaires ONEM : chaque modalité a sa propre case (pas un
+    // PDFRadioGroup). La paire oui/non est juste le sous-cas N=2.
     if (
       field.pdfFieldName.includes("|") &&
       field.type === "radio" &&
-      field.options &&
-      field.options.length === 2
+      field.options
     ) {
-      const [posName, negName] = field.pdfFieldName.split("|").map((s) => s.trim());
-      const posValue = field.options[0].value;
-      const negValue = field.options[1].value;
-      const strValue = String(value);
-      const posBox = safeCheckbox(form, posName);
-      const negBox = safeCheckbox(form, negName);
-      if (posBox && negBox) {
-        try {
-          if (strValue === posValue) { posBox.check(); negBox.uncheck(); }
-          else if (strValue === negValue) { posBox.uncheck(); negBox.check(); }
-        } catch {
-          /* readonly / incompatible */
+      // Pas de `filter(Boolean)` : on garde les positions exactes. Une entrée
+      // vide signifie « cette option n'a pas de case PDF dédiée » (ex. radio
+      // oui/non où seul le « oui » a un widget — le « non » = ne rien cocher).
+      const names = field.pdfFieldName.split("|").map((s) => s.trim());
+      if (names.length === field.options.length) {
+        const strValue = String(value);
+        for (let i = 0; i < names.length; i++) {
+          if (!names[i]) continue; // option sans widget — rien à faire
+          const box = safeCheckbox(form, names[i]);
+          if (!box) continue;
+          try {
+            if (field.options[i].value === strValue) box.check();
+            else box.uncheck();
+          } catch {
+            /* readonly / incompatible */
+          }
         }
+        continue;
       }
-      continue;
     }
 
     let pdfField;

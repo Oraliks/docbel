@@ -271,6 +271,13 @@ export function RendezVousExportClient({
 
   const duplicateCount = duplicates?.length ?? 0;
 
+  // Référence « aujourd'hui » (date locale = Bruxelles côté utilisateur) pour
+  // distinguer les RDV passés (info) des RDV à venir (alerte) dans les doublons.
+  const todayKey = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }, []);
+
   const handleGenerate = useCallback(async () => {
     setSubmitError(null);
     setSuccess(null);
@@ -486,6 +493,12 @@ export function RendezVousExportClient({
             <kbd className="rounded border px-1">⌘</kbd> +{" "}
             <kbd className="rounded border px-1">Entrée</kbd> pour générer.
           </p>
+          <p className="text-xs text-muted-foreground">
+            Vous pouvez coller votre <strong>liste d&apos;attente</strong> (RDV à
+            approuver) juste pour vérifier les doublons : rien n&apos;est
+            enregistré tant que vous ne cliquez pas sur «&nbsp;Enregistrer dans
+            l&apos;historique&nbsp;».
+          </p>
         </CardContent>
       </Card>
 
@@ -537,8 +550,10 @@ export function RendezVousExportClient({
             {duplicateCount > 1 ? "s" : ""}
           </AlertTitle>
           <AlertDescription>
-            Certaines personnes ont déjà un rendez-vous (ou apparaissent
-            plusieurs fois dans cette liste). Elles sont surlignées ci-dessous.
+            Certaines personnes ont un rendez-vous à venir, en ont déjà eu un,
+            ou apparaissent plusieurs fois dans cette liste. Les RDV à venir sont
+            en orange (à vérifier avant d&apos;approuver), les RDV passés en gris
+            (simple info).
           </AlertDescription>
         </Alert>
       ) : null}
@@ -576,7 +591,25 @@ export function RendezVousExportClient({
                 <ul className="flex flex-col gap-1 pl-1">
                   {group.names.map((name, nameIndex) => {
                     const dup = dupMap.get(normalizeName(name));
-                    const prior = dup?.history[0];
+                    const hist = dup?.history ?? [];
+                    // RDV à venir (≥ aujourd'hui) = alerte ; RDV passé = info grise.
+                    const nextUp = hist
+                      .filter((h) => h.date >= todayKey)
+                      .sort((a, b) =>
+                        a.date === b.date
+                          ? a.startTime.localeCompare(b.startTime)
+                          : a.date.localeCompare(b.date),
+                      )[0];
+                    const lastPast = hist
+                      .filter((h) => h.date < todayKey)
+                      .sort((a, b) =>
+                        a.date === b.date
+                          ? b.startTime.localeCompare(a.startTime)
+                          : b.date.localeCompare(a.date),
+                      )[0];
+                    const inListDup = (dup?.inListCount ?? 0) > 1;
+                    const isAlert = !!nextUp || inListDup;
+                    const more = hist.length > 1 ? ` (+${hist.length - 1})` : "";
                     return (
                       <li
                         key={nameIndex}
@@ -584,27 +617,33 @@ export function RendezVousExportClient({
                       >
                         <span
                           className={
-                            dup
+                            isAlert
                               ? "size-1.5 rounded-full bg-amber-500"
-                              : "size-1.5 rounded-full bg-muted-foreground/40"
+                              : lastPast
+                                ? "size-1.5 rounded-full bg-muted-foreground/60"
+                                : "size-1.5 rounded-full bg-muted-foreground/40"
                           }
                         />
                         <span className={dup ? "font-medium" : undefined}>
                           {name}
                         </span>
-                        {prior ? (
+                        {nextUp ? (
                           <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                             <History className="size-3" />
-                            Déjà un RDV le {formatDateKey(prior.date)} à{" "}
-                            {prior.startTime}
-                            {dup && dup.history.length > 1
-                              ? ` (+${dup.history.length - 1})`
-                              : ""}
+                            RDV à venir le {formatDateKey(nextUp.date)} à{" "}
+                            {nextUp.startTime}
+                            {more}
                           </span>
-                        ) : dup && dup.inListCount > 1 ? (
+                        ) : inListDup ? (
                           <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                             <AlertTriangle className="size-3" />×{" "}
-                            {dup.inListCount} dans cette liste
+                            {dup?.inListCount} dans cette liste
+                          </span>
+                        ) : lastPast ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                            <History className="size-3" />
+                            Déjà eu un RDV le {formatDateKey(lastPast.date)}
+                            {more}
                           </span>
                         ) : null}
                       </li>

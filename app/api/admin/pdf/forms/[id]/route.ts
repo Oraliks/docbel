@@ -5,6 +5,7 @@ import { requireAdminAuth } from "@/lib/auth-check";
 import { deleteSourcePdf } from "@/lib/pdf-forms/storage";
 import { isLocale, Locale, PdfFormField } from "@/lib/pdf-forms/types";
 import { sanitizeFields } from "@/lib/pdf-forms/sanitize-fields";
+import { parseTriggers } from "@/lib/pdf-forms/triggers";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -65,6 +66,10 @@ export async function PATCH(
   if (Array.isArray(body.locales)) {
     const locs = (body.locales as unknown[]).filter(isLocale) as Locale[];
     data.locales = Array.from(new Set(["fr", ...locs])) as unknown as Prisma.InputJsonValue;
+  }
+  if (Array.isArray(body.triggers)) {
+    // Parse + sanitise via parseTriggers (drop des éléments mal formés).
+    data.triggers = parseTriggers(body.triggers) as unknown as Prisma.InputJsonValue;
   }
 
   let createRevision = false;

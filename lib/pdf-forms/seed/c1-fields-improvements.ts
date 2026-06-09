@@ -15,7 +15,7 @@
 // Référence : feuille d'information C1 (version 01.01.2024/831.10.000).
 // Mapping AcroForm vérifié sur private/pdfs/C1_FR.pdf (page 2).
 
-import type { PdfFormField } from "../types";
+import type { PdfFormField, PdfFormTrigger } from "../types";
 
 const SECTION_ACTIVITES = "mes-activites";
 const SECTION_REVENUS = "mes-revenus";
@@ -304,6 +304,54 @@ export const C1_QUESTIONS: PdfFormField[] = [
     options: YN,
     section: SECTION_REVENUS,
     order: 150,
+  },
+];
+
+/// Déclencheurs de sous-formulaires portés par le C1. Quand l'utilisateur
+/// répond « oui » à une question sans avoir « déjà déclaré » la situation,
+/// le sous-formulaire correspondant est ajouté au parcours.
+///
+/// Référence : feuille d'information C1 (version 01.01.2024/831.10.000).
+export const C1_TRIGGERS: PdfFormTrigger[] = [
+  {
+    whenFieldId: "tremplinIndependants",
+    whenValue: "oui",
+    unlessFieldId: "tremplinIndependantsDejaDeclare",
+    unlessValue: "oui",
+    requiresFormSlug: "c1c",
+    reason: { fr: "Tremplin-indépendants à déclarer", nl: "", de: "" },
+  },
+  {
+    whenFieldId: "activiteAccessoireOuAide",
+    whenValue: "oui",
+    unlessFieldId: "activiteAccessoireDejaDeclare",
+    unlessValue: "oui",
+    requiresFormSlug: "c1a",
+    reason: { fr: "Activité accessoire ou aide à un indépendant à déclarer", nl: "", de: "" },
+  },
+  {
+    whenFieldId: "administrateurSociete",
+    whenValue: "oui",
+    unlessFieldId: "administrateurSocieteDejaDeclare",
+    unlessValue: "oui",
+    requiresFormSlug: "c1a",
+    reason: { fr: "Mandat d'administrateur de société à déclarer", nl: "", de: "" },
+  },
+  {
+    whenFieldId: "independantAccessoireOuPrincipal",
+    whenValue: "oui",
+    unlessFieldId: "independantAccessoireDejaDeclare",
+    unlessValue: "oui",
+    requiresFormSlug: "c1a",
+    reason: { fr: "Inscription indépendant à déclarer", nl: "", de: "" },
+  },
+  {
+    whenFieldId: "pensionRetraiteSurvie",
+    whenValue: "oui",
+    unlessFieldId: "pensionRetraiteDejaDeclare",
+    unlessValue: "oui",
+    requiresFormSlug: "c1b",
+    reason: { fr: "Pension de retraite ou de survie à déclarer", nl: "", de: "" },
   },
 ];
 

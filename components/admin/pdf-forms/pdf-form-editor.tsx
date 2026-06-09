@@ -18,8 +18,9 @@ import { useFormData } from "./use-form-data";
 import { TabChamps } from "./tabs/tab-champs";
 import { TabDocument } from "./tabs/tab-document";
 import { TabPublication } from "./tabs/tab-publication";
+import { TabTriggers } from "./tabs/tab-triggers";
 
-const TABS = ["champs", "document", "parametres", "publication"] as const;
+const TABS = ["champs", "document", "parametres", "declencheurs", "publication"] as const;
 type TabValue = (typeof TABS)[number];
 
 export function PdfFormEditor({ formId }: { formId: string }) {
@@ -110,6 +111,7 @@ export function PdfFormEditor({ formId }: { formId: string }) {
           <TabsTrigger value="champs">Champs</TabsTrigger>
           <TabsTrigger value="document">Document</TabsTrigger>
           <TabsTrigger value="parametres">Paramètres</TabsTrigger>
+          <TabsTrigger value="declencheurs">Déclencheurs</TabsTrigger>
           <TabsTrigger value="publication">Publication</TabsTrigger>
         </TabsList>
 
@@ -121,6 +123,9 @@ export function PdfFormEditor({ formId }: { formId: string }) {
         </TabsContent>
         <TabsContent value="parametres" className="pt-4">
           <FormSettings form={form} onChange={patchForm} />
+        </TabsContent>
+        <TabsContent value="declencheurs" className="pt-4">
+          <TabTriggers data={data} />
         </TabsContent>
         <TabsContent value="publication" className="pt-4">
           <TabPublication data={data} />

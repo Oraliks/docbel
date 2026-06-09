@@ -1737,6 +1737,13 @@ model PdfForm {
   technicalSchema Json @default("[]")
   /// Schéma enrichi éditable — PdfFormField[] (cf. lib/pdf-forms/types).
   fields          Json @default("[]")
+  /// Déclencheurs de sous-formulaires : PdfFormTrigger[].
+  /// Quand le payload de ce form satisfait un trigger, le PdfForm cible
+  /// (`requiresFormSlug`) est ajouté au parcours utilisateur de manière
+  /// dynamique. Cf. lib/pdf-forms/types#PdfFormTrigger et
+  /// lib/pdf-forms/triggers#evaluateTriggers. Évalué côté serveur au chargement
+  /// du parcours, pas de mutation DB.
+  triggers        Json @default("[]")
 
   // --- Éditeur visuel d'AcroForms (v1 : text + checkbox sur PDF plats) ---
   /// Wrapper VisualFieldsDoc — cf. lib/pdf-forms/visual/types.

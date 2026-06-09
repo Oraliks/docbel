@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { PdfFormField, Locale, AcroFieldRaw } from "@/lib/pdf-forms/types";
+import { PdfFormField, Locale, AcroFieldRaw, PdfFormTrigger } from "@/lib/pdf-forms/types";
 import type { PublishIssue } from "@/lib/pdf-forms/publish-checks";
 
 export interface EditorForm {
@@ -24,6 +24,8 @@ export interface EditorForm {
   /// Message custom affiché aux utilisateurs quand active=false. null = message générique.
   disabledMessage: string | null;
   fields: PdfFormField[];
+  /// Déclencheurs de sous-formulaires (cf. PdfFormTrigger).
+  triggers: PdfFormTrigger[];
   pageCount: number;
   technicalSchema?: AcroFieldRaw[];
   visualFields?: { version?: number; fields?: unknown[]; materializedNames?: string[] };
@@ -101,6 +103,7 @@ export function useFormData(formId: string): UseFormData {
           allowDownload: form.allowDownload, allowDoccle: form.allowDoccle, allowItsme: form.allowItsme,
           active: form.active, disabledMessage: form.disabledMessage,
           fields: form.fields,
+          triggers: form.triggers,
         }),
       });
       if (!res.ok) { toast.error("Échec de l'enregistrement."); return; }

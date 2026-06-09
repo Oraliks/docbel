@@ -203,3 +203,32 @@ export interface ParsedPdf {
   /// true si le PDF a au moins un champ AcroForm.
   hasAcroForm: boolean;
 }
+
+/// Déclencheur de sous-formulaire — porté par un PdfForm. Quand le payload
+/// satisfait la règle, le PdfForm cible (identifié par `requiresFormSlug`) est
+/// ajouté au parcours utilisateur dynamiquement.
+///
+/// Exemple (C1) :
+/// ```
+/// {
+///   whenFieldId: "tremplinIndependants", whenValue: "oui",
+///   unlessFieldId: "tremplinIndependantsDejaDeclare", unlessValue: "oui",
+///   requiresFormSlug: "c1c",
+///   reason: { fr: "Tremplin-indépendants à déclarer" }
+/// }
+/// ```
+export interface PdfFormTrigger {
+  /// Identifiant stable du champ déclencheur côté schéma enrichi.
+  whenFieldId: string;
+  /// Valeur attendue pour déclencher (comparaison stricte ===).
+  whenValue: string | number | boolean;
+  /// Champ d'exclusion : si défini ET égal à `unlessValue`, le trigger ne
+  /// se déclenche pas. Typiquement le follow-up "déjà déclaré ?".
+  unlessFieldId?: string;
+  unlessValue?: string | number | boolean;
+  /// Slug du PdfForm à ajouter au parcours (référence par slug, pas par id,
+  /// pour rester stable à travers les ré-imports).
+  requiresFormSlug: string;
+  /// Explication pédagogique affichée à l'utilisateur (« Tu dois aussi… »).
+  reason?: Localized;
+}

@@ -27,7 +27,6 @@ import {
 import {
   type EligibilityAnswers,
   type EligibilityQuestion,
-  parseEligibilityAnswers,
   parseEligibilityQuestions,
 } from "@/lib/bundles/eligibility";
 import { parseBundleWarnings, type BundleWarning } from "@/lib/bundles/types";
@@ -43,6 +42,10 @@ interface BundleItem {
   required: boolean;
   condition: BundleCondition;
   template: null;
+  /// True si cet item a été matérialisé dynamiquement par un trigger d'un
+  /// autre formulaire (cf. lib/pdf-forms/triggers.ts). Affiché avec un
+  /// badge spécifique « Suite à tes réponses ».
+  triggered?: boolean;
   pdfForm: {
     id: string;
     slug: string;
@@ -379,6 +382,14 @@ export function BundleRunner({
                         {!item.required && (
                           <Badge variant="secondary" className="text-xs">
                             Optionnel
+                          </Badge>
+                        )}
+                        {item.triggered && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs border-amber-500 text-amber-700 dark:text-amber-300"
+                          >
+                            Suite à tes réponses
                           </Badge>
                         )}
                       </div>

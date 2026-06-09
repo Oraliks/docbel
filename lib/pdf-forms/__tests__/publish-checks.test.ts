@@ -57,4 +57,51 @@ describe("checkPublishable", () => {
     const issues = checkPublishable(fields, [raw("present")], ["fr"]);
     expect(hasBlockingIssues(issues)).toBe(true);
   });
+
+  it("ancre pipe-séparée où les deux widgets existent → pas d'erreur", () => {
+    const field = {
+      id: "q8",
+      pdfFieldName: "oui_8|non_8",
+      type: "radio",
+      required: false,
+      label: { fr: "Question 8" },
+      options: [
+        { value: "oui", label: { fr: "Oui" } },
+        { value: "non", label: { fr: "Non" } },
+      ],
+    } as PdfFormField;
+    const technical = [raw("oui_8"), raw("non_8")];
+    const issues = checkPublishable([field], technical, ["fr"]);
+    expect(issues.some((i) => /inexistant/.test(i.message))).toBe(false);
+    expect(hasBlockingIssues(issues)).toBe(false);
+  });
+
+  it("ancre pipe-séparée où une partie manque → erreur nomme la partie absente", () => {
+    const field = {
+      id: "q8",
+      pdfFieldName: "oui_8|non_8",
+      type: "radio",
+      required: false,
+      label: { fr: "Question 8" },
+      options: [
+        { value: "oui", label: { fr: "Oui" } },
+        { value: "non", label: { fr: "Non" } },
+      ],
+    } as PdfFormField;
+    const technical = [raw("oui_8")]; // non_8 manquant
+    const issues = checkPublishable([field], technical, ["fr"]);
+    const missing = issues.find((i) => /inexistant/.test(i.message));
+    expect(missing).toBeDefined();
+    expect(missing!.level).toBe("error");
+    expect(missing!.message).toContain("non_8");
+    expect(missing!.message).not.toContain("oui_8");
+  });
+
+  it("ancre simple (sans pipe) garde le comportement existant", () => {
+    const fields = [enriched("a", "present"), enriched("b", "absent")];
+    const issues = checkPublishable(fields, [raw("present")], ["fr"]);
+    const missing = issues.filter((i) => /inexistant/.test(i.message));
+    expect(missing).toHaveLength(1);
+    expect(missing[0].message).toContain("absent");
+  });
 });

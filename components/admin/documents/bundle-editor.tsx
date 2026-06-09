@@ -39,6 +39,7 @@ import {
   parseBundleWarnings,
   type BundleWarning,
   LIFE_EVENT_CATEGORIES,
+  getLifeEventCategory,
 } from "@/lib/bundles/types";
 import { parseVocabularyTags } from "@/lib/bundles/vocabulary";
 
@@ -504,8 +505,15 @@ export function BundleEditor({
                   setFormLifeEventCategory(!v || v === "__none__" ? "" : v)
                 }
               >
-                <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="Aucune" />
+                <SelectTrigger className="w-full text-sm">
+                  <SelectValue placeholder="Aucune">
+                    {(value: string) => {
+                      const cat = getLifeEventCategory(
+                        value === "__none__" ? null : value
+                      );
+                      return cat ? `${cat.emoji} ${cat.label}` : "— Aucune —";
+                    }}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">— Aucune —</SelectItem>

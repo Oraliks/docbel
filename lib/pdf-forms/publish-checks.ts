@@ -47,13 +47,21 @@ export function checkPublishable(
       issues.push({ level: "error", fieldId: f.id, message: `Libellé FR manquant pour « ${f.id} ».` });
     }
 
-    // ancre vers un champ PDF existant
-    if (f.pdfFieldName && !techNames.has(f.pdfFieldName)) {
-      issues.push({
-        level: "error",
-        fieldId: f.id,
-        message: `Le champ « ${f.id} » pointe vers un champ PDF inexistant (${f.pdfFieldName}).`,
-      });
+    // ancre vers un champ PDF existant. Convention : `pdfFieldName` peut être
+    // pipe-séparé (ex. "oui_8|non_8") pour cibler une paire de checkboxes —
+    // chaque partie doit alors exister dans le schéma technique.
+    if (f.pdfFieldName) {
+      const parts = f.pdfFieldName.includes("|")
+        ? f.pdfFieldName.split("|").map((s) => s.trim()).filter(Boolean)
+        : [f.pdfFieldName];
+      const missing = parts.filter((p) => !techNames.has(p));
+      if (missing.length > 0) {
+        issues.push({
+          level: "error",
+          fieldId: f.id,
+          message: `Le champ « ${f.id} » pointe vers un champ PDF inexistant (${missing.join(", ")}).`,
+        });
+      }
     }
 
     // regex valide une fois ancrée
@@ -84,8 +92,20 @@ export function checkPublishable(
     }
   }
 
-  // Champs PDF requis non couverts par le schéma enrichi
-  const enrichedNames = new Set(fields.map((f) => f.pdfFieldName));
+  // Champs PDF requis non couverts par le schéma enrichi. On éclate les
+  // ancres pipe-séparées pour qu'une paire `oui_N|non_N` couvre bien chaque
+  // widget individuel.
+  const enrichedNames = new Set<string | undefined>();
+  for (const f of fields) {
+    if (!f.pdfFieldName) continue;
+    if (f.pdfFieldName.includes("|")) {
+      for (const p of f.pdfFieldName.split("|").map((s) => s.trim()).filter(Boolean)) {
+        enrichedNames.add(p);
+      }
+    } else {
+      enrichedNames.add(f.pdfFieldName);
+    }
+  }
   for (const t of technical) {
     if (t.required && !enrichedNames.has(t.pdfFieldName)) {
       issues.push({

@@ -123,6 +123,47 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
     [entries],
   );
 
+  // Occurrences par personne (nom normalisé) sur TOUT l'historique : ≥2 = doublon.
+  const counts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of entries) {
+      const k = normalizeName(e.name);
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return m;
+  }, [entries]);
+
+  const duplicatePeople = useMemo(() => {
+    let n = 0;
+    for (const c of counts.values()) if (c >= 2) n += 1;
+    return n;
+  }, [counts]);
+
+  // Réorganisation : d'abord les doublons (regroupés par personne, les plus
+  // fréquents en tête), puis les autres (du plus récent au plus ancien).
+  const { duplicates, others } = useMemo(() => {
+    const countOf = (e: HistoryEntry) => counts.get(normalizeName(e.name)) ?? 0;
+    const dup: HistoryEntry[] = [];
+    const oth: HistoryEntry[] = [];
+    for (const e of filtered) (countOf(e) >= 2 ? dup : oth).push(e);
+    dup.sort((a, b) => {
+      const ca = countOf(a);
+      const cb = countOf(b);
+      if (ca !== cb) return cb - ca; // personnes les plus fréquentes d'abord
+      const na = normalizeName(a.name);
+      const nb = normalizeName(b.name);
+      if (na !== nb) return na.localeCompare(nb); // regroupe les RDV d'une personne
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return a.startTime.localeCompare(b.startTime);
+    });
+    oth.sort((a, b) =>
+      a.date !== b.date
+        ? b.date.localeCompare(a.date)
+        : a.name.localeCompare(b.name),
+    );
+    return { duplicates: dup, others: oth };
+  }, [filtered, counts]);
+
   const handleDelete = useCallback(
     async (entry: HistoryEntry) => {
       const ok = await confirm({
@@ -189,6 +230,61 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
     }
   }, [confirm, isAdmin, org]);
 
+  const renderTable = (list: HistoryEntry[], dup: boolean) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Nom</TableHead>
+          <TableHead>Date</TableHead>
+          <TableHead>Créneau</TableHead>
+          <TableHead>Enregistré le</TableHead>
+          <TableHead className="text-right">Action</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {list.map((e) => {
+          const count = counts.get(normalizeName(e.name)) ?? 1;
+          return (
+            <TableRow
+              key={e.id}
+              className={dup ? "bg-amber-50/60 dark:bg-amber-950/20" : undefined}
+            >
+              <TableCell className="font-medium">
+                <span className="flex flex-wrap items-center gap-2">
+                  {e.name}
+                  {dup ? (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                      <History className="size-3" />
+                      {count} RDV
+                    </span>
+                  ) : null}
+                </span>
+              </TableCell>
+              <TableCell>{formatDateKey(e.date)}</TableCell>
+              <TableCell className="font-mono text-xs">
+                {e.startTime} – {e.endTime}
+              </TableCell>
+              <TableCell className="text-xs text-muted-foreground">
+                {new Date(e.createdAt).toLocaleDateString("fr-BE")}
+              </TableCell>
+              <TableCell className="text-right">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(e)}
+                  title="Supprimer cette entrée"
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1.5">
@@ -217,7 +313,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
           </CardTitle>
           <CardDescription>
             {loaded
-              ? `${entries.length} rendez-vous • ${distinctPeople} personne${distinctPeople > 1 ? "s" : ""} distincte${distinctPeople > 1 ? "s" : ""}`
+              ? `${entries.length} rendez-vous • ${distinctPeople} personne${distinctPeople > 1 ? "s" : ""} distincte${distinctPeople > 1 ? "s" : ""}${duplicatePeople > 0 ? ` • ${duplicatePeople} doublon${duplicatePeople > 1 ? "s" : ""}` : ""}`
               : "Sélectionnez une organisation pour afficher l'historique."}
           </CardDescription>
         </CardHeader>
@@ -292,42 +388,33 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                 : "Aucun résultat pour cette recherche."}
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Créneau</TableHead>
-                  <TableHead>Enregistré le</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((e) => (
-                  <TableRow key={e.id}>
-                    <TableCell className="font-medium">{e.name}</TableCell>
-                    <TableCell>{formatDateKey(e.date)}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {e.startTime} – {e.endTime}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {new Date(e.createdAt).toLocaleDateString("fr-BE")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(e)}
-                        title="Supprimer cette entrée"
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="flex flex-col gap-6">
+              {duplicates.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                      <History className="size-3.5" />
+                      Doublons
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {duplicatePeople} personne{duplicatePeople > 1 ? "s" : ""} ayant
+                      plusieurs rendez-vous
+                    </span>
+                  </div>
+                  {renderTable(duplicates, true)}
+                </div>
+              ) : null}
+              {others.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {duplicates.length > 0 ? (
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Autres rendez-vous
+                    </span>
+                  ) : null}
+                  {renderTable(others, false)}
+                </div>
+              ) : null}
+            </div>
           )}
         </CardContent>
       </Card>

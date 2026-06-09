@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowLeft,
   CalendarClock,
   History,
@@ -139,30 +140,77 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
     return n;
   }, [counts]);
 
-  // Réorganisation : d'abord les doublons (regroupés par personne, les plus
-  // fréquents en tête), puis les autres (du plus récent au plus ancien).
-  const { duplicates, others } = useMemo(() => {
+  // Référence « aujourd'hui » (date locale Bruxelles côté navigateur) pour
+  // distinguer les RDV à venir (à vérifier) des RDV passés (simple info).
+  const todayKey = useMemo(() => {
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  }, []);
+
+  // Pour chaque personne (nom normalisé) : a-t-elle au moins un RDV à venir ?
+  // Calcul sur TOUT l'historique pour rester stable malgré la recherche.
+  const hasUpcoming = useMemo(() => {
+    const m = new Map<string, boolean>();
+    for (const e of entries) {
+      const k = normalizeName(e.name);
+      if (e.date >= todayKey) m.set(k, true);
+      else if (!m.has(k)) m.set(k, false);
+    }
+    return m;
+  }, [entries, todayKey]);
+
+  // Réorganisation : doublons à VÉRIFIER (≥1 RDV à venir) en premier, puis
+  // doublons PASSÉS (tous passés, simple info), puis les autres rendez-vous.
+  const { dupActive, dupPast, others } = useMemo(() => {
     const countOf = (e: HistoryEntry) => counts.get(normalizeName(e.name)) ?? 0;
-    const dup: HistoryEntry[] = [];
+    const active: HistoryEntry[] = [];
+    const past: HistoryEntry[] = [];
     const oth: HistoryEntry[] = [];
-    for (const e of filtered) (countOf(e) >= 2 ? dup : oth).push(e);
-    dup.sort((a, b) => {
+    for (const e of filtered) {
+      if (countOf(e) >= 2) {
+        if (hasUpcoming.get(normalizeName(e.name))) active.push(e);
+        else past.push(e);
+      } else {
+        oth.push(e);
+      }
+    }
+    const sortDup = (a: HistoryEntry, b: HistoryEntry, upcomingFirst: boolean) => {
       const ca = countOf(a);
       const cb = countOf(b);
       if (ca !== cb) return cb - ca; // personnes les plus fréquentes d'abord
       const na = normalizeName(a.name);
       const nb = normalizeName(b.name);
       if (na !== nb) return na.localeCompare(nb); // regroupe les RDV d'une personne
+      if (upcomingFirst) {
+        const ua = a.date >= todayKey ? 0 : 1;
+        const ub = b.date >= todayKey ? 0 : 1;
+        if (ua !== ub) return ua - ub; // dans une personne : à venir d'abord
+      }
       if (a.date !== b.date) return a.date.localeCompare(b.date);
       return a.startTime.localeCompare(b.startTime);
-    });
+    };
+    active.sort((a, b) => sortDup(a, b, true));
+    past.sort((a, b) => sortDup(a, b, false));
     oth.sort((a, b) =>
       a.date !== b.date
         ? b.date.localeCompare(a.date)
         : a.name.localeCompare(b.name),
     );
-    return { duplicates: dup, others: oth };
-  }, [filtered, counts]);
+    return { dupActive: active, dupPast: past, others: oth };
+  }, [filtered, counts, hasUpcoming, todayKey]);
+
+  // Compteur de personnes par catégorie (pour l'en-tête).
+  const activeDuplicatePeople = useMemo(() => {
+    const seen = new Set<string>();
+    for (const e of dupActive) seen.add(normalizeName(e.name));
+    return seen.size;
+  }, [dupActive]);
+  const pastDuplicatePeople = useMemo(() => {
+    const seen = new Set<string>();
+    for (const e of dupPast) seen.add(normalizeName(e.name));
+    return seen.size;
+  }, [dupPast]);
 
   const handleDelete = useCallback(
     async (entry: HistoryEntry) => {
@@ -230,7 +278,8 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
     }
   }, [confirm, isAdmin, org]);
 
-  const renderTable = (list: HistoryEntry[], dup: boolean) => (
+  type RowVariant = "active" | "past" | "plain";
+  const renderTable = (list: HistoryEntry[], variant: RowVariant) => (
     <Table>
       <TableHeader>
         <TableRow>
@@ -244,15 +293,20 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
       <TableBody>
         {list.map((e) => {
           const count = counts.get(normalizeName(e.name)) ?? 1;
+          const isUpcoming = e.date >= todayKey;
+          const isDup = variant !== "plain";
+          const rowClass =
+            variant === "active"
+              ? "bg-amber-50/60 dark:bg-amber-950/20"
+              : variant === "past"
+                ? "bg-muted/30"
+                : undefined;
           return (
-            <TableRow
-              key={e.id}
-              className={dup ? "bg-amber-50/60 dark:bg-amber-950/20" : undefined}
-            >
+            <TableRow key={e.id} className={rowClass}>
               <TableCell className="font-medium">
                 <span className="flex flex-wrap items-center gap-2">
                   {e.name}
-                  {dup ? (
+                  {isDup ? (
                     <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                       <History className="size-3" />
                       {count} RDV
@@ -260,7 +314,20 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                   ) : null}
                 </span>
               </TableCell>
-              <TableCell>{formatDateKey(e.date)}</TableCell>
+              <TableCell>
+                <span className="flex flex-wrap items-center gap-2">
+                  {formatDateKey(e.date)}
+                  {isUpcoming ? (
+                    <span className="inline-flex items-center rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                      à venir
+                    </span>
+                  ) : variant === "plain" ? null : (
+                    <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      passé
+                    </span>
+                  )}
+                </span>
+              </TableCell>
               <TableCell className="font-mono text-xs">
                 {e.startTime} – {e.endTime}
               </TableCell>
@@ -313,7 +380,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
           </CardTitle>
           <CardDescription>
             {loaded
-              ? `${entries.length} rendez-vous • ${distinctPeople} personne${distinctPeople > 1 ? "s" : ""} distincte${distinctPeople > 1 ? "s" : ""}${duplicatePeople > 0 ? ` • ${duplicatePeople} doublon${duplicatePeople > 1 ? "s" : ""}` : ""}`
+              ? `${entries.length} rendez-vous • ${distinctPeople} personne${distinctPeople > 1 ? "s" : ""} distincte${distinctPeople > 1 ? "s" : ""}${activeDuplicatePeople > 0 ? ` • ${activeDuplicatePeople} à vérifier` : ""}${pastDuplicatePeople > 0 ? ` • ${pastDuplicatePeople} doublon${pastDuplicatePeople > 1 ? "s" : ""} passé${pastDuplicatePeople > 1 ? "s" : ""}` : ""}`
               : "Sélectionnez une organisation pour afficher l'historique."}
           </CardDescription>
         </CardHeader>
@@ -389,29 +456,46 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
             </p>
           ) : (
             <div className="flex flex-col gap-6">
-              {duplicates.length > 0 ? (
+              {dupActive.length > 0 ? (
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                      <History className="size-3.5" />
-                      Doublons
+                      <AlertTriangle className="size-3.5" />
+                      Doublons à vérifier
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {duplicatePeople} personne{duplicatePeople > 1 ? "s" : ""} ayant
-                      plusieurs rendez-vous
+                      {activeDuplicatePeople} personne
+                      {activeDuplicatePeople > 1 ? "s" : ""} avec un RDV à venir et
+                      au moins un autre enregistré
                     </span>
                   </div>
-                  {renderTable(duplicates, true)}
+                  {renderTable(dupActive, "active")}
+                </div>
+              ) : null}
+              {dupPast.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                      <History className="size-3.5" />
+                      Doublons passés
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {pastDuplicatePeople} personne
+                      {pastDuplicatePeople > 1 ? "s" : ""} ayant eu plusieurs RDV
+                      (information)
+                    </span>
+                  </div>
+                  {renderTable(dupPast, "past")}
                 </div>
               ) : null}
               {others.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  {duplicates.length > 0 ? (
+                  {dupActive.length > 0 || dupPast.length > 0 ? (
                     <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Autres rendez-vous
                     </span>
                   ) : null}
-                  {renderTable(others, false)}
+                  {renderTable(others, "plain")}
                 </div>
               ) : null}
             </div>

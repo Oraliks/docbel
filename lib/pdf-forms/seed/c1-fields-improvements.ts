@@ -18,6 +18,7 @@
 
 import type { PdfFormField, PdfFormTrigger } from "../types";
 
+const SECTION_IDENTITE = "identite";
 const SECTION_DEMANDE = "demande";
 const SECTION_SITUATION_FAMILIALE = "situation-familiale";
 const SECTION_ACTIVITES = "mes-activites";
@@ -259,6 +260,34 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // allocations familiales perçues (auto-non si > 35 ans), type & montant
   // de revenu professionnel (Indépendant → 999999.99 par défaut), revenus
   // de remplacement, remarque, et statut C1-PARTENAIRE si FAC.
+  //
+  // ----- Mapping PDF : décision NO-STAMP (sub-fields restent pdfFieldName: "") -----
+  // Le PDF C1 expose une grille à 5 lignes FIXES (widgets "1 1"/"1"/"1 2"/"2",
+  // "2 1"/"1_2"/"2 2"/"2_2", … jusqu'à "5 1"/"1_5"/"5 2"/"2_5") avec seulement
+  // DEUX colonnes texte par cohabitant (x≈47 et x≈161) — il n'y a pas de
+  // colonne dédiée pour lien, date de naissance, ni montants par ligne.
+  //
+  // Les widgets « Montant », « Allocation familiale » (dropdown), « Activité
+  // professionnelle » (dropdown), « Revenus de remplacement » (dropdown),
+  // « Identité du partenaire ou de la personne à charge » (texte) et les
+  // 2 cases C1-PARTENAIRE n'existent qu'UNE seule fois — ils décrivent le
+  // partenaire/FAC unique, pas chaque cohabitant. Idem pour « Remarques 1_2 »
+  // et « Remarques 2_2 » qui sont des lignes globales sous la grille.
+  //
+  // Notre tableau dynamique capture N cohabitants avec 11 sous-champs chacun
+  // (prenom, nom, lien, dateNaissance, allocationsFamiliales, typeRevenuPro,
+  // montantRevenuPro, revenuRemplacement, montantRevenuRemplacement, remarque,
+  // c1PartenaireStatus). La structure PDF (5 lignes × 2 colonnes + widgets
+  // partagés) ne peut pas accueillir cette granularité même avec une
+  // convention `arrayRowPdfMapping` ajoutée au filler : la majorité des
+  // sous-champs (lien, dateNaissance, les montants par ligne, le statut
+  // C1-PARTENAIRE par ligne) n'a tout simplement aucune cible PDF.
+  //
+  // → On garde pdfFieldName: "" sur cohabitants et tous ses itemFields. La
+  //   donnée vit dans le payload pour la logique applicative (trigger FAC,
+  //   règles d'allocations, calculs de revenus) ; le rendu PDF officiel
+  //   restera une vue dégradée à compléter manuellement ou via un second
+  //   passage de stamping ciblé (à concevoir plus tard si besoin métier).
   {
     id: "cohabitants",
     pdfFieldName: "",

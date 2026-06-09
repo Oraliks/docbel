@@ -61,14 +61,22 @@ export function PdfField({ field, value, error, locale, onChange, formId, formSl
 
   // Checkbox : disposition horizontale (case + libellé).
   if (field.type === "checkbox") {
+    // `readOnly` est porté côté schéma pour certaines cases qui ne doivent
+    // PAS être modifiées côté UX (eg. cotisation syndicale, gérée par
+    // l'organisme de paiement). On désactive l'interaction et on grise.
+    const isReadOnly = field.readOnly === true;
     return (
       <Field orientation="horizontal" data-invalid={invalid}>
         <Checkbox
           id={field.id}
           checked={value === true}
-          onCheckedChange={(c) => onChange(c === true)}
+          onCheckedChange={(c) => !isReadOnly && onChange(c === true)}
+          disabled={isReadOnly}
         />
-        <FieldLabel htmlFor={field.id} className="font-normal">
+        <FieldLabel
+          htmlFor={field.id}
+          className={isReadOnly ? "font-normal text-muted-foreground" : "font-normal"}
+        >
           {label}
           {field.required && <span className="text-destructive"> *</span>}
         </FieldLabel>

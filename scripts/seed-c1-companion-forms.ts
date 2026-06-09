@@ -22,7 +22,7 @@ import { saveSourcePdf } from "@/lib/pdf-forms/storage";
 const APPLY = process.argv.includes("--yes");
 const PDF_DIR = join(process.cwd(), "private", "pdfs");
 
-/// Trois sous-formulaires liés au C1 (cf. feuille d'information C1).
+/// Cinq sous-formulaires liés au C1 (cf. feuille d'information C1).
 const COMPANIONS = [
   {
     slug: "c1a",
@@ -44,6 +44,20 @@ const COMPANIONS = [
     title: "C1C — Tremplin-indépendants",
     description:
       "Formulaire à joindre au C1 quand le travailleur exerce une activité accessoire comme indépendant et bénéficie de la mesure « Tremplin-indépendants ».",
+  },
+  {
+    slug: "c46",
+    file: "C46_FR.pdf",
+    title: "C46 — Mandat dans un organe consultatif (secteur culturel / Comm. travail des arts)",
+    description:
+      "Formulaire à joindre au C1 quand le travailleur exerce un mandat rémunéré dans un organe consultatif du secteur culturel ou de la Commission du travail des arts.",
+  },
+  {
+    slug: "c1-partenaire",
+    file: "C1-Partenaire_FR.pdf",
+    title: "C1-Partenaire — Personne financièrement à charge",
+    description:
+      "Formulaire à joindre au C1 quand une personne du ménage (autre qu'un enfant) est déclarée comme financièrement à charge du travailleur.",
   },
 ] as const;
 

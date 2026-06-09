@@ -17,8 +17,17 @@
 
 import type { PdfFormField, PdfFormTrigger } from "../types";
 
+const SECTION_DEMANDE = "demande";
+const SECTION_SITUATION_FAMILIALE = "situation-familiale";
 const SECTION_ACTIVITES = "mes-activites";
 const SECTION_REVENUS = "mes-revenus";
+const SECTION_PAIEMENT = "mode-paiement";
+const SECTION_COTISATION = "cotisation-syndicale";
+const SECTION_NON_EEE = "non-eee";
+const SECTION_DIVERS = "divers";
+const SECTION_AFFIRMATIONS = "affirmations";
+const SECTION_ANNEXES = "annexes";
+const SECTION_SIGNATURE = "signature";
 
 /// Options communes oui/non. Premier élément = mappé à la case "oui_N",
 /// second élément = mappé à la case "non_N".
@@ -64,6 +73,188 @@ function dejaDeclare(opts: {
 /// (identité, adresse, mode de paiement, situation familiale…) conservent
 /// leur définition existante — voir applyC1Improvements() pour l'overlay.
 export const C1_QUESTIONS: PdfFormField[] = [
+  // ====================================================================
+  // SECTION 1 — DEMANDE (motifs d'introduction)
+  // Tous virtuels pour l'instant (pdfFieldName vide) — à mapper sur les
+  // widgets réels du C1 page 1 dans une 2e passe.
+  // ====================================================================
+  {
+    id: "dateDemande",
+    pdfFieldName: "",
+    type: "date",
+    required: true,
+    label: { fr: "Je demande des allocations à partir du", nl: "", de: "" },
+    help: { fr: "Date du premier jour pour lequel tu demandes des allocations.", nl: "", de: "" },
+    prefillFrom: "system.today",
+    section: SECTION_DEMANDE,
+    order: 1,
+  },
+  {
+    id: "chomeurTemporaireAlternance",
+    pdfFieldName: "",
+    type: "radio",
+    required: true,
+    label: {
+      fr: "… comme chômeur temporaire suivant une formation en alternance",
+      nl: "", de: "",
+    },
+    help: {
+      fr: "Cas rare — coche « non » sauf si tu suis une formation en alternance et que tu es en chômage temporaire pendant cette formation.",
+      nl: "", de: "",
+    },
+    options: YN,
+    defaultValue: "non",
+    section: SECTION_DEMANDE,
+    order: 2,
+  },
+  {
+    id: "motifIntroduction",
+    pdfFieldName: "",
+    type: "radio",
+    required: true,
+    label: { fr: "Motif d'introduction de cette demande", nl: "", de: "" },
+    help: {
+      fr: "« Première fois » = premier dossier de ce type, nouvelle admissibilité (souvent quand il n'y a pas eu d'allocation depuis plus d'un an), ou tout premier dossier. « Interruption » = reprise après une période de non-versement.",
+      nl: "", de: "",
+    },
+    options: [
+      { value: "premiere", label: { fr: "Pour la première fois", nl: "", de: "" } },
+      { value: "interruption", label: { fr: "Après une interruption de mes allocations", nl: "", de: "" } },
+      { value: "modification", label: { fr: "Je déclare une modification", nl: "", de: "" } },
+      { value: "changement-op", label: { fr: "Je change d'organisme de paiement", nl: "", de: "" } },
+    ],
+    section: SECTION_DEMANDE,
+    order: 3,
+  },
+  {
+    id: "dateChangementOrganisme",
+    pdfFieldName: "",
+    type: "date",
+    required: false,
+    label: { fr: "À partir du", nl: "", de: "" },
+    help: { fr: "Date de prise d'effet du changement d'organisme de paiement.", nl: "", de: "" },
+    visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "changement-op" },
+    section: SECTION_DEMANDE,
+    order: 4,
+  },
+  // Si « modification », l'utilisateur peut cocher plusieurs natures.
+  {
+    id: "modificationAdresse",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: { fr: "Modification d'adresse", nl: "", de: "" },
+    visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
+    section: SECTION_DEMANDE,
+    order: 5,
+  },
+  {
+    id: "modificationCompte",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: { fr: "Modification du compte bancaire", nl: "", de: "" },
+    visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
+    section: SECTION_DEMANDE,
+    order: 6,
+  },
+  {
+    id: "modificationSituationFamiliale",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: { fr: "Modification de situation familiale", nl: "", de: "" },
+    visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
+    section: SECTION_DEMANDE,
+    order: 7,
+  },
+  {
+    id: "modificationPermisSejour",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: { fr: "Modification du permis de séjour", nl: "", de: "" },
+    visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
+    section: SECTION_DEMANDE,
+    order: 8,
+  },
+  {
+    id: "modificationCotisationSyndicale",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: { fr: "Modification de la cotisation syndicale", nl: "", de: "" },
+    visibleIf: { fieldId: "motifIntroduction", op: "equals", value: "modification" },
+    section: SECTION_DEMANDE,
+    order: 9,
+  },
+
+  // ====================================================================
+  // SECTION 2 — SITUATION FAMILIALE (simplifié pour cette 1ʳᵉ passe)
+  // La grille cohabitants structurée + upload de jugement (pension
+  // alimentaire) sont reportés à un commit dédié (nouveau type `array`
+  // nécessaire). Ici on capture l'essentiel : isolé vs cohabite, et la
+  // déclaration de pension alimentaire avec rappel des pièces requises.
+  // ====================================================================
+  {
+    id: "statutFamilial",
+    pdfFieldName: "",
+    type: "radio",
+    required: true,
+    label: { fr: "Ma situation familiale", nl: "", de: "" },
+    help: { fr: "Choix unique : tu vis seul ou tu cohabites avec au moins une personne.", nl: "", de: "" },
+    options: [
+      { value: "isole", label: { fr: "Je vis seul (isolé)", nl: "", de: "" } },
+      { value: "cohabite", label: { fr: "Je cohabite avec au moins une personne", nl: "", de: "" } },
+    ],
+    section: SECTION_SITUATION_FAMILIALE,
+    order: 100,
+  },
+  {
+    id: "pensionAlimentaire",
+    pdfFieldName: "",
+    type: "radio",
+    required: false,
+    label: { fr: "Je paie une pension alimentaire (jugement, acte notarié, garde alternée)", nl: "", de: "" },
+    help: {
+      fr: "⚠ Si oui, joindre obligatoirement une copie du JUGEMENT ou de l'ACTE NOTARIÉ. Les preuves de paiement (virements, reçus) ne suffisent pas. Vaut aussi pour la garde alternée.",
+      nl: "", de: "",
+    },
+    options: YN,
+    visibleIf: { fieldId: "statutFamilial", op: "equals", value: "isole" },
+    section: SECTION_SITUATION_FAMILIALE,
+    order: 101,
+  },
+  {
+    id: "pensionAlimentaireDejaDeclare",
+    pdfFieldName: "",
+    type: "radio",
+    required: false,
+    label: { fr: "Le jugement / acte notarié a-t-il déjà été transmis dans un dossier précédent ?", nl: "", de: "" },
+    help: {
+      fr: "S'il s'agit du premier dossier, réponds « non » — le document doit être joint maintenant.",
+      nl: "", de: "",
+    },
+    options: YN_DECLARE,
+    visibleIf: { fieldId: "pensionAlimentaire", op: "equals", value: "oui" },
+    section: SECTION_SITUATION_FAMILIALE,
+    order: 102,
+  },
+  {
+    id: "remarqueSituationFamiliale",
+    pdfFieldName: "",
+    type: "textarea",
+    required: false,
+    label: { fr: "Remarque (situation familiale)", nl: "", de: "" },
+    help: { fr: "Précisions utiles : emprisonnement, internement, situation ambiguë, etc.", nl: "", de: "" },
+    section: SECTION_SITUATION_FAMILIALE,
+    order: 103,
+  },
+  // TODO (prochain commit) : grille cohabitants dynamique (nom, prénom,
+  // lien, date naissance, allocations familiales, revenu pro, revenu de
+  // remplacement, remarque, déclaration C1-PARTENAIRE si FAC). Nécessite
+  // un nouveau type de champ `array` dans PdfFormField.
+
   // ---------- MES ACTIVITÉS (10 questions, page 2) ----------
   {
     id: "etudesPleinExercice",
@@ -77,7 +268,17 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     options: YN,
     section: SECTION_ACTIVITES,
-    order: 10,
+    order: 200,
+  },
+  {
+    id: "etudesPleinExerciceDate",
+    pdfFieldName: "",
+    type: "date",
+    required: false,
+    label: { fr: "À partir du", nl: "", de: "" },
+    visibleIf: { fieldId: "etudesPleinExercice", op: "equals", value: "oui" },
+    section: SECTION_ACTIVITES,
+    order: 201,
   },
   {
     id: "apprentissageAlternance",
@@ -91,7 +292,17 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     options: YN,
     section: SECTION_ACTIVITES,
-    order: 20,
+    order: 210,
+  },
+  {
+    id: "apprentissageAlternanceDate",
+    pdfFieldName: "",
+    type: "date",
+    required: false,
+    label: { fr: "À partir du", nl: "", de: "" },
+    visibleIf: { fieldId: "apprentissageAlternance", op: "equals", value: "oui" },
+    section: SECTION_ACTIVITES,
+    order: 211,
   },
   {
     id: "formationStageSyntra",
@@ -102,7 +313,17 @@ export const C1_QUESTIONS: PdfFormField[] = [
     help: { fr: "⚠ Idem études — perte du droit sauf dispense.", nl: "", de: "" },
     options: YN,
     section: SECTION_ACTIVITES,
-    order: 30,
+    order: 220,
+  },
+  {
+    id: "formationStageSyntraDate",
+    pdfFieldName: "",
+    type: "date",
+    required: false,
+    label: { fr: "À partir du", nl: "", de: "" },
+    visibleIf: { fieldId: "formationStageSyntra", op: "equals", value: "oui" },
+    section: SECTION_ACTIVITES,
+    order: 221,
   },
   {
     id: "mandatArtistique",
@@ -113,11 +334,18 @@ export const C1_QUESTIONS: PdfFormField[] = [
       fr: "J'exerce un mandat rémunéré dans un organe consultatif du secteur culturel ou de la Commission du travail des arts",
       nl: "", de: "",
     },
-    help: { fr: "À déclarer. Prends contact avec ton organisme de paiement pour les formalités.", nl: "", de: "" },
+    help: { fr: "→ Joindre un FORMULAIRE C46 si pas encore déclaré.", nl: "", de: "" },
     options: YN,
     section: SECTION_ACTIVITES,
-    order: 40,
+    order: 230,
   },
+  dejaDeclare({
+    id: "mandatArtistiqueDejaDeclare",
+    parentId: "mandatArtistique",
+    helpText: "Si non, tu devras compléter le FORMULAIRE C46 — il sera ajouté à ton parcours.",
+    section: SECTION_ACTIVITES,
+    order: 231,
+  }),
   {
     id: "mandatPolitique",
     pdfFieldName: "oui_6|non_6",
@@ -130,7 +358,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     options: YN,
     section: SECTION_ACTIVITES,
-    order: 50,
+    order: 240,
   },
   {
     id: "chapitreXIIArts",
@@ -144,7 +372,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     help: { fr: "Demande des explications à ton organisme de paiement.", nl: "", de: "" },
     options: YN,
     section: SECTION_ACTIVITES,
-    order: 60,
+    order: 250,
   },
   {
     id: "tremplinIndependants",
@@ -158,7 +386,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     help: { fr: "→ Joindre un FORMULAIRE C1C si pas encore déclaré.", nl: "", de: "" },
     options: YN,
     section: SECTION_ACTIVITES,
-    order: 70,
+    order: 270,
   },
   dejaDeclare({
     id: "tremplinIndependantsDejaDeclare",
@@ -166,7 +394,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     helpText:
       "Si non, tu devras compléter le FORMULAIRE C1C — il sera ajouté à ton parcours.",
     section: SECTION_ACTIVITES,
-    order: 71,
+    order: 271,
   }),
   {
     id: "activiteAccessoireOuAide",
@@ -177,14 +405,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
     help: { fr: "→ Joindre un FORMULAIRE C1A si pas encore déclaré.", nl: "", de: "" },
     options: YN,
     section: SECTION_ACTIVITES,
-    order: 80,
+    order: 280,
   },
   dejaDeclare({
     id: "activiteAccessoireDejaDeclare",
     parentId: "activiteAccessoireOuAide",
     helpText: "Si non, tu devras compléter le FORMULAIRE C1A — il sera ajouté à ton parcours.",
     section: SECTION_ACTIVITES,
-    order: 81,
+    order: 281,
   }),
   {
     id: "administrateurSociete",
@@ -195,14 +423,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
     help: { fr: "→ Joindre un FORMULAIRE C1A si pas encore déclaré.", nl: "", de: "" },
     options: YN,
     section: SECTION_ACTIVITES,
-    order: 90,
+    order: 290,
   },
   dejaDeclare({
     id: "administrateurSocieteDejaDeclare",
     parentId: "administrateurSociete",
     helpText: "Si non, tu devras compléter le FORMULAIRE C1A — il sera ajouté à ton parcours.",
     section: SECTION_ACTIVITES,
-    order: 91,
+    order: 291,
   }),
   {
     id: "independantAccessoireOuPrincipal",
@@ -216,7 +444,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     options: YN,
     section: SECTION_ACTIVITES,
-    order: 100,
+    order: 500,
   },
   dejaDeclare({
     id: "independantAccessoireDejaDeclare",
@@ -224,7 +452,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     helpText:
       "Pour une activité accessoire : si non déclarée, tu devras compléter le FORMULAIRE C1A.",
     section: SECTION_ACTIVITES,
-    order: 101,
+    order: 501,
   }),
 
   // ---------- MES REVENUS (5 questions, page 2) ----------
@@ -243,7 +471,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     options: YN,
     section: SECTION_REVENUS,
-    order: 110,
+    order: 510,
   },
   {
     id: "pensionRetraiteSurvie",
@@ -257,14 +485,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     options: YN,
     section: SECTION_REVENUS,
-    order: 120,
+    order: 520,
   },
   dejaDeclare({
     id: "pensionRetraiteDejaDeclare",
     parentId: "pensionRetraiteSurvie",
     helpText: "Si non, tu devras compléter le FORMULAIRE C1B — il sera ajouté à ton parcours.",
     section: SECTION_REVENUS,
-    order: 121,
+    order: 521,
   }),
   {
     id: "indemniteMaladieInvalidite",
@@ -275,7 +503,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     help: { fr: "À déclarer. Demande des explications à ton organisme de paiement.", nl: "", de: "" },
     options: YN,
     section: SECTION_REVENUS,
-    order: 130,
+    order: 530,
   },
   {
     id: "indemniteAccidentTravail",
@@ -286,7 +514,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
     help: { fr: "À déclarer.", nl: "", de: "" },
     options: YN,
     section: SECTION_REVENUS,
-    order: 140,
+    order: 540,
   },
   {
     id: "avantageFinancierFormation",
@@ -303,7 +531,310 @@ export const C1_QUESTIONS: PdfFormField[] = [
     },
     options: YN,
     section: SECTION_REVENUS,
-    order: 150,
+    order: 550,
+  },
+
+  // ====================================================================
+  // SECTION — MODE DE PAIEMENT
+  // ====================================================================
+  {
+    id: "modePaiement",
+    pdfFieldName: "",
+    type: "radio",
+    required: true,
+    label: { fr: "Comment souhaites-tu recevoir tes allocations ?", nl: "", de: "" },
+    help: { fr: "Le virement bancaire est le mode standard. Le chèque circulaire est exceptionnel.", nl: "", de: "" },
+    options: [
+      { value: "virement", label: { fr: "Par virement bancaire", nl: "", de: "" } },
+      { value: "cheque", label: { fr: "Par chèque circulaire envoyé à mon adresse", nl: "", de: "" } },
+    ],
+    defaultValue: "virement",
+    section: SECTION_PAIEMENT,
+    order: 600,
+  },
+  {
+    id: "modePaiementChequeWarning",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: {
+      fr: "Je confirme avoir compris : le chèque circulaire est rare, plus lent et envoyé à l'adresse de la rubrique « MON IDENTITÉ ».",
+      nl: "", de: "",
+    },
+    visibleIf: { fieldId: "modePaiement", op: "equals", value: "cheque" },
+    section: SECTION_PAIEMENT,
+    order: 601,
+  },
+  {
+    id: "titulaireCompte",
+    pdfFieldName: "",
+    type: "radio",
+    required: false,
+    label: { fr: "Le compte est…", nl: "", de: "" },
+    options: [
+      { value: "mon-nom", label: { fr: "À mon nom", nl: "", de: "" } },
+      { value: "autre-nom", label: { fr: "Au nom d'une autre personne", nl: "", de: "" } },
+    ],
+    defaultValue: "mon-nom",
+    visibleIf: { fieldId: "modePaiement", op: "equals", value: "virement" },
+    section: SECTION_PAIEMENT,
+    order: 602,
+  },
+  {
+    id: "iban",
+    pdfFieldName: "",
+    type: "iban",
+    required: false,
+    label: { fr: "IBAN (compte belge SEPA)", nl: "", de: "" },
+    placeholder: { fr: "BE00 0000 0000 0000", nl: "", de: "" },
+    visibleIf: { fieldId: "modePaiement", op: "equals", value: "virement" },
+    section: SECTION_PAIEMENT,
+    order: 603,
+  },
+  {
+    id: "titulaireCompteNom",
+    pdfFieldName: "",
+    type: "text",
+    required: false,
+    label: { fr: "Nom du titulaire du compte", nl: "", de: "" },
+    placeholder: { fr: "Nom et prénom de la personne", nl: "", de: "" },
+    visibleIf: { fieldId: "titulaireCompte", op: "equals", value: "autre-nom" },
+    section: SECTION_PAIEMENT,
+    order: 604,
+  },
+
+  // ====================================================================
+  // SECTION — COTISATION SYNDICALE
+  // Les deux cases doivent rester DÉCOCHÉES par défaut et ne pas être
+  // cochables côté UX standard — la gestion est externe (organisme de
+  // paiement). readOnly empêche la saisie utilisateur.
+  // ====================================================================
+  {
+    id: "autoriseCotisationSyndicale",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: { fr: "J'autorise la retenue de la cotisation syndicale sur mes allocations", nl: "", de: "" },
+    help: {
+      fr: "Cette case est gérée directement par ton organisme de paiement — ne la coche pas ici.",
+      nl: "", de: "",
+    },
+    readOnly: true,
+    section: SECTION_COTISATION,
+    order: 700,
+  },
+  {
+    id: "retireCotisationSyndicale",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: { fr: "Je n'autorise plus la retenue de la cotisation syndicale", nl: "", de: "" },
+    help: { fr: "Gérée par l'organisme de paiement — ne pas cocher ici.", nl: "", de: "" },
+    readOnly: true,
+    section: SECTION_COTISATION,
+    order: 701,
+  },
+
+  // ====================================================================
+  // SECTION — TRAVAILLEUR NON-EEE / SUISSE
+  // À masquer automatiquement si la nationalité saisie est belge ou
+  // appartient à l'EEE / Suisse. Pour l'instant : 1 question d'orientation
+  // qui rend les sous-questions conditionnelles.
+  // ====================================================================
+  {
+    id: "nationaliteHorsEEE",
+    pdfFieldName: "",
+    type: "radio",
+    required: true,
+    label: {
+      fr: "Es-tu ressortissant d'un pays HORS EEE et HORS Suisse ?",
+      nl: "", de: "",
+    },
+    help: {
+      fr: "L'EEE = UE + Islande + Liechtenstein + Norvège. Si tu es belge, français, néerlandais, etc., réponds « non ». Cette section devient inutile pour les chômeurs temporaires.",
+      nl: "", de: "",
+    },
+    options: YN,
+    defaultValue: "non",
+    section: SECTION_NON_EEE,
+    order: 800,
+  },
+  {
+    id: "accesMarcheTravail",
+    pdfFieldName: "",
+    type: "radio",
+    required: false,
+    label: { fr: "Mention au verso de mon permis de séjour quant à l'accès au marché du travail", nl: "", de: "" },
+    help: {
+      fr: "« Illimité » : tu peux travailler pour tout employeur. « Limité » : restrictions précisées sur l'autorisation régionale. « Non » : aucun emploi possible (pas de droit aux allocations).",
+      nl: "", de: "",
+    },
+    options: [
+      { value: "illimite", label: { fr: "Illimité", nl: "", de: "" } },
+      { value: "limite", label: { fr: "Limité", nl: "", de: "" } },
+      { value: "non", label: { fr: "Non", nl: "", de: "" } },
+    ],
+    visibleIf: { fieldId: "nationaliteHorsEEE", op: "equals", value: "oui" },
+    section: SECTION_NON_EEE,
+    order: 801,
+  },
+
+  // ====================================================================
+  // SECTION — DIVERS
+  // ====================================================================
+  {
+    id: "congeSansSolde",
+    pdfFieldName: "",
+    type: "radio",
+    required: true,
+    label: { fr: "Je suis actuellement dans une période de congé sans solde", nl: "", de: "" },
+    options: YN,
+    defaultValue: "non",
+    section: SECTION_DIVERS,
+    order: 900,
+  },
+  {
+    id: "congeSansSoldeDate",
+    pdfFieldName: "",
+    type: "date",
+    required: false,
+    label: { fr: "À partir du", nl: "", de: "" },
+    visibleIf: { fieldId: "congeSansSolde", op: "equals", value: "oui" },
+    section: SECTION_DIVERS,
+    order: 901,
+  },
+  {
+    id: "incapacite33",
+    pdfFieldName: "",
+    type: "radio",
+    required: true,
+    label: {
+      fr: "Je présente une incapacité de travail permanente d'au moins 33 %",
+      nl: "", de: "",
+    },
+    help: {
+      fr: "→ Si oui, joindre un FORMULAIRE C47-DEMANDE pour fixer le montant des allocations (pas de dégressivité).",
+      nl: "", de: "",
+    },
+    options: YN,
+    defaultValue: "non",
+    section: SECTION_DIVERS,
+    order: 910,
+  },
+  // TODO : trigger vers c47 — PDF C47_FR.pdf pas encore fourni.
+  // À ajouter dans C1_TRIGGERS quand le PDF sera là.
+
+  // ====================================================================
+  // SECTION — AFFIRMATIONS OBLIGATOIRES
+  // Les 3 cases doivent être cochées pour valider la déclaration —
+  // required=true + helper qui explique la portée.
+  // ====================================================================
+  {
+    id: "affirmationSincerite",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: true,
+    label: {
+      fr: "J'affirme sur l'honneur que la présente déclaration est sincère et complète",
+      nl: "", de: "",
+    },
+    section: SECTION_AFFIRMATIONS,
+    order: 1000,
+  },
+  {
+    id: "affirmationLectureNotice",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: true,
+    label: { fr: "J'ai lu la feuille d'informations C1", nl: "", de: "" },
+    section: SECTION_AFFIRMATIONS,
+    order: 1001,
+  },
+  {
+    id: "affirmationModifications",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: true,
+    label: {
+      fr: "Je sais que je dois communiquer toute modification à mon organisme de paiement et que je peux être sanctionné(e) si je ne le fais pas",
+      nl: "", de: "",
+    },
+    section: SECTION_AFFIRMATIONS,
+    order: 1002,
+  },
+
+  // ====================================================================
+  // SECTION — ANNEXES (optionnelles)
+  // ====================================================================
+  {
+    id: "annexeHandicap",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: { fr: "J'ai joint une attestation de la DG Personnes handicapées du SPF Sécurité sociale", nl: "", de: "" },
+    section: SECTION_ANNEXES,
+    order: 1100,
+  },
+  {
+    id: "annexeExtraitPension",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: { fr: "J'ai joint une copie de l'extrait de la pension", nl: "", de: "" },
+    section: SECTION_ANNEXES,
+    order: 1101,
+  },
+  {
+    id: "annexeC1Regis",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: { fr: "J'ai joint un FORMULAIRE C1 ANNEXE REGIS", nl: "", de: "" },
+    section: SECTION_ANNEXES,
+    order: 1102,
+  },
+  {
+    id: "annexePermisSejour",
+    pdfFieldName: "",
+    type: "checkbox",
+    required: false,
+    label: { fr: "J'ai joint une copie du permis de séjour et/ou du permis de travail", nl: "", de: "" },
+    section: SECTION_ANNEXES,
+    order: 1103,
+  },
+  {
+    id: "annexeAutre",
+    pdfFieldName: "",
+    type: "textarea",
+    required: false,
+    label: { fr: "Autres pièces jointes (préciser)", nl: "", de: "" },
+    section: SECTION_ANNEXES,
+    order: 1104,
+  },
+
+  // ====================================================================
+  // SECTION — DATE + SIGNATURE
+  // ====================================================================
+  {
+    id: "dateSignature",
+    pdfFieldName: "",
+    type: "date",
+    required: true,
+    label: { fr: "Date de signature", nl: "", de: "" },
+    help: { fr: "Pré-remplie automatiquement avec la date du jour.", nl: "", de: "" },
+    prefillFrom: "system.today",
+    section: SECTION_SIGNATURE,
+    order: 1200,
+  },
+  {
+    id: "signature",
+    pdfFieldName: "",
+    type: "signature",
+    required: true,
+    label: { fr: "Signature électronique", nl: "", de: "" },
+    help: { fr: "Signature « façon Adobe » : ton nom + prénom + horodatage seront appliqués à la position de la signature.", nl: "", de: "" },
+    section: SECTION_SIGNATURE,
+    order: 1201,
   },
 ];
 
@@ -313,6 +844,14 @@ export const C1_QUESTIONS: PdfFormField[] = [
 ///
 /// Référence : feuille d'information C1 (version 01.01.2024/831.10.000).
 export const C1_TRIGGERS: PdfFormTrigger[] = [
+  {
+    whenFieldId: "mandatArtistique",
+    whenValue: "oui",
+    unlessFieldId: "mandatArtistiqueDejaDeclare",
+    unlessValue: "oui",
+    requiresFormSlug: "c46",
+    reason: { fr: "Mandat dans un organe consultatif culturel à déclarer", nl: "", de: "" },
+  },
   {
     whenFieldId: "tremplinIndependants",
     whenValue: "oui",

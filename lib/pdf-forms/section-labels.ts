@@ -6,8 +6,17 @@ const LABELS: Record<string, Record<Locale, string>> = {
   adresse: { fr: "Adresse", nl: "Adres", de: "Adresse" },
   employeur: { fr: "Employeur", nl: "Werkgever", de: "Arbeitgeber" },
   banque: { fr: "Coordonnées bancaires", nl: "Bankgegevens", de: "Bankverbindung" },
+  demande: { fr: "Motifs d'introduction", nl: "Aanvraagredenen", de: "Antragsgründe" },
+  "situation-familiale": { fr: "Situation familiale", nl: "Gezinssituatie", de: "Familienstand" },
   "mes-activites": { fr: "Mes activités", nl: "Mijn activiteiten", de: "Meine Tätigkeiten" },
   "mes-revenus": { fr: "Mes revenus", nl: "Mijn inkomsten", de: "Meine Einkünfte" },
+  "mode-paiement": { fr: "Mode de paiement", nl: "Betaalwijze", de: "Zahlungsweise" },
+  "cotisation-syndicale": { fr: "Cotisation syndicale", nl: "Vakbondsbijdrage", de: "Gewerkschaftsbeitrag" },
+  "non-eee": { fr: "Travailleur hors EEE / Suisse", nl: "Werknemer buiten EER/Zwitserland", de: "Arbeitnehmer außerhalb EWR/Schweiz" },
+  divers: { fr: "Divers", nl: "Diversen", de: "Sonstiges" },
+  affirmations: { fr: "Affirmations sur l'honneur", nl: "Eervolle verklaringen", de: "Eidesstattliche Erklärung" },
+  annexes: { fr: "Annexes (optionnelles)", nl: "Bijlagen (optioneel)", de: "Anlagen (optional)" },
+  signature: { fr: "Date et signature", nl: "Datum en handtekening", de: "Datum und Unterschrift" },
 };
 
 const DEFAULT: Record<Locale, string> = {

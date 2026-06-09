@@ -22,6 +22,9 @@ export interface PublicField {
   visibleIf?: PdfFormField["visibleIf"];
   prefillFrom?: PdfFormField["prefillFrom"];
   nameOrder?: PdfFormField["nameOrder"];
+  /// Si true côté schéma : champ informatif / géré ailleurs — interdit
+  /// d'édition côté UI publique (eg. cotisation syndicale C1).
+  readOnly?: boolean;
   section?: string;
   order?: number;
 }
@@ -45,6 +48,7 @@ export function toPublicField(f: PdfFormField): PublicField {
     visibleIf: f.visibleIf,
     prefillFrom: f.prefillFrom,
     nameOrder: f.nameOrder,
+    readOnly: f.readOnly,
     section: f.section,
     order: f.order,
   };

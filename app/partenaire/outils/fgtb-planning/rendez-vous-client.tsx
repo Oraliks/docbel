@@ -155,7 +155,9 @@ export function RendezVousExportClient({
   const [saving, setSaving] = useState(false);
   const [saveInfo, setSaveInfo] = useState<{
     saved: number;
+    removed: number;
     total: number;
+    days: number;
   } | null>(null);
 
   // Aperçu live : on réutilise le MÊME parseur que le serveur (module pur).
@@ -246,14 +248,21 @@ export function RendezVousExportClient({
       });
       const data = (await res.json().catch(() => null)) as {
         saved?: number;
+        removed?: number;
         total?: number;
+        days?: number;
         error?: string;
       } | null;
       if (!res.ok) {
         setSubmitError(data?.error ?? "Enregistrement impossible.");
         return;
       }
-      setSaveInfo({ saved: data?.saved ?? 0, total: data?.total ?? 0 });
+      setSaveInfo({
+        saved: data?.saved ?? 0,
+        removed: data?.removed ?? 0,
+        total: data?.total ?? 0,
+        days: data?.days ?? 0,
+      });
       await runCheck();
     } catch {
       setSubmitError("Erreur réseau lors de l'enregistrement.");
@@ -467,10 +476,10 @@ export function RendezVousExportClient({
               variant="outline"
               onClick={handleSave}
               disabled={preview.kind !== "ok" || saving || !scopeReady}
-              title="Mémoriser ces rendez-vous pour détecter les doublons à l'avenir"
+              title="Synchroniser l'historique sur les journées du collage (ajoute les nouveaux, retire ceux absents)"
             >
               {saving ? <Loader2 className="animate-spin" /> : <Save />}
-              Enregistrer dans l&apos;historique
+              Enregistrer / mettre à jour
             </Button>
             <Button
               variant="ghost"
@@ -497,7 +506,14 @@ export function RendezVousExportClient({
             Vous pouvez coller votre <strong>liste d&apos;attente</strong> (RDV à
             approuver, avec les boutons «&nbsp;approuverAnnuler…&nbsp;») juste pour
             vérifier les doublons : rien n&apos;est enregistré tant que vous ne
-            cliquez pas sur «&nbsp;Enregistrer dans l&apos;historique&nbsp;».
+            cliquez pas sur «&nbsp;Enregistrer&nbsp;».
+          </p>
+          <p className="text-xs text-muted-foreground">
+            <strong>Re-coller une journée mise à jour</strong> (RDV refusés ou
+            ajoutés) puis cliquer «&nbsp;Enregistrer&nbsp;» <em>synchronise</em>{" "}
+            l&apos;historique pour cette journée : les anciens RDV absents du
+            nouveau collage sont retirés. Seules les journées présentes dans le
+            collage sont touchées.
           </p>
         </CardContent>
       </Card>
@@ -533,11 +549,33 @@ export function RendezVousExportClient({
       {saveInfo ? (
         <Alert>
           <Save className="text-emerald-600" />
-          <AlertTitle>Enregistré dans l&apos;historique</AlertTitle>
+          <AlertTitle>Historique mis à jour</AlertTitle>
           <AlertDescription>
-            {saveInfo.saved > 0
-              ? `${saveInfo.saved} rendez-vous ajouté${saveInfo.saved > 1 ? "s" : ""} à l'historique du service.`
-              : "Ces rendez-vous étaient déjà enregistrés — rien à ajouter."}
+            {(() => {
+              const parts: string[] = [];
+              if (saveInfo.saved > 0)
+                parts.push(
+                  `${saveInfo.saved} ajouté${saveInfo.saved > 1 ? "s" : ""}`,
+                );
+              if (saveInfo.removed > 0)
+                parts.push(
+                  `${saveInfo.removed} retiré${saveInfo.removed > 1 ? "s" : ""} (absent${saveInfo.removed > 1 ? "s" : ""} du nouveau collage)`,
+                );
+              const sameCount =
+                saveInfo.total - saveInfo.saved >= 0
+                  ? saveInfo.total - saveInfo.saved
+                  : 0;
+              if (sameCount > 0)
+                parts.push(
+                  `${sameCount} inchangé${sameCount > 1 ? "s" : ""}`,
+                );
+              const days = saveInfo.days || 1;
+              const summary =
+                parts.length === 0
+                  ? "Rien à modifier — l'historique est déjà à jour."
+                  : parts.join(" · ");
+              return `${summary}. Synchronisation sur ${days} journée${days > 1 ? "s" : ""}.`;
+            })()}
           </AlertDescription>
         </Alert>
       ) : null}

@@ -23,8 +23,11 @@ const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
  *
  *  • `check` (lecture) → renvoie les doublons : noms répétés dans la liste et/ou
  *    déjà présents dans l'historique du service (avec leur créneau précédent).
- *  • `save`  (écriture) → enregistre les rendez-vous de la liste dans
- *    l'historique (idempotent grâce à la contrainte d'unicité).
+ *  • `save`  (écriture) → **synchronise** l'historique sur les journées du
+ *    collage : ajoute les nouveaux RDV ET retire ceux qui étaient enregistrés
+ *    pour ces journées mais sont absents du nouveau collage. Permet de re-coller
+ *    la même journée après avoir traité/refusé des demandes, et garder l'état
+ *    à jour. Seules les journées présentes dans le collage sont touchées.
  *
  * Accès réservé aux PARTENAIRES (dont la FGTB) et aux ADMINS. L'historique est
  * cloisonné par `scope` = organisation partenaire → partagé entre collègues du
@@ -109,22 +112,68 @@ export async function POST(req: NextRequest) {
 
   try {
     if (action === "save") {
+      // Sync par jour : on n'opère QUE sur les journées présentes dans le
+      // collage (jamais celles d'avant). Pour chacune : on supprime les RDV
+      // existants qui ne sont plus dans le nouveau collage, puis on ajoute les
+      // nouveaux. Garantit que re-coller la liste après traitement reflète
+      // exactement l'état courant pour ces jours.
+      const datesInPaste = [...new Set(current.map((r) => r.date))];
+      const expectedKeys = new Set(
+        current.map(
+          (r) => `${normalizeName(r.name)}|${r.date}|${r.startTime}`,
+        ),
+      );
+
       const result = await withDbRetry(() =>
-        prisma.rendezVousHistory.createMany({
-          data: current.map((r) => ({
-            scope,
-            nameNormalized: normalizeName(r.name),
-            name: r.name,
-            date: r.date,
-            startTime: r.startTime,
-            endTime: r.endTime,
-            createdById: user.id,
-          })),
-          skipDuplicates: true, // ré-enregistrer la même liste ne crée pas de doublon
+        prisma.$transaction(async (tx) => {
+          const existing = await tx.rendezVousHistory.findMany({
+            where: { scope, date: { in: datesInPaste } },
+            select: {
+              id: true,
+              nameNormalized: true,
+              date: true,
+              startTime: true,
+            },
+          });
+          const obsoleteIds = existing
+            .filter(
+              (e) =>
+                !expectedKeys.has(
+                  `${e.nameNormalized}|${e.date}|${e.startTime}`,
+                ),
+            )
+            .map((e) => e.id);
+
+          const del = obsoleteIds.length
+            ? await tx.rendezVousHistory.deleteMany({
+                where: { scope, id: { in: obsoleteIds } },
+              })
+            : { count: 0 };
+
+          const ins = await tx.rendezVousHistory.createMany({
+            data: current.map((r) => ({
+              scope,
+              nameNormalized: normalizeName(r.name),
+              name: r.name,
+              date: r.date,
+              startTime: r.startTime,
+              endTime: r.endTime,
+              createdById: user.id,
+            })),
+            skipDuplicates: true, // re-coller la même liste ne crée pas de doublon
+          });
+
+          return { saved: ins.count, removed: del.count };
         }),
       );
+
       return NextResponse.json(
-        { saved: result.count, total: current.length },
+        {
+          saved: result.saved,
+          removed: result.removed,
+          total: current.length,
+          days: datesInPaste.length,
+        },
         { status: 200, headers: jsonHeaders },
       );
     }

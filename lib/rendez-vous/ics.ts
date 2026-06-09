@@ -75,6 +75,19 @@ const STANDALONE_DATE = /^\d{1,2}\s*\/\s*\d{1,2}\s*\/\s*\d{4}$/;
 const NOISE_LINE = /appointments?|rendez-?vous|guichets?/i;
 const HAS_LETTER = /\p{L}/u;
 
+// Boutons de l'interface source (FGTB) parfois copiés avec la liste : « Approuver »,
+// « Refuser »… Ce ne sont pas des noms. On les ignore quand ils sont SEULS sur
+// leur ligne, et on les retire quand ils sont accolés en fin de nom.
+const ACTION_WORDS =
+  "approuver|approuvé|approuvée|approve|approved|refuser|refusé|refusée|rejeter|reject|rejected|annuler|annulé|annulée|cancel|cancelled|modifier|supprimer|détails?|details?|confirmer|valider|voir";
+const ACTION_BUTTON_LINE = new RegExp(`^(?:${ACTION_WORDS})$`, "i");
+// En fin de ligne, on ne retire que les boutons d'action « forts » (approuver/
+// refuser) pour ne jamais amputer un patronyme se terminant par un mot courant.
+const TRAILING_ACTION = new RegExp(
+  `\\s+(?:approuver|approuvé|approuvée|approve|approved|refuser|refusé|refusée|rejeter|reject|rejected)$`,
+  "i",
+);
+
 const MAX_LINE_OCTETS = 75;
 const TZID = "Europe/Brussels";
 const PRODID = "-//DocBel//Rendez-vous Export//FR";
@@ -202,8 +215,9 @@ export function parseAppointments(input: string): Appointment[] {
       continue;
     }
 
-    // 2) Autres lignes « bruit » (compteurs « 4 Appointments: », « guichet »…).
-    if (NOISE_LINE.test(line)) continue;
+    // 2) Bruit : compteurs (« 4 Appointments: », « guichet »…) et boutons de
+    //    l'interface source copiés par mégarde (« Approuver », « Refuser »…).
+    if (NOISE_LINE.test(line) || ACTION_BUTTON_LINE.test(line)) continue;
 
     // 3) Nouveau créneau horaire.
     if (LOOSE_TIME_RANGE.test(line)) {
@@ -211,10 +225,12 @@ export function parseAppointments(input: string): Appointment[] {
       continue;
     }
 
-    // 4) Sinon, un nom — uniquement après une date ET un créneau valides.
-    if (!currentDate || !slot || !HAS_LETTER.test(line)) continue;
+    // 4) Sinon, un nom — uniquement après une date ET un créneau valides. On
+    //    retire un éventuel bouton collé en fin de ligne (« Dupont Approuver »).
+    const name = line.replace(TRAILING_ACTION, "").trim();
+    if (!currentDate || !slot || !HAS_LETTER.test(name)) continue;
     appointments.push({
-      name: line,
+      name,
       start: wallClock(currentDate, slot.startH, slot.startM),
       end: wallClock(currentDate, slot.endH, slot.endM),
     });

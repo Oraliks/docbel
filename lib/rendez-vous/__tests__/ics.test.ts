@@ -119,6 +119,30 @@ Carla Trois`;
     expect(appointmentsFilename(multi)).toBe("RDV_09_06_2026-11_06_2026.ics");
   });
 
+  it("ignore les boutons « Approuver » / « Refuser » collés avec la liste", () => {
+    const input = `Appointments for 09/06/2026
+08:20 – 08:40
+Patrick Jyambere
+Approuver
+Sevil Sarıgöz
+Refuser`;
+    const appts = parseAppointments(input);
+    expect(appts.map((a) => a.name)).toEqual([
+      "Patrick Jyambere",
+      "Sevil Sarıgöz",
+    ]);
+  });
+
+  it("retire un bouton d'action accolé en fin de nom", () => {
+    const appts = parseAppointments(
+      "Appointments for 09/06/2026\n08:20 – 08:40\nPatrick Jyambere Approuver\nSevil Sarıgöz Refuser",
+    );
+    expect(appts.map((a) => a.name)).toEqual([
+      "Patrick Jyambere",
+      "Sevil Sarıgöz",
+    ]);
+  });
+
   it("accepte plusieurs variantes de tirets et d'espaces", () => {
     const appts = parseAppointments(
       "Appointments for 1/2/2026\n9:00-9:30\nJean Test\n10:00 — 10:30\nMarie Test",

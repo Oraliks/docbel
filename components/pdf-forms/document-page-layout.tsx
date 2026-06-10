@@ -70,7 +70,7 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
           </>
         ) : (
           <>
-            <Link href="/creer-ma-demande" className="hover:underline">Mes démarches</Link>
+            <Link href="/mon-dossier" className="hover:underline">Mon dossier</Link>
             <ChevronRightIcon className="size-3" />
           </>
         )}

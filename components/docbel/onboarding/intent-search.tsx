@@ -135,7 +135,7 @@ export function IntentSearch() {
                   <button
                     key={s.bundleId}
                     type="button"
-                    onClick={() => router.push(`/outils/bundles/${s.slug}`)}
+                    onClick={() => router.push(`/d/${s.slug}`)}
                     className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3 text-left transition-colors hover:bg-white/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
                   >
                     <div className="min-w-0 flex-1">

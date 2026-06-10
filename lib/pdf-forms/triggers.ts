@@ -3,7 +3,7 @@
 // Architecture : chaque PdfForm porte une liste `triggers: PdfFormTrigger[]`.
 // Quand le payload de ce form satisfait un trigger, le slug du formulaire
 // cible est ajouté au parcours utilisateur. Le runtime côté
-// app/outils/bundles/[slug]/page.tsx collecte tous les payloads complétés,
+// app/d/[slug]/page.tsx collecte tous les payloads complétés,
 // appelle `collectTriggeredSlugs` pour chaque PdfForm, déduplique, et
 // matérialise les items virtuels supplémentaires au rendu.
 

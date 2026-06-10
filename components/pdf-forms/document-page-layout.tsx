@@ -62,7 +62,7 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
         <ChevronRightIcon className="size-3" />
         {bundleSlug ? (
           <>
-            <Link href={`/outils/bundles/${bundleSlug}`} className="hover:underline">Mon dossier</Link>
+            <Link href={`/d/${bundleSlug}`} className="hover:underline">Mon dossier</Link>
             <ChevronRightIcon className="size-3" />
           </>
         ) : (

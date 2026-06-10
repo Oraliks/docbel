@@ -332,7 +332,15 @@ export function MonDossierClient({ bundles }: Props) {
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-                {/* ═════════ COLONNE DROITE — Accès direct ═════════ */}
+        {/* ═════════ COLONNE GAUCHE — Assistant guidé ═════════ */}
+        <section
+          className="outils-rise flex flex-col gap-4"
+          style={{ animationDelay: "0ms" }}
+        >
+          <DossierWizard situations={WIZARD_SITUATIONS} />
+        </section>
+
+        {/* ═════════ COLONNE DROITE — Accès direct ═════════ */}
         <section
           className="glass-surface outils-rise flex flex-col gap-4 p-7"
           style={{ animationDelay: "80ms" }}

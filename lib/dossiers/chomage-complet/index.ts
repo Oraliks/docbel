@@ -305,12 +305,30 @@ export const chomageComplet: DossierDefinition = {
         { field: "niss", required: true, section: "identite", pdfFieldName: "NISS" },
       ],
     },
+    {
+      // C4 — Certificat de chômage. OBLIGATOIRE au dossier mais c'est
+      // l'EMPLOYEUR qui doit le délivrer : le citoyen ne le remplit pas
+      // lui-même dans beldoc. On le liste quand même (required) pour que la
+      // personne sache qu'il doit figurer au dossier et le réclamer.
+      // Pas de sourcePdfPath / fields : non remplissable côté citoyen.
+      slug: "c4-employeur",
+      title: "C4 — Certificat de chômage (à fournir par l'employeur)",
+      issuer: "Employeur",
+      required: true,
+      responsibility: "employer",
+      responsibilityNote: {
+        fr: "Ce document doit t'être remis par ton (ex-)employeur dès la fin du contrat. Tu ne peux pas le remplir toi-même. S'il tarde, réclame-le par écrit : sans C4, ton organisme de paiement ne peut pas constituer ton dossier.",
+      },
+      internalRef:
+        "Dossier chomage-complet — C4 employeur (durée prestations + motif fin contrat).",
+      // Exclu uniquement pour une toute première inscription sans emploi
+      // antérieur (jeune insertion orienté ailleurs en théorie, mais on
+      // garde le filtre par sécurité).
+      includeWhen: (a) => a.statut !== "premiere-inscription",
+      fields: [],
+    },
     // -----------------------------------------------------------------
     // À AJOUTER ULTÉRIEUREMENT, quand les PDFs officiels seront disponibles :
-    //   - C4 (slug provisoire "c4-employeur") : certificat de chômage remis
-    //     par l'employeur, atteste la durée des prestations et le motif de
-    //     fin de contrat. Probablement requis pour tous sauf
-    //     "premiere-inscription".
     //   - C61 (slug provisoire "c61-carte-controle") : carte de contrôle
     //     mensuelle. Requise après l'admission au chômage.
     //   - C109 (slug provisoire "c109-situation-familiale") : déclaration

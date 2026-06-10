@@ -31,9 +31,11 @@ import {
   GraduationCap,
   HelpCircle,
   Hourglass,
+  MapPinned,
   RotateCcw,
   Search,
   Sparkles,
+  UserMinus,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -42,6 +44,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { GLASS_CARD } from "@/lib/glass-classes";
 import type {
+  WizardRefineOption,
   WizardResult,
   WizardSituation,
   WizardSubOption,
@@ -57,6 +60,8 @@ const ICONS: Record<string, LucideIcon> = {
   Hourglass,
   Accessibility,
   HelpCircle,
+  UserMinus,
+  MapPinned,
 };
 
 function resolveIcon(name: string): LucideIcon {
@@ -76,10 +81,6 @@ const STEP_LABELS: Record<StepNumber, string> = {
   4: "Résultat",
 };
 
-/// Step 3 reste désactivée tant qu'on n'a pas de logique de raffinement
-/// (plusieurs dossiers à départager pour un même couple situation/sous-option).
-const DISABLED_STEPS: ReadonlySet<StepNumber> = new Set<StepNumber>([3]);
-
 export function DossierWizard({ situations }: Props) {
   const [currentStep, setCurrentStep] = useState<StepNumber>(1);
   const [selectedSituation, setSelectedSituation] = useState<string | null>(
@@ -88,6 +89,7 @@ export function DossierWizard({ situations }: Props) {
   const [selectedSubOption, setSelectedSubOption] = useState<string | null>(
     null,
   );
+  const [selectedRefine, setSelectedRefine] = useState<string | null>(null);
 
   const situation =
     situations.find((s) => s.value === selectedSituation) ?? null;
@@ -95,30 +97,36 @@ export function DossierWizard({ situations }: Props) {
     situation?.subQuestion?.options.find(
       (opt) => opt.value === selectedSubOption,
     ) ?? null;
+  const refineOption: WizardRefineOption | null =
+    subOption?.refineQuestion?.options.find(
+      (opt) => opt.value === selectedRefine,
+    ) ?? null;
 
-  /// Le résultat n'est défini qu'en step 4. Provenance : option de
-  /// sous-question si elle existe, sinon `result` direct sur la situation.
+  /// Le résultat n'est défini qu'en step 4. Provenance, par ordre de
+  /// spécificité : raffinement (step 3) > sous-option (step 2) > situation.
   const result: WizardResult | null =
-    subOption?.result ?? situation?.result ?? null;
+    refineOption?.result ?? subOption?.result ?? situation?.result ?? null;
 
   function handleSituationSelect(value: string) {
     const next = situations.find((s) => s.value === value);
     if (!next) return;
     setSelectedSituation(value);
     setSelectedSubOption(null);
-    // Si la situation n'a pas de sous-question, on saute step 2 et on va
-    // directement au résultat. Sinon, étape suivante = step 2.
-    if (next.subQuestion) {
-      setCurrentStep(2);
-    } else {
-      setCurrentStep(4);
-    }
+    setSelectedRefine(null);
+    // Pas de sous-question → résultat direct (step 4). Sinon step 2.
+    setCurrentStep(next.subQuestion ? 2 : 4);
   }
 
   function handleSubOptionSelect(value: string) {
     setSelectedSubOption(value);
-    // Step 3 « Affinons » n'est pas encore activée — on saute directement
-    // à step 4 (cf. commentaire en tête de fichier).
+    setSelectedRefine(null);
+    const opt = situation?.subQuestion?.options.find((o) => o.value === value);
+    // Si la sous-option raffine encore → step 3. Sinon → résultat (step 4).
+    setCurrentStep(opt?.refineQuestion ? 3 : 4);
+  }
+
+  function handleRefineSelect(value: string) {
+    setSelectedRefine(value);
     setCurrentStep(4);
   }
 
@@ -136,15 +144,24 @@ export function DossierWizard({ situations }: Props) {
 
   function handleBack() {
     if (currentStep === 4) {
-      // Si la situation avait une sous-question, on retourne à step 2.
-      // Sinon, on retourne à step 1.
-      if (situation?.subQuestion) {
+      // Retour : si on venait d'un raffinement (step 3) → step 3 ;
+      // sinon si sous-question → step 2 ; sinon step 1.
+      if (subOption?.refineQuestion) {
+        setCurrentStep(3);
+        setSelectedRefine(null);
+      } else if (situation?.subQuestion) {
         setCurrentStep(2);
         setSelectedSubOption(null);
       } else {
         setCurrentStep(1);
         setSelectedSituation(null);
       }
+      return;
+    }
+    if (currentStep === 3) {
+      setCurrentStep(2);
+      setSelectedSubOption(null);
+      setSelectedRefine(null);
       return;
     }
     if (currentStep === 2) {
@@ -158,6 +175,7 @@ export function DossierWizard({ situations }: Props) {
     setCurrentStep(1);
     setSelectedSituation(null);
     setSelectedSubOption(null);
+    setSelectedRefine(null);
   }
 
   return (
@@ -194,6 +212,16 @@ export function DossierWizard({ situations }: Props) {
           />
         )}
 
+        {currentStep === 3 && subOption?.refineQuestion && (
+          <StepRefine
+            subOptionLabel={subOption.label}
+            refineQuestion={subOption.refineQuestion}
+            selected={selectedRefine}
+            onSelect={handleRefineSelect}
+            onBack={handleBack}
+          />
+        )}
+
         {currentStep === 4 && result && (
           <StepResult
             result={result}
@@ -221,10 +249,9 @@ function Stepper({ currentStep }: StepperProps) {
       aria-label="Progression du guide"
     >
       {steps.map((step, idx) => {
-        const isDisabled = DISABLED_STEPS.has(step);
-        const isCurrent = step === currentStep && !isDisabled;
-        const isPast = step < currentStep && !isDisabled;
-        const isFuture = !isCurrent && !isPast && !isDisabled;
+        const isCurrent = step === currentStep;
+        const isPast = step < currentStep;
+        const isFuture = !isCurrent && !isPast;
         return (
           <li
             key={step}
@@ -241,8 +268,6 @@ function Stepper({ currentStep }: StepperProps) {
                     "bg-emerald-500 text-white",
                   isFuture &&
                     "bg-muted text-muted-foreground",
-                  isDisabled &&
-                    "bg-muted/50 text-muted-foreground/60",
                 )}
                 aria-hidden
               >
@@ -253,7 +278,7 @@ function Stepper({ currentStep }: StepperProps) {
                   "hidden truncate text-xs font-medium sm:inline",
                   isCurrent && "text-foreground",
                   isPast && "text-foreground/80",
-                  (isFuture || isDisabled) && "text-muted-foreground",
+                  isFuture && "text-muted-foreground",
                 )}
               >
                 {STEP_LABELS[step]}
@@ -443,6 +468,89 @@ function StepSubQuestion({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Step 3 — refine (raffinement optionnel)
+
+interface StepRefineProps {
+  subOptionLabel: string;
+  refineQuestion: NonNullable<WizardSubOption["refineQuestion"]>;
+  selected: string | null;
+  onSelect: (value: string) => void;
+  onBack: () => void;
+}
+
+function StepRefine({
+  subOptionLabel,
+  refineQuestion,
+  selected,
+  onSelect,
+  onBack,
+}: StepRefineProps) {
+  return (
+    <div className="space-y-4 transition-opacity duration-200">
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {subOptionLabel}
+        </p>
+        <Label className="text-sm font-medium">{refineQuestion.question}</Label>
+        {refineQuestion.helpText && (
+          <p className="rounded-md border-l-2 border-blue-300 bg-blue-50/60 px-2.5 py-1.5 text-xs text-blue-900 dark:border-blue-700 dark:bg-blue-950/30 dark:text-blue-200">
+            {refineQuestion.helpText}
+          </p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-2">
+        {refineQuestion.options.map((opt) => {
+          const isSelected = selected === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onSelect(opt.value)}
+              aria-pressed={isSelected}
+              className={cn(
+                "group flex items-center gap-3 rounded-2xl border bg-[color:var(--glass-surface)] px-3 py-3 text-left text-sm transition-all",
+                "hover:-translate-y-px hover:border-[color:var(--glass-accent-a)]/40 hover:shadow-sm",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-a)]/40",
+                isSelected
+                  ? "border-[color:var(--glass-accent-a)] ring-1 ring-[color:var(--glass-accent-a)]/30"
+                  : "border-[color:var(--glass-border)]",
+              )}
+            >
+              <span className="flex-1">
+                <span className="block font-medium">{opt.label}</span>
+                {opt.helpText && (
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    {opt.helpText}
+                  </span>
+                )}
+              </span>
+              <ChevronRight
+                className={cn(
+                  "size-4 shrink-0 text-muted-foreground transition-transform",
+                  isSelected && "translate-x-0.5 text-[color:var(--glass-accent-a)]",
+                )}
+                aria-hidden
+              />
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center justify-between pt-1">
+        <Button variant="ghost" onClick={onBack}>
+          <ArrowLeft className="size-4" aria-hidden />
+          Précédent
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          Encore une précision pour t&apos;orienter au mieux.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Step 4 — result
 
 interface StepResultProps {
@@ -473,8 +581,12 @@ function StepResult({ result, onBack, onReset }: StepResultProps) {
           </div>
 
           <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
-            <Button variant="outline" render={<Link href="/mon-dossier" />}>
-              Voir d&apos;autres options
+            {/* Reset du wizard (pas un Link vers /mon-dossier : on est déjà
+                sur cette page, un Link soft ne réinitialiserait pas l'état
+                client et ne ferait donc rien visiblement). */}
+            <Button variant="outline" onClick={onReset}>
+              <RotateCcw className="size-4" aria-hidden />
+              Recommencer le guide
             </Button>
             <Button render={<Link href={`/d/${result.dossierSlug}`} />}>
               Commencer ce dossier
@@ -505,11 +617,12 @@ function StepResult({ result, onBack, onReset }: StepResultProps) {
           </div>
 
           <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
-            <Button variant="outline" render={<Link href="/contact" />}>
-              Contacter le service
+            <Button variant="outline" onClick={onReset}>
+              <RotateCcw className="size-4" aria-hidden />
+              Recommencer le guide
             </Button>
-            <Button render={<Link href="/mon-dossier" />}>
-              Voir le catalogue complet
+            <Button render={<Link href="/contact" />}>
+              Contacter le service
               <ArrowRight className="size-4" aria-hidden />
             </Button>
           </div>

@@ -186,9 +186,19 @@ export async function seedDossier(
     }
   }
 
-  // 1. PdfForms (un par document).
+  // Seuls les documents remplissables par le citoyen (responsibility "user"
+  // ou absent) deviennent des PdfForms + items de bundle. Les documents à
+  // charge d'un tiers (employeur pour le C4, ONEM, mutuelle…) sont listés
+  // dans la définition du dossier mais ne sont pas des formulaires à remplir
+  // dans beldoc — ils seront surfacés ailleurs (panneau « documents à
+  // fournir »). On les écarte ici pour ne pas générer de gabarit vide.
+  const fillableDocs = def.documents.filter(
+    (d) => !d.responsibility || d.responsibility === "user"
+  );
+
+  // 1. PdfForms (un par document remplissable).
   const pdfFormIds: string[] = [];
-  for (const docDef of def.documents) {
+  for (const docDef of fillableDocs) {
     pdfFormIds.push(await createPdfFormForDocument(docDef, userId));
   }
 
@@ -219,9 +229,9 @@ export async function seedDossier(
     },
   });
 
-  // 3. Items.
-  for (let i = 0; i < def.documents.length; i++) {
-    const docDef = def.documents[i];
+  // 3. Items (un par document remplissable, aligné sur fillableDocs).
+  for (let i = 0; i < fillableDocs.length; i++) {
+    const docDef = fillableDocs[i];
     await prisma.documentBundleItem.create({
       data: {
         bundleId: bundle.id,
@@ -232,14 +242,15 @@ export async function seedDossier(
     });
   }
 
+  const externalCount = def.documents.length - fillableDocs.length;
   return {
     ok: true,
     created: true,
     bundleId: bundle.id,
     bundleSlug: bundle.slug,
     pdfFormIds,
-    message: `Dossier « ${def.title} » créé avec ${def.documents.length} documents (${
-      def.documents.filter((d) => d.sourcePdfPath).length
-    } PDF officiels).`,
+    message: `Dossier « ${def.title} » créé avec ${fillableDocs.length} formulaire(s) à remplir (${
+      fillableDocs.filter((d) => d.sourcePdfPath).length
+    } PDF officiels)${externalCount > 0 ? ` + ${externalCount} document(s) à fournir par un tiers` : ""}.`,
   };
 }

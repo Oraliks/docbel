@@ -63,6 +63,14 @@ export type DossierFieldRef =
       section?: string;
     };
 
+/// Qui est responsable de produire / compléter le document.
+/// - "user"     : le citoyen le remplit lui-même dans beldoc (défaut)
+/// - "employer" : l'employeur doit le fournir (ex. C4) — le citoyen ne peut
+///                PAS le compléter, mais le document reste obligatoire au dossier
+/// - "onem"     : délivré par l'ONEM / organisme de paiement
+/// - "external" : autre tiers (mutuelle, médecin, administration…)
+export type DocumentResponsibility = "user" | "employer" | "onem" | "external";
+
 /// Un document du dossier.
 export interface DossierDocument {
   slug: string;
@@ -70,9 +78,18 @@ export interface DossierDocument {
   issuer: string;
   /// Document obligatoire dans le dossier (si inclus).
   required?: boolean;
+  /// Qui doit produire le document. Défaut = "user" (rempli dans beldoc).
+  /// Si ≠ "user", le document est listé dans le dossier mais n'est pas
+  /// remplissable par le citoyen — l'UI affiche qui doit s'en charger.
+  responsibility?: DocumentResponsibility;
+  /// Note explicative affichée quand `responsibility ≠ "user"` (ex. « À
+  /// réclamer à ton employeur dès la fin du contrat »).
+  responsibilityNote?: Localized;
   /// Inclusion conditionnelle selon les réponses d'orientation. Absent =
   /// toujours inclus.
   includeWhen?: (answers: DossierAnswers) => boolean;
+  /// Champs à remplir. Vide pour un document `responsibility ≠ "user"`
+  /// (le citoyen ne le complète pas dans beldoc).
   fields: DossierFieldRef[];
   /// Chemin (relatif à la racine du projet) vers le PDF source officiel.
   /// Si fourni, le seed l'utilise comme source du PdfForm (au lieu de

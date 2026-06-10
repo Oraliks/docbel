@@ -1,5 +1,7 @@
 import {
   PDFDocument,
+  PDFFont,
+  PDFForm,
   PDFTextField,
   PDFCheckBox,
   PDFDropdown,
@@ -10,7 +12,15 @@ import {
 import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
-import { PdfFormField, FormPayload, AcroFieldRaw } from "./types";
+import {
+  PdfFormField,
+  FieldOption,
+  FieldValue,
+  FieldValueRecord,
+  FormPayload,
+  AcroFieldRaw,
+  isFieldValueRecordArray,
+} from "./types";
 import { assembleFullName } from "./system-values";
 import { resolveSignerName, buildSignatureBlock } from "./signature";
 import { isSignatureField } from "./auto-fields";
@@ -52,6 +62,147 @@ export interface FillResult {
   unicodeFont: boolean;
 }
 
+/// Convention pipe-séparée : `pdfFieldName` = "w1|w2|…|wN" pour un champ
+/// `radio` à N options, où chaque widget est une checkbox indépendante. La
+/// fonction coche le widget correspondant à la valeur sélectionnée et décoche
+/// les autres. Renvoie `true` si la convention a été appliquée (handled),
+/// `false` sinon (le caller doit retomber sur le stamping scalaire standard).
+function stampPipeRadio(
+  form: PDFForm,
+  pdfFieldName: string,
+  type: PdfFormField["type"],
+  options: FieldOption[] | undefined,
+  value: FieldValue
+): boolean {
+  if (!pdfFieldName.includes("|") || type !== "radio" || !options) return false;
+  // Pas de `filter(Boolean)` : on garde les positions exactes. Une entrée
+  // vide signifie « cette option n'a pas de case PDF dédiée ».
+  const names = pdfFieldName.split("|").map((s) => s.trim());
+  if (names.length !== options.length) return false;
+  const strValue = String(value);
+  for (let i = 0; i < names.length; i++) {
+    if (!names[i]) continue; // option sans widget — rien à faire
+    const box = safeCheckbox(form, names[i]);
+    if (!box) continue;
+    try {
+      if (options[i].value === strValue) box.check();
+      else box.uncheck();
+    } catch {
+      /* readonly / incompatible */
+    }
+  }
+  return true;
+}
+
+/// Stampe une valeur scalaire sur un widget AcroForm résolu, en dispatchant
+/// sur son type (texte / checkbox / dropdown / radio group). Centralise la
+/// logique pour la réutiliser depuis le stamping de lignes d'`array`.
+function stampScalarWidget(
+  pdfField: unknown,
+  value: FieldValue,
+  font: PDFFont,
+  unicodeFont: boolean
+): void {
+  if (pdfField instanceof PDFTextField) {
+    pdfField.setText(value === false ? "" : String(value));
+    if (unicodeFont) pdfField.updateAppearances(font);
+  } else if (pdfField instanceof PDFCheckBox) {
+    if (isTruthy(value)) pdfField.check();
+    else pdfField.uncheck();
+  } else if (pdfField instanceof PDFDropdown) {
+    const s = String(value);
+    if (pdfField.getOptions().includes(s)) {
+      pdfField.select(s);
+      if (unicodeFont) pdfField.updateAppearances(font);
+    }
+  } else if (pdfField instanceof PDFRadioGroup) {
+    const s = String(value);
+    if (pdfField.getOptions().includes(s)) pdfField.select(s);
+  }
+}
+
+/// Stamping d'un champ `array` : deux mécanismes complémentaires.
+///   1. PAR LIGNE : pour chaque sous-champ porteur de `pdfFieldNameTemplate`,
+///      on substitue `{index}` (1-based) et on stampe la valeur du
+///      sous-champ. Sub-fields sans template = ignorés silencieusement.
+///   2. FIRST-MATCH : si `firstMatchMapping` est défini, on cherche la PREMIÈRE
+///      ligne qui satisfait `where` et on déverse ses sous-champs sur les
+///      widgets uniques listés dans `fields`. Convention :
+///        - un nom de widget standard → stamping scalaire
+///        - un nom pipe-séparé "w1|w2" sur un sous-champ `radio` → convention
+///          ONEM (paire oui/non ou N options).
+function stampArrayField(
+  form: PDFForm,
+  font: PDFFont,
+  unicodeFont: boolean,
+  field: PdfFormField,
+  rows: FieldValueRecord[]
+): void {
+  const subFields = field.itemFields ?? [];
+  if (subFields.length === 0) return;
+  // Tronque silencieusement au maxRows annoncé pour ne jamais stamper hors grille.
+  const cap = typeof field.maxRows === "number" ? Math.max(0, field.maxRows) : rows.length;
+  const effectiveRows = rows.slice(0, cap);
+
+  // (1) Stamping par ligne sur les widgets positionnels.
+  for (let i = 0; i < effectiveRows.length; i++) {
+    const row = effectiveRows[i];
+    const oneBased = String(i + 1);
+    for (const sub of subFields) {
+      if (!sub.pdfFieldNameTemplate) continue;
+      const subValue = row[sub.id];
+      if (subValue === null || subValue === undefined) continue;
+      const widgetName = sub.pdfFieldNameTemplate.replace(/\{index\}/g, oneBased);
+      // Sous-champ radio + pipe → convention multi-options.
+      if (
+        stampPipeRadio(form, widgetName, sub.type, sub.options, subValue as FieldValue)
+      ) {
+        continue;
+      }
+      let pdfField;
+      try {
+        pdfField = form.getField(widgetName);
+      } catch {
+        continue;
+      }
+      try {
+        stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont);
+      } catch {
+        /* readonly / incompatible */
+      }
+    }
+  }
+
+  // (2) Stamping first-match sur les widgets uniques (ex. bloc « partenaire »).
+  const fm = field.firstMatchMapping;
+  if (!fm) return;
+  const match = effectiveRows.find((row) => row[fm.where.fieldId] === fm.where.value);
+  if (!match) return;
+  for (const [subId, widgetName] of Object.entries(fm.fields)) {
+    if (!widgetName) continue;
+    const sub = subFields.find((s) => s.id === subId);
+    if (!sub) continue;
+    const subValue = match[subId];
+    if (subValue === null || subValue === undefined) continue;
+    if (
+      stampPipeRadio(form, widgetName, sub.type, sub.options, subValue as FieldValue)
+    ) {
+      continue;
+    }
+    let pdfField;
+    try {
+      pdfField = form.getField(widgetName);
+    } catch {
+      continue;
+    }
+    try {
+      stampScalarWidget(pdfField, subValue as FieldValue, font, unicodeFont);
+    } catch {
+      /* readonly / incompatible */
+    }
+  }
+}
+
 /// Remplit un PDF AcroForm à partir du schéma enrichi et d'un payload validé.
 /// - Mappe chaque champ via `pdfFieldName` (ancre).
 /// - Embarque une police Unicode si disponible (fontkit requis).
@@ -90,11 +241,18 @@ export async function fillForm(
   const obliqueFont = await doc.embedFont(StandardFonts.HelveticaOblique);
 
   for (const field of fields) {
+    // Branche dédiée aux champs `array` : stamping positionnel par ligne
+    // (template `pdfFieldNameTemplate` sur chaque sous-champ) + stamping
+    // « first-match » sur des widgets uniques (cf. firstMatchMapping). Ces
+    // deux mécanismes sont indépendants — un schéma peut n'en utiliser qu'un.
+    if (field.type === "array") {
+      const rows = payload[field.id];
+      if (!isFieldValueRecordArray(rows)) continue;
+      stampArrayField(form, font, unicodeFont, field, rows);
+      continue;
+    }
+
     if (!field.pdfFieldName) continue;
-    // Les champs `array` (tableaux de lignes) n'ont pas de stamping direct
-    // dans cette passe — leur valeur est capturée dans le payload mais ne
-    // se déverse pas sur un widget unique. Le mapping fin viendra plus tard.
-    if (field.type === "array") continue;
     const raw = payload[field.id];
     if (raw === null || raw === undefined) continue;
     // Champ composite : deux sous-champs front → une seule chaîne dans le PDF.
@@ -107,29 +265,9 @@ export async function fillForm(
     // formulaires ONEM : chaque modalité a sa propre case (pas un
     // PDFRadioGroup). La paire oui/non est juste le sous-cas N=2.
     if (
-      field.pdfFieldName.includes("|") &&
-      field.type === "radio" &&
-      field.options
+      stampPipeRadio(form, field.pdfFieldName, field.type, field.options, value)
     ) {
-      // Pas de `filter(Boolean)` : on garde les positions exactes. Une entrée
-      // vide signifie « cette option n'a pas de case PDF dédiée » (ex. radio
-      // oui/non où seul le « oui » a un widget — le « non » = ne rien cocher).
-      const names = field.pdfFieldName.split("|").map((s) => s.trim());
-      if (names.length === field.options.length) {
-        const strValue = String(value);
-        for (let i = 0; i < names.length; i++) {
-          if (!names[i]) continue; // option sans widget — rien à faire
-          const box = safeCheckbox(form, names[i]);
-          if (!box) continue;
-          try {
-            if (field.options[i].value === strValue) box.check();
-            else box.uncheck();
-          } catch {
-            /* readonly / incompatible */
-          }
-        }
-        continue;
-      }
+      continue;
     }
 
     let pdfField;
@@ -182,22 +320,7 @@ export async function fillForm(
         continue;
       }
 
-      if (pdfField instanceof PDFTextField) {
-        pdfField.setText(value === false ? "" : String(value));
-        if (unicodeFont) pdfField.updateAppearances(font);
-      } else if (pdfField instanceof PDFCheckBox) {
-        if (isTruthy(value)) pdfField.check();
-        else pdfField.uncheck();
-      } else if (pdfField instanceof PDFDropdown) {
-        const s = String(value);
-        if (pdfField.getOptions().includes(s)) {
-          pdfField.select(s);
-          if (unicodeFont) pdfField.updateAppearances(font);
-        }
-      } else if (pdfField instanceof PDFRadioGroup) {
-        const s = String(value);
-        if (pdfField.getOptions().includes(s)) pdfField.select(s);
-      }
+      stampScalarWidget(pdfField, value, font, unicodeFont);
     } catch {
       // champ readonly / incompatible — on ignore sans casser la génération
     }

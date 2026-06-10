@@ -32,6 +32,8 @@ export interface PublicField {
   addRowLabel?: PdfFormField["addRowLabel"];
   minRows?: number;
   maxRows?: number;
+  pdfFieldNameTemplate?: PdfFormField["pdfFieldNameTemplate"];
+  firstMatchMapping?: PdfFormField["firstMatchMapping"];
 }
 
 export function toPublicField(f: PdfFormField): PublicField {
@@ -60,6 +62,8 @@ export function toPublicField(f: PdfFormField): PublicField {
     addRowLabel: f.addRowLabel,
     minRows: f.minRows,
     maxRows: f.maxRows,
+    pdfFieldNameTemplate: f.pdfFieldNameTemplate,
+    firstMatchMapping: f.firstMatchMapping,
   };
 }
 

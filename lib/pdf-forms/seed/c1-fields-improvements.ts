@@ -408,33 +408,28 @@ export const C1_QUESTIONS: PdfFormField[] = [
   // de revenu professionnel (Indépendant → 999999.99 par défaut), revenus
   // de remplacement, remarque, et statut C1-PARTENAIRE si FAC.
   //
-  // ----- Mapping PDF : décision NO-STAMP (sub-fields restent pdfFieldName: "") -----
-  // Le PDF C1 expose une grille à 5 lignes FIXES (widgets "1 1"/"1"/"1 2"/"2",
-  // "2 1"/"1_2"/"2 2"/"2_2", … jusqu'à "5 1"/"1_5"/"5 2"/"2_5") avec seulement
-  // DEUX colonnes texte par cohabitant (x≈47 et x≈161) — il n'y a pas de
-  // colonne dédiée pour lien, date de naissance, ni montants par ligne.
+  // ----- Mapping PDF : stamping positionnel via `pdfFieldNameTemplate` -----
+  // Le PDF C1 expose une grille à 5 lignes FIXES (page 1, y≈140-300). Chaque
+  // ligne occupe DEUX rangées sur le PDF (un cohabitant = 2 lignes texte) et
+  // a deux colonnes (x≈47 et x≈161). Les widgets sont nommés irrégulièrement :
+  //   - col gauche, rangée 1 (x≈47) : "1 1", "2 1", "3 1", "4 1", "5 1" — RÉG.
+  //   - col gauche, rangée 2 (x≈45) : "1 2", "2 2", "3 2", "4 2", "5 2" — RÉG.
+  //   - col droite, rangée 1 (x≈161) : "1", "1_2", "1_3", "1_4", "1_5" — irrég.
+  //   - col droite, rangée 2 (x≈161) : "2", "2_2", "2_3", "2_4", "2_5" — irrég.
+  // Seules les deux colonnes régulières sont mappables via un template
+  // unique `{index}` — on y déverse prenom et dateNaissance par ligne. Les
+  // autres sous-champs (nom, lien, allocations, revenus, remarque,
+  // c1PartenaireStatus) restent VIRTUELS au niveau ligne — ils servent la
+  // logique applicative (triggers, règles métier) sans cible PDF par ligne.
   //
-  // Les widgets « Montant », « Allocation familiale » (dropdown), « Activité
-  // professionnelle » (dropdown), « Revenus de remplacement » (dropdown),
-  // « Identité du partenaire ou de la personne à charge » (texte) et les
-  // 2 cases C1-PARTENAIRE n'existent qu'UNE seule fois — ils décrivent le
-  // partenaire/FAC unique, pas chaque cohabitant. Idem pour « Remarques 1_2 »
-  // et « Remarques 2_2 » qui sont des lignes globales sous la grille.
-  //
-  // Notre tableau dynamique capture N cohabitants avec 11 sous-champs chacun
-  // (prenom, nom, lien, dateNaissance, allocationsFamiliales, typeRevenuPro,
-  // montantRevenuPro, revenuRemplacement, montantRevenuRemplacement, remarque,
-  // c1PartenaireStatus). La structure PDF (5 lignes × 2 colonnes + widgets
-  // partagés) ne peut pas accueillir cette granularité même avec une
-  // convention `arrayRowPdfMapping` ajoutée au filler : la majorité des
-  // sous-champs (lien, dateNaissance, les montants par ligne, le statut
-  // C1-PARTENAIRE par ligne) n'a tout simplement aucune cible PDF.
-  //
-  // → On garde pdfFieldName: "" sur cohabitants et tous ses itemFields. La
-  //   donnée vit dans le payload pour la logique applicative (trigger FAC,
-  //   règles d'allocations, calculs de revenus) ; le rendu PDF officiel
-  //   restera une vue dégradée à compléter manuellement ou via un second
-  //   passage de stamping ciblé (à concevoir plus tard si besoin métier).
+  // ----- Stamping « partenaire » via `firstMatchMapping` (lien==="FAC") -----
+  // Les widgets « Allocation familiale », « Activité professionnelle »,
+  // « Montant », « Revenus de remplacement », « Identité du partenaire… » et
+  // les 2 cases C1-PARTENAIRE n'existent qu'UNE seule fois — ils décrivent
+  // LA personne financièrement à charge (FAC). On y déverse les sous-champs
+  // de la PREMIÈRE ligne dont `lien === "FAC"`. L'identité affichée est le
+  // prénom seul (le widget est unique → pas de place pour Prénom + Nom
+  // séparément ; conserver le nom complet exigerait un champ composite).
   {
     id: "cohabitants",
     pdfFieldName: "",
@@ -449,6 +444,26 @@ export const C1_QUESTIONS: PdfFormField[] = [
     visibleIf: { fieldId: "statutFamilial", op: "equals", value: "cohabite" },
     section: SECTION_SITUATION_FAMILIALE,
     order: 110,
+    // La grille PDF a 5 slots positionnels — au-delà, on tronque silencieusement
+    // au stamping (la logique applicative voit toujours toutes les lignes).
+    maxRows: 5,
+    firstMatchMapping: {
+      where: { fieldId: "lien", value: "FAC" },
+      fields: {
+        prenom: "Identité du partenaire ou de la personne à charge",
+        allocationsFamiliales: "Allocation familiale",
+        typeRevenuPro: "Activité professionnelle",
+        montantRevenuPro: "Montant",
+        revenuRemplacement: "Revenus de remplacement",
+        // Pour le statut C1-PARTENAIRE : convention pipe-séparateur sur un
+        // sous-champ `radio` à 2 options — la 1ʳᵉ option ("premiere-fois")
+        // coche la case « Je le déclare pour la première fois… », la 2ᵉ
+        // ("deja-declare") coche la case « Ma déclaration précédente reste
+        // inchangée ». Cf. filler.ts#stampPipeRadio pour la convention.
+        c1PartenaireStatus:
+          "Je le déclare pour la première fois ou je déclare une modification et je joins un FORMULAIRE C1PARTENAIRE|Ma déclaration précédente sur le FORMULAIRE C1PARTENAIRE reste inchangée",
+      },
+    },
     itemFields: [
       {
         id: "prenom",
@@ -456,6 +471,8 @@ export const C1_QUESTIONS: PdfFormField[] = [
         type: "text",
         required: true,
         label: { fr: "Prénom", nl: "", de: "" },
+        // Stampé en colonne 1 rangée 1 du slot N (widgets "1 1", "2 1", …).
+        pdfFieldNameTemplate: "{index} 1",
         order: 1,
       },
       {
@@ -464,6 +481,9 @@ export const C1_QUESTIONS: PdfFormField[] = [
         type: "text",
         required: true,
         label: { fr: "Nom", nl: "", de: "" },
+        // La colonne 2 du PDF (widgets "1", "1_2", …) a un naming irrégulier
+        // qui ne se laisse pas capter par un template unique — sous-champ
+        // gardé virtuel pour cette passe.
         order: 2,
       },
       {
@@ -499,6 +519,8 @@ export const C1_QUESTIONS: PdfFormField[] = [
         type: "date",
         required: true,
         label: { fr: "Date de naissance", nl: "", de: "" },
+        // Stampé en colonne 1 rangée 2 du slot N (widgets "1 2", "2 2", …).
+        pdfFieldNameTemplate: "{index} 2",
         order: 4,
       },
       {
@@ -579,7 +601,7 @@ export const C1_QUESTIONS: PdfFormField[] = [
       // mutuellement exclusif entre « 1ʳᵉ fois / modification » et
       // « déjà déclaré ». La logique de trigger pour ajouter le formulaire
       // C1-PARTENAIRE lit la valeur « premiere-fois » sur n'importe quelle
-      // ligne FAC.
+      // ligne FAC. Stampé sur le PDF via `firstMatchMapping` du parent.
       {
         id: "c1PartenaireStatus",
         pdfFieldName: "",

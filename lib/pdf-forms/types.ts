@@ -196,6 +196,28 @@ export interface PdfFormField {
   /// Nombre minimum / maximum de lignes acceptées. Défaut : 0 / illimité.
   minRows?: number;
   maxRows?: number;
+  /// Stamping positionnel d'un sous-champ de `array` : template du nom de
+  /// widget AcroForm avec le placeholder `{index}` substitué par l'index de
+  /// ligne 1-based. Exemple : `"{index} 1"` → `"1 1"` pour la 1ʳᵉ ligne,
+  /// `"2 1"` pour la 2ᵉ, etc. Seuls les sous-champs qui portent ce template
+  /// sont stampés ; les autres restent virtuels (capturés dans le payload
+  /// mais sans cible PDF). Concrètement utilisé pour la grille des
+  /// cohabitants du C1, qui expose 5 slots positionnels.
+  pdfFieldNameTemplate?: string;
+  /// Stamping « first-match » sur un champ `array` : la PREMIÈRE ligne qui
+  /// satisfait `where` voit ses sous-champs déversés sur des widgets PDF
+  /// uniques (typiquement les widgets « partenaire » du C1 qui n'existent
+  /// qu'une fois sur le PDF mais dérivent de la ligne FAC du tableau).
+  /// `fields` : map subFieldId → pdfFieldName.
+  firstMatchMapping?: ArrayFirstMatchMapping;
+}
+
+/// Cf. `PdfFormField.firstMatchMapping`. La ligne qui satisfait `where` est
+/// stampée sur les widgets désignés. Les checkboxes en pipe-séparateur
+/// (`"oui_widget|non_widget"`) sont supportées pour les sous-champs `radio`.
+export interface ArrayFirstMatchMapping {
+  where: { fieldId: string; value: string | number | boolean };
+  fields: Record<string, string>;
 }
 
 /// Valeur d'un champ `fullname` : deux sous-parties éditées côté front,

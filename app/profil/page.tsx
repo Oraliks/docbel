@@ -58,7 +58,7 @@ export default async function ProfilRoute() {
         </p>
       </header>
 
-      <div className="mx-auto w-full max-w-4xl">
+      <div className="mx-auto w-full max-w-5xl">
         <ProfilePage
           initial={initial}
           userName={session.user.name || ""}

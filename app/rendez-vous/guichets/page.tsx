@@ -32,7 +32,7 @@ export default async function GuichetsDirectoryPage() {
   });
 
   return (
-    <section className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+    <section className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <div className="flex flex-col gap-2">
         <Link
           href="/rendez-vous"

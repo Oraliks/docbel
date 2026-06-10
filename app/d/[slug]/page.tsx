@@ -179,11 +179,9 @@ export default async function BundleRoute({
     ? [...applicableSlugs, ...triggeredSlugs]
     : null;
 
-  // max-w-5xl (1024px) au lieu du max-w-3xl (768px) historique : le 3xl
-  // était pensé pour un long formulaire vertical, mais le BundleRunner
-  // affiche des cartes (parcours + documents + pré-qualification) qui
-  // respirent mieux à ~1024px. Sur écran large l'ancien était à ~50% de la
-  // fenêtre, ce qui donnait l'impression d'une page « collée au centre ».
+  // Pleine largeur : la page remplit le shell public (max-w-[1840px]) comme
+  // /mon-dossier — le BundleRunner (cartes parcours/documents) occupe toute la
+  // largeur disponible plutôt que d'être « collé au centre ».
   // Issuer principal du dossier — affiché dans le breadcrumb pour donner
   // un repère à l'utilisateur ("Accueil > Mon dossier > ONEM"). On le
   // dérive du premier PdfForm du bundle (typiquement tous du même
@@ -191,7 +189,7 @@ export default async function BundleRoute({
   const dossierIssuer = bundle.items.find((it) => it.pdfForm?.issuer)?.pdfForm?.issuer ?? "Documents";
 
   return (
-    <div className="container max-w-5xl mx-auto py-6 px-4 lg:px-6">
+    <div className="w-full">
       {/*
         Breadcrumb : repère de navigation cohérent avec /document/[slug]
         (cf. components/pdf-forms/document-page-layout.tsx). Sert aux gens

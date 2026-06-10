@@ -104,7 +104,7 @@ export default async function PdfFormPage({
   if (res.kind === "missing") notFound();
   if (res.kind === "disabled") {
     return (
-      <div className="mx-auto w-full max-w-5xl p-4 lg:p-6">
+      <div className="w-full">
         <DisabledFormView formTitle={res.title} customMessage={res.disabledMessage} />
       </div>
     );

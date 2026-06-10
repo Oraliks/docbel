@@ -54,7 +54,7 @@ export default async function TenantBookingPage({
   // plutôt que le formulaire. La réservation reste impossible (APIs gardées).
   if (!tenant.active) {
     return (
-      <section className="mx-auto w-full max-w-6xl">
+      <section className="w-full">
         <BookingUnavailable variant="soon" tenantName={tenant.name} />
       </section>
     );

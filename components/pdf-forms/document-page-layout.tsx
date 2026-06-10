@@ -55,10 +55,10 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
   }, [form.title]);
 
   return (
-    // max-w-5xl (1024px) — cohérent avec /d/[slug]. Sans contrainte, la page
-    // héritait du max-w-[1840px] du layout public, ce qui étalait beaucoup
-    // trop le formulaire (~1700px utile pour une grille 2 colonnes).
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    // Pleine largeur : le formulaire remplit le shell public (max-w-[1840px])
+    // comme le reste du front. La grille 2 colonnes (formulaire + résumé live)
+    // occupe donc toute la largeur disponible — choix d'uniformité assumé.
+    <div className="flex w-full flex-col gap-6">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1 text-xs text-[color:var(--glass-ink-soft)]" aria-label="Fil d'Ariane">
         <Link href="/" className="hover:underline">Accueil</Link>

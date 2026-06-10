@@ -134,9 +134,22 @@ doit s'adapter, sinon il est collé aux bords (effet « formaté sans CSS ») :
 - **Aligner** des paires label/valeur : grille 2 colonnes
   (`grid grid-cols-[7rem_1fr]` + `dt`/`dd`), pas une suite de `flex` à largeurs
   variables (sinon les valeurs ne s'alignent pas).
-- Pages : le back-office occupe **toute la largeur** (cf. « Ne pas faire » :
-  `flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6`, jamais de `max-w-*` étroit sur le
-  conteneur de page) ; remplir via grilles multi-colonnes, pas une colonne centrée.
+- Pages (back-office) : le back-office occupe **toute la largeur** (cf. « Ne pas
+  faire » : `flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6`, jamais de `max-w-*`
+  étroit sur le conteneur de page) ; remplir via grilles multi-colonnes, pas une
+  colonne centrée.
+- Pages (front public « glass ») : le front vit **déjà** dans le shell centré
+  `max-w-[1840px]` + padding posé par
+  [`app-layout-client.tsx`](components/docbel/app-layout-client.tsx). Une nouvelle
+  page front NE re-pose **jamais** de `max-w-*` / `container` / `mx-auto` sur son
+  **conteneur racine** → sinon effet « collé au centre » incohérent avec le reste
+  (modèle correct : `/mon-dossier`, qui remplit tout le shell). Patron racine :
+  `<section className="flex w-full flex-col gap-6">` (ou `gap-8`, cf.
+  `/mon-dossier`). Les `max-w-*` ne sont tolérés QUE sur un **élément de texte**
+  (`<p>`/`<h*>`, pour la mesure de lecture) ou un **empty-state centré** (« bientôt
+  disponible », accès restreint, page d'erreur). **Exception assumée** : l'auth
+  (`login` / `inscription*` / `mot-de-passe-*`) reste volontairement
+  centrée-étroite (écrans split).
 
 **Avant de livrer une modale / sheet / page** : vérifier au navigateur (desktop
 large) que rien n'est collé aux bords ni coincé dans une colonne centrée étroite.

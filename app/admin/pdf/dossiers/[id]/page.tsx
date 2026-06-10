@@ -7,6 +7,9 @@ import {
   type BundleEditorItem,
 } from "@/components/admin/documents/bundle-editor";
 import type { BundleCondition } from "@/lib/bundles/conditions";
+import { parseEligibilityQuestions } from "@/lib/bundles/eligibility";
+import { getDossier } from "@/lib/dossiers/registry";
+import { dossierQuestionsToEligibility } from "@/lib/dossiers/types";
 import type { PdfFormField } from "@/lib/pdf-forms/types";
 
 export const dynamic = "force-dynamic";
@@ -82,6 +85,19 @@ export default async function EditBundlePage({
       : null,
   }));
 
+  // Si un dossier code-driven (DossierDefinition) existe pour ce slug ET que
+  // le champ DB `eligibilityQuestions` est vide, on pré-remplit l'éditeur
+  // avec les questions venues du code. L'admin voit ainsi le questionnaire
+  // réellement servi à l'utilisateur sur /d/<slug> (qui priorise le code).
+  // L'admin peut ensuite éditer / sauvegarder pour figer la version DB —
+  // le runtime continue à prendre le code en priorité si dossier existe.
+  const existingQuestions = parseEligibilityQuestions(bundle.eligibilityQuestions);
+  const codeDossier = getDossier(bundle.slug);
+  const effectiveEligibilityQuestions =
+    existingQuestions.length === 0 && codeDossier
+      ? dossierQuestionsToEligibility(codeDossier.questions)
+      : bundle.eligibilityQuestions;
+
   const initial: BundleEditorData = {
     id: bundle.id,
     slug: bundle.slug,
@@ -93,7 +109,7 @@ export default async function EditBundlePage({
     lifeEventCategory: bundle.lifeEventCategory,
     showOnOnboarding: bundle.showOnOnboarding,
     vocabularyTags: bundle.vocabularyTags,
-    eligibilityQuestions: bundle.eligibilityQuestions,
+    eligibilityQuestions: effectiveEligibilityQuestions,
     warnings: bundle.warnings,
     items,
   };

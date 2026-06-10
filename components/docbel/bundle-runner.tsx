@@ -206,13 +206,31 @@ export function BundleRunner({
     const ok = await confirm({
       title: "Recommencer ce parcours ?",
       description:
-        "Votre progression actuelle sera réinitialisée. Les documents déjà générés et téléchargés ne sont pas affectés.",
+        "Votre progression actuelle sera effacée (réponses au questionnaire + documents en cours). Les documents déjà téléchargés restent sur votre appareil.",
       confirmText: "Recommencer",
       destructive: true,
     });
     if (!ok || !runId) return;
     try {
+      // Abandonne le run côté serveur (status=abandoned). Le prochain rendu
+      // ne trouvera plus de run in_progress et démarrera un parcours vierge.
+      const res = await fetch(`/api/bundles/runs/${encodeURIComponent(runId)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok && res.status !== 404) {
+        toast.error("Impossible de réinitialiser le parcours");
+        return;
+      }
+      // Reset client : on perd la référence au run abandonné, on vide les
+      // réponses préliminaires affichées et on rafraîchit pour repartir
+      // d'une feuille blanche côté SSR.
+      setRunId(null);
+      setResumeCode(null);
+      setResumeCodeExpiresAt(null);
+      setEligibilityAnswers({});
+      setEditingEligibility(false);
       router.refresh();
+      toast.success("Parcours réinitialisé");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur");
     }

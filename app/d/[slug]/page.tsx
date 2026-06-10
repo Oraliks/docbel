@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { headers, cookies } from "next/headers";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { BundleRunner } from "@/components/docbel/bundle-runner";
@@ -183,8 +184,33 @@ export default async function BundleRoute({
   // affiche des cartes (parcours + documents + pré-qualification) qui
   // respirent mieux à ~1024px. Sur écran large l'ancien était à ~50% de la
   // fenêtre, ce qui donnait l'impression d'une page « collée au centre ».
+  // Issuer principal du dossier — affiché dans le breadcrumb pour donner
+  // un repère à l'utilisateur ("Accueil > Mon dossier > ONEM"). On le
+  // dérive du premier PdfForm du bundle (typiquement tous du même
+  // organisme). Fallback "Documents" si non disponible.
+  const dossierIssuer = bundle.items.find((it) => it.pdfForm?.issuer)?.pdfForm?.issuer ?? "Documents";
+
   return (
     <div className="container max-w-5xl mx-auto py-6 px-4 lg:px-6">
+      {/*
+        Breadcrumb : repère de navigation cohérent avec /document/[slug]
+        (cf. components/pdf-forms/document-page-layout.tsx). Sert aux gens
+        qui arrivent depuis un email de reprise et veulent comprendre où
+        ils sont.
+      */}
+      <nav
+        className="mb-4 flex items-center gap-1 text-xs text-[color:var(--glass-ink-soft)]"
+        aria-label="Fil d'Ariane"
+      >
+        <Link href="/" className="hover:underline">Accueil</Link>
+        <span aria-hidden>›</span>
+        <Link href="/creer-ma-demande" className="hover:underline">Mes démarches</Link>
+        <span aria-hidden>›</span>
+        <span>{dossierIssuer}</span>
+        <span aria-hidden>›</span>
+        <span className="truncate text-[color:var(--glass-ink)]">{bundle.name}</span>
+      </nav>
+
       <BundleRunner
         bundle={serializedBundle}
         runId={run?.id ?? null}

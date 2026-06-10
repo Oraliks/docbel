@@ -332,25 +332,7 @@ export function MonDossierClient({ bundles }: Props) {
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-        {/* ═════════ COLONNE GAUCHE — Assistant guidé ═════════ */}
-        <section
-          className="outils-rise flex flex-col gap-4"
-          style={{ animationDelay: "0ms" }}
-        >
-          <div className="flex flex-col gap-1.5 px-1">
-            <h2 className="glass-display text-[24px] font-semibold leading-tight">
-              Trouver le bon dossier
-            </h2>
-            <p className="text-[13px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
-              Répondez à quelques questions simples. Nous vous orientons vers le
-              dossier le plus adapté.
-            </p>
-          </div>
-
-          <DossierWizard situations={WIZARD_SITUATIONS} />
-        </section>
-
-        {/* ═════════ COLONNE DROITE — Accès direct ═════════ */}
+                {/* ═════════ COLONNE DROITE — Accès direct ═════════ */}
         <section
           className="glass-surface outils-rise flex flex-col gap-4 p-7"
           style={{ animationDelay: "80ms" }}

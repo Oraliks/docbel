@@ -6,7 +6,9 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+// `Select` (the Root wrapper) is defined further down — after `SelectItem` —
+// because it derives Base UI's `items` value→label mapping from the rendered
+// <SelectItem> children (see the comment on that wrapper).
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -141,6 +143,63 @@ function SelectItem({
         <CheckIcon className="pointer-events-none" />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
+  )
+}
+
+/**
+ * Base UI's <Select.Value> shows the raw selected `value` (e.g. "__none__")
+ * unless the Root knows the value→label mapping via its `items` prop — and,
+ * unlike Radix, Base UI does NOT capture that mapping from the rendered
+ * <SelectItem>s automatically. After the Radix→Base UI migration this made every
+ * *closed* trigger display its raw code instead of the human label.
+ *
+ * We restore the previous behaviour for the whole app by deriving `items` from
+ * the <SelectItem> descendants whenever the caller hasn't passed an explicit
+ * `items`, so call sites stay ergonomic: `<SelectItem value="x">Label</SelectItem>`.
+ * Recurses through groups / fragments / `.map(...)` so dynamic option lists work.
+ */
+function collectSelectItems(
+  node: React.ReactNode,
+  out: Array<{ value: unknown; label: React.ReactNode }>,
+): void {
+  React.Children.forEach(node, (child) => {
+    if (!React.isValidElement(child)) return
+    // React 19 types `element.props` as `unknown`.
+    const childProps = child.props as {
+      value?: unknown
+      children?: React.ReactNode
+    }
+    if (child.type === SelectItem) {
+      if (childProps.value !== undefined) {
+        out.push({ value: childProps.value, label: childProps.children })
+      }
+      return
+    }
+    if (childProps.children != null) collectSelectItems(childProps.children, out)
+  })
+}
+
+function Select<Value, Multiple extends boolean | undefined = false>({
+  items,
+  children,
+  ...props
+}: SelectPrimitive.Root.Props<Value, Multiple>) {
+  const derivedItems = React.useMemo(() => {
+    if (items !== undefined) return items
+    const out: Array<{ value: unknown; label: React.ReactNode }> = []
+    collectSelectItems(children, out)
+    return out.length > 0 ? out : undefined
+  }, [items, children])
+
+  return (
+    <SelectPrimitive.Root
+      items={
+        derivedItems as SelectPrimitive.Root.Props<Value, Multiple>["items"]
+      }
+      {...props}
+    >
+      {children}
+    </SelectPrimitive.Root>
   )
 }
 

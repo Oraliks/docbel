@@ -131,6 +131,14 @@ doit s'adapter, sinon il est collé aux bords (effet « formaté sans CSS ») :
   Modèle correct : `BookingDetail` dans `components/booking/agenda-client.tsx`.
 - **Élargir** un `*Content` exige le préfixe `sm:` (`sm:max-w-2xl`), sinon le défaut
   responsive (dialog `sm:max-w-lg`, sheet `sm:max-w-md`) le recoiffe à ≥640px.
+- **`Select`** (`components/ui/select.tsx`) est bâti sur **Base UI**, pas Radix :
+  `<Select.Value/>` n'affiche le **label** de l'option choisie que si la `Root`
+  connaît le mapping valeur→label (prop `items`). Le wrapper `Select` du repo
+  **dérive ce mapping automatiquement** depuis les `<SelectItem>` enfants → garder
+  ce wrapper (ne PAS le réduire à `SelectPrimitive.Root` nu, sinon le trigger
+  réaffiche le code brut, ex. `__none__`). Continuer à écrire
+  `<SelectItem value="code">Label</SelectItem>` ; le placeholder reste géré par
+  `<SelectValue placeholder=…/>` quand aucune valeur n'est sélectionnée.
 - **Aligner** des paires label/valeur : grille 2 colonnes
   (`grid grid-cols-[7rem_1fr]` + `dt`/`dd`), pas une suite de `flex` à largeurs
   variables (sinon les valeurs ne s'alignent pas).

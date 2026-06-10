@@ -1240,7 +1240,11 @@ export const C1_QUESTIONS: PdfFormField[] = [
   },
   {
     id: "signature",
-    pdfFieldName: "",
+    // Widget texte « Signature » ajouté au PDF par
+    // scripts/add-c1-signature-widget.ts (page 2, rect x=350,y=40,w=200,h=50).
+    // Le filler localise le rectangle via `technicalSchema` puis y dessine un
+    // bloc « façon Adobe » (nom + mention « Signé par » + horodatage ISO).
+    pdfFieldName: "Signature",
     type: "signature",
     required: true,
     label: { fr: "Signature électronique", nl: "", de: "" },

@@ -62,6 +62,7 @@ export default async function HomePage() {
           title: true,
           excerpt: true,
           publishedAt: true,
+          createdAt: true,
           color: true,
           readingTime: true,
           featured: true,
@@ -88,9 +89,11 @@ export default async function HomePage() {
     tag: article.category,
     title: article.title,
     desc: article.excerpt,
-    date: article.publishedAt
-      ? formatFrenchDate(article.publishedAt.toISOString())
-      : "",
+    // publishedAt si dispo, sinon createdAt → une date réelle s'affiche toujours
+    // dans le hero/listing (un article publié sans publishedAt reste daté).
+    date: formatFrenchDate(
+      (article.publishedAt ?? article.createdAt).toISOString(),
+    ),
     color: article.color,
     readingTime: article.readingTime ?? undefined,
     popular: article.featured,

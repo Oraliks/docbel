@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import type { NewsItem } from "@/lib/docbel-data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRightIcon, CalculatorIcon, FolderOpenIcon, TrendingUpIcon } from "lucide-react";
-import { Buildings, CalendarBlank, Phone, Scales } from "@phosphor-icons/react";
+import { CalendarBlank, Phone, Scales } from "@phosphor-icons/react";
 
 interface LandingHeroProps {
   article: NewsItem | null;
@@ -28,25 +28,44 @@ function formatHeadline(title: string) {
   );
 }
 
-// Bulles d'icônes flottantes (glassmorphism + glow néon), façon hero maquette.
-// Icônes Phosphor (duotone) — rendu plus riche que le mono-trait pour le décor.
+// Bulles d'icônes flottantes (glassmorphism + glow néon) — accents discrets
+// posés dans les coins libres, autour des illustrations 3D. Phosphor (duotone).
 const HERO_BUBBLES: {
   Icon: typeof Scales;
   hue: string;
   cls: string;
   delay: string;
 }[] = [
-  { Icon: Scales, hue: "#FF7A7A", cls: "left-[5%] top-[13%]", delay: "0s" },
-  { Icon: Phone, hue: "#FF5FA2", cls: "right-[7%] top-[7%]", delay: "1s" },
-  { Icon: Buildings, hue: "#8B5CF6", cls: "left-[3%] bottom-[15%]", delay: "2s" },
-  { Icon: CalendarBlank, hue: "#C084FC", cls: "right-[6%] bottom-[10%]", delay: "1.5s" },
+  { Icon: Scales, hue: "#FF7A7A", cls: "left-[6%] top-[12%]", delay: "0s" },
+  { Icon: Phone, hue: "#FF5FA2", cls: "right-[7%] bottom-[14%]", delay: "1.6s" },
 ];
 
+// Satellites 3D qui gravitent autour de l'illustration principale. Assets CC0
+// (Fluent Emoji) de public/3d/ ; chacun flotte avec un délai propre → parallaxe
+// douce. Coins opposés aux bulles pour équilibrer la composition.
+const HERO_SATELLITES: {
+  src: string;
+  cls: string;
+  size: number;
+  delay: string;
+}[] = [
+  { src: "/3d/compass.png", cls: "right-[5%] top-[9%]", size: 70, delay: "1.1s" },
+  { src: "/3d/folder.png", cls: "left-[4%] bottom-[9%]", size: 64, delay: "2.3s" },
+];
+
+// Glow violet partagé par les illustrations 3D (drop-shadow porté + halo mauve)
+// pour les harmoniser au thème (cf. AGENTS.md › Design).
+const ASSET_GLOW =
+  "drop-shadow(0 14px 22px rgba(20,10,45,0.45)) drop-shadow(0 0 20px color-mix(in oklab, var(--glass-accent-deep) 55%, transparent))";
+
 /**
- * Illustration du hero — reproduction « différente » de la maquette dark :
- * pile de cartes en verre dépoli (document/dossier abstrait) + halo lumineux
- * + bulles d'icônes flottantes glassmorphism qui glow. Aucun asset 3D requis ;
- * tout est en CSS + icônes Phosphor → s'adapte clair/sombre via les tokens.
+ * Illustration animée du hero : illustrations 3D (assets CC0 Fluent Emoji) en
+ * lévitation — un dossier/livre central entouré de satellites (boussole,
+ * dossier) — sur un anneau orbital qui tourne lentement + halo qui respire +
+ * bulles d'icônes en verre. Tout est piloté par des keyframes CSS gardées par
+ * `prefers-reduced-motion` (hero-float / hero-spin / hero-breath) : l'animation
+ * se coupe d'elle-même pour les utilisateurs qui la refusent. S'adapte
+ * clair/sombre via les tokens `--glass-*`.
  */
 function FeaturedArtwork() {
   return (
@@ -67,19 +86,47 @@ function FeaturedArtwork() {
         }}
       />
 
-      {/* Illustration 3D (livre) — asset CC0 Fluent Emoji ; drop-shadow violet
-          pour l'harmoniser au thème mauve (cf. AGENTS.md › Design). */}
+      {/* Anneau orbital — conic-gradient masqué en fin liseré, rotation lente. */}
+      <div
+        className="hero-spin absolute top-1/2 left-1/2 size-[230px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          background:
+            "conic-gradient(from 0deg, transparent 0deg, color-mix(in oklab, var(--glass-accent-deep) 50%, transparent) 60deg, transparent 130deg, color-mix(in oklab, var(--glass-accent-c) 45%, transparent) 220deg, transparent 320deg)",
+          maskImage:
+            "radial-gradient(closest-side, transparent 71%, #000 73%, #000 79%, transparent 81%)",
+          WebkitMaskImage:
+            "radial-gradient(closest-side, transparent 71%, #000 73%, #000 79%, transparent 81%)",
+          opacity: 0.75,
+        }}
+      />
+
+      {/* Illustration 3D centrale (livre/dossier) — flotte au-dessus de l'anneau. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/3d/book.png"
         alt=""
         aria-hidden
-        className="relative h-[160px] w-[160px] object-contain"
-        style={{
-          filter:
-            "drop-shadow(0 18px 28px rgba(20,10,45,0.5)) drop-shadow(0 0 26px color-mix(in oklab, var(--glass-accent-deep) 60%, transparent))",
-        }}
+        className="hero-float relative z-10 h-[150px] w-[150px] object-contain"
+        style={{ filter: ASSET_GLOW }}
       />
+
+      {/* Satellites 3D en lévitation (parallaxe via délais d'animation). */}
+      {HERO_SATELLITES.map(({ src, cls, size, delay }) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key={src}
+          src={src}
+          alt=""
+          aria-hidden
+          className={`hero-float absolute z-10 ${cls} object-contain`}
+          style={{
+            height: size,
+            width: size,
+            animationDelay: delay,
+            filter: ASSET_GLOW,
+          }}
+        />
+      ))}
 
       {/* Bulles d'icônes flottantes (glassmorphism + glow néon). */}
       {HERO_BUBBLES.map(({ Icon, hue, cls, delay }) => (
@@ -103,10 +150,10 @@ function FeaturedArticle({ article }: { article: NewsItem }) {
   return (
     <article className="glass-surface relative flex min-h-[340px] flex-col gap-7 overflow-hidden p-7 sm:p-9">
       {/*
-        Masthead — tag (gauche) + référence éditoriale (droite) posés sur une
-        vraie ligne d'en-tête séparée par un filet. Remplace le label VOL.
-        absolument positionné (top-9 right-10) qui chevauchait le titre et
-        l'artwork sous le breakpoint lg. Donne une hiérarchie de "une".
+        Masthead — tag (gauche) + date de publication RÉELLE (droite) posés sur
+        une vraie ligne d'en-tête séparée par un filet. La date vient de
+        `article.publishedAt` (cf. app/page.tsx › formatFrenchDate) ; plus de
+        numérotation « VOL./N° » factice. Donne une hiérarchie de "une".
       */}
       <div className="flex items-center justify-between gap-4 border-b border-[color:var(--glass-ink-line)] pb-5">
         <span
@@ -122,9 +169,12 @@ function FeaturedArticle({ article }: { article: NewsItem }) {
           />
           {article.tag}
         </span>
-        <span className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)] sm:text-[11px]">
-          VOL. III · N°12 · {article.date}
-        </span>
+        {article.date && (
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)] sm:text-[11px]">
+            <CalendarBlank size={13} weight="bold" aria-hidden />
+            {article.date}
+          </span>
+        )}
       </div>
 
       <div className="grid gap-9 lg:grid-cols-[1.2fr_1fr] lg:items-center">

@@ -362,11 +362,22 @@
   animation: hero-float 5s ease-in-out infinite;
 }
 
+/* Anneau orbital du hero — rotation très lente (pur décor). Le translate est
+   répété dans la keyframe pour rester centré pendant la rotation. */
+@keyframes hero-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+.hero-spin {
+  animation: hero-spin 32s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .outils-rise,
   .animate-heart-pop,
   .animate-soft-sheen,
-  .hero-float {
+  .hero-float,
+  .hero-spin {
     animation: none;
   }
   .search-glow {

@@ -21,6 +21,7 @@ import {
 import {
   Building2Icon,
   FileTextIcon,
+  FolderOpenIcon,
   HomeIcon,
   NewspaperIcon,
   PhoneIcon,
@@ -35,6 +36,7 @@ interface LandingCommandPaletteProps {
 
 const QUICK_LINKS = [
   { icon: HomeIcon, label: "Accueil", href: "/", shortcut: "H" },
+  { icon: FolderOpenIcon, label: "Mon dossier", href: "/mon-dossier", shortcut: "D" },
   { icon: WrenchIcon, label: "Tous les outils", href: "/outils", shortcut: "O" },
   { icon: NewspaperIcon, label: "Actualités", href: "/actualites", shortcut: "A" },
   { icon: PhoneIcon, label: "Contact", href: "/contact", shortcut: "C" },

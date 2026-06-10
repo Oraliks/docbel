@@ -35,6 +35,15 @@ describe("registre des dossiers", () => {
   it("listDossiers contient au moins le chômage temporaire", () => {
     expect(listDossiers().map((d) => d.slug)).toContain("chomage-temporaire");
   });
+  it("les slugs de documents sont uniques entre dossiers codés", () => {
+    const seen = new Map<string, string>();
+    for (const dossier of listDossiers()) {
+      for (const doc of dossier.documents) {
+        expect(seen.get(doc.slug), `document slug dupliqué: ${doc.slug}`).toBeUndefined();
+        seen.set(doc.slug, dossier.slug);
+      }
+    }
+  });
 });
 
 describe("chômage temporaire — 11 motifs officiels", () => {

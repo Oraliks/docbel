@@ -6,19 +6,14 @@ import { useRouter } from "next/navigation";
 import {
   ArrowRightIcon,
   BookmarkSimpleIcon,
-  BriefcaseIcon,
   ClockIcon,
-  DotsThreeIcon,
-  GraduationCapIcon,
-  MagnifyingGlassIcon,
-  PersonSimpleIcon,
   StackIcon,
-  WheelchairIcon,
-  type Icon as PhosphorIcon,
 } from "@phosphor-icons/react";
 import { LayoutGridIcon, ListIcon, SearchIcon, XIcon } from "lucide-react";
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
+import { DossierWizard } from "@/components/docbel/onboarding/dossier-wizard";
 import { LIFE_EVENT_CATEGORIES } from "@/lib/bundles/types";
+import { WIZARD_SITUATIONS } from "@/lib/dossier-wizard/config";
 
 export interface MonDossierBundle {
   slug: string;
@@ -220,28 +215,10 @@ const SORT_PILLS: { id: Sort; label: string }[] = [
   { id: "recents", label: "Récents" },
 ];
 
-interface SituationOption {
-  id: string;
-  label: string;
-  Icon: PhosphorIcon;
-}
-
-const SITUATIONS: SituationOption[] = [
-  { id: "travail", label: "Je travaille", Icon: BriefcaseIcon },
-  { id: "recherche", label: "Je recherche un emploi", Icon: MagnifyingGlassIcon },
-  { id: "etudiant", label: "Je suis étudiant ou apprenti", Icon: GraduationCapIcon },
-  { id: "retraite", label: "Je suis retraité", Icon: PersonSimpleIcon },
-  { id: "handicap", label: "Je suis en situation de handicap", Icon: WheelchairIcon },
-  { id: "autre", label: "Autre situation", Icon: DotsThreeIcon },
-];
-
-const STEPS = ["Votre situation", "Vos besoins", "Affinons", "Résultat"];
-
 export function MonDossierClient({ bundles }: Props) {
   const router = useRouter();
   const { isBookmarked, toggleBookmark } = useDossierBookmarks();
 
-  const [situation, setSituation] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("populaires");
   const [listView, setListView] = useState(false);
@@ -357,10 +334,10 @@ export function MonDossierClient({ bundles }: Props) {
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
         {/* ═════════ COLONNE GAUCHE — Assistant guidé ═════════ */}
         <section
-          className="glass-surface outils-rise flex flex-col gap-5 p-7"
+          className="outils-rise flex flex-col gap-4"
           style={{ animationDelay: "0ms" }}
         >
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5 px-1">
             <h2 className="glass-display text-[24px] font-semibold leading-tight">
               Trouver le bon dossier
             </h2>
@@ -370,103 +347,7 @@ export function MonDossierClient({ bundles }: Props) {
             </p>
           </div>
 
-          {/* Stepper 4 étapes */}
-          <ol className="flex items-center gap-1.5" aria-label="Progression du guide">
-            {STEPS.map((label, i) => {
-              const active = i === 0;
-              return (
-                <li key={label} className="flex flex-1 items-center gap-1.5">
-                  <span className="flex flex-col items-center gap-1.5">
-                    <span
-                      className={`flex size-7 items-center justify-center rounded-full text-[12px] font-bold transition ${
-                        active
-                          ? "bg-[color:var(--glass-accent-deep)] text-white shadow-[0_0_16px_color-mix(in_oklab,var(--glass-accent-deep)_55%,transparent)]"
-                          : "border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-faint)]"
-                      }`}
-                      aria-current={active ? "step" : undefined}
-                    >
-                      {i + 1}
-                    </span>
-                    <span
-                      className={`text-center text-[9.5px] font-semibold leading-tight ${
-                        active
-                          ? "text-[color:var(--glass-ink)]"
-                          : "text-[color:var(--glass-ink-faint)]"
-                      }`}
-                    >
-                      {label}
-                    </span>
-                  </span>
-                  {i < STEPS.length - 1 ? (
-                    <span
-                      className="mb-5 h-[2px] flex-1 rounded-full"
-                      style={{ background: "var(--glass-ink-line)" }}
-                      aria-hidden
-                    />
-                  ) : null}
-                </li>
-              );
-            })}
-          </ol>
-
-          {/* Sélection de situation */}
-          <div className="flex flex-col gap-2.5">
-            <p className="text-[13.5px] font-semibold text-[color:var(--glass-ink)]">
-              Quelle est votre situation principale ?
-            </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {SITUATIONS.map((opt) => {
-                const selected = situation === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setSituation(selected ? null : opt.id)}
-                    aria-pressed={selected}
-                    className="glass-interactive group flex flex-col items-center gap-2 rounded-2xl border p-3 text-center"
-                    style={{
-                      borderColor: selected
-                        ? "var(--glass-accent-deep)"
-                        : "var(--glass-border)",
-                      background: selected
-                        ? "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)"
-                        : "var(--glass-surface)",
-                    }}
-                  >
-                    <span
-                      className="glass-icon-tile flex size-9 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-[1.06] group-hover:-translate-y-px motion-reduce:transform-none"
-                      style={{
-                        background:
-                          "color-mix(in oklab, var(--glass-accent-deep) 16%, transparent)",
-                        color: "var(--glass-accent-deep)",
-                      }}
-                    >
-                      <opt.Icon size={18} weight="duotone" />
-                    </span>
-                    <span className="text-[11.5px] font-semibold leading-tight text-[color:var(--glass-ink)]">
-                      {opt.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* CTA + durée */}
-          <div className="mt-auto flex flex-col gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => router.push("/creer-ma-demande")}
-              className="glass-cta inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[14px] font-bold"
-            >
-              Commencer le guide
-              <ArrowRightIcon size={17} weight="bold" />
-            </button>
-            <p className="inline-flex items-center justify-center gap-1.5 text-[11.5px] text-[color:var(--glass-ink-faint)]">
-              <ClockIcon className="size-3.5" />
-              2 minutes
-            </p>
-          </div>
+          <DossierWizard situations={WIZARD_SITUATIONS} />
         </section>
 
         {/* ═════════ COLONNE DROITE — Accès direct ═════════ */}

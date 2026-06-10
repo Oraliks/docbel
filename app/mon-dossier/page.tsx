@@ -16,21 +16,32 @@ export default async function MonDossierPage() {
   const bundles = await prisma.documentBundle
     .findMany({
       where: { active: true },
-      orderBy: [{ order: "asc" }, { name: "asc" }],
-      include: { items: { select: { id: true } } },
+      orderBy: [{ showOnOnboarding: "desc" }, { order: "asc" }, { name: "asc" }],
+      take: 100,
+      select: {
+        slug: true,
+        name: true,
+        description: true,
+        color: true,
+        icon: true,
+        lifeEventCategory: true,
+        createdAt: true,
+        showOnOnboarding: true,
+        items: { select: { id: true } },
+      },
     })
     .catch(() => []);
 
-  const serializable: MonDossierBundle[] = bundles.map((b) => ({
-    slug: b.slug,
-    name: b.name,
-    description: b.description,
-    color: b.color,
-    icon: b.icon,
-    lifeEventCategory: b.lifeEventCategory,
-    itemCount: b.items.length,
-    createdAt: b.createdAt ? b.createdAt.toISOString() : null,
-    popular: b.showOnOnboarding,
+  const serializable: MonDossierBundle[] = bundles.map((bundle) => ({
+    slug: bundle.slug,
+    name: bundle.name,
+    description: bundle.description,
+    color: bundle.color,
+    icon: bundle.icon,
+    lifeEventCategory: bundle.lifeEventCategory,
+    itemCount: bundle.items.length,
+    createdAt: bundle.createdAt ? bundle.createdAt.toISOString() : null,
+    popular: bundle.showOnOnboarding,
   }));
 
   return <MonDossierClient bundles={serializable} />;

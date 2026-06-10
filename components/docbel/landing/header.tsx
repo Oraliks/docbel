@@ -54,6 +54,7 @@ const NAV_ITEMS: ReadonlyArray<{
   icon?: LucideIcon;
 }> = [
   { id: "accueil", label: "Accueil", href: "/" },
+  { id: "mon-dossier", label: "Mon dossier", href: "/mon-dossier" },
   { id: "actualites", label: "Actualités", href: "/actualites" },
   { id: "outils", label: "Outils", href: "/outils" },
   { id: "aide", label: "Aidez-moi", href: "/contact", icon: LifeBuoyIcon },
@@ -289,7 +290,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         type="button"
         onClick={onSearchOpen}
         aria-label="Rechercher"
-        className="ml-auto hidden min-w-[280px] items-center gap-2.5 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2.5 text-[13px] text-[color:var(--glass-ink-soft)] transition-colors hover:bg-white/55 dark:hover:bg-white/8 md:flex"
+        className="ml-auto hidden min-w-[280px] items-center gap-2.5 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2.5 text-[13px] text-[color:var(--glass-ink-soft)] transition-colors hover:bg-white/55 dark:hover:bg-white/8 2xl:flex"
       >
         <SearchIcon className="size-4" />
         <span className="truncate">Rechercher un outil, un guide, une loi…</span>
@@ -303,7 +304,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         size="icon-sm"
         onClick={onSearchOpen}
         aria-label="Rechercher"
-        className="ml-auto size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10 md:hidden"
+        className="ml-auto size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10 2xl:hidden"
       >
         <SearchIcon />
       </Button>

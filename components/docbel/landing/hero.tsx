@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { NewsItem } from "@/lib/docbel-data";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRightIcon, CalculatorIcon, TrendingUpIcon } from "lucide-react";
+import { ArrowRightIcon, CalculatorIcon, FolderOpenIcon, TrendingUpIcon } from "lucide-react";
 import { Buildings, CalendarBlank, Phone, Scales } from "@phosphor-icons/react";
 
 interface LandingHeroProps {
@@ -138,10 +138,23 @@ function FeaturedArticle({ article }: { article: NewsItem }) {
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-2.5">
+            {/* CTA primaire : mène vers le wizard d'orientation. Le hero
+                porte les démarches grand public — c'est l'action n°1 du
+                site, plus prioritaire que la lecture d'un article ou un
+                calcul ponctuel. */}
+            <button
+              type="button"
+              onClick={() => router.push("/mon-dossier")}
+              className="glass-cta inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13.5px] font-bold"
+            >
+              <FolderOpenIcon className="size-4" />
+              Créer mon dossier
+              <ArrowRightIcon className="size-4" />
+            </button>
             <button
               type="button"
               onClick={() => article.slug && router.push(`/actualites/${article.slug}`)}
-              className="glass-cta inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13.5px] font-bold"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-3 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10 dark:border-[color:var(--glass-accent-deep)]/40 dark:hover:shadow-[0_0_18px_rgba(139,92,246,0.3)]"
             >
               Lire l&apos;article
               <ArrowRightIcon className="size-4" />

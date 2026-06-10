@@ -578,6 +578,16 @@ body,
   height: 100%;
 }
 
+/* Belt-and-braces: clip any stray horizontal overflow at the document root
+   so a wide element (e.g. an artwork with absolute decorations) can never
+   make the whole page scroll sideways on mobile. `clip` is preferred over
+   `hidden` because it doesn't create a scroll container, so sticky headers
+   keep working. */
+html,
+body {
+  overflow-x: clip;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -905,6 +915,23 @@ body,
   .hero-breath {
     animation: none;
   }
+}
+
+/* Sonner toaster: on mobile, lift the toast off the screen edges so the
+   rounded corners stay visible (sonner pins it edge-to-edge by default,
+   which makes the sides look like a flat rectangle). */
+[data-sonner-toaster][data-mobile="true"] {
+  left: 12px !important;
+  right: 12px !important;
+  width: auto !important;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+[data-sonner-toaster][data-mobile="true"] [data-sonner-toast] {
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  border-radius: 14px !important;
 }
 
 /* A11y toolbar (page-blocks) */

@@ -314,7 +314,22 @@ export function MonDossierClient({ bundles }: Props) {
   const isEmpty = filtered.length === 0;
 
   return (
-    <section className="flex flex-col gap-8">
+    <section className="relative isolate flex flex-col gap-8">
+      {/* Décor 3D de fond (boussole) — coin haut-droit, estompé, derrière le
+          contenu (-z-10 + isolate), ne capte pas les clics. Remplit le vide en
+          haut à droite et libère de la place dans la carte guide. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/3d/compass.png"
+        alt=""
+        aria-hidden
+        className="hero-float pointer-events-none absolute -top-10 right-0 -z-10 hidden h-[280px] w-[280px] object-contain opacity-50 sm:block lg:-top-16 lg:right-4 lg:h-[360px] lg:w-[360px]"
+        style={{
+          filter:
+            "drop-shadow(0 20px 36px rgba(20,10,45,0.35)) drop-shadow(0 0 50px color-mix(in oklab, var(--glass-accent-deep) 45%, transparent))",
+        }}
+      />
+
       {/* ───────── EN-TÊTE ───────── */}
       <header className="flex flex-col gap-3 px-1">
         <nav
@@ -354,19 +369,6 @@ export function MonDossierClient({ bundles }: Props) {
               dossier le plus adapté.
             </p>
           </div>
-
-          {/* Illustration 3D flottante + glow */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/3d/compass.png"
-            alt=""
-            aria-hidden
-            className="hero-float mx-auto h-[120px] w-[120px] object-contain"
-            style={{
-              filter:
-                "drop-shadow(0 16px 26px rgba(20,10,45,0.4)) drop-shadow(0 0 24px color-mix(in oklab, var(--glass-accent-deep) 55%, transparent))",
-            }}
-          />
 
           {/* Stepper 4 étapes */}
           <ol className="flex items-center gap-1.5" aria-label="Progression du guide">

@@ -59,7 +59,7 @@ export function ResumeForm() {
       }
       const data = (await res.json()) as { bundleSlug: string; bundleName: string };
       toast.success(`Reprise du dossier « ${data.bundleName} »`);
-      router.push(`/outils/bundles/${data.bundleSlug}`);
+      router.push(`/d/${data.bundleSlug}`);
     } catch {
       setError("Erreur réseau. Réessayez.");
     } finally {

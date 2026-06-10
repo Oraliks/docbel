@@ -25,7 +25,7 @@ export function LifeEventCard({
 }: Props) {
   return (
     <Link
-      href={`/outils/bundles/${slug}`}
+      href={`/d/${slug}`}
       className="glass-surface group relative flex flex-col gap-3 rounded-3xl p-5 transition-all hover:translate-y-[-2px] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
     >
       <div className="flex items-start gap-3">

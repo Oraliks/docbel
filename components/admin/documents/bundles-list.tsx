@@ -318,7 +318,7 @@ export function BundlesList({ initialBundles }: Props) {
                           <Button
                             render={
                               <Link
-                                href={`/outils/bundles/${b.slug}`}
+                                href={`/d/${b.slug}`}
                                 target="_blank"
                               />
                             }

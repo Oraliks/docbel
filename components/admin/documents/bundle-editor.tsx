@@ -283,7 +283,7 @@ export function BundleEditor({
           {isEdit && initial?.id && (
             <Button
               render={
-                <Link href={`/outils/bundles/${initial.slug}`} target="_blank" />
+                <Link href={`/d/${initial.slug}`} target="_blank" />
               }
               variant="outline"
               size="sm"
@@ -327,7 +327,7 @@ export function BundleEditor({
                 className="font-mono text-sm"
               />
               <p className="text-[11px] text-muted-foreground">
-                URL publique : <code>/outils/bundles/{formSlug || "<slug>"}</code>
+                URL publique : <code>/d/{formSlug || "<slug>"}</code>
               </p>
             </div>
             <div className="space-y-1.5">

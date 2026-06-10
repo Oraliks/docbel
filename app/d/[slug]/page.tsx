@@ -178,8 +178,13 @@ export default async function BundleRoute({
     ? [...applicableSlugs, ...triggeredSlugs]
     : null;
 
+  // max-w-5xl (1024px) au lieu du max-w-3xl (768px) historique : le 3xl
+  // était pensé pour un long formulaire vertical, mais le BundleRunner
+  // affiche des cartes (parcours + documents + pré-qualification) qui
+  // respirent mieux à ~1024px. Sur écran large l'ancien était à ~50% de la
+  // fenêtre, ce qui donnait l'impression d'une page « collée au centre ».
   return (
-    <div className="container max-w-3xl mx-auto py-6 px-4">
+    <div className="container max-w-5xl mx-auto py-6 px-4 lg:px-6">
       <BundleRunner
         bundle={serializedBundle}
         runId={run?.id ?? null}

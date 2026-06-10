@@ -23,14 +23,56 @@ export interface EligibilityOption {
   verdict: EligibilityVerdict;
 }
 
+/// Condition de visibilité d'une question — sérialisable (pour pouvoir
+/// transiter via JSON DB). Compare la réponse d'une autre question selon
+/// l'opérateur indiqué.
+export interface EligibilityVisibleIf {
+  fieldId: string;
+  op: "equals" | "notEquals" | "in" | "notIn";
+  value: string | number | boolean | Array<string | number>;
+}
+
+/// Évalue une condition visibleIf contre des réponses d'eligibilité (string
+/// uniquement — les réponses booléennes sont stockées comme "true"/"false").
+/// Compare aussi loose : tolère "true" === true et casse différente.
+export function evaluateVisibleIf(
+  cond: EligibilityVisibleIf | undefined,
+  answers: EligibilityAnswers
+): boolean {
+  if (!cond) return true;
+  const ref = answers[cond.fieldId];
+  const match = (v: string | number | boolean): boolean => {
+    if (ref === undefined || ref === "") return false;
+    if (typeof v === "string") return ref === v;
+    if (typeof v === "boolean") return ref === String(v);
+    if (typeof v === "number") return ref === String(v);
+    return false;
+  };
+  switch (cond.op) {
+    case "equals":
+      return match(cond.value as string | number | boolean);
+    case "notEquals":
+      return !match(cond.value as string | number | boolean);
+    case "in":
+      return Array.isArray(cond.value) && cond.value.some((v) => match(v));
+    case "notIn":
+      return Array.isArray(cond.value) && !cond.value.some((v) => match(v));
+  }
+}
+
 export interface EligibilityQuestionBase {
   id: string;
   /// Question affichée au citoyen, en langage simple.
   label: string;
-  /// Aide complémentaire (info-bulle).
+  /// Aide complémentaire (info-bulle). Doit rester en langage simple,
+  /// accessible aux personnes avec difficultés de compréhension ou
+  /// alphabétisation faible.
   helpText?: string;
   /// Référence officielle / lien vers la source.
   helpUrl?: string;
+  /// Visibilité conditionnelle — la question n'est affichée que si la
+  /// condition est vraie. Si absent, toujours visible.
+  visibleIf?: EligibilityVisibleIf;
 }
 
 export interface EligibilityBooleanQuestion extends EligibilityQuestionBase {
@@ -89,10 +131,17 @@ export function evaluateEligibility(
 
   const perQuestion: EligibilityResult["perQuestion"] = [];
   let answered = 0;
+  let total = 0;
   let hasIneligible = false;
   let hasEligible = false;
 
   for (const q of questions) {
+    // Les questions invisibles (visibleIf non satisfait) ne comptent ni dans
+    // le total ni dans le verdict — sinon une question cachée non répondue
+    // empêcherait l'utilisateur de continuer / fausserait le verdict.
+    if (!evaluateVisibleIf(q.visibleIf, answers)) continue;
+    total += 1;
+
     const answer = answers[q.id] ?? null;
     let verdict: EligibilityVerdict | null = null;
 
@@ -117,7 +166,7 @@ export function evaluateEligibility(
   else if (hasEligible) global = "eligible";
   else global = "neutral";
 
-  return { verdict: global, answered, total: questions.length, perQuestion };
+  return { verdict: global, answered, total, perQuestion };
 }
 
 function verdictForAnswer(
@@ -176,6 +225,23 @@ export function verdictMessageFr(verdict: EligibilityResult["verdict"]): {
 // Validation type-safe à l'entrée (sécurise les données JSON venant de la base)
 // ---------------------------------------------------------------------------
 
+function parseVisibleIf(raw: unknown): EligibilityVisibleIf | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.fieldId !== "string") return undefined;
+  if (r.op !== "equals" && r.op !== "notEquals" && r.op !== "in" && r.op !== "notIn") return undefined;
+  const v = r.value;
+  if (
+    typeof v === "string" ||
+    typeof v === "number" ||
+    typeof v === "boolean" ||
+    (Array.isArray(v) && v.every((x) => typeof x === "string" || typeof x === "number"))
+  ) {
+    return { fieldId: r.fieldId, op: r.op, value: v as EligibilityVisibleIf["value"] };
+  }
+  return undefined;
+}
+
 export function parseEligibilityQuestions(input: unknown): EligibilityQuestion[] {
   if (!Array.isArray(input)) return [];
   const out: EligibilityQuestion[] = [];
@@ -183,12 +249,14 @@ export function parseEligibilityQuestions(input: unknown): EligibilityQuestion[]
     if (!raw || typeof raw !== "object") continue;
     const r = raw as Record<string, unknown>;
     if (typeof r.id !== "string" || typeof r.label !== "string") continue;
+    const visibleIf = parseVisibleIf(r.visibleIf);
     if (r.type === "boolean") {
       out.push({
         id: r.id,
         label: r.label,
         helpText: typeof r.helpText === "string" ? r.helpText : undefined,
         helpUrl: typeof r.helpUrl === "string" ? r.helpUrl : undefined,
+        visibleIf,
         type: "boolean",
         verdictTrue: parseVerdict(r.verdictTrue) ?? "neutral",
         verdictFalse: parseVerdict(r.verdictFalse) ?? "neutral",
@@ -211,6 +279,7 @@ export function parseEligibilityQuestions(input: unknown): EligibilityQuestion[]
           label: r.label,
           helpText: typeof r.helpText === "string" ? r.helpText : undefined,
           helpUrl: typeof r.helpUrl === "string" ? r.helpUrl : undefined,
+          visibleIf,
           type: "select",
           options: opts,
         });

@@ -301,88 +301,121 @@ export const chomageTemporaire: DossierDefinition = {
     // ------- Statut & contexte -------
     {
       id: "statut",
-      label: { fr: "Quel est ton statut ?" },
+      label: { fr: "Tu travailles comme…" },
+      helpText: {
+        fr: "Ouvrier = travail manuel (chantier, usine, ménage…). Employé = travail de bureau / administratif. Intérimaire = tu travailles pour une agence d'intérim qui te place chez différents employeurs.",
+      },
       type: "select",
       options: [
-        { value: "ouvrier", label: { fr: "Ouvrier" } },
-        { value: "employe", label: { fr: "Employé" } },
+        { value: "ouvrier", label: { fr: "Ouvrier (travail manuel)" } },
+        { value: "employe", label: { fr: "Employé (bureau / administratif)" } },
         { value: "interimaire", label: { fr: "Intérimaire ou apprenti industriel" } },
       ],
     },
     {
       id: "commissionParitaire",
-      label: { fr: "Travailles-tu dans le secteur de la construction (CP 124) ?" },
+      label: { fr: "Tu travailles dans le secteur du bâtiment / construction ?" },
+      helpText: {
+        fr: "On parle ici de la « Commission paritaire 124 », c'est-à-dire les ouvriers du bâtiment (maçons, peintres, électriciens sur chantier, etc.). Si tu ne sais pas, choisis « Je ne sais pas » — on adaptera.",
+      },
       type: "select",
       options: [
-        { value: "construction", label: { fr: "Oui — Construction (CP 124)" } },
-        { value: "autre", label: { fr: "Non — autre commission paritaire" } },
+        { value: "construction", label: { fr: "Oui — bâtiment / construction" } },
+        { value: "autre", label: { fr: "Non — un autre secteur" } },
         { value: "inconnu", label: { fr: "Je ne sais pas" } },
       ],
     },
     {
       id: "typeChomage",
-      label: { fr: "Quel est ton régime de travail ?" },
+      label: { fr: "Tu travailles habituellement…" },
+      helpText: {
+        fr: "Temps plein = horaire complet (38h/semaine en moyenne). Temps partiel = moins d'heures que ton collègue à temps plein. « Maintien des droits » et « AGR » sont des protections accordées par l'ONEM quand tu passes au temps partiel — si tu n'as jamais entendu parler, choisis « temps partiel volontaire ».",
+      },
       type: "select",
       options: [
-        { value: "temps-plein", label: { fr: "Temps plein" } },
-        { value: "tp-mdd", label: { fr: "Temps partiel avec maintien des droits (sans AGR)" } },
-        { value: "tp-volontaire", label: { fr: "Temps partiel volontaire / crédit-temps" } },
-        { value: "tp-agr", label: { fr: "Temps partiel avec maintien des droits + AGR" } },
+        { value: "temps-plein", label: { fr: "À temps plein" } },
+        { value: "tp-mdd", label: { fr: "À temps partiel — avec maintien des droits (sans AGR)" } },
+        { value: "tp-volontaire", label: { fr: "À temps partiel volontaire (ou crédit-temps)" } },
+        { value: "tp-agr", label: { fr: "À temps partiel — avec maintien des droits + AGR" } },
       ],
     },
 
     // ------- Motif -------
     {
       id: "motif",
-      label: { fr: "Quel est le motif du chômage temporaire ?" },
+      label: { fr: "Pourquoi es-tu en chômage temporaire ?" },
+      helpText: {
+        fr: "Le « motif » = la raison pour laquelle ton travail est suspendu. Choisis ce qui correspond le mieux à ta situation. Si tu hésites, regarde le document que ton employeur t'a remis : la raison y est généralement écrite.",
+      },
       type: "select",
       options: MOTIFS.map((m) => ({ value: m, label: { fr: m } })),
     },
 
-    // ------- Sous-questions selon motif (toujours visibles, à remplir si pertinent) -------
+    // ------- Sous-questions selon motif (visibilité conditionnelle) -------
     {
       id: "decisionComiteGestionGreve",
-      label: { fr: "Si grève : as-tu déjà reçu la décision du comité de gestion ONEM ?" },
+      label: { fr: "As-tu déjà reçu la décision du comité de gestion de l'ONEM sur cette grève ?" },
+      helpText: {
+        fr: "Pour les grèves et lock-out, l'ONEM doit décider si la grève est « indemnisable » (tu reçois des allocations) ou non. Si tu n'as encore rien reçu, choisis « en attente ».",
+      },
       type: "select",
       options: [
-        { value: "accord", label: { fr: "Oui — accord (grève indemnisable)" } },
-        { value: "refus", label: { fr: "Oui — refus (grève non indemnisable)" } },
-        { value: "attente", label: { fr: "Non — en attente de la décision" } },
-        { value: "na", label: { fr: "Sans objet (pas de grève)" } },
+        { value: "accord", label: { fr: "Oui — accord (la grève est indemnisable)" } },
+        { value: "refus", label: { fr: "Oui — refus (la grève n'est pas indemnisable)" } },
+        { value: "attente", label: { fr: "Non — j'attends encore la décision" } },
       ],
+      visibleIf: { fieldId: "motif", op: "equals", value: MOTIF_IDS.greve },
     },
     {
       id: "trajetReintegration",
-      label: { fr: "Si force majeure médicale : suis-tu un trajet de réintégration ?" },
+      label: { fr: "Suis-tu un « trajet de réintégration » ?" },
+      helpText: {
+        fr: "Un « trajet de réintégration » est un parcours organisé par le médecin du travail pour t'aider à reprendre un travail adapté à ta santé. Si tu n'es pas dans ce cas, réponds « non ».",
+      },
       type: "boolean",
-      visibleWhen: (a) => a.motif === MOTIF_IDS.forceMajeureMedicale,
+      visibleIf: { fieldId: "motif", op: "equals", value: MOTIF_IDS.forceMajeureMedicale },
     },
     {
       id: "formationAlternancePendantCT",
-      label: { fr: "Suis-tu une formation en alternance pendant ce chômage temporaire ?" },
+      label: { fr: "Tu suis une formation en alternance pendant ce chômage ?" },
+      helpText: {
+        fr: "Formation en alternance = tu combines travail et école/formation (ex. apprentissage IFAPME, SYNTRA, EFEPME, etc.). Tu n'es pas concerné si tu suis seulement des études classiques.",
+      },
       type: "boolean",
     },
 
     // ------- Historique -------
     {
       id: "premiereDemande",
-      label: { fr: "Est-ce ta première demande de chômage temporaire ?" },
+      label: { fr: "C'est la première fois que tu demandes du chômage temporaire ?" },
+      helpText: {
+        fr: "« Première fois » = tu n'as jamais reçu d'allocations de chômage temporaire avant, ou tu n'en as pas reçu depuis plus d'un an.",
+      },
       type: "boolean",
     },
     {
       id: "modificationC1",
       label: { fr: "Tes données personnelles ont-elles changé depuis ton dernier C1 ?" },
+      helpText: {
+        fr: "Le « C1 » est un formulaire ONEM que tu remplis pour déclarer ta situation (adresse, situation familiale, compte bancaire, etc.). Si quelque chose a changé depuis la dernière fois que tu l'as rempli, réponds « oui ».",
+      },
       type: "boolean",
-      visibleWhen: (a) => a.premiereDemande !== true,
+      visibleIf: { fieldId: "premiereDemande", op: "notEquals", value: true },
     },
     {
       id: "changementEmployeur",
       label: { fr: "As-tu changé d'employeur depuis ta dernière demande ?" },
+      helpText: {
+        fr: "Si tu travailles maintenant pour une autre entreprise que la dernière fois où tu as touché du chômage temporaire, réponds « oui ».",
+      },
       type: "boolean",
     },
     {
       id: "interruptionCT36Mois",
-      label: { fr: "Tes allocations de chômage temporaire ont-elles été interrompues plus de 36 mois ?" },
+      label: { fr: "Tes allocations de chômage temporaire ont été interrompues plus de 36 mois ?" },
+      helpText: {
+        fr: "36 mois = 3 ans. Si tu n'as pas reçu d'allocations de chômage temporaire pendant plus de 3 ans, réponds « oui ». Sinon, « non ».",
+      },
       type: "boolean",
     },
 
@@ -390,16 +423,25 @@ export const chomageTemporaire: DossierDefinition = {
     {
       id: "age66Plus",
       label: { fr: "As-tu 66 ans ou plus ?" },
+      helpText: {
+        fr: "Si tu continues à travailler au-delà de l'âge légal de la pension (65 ans en Belgique), des règles spécifiques s'appliquent à ton dossier.",
+      },
       type: "boolean",
     },
     {
       id: "transfertEnCours",
       label: { fr: "S'agit-il d'un transfert en cours de chômage temporaire ?" },
+      helpText: {
+        fr: "« Transfert » = tu changes d'organisme de paiement (par exemple, tu passes de la CAPAC à la FGTB ou vice-versa) en cours de dossier. Si tu ne changes rien, réponds « non ».",
+      },
       type: "boolean",
     },
     {
       id: "incapacite33Pourcent",
-      label: { fr: "Présentes-tu une incapacité de travail permanente d'au moins 33 % ?" },
+      label: { fr: "As-tu une incapacité de travail permanente d'au moins 33 % ?" },
+      helpText: {
+        fr: "Reconnaissance officielle d'un handicap ou d'une maladie chronique qui réduit ta capacité de travail d'au moins 33 % (= 1/3). Une attestation médicale ou un courrier officiel le prouve. Si oui, on ajoutera automatiquement un formulaire C47 à ton dossier.",
+      },
       type: "boolean",
     },
   ],

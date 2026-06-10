@@ -17,6 +17,7 @@ import {
   type EligibilityQuestion,
   type EligibilityResult,
   evaluateEligibility,
+  evaluateVisibleIf,
   verdictMessageFr,
 } from "@/lib/bundles/eligibility";
 
@@ -74,13 +75,19 @@ export function EligibilityPrequalifier({
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        {questions.map((q) => (
+        {questions.map((q) => {
+          // Visibilité conditionnelle : les questions dont la condition n'est
+          // pas satisfaite ne sont pas affichées (et ne sont pas comptées
+          // dans le verdict — cf. evaluateEligibility).
+          if (!evaluateVisibleIf(q.visibleIf, answers)) return null;
+          return (
           <div key={q.id} className="space-y-1.5">
             <Label htmlFor={`q-${q.id}`} className="text-sm font-medium">
               {q.label}
             </Label>
             {q.helpText && (
-              <p className="text-xs text-muted-foreground">
+              <p className="rounded-md border-l-2 border-blue-300 bg-blue-50/60 px-2.5 py-1.5 text-xs text-blue-900 dark:bg-blue-950/30 dark:text-blue-200 dark:border-blue-700">
+                <span className="font-medium">💡 </span>
                 {q.helpText}
                 {q.helpUrl && (
                   <>
@@ -128,7 +135,8 @@ export function EligibilityPrequalifier({
               </Select>
             )}
           </div>
-        ))}
+          );
+        })}
 
         {/* Verdict — visible dès qu'au moins une réponse a été donnée */}
         {result.answered > 0 && (

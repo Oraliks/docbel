@@ -23,8 +23,20 @@ export interface DossierQuestion {
   type: "select" | "boolean";
   /// Options pour `select`.
   options?: Array<{ value: string; label: Localized }>;
-  /// La question ne s'affiche que si la fonction retourne true (réponses
-  /// déjà saisies à ce stade). Absent = toujours visible.
+  /// Note pédagogique (bulle d'info) en langage simple, accessible aux
+  /// personnes avec faible alphabétisation ou difficultés de compréhension.
+  /// Évite le jargon ; explique les termes officiels par leur sens concret.
+  helpText?: Localized;
+  /// Visibilité conditionnelle SÉRIALISABLE — préférée pour les questions
+  /// destinées à l'utilisateur final (transitent via `dossierQuestionsToEligibility`).
+  visibleIf?: {
+    fieldId: string;
+    op: "equals" | "notEquals" | "in" | "notIn";
+    value: string | number | boolean | Array<string | number>;
+  };
+  /// Visibilité conditionnelle FONCTIONNELLE — usage interne (sélection
+  /// de documents, calcul de natureDA…). Non transmise au prequalifier.
+  /// Utiliser `visibleIf` pour les questions du parcours citoyen.
   visibleWhen?: (answers: DossierAnswers) => boolean;
 }
 
@@ -260,19 +272,22 @@ export function filterMotifOptions(
   return motifIds.filter((id) => def.whoConcerned![id]?.includes(statut));
 }
 
+/// Forme commune aux 2 variantes d'EligibilityQuestion sérialisée.
+type SerializedVisibleIf = {
+  fieldId: string;
+  op: "equals" | "notEquals" | "in" | "notIn";
+  value: string | number | boolean | Array<string | number>;
+};
+
 /// Convertit les `DossierQuestion[]` (questions code-driven, label localisé,
-/// `visibleWhen` fonctionnel) en `EligibilityQuestion[]` (format DB du
-/// `EligibilityPrequalifier`, label plat, verdict par option).
+/// `visibleIf` sérialisable ou `visibleWhen` fonctionnel) en
+/// `EligibilityQuestion[]` (format consommé par EligibilityPrequalifier).
 ///
-/// Choix de design : on attribue `verdict: "neutral"` à TOUTES les options/
-/// branches — la pré-qualification du dossier CT n'a pas vocation à dire
-/// « éligible / non éligible » (Beldoc n'a jamais ce pouvoir, cf. principe
-/// du module eligibility). Les réponses servent seulement à filtrer les
-/// documents applicables via `selectDocuments()`.
-///
-/// `visibleWhen` est perdu côté output (le format EligibilityQuestion ne le
-/// supporte pas) — toutes les questions sont affichées. À reprendre quand on
-/// étendra EligibilityQuestion avec une condition de visibilité sérialisable.
+/// - Label & helpText : résolus dans la locale demandée avec fallback FR.
+/// - visibleIf : transmis tel quel (sérialisable). `visibleWhen` (fonction)
+///   est ignoré — non transportable côté client.
+/// - Verdict : `neutral` partout — la pré-qualification d'un dossier n'a
+///   pas vocation à bloquer l'utilisateur (cf. principe Beldoc).
 export function dossierQuestionsToEligibility(
   questions: DossierQuestion[],
   locale: "fr" | "nl" | "de" = "fr"
@@ -280,6 +295,8 @@ export function dossierQuestionsToEligibility(
   | {
       id: string;
       label: string;
+      helpText?: string;
+      visibleIf?: SerializedVisibleIf;
       type: "boolean";
       verdictTrue: "neutral";
       verdictFalse: "neutral";
@@ -287,26 +304,34 @@ export function dossierQuestionsToEligibility(
   | {
       id: string;
       label: string;
+      helpText?: string;
+      visibleIf?: SerializedVisibleIf;
       type: "select";
       options: Array<{ value: string; label: string; verdict: "neutral" }>;
     }
 > {
-  const pickLabel = (l: { fr?: string; nl?: string; de?: string }): string =>
-    l[locale] ?? l.fr ?? l.nl ?? l.de ?? "";
+  const pickLabel = (l: { fr?: string; nl?: string; de?: string } | undefined): string => {
+    if (!l) return "";
+    return l[locale] ?? l.fr ?? l.nl ?? l.de ?? "";
+  };
 
   return questions.map((q) => {
+    const base = {
+      id: q.id,
+      label: pickLabel(q.label),
+      helpText: q.helpText ? pickLabel(q.helpText) || undefined : undefined,
+      visibleIf: q.visibleIf,
+    };
     if (q.type === "boolean") {
       return {
-        id: q.id,
-        label: pickLabel(q.label),
+        ...base,
         type: "boolean" as const,
         verdictTrue: "neutral" as const,
         verdictFalse: "neutral" as const,
       };
     }
     return {
-      id: q.id,
-      label: pickLabel(q.label),
+      ...base,
       type: "select" as const,
       options: (q.options ?? []).map((o) => ({
         value: o.value,

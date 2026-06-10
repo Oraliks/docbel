@@ -388,7 +388,7 @@ export function UsersListClient({ users }: UsersListClientProps) {
                 setPage(1)
               }}
             >
-              <SelectTrigger size="sm" className="h-8 min-w-[68px]">
+              <SelectTrigger size="sm" className="h-8 w-fit min-w-[68px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -575,7 +575,7 @@ function FloatingSelect({ label, value, onValueChange, items }: FloatingSelectPr
           onValueChange(v)
         }}
       >
-        <SelectTrigger className="h-12 min-w-[140px] pt-4">
+        <SelectTrigger className="h-12 w-fit min-w-[140px] pt-4">
           <SelectValue>{selected?.label ?? value}</SelectValue>
         </SelectTrigger>
         <SelectContent>

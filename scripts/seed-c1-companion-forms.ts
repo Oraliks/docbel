@@ -59,6 +59,20 @@ const COMPANIONS = [
     description:
       "Formulaire à joindre au C1 quand une personne du ménage (autre qu'un enfant) est déclarée comme financièrement à charge du travailleur.",
   },
+  {
+    slug: "c47",
+    file: "C47_FR.pdf",
+    title: "C47 — Demande de fixation des allocations (incapacité 33%+)",
+    description:
+      "Formulaire à joindre au C1 quand le travailleur présente une incapacité permanente d'au moins 33 %. Permet de fixer le montant des allocations (suppression de la dégressivité).",
+  },
+  {
+    slug: "c1-regis",
+    file: "Annexe_Regis_FR.pdf",
+    title: "C1 ANNEXE REGIS — Précisions sur la composition de ménage",
+    description:
+      "Annexe au C1 quand la situation de cohabitation est ambiguë (cf. registre national) et nécessite des précisions complémentaires.",
+  },
 ] as const;
 
 async function importOne(c: (typeof COMPANIONS)[number]): Promise<{

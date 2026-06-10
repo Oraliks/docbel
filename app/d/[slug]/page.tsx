@@ -8,7 +8,7 @@ import { collectTriggeredSlugs, parseTriggers } from "@/lib/pdf-forms/triggers";
 import type { BundleCondition } from "@/lib/bundles/conditions";
 import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
 import { getDossier } from "@/lib/dossiers/registry";
-import { selectDocuments, type DossierAnswers } from "@/lib/dossiers/types";
+import { dossierQuestionsToEligibility, selectDocuments, type DossierAnswers } from "@/lib/dossiers/types";
 
 export const dynamic = "force-dynamic";
 
@@ -108,13 +108,21 @@ export default async function BundleRoute({
     }
   }
 
+  // Code-driven dossiers (TS) prennent la priorité sur les questions stockées
+  // en DB sur le DocumentBundle. Permet d'avoir le code comme source de
+  // vérité sans avoir à reseeder la DB à chaque évolution du questionnaire.
+  const dossierForQuestions = getDossier(slug);
+  const eligibilityQuestionsSerialized = dossierForQuestions
+    ? dossierQuestionsToEligibility(dossierForQuestions.questions)
+    : bundle.eligibilityQuestions;
+
   const serializedBundle = {
     id: bundle.id,
     slug: bundle.slug,
     name: bundle.name,
     description: bundle.description,
     color: bundle.color,
-    eligibilityQuestions: bundle.eligibilityQuestions,
+    eligibilityQuestions: eligibilityQuestionsSerialized,
     warnings: bundle.warnings,
     items: [
       ...bundle.items.map((it) => ({

@@ -402,6 +402,28 @@ export const C1_QUESTIONS: PdfFormField[] = [
     section: SECTION_SITUATION_FAMILIALE,
     order: 103,
   },
+  {
+    id: "situationCohabitationAmbigue",
+    pdfFieldName: "",
+    type: "radio",
+    required: false,
+    label: { fr: "Ta situation de cohabitation est ambiguë (registre national / réalité de ménage divergents) ?", nl: "", de: "" },
+    help: {
+      fr: "Exemples : domiciliation à une adresse mais résidence à une autre, hébergement temporaire chez un tiers, garde alternée d'enfant non encore enregistrée… → l'Annexe REGIS sera ajoutée à ton parcours pour préciser la composition réelle du ménage.",
+      nl: "", de: "",
+    },
+    options: YN,
+    defaultValue: "non",
+    section: SECTION_SITUATION_FAMILIALE,
+    order: 104,
+  },
+  dejaDeclare({
+    id: "situationCohabitationAmbigueDejaDeclare",
+    parentId: "situationCohabitationAmbigue",
+    helpText: "Si non, tu devras compléter l'ANNEXE REGIS — elle sera ajoutée à ton parcours.",
+    section: SECTION_SITUATION_FAMILIALE,
+    order: 105,
+  }),
   // Grille cohabitants — visible seulement si l'utilisateur a indiqué
   // cohabiter. Pour chaque ligne : identité, lien familial, date naissance,
   // allocations familiales perçues (auto-non si > 35 ans), type & montant
@@ -1145,8 +1167,13 @@ export const C1_QUESTIONS: PdfFormField[] = [
     section: SECTION_DIVERS,
     order: 910,
   },
-  // TODO : trigger vers c47 — PDF C47_FR.pdf pas encore fourni.
-  // À ajouter dans C1_TRIGGERS quand le PDF sera là.
+  dejaDeclare({
+    id: "incapacite33DejaDeclare",
+    parentId: "incapacite33",
+    helpText: "Si non, tu devras compléter le FORMULAIRE C47 — il sera ajouté à ton parcours.",
+    section: SECTION_DIVERS,
+    order: 911,
+  }),
 
   // ====================================================================
   // SECTION — AFFIRMATIONS OBLIGATOIRES
@@ -1290,6 +1317,27 @@ export const C1_TRIGGERS: PdfFormTrigger[] = [
     whenValue: "premiere-fois",
     requiresFormSlug: "c1-partenaire",
     reason: { fr: "Personne financièrement à charge à déclarer", nl: "", de: "" },
+  },
+  {
+    // Incapacité de travail permanente d'au moins 33 % → joindre un C47
+    // pour fixer le montant des allocations (annule la dégressivité).
+    whenFieldId: "incapacite33",
+    whenValue: "oui",
+    unlessFieldId: "incapacite33DejaDeclare",
+    unlessValue: "oui",
+    requiresFormSlug: "c47",
+    reason: { fr: "Incapacité 33 % — demande de fixation des allocations", nl: "", de: "" },
+  },
+  {
+    // L'utilisateur signale lui-même une situation de cohabitation ambiguë
+    // → joindre une ANNEXE REGIS. Trigger sur la nouvelle question
+    // `situationCohabitationAmbigue` qu'on ajoute juste après.
+    whenFieldId: "situationCohabitationAmbigue",
+    whenValue: "oui",
+    unlessFieldId: "situationCohabitationAmbigueDejaDeclare",
+    unlessValue: "oui",
+    requiresFormSlug: "c1-regis",
+    reason: { fr: "Situation de cohabitation à préciser via Annexe REGIS", nl: "", de: "" },
   },
   {
     whenFieldId: "mandatArtistique",

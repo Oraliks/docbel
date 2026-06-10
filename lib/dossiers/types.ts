@@ -259,3 +259,60 @@ export function filterMotifOptions(
   if (!statut || !def.whoConcerned) return motifIds;
   return motifIds.filter((id) => def.whoConcerned![id]?.includes(statut));
 }
+
+/// Convertit les `DossierQuestion[]` (questions code-driven, label localisé,
+/// `visibleWhen` fonctionnel) en `EligibilityQuestion[]` (format DB du
+/// `EligibilityPrequalifier`, label plat, verdict par option).
+///
+/// Choix de design : on attribue `verdict: "neutral"` à TOUTES les options/
+/// branches — la pré-qualification du dossier CT n'a pas vocation à dire
+/// « éligible / non éligible » (Beldoc n'a jamais ce pouvoir, cf. principe
+/// du module eligibility). Les réponses servent seulement à filtrer les
+/// documents applicables via `selectDocuments()`.
+///
+/// `visibleWhen` est perdu côté output (le format EligibilityQuestion ne le
+/// supporte pas) — toutes les questions sont affichées. À reprendre quand on
+/// étendra EligibilityQuestion avec une condition de visibilité sérialisable.
+export function dossierQuestionsToEligibility(
+  questions: DossierQuestion[],
+  locale: "fr" | "nl" | "de" = "fr"
+): Array<
+  | {
+      id: string;
+      label: string;
+      type: "boolean";
+      verdictTrue: "neutral";
+      verdictFalse: "neutral";
+    }
+  | {
+      id: string;
+      label: string;
+      type: "select";
+      options: Array<{ value: string; label: string; verdict: "neutral" }>;
+    }
+> {
+  const pickLabel = (l: { fr?: string; nl?: string; de?: string }): string =>
+    l[locale] ?? l.fr ?? l.nl ?? l.de ?? "";
+
+  return questions.map((q) => {
+    if (q.type === "boolean") {
+      return {
+        id: q.id,
+        label: pickLabel(q.label),
+        type: "boolean" as const,
+        verdictTrue: "neutral" as const,
+        verdictFalse: "neutral" as const,
+      };
+    }
+    return {
+      id: q.id,
+      label: pickLabel(q.label),
+      type: "select" as const,
+      options: (q.options ?? []).map((o) => ({
+        value: o.value,
+        label: pickLabel(o.label),
+        verdict: "neutral" as const,
+      })),
+    };
+  });
+}

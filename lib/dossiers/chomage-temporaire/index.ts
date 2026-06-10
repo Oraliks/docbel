@@ -298,45 +298,108 @@ export const chomageTemporaire: DossierDefinition = {
   natureDA,
 
   questions: [
+    // ------- Statut & contexte -------
     {
       id: "statut",
-      label: { fr: "Quel est votre statut ?" },
+      label: { fr: "Quel est ton statut ?" },
       type: "select",
       options: [
         { value: "ouvrier", label: { fr: "Ouvrier" } },
         { value: "employe", label: { fr: "Employé" } },
-        { value: "interimaire", label: { fr: "Intérimaire" } },
+        { value: "interimaire", label: { fr: "Intérimaire ou apprenti industriel" } },
       ],
     },
+    {
+      id: "commissionParitaire",
+      label: { fr: "Travailles-tu dans le secteur de la construction (CP 124) ?" },
+      type: "select",
+      options: [
+        { value: "construction", label: { fr: "Oui — Construction (CP 124)" } },
+        { value: "autre", label: { fr: "Non — autre commission paritaire" } },
+        { value: "inconnu", label: { fr: "Je ne sais pas" } },
+      ],
+    },
+    {
+      id: "typeChomage",
+      label: { fr: "Quel est ton régime de travail ?" },
+      type: "select",
+      options: [
+        { value: "temps-plein", label: { fr: "Temps plein" } },
+        { value: "tp-mdd", label: { fr: "Temps partiel avec maintien des droits (sans AGR)" } },
+        { value: "tp-volontaire", label: { fr: "Temps partiel volontaire / crédit-temps" } },
+        { value: "tp-agr", label: { fr: "Temps partiel avec maintien des droits + AGR" } },
+      ],
+    },
+
+    // ------- Motif -------
     {
       id: "motif",
       label: { fr: "Quel est le motif du chômage temporaire ?" },
       type: "select",
-      // Les options sont la liste complète ; le filtrage par statut se fait
-      // au rendu via `filterMotifOptions(def, ...)` dans le runner.
       options: MOTIFS.map((m) => ({ value: m, label: { fr: m } })),
     },
+
+    // ------- Sous-questions selon motif (toujours visibles, à remplir si pertinent) -------
+    {
+      id: "decisionComiteGestionGreve",
+      label: { fr: "Si grève : as-tu déjà reçu la décision du comité de gestion ONEM ?" },
+      type: "select",
+      options: [
+        { value: "accord", label: { fr: "Oui — accord (grève indemnisable)" } },
+        { value: "refus", label: { fr: "Oui — refus (grève non indemnisable)" } },
+        { value: "attente", label: { fr: "Non — en attente de la décision" } },
+        { value: "na", label: { fr: "Sans objet (pas de grève)" } },
+      ],
+    },
+    {
+      id: "trajetReintegration",
+      label: { fr: "Si force majeure médicale : suis-tu un trajet de réintégration ?" },
+      type: "boolean",
+      visibleWhen: (a) => a.motif === MOTIF_IDS.forceMajeureMedicale,
+    },
+    {
+      id: "formationAlternancePendantCT",
+      label: { fr: "Suis-tu une formation en alternance pendant ce chômage temporaire ?" },
+      type: "boolean",
+    },
+
+    // ------- Historique -------
     {
       id: "premiereDemande",
-      label: { fr: "Est-ce votre première demande de chômage temporaire ?" },
+      label: { fr: "Est-ce ta première demande de chômage temporaire ?" },
       type: "boolean",
     },
     {
-      // N'apparaît que si la première demande est confirmée — détermine si
-      // un nouveau formulaire C1 est attendu.
       id: "modificationC1",
-      label: { fr: "Y a-t-il eu une modification de vos données personnelles depuis votre dernier C1 ?" },
+      label: { fr: "Tes données personnelles ont-elles changé depuis ton dernier C1 ?" },
       type: "boolean",
       visibleWhen: (a) => a.premiereDemande !== true,
     },
     {
+      id: "changementEmployeur",
+      label: { fr: "As-tu changé d'employeur depuis ta dernière demande ?" },
+      type: "boolean",
+    },
+    {
+      id: "interruptionCT36Mois",
+      label: { fr: "Tes allocations de chômage temporaire ont-elles été interrompues plus de 36 mois ?" },
+      type: "boolean",
+    },
+
+    // ------- Particularités -------
+    {
       id: "age66Plus",
-      label: { fr: "Avez-vous 66 ans ou plus ?" },
+      label: { fr: "As-tu 66 ans ou plus ?" },
       type: "boolean",
     },
     {
       id: "transfertEnCours",
       label: { fr: "S'agit-il d'un transfert en cours de chômage temporaire ?" },
+      type: "boolean",
+    },
+    {
+      id: "incapacite33Pourcent",
+      label: { fr: "Présentes-tu une incapacité de travail permanente d'au moins 33 % ?" },
       type: "boolean",
     },
   ],

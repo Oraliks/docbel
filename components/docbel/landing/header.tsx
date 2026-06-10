@@ -54,6 +54,7 @@ const NAV_ITEMS: ReadonlyArray<{
   icon?: LucideIcon;
 }> = [
   { id: "accueil", label: "Accueil", href: "/" },
+  { id: "mon-dossier", label: "Mon dossier", href: "/mon-dossier" },
   { id: "actualites", label: "Actualités", href: "/actualites" },
   { id: "outils", label: "Outils", href: "/outils" },
   { id: "aide", label: "Aidez-moi", href: "/contact", icon: LifeBuoyIcon },

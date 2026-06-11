@@ -372,12 +372,22 @@
   animation: hero-spin 32s linear infinite;
 }
 
+/* Étincelles du hero — scintillement (opacité + léger zoom). */
+@keyframes hero-twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+.hero-twinkle {
+  animation: hero-twinkle 2.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .outils-rise,
   .animate-heart-pop,
   .animate-soft-sheen,
   .hero-float,
-  .hero-spin {
+  .hero-spin,
+  .hero-twinkle {
     animation: none;
   }
   .search-glow {

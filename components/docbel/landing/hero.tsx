@@ -1,13 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { NewsItem } from "@/lib/docbel-data";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRightIcon, CalculatorIcon, FolderOpenIcon, TrendingUpIcon } from "lucide-react";
-import { CalendarBlank, Phone, Scales } from "@phosphor-icons/react";
+import { ArrowRightIcon, BookOpenIcon, FolderOpenIcon, TrendingUpIcon } from "lucide-react";
+import { Briefcase, Buildings, CalendarBlank, Calculator, Scales, Sparkle, User } from "@phosphor-icons/react";
 
 interface LandingHeroProps {
-  article: NewsItem | null;
+  articles: NewsItem[];
   loading?: boolean;
 }
 
@@ -28,29 +29,27 @@ function formatHeadline(title: string) {
   );
 }
 
-// Bulles d'icônes flottantes (glassmorphism + glow néon) — accents discrets
-// posés dans les coins libres, autour des illustrations 3D. Phosphor (duotone).
-const HERO_BUBBLES: {
+// Tuiles d'icônes en verre qui gravitent autour du livre 3D central (façon
+// maquette) : citoyen, justice, emploi, institution, calcul — les piliers du
+// site. Glassmorphism + glow violet (.glass-icon-tile), lévitation décalée.
+const ORBIT_TILES: {
   Icon: typeof Scales;
-  hue: string;
   cls: string;
   delay: string;
 }[] = [
-  { Icon: Scales, hue: "#FF7A7A", cls: "left-[6%] top-[12%]", delay: "0s" },
-  { Icon: Phone, hue: "#FF5FA2", cls: "right-[7%] bottom-[14%]", delay: "1.6s" },
+  { Icon: User, cls: "left-[42%] top-[4%]", delay: "0s" },
+  { Icon: Scales, cls: "left-[5%] top-[26%]", delay: "0.7s" },
+  { Icon: Briefcase, cls: "right-[5%] top-[22%]", delay: "1.1s" },
+  { Icon: Buildings, cls: "left-[8%] bottom-[18%]", delay: "1.7s" },
+  { Icon: Calculator, cls: "right-[7%] bottom-[14%]", delay: "2.3s" },
 ];
 
-// Satellites 3D qui gravitent autour de l'illustration principale. Assets CC0
-// (Fluent Emoji) de public/3d/ ; chacun flotte avec un délai propre → parallaxe
-// douce. Coins opposés aux bulles pour équilibrer la composition.
-const HERO_SATELLITES: {
-  src: string;
-  cls: string;
-  size: number;
-  delay: string;
-}[] = [
-  { src: "/3d/compass.png", cls: "right-[5%] top-[9%]", size: 70, delay: "1.1s" },
-  { src: "/3d/folder.png", cls: "left-[4%] bottom-[9%]", size: 64, delay: "2.3s" },
+// Étincelles dispersées (sparkles) — petits éclats 4 branches qui scintillent.
+const SPARKLES: { cls: string; size: number; delay: string }[] = [
+  { cls: "left-[24%] top-[12%]", size: 13, delay: "0s" },
+  { cls: "right-[26%] top-[34%]", size: 9, delay: "0.5s" },
+  { cls: "left-[32%] bottom-[12%]", size: 10, delay: "1s" },
+  { cls: "right-[33%] bottom-[30%]", size: 12, delay: "1.5s" },
 ];
 
 // Glow violet partagé par les illustrations 3D (drop-shadow porté + halo mauve)
@@ -59,26 +58,22 @@ const ASSET_GLOW =
   "drop-shadow(0 14px 22px rgba(20,10,45,0.45)) drop-shadow(0 0 20px color-mix(in oklab, var(--glass-accent-deep) 55%, transparent))";
 
 /**
- * Illustration animée du hero : illustrations 3D (assets CC0 Fluent Emoji) en
- * lévitation — un dossier/livre central entouré de satellites (boussole,
- * dossier) — sur un anneau orbital qui tourne lentement + halo qui respire +
- * bulles d'icônes en verre. Tout est piloté par des keyframes CSS gardées par
- * `prefers-reduced-motion` (hero-float / hero-spin / hero-breath) : l'animation
- * se coupe d'elle-même pour les utilisateurs qui la refusent. S'adapte
- * clair/sombre via les tokens `--glass-*`.
+ * Illustration animée du hero — reproduit la maquette : un livre/dossier 3D
+ * (asset CC0) en lévitation sur un socle lumineux, entouré de TUILES d'icônes
+ * en verre qui orbitent (citoyen, justice, emploi, institution, calcul) + des
+ * étincelles qui scintillent + des anneaux orbitaux (deux liserés statiques, un
+ * arc conique qui tourne) + un halo qui respire. PAS de panneau propre : le
+ * fond dégradé est porté par la nappe pleine largeur du bloc hero (cf.
+ * HeroCarousel), l'illustration se fond dedans. Keyframes CSS gardées par
+ * `prefers-reduced-motion` (hero-float / hero-spin / hero-breath / hero-twinkle) ;
+ * s'adapte clair/sombre via les tokens `--glass-*`.
  */
 function FeaturedArtwork() {
   return (
-    <div
-      className="relative flex h-[260px] items-center justify-center overflow-hidden rounded-[20px]"
-      style={{
-        backgroundImage:
-          "radial-gradient(ellipse at 30% 30%, var(--glass-accent-d) 0%, transparent 60%), linear-gradient(135deg, var(--glass-accent-c) 0%, var(--glass-accent-a) 60%, var(--glass-accent-deep) 100%)",
-      }}
-    >
+    <div className="relative flex min-h-[240px] flex-1 items-center justify-center sm:min-h-[280px]">
       {/* Halo lumineux central (glow) — respire. */}
       <div
-        className="hero-breath absolute top-1/2 left-1/2 size-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+        className="hero-breath absolute top-1/2 left-1/2 size-[66%] -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           background:
             "radial-gradient(circle, rgba(255,255,255,0.55) 0%, transparent 70%)",
@@ -86,168 +81,247 @@ function FeaturedArtwork() {
         }}
       />
 
-      {/* Anneau orbital — conic-gradient masqué en fin liseré, rotation lente. */}
+      {/* Anneaux orbitaux : deux liserés statiques + un arc conique qui tourne. */}
+      <div className="absolute top-1/2 left-1/2 size-[224px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25" />
+      <div className="absolute top-1/2 left-1/2 size-[148px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
       <div
-        className="hero-spin absolute top-1/2 left-1/2 size-[230px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+        className="hero-spin absolute top-1/2 left-1/2 size-[224px] -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           background:
-            "conic-gradient(from 0deg, transparent 0deg, color-mix(in oklab, var(--glass-accent-deep) 50%, transparent) 60deg, transparent 130deg, color-mix(in oklab, var(--glass-accent-c) 45%, transparent) 220deg, transparent 320deg)",
+            "conic-gradient(from 0deg, transparent 0deg, color-mix(in oklab, var(--glass-accent-deep) 55%, transparent) 55deg, transparent 120deg, color-mix(in oklab, var(--glass-accent-c) 50%, transparent) 220deg, transparent 310deg)",
           maskImage:
-            "radial-gradient(closest-side, transparent 71%, #000 73%, #000 79%, transparent 81%)",
+            "radial-gradient(closest-side, transparent 72%, #000 74%, #000 78%, transparent 80%)",
           WebkitMaskImage:
-            "radial-gradient(closest-side, transparent 71%, #000 73%, #000 79%, transparent 81%)",
-          opacity: 0.75,
+            "radial-gradient(closest-side, transparent 72%, #000 74%, #000 78%, transparent 80%)",
+          opacity: 0.8,
         }}
       />
 
-      {/* Illustration 3D centrale (livre/dossier) — flotte au-dessus de l'anneau. */}
+      {/* Socle lumineux sous le livre. */}
+      <div
+        className="absolute bottom-[22%] left-1/2 h-[28px] w-[148px] -translate-x-1/2 rounded-[50%]"
+        style={{
+          background:
+            "radial-gradient(ellipse, rgba(255,255,255,0.7) 0%, transparent 72%)",
+          filter: "blur(9px)",
+        }}
+      />
+
+      {/* Étincelles (sparkles) qui scintillent. */}
+      {SPARKLES.map(({ cls, size, delay }) => (
+        <Sparkle
+          key={cls}
+          weight="fill"
+          size={size}
+          className={`hero-twinkle absolute z-20 ${cls} text-white`}
+          style={{
+            animationDelay: delay,
+            filter: "drop-shadow(0 0 6px rgba(255,255,255,0.85))",
+          }}
+        />
+      ))}
+
+      {/* Livre 3D central — flotte au-dessus du socle et des anneaux. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/3d/book.png"
         alt=""
         aria-hidden
-        className="hero-float relative z-10 h-[150px] w-[150px] object-contain"
+        className="hero-float relative z-10 h-[140px] w-[140px] object-contain"
         style={{ filter: ASSET_GLOW }}
       />
 
-      {/* Satellites 3D en lévitation (parallaxe via délais d'animation). */}
-      {HERO_SATELLITES.map(({ src, cls, size, delay }) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          key={src}
-          src={src}
-          alt=""
-          aria-hidden
-          className={`hero-float absolute z-10 ${cls} object-contain`}
-          style={{
-            height: size,
-            width: size,
-            animationDelay: delay,
-            filter: ASSET_GLOW,
-          }}
-        />
-      ))}
-
-      {/* Bulles d'icônes flottantes (glassmorphism + glow néon). */}
-      {HERO_BUBBLES.map(({ Icon, hue, cls, delay }) => (
+      {/* Tuiles d'icônes en verre qui orbitent (lévitation décalée par tuile). */}
+      {ORBIT_TILES.map(({ Icon, cls, delay }) => (
         <span
           key={cls}
-          className={`hero-float absolute ${cls} flex size-11 items-center justify-center rounded-2xl border border-white/30 bg-white/10 backdrop-blur-md`}
-          style={{
-            animationDelay: delay,
-            boxShadow: `0 8px 22px rgba(20,10,45,0.35), 0 0 18px ${hue}55`,
-          }}
+          className={`hero-float glass-icon-tile absolute z-30 ${cls} flex size-11 items-center justify-center rounded-2xl border border-white/35 bg-white/15 backdrop-blur-md`}
+          style={{ animationDelay: delay }}
         >
-          <Icon weight="duotone" size={22} color={hue} />
+          <Icon weight="duotone" size={22} color="#6D4BFF" />
         </span>
       ))}
     </div>
   );
 }
 
-function FeaturedArticle({ article }: { article: NewsItem }) {
+function HeroCarousel({ articles }: { articles: NewsItem[] }) {
   const router = useRouter();
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const count = articles.length;
+  const article = articles[index] ?? articles[0];
+
+  // Auto-défilement doux : pause au survol/focus, coupé s'il n'y a qu'une seule
+  // « une » ou si l'utilisateur a demandé moins d'animations. `setIndex` est
+  // appelé dans le callback du timer (pas de setState synchrone dans l'effet).
+  useEffect(() => {
+    if (count <= 1 || paused) return;
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+    const id = window.setInterval(() => {
+      setIndex((i) => (i + 1) % count);
+    }, 6500);
+    return () => window.clearInterval(id);
+  }, [count, paused]);
+
   return (
-    <article className="glass-surface relative flex min-h-[340px] flex-col gap-7 overflow-hidden p-7 sm:p-9">
+    <article
+      className="glass-surface relative flex min-h-[340px] flex-col overflow-hidden p-6 sm:p-7"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
+      aria-roledescription="carrousel"
+      aria-label="Actualités à la une"
+    >
       {/*
-        Masthead — tag (gauche) + date de publication RÉELLE (droite) posés sur
-        une vraie ligne d'en-tête séparée par un filet. La date vient de
-        `article.publishedAt` (cf. app/page.tsx › formatFrenchDate) ; plus de
-        numérotation « VOL./N° » factice. Donne une hiérarchie de "une".
+        Nappe de couleur du BLOC UNIQUE (façon maquette) : voile lavande qui se
+        renforce vers la droite (sous le simulateur) + halo violet derrière
+        l'illustration centrale. Transparente côté texte pour préserver le
+        contraste de lecture. Pur décor (pointer-events-none).
       */}
-      <div className="flex items-center justify-between gap-4 border-b border-[color:var(--glass-ink-line)] pb-5">
-        <span
-          className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em]"
-          style={{
-            background: "var(--glass-ink)",
-            color: "var(--glass-bg-a)",
-          }}
-        >
-          <span
-            className="size-1.5 rounded-full"
-            style={{ background: "var(--glass-accent-c)" }}
-          />
-          {article.tag}
-        </span>
-        {article.date && (
-          <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)] sm:text-[11px]">
-            <CalendarBlank size={13} weight="bold" aria-hidden />
-            {article.date}
-          </span>
-        )}
-      </div>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "radial-gradient(ellipse 46% 90% at 46% 48%, var(--glass-accent-d) 0%, transparent 66%), linear-gradient(115deg, transparent 0%, var(--glass-accent-a) 42%, var(--glass-accent-c) 75%, var(--glass-accent-deep) 100%)",
+          opacity: 0.85,
+        }}
+      />
 
-      <div className="grid gap-9 lg:grid-cols-[1.2fr_1fr] lg:items-center">
-        <div className="flex flex-col">
-          <h1 className="glass-display text-[34px] font-semibold leading-[1.06] sm:text-[44px] lg:text-[46px] lg:leading-[1.04]">
-            {formatHeadline(article.title)}
-          </h1>
+      <div className="relative grid flex-1 gap-8 lg:grid-cols-[1.02fr_1.18fr_0.95fr] lg:items-stretch">
+        {/* ── Colonne texte (gauche) ── */}
+        <div className="flex flex-col justify-center py-1 lg:pl-2">
+          {/*
+            Masthead — pastille thème + date de publication réelle, côte à côte
+            (plus de filet pleine largeur : l'illustration monte jusqu'en haut
+            du bloc). Keyé sur l'article courant → fondu au changement de slide.
+            La date vient de `article.publishedAt` (cf. app/page.tsx).
+          */}
+          <div
+            key={`masthead-${article.id}`}
+            className="mb-5 flex animate-[fadeInUp_0.45s_ease] flex-wrap items-center gap-3 motion-reduce:animate-none"
+          >
+            <span
+              className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em] text-white"
+              style={{ background: "var(--glass-accent-deep)" }}
+            >
+              <span className="size-1.5 rounded-full bg-white/80" />
+              {article.tag}
+            </span>
+            {article.date && (
+              <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)] sm:text-[11px]">
+                <CalendarBlank size={13} weight="bold" aria-hidden />
+                {article.date}
+              </span>
+            )}
+          </div>
 
-          <p className="mt-4 max-w-[480px] text-[14.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-            {article.desc}
-          </p>
+          {/* Contenu qui change d'un slide à l'autre — fondu au changement. */}
+          <div
+            key={article.id}
+            className="flex animate-[fadeInUp_0.45s_ease] flex-col motion-reduce:animate-none"
+          >
+            <h1 className="glass-display text-[30px] font-semibold leading-[1.08] sm:text-[38px] lg:text-[32px] xl:text-[40px]">
+              {formatHeadline(article.title)}
+            </h1>
 
-          <div className="mt-7 flex flex-wrap items-center gap-2.5">
-            {/* CTA primaire : mène vers le wizard d'orientation. Le hero
-                porte les démarches grand public — c'est l'action n°1 du
-                site, plus prioritaire que la lecture d'un article ou un
-                calcul ponctuel. */}
-            <button
-              type="button"
-              onClick={() => router.push("/mon-dossier")}
-              className="glass-cta inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13.5px] font-bold"
-            >
-              <FolderOpenIcon className="size-4" />
-              Créer mon dossier
-              <ArrowRightIcon className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => article.slug && router.push(`/actualites/${article.slug}`)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-3 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10 dark:border-[color:var(--glass-accent-deep)]/40 dark:hover:shadow-[0_0_18px_rgba(139,92,246,0.3)]"
-            >
-              Lire l&apos;article
-              <ArrowRightIcon className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/outils")}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-3 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10 dark:border-[color:var(--glass-accent-deep)]/40 dark:hover:shadow-[0_0_18px_rgba(139,92,246,0.3)]"
-            >
-              <CalculatorIcon className="size-4" />
-              Calculer mes droits
-            </button>
+            <p className="mt-4 max-w-[440px] text-[13.5px] leading-[1.65] text-[color:var(--glass-ink-soft)]">
+              {article.desc}
+            </p>
+
+            <div className="mt-6 flex flex-wrap items-center gap-2.5">
+              {/* CTA primaire : mène vers le wizard d'orientation (action n°1). */}
+              <button
+                type="button"
+                onClick={() => router.push("/mon-dossier")}
+                className="glass-cta inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13.5px] font-bold"
+              >
+                <FolderOpenIcon className="size-4" />
+                Créer mon dossier
+                <ArrowRightIcon className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => article.slug && router.push(`/actualites/${article.slug}`)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-3 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] dark:border-[color:var(--glass-accent-deep)]/40 dark:hover:bg-white/10 dark:hover:shadow-[0_0_18px_rgba(139,92,246,0.3)]"
+              >
+                <BookOpenIcon className="size-4" />
+                Lire l&apos;article
+              </button>
+            </div>
           </div>
         </div>
 
-        <FeaturedArtwork />
+        {/* ── Illustration centrale + points du carrousel (centrés dessous) ── */}
+        <div className="relative flex h-full flex-col">
+          <FeaturedArtwork />
+          {count > 1 && (
+            <div
+              className="relative z-30 mt-3 flex items-center justify-center gap-2"
+              aria-label="Choisir une actualité"
+            >
+              {articles.map((a, i) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  aria-label={`Actualité ${i + 1} sur ${count} : ${a.title}`}
+                  aria-current={i === index}
+                  onClick={() => setIndex(i)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    i === index
+                      ? "w-6 bg-[color:var(--glass-accent-deep)]"
+                      : "w-2 bg-white/60 hover:bg-white/90"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Simulateur posé PAR-DESSUS le bloc (carte sombre incrustée) ── */}
+        <StatusCard />
       </div>
     </article>
   );
 }
 
+/**
+ * Simulateur « Mon estimation actuelle » — carte SOMBRE posée par-dessus la
+ * nappe du bloc hero (façon maquette) : violet profond dans les deux thèmes,
+ * texte blanc, ombre portée marquée pour l'effet « carte sur carte ». Données
+ * encore placeholder (mock conservé, cf. redesign).
+ */
 function StatusCard() {
   const router = useRouter();
   return (
-    <aside className="glass-surface flex flex-col gap-5 p-7">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
+    <aside
+      className="relative z-10 flex flex-col gap-4 overflow-hidden rounded-[20px] p-5 text-white ring-1 ring-white/15 sm:p-6"
+      style={{
+        backgroundImage:
+          "linear-gradient(168deg, color-mix(in oklab, var(--glass-status-from) 70%, #181040) 0%, color-mix(in oklab, var(--glass-status-to) 82%, #0F0A2C) 100%)",
+        boxShadow:
+          "0 24px 48px -14px rgba(34,18,84,0.55), 0 6px 18px rgba(34,18,84,0.25)",
+      }}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-white/75">
           Mon estimation actuelle
         </span>
-        <span
-          className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
-          style={{
-            background: "var(--glass-surface)",
-            color: "var(--glass-accent-deep)",
-          }}
-        >
+        <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold text-[color:var(--glass-accent-deep)]">
           <TrendingUpIcon className="size-3" strokeWidth={2.4} />
-          +2.1%
+          +2,1%
         </span>
       </div>
 
       <div
-        className="relative overflow-hidden rounded-[18px] p-6 text-white"
+        className="relative overflow-hidden rounded-[16px] p-5 ring-1 ring-white/20"
         style={{
           backgroundImage:
             "linear-gradient(135deg, var(--glass-status-from) 0%, var(--glass-status-to) 100%)",
@@ -261,7 +335,7 @@ function StatusCard() {
           <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/80">
             Allocation chômage
           </div>
-          <div className="glass-display mt-1 text-[42px] leading-none font-semibold">
+          <div className="glass-display mt-1 text-[40px] leading-none font-semibold">
             47,80 €
             <small className="ml-1.5 text-[14px] font-semibold opacity-70">/jour</small>
           </div>
@@ -271,15 +345,14 @@ function StatusCard() {
         </div>
       </div>
 
-      {/* Méta de l'estimation, détachée du bloc chiffré par un filet pour la
-          hiérarchie. Données encore placeholder (cf. redesign : mock conservé). */}
-      <div className="flex flex-col gap-2 border-t border-[color:var(--glass-ink-line)] pt-4 text-[12px]">
+      {/* Méta de l'estimation, détachée du bloc chiffré par un filet clair. */}
+      <div className="flex flex-col gap-2 border-t border-white/15 pt-4 text-[12px]">
         <div className="flex justify-between">
-          <span className="text-[color:var(--glass-ink-faint)]">Mise à jour</span>
+          <span className="text-white/60">Mise à jour</span>
           <span className="font-bold">il y a 2 jours</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-[color:var(--glass-ink-faint)]">Catégorie</span>
+          <span className="text-white/60">Catégorie</span>
           <span className="font-bold">Cohabitant · 1ʳᵉ pér.</span>
         </div>
       </div>
@@ -287,7 +360,7 @@ function StatusCard() {
       <button
         type="button"
         onClick={() => router.push("/outils")}
-        className="glass-cta inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[13.5px] font-bold"
+        className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-[rgba(13,7,34,0.5)] px-5 py-3.5 text-[13.5px] font-bold text-white transition hover:bg-[rgba(13,7,34,0.72)]"
       >
         Recalculer mon estimation
         <ArrowRightIcon className="size-4" />
@@ -297,8 +370,10 @@ function StatusCard() {
 }
 
 function FeaturedArticleSkeleton() {
+  // Reflète la vraie structure : bloc unique 3 colonnes (texte | illustration |
+  // simulateur incrusté), cf. règle perf "loading adapté à la structure UI".
   return (
-    <article className="glass-surface relative grid min-h-[340px] gap-9 overflow-hidden p-9 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+    <article className="glass-surface relative grid min-h-[340px] gap-8 overflow-hidden p-6 sm:p-7 lg:grid-cols-[1.02fr_1.18fr_0.95fr] lg:items-center">
       <div className="flex flex-col gap-4">
         <Skeleton className="h-6 w-44 rounded-full" />
         <div className="space-y-2">
@@ -313,21 +388,20 @@ function FeaturedArticleSkeleton() {
         <Skeleton className="mt-2 h-11 w-40 rounded-full" />
       </div>
       <Skeleton className="h-[260px] w-full rounded-[20px]" />
+      <Skeleton className="h-[280px] w-full rounded-[20px]" />
     </article>
   );
 }
 
-export function LandingHero({ article, loading = false }: LandingHeroProps) {
-  // While the news API is in flight, show a skeleton in place of the article.
-  // The status card is static placeholder data so it renders immediately.
-  return (
-    <section className="grid gap-6 lg:grid-cols-[1.7fr_1fr]">
-      {loading && !article ? (
-        <FeaturedArticleSkeleton />
-      ) : (
-        <FeaturedArticle article={article ?? FALLBACK_ARTICLE} />
-      )}
-      <StatusCard />
-    </section>
+export function LandingHero({ articles, loading = false }: LandingHeroProps) {
+  // BLOC UNIQUE (façon maquette) : texte + illustration centrale (points du
+  // carrousel dessous) + simulateur posé par-dessus — le tout rendu par
+  // HeroCarousel. Repli sur un article placeholder si l'API n'a rien renvoyé,
+  // pour ne jamais afficher un hero vide.
+  const list = articles.length > 0 ? articles : [FALLBACK_ARTICLE];
+  return loading && articles.length === 0 ? (
+    <FeaturedArticleSkeleton />
+  ) : (
+    <HeroCarousel articles={list} />
   );
 }

@@ -100,11 +100,12 @@ export default async function HomePage() {
     image: article.image ?? undefined,
   }));
 
-  const featuredArticle = news[0] ?? null;
+  // Les 5 premières « unes » alimentent le carrousel du hero (points de nav).
+  const featuredArticles = news.slice(0, 5);
 
   return (
     <>
-      <LandingHero article={featuredArticle} loading={false} />
+      <LandingHero articles={featuredArticles} loading={false} />
       <LandingToolsRow tools={tools} />
       <LandingBottom news={news} loading={false} />
     </>

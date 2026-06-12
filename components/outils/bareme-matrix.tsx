@@ -21,17 +21,21 @@ import { Calendar, Download, Home, Info, Search, X } from 'lucide-react'
 import { csvSafeCell, UTF8_BOM } from '@/lib/baremes/csv'
 import type { AllocationMatrixData, MatrixGroup } from '@/lib/baremes/allocationMatrix'
 
-// Accent par situation (repris du mockup : A/N en bleu, cohabitants en rose).
+// Accent par situation, aligné sur la palette violet/mauve du site (familles
+// distinctes pour la lisibilité : charge de famille violet, isolés fuchsia,
+// cohabitants rose).
 const ACCENT: Record<MatrixGroup['accent'], { text: string; head: string; ring: string }> = {
-  a: { text: 'text-blue-700 dark:text-blue-300', head: 'bg-blue-50/70 dark:bg-blue-950/30', ring: 'border-blue-200 dark:border-blue-900' },
-  n: { text: 'text-sky-700 dark:text-sky-300', head: 'bg-sky-50/70 dark:bg-sky-950/30', ring: 'border-sky-200 dark:border-sky-900' },
+  a: { text: 'text-violet-700 dark:text-violet-300', head: 'bg-violet-50/70 dark:bg-violet-950/30', ring: 'border-violet-200 dark:border-violet-900' },
+  n: { text: 'text-fuchsia-700 dark:text-fuchsia-300', head: 'bg-fuchsia-50/70 dark:bg-fuchsia-950/30', ring: 'border-fuchsia-200 dark:border-fuchsia-900' },
   b: { text: 'text-rose-700 dark:text-rose-300', head: 'bg-rose-50/70 dark:bg-rose-950/30', ring: 'border-rose-200 dark:border-rose-900' },
   b2: { text: 'text-rose-700 dark:text-rose-300', head: 'bg-rose-100/70 dark:bg-rose-950/40', ring: 'border-rose-300 dark:border-rose-900' },
 }
 
 function formatAmount(v: number | null): string {
   if (v == null) return '—'
-  return v.toLocaleString('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  // 2 décimales pour les allocations (76,55), jusqu'à 4 pour les salaires
+  // horaires (9,3119) — sans zéros superflus.
+  return v.toLocaleString('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
 }
 
 function formatDate(iso: string | null): string {
@@ -137,24 +141,24 @@ export function BaremeMatrix({ data }: { data: AllocationMatrixData }) {
 
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">
               {data.eyebrow}
             </p>
             <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">
               {data.title}{' '}
-              <span className="italic text-teal-600 dark:text-teal-400">{data.titleAccent}</span>
+              <span className="italic text-primary">{data.titleAccent}</span>
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">{data.subtitleNl}</p>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1 text-sm font-medium text-white">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-sm font-medium text-primary-foreground">
               <Calendar className="size-4" />
               Valable · {formatDate(data.validFrom)}
             </span>
             {data.multiplicateur != null && (
               <div className="text-right">
                 <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Multiplicateur</div>
-                <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
+                <div className="text-xl font-bold text-primary">
                   {data.multiplicateur.toLocaleString('fr-BE', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
                 </div>
               </div>
@@ -162,6 +166,14 @@ export function BaremeMatrix({ data }: { data: AllocationMatrixData }) {
           </div>
         </div>
       </div>
+
+      {/* Note (ex: libellés en cours) */}
+      {data.note && (
+        <div className="mx-6 mb-4 flex items-start gap-2 rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200 lg:mx-8">
+          <Info className="mt-0.5 size-3.5 shrink-0" />
+          <span>{data.note}</span>
+        </div>
+      )}
 
       {/* Barre de filtres */}
       <div className="mx-6 mb-4 rounded-xl border border-border bg-muted/30 p-3 lg:mx-8">
@@ -275,11 +287,11 @@ export function BaremeMatrix({ data }: { data: AllocationMatrixData }) {
             {rows.map((r) => (
               <tr
                 key={r.tranche}
-                className={r.isMin ? 'bg-blue-50/60 dark:bg-blue-950/20 font-semibold' : 'hover:bg-muted/40'}
+                className={r.isMin ? 'bg-primary/5 font-semibold' : 'hover:bg-muted/40'}
               >
                 <td
                   className={`sticky left-0 z-10 border-b border-r border-border px-3 py-1.5 text-left font-mono text-xs ${
-                    r.isMin ? 'bg-blue-50/60 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300' : 'bg-card text-muted-foreground'
+                    r.isMin ? 'bg-primary/5 text-primary' : 'bg-card text-muted-foreground'
                   }`}
                 >
                   {r.tranche}
@@ -288,7 +300,7 @@ export function BaremeMatrix({ data }: { data: AllocationMatrixData }) {
                   <td
                     key={i}
                     className={`border-b border-l border-border px-3 py-1.5 text-right tabular-nums ${
-                      r.isMin ? 'text-blue-700 dark:text-blue-300' : 'text-foreground'
+                      r.isMin ? 'text-primary' : 'text-foreground'
                     }`}
                   >
                     {formatAmount(r.values[i])}

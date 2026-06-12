@@ -17,6 +17,8 @@ export interface ActiveBaremeAmount {
   maxDailySalary: number | null
   validFrom: Date | null
   comparisonKey: string
+  /** Taux d'indemnisation (0.65 / 0.60) si présent — pour les colonnes à variantes. */
+  rate: number | null
 }
 
 export interface ActiveBaremeData {
@@ -79,7 +81,9 @@ export async function getActiveBaremeData(
     })
   )
 
-  const allAmounts: ActiveBaremeAmount[] = amounts.map((a) => ({
+  const allAmounts: ActiveBaremeAmount[] = amounts.map((a) => {
+    const raw = (a.rawData ?? {}) as { trace?: { rate?: number | null } }
+    return {
     id: a.id,
     sourceSheet: a.sourceSheet,
     category: a.category as BaremeCategory,
@@ -101,7 +105,9 @@ export async function getActiveBaremeData(
     maxDailySalary: a.maxDailySalary ? a.maxDailySalary.toNumber() : null,
     validFrom: a.validFrom,
     comparisonKey: a.comparisonKey,
-  }))
+    rate: raw.trace?.rate ?? null,
+    }
+  })
 
   const amountsByCategory: Partial<Record<BaremeCategory, ActiveBaremeAmount[]>> = {}
   for (const amount of allAmounts) {

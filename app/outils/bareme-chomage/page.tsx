@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { getActiveBaremeData } from '@/lib/baremes/getActiveBaremeData'
 import { buildAnbMatrix } from '@/lib/baremes/allocationMatrix'
 import { BaremeMatrix } from '@/components/outils/bareme-matrix'
+import { BaremeSheetNav } from '@/components/outils/bareme-sheet-nav'
+import { ROOT_SHEET_SLUG } from '@/lib/baremes/sheetRegistry'
 import { FileSpreadsheet } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -47,6 +49,7 @@ export default async function BaremeChomagePage() {
 
   return (
     <div className="px-4 py-6 lg:px-6">
+      <BaremeSheetNav activeSlug={ROOT_SHEET_SLUG} />
       <BaremeMatrix data={matrix} />
     </div>
   )

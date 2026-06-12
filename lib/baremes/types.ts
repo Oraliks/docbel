@@ -168,6 +168,8 @@ export interface BaremeRowTrace {
   transformTemplate?: string | null
   /** Explication humaine complète de la provenance (tooltip admin). */
   transformReason?: string | null
+  /** Taux d'indemnisation affiché en en-tête de colonne (0.65 / 0.60), si présent. */
+  rate?: number | null
 }
 
 // Brouillon de BaremeAmount produit par un parseur (avant insertion DB)

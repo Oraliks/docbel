@@ -32,6 +32,7 @@ function makeAmounts(): ActiveBaremeAmount[] {
         maxDailySalary: null,
         validFrom: new Date('2026-03-01T00:00:00.000Z'),
         comparisonKey: `full_unemployment:${code}:${tranche}`,
+        rate: null,
       })
     }
   }

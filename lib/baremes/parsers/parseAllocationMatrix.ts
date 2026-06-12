@@ -257,6 +257,9 @@ export function parseAllocationMatrix(
           mappingFile: isKnown ? CODE_MAPPING_FILE : null,
           transformTemplate: 'allocation_matrix',
           transformReason: explanation,
+          // Taux lu sous le code dans l'en-tête (0.65 / 0.60). Permet de libeller
+          // les colonnes à variantes (@2/@3) des feuilles temporaire/spéciale.
+          rate: rate ?? (info?.rate ?? null),
         },
       })
       extracted++

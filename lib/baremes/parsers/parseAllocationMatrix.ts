@@ -66,11 +66,23 @@ export function parseAllocationMatrix(
 
   // Extraire (colIndex, code) à partir de la ligne d'en-tête
   const headerRow = sheet.cellData[headerRowIndex]
-  const codeColumns: { colIndex: number; code: string; info: CodeInfo | null }[] = []
+  const codeColumns: {
+    colIndex: number
+    code: string
+    info: CodeInfo | null
+    occurrence: number
+    rate: number | null
+  }[] = []
   const seenUnknown = new Set<string>()
+  const occurrenceByCode = new Map<string, number>()
+  // Ligne de taux éventuelle juste sous l'en-tête (0.65 / 0.60) : différencie
+  // les blocs quand un même code apparaît dans plusieurs colonnes (TW-CT, SpecCat).
+  const rateRow = sheet.cellData[headerRowIndex + 1] ?? []
   for (let c = 1; c < headerRow.length; c++) {
     const rawHeaderCell = headerRow[c]
     const codes = parseCodeCell(rawHeaderCell)
+    const rateCandidate = parseCellNumber(rateRow[c])
+    const rate = rateCandidate !== null && rateCandidate > 0 && rateCandidate < 1 ? rateCandidate : null
     for (const code of codes) {
       const ignored = isIgnoredCode(code, options.category)
       if (ignored) {
@@ -108,8 +120,33 @@ export function parseAllocationMatrix(
           })
         )
       }
-      codeColumns.push({ colIndex: c, code, info })
+      const occurrence = (occurrenceByCode.get(code) ?? 0) + 1
+      occurrenceByCode.set(code, occurrence)
+      codeColumns.push({ colIndex: c, code, info, occurrence, rate })
     }
+  }
+
+  // Codes présents dans plusieurs colonnes (blocs entière/demi × taux) :
+  // les occurrences ≥ 2 sont suffixées @N dans la clé de comparaison pour que
+  // les montants coexistent au lieu de s'écraser. L'ordre des colonnes ONEM
+  // est stable d'un trimestre à l'autre → le diff reste fiable.
+  const duplicatedCodes = [...occurrenceByCode.entries()].filter(([, n]) => n > 1)
+  if (duplicatedCodes.length > 0) {
+    alerts.push(
+      makeIssue({
+        severity: 'info',
+        kind: 'duplicate',
+        title: 'Codes multi-colonnes désambiguïsés',
+        sheet: sheet.name,
+        row: headerRowIndex + 1,
+        reason: `${duplicatedCodes.length} code(s) apparaissent dans plusieurs colonnes (${duplicatedCodes
+          .slice(0, 4)
+          .map(([code, n]) => `"${code}" ×${n}`)
+          .join(', ')}${duplicatedCodes.length > 4 ? '…' : ''}) — typique des feuilles à blocs allocation entière/demi. Les occurrences suivantes sont suffixées @2, @3… dans la clé de comparaison ; le taux de chaque colonne est indiqué dans la trace.`,
+        recommendation:
+          'Vérifier dans la preview que chaque occurrence porte le bon taux (0.65 / 0.60) via le popover de provenance.',
+      })
+    )
   }
 
   if (codeColumns.length === 0) {
@@ -130,7 +167,6 @@ export function parseAllocationMatrix(
   // Parcourir les lignes de données (après l'en-tête)
   let extracted = 0
   let skippedErrorCells = 0
-  let invalidAmountCells = 0
   for (let r = headerRowIndex + 1; r < sheet.cellData.length; r++) {
     const row = sheet.cellData[r]
     const tranche = (row[0] ?? '').trim()
@@ -151,7 +187,7 @@ export function parseAllocationMatrix(
 
     const salaryCode = tranche.toUpperCase()
 
-    for (const { colIndex, code, info } of codeColumns) {
+    for (const { colIndex, code, info, occurrence, rate } of codeColumns) {
       const cellValue = row[colIndex]
       const cell = cellRef(r, colIndex)
       if (cellValue && cellValue.startsWith('#')) {
@@ -162,7 +198,6 @@ export function parseAllocationMatrix(
       if (amount === null) {
         // Cellule non vide mais non numérique → montant invalide à signaler
         if (cellValue && cellValue.trim()) {
-          invalidAmountCells++
           alerts.push(
             makeIssue({
               severity: 'warning',
@@ -182,7 +217,8 @@ export function parseAllocationMatrix(
         continue
       }
 
-      const comparisonKey = `${options.category}:${code}:${salaryCode}`
+      const keyCode = occurrence > 1 ? `${code}@${occurrence}` : code
+      const comparisonKey = `${options.category}:${keyCode}:${salaryCode}`
       const isKnown = info !== null
       const explanation = buildExplanation({
         sheet: sheet.name,
@@ -192,6 +228,8 @@ export function parseAllocationMatrix(
         salaryCode,
         amount,
         rawValue: cellValue ?? '',
+        occurrence,
+        rate,
       })
 
       amounts.push({
@@ -261,9 +299,17 @@ function buildExplanation(input: {
   salaryCode: string
   amount: number
   rawValue: string
+  occurrence: number
+  rate: number | null
 }): string {
   const parts: string[] = []
   parts.push(`Cette ligne provient de la feuille ${input.sheet}, cellule ${input.cell}.`)
+  if (input.occurrence > 1 || input.rate !== null) {
+    const bits: string[] = []
+    if (input.occurrence > 1) bits.push(`${input.occurrence}ᵉ colonne portant le code ${input.code}`)
+    if (input.rate !== null) bits.push(`taux affiché ${Math.round(input.rate * 100)} %`)
+    parts.push(`(${bits.join(', ')}.)`)
+  }
   if (input.info) {
     parts.push(`Le code ONEM ${input.code} a été reconnu via ${CODE_MAPPING_FILE}.`)
     const semantics: string[] = []

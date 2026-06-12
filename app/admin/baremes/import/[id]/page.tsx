@@ -10,15 +10,25 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   ArrowLeft,
   CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Info,
   Calendar,
+  Download,
   FileSpreadsheet,
   Loader2,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
+import { AmountsPreviewTab } from '@/components/admin/baremes/amounts-preview-tab'
+import {
+  IssuesTab,
+  effectiveSeverity,
+  type IssueItem,
+} from '@/components/admin/baremes/issues-tab'
+import {
+  DiagnosticTab,
+  type DiagnosticsPayload,
+} from '@/components/admin/baremes/diagnostic-tab'
 
 interface FileRecord {
   id: string
@@ -26,9 +36,11 @@ interface FileRecord {
   status: string
   filePath: string
   fileHash: string | null
+  fileSize: number | null
   effectiveDate: string
   validFrom: string | null
   multiplicateur: number | null
+  requiresApproval?: boolean
   publishedAt: string | null
   publishedBy: string | null
   createdBy: string | null
@@ -40,30 +52,8 @@ interface FileRecord {
     amountsExtracted: number
     sheetsByName: { name: string; parsed: boolean; amountsCount: number; reason?: string }[]
   } | null
-  alerts:
-    | {
-        level: 'info' | 'warn' | 'error'
-        sheet?: string
-        cell?: string
-        message: string
-      }[]
-    | null
-}
-
-interface AmountPreview {
-  id: string
-  sourceSheet: string
-  category: string
-  allocationCode: string | null
-  salaryCode: string | null
-  article: string | null
-  labelFr: string | null
-  labelNl: string | null
-  unit: string | null
-  amount: number
-  minDailySalary: number | null
-  maxDailySalary: number | null
-  comparisonKey: string
+  diagnostics: DiagnosticsPayload | null
+  alerts: IssueItem[] | null
 }
 
 interface DiffChange {
@@ -105,10 +95,9 @@ interface HistoryEntry {
 }
 
 interface PreviewData {
-  file: FileRecord & { requiresApproval?: boolean }
-  amountsPreview: AmountPreview[]
+  file: FileRecord
+  exportAllowed: boolean
   totalAmounts: number
-  amountsPreviewLimit: number
   diff: Diff | null
   history?: HistoryEntry[]
   approvals?: Approval[]
@@ -269,7 +258,7 @@ export default function BaremeImportPreviewPage() {
     )
   }
 
-  const { file, amountsPreview, totalAmounts, amountsPreviewLimit, diff } = data
+  const { file, exportAllowed, totalAmounts, diff } = data
   const alerts = file.alerts ?? []
   const summary = file.summary
   const isDraftOrPending = file.status === 'draft' || file.status === 'pending_approval'
@@ -277,9 +266,11 @@ export default function BaremeImportPreviewPage() {
   const requiresApproval = file.requiresApproval === true
   const approvals = data.approvals ?? []
   const history = data.history ?? []
-  const errorCount = alerts.filter((a) => a.level === 'error').length
-  const warnCount = alerts.filter((a) => a.level === 'warn').length
-  const infoCount = alerts.filter((a) => a.level === 'info').length
+  const errorCount = alerts.filter((a) => {
+    const s = effectiveSeverity(a)
+    return s === 'error' || s === 'critical'
+  }).length
+  const warnCount = alerts.filter((a) => effectiveSeverity(a) === 'warning').length
 
   const statusLabel: Record<string, { label: string; tone: string }> = {
     draft: { label: t('statusDraft'), tone: 'bg-yellow-100 text-yellow-900 border-yellow-200' },
@@ -315,15 +306,27 @@ export default function BaremeImportPreviewPage() {
               <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${statusInfo.tone}`}>
                 {statusInfo.label}
               </span>
+              {exportAllowed ? (
+                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border bg-green-100 text-green-900 border-green-300">
+                  <ShieldCheck className="w-3 h-3" />
+                  {t('exportAllowedBadge')}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border bg-red-100 text-red-900 border-red-300">
+                  <ShieldAlert className="w-3 h-3" />
+                  {t('exportBlockedBadge')}
+                </span>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
               <span className="inline-flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 {file.validFrom
                   ? t('validSince', { date: new Date(file.validFrom).toLocaleDateString('fr-BE') })
-                  : t('rawDate', { date: file.effectiveDate })}
+                  : t('rawDate', { date: file.effectiveDate || '—' })}
               </span>
               {file.multiplicateur && <span>×{file.multiplicateur.toFixed(4)}</span>}
+              {file.fileSize != null && <span>{formatBytes(file.fileSize)}</span>}
               <span className="font-mono">
                 {t('hashLabel', { hash: file.fileHash ? file.fileHash.slice(0, 10) + '…' : t('hashLegacy') })}
               </span>
@@ -338,7 +341,7 @@ export default function BaremeImportPreviewPage() {
             {file.filePath && (
               <Button
                 variant="outline"
-                onClick={() => window.open(file.filePath, '_blank')}
+                onClick={() => window.open(`/api/baremes/import/${file.id}/source`, '_blank')}
                 type="button"
                 size="sm"
               >
@@ -388,70 +391,79 @@ export default function BaremeImportPreviewPage() {
           <Stat label={t('statSheetsDetected')} value={summary.sheetsDetected} />
           <Stat label={t('statSheetsParsed')} value={summary.sheetsParsed} tone="success" />
           <Stat label={t('statSheetsIgnored')} value={summary.sheetsIgnored} tone="muted" />
-          <Stat label={t('kpiAmountsExtracted')} value={summary.amountsExtracted} tone="primary" />
+          <Stat label={t('kpiAmountsExtracted')} value={totalAmounts} tone="primary" />
           <Stat label={t('statErrors')} value={errorCount} tone={errorCount > 0 ? 'error' : 'muted'} />
           <Stat label={t('statWarnings')} value={warnCount} tone={warnCount > 0 ? 'warn' : 'muted'} />
         </div>
       )}
 
-      <Tabs defaultValue="diff" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="diff">
-            {t('tabChanges')}
-            {diff && diff.changes.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {diff.changes.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="alerts">
-            {t('tabAlerts')}
-            {alerts.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {alerts.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="sheets">{t('tabSheets')}</TabsTrigger>
-          <TabsTrigger value="preview">
-            {t('tabAmountsPreview')}
-            <Badge variant="secondary" className="ml-2">
-              {totalAmounts}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="raw">{t('tabRawGrid')}</TabsTrigger>
-          <TabsTrigger value="workflow">
-            {t('tabWorkflow')}
-            {(approvals.length > 0 || history.length > 0) && (
-              <Badge variant="secondary" className="ml-2">
-                {approvals.length + history.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="summary" className="space-y-4">
+        <div className="overflow-x-auto">
+          <TabsList className="inline-flex w-auto">
+            <TabsTrigger value="summary">{t('tabSummary')}</TabsTrigger>
+            <TabsTrigger value="diff">
+              {t('tabChanges')}
+              {diff && diff.changes.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {diff.changes.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="allocations">{t('tabAllocations')}</TabsTrigger>
+            <TabsTrigger value="tranches">{t('tabBrackets')}</TabsTrigger>
+            <TabsTrigger value="montants-base">{t('tabBasicAmounts')}</TabsTrigger>
+            <TabsTrigger value="issues">
+              {t('tabIssues')}
+              {alerts.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {alerts.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="diagnostic">{t('tabDiagnostic')}</TabsTrigger>
+            <TabsTrigger value="workflow">
+              {t('tabWorkflow')}
+              {(approvals.length > 0 || history.length > 0) && (
+                <Badge variant="secondary" className="ml-2">
+                  {approvals.length + history.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="summary">
+          <SummaryTab
+            file={file}
+            exportAllowed={exportAllowed}
+            totalAmounts={totalAmounts}
+            errorCount={errorCount}
+            warnCount={warnCount}
+          />
+        </TabsContent>
 
         <TabsContent value="diff">
           <DiffPanel diff={diff} status={file.status} />
         </TabsContent>
 
-        <TabsContent value="alerts">
-          <AlertsPanel alerts={alerts} counts={{ error: errorCount, warn: warnCount, info: infoCount }} />
+        <TabsContent value="allocations">
+          <AmountsPreviewTab fileId={file.id} group="allocations" exportAllowed={exportAllowed} />
         </TabsContent>
 
-        <TabsContent value="sheets">
-          <SheetsPanel sheets={summary?.sheetsByName ?? []} />
+        <TabsContent value="tranches">
+          <AmountsPreviewTab fileId={file.id} group="tranches" exportAllowed={exportAllowed} />
         </TabsContent>
 
-        <TabsContent value="preview">
-          <AmountsPreviewPanel
-            amounts={amountsPreview}
-            total={totalAmounts}
-            limit={amountsPreviewLimit}
-          />
+        <TabsContent value="montants-base">
+          <AmountsPreviewTab fileId={file.id} group="montants-base" exportAllowed={exportAllowed} />
         </TabsContent>
 
-        <TabsContent value="raw">
-          <RawSheetsPanel fileId={file.id} />
+        <TabsContent value="issues">
+          <IssuesTab issues={alerts} fileId={file.id} />
+        </TabsContent>
+
+        <TabsContent value="diagnostic">
+          <DiagnosticTab fileId={file.id} diagnostics={file.diagnostics} />
         </TabsContent>
 
         <TabsContent value="workflow">
@@ -463,6 +475,174 @@ export default function BaremeImportPreviewPage() {
           />
         </TabsContent>
       </Tabs>
+    </div>
+  )
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} o`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
+  return `${(bytes / 1024 / 1024).toFixed(2)} Mo`
+}
+
+function SummaryTab({
+  file,
+  exportAllowed,
+  totalAmounts,
+  errorCount,
+  warnCount,
+}: {
+  file: FileRecord
+  exportAllowed: boolean
+  totalAmounts: number
+  errorCount: number
+  warnCount: number
+}) {
+  const t = useTranslations('admin.baremes')
+  const summary = file.summary
+  const dl = (type: string) =>
+    window.open(`/api/baremes/import/${file.id}/export?type=${type}`, '_blank')
+
+  return (
+    <div className="space-y-4">
+      {/* Verdict export */}
+      <Card className={exportAllowed ? 'border-green-300' : 'border-red-300'}>
+        <CardContent className="py-4 flex items-start gap-3">
+          {exportAllowed ? (
+            <ShieldCheck className="w-6 h-6 text-green-600 shrink-0" />
+          ) : (
+            <ShieldAlert className="w-6 h-6 text-red-600 shrink-0" />
+          )}
+          <div className="flex-1">
+            <p className="font-medium text-sm">
+              {exportAllowed ? t('summaryExportOk') : t('summaryExportBlocked')}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {exportAllowed
+                ? t('summaryExportOkDetail', { errors: errorCount, warnings: warnCount })
+                : t('summaryExportBlockedDetail', { errors: errorCount })}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Fiche fichier */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">{t('summaryFileCard')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-xs">
+              <dt className="text-muted-foreground">{t('summaryFileName')}</dt>
+              <dd className="font-mono break-all">{file.name}</dd>
+              <dt className="text-muted-foreground">{t('summaryPeriod')}</dt>
+              <dd className="font-medium">
+                {file.validFrom
+                  ? new Date(file.validFrom).toLocaleDateString('fr-BE')
+                  : t('summaryPeriodMissing')}
+              </dd>
+              <dt className="text-muted-foreground">{t('summarySize')}</dt>
+              <dd>{file.fileSize != null ? formatBytes(file.fileSize) : '—'}</dd>
+              <dt className="text-muted-foreground">SHA-256</dt>
+              <dd className="font-mono break-all">{file.fileHash ?? '—'}</dd>
+              {file.multiplicateur && (
+                <>
+                  <dt className="text-muted-foreground">{t('colMultiplier')}</dt>
+                  <dd className="font-mono">×{file.multiplicateur.toFixed(4)}</dd>
+                </>
+              )}
+              <dt className="text-muted-foreground">{t('summaryImportedBy')}</dt>
+              <dd>
+                {file.createdBy ?? '—'} · {new Date(file.createdAt).toLocaleString('fr-BE')}
+              </dd>
+            </dl>
+          </CardContent>
+        </Card>
+
+        {/* Téléchargements */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">{t('summaryDownloads')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" disabled={!exportAllowed} onClick={() => dl('allocations')}
+                title={exportAllowed ? undefined : t('exportBlockedTooltip')}>
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                baremes-allocations.csv
+              </Button>
+              <Button size="sm" disabled={!exportAllowed} onClick={() => dl('tranches')}
+                title={exportAllowed ? undefined : t('exportBlockedTooltip')}>
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                tranches-salariales.csv
+              </Button>
+              <Button size="sm" disabled={!exportAllowed} onClick={() => dl('montants-base')}
+                title={exportAllowed ? undefined : t('exportBlockedTooltip')}>
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                montants-base.csv
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2 pt-2 border-t">
+              <Button variant="outline" size="sm" onClick={() => dl('report')}>
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                import-report.json
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => dl('unknown-codes')}>
+                unknown-codes.json
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => dl('ignored-rows')}>
+                ignored-rows.csv
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => dl('unsupported-sheets')}>
+                unsupported-sheets.json
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">{t('summaryReportsHint')}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Feuilles */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">
+            {t('tabSheets')} — {summary?.sheetsParsed ?? 0}/{summary?.sheetsDetected ?? 0}{' '}
+            {t('summarySheetsParsed')} · {totalAmounts.toLocaleString('fr-BE')}{' '}
+            {t('summaryRowsExtracted')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2">{t('sheetsColSheet')}</th>
+                <th className="text-left px-3 py-2">{t('sheetsColStatus')}</th>
+                <th className="text-right px-3 py-2">{t('sheetsColAmounts')}</th>
+                <th className="text-left px-3 py-2">{t('sheetsColReason')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(summary?.sheetsByName ?? []).map((s) => (
+                <tr key={s.name} className="border-t">
+                  <td className="px-3 py-2 font-mono text-xs">{s.name}</td>
+                  <td className="px-3 py-2">
+                    {s.parsed ? (
+                      <span className="inline-flex items-center gap-1 text-green-700">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {t('sheetParsed')}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">{t('sheetIgnored')}</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono">{s.amountsCount}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">{s.reason ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -614,368 +794,6 @@ function DiffSection({ title, items }: { title: string; items: DiffChange[] }) {
         </div>
       </CardContent>
     </Card>
-  )
-}
-
-function AlertsPanel({
-  alerts,
-  counts,
-}: {
-  alerts: FileRecord['alerts']
-  counts: { error: number; warn: number; info: number }
-}) {
-  const t = useTranslations('admin.baremes')
-  if (!alerts || alerts.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          {t('alertsNone')}
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const icons = {
-    error: <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />,
-    warn: <AlertTriangle className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />,
-    info: <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />,
-  }
-
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-3">
-          <span>
-            {counts.error > 0 && (
-              <span className="text-red-600 mr-2">{t('alertsErrorCount', { count: counts.error })}</span>
-            )}
-            {counts.warn > 0 && (
-              <span className="text-yellow-600 mr-2">{t('alertsWarnCount', { count: counts.warn })}</span>
-            )}
-            {counts.info > 0 && <span className="text-blue-600">{t('alertsInfoCount', { count: counts.info })}</span>}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ul className="space-y-2">
-          {alerts.map((a, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm">
-              {icons[a.level]}
-              <div className="flex-1">
-                <div>{a.message}</div>
-                {(a.sheet || a.cell) && (
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {a.sheet && <span>{t('alertSheet', { sheet: a.sheet })}</span>}
-                    {a.sheet && a.cell && <span> · </span>}
-                    {a.cell && <span>{t('alertCell', { cell: a.cell })}</span>}
-                  </div>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  )
-}
-
-function SheetsPanel({
-  sheets,
-}: {
-  sheets: { name: string; parsed: boolean; amountsCount: number; reason?: string }[]
-}) {
-  const t = useTranslations('admin.baremes')
-  if (sheets.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          {t('sheetsNone')}
-        </CardContent>
-      </Card>
-    )
-  }
-  return (
-    <Card>
-      <CardContent className="p-0">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs text-muted-foreground">
-            <tr>
-              <th className="text-left px-3 py-2">{t('sheetsColSheet')}</th>
-              <th className="text-left px-3 py-2">{t('sheetsColStatus')}</th>
-              <th className="text-right px-3 py-2">{t('sheetsColAmounts')}</th>
-              <th className="text-left px-3 py-2">{t('sheetsColReason')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sheets.map((s) => (
-              <tr key={s.name} className="border-t">
-                <td className="px-3 py-2 font-mono text-xs">{s.name}</td>
-                <td className="px-3 py-2">
-                  {s.parsed ? (
-                    <span className="inline-flex items-center gap-1 text-green-700">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> {t('sheetParsed')}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">{t('sheetIgnored')}</span>
-                  )}
-                </td>
-                <td className="px-3 py-2 text-right font-mono">{s.amountsCount}</td>
-                <td className="px-3 py-2 text-xs text-muted-foreground">{s.reason ?? '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </CardContent>
-    </Card>
-  )
-}
-
-function AmountsPreviewPanel({
-  amounts,
-  total,
-  limit,
-}: {
-  amounts: AmountPreview[]
-  total: number
-  limit: number
-}) {
-  const t = useTranslations('admin.baremes')
-  if (amounts.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          {t('amountsNone')}
-        </CardContent>
-      </Card>
-    )
-  }
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm">
-          {t('amountsPreviewHeader', { shown: amounts.length, total: total.toLocaleString('fr-BE') })}
-          {total > limit && ` ${t('amountsLimit', { limit })}`}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="border-t overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-muted/50 text-muted-foreground">
-              <tr>
-                <th className="text-left px-3 py-2">{t('amountsColCategory')}</th>
-                <th className="text-left px-3 py-2">{t('amountsColSheet')}</th>
-                <th className="text-left px-3 py-2">{t('amountsColAllocCode')}</th>
-                <th className="text-left px-3 py-2">{t('amountsColBracket')}</th>
-                <th className="text-left px-3 py-2">{t('amountsColArticle')}</th>
-                <th className="text-left px-3 py-2">{t('amountsColLabel')}</th>
-                <th className="text-right px-3 py-2">{t('amountsColAmount')}</th>
-                <th className="text-left px-3 py-2">{t('amountsColUnit')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {amounts.map((a) => (
-                <tr key={a.id} className="border-t hover:bg-muted/30">
-                  <td className="px-3 py-1.5 font-mono">{a.category}</td>
-                  <td className="px-3 py-1.5 font-mono text-muted-foreground">{a.sourceSheet}</td>
-                  <td className="px-3 py-1.5 font-mono">{a.allocationCode ?? '—'}</td>
-                  <td className="px-3 py-1.5 font-mono">
-                    {a.salaryCode ?? '—'}
-                    {a.minDailySalary != null && a.maxDailySalary != null && (
-                      <span className="text-muted-foreground ml-1">
-                        ({a.minDailySalary.toFixed(2)}–{a.maxDailySalary.toFixed(2)})
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-1.5">{a.article ?? '—'}</td>
-                  <td className="px-3 py-1.5 truncate max-w-[240px]">
-                    {a.labelFr ?? a.labelNl ?? '—'}
-                  </td>
-                  <td className="px-3 py-1.5 text-right font-mono">{a.amount.toFixed(4)}</td>
-                  <td className="px-3 py-1.5">{a.unit ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-interface RawSheetData {
-  id: string
-  name: string
-  category: string
-  rowCount: number
-  colCount: number
-  sheetIndex: number
-  cellData: string[][]
-}
-
-function RawSheetsPanel({ fileId }: { fileId: string }) {
-  const t = useTranslations('admin.baremes')
-  const [sheets, setSheets] = useState<RawSheetData[] | null>(null)
-  const [activeId, setActiveId] = useState<string>('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    async function fetchSheets() {
-      setLoading(true)
-      try {
-        const res = await fetch(`/api/baremes?fileId=${fileId}`)
-        if (!res.ok) throw new Error(t('loadError'))
-        const data = await res.json()
-        if (cancelled) return
-        setSheets(data.sheets ?? [])
-        if (data.sheets?.[0]) setActiveId(data.sheets[0].id)
-      } catch (err) {
-        if (!cancelled) toast.error(err instanceof Error ? err.message : t('error'))
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    void fetchSheets()
-    return () => {
-      cancelled = true
-    }
-  }, [fileId, t])
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center text-muted-foreground">
-          <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
-          {t('rawLoadingGrids')}
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (!sheets || sheets.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground text-sm">
-          {t('rawNoSheets')}
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const active = sheets.find((s) => s.id === activeId) ?? sheets[0]
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-center gap-3 justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{t('tabRawGrid')}</span>
-            <span className="text-xs text-muted-foreground">
-              ({t('rawSheetCount', { count: sheets.length })})
-            </span>
-          </div>
-          <div className="relative w-72 max-w-full">
-            <input
-              type="search"
-              placeholder={t('rawFilterCells')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-sm border rounded-md px-3 py-1.5 bg-background"
-            />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={active.id} onValueChange={setActiveId}>
-          <div className="overflow-x-auto pb-2">
-            <TabsList className="inline-flex w-auto">
-              {sheets.map((sheet) => (
-                <TabsTrigger key={sheet.id} value={sheet.id} className="text-xs">
-                  {sheet.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-
-          {sheets.map((sheet) => (
-            <TabsContent key={sheet.id} value={sheet.id} className="mt-4">
-              <div className="text-xs text-muted-foreground mb-2">
-                {sheet.category} · {sheet.rowCount} × {sheet.colCount}
-              </div>
-              <ExcelGrid cellData={sheet.cellData} searchTerm={searchTerm} />
-            </TabsContent>
-          ))}
-        </Tabs>
-      </CardContent>
-    </Card>
-  )
-}
-
-function ExcelGrid({ cellData, searchTerm }: { cellData: string[][]; searchTerm: string }) {
-  const t = useTranslations('admin.baremes')
-  const search = searchTerm.toLowerCase().trim()
-
-  const highlightCell = (val: string): React.ReactNode => {
-    if (!search || !val) return val
-    const lower = val.toLowerCase()
-    const idx = lower.indexOf(search)
-    if (idx === -1) return val
-    return (
-      <>
-        {val.slice(0, idx)}
-        <mark className="bg-yellow-200 dark:bg-yellow-700/60 dark:text-yellow-50 px-0.5">
-          {val.slice(idx, idx + search.length)}
-        </mark>
-        {val.slice(idx + search.length)}
-      </>
-    )
-  }
-
-  const isMatchingRow = (row: string[]): boolean => {
-    if (!search) return true
-    return row.some((c) => c && c.toLowerCase().includes(search))
-  }
-
-  if (!cellData || cellData.length === 0) {
-    return <p className="text-center py-8 text-muted-foreground">{t('rawNoData')}</p>
-  }
-
-  return (
-    <div className="border rounded-lg overflow-auto max-h-[70vh]">
-      <table className="text-sm w-full border-collapse">
-        <tbody>
-          {cellData.map((row, rIdx) => {
-            const matches = isMatchingRow(row)
-            return (
-              <tr
-                key={rIdx}
-                className={`${search && !matches ? 'opacity-30' : ''} ${
-                  rIdx === 0 ? 'bg-muted font-semibold' : 'hover:bg-primary/5'
-                }`}
-              >
-                <td className="border border-border px-2 py-1 text-xs text-muted-foreground sticky left-0 bg-muted/50 font-mono">
-                  {rIdx + 1}
-                </td>
-                {row.map((cell, cIdx) => {
-                  const isError = cell?.startsWith('#')
-                  return (
-                    <td
-                      key={cIdx}
-                      className={`border border-border px-2 py-1 whitespace-nowrap ${
-                        isError ? 'text-red-400 italic text-xs' : ''
-                      }`}
-                    >
-                      {isError ? '' : highlightCell(cell || '')}
-                    </td>
-                  )
-                })}
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
   )
 }
 

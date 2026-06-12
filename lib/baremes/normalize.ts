@@ -141,8 +141,9 @@ export function parseBelgianDate(value: string | undefined | null): Date | null 
  * serait capté à tort comme une date.
  */
 export function extractValidFromFileName(filename: string): Date | null {
-  // Pattern DDMMYYYY isolé : (début|séparateur) puis 8 chiffres suivis de .xlsx ou séparateur
-  const m1 = filename.match(/(?:^|[-_])(\d{2})(\d{2})(\d{4})(?=\.xlsx|[-_.]|$)/i)
+  // Pattern DDMMYYYY isolé : (début|séparateur) puis 8 chiffres suivis de .xlsx,
+  // d'un séparateur, ou d'un suffixe navigateur type " (1)" (re-téléchargement).
+  const m1 = filename.match(/(?:^|[-_])(\d{2})(\d{2})(\d{4})(?=\.xlsx|[-_.\s(]|$)/i)
   if (m1) {
     const day = parseInt(m1[1], 10)
     const month = parseInt(m1[2], 10)

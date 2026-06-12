@@ -26,17 +26,31 @@ export function parseEmploymentBonus(
   const alerts: BaremeAlert[] = []
   const amounts: BaremeAmountDraft[] = []
 
-  // Détecter les positions des 2 sections (Employé / Ouvrier)
+  // Détecter les positions des 2 sections (Employé / Ouvrier).
+  // Un intitulé de section est une cellule qui COMMENCE par le mot-clé — une
+  // simple mention au fil d'une note (ex: "… s'il s'agit d'un ouvrier" en L10)
+  // ne doit pas déclencher la section.
   let employeeStart = -1
   let workerStart = -1
   for (let r = 0; r < sheet.cellData.length; r++) {
-    const text = sheet.cellData[r].join(' ').toLowerCase()
-    if (employeeStart === -1 && /employ.|bediende/.test(text)) employeeStart = r
-    if (workerStart === -1 && /ouvrier|arbeider/.test(text)) workerStart = r
+    const cells = sheet.cellData[r].map((c) => (c ?? '').trim().toLowerCase())
+    if (employeeStart === -1 && cells.some((c) => /^(employ.|bediende)/.test(c))) {
+      employeeStart = r
+    }
+    if (workerStart === -1 && cells.some((c) => /^(ouvrier|arbeider)/.test(c))) {
+      workerStart = r
+    }
   }
 
+  // Bornes : chaque section s'arrête là où commence l'autre (sinon les
+  // fenêtres de scan se chevauchent et les tranches sont comptées deux fois).
+  const employeeEnd =
+    workerStart > employeeStart && employeeStart >= 0 ? workerStart : employeeStart + 15
+  const workerEnd =
+    employeeStart > workerStart && workerStart >= 0 ? employeeStart : workerStart + 15
+
   if (employeeStart >= 0) {
-    extractTier(sheet, employeeStart, 'employee', options.validFrom, amounts)
+    extractTier(sheet, employeeStart, employeeEnd, 'employee', options.validFrom, amounts)
   } else {
     alerts.push(
       makeIssue({
@@ -51,7 +65,7 @@ export function parseEmploymentBonus(
   }
 
   if (workerStart >= 0) {
-    extractTier(sheet, workerStart, 'worker', options.validFrom, amounts)
+    extractTier(sheet, workerStart, workerEnd, 'worker', options.validFrom, amounts)
   } else {
     alerts.push(
       makeIssue({
@@ -84,12 +98,13 @@ export function parseEmploymentBonus(
 function extractTier(
   sheet: ParsedSheet,
   startRow: number,
+  endRow: number,
   category: 'employee' | 'worker',
   validFrom: Date | null,
   amounts: BaremeAmountDraft[]
 ) {
-  // Chercher dans les ~10 lignes suivantes les tranches : opérateur en col B, seuil en C
-  for (let r = startRow; r < Math.min(startRow + 15, sheet.cellData.length); r++) {
+  // Chercher dans la fenêtre de la section les tranches : opérateur en col B, seuil en C
+  for (let r = startRow; r < Math.min(endRow, sheet.cellData.length); r++) {
     const row = sheet.cellData[r]
     const op = (row[1] ?? '').trim() // col B : "<", ">", etc.
     const threshold = parseCellNumber(row[2]) // col C

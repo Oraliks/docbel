@@ -74,6 +74,9 @@ export function parseOtherUnemploymentAmounts(
   let lastArticle: string | null = null
   let lastArticleRow: number | null = null
   let lastLabel: { nl: string | null; fr: string | null } = { nl: null, fr: null }
+  // Un même article peut porter plusieurs montants de même unité (sous-cas) :
+  // on suffixe @2, @3… pour qu'ils coexistent. L'ordre des lignes ONEM est stable.
+  const keyOccurrences = new Map<string, number>()
 
   for (let r = header.rowIndex + 1; r < sheet.cellData.length; r++) {
     const row = sheet.cellData[r]
@@ -99,6 +102,9 @@ export function parseOtherUnemploymentAmounts(
       const articleKey = normalizeArticleKey(lastArticle)
       const amountCell = cellRef(r, colIndex)
       const articleInherited = !article && lastArticleRow !== r + 1
+      const baseKey = `other_unemployment_amount:${articleKey}:${unit}`
+      const occurrence = (keyOccurrences.get(baseKey) ?? 0) + 1
+      keyOccurrences.set(baseKey, occurrence)
       amounts.push({
         sourceSheet: sheet.name,
         category: 'other_unemployment_amount',
@@ -108,7 +114,7 @@ export function parseOtherUnemploymentAmounts(
         unit,
         amount,
         validFrom: options.validFrom,
-        comparisonKey: `other_unemployment_amount:${articleKey}:${unit}`,
+        comparisonKey: occurrence > 1 ? `${baseKey}@${occurrence}` : baseKey,
         rawData: { row: r + 1 },
         status: 'valid',
         warnings: articleInherited

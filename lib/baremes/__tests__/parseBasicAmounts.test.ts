@@ -72,6 +72,27 @@ describe('parseBasicAmounts', () => {
     const result = parseBasicAmounts(sheet, { validFrom: VALID_FROM })
     expect(result.amounts).toHaveLength(1)
     expect(result.amounts[0].article).toBe('art 1')
-    expect(result.alerts.some((a) => a.level === 'info' && a.message.includes('lignes'))).toBe(true)
+    expect(result.alerts.some((a) => a.level === 'info' && a.kind === 'ignored_row')).toBe(true)
+    // Les lignes écartées sont tracées individuellement avec leur raison
+    expect(result.ignoredRows).toHaveLength(2)
+    expect(result.ignoredRows?.map((r) => r.rowIndex)).toEqual([3, 4])
+    expect(result.ignoredRows?.[0].reason).toBeTruthy()
+  })
+
+  it('trace la provenance de chaque montant extrait', () => {
+    const sheet = makeSheet([
+      ['Artikel', 'Wat', '', 'Basisbedrag', 'Freq bedrag'],
+      ['art 1', 'desc', 'D7', '100.00', 'dag'],
+    ])
+    const result = parseBasicAmounts(sheet, { validFrom: VALID_FROM })
+    expect(result.amounts).toHaveLength(1)
+    const trace = result.amounts[0].trace
+    expect(trace?.sourceCell).toBe('D2')
+    expect(trace?.sourceRowIndex).toBe(2)
+    expect(trace?.rawValue).toBe('100.00')
+    expect(trace?.normalizedValue).toBe(100)
+    expect(trace?.transformTemplate).toBe('basic_amounts')
+    expect(trace?.transformReason).toContain('D2')
+    expect(result.amounts[0].status).toBe('valid')
   })
 })

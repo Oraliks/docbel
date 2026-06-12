@@ -114,15 +114,20 @@ export function normalizeBaremeData(
   }
   const amounts = [...byKey.values()]
 
-  for (const [key, dup] of duplicates) {
+  // Une seule issue agrégée pour les doublons (le détail par clé vit dans
+  // diagnostics.duplicates) — sinon un défaut structurel répété noierait
+  // l'onglet Erreurs sous des centaines d'entrées identiques.
+  if (duplicates.size > 0) {
+    const totalDropped = [...duplicates.values()].reduce((s, d) => s + d.count - 1, 0)
+    const examples = [...duplicates.keys()].slice(0, 5).join(', ')
     alerts.push(
       makeIssue({
         severity: 'warning',
         kind: 'duplicate',
-        title: 'Doublon de clé de comparaison',
-        reason: `La clé "${key}" apparaît ${dup.count} fois (cellules écartées : ${dup.droppedCells.slice(0, 5).join(', ') || 'n/c'}${dup.droppedCells.length > 5 ? '…' : ''}). Seule la première occurrence est conservée.`,
+        title: 'Doublons de clés de comparaison',
+        reason: `${duplicates.size} clé(s) apparaissent plusieurs fois (${totalDropped} ligne(s) écartée(s), seule la première occurrence est conservée). Exemples : ${examples}${duplicates.size > 5 ? '…' : ''}. Détail complet dans le Diagnostic.`,
         recommendation:
-          'Si les deux occurrences sont légitimes, la clé de comparaison du parser doit être affinée (voir le parser concerné dans sheet-templates.ts).',
+          'Si plusieurs occurrences sont légitimes, la clé de comparaison du parser concerné doit être affinée (voir sheet-templates.ts).',
       })
     )
   }

@@ -135,6 +135,13 @@ function extractEffectiveDate(workbook: XLSX.WorkBook): string {
       if (match) {
         return value
       }
+      // Dates sérialisées ISO ("2026-03-01" ou "2026-03-01 00:00:00") :
+      // renvoyées au format belge D-M-YYYY pour rester compatibles avec
+      // parseBelgianDate côté normalisation.
+      const iso = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+      if (iso) {
+        return `${Number(iso[3])}-${Number(iso[2])}-${iso[1]}`
+      }
     }
   }
   // Pas de date détectée → chaîne vide. On ne devine JAMAIS une période

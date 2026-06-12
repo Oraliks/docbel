@@ -1,5 +1,6 @@
 import type { ParsedSheet } from '@/lib/baremes-parser'
 import type { BaremeAlert, BaremeAmountDraft, ParserResult } from '../types'
+import { cellRef, makeIssue } from '../types'
 import { parseCellNumber } from '../normalize'
 
 interface ParseActivationOptions {
@@ -46,6 +47,7 @@ export function parseActivation(
     addAmountIfValid({
       code: cellA,
       amountCell: row[1] ?? '',
+      amountColIndex: 1,
       subcategory: currentSubcategory,
       sheet,
       validFrom: options.validFrom,
@@ -58,6 +60,7 @@ export function parseActivation(
     addAmountIfValid({
       code: cellI,
       amountCell: row[9] ?? '',
+      amountColIndex: 9,
       subcategory: currentSubcategory,
       sheet,
       validFrom: options.validFrom,
@@ -68,19 +71,25 @@ export function parseActivation(
   }
 
   if (amounts.length === 0) {
-    alerts.push({
-      level: 'warn',
-      sheet: sheet.name,
-      message: 'Aucun montant d\'activation extrait (beaucoup de formules complexes)',
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'warning',
+        kind: 'partial_sheet',
+        title: "Aucun montant d'activation extrait",
+        sheet: sheet.name,
+        reason: 'Cette feuille contient beaucoup de formules complexes (ex: "500,00 X U/[Sx4]") que le parser ne convertit pas en montants purs.',
+        recommendation: 'Vérifier la grille brute dans le Diagnostic ; les formules sont conservées en rawData.',
+      })
+    )
   }
 
-  return { amounts, alerts }
+  return { amounts, alerts, ignoredRows: [], unknownCodes: [] }
 }
 
 interface AddAmountInput {
   code: string
   amountCell: string
+  amountColIndex: number
   subcategory: string | null
   sheet: ParsedSheet
   validFrom: Date | null
@@ -119,6 +128,7 @@ function addAmountIfValid(input: AddAmountInput) {
   const key = `activation:${subcat}:${codeKey}`
   if (input.seenKeys.has(key)) return
 
+  const amountCellRef = cellRef(input.row, input.amountColIndex)
   input.amounts.push({
     sourceSheet: input.sheet.name,
     category: 'activation',
@@ -132,6 +142,27 @@ function addAmountIfValid(input: AddAmountInput) {
       isFormula,
       originalCell: amountCell,
       row: input.row + 1,
+    },
+    status: isFormula ? 'warning' : 'valid',
+    warnings: isFormula
+      ? [`Montant extrait du préfixe d'une formule (« ${amountCell.slice(0, 60)} ») — la formule complète n'est pas évaluée`]
+      : [],
+    trace: {
+      sourceCell: amountCellRef,
+      sourceRowIndex: input.row + 1,
+      sourceColumnIndex: input.amountColIndex + 1,
+      rawValue: amountCell.slice(0, 80),
+      normalizedValue: amount,
+      mappingKey: codeRaw,
+      mappingFile: null,
+      transformTemplate: 'activation',
+      transformReason:
+        `Ce montant provient de la feuille ${input.sheet.name}, cellule ${amountCellRef}` +
+        (input.subcategory ? `, section « ${input.subcategory} »` : '') +
+        `. Le code « ${codeRaw} » a été lu dans la colonne de gauche.` +
+        (isFormula
+          ? ` La cellule contient une formule (« ${amountCell.slice(0, 60)} ») : seul le montant numérique en préfixe (${amount}) a été extrait — à vérifier.`
+          : ` Le montant mensuel ${amount} a été normalisé depuis la valeur brute « ${amountCell} ».`),
     },
   })
   input.seenKeys.add(key)

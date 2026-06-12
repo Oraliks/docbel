@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/auth-check'
+import { ensureWriteAllowed } from '@/lib/admin/readonly-guard'
 import { rollbackToVersion } from '@/lib/baremes/publishBaremeImport'
 import { logActivity } from '@/lib/activity-logger'
 
@@ -12,6 +13,9 @@ export async function POST(
 ) {
   const auth = await requireAdminAuth()
   if (!auth.isAuthorized) return auth.error
+
+  const writeGuard = await ensureWriteAllowed()
+  if (writeGuard) return writeGuard
 
   try {
     const { id } = await params

@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from 'fs/promises'
 import path from 'path'
+import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 import { prisma, withDbRetry } from '@/lib/prisma'
 import { parseBaremaFile } from '@/lib/baremes-parser'
@@ -9,9 +10,19 @@ import { extractValidFromFileName } from './normalize'
 import { compareBaremeVersions, detectAnomaliesFromDiff } from './compareBaremeVersions'
 import { loadSheetMappingOverrides } from './loadSheetMappings'
 import { logPublicationEvent } from './publicationLog'
-import type { BaremeAlert, BaremeImportSummary } from './types'
+import {
+  CATEGORY_EXPORT_GROUP,
+  isBlockingIssue,
+  makeIssue,
+  type BaremeAlert,
+  type BaremeAmountDraft,
+  type BaremeDiagnostics,
+  type BaremeImportSummary,
+} from './types'
 
-const UPLOAD_SUBDIR = 'public/uploads/baremes'
+// Stockage PRIVÉ : jamais sous public/ — le fichier source n'est servi que via
+// la route authentifiée /api/baremes/import/[id]/source.
+const PRIVATE_UPLOAD_SUBDIR = path.join('private', 'uploads', 'baremes')
 
 export interface ImportBaremeInput {
   buffer: ArrayBuffer | Buffer
@@ -29,6 +40,8 @@ export type ImportBaremeResult =
       summary: BaremeImportSummary
       alerts: BaremeAlert[]
       validFrom: Date | null
+      /** Export CSV/publication autorisés (aucune issue error/critical). */
+      exportAllowed: boolean
     }
   | {
       status: 'duplicate'
@@ -36,16 +49,34 @@ export type ImportBaremeResult =
       message: string
     }
 
+// Validation serveur stricte de chaque montant avant insertion.
+// La preview admin valide visuellement ; ceci est la barrière finale.
+const amountDraftSchema = z.object({
+  sourceSheet: z.string().min(1).max(200),
+  category: z.enum(Object.keys(CATEGORY_EXPORT_GROUP) as [string, ...string[]]),
+  allocationCode: z.string().max(60).nullish(),
+  salaryCode: z.string().max(60).nullish(),
+  article: z.string().max(300).nullish(),
+  labelFr: z.string().max(500).nullish(),
+  labelNl: z.string().max(500).nullish(),
+  unit: z.string().max(30).nullish(),
+  amount: z.number().finite(),
+  minDailySalary: z.number().finite().nullish(),
+  maxDailySalary: z.number().finite().nullish(),
+  comparisonKey: z.string().min(3).max(200),
+})
+
 /**
  * Pipeline complet d'import d'un fichier .xlsx de barèmes.
  *
  *  1. Calcule sha256 du fichier
  *  2. Vérifie l'absence d'un BaremeFile avec le même hash (dedup)
- *  3. Sauvegarde le fichier sur disque
- *  4. Lit le workbook (parseBaremaFile existant)
- *  5. Dispatche vers les parsers dédiés (normalizeBaremeData)
- *  6. Insère BaremeFile (status="draft") + BaremeAmount[] en transaction
- *  7. Crée aussi les BareSheet (vue grille brute) pour cohérence avec le viewer
+ *  3. Lit le workbook (parseBaremaFile : valeurs calculées uniquement, aucune
+ *     macro exécutée, aucune formule évaluée)
+ *  4. Dispatche vers les parsers dédiés (normalizeBaremeData) + validation zod
+ *  5. Sauvegarde le fichier dans private/ (jamais accessible publiquement)
+ *  6. Insère BaremeFile (status="draft") + BaremeAmount[] (avec trace) en transaction
+ *  7. Crée aussi les BareSheet (vue grille brute) pour le diagnostic
  */
 export async function importBaremeFile(
   input: ImportBaremeInput
@@ -56,6 +87,7 @@ export async function importBaremeFile(
 
   const buffer = Buffer.isBuffer(input.buffer) ? input.buffer : Buffer.from(input.buffer)
   const fileHash = sha256(buffer)
+  const fileSize = buffer.byteLength
 
   // 1) Dedup par hash
   const existing = await withDbRetry(() =>
@@ -80,13 +112,53 @@ export async function importBaremeFile(
   const overrides = await loadSheetMappingOverrides('onem-rates').catch(() => ({}))
   const normalized = normalizeBaremeData(parsed, validFromFromName, overrides)
 
-  // 4) Sauvegarde disque
-  const uploadDir = path.join(/* turbopackIgnore: true */ process.cwd(), UPLOAD_SUBDIR)
-  await mkdir(uploadDir, { recursive: true })
+  // 3bis) Validation zod finale des drafts — un draft invalide est écarté avec issue
+  const validatedAmounts: BaremeAmountDraft[] = []
+  for (const draft of normalized.amounts) {
+    const check = amountDraftSchema.safeParse(draft)
+    if (!check.success) {
+      normalized.alerts.push(
+        makeIssue({
+          severity: 'error',
+          kind: 'validation',
+          title: 'Ligne rejetée par la validation serveur',
+          sheet: draft.sourceSheet,
+          cell: draft.trace?.sourceCell,
+          rawValue: draft.trace?.rawValue,
+          reason: `La ligne "${draft.comparisonKey}" ne passe pas la validation : ${check.error.issues[0]?.message ?? 'données invalides'}.`,
+          recommendation: 'Bug probable du parser — vérifier la cellule source dans le Diagnostic.',
+        })
+      )
+      continue
+    }
+    validatedAmounts.push(draft)
+  }
+  normalized.summary.amountsExtracted = validatedAmounts.length
+
+  // 4) Sauvegarde disque — répertoire PRIVÉ
+  const uploadDir = path.join(/* turbopackIgnore: true */ process.cwd(), PRIVATE_UPLOAD_SUBDIR)
   const safeName = sanitizeFileName(input.fileName)
   const storedName = `${Date.now()}-${safeName}`
-  const fullPath = path.join(uploadDir, storedName)
-  await writeFile(fullPath, buffer)
+  let storedPath: string | null = null
+  try {
+    await mkdir(uploadDir, { recursive: true })
+    await writeFile(path.join(uploadDir, storedName), buffer)
+    storedPath = path.posix.join('private/uploads/baremes', storedName)
+  } catch (err) {
+    // FS read-only (serverless) : l'import continue, le fichier source n'est
+    // simplement pas re-téléchargeable. Les données extraites sont en DB.
+    console.warn('[importBaremeFile] stockage du fichier source impossible:', err)
+    normalized.alerts.push(
+      makeIssue({
+        severity: 'info',
+        kind: 'other',
+        title: 'Fichier source non conservé',
+        reason: 'Le système de fichiers est en lecture seule — le .xlsx source ne sera pas re-téléchargeable depuis l\'admin. Les données extraites sont en base.',
+      })
+    )
+  }
+
+  const diagnostics: BaremeDiagnostics = { fileSize, ...normalized.diagnostics }
 
   // 5) Insertion DB (transaction)
   const fileId = await withDbRetry(() =>
@@ -94,13 +166,15 @@ export async function importBaremeFile(
       const created = await tx.baremeFile.create({
         data: {
           name: input.fileName,
-          filePath: `/uploads/baremes/${storedName}`,
+          filePath: storedPath ?? '',
           fileHash,
+          fileSize,
           effectiveDate: parsed.fileMetadata.effectiveDate,
           validFrom: normalized.validFrom,
           multiplicateur: parsed.fileMetadata.multiplicateur,
           status: 'draft',
           summary: normalized.summary as unknown as Prisma.InputJsonValue,
+          diagnostics: diagnostics as unknown as Prisma.InputJsonValue,
           alerts: normalized.alerts as unknown as Prisma.InputJsonValue,
           requiresApproval: input.requiresApproval ?? false,
           createdBy: input.createdBy ?? null,
@@ -108,7 +182,7 @@ export async function importBaremeFile(
         select: { id: true },
       })
 
-      // BareSheet : on conserve la vue grille brute pour le viewer existant
+      // BareSheet : on conserve la vue grille brute pour le viewer/diagnostic
       let sheetIndex = 0
       for (const sheet of parsed.sheets) {
         await tx.bareSheet.create({
@@ -126,10 +200,12 @@ export async function importBaremeFile(
         sheetIndex++
       }
 
-      // BaremeAmount : couche normalisée (la "vraie" source des calculateurs)
-      if (normalized.amounts.length > 0) {
+      // BaremeAmount : couche normalisée (la "vraie" source des calculateurs).
+      // La trace complète (cellule, valeur brute, mapping, statut) est rangée
+      // dans rawData — exposée dans la preview admin, jamais dans les CSV publics.
+      if (validatedAmounts.length > 0) {
         await tx.baremeAmount.createMany({
-          data: normalized.amounts.map((a) => ({
+          data: validatedAmounts.map((a) => ({
             fileId: created.id,
             sourceSheet: a.sourceSheet,
             category: a.category,
@@ -145,9 +221,12 @@ export async function importBaremeFile(
             maxDailySalary:
               a.maxDailySalary != null ? new Prisma.Decimal(a.maxDailySalary) : null,
             validFrom: a.validFrom ?? null,
-            rawData: a.rawData
-              ? (a.rawData as unknown as Prisma.InputJsonValue)
-              : Prisma.JsonNull,
+            rawData: {
+              ...(a.rawData ?? {}),
+              trace: a.trace ?? null,
+              status: a.status ?? 'valid',
+              warnings: a.warnings ?? [],
+            } as unknown as Prisma.InputJsonValue,
             comparisonKey: a.comparisonKey,
           })),
         })
@@ -157,16 +236,31 @@ export async function importBaremeFile(
     })
   )
 
-  // Audit : trace la création du draft
+  const errorCount = normalized.alerts.filter(isBlockingIssue).length
+  const warningCount = normalized.alerts.filter(
+    (a) => !isBlockingIssue(a) && a.level === 'warn'
+  ).length
+
+  // Audit : trace la création du draft (log d'import complet)
   await logPublicationEvent({
     fileId,
     action: 'created',
     toStatus: 'draft',
     actorEmail: input.createdBy,
     details: {
+      fileName: input.fileName,
+      fileSize,
+      fileHash,
+      validFrom: normalized.validFrom?.toISOString() ?? null,
+      sheetsDetected: normalized.summary.sheetsDetected,
       sheetsParsed: normalized.summary.sheetsParsed,
       amountsExtracted: normalized.summary.amountsExtracted,
+      errorCount,
+      warningCount,
+      unknownCodesCount: diagnostics.unknownCodes.length,
+      ignoredRowsCount: diagnostics.ignoredRows.length,
       mappingOverridesUsed: Object.keys(overrides).length,
+      importStatus: errorCount > 0 ? 'success_with_errors' : warningCount > 0 ? 'success_with_warnings' : 'success',
     },
   })
 
@@ -206,6 +300,7 @@ export async function importBaremeFile(
     summary: enrichedSummary,
     alerts: enrichedAlerts,
     validFrom: normalized.validFrom,
+    exportAllowed: !enrichedAlerts.some(isBlockingIssue),
   }
 }
 

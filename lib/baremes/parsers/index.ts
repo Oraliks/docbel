@@ -2,110 +2,37 @@ import type { ParsedSheet } from '@/lib/baremes-parser'
 import type {
   BaremeAlert,
   BaremeAmountDraft,
-  BaremeCategory,
+  BaremeIgnoredRow,
+  BaremeUnknownCode,
   ParserResult,
 } from '../types'
-import { parseAllocationMatrix } from './parseAllocationMatrix'
-import { parseSalaryBrackets } from './parseSalaryBrackets'
-import { parseBasicAmounts } from './parseBasicAmounts'
-import { parseHourlyWages } from './parseHourlyWages'
-import { parseAllocationW } from './parseAllocationW'
-import { parseOtherUnemploymentAmounts } from './parseOtherUnemploymentAmounts'
-import { parseActivation } from './parseActivation'
-import { parseOtherAllocations } from './parseOtherAllocations'
-import { parseEmploymentBonus } from './parseEmploymentBonus'
+import { makeIssue } from '../types'
+import { parseBelgianDate } from '../normalize'
+import {
+  DEFAULT_SHEET_HANDLERS,
+  SHEET_TEMPLATES_FILE,
+  isSheetSupported,
+  makeHandler,
+  type ParserConfig,
+  type ParserType,
+  type SheetHandler,
+} from '../sheet-templates'
 
-export type ParserType =
-  | 'allocation_matrix'
-  | 'salary_brackets'
-  | 'basic_amounts'
-  | 'hourly_wages'
-  | 'allocation_w'
-  | 'other_unemployment_amounts'
-  | 'activation'
-  | 'other_allocations'
-  | 'employment_bonus'
-
-export interface ParserConfig {
-  parserType: ParserType
-  category: BaremeCategory
-  // Pour le parser de matrice (allocation_matrix) : autorise plusieurs catégories
-  // selon que c'est plein temps, mi-temps, etc. La catégorie ci-dessus est utilisée.
-}
-
-export interface SheetHandler extends ParserConfig {
-  parse: (sheet: ParsedSheet, opts: { validFrom: Date | null }) => ParserResult
-}
-
-function makeHandler(config: ParserConfig): SheetHandler {
-  const { parserType, category } = config
-  switch (parserType) {
-    case 'allocation_matrix':
-      return {
-        ...config,
-        parse: (sheet, opts) =>
-          parseAllocationMatrix(sheet, { category, validFrom: opts.validFrom }),
-      }
-    case 'salary_brackets':
-      return { ...config, parse: (sheet, opts) => parseSalaryBrackets(sheet, opts) }
-    case 'basic_amounts':
-      return { ...config, parse: (sheet, opts) => parseBasicAmounts(sheet, opts) }
-    case 'hourly_wages':
-      return { ...config, parse: (sheet, opts) => parseHourlyWages(sheet, opts) }
-    case 'allocation_w':
-      return { ...config, parse: (sheet, opts) => parseAllocationW(sheet, opts) }
-    case 'other_unemployment_amounts':
-      return {
-        ...config,
-        parse: (sheet, opts) => parseOtherUnemploymentAmounts(sheet, opts),
-      }
-    case 'activation':
-      return { ...config, parse: (sheet, opts) => parseActivation(sheet, opts) }
-    case 'other_allocations':
-      return { ...config, parse: (sheet, opts) => parseOtherAllocations(sheet, opts) }
-    case 'employment_bonus':
-      return { ...config, parse: (sheet, opts) => parseEmploymentBonus(sheet, opts) }
-  }
-}
-
-// Mapping par défaut nom d'onglet → config parser.
-// Peut être overridé via BaremeSheetMapping (loadOverrides).
-const DEFAULT_SHEET_HANDLERS: Record<string, SheetHandler> = {
-  A_N_B_vol_plein: makeHandler({ parserType: 'allocation_matrix', category: 'full_unemployment' }),
-  A_N_B_half_demi: makeHandler({ parserType: 'allocation_matrix', category: 'half_unemployment' }),
-  'TW-CT_JS': makeHandler({
-    parserType: 'allocation_matrix',
-    category: 'temporary_unemployment_full',
-  }),
-  SpecCat: makeHandler({
-    parserType: 'allocation_matrix',
-    category: 'special_category_full',
-  }),
-  'Loonschijven_Tranches salariale': makeHandler({
-    parserType: 'salary_brackets',
-    category: 'salary_bracket',
-  }),
-  'Uurlonen_Salaires horaires': makeHandler({
-    parserType: 'hourly_wages',
-    category: 'hourly_wage',
-  }),
-  'W ': makeHandler({ parserType: 'allocation_w', category: 'allocation_w' }),
-  AndereBedrWLH_AutresMontCHOM: makeHandler({
-    parserType: 'other_unemployment_amounts',
-    category: 'other_unemployment_amount',
-  }),
-  Activering_Activation: makeHandler({ parserType: 'activation', category: 'activation' }),
-  AndereUitk_AutresAlloc: makeHandler({
-    parserType: 'other_allocations',
-    category: 'other_allocation',
-  }),
-  Bonus: makeHandler({ parserType: 'employment_bonus', category: 'employment_bonus' }),
-  Basisbedragen: makeHandler({ parserType: 'basic_amounts', category: 'basic_amount' }),
-}
+// Réexports de compatibilité : les templates vivent dans sheet-templates.ts,
+// les anciens imports `from './parsers'` continuent de fonctionner.
+export { makeHandler, isSheetSupported }
+export type { ParserConfig, ParserType, SheetHandler }
+export { DEFAULT_SHEET_HANDLERS as SHEET_HANDLERS }
 
 export interface DispatchResult extends ParserResult {
   parsedSheets: string[]
   ignoredSheets: { name: string; reason: string }[]
+  ignoredRows: BaremeIgnoredRow[]
+  unknownCodes: BaremeUnknownCode[]
+  /** Date de validité détectée dans chaque feuille (cellule "Geldig/valable"). */
+  sheetPeriods: { sheet: string; detectedDate: string | null; matchesFile: boolean | null }[]
+  /** Feuilles parsées mais avec erreurs/warnings (traitement partiel). */
+  partialSheets: { name: string; reason: string }[]
 }
 
 /**
@@ -130,16 +57,51 @@ export function dispatchParsers(
   const alerts: BaremeAlert[] = []
   const parsedSheets: string[] = []
   const ignoredSheets: { name: string; reason: string }[] = []
+  const ignoredRows: BaremeIgnoredRow[] = []
+  const unknownCodes: BaremeUnknownCode[] = []
+  const sheetPeriods: DispatchResult['sheetPeriods'] = []
+  const partialSheets: { name: string; reason: string }[] = []
 
   for (const sheet of sheets) {
+    // Date de validité propre à la feuille (les feuilles ONEM portent chacune
+    // leur date sous "Geldig/valable" — elles peuvent légitimement différer
+    // entre elles, ex: Bonus au 01/04 quand les allocations sont au 01/03).
+    const sheetDate = detectSheetDate(sheet)
+    const matchesFile =
+      sheetDate && validFrom ? sheetDate.getTime() === validFrom.getTime() : null
+    sheetPeriods.push({
+      sheet: sheet.name,
+      detectedDate: sheetDate ? sheetDate.toISOString().slice(0, 10) : null,
+      matchesFile,
+    })
+    if (sheetDate && validFrom && sheetDate.getTime() !== validFrom.getTime()) {
+      alerts.push(
+        makeIssue({
+          severity: 'info',
+          kind: 'period_mismatch',
+          title: 'Période propre à la feuille',
+          sheet: sheet.name,
+          reason: `La feuille indique une validité au ${formatDate(sheetDate)} alors que le fichier est importé pour le ${formatDate(validFrom)}. C'est fréquent chez l'ONEM (certaines feuilles changent à une autre date) mais à vérifier.`,
+          recommendation:
+            'Vérifier que la date de la feuille est cohérente avec la lettre ONEM accompagnant le fichier.',
+        })
+      )
+    }
+
     const handler = handlers[sheet.name]
     if (!handler) {
-      ignoredSheets.push({ name: sheet.name, reason: 'Aucun parser dédié' })
-      alerts.push({
-        level: 'info',
-        sheet: sheet.name,
-        message: `Onglet non géré (parser à configurer)`,
-      })
+      const reason = 'Aucun parser dédié pour cet onglet'
+      ignoredSheets.push({ name: sheet.name, reason })
+      alerts.push(
+        makeIssue({
+          severity: 'warning',
+          kind: 'unknown_sheet',
+          title: 'Feuille inconnue',
+          sheet: sheet.name,
+          reason: `L'onglet "${sheet.name}" (${sheet.rowCount} lignes) n'est associé à aucun template — aucune donnée n'en a été extraite.`,
+          recommendation: `Ajouter un template dans ${SHEET_TEMPLATES_FILE} (ou un mapping dans /admin/baremes/mappings) si cette feuille doit être importée ; sa grille brute reste consultable dans le Diagnostic.`,
+        })
+      )
       continue
     }
 
@@ -147,23 +109,82 @@ export function dispatchParsers(
       const result = handler.parse(sheet, { validFrom })
       amounts.push(...result.amounts)
       alerts.push(...result.alerts)
+      if (result.ignoredRows?.length) ignoredRows.push(...result.ignoredRows)
+      if (result.unknownCodes?.length) unknownCodes.push(...result.unknownCodes)
       parsedSheets.push(sheet.name)
+
+      const sheetErrors = result.alerts.filter((a) => a.level === 'error')
+      if (sheetErrors.length > 0 && result.amounts.length > 0) {
+        partialSheets.push({
+          name: sheet.name,
+          reason: `${result.amounts.length} montants extraits malgré ${sheetErrors.length} erreur(s) — feuille traitée partiellement`,
+        })
+        alerts.push(
+          makeIssue({
+            severity: 'warning',
+            kind: 'partial_sheet',
+            title: 'Feuille traitée partiellement',
+            sheet: sheet.name,
+            reason: `${result.amounts.length} montants ont été extraits mais ${sheetErrors.length} erreur(s) de parsing ont été rencontrées sur cette feuille.`,
+            recommendation:
+              'Consulter les erreurs de la feuille dans l\'onglet "Erreurs & warnings" et vérifier la grille brute.',
+          })
+        )
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      alerts.push({
-        level: 'error',
-        sheet: sheet.name,
-        message: `Erreur dans le parser: ${msg}`,
-      })
+      alerts.push(
+        makeIssue({
+          severity: 'error',
+          kind: 'parser_error',
+          title: 'Erreur du parser',
+          sheet: sheet.name,
+          reason: `Le parser "${handler.parserType}" a levé une exception : ${msg}. Aucune donnée extraite de cette feuille.`,
+          recommendation: `Vérifier la structure de la feuille dans le Diagnostic (grille brute) ; adapter le parser ou le template dans ${SHEET_TEMPLATES_FILE}.`,
+        })
+      )
       ignoredSheets.push({ name: sheet.name, reason: `Erreur parser: ${msg}` })
     }
   }
 
-  return { amounts, alerts, parsedSheets, ignoredSheets }
+  return {
+    amounts,
+    alerts,
+    parsedSheets,
+    ignoredSheets,
+    ignoredRows,
+    unknownCodes,
+    sheetPeriods,
+    partialSheets,
+  }
 }
 
-export function isSheetSupported(sheetName: string): boolean {
-  return sheetName in DEFAULT_SHEET_HANDLERS
+/**
+ * Détecte la date de validité affichée dans une feuille ONEM.
+ * Convention : libellé "Geldig/valable" en haut de feuille, date dans les
+ * premières lignes/colonnes (souvent A2). On scanne les 6 premières lignes.
+ */
+function detectSheetDate(sheet: ParsedSheet): Date | null {
+  const maxRows = Math.min(6, sheet.cellData.length)
+  for (let r = 0; r < maxRows; r++) {
+    const row = sheet.cellData[r]
+    const maxCols = Math.min(6, row.length)
+    for (let c = 0; c < maxCols; c++) {
+      const value = (row[c] ?? '').trim()
+      if (!value) continue
+      // Format affiché "1-3-2026" / "01-03-2026" / "2026-03-01" (cellDates)
+      const be = parseBelgianDate(value)
+      if (be) return be
+      const iso = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+      if (iso) {
+        const d = new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])))
+        if (!Number.isNaN(d.getTime())) return d
+      }
+    }
+  }
+  return null
 }
 
-export { DEFAULT_SHEET_HANDLERS as SHEET_HANDLERS, makeHandler }
+function formatDate(d: Date): string {
+  return d.toISOString().slice(0, 10)
+}

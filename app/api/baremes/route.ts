@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdminAuth } from '@/lib/auth-check'
 
 // GET /api/baremes => list all files
 // GET /api/baremes?fileId=xxx => get all sheets of a file (with grid data)
+// Réservé à l'admin : la liste expose tous les statuts (drafts, rejetés…) et
+// les grilles brutes complètes. Le front public passe par /api/baremes/lookup.
 export async function GET(req: NextRequest) {
+  const auth = await requireAdminAuth()
+  if (!auth.isAuthorized) return auth.error
+
   try {
     const { searchParams } = new URL(req.url)
     const fileId = searchParams.get('fileId')

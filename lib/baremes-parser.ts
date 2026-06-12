@@ -137,7 +137,10 @@ function extractEffectiveDate(workbook: XLSX.WorkBook): string {
       }
     }
   }
-  return new Date().toISOString().split('T')[0]
+  // Pas de date détectée → chaîne vide. On ne devine JAMAIS une période
+  // légale (la date du jour serait mensongère) ; l'import lèvera une issue
+  // 'missing_period' bloquante si le nom de fichier n'en fournit pas non plus.
+  return ''
 }
 
 function extractMultiplicateur(workbook: XLSX.WorkBook): number | undefined {

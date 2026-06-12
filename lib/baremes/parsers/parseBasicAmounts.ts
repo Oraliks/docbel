@@ -1,5 +1,11 @@
 import type { ParsedSheet } from '@/lib/baremes-parser'
-import type { BaremeAlert, BaremeAmountDraft, ParserResult } from '../types'
+import type {
+  BaremeAlert,
+  BaremeAmountDraft,
+  BaremeIgnoredRow,
+  ParserResult,
+} from '../types'
+import { cellRef, columnLetter, makeIssue } from '../types'
 import { normalizeUnit, parseCellNumber } from '../normalize'
 
 interface ParseBasicAmountsOptions {
@@ -30,53 +36,82 @@ export function parseBasicAmounts(
 ): ParserResult {
   const alerts: BaremeAlert[] = []
   const amounts: BaremeAmountDraft[] = []
+  const ignoredRows: BaremeIgnoredRow[] = []
 
   const headerInfo = findHeaderRow(sheet)
   if (!headerInfo) {
-    alerts.push({
-      level: 'error',
-      sheet: sheet.name,
-      message: `Ligne d'en-tête introuvable (mots-clés attendus: Artikel, Basisbedrag, …)`,
-    })
-    return { amounts, alerts }
+    alerts.push(
+      makeIssue({
+        severity: 'error',
+        kind: 'unknown_column',
+        title: "Ligne d'en-tête introuvable",
+        sheet: sheet.name,
+        reason: 'Aucune ligne contenant les mots-clés attendus (Artikel, Basisbedrag, …) — le template basic_amounts ne reconnaît pas cette feuille.',
+        recommendation: 'Vérifier la grille brute ; si la structure ONEM a changé, adapter le parser basic_amounts.',
+      })
+    )
+    return { amounts, alerts, ignoredRows, unknownCodes: [] }
   }
 
   const { rowIndex: headerRowIndex, articleCol, labelCol, amountCol, unitCol } = headerInfo
 
   if (articleCol === -1) {
-    alerts.push({
-      level: 'warn',
-      sheet: sheet.name,
-      message: `Colonne "Artikel" non trouvée — les montants seront sans article de référence`,
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'warning',
+        kind: 'unknown_column',
+        title: 'Colonne "Artikel" non trouvée',
+        sheet: sheet.name,
+        row: headerRowIndex + 1,
+        reason: 'Les montants seront extraits sans article de loi de référence.',
+        recommendation: 'Vérifier la ligne d\'en-tête dans la grille brute.',
+      })
+    )
   }
   if (amountCol === -1) {
-    alerts.push({
-      level: 'error',
-      sheet: sheet.name,
-      message: `Colonne "Basisbedrag" (montant) introuvable — onglet non parsable`,
-    })
-    return { amounts, alerts }
+    alerts.push(
+      makeIssue({
+        severity: 'error',
+        kind: 'unknown_column',
+        title: 'Colonne montant introuvable',
+        sheet: sheet.name,
+        row: headerRowIndex + 1,
+        reason: 'Colonne "Basisbedrag" (montant) introuvable — onglet non parsable.',
+        recommendation: 'Vérifier la ligne d\'en-tête dans la grille brute ; adapter HEADER_KEYWORDS du parser basic_amounts si l\'intitulé a changé.',
+      })
+    )
+    return { amounts, alerts, ignoredRows, unknownCodes: [] }
   }
 
   let lastArticle: string | null = null
-  let skippedEmptyAmount = 0
+  let lastArticleRow: number | null = null
 
   for (let r = headerRowIndex + 1; r < sheet.cellData.length; r++) {
     const row = sheet.cellData[r]
 
     // Article peut être hérité de la ligne précédente (cellule fusionnée visuellement)
     const articleCell = articleCol >= 0 ? (row[articleCol] ?? '').trim() : ''
-    if (articleCell) lastArticle = articleCell
+    if (articleCell) {
+      lastArticle = articleCell
+      lastArticleRow = r + 1
+    }
 
-    const amount = parseCellNumber(row[amountCol])
+    const rawAmount = row[amountCol] ?? ''
+    const amount = parseCellNumber(rawAmount)
     if (amount === null) {
       // Lignes vides ignorées silencieusement ; signaler seulement si tout le contexte est vide
       const isMostlyEmpty = row.every((c) => !c || !c.trim())
       if (isMostlyEmpty) continue
       // Sinon ligne potentiellement informative mais sans montant
       if (articleCell || (labelCol >= 0 && (row[labelCol] ?? '').trim())) {
-        skippedEmptyAmount++
+        ignoredRows.push({
+          sheet: sheet.name,
+          rowIndex: r + 1,
+          rawValues: row.slice(0, 8).map((v) => truncate(v)),
+          reason: rawAmount.trim()
+            ? `La cellule montant (${cellRef(r, amountCol)}) contient "${truncate(rawAmount)}" qui n'est pas un nombre — ligne descriptive ou montant manquant.`
+            : `Pas de montant en colonne ${columnLetter(amountCol)} — ligne de titre, de section ou descriptive.`,
+        })
       }
       continue
     }
@@ -84,6 +119,7 @@ export function parseBasicAmounts(
     const labelNl = labelCol >= 0 ? cleanLabel(row[labelCol]) : null
     const unit = unitCol >= 0 ? normalizeUnit(row[unitCol]) : null
     const article = lastArticle
+    const articleInherited = !articleCell && !!lastArticle
 
     // Identifiant stable pour comparaison : on préfère article + amount-col-code,
     // sinon on retombe sur le label (moins stable mais utilisable).
@@ -91,6 +127,25 @@ export function parseBasicAmounts(
     const internalCode = row[2] ? (row[2] ?? '').trim() : ''
     const keyPart = internalCode || normalizeKeyText(labelNl || `row${r}`)
     const comparisonKey = `basic_amount:${keyPart}`
+
+    const amountCell = cellRef(r, amountCol)
+    const explanationParts = [
+      `Ce montant provient de la feuille ${sheet.name}, cellule ${amountCell} (ligne ${r + 1}).`,
+    ]
+    if (article) {
+      explanationParts.push(
+        articleInherited
+          ? `L'article « ${article} » est hérité de la ligne ${lastArticleRow} (cellule fusionnée dans le fichier ONEM).`
+          : `Il est rattaché à l'article « ${article} » (colonne ${columnLetter(articleCol)}).`
+      )
+    }
+    if (internalCode) {
+      explanationParts.push(`Le code interne ONEM « ${internalCode} » sert de clé de comparaison entre versions.`)
+    }
+    if (labelNl) explanationParts.push(`Libellé source (NL) : « ${labelNl} ».`)
+    explanationParts.push(
+      `Le montant ${amount}${unit ? ` (${unit})` : ''} a été normalisé depuis la valeur brute « ${rawAmount.trim()} ».`
+    )
 
     amounts.push({
       sourceSheet: sheet.name,
@@ -107,26 +162,50 @@ export function parseBasicAmounts(
         internalCode: internalCode || undefined,
         reference: row[5] ? row[5].trim() : undefined,
       },
+      status: 'valid',
+      warnings: articleInherited
+        ? [`Article hérité de la ligne ${lastArticleRow} (cellule fusionnée)`]
+        : [],
+      trace: {
+        sourceCell: amountCell,
+        sourceRowIndex: r + 1,
+        sourceColumnIndex: amountCol + 1,
+        rawValue: truncate(rawAmount),
+        normalizedValue: amount,
+        mappingKey: internalCode || article || null,
+        mappingFile: null,
+        transformTemplate: 'basic_amounts',
+        transformReason: explanationParts.join(' '),
+      },
     })
   }
 
   if (amounts.length === 0) {
-    alerts.push({
-      level: 'error',
-      sheet: sheet.name,
-      message: 'Aucun montant de base extrait',
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'error',
+        kind: 'parser_error',
+        title: 'Aucun montant de base extrait',
+        sheet: sheet.name,
+        reason: 'L\'en-tête a été reconnu mais aucune ligne de données n\'a produit de montant.',
+        recommendation: 'Vérifier la grille brute dans le Diagnostic.',
+      })
+    )
   }
 
-  if (skippedEmptyAmount > 0) {
-    alerts.push({
-      level: 'info',
-      sheet: sheet.name,
-      message: `${skippedEmptyAmount} lignes ignorées (sans montant)`,
-    })
+  if (ignoredRows.length > 0) {
+    alerts.push(
+      makeIssue({
+        severity: 'info',
+        kind: 'ignored_row',
+        title: 'Lignes sans montant ignorées',
+        sheet: sheet.name,
+        reason: `${ignoredRows.length} ligne(s) avec article/libellé mais sans montant numérique ont été ignorées (détail dans le Diagnostic).`,
+      })
+    )
   }
 
-  return { amounts, alerts }
+  return { amounts, alerts, ignoredRows, unknownCodes: [] }
 }
 
 interface HeaderInfo {
@@ -160,6 +239,12 @@ function cleanLabel(value: string | undefined | null): string | null {
   if (value == null) return null
   const cleaned = String(value).trim()
   return cleaned || null
+}
+
+function truncate(value: string | undefined | null, max = 80): string {
+  if (!value) return ''
+  const s = String(value)
+  return s.length > max ? `${s.slice(0, max)}…` : s
 }
 
 function normalizeKeyText(s: string): string {

@@ -3,9 +3,14 @@ import type {
   BaremeAlert,
   BaremeAmountDraft,
   BaremeCategory,
+  BaremeIgnoredRow,
+  BaremeUnknownCode,
   ParserResult,
 } from '../types'
+import { cellRef, columnLetter, makeIssue } from '../types'
 import { parseCellNumber, parseCodeCell } from '../normalize'
+import { CODE_MAPPING_FILE, resolveCodeInfo, type CodeInfo } from '../code-mapping'
+import { IGNORED_CODES_FILE, isIgnoredCode } from '../ignored-codes'
 
 interface ParseAllocationMatrixOptions {
   /** Catégorie à attribuer aux montants extraits (varie selon la feuille). */
@@ -30,6 +35,9 @@ const TRANCHE_REGEX = /^(MIN|MAX|\d{1,3})$/i
  *  - Les codes peuvent être empilés sur plusieurs lignes dans une seule
  *    cellule (ex: "AB\nAX") — on émet alors un montant par code.
  *  - Les cellules commençant par "#" sont des erreurs de formule et sont ignorées.
+ *
+ * Chaque montant émis porte une trace complète (cellule, valeur brute, mapping
+ * appliqué) ; chaque code non mappé devient une issue 'unknown_code'.
  */
 export function parseAllocationMatrix(
   sheet: ParsedSheet,
@@ -37,39 +45,92 @@ export function parseAllocationMatrix(
 ): ParserResult {
   const alerts: BaremeAlert[] = []
   const amounts: BaremeAmountDraft[] = []
+  const ignoredRows: BaremeIgnoredRow[] = []
+  const unknownCodes: BaremeUnknownCode[] = []
 
   const headerRowIndex = findHeaderRow(sheet)
   if (headerRowIndex === -1) {
-    alerts.push({
-      level: 'error',
-      sheet: sheet.name,
-      message: `Ligne d'en-tête introuvable (cellule "Code" attendue en colonne A)`,
-    })
-    return { amounts, alerts }
+    alerts.push(
+      makeIssue({
+        severity: 'error',
+        kind: 'unknown_column',
+        title: "Ligne d'en-tête introuvable",
+        sheet: sheet.name,
+        reason: `Aucune cellule "Code" trouvée en colonne A — le template allocation_matrix ne reconnaît pas la structure de cette feuille.`,
+        recommendation:
+          'Vérifier la grille brute dans le Diagnostic ; si la structure ONEM a changé, adapter le template (sheet-templates.ts ou mapping DB).',
+      })
+    )
+    return { amounts, alerts, ignoredRows, unknownCodes }
   }
 
   // Extraire (colIndex, code) à partir de la ligne d'en-tête
   const headerRow = sheet.cellData[headerRowIndex]
-  const codeColumns: { colIndex: number; code: string }[] = []
+  const codeColumns: { colIndex: number; code: string; info: CodeInfo | null }[] = []
+  const seenUnknown = new Set<string>()
   for (let c = 1; c < headerRow.length; c++) {
-    const codes = parseCodeCell(headerRow[c])
+    const rawHeaderCell = headerRow[c]
+    const codes = parseCodeCell(rawHeaderCell)
     for (const code of codes) {
-      codeColumns.push({ colIndex: c, code })
+      const ignored = isIgnoredCode(code, options.category)
+      if (ignored) {
+        ignoredRows.push({
+          sheet: sheet.name,
+          rowIndex: headerRowIndex + 1,
+          rawValues: [code],
+          reason: `Code "${code}" volontairement ignoré (${IGNORED_CODES_FILE}) : ${ignored.reason}`,
+        })
+        continue
+      }
+      const info = resolveCodeInfo(code, options.category)
+      if (!info && !seenUnknown.has(code)) {
+        seenUnknown.add(code)
+        const cell = cellRef(headerRowIndex, c)
+        unknownCodes.push({
+          sheet: sheet.name,
+          cell,
+          code,
+          category: options.category,
+          recommendation: `Ajouter "${code}" dans ${CODE_MAPPING_FILE} (glossaire) ou le déclarer dans ${IGNORED_CODES_FILE} avec une raison explicite.`,
+        })
+        alerts.push(
+          makeIssue({
+            severity: 'warning',
+            kind: 'unknown_code',
+            title: 'Code ONEM non mappé',
+            sheet: sheet.name,
+            cell,
+            row: headerRowIndex + 1,
+            column: columnLetter(c),
+            rawValue: rawHeaderCell?.trim() || code,
+            reason: `Le code "${code}" n'est ni mappé dans le glossaire ni déclaré comme ignoré. Les montants de cette colonne sont extraits mais marqués "à vérifier".`,
+            recommendation: `Ajouter "${code}" dans ${CODE_MAPPING_FILE} ou dans ${IGNORED_CODES_FILE} avec une raison explicite.`,
+          })
+        )
+      }
+      codeColumns.push({ colIndex: c, code, info })
     }
   }
 
   if (codeColumns.length === 0) {
-    alerts.push({
-      level: 'error',
-      sheet: sheet.name,
-      message: `Aucun code d'allocation détecté dans la ligne d'en-tête (ligne ${headerRowIndex + 1})`,
-    })
-    return { amounts, alerts }
+    alerts.push(
+      makeIssue({
+        severity: 'error',
+        kind: 'unknown_column',
+        title: "Aucun code d'allocation détecté",
+        sheet: sheet.name,
+        row: headerRowIndex + 1,
+        reason: `La ligne d'en-tête (ligne ${headerRowIndex + 1}) ne contient aucun code d'allocation exploitable.`,
+        recommendation: 'Vérifier la grille brute — la structure de la feuille a probablement changé.',
+      })
+    )
+    return { amounts, alerts, ignoredRows, unknownCodes }
   }
 
   // Parcourir les lignes de données (après l'en-tête)
   let extracted = 0
   let skippedErrorCells = 0
+  let invalidAmountCells = 0
   for (let r = headerRowIndex + 1; r < sheet.cellData.length; r++) {
     const row = sheet.cellData[r]
     const tranche = (row[0] ?? '').trim()
@@ -79,53 +140,168 @@ export function parseAllocationMatrix(
       // Sauf si c'est une ligne complètement vide entre deux blocs : on continue silencieusement
       const isEmptyRow = row.every((c) => !c || !c.trim())
       if (isEmptyRow) continue
+      ignoredRows.push({
+        sheet: sheet.name,
+        rowIndex: r + 1,
+        rawValues: row.slice(0, 8).map((v) => truncate(v)),
+        reason: `Colonne A = "${truncate(tranche)}" : pas une tranche salariale (MIN/MAX/entier) — fin des données, le reste de la feuille (notes de bas de page) est ignoré.`,
+      })
       break
     }
 
     const salaryCode = tranche.toUpperCase()
 
-    for (const { colIndex, code } of codeColumns) {
+    for (const { colIndex, code, info } of codeColumns) {
       const cellValue = row[colIndex]
+      const cell = cellRef(r, colIndex)
       if (cellValue && cellValue.startsWith('#')) {
         skippedErrorCells++
         continue
       }
       const amount = parseCellNumber(cellValue)
-      if (amount === null) continue
+      if (amount === null) {
+        // Cellule non vide mais non numérique → montant invalide à signaler
+        if (cellValue && cellValue.trim()) {
+          invalidAmountCells++
+          alerts.push(
+            makeIssue({
+              severity: 'warning',
+              kind: 'invalid_amount',
+              title: 'Montant illisible',
+              sheet: sheet.name,
+              cell,
+              row: r + 1,
+              column: columnLetter(colIndex),
+              rawValue: truncate(cellValue),
+              reason: `La cellule ${cell} (code ${code}, tranche ${salaryCode}) contient "${truncate(cellValue)}" qui n'est pas un nombre exploitable. Ligne sautée pour ce code.`,
+              recommendation:
+                'Vérifier la cellule dans le fichier source ONEM — formule cassée ou format inattendu.',
+            })
+          )
+        }
+        continue
+      }
 
       const comparisonKey = `${options.category}:${code}:${salaryCode}`
+      const isKnown = info !== null
+      const explanation = buildExplanation({
+        sheet: sheet.name,
+        cell,
+        code,
+        info,
+        salaryCode,
+        amount,
+        rawValue: cellValue ?? '',
+      })
+
       amounts.push({
         sourceSheet: sheet.name,
         category: options.category,
         allocationCode: code,
         salaryCode,
+        labelFr: info?.labelFr && !info.labelFr.startsWith('TODO') ? info.labelFr : null,
+        labelNl: info?.labelNl ?? null,
         amount,
         validFrom: options.validFrom,
         unit: 'daily', // les allocations chômage sont quotidiennes
         comparisonKey,
-        rawData: { cell: cellRef(r, colIndex) },
+        status: isKnown ? 'valid' : 'unknown',
+        warnings: isKnown
+          ? []
+          : [`Code "${code}" non mappé — sémantique inconnue, montant à vérifier`],
+        trace: {
+          sourceCell: cell,
+          sourceRowIndex: r + 1,
+          sourceColumnIndex: colIndex + 1,
+          rawValue: truncate(cellValue ?? ''),
+          normalizedValue: amount,
+          mappingKey: code,
+          mappingFile: isKnown ? CODE_MAPPING_FILE : null,
+          transformTemplate: 'allocation_matrix',
+          transformReason: explanation,
+        },
       })
       extracted++
     }
   }
 
   if (extracted === 0) {
-    alerts.push({
-      level: 'error',
-      sheet: sheet.name,
-      message: `Aucun montant extrait (${codeColumns.length} codes détectés, aucune ligne de tranche valide)`,
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'error',
+        kind: 'parser_error',
+        title: 'Aucun montant extrait',
+        sheet: sheet.name,
+        reason: `${codeColumns.length} codes détectés dans l'en-tête mais aucune ligne de tranche salariale valide n'a produit de montant.`,
+        recommendation: 'Vérifier la grille brute — la zone de données a probablement bougé.',
+      })
+    )
   }
 
   if (skippedErrorCells > 0) {
-    alerts.push({
-      level: 'info',
-      sheet: sheet.name,
-      message: `${skippedErrorCells} cellules d'erreur Excel (#REF!, #N/A, …) ignorées`,
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'info',
+        kind: 'invalid_amount',
+        title: 'Cellules en erreur Excel ignorées',
+        sheet: sheet.name,
+        reason: `${skippedErrorCells} cellule(s) contenant une erreur de formule Excel (#REF!, #N/A, …) ont été ignorées. C'est habituel dans les fichiers ONEM (colonnes non applicables).`,
+      })
+    )
   }
 
-  return { amounts, alerts }
+  return { amounts, alerts, ignoredRows, unknownCodes }
+}
+
+function buildExplanation(input: {
+  sheet: string
+  cell: string
+  code: string
+  info: CodeInfo | null
+  salaryCode: string
+  amount: number
+  rawValue: string
+}): string {
+  const parts: string[] = []
+  parts.push(`Cette ligne provient de la feuille ${input.sheet}, cellule ${input.cell}.`)
+  if (input.info) {
+    parts.push(`Le code ONEM ${input.code} a été reconnu via ${CODE_MAPPING_FILE}.`)
+    const semantics: string[] = []
+    if (input.info.situationLabelFr) semantics.push(`la situation « ${input.info.situationLabelFr} »`)
+    if (input.info.period === 1) {
+      semantics.push(
+        `la 1ère période d'indemnisation${input.info.phase ? ` (phase ${input.info.phase}${input.info.rate ? `, taux ${Math.round(input.info.rate * 100)} %` : ''})` : ''}`
+      )
+    } else if (input.info.period === 2) {
+      semantics.push('la 2ème période d\'indemnisation (forfait)')
+    }
+    if (semantics.length > 0) {
+      parts.push(`Il correspond à ${semantics.join(' et à ')}.`)
+    } else if (input.info.labelFr && !input.info.labelFr.startsWith('TODO')) {
+      parts.push(`Il correspond à : ${input.info.labelFr}.`)
+    } else {
+      parts.push('Sa sémantique précise est encore à documenter dans le glossaire.')
+    }
+  } else {
+    parts.push(
+      `Le code ONEM ${input.code} n'est PAS mappé (absent de ${CODE_MAPPING_FILE} et de ${IGNORED_CODES_FILE}) — montant extrait mais à vérifier.`
+    )
+  }
+  parts.push(
+    input.salaryCode === 'MIN' || input.salaryCode === 'MAX'
+      ? `La tranche ${input.salaryCode} a été détectée dans la colonne de gauche.`
+      : `La tranche salariale ${input.salaryCode} a été détectée dans la colonne de gauche.`
+  )
+  parts.push(
+    `Le montant journalier ${input.amount} a été normalisé depuis la valeur Excel brute « ${input.rawValue.trim()} ».`
+  )
+  return parts.join(' ')
+}
+
+function truncate(value: string | undefined | null, max = 80): string {
+  if (!value) return ''
+  const s = String(value)
+  return s.length > max ? `${s.slice(0, max)}…` : s
 }
 
 function findHeaderRow(sheet: ParsedSheet): number {
@@ -134,15 +310,4 @@ function findHeaderRow(sheet: ParsedSheet): number {
     if (cellA === HEADER_KEYWORD) return r
   }
   return -1
-}
-
-function cellRef(r: number, c: number): string {
-  // Conversion index colonne → lettres Excel (0→A, 25→Z, 26→AA, …)
-  let n = c
-  let letters = ''
-  do {
-    letters = String.fromCharCode(65 + (n % 26)) + letters
-    n = Math.floor(n / 26) - 1
-  } while (n >= 0)
-  return `${letters}${r + 1}`
 }

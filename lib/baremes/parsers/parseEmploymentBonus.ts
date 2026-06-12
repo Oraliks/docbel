@@ -1,5 +1,6 @@
 import type { ParsedSheet } from '@/lib/baremes-parser'
 import type { BaremeAlert, BaremeAmountDraft, ParserResult } from '../types'
+import { cellRef, makeIssue } from '../types'
 import { parseCellNumber } from '../normalize'
 
 interface ParseEmploymentBonusOptions {
@@ -37,32 +38,47 @@ export function parseEmploymentBonus(
   if (employeeStart >= 0) {
     extractTier(sheet, employeeStart, 'employee', options.validFrom, amounts)
   } else {
-    alerts.push({
-      level: 'warn',
-      sheet: sheet.name,
-      message: 'Section "Employé / Bediende" non détectée',
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'warning',
+        kind: 'partial_sheet',
+        title: 'Section non détectée',
+        sheet: sheet.name,
+        reason: 'Section "Employé / Bediende" non détectée — les bonus de cette catégorie ne sont pas extraits.',
+        recommendation: 'Vérifier la grille brute dans le Diagnostic.',
+      })
+    )
   }
 
   if (workerStart >= 0) {
     extractTier(sheet, workerStart, 'worker', options.validFrom, amounts)
   } else {
-    alerts.push({
-      level: 'warn',
-      sheet: sheet.name,
-      message: 'Section "Ouvrier / Arbeider" non détectée',
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'warning',
+        kind: 'partial_sheet',
+        title: 'Section non détectée',
+        sheet: sheet.name,
+        reason: 'Section "Ouvrier / Arbeider" non détectée — les bonus de cette catégorie ne sont pas extraits.',
+        recommendation: 'Vérifier la grille brute dans le Diagnostic.',
+      })
+    )
   }
 
   if (amounts.length === 0) {
-    alerts.push({
-      level: 'error',
-      sheet: sheet.name,
-      message: 'Aucun bonus extrait',
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'error',
+        kind: 'parser_error',
+        title: 'Aucun bonus extrait',
+        sheet: sheet.name,
+        reason: 'Aucune tranche de bonus à l\'emploi n\'a été extraite — structure inattendue.',
+        recommendation: 'Vérifier la grille brute ; adapter le parser employment_bonus si la mise en page a changé.',
+      })
+    )
   }
 
-  return { amounts, alerts }
+  return { amounts, alerts, ignoredRows: [], unknownCodes: [] }
 }
 
 function extractTier(
@@ -95,6 +111,8 @@ function extractTier(
       continue
     }
 
+    const bonusCellRef = cellRef(r, 6)
+    const categoryFr = category === 'employee' ? 'employé du secteur privé' : 'ouvrier du secteur privé'
     amounts.push({
       sourceSheet: sheet.name,
       category: 'employment_bonus',
@@ -116,6 +134,23 @@ function extractTier(
         threshold,
         upperBound: parseCellNumber(row[4]) ?? undefined,
         row: r + 1,
+      },
+      status: 'valid',
+      warnings: [],
+      trace: {
+        sourceCell: bonusCellRef,
+        sourceRowIndex: r + 1,
+        sourceColumnIndex: 7,
+        rawValue: (row[6] ?? '').trim(),
+        normalizedValue: bonus,
+        mappingKey: `${category}:${tier}`,
+        mappingFile: null,
+        transformTemplate: 'employment_bonus',
+        transformReason:
+          `Ce bonus provient de la feuille ${sheet.name}, cellule ${bonusCellRef} (ligne ${r + 1}). ` +
+          `Catégorie « ${categoryFr} », tranche salariale « ${op} ${threshold} »` +
+          (parseCellNumber(row[4]) !== null ? ` jusqu'à ${parseCellNumber(row[4])}` : '') +
+          `. Le montant mensuel ${bonus} a été normalisé depuis la valeur brute « ${(row[6] ?? '').trim()} ».`,
       },
     })
   }

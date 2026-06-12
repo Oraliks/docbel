@@ -3,6 +3,7 @@ import { prisma, withDbRetry } from '@/lib/prisma'
 import { requireAdminAuth } from '@/lib/auth-check'
 import { compareBaremeVersions } from '@/lib/baremes/compareBaremeVersions'
 import { getPublicationHistory } from '@/lib/baremes/publicationLog'
+import { isBlockingIssue, type BaremeAlert } from '@/lib/baremes/types'
 
 export const runtime = 'nodejs'
 const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
@@ -28,11 +29,14 @@ export async function GET(
           filePath: true,
           status: true,
           fileHash: true,
+          fileSize: true,
           effectiveDate: true,
           validFrom: true,
           multiplicateur: true,
           summary: true,
+          diagnostics: true,
           alerts: true,
+          requiresApproval: true,
           publishedAt: true,
           publishedBy: true,
           createdBy: true,
@@ -72,24 +76,19 @@ export async function GET(
       ),
     ])
 
+    const alerts = (file.alerts ?? []) as unknown as BaremeAlert[]
+    const exportAllowed = !alerts.some(isBlockingIssue)
+
     return NextResponse.json(
       {
-        file,
-        amountsPreview: amounts.map((a) => ({
-          id: a.id,
-          sourceSheet: a.sourceSheet,
-          category: a.category,
-          allocationCode: a.allocationCode,
-          salaryCode: a.salaryCode,
-          article: a.article,
-          labelFr: a.labelFr,
-          labelNl: a.labelNl,
-          unit: a.unit,
-          amount: a.amount.toNumber(),
-          minDailySalary: a.minDailySalary ? a.minDailySalary.toNumber() : null,
-          maxDailySalary: a.maxDailySalary ? a.maxDailySalary.toNumber() : null,
-          comparisonKey: a.comparisonKey,
-        })),
+        file: {
+          ...file,
+          // Le fichier source n'est plus servi statiquement : la page admin
+          // passe par /api/baremes/import/[id]/source (auth + privé).
+          filePath: file.filePath,
+        },
+        exportAllowed,
+        amountsPreview: amounts.map(serializeAmount),
         totalAmounts,
         amountsPreviewLimit: PREVIEW_AMOUNTS_LIMIT,
         diff,
@@ -105,5 +104,45 @@ export async function GET(
       { error: message },
       { status: 500, headers: jsonHeaders }
     )
+  }
+}
+
+interface AmountRow {
+  id: string
+  sourceSheet: string
+  category: string
+  allocationCode: string | null
+  salaryCode: string | null
+  article: string | null
+  labelFr: string | null
+  labelNl: string | null
+  unit: string | null
+  amount: { toNumber(): number }
+  minDailySalary: { toNumber(): number } | null
+  maxDailySalary: { toNumber(): number } | null
+  comparisonKey: string
+  rawData: unknown
+}
+
+function serializeAmount(a: AmountRow) {
+  const raw = (a.rawData ?? {}) as Record<string, unknown>
+  return {
+    id: a.id,
+    sourceSheet: a.sourceSheet,
+    category: a.category,
+    allocationCode: a.allocationCode,
+    salaryCode: a.salaryCode,
+    article: a.article,
+    labelFr: a.labelFr,
+    labelNl: a.labelNl,
+    unit: a.unit,
+    amount: a.amount.toNumber(),
+    minDailySalary: a.minDailySalary ? a.minDailySalary.toNumber() : null,
+    maxDailySalary: a.maxDailySalary ? a.maxDailySalary.toNumber() : null,
+    comparisonKey: a.comparisonKey,
+    // Traçabilité (preview admin uniquement — jamais dans les CSV publics)
+    status: (raw.status as string) ?? 'valid',
+    warnings: (raw.warnings as string[]) ?? [],
+    trace: raw.trace ?? null,
   }
 }

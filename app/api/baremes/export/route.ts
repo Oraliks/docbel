@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdminAuth } from '@/lib/auth-check'
+import { csvEscape } from '@/lib/baremes/csv'
 
-// Export une feuille spécifique en CSV
+// Export une feuille spécifique en CSV (grille brute) — admin uniquement
 export async function GET(req: NextRequest) {
+  const auth = await requireAdminAuth()
+  if (!auth.isAuthorized) return auth.error
+
   try {
     const { searchParams } = new URL(req.url)
     const sheetId = searchParams.get('sheetId')
@@ -70,9 +75,6 @@ export async function GET(req: NextRequest) {
 }
 
 function toCsv(grid: string[][]): string {
-  return grid
-    .map((row) =>
-      row.map((cell) => `"${String(cell || '').replace(/"/g, '""')}"`).join(',')
-    )
-    .join('\n')
+  // csvEscape neutralise les injections de formule (=, +, -, @, tab, CR)
+  return grid.map((row) => row.map((cell) => csvEscape(cell || '')).join(',')).join('\n')
 }

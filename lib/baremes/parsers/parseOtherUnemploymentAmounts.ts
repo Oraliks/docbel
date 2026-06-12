@@ -1,5 +1,6 @@
 import type { ParsedSheet } from '@/lib/baremes-parser'
 import type { BaremeAlert, BaremeAmountDraft, ParserResult } from '../types'
+import { cellRef, makeIssue } from '../types'
 import { parseCellNumber } from '../normalize'
 
 interface ParseOtherUnemploymentAmountsOptions {
@@ -42,24 +43,36 @@ export function parseOtherUnemploymentAmounts(
 
   const header = findHeader(sheet)
   if (!header) {
-    alerts.push({
-      level: 'error',
-      sheet: sheet.name,
-      message: 'Ligne d\'en-tête introuvable (mot-clé "Artikel" attendu)',
-    })
-    return { amounts, alerts }
+    alerts.push(
+      makeIssue({
+        severity: 'error',
+        kind: 'unknown_column',
+        title: "Ligne d'en-tête introuvable",
+        sheet: sheet.name,
+        reason: 'Aucune ligne contenant le mot-clé "Artikel" avec des colonnes d\'unité — le template other_unemployment_amounts ne reconnaît pas cette feuille.',
+        recommendation: 'Vérifier la grille brute ; adapter le parser si la structure ONEM a changé.',
+      })
+    )
+    return { amounts, alerts, ignoredRows: [], unknownCodes: [] }
   }
 
   if (header.unitCols.length === 0) {
-    alerts.push({
-      level: 'error',
-      sheet: sheet.name,
-      message: 'Aucune colonne d\'unité détectée (uur/dag/maand/jaar)',
-    })
-    return { amounts, alerts }
+    alerts.push(
+      makeIssue({
+        severity: 'error',
+        kind: 'unknown_column',
+        title: "Aucune colonne d'unité détectée",
+        sheet: sheet.name,
+        row: header.rowIndex + 1,
+        reason: 'Aucune colonne uur/dag/maand/jaar trouvée dans l\'en-tête.',
+        recommendation: 'Vérifier la grille brute dans le Diagnostic.',
+      })
+    )
+    return { amounts, alerts, ignoredRows: [], unknownCodes: [] }
   }
 
   let lastArticle: string | null = null
+  let lastArticleRow: number | null = null
   let lastLabel: { nl: string | null; fr: string | null } = { nl: null, fr: null }
 
   for (let r = header.rowIndex + 1; r < sheet.cellData.length; r++) {
@@ -67,7 +80,10 @@ export function parseOtherUnemploymentAmounts(
     const article = (row[header.articleCol] ?? '').trim()
     const labelCell = (row[header.labelCol] ?? '').trim()
 
-    if (article) lastArticle = article
+    if (article) {
+      lastArticle = article
+      lastArticleRow = r + 1
+    }
     if (labelCell) {
       const parts = labelCell.split(/[\n\r]+/).map((s) => s.trim()).filter(Boolean)
       lastLabel = { nl: parts[0] ?? null, fr: parts[1] ?? null }
@@ -76,10 +92,13 @@ export function parseOtherUnemploymentAmounts(
     if (!lastArticle) continue // aucun article connu, on n'a rien à rattacher
 
     for (const { colIndex, unit } of header.unitCols) {
-      const amount = parseCellNumber(row[colIndex])
+      const rawValue = row[colIndex] ?? ''
+      const amount = parseCellNumber(rawValue)
       if (amount === null) continue
 
       const articleKey = normalizeArticleKey(lastArticle)
+      const amountCell = cellRef(r, colIndex)
+      const articleInherited = !article && lastArticleRow !== r + 1
       amounts.push({
         sourceSheet: sheet.name,
         category: 'other_unemployment_amount',
@@ -91,19 +110,46 @@ export function parseOtherUnemploymentAmounts(
         validFrom: options.validFrom,
         comparisonKey: `other_unemployment_amount:${articleKey}:${unit}`,
         rawData: { row: r + 1 },
+        status: 'valid',
+        warnings: articleInherited
+          ? [`Article « ${lastArticle} » hérité de la ligne ${lastArticleRow} (cellule fusionnée)`]
+          : [],
+        trace: {
+          sourceCell: amountCell,
+          sourceRowIndex: r + 1,
+          sourceColumnIndex: colIndex + 1,
+          rawValue: rawValue.trim(),
+          normalizedValue: amount,
+          mappingKey: lastArticle,
+          mappingFile: null,
+          transformTemplate: 'other_unemployment_amounts',
+          transformReason:
+            `Ce montant provient de la feuille ${sheet.name}, cellule ${amountCell} (colonne d'unité « ${unit} »). ` +
+            `Il est rattaché à l'article « ${lastArticle} »` +
+            (articleInherited
+              ? ` hérité de la ligne ${lastArticleRow} (cellule fusionnée dans le fichier ONEM).`
+              : '.') +
+            (lastLabel.fr || lastLabel.nl ? ` Libellé source : « ${lastLabel.fr ?? lastLabel.nl} ».` : '') +
+            ` Le montant ${amount} a été normalisé depuis la valeur brute « ${rawValue.trim()} ».`,
+        },
       })
     }
   }
 
   if (amounts.length === 0) {
-    alerts.push({
-      level: 'warn',
-      sheet: sheet.name,
-      message: 'Aucun montant extrait — structure peut-être incompatible',
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'warning',
+        kind: 'partial_sheet',
+        title: 'Aucun montant extrait',
+        sheet: sheet.name,
+        reason: 'L\'en-tête a été reconnu mais aucune ligne article × unité n\'a produit de montant — structure peut-être incompatible.',
+        recommendation: 'Vérifier la grille brute dans le Diagnostic.',
+      })
+    )
   }
 
-  return { amounts, alerts }
+  return { amounts, alerts, ignoredRows: [], unknownCodes: [] }
 }
 
 interface HeaderInfo {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdminAuth } from '@/lib/auth-check'
+import { ensureWriteAllowed } from '@/lib/admin/readonly-guard'
 import { logActivity } from '@/lib/activity-logger'
 import { unlink } from 'fs/promises'
 import path from 'path'
@@ -14,6 +15,9 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const writeGuard = await ensureWriteAllowed()
+  if (writeGuard) return writeGuard
+
   try {
     const { id } = await params
 
@@ -25,9 +29,12 @@ export async function DELETE(
       )
     }
 
-    // Supprimer le fichier physique
+    // Supprimer le fichier physique (legacy sous public/, nouveaux sous private/)
     try {
-      const fullPath = path.join(process.cwd(), 'public', file.filePath)
+      const relative = file.filePath.replace(/^\//, '')
+      const fullPath = relative.startsWith('uploads/')
+        ? path.join(process.cwd(), 'public', relative)
+        : path.join(process.cwd(), relative)
       await unlink(fullPath)
     } catch {
       // Continuer même si le fichier physique n'existe plus

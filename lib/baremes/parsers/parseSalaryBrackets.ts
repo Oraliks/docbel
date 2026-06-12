@@ -1,5 +1,10 @@
 import type { ParsedSheet } from '@/lib/baremes-parser'
-import type { BaremeAlert, BaremeAmountDraft, ParserResult } from '../types'
+import type {
+  BaremeAlert,
+  BaremeAmountDraft,
+  ParserResult,
+} from '../types'
+import { cellRef, makeIssue } from '../types'
 import { parseCellInteger, parseCellNumber } from '../normalize'
 
 interface ParseSalaryBracketsOptions {
@@ -45,7 +50,15 @@ export function parseSalaryBrackets(
         const min = parseCellNumber(row[c - 3])
         const max = parseCellNumber(row[c - 2])
         if (min !== null && max !== null && max >= min) {
-          found.set(code, makeAmount(sheet.name, code, min, max, options.validFrom, r, c))
+          found.set(
+            code,
+            makeAmount(sheet.name, code, min, max, options.validFrom, r, c, 'gauche', {
+              minCell: cellRef(r, c - 3),
+              maxCell: cellRef(r, c - 2),
+              rawMin: row[c - 3] ?? '',
+              rawMax: row[c - 2] ?? '',
+            })
+          )
           continue
         }
       }
@@ -57,7 +70,12 @@ export function parseSalaryBrackets(
         if (min !== null && max !== null && max >= min) {
           // Optionnel : 3ème valeur en c+3 (médiane ?) stockée dans rawData
           const third = c + 3 < row.length ? parseCellNumber(row[c + 3]) : null
-          const draft = makeAmount(sheet.name, code, min, max, options.validFrom, r, c)
+          const draft = makeAmount(sheet.name, code, min, max, options.validFrom, r, c, 'droite', {
+            minCell: cellRef(r, c + 1),
+            maxCell: cellRef(r, c + 2),
+            rawMin: row[c + 1] ?? '',
+            rawMax: row[c + 2] ?? '',
+          })
           if (third !== null) {
             draft.rawData = { ...draft.rawData, midDailySalary: third }
           }
@@ -69,11 +87,17 @@ export function parseSalaryBrackets(
   }
 
   if (found.size === 0) {
-    alerts.push({
-      level: 'error',
-      sheet: sheet.name,
-      message: 'Aucune tranche salariale détectée (structure inattendue)',
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'error',
+        kind: 'parser_error',
+        title: 'Aucune tranche salariale détectée',
+        sheet: sheet.name,
+        reason:
+          'Le scan des layouts attendus (min/max/code à gauche ou code/min/max à droite) n\'a trouvé aucune tranche — structure inattendue.',
+        recommendation: 'Vérifier la grille brute dans le Diagnostic ; adapter le parser salary_brackets si la mise en page ONEM a changé.',
+      })
+    )
   } else {
     // Vérifier la continuité: si codes 1..N attendus mais des trous, signaler
     const codes = [...found.keys()].sort((a, b) => a - b)
@@ -84,21 +108,30 @@ export function parseSalaryBrackets(
       if (!found.has(i)) missing.push(i)
     }
     if (missing.length > 0 && missing.length < 10) {
-      alerts.push({
-        level: 'warn',
-        sheet: sheet.name,
-        message: `Tranches manquantes dans la séquence: ${missing.join(', ')}`,
-      })
+      alerts.push(
+        makeIssue({
+          severity: 'warning',
+          kind: 'partial_sheet',
+          title: 'Tranches manquantes',
+          sheet: sheet.name,
+          reason: `Les codes de tranche ${missing.join(', ')} sont absents de la séquence 1..${expected} — soit ils n'existent pas dans cette version ONEM, soit le parser les a manqués.`,
+          recommendation: 'Vérifier dans la grille brute si ces codes existent ; le cas échéant adapter le parser salary_brackets.',
+        })
+      )
     } else if (missing.length >= 10) {
-      alerts.push({
-        level: 'info',
-        sheet: sheet.name,
-        message: `${missing.length} tranches non détectées dans la séquence 1..${expected}`,
-      })
+      alerts.push(
+        makeIssue({
+          severity: 'info',
+          kind: 'partial_sheet',
+          title: 'Séquence de tranches incomplète',
+          sheet: sheet.name,
+          reason: `${missing.length} tranches non détectées dans la séquence 1..${expected}.`,
+        })
+      )
     }
   }
 
-  return { amounts: [...found.values()], alerts }
+  return { amounts: [...found.values()], alerts, ignoredRows: [], unknownCodes: [] }
 }
 
 function makeAmount(
@@ -108,8 +141,11 @@ function makeAmount(
   max: number,
   validFrom: Date | null,
   row: number,
-  col: number
+  col: number,
+  layout: 'gauche' | 'droite',
+  cells: { minCell: string; maxCell: string; rawMin: string; rawMax: string }
 ): BaremeAmountDraft {
+  const codeCell = cellRef(row, col)
   return {
     sourceSheet: sheetName,
     category: 'salary_bracket',
@@ -121,5 +157,21 @@ function makeAmount(
     validFrom,
     comparisonKey: `salary_bracket:${code}`,
     rawData: { row: row + 1, col: col + 1 },
+    status: 'valid',
+    warnings: [],
+    trace: {
+      sourceCell: codeCell,
+      sourceRowIndex: row + 1,
+      sourceColumnIndex: col + 1,
+      rawValue: String(code),
+      normalizedValue: max,
+      mappingKey: `tranche ${code}`,
+      mappingFile: null,
+      transformTemplate: 'salary_brackets',
+      transformReason:
+        `Cette tranche provient de la feuille ${sheetName} : le code ${code} a été détecté en ${codeCell} (table ${layout}). ` +
+        `Le salaire journalier minimum ${min} vient de la cellule ${cells.minCell} (valeur brute « ${cells.rawMin.trim()} ») ` +
+        `et le maximum ${max} de la cellule ${cells.maxCell} (valeur brute « ${cells.rawMax.trim()} »).`,
+    },
   }
 }

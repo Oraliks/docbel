@@ -515,9 +515,11 @@ model BaremeFile {
 
   // Workflow d'import (nouveaux uploads via /api/baremes/import)
   fileHash    String?   @unique // sha256, null pour les BaremeFile legacy
+  fileSize    Int? // octets du fichier source, null pour les legacy
   validFrom   DateTime? // Date de validité parsée (en plus de effectiveDate qui est String legacy)
   summary     Json? // { sheetsDetected, sheetsParsed, sheetsIgnored, amountsExtracted, newEntries, modifiedEntries, removedEntries }
-  alerts      Json? // [{ level: 'info'|'warn'|'error', sheet?, message }]
+  diagnostics Json? // BaremeDiagnostics : unknownCodes, ignoredRows, unsupportedSheets, sheetPeriods, duplicates
+  alerts      Json? // [{ level, message, severity?, kind?, title?, cell?, rawValue?, reason?, recommendation? }]
   publishedAt DateTime?
   publishedBy String?
 

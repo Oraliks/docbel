@@ -1,6 +1,14 @@
 import type { ParsedSheet } from '@/lib/baremes-parser'
-import type { BaremeAlert, BaremeAmountDraft, ParserResult } from '../types'
+import type {
+  BaremeAlert,
+  BaremeAmountDraft,
+  BaremeUnknownCode,
+  ParserResult,
+} from '../types'
+import { cellRef, makeIssue } from '../types'
 import { parseCellNumber } from '../normalize'
+import { CODE_MAPPING_FILE, resolveCodeInfo } from '../code-mapping'
+import { IGNORED_CODES_FILE, isIgnoredCode } from '../ignored-codes'
 
 interface ParseAllocationWOptions {
   validFrom: Date | null
@@ -25,7 +33,9 @@ export function parseAllocationW(
 ): ParserResult {
   const alerts: BaremeAlert[] = []
   const amounts: BaremeAmountDraft[] = []
+  const unknownCodes: BaremeUnknownCode[] = []
   const seenKeys = new Set<string>()
+  const seenUnknown = new Set<string>()
 
   for (let r = 0; r < sheet.cellData.length; r++) {
     const row = sheet.cellData[r]
@@ -51,58 +61,103 @@ export function parseAllocationW(
     const labelFr = labelParts[1] ?? null
 
     const condTag = !ageCondition || ageCondition === '//' ? '' : `:${normalizeCondition(ageCondition)}`
+    const codesCellRef = cellRef(r, 12)
 
     for (const code of codes) {
-      if (fullAmount !== null) {
-        const key = `allocation_w:${code}:full${condTag}`
-        if (!seenKeys.has(key)) {
-          amounts.push({
-            sourceSheet: sheet.name,
-            category: 'allocation_w',
-            allocationCode: code,
-            salaryCode: 'full',
-            labelNl,
-            labelFr,
-            amount: fullAmount,
-            unit: 'daily',
-            validFrom: options.validFrom,
-            comparisonKey: key,
-            rawData: { ageCondition: ageCondition || undefined, row: r + 1 },
+      if (isIgnoredCode(code, 'allocation_w')) continue
+      const info = resolveCodeInfo(code, 'allocation_w')
+      if (!info && !seenUnknown.has(code)) {
+        seenUnknown.add(code)
+        unknownCodes.push({
+          sheet: sheet.name,
+          cell: codesCellRef,
+          code,
+          category: 'allocation_w',
+          recommendation: `Ajouter "${code}" dans ${CODE_MAPPING_FILE} (section allocationWCodes) ou le déclarer dans ${IGNORED_CODES_FILE}.`,
+        })
+        alerts.push(
+          makeIssue({
+            severity: 'warning',
+            kind: 'unknown_code',
+            title: 'Code ONEM non mappé',
+            sheet: sheet.name,
+            cell: codesCellRef,
+            row: r + 1,
+            rawValue: codesCell.slice(0, 80),
+            reason: `Le code "${code}" (allocations W) n'est ni mappé ni déclaré comme ignoré. Les montants sont extraits mais marqués "à vérifier".`,
+            recommendation: `Ajouter "${code}" dans ${CODE_MAPPING_FILE} ou dans ${IGNORED_CODES_FILE} avec une raison explicite.`,
           })
-          seenKeys.add(key)
-        }
+        )
       }
-      if (halfAmount !== null) {
-        const key = `allocation_w:${code}:half${condTag}`
-        if (!seenKeys.has(key)) {
-          amounts.push({
-            sourceSheet: sheet.name,
-            category: 'allocation_w',
-            allocationCode: code,
-            salaryCode: 'half',
-            labelNl,
-            labelFr,
-            amount: halfAmount,
-            unit: 'daily',
-            validFrom: options.validFrom,
-            comparisonKey: key,
-            rawData: { ageCondition: ageCondition || undefined, row: r + 1 },
-          })
-          seenKeys.add(key)
-        }
+      const isKnown = info !== null
+
+      const emit = (
+        variant: 'full' | 'half',
+        amount: number,
+        colIndex: number
+      ) => {
+        const key = `allocation_w:${code}:${variant}${condTag}`
+        if (seenKeys.has(key)) return
+        seenKeys.add(key)
+        const amountCell = cellRef(r, colIndex)
+        const variantFr = variant === 'full' ? 'allocation entière' : 'demi-allocation'
+        const explanation =
+          `Cette ligne provient de la feuille ${sheet.name} : le code ${code} est listé en ${codesCellRef} (ligne ${r + 1})` +
+          (ageCondition && ageCondition !== '//' ? `, condition d'âge « ${ageCondition} »` : '') +
+          `. Le montant journalier ${amount} (${variantFr}) a été lu en ${amountCell}.` +
+          (isKnown
+            ? ` Le code est reconnu via ${CODE_MAPPING_FILE}${info?.labelFr && !info.labelFr.startsWith('TODO') ? ` : ${info.labelFr}` : ''}.`
+            : ` Le code n'est PAS mappé (absent de ${CODE_MAPPING_FILE}) — à vérifier.`) +
+          (labelNl ? ` Libellé source : « ${labelNl} ».` : '')
+
+        amounts.push({
+          sourceSheet: sheet.name,
+          category: 'allocation_w',
+          allocationCode: code,
+          salaryCode: variant,
+          labelNl,
+          labelFr:
+            labelFr ?? (info?.labelFr && !info.labelFr.startsWith('TODO') ? info.labelFr : null),
+          amount,
+          unit: 'daily',
+          validFrom: options.validFrom,
+          comparisonKey: key,
+          rawData: { ageCondition: ageCondition || undefined, row: r + 1 },
+          status: isKnown ? 'valid' : 'unknown',
+          warnings: isKnown ? [] : [`Code "${code}" non mappé — sémantique inconnue`],
+          trace: {
+            sourceCell: amountCell,
+            sourceRowIndex: r + 1,
+            sourceColumnIndex: colIndex + 1,
+            rawValue: (row[colIndex] ?? '').trim(),
+            normalizedValue: amount,
+            mappingKey: code,
+            mappingFile: isKnown ? CODE_MAPPING_FILE : null,
+            transformTemplate: 'allocation_w',
+            transformReason: explanation,
+          },
+        })
       }
+
+      if (fullAmount !== null) emit('full', fullAmount, 15)
+      if (halfAmount !== null) emit('half', halfAmount, 17)
     }
   }
 
   if (amounts.length === 0) {
-    alerts.push({
-      level: 'error',
-      sheet: sheet.name,
-      message: 'Aucune allocation W extraite (vérifier les colonnes M/P/R)',
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'error',
+        kind: 'parser_error',
+        title: 'Aucune allocation W extraite',
+        sheet: sheet.name,
+        reason: 'Aucune ligne avec codes (col M) et montants (col P/R) n\'a été trouvée — structure inattendue.',
+        recommendation: 'Vérifier les colonnes M/P/R dans la grille brute ; adapter le parser allocation_w si la mise en page a changé.',
+      })
+    )
   }
 
-  return { amounts, alerts }
+  return { amounts, alerts, ignoredRows: [], unknownCodes }
 }
 
 function normalizeCondition(c: string): string {

@@ -77,9 +77,21 @@ export async function publishBaremeImport(
     }
   }
 
+  const alerts = (file.alerts ?? []) as Array<{ level?: string; severity?: string }>
+
+  // Les alertes 'critical' bloquent TOUJOURS, même avec force : on ne publie
+  // jamais un barème dont l'intégrité même est compromise.
+  const criticalCount = alerts.filter((a) => a?.severity === 'critical').length
+  if (criticalCount > 0) {
+    return {
+      status: 'error',
+      reason: 'has_errors',
+      message: `${criticalCount} alerte(s) de gravité "critical" — publication impossible, corriger l'import d'abord`,
+    }
+  }
+
   // Vérification des erreurs (sauf si force)
   if (!options.force) {
-    const alerts = (file.alerts ?? []) as Array<{ level?: string }>
     const errorCount = alerts.filter((a) => a?.level === 'error').length
     if (errorCount > 0) {
       return {

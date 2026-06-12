@@ -1,5 +1,6 @@
 import type { ParsedSheet } from '@/lib/baremes-parser'
 import type { BaremeAlert, BaremeAmountDraft, ParserResult } from '../types'
+import { cellRef, makeIssue } from '../types'
 import { parseCellNumber } from '../normalize'
 
 interface ParseOtherAllocationsOptions {
@@ -31,42 +32,61 @@ export function parseOtherAllocations(
   if (sectionRows.opvang !== null) {
     extractOpvang(sheet, sectionRows.opvang, options.validFrom, amounts)
   } else {
-    alerts.push({
-      level: 'info',
-      sheet: sheet.name,
-      message: 'Section "Opvanguitkering / allocation d\'accueil" non détectée',
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'info',
+        kind: 'partial_sheet',
+        title: 'Section non détectée',
+        sheet: sheet.name,
+        reason: 'Section "Opvanguitkering / allocation d\'accueil" non détectée dans la feuille.',
+      })
+    )
   }
 
   // Leefloon : 3 lignes (gezinshoofd, alleenstaande, samenwonende) avec montants mensuel + annuel
   if (sectionRows.leefloon !== null) {
     extractLeefloon(sheet, sectionRows.leefloon, options.validFrom, amounts)
   } else {
-    alerts.push({
-      level: 'info',
-      sheet: sheet.name,
-      message: 'Section "Leefloon / revenu d\'intégration" non détectée',
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'info',
+        kind: 'partial_sheet',
+        title: 'Section non détectée',
+        sheet: sheet.name,
+        reason: 'Section "Leefloon / revenu d\'intégration" non détectée dans la feuille.',
+      })
+    )
   }
 
   // Wisselkoerstoeslag : ignorée en V1 (matrice complexe avec conditions)
   if (sectionRows.wissel !== null) {
-    alerts.push({
-      level: 'info',
-      sheet: sheet.name,
-      message: 'Section "Wisselkoerstoeslag" détectée mais non parsée (V2)',
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'info',
+        kind: 'ignored_sheet',
+        title: 'Section volontairement non parsée',
+        sheet: sheet.name,
+        row: sectionRows.wissel + 1,
+        reason: 'La section "Wisselkoerstoeslag" (supplément taux de change) est détectée mais volontairement non parsée en V1 : matrice complexe avec conditions.',
+        recommendation: 'Si ces montants deviennent nécessaires, étendre le parser other_allocations ; la grille brute reste consultable.',
+      })
+    )
   }
 
   if (amounts.length === 0) {
-    alerts.push({
-      level: 'warn',
-      sheet: sheet.name,
-      message: 'Aucune autre allocation extraite',
-    })
+    alerts.push(
+      makeIssue({
+        severity: 'warning',
+        kind: 'partial_sheet',
+        title: 'Aucune autre allocation extraite',
+        sheet: sheet.name,
+        reason: 'Aucune des sections attendues (Opvang, Leefloon) n\'a produit de montant.',
+        recommendation: 'Vérifier la grille brute dans le Diagnostic.',
+      })
+    )
   }
 
-  return { amounts, alerts }
+  return { amounts, alerts, ignoredRows: [], unknownCodes: [] }
 }
 
 interface SectionLocations {
@@ -107,15 +127,18 @@ function extractOpvang(
 
     // Le montant peut être en col C, D ou E selon la version
     let amount: number | null = null
+    let amountCol = -1
     for (let c = 2; c <= 5 && c < row.length; c++) {
       const candidate = parseCellNumber(row[c])
       if (candidate !== null) {
         amount = candidate
+        amountCol = c
         break
       }
     }
     if (amount === null) continue
 
+    const amountCellRef = cellRef(r, amountCol)
     amounts.push({
       sourceSheet: sheet.name,
       category: 'other_allocation',
@@ -128,6 +151,22 @@ function extractOpvang(
       validFrom,
       comparisonKey: `other_allocation:opvanguitkering:${salaryCode}`,
       rawData: { row: r + 1 },
+      status: 'valid',
+      warnings: [],
+      trace: {
+        sourceCell: amountCellRef,
+        sourceRowIndex: r + 1,
+        sourceColumnIndex: amountCol + 1,
+        rawValue: (row[amountCol] ?? '').trim(),
+        normalizedValue: amount,
+        mappingKey: `opvang:${salaryCode}`,
+        mappingFile: null,
+        transformTemplate: 'other_allocations',
+        transformReason:
+          `Ce montant provient de la feuille ${sheet.name}, section « Opvanguitkering / allocation d'accueil », cellule ${amountCellRef}. ` +
+          `La variante « ${salaryCode === 'full' ? 'allocation entière' : 'demi-allocation'} » a été détectée depuis le libellé de la ligne ${r + 1}. ` +
+          `Le montant journalier ${amount} a été normalisé depuis la valeur brute « ${(row[amountCol] ?? '').trim()} ».`,
+      },
     })
   }
 }
@@ -176,6 +215,7 @@ function extractLeefloon(
     const monthly = parseCellNumber(row[monthlyCol])
     if (monthly !== null) {
       const parts = label.split(/[\n\r]+/)
+      const monthlyCellRef = cellRef(r, monthlyCol)
       amounts.push({
         sourceSheet: sheet.name,
         category: 'other_allocation',
@@ -188,11 +228,28 @@ function extractLeefloon(
         validFrom,
         comparisonKey: `other_allocation:leefloon:${situation}:monthly`,
         rawData: { row: r + 1 },
+        status: 'valid',
+        warnings: [],
+        trace: {
+          sourceCell: monthlyCellRef,
+          sourceRowIndex: r + 1,
+          sourceColumnIndex: monthlyCol + 1,
+          rawValue: (row[monthlyCol] ?? '').trim(),
+          normalizedValue: monthly,
+          mappingKey: `leefloon:${situation}`,
+          mappingFile: null,
+          transformTemplate: 'other_allocations',
+          transformReason:
+            `Ce montant provient de la feuille ${sheet.name}, section « Leefloon / revenu d'intégration », cellule ${monthlyCellRef}. ` +
+            `La situation « ${situation} » a été détectée depuis le libellé de la ligne ${r + 1}. ` +
+            `Montant mensuel ${monthly}, normalisé depuis « ${(row[monthlyCol] ?? '').trim()} ».`,
+        },
       })
     }
     if (yearlyCol >= 0) {
       const yearly = parseCellNumber(row[yearlyCol])
       if (yearly !== null) {
+        const yearlyCellRef = cellRef(r, yearlyCol)
         amounts.push({
           sourceSheet: sheet.name,
           category: 'other_allocation',
@@ -203,6 +260,22 @@ function extractLeefloon(
           validFrom,
           comparisonKey: `other_allocation:leefloon:${situation}:yearly`,
           rawData: { row: r + 1 },
+          status: 'valid',
+          warnings: [],
+          trace: {
+            sourceCell: yearlyCellRef,
+            sourceRowIndex: r + 1,
+            sourceColumnIndex: yearlyCol + 1,
+            rawValue: (row[yearlyCol] ?? '').trim(),
+            normalizedValue: yearly,
+            mappingKey: `leefloon:${situation}`,
+            mappingFile: null,
+            transformTemplate: 'other_allocations',
+            transformReason:
+              `Ce montant provient de la feuille ${sheet.name}, section « Leefloon / revenu d'intégration », cellule ${yearlyCellRef}. ` +
+              `La situation « ${situation} » a été détectée depuis le libellé de la ligne ${r + 1}. ` +
+              `Montant annuel ${yearly}, normalisé depuis « ${(row[yearlyCol] ?? '').trim()} ».`,
+          },
         })
       }
     }

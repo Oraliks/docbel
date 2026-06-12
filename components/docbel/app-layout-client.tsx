@@ -92,6 +92,9 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
         setDark: (value) => setTheme(value ? "dark" : "light"),
         toolsCat,
         setToolsCat,
+        // Permet aux pages (ex. barre de recherche héroïque de la home)
+        // d'ouvrir la même palette que le bouton du header.
+        openSearch: () => setPaletteOpen(true),
       }}
     >
       <div className="glass-root">

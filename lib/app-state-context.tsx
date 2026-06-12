@@ -8,6 +8,9 @@ interface AppStateContextType {
   setDark: (d: boolean) => void;
   toolsCat: string;
   setToolsCat: (c: string) => void;
+  /// Ouvre la palette de recherche globale (LandingCommandPalette). Fournie
+  /// par AppLayoutClient ; no-op par défaut hors du chrome public.
+  openSearch: () => void;
 }
 
 const AppStateContext = createContext<AppStateContextType>({
@@ -15,6 +18,7 @@ const AppStateContext = createContext<AppStateContextType>({
   setDark: () => {},
   toolsCat: "Tous",
   setToolsCat: () => {},
+  openSearch: () => {},
 });
 
 export function useAppState() {

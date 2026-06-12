@@ -1,0 +1,100 @@
+import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import { getServerAuthSession } from "@/lib/auth-session";
+
+/**
+ * Cookie anonyme posé par le parcours dossier — même nom que dans
+ * app/d/[slug]/page.tsx, qui identifie les BundleRun des visiteurs
+ * non connectés.
+ */
+const BUNDLE_COOKIE = "beldoc-bundle-session";
+
+/**
+ * Cookie de session posé côté client quand l'utilisateur ferme la bande
+ * « Reprendre » (✕). Permet au serveur de ne plus rendre la bande au
+ * prochain chargement complet → le HTML serveur et le premier rendu client
+ * (qui lit sessionStorage) restent d'accord, pas de mismatch d'hydratation.
+ * Cookie de session (sans expiration) : il disparaît à la fermeture du
+ * navigateur, mêmes sémantiques que sessionStorage.
+ */
+export const RESUME_DISMISS_COOKIE = "docbel-resume-dismissed";
+
+/** Dossier en cours, prêt à afficher dans la bande « Reprendre » de la home. */
+export interface ActiveBundleRun {
+  slug: string;
+  name: string;
+  color: string;
+  /** Nombre de documents déjà complétés dans ce parcours. */
+  completed: number;
+  /** Nombre total de documents du dossier. */
+  total: number;
+  /** Date de démarrage du parcours (ISO) — sérialisable vers le client. */
+  startedAt: string;
+}
+
+/**
+ * Cherche le dossier (BundleRun) « in_progress » le plus récent du visiteur,
+ * identifié par sa session (connecté) OU par le cookie anonyme du parcours —
+ * même logique d'identification que app/d/[slug]/page.tsx.
+ *
+ * Fail-soft : toute erreur (DB froide Neon, session indisponible) renvoie
+ * null — la home ne doit jamais casser pour une bande de reprise.
+ */
+export async function loadActiveBundleRun(): Promise<ActiveBundleRun | null> {
+  try {
+    const cookieStore = await cookies();
+
+    // L'utilisateur a fermé la bande pour cette session de navigation :
+    // on s'épargne la requête et on ne rend rien côté serveur.
+    if (cookieStore.get(RESUME_DISMISS_COOKIE)?.value === "1") return null;
+
+    const session = await getServerAuthSession().catch(() => null);
+    const userId = session?.user?.id || null;
+    const sessionId = cookieStore.get(BUNDLE_COOKIE)?.value || null;
+    if (!userId && !sessionId) return null;
+
+    // Priorité au compte connecté, sinon au cookie anonyme (comme d/[slug]).
+    // findFirst + orderBy = le run en cours le plus récent, requête bornée.
+    const run = await prisma.bundleRun.findFirst({
+      where: userId
+        ? { userId, status: "in_progress" }
+        : { sessionId: sessionId as string, status: "in_progress" },
+      orderBy: { startedAt: "desc" },
+      select: {
+        startedAt: true,
+        completedTemplateIds: true,
+        bundle: {
+          select: {
+            slug: true,
+            name: true,
+            color: true,
+            active: true,
+            items: { select: { id: true } },
+          },
+        },
+      },
+    });
+
+    // Bundle désactivé entre-temps → /d/[slug] renverrait un 404, on ne
+    // propose pas de le reprendre.
+    if (!run || !run.bundle.active) return null;
+
+    const completedIds = Array.isArray(run.completedTemplateIds)
+      ? (run.completedTemplateIds as string[])
+      : [];
+    const total = run.bundle.items.length;
+
+    return {
+      slug: run.bundle.slug,
+      name: run.bundle.name,
+      color: run.bundle.color,
+      // Les documents matérialisés par déclencheurs peuvent dépasser les
+      // items de base du bundle : on borne pour ne jamais afficher « 5 sur 4 ».
+      completed: Math.min(completedIds.length, total),
+      total,
+      startedAt: run.startedAt.toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}

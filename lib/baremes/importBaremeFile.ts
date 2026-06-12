@@ -160,80 +160,87 @@ export async function importBaremeFile(
 
   const diagnostics: BaremeDiagnostics = { fileSize, ...normalized.diagnostics }
 
-  // 5) Insertion DB (transaction)
+  // 5) Préparation des lignes HORS transaction (pur CPU — pas de temps DB gaspillé).
+  // Un import complet = 12 feuilles + plusieurs milliers de montants ; on garde la
+  // transaction la plus courte possible et on l'alimente avec des lots prêts.
+  const sheetRows = parsed.sheets.map((sheet, sheetIndex) => ({
+    name: sheet.name,
+    category: sheet.category,
+    rowCount: sheet.rowCount,
+    colCount: sheet.colCount,
+    sheetIndex,
+    cellData: JSON.stringify(sheet.cellData),
+    searchText: sheet.searchText.toLowerCase(),
+  }))
+
+  // La trace complète (cellule, valeur brute, mapping, statut) est rangée dans
+  // rawData — exposée dans la preview admin, jamais dans les CSV publics.
+  const amountRows = validatedAmounts.map((a) => ({
+    sourceSheet: a.sourceSheet,
+    category: a.category,
+    allocationCode: a.allocationCode ?? null,
+    salaryCode: a.salaryCode ?? null,
+    article: a.article ?? null,
+    labelFr: a.labelFr ?? null,
+    labelNl: a.labelNl ?? null,
+    unit: a.unit ?? null,
+    amount: new Prisma.Decimal(a.amount),
+    minDailySalary: a.minDailySalary != null ? new Prisma.Decimal(a.minDailySalary) : null,
+    maxDailySalary: a.maxDailySalary != null ? new Prisma.Decimal(a.maxDailySalary) : null,
+    validFrom: a.validFrom ?? null,
+    rawData: {
+      ...(a.rawData ?? {}),
+      trace: a.trace ?? null,
+      status: a.status ?? 'valid',
+      warnings: a.warnings ?? [],
+    } as unknown as Prisma.InputJsonValue,
+    comparisonKey: a.comparisonKey,
+  }))
+
+  // Lots de 500 : ~13 colonnes × 500 = 6500 paramètres, bien sous la limite
+  // Postgres (~65535). Évite l'erreur "too many bind parameters" sur les gros imports.
+  const AMOUNT_CHUNK = 500
+
+  // 6) Insertion DB (transaction atomique, timeout élargi pour la DB Neon distante).
   const fileId = await withDbRetry(() =>
-    prisma.$transaction(async (tx) => {
-      const created = await tx.baremeFile.create({
-        data: {
-          name: input.fileName,
-          filePath: storedPath ?? '',
-          fileHash,
-          fileSize,
-          effectiveDate: parsed.fileMetadata.effectiveDate,
-          validFrom: normalized.validFrom,
-          multiplicateur: parsed.fileMetadata.multiplicateur,
-          status: 'draft',
-          summary: normalized.summary as unknown as Prisma.InputJsonValue,
-          diagnostics: diagnostics as unknown as Prisma.InputJsonValue,
-          alerts: normalized.alerts as unknown as Prisma.InputJsonValue,
-          requiresApproval: input.requiresApproval ?? false,
-          createdBy: input.createdBy ?? null,
-        },
-        select: { id: true },
-      })
-
-      // BareSheet : on conserve la vue grille brute pour le viewer/diagnostic
-      let sheetIndex = 0
-      for (const sheet of parsed.sheets) {
-        await tx.bareSheet.create({
+    prisma.$transaction(
+      async (tx) => {
+        const created = await tx.baremeFile.create({
           data: {
-            fileId: created.id,
-            name: sheet.name,
-            category: sheet.category,
-            rowCount: sheet.rowCount,
-            colCount: sheet.colCount,
-            sheetIndex,
-            cellData: JSON.stringify(sheet.cellData),
-            searchText: sheet.searchText.toLowerCase(),
+            name: input.fileName,
+            filePath: storedPath ?? '',
+            fileHash,
+            fileSize,
+            effectiveDate: parsed.fileMetadata.effectiveDate,
+            validFrom: normalized.validFrom,
+            multiplicateur: parsed.fileMetadata.multiplicateur,
+            status: 'draft',
+            summary: normalized.summary as unknown as Prisma.InputJsonValue,
+            diagnostics: diagnostics as unknown as Prisma.InputJsonValue,
+            alerts: normalized.alerts as unknown as Prisma.InputJsonValue,
+            requiresApproval: input.requiresApproval ?? false,
+            createdBy: input.createdBy ?? null,
           },
+          select: { id: true },
         })
-        sheetIndex++
-      }
 
-      // BaremeAmount : couche normalisée (la "vraie" source des calculateurs).
-      // La trace complète (cellule, valeur brute, mapping, statut) est rangée
-      // dans rawData — exposée dans la preview admin, jamais dans les CSV publics.
-      if (validatedAmounts.length > 0) {
-        await tx.baremeAmount.createMany({
-          data: validatedAmounts.map((a) => ({
-            fileId: created.id,
-            sourceSheet: a.sourceSheet,
-            category: a.category,
-            allocationCode: a.allocationCode ?? null,
-            salaryCode: a.salaryCode ?? null,
-            article: a.article ?? null,
-            labelFr: a.labelFr ?? null,
-            labelNl: a.labelNl ?? null,
-            unit: a.unit ?? null,
-            amount: new Prisma.Decimal(a.amount),
-            minDailySalary:
-              a.minDailySalary != null ? new Prisma.Decimal(a.minDailySalary) : null,
-            maxDailySalary:
-              a.maxDailySalary != null ? new Prisma.Decimal(a.maxDailySalary) : null,
-            validFrom: a.validFrom ?? null,
-            rawData: {
-              ...(a.rawData ?? {}),
-              trace: a.trace ?? null,
-              status: a.status ?? 'valid',
-              warnings: a.warnings ?? [],
-            } as unknown as Prisma.InputJsonValue,
-            comparisonKey: a.comparisonKey,
-          })),
+        // Grilles brutes (viewer/diagnostic) : un seul createMany au lieu de 12 inserts.
+        await tx.bareSheet.createMany({
+          data: sheetRows.map((s) => ({ ...s, fileId: created.id })),
         })
-      }
 
-      return created.id
-    })
+        // Montants normalisés (source des calculateurs) par lots.
+        for (let i = 0; i < amountRows.length; i += AMOUNT_CHUNK) {
+          const chunk = amountRows.slice(i, i + AMOUNT_CHUNK)
+          await tx.baremeAmount.createMany({
+            data: chunk.map((a) => ({ ...a, fileId: created.id })),
+          })
+        }
+
+        return created.id
+      },
+      { timeout: 30_000, maxWait: 10_000 }
+    )
   )
 
   const errorCount = normalized.alerts.filter(isBlockingIssue).length

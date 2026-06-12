@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { NewsItem } from "@/lib/docbel-data";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRightIcon, BookOpenIcon, FolderOpenIcon, TrendingUpIcon } from "lucide-react";
+import { ArrowRightIcon, BookOpenIcon, FolderOpenIcon } from "lucide-react";
 import { Briefcase, Buildings, CalendarBlank, Calculator, Scales, Sparkle, User } from "@phosphor-icons/react";
+import { SimulatorCard } from "@/components/docbel/landing/simulator-card";
 
 interface LandingHeroProps {
   articles: NewsItem[];
@@ -285,87 +286,12 @@ function HeroCarousel({ articles }: { articles: NewsItem[] }) {
           )}
         </div>
 
-        {/* ── Simulateur posé PAR-DESSUS le bloc (carte sombre incrustée) ── */}
-        <StatusCard />
+        {/* ── Simulateur posé PAR-DESSUS le bloc (carte sombre incrustée) —
+            FONCTIONNEL : moteur lib/simulateur-chomage (mêmes chiffres que
+            /outils), persistance localStorage. ── */}
+        <SimulatorCard />
       </div>
     </article>
-  );
-}
-
-/**
- * Simulateur « Mon estimation actuelle » — carte SOMBRE posée par-dessus la
- * nappe du bloc hero (façon maquette) : violet profond dans les deux thèmes,
- * texte blanc, ombre portée marquée pour l'effet « carte sur carte ». Données
- * encore placeholder (mock conservé, cf. redesign).
- */
-function StatusCard() {
-  const router = useRouter();
-  return (
-    <aside
-      className="relative z-10 flex flex-col gap-4 overflow-hidden rounded-[20px] p-5 text-white ring-1 ring-white/15 sm:p-6"
-      style={{
-        backgroundImage:
-          "linear-gradient(168deg, color-mix(in oklab, var(--glass-status-from) 70%, #181040) 0%, color-mix(in oklab, var(--glass-status-to) 82%, #0F0A2C) 100%)",
-        boxShadow:
-          "0 24px 48px -14px rgba(34,18,84,0.55), 0 6px 18px rgba(34,18,84,0.25)",
-      }}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-white/75">
-          Mon estimation actuelle
-        </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold text-[color:var(--glass-accent-deep)]">
-          <TrendingUpIcon className="size-3" strokeWidth={2.4} />
-          +2,1%
-        </span>
-      </div>
-
-      <div
-        className="relative overflow-hidden rounded-[16px] p-5 ring-1 ring-white/20"
-        style={{
-          backgroundImage:
-            "linear-gradient(135deg, var(--glass-status-from) 0%, var(--glass-status-to) 100%)",
-        }}
-      >
-        <span
-          className="absolute -top-10 -right-10 size-40 rounded-full bg-[rgba(255,200,140,0.40)] dark:bg-[rgba(180,160,200,0.12)]"
-          style={{ filter: "blur(28px)" }}
-        />
-        <div className="relative">
-          <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/80">
-            Allocation chômage
-          </div>
-          <div className="glass-display mt-1 text-[40px] leading-none font-semibold">
-            47,80 €
-            <small className="ml-1.5 text-[14px] font-semibold opacity-70">/jour</small>
-          </div>
-          <div className="mt-1.5 text-[12px] opacity-80">
-            Sur base d&apos;un salaire de référence de 2 850 €
-          </div>
-        </div>
-      </div>
-
-      {/* Méta de l'estimation, détachée du bloc chiffré par un filet clair. */}
-      <div className="flex flex-col gap-2 border-t border-white/15 pt-4 text-[12px]">
-        <div className="flex justify-between">
-          <span className="text-white/60">Mise à jour</span>
-          <span className="font-bold">il y a 2 jours</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-white/60">Catégorie</span>
-          <span className="font-bold">Cohabitant · 1ʳᵉ pér.</span>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => router.push("/outils")}
-        className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-[rgba(13,7,34,0.5)] px-5 py-3.5 text-[13.5px] font-bold text-white transition hover:bg-[rgba(13,7,34,0.72)]"
-      >
-        Recalculer mon estimation
-        <ArrowRightIcon className="size-4" />
-      </button>
-    </aside>
   );
 }
 

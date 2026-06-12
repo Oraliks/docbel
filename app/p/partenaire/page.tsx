@@ -22,6 +22,10 @@ import {
   UsersIcon,
 } from "lucide-react";
 import { AlreadyLoggedInBanner } from "@/components/docbel/landing/already-logged-in-banner";
+import { AgrDemo } from "@/components/docbel/p/agr-demo";
+import { BookingShowcase } from "@/components/docbel/p/booking-showcase";
+import { EspacePreview } from "@/components/docbel/p/espace-preview";
+import { RoiCalc } from "@/components/docbel/p/roi-calc";
 
 export const metadata: Metadata = {
   title: "Espace Partenaire | Docbel",
@@ -288,7 +292,19 @@ export default function PartenaireLandingPage() {
           />
           <div className="relative flex h-full items-center justify-center">
             <div className="flex size-[200px] flex-col items-center justify-center gap-3 rounded-3xl border border-white/30 bg-white/15 p-6 shadow-[0_30px_80px_rgba(20,10,45,0.45),inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-xl sm:size-[240px]">
-              <FolderOpenIcon className="size-16 text-white sm:size-20" strokeWidth={1.6} />
+              {/* Illustration 3D (asset CC0) en lévitation — remplace l'icône
+                  plate ; drop-shadow violet pour l'harmoniser au fond mauve. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/3d/folder.png"
+                alt=""
+                aria-hidden
+                className="hero-float h-20 w-20 object-contain sm:h-24 sm:w-24"
+                style={{
+                  filter:
+                    "drop-shadow(0 14px 22px rgba(20,10,45,0.45)) drop-shadow(0 0 18px color-mix(in oklab, var(--glass-accent-deep) 50%, transparent))",
+                }}
+              />
               <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/80">
                 Espace partenaire
               </span>
@@ -346,6 +362,15 @@ export default function PartenaireLandingPage() {
         </div>
       </section>
 
+      {/* Section C2 — Démo interactive du Calcul AGR (vrai moteur lib/agr) */}
+      <AgrDemo />
+
+      {/* Section C3 — Calculette retour sur investissement */}
+      <RoiCalc />
+
+      {/* Section C4 — Visite guidée de l'espace (aperçu à onglets) */}
+      <EspacePreview />
+
       {/* Section D — 4 bénéfices secondaires */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {SECONDARY_BENEFITS.map(({ Icon, hue, title, desc }) => (
@@ -361,6 +386,9 @@ export default function PartenaireLandingPage() {
           </article>
         ))}
       </section>
+
+      {/* Section D2 — Vitrine du parcours rendez-vous */}
+      <BookingShowcase />
 
       {/* Section E — CTA banner final */}
       <section

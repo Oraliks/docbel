@@ -46,16 +46,30 @@ export function normalizeBaremeData(
   validFromOverride: Date | null,
   parserOverrides: Record<string, SheetHandler> = {}
 ): NormalizedBaremeImport {
-  // Priorité du validFrom :
+  // validFrom AU NIVEAU FICHIER (marqueur de publication / batch) :
   //   1. override (typiquement extrait du nom de fichier)
   //   2. métadata détectée par lib/baremes-parser.ts (effectiveDate)
-  //   3. null → erreur bloquante (on ne devine jamais une période légale)
-  const validFrom =
+  // NB : chaque feuille porte sa propre date "Geldig/valable" — c'est elle qui
+  // date les montants (cf. dispatchParsers). Le validFrom fichier ne sert qu'au
+  // record BaremeFile et au contrôle "période obligatoire".
+  const fileValidFrom =
     validFromOverride ??
     parseBelgianDate(parsed.fileMetadata.effectiveDate) ??
     null
 
-  const dispatch = dispatchParsers(parsed.sheets, validFrom, parserOverrides)
+  const dispatch = dispatchParsers(parsed.sheets, fileValidFrom, parserOverrides)
+
+  // Si ni le nom de fichier ni la métadata ne donnent de date, on retombe sur la
+  // date de feuille la plus récente (les feuilles ONEM la portent toujours) —
+  // on ne devine jamais, on lit une date réellement présente dans le fichier.
+  const detectedSheetDates = dispatch.sheetPeriods
+    .map((p) => p.detectedDate)
+    .filter((d): d is string => !!d)
+    .sort()
+  const latestSheetDate = detectedSheetDates.at(-1)
+  const validFrom =
+    fileValidFrom ??
+    (latestSheetDate ? new Date(`${latestSheetDate}T00:00:00.000Z`) : null)
 
   const sheetsByName = parsed.sheets.map((s) => {
     const isParsed = dispatch.parsedSheets.includes(s.name)

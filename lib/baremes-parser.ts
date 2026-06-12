@@ -96,7 +96,16 @@ function extractGrid(worksheet: XLSX.WorkSheet): {
 
       let value = ''
       if (cell) {
-        if (cell.w !== undefined) {
+        if (cell.t === 'd' && cell.v instanceof Date) {
+          // Cellule date : on émet du ISO (YYYY-MM-DD) non ambigu plutôt que la
+          // chaîne formatée .w, qui peut être en format US (M/J/AA) sur certaines
+          // feuilles (ex: Basisbedragen "4/1/26" = 1er avril) et EU (J/M/AAAA) sur
+          // d'autres — source de swaps jour/mois. cellDates construit la Date en
+          // heure locale ; on lit les composantes locales (stable quel que soit le
+          // fuseau du serveur, cf. SheetJS).
+          const d = cell.v
+          value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        } else if (cell.w !== undefined) {
           value = String(cell.w)
         } else if (cell.v !== undefined) {
           value = String(cell.v)

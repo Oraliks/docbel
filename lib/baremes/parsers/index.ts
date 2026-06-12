@@ -81,12 +81,17 @@ export function dispatchParsers(
           kind: 'period_mismatch',
           title: 'Période propre à la feuille',
           sheet: sheet.name,
-          reason: `La feuille indique une validité au ${formatDate(sheetDate)} alors que le fichier est importé pour le ${formatDate(validFrom)}. C'est fréquent chez l'ONEM (certaines feuilles changent à une autre date) mais à vérifier.`,
+          reason: `Les montants de cette feuille sont valables à partir du ${formatDate(sheetDate)} (date "Geldig/valable" de la feuille), alors que le fichier est importé pour le ${formatDate(validFrom)}. C'est normal chez l'ONEM : une feuille peut ne pas avoir changé depuis une publication antérieure. Les montants sont donc datés du ${formatDate(sheetDate)}, pas de la date du fichier.`,
           recommendation:
-            'Vérifier que la date de la feuille est cohérente avec la lettre ONEM accompagnant le fichier.',
+            'Aucune action si la date de la feuille correspond à la dernière modification réelle de ce barème.',
         })
       )
     }
+
+    // Date de validité des montants = date PROPRE à la feuille (Geldig/valable),
+    // pas celle du fichier. Un fichier d'avril peut contenir des montants chômage
+    // complet inchangés depuis mars : ils doivent rester datés de mars.
+    const sheetValidFrom = sheetDate ?? validFrom
 
     const handler = handlers[sheet.name]
     if (!handler) {
@@ -106,7 +111,7 @@ export function dispatchParsers(
     }
 
     try {
-      const result = handler.parse(sheet, { validFrom })
+      const result = handler.parse(sheet, { validFrom: sheetValidFrom })
       amounts.push(...result.amounts)
       alerts.push(...result.alerts)
       if (result.ignoredRows?.length) ignoredRows.push(...result.ignoredRows)

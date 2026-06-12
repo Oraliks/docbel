@@ -24,6 +24,8 @@ export interface ActiveBaremeData {
   fileName: string
   validFrom: Date | null
   publishedAt: Date | null
+  /** Multiplicateur (index) du fichier — affiché sur les pages de consultation. */
+  multiplicateur: number | null
   amountsByCategory: Partial<Record<BaremeCategory, ActiveBaremeAmount[]>>
   allAmounts: ActiveBaremeAmount[]
 }
@@ -60,6 +62,7 @@ export async function getActiveBaremeData(
         name: true,
         validFrom: true,
         publishedAt: true,
+        multiplicateur: true,
       },
     })
   )
@@ -112,6 +115,7 @@ export async function getActiveBaremeData(
     fileName: file.name,
     validFrom: file.validFrom,
     publishedAt: file.publishedAt,
+    multiplicateur: file.multiplicateur,
     amountsByCategory,
     allAmounts,
   }

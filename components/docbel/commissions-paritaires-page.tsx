@@ -66,12 +66,22 @@ function typeLabel(type: string): string {
   return type;
 }
 
+/// Valeur initiale de la recherche : préremplie depuis `?q=` (ex. teaser
+/// « Quelle commission paritaire ? » de la landing employeur). Lecture directe
+/// de window.location plutôt que useSearchParams : la page n'a pas de boundary
+/// Suspense (cf. app/outils/commissions-paritaires/page.tsx) et le rendu
+/// serveur retombe simplement sur "".
+function initialSearchFromUrl(): string {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("q")?.trim() ?? "";
+}
+
 export function CommissionsParitairesPage() {
   const [all, setAll] = useState<CommissionParitaire[]>([]);
   const [lastUpdated, setLastUpdated] = useState("");
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [debounced, setDebounced] = useState("");
+  const [search, setSearch] = useState(initialSearchFromUrl);
+  const [debounced, setDebounced] = useState(initialSearchFromUrl);
   const [typeFilter, setTypeFilter] = useState<CommissionType | "ALL">("ALL");
   const [page, setPage] = useState(1);
 
@@ -194,6 +204,9 @@ export function CommissionsParitairesPage() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher par code, numéro ou nom (ex: 124, horeca)…"
             className={`${GLASS_INPUT} h-11 pl-11`}
+            // Avec ?q=, le serveur rend value="" et le client la valeur du
+            // paramètre : écart attendu, on coupe juste l'avertissement.
+            suppressHydrationWarning
           />
         </div>
         <Select

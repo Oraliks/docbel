@@ -16,11 +16,15 @@ import {
   SearchIcon,
   ShieldCheckIcon,
   TimerIcon,
-  UserCheckIcon,
   UsersIcon,
   ZapIcon,
 } from "lucide-react";
 import { AlreadyLoggedInBanner } from "@/components/docbel/landing/already-logged-in-banner";
+import { CpFinderTeaser } from "@/components/docbel/p/cp-finder-teaser";
+import { CtParcours } from "@/components/docbel/p/ct-parcours";
+import { EcheancierEmployeur } from "@/components/docbel/p/echeancier-employeur";
+import { EmployeurHeroBilingue } from "@/components/docbel/p/employeur-hero-bilingue";
+import { PricingEmployeur } from "@/components/docbel/p/pricing-employeur";
 
 export const metadata: Metadata = {
   title: "Espace Employeur | Docbel",
@@ -147,12 +151,6 @@ const SECONDARY_BENEFITS: BenefitItem[] = [
   },
 ];
 
-const REASSURANCE_BADGES: { Icon: LucideIcon; label: string }[] = [
-  { Icon: ShieldCheckIcon, label: "Informations fiables & à jour" },
-  { Icon: UserCheckIcon, label: "Outils validés par des experts" },
-  { Icon: ScaleIcon, label: "Conforme au droit belge" },
-];
-
 function IconTile({
   Icon,
   hue,
@@ -200,95 +198,11 @@ export default function EmployeurLandingPage() {
         label="votre espace employeur"
       />
 
-      {/* Section A — Hero */}
-      <section className="grid items-center gap-10 lg:grid-cols-[1.15fr_1fr]">
-        <div className="flex flex-col gap-7">
-          <span
-            className="inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em]"
-            style={{
-              borderColor: "color-mix(in oklab, var(--glass-accent-deep) 30%, transparent)",
-              background: "color-mix(in oklab, var(--glass-accent-a) 12%, var(--glass-surface))",
-              color: "var(--glass-accent-deep)",
-            }}
-          >
-            <span
-              className="size-1.5 rounded-full"
-              style={{ background: "var(--glass-accent-deep)" }}
-            />
-            Plateforme RH &amp; administrative
-          </span>
+      {/* Section A — Hero (bilingue FR/NL, commutateur en tête) */}
+      <EmployeurHeroBilingue />
 
-          <h1 className="glass-display text-[40px] leading-[1.05] font-semibold tracking-tight sm:text-[52px] lg:text-[58px]">
-            L&apos;espace employeur qui vous fait{" "}
-            <em>gagner du temps</em> et de <em>l&apos;argent.</em>
-          </h1>
-
-          <p className="max-w-[560px] text-[15.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-            Docbel centralise outils pratiques, simulations et informations
-            fiables pour simplifier votre gestion RH et administrative au
-            quotidien.
-          </p>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/employeur"
-              className="glass-cta inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold"
-            >
-              Découvrir l&apos;espace employeur
-              <ArrowRightIcon className="size-4" strokeWidth={2.4} />
-            </Link>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-6 py-3.5 text-[13.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10"
-            >
-              Demander une démo
-            </Link>
-          </div>
-
-          <ul className="flex flex-wrap gap-2 pt-2">
-            {REASSURANCE_BADGES.map(({ Icon, label }) => (
-              <li
-                key={label}
-                className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 py-2 text-[12px] font-semibold text-[color:var(--glass-ink-soft)]"
-              >
-                <Icon
-                  className="size-3.5"
-                  style={{ color: "var(--glass-accent-deep)" }}
-                  strokeWidth={2.4}
-                />
-                {label}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Illustration placeholder — à raffiner par la session design. */}
-        <div
-          className="relative aspect-square w-full overflow-hidden rounded-[28px]"
-          style={{
-            backgroundImage:
-              "radial-gradient(ellipse at 30% 20%, var(--glass-accent-d) 0%, transparent 55%), linear-gradient(135deg, var(--glass-accent-c) 0%, var(--glass-accent-a) 55%, var(--glass-accent-deep) 100%)",
-          }}
-        >
-          <div
-            className="absolute top-1/2 left-1/2 size-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(255,255,255,0.55) 0%, transparent 70%)",
-              filter: "blur(40px)",
-            }}
-            aria-hidden
-          />
-          <div className="relative flex h-full items-center justify-center">
-            <div className="flex size-[200px] flex-col items-center justify-center gap-3 rounded-3xl border border-white/30 bg-white/15 p-6 shadow-[0_30px_80px_rgba(20,10,45,0.45),inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-xl sm:size-[240px]">
-              <CalculatorIcon className="size-16 text-white sm:size-20" strokeWidth={1.6} />
-              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/80">
-                Espace employeur
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Section A2 — Parcours chômage temporaire (obligations en 4 étapes) */}
+      <CtParcours />
 
       {/* Section B — 4 bénéfices */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -337,7 +251,13 @@ export default function EmployeurLandingPage() {
             </article>
           ))}
         </div>
+
+        {/* Teaser commissions paritaires — pousse vers l'outil complet (?q=) */}
+        <CpFinderTeaser />
       </section>
+
+      {/* Section C2 — Échéancier des obligations employeur (+ export .ics) */}
+      <EcheancierEmployeur />
 
       {/* Section D — 4 bénéfices secondaires */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -354,6 +274,9 @@ export default function EmployeurLandingPage() {
           </article>
         ))}
       </section>
+
+      {/* Section D2 — Tarifs (HTVA ⇄ TVAC) */}
+      <PricingEmployeur />
 
       {/* Section E — CTA banner final */}
       <section

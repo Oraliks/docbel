@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowRight,
+  Building2,
   CheckCircle2,
   Circle,
   Clock,
   EyeOff,
+  Inbox,
   Package,
   RefreshCw,
   Pencil,
@@ -81,6 +83,18 @@ interface Bundle {
   warnings?: unknown;
 }
 
+/// Document obligatoire au dossier mais NON remplissable par le citoyen :
+/// l'employeur, l'ONEM ou un autre tiers doit le produire. Affiché dans une
+/// carte séparée du parcours, à titre d'aide-mémoire.
+export interface ExternalDocument {
+  slug: string;
+  title: string;
+  issuer: string;
+  required: boolean;
+  responsibility: "employer" | "onem" | "external";
+  responsibilityNote: string | null;
+}
+
 interface BundleRunnerProps {
   bundle: Bundle;
   runId: string | null;
@@ -96,7 +110,16 @@ interface BundleRunnerProps {
   /// slugs des documents applicables aux réponses d'orientation actuelles.
   /// `null` = pas de filtrage par module (dossier piloté par config DB).
   applicableSlugs?: string[] | null;
+  /// Documents obligatoires au dossier mais à charge d'un tiers (employeur,
+  /// ONEM, mutuelle…). Listés à part — pas de bouton « Compléter ».
+  externalDocuments?: ExternalDocument[];
 }
+
+const RESPONSIBILITY_LABEL: Record<ExternalDocument["responsibility"], string> = {
+  employer: "À l'employeur",
+  onem: "À l'ONEM",
+  external: "À un tiers",
+};
 
 export function BundleRunner({
   bundle,
@@ -110,6 +133,7 @@ export function BundleRunner({
   templateNames,
   fieldLabels,
   applicableSlugs = null,
+  externalDocuments = [],
 }: BundleRunnerProps) {
   const router = useRouter();
   const confirm = useConfirm();
@@ -446,6 +470,54 @@ export function BundleRunner({
               })}
             </CardContent>
           </Card>
+
+          {externalDocuments.length > 0 && (
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Inbox className="w-4 h-4 text-amber-700 dark:text-amber-300" />
+                  Documents à fournir par un tiers ({externalDocuments.length})
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Ces pièces sont obligatoires au dossier mais tu ne peux pas les remplir
+                  toi-même. Pense à les réclamer dès que possible.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {externalDocuments.map((d) => (
+                  <div
+                    key={d.slug}
+                    className="flex items-start gap-3 p-3 border rounded-md border-amber-500/20 bg-white/[0.04]"
+                  >
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Building2 className="w-5 h-5 text-amber-700 dark:text-amber-300" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium">{d.title}</span>
+                        <Badge
+                          variant="outline"
+                          className="text-xs border-amber-500 text-amber-700 dark:text-amber-300"
+                        >
+                          {RESPONSIBILITY_LABEL[d.responsibility]}
+                        </Badge>
+                        {!d.required && (
+                          <Badge variant="secondary" className="text-xs">
+                            Optionnel
+                          </Badge>
+                        )}
+                      </div>
+                      {d.responsibilityNote && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {d.responsibilityNote}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {hiddenItems.length > 0 && (
             <Card className="border-dashed bg-white/5">

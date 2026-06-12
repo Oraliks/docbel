@@ -169,15 +169,36 @@ export default async function BundleRoute({
 
   const dossier = getDossier(slug);
   const eligibilityAnswers = parseEligibilityAnswers(run?.eligibilityAnswers);
-  const applicableSlugs = dossier
-    ? selectDocuments(dossier, eligibilityAnswers as unknown as DossierAnswers).map((d) => d.slug)
+  const selectedDocs = dossier
+    ? selectDocuments(dossier, eligibilityAnswers as unknown as DossierAnswers)
     : null;
+  const applicableSlugs = selectedDocs ? selectedDocs.map((d) => d.slug) : null;
   // Les formulaires matérialisés par trigger sont toujours applicables — on
   // les rajoute aux applicables pour qu'ils ne soient pas masqués par le
   // filtre dossier.
   const finalApplicableSlugs = applicableSlugs
     ? [...applicableSlugs, ...triggeredSlugs]
     : null;
+
+  // Documents à charge d'un tiers (employeur, ONEM, mutuelle…) : pas remplis
+  // dans beldoc mais obligatoires au dossier. On les sérialise séparément
+  // pour que le runner affiche une carte « à fournir par un tiers ».
+  const externalDocuments =
+    selectedDocs
+      ?.flatMap((d) => {
+        const r = d.responsibility;
+        if (!r || r === "user") return [];
+        return [
+          {
+            slug: d.slug,
+            title: d.title,
+            issuer: d.issuer,
+            required: d.required ?? true,
+            responsibility: r,
+            responsibilityNote: d.responsibilityNote?.fr ?? null,
+          },
+        ];
+      }) ?? [];
 
   // Pleine largeur : la page remplit le shell public (max-w-[1840px]) comme
   // /mon-dossier — le BundleRunner (cartes parcours/documents) occupe toute la
@@ -221,6 +242,7 @@ export default async function BundleRoute({
         templateNames={templateNames}
         fieldLabels={fieldLabels}
         applicableSlugs={finalApplicableSlugs}
+        externalDocuments={externalDocuments}
       />
     </div>
   );

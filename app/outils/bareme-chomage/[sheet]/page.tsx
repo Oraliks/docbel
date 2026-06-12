@@ -2,21 +2,16 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getActiveBaremeData } from '@/lib/baremes/getActiveBaremeData'
-import {
-  BAREME_SHEETS,
-  ROOT_SHEET_SLUG,
-  buildMatrixForEntry,
-  findSheet,
-} from '@/lib/baremes/sheetRegistry'
+import { BAREME_SHEETS, buildMatrixForEntry, findSheet } from '@/lib/baremes/sheetRegistry'
 import { BaremeMatrix } from '@/components/outils/bareme-matrix'
 import { BaremeSheetNav } from '@/components/outils/bareme-sheet-nav'
 import { FileSpreadsheet } from 'lucide-react'
 
 export const revalidate = 300
 
-// Pré-génère les sous-routes connues (hors racine chomage-complet).
+// Pré-génère toutes les feuilles connues.
 export function generateStaticParams() {
-  return BAREME_SHEETS.filter((s) => s.slug !== ROOT_SHEET_SLUG).map((s) => ({ sheet: s.slug }))
+  return BAREME_SHEETS.map((s) => ({ sheet: s.slug }))
 }
 
 export async function generateMetadata({
@@ -40,8 +35,7 @@ export default async function BaremeSheetPage({
 }) {
   const { sheet } = await params
   const entry = findSheet(sheet)
-  // La racine (chomage-complet) vit sur /outils/bareme-chomage, pas ici.
-  if (!entry || entry.slug === ROOT_SHEET_SLUG) notFound()
+  if (!entry) notFound()
 
   const data = await getActiveBaremeData()
   const matrix = data ? buildMatrixForEntry(entry, data) : null

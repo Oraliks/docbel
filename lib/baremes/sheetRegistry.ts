@@ -11,32 +11,73 @@ import {
 } from './allocationMatrix'
 
 export interface SheetEntry {
-  /** Slug d'URL (la 1ʳᵉ entrée vit sur /outils/bareme-chomage, les autres sur /[slug]). */
   slug: string
   navLabel: string
+  /** Titre long affiché sur la carte du hub. */
+  title: string
+  description: string
+  /** Regroupement sur le hub. */
+  group: string
   category: BaremeCategory
   builder: 'anb' | 'flat' | 'hourly'
 }
 
-// Ordre = ordre d'affichage dans la navigation inter-feuilles.
+// Ordre = ordre d'affichage (nav + hub).
 export const BAREME_SHEETS: SheetEntry[] = [
-  { slug: 'chomage-complet', navLabel: 'Chômage complet', category: 'full_unemployment', builder: 'anb' },
-  { slug: 'mi-temps', navLabel: 'Mi-temps', category: 'half_unemployment', builder: 'anb' },
-  { slug: 'temporaire', navLabel: 'Chômage temporaire', category: 'temporary_unemployment_full', builder: 'flat' },
-  { slug: 'categorie-speciale', navLabel: 'Catégories spéciales', category: 'special_category_full', builder: 'flat' },
-  { slug: 'salaires-horaires', navLabel: 'Salaires horaires', category: 'hourly_wage', builder: 'hourly' },
+  {
+    slug: 'chomage-complet',
+    navLabel: 'Chômage complet',
+    title: 'Allocations de chômage complet',
+    description: "Montant journalier de l'allocation entière, par code, situation familiale et tranche salariale.",
+    group: 'Allocations de chômage',
+    category: 'full_unemployment',
+    builder: 'anb',
+  },
+  {
+    slug: 'mi-temps',
+    navLabel: 'Mi-temps',
+    title: 'Chômage complet — mi-temps',
+    description: 'Allocation sur base d’un travail à temps partiel (demi-allocation).',
+    group: 'Allocations de chômage',
+    category: 'half_unemployment',
+    builder: 'anb',
+  },
+  {
+    slug: 'temporaire',
+    navLabel: 'Chômage temporaire',
+    title: 'Chômage temporaire',
+    description: 'Montants journaliers du chômage temporaire (force majeure, économique…).',
+    group: 'Allocations de chômage',
+    category: 'temporary_unemployment_full',
+    builder: 'flat',
+  },
+  {
+    slug: 'categorie-speciale',
+    navLabel: 'Catégories spéciales',
+    title: 'Catégories spéciales',
+    description: 'Catégories particulières : travailleurs portuaires, pêcheurs de mer, SWT…',
+    group: 'Allocations de chômage',
+    category: 'special_category_full',
+    builder: 'flat',
+  },
+  {
+    slug: 'salaires-horaires',
+    navLabel: 'Salaires horaires',
+    title: 'Salaires horaires de référence',
+    description: 'Salaire horaire par tranche et régime hebdomadaire (35 à 40 h).',
+    group: 'Salaires de référence',
+    category: 'hourly_wage',
+    builder: 'hourly',
+  },
 ]
-
-/** Slug de la feuille servie sur la racine /outils/bareme-chomage. */
-export const ROOT_SHEET_SLUG = 'chomage-complet'
 
 export function findSheet(slug: string): SheetEntry | undefined {
   return BAREME_SHEETS.find((s) => s.slug === slug)
 }
 
-/** href public d'une feuille (racine pour chomage-complet, sous-route sinon). */
+/** href public d'une feuille (toutes sous /outils/bareme-chomage/[slug]). */
 export function sheetHref(slug: string): string {
-  return slug === ROOT_SHEET_SLUG ? '/outils/bareme-chomage' : `/outils/bareme-chomage/${slug}`
+  return `/outils/bareme-chomage/${slug}`
 }
 
 /** Construit la matrice d'une feuille à partir des données publiées. */

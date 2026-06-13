@@ -140,55 +140,24 @@ export function parseSalaryBrackets(
   )
   const topCode = allCodes[allCodes.length - 1]
 
+  // Valeurs EXACTES de la feuille, AUCUNE conversion (décision Oraliks : « on
+  // calcule au centime près, rien convertir »). Table gauche indexée prioritaire
+  // pour les codes présents aux deux ; sinon table droite (base). Le ratio dérivé
+  // ne sert plus qu'au contrôle de cohérence, pas à transformer les montants.
   const amounts: BaremeAmountDraft[] = []
-  let convertedCount = 0
-  let baseUnconvertedCount = 0
+  let baseCount = 0
   for (const code of allCodes) {
     const left = leftByCode.get(code)
-    if (left) {
-      // Échelle indexée disponible : on l'utilise telle quelle.
-      amounts.push(
-        makeAmount(sheet.name, code, left, options.validFrom, {
-          scale: 'indexée',
-          isOpen: left.max === null,
-          isTop: code === topCode,
-        })
-      )
-      continue
-    }
-    const right = rightByCode.get(code)
-    if (!right) continue
-
-    if (ratio !== null) {
-      // Échelle de base uniquement → conversion vers l'échelle indexée (×ratio).
-      convertedCount++
-      const converted: RawEntry = {
-        ...right,
-        min: round4(right.min * ratio),
-        max: right.max === null ? null : round4(right.max * ratio),
-      }
-      amounts.push(
-        makeAmount(sheet.name, code, converted, options.validFrom, {
-          scale: 'convertie',
-          ratio,
-          baseMin: right.min,
-          baseMax: right.max,
-          isOpen: right.max === null,
-          isTop: code === topCode,
-        })
-      )
-    } else {
-      // Aucun code chevauchant les deux échelles → ratio indéterminé : on émet la
-      // valeur de base telle quelle (jamais de perte silencieuse) avec un signalement.
-      baseUnconvertedCount++
-      amounts.push(
-        makeAmount(sheet.name, code, right, options.validFrom, {
-          scale: 'base',
-          isOpen: right.max === null,
-          isTop: code === topCode,
-        })
-      )
-    }
+    const entry = left ?? rightByCode.get(code)
+    if (!entry) continue
+    if (!left) baseCount++
+    amounts.push(
+      makeAmount(sheet.name, code, entry, options.validFrom, {
+        scale: left ? 'indexée' : 'base',
+        isOpen: entry.max === null,
+        isTop: code === topCode,
+      })
+    )
   }
 
   // Diagnostics
@@ -206,32 +175,20 @@ export function parseSalaryBrackets(
       })
     )
   } else {
-    if (convertedCount > 0 && ratio !== null) {
+    if (baseCount > 0) {
       alerts.push(
         makeIssue({
           severity: 'info',
           kind: 'anomaly',
-          title: 'Tranches converties à l\'échelle indexée',
+          title: 'Tranches basses à l\'échelle de base',
           sheet: sheet.name,
-          reason: `Cette feuille contient deux échelles : table gauche INDEXÉE (codes présents) et table droite de BASE (non indexée). ${convertedCount} tranche(s) présente(s) uniquement à l'échelle de base ont été converties à l'échelle indexée en multipliant par le ratio ${ratio} (dérivé des codes présents aux deux échelles). Décision admin : convertir (choix actuel, série continue) ou exclure ces basses tranches du barème applicable.`,
+          reason: `${baseCount} tranche(s) basse(s) ne figurent qu'à l'échelle de base (table droite, non indexée) ; stockées telles quelles, SANS conversion (au centime près). Pour info, ratio indexé/base dérivé ≈ ${ratio ?? '—'}.`,
           recommendation:
-            'Vérifier que le ratio correspond bien au multiplicateur d\'indexation ONEM (cellule K1). Si les basses tranches ne doivent pas figurer au barème courant, le signaler pour les exclure.',
+            "Comportement voulu (valeurs exactes). Si ces basses tranches ne doivent pas figurer au barème courant, le signaler.",
         })
       )
     }
-    if (baseUnconvertedCount > 0) {
-      alerts.push(
-        makeIssue({
-          severity: 'warning',
-          kind: 'anomaly',
-          title: "Tranches à l'échelle de base non converties",
-          sheet: sheet.name,
-          reason: `${baseUnconvertedCount} tranche(s) ne figurent qu'à l'échelle de base et aucun code commun aux deux échelles n'a permis de dériver le ratio d'indexation — elles sont émises telles quelles (échelle de base).`,
-          recommendation: 'Vérifier la structure des deux tables dans la grille brute.',
-        })
-      )
-    }
-    if (ratioSpread > 0.005) {
+    if (ratio !== null && ratioSpread > 0.005) {
       alerts.push(
         makeIssue({
           severity: 'warning',

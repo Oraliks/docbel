@@ -16,6 +16,54 @@ async function getUserId(): Promise<string | null> {
   return session?.user?.id || null;
 }
 
+/// Composition de ménage : liens de parenté autorisés (cf. profile-page.tsx).
+const HOUSEHOLD_RELATIONSHIPS = [
+  "conjoint",
+  "enfant",
+  "parent",
+  "cohabitant",
+  "autre",
+] as const;
+const MAX_HOUSEHOLD_MEMBERS = 12;
+
+/// Valide et normalise le tableau `householdMembers`. Renvoie soit la liste
+/// nettoyée (membres vides ignorés), soit une erreur lisible. On reste tolérant
+/// sur les champs optionnels mais strict sur la borne et le lien de parenté.
+function parseHouseholdMembers(
+  raw: unknown
+): { ok: true; value: Array<Record<string, unknown>> } | { ok: false; error: string } {
+  if (!Array.isArray(raw)) return { ok: false, error: "Composition de ménage invalide" };
+  if (raw.length > MAX_HOUSEHOLD_MEMBERS)
+    return { ok: false, error: `Ménage : ${MAX_HOUSEHOLD_MEMBERS} membres maximum` };
+
+  const out: Array<Record<string, unknown>> = [];
+  for (const m of raw) {
+    if (typeof m !== "object" || m === null || Array.isArray(m))
+      return { ok: false, error: "Membre de ménage invalide" };
+    const member = m as Record<string, unknown>;
+    const relationship = member.relationship;
+    if (
+      typeof relationship !== "string" ||
+      !HOUSEHOLD_RELATIONSHIPS.includes(relationship as (typeof HOUSEHOLD_RELATIONSHIPS)[number])
+    ) {
+      return { ok: false, error: "Lien de parenté invalide" };
+    }
+    const firstName = typeof member.firstName === "string" ? member.firstName.trim() : "";
+    const lastName = typeof member.lastName === "string" ? member.lastName.trim() : "";
+    const birthDate = typeof member.birthDate === "string" ? member.birthDate.trim() : "";
+    // Ligne entièrement vide (juste un lien par défaut) → on l'ignore.
+    if (!firstName && !lastName && !birthDate && member.hasRevenu !== true) continue;
+    out.push({
+      firstName: firstName || null,
+      lastName: lastName || null,
+      relationship,
+      birthDate: birthDate || null,
+      hasRevenu: member.hasRevenu === true,
+    });
+  }
+  return { ok: true, value: out };
+}
+
 export async function GET() {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -51,6 +99,15 @@ export async function PUT(req: NextRequest) {
     errors.push("Téléphone mobile invalide");
   if (body.employerBce && !isValidBelgianBCE(body.employerBce))
     errors.push("BCE employeur invalide");
+
+  // Composition de ménage : valide à part (tableau JSON borné).
+  let householdMembers: Array<Record<string, unknown>> | undefined;
+  if (body.householdMembers !== undefined && body.householdMembers !== null) {
+    const parsed = parseHouseholdMembers(body.householdMembers);
+    if (!parsed.ok) errors.push(parsed.error);
+    else householdMembers = parsed.value;
+  }
+
   if (errors.length > 0) {
     return NextResponse.json({ error: errors.join(" ; ") }, { status: 422 });
   }
@@ -97,6 +154,14 @@ export async function PUT(req: NextRequest) {
         data[k] = body[k];
       }
     }
+  }
+
+  // householdMembers : champ JSON (hors whitelist scalaire). null si absent
+  // explicitement vidé, sinon le tableau normalisé.
+  if (body.householdMembers === null) {
+    data.householdMembers = null;
+  } else if (householdMembers !== undefined) {
+    data.householdMembers = householdMembers;
   }
 
   const profile = await prisma.userProfile.upsert({

@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {
   BriefcaseIcon,
   CreditCardIcon,
   MapPinIcon,
+  PlusIcon,
   SaveIcon,
   ShieldCheckIcon,
   Trash2Icon,
   UserIcon,
+  UsersIcon,
+  XIcon,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -39,8 +42,44 @@ import {
   GLASS_CARD,
   GLASS_INPUT,
   GLASS_LABEL,
-  GLASS_PRIMARY_STYLE,
 } from "@/lib/glass-classes";
+
+/// Lien de parenté d'un membre du ménage (cf. validation API).
+type HouseholdRelationship =
+  | "conjoint"
+  | "enfant"
+  | "parent"
+  | "cohabitant"
+  | "autre";
+
+const HOUSEHOLD_RELATIONSHIP_LABELS: Record<HouseholdRelationship, string> = {
+  conjoint: "Conjoint(e)",
+  enfant: "Enfant",
+  parent: "Parent",
+  cohabitant: "Cohabitant(e)",
+  autre: "Autre",
+};
+
+/// Un membre de la composition de ménage. Tout est optionnel sauf le lien.
+interface HouseholdMember {
+  firstName: string;
+  lastName: string;
+  relationship: HouseholdRelationship;
+  birthDate: string; // ISO court AAAA-MM-JJ
+  hasRevenu: boolean;
+}
+
+const MAX_HOUSEHOLD_MEMBERS = 12;
+
+function emptyMember(): HouseholdMember {
+  return {
+    firstName: "",
+    lastName: "",
+    relationship: "enfant",
+    birthDate: "",
+    hasRevenu: false,
+  };
+}
 
 interface ProfileForm {
   firstName: string;
@@ -65,6 +104,31 @@ interface ProfileForm {
   jobTitle: string;
   contractType: string;
   contractStart: string;
+  householdMembers: HouseholdMember[];
+}
+
+/// Normalise une valeur JSON brute (Prisma) en liste de membres typés.
+function normalizeHouseholdMembers(raw: unknown): HouseholdMember[] {
+  if (!Array.isArray(raw)) return [];
+  const out: HouseholdMember[] = [];
+  for (const m of raw) {
+    if (typeof m !== "object" || m === null) continue;
+    const rec = m as Record<string, unknown>;
+    const rel = rec.relationship;
+    const relationship: HouseholdRelationship =
+      typeof rel === "string" && rel in HOUSEHOLD_RELATIONSHIP_LABELS
+        ? (rel as HouseholdRelationship)
+        : "autre";
+    out.push({
+      firstName: typeof rec.firstName === "string" ? rec.firstName : "",
+      lastName: typeof rec.lastName === "string" ? rec.lastName : "",
+      relationship,
+      birthDate:
+        typeof rec.birthDate === "string" ? rec.birthDate.slice(0, 10) : "",
+      hasRevenu: rec.hasRevenu === true,
+    });
+  }
+  return out.slice(0, MAX_HOUSEHOLD_MEMBERS);
 }
 
 const EMPTY: ProfileForm = {
@@ -90,10 +154,17 @@ const EMPTY: ProfileForm = {
   jobTitle: "",
   contractType: "",
   contractStart: "",
+  householdMembers: [],
 };
 
+/// Le `initial` venant du serveur peut ne pas porter `householdMembers`
+/// (champ JSON ajouté après coup) : on le rend optionnel et on hydrate la
+/// composition de ménage côté client au montage si besoin.
+type InitialProfile = Omit<ProfileForm, "householdMembers"> &
+  Partial<Pick<ProfileForm, "householdMembers">>;
+
 interface ProfilePageProps {
-  initial: ProfileForm | null;
+  initial: InitialProfile | null;
   userName: string;
   userEmail: string;
 }
@@ -104,12 +175,75 @@ export function ProfilePage({
   userEmail,
 }: ProfilePageProps) {
   const router = useRouter();
-  const [form, setForm] = useState<ProfileForm>(initial || EMPTY);
+  const [form, setForm] = useState<ProfileForm>(
+    initial
+      ? { ...EMPTY, ...initial, householdMembers: initial.householdMembers ?? [] }
+      : EMPTY
+  );
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
+  // Le serveur ne propage pas toujours `householdMembers` dans `initial` :
+  // on hydrate la composition de ménage depuis l'API au montage si elle n'a
+  // pas été fournie. N'écrase pas une saisie en cours (dirty).
+  useEffect(() => {
+    if (initial?.householdMembers !== undefined) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/user/profile");
+        if (!res.ok) return;
+        const j = await res.json();
+        const members = normalizeHouseholdMembers(j?.householdMembers);
+        if (cancelled || members.length === 0) return;
+        setForm((prev) =>
+          prev.householdMembers.length > 0
+            ? prev
+            : { ...prev, householdMembers: members }
+        );
+      } catch {
+        // silencieux : la section reste vide, l'utilisateur peut ajouter.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function update<K extends keyof ProfileForm>(key: K, value: ProfileForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setDirty(true);
+  }
+
+  function updateMember<K extends keyof HouseholdMember>(
+    index: number,
+    key: K,
+    value: HouseholdMember[K]
+  ) {
+    setForm((prev) => ({
+      ...prev,
+      householdMembers: prev.householdMembers.map((m, i) =>
+        i === index ? { ...m, [key]: value } : m
+      ),
+    }));
+    setDirty(true);
+  }
+
+  function addMember() {
+    setForm((prev) =>
+      prev.householdMembers.length >= MAX_HOUSEHOLD_MEMBERS
+        ? prev
+        : { ...prev, householdMembers: [...prev.householdMembers, emptyMember()] }
+    );
+    setDirty(true);
+  }
+
+  function removeMember(index: number) {
+    setForm((prev) => ({
+      ...prev,
+      householdMembers: prev.householdMembers.filter((_, i) => i !== index),
+    }));
     setDirty(true);
   }
 
@@ -338,6 +472,123 @@ export function ProfilePage({
               placeholder="+32 470 12 34 56"
             />
           </Field>
+        </CardContent>
+      </Card>
+
+      <Card className={GLASS_CARD}>
+        <CardHeader className="px-6 pt-6 pb-3">
+          <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
+            <UsersIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
+            Composition de ménage
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 px-6 pb-6">
+          <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
+            Les personnes qui vivent sous votre toit (conjoint, enfants,
+            cohabitants…). Utile pour les formulaires qui demandent la
+            composition de ménage.
+          </p>
+
+          {form.householdMembers.length === 0 ? (
+            <p className="text-[13px] text-[color:var(--glass-ink-faint)]">
+              Aucun membre ajouté.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {form.householdMembers.map((member, i) => (
+                <div
+                  key={i}
+                  className="relative grid gap-3 rounded-2xl p-4 md:grid-cols-2"
+                  style={{ background: "var(--glass-surface)" }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => removeMember(i)}
+                    aria-label="Retirer ce membre"
+                    className="absolute right-3 top-3 flex size-7 items-center justify-center rounded-full transition-colors hover:bg-[color:var(--glass-pop-bg)]/40"
+                    style={{ color: "var(--glass-ink-soft)" }}
+                  >
+                    <XIcon className="size-4" />
+                  </button>
+                  <Field label="Prénom">
+                    <Input
+                      className={GLASS_INPUT}
+                      value={member.firstName}
+                      onChange={(e) => updateMember(i, "firstName", e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Nom">
+                    <Input
+                      className={GLASS_INPUT}
+                      value={member.lastName}
+                      onChange={(e) => updateMember(i, "lastName", e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Lien de parenté">
+                    <Select
+                      value={member.relationship}
+                      onValueChange={(v) =>
+                        updateMember(i, "relationship", v as HouseholdRelationship)
+                      }
+                    >
+                      <SelectTrigger className={`${GLASS_INPUT} w-full`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(
+                          Object.keys(
+                            HOUSEHOLD_RELATIONSHIP_LABELS
+                          ) as HouseholdRelationship[]
+                        ).map((rel) => (
+                          <SelectItem key={rel} value={rel}>
+                            {HOUSEHOLD_RELATIONSHIP_LABELS[rel]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="Date de naissance">
+                    <Input
+                      type="date"
+                      className={GLASS_INPUT}
+                      value={member.birthDate}
+                      onChange={(e) => updateMember(i, "birthDate", e.target.value)}
+                    />
+                  </Field>
+                  <label className="flex items-center gap-2 text-[13px] text-[color:var(--glass-ink-soft)] md:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={member.hasRevenu}
+                      onChange={(e) =>
+                        updateMember(i, "hasRevenu", e.target.checked)
+                      }
+                      className="size-4 rounded border-[color:var(--glass-border)] accent-[color:var(--glass-accent-deep)]"
+                    />
+                    A des revenus propres
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addMember}
+              disabled={form.householdMembers.length >= MAX_HOUSEHOLD_MEMBERS}
+              className="rounded-full border-[color:var(--glass-border)] bg-transparent text-[13px] disabled:opacity-50"
+              style={{ color: "var(--glass-ink)" }}
+            >
+              <PlusIcon className="size-4" />
+              Ajouter un membre
+            </Button>
+            {form.householdMembers.length >= MAX_HOUSEHOLD_MEMBERS && (
+              <p className="mt-2 text-[12px] text-[color:var(--glass-ink-faint)]">
+                Maximum {MAX_HOUSEHOLD_MEMBERS} membres.
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
 

@@ -62,7 +62,16 @@ export const CATALOG = {
     pdfFieldName: "BirthDate",
     type: "date",
     label: { fr: "Date de naissance", nl: "Geboortedatum", de: "Geburtsdatum" },
+    // Source itsme par défaut ; le profil sert de repli (cf. profile-prefill.ts,
+    // qui alimente aussi `itsme.birthDate` depuis `UserProfile.birthDate`).
     prefillFrom: "itsme.birthDate",
+  },
+  gender: {
+    key: "gender",
+    pdfFieldName: "Gender",
+    type: "select",
+    label: { fr: "Sexe", nl: "Geslacht", de: "Geschlecht" },
+    prefillFrom: "profile.gender",
   },
   street: {
     key: "street",
@@ -91,6 +100,14 @@ export const CATALOG = {
     type: "iban",
     label: { fr: "IBAN", nl: "IBAN", de: "IBAN" },
     prefillFrom: "profile.iban",
+  },
+  phone: {
+    key: "phone",
+    pdfFieldName: "Phone",
+    type: "phone_be",
+    label: { fr: "Téléphone", nl: "Telefoon", de: "Telefon" },
+    // Repli GSM → fixe assuré côté profile-prefill.ts.
+    prefillFrom: "profile.phone",
   },
   employerName: {
     key: "employerName",

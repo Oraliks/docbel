@@ -25,6 +25,21 @@ export interface WizardResult {
   dossierTitle: string;
   /// Phrase qui explique pourquoi ce choix.
   rationale: string;
+  /// Champ ADDITIF (optionnel) : signale qu'une estimation indicative
+  /// d'allocation a du sens pour ce dossier. Présent uniquement sur les
+  /// dossiers dont le revenu est une allocation de chômage proportionnelle au
+  /// salaire (chômage complet, frontalier, RCC) — calculée par le moteur pur
+  /// `estimerAllocation` de `lib/simulateur-chomage`. Le bloc d'estimation
+  /// (`components/docbel/onboarding/allocation-estimate-block.tsx`) ne s'affiche
+  /// que si ce champ vaut `true`.
+  ///
+  /// VOLONTAIREMENT ABSENT pour :
+  ///   - les allocations d'insertion (forfait jeunes, logique distincte du
+  ///     barème salaire — hors périmètre du simulateur) ;
+  ///   - le chômage temporaire (montant lié à la suspension, pas à la 1ʳᵉ
+  ///     période d'indemnisation simulée ici) ;
+  ///   - les cartes « bientôt disponible » (dossierSlug = null).
+  allocationEstimate?: boolean;
 }
 
 /// Option de la 3ᵉ étape (« Affinons »). Résout toujours vers un résultat.
@@ -77,6 +92,7 @@ const R_COMPLET_PREMIERE: WizardResult = {
   dossierTitle: "Chômage complet — première demande",
   rationale:
     "Tu as assez travaillé pour ouvrir un droit au chômage complet pour la première fois.",
+  allocationEstimate: true,
 };
 
 const R_COMPLET_REDEMANDE: WizardResult = {
@@ -84,6 +100,7 @@ const R_COMPLET_REDEMANDE: WizardResult = {
   dossierTitle: "Chômage complet — redemande",
   rationale:
     "Tu as déjà été indemnisé par le passé : on rouvre ton droit au chômage complet.",
+  allocationEstimate: true,
 };
 
 const R_INSERTION: WizardResult = {
@@ -98,6 +115,7 @@ const R_FRONTALIER: WizardResult = {
   dossierTitle: "Chômage frontalier",
   rationale:
     "Tu résides dans un pays et tu travaillais dans un autre (UE/EEE) : ton dossier passe par le régime frontalier (formulaire U1).",
+  allocationEstimate: true,
 };
 
 // Cas d'agrégation européenne : après une occupation à l'étranger (UE/EEE),
@@ -109,6 +127,7 @@ const R_COMPLET_AGREGATION: WizardResult = {
   dossierTitle: "Chômage complet (après travail à l'étranger)",
   rationale:
     "Tu as retravaillé en Belgique après ton occupation à l'étranger : tu peux ouvrir un droit belge complet, en rattachant tes périodes étrangères via le formulaire U1.",
+  allocationEstimate: true,
 };
 
 const R_RCC: WizardResult = {
@@ -116,6 +135,7 @@ const R_RCC: WizardResult = {
   dossierTitle: "Régime de chômage avec complément d'entreprise (RCC)",
   rationale:
     "Licencié en fin de carrière, tu peux cumuler allocations de chômage et complément payé par ton ex-employeur.",
+  allocationEstimate: true,
 };
 
 export const WIZARD_SITUATIONS: WizardSituation[] = [

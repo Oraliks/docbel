@@ -92,6 +92,7 @@ const EMPLOYER_SPACE: ProSpace = {
       items: [
         { title: "Nouveau dossier", url: "/employeur/nouveau-dossier", icon: "plus" },
         { title: "Mes dossiers", url: "/employeur/dossiers", icon: "folder" },
+        { title: "Générer un contrat", url: "/employeur/contrats", icon: "document" },
       ],
     },
     {

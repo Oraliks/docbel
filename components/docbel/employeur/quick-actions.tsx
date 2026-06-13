@@ -12,6 +12,7 @@ import {
   Calculator,
   ClipboardList,
   FileText,
+  FileSignature,
   FileCheck2,
   FolderOpen,
   BookOpen,
@@ -21,6 +22,7 @@ import {
 const ACTIONS = [
   { id: "cout", label: "Simuler un coût", href: "/employeur/simulateur-cout", icon: Calculator },
   { id: "engagement", label: "Préparer un engagement", href: "/employeur/nouveau-dossier", icon: ClipboardList },
+  { id: "contrat", label: "Générer un contrat", href: "/employeur/contrats", icon: FileSignature },
   { id: "document", label: "Préparer un document", href: "/employeur/documents", icon: FileText },
   { id: "fiche", label: "Vérifier une fiche", href: "/employeur/controle", icon: FileCheck2 },
   { id: "dossiers", label: "Mes dossiers", href: "/employeur/dossiers", icon: FolderOpen },

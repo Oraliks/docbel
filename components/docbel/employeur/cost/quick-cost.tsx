@@ -57,7 +57,7 @@ export function QuickCost({
   const pAutres = pct(autres);
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-5 pt-4">
         <h2 className="text-sm font-semibold">Simulateur de coût</h2>
         <span
@@ -155,7 +155,7 @@ export function QuickCost({
         </div>
       </div>
 
-      <div className="px-5 pb-5">
+      <div className="mt-auto px-5 pb-5">
         <p className="mb-2 rounded-lg bg-muted/40 px-3 py-2 text-[10px] leading-snug text-muted-foreground">
           Coût employeur mensuel estimé (salaire brut + cotisations patronales + provisions). Indicatif — CP 200 par défaut.
         </p>

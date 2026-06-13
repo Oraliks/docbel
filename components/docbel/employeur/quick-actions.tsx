@@ -44,7 +44,7 @@ export function QuickActions({ dossiersBadge }: { dossiersBadge: number }) {
   }, [q]);
 
   return (
-    <section className="p-5">
+    <section className="flex h-full flex-col p-5">
       <h2 className="text-base font-semibold tracking-tight">Actions rapides</h2>
 
       <div className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs transition-colors focus-within:border-primary/40">

@@ -132,10 +132,10 @@ export default async function EmployeurDashboard() {
         <Kpi icon={TriangleAlert} tone="red" value={String(kpis.alertsCount)} label="Alertes" href="/employeur/dossiers" sub="Actions à vérifier" />
       </div>
 
-      {/* Row 1 — Calendrier social · Simulateur (rapide) · Actions rapides */}
-      <div className="grid items-start gap-4 xl:grid-cols-3">
+      {/* Row 1 — Calendrier social · Simulateur (rapide) · Actions rapides (même hauteur) */}
+      <div className="grid gap-4 xl:grid-cols-3">
         {/* Calendrier social — échéances récurrentes (ONSS / précompte / TVA) */}
-        <div className={PANEL}>
+        <div className={cn(PANEL, "flex flex-col")}>
           <div className="flex items-center justify-between px-4 pt-4">
             <div className="flex items-center gap-2">
               <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
@@ -147,18 +147,20 @@ export default async function EmployeurDashboard() {
               Voir tout <ArrowRight className="size-3" />
             </Link>
           </div>
-          <div className="space-y-1.5 p-4 pt-3">
-            {socialDeadlines.map((d) => (
-              <div key={d.id} className="flex items-center gap-2.5 rounded-lg border border-border bg-background p-2">
-                <div className="flex size-10 shrink-0 flex-col items-center justify-center rounded-md bg-muted leading-none">
-                  <span className="text-sm font-bold">{d.day}</span>
-                  <span className="text-[9px] uppercase text-muted-foreground">{d.month}</span>
+          <div className="flex flex-1 flex-col p-4 pt-3">
+            <div className="space-y-1.5">
+              {socialDeadlines.map((d) => (
+                <div key={d.id} className="flex items-center gap-2.5 rounded-lg border border-border bg-background p-2">
+                  <div className="flex size-10 shrink-0 flex-col items-center justify-center rounded-md bg-muted leading-none">
+                    <span className="text-sm font-bold">{d.day}</span>
+                    <span className="text-[9px] uppercase text-muted-foreground">{d.month}</span>
+                  </div>
+                  <p className="min-w-0 flex-1 truncate text-sm font-medium">{d.shortTitle}</p>
+                  <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <p className="min-w-0 flex-1 truncate text-sm font-medium">{d.shortTitle}</p>
-                <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-              </div>
-            ))}
-            <p className="pt-1 text-[10px] leading-snug text-muted-foreground">
+              ))}
+            </div>
+            <p className="mt-auto pt-3 text-[10px] leading-snug text-muted-foreground">
               Dates indicatives (régime trimestriel) — sources sur le calendrier.
             </p>
           </div>

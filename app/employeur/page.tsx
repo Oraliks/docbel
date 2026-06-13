@@ -32,6 +32,7 @@ import {
   type ActivityIcon,
   type DashboardAlert,
 } from "@/lib/employeur/dashboard/overview";
+import { SOCIAL_CALENDAR_WARNING } from "@/lib/employeur/calendar/social-deadlines";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -44,14 +45,12 @@ export const dynamic = "force-dynamic";
 const eur = (n: number) =>
   `${n.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
-// Toutes les tuiles mènent à une page RÉELLE (aucun lien mort). `badge` = clé de
-// compteur réel résolue au rendu (cf. quickBadge).
 const QUICK = [
   { id: "cout", label: "Simuler un coût", href: "/employeur/simulateur-cout", icon: Calculator },
   { id: "engagement", label: "Préparer un engagement", href: "/employeur/nouveau-dossier", icon: ClipboardList },
   { id: "document", label: "Préparer un document", href: "/employeur/documents", icon: FileText },
   { id: "fiche", label: "Vérifier une fiche", href: "/employeur/controle", icon: FileCheck2 },
-  { id: "dossiers", label: "Voir mes dossiers", href: "/employeur/dossiers", icon: FolderOpen },
+  { id: "dossiers", label: "Mes dossiers", href: "/employeur/dossiers", icon: FolderOpen },
   { id: "biblio", label: "Bibliothèque", href: "/employeur/bibliotheque", icon: BookOpen },
 ];
 
@@ -157,48 +156,8 @@ export default async function EmployeurDashboard() {
         <Kpi icon={TriangleAlert} tone="red" value={String(kpis.alertsCount)} label="Alertes" href="/employeur/dossiers" sub="Actions à vérifier" />
       </div>
 
-      {/* Row 1 — Simulateur (2/3, façon mockup) + Échéances (1/3) */}
+      {/* Row 1 — Calendrier social · Simulateur (compact) · Actions rapides */}
       <div className="grid gap-4 xl:grid-cols-3">
-        {/* Cost simulator snapshot (vrai moteur / dernière simulation) */}
-        <div className={cn(PANEL, "xl:col-span-2")}>
-          <div className="flex items-center justify-between px-5 pt-4">
-            <h2 className="text-sm font-semibold">Simulateur de coût — engagement</h2>
-            {cost.isExample ? <Badge variant="secondary">Exemple</Badge> : <Badge variant="info">Dernière simulation</Badge>}
-          </div>
-          <div className="grid gap-5 p-5 pt-3 sm:grid-cols-2">
-            {/* Champs (lecture) */}
-            <div className="space-y-3">
-              <p className="truncate text-xs text-muted-foreground">{cost.title}</p>
-              <Field label="Type de travailleur" value={cost.workerTypeLabel} />
-              <Field label="Régime de travail" value={cost.regimeLabel} />
-              <Field label="Salaire brut mensuel" value={eur(cost.gross)} />
-            </div>
-            {/* Donut + légende + CTA */}
-            <div className="flex flex-col justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="relative size-28 shrink-0 rounded-full" style={{ background: donut }}>
-                  <div className="absolute inset-[9px] flex flex-col items-center justify-center rounded-full bg-card text-center">
-                    <span className="text-[9px] text-muted-foreground">Coût total</span>
-                    <span className="text-sm font-bold">{eur(cost.total)}</span>
-                    <span className="text-[9px] text-muted-foreground">/ mois</span>
-                  </div>
-                </div>
-                <ul className="flex-1 space-y-1.5 text-xs">
-                  <Legend color="#3b82f6" label="Salaire brut" value={eur(cost.gross)} />
-                  <Legend color="var(--primary)" label="Cotisations patronales" value={eur(cost.contributions)} />
-                  <Legend color="#ec4899" label="Autres coûts" value={eur(cost.other)} />
-                </ul>
-              </div>
-              <Link
-                href="/employeur/simulateur-cout"
-                className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-xs font-medium text-primary no-underline"
-              >
-                {cost.isExample ? "Lancer une simulation" : "Voir le détail du calcul"} <ArrowRight className="size-3.5" />
-              </Link>
-            </div>
-          </div>
-        </div>
-
         {/* Calendrier social — échéances récurrentes (ONSS / précompte / TVA) */}
         <div className={PANEL}>
           <div className="flex items-center justify-between px-5 pt-4">
@@ -209,7 +168,7 @@ export default async function EmployeurDashboard() {
               <h2 className="text-sm font-semibold">Calendrier social</h2>
             </div>
             <Link href="/employeur/calendrier" className="flex items-center gap-1 text-xs text-primary no-underline hover:underline">
-              Voir le calendrier <ArrowRight className="size-3" />
+              Voir tout <ArrowRight className="size-3" />
             </Link>
           </div>
           <p className="px-5 pt-1 text-xs text-muted-foreground">
@@ -229,35 +188,58 @@ export default async function EmployeurDashboard() {
                 <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
               </div>
             ))}
-            <Link
-              href="/employeur/calendrier"
-              className="block pt-1 text-center text-xs text-primary no-underline hover:underline"
-            >
-              Voir toutes les échéances
-            </Link>
-            <p className="pt-1 text-center text-[10px] text-muted-foreground">
-              Dates indicatives — à confirmer selon votre régime (mensuel / trimestriel).
-            </p>
+            <p className="pt-1 text-[10px] leading-snug text-muted-foreground">{SOCIAL_CALENDAR_WARNING}</p>
           </div>
         </div>
-      </div>
 
-      {/* Row 2 — Actions rapides (2/3) + Reprendre (1/3) */}
-      <div className="grid gap-4 xl:grid-cols-3">
-        {/* Actions rapides — bloc (recherche + grille de tuiles) */}
-        <section className={cn(PANEL, "p-5 xl:col-span-2")}>
+        {/* Simulateur de coût — bloc compact (vrai moteur / dernière simulation) */}
+        <div className={PANEL}>
+          <div className="flex items-center justify-between px-5 pt-4">
+            <h2 className="text-sm font-semibold">Simulateur de coût</h2>
+            {cost.isExample ? <Badge variant="secondary">Exemple</Badge> : <Badge variant="info">Dernière simulation</Badge>}
+          </div>
+          <div className="space-y-3 p-5 pt-3">
+            <p className="truncate text-xs text-muted-foreground">{cost.title}</p>
+            <div className="flex items-center gap-3">
+              <div className="relative size-24 shrink-0 rounded-full" style={{ background: donut }}>
+                <div className="absolute inset-[8px] flex flex-col items-center justify-center rounded-full bg-card text-center">
+                  <span className="text-[8px] text-muted-foreground">Total</span>
+                  <span className="text-xs font-bold leading-tight">{eur(cost.total)}</span>
+                  <span className="text-[8px] text-muted-foreground">/ mois</span>
+                </div>
+              </div>
+              <ul className="flex-1 space-y-1 text-[11px]">
+                <Legend color="#3b82f6" label="Brut" value={eur(cost.gross)} />
+                <Legend color="var(--primary)" label="Cotisations" value={eur(cost.contributions)} />
+                <Legend color="#ec4899" label="Autres" value={eur(cost.other)} />
+              </ul>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {cost.workerTypeLabel} · {cost.regimeLabel} · {eur(cost.gross)} brut
+            </p>
+            <Link
+              href="/employeur/simulateur-cout"
+              className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-xs font-medium text-primary no-underline"
+            >
+              {cost.isExample ? "Lancer une simulation" : "Voir le détail"} <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Actions rapides — recherche + grille de tuiles */}
+        <section className={cn(PANEL, "p-5")}>
           <h2 className="text-base font-semibold tracking-tight">Actions rapides</h2>
 
           <Link
             href="/employeur/dossiers"
-            className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground no-underline transition-colors hover:border-primary/40"
+            className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground no-underline transition-colors hover:border-primary/40"
           >
             <Search className="size-4" />
-            <span className="flex-1">Rechercher un dossier…</span>
-            <kbd className="hidden items-center rounded-md border border-border bg-muted px-2 py-1 text-[11px] sm:inline-flex">⌘K</kbd>
+            <span className="flex-1">Rechercher…</span>
+            <kbd className="hidden items-center rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] sm:inline-flex">⌘K</kbd>
           </Link>
 
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="mt-3 grid grid-cols-2 gap-2.5">
             {QUICK.map((q) => {
               const Icon = q.icon;
               const badge = quickBadge(q.id);
@@ -265,77 +247,25 @@ export default async function EmployeurDashboard() {
                 <Link
                   key={q.id}
                   href={q.href}
-                  className="group relative flex flex-col items-center gap-2.5 rounded-xl border border-border bg-background p-4 text-center no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+                  className="group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-3 text-center no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
                 >
                   {badge !== null ? (
-                    <span className="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                    <span className="absolute right-1.5 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
                       {badge > 99 ? "99+" : badge}
                     </span>
                   ) : null}
-                  <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-                    <Icon className="size-5" />
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                    <Icon className="size-[18px]" />
                   </span>
-                  <span className="text-sm font-medium leading-tight">{q.label}</span>
+                  <span className="text-xs font-medium leading-tight">{q.label}</span>
                 </Link>
               );
             })}
           </div>
         </section>
-
-        {/* Resume / start engagement */}
-        <div className={PANEL}>
-          <div className="flex items-center justify-between px-5 pt-4">
-            <h2 className="text-sm font-semibold">{resume ? "Reprendre un engagement" : "Démarrer un engagement"}</h2>
-            {resume ? (
-              <span className="text-xs text-muted-foreground">
-                {resume.doneItems}/{resume.totalItems} étapes
-              </span>
-            ) : null}
-          </div>
-          <div className="space-y-4 p-5 pt-3">
-            {resume ? (
-              <>
-                <div>
-                  <p className="truncate text-sm font-medium">{resume.title}</p>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${resume.pct}%` }} />
-                  </div>
-                  <p className="mt-1.5 text-xs text-muted-foreground">{resume.pct}% de la checklist complétée</p>
-                </div>
-                {resume.nextItem ? (
-                  <div className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
-                    <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-                    <div className="min-w-0">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Prochaine étape</p>
-                      <p className="text-sm">{resume.nextItem}</p>
-                    </div>
-                  </div>
-                ) : null}
-                <Link
-                  href={`/employeur/dossiers/${resume.scenarioId}`}
-                  className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
-                >
-                  Continuer <ArrowRight className="size-3.5" />
-                </Link>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  L&apos;assistant « Puis-je engager ? » vous guide pas à pas et génère la checklist de votre engagement.
-                </p>
-                <Link
-                  href="/employeur/nouveau-dossier"
-                  className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
-                >
-                  Démarrer <ArrowRight className="size-3.5" />
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
       </div>
 
-      {/* Row 3 — Alertes · Dossiers récents · Activité */}
+      {/* Row 2 — Alertes · Dossiers récents · Reprendre un engagement */}
       <div className="grid gap-4 xl:grid-cols-3">
         {/* Alerts */}
         <div className={PANEL}>
@@ -397,7 +327,6 @@ export default async function EmployeurDashboard() {
                       <p className="text-xs text-muted-foreground">{d.role}</p>
                     </div>
                     <Badge variant={d.tone}>{d.status}</Badge>
-                    <span className="hidden text-[11px] text-muted-foreground sm:block">{d.date}</span>
                   </Link>
                 ))}
               </div>
@@ -405,6 +334,61 @@ export default async function EmployeurDashboard() {
           </div>
         </div>
 
+        {/* Resume / start engagement */}
+        <div className={PANEL}>
+          <div className="flex items-center justify-between px-5 pt-4">
+            <h2 className="text-sm font-semibold">{resume ? "Reprendre un engagement" : "Démarrer un engagement"}</h2>
+            {resume ? (
+              <span className="text-xs text-muted-foreground">
+                {resume.doneItems}/{resume.totalItems} étapes
+              </span>
+            ) : null}
+          </div>
+          <div className="space-y-4 p-5 pt-3">
+            {resume ? (
+              <>
+                <div>
+                  <p className="truncate text-sm font-medium">{resume.title}</p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${resume.pct}%` }} />
+                  </div>
+                  <p className="mt-1.5 text-xs text-muted-foreground">{resume.pct}% de la checklist complétée</p>
+                </div>
+                {resume.nextItem ? (
+                  <div className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
+                    <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Prochaine étape</p>
+                      <p className="text-sm">{resume.nextItem}</p>
+                    </div>
+                  </div>
+                ) : null}
+                <Link
+                  href={`/employeur/dossiers/${resume.scenarioId}`}
+                  className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
+                >
+                  Continuer <ArrowRight className="size-3.5" />
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  L&apos;assistant « Puis-je engager ? » vous guide pas à pas et génère la checklist de votre engagement.
+                </p>
+                <Link
+                  href="/employeur/nouveau-dossier"
+                  className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
+                >
+                  Démarrer <ArrowRight className="size-3.5" />
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Row 3 — Activité · Veille */}
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Activity */}
         <div className={PANEL}>
           <PanelHead title="Activité récente" />
@@ -437,29 +421,29 @@ export default async function EmployeurDashboard() {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Veille (informatif, vers bibliothèque) — pleine largeur */}
-      <div className={PANEL}>
-        <PanelHead title="Veille & conformité" href="/employeur/bibliotheque" action="Bibliothèque" />
-        <div className="flex items-start gap-4 p-5 pt-3">
-          <div className="min-w-0 flex-1">
-            <Badge variant="secondary">Sources officielles</Badge>
-            <p className="mt-2 font-medium">Démarches expliquées, à jour et sourcées</p>
-            <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
-              Dimona, DmfA, commissions paritaires, salaire minimum, contrats étudiant et flexi-job — chaque
-              fiche renvoie aux textes officiels (ONSS, SPF Emploi…).
-            </p>
-            <Link
-              href="/employeur/bibliotheque"
-              className="mt-2 inline-flex items-center gap-1 text-xs text-primary no-underline hover:underline"
-            >
-              Parcourir la bibliothèque <ArrowRight className="size-3" />
-            </Link>
+        {/* Veille (informatif, vers bibliothèque) */}
+        <div className={PANEL}>
+          <PanelHead title="Veille & conformité" href="/employeur/bibliotheque" action="Bibliothèque" />
+          <div className="flex items-start gap-4 p-5 pt-3">
+            <div className="min-w-0 flex-1">
+              <Badge variant="secondary">Sources officielles</Badge>
+              <p className="mt-2 font-medium">Démarches expliquées, à jour et sourcées</p>
+              <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
+                Dimona, DmfA, commissions paritaires, salaire minimum, contrats étudiant et flexi-job — chaque
+                fiche renvoie aux textes officiels (ONSS, SPF Emploi…).
+              </p>
+              <Link
+                href="/employeur/bibliotheque"
+                className="mt-2 inline-flex items-center gap-1 text-xs text-primary no-underline hover:underline"
+              >
+                Parcourir la bibliothèque <ArrowRight className="size-3" />
+              </Link>
+            </div>
+            <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Scale className="size-6" />
+            </span>
           </div>
-          <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Scale className="size-6" />
-          </span>
         </div>
       </div>
     </div>
@@ -495,20 +479,11 @@ function Kpi({
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="mb-1 text-[11px] text-muted-foreground">{label}</p>
-      <div className="rounded-lg border border-border bg-background px-3 py-2 text-sm">{value}</div>
-    </div>
-  );
-}
-
 function Legend({ color, label, value }: { color: string; label: string; value: string }) {
   return (
     <li className="flex items-center gap-2">
-      <span className="size-2 rounded-full" style={{ backgroundColor: color }} />
-      <span className="flex-1 text-muted-foreground">{label}</span>
+      <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+      <span className="flex-1 truncate text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
     </li>
   );

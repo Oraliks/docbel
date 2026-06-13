@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getEmployerPageUser } from "@/lib/employeur/page-auth";
 import {
   getUpcomingSocialDeadlines,
+  SOCIAL_CALENDAR_WARNING,
   type SocialDeadlineCategory,
 } from "@/lib/employeur/calendar/social-deadlines";
 
@@ -57,15 +58,10 @@ export default async function CalendrierPage() {
         </div>
       </div>
 
-      {/* Avertissement honnête : dates indicatives */}
+      {/* Avertissement officiel : à afficher tel quel */}
       <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/40 p-4 text-sm">
         <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-        <p className="text-muted-foreground">
-          Dates <span className="font-medium text-foreground">indicatives</span>, calculées pour le régime{" "}
-          <span className="font-medium text-foreground">trimestriel</span> (le plus courant). Vérifiez-les selon votre
-          régime réel (mensuel / trimestriel) ; les tolérances administratives (report au 1ᵉʳ jour ouvrable, régime
-          estival TVA…) ne sont pas prises en compte. Chaque échéance renvoie à sa source officielle.
-        </p>
+        <p className="text-muted-foreground">{SOCIAL_CALENDAR_WARNING}</p>
       </div>
 
       <div className="grid gap-3">

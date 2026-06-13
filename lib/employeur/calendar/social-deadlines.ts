@@ -7,49 +7,56 @@
  * uniquement l'objet `Date` standard de JavaScript.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * ⚠️  DATES INDICATIVES — à confirmer selon le régime réel de l'employeur.
+ * ⚠️  DATES INDICATIVES — régime TRIMESTRIEL par défaut, à confirmer.
  * ─────────────────────────────────────────────────────────────────────────────
- * Les règles ci-dessous dépendent du régime de déclaration (mensuel vs trimestriel),
- * lui-même fonction de la taille / du chiffre d'affaires de l'entreprise. Par défaut,
- * ce moteur retient le **régime TRIMESTRIEL** (cas le plus courant pour une PME) et
- * le signale dans le champ `note`. Les tolérances administratives (report au 1er jour
- * ouvrable, régime estival / « vacances TVA », tolérance de paiement) ne sont PAS
- * modélisées : seule la date limite légale générale est calculée.
+ * Les 3 obligations actives en MVP sont toutes modélisées en régime TRIMESTRIEL
+ * (cas le plus courant pour une PME). Les régimes mensuels, les tolérances
+ * administratives et les autres obligations (relevé intracommunautaire, paiement
+ * TVA séparé, fiches 281.xx, pécule de vacances, assurance accidents du travail…)
+ * sont prévus dans l'énumération interne mais NON émis en MVP. Voir
+ * {@link SOCIAL_CALENDAR_WARNING} pour l'avertissement utilisateur exact.
  *
- * RÈGLES RETENUES (échéances 2026, vérifiées en juin 2026) :
+ * RÈGLES VALIDÉES (expert métier, juin 2026) :
  *
- *  1. ONSS — Déclaration trimestrielle DmfA
+ *  1. ONSS — Déclaration trimestrielle DmfA  (category "ONSS")
  *     → Dernier jour du mois qui suit le trimestre.
  *       T1 → 30/04, T2 → 31/07, T3 → 31/10, T4 → 31/01 (année suivante).
- *     Source : ONSS / socialsecurity.be (DmfA).
+ *     Source : ONSS
+ *       https://www.socialsecurity.be/site_fr/employer/applics/dmfa/web/intro/home.htm
  *
- *  2. Précompte professionnel — régime trimestriel (par défaut)
+ *  2. Précompte professionnel — régime trimestriel par défaut  (category "Précompte")
  *     → Le 15 du mois qui suit le trimestre.
  *       T1 → 15/04, T2 → 15/07, T3 → 15/10, T4 → 15/01 (année suivante).
- *     (Régime mensuel = le 15 du mois qui suit le mois concerné — non modélisé ici.)
- *     Seuil régime trimestriel 2026 : ≤ 51 480 € de précompte annuel.
- *     Source : SPF Finances — calendrier du précompte professionnel.
+ *       (Le régime mensuel n'est pas émis en MVP.)
+ *     Source : SPF Finances
+ *       https://finances.belgium.be/fr/entreprises/personnel_et_remuneration/precompte_professionnel/calendrier
  *
- *  3. TVA — déclaration + paiement, régime trimestriel (par défaut)
- *     → Le 25 du mois qui suit le trimestre.
- *       Depuis la « nouvelle chaîne TVA » (entrée en vigueur 2025), l'échéance des
- *       déclarants TRIMESTRIELS est passée du 20 au **25** du mois suivant.
- *       Les déclarants MENSUELS restent au 20 du mois suivant (non modélisé ici).
- *       Le régime estival / « vacances TVA » (tolérances) n'est pas modélisé.
- *     Source : SPF Finances — déclaration périodique TVA / nouvelle chaîne TVA.
+ *  3. TVA — déclaration périodique trimestrielle  (category "TVA")
+ *     → Date issue de la TABLE OFFICIELLE SPF (les reports week-end/jour férié y
+ *       sont déjà intégrés ; on NE calcule PAS « toujours le 25 »).
  *
- * SOURCES OFFICIELLES & DE RÉFÉRENCE CONSULTÉES :
- *  - ONSS / Sécurité sociale (DmfA) :
- *      https://www.socialsecurity.be/site_fr/employer/applics/dmfa/index.htm
- *  - SPF Finances — déclaration périodique TVA :
- *      https://finances.belgium.be/fr/entreprises/tva/declaration/declaration-periodique
- *  - SPF Finances — calendrier du précompte professionnel :
- *      https://finances.belgium.be/fr/experts_partenaires/secretariats-sociaux-autres-societes-service/precompte_professionnel/calendrier
- *  - Nouvelle chaîne TVA (échéance trimestrielle 20 → 25), RSM Belgium :
- *      https://www.rsm.global/belgium/fr/insights/changements-en-matiere-de-tva-belge-partir-du-1er-janvier-2025-la-chaine-tva
+ *       TABLE OFFICIELLE TVA (par année & trimestre du trimestre concerné) :
+ *         ┌───────────┬──────────────┬────────────────────────────────────────┐
+ *         │ Trimestre │ Échéance     │ Remarque                               │
+ *         ├───────────┼──────────────┼────────────────────────────────────────┤
+ *         │ T4 2025   │ 2026-01-26   │                                        │
+ *         │ T1 2026   │ 2026-04-27   │ 25/04/2026 = samedi → reporté au 27    │
+ *         │ T2 2026   │ 2026-07-25   │                                        │
+ *         │ T3 2026   │ 2026-10-25   │                                        │
+ *         │ T4 2026   │ 2027-01-25   │                                        │
+ *         └───────────┴──────────────┴────────────────────────────────────────┘
  *
- * Aucune autre échéance (pécule de vacances, bilan social, fiches 281.xx, etc.) n'est
- * incluse faute de règle datée suffisamment fiable au moment de la rédaction.
+ *       Pour un (année, trimestre) ABSENT de la table → fallback = le 25 du mois
+ *       qui suit le trimestre, avec une `note` signalant que la date est calculée
+ *       et que le report officiel n'est pas garanti (à confirmer sur le calendrier
+ *       SPF). Le relevé intracommunautaire, le paiement TVA séparé et le régime
+ *       mensuel ne sont PAS inclus en MVP.
+ *     Source : SPF Finances
+ *       https://finances.belgium.be/fr/entreprises/tva/calendrier-tva
+ *
+ * Toutes les dates émises sont INDICATIVES et calculées selon un régime trimestriel
+ * par défaut. Conserver la prudence : seules les sources officielles SPF Finances et
+ * Sécurité sociale font foi.
  */
 
 export type SocialDeadlineCategory = "ONSS" | "Précompte" | "TVA" | "Autre";
@@ -57,29 +64,133 @@ export type SocialDeadlineCategory = "ONSS" | "Précompte" | "TVA" | "Autre";
 export interface SocialDeadline {
   /** Identifiant stable et unique, ex. "onss-dmfa-2026T2". */
   id: string;
-  /** Date d'échéance calculée, au format ISO "YYYY-MM-DD". */
+  /** Date d'échéance, au format ISO "YYYY-MM-DD". */
   date: string;
-  /** Libellé lisible, ex. "Déclaration ONSS – DMFA · T2 2026". */
+  /** Libellé lisible, ex. "Déclaration ONSS – DmfA · T2 2026". */
   title: string;
   category: SocialDeadlineCategory;
   periodicity: "mensuelle" | "trimestrielle" | "annuelle";
-  /** Note de contexte (hypothèse de régime, tolérances, etc.). */
+  /** Note de contexte (hypothèse de régime, fallback, tolérances, etc.). */
   note?: string;
   /** Libellé de la source officielle, ex. "ONSS". */
   sourceLabel?: string;
-  /** URL officielle vérifiée. */
+  /** URL officielle. */
   sourceUrl?: string;
 }
+
+/**
+ * Avertissement utilisateur — texte EXACT validé par le métier.
+ * À afficher partout où les échéances sont présentées.
+ */
+export const SOCIAL_CALENDAR_WARNING =
+  "Dates indicatives calculées selon un régime trimestriel par défaut. Les échéances peuvent varier selon votre régime TVA, votre situation employeur, les reports au jour ouvrable suivant, les jours fériés, les tolérances administratives ou les communications officielles. Vérifiez toujours les sources officielles SPF Finances et Sécurité sociale.";
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Structure interne extensible (recommandée par le métier).
+ * Les obligations sont décrites comme des DONNÉES typées, puis `SocialDeadline[]`
+ * en est dérivé. L'énumération couvre l'extension future ; seules 3 obligations
+ * sont ACTIVES en MVP (toutes `regime: "quarterly"`).
+ * ────────────────────────────────────────────────────────────────────────── */
 
 /** Trimestre civil belge : T1=jan-mar, T2=avr-juin, T3=juil-sep, T4=oct-déc. */
 type Quarter = 1 | 2 | 3 | 4;
 
-const SOURCE_ONSS_DMFA =
-  "https://www.socialsecurity.be/site_fr/employer/applics/dmfa/index.htm";
-const SOURCE_PRECOMPTE =
-  "https://finances.belgium.be/fr/experts_partenaires/secretariats-sociaux-autres-societes-service/precompte_professionnel/calendrier";
-const SOURCE_TVA =
-  "https://finances.belgium.be/fr/entreprises/tva/declaration/declaration-periodique";
+type DueDateRule =
+  | { type: "last_day_of_month_after_quarter" }
+  | { type: "fixed_day_after_quarter"; day: number }
+  | { type: "official_calendar_table" }
+  | { type: "custom" };
+
+type SocialCalendarObligation = {
+  obligationType:
+    | "ONSS_DMFA"
+    | "PROFESSIONAL_WITHHOLDING_TAX"
+    | "VAT_PERIODIC_RETURN"
+    | "VAT_PAYMENT"
+    | "VAT_INTRA_COMMUNITY_STATEMENT"
+    | "FISCAL_FORMS_281"
+    | "HOLIDAY_PAY"
+    | "WORK_ACCIDENT_INSURANCE";
+  regime: "monthly" | "quarterly" | "yearly" | "custom";
+  category: SocialDeadlineCategory;
+  label: string;
+  sourceLabel: string;
+  sourceUrl: string;
+  dueDateRule: DueDateRule;
+  note?: string;
+};
+
+/** Préfixe d'`id` stable par type d'obligation (pour la dérivation + tri). */
+const OBLIGATION_ID_PREFIX: Record<
+  SocialCalendarObligation["obligationType"],
+  string
+> = {
+  ONSS_DMFA: "onss-dmfa",
+  PROFESSIONAL_WITHHOLDING_TAX: "precompte",
+  VAT_PERIODIC_RETURN: "tva",
+  VAT_PAYMENT: "tva-paiement",
+  VAT_INTRA_COMMUNITY_STATEMENT: "tva-icp",
+  FISCAL_FORMS_281: "fiches-281",
+  HOLIDAY_PAY: "pecule-vacances",
+  WORK_ACCIDENT_INSURANCE: "accidents-travail",
+};
+
+/**
+ * Obligations ACTIVES en MVP — uniquement les 3 trimestrielles validées.
+ * (L'énumération `obligationType` ci-dessus prévoit l'extension future, mais on
+ * n'émet QUE ces trois entrées.)
+ */
+const ACTIVE_OBLIGATIONS: readonly SocialCalendarObligation[] = [
+  {
+    obligationType: "ONSS_DMFA",
+    regime: "quarterly",
+    category: "ONSS",
+    label: "Déclaration ONSS – DmfA",
+    sourceLabel: "ONSS",
+    sourceUrl:
+      "https://www.socialsecurity.be/site_fr/employer/applics/dmfa/web/intro/home.htm",
+    dueDateRule: { type: "last_day_of_month_after_quarter" },
+    note: "Régime trimestriel (par défaut). Échéance = dernier jour du mois qui suit le trimestre.",
+  },
+  {
+    obligationType: "PROFESSIONAL_WITHHOLDING_TAX",
+    regime: "quarterly",
+    category: "Précompte",
+    label: "Versement précompte professionnel",
+    sourceLabel: "SPF Finances",
+    sourceUrl:
+      "https://finances.belgium.be/fr/entreprises/personnel_et_remuneration/precompte_professionnel/calendrier",
+    dueDateRule: { type: "fixed_day_after_quarter", day: 15 },
+    note: "Régime trimestriel par défaut (le régime mensuel n'est pas modélisé en MVP). Échéance = le 15 du mois qui suit le trimestre.",
+  },
+  {
+    obligationType: "VAT_PERIODIC_RETURN",
+    regime: "quarterly",
+    category: "TVA",
+    label: "Déclaration TVA (trimestrielle)",
+    sourceLabel: "SPF Finances",
+    sourceUrl: "https://finances.belgium.be/fr/entreprises/tva/calendrier-tva",
+    dueDateRule: { type: "official_calendar_table" },
+    note: "Régime trimestriel (par défaut). Date issue du calendrier officiel SPF (reports week-end/jour férié déjà intégrés).",
+  },
+];
+
+/**
+ * Table officielle SPF des échéances TVA trimestrielles, indexée par
+ * "<année du trimestre>T<numéro de trimestre>". Les reports au jour ouvrable
+ * (week-end / jour férié) sont DÉJÀ intégrés dans ces dates.
+ */
+const VAT_OFFICIAL_CALENDAR: Readonly<Record<string, string>> = {
+  "2025T4": "2026-01-26",
+  "2026T1": "2026-04-27", // 25/04/2026 = samedi → reporté au 27
+  "2026T2": "2026-07-25",
+  "2026T3": "2026-10-25",
+  "2026T4": "2027-01-25",
+};
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Utilitaires Date (calcul local « au jour près », sans glissement ISO).
+ * ────────────────────────────────────────────────────────────────────────── */
 
 /**
  * Construit une date locale « au jour près » (heure fixée à midi pour éviter tout
@@ -109,8 +220,8 @@ function startOfDay(d: Date): number {
 }
 
 /**
- * Mois (index 0-11) et année du « mois qui suit le trimestre » `q` de l'année `year`.
- * T1 → avril (year), T2 → juillet (year), T3 → octobre (year),
+ * Mois (index 0-11) et année du « mois qui suit le trimestre » `q` de l'année
+ * `year`. T1 → avril (year), T2 → juillet (year), T3 → octobre (year),
  * T4 → janvier (year + 1).
  */
 function monthAfterQuarter(
@@ -131,53 +242,82 @@ function monthAfterQuarter(
 
 const QUARTERS: readonly Quarter[] = [1, 2, 3, 4];
 
+/* ──────────────────────────────────────────────────────────────────────────
+ * Dérivation des `SocialDeadline` à partir des obligations + règles de date.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+type ResolvedDue = { date: string; extraNote?: string };
+
 /**
- * Génère toutes les échéances trimestrielles pour une année civile de trimestres
- * `year` donnée (les 4 trimestres T1..T4 de cette année). Les dates calculées
- * peuvent retomber sur `year + 1` (cas du T4).
+ * Résout la date d'échéance (et une éventuelle note additionnelle) pour une
+ * obligation, un trimestre `q` et l'année de trimestre `year`.
  */
-function buildQuarterlyDeadlinesForYear(year: number): SocialDeadline[] {
+function resolveDueDate(
+  obligation: SocialCalendarObligation,
+  year: number,
+  q: Quarter,
+): ResolvedDue {
+  const { year: dueYear, monthIndex } = monthAfterQuarter(year, q);
+  const rule = obligation.dueDateRule;
+
+  switch (rule.type) {
+    case "last_day_of_month_after_quarter": {
+      const day = lastDayOfMonth(dueYear, monthIndex);
+      return { date: toISODate(makeDay(dueYear, monthIndex, day)) };
+    }
+    case "fixed_day_after_quarter": {
+      return { date: toISODate(makeDay(dueYear, monthIndex, rule.day)) };
+    }
+    case "official_calendar_table": {
+      const key = `${year}T${q}`;
+      const official = VAT_OFFICIAL_CALENDAR[key];
+      if (official) {
+        return { date: official };
+      }
+      // Fallback hors table : le 25 du mois qui suit le trimestre, signalé.
+      return {
+        date: toISODate(makeDay(dueYear, monthIndex, 25)),
+        extraNote:
+          "Date calculée (le 25 du mois suivant le trimestre) car ce trimestre est absent du calendrier officiel SPF : le report éventuel au jour ouvrable suivant n'est pas garanti, à confirmer sur le calendrier TVA du SPF Finances.",
+      };
+    }
+    case "custom": {
+      // Aucune obligation MVP n'utilise ce cas ; fallback prudent.
+      const day = lastDayOfMonth(dueYear, monthIndex);
+      return { date: toISODate(makeDay(dueYear, monthIndex, day)) };
+    }
+  }
+}
+
+/**
+ * Génère toutes les échéances (3 obligations actives × 4 trimestres) pour une
+ * année civile de trimestres `year`. Les dates calculées peuvent retomber sur
+ * `year + 1` (cas du T4).
+ */
+function buildDeadlinesForYear(year: number): SocialDeadline[] {
   const out: SocialDeadline[] = [];
 
-  for (const q of QUARTERS) {
-    const { year: dueYear, monthIndex } = monthAfterQuarter(year, q);
+  for (const obligation of ACTIVE_OBLIGATIONS) {
+    const prefix = OBLIGATION_ID_PREFIX[obligation.obligationType];
 
-    // 1) ONSS — DmfA : dernier jour du mois qui suit le trimestre.
-    const onssDay = lastDayOfMonth(dueYear, monthIndex);
-    out.push({
-      id: `onss-dmfa-${year}T${q}`,
-      date: toISODate(makeDay(dueYear, monthIndex, onssDay)),
-      title: `Déclaration ONSS – DMFA · T${q} ${year}`,
-      category: "ONSS",
-      periodicity: "trimestrielle",
-      note: "Régime trimestriel (par défaut). Échéance = dernier jour du mois qui suit le trimestre. Date indicative, à confirmer selon votre régime.",
-      sourceLabel: "ONSS",
-      sourceUrl: SOURCE_ONSS_DMFA,
-    });
+    for (const q of QUARTERS) {
+      const { date, extraNote } = resolveDueDate(obligation, year, q);
+      const note =
+        extraNote && obligation.note
+          ? `${obligation.note} ${extraNote}`
+          : (extraNote ?? obligation.note);
 
-    // 2) Précompte professionnel : le 15 du mois qui suit le trimestre.
-    out.push({
-      id: `precompte-${year}T${q}`,
-      date: toISODate(makeDay(dueYear, monthIndex, 15)),
-      title: `Versement précompte professionnel · T${q} ${year}`,
-      category: "Précompte",
-      periodicity: "trimestrielle",
-      note: "Régime trimestriel (par défaut, précompte annuel ≤ 51 480 € pour 2026). Échéance = le 15 du mois qui suit le trimestre. Le régime mensuel est dû le 15 du mois suivant.",
-      sourceLabel: "SPF Finances",
-      sourceUrl: SOURCE_PRECOMPTE,
-    });
-
-    // 3) TVA : le 25 du mois qui suit le trimestre (nouvelle chaîne TVA).
-    out.push({
-      id: `tva-${year}T${q}`,
-      date: toISODate(makeDay(dueYear, monthIndex, 25)),
-      title: `Déclaration & paiement TVA · T${q} ${year}`,
-      category: "TVA",
-      periodicity: "trimestrielle",
-      note: "Régime trimestriel (par défaut). Depuis la nouvelle chaîne TVA (2025), l'échéance trimestrielle est le 25 du mois qui suit le trimestre (les déclarants mensuels restent au 20). Tolérances/régime estival non pris en compte.",
-      sourceLabel: "SPF Finances",
-      sourceUrl: SOURCE_TVA,
-    });
+      out.push({
+        id: `${prefix}-${year}T${q}`,
+        date,
+        title: `${obligation.label} · T${q} ${year}`,
+        category: obligation.category,
+        periodicity: "trimestrielle",
+        note,
+        sourceLabel: obligation.sourceLabel,
+        sourceUrl: obligation.sourceUrl,
+      });
+    }
   }
 
   return out;
@@ -185,11 +325,12 @@ function buildQuarterlyDeadlinesForYear(year: number): SocialDeadline[] {
 
 /**
  * Renvoie les `limit` prochaines échéances (date >= from), triées par date
- * croissante. `from` est la date de référence (ex. aujourd'hui).
+ * croissante puis par `id` (stabilité). `from` est la date de référence.
  *
  * La comparaison se fait au jour près (l'heure de `from` est ignorée). Les
- * occurrences sont générées sur un horizon glissant d'environ 12 mois afin de
- * couvrir suffisamment d'échéances après `from`.
+ * occurrences sont générées sur un horizon glissant > 12 mois autour de `from`
+ * (trimestres de l'année précédente, courante et suivante) afin de couvrir le
+ * report du T4 sur janvier+1 et la table TVA jusqu'à 2027-01.
  */
 export function getUpcomingSocialDeadlines(
   from: Date,
@@ -201,13 +342,10 @@ export function getUpcomingSocialDeadlines(
 
   const fromYear = from.getFullYear();
 
-  // On génère les trimestres de l'année précédente, courante et suivante :
-  // cela garantit une couverture > 12 mois autour de `from`, quel que soit le
-  // mois de référence (les échéances du T4 retombent sur l'année suivante).
   const candidates: SocialDeadline[] = [
-    ...buildQuarterlyDeadlinesForYear(fromYear - 1),
-    ...buildQuarterlyDeadlinesForYear(fromYear),
-    ...buildQuarterlyDeadlinesForYear(fromYear + 1),
+    ...buildDeadlinesForYear(fromYear - 1),
+    ...buildDeadlinesForYear(fromYear),
+    ...buildDeadlinesForYear(fromYear + 1),
   ];
 
   const fromDay = startOfDay(from);

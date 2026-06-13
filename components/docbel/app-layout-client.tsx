@@ -62,7 +62,6 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   // sont des écrans split full-page — le header glass collerait avec.
   if (
     pathname.startsWith("/admin") ||
-    pathname === "/employeur" || // dashboard employeur = chrome dédié (sidebar+topbar sombres)
     pathname.startsWith("/login") ||
     pathname === "/inscription" ||
     pathname === "/mot-de-passe-oublie" ||

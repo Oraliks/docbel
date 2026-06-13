@@ -28,7 +28,6 @@ import {
   type ActivityIcon,
   type DashboardAlert,
 } from "@/lib/employeur/dashboard/overview";
-import { SOCIAL_CALENDAR_WARNING } from "@/lib/employeur/calendar/social-deadlines";
 import { QuickCost } from "@/components/docbel/employeur/cost/quick-cost";
 import { QuickActions } from "@/components/docbel/employeur/quick-actions";
 import { cn } from "@/lib/utils";
@@ -134,10 +133,10 @@ export default async function EmployeurDashboard() {
       </div>
 
       {/* Row 1 — Calendrier social · Simulateur (rapide) · Actions rapides */}
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid items-start gap-4 xl:grid-cols-3">
         {/* Calendrier social — échéances récurrentes (ONSS / précompte / TVA) */}
         <div className={PANEL}>
-          <div className="flex items-center justify-between px-5 pt-4">
+          <div className="flex items-center justify-between px-4 pt-4">
             <div className="flex items-center gap-2">
               <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <CalendarDays className="size-4" />
@@ -148,24 +147,20 @@ export default async function EmployeurDashboard() {
               Voir tout <ArrowRight className="size-3" />
             </Link>
           </div>
-          <p className="px-5 pt-1 text-xs text-muted-foreground">
-            Ne manquez aucune échéance importante (ONSS, précompte, TVA…).
-          </p>
-          <div className="space-y-2 p-5 pt-3">
+          <div className="space-y-1.5 p-4 pt-3">
             {socialDeadlines.map((d) => (
-              <div key={d.id} className="flex items-center gap-3 rounded-lg border border-border bg-background p-2.5">
-                <div className="flex size-11 shrink-0 flex-col items-center justify-center rounded-lg bg-muted">
+              <div key={d.id} className="flex items-center gap-2.5 rounded-lg border border-border bg-background p-2">
+                <div className="flex size-10 shrink-0 flex-col items-center justify-center rounded-md bg-muted leading-none">
                   <span className="text-sm font-bold">{d.day}</span>
                   <span className="text-[9px] uppercase text-muted-foreground">{d.month}</span>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{d.title}</p>
-                  <p className="text-xs text-muted-foreground">{d.category} · trimestriel</p>
-                </div>
+                <p className="min-w-0 flex-1 truncate text-sm font-medium">{d.shortTitle}</p>
                 <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
               </div>
             ))}
-            <p className="pt-1 text-[10px] leading-snug text-muted-foreground">{SOCIAL_CALENDAR_WARNING}</p>
+            <p className="pt-1 text-[10px] leading-snug text-muted-foreground">
+              Dates indicatives (régime trimestriel) — sources sur le calendrier.
+            </p>
           </div>
         </div>
 

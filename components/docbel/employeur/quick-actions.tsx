@@ -73,7 +73,7 @@ export function QuickActions({ dossiersBadge }: { dossiersBadge: number }) {
           Aucune action ne correspond à « {q} ».
         </p>
       ) : (
-        <div className="mt-3 grid grid-cols-2 gap-2.5">
+        <div className="mt-3 grid grid-cols-2 gap-2">
           {filtered.map((a) => {
             const Icon = a.icon;
             const badge = a.id === "dossiers" && dossiersBadge > 0 ? dossiersBadge : null;
@@ -81,17 +81,17 @@ export function QuickActions({ dossiersBadge }: { dossiersBadge: number }) {
               <Link
                 key={a.id}
                 href={a.href}
-                className="group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-3 text-center no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+                className="group relative flex flex-col items-center gap-1.5 rounded-lg border border-border bg-background p-2.5 text-center no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
               >
                 {badge !== null ? (
-                  <span className="absolute right-1.5 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                  <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
                     {badge > 99 ? "99+" : badge}
                   </span>
                 ) : null}
-                <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-                  <Icon className="size-[18px]" />
+                <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                  <Icon className="size-4" />
                 </span>
-                <span className="text-xs font-medium leading-tight">{a.label}</span>
+                <span className="text-[11px] font-medium leading-tight">{a.label}</span>
               </Link>
             );
           })}

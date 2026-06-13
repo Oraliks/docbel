@@ -156,11 +156,14 @@ export function QuickCost({
       </div>
 
       <div className="px-5 pb-5">
+        <p className="mb-2 rounded-lg bg-muted/40 px-3 py-2 text-[10px] leading-snug text-muted-foreground">
+          Coût employeur mensuel estimé (salaire brut + cotisations patronales + provisions). Indicatif — CP 200 par défaut.
+        </p>
         <Link
           href="/employeur/simulateur-cout"
           className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-xs font-medium text-primary no-underline"
         >
-          Détail & sauvegarde <ArrowRight className="size-3.5" />
+          Détail &amp; sauvegarde <ArrowRight className="size-3.5" />
         </Link>
         <p className="mt-1 truncate text-center text-[10px] text-muted-foreground">{title}</p>
       </div>

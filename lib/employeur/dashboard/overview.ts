@@ -81,6 +81,8 @@ export interface DashboardSocialDeadline {
   day: string;
   month: string;
   title: string;
+  /** Libellé court pour les blocs étroits, ex. « TVA · T2 2026 ». */
+  shortTitle: string;
   category: string;
   note?: string;
   sourceUrl?: string;
@@ -287,11 +289,13 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
   // --- Calendrier social : échéances récurrentes belges (ONSS/précompte/TVA) --
   const socialDeadlines: DashboardSocialDeadline[] = getUpcomingSocialDeadlines(now, 4).map((s) => {
     const due = new Date(`${s.date}T12:00:00`);
+    const period = s.title.match(/T[1-4]\s?\d{4}/)?.[0] ?? "";
     return {
       id: s.id,
       day: String(due.getDate()).padStart(2, "0"),
       month: MONTHS_FR[due.getMonth()],
       title: s.title,
+      shortTitle: period ? `${s.category} · ${period}` : s.category,
       category: s.category,
       note: s.note,
       sourceUrl: s.sourceUrl,

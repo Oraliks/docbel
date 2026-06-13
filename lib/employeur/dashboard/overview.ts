@@ -112,6 +112,9 @@ export interface DashboardCost {
   total: number;
   regimeLabel: string;
   workerTypeLabel: string;
+  /** Valeurs initiales (codes) pour pré-remplir le mini-simulateur interactif. */
+  regimeInit: "temps_plein" | "temps_partiel";
+  workerTypeInit: string;
   /** true si aucune simulation sauvegardée → exemple par défaut. */
   isExample: boolean;
 }
@@ -361,6 +364,8 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
       total,
       regimeLabel: REGIME_LABEL[inp.regime ?? ""] ?? "Temps plein",
       workerTypeLabel: labelWorkerType(inp.workerType) || "Employé",
+      regimeInit: inp.regime === "temps_partiel" ? "temps_partiel" : "temps_plein",
+      workerTypeInit: inp.workerType ?? "employe",
       isExample: false,
     };
   } else {
@@ -382,6 +387,8 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
       total,
       regimeLabel: "Temps plein",
       workerTypeLabel: "Employé",
+      regimeInit: "temps_plein",
+      workerTypeInit: "employe",
       isExample: true,
     };
   }

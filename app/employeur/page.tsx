@@ -3,16 +3,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   FolderOpen,
-  ClipboardList,
-  FileText,
-  BookOpen,
-  Calculator,
-  Send,
-  Search,
   CalendarDays,
   CalendarClock,
   TriangleAlert,
   FileCheck2,
+  FileText,
   Check,
   Scale,
   ArrowRight,
@@ -20,6 +15,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Send,
   Activity,
   ShieldCheck,
   Users,
@@ -33,6 +29,8 @@ import {
   type DashboardAlert,
 } from "@/lib/employeur/dashboard/overview";
 import { SOCIAL_CALENDAR_WARNING } from "@/lib/employeur/calendar/social-deadlines";
+import { QuickCost } from "@/components/docbel/employeur/cost/quick-cost";
+import { QuickActions } from "@/components/docbel/employeur/quick-actions";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -41,18 +39,6 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
-
-const eur = (n: number) =>
-  `${n.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
-
-const QUICK = [
-  { id: "cout", label: "Simuler un coût", href: "/employeur/simulateur-cout", icon: Calculator },
-  { id: "engagement", label: "Préparer un engagement", href: "/employeur/nouveau-dossier", icon: ClipboardList },
-  { id: "document", label: "Préparer un document", href: "/employeur/documents", icon: FileText },
-  { id: "fiche", label: "Vérifier une fiche", href: "/employeur/controle", icon: FileCheck2 },
-  { id: "dossiers", label: "Mes dossiers", href: "/employeur/dossiers", icon: FolderOpen },
-  { id: "biblio", label: "Bibliothèque", href: "/employeur/bibliotheque", icon: BookOpen },
-];
 
 const PANEL = "rounded-xl border border-border bg-card";
 
@@ -106,15 +92,6 @@ export default async function EmployeurDashboard() {
   const data = await getEmployerDashboard(user.id);
   const { identity, kpis, socialDeadlines, alerts, recentDossiers, recentActivity, cost, resume } = data;
 
-  const quickBadge = (id: string): number | null =>
-    id === "dossiers" && kpis.activeDossiers > 0 ? kpis.activeDossiers : null;
-
-  // Donut : brut = bleu, cotisations = violet (primary), autres = rose.
-  const pct = (x: number) => (cost.total > 0 ? (x / cost.total) * 100 : 0);
-  const pBrut = pct(cost.gross);
-  const pCotis = pct(cost.contributions);
-  const donut = `conic-gradient(#3b82f6 0 ${pBrut}%, var(--primary) ${pBrut}% ${pBrut + pCotis}%, #ec4899 ${pBrut + pCotis}% 100%)`;
-
   return (
     <div className="flex w-full flex-col gap-6 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
       {/* ============================== HERO ============================== */}
@@ -156,7 +133,7 @@ export default async function EmployeurDashboard() {
         <Kpi icon={TriangleAlert} tone="red" value={String(kpis.alertsCount)} label="Alertes" href="/employeur/dossiers" sub="Actions à vérifier" />
       </div>
 
-      {/* Row 1 — Calendrier social · Simulateur (compact) · Actions rapides */}
+      {/* Row 1 — Calendrier social · Simulateur (rapide) · Actions rapides */}
       <div className="grid gap-4 xl:grid-cols-3">
         {/* Calendrier social — échéances récurrentes (ONSS / précompte / TVA) */}
         <div className={PANEL}>
@@ -192,77 +169,21 @@ export default async function EmployeurDashboard() {
           </div>
         </div>
 
-        {/* Simulateur de coût — bloc compact (vrai moteur / dernière simulation) */}
+        {/* Simulateur de coût — bloc interactif (simulation rapide) */}
         <div className={PANEL}>
-          <div className="flex items-center justify-between px-5 pt-4">
-            <h2 className="text-sm font-semibold">Simulateur de coût</h2>
-            {cost.isExample ? <Badge variant="secondary">Exemple</Badge> : <Badge variant="info">Dernière simulation</Badge>}
-          </div>
-          <div className="space-y-3 p-5 pt-3">
-            <p className="truncate text-xs text-muted-foreground">{cost.title}</p>
-            <div className="flex items-center gap-3">
-              <div className="relative size-24 shrink-0 rounded-full" style={{ background: donut }}>
-                <div className="absolute inset-[8px] flex flex-col items-center justify-center rounded-full bg-card text-center">
-                  <span className="text-[8px] text-muted-foreground">Total</span>
-                  <span className="text-xs font-bold leading-tight">{eur(cost.total)}</span>
-                  <span className="text-[8px] text-muted-foreground">/ mois</span>
-                </div>
-              </div>
-              <ul className="flex-1 space-y-1 text-[11px]">
-                <Legend color="#3b82f6" label="Brut" value={eur(cost.gross)} />
-                <Legend color="var(--primary)" label="Cotisations" value={eur(cost.contributions)} />
-                <Legend color="#ec4899" label="Autres" value={eur(cost.other)} />
-              </ul>
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              {cost.workerTypeLabel} · {cost.regimeLabel} · {eur(cost.gross)} brut
-            </p>
-            <Link
-              href="/employeur/simulateur-cout"
-              className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-xs font-medium text-primary no-underline"
-            >
-              {cost.isExample ? "Lancer une simulation" : "Voir le détail"} <ArrowRight className="size-3.5" />
-            </Link>
-          </div>
+          <QuickCost
+            title={cost.title}
+            isExample={cost.isExample}
+            initialGross={cost.gross}
+            initialRegime={cost.regimeInit}
+            initialWorkerType={cost.workerTypeInit}
+          />
         </div>
 
-        {/* Actions rapides — recherche + grille de tuiles */}
-        <section className={cn(PANEL, "p-5")}>
-          <h2 className="text-base font-semibold tracking-tight">Actions rapides</h2>
-
-          <Link
-            href="/employeur/dossiers"
-            className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground no-underline transition-colors hover:border-primary/40"
-          >
-            <Search className="size-4" />
-            <span className="flex-1">Rechercher…</span>
-            <kbd className="hidden items-center rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] sm:inline-flex">⌘K</kbd>
-          </Link>
-
-          <div className="mt-3 grid grid-cols-2 gap-2.5">
-            {QUICK.map((q) => {
-              const Icon = q.icon;
-              const badge = quickBadge(q.id);
-              return (
-                <Link
-                  key={q.id}
-                  href={q.href}
-                  className="group relative flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-3 text-center no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
-                >
-                  {badge !== null ? (
-                    <span className="absolute right-1.5 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
-                      {badge > 99 ? "99+" : badge}
-                    </span>
-                  ) : null}
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-                    <Icon className="size-[18px]" />
-                  </span>
-                  <span className="text-xs font-medium leading-tight">{q.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
+        {/* Actions rapides — recherche fonctionnelle + grille de tuiles */}
+        <div className={PANEL}>
+          <QuickActions dossiersBadge={kpis.activeDossiers} />
+        </div>
       </div>
 
       {/* Row 2 — Alertes · Dossiers récents · Reprendre un engagement */}
@@ -476,15 +397,5 @@ function Kpi({
         <Icon className="size-6" />
       </span>
     </Link>
-  );
-}
-
-function Legend({ color, label, value }: { color: string; label: string; value: string }) {
-  return (
-    <li className="flex items-center gap-2">
-      <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-      <span className="flex-1 truncate text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
-    </li>
   );
 }

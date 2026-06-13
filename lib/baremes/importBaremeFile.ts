@@ -7,6 +7,7 @@ import { parseBaremaFile } from '@/lib/baremes-parser'
 import { sha256 } from './hash'
 import { normalizeBaremeData } from './normalizeBaremeData'
 import { verifyRoundTrip } from './verifyRoundTrip'
+import { verifySheetContracts } from './sheetContracts'
 import { extractValidFromFileName } from './normalize'
 import { compareBaremeVersions, detectAnomaliesFromDiff } from './compareBaremeVersions'
 import { loadSheetMappingOverrides } from './loadSheetMappings'
@@ -141,6 +142,11 @@ export async function importBaremeFile(
   const roundTrip = verifyRoundTrip(parsed.sheets, validatedAmounts)
   normalized.alerts.push(...roundTrip.alerts)
 
+  // 3quater) Contrats de structure : feuille attendue présente, bonne catégorie,
+  // compte plausible, codes-clés présents — détecte une dérive du fichier ONEM.
+  const contracts = verifySheetContracts(parsed.sheets, validatedAmounts)
+  normalized.alerts.push(...contracts.alerts)
+
   // 4) Sauvegarde disque — répertoire PRIVÉ
   const uploadDir = path.join(/* turbopackIgnore: true */ process.cwd(), PRIVATE_UPLOAD_SUBDIR)
   const safeName = sanitizeFileName(input.fileName)
@@ -174,6 +180,7 @@ export async function importBaremeFile(
       noTrace: roundTrip.noTrace,
       mismatches: roundTrip.mismatches,
     },
+    contracts: contracts.results,
   }
 
   // 5) Préparation des lignes HORS transaction (pur CPU — pas de temps DB gaspillé).

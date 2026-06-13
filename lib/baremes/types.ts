@@ -242,6 +242,14 @@ export interface BaremeDiagnostics {
     noTrace: number
     mismatches: number
   }
+  /** Résultats des contrats de structure par feuille. */
+  contracts?: {
+    sheet: string
+    present: boolean
+    actualCount: number
+    expectedCount: number
+    status: string
+  }[]
 }
 
 // Résumé global de l'import (stocké dans BaremeFile.summary)

@@ -92,13 +92,34 @@ export function verifyRoundTrip(
       continue
     }
 
-    // DÉRIVÉ : la cellule contient bien la valeur brute déclarée (rattachement OK,
-    // montant dérivé). Tolère la troncature de rawValue (slice à 80 dans les parsers).
+    // DÉRIVÉ : la cellule contient bien la valeur brute déclarée mais le montant en
+    // dérive. Deux sous-cas, durcis pour ne plus être tautologiques :
     const raw = (trace.rawValue ?? '').toString().trim()
     const cs = cellStr.trim()
-    if (raw !== '' && cs !== '' && (cs === raw || cs.startsWith(raw) || raw.startsWith(cs))) {
-      derived++
-      continue
+    if (raw !== '' && cs !== '') {
+      if (cellNum !== null) {
+        // La cellule EST un nombre (ex: code de tranche, le montant = borne convertie).
+        // rawValue court-numérique → exiger l'égalité EXACTE (pas startsWith, sinon
+        // "13".startsWith("1") validerait un faux rattachement de code).
+        const shortNum = /^[\d.,]+$/.test(raw) && raw.length < 6
+        const ok = shortNum
+          ? cs === raw || approxEq(parseCellNumber(cs), parseCellNumber(raw))
+          : cs === raw || cs.startsWith(raw) || raw.startsWith(cs)
+        if (ok) {
+          derived++
+          continue
+        }
+      } else {
+        // La cellule est du TEXTE/une formule (ex: "750 X Q/S (max. 500)"). Le
+        // rattachement passe par rawValue ET le montant doit se retrouver dans la
+        // formule (plafond "max. N" prioritaire, sinon un des nombres) — sinon le
+        // mauvais nombre a été extrait (régression plafond activation 750≠500).
+        const bound = cs === raw || cs.startsWith(raw) || raw.startsWith(cs)
+        if (bound && formulaHasValue(cs, nv)) {
+          derived++
+          continue
+        }
+      }
     }
 
     reportMismatch(
@@ -121,6 +142,29 @@ export function verifyRoundTrip(
   }
 
   return { alerts, checked, direct, derived, noTrace, mismatches }
+}
+
+function approxEq(a: number | null, b: number | null): boolean {
+  return a !== null && b !== null && Math.abs(a - b) <= TOLERANCE
+}
+
+/**
+ * La valeur normalisée se retrouve-t-elle dans une cellule formule/texte ?
+ * Priorité au plafond « max. N » (le montant DOIT valoir N) ; sinon le montant doit
+ * être l'un des nombres présents. Si la valeur n'est pas numérique, on ne peut pas
+ * vérifier → on accepte (le rattachement par rawValue a déjà été prouvé).
+ */
+function formulaHasValue(cell: string, nv: number | string | null): boolean {
+  if (typeof nv !== 'number') return true
+  const maxMatch = cell.match(/max\.?\s*([\d.,]+)/i)
+  if (maxMatch) {
+    const maxVal = parseCellNumber(maxMatch[1])
+    return maxVal !== null && Math.abs(maxVal - nv) <= TOLERANCE
+  }
+  const numbers = (cell.match(/\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?/g) ?? [])
+    .map((s) => parseCellNumber(s))
+    .filter((n): n is number => n !== null)
+  return numbers.some((n) => Math.abs(n - nv) <= TOLERANCE)
 }
 
 /** Inverse de cellRef : "H14" → { row: 13, col: 7 } (0-based). */

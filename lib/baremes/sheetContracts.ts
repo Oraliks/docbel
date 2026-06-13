@@ -31,31 +31,34 @@ export interface SheetContract {
   notes?: string
 }
 
-// floor(expected × 0.6) : tolère une évolution ONEM modérée, bloque l'effondrement.
+// floor(expected × 0.6) : feuilles irrégulières (tolère une évolution ONEM modérée).
 const floor = (n: number) => Math.max(1, Math.floor(n * 0.6))
+// floor(expected × 0.95) : matrices rigides (codes × tranches) — une perte > 5 %
+// (typiquement une colonne d'allocation entière) devient une ERREUR bloquante.
+const denseFloor = (n: number) => Math.floor(n * 0.95)
 
 export const BAREME_CONTRACTS: SheetContract[] = [
   {
     sheetName: 'A_N_B_vol_plein',
     category: 'full_unemployment',
     expectedCount: 1500,
-    minCount: floor(1500),
-    requiredCodes: ['AA1', 'AA2', 'AA3', 'AB', 'AX', 'NA1', 'NB', 'BA1', 'BA3', 'BX', 'BB'],
+    minCount: denseFloor(1500),
+    requiredCodes: ['AA1', 'AA2', 'AA3', 'AB', 'AX', 'NA1', 'NA2', 'NA3', 'NB', 'NX', 'BA1', 'BA2', 'BA3', 'BX', 'BB'],
     notes: '15 codes × (MIN + tranches 1..99). Colonne AFoud = #REF! (0 montant attendu).',
   },
   {
     sheetName: 'A_N_B_half_demi',
     category: 'half_unemployment',
     expectedCount: 1501,
-    minCount: floor(1501),
-    requiredCodes: ['AA1', 'AA3', 'AB', 'AX', 'NA1', 'NB', 'BA1', 'BX', 'BB'],
+    minCount: denseFloor(1501),
+    requiredCodes: ['AA1', 'AA2', 'AA3', 'AB', 'AX', 'NA1', 'NA2', 'NA3', 'NB', 'NX', 'BA1', 'BA2', 'BA3', 'BX', 'BB'],
     notes: '= vol_plein/2. +1 vs plein : half:AFoud:MIN=0 (résidu colonne #REF!).',
   },
   {
     sheetName: 'TW-CT_JS',
     category: 'temporary_unemployment_full',
     expectedCount: 1000,
-    minCount: floor(1000),
+    minCount: denseFloor(1000),
     requiredCodes: ['A0 N0 B0', 'A0H', 'J/S'],
     notes: '3 codes de base, 10 colonnes (variantes plein/demi × taux 65/60) × 100 tranches.',
   },
@@ -63,7 +66,7 @@ export const BAREME_CONTRACTS: SheetContract[] = [
     sheetName: 'SpecCat',
     category: 'special_category_full',
     expectedCount: 1468,
-    minCount: floor(1468),
+    minCount: denseFloor(1468),
     requiredCodes: ['A6', 'A7', 'E', 'FA', 'FB', 'FN', 'GB', 'GN', 'AA', 'AN', 'AB'],
     notes: 'Codes empilés (E\\nFA, AN\\nAB) + colonnes SWT à 64 tranches.',
   },
@@ -71,7 +74,7 @@ export const BAREME_CONTRACTS: SheetContract[] = [
     sheetName: 'Loonschijven_Tranches salariale',
     category: 'salary_bracket',
     expectedCount: 99,
-    minCount: floor(99),
+    minCount: denseFloor(99),
     requiredCodes: ['1', '28', '29', '98', '99'],
     notes: '2 échelles : gauche indexée (29-99), droite base (1-99). 1-28 converties ×ratio ; 99 = tranche ouverte.',
   },
@@ -79,7 +82,7 @@ export const BAREME_CONTRACTS: SheetContract[] = [
     sheetName: 'Uurlonen_Salaires horaires',
     category: 'hourly_wage',
     expectedCount: 781,
-    minCount: floor(781),
+    minCount: denseFloor(781),
     requiredCodes: ['29', '99'],
     notes: '71 codes (29-99) × 11 régimes horaires (35-40 h). Dérivée de Loonschijven.',
   },
@@ -102,7 +105,7 @@ export const BAREME_CONTRACTS: SheetContract[] = [
     sheetName: 'Activering_Activation',
     category: 'activation',
     expectedCount: 14,
-    minCount: 10,
+    minCount: 13,
     requiredCodes: ['G•/ ••WB1••', 'CA/ ••#••••', 'G•/ ••BA1••'],
     notes: '2 blocs côte à côte (SINE gauche, ACTIVA droite). WB1 + nouveau régime SINE étaient perdus.',
   },
@@ -110,7 +113,7 @@ export const BAREME_CONTRACTS: SheetContract[] = [
     sheetName: 'AndereUitk_AutresAlloc',
     category: 'other_allocation',
     expectedCount: 8,
-    minCount: 4,
+    minCount: 8,
     requiredCodes: ['opvang', 'leefloon'],
     notes: 'Opvanguitkering + Leefloon. Section Wisselkoerstoeslag volontairement ignorée.',
   },
@@ -118,7 +121,7 @@ export const BAREME_CONTRACTS: SheetContract[] = [
     sheetName: 'Bonus',
     category: 'employment_bonus',
     expectedCount: 8,
-    minCount: 4,
+    minCount: 8,
     requiredCodes: ['employee', 'worker'],
     notes: '4 tranches × employé/ouvrier. Coefficients de dégressivité (col I) non extraits.',
   },

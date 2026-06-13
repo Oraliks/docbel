@@ -12,7 +12,7 @@ function makeDiff(changes: BaremeDiff['changes']): BaremeDiff {
 }
 
 describe('detectAnomaliesFromDiff', () => {
-  it('aucune alerte si toutes les variations sont sous le seuil', () => {
+  it('aucune alerte si toutes les variations sont sous le seuil (8%)', () => {
     const diff = makeDiff([
       {
         type: 'amount_changed',
@@ -25,7 +25,7 @@ describe('detectAnomaliesFromDiff', () => {
         type: 'amount_changed',
         key: 'y',
         oldValue: 200,
-        newValue: 230, // +15%
+        newValue: 213, // +6.5%
         category: 'full_unemployment',
       },
     ])
@@ -33,7 +33,7 @@ describe('detectAnomaliesFromDiff', () => {
     expect(alerts).toHaveLength(0)
   })
 
-  it('alerte warn pour les variations entre 20% et 50%', () => {
+  it('alerte warn pour les variations entre 8% et 50%', () => {
     const diff = makeDiff([
       {
         type: 'amount_changed',
@@ -46,7 +46,7 @@ describe('detectAnomaliesFromDiff', () => {
     const alerts = detectAnomaliesFromDiff(diff)
     expect(alerts).toHaveLength(1)
     expect(alerts[0].level).toBe('warn')
-    expect(alerts[0].message).toContain('20%')
+    expect(alerts[0].message).toContain('8%')
   })
 
   it('alerte error pour les variations >50%', () => {

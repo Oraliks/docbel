@@ -58,8 +58,8 @@ describe('verifySheetContracts', () => {
   })
 
   it('warning de déviation si compte ≠ attendu (mais au-dessus du plancher)', () => {
-    // Bonus : expected 8, minCount 4 → 6 montants = déviation (warning, pas erreur)
-    const amounts = Array.from({ length: 6 }, (_, i) =>
+    // Bonus : expected 8 → 10 montants = déviation (au-dessus, warning pas erreur)
+    const amounts = Array.from({ length: 10 }, (_, i) =>
       amt('Bonus', 'employment_bonus', i < 2 ? ['employee', 'worker'][i] : `t${i}`)
     )
     const res = verifySheetContracts([sheet('Bonus')], amounts)

@@ -1,8 +1,11 @@
 import { prisma, withDbRetry } from '@/lib/prisma'
 import type { BaremeAlert, BaremeDiff, BaremeDiffChange } from './types'
 
-// Seuil de variation déclenchant une alerte "anomalie" (en %)
-const ANOMALY_THRESHOLD_PCT = 20
+// Seuil de variation déclenchant une alerte "anomalie" (en %).
+// Abaissé de 20→8 % (hardening adversarial) : l'indexation ONEM est ~2 %/an, donc
+// toute variation > 8 % sur une comparisonKey est suspecte (swap de colonnes, valeur
+// fausse, mauvaise échelle) et mérite une revue admin.
+const ANOMALY_THRESHOLD_PCT = 8
 
 // Variation au-dessus de ce seuil → erreur (bloque la publication sauf force)
 const ANOMALY_ERROR_THRESHOLD_PCT = 50

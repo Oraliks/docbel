@@ -234,6 +234,14 @@ export interface BaremeDiagnostics {
   duplicates: { comparisonKey: string; count: number; droppedCells: string[] }[]
   /** Lignes ignorées tronquées ? (cap de stockage atteint) */
   ignoredRowsTruncated?: boolean
+  /** Vérification round-trip (chaque montant relié à sa cellule source). */
+  roundTrip?: {
+    checked: number
+    direct: number
+    derived: number
+    noTrace: number
+    mismatches: number
+  }
 }
 
 // Résumé global de l'import (stocké dans BaremeFile.summary)

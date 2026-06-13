@@ -6,6 +6,7 @@ import { prisma, withDbRetry } from '@/lib/prisma'
 import { parseBaremaFile } from '@/lib/baremes-parser'
 import { sha256 } from './hash'
 import { normalizeBaremeData } from './normalizeBaremeData'
+import { verifyRoundTrip } from './verifyRoundTrip'
 import { extractValidFromFileName } from './normalize'
 import { compareBaremeVersions, detectAnomaliesFromDiff } from './compareBaremeVersions'
 import { loadSheetMappingOverrides } from './loadSheetMappings'
@@ -135,6 +136,11 @@ export async function importBaremeFile(
   }
   normalized.summary.amountsExtracted = validatedAmounts.length
 
+  // 3ter) Round-trip : chaque montant doit être rattaché à sa cellule source réelle
+  // (preuve qu'aucun montant n'est copié/décalé/inventé). Tout mismatch = bloquant.
+  const roundTrip = verifyRoundTrip(parsed.sheets, validatedAmounts)
+  normalized.alerts.push(...roundTrip.alerts)
+
   // 4) Sauvegarde disque — répertoire PRIVÉ
   const uploadDir = path.join(/* turbopackIgnore: true */ process.cwd(), PRIVATE_UPLOAD_SUBDIR)
   const safeName = sanitizeFileName(input.fileName)
@@ -158,7 +164,17 @@ export async function importBaremeFile(
     )
   }
 
-  const diagnostics: BaremeDiagnostics = { fileSize, ...normalized.diagnostics }
+  const diagnostics: BaremeDiagnostics = {
+    fileSize,
+    ...normalized.diagnostics,
+    roundTrip: {
+      checked: roundTrip.checked,
+      direct: roundTrip.direct,
+      derived: roundTrip.derived,
+      noTrace: roundTrip.noTrace,
+      mismatches: roundTrip.mismatches,
+    },
+  }
 
   // 5) Préparation des lignes HORS transaction (pur CPU — pas de temps DB gaspillé).
   // Un import complet = 12 feuilles + plusieurs milliers de montants ; on garde la
@@ -266,6 +282,8 @@ export async function importBaremeFile(
       warningCount,
       unknownCodesCount: diagnostics.unknownCodes.length,
       ignoredRowsCount: diagnostics.ignoredRows.length,
+      roundTripChecked: roundTrip.checked,
+      roundTripMismatches: roundTrip.mismatches,
       mappingOverridesUsed: Object.keys(overrides).length,
       importStatus: errorCount > 0 ? 'success_with_errors' : warningCount > 0 ? 'success_with_warnings' : 'success',
     },

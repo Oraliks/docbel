@@ -175,10 +175,19 @@ function addAmountIfValid(input: AddAmountInput) {
   if (input.seenKeys.has(key)) return
 
   const amountCellRef = cellRef(input.row, input.amountColIndex)
+  // Tous les montants d'activation sont des montants mensuels MAXIMUM (en-tête
+  // "maximum maandbedrag - montant mensuel maximum"). Les montants ACTIVA (formules
+  // N × U/[Sx4]) sont en plus PRORATISÉS selon les heures prestées (38/38 → plein,
+  // sinon moins) — confirmé par Oraliks. Un calculateur NE doit PAS les traiter
+  // comme un montant fixe : amountKind='monthly_ceiling' + prorated.
+  const labelFr = isFormula
+    ? 'Montant mensuel maximum — proratisé selon les heures prestées'
+    : 'Montant mensuel maximum'
   input.amounts.push({
     sourceSheet: input.sheet.name,
     category: 'activation',
     allocationCode: codeRaw,
+    labelFr,
     amount,
     unit: 'monthly',
     validFrom: input.validFrom,
@@ -186,12 +195,15 @@ function addAmountIfValid(input: AddAmountInput) {
     rawData: {
       subcategory: input.subcategory ?? undefined,
       isFormula,
+      amountKind: 'monthly_ceiling',
+      prorated: isFormula,
+      prorationFormula: isFormula ? amountCell : undefined,
       originalCell: amountCell,
       row: input.row + 1,
     },
     status: isFormula ? 'warning' : 'valid',
     warnings: isFormula
-      ? [`Montant extrait du préfixe d'une formule (« ${amountCell.slice(0, 60)} ») — la formule complète n'est pas évaluée`]
+      ? [`Montant mensuel MAXIMUM proratisé (heures prestées) — « ${amountCell.slice(0, 60)} ». Pas un montant fixe.`]
       : [],
     trace: {
       sourceCell: amountCellRef,

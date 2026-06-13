@@ -362,11 +362,14 @@
   animation: hero-float 5s ease-in-out infinite;
 }
 
-/* Anneau orbital du hero — rotation très lente (pur décor). Le translate est
-   répété dans la keyframe pour rester centré pendant la rotation. */
+/* Anneau orbital du hero — rotation très lente (pur décor). Le centrage est
+   porté par la propriété CSS `translate` (utilitaires Tailwind `-translate-*`,
+   séparée de `transform` en v4) ; la keyframe ne fait QUE tourner, sinon le
+   `translate(-50%,-50%)` s'appliquerait deux fois et décalerait l'anneau.
+   `transform-origin` vaut le centre de l'élément (size-224 → 112px 112px). */
 @keyframes hero-spin {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to   { transform: translate(-50%, -50%) rotate(360deg); }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 .hero-spin {
   animation: hero-spin 32s linear infinite;

@@ -135,48 +135,46 @@ export default async function EmployeurDashboard() {
         <Kpi icon={TriangleAlert} tone="red" value={String(kpis.alertsCount)} label="Alertes" href="/employeur/dossiers" sub="Actions à vérifier" />
       </div>
 
-      {/* Actions rapides — section pleine largeur (recherche + grille de tuiles) */}
-      <section className={cn(PANEL, "p-5")}>
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold tracking-tight">Actions rapides</h2>
-        </div>
-
-        <Link
-          href="/employeur/dossiers"
-          className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground no-underline transition-colors hover:border-primary/40"
-        >
-          <Search className="size-4" />
-          <span className="flex-1">Rechercher un dossier…</span>
-          <kbd className="hidden items-center rounded-md border border-border bg-muted px-2 py-1 text-[11px] sm:inline-flex">⌘K</kbd>
-        </Link>
-
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {QUICK.map((q) => {
-            const Icon = q.icon;
-            const badge = quickBadge(q.id);
-            return (
-              <Link
-                key={q.id}
-                href={q.href}
-                className="group relative flex flex-col items-center gap-2.5 rounded-xl border border-border bg-background p-4 text-center no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
-              >
-                {badge !== null ? (
-                  <span className="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
-                    {badge > 99 ? "99+" : badge}
-                  </span>
-                ) : null}
-                <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-                  <Icon className="size-5" />
-                </span>
-                <span className="text-sm font-medium leading-tight">{q.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Row 1 */}
+      {/* Row 1 — Actions rapides (bloc 2/3) + Simulateur (1/3) */}
       <div className="grid gap-4 xl:grid-cols-3">
+        {/* Actions rapides — bloc de largeur limitée (recherche + grille de tuiles) */}
+        <section className={cn(PANEL, "p-5 xl:col-span-2")}>
+          <h2 className="text-base font-semibold tracking-tight">Actions rapides</h2>
+
+          <Link
+            href="/employeur/dossiers"
+            className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground no-underline transition-colors hover:border-primary/40"
+          >
+            <Search className="size-4" />
+            <span className="flex-1">Rechercher un dossier…</span>
+            <kbd className="hidden items-center rounded-md border border-border bg-muted px-2 py-1 text-[11px] sm:inline-flex">⌘K</kbd>
+          </Link>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {QUICK.map((q) => {
+              const Icon = q.icon;
+              const badge = quickBadge(q.id);
+              return (
+                <Link
+                  key={q.id}
+                  href={q.href}
+                  className="group relative flex flex-col items-center gap-2.5 rounded-xl border border-border bg-background p-4 text-center no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+                >
+                  {badge !== null ? (
+                    <span className="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                      {badge > 99 ? "99+" : badge}
+                    </span>
+                  ) : null}
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                    <Icon className="size-5" />
+                  </span>
+                  <span className="text-sm font-medium leading-tight">{q.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
         {/* Cost simulator snapshot (vrai moteur / dernière simulation) */}
         <div className={PANEL}>
           <PanelHead title="Simulateur de coût" href="/employeur/simulateur-cout" action="Ouvrir" />
@@ -207,7 +205,10 @@ export default async function EmployeurDashboard() {
             </Link>
           </div>
         </div>
+      </div>
 
+      {/* Row 2 — Échéances · Reprendre · Alertes */}
+      <div className="grid gap-4 xl:grid-cols-3">
         {/* Deadlines */}
         <div className={PANEL}>
           <PanelHead title="Échéances à venir" href="/employeur/dossiers" action={deadlines.length ? "Voir tout" : undefined} />
@@ -289,10 +290,7 @@ export default async function EmployeurDashboard() {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Row 2 */}
-      <div className="grid gap-4 lg:grid-cols-2">
         {/* Alerts */}
         <div className={PANEL}>
           <PanelHead title="Alertes & actions requises" href="/employeur/dossiers" action={alerts.length ? "Voir tout" : undefined} />
@@ -322,7 +320,10 @@ export default async function EmployeurDashboard() {
             )}
           </div>
         </div>
+      </div>
 
+      {/* Row 3 — Dossiers · Activité · Veille */}
+      <div className="grid gap-4 xl:grid-cols-3">
         {/* Recent dossiers */}
         <div className={PANEL}>
           <PanelHead title="Mes dossiers récents" href="/employeur/dossiers" action={recentDossiers.length ? "Voir tous" : undefined} />
@@ -360,10 +361,7 @@ export default async function EmployeurDashboard() {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Row 3 */}
-      <div className="grid gap-4 lg:grid-cols-2">
         {/* Activity */}
         <div className={PANEL}>
           <PanelHead title="Activité récente" />

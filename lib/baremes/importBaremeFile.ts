@@ -9,6 +9,7 @@ import { normalizeBaremeData } from './normalizeBaremeData'
 import { verifyRoundTrip } from './verifyRoundTrip'
 import { verifySheetContracts } from './sheetContracts'
 import { verifyCoverage } from './verifyCoverage'
+import { verifyInvariants } from './verifyInvariants'
 import { extractValidFromFileName } from './normalize'
 import { compareBaremeVersions, detectAnomaliesFromDiff } from './compareBaremeVersions'
 import { loadSheetMappingOverrides } from './loadSheetMappings'
@@ -152,6 +153,11 @@ export async function importBaremeFile(
   // zone de données n'est oubliée (anti-perte silencieuse).
   const coverage = verifyCoverage(parsed.sheets, validatedAmounts, normalized.diagnostics.ignoredRows)
   normalized.alerts.push(...coverage.alerts)
+
+  // 3sexies) Invariants SÉMANTIQUES : sentinelles (code↔colonne), ordres par tranche,
+  // half=plein/2, monotonie, bornes de plausibilité — la justesse, pas que la présence.
+  const invariants = verifyInvariants(validatedAmounts)
+  normalized.alerts.push(...invariants.alerts)
 
   // 4) Sauvegarde disque — répertoire PRIVÉ
   const uploadDir = path.join(/* turbopackIgnore: true */ process.cwd(), PRIVATE_UPLOAD_SUBDIR)

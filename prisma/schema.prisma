@@ -1105,6 +1105,10 @@ model UserProfile {
   bic                     String?
   // Civil
   maritalStatus           String? // single | married | cohabiting | divorced | widowed
+  /// Composition de ménage : tableau JSON de membres (conjoint, enfants…).
+  /// Chaque membre : { firstName?, lastName?, relationship, birthDate?, hasRevenu? }.
+  /// Contenu (pas de table relationnelle) : borné côté API (≤ 12 membres).
+  householdMembers        Json?
   // Pro
   employer                String?
   employerBce             String?

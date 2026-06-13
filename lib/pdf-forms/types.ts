@@ -125,6 +125,8 @@ export type PrefillSource =
   | "profile.firstName"
   | "profile.lastName"
   | "profile.niss"
+  | "profile.birthDate"
+  | "profile.gender"
   | "profile.email"
   | "profile.phone"
   | "profile.iban"

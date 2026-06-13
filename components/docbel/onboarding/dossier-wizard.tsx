@@ -43,6 +43,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { GLASS_CARD } from "@/lib/glass-classes";
+import { AllocationEstimateBlock } from "@/components/docbel/onboarding/allocation-estimate-block";
 import type {
   WizardRefineOption,
   WizardResult,
@@ -579,6 +580,13 @@ function StepResult({ result, onBack, onReset }: StepResultProps) {
               </p>
             </div>
           </div>
+
+          {/* Estimation indicative — ne se rend que pour les dossiers dont le
+              revenu est une allocation proportionnelle au salaire (le bloc
+              early-return null sinon). */}
+          {result.allocationEstimate && (
+            <AllocationEstimateBlock result={result} />
+          )}
 
           <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
             {/* Reset du wizard (pas un Link vers /mon-dossier : on est déjà

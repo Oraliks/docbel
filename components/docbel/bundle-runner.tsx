@@ -11,6 +11,7 @@ import {
   Clock,
   EyeOff,
   Inbox,
+  Mail,
   Package,
   RefreshCw,
   Pencil,
@@ -143,6 +144,8 @@ export function BundleRunner({
     initialResumeCodeExpiresAt
   );
   const [starting, setStarting] = useState(false);
+  /// Slug du document tiers dont on génère le courrier (spinner par item).
+  const [generatingLetter, setGeneratingLetter] = useState<string | null>(null);
   const [eligibilityAnswers, setEligibilityAnswers] = useState<EligibilityAnswers>(
     initialEligibilityAnswers
   );
@@ -201,6 +204,46 @@ export function BundleRunner({
     if (!id) return;
     const url = `/document/${item.pdfForm.slug}?bundleRun=${encodeURIComponent(id)}&bundleSlug=${encodeURIComponent(bundle.slug)}`;
     router.push(url);
+  }
+
+  /// Génère un courrier de réclamation PDF (document à charge d'un tiers) et
+  /// déclenche son téléchargement. Réservé aux responsabilités "employer" et
+  /// "external" (jamais "onem").
+  async function handleGenerateLetter(d: ExternalDocument) {
+    if (d.responsibility === "onem") return;
+    setGeneratingLetter(d.slug);
+    try {
+      const res = await fetch("/api/dossier/letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          runId,
+          docSlug: d.slug,
+          docTitle: d.title,
+          issuer: d.issuer,
+          responsibility: d.responsibility,
+        }),
+      });
+      const ct = res.headers.get("content-type") || "";
+      if (!res.ok || !ct.includes("application/pdf")) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Échec de génération du courrier");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `courrier-${d.slug}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Courrier généré — pense à le compléter, le signer et l'envoyer.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setGeneratingLetter(null);
+    }
   }
 
   async function handlePrequalifierContinue(answers: EligibilityAnswers) {
@@ -513,6 +556,22 @@ export function BundleRunner({
                         </p>
                       )}
                     </div>
+                    {(d.responsibility === "employer" ||
+                      d.responsibility === "external") && (
+                      <div className="flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleGenerateLetter(d)}
+                          disabled={generatingLetter === d.slug}
+                        >
+                          <Mail className="w-4 h-4 mr-1" />
+                          {generatingLetter === d.slug
+                            ? "Génération…"
+                            : "Générer le courrier"}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </CardContent>

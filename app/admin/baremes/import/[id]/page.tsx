@@ -29,6 +29,8 @@ import {
   DiagnosticTab,
   type DiagnosticsPayload,
 } from '@/components/admin/baremes/diagnostic-tab'
+import { ConformiteTab, type AmountSampleRow } from '@/components/admin/baremes/conformite-tab'
+import type { BaremeAlert, BaremeDiagnostics } from '@/lib/baremes/types'
 
 interface FileRecord {
   id: string
@@ -94,6 +96,15 @@ interface HistoryEntry {
   createdAt: string
 }
 
+interface PreviewAmount {
+  comparisonKey: string
+  allocationCode: string | null
+  salaryCode: string | null
+  amount: number
+  sourceSheet: string
+  trace: { sourceCell?: string; rawValue?: string } | null
+}
+
 interface PreviewData {
   file: FileRecord
   exportAllowed: boolean
@@ -101,6 +112,7 @@ interface PreviewData {
   diff: Diff | null
   history?: HistoryEntry[]
   approvals?: Approval[]
+  amountsPreview?: PreviewAmount[]
 }
 
 export default function BaremeImportPreviewPage() {
@@ -265,6 +277,36 @@ export default function BaremeImportPreviewPage() {
   const isArchived = file.status === 'archived'
   const requiresApproval = file.requiresApproval === true
   const approvals = data.approvals ?? []
+
+  // Échantillon à recouper (onglet Conformité) : montants tracés, étalés sur les
+  // feuilles, plafonné à 12. Prouve à l'admin que les valeurs viennent des cellules.
+  const tracedPreview = (data.amountsPreview ?? []).filter((a) => a.trace?.sourceCell)
+  const amountsSample: AmountSampleRow[] = (() => {
+    const bySheet = new Map<string, PreviewAmount[]>()
+    for (const a of tracedPreview) {
+      const list = bySheet.get(a.sourceSheet) ?? []
+      list.push(a)
+      bySheet.set(a.sourceSheet, list)
+    }
+    const picked: PreviewAmount[] = []
+    // 1er passage : 1 par feuille (variété) ; passages suivants : on complète.
+    let round = 0
+    while (picked.length < 12 && round < 6) {
+      for (const list of bySheet.values()) {
+        if (list[round] && picked.length < 12) picked.push(list[round])
+      }
+      round++
+    }
+    return picked.map((a) => ({
+      comparisonKey: a.comparisonKey,
+      allocationCode: a.allocationCode,
+      salaryCode: a.salaryCode,
+      amount: a.amount,
+      sourceSheet: a.sourceSheet,
+      sourceCell: a.trace?.sourceCell ?? '',
+      rawValue: a.trace?.rawValue ?? '',
+    }))
+  })()
   const history = data.history ?? []
   const errorCount = alerts.filter((a) => {
     const s = effectiveSeverity(a)
@@ -421,6 +463,7 @@ export default function BaremeImportPreviewPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="diagnostic">{t('tabDiagnostic')}</TabsTrigger>
+            <TabsTrigger value="conformite">{t('tabConformite')}</TabsTrigger>
             <TabsTrigger value="workflow">
               {t('tabWorkflow')}
               {(approvals.length > 0 || history.length > 0) && (
@@ -460,6 +503,14 @@ export default function BaremeImportPreviewPage() {
 
         <TabsContent value="issues">
           <IssuesTab issues={alerts} fileId={file.id} />
+        </TabsContent>
+
+        <TabsContent value="conformite">
+          <ConformiteTab
+            diagnostics={(file.diagnostics ?? {}) as unknown as BaremeDiagnostics}
+            alerts={alerts as unknown as BaremeAlert[]}
+            amountsSample={amountsSample}
+          />
         </TabsContent>
 
         <TabsContent value="diagnostic">

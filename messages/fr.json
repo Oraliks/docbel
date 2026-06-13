@@ -545,6 +545,7 @@
       "tabBasicAmounts": "Montants de base",
       "tabIssues": "Erreurs & warnings",
       "tabDiagnostic": "Diagnostic",
+      "tabConformite": "Conformité",
       "rowStatusCol": "Statut",
       "rowStatusValid": "Validée",
       "rowStatusWarning": "À vérifier",

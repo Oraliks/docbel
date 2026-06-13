@@ -91,6 +91,14 @@ const FIELD_STYLE = {
   background: "rgba(255,255,255,0.12)",
   colorScheme: "dark",
 } as const;
+/* Fond du menu déroulant natif. La carte est sombre et le trigger reçoit déjà
+   un fond verre clair via la règle globale `.glass-root select` — mais le popup
+   d'options est dessiné par l'OS : les <option> ont un fond transparent qui
+   retombe sur du blanc, d'où le texte blanc illisible (blanc sur blanc) vu en
+   maquette. On force un fond sombre opaque + texte clair sur chaque <option>
+   (Chrome/Firefox Windows/Linux) ; sur macOS le menu natif suit le
+   `color-scheme: dark` du select. */
+const OPTION_STYLE = { background: "#1b1142", color: "#ffffff" } as const;
 const PILL_CLS =
   "inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-[rgba(13,7,34,0.5)] px-5 py-3.5 text-[13.5px] font-bold text-white transition hover:bg-[rgba(13,7,34,0.72)] motion-reduce:transition-none";
 
@@ -260,7 +268,7 @@ export function SimulatorCard() {
               style={FIELD_STYLE}
             >
               {Object.entries(CATEGORIE_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
+                <option key={value} value={value} style={OPTION_STYLE}>
                   {label}
                 </option>
               ))}
@@ -301,7 +309,7 @@ export function SimulatorCard() {
               style={FIELD_STYLE}
             >
               {ANCIENNETE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
+                <option key={o.value} value={o.value} style={OPTION_STYLE}>
                   {o.label}
                 </option>
               ))}

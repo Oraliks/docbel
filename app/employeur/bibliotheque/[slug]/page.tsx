@@ -41,7 +41,7 @@ export default async function BibliothequeArticlePage({
   const sources = await getSourceMap();
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-5 p-4 sm:p-6">
+    <div className="w-full space-y-5 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
       <Button variant="ghost" size="sm" render={<Link href="/employeur/bibliotheque" />}>
         <ArrowLeft /> Bibliothèque
       </Button>

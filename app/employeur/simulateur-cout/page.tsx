@@ -41,7 +41,7 @@ export default async function SimulateurCoutPage() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
+    <div className="w-full space-y-6 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
       <header className="space-y-1">
         <Button variant="ghost" size="sm" render={<Link href="/employeur" />} className="-ml-2 mb-1">
           <ArrowLeft /> Espace employeur

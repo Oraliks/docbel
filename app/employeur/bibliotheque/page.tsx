@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LegalDisclaimerBox } from "@/components/docbel/employeur/legal-disclaimer-box";
+import { TiltCard } from "@/components/docbel/employeur/ui/tilt-card";
 import { getEmployerPageUser } from "@/lib/employeur/page-auth";
 import { ARTICLES } from "@/lib/employeur/library/articles";
 
@@ -21,7 +22,7 @@ export default async function BibliothequePage() {
   if (!user) redirect("/p/employeur");
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-5 p-4 sm:p-6">
+    <div className="w-full space-y-5 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
       <Button variant="ghost" size="sm" render={<Link href="/employeur" />}>
         <ArrowLeft /> Tableau de bord
       </Button>
@@ -40,25 +41,36 @@ export default async function BibliothequePage() {
 
       <LegalDisclaimerBox context="general" />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {ARTICLES.map((article) => (
-          <Link
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {ARTICLES.map((article, i) => (
+          <div
             key={article.slug}
-            href={`/employeur/bibliotheque/${article.slug}`}
-            className="block no-underline"
+            className="duration-500 animate-in fade-in slide-in-from-bottom-4"
+            style={{ animationDelay: `${i * 45}ms`, animationFillMode: "backwards" }}
           >
-            <Card className="flex h-full flex-col transition-colors hover:border-primary/40">
-              <CardHeader>
-                <CardTitle className="text-base">{article.title}</CardTitle>
-                <CardDescription className="line-clamp-3">{article.summary}</CardDescription>
-              </CardHeader>
-              <CardContent className="mt-auto">
-                <span className="flex items-center gap-1 text-sm font-medium text-primary">
-                  Lire <ArrowRight className="size-4" aria-hidden />
-                </span>
-              </CardContent>
-            </Card>
-          </Link>
+            <TiltCard max={5}>
+              <Link
+                href={`/employeur/bibliotheque/${article.slug}`}
+                className="group block h-full no-underline"
+              >
+                <Card className="flex h-full flex-col border-border/60 bg-card/80 backdrop-blur transition-colors hover:border-primary/50 hover:shadow-xl hover:shadow-primary/10">
+                  <CardHeader>
+                    <CardTitle className="text-base">{article.title}</CardTitle>
+                    <CardDescription className="line-clamp-3">{article.summary}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="mt-auto">
+                    <span className="flex items-center gap-1 text-sm font-medium text-primary">
+                      Lire{" "}
+                      <ArrowRight
+                        className="size-4 transition-transform group-hover:translate-x-1"
+                        aria-hidden
+                      />
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            </TiltCard>
+          </div>
         ))}
       </div>
     </div>

@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LegalDisclaimerBox } from "@/components/docbel/employeur/legal-disclaimer-box";
+import { TiltCard } from "@/components/docbel/employeur/ui/tilt-card";
+import { AuroraBackdrop } from "@/components/docbel/employeur/ui/aurora-backdrop";
 import { getEmployerPageUser } from "@/lib/employeur/page-auth";
 import { listScenariosForUser } from "@/lib/employeur/queries";
 import { labelScenarioStatus, labelWorkerType } from "@/lib/employeur/constants";
@@ -69,35 +71,45 @@ export default async function EmployeurDashboard() {
   const scenarios = (await listScenariosForUser(user.id)).slice(0, 5);
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Espace Employeur</h1>
-        <p className="text-muted-foreground">
-          Comprenez, simulez et préparez vos démarches sociales en Belgique.
+    <div className="relative w-full space-y-8 overflow-hidden p-4 duration-700 animate-in fade-in sm:p-6 lg:px-8">
+      <AuroraBackdrop />
+
+      <header className="space-y-2 duration-700 animate-in fade-in slide-in-from-bottom-3">
+        <h1 className="bg-gradient-to-br from-foreground to-foreground/55 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+          Espace Employeur
+        </h1>
+        <p className="max-w-2xl text-muted-foreground">
+          Comprenez, simulez et préparez vos démarches sociales en Belgique — checklists,
+          coûts, documents et contrôles, sourcés et sans jargon.
         </p>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {ACTIONS.map((a) => {
+        {ACTIONS.map((a, i) => {
           const Icon = a.icon;
-          const card = (
-            <Card className={a.soon ? "opacity-60" : "transition-colors hover:border-primary/40"}>
-              <CardHeader>
-                <div className="flex items-start justify-between gap-2">
-                  <Icon className="size-5 text-primary" />
-                  {a.soon ? <Badge variant="secondary">Bientôt</Badge> : <ArrowRight className="size-4 text-muted-foreground" />}
-                </div>
-                <CardTitle className="mt-2">{a.title}</CardTitle>
-                <CardDescription>{a.desc}</CardDescription>
-              </CardHeader>
-            </Card>
-          );
-          return a.soon ? (
-            <div key={a.title}>{card}</div>
-          ) : (
-            <Link key={a.title} href={a.href} className="block no-underline">
-              {card}
-            </Link>
+          return (
+            <div
+              key={a.title}
+              className="duration-500 animate-in fade-in slide-in-from-bottom-4"
+              style={{ animationDelay: `${i * 70}ms`, animationFillMode: "backwards" }}
+            >
+              <TiltCard>
+                <Link href={a.href} className="group block h-full no-underline">
+                  <Card className="h-full border-border/60 bg-card/80 backdrop-blur transition-colors hover:border-primary/50 hover:shadow-xl hover:shadow-primary/10">
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary ring-1 ring-primary/10">
+                          <Icon className="size-5" />
+                        </span>
+                        <ArrowRight className="size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-primary" />
+                      </div>
+                      <CardTitle className="mt-3">{a.title}</CardTitle>
+                      <CardDescription>{a.desc}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                </Link>
+              </TiltCard>
+            </div>
           );
         })}
       </div>

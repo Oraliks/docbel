@@ -26,7 +26,9 @@ import {
 } from "@/lib/employeur/constants";
 import { LegalDisclaimerBox } from "./legal-disclaimer-box";
 
-const NONE = "_none";
+// Sentinelle unique pour l'état « non choisi » d'un Select. RÈGLE base-ui :
+// toute valeur (sentinelle comprise) DOIT avoir un <SelectItem> correspondant,
+// sinon le trigger affiche la valeur brute (« _none ») au lieu du libellé.
 const CHOOSE = "_choose";
 
 interface FormState {
@@ -57,12 +59,12 @@ interface FormState {
 
 const INITIAL: FormState = {
   organisationName: "",
-  legalForm: NONE,
+  legalForm: CHOOSE,
   enterpriseNumber: "",
   hasEmployees: "unknown",
   hasOnssNumber: "unknown",
   onssNumber: "",
-  region: NONE,
+  region: CHOOSE,
   sector: "",
   naceCode: "",
   workerType: CHOOSE,
@@ -93,7 +95,7 @@ function num(s: string): number | null {
 }
 
 function pickEnum(v: string): string | undefined {
-  return v === NONE || v === CHOOSE || v === "" ? undefined : v;
+  return v === CHOOSE || v === "" ? undefined : v;
 }
 
 /** Champ avec label + aide. */

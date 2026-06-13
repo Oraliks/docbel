@@ -19,7 +19,7 @@ export default async function ControlePage() {
   if (!user) redirect("/p/employeur");
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 p-4 sm:p-6">
+    <div className="w-full space-y-4 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
       <Button variant="ghost" size="sm" render={<Link href="/employeur" />}>
         <ArrowLeft /> Tableau de bord
       </Button>

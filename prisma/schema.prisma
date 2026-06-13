@@ -52,48 +52,51 @@ enum BelgianRegion {
 }
 
 model User {
-  id                  String     @id @default(cuid())
-  name                String
-  email               String     @unique
-  emailVerified       Boolean    @default(false)
-  image               String?
-  password            String     @default("")
-  role                UserRole   @default(user)
-  status              UserStatus @default(active)
-  emailVerifiedAt     DateTime?
-  lastLoginAt         DateTime?
-  passwordChangedAt   DateTime   @default(now())
-  failedLoginAttempts Int        @default(0)
-  lockedUntil         DateTime?
-  partnerOrganization String?
+  id                     String                  @id @default(cuid())
+  name                   String
+  email                  String                  @unique
+  emailVerified          Boolean                 @default(false)
+  image                  String?
+  password               String                  @default("")
+  role                   UserRole                @default(user)
+  status                 UserStatus              @default(active)
+  emailVerifiedAt        DateTime?
+  lastLoginAt            DateTime?
+  passwordChangedAt      DateTime                @default(now())
+  failedLoginAttempts    Int                     @default(0)
+  lockedUntil            DateTime?
+  partnerOrganization    String?
   /// Segment d'accès du compte : "employeur" | "partenaire" (les citoyens n'ont
   /// pas de compte). null = comptes legacy/admin. Validé via isAudienceId().
-  segment             String?
+  segment                String?
   /// Sous-type partenaire : "onem" | "organisme_paiement" | "service_public" |
   /// "prive_asbl". null pour les employeurs et comptes non-partenaires.
-  partnerType         String?
+  partnerType            String?
   /// Numéro de TVA belge (forme canonique "BE0123456789"). Obligatoire et
   /// unique pour les comptes employeur ; null sinon. Validé via
   /// normalizeBelgianTVA() (checksum mod-97).
-  vatNumber           String?    @unique
+  vatNumber              String?                 @unique
   /// Responsable du service partenaire : accès par défaut à l'historique des
   /// rendez-vous de son organisation (cf. outil "/rendez-vous").
-  isOrgManager        Boolean    @default(false)
+  isOrgManager           Boolean                 @default(false)
   /// Autorisation explicite d'accès à l'historique des rendez-vous, pour un
   /// membre non-responsable (octroyée individuellement par un admin).
-  canViewRdvHistory   Boolean    @default(false)
+  canViewRdvHistory      Boolean                 @default(false)
   /// Champs Better Auth admin plugin (non utilisés dans l'UI pour l'instant —
   /// pas de fonctionnalité "désactiver un compte partenaire" — mais le plugin
   /// les sélectionne lors du getSession, donc ils doivent exister en DB).
-  banned              Boolean    @default(false)
-  banReason           String?
-  banExpires          DateTime?
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
-  sessions            Session[]
-  accounts            Account[]
+  banned                 Boolean                 @default(false)
+  banReason              String?
+  banExpires             DateTime?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  sessions               Session[]
+  accounts               Account[]
   impersonationsAsAdmin  AdminImpersonationLog[] @relation("AdminImpersonationLog_admin")
   impersonationsAsTarget AdminImpersonationLog[] @relation("AdminImpersonationLog_target")
+  employerProfiles       EmployerProfile[]
+  costSimulations        CostSimulation[]
+  documentDrafts         DocumentDraft[]
 
   @@index([role])
   @@index([status])
@@ -178,20 +181,20 @@ model AdminImpersonationLog {
 }
 
 model Page {
-  id        String    @id @default(cuid())
-  title     String
-  slug      String    @unique
-  content   Json      @default("[]")
-  status    String    @default("draft")
-  metaTitle String?
-  metaDesc  String?
-  ogImage   String?
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  content     Json      @default("[]")
+  status      String    @default("draft")
+  metaTitle   String?
+  metaDesc    String?
+  ogImage     String?
   themeTokens Json?
-  variables Json?
+  variables   Json?
   scheduledAt DateTime?
-  deletedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   revisions PageRevision[]
 
@@ -893,8 +896,8 @@ model Organisme {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  bureaus   Bureau[]
-  pdfForms  PdfForm[] @relation("OrganismePdfForms")
+  bureaus  Bureau[]
+  pdfForms PdfForm[] @relation("OrganismePdfForms")
 
   @@index([type])
   @@index([active])
@@ -1697,28 +1700,28 @@ enum PdfFormStatus {
 /// via lib/pdf-forms/storage (chemin `sourceStoragePath`), découplé du
 /// modèle File de l'ancien système.
 model PdfForm {
-  id          String        @id @default(cuid())
-  slug        String        @unique
-  title       String
-  description String?
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  title           String
+  description     String?
   /// Organisme émetteur en texte libre (fallback historique : ONEM, CPAS,
   /// SPF…). Conservé pour les PdfForms importés avant la FK organismeId.
-  issuer      String?
+  issuer          String?
   /// Organisme émetteur (référence au modèle Organisme partagé).
   /// Nullable pour ne pas casser les PdfForms existants — l'admin peut
   /// rattacher progressivement les anciens.
-  organismeId String?
-  organisme   Organisme? @relation("OrganismePdfForms", fields: [organismeId], references: [id], onDelete: SetNull)
-  status      PdfFormStatus @default(draft)
-  version     Int           @default(1)
+  organismeId     String?
+  organisme       Organisme?    @relation("OrganismePdfForms", fields: [organismeId], references: [id], onDelete: SetNull)
+  status          PdfFormStatus @default(draft)
+  version         Int           @default(1)
   /// Disponibilité publique du formulaire publié. Permet de mettre en pause
   /// un PdfForm (correction d'erreur, mise à jour d'un document officiel)
   /// sans le dépublier — la page publique affiche un message dédié. Sans
   /// effet sur les drafts/archived (de toute façon non publics).
-  active           Boolean @default(true)
+  active          Boolean       @default(true)
   /// Message affiché aux utilisateurs quand `active=false`. Si null, un
   /// message générique est utilisé.
-  disabledMessage  String?
+  disabledMessage String?
 
   // --- Localisation ---
   /// Locale par défaut (toujours présente). Valeurs : "fr" | "nl" | "de".
@@ -1764,10 +1767,10 @@ model PdfForm {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  revisions   PdfFormRevision[]
-  submissions PdfFormSubmissionLog[]
-  drafts      PdfFormDraft[]
-  bundleItems DocumentBundleItem[]
+  revisions         PdfFormRevision[]
+  submissions       PdfFormSubmissionLog[]
+  drafts            PdfFormDraft[]
+  bundleItems       DocumentBundleItem[]
   validationReports FormValidationReport[]
 
   @@index([status])
@@ -1964,10 +1967,10 @@ model KboEtlRun {
 // ---------------------------------------------------------------------------
 
 model FormValidationReport {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   /// Réf. au PdfForm si connu (peut être null si saisi hors contexte form).
   formId        String?
-  form          PdfForm? @relation(fields: [formId], references: [id], onDelete: SetNull)
+  form          PdfForm?  @relation(fields: [formId], references: [id], onDelete: SetNull)
   /// Slug du formulaire au moment du report (utile si le PdfForm est supprimé).
   formSlug      String?
   /// Identifiant du champ dans le schéma du formulaire (cf. PdfFormField.id).
@@ -1989,12 +1992,12 @@ model FormValidationReport {
   ipHash        String?
   userAgent     String?
   /// Workflow admin.
-  status        String   @default("pending") // pending | resolved | dismissed
+  status        String    @default("pending") // pending | resolved | dismissed
   resolvedBy    String?
   resolvedAt    DateTime?
   adminNotes    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([formId])
   @@index([status])
@@ -2079,38 +2082,38 @@ enum BookingStatus {
 }
 
 model BookingTenant {
-  id                    String          @id @default(cuid())
+  id                       String             @id @default(cuid())
   /// Segment d'URL public : /<slug>/rendez-vous.
-  slug                  String          @unique
-  name                  String
-  category              BookingCategory @default(other)
+  slug                     String             @unique
+  name                     String
+  category                 BookingCategory    @default(other)
   /// Référence libre vers Organisme.id (sans FK). Null pour une entreprise.
-  organismeId           String?
+  organismeId              String?
   /// Pont vers User.partnerOrganization : auto-accès des partenaires de cette
   /// organisation (ex "FGTB"). Les responsables (isOrgManager) deviennent owner.
-  partnerOrganization   String?
-  logoUrl               String?
+  partnerOrganization      String?
+  logoUrl                  String?
   /// Couleur d'accent (hex) pour la page publique et les emails.
-  brandColor            String?
+  brandColor               String?
   /// Nom d'expéditeur des emails ("FGTB Bruxelles"). Défaut: name.
-  emailFromName         String?
+  emailFromName            String?
   /// Email de l'équipe notifié à chaque nouvelle demande (optionnel).
-  notifyEmail           String?
+  notifyEmail              String?
   /// F : exiger une vérification de l'email (double opt-in) avant prise en compte.
-  requireEmailVerification Boolean      @default(false)
+  requireEmailVerification Boolean            @default(false)
   /// Définition du formulaire citoyen (registre fermé, cf lib/booking/form-fields).
-  formFields            Json            @default("[]")
+  formFields               Json               @default("[]")
   /// Validation manuelle requise avant confirmation.
-  requireApproval       Boolean         @default(true)
+  requireApproval          Boolean            @default(true)
   /// Délai (heures) après lequel une demande non traitée est auto-acceptée.
-  autoApproveAfterHours Int             @default(48)
+  autoApproveAfterHours    Int                @default(48)
   /// Champ servant à détecter les doublons.
-  dedupeField           BookingDedupeField @default(email)
+  dedupeField              BookingDedupeField @default(email)
   /// Fenêtre anti-doublon en jours (1 RDV par fenêtre).
-  dedupeWindowDays      Int             @default(30)
-  active                Boolean         @default(true)
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  dedupeWindowDays         Int                @default(30)
+  active                   Boolean            @default(true)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
 
   members   BookingTenantMember[]
   locations BookingLocation[]
@@ -2195,61 +2198,61 @@ model BookingException {
 }
 
 model Booking {
-  id                   String          @id @default(cuid())
-  tenantId             String
-  tenant               BookingTenant   @relation(fields: [tenantId], references: [id])
-  locationId           String
-  location             BookingLocation @relation(fields: [locationId], references: [id])
-  date                 String // "YYYY-MM-DD"
-  startTime            String // "09:00"
-  endTime              String // "10:00"
-  serviceCode          String?
+  id                    String          @id @default(cuid())
+  tenantId              String
+  tenant                BookingTenant   @relation(fields: [tenantId], references: [id])
+  locationId            String
+  location              BookingLocation @relation(fields: [locationId], references: [id])
+  date                  String // "YYYY-MM-DD"
+  startTime             String // "09:00"
+  endTime               String // "10:00"
+  serviceCode           String?
   /// Réponses brutes au formulaire du tenant.
-  formData             Json            @default("{}")
-  citizenName          String?
+  formData              Json            @default("{}")
+  citizenName           String?
   /// Nom normalisé (anti-doublon par nom).
   citizenNameNormalized String?
-  citizenEmail         String? // minuscules
-  citizenPhone         String?
+  citizenEmail          String? // minuscules
+  citizenPhone          String?
   /// HMAC-SHA256 du NRN (déterministe, indexable, anti-doublon par NRN).
-  citizenNrnHash       String?
+  citizenNrnHash        String?
   /// 4 derniers chiffres du NRN pour l'affichage compact côté équipe.
-  citizenNrnLast4      String?
+  citizenNrnLast4       String?
   /// NRN chiffré (AES-256-GCM) — déchiffré à la demande pour l'affichage aux
   /// agents autorisés (vérification du dossier). Jamais stocké en clair.
-  citizenNrnEnc        String?
-  citizenPostalCode    String?
+  citizenNrnEnc         String?
+  citizenPostalCode     String?
   /// Référence libre vers Commune.id (sans FK).
-  citizenCommuneId     String?
+  citizenCommuneId      String?
   /// Référence libre vers User.id si le citoyen était connecté.
-  userId               String?
-  status               BookingStatus   @default(pending_approval)
+  userId                String?
+  status                BookingStatus   @default(pending_approval)
   /// Token opaque : gestion/annulation par le citoyen + lien email.
-  confirmationToken    String          @unique
-  autoApproved         Boolean         @default(false)
-  confirmedAt          DateTime?
-  approvedById         String?
-  approvedAt           DateTime?
-  rejectedById         String?
-  rejectionReason      String?
-  cancelReason         String?
-  cancelledAt          DateTime?
-  reminderSentAt       DateTime?
+  confirmationToken     String          @unique
+  autoApproved          Boolean         @default(false)
+  confirmedAt           DateTime?
+  approvedById          String?
+  approvedAt            DateTime?
+  rejectedById          String?
+  rejectionReason       String?
+  cancelReason          String?
+  cancelledAt           DateTime?
+  reminderSentAt        DateTime?
   /// B : relance après absence (no-show) — horodatage d'envoi.
-  noShowFollowupSentAt DateTime?
+  noShowFollowupSentAt  DateTime?
   /// B : le citoyen a confirmé sa présence via l'email de rappel.
-  presenceConfirmedAt  DateTime?
+  presenceConfirmedAt   DateTime?
   /// F : double opt-in — horodatage de vérification de l'email.
-  verifiedAt           DateTime?
+  verifiedAt            DateTime?
   /// D : note interne de l'équipe (non visible du citoyen).
-  internalNote         String?
+  internalNote          String?
   /// D : agent assigné (référence libre vers User.id, sans FK) + nom affiché.
-  assignedToUserId     String?
-  assignedToName       String?
+  assignedToUserId      String?
+  assignedToName        String?
   /// G : langue choisie par le citoyen (fr|nl|en|de) pour les emails.
-  locale               String?
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime        @updatedAt
+  locale                String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
   @@unique([locationId, date, startTime, citizenEmail])
   @@index([tenantId, status, createdAt])
@@ -2286,4 +2289,209 @@ model BookingWaitlist {
 
   @@index([locationId, date, startTime, status])
   @@index([tenantId])
+}
+
+// ===========================================================================
+// Docbel Employeur — MVP Phase 1 (assistant administratif employeur)
+// Tables additives. Champs à ensemble borné = String + union Zod (cf.
+// lib/employeur/*), pas d'enum Postgres, pour rester extensible côté admin.
+// ===========================================================================
+
+/// Profil employeur (une organisation rattachée à un compte utilisateur).
+/// Scope d'accès : `userId`. Un profil par utilisateur pour le MVP.
+model EmployerProfile {
+  id                   String           @id @default(cuid())
+  userId               String
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organisationName     String?
+  /// independant | srl | asbl | societe_etrangere | autre
+  legalForm            String?
+  /// Numéro BCE (Banque-Carrefour des Entreprises).
+  enterpriseNumber     String?
+  /// null = "je ne sais pas".
+  hasEmployees         Boolean?
+  hasOnssNumber        Boolean?
+  onssNumber           String?
+  /// wallonia | flanders | brussels | multi
+  region               String?
+  sector               String?
+  naceCode             String?
+  jointCommitteeKnown  Boolean          @default(false)
+  jointCommitteeNumber String?
+  scenarios            WorkerScenario[]
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([userId])
+}
+
+/// Scénario d'engagement d'un travailleur envisagé.
+model WorkerScenario {
+  id                     String              @id @default(cuid())
+  employerProfileId      String
+  employerProfile        EmployerProfile     @relation(fields: [employerProfileId], references: [id], onDelete: Cascade)
+  title                  String
+  /// employe | ouvrier | etudiant | flexi_job | interim | stagiaire | autre
+  workerType             String
+  /// cdi | cdd | temps_partiel | temps_plein | remplacement | etudiant | flexi_job | interim | autre
+  contractType           String
+  /// draft | ready | exported | archived
+  status                 String              @default("draft")
+  plannedStartDate       DateTime?
+  plannedEndDate         DateTime?
+  functionTitle          String?
+  workplace              String?
+  weeklyHours            Float?
+  fullTimeReferenceHours Float?
+  scheduleType           String?
+  grossMonthlySalary     Float?
+  /// Tableau de codes d'avantages (string[]).
+  benefits               Json?
+  region                 String?
+  jointCommitteeNumber   String?
+  nightWork              Boolean?
+  sundayWork             Boolean?
+  saturdayWork           Boolean?
+  telework               Boolean?
+  /// low | medium | high | needs_human_validation
+  reliabilityScore       String?
+  /// Alertes générées par le moteur de règles (snapshot JSON).
+  alerts                 Json?
+  checklists             EmployerChecklist[]
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  @@index([employerProfileId])
+}
+
+/// Checklist générée pour un scénario.
+model EmployerChecklist {
+  id            String          @id @default(cuid())
+  scenarioId    String
+  scenario      WorkerScenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  title         String
+  /// premier_engagement | engagement_classique | etudiant | flexi_job |
+  /// temps_partiel | chomage_temporaire | sortie_service
+  category      String
+  status        String          @default("active")
+  sourceVersion String?
+  generatedAt   DateTime        @default(now())
+  items         ChecklistItem[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([scenarioId])
+}
+
+/// Tâche d'une checklist.
+model ChecklistItem {
+  id               String            @id @default(cuid())
+  checklistId      String
+  checklist        EmployerChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  title            String
+  description      String?
+  legalBasisRef    String?
+  /// obligatoire | recommande | optionnel
+  priority         String            @default("recommande")
+  /// todo | in_progress | done | not_applicable | needs_review
+  status           String            @default("todo")
+  dueDate          DateTime?
+  tooltip          String?
+  adminExplanation String?
+  /// Référence souple vers EmployerLegalSource.code (S1..S13).
+  sourceCode       String?
+  /// Provenance : code de la règle qui a émis cet item (ou null si template).
+  ruleCode         String?
+  order            Int               @default(0)
+  comment          String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([checklistId])
+}
+
+/// Registre des sources officielles (S1..S13). Léger : pas d'indexation
+/// pgvector (≠ KnowledgeSource, réservé à l'assistant chômage-ia).
+model EmployerLegalSource {
+  id               String    @id @default(cuid())
+  code             String    @unique
+  title            String
+  institution      String
+  url              String
+  contentSummary   String?
+  reliability      String?
+  appliesToModules String[]  @default([])
+  lastCheckedAt    DateTime?
+  active           Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+/// Règle métier du moteur déterministe (condition JSON → output JSON).
+/// `conditionJson` = arbre ConditionGroup (cf. lib/bundles/conditions.ts),
+/// les feuilles ciblent sourceTemplateId="scenario".
+model EmployerRule {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  title         String
+  description   String?
+  conditionJson Json
+  outputJson    Json
+  /// info | warning | critical
+  severity      String    @default("info")
+  /// Référence souple vers EmployerLegalSource.code (Critère 8).
+  sourceCode    String?
+  /// Justification interne alternative quand pas de source officielle.
+  internalNote  String?
+  active        Boolean   @default(true)
+  validFrom     DateTime?
+  validTo       DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+/// Simulation de coût employeur (Module 2). Estimation STRUCTURELLE, non
+/// certifiée : ONSS patronale forfaitaire + provisionnement pécule/13e +
+/// avantages. `scenarioId` = référence souple (pas de FK).
+model CostSimulation {
+  id                             String   @id @default(cuid())
+  userId                         String
+  user                           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scenarioId                     String?
+  title                          String
+  inputs                         Json
+  grossMonthlySalary             Float
+  estimatedEmployerContributions Float
+  estimatedMonthlyEmployerCost   Float
+  estimatedAnnualEmployerCost    Float
+  estimatedNetSalary             Float?
+  assumptions                    Json?
+  missingData                    Json?
+  /// low | medium | high | needs_human_validation
+  reliability                    String   @default("low")
+  warnings                       Json?
+  createdAt                      DateTime @default(now())
+  updatedAt                      DateTime @updatedAt
+
+  @@index([userId])
+  @@index([scenarioId])
+}
+
+/// Document préparatoire généré pour l'employeur (Module 5).
+/// `type` : fiche_travailleur | demande_secretariat | prepa_contrat_etudiant |
+/// prepa_flexi | verif_bareme | autre. `scenarioId` = référence souple.
+model DocumentDraft {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scenarioId String?
+  type       String
+  title      String
+  content    Json
+  status     String   @default("draft")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([scenarioId])
 }

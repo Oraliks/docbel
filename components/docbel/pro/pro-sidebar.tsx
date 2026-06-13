@@ -5,12 +5,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Building2Icon,
+  BookOpenIcon,
+  CalculatorIcon,
   CalendarClock,
   CommandIcon,
   FileTextIcon,
+  FilesIcon,
+  FolderOpenIcon,
   LayoutDashboardIcon,
   type LucideIcon,
+  PlusCircleIcon,
   SearchIcon,
+  ShieldCheckIcon,
   UsersIcon,
 } from "lucide-react";
 
@@ -36,6 +42,12 @@ const ICONS: Record<ProIcon, LucideIcon> = {
   building: Building2Icon,
   users: UsersIcon,
   file: FileTextIcon,
+  plus: PlusCircleIcon,
+  folder: FolderOpenIcon,
+  calculator: CalculatorIcon,
+  shield: ShieldCheckIcon,
+  book: BookOpenIcon,
+  document: FilesIcon,
 };
 
 /** Les ancres (#…) ne portent pas d'état actif ; sinon match exact ou préfixe. */

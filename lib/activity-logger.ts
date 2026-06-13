@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
 export type ActivityAction = "created" | "updated" | "deleted" | "published" | "unpublished" | "error" | "scheduled" | "received" | "synced" | "replied" | "created_bulk" | "published_bulk" | "unpublished_bulk" | "deleted_bulk";
-export type ActivityResource = "page" | "user" | "comment" | "setting" | "news" | "category" | "message" | "file" | "inbox" | "email" | "changelog" | "booking";
+export type ActivityResource = "page" | "user" | "comment" | "setting" | "news" | "category" | "message" | "file" | "inbox" | "email" | "changelog" | "booking" | "employer";
 
 export async function logActivity(
   user: string,

@@ -18,7 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, FileInputIcon, UsersIcon, CalendarClock } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, FileInputIcon, UsersIcon, CalendarClock, BriefcaseIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultUser = {
@@ -143,6 +143,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           title: t("auditImpersonations"),
           url: "/admin/impersonation",
         },
+      ],
+    },
+    {
+      // Assistant administratif employeur (sources officielles + moteur de
+      // règles déterministe). Libellés en dur (pas de clés i18n) pour le MVP.
+      title: "Assistant Employeur",
+      url: "/admin/employeur/sources",
+      icon: <BriefcaseIcon className="size-4" />,
+      items: [
+        { title: "Sources officielles", url: "/admin/employeur/sources" },
+        { title: "Règles métier", url: "/admin/employeur/regles" },
       ],
     },
     {

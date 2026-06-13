@@ -12,7 +12,13 @@ export type ProIcon =
   | "search"
   | "building"
   | "users"
-  | "file";
+  | "file"
+  | "plus"
+  | "folder"
+  | "calculator"
+  | "shield"
+  | "book"
+  | "document";
 
 export interface ProNavItem {
   title: string;
@@ -82,20 +88,24 @@ const EMPLOYER_SPACE: ProSpace = {
       ],
     },
     {
-      label: "Rendez-vous",
+      label: "Engagements",
       items: [
-        { title: "Agenda & demandes", url: "/partenaire/booking", icon: "calendar" },
+        { title: "Nouveau dossier", url: "/employeur/nouveau-dossier", icon: "plus" },
+        { title: "Mes dossiers", url: "/employeur/dossiers", icon: "folder" },
       ],
     },
     {
       label: "Outils",
-      items: [{ title: "Catalogue d'outils", url: "/outils", icon: "file" }],
+      items: [
+        { title: "Simulateur de coût", url: "/employeur/simulateur-cout", icon: "calculator" },
+        { title: "Vérifier une fiche", url: "/employeur/controle", icon: "shield" },
+      ],
     },
     {
-      label: "Organisation",
+      label: "Ressources",
       items: [
-        { title: "Équipe", url: "/employeur#equipe", icon: "users" },
-        { title: "Accès autorisés", url: "/employeur#acces", icon: "building" },
+        { title: "Bibliothèque", url: "/employeur/bibliotheque", icon: "book" },
+        { title: "Documents", url: "/employeur/documents", icon: "document" },
       ],
     },
   ],

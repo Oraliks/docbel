@@ -133,7 +133,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
     >
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetTrigger
-          className="flex size-10 items-center justify-center rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] transition-colors hover:bg-white/55 dark:hover:bg-white/10 lg:hidden"
+          className="flex size-10 items-center justify-center rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] transition-colors hover:bg-white/55 dark:hover:bg-white/10 xl:hidden"
           aria-label="Menu"
         >
           <MenuIcon className="size-5" />
@@ -245,11 +245,11 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         </Link>
       </div>
 
-      <nav className="ml-2 hidden items-center gap-1 lg:flex">
+      <nav className="ml-2 hidden items-center gap-0.5 xl:flex">
         {NAV_ITEMS.map((item) => {
           const active = item.id === activeNav;
           const ItemIcon = item.icon;
-          const className = `inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-[13.5px] font-semibold transition-colors ${
+          const className = `inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[13px] font-semibold transition-colors ${
             active
               ? "bg-white/60 text-[color:var(--glass-ink)] shadow-[inset_0_0_0_1px_var(--glass-border)] dark:bg-white/10"
               : "text-[color:var(--glass-ink-soft)] hover:bg-white/40 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/8"
@@ -272,7 +272,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         {AUDIENCE_NAV_ITEMS.map((item) => {
           const ItemIcon = item.icon;
           const active = pathname.startsWith(item.href);
-          const className = `inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-[13.5px] font-semibold transition-colors ${
+          const className = `inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[13px] font-semibold transition-colors ${
             active
               ? "bg-white/60 text-[color:var(--glass-ink)] shadow-[inset_0_0_0_1px_var(--glass-border)] dark:bg-white/10"
               : "text-[color:var(--glass-ink-soft)] hover:bg-white/40 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/8"
@@ -290,7 +290,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         type="button"
         onClick={onSearchOpen}
         aria-label="Rechercher"
-        className="ml-auto hidden min-w-[280px] items-center gap-2.5 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2.5 text-[13px] text-[color:var(--glass-ink-soft)] transition-colors hover:bg-white/55 dark:hover:bg-white/8 2xl:flex"
+        className="ml-auto hidden min-w-[240px] items-center gap-2.5 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2.5 text-[13px] text-[color:var(--glass-ink-soft)] transition-colors hover:bg-white/55 dark:hover:bg-white/8 min-[1600px]:flex"
       >
         <SearchIcon className="size-4" />
         <span className="truncate">Rechercher un outil, un guide, une loi…</span>
@@ -304,7 +304,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         size="icon-sm"
         onClick={onSearchOpen}
         aria-label="Rechercher"
-        className="ml-auto size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10 2xl:hidden"
+        className="ml-auto size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10 min-[1600px]:hidden"
       >
         <SearchIcon />
       </Button>
@@ -322,7 +322,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         <NotificationBell />
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-1 transition-colors hover:bg-white/55 dark:hover:bg-white/8 md:pr-3.5">
+          <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-1 transition-colors hover:bg-white/55 dark:hover:bg-white/8 2xl:pr-3.5">
             <Avatar size="sm">
               <AvatarFallback
                 className="text-[11px] font-bold text-white"
@@ -334,7 +334,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden text-[12.5px] font-bold md:inline">
+            <span className="hidden max-w-[120px] truncate text-[12.5px] font-bold 2xl:inline">
               {userName.split(" ")[0]}
             </span>
           </DropdownMenuTrigger>

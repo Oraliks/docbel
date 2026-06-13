@@ -218,10 +218,21 @@ export function buildFlatMatrix(
         sub: null,
       }
     })
+    // Libellé légal du code (glossaire ONEM) en sous-titre du groupe — sinon
+    // le décompte de variantes. Tronqué pour l'en-tête.
+    const info = resolveCodeInfo(base, category)
+    const label = info?.labelFr && !info.labelFr.startsWith('TODO') ? info.labelFr : null
+    const sublabel = label
+      ? label.length > 70
+        ? `${label.slice(0, 68)}…`
+        : label
+      : multi
+        ? `${entries.length} variantes`
+        : ''
     return {
       key: base,
       label: base,
-      sublabel: multi ? `${entries.length} variantes` : '',
+      sublabel,
       accent: FLAT_ACCENTS[i % FLAT_ACCENTS.length],
       columns: cols,
     }

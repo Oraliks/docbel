@@ -11,15 +11,13 @@
       "allocationWCodes": "Codes des allocations d'insertion / sauvegarde (onglet W).",
       "situationProfiles": "Profils utilisateur → liste de codes ONEM correspondants. Permet le lookup 'par profil' depuis une UI publique."
     },
-    "lastUpdated": "2026-05-22",
+    "lastUpdated": "2026-06-13",
     "TODO": [
       "Différence entre AB et AX (les deux sont 2ème période chef de ménage ?)",
       "Différence entre NB et NX (idem pour isolé ?)",
       "Différence entre BB et BX (BX = cohabitant privilégié, BB = ?)",
       "Préciser AFoud (régime spécial ?)",
-      "Donner sens aux codes SpecCat (A6, A7, FA, GB, GN, E)",
-      "Compléter les codes W (D = sauvegarde ?, I/S/T = ?, suffixes V/2/3 = ?)",
-      "Confirmer J/S et A0H dans chômage temporaire"
+      "Confirmer A0H dans chômage temporaire (le H = ?)"
     ]
   },
 
@@ -95,57 +93,46 @@
 
   "tempUnemploymentCodes": {
     "A0 N0 B0": {
-      "fr": "TODO — codes regroupés du chômage temporaire (Chef + Isolé + Cohabitant)",
-      "TODO_explain": true
+      "fr": "Toutes situations familiales (Chef de ménage, Isolé, Cohabitant — A0/N0/B0). En chômage temporaire la situation familiale n'a pas d'impact : le montant est identique pour les trois, c'est pourquoi les codes sont regroupés.",
+      "nl": "Tijdelijke werkloosheid — alle gezinssituaties (A0/N0/B0)",
+      "source": "Oraliks 2026-06"
     },
     "A0H": {
-      "fr": "TODO — variante H du chômage temporaire",
-      "TODO_explain": "Que signifie le H ?"
+      "fr": "Variante H du chômage temporaire (A0H) — à préciser",
+      "TODO_explain": "Le H reste à confirmer (montant plus élevé que A0 N0 B0)"
     },
     "J/S": {
-      "fr": "TODO — Jeune / Senior ? Ou autre ?",
-      "TODO_explain": true
+      "fr": "Junior / Senior — allocation de vacances jeunes/seniors",
+      "nl": "Jongeren- / seniorenvakantie",
+      "source": "Oraliks 2026-06"
     }
   },
 
   "specCatCodes": {
-    "A6": {
-      "fr": "TODO — Travailleurs portuaires (catégorie spéciale) ?",
-      "TODO_explain": true
-    },
-    "A7": {
-      "fr": "TODO — Pêcheurs de mer ?",
-      "TODO_explain": true
-    },
-    "E": { "fr": "TODO — Stelsel van werkloosheid met bedrijfstoeslag (SWT) ?", "TODO_explain": true },
-    "FA": { "fr": "TODO — Famille ?", "TODO_explain": true },
-    "FB": { "fr": "TODO", "TODO_explain": true },
-    "FN": { "fr": "TODO", "TODO_explain": true },
-    "GB": { "fr": "TODO — Gepensioneerde Bediende ?", "TODO_explain": true },
-    "GN": { "fr": "TODO", "TODO_explain": true },
-    "AA": { "fr": "TODO", "TODO_explain": true },
-    "AB": { "fr": "TODO", "TODO_explain": true },
-    "AN": { "fr": "TODO", "TODO_explain": true }
+    "A6": { "fr": "Travailleurs de port (havenarbeiders)", "nl": "Havenarbeiders", "source": "Oraliks 2026-06" },
+    "A7": { "fr": "Pêcheurs de mer (zeevissers)", "nl": "Zeevissers", "source": "Oraliks 2026-06" },
+    "E": { "fr": "Régime de chômage avec complément d'entreprise (RCC, ex-prépension / SWT)", "nl": "SWT — stelsel van werkloosheid met bedrijfstoeslag", "source": "Oraliks 2026-06" },
+    "FA": { "fr": "RCC / chômage avec complément d'entreprise (charge de famille)", "nl": "SWT", "source": "Oraliks 2026-06" },
+    "FB": { "fr": "RCC / chômage avec complément d'entreprise (cohabitant)", "nl": "SWT", "source": "Oraliks 2026-06" },
+    "FN": { "fr": "RCC / chômage avec complément d'entreprise (isolé)", "nl": "SWT", "source": "Oraliks 2026-06" },
+    "GB": { "fr": "RCC / chômage avec complément d'entreprise (variante GB)", "nl": "SWT", "source": "Oraliks 2026-06" },
+    "GN": { "fr": "RCC / chômage avec complément d'entreprise (variante GN)", "nl": "SWT", "source": "Oraliks 2026-06" },
+    "AA": { "fr": "Travailleur des arts (charge de famille)", "nl": "Kunstenaar", "source": "Oraliks 2026-06" },
+    "AN": { "fr": "Travailleur des arts (isolé)", "nl": "Kunstenaar", "source": "Oraliks 2026-06" },
+    "AB": { "fr": "Travailleur des arts (cohabitant)", "nl": "Kunstenaar", "source": "Oraliks 2026-06" }
   },
 
   "allocationWCodes": {
-    "W": {
-      "fr": "Allocation d'insertion (inschakelingsuitkering)",
-      "nl": "Inschakelingsuitkering",
-      "TODO_confirm": true
-    },
-    "D": {
-      "fr": "Allocation de sauvegarde (beschermingsuitkering) ?",
-      "TODO_confirm": true
-    },
-    "I": { "fr": "TODO", "TODO_explain": true },
-    "S": { "fr": "TODO", "TODO_explain": true },
-    "T": { "fr": "TODO", "TODO_explain": true },
-    "_suffixes": {
-      "V": { "fr": "TODO — Volledig (plein) ?", "TODO_confirm": true },
-      "2": { "fr": "TODO", "TODO_explain": true },
-      "3": { "fr": "TODO", "TODO_explain": true },
-      "F": { "fr": "TODO", "TODO_explain": true }
+    "W": { "fr": "Allocation d'insertion (inschakelingsuitkering)", "nl": "Inschakelingsuitkering", "source": "Oraliks 2026-06" },
+    "D": { "fr": "Allocation de sauvegarde (beschermingsuitkering)", "nl": "Beschermingsuitkering", "source": "Oraliks 2026-06" },
+    "I": { "fr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering)", "nl": "Inschakelingsuitkering — opleidingsuitkering", "source": "Oraliks 2026-06" },
+    "T": { "fr": "Allocation de transition — chômeur temporaire (overbruggingsuitkering)", "nl": "Overbruggingsuitkering", "source": "Oraliks 2026-06" },
+    "S": { "fr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage »)", "nl": "Stageuitkering — instapstage 2013", "source": "Oraliks 2026-06" },
+    "_situationBySecondLetter": {
+      "A": "Charge de famille",
+      "N": "Isolé",
+      "P": "Cohabitant privilégié",
+      "B": "Cohabitant non privilégié"
     }
   },
 

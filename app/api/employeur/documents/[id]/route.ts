@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireEmployerOrAdminAuth } from "@/lib/auth-check";
+import { logActivity } from "@/lib/activity-logger";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -36,5 +37,6 @@ export async function DELETE(_req: NextRequest, context: { params: Promise<{ id:
   }
 
   await prisma.documentDraft.delete({ where: { id } });
+  await logActivity(auth.user.id, "deleted", "employer", draft.title || "Document", id, "Document supprimé");
   return NextResponse.json({ ok: true }, { status: 200, headers: jsonHeaders });
 }

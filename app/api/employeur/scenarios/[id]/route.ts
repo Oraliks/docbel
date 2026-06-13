@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireEmployerOrAdminAuth } from "@/lib/auth-check";
 import { SCENARIO_STATUSES } from "@/lib/employeur/constants";
+import { logActivity } from "@/lib/activity-logger";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 const VALID_STATUSES = new Set<string>(SCENARIO_STATUSES.map((s) => s.value));
@@ -36,6 +37,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   }
 
   await prisma.workerScenario.update({ where: { id }, data: { status } });
+  await logActivity(auth.user.id, "updated", "employer", "Dossier", id, "Statut mis à jour");
   return NextResponse.json({ ok: true }, { headers: jsonHeaders });
 }
 
@@ -48,5 +50,6 @@ export async function DELETE(_req: NextRequest, context: { params: Promise<{ id:
   if (!scenario) return NextResponse.json({ error: "Introuvable" }, { status: 404, headers: jsonHeaders });
 
   await prisma.workerScenario.delete({ where: { id } }); // cascade checklists + items
+  await logActivity(auth.user.id, "deleted", "employer", "Dossier", id, "Dossier supprimé");
   return NextResponse.json({ ok: true }, { headers: jsonHeaders });
 }

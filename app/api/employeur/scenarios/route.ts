@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireEmployerOrAdminAuth } from "@/lib/auth-check";
+import { logActivity } from "@/lib/activity-logger";
 import { runScenarioPipeline } from "@/lib/employeur/service";
 import { labelWorkerType } from "@/lib/employeur/constants";
 import {
@@ -83,6 +84,15 @@ export async function POST(req: NextRequest) {
     });
 
     await runScenarioPipeline(scenarioRow.id);
+
+    await logActivity(
+      userId,
+      "created",
+      "employer",
+      scenarioRow.title ?? "Dossier d'engagement",
+      scenarioRow.id,
+      "Dossier d'engagement"
+    );
 
     return NextResponse.json({ id: scenarioRow.id }, { status: 201, headers: jsonHeaders });
   } catch (error) {

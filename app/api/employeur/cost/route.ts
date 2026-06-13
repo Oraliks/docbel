@@ -7,6 +7,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireEmployerOrAdminAuth } from "@/lib/auth-check";
+import { logActivity } from "@/lib/activity-logger";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -70,6 +71,15 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true },
     });
+
+    await logActivity(
+      userId,
+      "created",
+      "employer",
+      title ?? "Simulation de coût",
+      row.id,
+      "Simulation de coût"
+    );
 
     return NextResponse.json({ id: row.id }, { status: 201, headers: jsonHeaders });
   } catch (error) {

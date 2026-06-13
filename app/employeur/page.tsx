@@ -8,16 +8,11 @@ import {
   FileText,
   BookOpen,
   Calculator,
-  Users,
-  BarChart3,
-  Settings,
   Search,
   CircleHelp,
   Bell,
   ChevronDown,
   Send,
-  UserPlus,
-  Download,
   CalendarDays,
   CalendarClock,
   TriangleAlert,
@@ -27,12 +22,20 @@ import {
   Scale,
   Headphones,
   ArrowRight,
+  Info,
+  Plus,
+  Pencil,
+  Trash2,
+  Activity,
+  ShieldCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getEmployerPageUser } from "@/lib/employeur/page-auth";
-import { listScenariosForUser } from "@/lib/employeur/queries";
-import { estimateEmployerCost } from "@/lib/employeur/cost/engine";
-import { labelWorkerType } from "@/lib/employeur/constants";
+import {
+  getEmployerDashboard,
+  type ActivityIcon,
+  type DashboardAlert,
+} from "@/lib/employeur/dashboard/overview";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -45,53 +48,32 @@ export const dynamic = "force-dynamic";
 const eur = (n: number) =>
   `${n.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
-type Variant = "default" | "secondary" | "destructive" | "success" | "info" | "warning" | "outline";
+function formatVat(vat: string | null): string | null {
+  if (!vat) return null;
+  const m = vat.match(/^BE(\d{10})$/);
+  if (!m) return vat;
+  const d = m[1];
+  return `BE ${d.slice(0, 4)}.${d.slice(4, 7)}.${d.slice(7, 10)}`;
+}
 
-// --- Données factices (à brancher — cf. mémoire project-employeur-dashboard) -
-const MOCK_DEADLINES: { day: string; month: string; title: string; sub: string; tag: string; variant: Variant }[] = [
-  { day: "16", month: "MAI", title: "ONSS – DMFA", sub: "Déclaration mensuelle – Avr. 2024", tag: "Urgent", variant: "destructive" },
-  { day: "20", month: "MAI", title: "Précompte professionnel", sub: "Paiement – Mai 2024", tag: "Dans 3 j", variant: "warning" },
-  { day: "24", month: "MAI", title: "Assurance accidents du travail", sub: "Déclaration annuelle 2023", tag: "Dans 7 j", variant: "info" },
-  { day: "31", month: "MAI", title: "Fiche 281.10", sub: "Envoi annuel", tag: "Dans 14 j", variant: "secondary" },
-];
-const MOCK_ALERTS: { icon: typeof TriangleAlert; title: string; sub: string; cta: string; color: string }[] = [
-  { icon: TriangleAlert, title: "3 fiches employé incomplètes", sub: "Des informations manquent pour finaliser le dossier.", cta: "Compléter", color: "text-destructive" },
-  { icon: CalendarClock, title: "Contrat à durée déterminée arrivant à échéance", sub: "2 contrats arrivent à échéance dans les 30 prochains jours.", cta: "Voir les contrats", color: "text-amber-600 dark:text-amber-400" },
-  { icon: FileCheck2, title: "Document en attente de signature", sub: "Contrat de travail – Martin De Witte", cta: "Ouvrir", color: "text-blue-600 dark:text-blue-400" },
-];
-const MOCK_DOSSIERS: { name: string; role: string; status: string; date: string; variant: Variant }[] = [
-  { name: "Martin De Witte", role: "Employé", status: "En préparation", date: "14/05/2024", variant: "secondary" },
-  { name: "Claire Dubois", role: "Employée", status: "Actif", date: "13/05/2024", variant: "success" },
-  { name: "Julien Peeters", role: "Employé", status: "En attente", date: "11/05/2024", variant: "warning" },
-  { name: "Sophie Lambert", role: "Employée", status: "Actif", date: "08/05/2024", variant: "success" },
-  { name: "Thomas Janssens", role: "Employé", status: "En préparation", date: "06/05/2024", variant: "secondary" },
-];
-const STEPS = ["Informations employé", "Conditions de travail", "Rémunération", "Avantages & primes", "Documents", "Vérification & envoi"];
-const MOCK_ACTIVITY = [
-  { icon: FileText, text: "Document généré", detail: "Avril 2024 – Claire Dubois", when: "Aujourd'hui à 09:12" },
-  { icon: Send, text: "Document envoyé", detail: "Contrat de travail – Martin De Witte", when: "Hier à 16:45" },
-  { icon: CalendarDays, text: "Échéance créée", detail: "ONSS – DMFA – Mai 2024", when: "Hier à 11:08" },
-  { icon: UserPlus, text: "Employé ajouté", detail: "Thomas Janssens", when: "13/05/2024 à 10:22" },
-];
-
+// Toutes les destinations de navigation pointent vers des pages RÉELLES.
 const NAV = [
   { label: "Tableau de bord", href: "/employeur", icon: LayoutDashboard, active: true },
   { label: "Mes dossiers", href: "/employeur/dossiers", icon: FolderOpen },
-  { label: "Engagements", href: "/employeur/nouveau-dossier", icon: ClipboardList },
-  { label: "Documents", href: "/employeur/documents", icon: FileText, caret: true },
-  { label: "Bibliothèque", href: "/employeur/bibliotheque", icon: BookOpen, caret: true },
-  { label: "Simulateurs", href: "/employeur/simulateur-cout", icon: Calculator, caret: true },
-  { label: "Employés", href: "#", icon: Users },
-  { label: "Rapports & exports", href: "#", icon: BarChart3 },
-  { label: "Paramètres", href: "#", icon: Settings },
+  { label: "Préparer un engagement", href: "/employeur/nouveau-dossier", icon: ClipboardList },
+  { label: "Documents", href: "/employeur/documents", icon: FileText },
+  { label: "Bibliothèque", href: "/employeur/bibliotheque", icon: BookOpen },
+  { label: "Simulateur de coût", href: "/employeur/simulateur-cout", icon: Calculator },
+  { label: "Contrôle de fiche", href: "/employeur/controle", icon: FileCheck2 },
 ];
+
 const QUICK = [
   { label: "Simuler un coût", sub: "Estimer le coût d'un engagement", href: "/employeur/simulateur-cout", icon: Calculator },
-  { label: "Préparer un engagement", sub: "Créer un contrat de travail", href: "/employeur/nouveau-dossier", icon: ClipboardList },
-  { label: "Envoyer un document", sub: "Transmettre à Docbel", href: "/employeur/documents", icon: Send },
-  { label: "Créer un employé", sub: "Ajouter un collaborateur", href: "#", icon: UserPlus },
-  { label: "Télécharger une attestation", sub: "Fiches, ONSS, fiscales…", href: "#", icon: Download },
-  { label: "Consulter le calendrier", sub: "Toutes vos échéances", href: "#", icon: CalendarDays },
+  { label: "Préparer un engagement", sub: "Assistant « Puis-je engager ? »", href: "/employeur/nouveau-dossier", icon: ClipboardList },
+  { label: "Préparer un document", sub: "Fiche travailleur, demande…", href: "/employeur/documents", icon: FileText },
+  { label: "Vérifier une fiche", sub: "Contrôler une fiche de paie", href: "/employeur/controle", icon: FileCheck2 },
+  { label: "Consulter la bibliothèque", sub: "Démarches & sources officielles", href: "/employeur/bibliotheque", icon: BookOpen },
+  { label: "Voir mes dossiers", sub: "Tous vos engagements", href: "/employeur/dossiers", icon: FolderOpen },
 ];
 
 const PANEL = "rounded-xl border border-border bg-card";
@@ -103,15 +85,38 @@ const KPI_TONE: Record<string, string> = {
   red: "bg-destructive/10 text-destructive",
 };
 
-function PanelHead({ title, action }: { title: string; action?: string }) {
+const ACTIVITY_ICONS: Record<ActivityIcon, typeof FileText> = {
+  plus: Plus,
+  edit: Pencil,
+  send: Send,
+  trash: Trash2,
+  activity: Activity,
+};
+
+function alertVisual(level: DashboardAlert["level"]) {
+  if (level === "critical") return { Icon: TriangleAlert, color: "text-destructive" };
+  if (level === "warning") return { Icon: CalendarClock, color: "text-amber-600 dark:text-amber-400" };
+  return { Icon: Info, color: "text-blue-600 dark:text-blue-400" };
+}
+
+function PanelHead({ title, href, action }: { title: string; href?: string; action?: string }) {
   return (
     <div className="flex items-center justify-between px-5 pt-4">
       <h2 className="text-sm font-semibold">{title}</h2>
-      {action ? (
-        <span className="flex items-center gap-1 text-xs text-primary">
+      {action && href ? (
+        <Link href={href} className="flex items-center gap-1 text-xs text-primary no-underline hover:underline">
           {action} <ArrowRight className="size-3" />
-        </span>
+        </Link>
       ) : null}
+    </div>
+  );
+}
+
+function EmptyState({ icon: Icon, children }: { icon: typeof FileText; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border bg-background/50 px-4 py-8 text-center">
+      <Icon className="size-6 text-muted-foreground/60" />
+      <p className="text-xs text-muted-foreground">{children}</p>
     </div>
   );
 }
@@ -120,35 +125,17 @@ export default async function EmployeurDashboard() {
   const user = await getEmployerPageUser();
   if (!user) redirect("/p/employeur");
 
-  const scenarios = await listScenariosForUser(user.id);
-  const activeCount = scenarios.length;
+  const data = await getEmployerDashboard(user.id);
+  const { identity, kpis, deadlines, alerts, recentDossiers, recentActivity, cost, resume } = data;
 
-  const sim = estimateEmployerCost({
-    grossMonthlySalary: 3000,
-    regime: "temps_plein",
-    workerType: "employe",
-    contractType: "cdi",
-    jointCommitteeNumber: "200",
-  });
-  const brut = 3000;
-  const cotis = sim.estimatedEmployerContributions;
-  const total = sim.estimatedMonthlyEmployerCost;
-  const autres = Math.max(0, Math.round((total - brut - cotis) * 100) / 100);
-  const pct = (x: number) => (total > 0 ? (x / total) * 100 : 0);
-  const pBrut = pct(brut);
-  const pCotis = pct(cotis);
-  // Couleurs : brut = bleu, cotisations = violet (primary), autres = rose.
+  // Donut : brut = bleu, cotisations = violet (primary), autres = rose.
+  const pct = (x: number) => (cost.total > 0 ? (x / cost.total) * 100 : 0);
+  const pBrut = pct(cost.gross);
+  const pCotis = pct(cost.contributions);
   const donut = `conic-gradient(#3b82f6 0 ${pBrut}%, var(--primary) ${pBrut}% ${pBrut + pCotis}%, #ec4899 ${pBrut + pCotis}% 100%)`;
 
-  const recent = activeCount
-    ? scenarios.slice(0, 5).map((s) => ({
-        name: s.title,
-        role: labelWorkerType(s.workerType),
-        status: "Actif",
-        date: new Date(s.updatedAt).toLocaleDateString("fr-BE"),
-        variant: "success" as Variant,
-      }))
-    : MOCK_DOSSIERS;
+  const vat = formatVat(identity.vatNumber);
+  const orgName = identity.organisationName ?? identity.fullName;
 
   return (
     <div className="flex min-h-svh bg-background text-foreground">
@@ -180,7 +167,6 @@ export default async function EmployeurDashboard() {
               >
                 <Icon className="size-[18px]" />
                 <span className="flex-1">{n.label}</span>
-                {n.caret ? <ChevronDown className="size-4 opacity-50" /> : null}
               </Link>
             );
           })}
@@ -190,19 +176,20 @@ export default async function EmployeurDashboard() {
           <div className="rounded-xl border border-border bg-muted/40 p-3">
             <p className="text-sm font-medium">Besoin d&apos;aide ?</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Nos conseillers sont disponibles du lundi au vendredi de 8h30 à 17h.
+              Retrouvez les démarches expliquées et les sources officielles dans la bibliothèque.
             </p>
-            <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-primary/10 py-2 text-xs font-medium text-primary">
-              <Headphones className="size-3.5" /> Contacter le support
-            </button>
+            <Link
+              href="/employeur/bibliotheque"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-primary/10 py-2 text-xs font-medium text-primary no-underline"
+            >
+              <Headphones className="size-3.5" /> Consulter la bibliothèque
+            </Link>
           </div>
           <div className="rounded-xl border border-border bg-muted/20 p-3 text-xs">
-            <p className="font-semibold">DOCBEL SRL</p>
-            <p className="text-muted-foreground">Secrétariat social agréé</p>
-            <p className="text-muted-foreground">N° d&apos;agrément 11111</p>
-            <span className="mt-1 inline-flex items-center gap-1 text-primary">
-              Voir nos agréments <ArrowRight className="size-3" />
-            </span>
+            <p className="font-semibold">Docbel — assistant employeur</p>
+            <p className="text-muted-foreground">
+              Outils informatifs avec sources officielles. Ne remplace pas un secrétariat social agréé.
+            </p>
           </div>
         </div>
       </aside>
@@ -211,28 +198,36 @@ export default async function EmployeurDashboard() {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar */}
         <header className="flex items-center gap-4 border-b border-border bg-card/40 px-6 py-3.5">
-          <div className="flex max-w-md flex-1 items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          <Link
+            href="/employeur/dossiers"
+            className="flex max-w-md flex-1 items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground no-underline transition-colors hover:border-primary/40"
+          >
             <Search className="size-4" />
-            <span className="flex-1">Rechercher (dossier, employé, document…)</span>
-            <kbd className="rounded bg-muted px-1.5 py-0.5 text-[10px]">⌘K</kbd>
-          </div>
+            <span className="flex-1">Rechercher un dossier…</span>
+            <ArrowRight className="size-3.5" />
+          </Link>
           <div className="ml-auto flex items-center gap-4">
-            <span className="hidden items-center gap-1.5 text-sm text-muted-foreground sm:flex">
+            <Link
+              href="/employeur/bibliotheque"
+              className="hidden items-center gap-1.5 text-sm text-muted-foreground no-underline hover:text-foreground sm:flex"
+            >
               <CircleHelp className="size-4" /> Aide
-            </span>
-            <span className="relative">
+            </Link>
+            <Link href="/employeur/dossiers" className="relative no-underline" aria-label="Alertes">
               <Bell className="size-5 text-muted-foreground" />
-              <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                3
-              </span>
-            </span>
+              {kpis.alertsCount > 0 ? (
+                <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                  {kpis.alertsCount > 9 ? "9+" : kpis.alertsCount}
+                </span>
+              ) : null}
+            </Link>
             <span className="flex items-center gap-2">
               <span className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                O
+                {identity.initials}
               </span>
               <span className="hidden leading-tight sm:block">
-                <span className="block text-sm font-medium">Oraliks SRL</span>
-                <span className="block text-[11px] text-muted-foreground">BE 0641.837.230</span>
+                <span className="block text-sm font-medium">{orgName}</span>
+                {vat ? <span className="block text-[11px] text-muted-foreground">{vat}</span> : null}
               </span>
               <ChevronDown className="size-4 text-muted-foreground" />
             </span>
@@ -243,20 +238,19 @@ export default async function EmployeurDashboard() {
           {/* Greeting */}
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
-              <h1 className="text-2xl font-bold">Bonjour, Sophie 👋</h1>
+              <h1 className="text-2xl font-bold">Bonjour, {identity.firstName} 👋</h1>
               <p className="text-sm text-muted-foreground">
                 Gérez vos obligations sociales en toute sérénité. Docbel est à vos côtés.
               </p>
             </div>
-            <p className="text-xs text-muted-foreground">Dernière connexion : aujourd&apos;hui à 09:18</p>
           </div>
 
           {/* KPIs */}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Kpi icon={FolderOpen} tone="violet" value={String(activeCount || 24)} label="Dossiers actifs" sub="+3 ce mois ↗" />
-            <Kpi icon={CalendarClock} tone="sky" value="5" label="Échéances cette semaine" sub="Voir le calendrier" />
-            <Kpi icon={FileCheck2} tone="emerald" value="12" label="Documents prêts" sub="À envoyer / télécharger" />
-            <Kpi icon={TriangleAlert} tone="red" value="3" label="Alertes" sub="Actions requises" />
+            <Kpi icon={FolderOpen} tone="violet" value={String(kpis.activeDossiers)} label="Dossiers actifs" href="/employeur/dossiers" sub="Voir mes dossiers" />
+            <Kpi icon={CalendarClock} tone="sky" value={String(kpis.deadlinesThisWeek)} label="Échéances cette semaine" href="/employeur/dossiers" sub="Débuts de contrat à venir" />
+            <Kpi icon={FileCheck2} tone="emerald" value={String(kpis.documentsReady)} label="Documents préparés" href="/employeur/documents" sub="Consulter / télécharger" />
+            <Kpi icon={TriangleAlert} tone="red" value={String(kpis.alertsCount)} label="Alertes" href="/employeur/dossiers" sub="Actions à vérifier" />
           </div>
 
           {/* Row 1 */}
@@ -286,186 +280,245 @@ export default async function EmployeurDashboard() {
               </div>
             </div>
 
-            {/* Cost simulator (real engine) */}
+            {/* Cost simulator snapshot (vrai moteur / dernière simulation) */}
             <div className={PANEL}>
-              <PanelHead title="Simulateur de coût – engagement" />
+              <PanelHead title="Simulateur de coût" href="/employeur/simulateur-cout" action="Ouvrir" />
               <div className="space-y-4 p-5 pt-3">
-                <div className="flex rounded-lg bg-muted p-1 text-xs">
-                  <span className="flex-1 rounded-md bg-primary py-1.5 text-center font-medium text-primary-foreground">Employé</span>
-                  <span className="flex-1 py-1.5 text-center text-muted-foreground">Indépendant</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Régime de travail" value="Temps plein" caret />
-                  <Field label="Salaire brut mensuel" value="3.000 €" />
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate text-xs text-muted-foreground">{cost.title}</p>
+                  {cost.isExample ? <Badge variant="secondary">Exemple</Badge> : <Badge variant="info">Dernière simulation</Badge>}
                 </div>
                 <div className="flex items-center gap-5">
                   <div className="relative size-32 shrink-0 rounded-full" style={{ background: donut }}>
                     <div className="absolute inset-[10px] flex flex-col items-center justify-center rounded-full bg-card text-center">
                       <span className="text-[10px] text-muted-foreground">Coût total estimé</span>
-                      <span className="text-base font-bold">{eur(total)}</span>
+                      <span className="text-base font-bold">{eur(cost.total)}</span>
                       <span className="text-[10px] text-muted-foreground">/ mois</span>
                     </div>
                   </div>
                   <ul className="flex-1 space-y-1.5 text-xs">
-                    <Legend color="#3b82f6" label="Salaire brut" value={eur(brut)} />
-                    <Legend color="var(--primary)" label="Cotisations patronales" value={eur(cotis)} />
-                    <Legend color="#ec4899" label="Autres coûts" value={eur(autres)} />
+                    <Legend color="#3b82f6" label="Salaire brut" value={eur(cost.gross)} />
+                    <Legend color="var(--primary)" label="Cotisations patronales" value={eur(cost.contributions)} />
+                    <Legend color="#ec4899" label="Autres coûts" value={eur(cost.other)} />
                   </ul>
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Index actuel (mai 2024)</span>
-                  <span className="text-foreground">1,9975</span>
                 </div>
                 <Link
                   href="/employeur/simulateur-cout"
                   className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-xs font-medium text-primary no-underline"
                 >
-                  Voir le détail du calcul <ArrowRight className="size-3.5" />
+                  {cost.isExample ? "Lancer une simulation" : "Voir le détail du calcul"} <ArrowRight className="size-3.5" />
                 </Link>
               </div>
             </div>
 
             {/* Deadlines */}
             <div className={PANEL}>
-              <PanelHead title="Échéances sociales" action="Voir tout" />
+              <PanelHead title="Échéances à venir" href="/employeur/dossiers" action={deadlines.length ? "Voir tout" : undefined} />
               <div className="space-y-2 p-5 pt-3">
-                {MOCK_DEADLINES.map((d) => (
-                  <div key={d.title} className="flex items-center gap-3 rounded-lg border border-border bg-background p-2.5">
-                    <div className="flex size-11 shrink-0 flex-col items-center justify-center rounded-lg bg-muted">
-                      <span className="text-sm font-bold">{d.day}</span>
-                      <span className="text-[9px] uppercase text-muted-foreground">{d.month}</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{d.title}</p>
-                      <p className="truncate text-xs text-muted-foreground">{d.sub}</p>
-                    </div>
-                    <Badge variant={d.variant}>{d.tag}</Badge>
-                  </div>
-                ))}
-                <p className="pt-1 text-center text-xs text-primary">Voir le calendrier complet</p>
+                {deadlines.length === 0 ? (
+                  <EmptyState icon={CalendarDays}>
+                    Aucune échéance planifiée. Ajoutez une date de début dans vos dossiers pour la suivre ici.
+                  </EmptyState>
+                ) : (
+                  deadlines.map((d) => (
+                    <Link
+                      key={d.id}
+                      href={`/employeur/dossiers/${d.scenarioId}`}
+                      className="flex items-center gap-3 rounded-lg border border-border bg-background p-2.5 no-underline transition-colors hover:border-primary/40"
+                    >
+                      <div className="flex size-11 shrink-0 flex-col items-center justify-center rounded-lg bg-muted">
+                        <span className="text-sm font-bold">{d.day}</span>
+                        <span className="text-[9px] uppercase text-muted-foreground">{d.month}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{d.title}</p>
+                        <p className="truncate text-xs text-muted-foreground">{d.sub}</p>
+                      </div>
+                      <Badge variant={d.tone}>{d.tag}</Badge>
+                    </Link>
+                  ))
+                )}
               </div>
             </div>
           </div>
 
           {/* Row 2 */}
           <div className="grid gap-4 xl:grid-cols-3">
+            {/* Alerts */}
             <div className={PANEL}>
-              <PanelHead title="Alertes & actions requises" action="Voir tout" />
+              <PanelHead title="Alertes & actions requises" href="/employeur/dossiers" action={alerts.length ? "Voir tout" : undefined} />
               <div className="space-y-2 p-5 pt-3">
-                {MOCK_ALERTS.map((a) => {
-                  const Icon = a.icon;
-                  return (
-                    <div key={a.title} className="flex items-start gap-3 rounded-lg border border-border bg-background p-3">
-                      <Icon className={cn("mt-0.5 size-4 shrink-0", a.color)} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium">{a.title}</p>
-                        <p className="text-xs text-muted-foreground">{a.sub}</p>
-                      </div>
-                      <span className="shrink-0 rounded-md bg-muted px-2 py-1 text-[11px]">{a.cta}</span>
-                    </div>
-                  );
-                })}
+                {alerts.length === 0 ? (
+                  <EmptyState icon={ShieldCheck}>
+                    Aucune alerte. Vos dossiers ne signalent aucune action requise.
+                  </EmptyState>
+                ) : (
+                  alerts.slice(0, 4).map((a) => {
+                    const { Icon, color } = alertVisual(a.level);
+                    return (
+                      <Link
+                        key={a.id}
+                        href={a.href}
+                        className="flex items-start gap-3 rounded-lg border border-border bg-background p-3 no-underline transition-colors hover:border-primary/40"
+                      >
+                        <Icon className={cn("mt-0.5 size-4 shrink-0", color)} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium">{a.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">{a.sub}</p>
+                        </div>
+                        <ArrowRight className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                      </Link>
+                    );
+                  })
+                )}
               </div>
             </div>
 
+            {/* Recent dossiers */}
             <div className={PANEL}>
-              <PanelHead title="Mes dossiers récents" action="Voir tous" />
-              <div className="divide-y divide-border px-5 pt-2 pb-3">
-                {recent.map((d, i) => (
-                  <div key={i} className="flex items-center gap-3 py-2.5">
-                    <span className="flex size-8 items-center justify-center rounded-full bg-muted text-xs">{d.name.slice(0, 1)}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{d.name}</p>
-                      <p className="text-xs text-muted-foreground">{d.role}</p>
-                    </div>
-                    <Badge variant={d.variant}>{d.status}</Badge>
-                    <span className="hidden text-[11px] text-muted-foreground sm:block">Mis à jour le {d.date}</span>
+              <PanelHead title="Mes dossiers récents" href="/employeur/dossiers" action={recentDossiers.length ? "Voir tous" : undefined} />
+              <div className="px-5 pt-2 pb-3">
+                {recentDossiers.length === 0 ? (
+                  <div className="py-3">
+                    <EmptyState icon={FolderOpen}>
+                      Aucun dossier pour le moment.
+                    </EmptyState>
+                    <Link
+                      href="/employeur/nouveau-dossier"
+                      className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
+                    >
+                      Créer mon premier dossier <ArrowRight className="size-3.5" />
+                    </Link>
                   </div>
-                ))}
+                ) : (
+                  <div className="divide-y divide-border">
+                    {recentDossiers.map((d) => (
+                      <Link
+                        key={d.id}
+                        href={`/employeur/dossiers/${d.id}`}
+                        className="flex items-center gap-3 py-2.5 no-underline"
+                      >
+                        <span className="flex size-8 items-center justify-center rounded-full bg-muted text-xs text-foreground">
+                          {d.name.slice(0, 1).toUpperCase()}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{d.name}</p>
+                          <p className="text-xs text-muted-foreground">{d.role}</p>
+                        </div>
+                        <Badge variant={d.tone}>{d.status}</Badge>
+                        <span className="hidden text-[11px] text-muted-foreground sm:block">{d.date}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* Resume / start engagement */}
             <div className={PANEL}>
               <div className="flex items-center justify-between px-5 pt-4">
-                <h2 className="text-sm font-semibold">Démarrer un engagement</h2>
-                <span className="text-xs text-muted-foreground">Étape 2 sur 6</span>
+                <h2 className="text-sm font-semibold">{resume ? "Reprendre un engagement" : "Démarrer un engagement"}</h2>
+                {resume ? (
+                  <span className="text-xs text-muted-foreground">
+                    {resume.doneItems}/{resume.totalItems} étapes
+                  </span>
+                ) : null}
               </div>
               <div className="space-y-4 p-5 pt-3">
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full w-1/3 rounded-full bg-primary" />
-                </div>
-                <ol className="space-y-2.5">
-                  {STEPS.map((s, i) => {
-                    const done = i === 0;
-                    const current = i === 1;
-                    return (
-                      <li key={s} className="flex items-center gap-3 text-sm">
-                        <span
-                          className={cn(
-                            "flex size-6 shrink-0 items-center justify-center rounded-full text-[11px]",
-                            done
-                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                              : current
-                                ? "bg-primary font-bold text-primary-foreground"
-                                : "bg-muted text-muted-foreground"
-                          )}
-                        >
-                          {done ? <Check className="size-3.5" /> : i + 1}
-                        </span>
-                        <span className={cn(current ? "font-medium" : done ? "text-foreground" : "text-muted-foreground")}>{s}</span>
-                      </li>
-                    );
-                  })}
-                </ol>
-                <Link
-                  href="/employeur/nouveau-dossier"
-                  className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
-                >
-                  Continuer <ArrowRight className="size-3.5" />
-                </Link>
+                {resume ? (
+                  <>
+                    <div>
+                      <p className="truncate text-sm font-medium">{resume.title}</p>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${resume.pct}%` }} />
+                      </div>
+                      <p className="mt-1.5 text-xs text-muted-foreground">{resume.pct}% de la checklist complétée</p>
+                    </div>
+                    {resume.nextItem ? (
+                      <div className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
+                        <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                        <div className="min-w-0">
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Prochaine étape</p>
+                          <p className="text-sm">{resume.nextItem}</p>
+                        </div>
+                      </div>
+                    ) : null}
+                    <Link
+                      href={`/employeur/dossiers/${resume.scenarioId}`}
+                      className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
+                    >
+                      Continuer <ArrowRight className="size-3.5" />
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      L&apos;assistant « Puis-je engager ? » vous guide pas à pas et génère la checklist de votre engagement.
+                    </p>
+                    <Link
+                      href="/employeur/nouveau-dossier"
+                      className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
+                    >
+                      Démarrer <ArrowRight className="size-3.5" />
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
           {/* Row 3 */}
           <div className="grid gap-4 lg:grid-cols-2">
+            {/* Activity */}
             <div className={PANEL}>
-              <PanelHead title="Activité récente" action="Voir toute l'activité" />
-              <div className="divide-y divide-border px-5 pt-2 pb-3">
-                {MOCK_ACTIVITY.map((a, i) => {
-                  const Icon = a.icon;
-                  return (
-                    <div key={i} className="flex items-center gap-3 py-2.5">
-                      <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                        <Icon className="size-4" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm">
-                          {a.text} <span className="text-muted-foreground">{a.detail}</span>
-                        </p>
-                      </div>
-                      <span className="text-[11px] text-muted-foreground">{a.when}</span>
-                    </div>
-                  );
-                })}
+              <PanelHead title="Activité récente" />
+              <div className="px-5 pt-2 pb-3">
+                {recentActivity.length === 0 ? (
+                  <div className="py-3">
+                    <EmptyState icon={Activity}>
+                      Aucune activité récente. Vos actions (dossiers, documents, simulations) apparaîtront ici.
+                    </EmptyState>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {recentActivity.map((a) => {
+                      const Icon = ACTIVITY_ICONS[a.icon];
+                      return (
+                        <div key={a.id} className="flex items-center gap-3 py-2.5">
+                          <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                            <Icon className="size-4" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm">
+                              {a.text} {a.detail ? <span className="text-muted-foreground">— {a.detail}</span> : null}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-[11px] text-muted-foreground">{a.when}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* Veille (informatif, vers bibliothèque) */}
             <div className={PANEL}>
-              <PanelHead title="Veille & conformité" action="Voir toute la veille" />
+              <PanelHead title="Veille & conformité" href="/employeur/bibliotheque" action="Bibliothèque" />
               <div className="flex items-start gap-4 p-5 pt-3">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>10/05/2024</span>
-                    <Badge variant="secondary">Législation</Badge>
-                  </div>
-                  <p className="mt-1 font-medium">Indexation des salaires au 1er mai 2024</p>
+                  <Badge variant="secondary">Sources officielles</Badge>
+                  <p className="mt-2 font-medium">Démarches expliquées, à jour et sourcées</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Les salaires et avantages ont été indexés conformément à l&apos;indice santé lissé.
+                    Dimona, DmfA, commissions paritaires, salaire minimum, contrats étudiant et flexi-job — chaque
+                    fiche renvoie aux textes officiels (ONSS, SPF Emploi…).
                   </p>
-                  <span className="mt-2 inline-flex items-center gap-1 text-xs text-primary">
-                    Lire la suite <ArrowRight className="size-3" />
-                  </span>
+                  <Link
+                    href="/employeur/bibliotheque"
+                    className="mt-2 inline-flex items-center gap-1 text-xs text-primary no-underline hover:underline"
+                  >
+                    Parcourir la bibliothèque <ArrowRight className="size-3" />
+                  </Link>
                 </div>
                 <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <Scale className="size-6" />
@@ -485,36 +538,26 @@ function Kpi({
   value,
   label,
   sub,
+  href,
 }: {
   icon: typeof FolderOpen;
   tone: "violet" | "sky" | "emerald" | "red";
   value: string;
   label: string;
   sub: string;
+  href: string;
 }) {
   return (
-    <div className={cn(PANEL, "flex items-center justify-between p-5")}>
+    <Link href={href} className={cn(PANEL, "flex items-center justify-between p-5 no-underline transition-colors hover:border-primary/40")}>
       <div>
         <p className="text-sm text-muted-foreground">{label}</p>
         <p className="mt-1 text-3xl font-bold">{value}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+        <p className="mt-1 text-xs text-primary">{sub}</p>
       </div>
       <span className={cn("flex size-12 items-center justify-center rounded-xl", KPI_TONE[tone])}>
         <Icon className="size-6" />
       </span>
-    </div>
-  );
-}
-
-function Field({ label, value, caret }: { label: string; value: string; caret?: boolean }) {
-  return (
-    <div>
-      <p className="mb-1 text-[11px] text-muted-foreground">{label}</p>
-      <div className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm">
-        <span>{value}</span>
-        {caret ? <ChevronDown className="size-4 text-muted-foreground" /> : null}
-      </div>
-    </div>
+    </Link>
   );
 }
 

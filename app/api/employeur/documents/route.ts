@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireEmployerOrAdminAuth } from "@/lib/auth-check";
 import { DOCUMENT_TYPES } from "@/lib/employeur/documents/types";
+import { logActivity } from "@/lib/activity-logger";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true },
     });
+    await logActivity(userId, "created", "employer", title || "Document", draft.id, "Document préparé");
     return NextResponse.json({ id: draft.id }, { status: 201, headers: jsonHeaders });
   } catch (error) {
     console.error("[employeur] save document failed:", error);

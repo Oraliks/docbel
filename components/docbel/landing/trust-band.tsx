@@ -90,18 +90,20 @@ function StatCard({
   hue,
   value,
   label,
+  sub,
   delay,
 }: {
   Icon: LucideIcon;
   hue: string;
   value: number;
   label: string;
+  sub: string;
   delay: number;
 }) {
   const { ref, display } = useCountUp(value);
   return (
     <div
-      className="glass-surface outils-rise flex min-w-[200px] flex-1 flex-col items-start gap-3 p-6"
+      className="glass-surface outils-rise flex min-w-[200px] flex-1 flex-col items-start justify-between gap-4 p-6"
       style={{ animationDelay: `${delay}ms` }}
     >
       <span
@@ -114,15 +116,24 @@ function StatCard({
       >
         <Icon className="size-5" strokeWidth={1.9} aria-hidden />
       </span>
-      <span
-        ref={ref}
-        className="glass-display text-[34px] font-semibold leading-none tabular-nums"
-      >
-        {display.toLocaleString("fr-BE")}
-      </span>
-      <span className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
-        {label}
-      </span>
+      <div className="flex flex-col gap-1.5">
+        <span
+          ref={ref}
+          className="glass-display text-[44px] font-semibold leading-none tabular-nums"
+        >
+          {display.toLocaleString("fr-BE")}
+        </span>
+        <span className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
+          {label}
+        </span>
+      </div>
+      {/* Descriptif : avec justify-between sur la carte, l'icône, le chiffre et
+          ce texte se répartissent sur toute la hauteur étirée par la carte
+          confidentialité voisine — plus de grand vide, et le chiffre prend du
+          sens. */}
+      <p className="text-[12.5px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
+        {sub}
+      </p>
     </div>
   );
 }
@@ -171,18 +182,21 @@ export function TrustBand({ stats }: TrustBandProps) {
       hue: "var(--glass-accent-deep)",
       value: stats.documents,
       label: "documents officiels couverts",
+      sub: "Formulaires officiels prêts à compléter, expliqués pas à pas.",
     },
     {
       Icon: WrenchIcon,
       hue: "var(--glass-accent-a)",
       value: stats.outils,
       label: "outils gratuits",
+      sub: "Calculateurs, simulateurs et guides — sans inscription.",
     },
     {
       Icon: Building2Icon,
       hue: "var(--glass-accent-c)",
       value: stats.organismes,
       label: "organismes",
+      sub: "Administrations et institutions reliées à vos démarches.",
     },
   ].filter((counter) => counter.value > 0);
 
@@ -198,6 +212,7 @@ export function TrustBand({ stats }: TrustBandProps) {
           hue={counter.hue}
           value={counter.value}
           label={counter.label}
+          sub={counter.sub}
           delay={index * 70}
         />
       ))}

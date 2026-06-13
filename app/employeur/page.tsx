@@ -8,6 +8,7 @@ import {
   BookOpen,
   Calculator,
   Send,
+  Search,
   CalendarDays,
   CalendarClock,
   TriangleAlert,
@@ -41,13 +42,15 @@ export const dynamic = "force-dynamic";
 const eur = (n: number) =>
   `${n.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
+// Toutes les tuiles mènent à une page RÉELLE (aucun lien mort). `badge` = clé de
+// compteur réel résolue au rendu (cf. quickBadge).
 const QUICK = [
-  { label: "Simuler un coût", sub: "Estimer le coût d'un engagement", href: "/employeur/simulateur-cout", icon: Calculator },
-  { label: "Préparer un engagement", sub: "Assistant « Puis-je engager ? »", href: "/employeur/nouveau-dossier", icon: ClipboardList },
-  { label: "Préparer un document", sub: "Fiche travailleur, demande…", href: "/employeur/documents", icon: FileText },
-  { label: "Vérifier une fiche", sub: "Contrôler une fiche de paie", href: "/employeur/controle", icon: FileCheck2 },
-  { label: "Consulter la bibliothèque", sub: "Démarches & sources officielles", href: "/employeur/bibliotheque", icon: BookOpen },
-  { label: "Voir mes dossiers", sub: "Tous vos engagements", href: "/employeur/dossiers", icon: FolderOpen },
+  { id: "cout", label: "Simuler un coût", href: "/employeur/simulateur-cout", icon: Calculator },
+  { id: "engagement", label: "Préparer un engagement", href: "/employeur/nouveau-dossier", icon: ClipboardList },
+  { id: "document", label: "Préparer un document", href: "/employeur/documents", icon: FileText },
+  { id: "fiche", label: "Vérifier une fiche", href: "/employeur/controle", icon: FileCheck2 },
+  { id: "dossiers", label: "Voir mes dossiers", href: "/employeur/dossiers", icon: FolderOpen },
+  { id: "biblio", label: "Bibliothèque", href: "/employeur/bibliotheque", icon: BookOpen },
 ];
 
 const PANEL = "rounded-xl border border-border bg-card";
@@ -102,6 +105,10 @@ export default async function EmployeurDashboard() {
   const data = await getEmployerDashboard(user.id);
   const { identity, kpis, deadlines, alerts, recentDossiers, recentActivity, cost, resume } = data;
 
+  // Compteur réel affiché en pastille sur certaines actions rapides.
+  const quickBadge = (id: string): number | null =>
+    id === "dossiers" && kpis.activeDossiers > 0 ? kpis.activeDossiers : null;
+
   // Donut : brut = bleu, cotisations = violet (primary), autres = rose.
   const pct = (x: number) => (cost.total > 0 ? (x / cost.total) * 100 : 0);
   const pBrut = pct(cost.gross);
@@ -128,33 +135,48 @@ export default async function EmployeurDashboard() {
         <Kpi icon={TriangleAlert} tone="red" value={String(kpis.alertsCount)} label="Alertes" href="/employeur/dossiers" sub="Actions à vérifier" />
       </div>
 
-      {/* Row 1 */}
-      <div className="grid gap-4 xl:grid-cols-3">
-        {/* Quick actions */}
-        <div className={PANEL}>
-          <PanelHead title="Actions rapides" />
-          <div className="grid grid-cols-2 gap-3 p-5 pt-3">
-            {QUICK.map((q) => {
-              const Icon = q.icon;
-              return (
-                <Link
-                  key={q.label}
-                  href={q.href}
-                  className="group flex items-start gap-3 rounded-lg border border-border bg-background p-3 no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
-                >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Icon className="size-4" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium">{q.label}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{q.sub}</span>
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
+      {/* Actions rapides — section pleine largeur (recherche + grille de tuiles) */}
+      <section className={cn(PANEL, "p-5")}>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold tracking-tight">Actions rapides</h2>
         </div>
 
+        <Link
+          href="/employeur/dossiers"
+          className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground no-underline transition-colors hover:border-primary/40"
+        >
+          <Search className="size-4" />
+          <span className="flex-1">Rechercher un dossier…</span>
+          <kbd className="hidden items-center rounded-md border border-border bg-muted px-2 py-1 text-[11px] sm:inline-flex">⌘K</kbd>
+        </Link>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {QUICK.map((q) => {
+            const Icon = q.icon;
+            const badge = quickBadge(q.id);
+            return (
+              <Link
+                key={q.id}
+                href={q.href}
+                className="group relative flex flex-col items-center gap-2.5 rounded-xl border border-border bg-background p-4 text-center no-underline transition-colors hover:border-primary/40 hover:bg-primary/5"
+              >
+                {badge !== null ? (
+                  <span className="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                    {badge > 99 ? "99+" : badge}
+                  </span>
+                ) : null}
+                <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                  <Icon className="size-5" />
+                </span>
+                <span className="text-sm font-medium leading-tight">{q.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Row 1 */}
+      <div className="grid gap-4 xl:grid-cols-3">
         {/* Cost simulator snapshot (vrai moteur / dernière simulation) */}
         <div className={PANEL}>
           <PanelHead title="Simulateur de coût" href="/employeur/simulateur-cout" action="Ouvrir" />
@@ -215,10 +237,62 @@ export default async function EmployeurDashboard() {
             )}
           </div>
         </div>
+
+        {/* Resume / start engagement */}
+        <div className={PANEL}>
+          <div className="flex items-center justify-between px-5 pt-4">
+            <h2 className="text-sm font-semibold">{resume ? "Reprendre un engagement" : "Démarrer un engagement"}</h2>
+            {resume ? (
+              <span className="text-xs text-muted-foreground">
+                {resume.doneItems}/{resume.totalItems} étapes
+              </span>
+            ) : null}
+          </div>
+          <div className="space-y-4 p-5 pt-3">
+            {resume ? (
+              <>
+                <div>
+                  <p className="truncate text-sm font-medium">{resume.title}</p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${resume.pct}%` }} />
+                  </div>
+                  <p className="mt-1.5 text-xs text-muted-foreground">{resume.pct}% de la checklist complétée</p>
+                </div>
+                {resume.nextItem ? (
+                  <div className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
+                    <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Prochaine étape</p>
+                      <p className="text-sm">{resume.nextItem}</p>
+                    </div>
+                  </div>
+                ) : null}
+                <Link
+                  href={`/employeur/dossiers/${resume.scenarioId}`}
+                  className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
+                >
+                  Continuer <ArrowRight className="size-3.5" />
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  L&apos;assistant « Puis-je engager ? » vous guide pas à pas et génère la checklist de votre engagement.
+                </p>
+                <Link
+                  href="/employeur/nouveau-dossier"
+                  className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
+                >
+                  Démarrer <ArrowRight className="size-3.5" />
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Row 2 */}
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Alerts */}
         <div className={PANEL}>
           <PanelHead title="Alertes & actions requises" href="/employeur/dossiers" action={alerts.length ? "Voir tout" : undefined} />
@@ -283,58 +357,6 @@ export default async function EmployeurDashboard() {
                   </Link>
                 ))}
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Resume / start engagement */}
-        <div className={PANEL}>
-          <div className="flex items-center justify-between px-5 pt-4">
-            <h2 className="text-sm font-semibold">{resume ? "Reprendre un engagement" : "Démarrer un engagement"}</h2>
-            {resume ? (
-              <span className="text-xs text-muted-foreground">
-                {resume.doneItems}/{resume.totalItems} étapes
-              </span>
-            ) : null}
-          </div>
-          <div className="space-y-4 p-5 pt-3">
-            {resume ? (
-              <>
-                <div>
-                  <p className="truncate text-sm font-medium">{resume.title}</p>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${resume.pct}%` }} />
-                  </div>
-                  <p className="mt-1.5 text-xs text-muted-foreground">{resume.pct}% de la checklist complétée</p>
-                </div>
-                {resume.nextItem ? (
-                  <div className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
-                    <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-                    <div className="min-w-0">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Prochaine étape</p>
-                      <p className="text-sm">{resume.nextItem}</p>
-                    </div>
-                  </div>
-                ) : null}
-                <Link
-                  href={`/employeur/dossiers/${resume.scenarioId}`}
-                  className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
-                >
-                  Continuer <ArrowRight className="size-3.5" />
-                </Link>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  L&apos;assistant « Puis-je engager ? » vous guide pas à pas et génère la checklist de votre engagement.
-                </p>
-                <Link
-                  href="/employeur/nouveau-dossier"
-                  className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
-                >
-                  Démarrer <ArrowRight className="size-3.5" />
-                </Link>
-              </>
             )}
           </div>
         </div>

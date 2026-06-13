@@ -95,6 +95,12 @@ const EMPLOYER_SPACE: ProSpace = {
       ],
     },
     {
+      label: "Agenda",
+      items: [
+        { title: "Calendrier social", url: "/employeur/calendrier", icon: "calendar" },
+      ],
+    },
+    {
       label: "Outils",
       items: [
         { title: "Simulateur de coût", url: "/employeur/simulateur-cout", icon: "calculator" },

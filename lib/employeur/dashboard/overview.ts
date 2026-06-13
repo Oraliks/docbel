@@ -20,6 +20,7 @@ import {
   type EmployerCostResult,
 } from "../cost/engine";
 import { labelScenarioStatus, labelWorkerType } from "../constants";
+import { getUpcomingSocialDeadlines } from "../calendar/social-deadlines";
 
 export type BadgeTone =
   | "default"
@@ -74,6 +75,18 @@ export interface DashboardAlert {
   href: string;
 }
 
+/** Échéance sociale/fiscale récurrente (calendrier social), formatée pour l'UI. */
+export interface DashboardSocialDeadline {
+  id: string;
+  day: string;
+  month: string;
+  title: string;
+  category: string;
+  note?: string;
+  sourceUrl?: string;
+  daysUntil: number;
+}
+
 export interface DashboardDossier {
   id: string;
   name: string;
@@ -97,6 +110,8 @@ export interface DashboardCost {
   contributions: number;
   other: number;
   total: number;
+  regimeLabel: string;
+  workerTypeLabel: string;
   /** true si aucune simulation sauvegardée → exemple par défaut. */
   isExample: boolean;
 }
@@ -114,6 +129,7 @@ export interface EmployerDashboardData {
   identity: DashboardIdentity;
   kpis: DashboardKpis;
   deadlines: DashboardDeadline[];
+  socialDeadlines: DashboardSocialDeadline[];
   alerts: DashboardAlert[];
   recentDossiers: DashboardDossier[];
   recentActivity: DashboardActivity[];
@@ -136,6 +152,11 @@ const SEVERITY_LEVEL: Record<string, DashboardAlert["level"]> = {
   info: "info",
   warning: "warning",
   critical: "critical",
+};
+
+const REGIME_LABEL: Record<string, string> = {
+  temps_plein: "Temps plein",
+  temps_partiel: "Temps partiel",
 };
 
 function initialsFrom(name: string, org: string | null): string {
@@ -260,6 +281,21 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
     .sort((a, b) => a.daysUntil - b.daysUntil)
     .slice(0, 5);
 
+  // --- Calendrier social : échéances récurrentes belges (ONSS/précompte/TVA) --
+  const socialDeadlines: DashboardSocialDeadline[] = getUpcomingSocialDeadlines(now, 4).map((s) => {
+    const due = new Date(`${s.date}T12:00:00`);
+    return {
+      id: s.id,
+      day: String(due.getDate()).padStart(2, "0"),
+      month: MONTHS_FR[due.getMonth()],
+      title: s.title,
+      category: s.category,
+      note: s.note,
+      sourceUrl: s.sourceUrl,
+      daysUntil: daysBetween(now, due),
+    };
+  });
+
   // --- Alertes : snapshot moteur + scénarios à valider -----------------------
   const alerts: DashboardAlert[] = [];
   for (const s of scenarios) {
@@ -316,12 +352,15 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
     const gross = lastSim.grossMonthlySalary;
     const contributions = lastSim.estimatedEmployerContributions;
     const total = lastSim.estimatedMonthlyEmployerCost;
+    const inp = (lastSim.inputs ?? {}) as { regime?: string; workerType?: string };
     cost = {
       title: lastSim.title,
       gross,
       contributions,
       other: Math.max(0, Math.round((total - gross - contributions) * 100) / 100),
       total,
+      regimeLabel: REGIME_LABEL[inp.regime ?? ""] ?? "Temps plein",
+      workerTypeLabel: labelWorkerType(inp.workerType) || "Employé",
       isExample: false,
     };
   } else {
@@ -341,6 +380,8 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
       contributions,
       other: Math.max(0, Math.round((total - gross - contributions) * 100) / 100),
       total,
+      regimeLabel: "Temps plein",
+      workerTypeLabel: "Employé",
       isExample: true,
     };
   }
@@ -376,6 +417,7 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
     identity,
     kpis,
     deadlines,
+    socialDeadlines,
     alerts,
     recentDossiers,
     recentActivity,

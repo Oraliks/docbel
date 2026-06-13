@@ -22,6 +22,8 @@ import {
   Trash2,
   Activity,
   ShieldCheck,
+  Users,
+  ListChecks,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getEmployerPageUser } from "@/lib/employeur/page-auth";
@@ -103,9 +105,8 @@ export default async function EmployeurDashboard() {
   if (!user) redirect("/p/employeur");
 
   const data = await getEmployerDashboard(user.id);
-  const { identity, kpis, deadlines, alerts, recentDossiers, recentActivity, cost, resume } = data;
+  const { identity, kpis, socialDeadlines, alerts, recentDossiers, recentActivity, cost, resume } = data;
 
-  // Compteur réel affiché en pastille sur certaines actions rapides.
   const quickBadge = (id: string): number | null =>
     id === "dossiers" && kpis.activeDossiers > 0 ? kpis.activeDossiers : null;
 
@@ -117,15 +118,36 @@ export default async function EmployeurDashboard() {
 
   return (
     <div className="flex w-full flex-col gap-6 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
-      {/* Greeting */}
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Bonjour, {identity.firstName} 👋</h1>
-          <p className="text-sm text-muted-foreground">
-            Gérez vos obligations sociales en toute sérénité. Docbel est à vos côtés.
+      {/* ============================== HERO ============================== */}
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/12 via-card to-pink-500/8 p-6 sm:p-8">
+        <div className="relative z-10 max-w-2xl">
+          <p className="text-sm font-medium text-muted-foreground">Bonjour, {identity.firstName} 👋</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
+            Bienvenue dans votre{" "}
+            <span className="bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
+              Espace Employeur
+            </span>
+          </h1>
+          <p className="mt-3 max-w-xl text-sm text-muted-foreground">
+            Gérez vos obligations sociales en Belgique simplement, avec des outils fiables, à jour et pensés pour vous.
           </p>
         </div>
-      </div>
+
+        {/* Illustration glass décorative (cachée < lg) */}
+        <div aria-hidden className="pointer-events-none absolute inset-y-0 right-6 hidden w-80 items-center lg:flex">
+          <div className="relative size-full">
+            <div className="absolute right-40 top-1/2 flex size-24 -translate-y-[70%] rotate-[-8deg] items-center justify-center rounded-2xl border border-primary/20 bg-primary/15 shadow-lg backdrop-blur-sm">
+              <Users className="size-10 text-primary" />
+            </div>
+            <div className="absolute right-12 top-1/2 flex size-28 -translate-y-1/2 rotate-[7deg] items-center justify-center rounded-2xl border border-primary/20 bg-card/70 shadow-xl backdrop-blur-sm">
+              <ListChecks className="size-12 text-primary" />
+            </div>
+            <div className="absolute right-44 top-1/2 flex size-16 translate-y-[60%] rotate-[10deg] items-center justify-center rounded-2xl border border-pink-500/20 bg-pink-500/15 shadow-lg backdrop-blur-sm">
+              <Check className="size-8 text-pink-500" />
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -135,9 +157,94 @@ export default async function EmployeurDashboard() {
         <Kpi icon={TriangleAlert} tone="red" value={String(kpis.alertsCount)} label="Alertes" href="/employeur/dossiers" sub="Actions à vérifier" />
       </div>
 
-      {/* Row 1 — Actions rapides (bloc 2/3) + Simulateur (1/3) */}
+      {/* Row 1 — Simulateur (2/3, façon mockup) + Échéances (1/3) */}
       <div className="grid gap-4 xl:grid-cols-3">
-        {/* Actions rapides — bloc de largeur limitée (recherche + grille de tuiles) */}
+        {/* Cost simulator snapshot (vrai moteur / dernière simulation) */}
+        <div className={cn(PANEL, "xl:col-span-2")}>
+          <div className="flex items-center justify-between px-5 pt-4">
+            <h2 className="text-sm font-semibold">Simulateur de coût — engagement</h2>
+            {cost.isExample ? <Badge variant="secondary">Exemple</Badge> : <Badge variant="info">Dernière simulation</Badge>}
+          </div>
+          <div className="grid gap-5 p-5 pt-3 sm:grid-cols-2">
+            {/* Champs (lecture) */}
+            <div className="space-y-3">
+              <p className="truncate text-xs text-muted-foreground">{cost.title}</p>
+              <Field label="Type de travailleur" value={cost.workerTypeLabel} />
+              <Field label="Régime de travail" value={cost.regimeLabel} />
+              <Field label="Salaire brut mensuel" value={eur(cost.gross)} />
+            </div>
+            {/* Donut + légende + CTA */}
+            <div className="flex flex-col justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="relative size-28 shrink-0 rounded-full" style={{ background: donut }}>
+                  <div className="absolute inset-[9px] flex flex-col items-center justify-center rounded-full bg-card text-center">
+                    <span className="text-[9px] text-muted-foreground">Coût total</span>
+                    <span className="text-sm font-bold">{eur(cost.total)}</span>
+                    <span className="text-[9px] text-muted-foreground">/ mois</span>
+                  </div>
+                </div>
+                <ul className="flex-1 space-y-1.5 text-xs">
+                  <Legend color="#3b82f6" label="Salaire brut" value={eur(cost.gross)} />
+                  <Legend color="var(--primary)" label="Cotisations patronales" value={eur(cost.contributions)} />
+                  <Legend color="#ec4899" label="Autres coûts" value={eur(cost.other)} />
+                </ul>
+              </div>
+              <Link
+                href="/employeur/simulateur-cout"
+                className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-xs font-medium text-primary no-underline"
+              >
+                {cost.isExample ? "Lancer une simulation" : "Voir le détail du calcul"} <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Calendrier social — échéances récurrentes (ONSS / précompte / TVA) */}
+        <div className={PANEL}>
+          <div className="flex items-center justify-between px-5 pt-4">
+            <div className="flex items-center gap-2">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <CalendarDays className="size-4" />
+              </span>
+              <h2 className="text-sm font-semibold">Calendrier social</h2>
+            </div>
+            <Link href="/employeur/calendrier" className="flex items-center gap-1 text-xs text-primary no-underline hover:underline">
+              Voir le calendrier <ArrowRight className="size-3" />
+            </Link>
+          </div>
+          <p className="px-5 pt-1 text-xs text-muted-foreground">
+            Ne manquez aucune échéance importante (ONSS, précompte, TVA…).
+          </p>
+          <div className="space-y-2 p-5 pt-3">
+            {socialDeadlines.map((d) => (
+              <div key={d.id} className="flex items-center gap-3 rounded-lg border border-border bg-background p-2.5">
+                <div className="flex size-11 shrink-0 flex-col items-center justify-center rounded-lg bg-muted">
+                  <span className="text-sm font-bold">{d.day}</span>
+                  <span className="text-[9px] uppercase text-muted-foreground">{d.month}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{d.title}</p>
+                  <p className="text-xs text-muted-foreground">{d.category} · trimestriel</p>
+                </div>
+                <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              </div>
+            ))}
+            <Link
+              href="/employeur/calendrier"
+              className="block pt-1 text-center text-xs text-primary no-underline hover:underline"
+            >
+              Voir toutes les échéances
+            </Link>
+            <p className="pt-1 text-center text-[10px] text-muted-foreground">
+              Dates indicatives — à confirmer selon votre régime (mensuel / trimestriel).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 2 — Actions rapides (2/3) + Reprendre (1/3) */}
+      <div className="grid gap-4 xl:grid-cols-3">
+        {/* Actions rapides — bloc (recherche + grille de tuiles) */}
         <section className={cn(PANEL, "p-5 xl:col-span-2")}>
           <h2 className="text-base font-semibold tracking-tight">Actions rapides</h2>
 
@@ -174,70 +281,6 @@ export default async function EmployeurDashboard() {
             })}
           </div>
         </section>
-
-        {/* Cost simulator snapshot (vrai moteur / dernière simulation) */}
-        <div className={PANEL}>
-          <PanelHead title="Simulateur de coût" href="/employeur/simulateur-cout" action="Ouvrir" />
-          <div className="space-y-4 p-5 pt-3">
-            <div className="flex items-center justify-between gap-2">
-              <p className="truncate text-xs text-muted-foreground">{cost.title}</p>
-              {cost.isExample ? <Badge variant="secondary">Exemple</Badge> : <Badge variant="info">Dernière simulation</Badge>}
-            </div>
-            <div className="flex items-center gap-5">
-              <div className="relative size-32 shrink-0 rounded-full" style={{ background: donut }}>
-                <div className="absolute inset-[10px] flex flex-col items-center justify-center rounded-full bg-card text-center">
-                  <span className="text-[10px] text-muted-foreground">Coût total estimé</span>
-                  <span className="text-base font-bold">{eur(cost.total)}</span>
-                  <span className="text-[10px] text-muted-foreground">/ mois</span>
-                </div>
-              </div>
-              <ul className="flex-1 space-y-1.5 text-xs">
-                <Legend color="#3b82f6" label="Salaire brut" value={eur(cost.gross)} />
-                <Legend color="var(--primary)" label="Cotisations patronales" value={eur(cost.contributions)} />
-                <Legend color="#ec4899" label="Autres coûts" value={eur(cost.other)} />
-              </ul>
-            </div>
-            <Link
-              href="/employeur/simulateur-cout"
-              className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-xs font-medium text-primary no-underline"
-            >
-              {cost.isExample ? "Lancer une simulation" : "Voir le détail du calcul"} <ArrowRight className="size-3.5" />
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Row 2 — Échéances · Reprendre · Alertes */}
-      <div className="grid gap-4 xl:grid-cols-3">
-        {/* Deadlines */}
-        <div className={PANEL}>
-          <PanelHead title="Échéances à venir" href="/employeur/dossiers" action={deadlines.length ? "Voir tout" : undefined} />
-          <div className="space-y-2 p-5 pt-3">
-            {deadlines.length === 0 ? (
-              <EmptyState icon={CalendarDays}>
-                Aucune échéance planifiée. Ajoutez une date de début dans vos dossiers pour la suivre ici.
-              </EmptyState>
-            ) : (
-              deadlines.map((d) => (
-                <Link
-                  key={d.id}
-                  href={`/employeur/dossiers/${d.scenarioId}`}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-background p-2.5 no-underline transition-colors hover:border-primary/40"
-                >
-                  <div className="flex size-11 shrink-0 flex-col items-center justify-center rounded-lg bg-muted">
-                    <span className="text-sm font-bold">{d.day}</span>
-                    <span className="text-[9px] uppercase text-muted-foreground">{d.month}</span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{d.title}</p>
-                    <p className="truncate text-xs text-muted-foreground">{d.sub}</p>
-                  </div>
-                  <Badge variant={d.tone}>{d.tag}</Badge>
-                </Link>
-              ))
-            )}
-          </div>
-        </div>
 
         {/* Resume / start engagement */}
         <div className={PANEL}>
@@ -290,7 +333,10 @@ export default async function EmployeurDashboard() {
             )}
           </div>
         </div>
+      </div>
 
+      {/* Row 3 — Alertes · Dossiers récents · Activité */}
+      <div className="grid gap-4 xl:grid-cols-3">
         {/* Alerts */}
         <div className={PANEL}>
           <PanelHead title="Alertes & actions requises" href="/employeur/dossiers" action={alerts.length ? "Voir tout" : undefined} />
@@ -320,10 +366,7 @@ export default async function EmployeurDashboard() {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Row 3 — Dossiers · Activité · Veille */}
-      <div className="grid gap-4 xl:grid-cols-3">
         {/* Recent dossiers */}
         <div className={PANEL}>
           <PanelHead title="Mes dossiers récents" href="/employeur/dossiers" action={recentDossiers.length ? "Voir tous" : undefined} />
@@ -394,29 +437,29 @@ export default async function EmployeurDashboard() {
             )}
           </div>
         </div>
+      </div>
 
-        {/* Veille (informatif, vers bibliothèque) */}
-        <div className={PANEL}>
-          <PanelHead title="Veille & conformité" href="/employeur/bibliotheque" action="Bibliothèque" />
-          <div className="flex items-start gap-4 p-5 pt-3">
-            <div className="min-w-0 flex-1">
-              <Badge variant="secondary">Sources officielles</Badge>
-              <p className="mt-2 font-medium">Démarches expliquées, à jour et sourcées</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Dimona, DmfA, commissions paritaires, salaire minimum, contrats étudiant et flexi-job — chaque
-                fiche renvoie aux textes officiels (ONSS, SPF Emploi…).
-              </p>
-              <Link
-                href="/employeur/bibliotheque"
-                className="mt-2 inline-flex items-center gap-1 text-xs text-primary no-underline hover:underline"
-              >
-                Parcourir la bibliothèque <ArrowRight className="size-3" />
-              </Link>
-            </div>
-            <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Scale className="size-6" />
-            </span>
+      {/* Veille (informatif, vers bibliothèque) — pleine largeur */}
+      <div className={PANEL}>
+        <PanelHead title="Veille & conformité" href="/employeur/bibliotheque" action="Bibliothèque" />
+        <div className="flex items-start gap-4 p-5 pt-3">
+          <div className="min-w-0 flex-1">
+            <Badge variant="secondary">Sources officielles</Badge>
+            <p className="mt-2 font-medium">Démarches expliquées, à jour et sourcées</p>
+            <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
+              Dimona, DmfA, commissions paritaires, salaire minimum, contrats étudiant et flexi-job — chaque
+              fiche renvoie aux textes officiels (ONSS, SPF Emploi…).
+            </p>
+            <Link
+              href="/employeur/bibliotheque"
+              className="mt-2 inline-flex items-center gap-1 text-xs text-primary no-underline hover:underline"
+            >
+              Parcourir la bibliothèque <ArrowRight className="size-3" />
+            </Link>
           </div>
+          <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Scale className="size-6" />
+          </span>
         </div>
       </div>
     </div>
@@ -449,6 +492,15 @@ function Kpi({
         <Icon className="size-6" />
       </span>
     </Link>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="mb-1 text-[11px] text-muted-foreground">{label}</p>
+      <div className="rounded-lg border border-border bg-background px-3 py-2 text-sm">{value}</div>
+    </div>
   );
 }
 

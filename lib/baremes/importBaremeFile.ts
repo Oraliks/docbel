@@ -8,6 +8,7 @@ import { sha256 } from './hash'
 import { normalizeBaremeData } from './normalizeBaremeData'
 import { verifyRoundTrip } from './verifyRoundTrip'
 import { verifySheetContracts } from './sheetContracts'
+import { verifyCoverage } from './verifyCoverage'
 import { extractValidFromFileName } from './normalize'
 import { compareBaremeVersions, detectAnomaliesFromDiff } from './compareBaremeVersions'
 import { loadSheetMappingOverrides } from './loadSheetMappings'
@@ -146,6 +147,11 @@ export async function importBaremeFile(
   // compte plausible, codes-clés présents — détecte une dérive du fichier ONEM.
   const contracts = verifySheetContracts(parsed.sheets, validatedAmounts)
   normalized.alerts.push(...contracts.alerts)
+
+  // 3quinquies) Couverture inverse (feuilles denses) : aucune cellule montant de la
+  // zone de données n'est oubliée (anti-perte silencieuse).
+  const coverage = verifyCoverage(parsed.sheets, validatedAmounts, normalized.diagnostics.ignoredRows)
+  normalized.alerts.push(...coverage.alerts)
 
   // 4) Sauvegarde disque — répertoire PRIVÉ
   const uploadDir = path.join(/* turbopackIgnore: true */ process.cwd(), PRIVATE_UPLOAD_SUBDIR)

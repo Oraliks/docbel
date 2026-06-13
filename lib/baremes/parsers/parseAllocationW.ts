@@ -2,6 +2,7 @@ import type { ParsedSheet } from '@/lib/baremes-parser'
 import type {
   BaremeAlert,
   BaremeAmountDraft,
+  BaremeIgnoredRow,
   BaremeUnknownCode,
   ParserResult,
 } from '../types'
@@ -33,6 +34,7 @@ export function parseAllocationW(
 ): ParserResult {
   const alerts: BaremeAlert[] = []
   const amounts: BaremeAmountDraft[] = []
+  const ignoredRows: BaremeIgnoredRow[] = []
   const unknownCodes: BaremeUnknownCode[] = []
   const seenKeys = new Set<string>()
   const seenUnknown = new Set<string>()
@@ -42,13 +44,27 @@ export function parseAllocationW(
     const codesCell = (row[12] ?? '').trim() // col M
     if (!codesCell) continue
 
-    // Extraire chaque code séparé par espaces
+    // Extraire chaque code séparé par espaces.
+    // Les codes ONEM des allocations W vont d'1 à 4 lettres : les codes
+    // mono-lettre I (cohabitant non privilégié), T (idem <18) et S (pendant le
+    // SIP) sont légitimes — l'ancien filtre {2,4} les rejetait silencieusement
+    // (perte de 7 montants : P34=24.88, R34=12.44, P35=15.61, R35=7.81, P37=26.82).
     const codes = codesCell
       .split(/\s+/)
       .map((c) => c.trim())
-      .filter((c) => c && /^[A-Z]{2,4}\d*[A-Z]?$/i.test(c))
+      .filter((c) => c && /^[A-Z]{1,4}\d*[A-Z]?$/i.test(c))
 
-    if (codes.length === 0) continue
+    if (codes.length === 0) {
+      // Ligne avec un contenu en col M mais aucun token reconnu comme code :
+      // tracée explicitement plutôt que sautée en silence (couverture inverse).
+      ignoredRows.push({
+        sheet: sheet.name,
+        rowIndex: r + 1,
+        rawValues: row.slice(0, 18).map((v) => (v ?? '').toString().slice(0, 40)),
+        reason: `Col M = « ${codesCell.slice(0, 60)} » : aucun token ne correspond à un code ONEM (1-4 lettres). Ligne ignorée — vérifier si un montant a été perdu.`,
+      })
+      continue
+    }
 
     const ageCondition = (row[13] ?? '').trim() // col N
     const fullAmount = parseCellNumber(row[15]) // col P
@@ -157,7 +173,7 @@ export function parseAllocationW(
     )
   }
 
-  return { amounts, alerts, ignoredRows: [], unknownCodes }
+  return { amounts, alerts, ignoredRows, unknownCodes }
 }
 
 function normalizeCondition(c: string): string {

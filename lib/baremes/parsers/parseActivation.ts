@@ -1,5 +1,5 @@
 import type { ParsedSheet } from '@/lib/baremes-parser'
-import type { BaremeAlert, BaremeAmountDraft, ParserResult } from '../types'
+import type { BaremeAlert, BaremeAmountDraft, BaremeIgnoredRow, ParserResult } from '../types'
 import { cellRef, makeIssue } from '../types'
 import { parseCellNumber } from '../normalize'
 
@@ -10,16 +10,22 @@ interface ParseActivationOptions {
 /**
  * Parse Activering_Activation (allocations d'activation).
  *
- * Structure : plusieurs sous-sections (SINE oude/nieuwe regeling, ACTIVA-WALLONIE,
- * ACTIVA-BRUSSEL), chacune avec un mini-tableau code → montant max mensuel.
+ * Structure : DEUX blocs côte à côte, chacun avec sa propre séquence de sections :
+ *  - bloc GAUCHE  (col A = code, col B = montant) : SINE ancien régime, SINE nouveau régime
+ *  - bloc DROIT   (col I = code, col J = montant) : ACTIVA-WALLONIE, ACTIVA-BRUSSEL
  *
- * On scanne la feuille à la recherche de paires (code, montant) :
- *  - dans le bloc gauche (col A = code, col B = montant)
- *  - dans le bloc droit (col I = code, col J = montant)
+ * ⚠️ Les deux blocs sont DÉSALIGNÉS verticalement : une même ligne peut porter un
+ * en-tête de section d'un bloc ET une donnée de l'autre (ex. L13 : A="SINE" +
+ * I="WB1"=500 ; L17 : A="CA/#"=500 + I="ACTIVA-BRUSSEL"). L'ancien parser faisait
+ * `continue` sur toute la ligne dès qu'un en-tête était vu dans N'IMPORTE quel bloc
+ * → perte silencieuse de 2 montants (WB1 et le nouveau régime SINE) et 5 codes
+ * ACTIVA-WALLONIE rattachés à tort à "SINE" (état de section global partagé).
+ * Corrigé : un état de sous-catégorie PAR BLOC, détection d'en-tête par bloc, et on
+ * ne saute que la cellule-code du bloc qui porte l'en-tête (pas la ligne entière).
  *
- * Les valeurs qui contiennent des formules (ex: "500,00 X U/[Sx4]") sont stockées
- * dans rawData mais l'`amount` n'est rempli que si la cellule contient un nombre
- * pur. Pour les formules avec un montant numérique en préfixe, on capte ce préfixe.
+ * Montant = montant mensuel MAXIMUM. Pour les formules de proratisation
+ * ("750,00 X Q/S (max. 500,00)"), c'est la valeur après "max." qui est le plafond
+ * réel (500), PAS le préfixe (750) qui n'est que la base de calcul.
  */
 export function parseActivation(
   sheet: ParsedSheet,
@@ -27,47 +33,65 @@ export function parseActivation(
 ): ParserResult {
   const alerts: BaremeAlert[] = []
   const amounts: BaremeAmountDraft[] = []
+  const ignoredRows: BaremeIgnoredRow[] = []
   const seenKeys = new Set<string>()
 
-  let currentSubcategory: string | null = null
+  // État de section INDÉPENDANT par bloc (le partage global était la cause des
+  // rattachements faux WA/WB → SINE).
+  let leftSubcat: string | null = null
+  let rightSubcat: string | null = null
 
   for (let r = 0; r < sheet.cellData.length; r++) {
     const row = sheet.cellData[r]
-
-    // Tentative de détecter le nom de la sous-section (texte large en A ou I)
     const cellA = (row[0] ?? '').trim()
     const cellI = (row[8] ?? '').trim()
-    const subcatCandidate = detectSubcategory(cellA) ?? detectSubcategory(cellI)
-    if (subcatCandidate) {
-      currentSubcategory = subcatCandidate
-      continue
+
+    // Détection d'en-tête de section PAR BLOC.
+    const leftHeader = detectSubcategory(cellA)
+    const rightHeader = detectSubcategory(cellI)
+    if (leftHeader) leftSubcat = leftHeader
+    if (rightHeader) rightSubcat = rightHeader
+
+    // Affinage du régime SINE (ancien/nouveau) depuis les lignes de condition,
+    // pour que CA/1-CA/2 (ancien) ne soient pas confondus avec CA/# (nouveau).
+    const regime = detectRegime(cellA)
+    if (regime && leftSubcat && /^sine/i.test(leftSubcat)) {
+      leftSubcat = `SINE (${regime} régime)`
     }
 
-    // Couple gauche : code en A, montant en B
-    addAmountIfValid({
-      code: cellA,
-      amountCell: row[1] ?? '',
-      amountColIndex: 1,
-      subcategory: currentSubcategory,
-      sheet,
-      validFrom: options.validFrom,
-      row: r,
-      amounts,
-      seenKeys,
-    })
+    // Bloc gauche : code A / montant B — seulement si A ne porte pas un en-tête.
+    if (!leftHeader) {
+      addAmountIfValid({
+        code: cellA,
+        amountCell: row[1] ?? '',
+        amountColIndex: 1,
+        codeColumnLabel: 'gauche (col A)',
+        subcategory: leftSubcat,
+        sheet,
+        validFrom: options.validFrom,
+        row: r,
+        amounts,
+        ignoredRows,
+        seenKeys,
+      })
+    }
 
-    // Couple droit : code en I, montant en J
-    addAmountIfValid({
-      code: cellI,
-      amountCell: row[9] ?? '',
-      amountColIndex: 9,
-      subcategory: currentSubcategory,
-      sheet,
-      validFrom: options.validFrom,
-      row: r,
-      amounts,
-      seenKeys,
-    })
+    // Bloc droit : code I / montant J — seulement si I ne porte pas un en-tête.
+    if (!rightHeader) {
+      addAmountIfValid({
+        code: cellI,
+        amountCell: row[9] ?? '',
+        amountColIndex: 9,
+        codeColumnLabel: 'droite (col I)',
+        subcategory: rightSubcat,
+        sheet,
+        validFrom: options.validFrom,
+        row: r,
+        amounts,
+        ignoredRows,
+        seenKeys,
+      })
+    }
   }
 
   if (amounts.length === 0) {
@@ -83,18 +107,20 @@ export function parseActivation(
     )
   }
 
-  return { amounts, alerts, ignoredRows: [], unknownCodes: [] }
+  return { amounts, alerts, ignoredRows, unknownCodes: [] }
 }
 
 interface AddAmountInput {
   code: string
   amountCell: string
   amountColIndex: number
+  codeColumnLabel: string
   subcategory: string | null
   sheet: ParsedSheet
   validFrom: Date | null
   row: number
   amounts: BaremeAmountDraft[]
+  ignoredRows: BaremeIgnoredRow[]
   seenKeys: Set<string>
 }
 
@@ -109,10 +135,20 @@ function addAmountIfValid(input: AddAmountInput) {
   const amountCell = input.amountCell.trim()
   if (!amountCell) return
 
-  // Soit nombre pur, soit formule commençant par un nombre (ex: "500,00 X U/[Sx4]")
+  // Le montant à retenir est le montant mensuel MAXIMUM :
+  //  1. nombre pur (ex: "433,81")
+  //  2. plafond explicite d'une formule : "(max. 500,00)" → 500 (PAS le préfixe)
+  //  3. à défaut, préfixe numérique de la formule (ex: "500,00 X U/[Sx4]")
   let amount: number | null = parseCellNumber(amountCell)
   let isFormula = false
 
+  if (amount === null) {
+    const maxMatch = amountCell.match(/max\.?\s*([\d.,]+)/i)
+    if (maxMatch) {
+      amount = parseCellNumber(maxMatch[1])
+      isFormula = amount !== null
+    }
+  }
   if (amount === null) {
     const match = amountCell.match(/^(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/)
     if (match) {
@@ -121,7 +157,17 @@ function addAmountIfValid(input: AddAmountInput) {
     }
   }
 
-  if (amount === null) return
+  if (amount === null) {
+    // Code plausible mais aucun montant extractible : tracé (couverture inverse)
+    // plutôt que perdu en silence.
+    input.ignoredRows.push({
+      sheet: input.sheet.name,
+      rowIndex: input.row + 1,
+      rawValues: [codeRaw.slice(0, 40), amountCell.slice(0, 40)],
+      reason: `Code « ${codeRaw} » (${input.codeColumnLabel}) sans montant extractible depuis « ${amountCell.slice(0, 50)} ».`,
+    })
+    return
+  }
 
   const subcat = input.subcategory ? normalizeKey(input.subcategory) : 'unknown'
   const codeKey = normalizeKey(codeRaw)
@@ -159,9 +205,9 @@ function addAmountIfValid(input: AddAmountInput) {
       transformReason:
         `Ce montant provient de la feuille ${input.sheet.name}, cellule ${amountCellRef}` +
         (input.subcategory ? `, section « ${input.subcategory} »` : '') +
-        `. Le code « ${codeRaw} » a été lu dans la colonne de gauche.` +
+        `. Le code « ${codeRaw} » a été lu dans la colonne ${input.codeColumnLabel}.` +
         (isFormula
-          ? ` La cellule contient une formule (« ${amountCell.slice(0, 60)} ») : seul le montant numérique en préfixe (${amount}) a été extrait — à vérifier.`
+          ? ` La cellule contient une formule (« ${amountCell.slice(0, 60)} ») : le montant mensuel maximum retenu est ${amount} (plafond « max. » s'il est présent, sinon préfixe) — à vérifier.`
           : ` Le montant mensuel ${amount} a été normalisé depuis la valeur brute « ${amountCell} ».`),
     },
   })
@@ -169,18 +215,27 @@ function addAmountIfValid(input: AddAmountInput) {
 }
 
 function detectSubcategory(cell: string): string | null {
-  const lower = cell.toLowerCase()
-  if (/sine/.test(lower) && /oude|nieuwe|nouveau|ancien/.test(lower)) {
-    return cell
-  }
   if (/^sine$/i.test(cell)) return 'SINE'
   if (/activa.*wallonie|activa.*wallon/i.test(cell)) return 'ACTIVA-WALLONIE'
   if (/activa.*brussel|activa.*bruxelles/i.test(cell)) return 'ACTIVA-BRUSSEL'
   return null
 }
 
+/**
+ * Détecte la mention de régime SINE (ancien avant 2004 / nouveau dès 2004) portée
+ * par une ligne de condition, pour distinguer CA/1-CA/2 (ancien) de CA/# (nouveau).
+ */
+function detectRegime(cell: string): 'ancien' | 'nouveau' | null {
+  const lower = cell.toLowerCase()
+  if (/oude regeling|ancien régime|vóór 2004|avant 2004/.test(lower)) return 'ancien'
+  if (/nieuwe regeling|nouveau régime|vanaf 2004|à partir de.*2004/.test(lower)) return 'nouveau'
+  return null
+}
+
 function normalizeKey(s: string): string {
   return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // translittère les accents (régime → regime)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '')

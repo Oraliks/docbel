@@ -62,11 +62,12 @@ export function TrustBand() {
   return (
     <section
       aria-label="Vos données restent à vous"
-      className="outils-rise flex flex-col gap-6"
+      className="glass-surface outils-rise flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6"
     >
-      <div className="flex items-center gap-3">
+      {/* En-tête : tuile + titre — compact, posé à gauche sur desktop. */}
+      <div className="flex shrink-0 items-center gap-2.5 sm:max-w-[190px]">
         <span
-          className="glass-icon-tile flex size-11 shrink-0 items-center justify-center rounded-xl"
+          className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-lg"
           style={
             {
               background:
@@ -76,22 +77,23 @@ export function TrustBand() {
             } as React.CSSProperties
           }
         >
-          <ShieldCheckIcon className="size-5" strokeWidth={1.9} aria-hidden />
+          <ShieldCheckIcon className="size-[18px]" strokeWidth={1.9} aria-hidden />
         </span>
-        <h2 className="glass-display text-[26px] font-semibold leading-tight sm:text-[30px]">
+        <h2 className="glass-display text-[19px] font-semibold leading-tight sm:text-[21px]">
           Vos données restent à vous
         </h2>
       </div>
 
-      <div className="grid gap-x-10 gap-y-5 sm:grid-cols-3">
+      {/* 3 engagements en ligne, compacts. */}
+      <div className="grid flex-1 gap-x-8 gap-y-2.5 sm:grid-cols-3">
         {PRIVACY_POINTS.map(({ Icon, text }, index) => (
-          <div key={index} className="flex items-start gap-3">
+          <div key={index} className="flex items-start gap-2.5">
             <Icon
-              className="mt-0.5 size-5 shrink-0 text-[color:var(--glass-accent-deep)]"
+              className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-accent-deep)]"
               strokeWidth={2}
               aria-hidden
             />
-            <p className="text-[13.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
+            <p className="text-[12px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
               {text}
             </p>
           </div>

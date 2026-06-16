@@ -67,8 +67,9 @@ export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
                   className="group relative flex min-w-0 flex-1 animate-[fadeInUp_0.5s_ease_both] flex-col items-center gap-2.5"
                   style={{ animationDelay: `${index * 70}ms` }}
                 >
-                  {/* Nom au survol (apparaît/disparaît) */}
-                  <span className="pointer-events-none absolute left-1/2 top-0 z-20 max-w-[140px] -translate-x-1/2 -translate-y-[calc(100%+8px)] truncate rounded-lg bg-[color:var(--glass-ink)] px-2.5 py-1 text-center text-[11px] font-bold text-[color:var(--glass-surface)] opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
+                  {/* Nom au survol : texte gras posé au-dessus de l'icône
+                      (sans pastille), fondu + montée douce. Pro & lisible. */}
+                  <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap text-center text-[13px] font-extrabold tracking-tight text-[color:var(--glass-ink)] opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100">
                     {tool.title}
                   </span>
 

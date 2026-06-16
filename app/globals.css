@@ -701,6 +701,19 @@ body {
   }
 }
 
+/* Flottement doux des icônes d'outils (timeline « Vos outils, en un geste »).
+   Appliqué sur un wrapper interne pour ne pas entrer en conflit avec le
+   transform d'entrée (fadeInUp) du <li> ni le scale au survol de l'icône. */
+@keyframes toolFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
 @keyframes slideInSearch {
   from {
     opacity: 0;

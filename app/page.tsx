@@ -140,7 +140,7 @@ export default async function HomePage() {
       {activeRun && <ResumeStrip run={activeRun} />}
       <LandingHero articles={featuredArticles} loading={false} />
       <HeroSearch />
-      <LandingToolsRow tools={toolsForRow} totalCount={citizenTools.length} />
+      <LandingToolsRow tools={toolsForRow} />
       <WizardTeaser />
       <TrustBand />
       <LandingBottom news={news} loading={false} bundles={popularBundles} />

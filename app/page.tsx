@@ -54,61 +54,47 @@ function formatFrenchDate(value: string): string {
  * Le persona switcher / la recherche restent des îlots client (header).
  */
 export default async function HomePage() {
-  const [articles, toolRows, bundleRows, activeRun, documentsCount, issuerRows] =
-    await Promise.all([
-      prisma.news
-        .findMany({
-          where: { status: "published", featured: true },
-          orderBy: { createdAt: "desc" },
-          take: 10,
-          select: {
-            id: true,
-            slug: true,
-            category: true,
-            title: true,
-            excerpt: true,
-            publishedAt: true,
-            createdAt: true,
-            color: true,
-            readingTime: true,
-            featured: true,
-            image: true,
-          },
-        })
-        .catch(() => []),
-      fetchAllToolsActive().catch(() => []),
-      // Dossiers populaires (vrais DocumentBundle) — même pattern fail-soft
-      // que /mon-dossier : DB indisponible → liste vide, la home tient debout.
-      prisma.documentBundle
-        .findMany({
-          where: { active: true },
-          orderBy: [{ showOnOnboarding: "desc" }, { order: "asc" }, { name: "asc" }],
-          take: 4,
-          select: {
-            slug: true,
-            name: true,
-            color: true,
-            lifeEventCategory: true,
-            items: { select: { id: true } },
-          },
-        })
-        .catch(() => []),
-      // Dossier en cours du visiteur (fail-soft intégré : erreur → null).
-      loadActiveBundleRun(),
-      // Compteurs de la bande de confiance (chiffres réels, fail-soft → 0/[]).
-      prisma.pdfForm
-        .count({ where: { status: "published", active: true } })
-        .catch(() => 0),
-      // Organismes émetteurs distincts des documents publiés (champ texte
-      // `issuer` — les vides sont filtrés plus bas).
-      prisma.pdfForm
-        .findMany({
-          where: { status: "published", active: true, issuer: { not: null } },
-          select: { issuer: true },
-          distinct: ["issuer"],
-        })
-        .catch(() => [] as { issuer: string | null }[]),
-    ]);
+  const [articles, toolRows, bundleRows, activeRun] = await Promise.all([
+    prisma.news
+      .findMany({
+        where: { status: "published", featured: true },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          slug: true,
+          category: true,
+          title: true,
+          excerpt: true,
+          publishedAt: true,
+          createdAt: true,
+          color: true,
+          readingTime: true,
+          featured: true,
+          image: true,
+        },
+      })
+      .catch(() => []),
+    fetchAllToolsActive().catch(() => []),
+    // Dossiers populaires (vrais DocumentBundle) — même pattern fail-soft
+    // que /mon-dossier : DB indisponible → liste vide, la home tient debout.
+    prisma.documentBundle
+      .findMany({
+        where: { active: true },
+        orderBy: [{ showOnOnboarding: "desc" }, { order: "asc" }, { name: "asc" }],
+        take: 4,
+        select: {
+          slug: true,
+          name: true,
+          color: true,
+          lifeEventCategory: true,
+          items: { select: { id: true } },
+        },
+      })
+      .catch(() => []),
+    // Dossier en cours du visiteur (fail-soft intégré : erreur → null).
+    loadActiveBundleRun(),
+  ]);
 
   const inactiveSlugs = new Set(
     toolRows.filter((r) => !r.active).map((r) => r.slug)
@@ -119,16 +105,6 @@ export default async function HomePage() {
   const audienceTools = getToolsByAudience(persona);
   const base = audienceTools.length ? audienceTools : TOOLS_DATA;
   const tools = base.filter((t) => !inactiveSlugs.has(getToolSlug(t)));
-
-  // Bande de confiance : outils = catalogue site entier (toutes audiences),
-  // pas le sous-ensemble persona affiché dans la rangée ; organismes = issuers
-  // distincts non vides. TrustBand masque tout compteur à 0 (fail-soft DB).
-  const activeToolsCount = TOOLS_DATA.filter(
-    (t) => !inactiveSlugs.has(getToolSlug(t)),
-  ).length;
-  const organismesCount = issuerRows.filter(
-    (row) => row.issuer && row.issuer.trim(),
-  ).length;
 
   const news: NewsItem[] = articles.map((article) => ({
     id: article.id,
@@ -166,13 +142,7 @@ export default async function HomePage() {
       <HeroSearch />
       <LandingToolsRow tools={tools} />
       <WizardTeaser />
-      <TrustBand
-        stats={{
-          documents: documentsCount,
-          outils: activeToolsCount,
-          organismes: organismesCount,
-        }}
-      />
+      <TrustBand />
       <LandingBottom news={news} loading={false} bundles={popularBundles} />
     </>
   );

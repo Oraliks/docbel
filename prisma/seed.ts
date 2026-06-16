@@ -6,6 +6,7 @@ import { seedOrganismes } from "./seeds/organismes";
 import { seedFieldValidationPresets } from "./seeds/field-validation-presets";
 import { seedBureaus } from "./seeds/bureaus";
 import { seedBookingTenants } from "./seeds/booking";
+import { seedFormations } from "./seeds/formations";
 
 const prisma = new PrismaClient();
 
@@ -461,6 +462,9 @@ async function main() {
 
   console.log("🌱 Seeding booking tenants (FGTB, CSC, CGSLB, CAPAC)...");
   await seedBookingTenants(prisma);
+
+  console.log("🌱 Seeding formations (catégories, tags, Boussole, démo)...");
+  await seedFormations(prisma);
 }
 
 main()

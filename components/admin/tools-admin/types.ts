@@ -43,6 +43,32 @@ export interface Section {
 }
 
 /**
+ * Outil "à plat" pour la table : on aplatit les sections en une seule liste
+ * et on rapatrie le nom/id de section sur chaque ligne (la section devient
+ * la colonne "Catégorie", remplaçant le groupement par section).
+ */
+export interface FlatTool extends Tool {
+  sectionId: string;
+  sectionName: string;
+}
+
+/**
+ * Compteurs affichés dans la barre de stats. Aux 4 globaux (total/actifs/
+ * inactifs/populaires) s'ajoutent les compteurs par segment d'accès,
+ * calculés via `effectiveRules` (un outil compte pour un segment si ce
+ * segment figure dans ses règles effectives).
+ */
+export interface ToolCounts {
+  total: number;
+  active: number;
+  inactive: number;
+  popular: number;
+  citoyen: number;
+  employeur: number;
+  partenaire: number;
+}
+
+/**
  * Filtre principal de la barre de tabs (refonte 2026-05) — combine statut
  * (actif/inactif) ET vue "populaires", car ce sont les 3 axes de tri rapides
  * pour un admin qui veut vérifier sa vitrine publique en un coup d'œil.

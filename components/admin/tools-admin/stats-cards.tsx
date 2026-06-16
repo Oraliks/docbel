@@ -1,108 +1,108 @@
+import {
+  Building2,
+  CheckCircle2,
+  CircleSlash,
+  Handshake,
+  LayoutGrid,
+  type LucideIcon,
+  Star,
+  User,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { ToolCounts } from "./types";
 
 interface StatsCardsProps {
-  counts: {
-    total: number;
-    active: number;
-    inactive: number;
-    popular: number;
-  };
+  counts: ToolCounts;
 }
 
 /**
- * 4 cards stats compactes en haut de la page admin /outils.
- *
- * Chaque card affiche un gros chiffre (le compte) + un label court, avec
- * une bordure colorée fine côté gauche (`border-l-4`) qui matérialise la
- * catégorie. Pattern aligné sur `overview-stats.tsx` (page méthodologie
- * des calculateurs) pour cohérence visuelle de la zone admin.
- *
- * Purement présentationnel : compteurs passés en props depuis `workspace.tsx`,
- * pas d'agrégation interne.
+ * Bandeau de stats horizontal en tête de /admin/chomage/outils (refonte
+ * mockup 2026-06). Un seul conteneur carte, plusieurs stats inline séparées
+ * par un filet vertical. Aux 4 globaux s'ajoutent les compteurs par segment
+ * d'accès (Citoyen/Employeur/Partenaire) — calculés en amont via
+ * `effectiveRules`. Pas de stat "Admin" : un admin voit tout par définition,
+ * ce n'est pas un segment d'accès.
  */
 export function StatsCards({ counts }: StatsCardsProps) {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StatCard value={counts.total} label="Total" tone="slate" />
-      <StatCard
-        symbol="✓"
+    <div className="flex flex-wrap items-stretch divide-x divide-border rounded-xl border border-border bg-card">
+      <Stat
+        icon={LayoutGrid}
+        value={counts.total}
+        label="Total"
+        tone="slate"
+        accent
+      />
+      <Stat
+        icon={CheckCircle2}
         value={counts.active}
         label="Actifs"
         tone="emerald"
       />
-      <StatCard
-        symbol="∅"
+      <Stat
+        icon={CircleSlash}
         value={counts.inactive}
-        label="Inactifs"
+        label="Inactif"
         tone="red"
       />
-      <StatCard
-        symbol="★"
-        value={counts.popular}
-        label="Populaires"
+      <Stat icon={Star} value={counts.popular} label="Populaires" tone="amber" />
+      <Stat icon={User} value={counts.citoyen} label="Citoyen" tone="blue" />
+      <Stat
+        icon={Building2}
+        value={counts.employeur}
+        label="Employeur"
+        tone="violet"
+      />
+      <Stat
+        icon={Handshake}
+        value={counts.partenaire}
+        label="Partenaire"
         tone="amber"
       />
     </div>
   );
 }
 
-type Tone = "emerald" | "amber" | "red" | "slate";
+type Tone = "emerald" | "amber" | "red" | "slate" | "blue" | "violet";
 
-const TONE_STYLES: Record<
-  Tone,
-  { border: string; symbol: string; value: string }
-> = {
-  emerald: {
-    border: "border-l-emerald-500",
-    symbol: "text-emerald-600 dark:text-emerald-400",
-    value: "text-emerald-700 dark:text-emerald-300",
-  },
-  amber: {
-    border: "border-l-amber-500",
-    symbol: "text-amber-600 dark:text-amber-400",
-    value: "text-amber-700 dark:text-amber-300",
-  },
-  red: {
-    border: "border-l-red-500",
-    symbol: "text-red-600 dark:text-red-400",
-    value: "text-red-700 dark:text-red-300",
-  },
-  slate: {
-    border: "border-l-slate-400 dark:border-l-slate-500",
-    symbol: "text-slate-500 dark:text-slate-400",
-    value: "text-foreground",
-  },
+const TONE_TEXT: Record<Tone, string> = {
+  emerald: "text-emerald-600 dark:text-emerald-400",
+  amber: "text-amber-600 dark:text-amber-400",
+  red: "text-red-600 dark:text-red-400",
+  slate: "text-slate-500 dark:text-slate-400",
+  blue: "text-blue-600 dark:text-blue-400",
+  violet: "text-violet-600 dark:text-violet-400",
 };
 
-interface StatCardProps {
-  symbol?: string;
+function Stat({
+  icon: Icon,
+  value,
+  label,
+  tone,
+  accent,
+}: {
+  icon: LucideIcon;
   value: number;
   label: string;
   tone: Tone;
-}
-
-function StatCard({ symbol, value, label, tone }: StatCardProps) {
-  const styles = TONE_STYLES[tone];
+  accent?: boolean;
+}) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-0.5 rounded-xl border border-border bg-card px-4 py-3 border-l-4",
-        styles.border,
+        "flex min-w-[88px] flex-1 flex-col gap-0.5 px-4 py-3",
+        accent && "border-l-4 border-l-primary",
       )}
     >
-      <div className="flex items-baseline gap-2">
-        {symbol ? (
-          <span className={cn("text-lg font-bold leading-none", styles.symbol)}>
-            {symbol}
-          </span>
-        ) : null}
-        <span
-          className={cn("text-2xl font-bold leading-none", styles.value)}
-        >
+      <div className="flex items-center gap-1.5">
+        <Icon className={cn("size-3.5", TONE_TEXT[tone])} />
+        <span className="text-xl font-bold leading-none text-foreground">
           {value}
         </span>
       </div>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <span className="text-[11px] font-medium text-muted-foreground">
+        {label}
+      </span>
     </div>
   );
 }

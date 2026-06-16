@@ -116,7 +116,7 @@ export function Tutorial({ tool, accent }: ToolViewProps) {
     ? [
         {
           title: "Télécharger l'application MyONEM",
-          body: "Disponible sur App Store et Google Play. Connectez-vous avec votre eID ou itsme. Vous pouvez aussi utiliser le site web myonem.be depuis un ordinateur.",
+          body: "Disponible sur App Store et Google Play. Connectez-vous avec votre eID ou itsme. Vous pouvez aussi utiliser le site web myonem.onem.be depuis un ordinateur.",
         },
         {
           title: "Accéder à « Ma carte de contrôle »",
@@ -149,7 +149,7 @@ export function Tutorial({ tool, accent }: ToolViewProps) {
     : [
         {
           title: "Accéder à MyONEM",
-          body: "Rendez-vous sur myonem.be et cliquez sur « S'inscrire ». Vous aurez besoin de votre carte eID ou de l'application itsme.",
+          body: "Rendez-vous sur myonem.onem.be et cliquez sur « S'inscrire ». Vous aurez besoin de votre carte eID ou de l'application itsme.",
         },
         {
           title: "Vérifier votre identité",

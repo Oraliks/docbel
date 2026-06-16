@@ -2499,3 +2499,510 @@ model DocumentDraft {
   @@index([userId])
   @@index([scenarioId])
 }
+
+// ===========================================================================
+// Docbel Formations — Module V1 (catalogue + Boussole d'orientation + création
+// org + workflow admin + sessions + inscriptions).
+// Tables ADDITIVES uniquement (migration 48). Convention employeur : champs à
+// ensemble borné = String + union Zod (cf. lib/formations/*), pas d'enum
+// Postgres. Références vers User/Organisme = String brut SANS FK (isolation,
+// comme BookingTenant). FK + onDelete:Cascade UNIQUEMENT entre tables du module.
+// ===========================================================================
+
+/// Organisation propriétaire de formations (employeur, partenaire, ASBL,
+/// organisme de formation, formateur vérifié, organisation interne Docbel…).
+/// Conteneur dédié, modelé sur BookingTenant : pont `partnerOrganization` vers
+/// User.partnerOrganization + `organismeId` (réf. libre). L'admin active les
+/// capacités via OrganizationTrainingPermission.
+model FormationOrganization {
+  id                  String   @id @default(cuid())
+  slug                String   @unique
+  name                String
+  /// employeur | partenaire | asbl | organisme_formation | administration |
+  /// prive | formateur | interne_docbel
+  type                String   @default("partenaire")
+  /// Référence libre vers Organisme.id (sans FK). Null pour une entreprise.
+  organismeId         String?
+  /// Pont vers User.partnerOrganization : auto-accès des partenaires de cette
+  /// organisation (ex "FGTB"). Les responsables (isOrgManager) deviennent owner.
+  partnerOrganization String?
+  description         String?
+  logoUrl             String?
+  brandColor          String?
+  website             String?
+  contactEmail        String?
+  /// Email de l'équipe notifié (nouvelle inscription, etc.).
+  notifyEmail         String?
+  /// active | suspended | pending
+  status              String   @default("active")
+  createdById         String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  permission OrganizationTrainingPermission?
+  members    FormationOrgMember[]
+  trainings  Training[]
+
+  @@index([partnerOrganization])
+  @@index([status])
+  @@index([type])
+}
+
+/// Membre d'une organisation de formation (équipe). Rôle fin par membre.
+/// `userId` = réf. libre vers User.id (sans FK).
+model FormationOrgMember {
+  id             String                @id @default(cuid())
+  organizationId String
+  organization   FormationOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  /// owner | manager | trainer | viewer | admin_contact
+  role           String                @default("viewer")
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+/// Capacités de création de formations octroyées par l'admin à une organisation.
+/// 1:1 avec FormationOrganization. Les capacités sensibles sont OFF par défaut
+/// (privé/interne/publication directe), conformément au spec.
+model OrganizationTrainingPermission {
+  id                          String                @id @default(cuid())
+  organizationId              String                @unique
+  organization                FormationOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  canCreateTraining           Boolean               @default(true)
+  canSubmitTraining           Boolean               @default(true)
+  canPublishDirectly          Boolean               @default(false)
+  canCreatePublicTraining     Boolean               @default(true)
+  canCreatePaidTraining       Boolean               @default(true)
+  canCreatePrivateTraining    Boolean               @default(false)
+  canCreateInternalTraining   Boolean               @default(false)
+  canManageSessions           Boolean               @default(true)
+  canManageEnrollments        Boolean               @default(true)
+  canViewParticipantData      Boolean               @default(true)
+  canExportParticipants       Boolean               @default(false)
+  canIssueCertificate         Boolean               @default(false)
+  canUseDocbelBadge           Boolean               @default(false)
+  canRequestFeaturedPlacement Boolean               @default(false)
+  updatedById                 String?
+  createdAt                   DateTime              @default(now())
+  updatedAt                   DateTime              @updatedAt
+}
+
+/// Catégorie de formation (Administratif, Social, Numérique…). Hiérarchie
+/// optionnelle via parentId (réf. libre).
+model TrainingCategory {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  icon        String?
+  color       String   @default("#7C3AED")
+  parentId    String?
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  trainings Training[]
+
+  @@index([isActive])
+  @@index([order])
+}
+
+/// Tag de formation. `isOrientationTag` = relie à la Boussole (recommandations).
+model TrainingTag {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  /// thematique | format | public | orientation | autre
+  type             String?
+  isOrientationTag Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  trainings TrainingTagOnTraining[]
+
+  @@index([isOrientationTag])
+}
+
+model TrainingTagOnTraining {
+  trainingId String
+  training   Training    @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  tagId      String
+  tag        TrainingTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([trainingId, tagId])
+  @@index([tagId])
+}
+
+/// Badge affiché sur une formation. Les badges officiels (Validée Docbel,
+/// Recommandée Docbel…) sont `controlledByAdmin = true` et seul l'admin peut
+/// les attribuer.
+model TrainingBadge {
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  name              String
+  description       String?
+  controlledByAdmin Boolean  @default(true)
+  icon              String?
+  color             String?
+  order             Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  trainings TrainingBadgeOnTraining[]
+}
+
+model TrainingBadgeOnTraining {
+  trainingId  String
+  training    Training      @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  badgeId     String
+  badge       TrainingBadge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  /// Réf. libre vers User.id de l'admin ayant attribué (badges contrôlés).
+  grantedById String?
+  grantedAt   DateTime      @default(now())
+
+  @@id([trainingId, badgeId])
+  @@index([badgeId])
+}
+
+/// Formation (contenu général). Plusieurs TrainingSession (dates concrètes).
+model Training {
+  id             String                @id @default(cuid())
+  slug           String                @unique
+  organizationId String
+  organization   FormationOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /// Réf. libre vers Organisme.id + User.id (sans FK).
+  organismeId    String?
+  createdById    String?
+
+  title            String
+  shortDescription String?
+  description      String?
+  /// Listes (réponses libres). TEXT[].
+  objectives       String[] @default([])
+  targetAudience   String?
+  prerequisites    String?
+  /// debutant | intermediaire | avance
+  level            String   @default("debutant")
+  language         String   @default("fr")
+
+  categoryId           String?
+  category             TrainingCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  secondaryCategoryIds String[]          @default([])
+  skills               String[]          @default([])
+  keywords             String[]          @default([])
+
+  /// online | onsite | hybrid | autoformation | accompagnement
+  format             String  @default("online")
+  durationHours      Float?
+  durationDays       Float?
+  totalDurationLabel String?
+  /// rythme libre ("2 soirs/semaine", "temps plein"…)
+  rhythm             String?
+  /// Sessions multiples activées (sinon dates dans la formation).
+  hasSessions        Boolean @default(true)
+
+  /// draft | pending_review | changes_requested | approved | published |
+  /// suspended | rejected | archived
+  status     String @default("draft")
+  /// public | unlisted | private | internal | draft
+  visibility String @default("draft")
+
+  /// free | paid
+  priceType          String   @default("free")
+  priceAmount        Float?
+  currency           String   @default("EUR")
+  priceVatIncluded   Boolean?
+  externalPaymentUrl String?
+  paymentInfo        String?
+  cancellationPolicy String?
+  refundPolicy       String?
+
+  /// none | participation | partner | docbel
+  certificateType        String  @default("none")
+  certificateDescription String?
+
+  coverImageUrl String?
+  logoUrl       String?
+  programPdfUrl String?
+  attachmentUrl String?
+  externalUrl   String?
+
+  contactName    String?
+  contactEmail   String?
+  contactPhone   String?
+  contactWebsite String?
+
+  /// Badges/flags officiels — pilotés par l'admin uniquement.
+  isFeatured          Boolean @default(false)
+  isDocbelRecommended Boolean @default(false)
+  isVerifiedByDocbel  Boolean @default(false)
+
+  adminReviewNote String?
+  rejectedReason  String?
+  reviewedById    String?
+  submittedAt     DateTime?
+  approvedAt      DateTime?
+  publishedAt     DateTime?
+  suspendedAt     DateTime?
+  archivedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sessions    TrainingSession[]
+  tags        TrainingTagOnTraining[]
+  badges      TrainingBadgeOnTraining[]
+  accessRules TrainingAccessRule[]
+  saved       TrainingSaved[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([visibility])
+  @@index([categoryId])
+  @@index([status, visibility])
+  @@index([publishedAt])
+}
+
+/// Session concrète d'une formation (date/lieu/capacité).
+model TrainingSession {
+  id             String   @id @default(cuid())
+  trainingId     String
+  training       Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  /// Réf. libre (denormalisé) vers FormationOrganization.id pour le scoping.
+  organizationId String
+  /// Réf. libre vers User.id du formateur.
+  instructorId   String?
+
+  title  String?
+  /// draft | scheduled | open | full | cancelled | ongoing | completed | archived
+  status String  @default("scheduled")
+  /// online | onsite | hybrid
+  mode   String  @default("online")
+
+  startsAt DateTime?
+  endsAt   DateTime?
+  timezone String    @default("Europe/Brussels")
+
+  locationName String?
+  address      String?
+  city         String?
+  region       String?
+  onlineUrl    String?
+
+  capacity               Int?
+  waitlistEnabled        Boolean   @default(false)
+  registrationDeadline   DateTime?
+  /// Validation manuelle requise avant confirmation d'inscription.
+  requiresManualApproval Boolean   @default(true)
+  instructions           String?
+  contactEmail           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrollments TrainingEnrollment[]
+
+  @@index([trainingId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([startsAt])
+}
+
+/// Inscription d'un utilisateur à une session. Identité dénormalisée (citoyens
+/// sans compte), comme Booking. Dédup par email normalisé.
+model TrainingEnrollment {
+  id             String          @id @default(cuid())
+  sessionId      String
+  session        TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  /// Réfs libres (denormalisées) pour requêtes "mes inscriptions" / scoping org.
+  trainingId     String
+  organizationId String
+  userId         String?
+
+  citizenName            String?
+  citizenEmail           String?
+  citizenEmailNormalized String?
+  citizenPhone           String?
+
+  /// requested | pending_review | accepted | refused | waitlisted |
+  /// cancelled_user | cancelled_org | present | absent | completed |
+  /// certificate_available
+  status            String  @default("requested")
+  message           String?
+  motivation        String?
+  adminNote         String?
+  organizationNote  String?
+  /// Token opaque : gestion/annulation par l'utilisateur via lien email.
+  confirmationToken String  @unique
+  locale            String?
+
+  requestedAt        DateTime  @default(now())
+  acceptedAt         DateTime?
+  refusedAt          DateTime?
+  cancelledAt        DateTime?
+  completedAt        DateTime?
+  attendanceMarkedAt DateTime?
+  approvedById       String?
+  certificateUrl     String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([sessionId, citizenEmailNormalized])
+  @@index([sessionId, status])
+  @@index([trainingId])
+  @@index([organizationId, status])
+  @@index([userId])
+}
+
+/// Formation sauvegardée par un utilisateur connecté.
+model TrainingSaved {
+  id         String   @id @default(cuid())
+  userId     String
+  trainingId String
+  training   Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, trainingId])
+  @@index([userId])
+}
+
+/// Règle d'accès pour formations PRIVATE / INTERNAL. Plusieurs règles = union.
+model TrainingAccessRule {
+  id             String   @id @default(cuid())
+  trainingId     String
+  training       Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  /// user | organization | email_invite | role | group | segment | partner |
+  /// admin_selected
+  type           String
+  /// Réfs libres selon `type`.
+  userId         String?
+  organizationId String?
+  email          String?
+  role           String?
+  group          String?
+  segment        String?
+  partnerType    String?
+  createdById    String?
+  createdAt      DateTime @default(now())
+
+  @@index([trainingId])
+  @@index([email])
+  @@index([userId])
+}
+
+/// Signalement d'une formation publiée.
+model TrainingReport {
+  id            String    @id @default(cuid())
+  /// Réf. libre vers Training.id (conservé même si la formation est supprimée).
+  trainingId    String
+  reporterId    String?
+  reporterEmail String?
+  /// prix_trompeur | info_fausse | non_serieuse | probleme_partenaire |
+  /// contenu_inadapte | lien_casse | expiree | probleme_inscription | autre
+  reason        String
+  message       String?
+  /// new | in_progress | resolved | rejected
+  status        String    @default("new")
+  adminNote     String?
+  actionTaken   String?
+  resolvedById  String?
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([trainingId])
+  @@index([status])
+}
+
+// --- Boussole d'orientation ------------------------------------------------
+
+/// Branche d'orientation (domaine). `key` = identifiant stable (ADMINISTRATIVE_
+/// OFFICE, SOCIAL_CARE…). `possibleJobs` = métiers possibles (TEXT[]).
+model OrientationBranch {
+  id           String   @id @default(cuid())
+  key          String   @unique
+  slug         String   @unique
+  name         String
+  description  String?
+  possibleJobs String[] @default([])
+  icon         String?
+  color        String   @default("#7C3AED")
+  isActive     Boolean  @default(true)
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  scores OrientationAnswerScore[]
+
+  @@index([isActive])
+}
+
+/// Question de la Boussole (configurable en admin).
+model OrientationQuestion {
+  id          String   @id @default(cuid())
+  text        String
+  description String?
+  /// single | multi
+  type        String   @default("single")
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  options OrientationAnswerOption[]
+
+  @@index([isActive])
+  @@index([order])
+}
+
+/// Option de réponse à une question (Oui / Non / Un peu / Je ne sais pas).
+model OrientationAnswerOption {
+  id         String              @id @default(cuid())
+  questionId String
+  question   OrientationQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  label      String
+  value      String
+  helperText String?
+  order      Int                 @default(0)
+
+  scores OrientationAnswerScore[]
+
+  @@index([questionId])
+}
+
+/// Score apporté par une option à une branche (option → branche, pondéré).
+model OrientationAnswerScore {
+  id       String                  @id @default(cuid())
+  optionId String
+  option   OrientationAnswerOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  branchId String
+  branch   OrientationBranch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  score    Int                     @default(0)
+
+  @@index([optionId])
+  @@index([branchId])
+}
+
+/// Résultat d'une passation de la Boussole. `userId` null = visiteur anonyme
+/// (sessionId = identifiant de session navigateur). Sauvegardable si connecté.
+model OrientationResult {
+  id                 String   @id @default(cuid())
+  userId             String?
+  /// Identifiant de session (cookie/anon) pour rattacher un résultat anonyme.
+  sessionId          String
+  primaryBranchId    String?
+  secondaryBranchIds String[] @default([])
+  scoresJson         Json     @default("{}")
+  answersJson        Json     @default("{}")
+  confidenceScore    Float?
+  summary            String?
+  saved              Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
+}

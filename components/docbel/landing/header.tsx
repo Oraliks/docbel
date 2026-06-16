@@ -57,6 +57,7 @@ const NAV_ITEMS: ReadonlyArray<{
   { id: "mon-dossier", label: "Mon dossier", href: "/mon-dossier" },
   { id: "actualites", label: "Actualités", href: "/actualites" },
   { id: "outils", label: "Outils", href: "/outils" },
+  { id: "formations", label: "Formations", href: "/formations" },
 ] as const;
 
 // Liens directs vers les landings marketing des segments employeur/partenaire.

@@ -1,14 +1,13 @@
 import { redirect } from "next/navigation";
 
 /// Redirection 308 (permanente) de l'ancienne URL `/outils/bundles/[slug]` vers
-/// la nouvelle URL canonique `/d/[slug]`. Préserve la query string (eg.
-/// `?resume=…` pour la reprise d'un parcours). À conserver tant que d'anciens
-/// liens (bookmarks, emails de reprise, partage externe) circulent.
+/// la page « Mon dossier » sur le front. Les dossiers vivent à `/mon-dossier`
+/// en interne, mais ne sont pas listés comme « outils » — cette page redirige
+/// tout appel legacy vers l'accueil des dossiers.
 export default async function LegacyBundleRedirect({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
-  redirect(`/d/${slug}`);
+  redirect("https://www.docbel.be/mon-dossier");
 }

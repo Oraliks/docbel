@@ -57,7 +57,6 @@ const NAV_ITEMS: ReadonlyArray<{
   { id: "mon-dossier", label: "Mon dossier", href: "/mon-dossier" },
   { id: "actualites", label: "Actualités", href: "/actualites" },
   { id: "outils", label: "Outils", href: "/outils" },
-  { id: "aide", label: "Aidez-moi", href: "/contact", icon: LifeBuoyIcon },
 ] as const;
 
 // Liens directs vers les landings marketing des segments employeur/partenaire.
@@ -269,6 +268,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
             </Link>
           );
         })}
+        <div className="mx-1 h-6 w-px bg-[color:var(--glass-ink-line)]" />
         {AUDIENCE_NAV_ITEMS.map((item) => {
           const ItemIcon = item.icon;
           const active = pathname.startsWith(item.href);

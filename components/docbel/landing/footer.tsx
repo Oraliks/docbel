@@ -19,6 +19,12 @@ export function LandingFooter() {
         >
           Glossaire
         </Link>
+        <Link
+          href="/contact"
+          className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
+        >
+          Contact
+        </Link>
         <a
           href="#"
           className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"

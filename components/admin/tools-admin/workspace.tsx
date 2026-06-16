@@ -69,6 +69,12 @@ export function ToolsAdminWorkspace({ sections }: Props) {
     return [...set].sort((a, b) => a.localeCompare(b, "fr"));
   }, [flat]);
 
+  /** Sections (id + nom) pour réassigner la catégorie dans chaque ligne. */
+  const sectionOptions = useMemo(
+    () => sections.map((s) => ({ id: s.id, name: s.name })),
+    [sections],
+  );
+
   /** Liste filtrée passée à la table. */
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -131,7 +137,7 @@ export function ToolsAdminWorkspace({ sections }: Props) {
       />
 
       {/* Table --------------------------------------------------------- */}
-      <ToolsTable tools={filtered} />
+      <ToolsTable tools={filtered} sectionOptions={sectionOptions} />
     </div>
   );
 }

@@ -57,7 +57,7 @@ export function FiltersBar({
 }: FiltersBarProps) {
   return (
     <div
-      role="toolbar"
+      role="group"
       aria-label="Filtres outils"
       className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center"
     >

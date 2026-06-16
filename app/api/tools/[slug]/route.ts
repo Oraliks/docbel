@@ -35,6 +35,10 @@ const patchSchema = z.object({
   active: z.boolean().optional(),
   popular: z.boolean().optional(),
   order: z.number().int().optional(),
+  // Réassignation de la section (= colonne "Catégorie" côté admin). Le client
+  // ne propose que des ids de section existants ; un id invalide ferait
+  // échouer la FK Prisma (rejeté proprement par le try/catch).
+  sectionId: z.string().trim().min(1).optional(),
   // Champs éditoriaux — admin uniquement. Bornes raisonnables pour éviter
   // d'écraser un champ par erreur (UI inline edit envoie ces champs).
   name: z.string().trim().min(2).max(120).optional(),
@@ -152,6 +156,17 @@ export async function PATCH(
 
     return NextResponse.json({ ok: true, slug, active, ...updated })
   } catch (error) {
+    // Slug inexistant (course avec une suppression / refresh en retard) →
+    // Prisma lève P2025 sur update. On le mappe en 404 explicite plutôt qu'un
+    // 500 générique, cohérent avec le DELETE de cette route.
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error as { code?: string }).code === 'P2025'
+    ) {
+      return NextResponse.json({ error: 'Tool not found' }, { status: 404 })
+    }
     console.error('Error patching tool:', error)
     return NextResponse.json({ error: 'Failed to patch tool' }, { status: 500 })
   }

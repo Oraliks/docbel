@@ -36,6 +36,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -82,6 +89,8 @@ const TILE_TONE: Record<AudienceId, string> = {
 
 interface ToolRowProps {
   tool: FlatTool;
+  /** Sections disponibles pour réassigner la catégorie de l'outil. */
+  sections: { id: string; name: string }[];
   selected: boolean;
   onSelectChange: (next: boolean) => void;
 }
@@ -97,7 +106,7 @@ interface ToolRowProps {
  * modification matérialise alors l'accès explicite (l'audience legacy ne sert
  * plus de fallback une fois `access` non vide).
  */
-export function ToolRow({ tool, selected, onSelectChange }: ToolRowProps) {
+export function ToolRow({ tool, sections, selected, onSelectChange }: ToolRowProps) {
   const router = useRouter();
   const confirm = useConfirm();
   const [active, setActive] = useState(tool.active);
@@ -105,10 +114,24 @@ export function ToolRow({ tool, selected, onSelectChange }: ToolRowProps) {
   const [name, setName] = useState(tool.name);
   const [description, setDescription] = useState(tool.description);
   const [icon, setIcon] = useState<string | null>(tool.icon ?? null);
+  const [sectionId, setSectionId] = useState(tool.sectionId);
   const [access, setAccess] = useState<AccessRule[]>(() => effectiveRules(tool));
   const [saving, setSaving] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [descOpen, setDescOpen] = useState(false);
+
+  // Resynchronise l'état des toggles (actif/populaire/section/accès) quand le
+  // serveur renvoie un nouveau `tool` (après router.refresh, y compris déclenché
+  // par une action GROUPÉE ou une modif d'un autre onglet). `tool` ne change
+  // d'identité qu'au refresh serveur, pas aux re-renders locaux (sélection…),
+  // donc pas de boucle. On NE touche pas name/description/icon pour ne pas
+  // écraser une édition inline en cours.
+  useEffect(() => {
+    setActive(tool.active);
+    setPopular(tool.popular);
+    setSectionId(tool.sectionId);
+    setAccess(effectiveRules(tool));
+  }, [tool]);
 
   async function patch(body: {
     active?: boolean;
@@ -116,6 +139,7 @@ export function ToolRow({ tool, selected, onSelectChange }: ToolRowProps) {
     name?: string;
     description?: string;
     icon?: string | null;
+    sectionId?: string;
     access?: AccessRule[];
   }) {
     setSaving(true);
@@ -185,17 +209,40 @@ export function ToolRow({ tool, selected, onSelectChange }: ToolRowProps) {
     }
   }
 
-  function toggleActive(next: boolean) {
-    setActive(next);
-    void patch({ active: next });
-    toast.success(next ? `${tool.name} activé` : `${tool.name} désactivé`);
+  async function saveSectionId(next: string) {
+    if (!next || next === sectionId) return;
+    const previous = sectionId;
+    setSectionId(next);
+    try {
+      await patch({ sectionId: next });
+      toast.success("Catégorie mise à jour");
+      router.refresh();
+    } catch {
+      setSectionId(previous);
+    }
   }
 
-  function togglePopular() {
+  async function toggleActive(next: boolean) {
+    setActive(next);
+    try {
+      await patch({ active: next });
+      toast.success(next ? `${tool.name} activé` : `${tool.name} désactivé`);
+      router.refresh();
+    } catch {
+      /* patch() a déjà rollback l'état + affiché toast.error */
+    }
+  }
+
+  async function togglePopular() {
     const next = !popular;
     setPopular(next);
-    void patch({ popular: next });
-    toast.success(next ? "Marqué populaire" : "Retiré des populaires");
+    try {
+      await patch({ popular: next });
+      toast.success(next ? "Marqué populaire" : "Retiré des populaires");
+      router.refresh();
+    } catch {
+      /* idem : rollback géré par patch() */
+    }
   }
 
   async function saveAccess(next: AccessRule[]) {
@@ -203,6 +250,9 @@ export function ToolRow({ tool, selected, onSelectChange }: ToolRowProps) {
     setAccess(next);
     try {
       await patch({ access: next });
+      toast.success("Accès mis à jour");
+      // Re-fetch serveur → resync des compteurs par segment + filtre Audience.
+      router.refresh();
     } catch {
       setAccess(previous);
     }
@@ -260,7 +310,7 @@ export function ToolRow({ tool, selected, onSelectChange }: ToolRowProps) {
             disabled={saving}
             tone={tone}
           />
-          <div className="min-w-0">
+          <div>
             <EditableInline
               value={name}
               onSave={saveName}
@@ -270,7 +320,7 @@ export function ToolRow({ tool, selected, onSelectChange }: ToolRowProps) {
               disabled={saving}
               className="text-[13px] font-semibold text-foreground"
             />
-            <p className="truncate font-mono text-[10.5px] text-muted-foreground">
+            <p className="font-mono text-[10.5px] text-muted-foreground">
               {tool.slug}
             </p>
           </div>
@@ -284,11 +334,27 @@ export function ToolRow({ tool, selected, onSelectChange }: ToolRowProps) {
         </Badge>
       </TableCell>
 
-      {/* Catégorie (= section) */}
+      {/* Catégorie (= section, réassignable) */}
       <TableCell>
-        <span className="text-[12px] text-muted-foreground">
-          {tool.sectionName}
-        </span>
+        <Select
+          value={sectionId}
+          onValueChange={(v) => saveSectionId(v ?? "")}
+          disabled={saving}
+        >
+          <SelectTrigger
+            aria-label="Changer la catégorie"
+            className="h-7 w-[150px] border-transparent bg-transparent px-2 text-[12px] text-muted-foreground shadow-none hover:border-border hover:bg-card focus:border-border"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {sections.map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </TableCell>
 
       {/* Actif */}
@@ -312,7 +378,7 @@ export function ToolRow({ tool, selected, onSelectChange }: ToolRowProps) {
           aria-pressed={popular}
           aria-label={popular ? "Retirer des populaires" : "Marquer populaire"}
           title={popular ? "Retirer des populaires" : "Marquer populaire"}
-          className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground transition hover:bg-muted disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
         >
           <Star
             className={cn(
@@ -352,7 +418,7 @@ export function ToolRow({ tool, selected, onSelectChange }: ToolRowProps) {
                 type="button"
                 aria-label="Plus d'actions"
                 title="Plus d'actions"
-                className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <MoreVertical className="size-3.5" />
               </button>
@@ -463,6 +529,7 @@ function SegmentCell({
           <Popover>
             <PopoverTrigger
               disabled={disabled}
+              aria-haspopup="dialog"
               title={
                 subTypes.length
                   ? `Sous-types : ${subTypes
@@ -471,7 +538,7 @@ function SegmentCell({
                   : "Tout le segment partenaire — préciser des sous-types"
               }
               aria-label="Sous-types partenaire"
-              className="inline-flex size-4 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"
+              className="inline-flex size-4 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:opacity-50"
             >
               <ChevronDown className="size-3" />
             </PopoverTrigger>
@@ -534,7 +601,7 @@ function IconPickerTile({
       className={cn(
         "group/icon relative flex size-8 shrink-0 items-center justify-center rounded-lg transition",
         tone,
-        "hover:ring-2 hover:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50",
+        "hover:ring-2 hover:ring-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
       )}
     >
       {value ? (
@@ -635,7 +702,7 @@ function EditableInline({
       aria-label={ariaLabel}
       title={ariaLabel ? `${ariaLabel} (clic)` : "Cliquer pour éditer"}
       className={cn(
-        "group/edit relative -mx-1 block max-w-full truncate rounded px-1 text-left transition hover:bg-muted/60 disabled:cursor-not-allowed",
+        "group/edit relative -mx-1 block rounded px-1 text-left transition hover:bg-muted/60 disabled:cursor-not-allowed",
         className,
       )}
     >

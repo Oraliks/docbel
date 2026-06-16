@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, ArrowUpDown, CheckCircle2, CircleSlash } from "lucide-react";
 import { toast } from "sonner";
@@ -32,6 +32,8 @@ const PAGE_SIZES = [25, 50, 100] as const;
 
 interface ToolsTableProps {
   tools: FlatTool[];
+  /** Sections disponibles pour réassigner la catégorie d'un outil. */
+  sectionOptions: { id: string; name: string }[];
 }
 
 /**
@@ -43,13 +45,31 @@ interface ToolsTableProps {
  * Le filtrage (recherche, catégorie, type, audience, statut) est fait en amont
  * par `workspace.tsx` qui passe la liste déjà filtrée.
  */
-export function ToolsTable({ tools }: ToolsTableProps) {
+export function ToolsTable({ tools, sectionOptions }: ToolsTableProps) {
   const router = useRouter();
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(25);
   const [bulkSaving, setBulkSaving] = useState(false);
+
+  // Élague la sélection aux outils RÉELLEMENT présents quand la liste change
+  // (filtre/recherche). Évite qu'une action groupée agisse sur des lignes
+  // masquées et non visibles à l'écran. Comparaison par slug (contenu), donc
+  // un simple router.refresh (mêmes slugs) préserve la sélection.
+  useEffect(() => {
+    setSelected((prev) => {
+      if (prev.size === 0) return prev;
+      const present = new Set(tools.map((t) => t.slug));
+      let changed = false;
+      const next = new Set<string>();
+      for (const s of prev) {
+        if (present.has(s)) next.add(s);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [tools]);
 
   // Tri : par défaut on garde l'ordre fourni (section.order puis tool.order).
   const sorted = useMemo(() => {
@@ -188,11 +208,26 @@ export function ToolsTable({ tools }: ToolsTableProps) {
                   aria-label="Tout sélectionner sur cette page"
                 />
               </TableHead>
-              <TableHead>
+              <TableHead
+                aria-sort={
+                  sortDir === "asc"
+                    ? "ascending"
+                    : sortDir === "desc"
+                      ? "descending"
+                      : "none"
+                }
+              >
                 <button
                   type="button"
                   onClick={cycleSort}
-                  className="inline-flex items-center gap-1 font-medium text-foreground transition hover:text-primary"
+                  aria-label={
+                    sortDir === "asc"
+                      ? "Trier par nom (croissant ; cliquer pour décroissant)"
+                      : sortDir === "desc"
+                        ? "Trier par nom (décroissant ; cliquer pour annuler le tri)"
+                        : "Trier par nom (cliquer pour trier)"
+                  }
+                  className="inline-flex items-center gap-1 rounded font-medium text-foreground transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   Nom
                   {sortDir === "asc" ? (
@@ -229,6 +264,7 @@ export function ToolsTable({ tools }: ToolsTableProps) {
                 <ToolRow
                   key={tool.id}
                   tool={tool}
+                  sections={sectionOptions}
                   selected={selected.has(tool.slug)}
                   onSelectChange={(next) => toggleOne(tool.slug, next)}
                 />

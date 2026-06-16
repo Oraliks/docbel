@@ -46,15 +46,17 @@ export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
         </h2>
       </div>
 
-      {/* Frise d'outils ----------------------------------------------- */}
-      <div className="-mx-2 flex-1 overflow-x-auto px-2 lg:mx-0 lg:overflow-visible lg:px-0">
-        <div className="relative min-w-[420px] pt-6 lg:min-w-0">
+      {/* Frise d'outils — s'adapte au nombre d'outils, JAMAIS de scroll :
+          chaque outil prend une part égale (flex-1), l'icône remplit sa colonne
+          jusqu'à un plafond (56px) puis rétrécit quand il y en a beaucoup. */}
+      <div className="w-full min-w-0 lg:flex-1">
+        <div className="relative pt-6">
           {/* Ligne horizontale (passe au centre des nœuds numérotés). */}
           <div
             aria-hidden
             className="absolute inset-x-1 bottom-[11px] h-px bg-gradient-to-r from-transparent via-[color:var(--glass-ink-line)] to-transparent"
           />
-          <ol className="relative flex items-end justify-between gap-3">
+          <ol className="relative flex items-end gap-1.5 sm:gap-2.5 lg:gap-3">
             {visible.map((tool, index) => {
               const { Icon, hue } = glyphForTool(tool);
               const href = tool.href ?? `/outils/${getToolSlug(tool)}`;
@@ -62,33 +64,33 @@ export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
               return (
                 <li
                   key={tool.id}
-                  className="group relative flex animate-[fadeInUp_0.5s_ease_both] flex-col items-center gap-3"
+                  className="group relative flex min-w-0 flex-1 animate-[fadeInUp_0.5s_ease_both] flex-col items-center gap-2.5"
                   style={{ animationDelay: `${index * 70}ms` }}
                 >
                   {/* Nom au survol (apparaît/disparaît) */}
-                  <span className="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-[calc(100%+8px)] whitespace-nowrap rounded-lg bg-[color:var(--glass-ink)] px-2.5 py-1 text-[11px] font-bold text-[color:var(--glass-surface)] opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
+                  <span className="pointer-events-none absolute left-1/2 top-0 z-20 max-w-[140px] -translate-x-1/2 -translate-y-[calc(100%+8px)] truncate rounded-lg bg-[color:var(--glass-ink)] px-2.5 py-1 text-center text-[11px] font-bold text-[color:var(--glass-surface)] opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
                     {tool.title}
                   </span>
 
-                  {/* Icône flottante + cliquable */}
+                  {/* Icône flottante + cliquable (taille fluide, plafonnée à 56px) */}
                   <span
-                    className="motion-safe:animate-[toolFloat_4.5s_ease-in-out_infinite]"
+                    className="w-full max-w-[56px] motion-safe:animate-[toolFloat_4.5s_ease-in-out_infinite]"
                     style={{ animationDelay: `${index * 260}ms` }}
                   >
                     <Link
                       href={href}
                       aria-label={tool.title}
                       title={tool.title}
-                      className="flex size-14 items-center justify-center rounded-full ring-1 ring-inset ring-white/50 transition-[transform,box-shadow] duration-300 hover:shadow-[0_10px_24px_-8px_rgba(80,50,160,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] group-hover:-translate-y-1 group-hover:scale-110 dark:ring-white/10"
+                      className="flex aspect-square w-full items-center justify-center rounded-full ring-1 ring-inset ring-white/50 transition-[transform,box-shadow] duration-300 hover:shadow-[0_10px_24px_-8px_rgba(80,50,160,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] group-hover:-translate-y-1 group-hover:scale-110 dark:ring-white/10"
                       style={{ background: tint, color: hue }}
                     >
-                      <Icon className="size-6" strokeWidth={1.9} aria-hidden />
+                      <Icon className="h-1/2 w-1/2" strokeWidth={1.9} aria-hidden />
                     </Link>
                   </span>
 
                   {/* Nœud numéroté posé sur la ligne */}
                   <span
-                    className="relative z-[1] flex size-[22px] items-center justify-center rounded-full text-[11px] font-bold ring-4 ring-[color:var(--glass-surface)] transition-transform duration-300 group-hover:scale-110"
+                    className="relative z-[1] flex size-[22px] shrink-0 items-center justify-center rounded-full text-[11px] font-bold ring-4 ring-[color:var(--glass-surface)] transition-transform duration-300 group-hover:scale-110"
                     style={{ background: tint, color: hue }}
                   >
                     {index + 1}

@@ -286,3 +286,20 @@ export type CatalogueFilter = z.infer<typeof catalogueFilterSchema>;
 
 /** Liste blanche des statuts pour la validation admin. */
 export const trainingStatusSchema = zEnum(TRAINING_STATUSES);
+
+// --- Org : payloads du wizard de création/édition ---------------------------
+export const trainingCreatePayloadSchema = z.object({
+  training: trainingUpdateSchema,
+  sessions: z.array(sessionSchema).max(30).optional(),
+  submit: z.boolean().optional(),
+});
+export type TrainingCreatePayload = z.infer<typeof trainingCreatePayloadSchema>;
+
+export const trainingUpdatePayloadSchema = z.object({
+  training: trainingUpdateSchema,
+  submit: z.boolean().optional(),
+});
+export type TrainingUpdatePayload = z.infer<typeof trainingUpdatePayloadSchema>;
+
+/** Session côté org (création/édition individuelle sur la page de gestion). */
+export const sessionUpsertSchema = sessionSchema;

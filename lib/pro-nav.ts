@@ -18,6 +18,7 @@ export type ProIcon =
   | "calculator"
   | "shield"
   | "book"
+  | "graduate"
   | "document";
 
 export interface ProNavItem {
@@ -67,6 +68,13 @@ const PARTNER_SPACE: ProSpace = {
       ],
     },
     {
+      label: "Formations",
+      items: [
+        { title: "Mes formations", url: "/partenaire/formations", icon: "graduate" },
+        { title: "Créer une formation", url: "/partenaire/formations/nouvelle", icon: "plus" },
+      ],
+    },
+    {
       label: "Organisation",
       items: [
         { title: "Membres", url: "/partenaire#membres", icon: "users" },
@@ -106,6 +114,13 @@ const EMPLOYER_SPACE: ProSpace = {
       items: [
         { title: "Simulateur de coût", url: "/employeur/simulateur-cout", icon: "calculator" },
         { title: "Vérifier une fiche", url: "/employeur/controle", icon: "shield" },
+      ],
+    },
+    {
+      label: "Formations",
+      items: [
+        { title: "Mes formations", url: "/employeur/formations", icon: "graduate" },
+        { title: "Créer une formation", url: "/employeur/formations/nouvelle", icon: "plus" },
       ],
     },
     {

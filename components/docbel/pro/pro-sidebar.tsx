@@ -12,6 +12,7 @@ import {
   FileTextIcon,
   FilesIcon,
   FolderOpenIcon,
+  GraduationCapIcon,
   LayoutDashboardIcon,
   type LucideIcon,
   PlusCircleIcon,
@@ -47,6 +48,7 @@ const ICONS: Record<ProIcon, LucideIcon> = {
   calculator: CalculatorIcon,
   shield: ShieldCheckIcon,
   book: BookOpenIcon,
+  graduate: GraduationCapIcon,
   document: FilesIcon,
 };
 

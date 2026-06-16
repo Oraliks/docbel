@@ -1,12 +1,13 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { boussoleSubmitSchema } from "@/lib/formations/schemas";
 import { getBoussoleQuestions } from "@/lib/formations/boussole/load";
 import { scoreBoussole } from "@/lib/formations/boussole/engine";
-import { BRANCH_BY_KEY } from "@/lib/formations/boussole/branches";
+import { BRANCH_BY_KEY, type BranchKey } from "@/lib/formations/boussole/branches";
 import { getRecommendedTrainings } from "@/lib/formations/queries";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
   const userId = await getOptionalUserId();
 
   const branchKeys = [result.primaryKey, ...result.secondaryKeys].filter(
-    (k): k is string => !!k,
+    (k): k is BranchKey => !!k,
   );
   const recommendations = await getRecommendedTrainings(branchKeys, 6);
 
@@ -51,8 +52,8 @@ export async function POST(req: Request) {
       sessionId,
       primaryBranchId: result.primaryKey,
       secondaryBranchIds: result.secondaryKeys,
-      scoresJson: result.ranking,
-      answersJson: answers,
+      scoresJson: result.ranking as unknown as Prisma.InputJsonValue,
+      answersJson: answers as Prisma.InputJsonValue,
       confidenceScore: result.confidence,
       summary,
       saved: !!save,
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
       confidence: result.confidence,
       confidenceLabel: result.confidenceLabel,
       summary,
-      branches: branchKeys.map((k) => BRANCH_BY_KEY[k as keyof typeof BRANCH_BY_KEY]),
+      branches: branchKeys.map((k) => BRANCH_BY_KEY[k]),
       recommendations,
     },
     { headers: json },

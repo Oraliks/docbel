@@ -55,6 +55,21 @@ export async function getFormationsPageUser(): Promise<FormationsPageUser | null
   };
 }
 
+/**
+ * Garde de page pour l'espace org (employeur/partenaire). Renvoie l'utilisateur
+ * si son rôle correspond au segment (ou admin), sinon null — la page redirige
+ * alors vers la landing marketing du segment.
+ */
+export async function getOrgPageUser(
+  segment: "employeur" | "partenaire",
+): Promise<FormationsPageUser | null> {
+  const u = await getFormationsPageUser();
+  if (!u) return null;
+  const expectedRole = segment === "employeur" ? "employer" : "partner";
+  if (u.isAdmin || u.role === expectedRole) return u;
+  return null;
+}
+
 /** Convertit en FormationViewer (pour canViewTraining), anonyme inclus. */
 export async function getFormationsViewer(): Promise<FormationViewer> {
   const u = await getFormationsPageUser();

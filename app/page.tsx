@@ -7,14 +7,9 @@ import { ResumeStrip } from "@/components/docbel/landing/resume-strip";
 import { TrustBand } from "@/components/docbel/landing/trust-band";
 import { WizardTeaser } from "@/components/docbel/landing/wizard-teaser";
 import { getAudienceFromPath } from "@/lib/audience";
-import {
-  type NewsItem,
-  TOOLS_DATA,
-  getToolsByAudience,
-  getToolSlug,
-} from "@/lib/docbel-data";
+import { type NewsItem } from "@/lib/docbel-data";
+import { filterByAudience, getPublicCatalog } from "@/lib/outils-catalog";
 import { loadActiveBundleRun } from "@/lib/landing/resume";
-import { fetchAllToolsActive } from "@/lib/tools-active";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +49,7 @@ function formatFrenchDate(value: string): string {
  * Le persona switcher / la recherche restent des îlots client (header).
  */
 export default async function HomePage() {
-  const [articles, toolRows, bundleRows, activeRun] = await Promise.all([
+  const [articles, catalog, bundleRows, activeRun] = await Promise.all([
     prisma.news
       .findMany({
         where: { status: "published", featured: true },
@@ -75,7 +70,10 @@ export default async function HomePage() {
         },
       })
       .catch(() => []),
-    fetchAllToolsActive().catch(() => []),
+    // Catalogue d'outils RÉEL (mêmes outils que /outils, DB + entrées statiques),
+    // déjà filtré sur active=true. Remplace l'ancienne liste statique TOOLS_DATA
+    // → un outil ajouté/activé en admin apparaît automatiquement sur la home.
+    getPublicCatalog().catch(() => []),
     // Dossiers populaires (vrais DocumentBundle) — même pattern fail-soft
     // que /mon-dossier : DB indisponible → liste vide, la home tient debout.
     prisma.documentBundle
@@ -96,15 +94,17 @@ export default async function HomePage() {
     loadActiveBundleRun(),
   ]);
 
-  const inactiveSlugs = new Set(
-    toolRows.filter((r) => !r.active).map((r) => r.slug)
-  );
-
   // Persona figé pour "/" (citoyen) — le header gère le changement d'espace.
   const persona = getAudienceFromPath("/");
-  const audienceTools = getToolsByAudience(persona);
-  const base = audienceTools.length ? audienceTools : TOOLS_DATA;
-  const tools = base.filter((t) => !inactiveSlugs.has(getToolSlug(t)));
+  const citizenTools = filterByAudience(catalog, persona);
+
+  // « Vos outils, en un geste » = uniquement les outils marqués POPULAIRE en
+  // admin (étoile sur /admin/chomage/outils). Dynamique : un nouvel outil actif
+  // + populaire s'ajoute tout seul ici. Fallback : si aucun n'est marqué
+  // populaire, on montre toute la liste citoyen pour ne pas laisser la rangée
+  // vide. `totalCount` (sous-titre) reflète le catalogue citoyen complet.
+  const importantTools = citizenTools.filter((t) => t.popular);
+  const toolsForRow = importantTools.length ? importantTools : citizenTools;
 
   const news: NewsItem[] = articles.map((article) => ({
     id: article.id,
@@ -140,7 +140,7 @@ export default async function HomePage() {
       {activeRun && <ResumeStrip run={activeRun} />}
       <LandingHero articles={featuredArticles} loading={false} />
       <HeroSearch />
-      <LandingToolsRow tools={tools} />
+      <LandingToolsRow tools={toolsForRow} totalCount={citizenTools.length} />
       <WizardTeaser />
       <TrustBand />
       <LandingBottom news={news} loading={false} bundles={popularBundles} />

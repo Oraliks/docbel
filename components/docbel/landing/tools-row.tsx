@@ -6,9 +6,16 @@ import { type Tool, getToolSlug } from "@/lib/docbel-data";
 import { glyphForTool } from "@/lib/tool-glyphs";
 
 interface LandingToolsRowProps {
+  /** Outils à afficher dans le strip (ex: uniquement les populaires). */
   tools: Tool[];
   /** Nombre max d'icônes avant « Voir tous ». Défaut 8 (maquette). */
   max?: number;
+  /**
+   * Total d'outils du catalogue pour le sous-titre. Permet d'afficher
+   * « N outils disponibles » sur tout le catalogue tout en n'affichant qu'un
+   * sous-ensemble (populaires) dans le strip. Défaut : `tools.length`.
+   */
+  totalCount?: number;
 }
 
 /**
@@ -17,9 +24,10 @@ interface LandingToolsRowProps {
  * outils ». Sous lg, le strip défile horizontalement. Remplace la grille de
  * cartes (`LandingTools`) sur la home uniquement — /outils garde son catalogue.
  */
-export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
+export function LandingToolsRow({ tools, max = 8, totalCount }: LandingToolsRowProps) {
   const router = useRouter();
   const visible = tools.slice(0, max);
+  const total = totalCount ?? tools.length;
 
   // Colonne cliquable partagée par les outils ET le bouton « Voir tous » :
   // largeur fixe (strip scrollable) sous lg, équi-répartie (flex-1) au-delà.
@@ -35,7 +43,7 @@ export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
           <em>en un geste.</em>
         </h2>
         <p className="mt-2 text-[12px] leading-snug text-[color:var(--glass-ink-faint)]">
-          {tools.length} outils disponibles · pré-remplis depuis votre profil
+          {total} outils disponibles · pré-remplis depuis votre profil
         </p>
       </div>
 

@@ -24,55 +24,12 @@ import {
  * mêmes chiffres que le calculateur complet de /outils).
  *
  * Deux états : formulaire (catégorie / brut / ancienneté) ⇄ résultat
- * (count-up €/jour). La dernière simulation est persistée en localStorage
- * (clé "docbel-simulation") et restaurée au montage — lecture différée dans
- * un requestAnimationFrame : pas de setState synchrone dans l'effet (règle
- * React 19) et pas de divergence avec le HTML serveur (le serveur rend
- * toujours le formulaire). Toutes les animations sont neutralisées par
- * prefers-reduced-motion (motion-reduce:* + matchMedia pour le count-up).
+ * (count-up €/jour). L'estimation N'EST PAS persistée : elle vit uniquement le
+ * temps de la session (état React). Un rechargement de page repart donc du
+ * formulaire vide — comportement voulu pour ne pas réafficher un ancien calcul.
+ * Toutes les animations sont neutralisées par prefers-reduced-motion
+ * (motion-reduce:* + matchMedia pour le count-up).
  */
-
-const STORAGE_KEY = "docbel-simulation";
-
-interface SavedSimulation {
-  input: SimulationInput;
-  result: SimulationResult;
-  ts: number;
-}
-
-/** Lecture défensive du localStorage (SSR-safe, payload corrompu toléré). */
-function readSaved(): SavedSimulation | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as SavedSimulation;
-    if (
-      typeof parsed?.ts !== "number" ||
-      typeof parsed?.result?.parJour !== "number" ||
-      typeof parsed?.result?.parMois !== "number" ||
-      typeof parsed?.input?.brutMensuel !== "number" ||
-      typeof parsed?.input?.moisDeChomage !== "number" ||
-      !(String(parsed?.input?.categorie) in CATEGORIE_LABELS)
-    ) {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-/** « à l'instant / il y a N min / h / j » depuis le timestamp sauvegardé. */
-function formatRelative(ts: number, now: number): string {
-  const minutes = Math.floor(Math.max(0, now - ts) / 60_000);
-  if (minutes < 1) return "à l'instant";
-  if (minutes < 60) return `il y a ${minutes} min`;
-  const heures = Math.floor(minutes / 60);
-  if (heures < 24) return `il y a ${heures} h`;
-  const jours = Math.floor(heures / 24);
-  return `il y a ${jours} j`;
-}
 
 const FMT_JOUR = new Intl.NumberFormat("fr-BE", {
   minimumFractionDigits: 2,
@@ -118,29 +75,8 @@ export function SimulatorCard() {
   // calcul / de la restauration (jamais Date.now() au render — règle
   // react-hooks/purity ; un libellé statique suffit ici).
   const [result, setResult] = useState<SimulationResult | null>(null);
-  const [relativeLabel, setRelativeLabel] = useState("à l'instant");
   const [editing, setEditing] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-
-  // Restauration de la simulation sauvegardée — différée d'une frame :
-  // le 1ᵉʳ rendu client reste identique au HTML serveur (formulaire), puis
-  // on bascule en vue résultat de façon asynchrone (lint React 19 ok).
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => {
-      const saved = readSaved();
-      if (!saved) return;
-      setResult(saved.result);
-      setRelativeLabel(formatRelative(saved.ts, Date.now()));
-      setCategorie(saved.input.categorie);
-      setBrutStr(String(saved.input.brutMensuel));
-      setAnciennete(
-        saved.input.moisDeChomage <= BAREME_2026.dernierMoisTaux65
-          ? "0-3"
-          : "4-12",
-      );
-    });
-    return () => cancelAnimationFrame(raf);
-  }, []);
 
   // Count-up du montant journalier : rAF + easing, ou valeur directe si
   // l'utilisateur préfère moins d'animations.
@@ -196,20 +132,9 @@ export function SimulatorCard() {
       );
       return;
     }
-    const now = Date.now();
     setFormError(null);
     setResult(res);
-    setRelativeLabel("à l'instant");
     setEditing(false);
-    try {
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ input, result: res, ts: now } satisfies SavedSimulation),
-      );
-    } catch {
-      // Stockage indisponible (navigation privée, quota) : l'estimation
-      // reste affichée pour la session, simplement non persistée.
-    }
   }
 
   return (
@@ -368,7 +293,7 @@ export function SimulatorCard() {
           <div className="flex flex-col gap-2 border-t border-white/15 pt-4 text-[12px]">
             <div className="flex justify-between gap-3">
               <span className="text-white/60">Mise à jour</span>
-              <span className="font-bold">{relativeLabel}</span>
+              <span className="font-bold">à l&apos;instant</span>
             </div>
             <div className="flex justify-between gap-3">
               <span className="text-white/60">Catégorie</span>

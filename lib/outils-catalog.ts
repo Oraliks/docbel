@@ -92,6 +92,19 @@ export async function getPublicCatalog(): Promise<Tool[]> {
   // champ tant que pnpm db:generate n'a pas tourné après la migration.
   const [allTools, activeRows] = await Promise.all([
     prisma.tool.findMany({
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        type: true,
+        icon: true,
+        popular: true,
+        timeMin: true,
+        order: true,
+        audience: true,
+        createdAt: true,
+      },
       orderBy: [{ popular: 'desc' }, { order: 'asc' }, { name: 'asc' }],
     }),
     fetchAllToolsActive(),

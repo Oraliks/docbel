@@ -5,6 +5,7 @@ import {
   listOrgTrainings,
   getOrgStats,
   getOrgTraining,
+  getTrainingWithEnrollments,
   listAllTags,
   listCategoriesForSelect,
   type OrgTrainingDetail,
@@ -13,6 +14,7 @@ import { formationOrgAccess } from "@/lib/formations/access";
 import { OrgFormationsHome } from "./org-home";
 import { TrainingWizard, type WizardInitial } from "./training-wizard";
 import { TrainingManage, type OrgManageView, type ManageCaps } from "./training-manage";
+import { EnrollmentsManager } from "./enrollments-manager";
 
 type Segment = "employeur" | "partenaire";
 
@@ -104,6 +106,22 @@ export async function OrgFormationsManagePage({ segment, id }: { segment: Segmen
     manageEnrollments: caps.manageEnrollments,
   };
   return <TrainingManage training={toManageView(training)} basePath={basePathFor(segment)} caps={manageCaps} />;
+}
+
+/** /[seg]/formations/[id]/inscriptions — gestion des inscriptions. */
+export async function OrgFormationsEnrollmentsPage({ segment, id }: { segment: Segment; id: string }) {
+  const { caps } = await loadOwnedTraining(segment, id);
+  if (!caps.manageEnrollments) notFound();
+  const data = await getTrainingWithEnrollments(id);
+  if (!data) notFound();
+  return (
+    <EnrollmentsManager
+      trainingTitle={data.title}
+      trainingId={id}
+      sessions={data.sessions}
+      basePath={basePathFor(segment)}
+    />
+  );
 }
 
 /** /[seg]/formations/[id]/modifier — wizard d'édition. */

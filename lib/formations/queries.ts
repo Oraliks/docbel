@@ -250,6 +250,17 @@ export function seatsLeft(
   return Math.max(0, session.capacity - session._count.enrollments);
 }
 
+/** Cartes de formations par ids (ordre d'entrée préservé), publiées uniquement. */
+export async function getTrainingCardsByIds(ids: string[]): Promise<TrainingCardData[]> {
+  if (ids.length === 0) return [];
+  const rows = await prisma.training.findMany({
+    where: { id: { in: ids }, status: "published" },
+    include: cardInclude,
+  });
+  const byId = new Map(rows.map((r) => [r.id, toCard(r)]));
+  return ids.map((id) => byId.get(id)).filter((c): c is TrainingCardData => !!c);
+}
+
 export async function listActiveCategories() {
   const cats = await prisma.trainingCategory.findMany({
     where: { isActive: true },

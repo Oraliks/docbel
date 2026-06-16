@@ -222,3 +222,67 @@ export async function listCategoriesForSelect() {
     select: { id: true, slug: true, name: true },
   });
 }
+
+export interface OrgEnrollmentRow {
+  id: string;
+  status: string;
+  citizenName: string | null;
+  citizenEmail: string | null;
+  citizenPhone: string | null;
+  message: string | null;
+  organizationNote: string | null;
+  requestedAt: string;
+}
+
+export interface OrgEnrollmentSession {
+  id: string;
+  label: string | null;
+  mode: string;
+  city: string | null;
+  capacity: number | null;
+  enrollments: OrgEnrollmentRow[];
+}
+
+/** Inscriptions d'une formation, groupées par session (page de gestion org). */
+export async function getTrainingWithEnrollments(
+  trainingId: string,
+): Promise<{ title: string; sessions: OrgEnrollmentSession[] } | null> {
+  const training = await prisma.training.findUnique({
+    where: { id: trainingId },
+    select: {
+      title: true,
+      sessions: {
+        orderBy: { startsAt: "asc" },
+        select: {
+          id: true,
+          startsAt: true,
+          mode: true,
+          city: true,
+          capacity: true,
+          enrollments: { orderBy: { requestedAt: "asc" } },
+        },
+      },
+    },
+  });
+  if (!training) return null;
+  return {
+    title: training.title,
+    sessions: training.sessions.map((s) => ({
+      id: s.id,
+      label: s.startsAt ? s.startsAt.toISOString() : null,
+      mode: s.mode,
+      city: s.city,
+      capacity: s.capacity,
+      enrollments: s.enrollments.map((e) => ({
+        id: e.id,
+        status: e.status,
+        citizenName: e.citizenName,
+        citizenEmail: e.citizenEmail,
+        citizenPhone: e.citizenPhone,
+        message: e.message,
+        organizationNote: e.organizationNote,
+        requestedAt: e.requestedAt.toISOString(),
+      })),
+    })),
+  };
+}

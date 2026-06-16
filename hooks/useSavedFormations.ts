@@ -40,7 +40,18 @@ export function useSavedFormations() {
 
   const toggle = useCallback(
     (slug: string) => {
-      persist(saved.includes(slug) ? saved.filter((s) => s !== slug) : [...saved, slug]);
+      const isOn = saved.includes(slug);
+      persist(isOn ? saved.filter((s) => s !== slug) : [...saved, slug]);
+      // Persiste côté serveur pour les utilisateurs connectés (no-op si anonyme).
+      if (isOn) {
+        void fetch(`/api/formations/saved?id=${encodeURIComponent(slug)}`, { method: "DELETE" }).catch(() => {});
+      } else {
+        void fetch("/api/formations/saved", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ trainingId: slug }),
+        }).catch(() => {});
+      }
     },
     [saved, persist],
   );

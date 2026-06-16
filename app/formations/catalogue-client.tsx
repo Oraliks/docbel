@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRightIcon,
+  BookmarkIcon,
   CompassIcon,
   SearchIcon,
   SparklesIcon,
@@ -108,6 +109,14 @@ export function CatalogueClient({ trainings, categories }: Props) {
               Voir les formations
               <ArrowRightIcon className="size-4" />
             </a>
+            <button
+              type="button"
+              onClick={() => router.push("/mon-espace/formations")}
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
+            >
+              <BookmarkIcon className="size-4" />
+              Mes formations
+            </button>
           </div>
         </header>
 

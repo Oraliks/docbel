@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { enrollmentSchema } from "@/lib/formations/schemas";
 import { ACTIVE_ENROLLMENT_STATUSES, OPEN_SESSION_STATUSES } from "@/lib/formations/constants";
+import { sendEnrollmentEmail } from "@/lib/formations/emails";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
 
   const session = await prisma.trainingSession.findUnique({
     where: { id: data.sessionId },
-    include: { training: { select: { id: true, status: true, visibility: true, title: true } } },
+    include: { training: { select: { id: true, slug: true, status: true, visibility: true, title: true } } },
   });
   if (!session || !session.training) {
     return NextResponse.json({ error: "Session introuvable" }, { status: 404, headers: json });
@@ -111,6 +112,20 @@ export async function POST(req: Request) {
     if (userId) {
       await logActivity(userId, "enrolled", "enrollment", session.training.title, enrollment.id);
     }
+
+    const org = await prisma.formationOrganization.findUnique({
+      where: { id: session.organizationId },
+      select: { name: true },
+    });
+    await sendEnrollmentEmail({
+      to: email,
+      citizenName: data.citizenName,
+      trainingTitle: session.training.title,
+      trainingSlug: session.training.slug,
+      orgName: org?.name ?? "Docbel",
+      status,
+      sessionLabel: session.startsAt ? session.startsAt.toLocaleDateString("fr-BE") : null,
+    });
 
     return NextResponse.json(
       { ok: true, status, enrollmentId: enrollment.id },

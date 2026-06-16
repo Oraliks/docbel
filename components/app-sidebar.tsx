@@ -18,7 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, FileInputIcon, UsersIcon, CalendarClock, BriefcaseIcon } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, FileInputIcon, UsersIcon, CalendarClock, BriefcaseIcon, GraduationCapIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultUser = {
@@ -167,6 +167,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         { title: t("competencesTerritoriales"), url: "/admin/bureaux#services" },
         { title: t("competencesOnem"), url: "/admin/bureaux#onem" },
         { title: t("signalements"), url: "/admin/bureaux#reports" },
+      ],
+    },
+    {
+      // Module Docbel Formations : catalogue, modération, taxonomie, permissions.
+      title: t("formations"),
+      url: "/admin/formations",
+      icon: <GraduationCapIcon className="size-4" />,
+      items: [
+        { title: t("formationsOverview"), url: "/admin/formations" },
+        { title: t("formationsValidation"), url: "/admin/formations/validation" },
+        { title: t("formationsPermissions"), url: "/admin/formations/permissions" },
+        { title: t("formationsCategories"), url: "/admin/formations/categories" },
+        { title: t("formationsSignalements"), url: "/admin/formations/signalements" },
+        { title: t("formationsBoussole"), url: "/admin/formations/boussole" },
       ],
     },
     {

@@ -67,7 +67,14 @@
       "rendezVous": "Rendez-vous",
       "plateformeBooking": "Plateforme de booking",
       "planningFgtb": "Planning FGTB (.ics)",
-      "newsletter": "Newsletter"
+      "newsletter": "Newsletter",
+      "formations": "Formations",
+      "formationsOverview": "Vue d'ensemble",
+      "formationsValidation": "Validation",
+      "formationsPermissions": "Permissions",
+      "formationsCategories": "Catégories",
+      "formationsSignalements": "Signalements",
+      "formationsBoussole": "Boussole"
     },
     "users": {
       "title": "Utilisateurs",

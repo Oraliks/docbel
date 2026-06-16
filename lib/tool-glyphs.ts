@@ -3,6 +3,7 @@ import {
   Building2Icon,
   CalculatorIcon,
   CarIcon,
+  DatabaseIcon,
   EuroIcon,
   FileTextIcon,
   type LucideIcon,
@@ -44,6 +45,7 @@ export const TOOL_GLYPHS: Record<string, ToolGlyph> = {
   "commissions-paritaires": { Icon: Building2Icon, hue: "#6366F1" },
   u1: { Icon: FileTextIcon, hue: "#0EA5E9" },
   "lookup-onem": { Icon: SearchIcon, hue: "#7C3AED" },
+  "bareme-chomage": { Icon: DatabaseIcon, hue: "#A855F7" },
 };
 
 export const FALLBACK_GLYPH: ToolGlyph = {

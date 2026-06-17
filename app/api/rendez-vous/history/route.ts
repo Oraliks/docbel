@@ -124,25 +124,30 @@ export async function POST(req: NextRequest) {
         ),
       );
 
+      // Clé d'identité d'un RDV (nom normalisé + jour + créneau de début).
+      const keyOf = (e: {
+        nameNormalized: string;
+        date: string;
+        startTime: string;
+      }) => `${e.nameNormalized}|${e.date}|${e.startTime}`;
+
       const result = await withDbRetry(() =>
         prisma.$transaction(async (tx) => {
           const existing = await tx.rendezVousHistory.findMany({
             where: { scope, date: { in: datesInPaste } },
             select: {
               id: true,
+              name: true,
               nameNormalized: true,
               date: true,
               startTime: true,
+              endTime: true,
             },
           });
-          const obsoleteIds = existing
-            .filter(
-              (e) =>
-                !expectedKeys.has(
-                  `${e.nameNormalized}|${e.date}|${e.startTime}`,
-                ),
-            )
-            .map((e) => e.id);
+          const existingKeys = new Set(existing.map(keyOf));
+          // Présents en base pour ces journées mais absents du nouveau collage.
+          const obsolete = existing.filter((e) => !expectedKeys.has(keyOf(e)));
+          const obsoleteIds = obsolete.map((e) => e.id);
 
           const del = obsoleteIds.length
             ? await tx.rendezVousHistory.deleteMany({
@@ -163,7 +168,25 @@ export async function POST(req: NextRequest) {
             skipDuplicates: true, // re-coller la même liste ne crée pas de doublon
           });
 
-          return { saved: ins.count, removed: del.count };
+          // Réellement nouveaux : présents dans le collage, absents de la base.
+          const addedEntries = current.filter(
+            (r) =>
+              !existingKeys.has(
+                `${normalizeName(r.name)}|${r.date}|${r.startTime}`,
+              ),
+          );
+
+          return {
+            saved: ins.count,
+            removed: del.count,
+            removedEntries: obsolete.map((e) => ({
+              name: e.name,
+              date: e.date,
+              startTime: e.startTime,
+              endTime: e.endTime,
+            })),
+            addedEntries,
+          };
         }),
       );
 
@@ -171,6 +194,10 @@ export async function POST(req: NextRequest) {
         {
           saved: result.saved,
           removed: result.removed,
+          // Détail nominatif (sert à l'onglet « Mise à jour » de l'historique
+          // pour montrer concrètement qui a été retiré / ajouté).
+          removedEntries: result.removedEntries,
+          added: result.addedEntries,
           total: current.length,
           days: datesInPaste.length,
         },

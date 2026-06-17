@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTrainingCardsByIds } from "@/lib/formations/queries";
+import { blockIfFlagOff } from "@/lib/formations/module-guard";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
 /** Renvoie les cartes (publiées) pour une liste de slugs : ?slugs=a,b,c. */
 export async function GET(req: Request) {
+  const blocked = await blockIfFlagOff("catalog");
+  if (blocked) return blocked;
   const url = new URL(req.url);
   const raw = url.searchParams.get("slugs") ?? "";
   const slugs = raw.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 60);

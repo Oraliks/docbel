@@ -176,6 +176,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: <GraduationCapIcon className="size-4" />,
       items: [
         { title: t("formationsOverview"), url: "/admin/formations" },
+        { title: t("formationsModule"), url: "/admin/modules/formations" },
         { title: t("formationsValidation"), url: "/admin/formations/validation" },
         { title: t("formationsPermissions"), url: "/admin/formations/permissions" },
         { title: t("formationsCategories"), url: "/admin/formations/categories" },

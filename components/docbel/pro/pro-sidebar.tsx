@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/nav-user";
 import { getProSpace, type ProIcon, type ProSegment } from "@/lib/pro-nav";
+import { useFormationsModule } from "@/hooks/useFormationsModule";
 
 const ICONS: Record<ProIcon, LucideIcon> = {
   dashboard: LayoutDashboardIcon,
@@ -69,6 +70,10 @@ export function ProSidebar({
 } & React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname() ?? "";
   const space = getProSpace(segment);
+  const { navVisible: formationsVisible } = useFormationsModule();
+  const groups = space.groups.filter(
+    (g) => g.label !== "Formations" || formationsVisible,
+  );
 
   return (
     <Sidebar collapsible="offcanvas" variant="inset" {...props}>
@@ -90,7 +95,7 @@ export function ProSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        {space.groups.map((group) => (
+        {groups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>

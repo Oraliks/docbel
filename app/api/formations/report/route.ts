@@ -3,11 +3,14 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { reportSchema } from "@/lib/formations/schemas";
+import { blockIfFlagOff } from "@/lib/formations/module-guard";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
 /** Signalement public d'une formation. */
 export async function POST(req: Request) {
+  const blocked = await blockIfFlagOff("catalog");
+  if (blocked) return blocked;
   const body = await req.json().catch(() => null);
   const parsed = reportSchema.safeParse(body);
   if (!parsed.success) {

@@ -9,6 +9,9 @@ import { getBoussoleQuestions } from "@/lib/formations/boussole/load";
 import { scoreBoussole } from "@/lib/formations/boussole/engine";
 import { BRANCH_BY_KEY, type BranchKey } from "@/lib/formations/boussole/branches";
 import { getRecommendedTrainings } from "@/lib/formations/queries";
+import { blockIfFlagOff } from "@/lib/formations/module-guard";
+import { trackEvent } from "@/lib/formations/analytics";
+import { explainOrientationResult } from "@/lib/formations/providers/ai";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -22,6 +25,9 @@ async function getOptionalUserId(): Promise<string | null> {
 /** POST : score la Boussole (serveur, faisant autorité), persiste le résultat
  * (anonyme autorisé) et renvoie branches + formations recommandées. */
 export async function POST(req: Request) {
+  const blocked = await blockIfFlagOff("orientation");
+  if (blocked) return blocked;
+
   const body = await req.json().catch(() => null);
   const parsed = boussoleSubmitSchema.safeParse(body);
   if (!parsed.success) {
@@ -42,9 +48,11 @@ export async function POST(req: Request) {
   );
   const recommendations = await getRecommendedTrainings(branchKeys, 6);
 
-  const summary = result.primaryKey
-    ? `Sur base de tes réponses, le domaine « ${BRANCH_BY_KEY[result.primaryKey].name} » semble le mieux correspondre à ton profil.`
-    : "Réponds à quelques questions de plus pour obtenir des pistes.";
+  const { text: summary } = await explainOrientationResult({
+    primaryKey: result.primaryKey,
+    secondaryKeys: result.secondaryKeys,
+    confidence: result.confidence,
+  });
 
   const saved = await prisma.orientationResult.create({
     data: {
@@ -63,6 +71,11 @@ export async function POST(req: Request) {
   if (userId) {
     await logActivity(userId, "completed", "boussole", "Boussole d'orientation", saved.id);
   }
+  await trackEvent("ORIENTATION_RECOMMENDED", {
+    userId,
+    source: "boussole",
+    metadata: { primaryKey: result.primaryKey },
+  });
 
   return NextResponse.json(
     {

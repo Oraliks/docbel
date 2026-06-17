@@ -7,6 +7,7 @@ import { authClient } from "@/lib/auth-client";
 import { useAuthSession } from "@/components/auth-session-provider";
 import { useTheme } from "@/components/theme-provider";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { useFormationsModule } from "@/hooks/useFormationsModule";
 import { NotificationBell } from "@/components/docbel/notification-bell";
 import { AUDIENCES, type AudienceId } from "@/lib/audience";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -104,6 +105,10 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
   const { data: session } = useAuthSession();
   const activeNav = resolveActiveNav(pathname);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { navVisible: formationsVisible } = useFormationsModule();
+  const navItems = NAV_ITEMS.filter(
+    (item) => item.id !== "formations" || formationsVisible,
+  );
 
   const current = AUDIENCES.find((aud) => aud.id === persona) ?? AUDIENCES[0];
   const Icon = current.Icon;
@@ -151,7 +156,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
             </SheetDescription>
           </SheetHeader>
           <nav className="flex flex-col gap-1 p-3">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const active = item.id === activeNav;
               const ItemIcon = item.icon;
               const className = `inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-[14px] font-semibold transition-colors ${
@@ -246,7 +251,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
       </div>
 
       <nav className="ml-2 hidden items-center gap-0.5 xl:flex">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const active = item.id === activeNav;
           const ItemIcon = item.icon;
           const className = `inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[13px] font-semibold transition-colors ${

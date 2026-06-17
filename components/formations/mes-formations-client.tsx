@@ -3,15 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  AwardIcon,
   BookmarkIcon,
   CalendarRangeIcon,
   CompassIcon,
+  DownloadIcon,
   GraduationCapIcon,
   MapPinIcon,
   SparklesIcon,
 } from "lucide-react";
 import type { TrainingCardData } from "@/lib/formations/queries";
-import type { MyEnrollment, MyResult } from "@/lib/formations/me-queries";
+import type { MyEnrollment, MyResult, MyCertificate } from "@/lib/formations/me-queries";
 import { TrainingCard } from "@/components/formations/training-card";
 import { resolveIcon } from "@/components/formations/icons";
 import { formatDate } from "@/components/formations/format";
@@ -26,10 +28,11 @@ interface Props {
   isLoggedIn: boolean;
   enrollments: MyEnrollment[];
   results: MyResult[];
+  certificates: MyCertificate[];
   serverSavedSlugs: string[];
 }
 
-export function MesFormationsClient({ isLoggedIn, enrollments, results, serverSavedSlugs }: Props) {
+export function MesFormationsClient({ isLoggedIn, enrollments, results, certificates, serverSavedSlugs }: Props) {
   const { saved } = useSavedFormations();
   const [cards, setCards] = useState<TrainingCardData[]>([]);
 
@@ -61,7 +64,8 @@ export function MesFormationsClient({ isLoggedIn, enrollments, results, serverSa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedKey]);
 
-  const hasAnything = enrollments.length > 0 || results.length > 0 || saved.length > 0;
+  const hasAnything =
+    enrollments.length > 0 || results.length > 0 || certificates.length > 0 || saved.length > 0;
 
   return (
     <div className="flex flex-col gap-8">
@@ -148,6 +152,38 @@ export function MesFormationsClient({ isLoggedIn, enrollments, results, serverSa
                 </Link>
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {certificates.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="flex items-center gap-2 px-1 text-[16px] font-bold tracking-tight">
+            <AwardIcon className="size-4 text-[color:var(--glass-accent-deep)]" /> Mes attestations
+          </h2>
+          <div className="flex flex-col gap-2.5">
+            {certificates.map((c) => (
+              <div
+                key={c.id}
+                className="glass-surface flex flex-wrap items-center justify-between gap-3 p-4"
+              >
+                <div>
+                  <p className="text-[14px] font-bold">{c.trainingTitle}</p>
+                  <p className="text-[12px] text-[color:var(--glass-ink-soft)]">
+                    {c.orgName ? `${c.orgName} · ` : ""}N° {c.certificateNumber} · {formatDate(c.issuedAt)}
+                  </p>
+                </div>
+                <a
+                  href={`/api/formations/certificates/${c.id}/pdf`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="glass-cta inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12.5px] font-bold"
+                >
+                  <DownloadIcon className="size-4" />
+                  Télécharger
+                </a>
+              </div>
+            ))}
           </div>
         </section>
       )}

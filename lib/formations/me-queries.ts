@@ -62,6 +62,30 @@ export interface MyResult {
   createdAt: string;
 }
 
+export interface MyCertificate {
+  id: string;
+  certificateNumber: string;
+  trainingTitle: string;
+  orgName: string | null;
+  type: string;
+  issuedAt: string;
+}
+
+export async function getMyCertificates(userId: string): Promise<MyCertificate[]> {
+  const rows = await prisma.trainingCertificate.findMany({
+    where: { userId, status: "issued" },
+    orderBy: { issuedAt: "desc" },
+  });
+  return rows.map((c) => ({
+    id: c.id,
+    certificateNumber: c.certificateNumber,
+    trainingTitle: c.trainingTitle,
+    orgName: c.orgName,
+    type: c.type,
+    issuedAt: c.issuedAt.toISOString(),
+  }));
+}
+
 export async function getMyResults(userId: string): Promise<MyResult[]> {
   const rows = await prisma.orientationResult.findMany({
     where: { userId, saved: true },

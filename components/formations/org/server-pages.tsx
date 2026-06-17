@@ -11,6 +11,7 @@ import {
   type OrgTrainingDetail,
 } from "@/lib/formations/org-queries";
 import { formationOrgAccess } from "@/lib/formations/access";
+import { getTrainingAccess, isFlagEnabled } from "@/lib/formations/module";
 import { OrgFormationsHome } from "./org-home";
 import { TrainingWizard, type WizardInitial } from "./training-wizard";
 import { TrainingManage, type OrgManageView, type ManageCaps } from "./training-manage";
@@ -22,10 +23,18 @@ function basePathFor(segment: Segment) {
   return `/${segment}/formations`;
 }
 
+/** Module désactivé pour cet espace → 404 (l'org ne voit rien). */
+async function ensureOrgModule(segment: Segment, user: { role: string; isAdmin: boolean }) {
+  const space = segment === "employeur" ? "employer" : "partner";
+  const { access } = await getTrainingAccess({ role: user.role, isAdmin: user.isAdmin }, space);
+  if (access !== "ok") notFound();
+}
+
 /** /[seg]/formations — liste + stats. */
 export async function OrgFormationsListPage({ segment }: { segment: Segment }) {
   const user = await getOrgPageUser(segment);
   if (!user) redirect(`/p/${segment}`);
+  await ensureOrgModule(segment, user);
 
   const { orgIds } = await getOrgContext(user.id, user.role);
   const [items, stats] = await Promise.all([listOrgTrainings(orgIds), getOrgStats(orgIds)]);
@@ -37,6 +46,8 @@ export async function OrgFormationsListPage({ segment }: { segment: Segment }) {
 export async function OrgFormationsNewPage({ segment }: { segment: Segment }) {
   const user = await getOrgPageUser(segment);
   if (!user) redirect(`/p/${segment}`);
+  await ensureOrgModule(segment, user);
+  if (!(await isFlagEnabled("organizationCreation"))) notFound();
 
   const [{ allowedVisibilities }, categories, tags] = await Promise.all([
     getOrgContext(user.id, user.role),
@@ -58,6 +69,7 @@ export async function OrgFormationsNewPage({ segment }: { segment: Segment }) {
 async function loadOwnedTraining(segment: Segment, id: string) {
   const user = await getOrgPageUser(segment);
   if (!user) redirect(`/p/${segment}`);
+  await ensureOrgModule(segment, user);
   const training = await getOrgTraining(id);
   if (!training) notFound();
   const access = await formationOrgAccess(user.id, user.role, training.organizationId);
@@ -120,6 +132,7 @@ export async function OrgFormationsEnrollmentsPage({ segment, id }: { segment: S
       trainingId={id}
       sessions={data.sessions}
       basePath={basePathFor(segment)}
+      canExport={caps.exportParticipants}
     />
   );
 }

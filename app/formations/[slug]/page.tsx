@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getTrainingBySlug, seatsLeft } from "@/lib/formations/queries";
 import { getFormationsViewer } from "@/lib/formations/page-auth";
 import { canViewTraining } from "@/lib/formations/access";
+import { getTrainingAccess } from "@/lib/formations/module";
+import { ModuleGate } from "@/components/formations/module-gate";
 import { OPEN_SESSION_STATUSES } from "@/lib/formations/constants";
 import { TrainingDetailClient, type TrainingDetailView } from "./training-detail-client";
 import { PrivateNotice } from "./private-notice";
@@ -25,10 +27,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function TrainingDetailPage({ params }: PageProps) {
   const { slug } = await params;
+  const viewer = await getFormationsViewer();
+
+  const { access, config } = await getTrainingAccess(viewer, "public");
+  if (access === "hidden") notFound();
+  if (access !== "ok")
+    return <ModuleGate access={access} maintenanceMessage={config.maintenanceMessage} />;
+
   const training = await getTrainingBySlug(slug);
   if (!training) notFound();
 
-  const viewer = await getFormationsViewer();
   const allowed = await canViewTraining(viewer, training);
   if (!allowed) return <PrivateNotice visibility={training.visibility} />;
 

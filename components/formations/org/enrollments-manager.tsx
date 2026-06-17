@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeftIcon, CheckIcon, MailIcon, PhoneIcon, XIcon } from "lucide-react";
+import { ArrowLeftIcon, CheckIcon, DownloadIcon, MailIcon, PhoneIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ interface Props {
   trainingId: string;
   sessions: OrgEnrollmentSession[];
   basePath: string;
+  canExport: boolean;
 }
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
@@ -59,7 +60,7 @@ const ACTIONS: Record<string, { action: string; label: string }[]> = {
   present: [{ action: "completed", label: "Terminé" }],
 };
 
-export function EnrollmentsManager({ trainingTitle, sessions, basePath, trainingId }: Props) {
+export function EnrollmentsManager({ trainingTitle, sessions, basePath, trainingId, canExport }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -88,11 +89,21 @@ export function EnrollmentsManager({ trainingTitle, sessions, basePath, training
         <ArrowLeftIcon /> Retour à la formation
       </Button>
 
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Inscriptions</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {trainingTitle} · {totalEnrollments} inscription{totalEnrollments > 1 ? "s" : ""}
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Inscriptions</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {trainingTitle} · {totalEnrollments} inscription{totalEnrollments > 1 ? "s" : ""}
+          </p>
+        </div>
+        {canExport && totalEnrollments > 0 && (
+          <Button
+            variant="outline"
+            render={<a href={`/api/formations/trainings/${trainingId}/participants/export`} />}
+          >
+            <DownloadIcon /> Exporter (CSV)
+          </Button>
+        )}
       </div>
 
       {sessions.length === 0 ? (

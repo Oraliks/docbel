@@ -5,7 +5,8 @@ import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { guardFormationOrg, forbidden } from "@/lib/formations/guard";
-import { sendEnrollmentEmail } from "@/lib/formations/emails";
+import { notifyEnrollment } from "@/lib/formations/providers/notifications";
+import { issueCertificateForEnrollment } from "@/lib/formations/certificates/service";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -53,8 +54,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   await prisma.trainingEnrollment.update({ where: { id }, data });
 
-  // Notification au citoyen pour les transitions visibles.
-  if (["accept", "refuse", "cancel"].includes(parsed.data.action) && enrollment.citizenEmail) {
+  // Émission d'attestation à la fin (statut → certificate_available si succès).
+  let certificateIssued = false;
+  if (parsed.data.action === "completed") {
+    const cert = await issueCertificateForEnrollment(id).catch(() => null);
+    certificateIssued = !!cert;
+  }
+
+  // Notification au citoyen pour les transitions visibles + attestation.
+  const notifyActions = ["accept", "refuse", "cancel"];
+  if ((notifyActions.includes(parsed.data.action) || certificateIssued) && enrollment.citizenEmail) {
     const training = await prisma.training.findUnique({
       where: { id: enrollment.trainingId },
       select: { title: true, slug: true },
@@ -64,18 +73,24 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       select: { name: true },
     });
     if (training) {
-      await sendEnrollmentEmail({
-        to: enrollment.citizenEmail,
+      await notifyEnrollment({
+        type: certificateIssued ? "certificate_available" : `enrollment_${t.status}`,
+        emailStatus: certificateIssued ? "accepted" : t.status,
+        recipientId: enrollment.userId,
+        recipientEmail: enrollment.citizenEmail,
+        organizationId: enrollment.organizationId,
+        trainingId: enrollment.trainingId,
+        sessionId: enrollment.sessionId,
+        enrollmentId: id,
         citizenName: enrollment.citizenName,
         trainingTitle: training.title,
         trainingSlug: training.slug,
         orgName: org?.name ?? "Docbel",
-        status: t.status,
-        note: parsed.data.note ?? null,
+        note: certificateIssued ? "Votre attestation est disponible." : parsed.data.note ?? null,
       });
     }
   }
 
   await logActivity(auth.user.id, "updated", "enrollment", enrollment.citizenName ?? "Inscription", id, parsed.data.action);
-  return NextResponse.json({ ok: true, status: t.status }, { headers: json });
+  return NextResponse.json({ ok: true, status: certificateIssued ? "certificate_available" : t.status }, { headers: json });
 }

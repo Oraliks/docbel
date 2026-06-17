@@ -14,6 +14,7 @@ import {
   toDate,
 } from "@/lib/formations/org-mutations";
 import { trainingCreatePayloadSchema } from "@/lib/formations/schemas";
+import { blockIfFlagOff } from "@/lib/formations/module-guard";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -23,6 +24,8 @@ export async function POST(req: Request) {
   if (!auth.isAuthorized) return auth.error;
   const block = await ensureWriteAllowed();
   if (block) return block;
+  const blocked = await blockIfFlagOff("organizationCreation");
+  if (blocked) return blocked;
 
   const body = await req.json().catch(() => null);
   const parsed = trainingCreatePayloadSchema.safeParse(body);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -102,6 +102,14 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
   const accent = training.category?.color ?? "#7C3AED";
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+
+  useEffect(() => {
+    void fetch("/api/formations/analytics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventType: "VIEW", trainingId: training.id, source: "detail" }),
+    }).catch(() => {});
+  }, [training.id]);
 
   const openSessions = training.sessions.filter((s) => s.isOpen);
   const isPrivate = training.visibility === "private" || training.visibility === "internal";

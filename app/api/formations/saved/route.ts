@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { blockIfFlagOff } from "@/lib/formations/module-guard";
+import { trackEvent } from "@/lib/formations/analytics";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 const schema = z.object({ trainingId: z.string().min(1) });
@@ -14,6 +16,8 @@ async function userId(): Promise<string | null> {
 
 /** Sauvegarde une formation pour l'utilisateur connecté (no-op silencieux si anonyme). */
 export async function POST(req: Request) {
+  const blocked = await blockIfFlagOff("catalog");
+  if (blocked) return blocked;
   const uid = await userId();
   if (!uid) return NextResponse.json({ ok: false, anonymous: true }, { status: 401, headers: json });
   const parsed = schema.safeParse(await req.json().catch(() => null));
@@ -29,6 +33,7 @@ export async function POST(req: Request) {
       create: { userId: uid, trainingId: bySlug.id },
       update: {},
     });
+    await trackEvent("SAVE", { userId: uid, trainingId: bySlug.id });
     return NextResponse.json({ ok: true }, { headers: json });
   }
 
@@ -37,11 +42,14 @@ export async function POST(req: Request) {
     create: { userId: uid, trainingId: training.id },
     update: {},
   });
+  await trackEvent("SAVE", { userId: uid, trainingId: training.id });
   return NextResponse.json({ ok: true }, { headers: json });
 }
 
 /** Retire une formation sauvegardée. Accepte ?id= (training id ou slug). */
 export async function DELETE(req: Request) {
+  const blocked = await blockIfFlagOff("catalog");
+  if (blocked) return blocked;
   const uid = await userId();
   if (!uid) return NextResponse.json({ ok: false, anonymous: true }, { status: 401, headers: json });
   const url = new URL(req.url);

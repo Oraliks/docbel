@@ -7,7 +7,9 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { enrollmentSchema } from "@/lib/formations/schemas";
 import { ACTIVE_ENROLLMENT_STATUSES, OPEN_SESSION_STATUSES } from "@/lib/formations/constants";
-import { sendEnrollmentEmail } from "@/lib/formations/emails";
+import { notifyEnrollment } from "@/lib/formations/providers/notifications";
+import { trackEvent } from "@/lib/formations/analytics";
+import { blockIfFlagOff } from "@/lib/formations/module-guard";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -17,6 +19,9 @@ const json = { "Content-Type": "application/json; charset=utf-8" };
  * équipe + emails sont gérés côté organisation (Phase 5).
  */
 export async function POST(req: Request) {
+  const blocked = await blockIfFlagOff("enrollments");
+  if (blocked) return blocked;
+
   const body = await req.json().catch(() => null);
   const parsed = enrollmentSchema.safeParse(body);
   if (!parsed.success) {
@@ -117,14 +122,27 @@ export async function POST(req: Request) {
       where: { id: session.organizationId },
       select: { name: true },
     });
-    await sendEnrollmentEmail({
-      to: email,
+    await notifyEnrollment({
+      type: `enrollment_${status}`,
+      emailStatus: status,
+      recipientId: userId,
+      recipientEmail: email,
+      organizationId: session.organizationId,
+      trainingId: session.training.id,
+      sessionId: session.id,
+      enrollmentId: enrollment.id,
       citizenName: data.citizenName,
       trainingTitle: session.training.title,
       trainingSlug: session.training.slug,
       orgName: org?.name ?? "Docbel",
-      status,
       sessionLabel: session.startsAt ? session.startsAt.toLocaleDateString("fr-BE") : null,
+    });
+    await trackEvent("ENROLLMENT_SUBMITTED", {
+      trainingId: session.training.id,
+      sessionId: session.id,
+      organizationId: session.organizationId,
+      userId,
+      source: "detail",
     });
 
     return NextResponse.json(

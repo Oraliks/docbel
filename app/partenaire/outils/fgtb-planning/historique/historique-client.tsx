@@ -1,16 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
   ArrowLeft,
   CalendarClock,
+  CalendarDays,
   CheckCircle2,
   Eraser,
   History,
   Loader2,
   RefreshCw,
+  RotateCcw,
   Search,
   Trash2,
   UserMinus,
@@ -91,6 +93,42 @@ const UPDATE_PLACEHOLDER = `Appointments for 06/06/2026
 Patrick Jyambere
 Julie Dupont`;
 
+/**
+ * Reconstruit un collage texte (format FGTB) à partir des RDV enregistrés d'UNE
+ * journée, pour le re-charger dans la zone de mise à jour et l'éditer. Le texte
+ * produit est re-parsable à l'identique par `parseAppointments`.
+ */
+function reconstructDayPaste(dayEntries: HistoryEntry[]): string {
+  if (dayEntries.length === 0) return "";
+  const slots = new Map<
+    string,
+    { start: string; end: string; names: string[] }
+  >();
+  for (const e of dayEntries) {
+    const key = `${e.startTime}-${e.endTime}`;
+    const slot = slots.get(key) ?? {
+      start: e.startTime,
+      end: e.endTime,
+      names: [],
+    };
+    slot.names.push(e.name);
+    slots.set(key, slot);
+  }
+  const ordered = [...slots.values()].sort((a, b) =>
+    a.start.localeCompare(b.start),
+  );
+  const lines: string[] = [
+    `Appointments for ${formatDateKey(dayEntries[0].date)}`,
+    "",
+  ];
+  for (const slot of ordered) {
+    lines.push(`${slot.start} – ${slot.end}`);
+    for (const name of slot.names) lines.push(name);
+    lines.push("");
+  }
+  return `${lines.join("\n").trim()}\n`;
+}
+
 export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
   const [org, setOrg] = useState<string>(isAdmin ? "" : (defaultOrg ?? ""));
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
@@ -104,6 +142,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
   const [applying, setApplying] = useState(false);
   const [updateResult, setUpdateResult] = useState<UpdateResult | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const updateRef = useRef<HTMLTextAreaElement>(null);
 
   // Un partenaire a un périmètre fixe ; un admin doit choisir une organisation.
   const ready = org !== "";
@@ -312,6 +351,43 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
   }, [confirm, isAdmin, org]);
 
   // ── Onglet « Mise à jour » ──────────────────────────────────────────────
+
+  // Synthèse par journée enregistrée : nb de RDV + dernière mise à jour. Permet
+  // de savoir, sans rien re-coller, quelles journées sont déjà encodées.
+  const daySummary = useMemo(() => {
+    const m = new Map<
+      string,
+      { date: string; count: number; lastUpdated: number }
+    >();
+    for (const e of entries) {
+      const t = new Date(e.createdAt).getTime();
+      const cur = m.get(e.date) ?? { date: e.date, count: 0, lastUpdated: 0 };
+      cur.count += 1;
+      if (t > cur.lastUpdated) cur.lastUpdated = t;
+      m.set(e.date, cur);
+    }
+    return [...m.values()].sort((a, b) => b.date.localeCompare(a.date));
+  }, [entries]);
+
+  // « Recharger » : réinjecte la liste d'une journée dans la zone de texte.
+  const handleReloadDay = useCallback(
+    (date: string) => {
+      const text = reconstructDayPaste(
+        entries.filter((e) => e.date === date),
+      );
+      setUpdateContent(text);
+      setUpdateError(null);
+      setUpdateResult(null);
+      requestAnimationFrame(() => {
+        updateRef.current?.focus();
+        updateRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
+    },
+    [entries],
+  );
 
   // Aperçu live du collage : nombre de RDV et journées concernées (réutilise le
   // MÊME parseur que le serveur). Sert à activer le bouton et à montrer quelles
@@ -677,6 +753,65 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
 
         {/* ── Onglet Mise à jour ── */}
         <TabsContent value="update" className="mt-4">
+          {ready && daySummary.length > 0 ? (
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarDays className="size-4 text-primary" />
+                  Journées déjà enregistrées
+                </CardTitle>
+                <CardDescription>
+                  {daySummary.length} journée{daySummary.length > 1 ? "s" : ""}{" "}
+                  dans l&apos;historique. «&nbsp;Recharger&nbsp;» remet la liste
+                  de la journée dans la zone ci-dessous — vous l&apos;éditez puis
+                  cliquez sur «&nbsp;Appliquer&nbsp;».
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="max-h-72 overflow-y-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Journée</TableHead>
+                        <TableHead>RDV</TableHead>
+                        <TableHead>Dernière mise à jour</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {daySummary.map((d) => (
+                        <TableRow key={d.date}>
+                          <TableCell className="font-medium">
+                            {formatDateKey(d.date)}
+                          </TableCell>
+                          <TableCell>{d.count}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {d.lastUpdated
+                              ? new Date(d.lastUpdated).toLocaleString("fr-BE", {
+                                  dateStyle: "short",
+                                  timeStyle: "short",
+                                })
+                              : "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleReloadDay(d.date)}
+                              title="Recharger cette journée dans la zone de texte"
+                            >
+                              <RotateCcw className="size-4" />
+                              Recharger
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -703,6 +838,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                 Calendrier corrigé
               </Label>
               <Textarea
+                ref={updateRef}
                 id="update-input"
                 value={updateContent}
                 onChange={(e) => {

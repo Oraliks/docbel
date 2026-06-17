@@ -32,6 +32,16 @@ export const SETTING_KEYS = {
   /// "true", canUseTool() consultera le plan du compte (cf. lib/entitlements.ts).
   /// Le processeur de paiement (Mollie/Stripe) se branchera plus tard sur ce flag.
   BILLING_ENABLED: "billing_enabled",
+  /// Module Formations — configuration globale (JSON). Champs : enabled,
+  /// publicEnabled, citizenEnabled, employerEnabled, partnerEnabled,
+  /// maintenanceMode, maintenanceMessage, launchMode (HIDDEN|COMING_SOON|
+  /// PRIVATE_BETA|PUBLIC). Lu/écrit via lib/formations/module.ts.
+  FORMATIONS_MODULE: "formations_module",
+  /// Module Formations — feature flags internes (JSON, clés courtes). Active
+  /// progressivement les grandes fonctionnalités (catalog, orientation,
+  /// enrollments, certificates, lms, quizzes, paths, payments, marketplace,
+  /// ai, partnerApi, …). Lu via lib/formations/module.ts.
+  FORMATIONS_FLAGS: "formations_flags",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
@@ -101,6 +111,38 @@ L'équipe DocBel`,
   chomage_ia_ingestion_enabled: "false",
   chomage_ia_web_search_enabled: "false",
   billing_enabled: "false",
+  formations_module: JSON.stringify({
+    enabled: true,
+    publicEnabled: true,
+    citizenEnabled: true,
+    employerEnabled: true,
+    partnerEnabled: true,
+    maintenanceMode: false,
+    maintenanceMessage:
+      "Le module Formations est temporairement indisponible. Veuillez réessayer plus tard.",
+    launchMode: "PUBLIC",
+  }),
+  formations_flags: JSON.stringify({
+    catalog: true,
+    orientation: true,
+    organizationCreation: true,
+    privateTrainings: true,
+    internalTrainings: true,
+    enrollments: true,
+    certificates: true,
+    notifications: true,
+    analytics: true,
+    lms: false,
+    quizzes: false,
+    paths: false,
+    payments: false,
+    marketplace: false,
+    ai: false,
+    partnerApi: false,
+    qualityScore: false,
+    docbelCertified: false,
+    sponsored: false,
+  }),
 };
 
 export async function getSetting(key: SettingKey): Promise<string> {

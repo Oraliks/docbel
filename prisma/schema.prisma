@@ -2585,6 +2585,13 @@ model OrganizationTrainingPermission {
   canIssueCertificate         Boolean               @default(false)
   canUseDocbelBadge           Boolean               @default(false)
   canRequestFeaturedPlacement Boolean               @default(false)
+  // Capacités V3/V4 (LMS, marketplace, paiement, API) — OFF par défaut.
+  canCreateLearningModules    Boolean               @default(false)
+  canCreateQuizzes            Boolean               @default(false)
+  canManageTrainingPaths      Boolean               @default(false)
+  canUseMarketplace           Boolean               @default(false)
+  canReceivePayments          Boolean               @default(false)
+  canUsePartnerApi            Boolean               @default(false)
   updatedById                 String?
   createdAt                   DateTime              @default(now())
   updatedAt                   DateTime              @updatedAt
@@ -2717,6 +2724,8 @@ model Training {
   currency           String   @default("EUR")
   priceVatIncluded   Boolean?
   externalPaymentUrl String?
+  /// manual | mock | stripe | paypal | disabled (V4 — défaut manual/disabled).
+  paymentProvider    String?
   paymentInfo        String?
   cancellationPolicy String?
   refundPolicy       String?
@@ -2740,6 +2749,9 @@ model Training {
   isFeatured          Boolean @default(false)
   isDocbelRecommended Boolean @default(false)
   isVerifiedByDocbel  Boolean @default(false)
+  /// V4 — formation sponsorisée (admin) + score qualité calculé.
+  isSponsored         Boolean @default(false)
+  qualityScore        Float?
 
   adminReviewNote String?
   rejectedReason  String?
@@ -2835,6 +2847,11 @@ model TrainingEnrollment {
   motivation        String?
   adminNote         String?
   organizationNote  String?
+  /// V2 paiement manuel/externe — pending | confirmed | failed | refunded | null.
+  paymentStatus     String?
+  paymentReference  String?
+  /// Réf. libre vers TrainingCertificate.id une fois l'attestation émise.
+  certificateId     String?
   /// Token opaque : gestion/annulation par l'utilisateur via lien email.
   confirmationToken String  @unique
   locale            String?
@@ -3005,4 +3022,126 @@ model OrientationResult {
 
   @@index([userId])
   @@index([sessionId])
+}
+
+// ===========================================================================
+// Docbel Formations — V2 (migration 49, additif). Attestations, journal de
+// notifications, analytics, avis, recommandations contextuelles. Réfs vers
+// User/Training = String brut sans FK (isolation, survie aux suppressions).
+// ===========================================================================
+
+/// Attestation / certificat délivré pour une inscription terminée. Vérifiable
+/// via `verificationCode` (page publique). `pdfUrl` null = généré à la demande.
+model TrainingCertificate {
+  id              String    @id @default(cuid())
+  trainingId      String
+  sessionId       String?
+  enrollmentId    String?
+  userId          String?
+  organizationId  String
+  /// participation | completion | success | docbel_certified | partner_certificate
+  type            String    @default("participation")
+  /// issued | revoked
+  status          String    @default("issued")
+  certificateNumber String  @unique
+  verificationCode  String  @unique
+  pdfUrl          String?
+  /// Données figées au moment de l'émission (affichage + PDF).
+  holderName      String
+  trainingTitle   String
+  orgName         String?
+  issuedAt        DateTime  @default(now())
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  revokedReason   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([trainingId])
+  @@index([userId])
+  @@index([enrollmentId])
+}
+
+/// Journal des notifications (in-app/email). Provider mock/database tant
+/// qu'aucune API n'est configurée — sert d'historique et de "in-app".
+model TrainingNotificationLog {
+  id             String    @id @default(cuid())
+  /// type d'événement (enrollment_accepted, session_cancelled, certificate_available…)
+  type           String
+  recipientId    String?
+  recipientEmail String?
+  organizationId String?
+  trainingId     String?
+  sessionId      String?
+  enrollmentId   String?
+  /// inapp | email
+  channel        String    @default("inapp")
+  /// queued | sent | failed | skipped
+  status         String    @default("queued")
+  provider       String?
+  payloadJson    Json      @default("{}")
+  error          String?
+  sentAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([recipientId, createdAt])
+  @@index([trainingId])
+  @@index([type])
+}
+
+/// Événement analytics du module (VIEW, SAVE, ENROLLMENT_SUBMITTED…).
+model TrainingAnalyticsEvent {
+  id           String   @id @default(cuid())
+  trainingId   String?
+  sessionId    String?
+  organizationId String?
+  userId       String?
+  /// VIEW | SAVE | UNSAVE | ENROLLMENT_STARTED | ENROLLMENT_SUBMITTED |
+  /// ORIENTATION_RECOMMENDED | EXTERNAL_PAYMENT_CLICKED | CERTIFICATE_DOWNLOADED
+  eventType    String
+  source       String?
+  metadataJson Json     @default("{}")
+  createdAt    DateTime @default(now())
+
+  @@index([trainingId, eventType])
+  @@index([eventType, createdAt])
+}
+
+/// Avis (interne en V2, public en V4). Laissé uniquement par un participant.
+model TrainingReview {
+  id                 String   @id @default(cuid())
+  trainingId         String
+  sessionId          String?
+  enrollmentId       String?
+  userId             String
+  rating             Int
+  clarityRating      Int?
+  usefulnessRating   Int?
+  organizationRating Int?
+  comment            String?
+  isPublic           Boolean  @default(false)
+  isVerified         Boolean  @default(false)
+  /// pending | approved | rejected | hidden
+  status             String   @default("pending")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([trainingId, status])
+  @@index([userId])
+}
+
+/// Recommandation contextuelle : lie un contexte Docbel (outil/espace/résultat
+/// Boussole) à une formation. Ex contextKey : citizen.unemployment,
+/// employer.first_hire, orientation.result.ADMINISTRATIVE_OFFICE.
+model TrainingContextRecommendation {
+  id         String   @id @default(cuid())
+  contextKey String
+  trainingId String
+  priority   Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([contextKey, trainingId])
+  @@index([contextKey, isActive])
 }

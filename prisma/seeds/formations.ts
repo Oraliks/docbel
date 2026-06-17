@@ -103,6 +103,37 @@ export async function seedFormations(prisma: PrismaClient) {
 
   // --- Jeu de démonstration : organisation + formations publiées ---
   await seedDemoTrainings(prisma);
+
+  // --- V2 : recommandations contextuelles (formations ↔ outils Docbel) ---
+  await seedContextRecommendations(prisma);
+}
+
+async function seedContextRecommendations(prisma: PrismaClient) {
+  const trainings = await prisma.training.findMany({ select: { id: true, slug: true } });
+  const idBySlug = new Map(trainings.map((t) => [t.slug, t.id]));
+
+  const mappings: Array<[string, string, number]> = [
+    ["citizen.unemployment", "comprendre-sa-fiche-de-paie", 10],
+    ["citizen.notice_period", "comprendre-sa-fiche-de-paie", 8],
+    ["employer.first_hire", "comprendre-sa-fiche-de-paie", 9],
+    ["partner.case_support", "devenir-aide-a-domicile-les-bases", 7],
+    ["orientation.result.ENTREPRENEURSHIP", "lancer-son-activite-independant-belgique", 10],
+    ["orientation.result.DIGITAL_IT", "initiation-bureautique-word-excel", 9],
+    ["orientation.result.ADMINISTRATIVE_OFFICE", "comprendre-sa-fiche-de-paie", 8],
+  ];
+
+  let created = 0;
+  for (const [contextKey, slug, priority] of mappings) {
+    const trainingId = idBySlug.get(slug);
+    if (!trainingId) continue;
+    await prisma.trainingContextRecommendation.upsert({
+      where: { contextKey_trainingId: { contextKey, trainingId } },
+      update: { priority, isActive: true },
+      create: { contextKey, trainingId, priority, isActive: true },
+    });
+    created++;
+  }
+  console.log(`   ✓ ${created} recommandations contextuelles`);
 }
 
 async function seedDemoTrainings(prisma: PrismaClient) {

@@ -241,15 +241,13 @@ export function DeadImagesClient({ initial }: DeadImagesClientProps) {
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
-                      asChild
+                      render={<Link href={item.adminUrl} />}
                       variant="ghost"
                       size="sm"
                       className="gap-1.5"
                     >
-                      <Link href={item.adminUrl}>
-                        <WrenchIcon className="size-3.5" />
-                        Corriger
-                      </Link>
+                      <WrenchIcon className="size-3.5" />
+                      Corriger
                     </Button>
                   </TableCell>
                 </TableRow>

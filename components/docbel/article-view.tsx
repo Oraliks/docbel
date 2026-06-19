@@ -199,17 +199,53 @@ export function ArticleView({
           </Link>
 
           <div className="glass-surface flex flex-col overflow-hidden">
-            {/* ── HERO FUSIONNÉ : méta à gauche, illustration à droite ───── */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_minmax(0,1fr)]">
-              {/* GAUCHE — méta de l'article */}
-              <div className="flex flex-col gap-5 p-6 sm:p-9">
+            {/* ── HERO FUSIONNÉ : une seule couche, titre PLEINE LARGEUR,
+                illustration fondue en fond à droite (pas deux colonnes), compact. ── */}
+            <div className="relative overflow-hidden">
+              {/* Illustration fondue, ancrée à droite (masquée < sm) */}
+              {heroImage ? (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 right-0 hidden w-[40%] items-center justify-end pr-5 sm:flex lg:w-[34%]"
+                >
+                  <SmartImage
+                    src={heroImage}
+                    alt=""
+                    fit="contain"
+                    fallbackMode="hide"
+                    className="size-full"
+                    imgClassName="object-contain object-right opacity-90"
+                  />
+                  {/* Voile : fond l'image dans la carte vers la gauche (lisibilité du titre). */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        "linear-gradient(to right, var(--glass-surface) 0%, color-mix(in oklab, var(--glass-surface) 45%, transparent) 38%, transparent 82%)",
+                    }}
+                  />
+                </div>
+              ) : null}
+
+              {/* Voile violet doux sur tout le hero (effet « fusion », même sans image) */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(115deg, transparent 46%, color-mix(in oklab, var(--glass-accent-deep) 10%, transparent) 100%)",
+                }}
+              />
+
+              {/* Contenu — pleine largeur, par-dessus l'illustration */}
+              <div className="relative flex flex-col gap-3 p-6 pb-16 sm:p-7 sm:pb-7">
                 <CategoryBadge>{article.tag}</CategoryBadge>
 
-                <h1 className="glass-display text-[32px] font-semibold leading-[1.04] sm:text-[46px]">
+                <h1 className="glass-display text-[27px] font-semibold leading-[1.05] sm:text-[40px]">
                   <AcronymText>{article.title}</AcronymText>
                 </h1>
 
-                {/* Méta : date · lecture · catégorie (pastilles façon maquette) */}
+                {/* Méta : date · lecture · catégorie */}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12.5px] font-medium text-[color:var(--glass-ink-soft)]">
                   <span className="inline-flex items-center gap-2">
                     <span
@@ -257,29 +293,29 @@ export function ArticleView({
                   </span>
                 </div>
 
-                {/* « À retenir » — pastille violette (étoile, façon maquette) */}
+                {/* « À retenir » — pastille compacte (étoile) */}
                 {article.keyTakeaway ? (
                   <div
-                    className="mt-1 flex w-fit max-w-md items-start gap-3 rounded-[18px] p-4 pr-5"
+                    className="flex w-fit max-w-xl items-start gap-2.5 rounded-2xl p-3"
                     style={{
                       background:
                         "color-mix(in oklab, var(--glass-accent-deep) 9%, var(--glass-surface))",
                     }}
                   >
                     <span
-                      className="flex size-9 shrink-0 items-center justify-center rounded-full"
+                      className="flex size-8 shrink-0 items-center justify-center rounded-full"
                       style={{
                         background: "color-mix(in oklab, var(--glass-accent-deep) 16%, transparent)",
                         color: "var(--glass-accent-deep)",
                       }}
                     >
-                      <StarIcon className="size-[18px]" />
+                      <StarIcon className="size-4" />
                     </span>
                     <div className="flex flex-col gap-0.5">
-                      <p className="text-[13.5px] font-bold text-[color:var(--glass-accent-deep)]">
+                      <p className="text-[12.5px] font-bold text-[color:var(--glass-accent-deep)]">
                         À retenir
                       </p>
-                      <p className="text-[13.5px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
+                      <p className="text-[12.5px] leading-[1.45] text-[color:var(--glass-ink-soft)]">
                         <AcronymText>{article.keyTakeaway}</AcronymText>
                       </p>
                     </div>
@@ -287,56 +323,27 @@ export function ArticleView({
                 ) : null}
               </div>
 
-              {/* DROITE — illustration sur fond dégradé doux + actions */}
-              <div
-                className="relative flex min-h-[230px] items-center justify-center overflow-hidden p-8 lg:min-h-full"
-                style={{
-                  background:
-                    "linear-gradient(155deg, color-mix(in oklab, var(--glass-accent-deep) 13%, var(--glass-bg-a)) 0%, color-mix(in oklab, var(--glass-accent-deep) 4%, var(--glass-bg-a)) 100%)",
-                }}
-              >
-                {/* halo circulaire doux */}
-                <div
-                  aria-hidden
-                  className="absolute size-[320px] rounded-full"
-                  style={{
-                    background:
-                      "radial-gradient(circle, color-mix(in oklab, var(--glass-accent-deep) 13%, transparent) 0%, transparent 70%)",
-                  }}
-                />
-                {heroImage ? (
-                  <SmartImage
-                    src={heroImage}
-                    alt=""
-                    fit="contain"
-                    fallbackMode="hide"
-                    className="relative z-[1] max-h-[300px] w-full"
-                    imgClassName="object-contain drop-shadow-[0_26px_46px_rgba(80,50,160,0.30)]"
-                  />
-                ) : null}
-
-                {/* Actions (partager / enregistrer) — bas-droite */}
-                <div className="absolute right-4 bottom-4 z-10 flex items-center gap-2 sm:right-5 sm:bottom-5">
-                  <ShareMenu compact title={article.title} text={article.desc} />
-                  <button
-                    type="button"
-                    onClick={toggleSaved}
-                    aria-pressed={saved}
-                    aria-label={saved ? "Retirer des enregistrements" : "Enregistrer l'article"}
-                    className="inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-                    style={
-                      saved
-                        ? {
-                            background: "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
-                            borderColor: "color-mix(in oklab, var(--glass-accent-deep) 40%, transparent)",
-                            color: "var(--glass-accent-deep)",
-                          }
-                        : undefined
-                    }
-                  >
-                    <BookmarkIcon className="size-4" fill={saved ? "currentColor" : "none"} />
-                  </button>
-                </div>
+              {/* Actions (partager / enregistrer) — bas-droite, façon maquette */}
+              <div className="absolute right-4 bottom-4 z-10 flex items-center gap-2 sm:right-5 sm:bottom-5">
+                <ShareMenu compact title={article.title} text={article.desc} />
+                <button
+                  type="button"
+                  onClick={toggleSaved}
+                  aria-pressed={saved}
+                  aria-label={saved ? "Retirer des enregistrements" : "Enregistrer l'article"}
+                  className="inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+                  style={
+                    saved
+                      ? {
+                          background: "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
+                          borderColor: "color-mix(in oklab, var(--glass-accent-deep) 40%, transparent)",
+                          color: "var(--glass-accent-deep)",
+                        }
+                      : undefined
+                  }
+                >
+                  <BookmarkIcon className="size-4" fill={saved ? "currentColor" : "none"} />
+                </button>
               </div>
             </div>
 

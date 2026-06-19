@@ -101,8 +101,11 @@ export function ArticleView({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  // Illustration du hero : image perso de l'article, sinon illustration de la catégorie.
-  const heroImage = article.image ?? categoryIllustration;
+  // Illustration du hero = illustration PROPRE de la catégorie (sans texte).
+  // On n'utilise PAS `article.image` ici : c'est la bannière générée (titre cuit
+  // dedans), réservée à l'aperçu de partage (OG) et aux vignettes de liste —
+  // l'afficher dans le hero (qui a déjà le titre en HTML) doublonnait le titre.
+  const heroImage = categoryIllustration;
 
   const hasSummary = Boolean(article.summary?.length);
   const hasDocs = Boolean(article.linkedDocs?.length);
@@ -206,7 +209,7 @@ export function ArticleView({
               {heroImage ? (
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute inset-y-0 right-0 hidden w-[40%] items-center justify-end pr-5 sm:flex lg:w-[34%]"
+                  className="pointer-events-none absolute inset-y-0 right-0 hidden w-[44%] items-center justify-center p-6 sm:flex lg:w-[40%]"
                 >
                   <SmartImage
                     src={heroImage}
@@ -214,14 +217,15 @@ export function ArticleView({
                     fit="contain"
                     fallbackMode="hide"
                     className="size-full"
-                    imgClassName="object-contain object-right opacity-90"
+                    imgClassName="object-contain object-center"
                   />
-                  {/* Voile : fond l'image dans la carte vers la gauche (lisibilité du titre). */}
+                  {/* Voile léger : fond seulement le bord GAUCHE de l'illustration
+                      dans la carte (lisibilité du titre) ; elle reste nette à droite. */}
                   <div
                     className="absolute inset-0"
                     style={{
                       background:
-                        "linear-gradient(to right, var(--glass-surface) 0%, color-mix(in oklab, var(--glass-surface) 45%, transparent) 38%, transparent 82%)",
+                        "linear-gradient(to right, var(--glass-surface) 0%, color-mix(in oklab, var(--glass-surface) 30%, transparent) 24%, transparent 54%)",
                     }}
                   />
                 </div>

@@ -1,0 +1,99 @@
+'use client'
+
+// =====================================================================
+//  eC3.2 — Section « Ressources & liens utiles » (présentationnel)
+// ---------------------------------------------------------------------
+//  Intro + bouton « site officiel » clairement séparé (rappel : ce
+//  n'est PAS la simulation), liste de ressources (lien externe
+//  optionnel) + note de non-affiliation. Glass mauve, responsive.
+// =====================================================================
+
+import { BookOpen, ExternalLink, Link2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import type { Ec32Content } from '@/lib/ec32/schema'
+import { Ec32Card, Ec32InfoBox, Ec32Section } from './ui'
+
+export function Ec32ResourcesSection({ content }: { content: Ec32Content }) {
+  const { resources } = content
+  const items = resources.items.filter((item) => item.label.trim().length > 0)
+
+  return (
+    <Ec32Section
+      id="ressources"
+      eyebrow="Pour aller plus loin"
+      icon={BookOpen}
+      title={resources.title}
+      subtitle={resources.subtitle}
+    >
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        {/* Bloc « site officiel » — bien séparé de la simulation */}
+        {(resources.intro || (resources.officialUrl && resources.officialButtonLabel)) && (
+          <Ec32Card className="flex flex-col gap-4 border-primary/30 bg-primary/5 lg:col-span-1">
+            {resources.intro && (
+              <p className="text-sm leading-relaxed text-foreground">{resources.intro}</p>
+            )}
+            {resources.officialUrl && resources.officialButtonLabel && (
+              <Button
+                size="lg"
+                className="w-full"
+                render={
+                  <a href={resources.officialUrl} target="_blank" rel="noopener noreferrer" />
+                }
+              >
+                <ExternalLink className="size-4" aria-hidden />
+                {resources.officialButtonLabel}
+              </Button>
+            )}
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Vous quittez la simulation Docbel : ce lien ouvre un site externe et officiel,
+              distinct de cette page pédagogique.
+            </p>
+          </Ec32Card>
+        )}
+
+        {/* Liste des ressources complémentaires */}
+        {items.length > 0 && (
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:col-span-2" role="list">
+            {items.map((item, index) => {
+              const hasUrl = item.url.trim().length > 0
+              return (
+                <Ec32Card key={index} as="li" interactive className="flex flex-col gap-2">
+                  <div className="flex items-start gap-2.5">
+                    <Link2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+                    <div className="min-w-0 space-y-1">
+                      {hasUrl ? (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                        >
+                          {item.label}
+                          <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                          <span className="sr-only">(ouvre un nouvel onglet)</span>
+                        </a>
+                      ) : (
+                        <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                      )}
+                      {item.description && (
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Ec32Card>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+
+      {resources.note && (
+        <Ec32InfoBox tone="neutral" className="mt-5 max-w-3xl text-xs">
+          {resources.note}
+        </Ec32InfoBox>
+      )}
+    </Ec32Section>
+  )
+}

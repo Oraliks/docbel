@@ -7,6 +7,10 @@ import {
   Italic,
   Strikethrough,
   Code,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
   Heading1,
   Heading2,
   Heading3,
@@ -219,6 +223,45 @@ export function EditorToolbar({
         disabled={isReadOnly}
       >
         <Code size={18} />
+      </ToolbarButton>
+
+      <Separator />
+
+      {/* Text Alignment */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign("left").run()}
+        isActive={editor.isActive({ textAlign: "left" })}
+        title="Aligner à gauche"
+        disabled={isReadOnly}
+      >
+        <AlignLeft size={18} />
+      </ToolbarButton>
+
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign("center").run()}
+        isActive={editor.isActive({ textAlign: "center" })}
+        title="Centrer"
+        disabled={isReadOnly}
+      >
+        <AlignCenter size={18} />
+      </ToolbarButton>
+
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign("right").run()}
+        isActive={editor.isActive({ textAlign: "right" })}
+        title="Aligner à droite"
+        disabled={isReadOnly}
+      >
+        <AlignRight size={18} />
+      </ToolbarButton>
+
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+        isActive={editor.isActive({ textAlign: "justify" })}
+        title="Justifier"
+        disabled={isReadOnly}
+      >
+        <AlignJustify size={18} />
       </ToolbarButton>
 
       <Separator />

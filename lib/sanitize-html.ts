@@ -99,7 +99,7 @@ const ALLOWED_TAGS = [
 ];
 
 const ALLOWED_ATTR = [
-  "href", "title", "alt", "src", "class", "target", "rel",
+  "href", "title", "alt", "src", "class", "style", "target", "rel",
   "width", "height", "colspan", "rowspan",
   // attributs utilisés par l'enrichissement glossaire (<abbr>)
   "data-acronym", "tabindex",
@@ -109,6 +109,24 @@ const ALLOWED_ATTR = [
  * Assainit du HTML de contenu de confiance modérée (rich-text d'admin).
  * À utiliser pour envelopper toute valeur passée à `dangerouslySetInnerHTML`.
  */
+/**
+ * Hook DOMPurify : sur l'attribut `style`, ne conserve QUE
+ * `text-align: left|right|center|justify` (alignements posés par l'éditeur).
+ * Toute autre déclaration CSS inline est supprimée → pas de CSS arbitraire.
+ */
+function keepOnlyTextAlign(
+  _node: Element,
+  data: { attrName: string; attrValue: string; keepAttr: boolean }
+): void {
+  if (data.attrName !== "style") return;
+  const match = /text-align\s*:\s*(left|right|center|justify)/i.exec(data.attrValue);
+  if (match) {
+    data.attrValue = `text-align: ${match[1].toLowerCase()}`;
+  } else {
+    data.keepAttr = false;
+  }
+}
+
 export function sanitizeHtml(dirty: string): string {
   if (!dirty) return "";
   const stripped = stripDangerousHtml(dirty);
@@ -116,12 +134,19 @@ export function sanitizeHtml(dirty: string): string {
   // n'est même pas une fonction et lèverait). La passe regex isomorphe ci-dessus
   // sécurise déjà le rendu serveur ; DOMPurify affine l'allowlist à l'hydratation.
   if (typeof window === "undefined") return stripped;
-  return DOMPurify.sanitize(stripped, {
-    ALLOWED_TAGS,
-    ALLOWED_ATTR,
-    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|#|\/|data:image\/)/i,
-    ADD_ATTR: ["target"],
-  });
+  // `style` est autorisé par l'allowlist mais réduit à `text-align` par le hook
+  // (scopé à cet appel pour ne pas contaminer sanitizeEmbed/Svg).
+  DOMPurify.addHook("uponSanitizeAttribute", keepOnlyTextAlign);
+  try {
+    return DOMPurify.sanitize(stripped, {
+      ALLOWED_TAGS,
+      ALLOWED_ATTR,
+      ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|#|\/|data:image\/)/i,
+      ADD_ATTR: ["target"],
+    });
+  } finally {
+    DOMPurify.removeHook("uponSanitizeAttribute");
+  }
 }
 
 // Hook DOMPurify (côté client) : confine chaque <iframe> survivante. `sandbox`

@@ -9,6 +9,7 @@ import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
 import Placeholder from "@tiptap/extension-placeholder";
+import TextAlign from "@tiptap/extension-text-align";
 import { EditorToolbar } from "./editor-toolbar";
 import { EditorVersionHistory, EditorVersion } from "./editor-version-history";
 import { SlashCommandsMenu } from "./editor-slash-commands";
@@ -75,6 +76,7 @@ export function RichTextEditor({
         emptyNodeClass:
           "is-editor-empty:first:before:content-[attr(data-placeholder)] is-editor-empty:first:before:float-left is-editor-empty:first:before:pointer-events-none is-editor-empty:first:before:h-0",
       }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
     content: value || "",
     editable: !readOnly,

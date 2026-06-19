@@ -294,7 +294,7 @@ export function ArticleView({
             {article.content ? (
               <div
                 id={CONTENT_ANCHOR}
-                className="prose prose-neutral max-w-3xl scroll-mt-6 border-t border-[color:var(--glass-ink-line)] pt-6 text-[15.5px] leading-[1.7] [&_a]:font-semibold [&_a]:text-[color:var(--glass-accent-deep)] [&_h2]:glass-display [&_h2]:mt-8 [&_h2]:text-[26px] [&_h2]:font-semibold [&_h3]:glass-display [&_h3]:mt-6 [&_h3]:text-[20px] [&_h3]:font-semibold [&_p]:mt-4 [&_strong]:text-[color:var(--glass-ink)] dark:prose-invert"
+                className="prose prose-neutral max-w-none scroll-mt-6 border-t border-[color:var(--glass-ink-line)] pt-6 text-[15.5px] leading-[1.7] [&_a]:font-semibold [&_a]:text-[color:var(--glass-accent-deep)] [&_h2]:glass-display [&_h2]:mt-8 [&_h2]:text-[26px] [&_h2]:font-semibold [&_h3]:glass-display [&_h3]:mt-6 [&_h3]:text-[20px] [&_h3]:font-semibold [&_p]:mt-4 [&_strong]:text-[color:var(--glass-ink)] dark:prose-invert"
                 style={{ color: "var(--glass-ink)" }}
                 dangerouslySetInnerHTML={{ __html: enrichedContent }}
               />

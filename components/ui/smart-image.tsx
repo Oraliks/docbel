@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Building2Icon,
   FileTextIcon,
@@ -49,6 +49,8 @@ export interface MediaFallbackProps {
   title?: string;
   /** Texte du badge. Défaut : "Aperçu indisponible". */
   label?: string;
+  /** Variante compacte (icône seule, sans titre ni badge) — pour vignettes/logos. */
+  compact?: boolean;
   className?: string;
 }
 
@@ -61,6 +63,7 @@ export function MediaFallback({
   type = "generic",
   title,
   label,
+  compact = false,
   className,
 }: MediaFallbackProps) {
   const { Icon, label: defaultLabel, hue } = TYPE_CONFIG[type];
@@ -100,35 +103,42 @@ export function MediaFallback({
       <div className="relative z-10 flex flex-col items-center gap-2.5 px-4 text-center">
         {/* Icône avec halo */}
         <div
-          className="flex size-11 items-center justify-center rounded-xl ring-1 ring-white/10"
+          className={cn(
+            "flex items-center justify-center rounded-xl ring-1 ring-white/10",
+            compact ? "size-8" : "size-11",
+          )}
           style={{
             background: `color-mix(in oklab, ${hue} 20%, rgba(20,12,50,0.9))`,
             boxShadow: `0 0 20px ${hue}40, inset 0 1px 0 rgba(255,255,255,0.08)`,
           }}
         >
           <Icon
-            className="size-[22px] text-white/75"
+            className={cn("text-white/75", compact ? "size-4" : "size-[22px]")}
             strokeWidth={1.5}
             aria-hidden
           />
         </div>
 
-        {/* Titre */}
-        <p className="max-w-[85%] truncate text-[11.5px] font-semibold leading-tight text-white/55">
-          {titleText}
-        </p>
+        {!compact && (
+          <>
+            {/* Titre */}
+            <p className="max-w-[85%] truncate text-[11.5px] font-semibold leading-tight text-white/55">
+              {titleText}
+            </p>
 
-        {/* Badge */}
-        <span
-          className="inline-flex items-center rounded-full px-2.5 py-[3px] text-[9.5px] font-bold uppercase tracking-[0.1em] text-white/40"
-          style={{
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            backdropFilter: "blur(6px)",
-          }}
-        >
-          {badgeText}
-        </span>
+            {/* Badge */}
+            <span
+              className="inline-flex items-center rounded-full px-2.5 py-[3px] text-[9.5px] font-bold uppercase tracking-[0.1em] text-white/40"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                backdropFilter: "blur(6px)",
+              }}
+            >
+              {badgeText}
+            </span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -147,27 +157,40 @@ export interface SmartImageProps {
   label?: string;
   /** Variante d'icône/couleur. Défaut : "generic". */
   type?: SmartImageType;
+  /** Classes du conteneur (taille, arrondi, position). */
   className?: string;
+  /** Classes appliquées UNIQUEMENT à la balise <img> (mix-blend, opacity…). */
+  imgClassName?: string;
   /** object-fit de l'image réelle. Défaut : "cover". */
   fit?: "cover" | "contain" | "fill";
   loading?: "lazy" | "eager";
+  /**
+   * Que faire quand l'image est absente/cassée :
+   *  - "component" (défaut) : afficher le MediaFallback premium ;
+   *  - "hide" : ne rien rendre (laisse voir le fond derrière — utile quand
+   *    l'image est décorative posée sur un dégradé déjà esthétique).
+   */
+  fallbackMode?: "component" | "hide";
+  /** Fallback compact (icône seule) — pour petites vignettes/logos. */
+  compactFallback?: boolean;
 }
 
 /**
- * Image intelligente : affiche `src` si disponible, bascule sur MediaFallback
- * si `src` est absent ou si le chargement échoue (`onError`).
- * Jamais d'icône navigateur d'image cassée.
+ * Image intelligente : affiche `src` si disponible, sinon bascule sur
+ * MediaFallback (ou se masque). Jamais d'icône navigateur d'image cassée.
+ *
+ * Cycle de vie :
+ *  - tant que l'image charge → skeleton shimmer (couvre le cas « lente ») ;
+ *  - au chargement → fondu d'apparition (pas de « pop ») ;
+ *  - si `src` vide / `onError` → fallback (composant premium ou masqué).
+ *
+ * Le conteneur doit avoir une taille (la donner via `className` ou via le
+ * parent) ; l'image et le fallback la remplissent en `absolute inset-0`.
  *
  * @example
- * // Cas basique (la div parente contrôle les dimensions)
  * <div className="relative h-48 w-full overflow-hidden rounded-xl">
- *   <SmartImage src={tool.image} alt={tool.title} type="outil" title={tool.title} className="h-full w-full" />
- * </div>
- *
- * @example
- * // Avatar circulaire
- * <div className="size-10 overflow-hidden rounded-full">
- *   <SmartImage src={user.avatar} alt={user.name} type="avatar" className="h-full w-full" />
+ *   <SmartImage src={tool.image} alt={tool.title} type="outil" title={tool.title}
+ *     className="absolute inset-0" />
  * </div>
  */
 export function SmartImage({
@@ -177,36 +200,74 @@ export function SmartImage({
   label,
   type = "generic",
   className,
+  imgClassName,
   fit = "cover",
   loading = "lazy",
+  fallbackMode = "component",
+  compactFallback = false,
 }: SmartImageProps) {
+  const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
-  if (!src || errored) {
+  // `src` peut changer (liste réutilisée) → on réinitialise l'état.
+  useEffect(() => {
+    setLoaded(false);
+    setErrored(false);
+  }, [src]);
+
+  // Images servies depuis le cache : `onLoad` peut ne jamais se déclencher en
+  // React (l'image est déjà `complete` au montage). On le détecte ici pour ne
+  // pas rester bloqué sur le skeleton.
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img?.complete && img.naturalWidth > 0) setLoaded(true);
+  }, [src]);
+
+  const missing = !src || errored;
+
+  // Mode "hide" : rien à afficher quand l'image manque/casse.
+  if (missing && fallbackMode === "hide") return null;
+
+  if (missing) {
     return (
       <MediaFallback
         type={type}
         title={title}
         label={label}
+        compact={compactFallback}
         className={className}
       />
     );
   }
 
   return (
-    <img
-      src={src}
-      alt={alt}
-      loading={loading}
-      decoding="async"
-      onError={() => setErrored(true)}
-      className={cn(
-        "h-full w-full",
-        fit === "cover" && "object-cover",
-        fit === "contain" && "object-contain",
-        fit === "fill" && "object-fill",
-        className,
+    <span className={cn("relative block overflow-hidden", className)}>
+      {/* Skeleton tant que l'image n'est pas chargée (état « lente »). Inutile
+          en mode "hide" : un fond (dégradé…) est déjà visible derrière. */}
+      {!loaded && fallbackMode === "component" && (
+        <span
+          aria-hidden
+          className="skeleton-shimmer absolute inset-0 motion-reduce:animate-none"
+        />
       )}
-    />
+      <img
+        ref={imgRef}
+        src={src ?? undefined}
+        alt={alt}
+        loading={loading}
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        onError={() => setErrored(true)}
+        className={cn(
+          "absolute inset-0 h-full w-full transition-opacity duration-500 motion-reduce:transition-none",
+          fit === "cover" && "object-cover",
+          fit === "contain" && "object-contain",
+          fit === "fill" && "object-fill",
+          loaded ? "opacity-100" : "opacity-0",
+          imgClassName,
+        )}
+      />
+    </span>
   );
 }

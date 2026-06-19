@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { ArrowRightIcon, SearchIcon } from "lucide-react";
 import type { NewsItem } from "@/lib/docbel-data";
 import { AcronymText } from "@/components/docbel/acronym";
+import { SmartImage } from "@/components/ui/smart-image";
 
 const MONTH_LABELS = [
   "JAN",
@@ -169,14 +170,13 @@ export function ActualitesView({
                       "radial-gradient(circle at 80% 80%, rgba(255,255,255,0.4) 0%, transparent 50%)",
                   }}
                 />
-                {featured.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={featured.image}
-                    alt=""
-                    className="absolute inset-0 size-full object-cover mix-blend-luminosity opacity-90"
-                  />
-                ) : null}
+                <SmartImage
+                  src={featured.image}
+                  alt=""
+                  fallbackMode="hide"
+                  className="absolute inset-0 size-full"
+                  imgClassName="mix-blend-luminosity opacity-90"
+                />
               </div>
             </button>
           ) : null}

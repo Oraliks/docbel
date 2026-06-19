@@ -7,6 +7,7 @@ import type { NewsItem } from "@/lib/docbel-data";
 import { enrichHtmlWithAcronyms } from "@/lib/acronyms-html";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { AcronymText } from "@/components/docbel/acronym";
+import { SmartImage } from "@/components/ui/smart-image";
 
 interface ArticleViewProps {
   article: NewsItem;
@@ -73,14 +74,13 @@ export function ArticleView({ article }: ArticleViewProps) {
         </div>
 
         {article.image ? (
-          <div className="relative mt-2 overflow-hidden rounded-[20px]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={article.image}
-              alt=""
-              className="aspect-[16/9] w-full object-cover"
-            />
-          </div>
+          <SmartImage
+            src={article.image}
+            alt=""
+            type="document"
+            title={article.title}
+            className="mt-2 aspect-[16/9] w-full rounded-[20px]"
+          />
         ) : null}
       </header>
 

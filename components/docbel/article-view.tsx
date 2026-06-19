@@ -6,15 +6,15 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   BookmarkIcon,
+  BriefcaseIcon,
   CalendarIcon,
   CheckIcon,
   ChevronDownIcon,
   ClockIcon,
   FileTextIcon,
-  InfoIcon,
   LifeBuoyIcon,
+  StarIcon,
   TagIcon,
-  XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { NewsItem } from "@/lib/docbel-data";
@@ -30,6 +30,8 @@ interface ArticleViewProps {
   related?: NewsItem[];
   /** Catégories publiées distinctes → liste « Thématiques ». */
   categories?: string[];
+  /** Illustration de la catégorie — repli du hero si l'article n'a pas d'image perso. */
+  categoryIllustration?: string;
   // Kept for API compatibility with the route. Unused — glass tokens drive
   // the accent now.
   accent?: string;
@@ -58,6 +60,7 @@ export function ArticleView({
   article,
   related = [],
   categories = [],
+  categoryIllustration,
 }: ArticleViewProps) {
   // Enrichit l'HTML rich-text avec les <abbr> du glossaire. Mémoïsé
   // pour ne pas re-tokeniser à chaque re-render (le contenu d'un
@@ -66,9 +69,6 @@ export function ArticleView({
     () => (article.content ? enrichHtmlWithAcronyms(sanitizeHtml(article.content)) : ""),
     [article.content],
   );
-
-  // « À retenir » : encart info masquable (état local volatil).
-  const [calloutOpen, setCalloutOpen] = useState(true);
 
   // « Enregistrer » : bookmark persistant en localStorage, clé par slug.
   const bookmarkKey = `${BOOKMARK_PREFIX}${article.slug ?? article.id}`;
@@ -100,6 +100,9 @@ export function ArticleView({
       .getElementById(CONTENT_ANCHOR)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
+
+  // Illustration du hero : image perso de l'article, sinon illustration de la catégorie.
+  const heroImage = article.image ?? categoryIllustration;
 
   const hasSummary = Boolean(article.summary?.length);
   const hasDocs = Boolean(article.linkedDocs?.length);
@@ -195,117 +198,166 @@ export function ArticleView({
             Toutes les actualités
           </Link>
 
-          <div className="glass-surface flex flex-col gap-6 p-6 sm:p-9">
-            <header className="flex flex-col gap-5">
-              {/* Badge + actions (Partager / Enregistrer). */}
-              <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="glass-surface flex flex-col overflow-hidden">
+            {/* ── HERO FUSIONNÉ : méta à gauche, illustration à droite ───── */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_minmax(0,1fr)]">
+              {/* GAUCHE — méta de l'article */}
+              <div className="flex flex-col gap-5 p-6 sm:p-9">
                 <CategoryBadge>{article.tag}</CategoryBadge>
-                <div className="flex items-center gap-2">
-                  <ShareMenu title={article.title} text={article.desc} />
+
+                <h1 className="glass-display text-[32px] font-semibold leading-[1.04] sm:text-[46px]">
+                  <AcronymText>{article.title}</AcronymText>
+                </h1>
+
+                {/* Méta : date · lecture · catégorie (pastilles façon maquette) */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12.5px] font-medium text-[color:var(--glass-ink-soft)]">
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      className="flex size-7 items-center justify-center rounded-lg"
+                      style={{
+                        background: "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
+                        color: "var(--glass-accent-deep)",
+                      }}
+                    >
+                      <CalendarIcon className="size-3.5" />
+                    </span>
+                    {article.date}
+                  </span>
+
+                  {article.readingTime ? (
+                    <>
+                      <span aria-hidden className="h-4 w-px bg-[color:var(--glass-ink-line)]" />
+                      <span className="inline-flex items-center gap-2">
+                        <span
+                          className="flex size-7 items-center justify-center rounded-lg"
+                          style={{
+                            background: "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
+                            color: "var(--glass-accent-deep)",
+                          }}
+                        >
+                          <ClockIcon className="size-3.5" />
+                        </span>
+                        {article.readingTime} min de lecture
+                      </span>
+                    </>
+                  ) : null}
+
+                  <span aria-hidden className="h-4 w-px bg-[color:var(--glass-ink-line)]" />
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      className="flex size-7 items-center justify-center rounded-lg"
+                      style={{
+                        background: "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
+                        color: "var(--glass-accent-deep)",
+                      }}
+                    >
+                      <BriefcaseIcon className="size-3.5" />
+                    </span>
+                    {article.tag}
+                  </span>
+                </div>
+
+                {/* « À retenir » — pastille violette (étoile, façon maquette) */}
+                {article.keyTakeaway ? (
+                  <div
+                    className="mt-1 flex w-fit max-w-md items-start gap-3 rounded-[18px] p-4 pr-5"
+                    style={{
+                      background:
+                        "color-mix(in oklab, var(--glass-accent-deep) 9%, var(--glass-surface))",
+                    }}
+                  >
+                    <span
+                      className="flex size-9 shrink-0 items-center justify-center rounded-full"
+                      style={{
+                        background: "color-mix(in oklab, var(--glass-accent-deep) 16%, transparent)",
+                        color: "var(--glass-accent-deep)",
+                      }}
+                    >
+                      <StarIcon className="size-[18px]" />
+                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-[13.5px] font-bold text-[color:var(--glass-accent-deep)]">
+                        À retenir
+                      </p>
+                      <p className="text-[13.5px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
+                        <AcronymText>{article.keyTakeaway}</AcronymText>
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* DROITE — illustration sur fond dégradé doux + actions */}
+              <div
+                className="relative flex min-h-[230px] items-center justify-center overflow-hidden p-8 lg:min-h-full"
+                style={{
+                  background:
+                    "linear-gradient(155deg, color-mix(in oklab, var(--glass-accent-deep) 13%, var(--glass-bg-a)) 0%, color-mix(in oklab, var(--glass-accent-deep) 4%, var(--glass-bg-a)) 100%)",
+                }}
+              >
+                {/* halo circulaire doux */}
+                <div
+                  aria-hidden
+                  className="absolute size-[320px] rounded-full"
+                  style={{
+                    background:
+                      "radial-gradient(circle, color-mix(in oklab, var(--glass-accent-deep) 13%, transparent) 0%, transparent 70%)",
+                  }}
+                />
+                {heroImage ? (
+                  <SmartImage
+                    src={heroImage}
+                    alt=""
+                    fit="contain"
+                    fallbackMode="hide"
+                    className="relative z-[1] max-h-[300px] w-full"
+                    imgClassName="object-contain drop-shadow-[0_26px_46px_rgba(80,50,160,0.30)]"
+                  />
+                ) : null}
+
+                {/* Actions (partager / enregistrer) — bas-droite */}
+                <div className="absolute right-4 bottom-4 z-10 flex items-center gap-2 sm:right-5 sm:bottom-5">
+                  <ShareMenu compact title={article.title} text={article.desc} />
                   <button
                     type="button"
                     onClick={toggleSaved}
                     aria-pressed={saved}
-                    className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[12.5px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+                    aria-label={saved ? "Retirer des enregistrements" : "Enregistrer l'article"}
+                    className="inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
                     style={
                       saved
                         ? {
-                            background:
-                              "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
-                            borderColor:
-                              "color-mix(in oklab, var(--glass-accent-deep) 40%, transparent)",
+                            background: "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
+                            borderColor: "color-mix(in oklab, var(--glass-accent-deep) 40%, transparent)",
                             color: "var(--glass-accent-deep)",
                           }
                         : undefined
                     }
                   >
-                    <BookmarkIcon
-                      className="size-4"
-                      fill={saved ? "currentColor" : "none"}
-                    />
-                    {saved ? "Enregistré" : "Enregistrer"}
+                    <BookmarkIcon className="size-4" fill={saved ? "currentColor" : "none"} />
                   </button>
                 </div>
               </div>
+            </div>
 
-              <h1 className="glass-display max-w-3xl text-[36px] font-semibold leading-[1.05] sm:text-[44px]">
-                <AcronymText>{article.title}</AcronymText>
-              </h1>
-
-              <div className="flex flex-wrap items-center gap-4 text-[12.5px] text-[color:var(--glass-ink-faint)]">
-                <span className="inline-flex items-center gap-1.5">
-                  <CalendarIcon className="size-3.5" />
-                  {article.date}
-                </span>
-                {article.readingTime ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <ClockIcon className="size-3.5" />
-                    {article.readingTime} min de lecture
-                  </span>
-                ) : null}
-              </div>
-
-              {article.image ? (
-                <SmartImage
-                  src={article.image}
-                  alt=""
-                  type="document"
-                  title={article.title}
-                  className="mt-2 aspect-[16/9] w-full rounded-[20px]"
+            {/* ── Contenu de l'article (filet pleine largeur au-dessus) ──── */}
+            <div className="border-t border-[color:var(--glass-ink-line)] p-6 sm:p-9">
+              {article.content ? (
+                <div
+                  id={CONTENT_ANCHOR}
+                  className="prose prose-neutral max-w-none scroll-mt-6 text-[15.5px] leading-[1.7] [&_a]:font-semibold [&_a]:text-[color:var(--glass-accent-deep)] [&_h2]:glass-display [&_h2]:mt-8 [&_h2]:text-[26px] [&_h2]:font-semibold [&_h3]:glass-display [&_h3]:mt-6 [&_h3]:text-[20px] [&_h3]:font-semibold [&_p]:mt-4 [&_strong]:text-[color:var(--glass-ink)] dark:prose-invert"
+                  style={{ color: "var(--glass-ink)" }}
+                  dangerouslySetInnerHTML={{ __html: enrichedContent }}
                 />
-              ) : null}
-            </header>
-
-            {/* « À retenir » : encart info violet, masquable. */}
-            {article.keyTakeaway && calloutOpen ? (
-              <div
-                className="relative flex gap-3 rounded-[18px] border p-4 pr-10"
-                style={{
-                  background:
-                    "color-mix(in oklab, var(--glass-accent-deep) 9%, var(--glass-surface))",
-                  borderColor:
-                    "color-mix(in oklab, var(--glass-accent-deep) 28%, transparent)",
-                }}
-              >
-                <InfoIcon
-                  className="mt-0.5 size-5 shrink-0"
-                  style={{ color: "var(--glass-accent-deep)" }}
-                />
-                <div className="flex flex-col gap-1">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-accent-deep)]">
-                    À retenir
-                  </p>
-                  <p className="text-[14px] leading-[1.55] text-[color:var(--glass-ink)]">
-                    <AcronymText>{article.keyTakeaway}</AcronymText>
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCalloutOpen(false)}
-                  aria-label="Masquer l'encart « À retenir »"
-                  className="absolute top-3 right-3 inline-flex size-6 items-center justify-center rounded-full text-[color:var(--glass-ink-faint)] outline-none transition-colors hover:bg-white/55 hover:text-[color:var(--glass-ink)] focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+              ) : (
+                <p
+                  id={CONTENT_ANCHOR}
+                  className="scroll-mt-6 text-[14px] text-[color:var(--glass-ink-soft)]"
                 >
-                  <XIcon className="size-4" />
-                </button>
-              </div>
-            ) : null}
-
-            {/* Contenu riche (ancre de scroll pour « Voir le résumé… »). */}
-            {article.content ? (
-              <div
-                id={CONTENT_ANCHOR}
-                className="prose prose-neutral max-w-none scroll-mt-6 border-t border-[color:var(--glass-ink-line)] pt-6 text-[15.5px] leading-[1.7] [&_a]:font-semibold [&_a]:text-[color:var(--glass-accent-deep)] [&_h2]:glass-display [&_h2]:mt-8 [&_h2]:text-[26px] [&_h2]:font-semibold [&_h3]:glass-display [&_h3]:mt-6 [&_h3]:text-[20px] [&_h3]:font-semibold [&_p]:mt-4 [&_strong]:text-[color:var(--glass-ink)] dark:prose-invert"
-                style={{ color: "var(--glass-ink)" }}
-                dangerouslySetInnerHTML={{ __html: enrichedContent }}
-              />
-            ) : (
-              <p
-                id={CONTENT_ANCHOR}
-                className="scroll-mt-6 border-t border-[color:var(--glass-ink-line)] pt-6 text-[14px] text-[color:var(--glass-ink-soft)]"
-              >
-                Le contenu de cet article n&apos;est pas encore disponible.
-              </p>
-            )}
+                  Le contenu de cet article n&apos;est pas encore disponible.
+                </p>
+              )}
+            </div>
           </div>
 
           {/* ── « À lire aussi » (sous le contenu) ──────────────────────── */}

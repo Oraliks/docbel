@@ -17,6 +17,8 @@ interface ShareMenuProps {
   text?: string;
   /** URL canonique COMPLÈTE. Si absente, on lit window.location.href au clic. */
   url?: string;
+  /** Déclencheur compact (icône ronde seule) + popover vers le haut. */
+  compact?: boolean;
   className?: string;
 }
 
@@ -73,7 +75,7 @@ function LinkedInGlyph({ className }: { className?: string }) {
  * Auto-contenu : gère l'ouverture/fermeture (clic extérieur + Échap),
  * et possède sa propre micro-animation d'entrée.
  */
-export function ShareMenu({ title, text, url, className }: ShareMenuProps) {
+export function ShareMenu({ title, text, url, className, compact }: ShareMenuProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -188,17 +190,22 @@ export function ShareMenu({ title, text, url, className }: ShareMenuProps) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Partager cet article"
-        className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+        className={
+          compact
+            ? "inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+            : "inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+        }
       >
         <Share2Icon className="size-4" />
-        Partager
+        {compact ? null : "Partager"}
       </button>
 
       {open ? (
         <div
           role="menu"
           aria-label="Options de partage"
-          className="glass-surface share-menu-pop absolute top-[calc(100%+8px)] right-0 z-50 flex w-60 flex-col gap-0.5 !rounded-2xl p-1.5"
+          className={`glass-surface share-menu-pop absolute right-0 z-50 flex w-60 flex-col gap-0.5 !rounded-2xl p-1.5 ${compact ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}
+          style={compact ? { transformOrigin: "bottom right" } : undefined}
         >
           {canNativeShare ? (
             <ShareRow

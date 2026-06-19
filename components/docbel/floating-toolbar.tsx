@@ -66,6 +66,14 @@ export function FloatingToolbar({
     if (!editor) return;
 
     const handleSelectionChange = () => {
+      // La barre ne doit vivre que tant que l'éditeur a réellement le focus.
+      // Sans ce garde, une sélection laissée derrière soi (clic hors éditeur)
+      // gardait `from !== to` vrai et la barre restait affichée en permanence.
+      if (!editor.isFocused) {
+        setShow(false);
+        return;
+      }
+
       const { from, to } = editor.state.selection;
 
       if (from === to) {
@@ -94,12 +102,17 @@ export function FloatingToolbar({
       }
     };
 
+    // Quand l'éditeur perd le focus (clic ailleurs, autre champ), on masque.
+    const handleBlur = () => setShow(false);
+
     editor.on("selectionUpdate", handleSelectionChange);
     editor.on("update", handleSelectionChange);
+    editor.on("blur", handleBlur);
 
     return () => {
       editor.off("selectionUpdate", handleSelectionChange);
       editor.off("update", handleSelectionChange);
+      editor.off("blur", handleBlur);
     };
   }, [editor]);
 
@@ -119,6 +132,10 @@ export function FloatingToolbar({
 
   return (
     <div
+      // Empêche le clic sur la barre de retirer le focus de l'éditeur : sinon
+      // le mousedown déclenche un blur qui masque la barre avant que le onClick
+      // du bouton n'aboutisse (boutons alors inutilisables).
+      onMouseDown={(e) => e.preventDefault()}
       style={{
         position: "fixed",
         top: adjustedTop,

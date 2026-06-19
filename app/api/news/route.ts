@@ -177,9 +177,10 @@ export async function POST(req: NextRequest) {
         readingTime: calcReadingTime,
         scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
         keyTakeaway: data.keyTakeaway ?? null,
-        summary: data.summary ?? null,
-        linkedDocs: data.linkedDocs ?? null,
-        faqs: data.faqs ?? null,
+        // Colonnes JSONB : Prisma refuse un null brut → Prisma.JsonNull pour vider.
+        summary: data.summary ?? Prisma.JsonNull,
+        linkedDocs: data.linkedDocs ?? Prisma.JsonNull,
+        faqs: data.faqs ?? Prisma.JsonNull,
         createdBy: authCheck.user?.id || "unknown",
         updatedBy: authCheck.user?.id || null,
       },

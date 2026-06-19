@@ -96,9 +96,10 @@ export async function PATCH(
         publishedAt: body.publishedAt ? new Date(body.publishedAt) : null,
       }),
       ...(body.keyTakeaway !== undefined && { keyTakeaway: body.keyTakeaway ?? null }),
-      ...(body.summary !== undefined && { summary: body.summary ?? null }),
-      ...(body.linkedDocs !== undefined && { linkedDocs: body.linkedDocs ?? null }),
-      ...(body.faqs !== undefined && { faqs: body.faqs ?? null }),
+      // Colonnes JSONB : Prisma refuse un null brut → Prisma.JsonNull pour vider.
+      ...(body.summary !== undefined && { summary: body.summary ?? Prisma.JsonNull }),
+      ...(body.linkedDocs !== undefined && { linkedDocs: body.linkedDocs ?? Prisma.JsonNull }),
+      ...(body.faqs !== undefined && { faqs: body.faqs ?? Prisma.JsonNull }),
       updatedBy: authCheck.user?.id ?? null,
     };
 

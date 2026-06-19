@@ -14,6 +14,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import dynamic from 'next/dynamic';
 import { Folder, CheckCircle2, ImagePlus, X, Loader2 } from 'lucide-react';
+import { FeaturedImageGenerator } from '@/components/admin/news/featured-image-generator';
 
 // Tiptap = client-only (DOM requis). dynamic ssr:false évite l'hydratation SSR
 // et sort l'éditeur riche (~250 Ko) du bundle initial de /admin/news/[newsId].
@@ -541,6 +542,16 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                   <span className="text-xs text-muted-foreground/70">JPG, PNG, WebP, GIF · max 5 Mo</span>
                 </button>
               )}
+
+              {/* Génération IA de l'image à la une — manuel, sous l'upload existant.
+                  Le composant lit l'id de l'article via useParams (clé newsId). */}
+              <div className="mt-4">
+                <FeaturedImageGenerator
+                  title={form.title}
+                  defaultSummary={form.excerpt}
+                  onUse={(url) => onFieldChange('image', url)}
+                />
+              </div>
             </Card>
 
             {/* Options */}

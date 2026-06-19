@@ -34,15 +34,21 @@ Sans image de référence, on utilise la génération standard.
 La validation (type + taille) est faite **côté client** dans le composant et **revérifiée
 côté serveur**.
 
-## Post-traitement (sharp)
+## Post-traitement (next/og)
 
-L'image brute d'OpenAI est normalisée avec [sharp](https://sharp.pixelplumbing.com/) :
+L'image brute d'OpenAI est composée en **1600×900** (16:9) via **`next/og`**
+(Satori + resvg-wasm), le même moteur que `/api/og` et `/api/featured` :
 
-1. recadrage / redimensionnement en **1600×900** (16:9) ;
+1. l'image IA est posée **en fond plein cadre** (cover) ;
 2. **dégradé sombre à gauche** pour la lisibilité du texte ;
-3. ajout **en code** du **titre de l'article**, d'un **badge** (catégorie) et du **logo**.
+3. ajout **en code** du **titre de l'article** (retour à la ligne automatique),
+   d'un **badge** (« Docbel · Article ») et d'un **logo**.
 
 L'IA produit donc uniquement l'illustration ; tout texte « dur » est composé par le serveur.
+
+> **Pourquoi pas `sharp` ?** sa lib native (libvips) ne se charge pas de façon
+> fiable sur le runtime serverless Linux de Netlify (`ERR_DLOPEN_FAILED
+> libvips-cpp.so`). `next/og` n'a aucun binaire natif et tourne déjà en prod.
 
 ## Stockage
 

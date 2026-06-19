@@ -37,68 +37,65 @@ export function ArticleView({ article }: ArticleViewProps) {
         Toutes les actualités
       </button>
 
-      <header className="glass-surface flex flex-col gap-5 p-8 sm:p-10">
-        <span
-          className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em]"
-          style={{
-            background: "var(--glass-ink)",
-            color: "var(--glass-bg-a)",
-          }}
-        >
+      {/* Un seul bloc : méta (badge, titre, date, image) + contenu. La
+          description courte (article.desc) n'est PAS répétée ici — elle reste
+          réservée aux listings/cartes hors article. */}
+      <div className="glass-surface flex flex-col gap-6 p-8 sm:p-10">
+        <header className="flex flex-col gap-5">
           <span
-            className="size-1.5 rounded-full"
-            style={{ background: "var(--glass-accent-c)" }}
-          />
-          {article.tag}
-        </span>
-
-        <h1 className="glass-display max-w-3xl text-[36px] font-semibold leading-[1.05] sm:text-[44px]">
-          <AcronymText>{article.title}</AcronymText>
-        </h1>
-
-        <p className="max-w-3xl text-[15px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
-          <AcronymText>{article.desc}</AcronymText>
-        </p>
-
-        <div className="flex flex-wrap items-center gap-4 text-[12.5px] text-[color:var(--glass-ink-faint)]">
-          <span className="inline-flex items-center gap-1.5">
-            <CalendarIcon className="size-3.5" />
-            {article.date}
+            className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em]"
+            style={{
+              background: "var(--glass-ink)",
+              color: "var(--glass-bg-a)",
+            }}
+          >
+            <span
+              className="size-1.5 rounded-full"
+              style={{ background: "var(--glass-accent-c)" }}
+            />
+            {article.tag}
           </span>
-          {article.readingTime ? (
+
+          <h1 className="glass-display max-w-3xl text-[36px] font-semibold leading-[1.05] sm:text-[44px]">
+            <AcronymText>{article.title}</AcronymText>
+          </h1>
+
+          <div className="flex flex-wrap items-center gap-4 text-[12.5px] text-[color:var(--glass-ink-faint)]">
             <span className="inline-flex items-center gap-1.5">
-              <ClockIcon className="size-3.5" />
-              {article.readingTime} min de lecture
+              <CalendarIcon className="size-3.5" />
+              {article.date}
             </span>
+            {article.readingTime ? (
+              <span className="inline-flex items-center gap-1.5">
+                <ClockIcon className="size-3.5" />
+                {article.readingTime} min de lecture
+              </span>
+            ) : null}
+          </div>
+
+          {article.image ? (
+            <SmartImage
+              src={article.image}
+              alt=""
+              type="document"
+              title={article.title}
+              className="mt-2 aspect-[16/9] w-full rounded-[20px]"
+            />
           ) : null}
-        </div>
+        </header>
 
-        {article.image ? (
-          <SmartImage
-            src={article.image}
-            alt=""
-            type="document"
-            title={article.title}
-            className="mt-2 aspect-[16/9] w-full rounded-[20px]"
-          />
-        ) : null}
-      </header>
-
-      {article.content ? (
-        <div className="glass-surface p-8 sm:p-10">
+        {article.content ? (
           <div
-            className="prose prose-neutral max-w-3xl text-[15.5px] leading-[1.7] [&_a]:font-semibold [&_a]:text-[color:var(--glass-accent-deep)] [&_h2]:glass-display [&_h2]:mt-8 [&_h2]:text-[26px] [&_h2]:font-semibold [&_h3]:glass-display [&_h3]:mt-6 [&_h3]:text-[20px] [&_h3]:font-semibold [&_p]:mt-4 [&_strong]:text-[color:var(--glass-ink)] dark:prose-invert"
+            className="prose prose-neutral max-w-3xl border-t border-[color:var(--glass-ink-line)] pt-6 text-[15.5px] leading-[1.7] [&_a]:font-semibold [&_a]:text-[color:var(--glass-accent-deep)] [&_h2]:glass-display [&_h2]:mt-8 [&_h2]:text-[26px] [&_h2]:font-semibold [&_h3]:glass-display [&_h3]:mt-6 [&_h3]:text-[20px] [&_h3]:font-semibold [&_p]:mt-4 [&_strong]:text-[color:var(--glass-ink)] dark:prose-invert"
             style={{ color: "var(--glass-ink)" }}
             dangerouslySetInnerHTML={{ __html: enrichedContent }}
           />
-        </div>
-      ) : (
-        <div className="glass-surface px-6 py-16 text-center">
-          <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
+        ) : (
+          <p className="border-t border-[color:var(--glass-ink-line)] pt-6 text-[14px] text-[color:var(--glass-ink-soft)]">
             Le contenu de cet article n&apos;est pas encore disponible.
           </p>
-        </div>
-      )}
+        )}
+      </div>
     </article>
   );
 }

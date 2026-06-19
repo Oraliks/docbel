@@ -15,12 +15,19 @@ export async function PATCH(
     const body = await req.json()
     const name = typeof body.name === "string" ? body.name.trim() : body.name
     const color = typeof body.color === "string" ? body.color.trim() : body.color
+    const illustrationUrl =
+      "illustrationUrl" in body
+        ? typeof body.illustrationUrl === "string" && body.illustrationUrl.trim()
+          ? body.illustrationUrl.trim()
+          : null
+        : undefined
 
     const category = await prisma.category.update({
       where: { id },
       data: {
         ...(name !== undefined && { name }),
         ...(color !== undefined && { color }),
+        ...(illustrationUrl !== undefined && { illustrationUrl }),
       },
     })
 

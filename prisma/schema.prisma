@@ -318,11 +318,14 @@ model FileUsage {
 }
 
 model Category {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  color     String   @default("#7C3AED")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String   @unique
+  color           String   @default("#7C3AED")
+  // Illustration 3D (PNG, fond transparent) composée dans l'image à la une
+  // générée (/api/featured). Optionnelle : sans elle, scène vectorielle de repli.
+  illustrationUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model ToolSection {

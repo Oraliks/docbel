@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/news/session";
 import { ArticleView } from "@/components/docbel/article-view";
 import type { NewsItem } from "@/lib/docbel-data";
+import { resolveArticleImage } from "@/lib/featured-image";
 
 export const dynamic = "force-dynamic";
 
@@ -109,15 +110,24 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
   const canonical = `${base}/actualites/${slug}`;
   const description = article.excerpt;
 
-  // Featured image when the article has one (absolutised), otherwise fall back
-  // to the dynamically generated branded card from /api/og.
-  const ogImage = article.image
-    ? article.image.startsWith("http")
-      ? article.image
-      : `${base}${article.image}`
-    : `${base}/api/og?title=${encodeURIComponent(
-        article.title,
-      )}&cat=${encodeURIComponent(article.category)}`;
+  // Fetch the category's color + illustration for the branded OG image.
+  const cat = article.category
+    ? await prisma.category.findUnique({
+        where: { name: article.category },
+        select: { color: true, illustrationUrl: true },
+      })
+    : null;
+
+  // Manual image wins; otherwise the branded /api/featured card is used.
+  const ogImage = resolveArticleImage({
+    manualImage: article.image,
+    title: article.title,
+    category: article.category,
+    categoryColor: cat?.color,
+    categoryIllustration: cat?.illustrationUrl,
+    subtitle: article.excerpt,
+    base,
+  });
 
   return {
     title: article.title,
@@ -131,7 +141,7 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
       siteName: "Docbel",
       publishedTime: article.publishedAt?.toISOString(),
       images: [
-        { url: ogImage, width: 1200, height: 630, alt: article.title },
+        { url: ogImage, width: 1280, height: 720, alt: article.title },
       ],
     },
     twitter: {

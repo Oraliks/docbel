@@ -25,6 +25,7 @@ export function CategoriesDialog({ open, onOpenChange, onCategoriesUpdated }: Ca
   const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState('#7C3AED');
+  const [newIllustrationUrl, setNewIllustrationUrl] = useState('');
 
   const handleAddCategory = async () => {
     if (!newName.trim()) {
@@ -37,7 +38,7 @@ export function CategoriesDialog({ open, onOpenChange, onCategoriesUpdated }: Ca
       const res = await fetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName, color: newColor })
+        body: JSON.stringify({ name: newName, color: newColor, illustrationUrl: newIllustrationUrl })
       });
 
       if (!res.ok) {
@@ -48,6 +49,7 @@ export function CategoriesDialog({ open, onOpenChange, onCategoriesUpdated }: Ca
       await res.json();
       setNewName('');
       setNewColor('#7C3AED');
+      setNewIllustrationUrl('');
       toast.success('Catégorie créée');
       onCategoriesUpdated?.();
       onOpenChange(false);
@@ -96,6 +98,16 @@ export function CategoriesDialog({ open, onOpenChange, onCategoriesUpdated }: Ca
                   className="font-mono text-sm flex-1"
                 />
               </div>
+            </div>
+            <div>
+              <Label className="text-sm">Illustration (URL PNG)</Label>
+              <Input
+                value={newIllustrationUrl}
+                onChange={(e) => setNewIllustrationUrl(e.target.value)}
+                placeholder="https://…/illustration.png"
+                className="mt-1"
+                type="url"
+              />
             </div>
             <Button
               onClick={handleAddCategory}

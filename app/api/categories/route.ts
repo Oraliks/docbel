@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const name = typeof body.name === "string" ? body.name.trim() : ""
     const color = typeof body.color === "string" ? body.color.trim() : ""
+    const illustrationUrl =
+      typeof body.illustrationUrl === "string" && body.illustrationUrl.trim()
+        ? body.illustrationUrl.trim()
+        : null
 
     if (!name || !color) {
       return NextResponse.json({ error: "Name and color are required" }, { status: 400 })
@@ -38,6 +42,7 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         color,
+        illustrationUrl,
       },
     })
 

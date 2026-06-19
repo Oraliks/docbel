@@ -16,6 +16,10 @@ export const newsCreateSchema = z.object({
   featured: z.boolean().optional(),
   scheduledAt: z.string().datetime().nullable().optional(),
   readingTime: z.number().int().positive().max(600).optional(),
+  keyTakeaway: z.string().max(500).nullable().optional(),
+  summary: z.array(z.string()).nullable().optional(),
+  linkedDocs: z.array(z.object({ title: z.string(), url: z.string() })).nullable().optional(),
+  faqs: z.array(z.object({ q: z.string(), a: z.string() })).nullable().optional(),
 });
 
 export const newsUpdateSchema = newsCreateSchema.partial().extend({

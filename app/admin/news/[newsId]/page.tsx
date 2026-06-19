@@ -34,6 +34,10 @@ interface NewsArticle {
   scheduledAt: string | null;
   createdAt: string;
   updatedAt: string;
+  keyTakeaway?: string;
+  summary?: string[];
+  linkedDocs?: { title: string; url: string }[];
+  faqs?: { q: string; a: string }[];
 }
 
 const generateSlug = (title: string) => slugify(title);
@@ -92,7 +96,11 @@ export default function NewsEditorPage() {
     image: '',
     status: 'draft',
     featured: false,
-    readingTime: 0
+    readingTime: 0,
+    keyTakeaway: '',
+    summary: [] as string[],
+    linkedDocs: [] as { title: string; url: string }[],
+    faqs: [] as { q: string; a: string }[],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -115,7 +123,11 @@ export default function NewsEditorPage() {
           image: data.image || '',
           status: data.status || 'draft',
           featured: data.featured || false,
-          readingTime: data.readingTime || 0
+          readingTime: data.readingTime || 0,
+          keyTakeaway: data.keyTakeaway || '',
+          summary: Array.isArray(data.summary) ? data.summary : [],
+          linkedDocs: Array.isArray(data.linkedDocs) ? data.linkedDocs : [],
+          faqs: Array.isArray(data.faqs) ? data.faqs : [],
         });
         setCurrentId(data.id);
       } catch (error) {

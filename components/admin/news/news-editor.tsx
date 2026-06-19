@@ -66,6 +66,10 @@ export interface NewsEditorForm {
   status: string;
   featured: boolean;
   readingTime: number;
+  keyTakeaway: string;
+  summary: string[];
+  linkedDocs: { title: string; url: string }[];
+  faqs: { q: string; a: string }[];
 }
 
 interface NewsEditorProps {
@@ -219,6 +223,188 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                 <span>Courte description utilisée dans les listes et les aperçus (recommandé : 120-160 caractères).</span>
                 <span className="ml-4 whitespace-nowrap">{form.excerpt.length} / 160</span>
               </div>
+            </Card>
+
+            {/* ── Compléments ── */}
+
+            {/* À retenir */}
+            <Card className="border bg-card p-5 shadow-none gap-0">
+              <label className="block text-sm font-semibold mb-1">À retenir</label>
+              <p className="text-xs text-muted-foreground mb-3">
+                Message clé mis en évidence en haut de l&apos;article.
+              </p>
+              <Textarea
+                value={form.keyTakeaway}
+                onChange={(e) => onFieldChange('keyTakeaway', e.target.value)}
+                placeholder="Ex. : À partir du 1er janvier 2025, les règles changent…"
+                rows={3}
+                className="resize-y"
+              />
+            </Card>
+
+            {/* Résumé en 30 sec */}
+            <Card className="border bg-card p-5 shadow-none gap-0">
+              <label className="block text-sm font-semibold mb-1">Résumé en 30 sec</label>
+              <p className="text-xs text-muted-foreground mb-3">
+                Liste de puces courtes pour le lecteur pressé.
+              </p>
+              <div className="space-y-2">
+                {form.summary.map((bullet, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs select-none">•</span>
+                    <Input
+                      value={bullet}
+                      onChange={(e) => {
+                        const next = [...form.summary];
+                        next[idx] = e.target.value;
+                        onFieldChange('summary', next);
+                      }}
+                      placeholder={`Puce ${idx + 1}`}
+                      className="h-9 flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = form.summary.filter((_, i) => i !== idx);
+                        onFieldChange('summary', next);
+                      }}
+                      className="shrink-0 p-1 rounded hover:bg-destructive/10 transition-colors"
+                      title="Supprimer cette puce"
+                    >
+                      <X className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => onFieldChange('summary', [...form.summary, ''])}
+                className="mt-3 text-sm text-primary hover:underline flex items-center gap-1"
+              >
+                + Ajouter une puce
+              </button>
+            </Card>
+
+            {/* Documents liés */}
+            <Card className="border bg-card p-5 shadow-none gap-0">
+              <label className="block text-sm font-semibold mb-1">Documents liés</label>
+              <p className="text-xs text-muted-foreground mb-3">
+                Liens vers des PDF, circulaires ou pages officielles.
+              </p>
+              <div className="space-y-3">
+                {form.linkedDocs.map((doc, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <Input
+                        value={doc.title}
+                        onChange={(e) => {
+                          const next = form.linkedDocs.map((d, i) =>
+                            i === idx ? { ...d, title: e.target.value } : d
+                          );
+                          onFieldChange('linkedDocs', next);
+                        }}
+                        placeholder="Titre du document"
+                        className="h-9"
+                      />
+                      <Input
+                        value={doc.url}
+                        onChange={(e) => {
+                          const next = form.linkedDocs.map((d, i) =>
+                            i === idx ? { ...d, url: e.target.value } : d
+                          );
+                          onFieldChange('linkedDocs', next);
+                        }}
+                        placeholder="https://…"
+                        className="h-9"
+                        type="url"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = form.linkedDocs.filter((_, i) => i !== idx);
+                        onFieldChange('linkedDocs', next);
+                      }}
+                      className="shrink-0 p-1 mt-0.5 rounded hover:bg-destructive/10 transition-colors"
+                      title="Supprimer ce document"
+                    >
+                      <X className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => onFieldChange('linkedDocs', [...form.linkedDocs, { title: '', url: '' }])}
+                className="mt-3 text-sm text-primary hover:underline flex items-center gap-1"
+              >
+                + Ajouter un document
+              </button>
+            </Card>
+
+            {/* Questions fréquentes */}
+            <Card className="border bg-card p-5 shadow-none gap-0">
+              <label className="block text-sm font-semibold mb-1">Questions fréquentes</label>
+              <p className="text-xs text-muted-foreground mb-3">
+                FAQ contextuelle affichée avec l&apos;article.
+              </p>
+              <div className="space-y-4">
+                {form.faqs.map((faq, idx) => (
+                  <div key={idx} className="border border-border rounded-md p-3 space-y-2 relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = form.faqs.filter((_, i) => i !== idx);
+                        onFieldChange('faqs', next);
+                      }}
+                      className="absolute top-2 right-2 p-1 rounded hover:bg-destructive/10 transition-colors"
+                      title="Supprimer cette question"
+                    >
+                      <X className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                        Question
+                      </label>
+                      <Input
+                        value={faq.q}
+                        onChange={(e) => {
+                          const next = form.faqs.map((f, i) =>
+                            i === idx ? { ...f, q: e.target.value } : f
+                          );
+                          onFieldChange('faqs', next);
+                        }}
+                        placeholder="Ex. : Qui est concerné par ce changement ?"
+                        className="h-9 pr-8"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                        Réponse
+                      </label>
+                      <Textarea
+                        value={faq.a}
+                        onChange={(e) => {
+                          const next = form.faqs.map((f, i) =>
+                            i === idx ? { ...f, a: e.target.value } : f
+                          );
+                          onFieldChange('faqs', next);
+                        }}
+                        placeholder="Réponse détaillée…"
+                        rows={3}
+                        className="resize-y"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => onFieldChange('faqs', [...form.faqs, { q: '', a: '' }])}
+                className="mt-3 text-sm text-primary hover:underline flex items-center gap-1"
+              >
+                + Ajouter une question
+              </button>
             </Card>
           </div>
 

@@ -95,6 +95,10 @@ export async function PATCH(
       ...(body.publishedAt !== undefined && {
         publishedAt: body.publishedAt ? new Date(body.publishedAt) : null,
       }),
+      ...(body.keyTakeaway !== undefined && { keyTakeaway: body.keyTakeaway ?? null }),
+      ...(body.summary !== undefined && { summary: body.summary ?? null }),
+      ...(body.linkedDocs !== undefined && { linkedDocs: body.linkedDocs ?? null }),
+      ...(body.faqs !== undefined && { faqs: body.faqs ?? null }),
       updatedBy: authCheck.user?.id ?? null,
     };
 

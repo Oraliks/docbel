@@ -10,6 +10,10 @@ export interface NewsItem {
   popular?: boolean;
   image?: string;
   content?: string;
+  keyTakeaway?: string;
+  summary?: string[];
+  linkedDocs?: { title: string; url: string }[];
+  faqs?: { q: string; a: string }[];
 }
 
 import type { AudienceId } from "@/lib/audience";

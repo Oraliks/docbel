@@ -39,12 +39,28 @@ function splitDate(date: string) {
 
 export function ActualitesView({
   initialArticles,
+  initialCategory,
 }: {
   initialArticles: NewsItem[];
+  initialCategory?: string;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [activeTag, setActiveTag] = useState<string>("Tous");
+  const [activeTag, setActiveTag] = useState<string>(() => {
+    if (!initialCategory) return "Tous";
+    const m = initialArticles.find(
+      (a) => a.tag?.toLowerCase() === initialCategory.toLowerCase(),
+    );
+    return m?.tag ?? "Tous";
+  });
+
+  const selectTag = (tag: string) => {
+    setActiveTag(tag);
+    router.replace(
+      tag === "Tous" ? "/actualites" : `/actualites?cat=${encodeURIComponent(tag)}`,
+      { scroll: false },
+    );
+  };
 
   const tags = useMemo(() => {
     const set = new Set<string>();
@@ -99,7 +115,7 @@ export function ActualitesView({
               <button
                 key={tag}
                 type="button"
-                onClick={() => setActiveTag(tag)}
+                onClick={() => selectTag(tag)}
                 className={`rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition ${
                   active
                     ? "border-transparent text-[color:var(--glass-bg-a)]"

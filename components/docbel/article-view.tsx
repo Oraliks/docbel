@@ -13,7 +13,6 @@ import {
   FileTextIcon,
   InfoIcon,
   LifeBuoyIcon,
-  Share2Icon,
   TagIcon,
   XIcon,
 } from "lucide-react";
@@ -22,6 +21,7 @@ import type { NewsItem } from "@/lib/docbel-data";
 import { enrichHtmlWithAcronyms } from "@/lib/acronyms-html";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { AcronymText } from "@/components/docbel/acronym";
+import { ShareMenu } from "./share-menu";
 import { SmartImage } from "@/components/ui/smart-image";
 
 interface ArticleViewProps {
@@ -95,27 +95,6 @@ export function ArticleView({
     });
   }, [bookmarkKey]);
 
-  // « Partager » : Web Share natif si dispo, sinon copie du lien.
-  const handleShare = useCallback(async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title: article.title, url });
-        return;
-      } catch (err) {
-        // L'utilisateur a annulé la feuille de partage → ne pas spammer.
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        // Sinon on bascule sur la copie ci-dessous.
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Lien copié dans le presse-papiers");
-    } catch {
-      toast.error("Impossible de copier le lien");
-    }
-  }, [article.title]);
-
   const scrollToContent = useCallback(() => {
     document
       .getElementById(CONTENT_ANCHOR)
@@ -155,7 +134,7 @@ export function ArticleView({
                   return (
                     <Link
                       key={cat}
-                      href="/actualites"
+                      href={`/actualites?cat=${encodeURIComponent(cat)}`}
                       aria-current={active ? "page" : undefined}
                       className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-[13px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] ${
                         active
@@ -222,14 +201,7 @@ export function ArticleView({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <CategoryBadge>{article.tag}</CategoryBadge>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleShare}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-                  >
-                    <Share2Icon className="size-4" />
-                    Partager
-                  </button>
+                  <ShareMenu title={article.title} text={article.desc} />
                   <button
                     type="button"
                     onClick={toggleSaved}

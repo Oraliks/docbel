@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/news/session";
 import { ArticleView } from "@/components/docbel/article-view";
@@ -96,22 +97,48 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
     return { title: "Article introuvable" };
   }
 
+  // Build the absolute base URL per-request from forwarded headers so the OG
+  // tags resolve correctly on localhost, Netlify preview, and prod (same
+  // approach as app/sitemap.xml/route.ts).
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "docbel.be";
+  const proto =
+    h.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+  const base = `${proto}://${host}`;
+
+  const canonical = `${base}/actualites/${slug}`;
   const description = article.excerpt;
+
+  // Featured image when the article has one (absolutised), otherwise fall back
+  // to the dynamically generated branded card from /api/og.
+  const ogImage = article.image
+    ? article.image.startsWith("http")
+      ? article.image
+      : `${base}${article.image}`
+    : `${base}/api/og?title=${encodeURIComponent(
+        article.title,
+      )}&cat=${encodeURIComponent(article.category)}`;
+
   return {
     title: article.title,
     description,
+    alternates: { canonical },
     openGraph: {
       title: article.title,
       description,
       type: "article",
+      url: canonical,
+      siteName: "Docbel",
       publishedTime: article.publishedAt?.toISOString(),
-      images: article.image ? [{ url: article.image }] : undefined,
+      images: [
+        { url: ogImage, width: 1200, height: 630, alt: article.title },
+      ],
     },
     twitter: {
-      card: article.image ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: article.title,
       description,
-      images: article.image ? [article.image] : undefined,
+      images: [ogImage],
     },
   };
 }

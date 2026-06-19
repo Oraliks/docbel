@@ -10,7 +10,8 @@ export const metadata: Metadata = {
   description: "Suivez les informations utiles, les réformes et les changements administratifs.",
 };
 
-export default async function ActualitesRoute() {
+export default async function ActualitesRoute({ searchParams }: { searchParams: Promise<{ cat?: string }> }) {
+  const { cat } = await searchParams;
   const articles = await prisma.news.findMany({
     where: { status: "published" },
     orderBy: { publishedAt: "desc" },
@@ -49,5 +50,5 @@ export default async function ActualitesRoute() {
     image: article.image ?? undefined,
   }));
 
-  return <ActualitesView initialArticles={initialArticles} />;
+  return <ActualitesView initialArticles={initialArticles} initialCategory={cat} />;
 }

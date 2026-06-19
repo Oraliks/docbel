@@ -38,6 +38,9 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
+  // Resolves relative OG/Twitter image URLs and silences Next's
+  // metadataBase warning. Override via NEXT_PUBLIC_SITE_URL per environment.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://docbel.be"),
   title: "Docbel — Documents administratifs belges",
   description: "Portail officieux des documents administratifs belges (chômage)",
 };

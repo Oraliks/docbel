@@ -31,6 +31,7 @@ import {
 import {
   Building2Icon,
   type LucideIcon,
+  LogInIcon,
   LogOutIcon,
   MenuIcon,
   MoonIcon,
@@ -318,76 +319,74 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         </Button>
         <NotificationBell />
 
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-1 transition-colors hover:bg-white/55 dark:hover:bg-white/8 2xl:pr-3.5">
-            <Avatar size="sm">
-              <AvatarFallback
-                className="text-[11px] font-bold text-white"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(135deg, var(--glass-accent-c), var(--glass-accent-d))",
-                }}
-              >
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <span className="hidden max-w-[120px] truncate text-[12.5px] font-bold 2xl:inline">
-              {userName.split(" ")[0]}
-            </span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="glass-popup glass-surface-strong min-w-[220px] border-0 p-2 text-[color:var(--glass-ink)]"
-          >
-            <DropdownMenuGroup>
-              <DropdownMenuLabel className="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-                {userLoggedIn ? "Mon compte" : "Compte"}
-              </DropdownMenuLabel>
-            </DropdownMenuGroup>
-            {userLoggedIn ? (
-              <>
-                <DropdownMenuItem
-                  render={<Link href="/profil" />}
-                  className={`${ITEM_BASE} text-[13px]`}
+        {userLoggedIn ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-1 transition-colors hover:bg-white/55 dark:hover:bg-white/8 2xl:pr-3.5">
+              <Avatar size="sm">
+                <AvatarFallback
+                  className="text-[11px] font-bold text-white"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(135deg, var(--glass-accent-c), var(--glass-accent-d))",
+                  }}
                 >
-                  <UserIcon className="size-4" />
-                  <span className="flex-1 truncate font-semibold">{userName}</span>
-                </DropdownMenuItem>
-                {userRole === "admin" ? (
-                  <DropdownMenuItem
-                    render={
-                      <a
-                        href="/admin"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      />
-                    }
-                    className={`${ITEM_BASE} text-[13px]`}
-                  >
-                    <SettingsIcon className="size-4" />
-                    Administration
-                  </DropdownMenuItem>
-                ) : null}
-                <DropdownMenuSeparator className="my-1 bg-[color:var(--glass-ink-line)]" />
-                <DropdownMenuItem
-                  onClick={handleSignOut}
-                  className={`${ITEM_BASE} text-[13px] text-[color:var(--glass-ink-soft)]`}
-                >
-                  <LogOutIcon className="size-4" />
-                  Déconnexion
-                </DropdownMenuItem>
-              </>
-            ) : (
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden max-w-[120px] truncate text-[12.5px] font-bold 2xl:inline">
+                {userName.split(" ")[0]}
+              </span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="glass-popup glass-surface-strong min-w-[220px] border-0 p-2 text-[color:var(--glass-ink)]"
+            >
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
+                  Mon compte
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuItem
-                render={<Link href="/login" />}
+                render={<Link href="/profil" />}
                 className={`${ITEM_BASE} text-[13px]`}
               >
                 <UserIcon className="size-4" />
-                Se connecter
+                <span className="flex-1 truncate font-semibold">{userName}</span>
               </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {userRole === "admin" ? (
+                <DropdownMenuItem
+                  render={
+                    <a href="/admin" target="_blank" rel="noopener noreferrer" />
+                  }
+                  className={`${ITEM_BASE} text-[13px]`}
+                >
+                  <SettingsIcon className="size-4" />
+                  Administration
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuSeparator className="my-1 bg-[color:var(--glass-ink-line)]" />
+              <DropdownMenuItem
+                onClick={handleSignOut}
+                className={`${ITEM_BASE} text-[13px] text-[color:var(--glass-ink-soft)]`}
+              >
+                <LogOutIcon className="size-4" />
+                Déconnexion
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          // Déconnecté : pas d'avatar ni de « Invité » — lien direct de connexion.
+          <Link
+            href="/login"
+            aria-label="Se connecter"
+            className="flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2 text-[color:var(--glass-ink)] outline-none transition-colors hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] dark:hover:bg-white/8"
+          >
+            <LogInIcon className="size-4" />
+            <span className="hidden text-[12.5px] font-bold sm:inline">
+              Se connecter
+            </span>
+          </Link>
+        )}
       </div>
     </header>
   );

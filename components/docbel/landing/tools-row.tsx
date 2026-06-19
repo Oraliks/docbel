@@ -69,7 +69,7 @@ export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
                 >
                   {/* Nom au survol : texte gras posé au-dessus de l'icône
                       (sans pastille), fondu + montée douce. Pro & lisible. */}
-                  <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap text-center text-[13px] font-extrabold tracking-tight text-[color:var(--glass-ink)] opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100">
+                  <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3.5 -translate-x-1/2 translate-y-1 whitespace-nowrap text-center text-[13px] font-extrabold tracking-tight text-[color:var(--glass-ink)] opacity-0 transition-all duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100">
                     {tool.title}
                   </span>
 
@@ -81,7 +81,6 @@ export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
                     <Link
                       href={href}
                       aria-label={tool.title}
-                      title={tool.title}
                       className="flex aspect-square w-full items-center justify-center rounded-full ring-1 ring-inset ring-white/50 transition-[transform,box-shadow] duration-300 hover:shadow-[0_10px_24px_-8px_rgba(80,50,160,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] group-hover:-translate-y-1 group-hover:scale-110 dark:ring-white/10"
                       style={{ background: tint, color: hue }}
                     >

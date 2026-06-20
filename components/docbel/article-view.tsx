@@ -12,9 +12,7 @@ import {
   ChevronDownIcon,
   ClockIcon,
   FileTextIcon,
-  LifeBuoyIcon,
   StarIcon,
-  TagIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { NewsItem } from "@/lib/docbel-data";
@@ -28,8 +26,6 @@ interface ArticleViewProps {
   article: NewsItem;
   /** 3 articles « À lire aussi » (même catégorie, fallback récents). */
   related?: NewsItem[];
-  /** Catégories publiées distinctes → liste « Thématiques ». */
-  categories?: string[];
   /**
    * Illustration dédiée du hero, définie par article (champ heroIllustration
    * en base) — SEULE source du visuel de hero. Ne jamais confondre avec
@@ -63,7 +59,6 @@ function CategoryBadge({ children }: { children: React.ReactNode }) {
 export function ArticleView({
   article,
   related = [],
-  categories = [],
   articleHeroIllustration,
 }: ArticleViewProps) {
   // Enrichit l'HTML rich-text avec les <abbr> du glossaire. Mémoïsé
@@ -133,64 +128,6 @@ export function ArticleView({
               Retour aux actualités
             </Link>
 
-            {categories.length > 0 ? (
-              <nav className="glass-surface flex flex-col gap-1 p-4">
-                <p className="mb-1 flex items-center gap-1.5 px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-                  <TagIcon className="size-3" />
-                  Thématiques
-                </p>
-                {categories.map((cat) => {
-                  const active = cat === article.tag;
-                  return (
-                    <Link
-                      key={cat}
-                      href={`/actualites?cat=${encodeURIComponent(cat)}`}
-                      aria-current={active ? "page" : undefined}
-                      className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-[13px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] ${
-                        active
-                          ? "bg-[color:var(--glass-surface-strong)] text-[color:var(--glass-ink)]"
-                          : "text-[color:var(--glass-ink-soft)] hover:bg-white/45 hover:text-[color:var(--glass-ink)]"
-                      }`}
-                    >
-                      <span className="truncate">{cat}</span>
-                      {active ? (
-                        <span
-                          className="size-1.5 shrink-0 rounded-full"
-                          style={{ background: "var(--glass-accent-deep)" }}
-                        />
-                      ) : null}
-                    </Link>
-                  );
-                })}
-              </nav>
-            ) : null}
-
-            {/* Besoin d'aide ? → route /contact (vérifiée existante). */}
-            <Link
-              href="/contact"
-              className="glass-surface group flex flex-col gap-2 p-4 outline-none transition-colors hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-            >
-              <span
-                className="flex size-9 items-center justify-center rounded-xl"
-                style={{
-                  background:
-                    "color-mix(in oklab, var(--glass-accent-deep) 16%, transparent)",
-                  color: "var(--glass-accent-deep)",
-                }}
-              >
-                <LifeBuoyIcon className="size-[18px]" />
-              </span>
-              <span className="text-[13.5px] font-bold text-[color:var(--glass-ink)]">
-                Besoin d&apos;aide ?
-              </span>
-              <span className="text-[12px] leading-[1.45] text-[color:var(--glass-ink-soft)]">
-                Une question sur vos démarches&nbsp;? Contactez un conseiller.
-              </span>
-              <span className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[color:var(--glass-accent-deep)]">
-                Nous contacter
-                <ArrowRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-              </span>
-            </Link>
           </div>
         </aside>
 

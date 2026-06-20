@@ -81,17 +81,6 @@ async function loadRelated(slug: string, category: string) {
   return sameCategory;
 }
 
-/** Catégories distinctes des articles publiés → liste « Thématiques ». */
-async function loadCategories() {
-  const rows = await prisma.news.findMany({
-    where: { status: "published" },
-    distinct: ["category"],
-    orderBy: { category: "asc" },
-    select: { category: true },
-  });
-  return rows.map((r) => r.category).filter(Boolean);
-}
-
 export async function generateMetadata({ params }: RouteParams): Promise<Metadata> {
   const { slug } = await params;
   const article = await loadArticle(slug);
@@ -160,10 +149,7 @@ export default async function ArticleRoute({ params }: RouteParams) {
   const article = await loadArticle(slug);
   if (!article) notFound();
 
-  const [related, categories] = await Promise.all([
-    loadRelated(article.slug, article.category),
-    loadCategories(),
-  ]);
+  const related = await loadRelated(article.slug, article.category);
 
   const newsItem: NewsItem = {
     id: article.id,
@@ -204,7 +190,6 @@ export default async function ArticleRoute({ params }: RouteParams) {
     <ArticleView
       article={newsItem}
       related={relatedItems}
-      categories={categories}
       articleHeroIllustration={newsItem.heroIllustration}
       accent="#7C3AED"
     />

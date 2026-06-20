@@ -55,6 +55,17 @@ export async function POST(req: NextRequest) {
       if (action === "delete") {
         const result = await tx.news.deleteMany({ where: { id: { in: ids } } });
         affected = result.count;
+      } else if (action === "publish") {
+        // Pas de mise en ligne sans illustration de hero : on ne publie que les
+        // articles éligibles ; les autres restent inchangés (cf. skipped).
+        const result = await tx.news.updateMany({
+          where: {
+            id: { in: ids },
+            AND: [{ heroIllustration: { not: null } }, { heroIllustration: { not: "" } }],
+          },
+          data: { ...(config.data ?? {}), updatedBy: authCheck.user?.id ?? null },
+        });
+        affected = result.count;
       } else {
         const result = await tx.news.updateMany({
           where: { id: { in: ids } },
@@ -77,7 +88,12 @@ export async function POST(req: NextRequest) {
       return affected;
     });
 
-    return NextResponse.json({ success: true, count }, { headers: jsonHeaders });
+    // En publication groupée, signale les articles ignorés faute d'illustration.
+    const skipped = action === "publish" ? ids.length - count : 0;
+    return NextResponse.json(
+      { success: true, count, ...(skipped > 0 ? { skipped } : {}) },
+      { headers: jsonHeaders }
+    );
   } catch (error) {
     console.error("Error performing bulk action:", error);
     // Surface a degraded log entry if the transaction failed.

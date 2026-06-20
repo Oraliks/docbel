@@ -158,13 +158,9 @@ export default async function ArticleRoute({ params }: RouteParams) {
   const article = await loadArticle(slug);
   if (!article) notFound();
 
-  const [related, categories, articleCategory] = await Promise.all([
+  const [related, categories] = await Promise.all([
     loadRelated(article.slug, article.category),
     loadCategories(),
-    prisma.category.findUnique({
-      where: { name: article.category },
-      select: { illustrationUrl: true },
-    }),
   ]);
 
   const newsItem: NewsItem = {
@@ -206,7 +202,6 @@ export default async function ArticleRoute({ params }: RouteParams) {
       article={newsItem}
       related={relatedItems}
       categories={categories}
-      categoryIllustration={articleCategory?.illustrationUrl ?? undefined}
       articleHeroIllustration={newsItem.heroIllustration}
       accent="#7C3AED"
     />

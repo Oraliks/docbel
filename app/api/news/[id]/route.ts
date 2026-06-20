@@ -6,6 +6,7 @@ import { requireAdminAuth } from "@/lib/auth-check";
 import { actorLabel } from "@/lib/news/session";
 import { newsUpdateSchema } from "@/lib/news/validation";
 import { slugify } from "@/lib/news/slug";
+import { HERO_REQUIRED_MESSAGE, hasHeroIllustration } from "@/lib/news/publish-guard";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -74,6 +75,23 @@ export async function PATCH(
           { error: "scheduledAt doit être dans le futur" },
           { status: 400, headers: jsonHeaders }
         );
+      }
+    }
+
+    // Garde : passer un article en « publié » (ou « planifié ») exige une
+    // illustration de hero — fournie dans ce PATCH ou déjà en base.
+    if (body.status === "published" || body.status === "scheduled") {
+      const effectiveHero =
+        body.heroIllustration !== undefined
+          ? body.heroIllustration
+          : (
+              await prisma.news.findUnique({
+                where: { id },
+                select: { heroIllustration: true },
+              })
+            )?.heroIllustration;
+      if (!hasHeroIllustration(effectiveHero)) {
+        return NextResponse.json({ error: HERO_REQUIRED_MESSAGE }, { status: 422, headers: jsonHeaders });
       }
     }
 

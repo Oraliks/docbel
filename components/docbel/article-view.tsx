@@ -30,11 +30,9 @@ interface ArticleViewProps {
   related?: NewsItem[];
   /** Catégories publiées distinctes → liste « Thématiques ». */
   categories?: string[];
-  /** Illustration de la catégorie — repli du hero si l'article n'a pas d'image perso. */
-  categoryIllustration?: string;
   /**
    * Illustration dédiée du hero, définie par article (champ heroIllustration
-   * en base). Prioritaire sur categoryIllustration. Ne jamais confondre avec
+   * en base) — SEULE source du visuel de hero. Ne jamais confondre avec
    * article.image qui est la thumbnail/bannière OG réservée aux listes.
    */
   articleHeroIllustration?: string;
@@ -66,7 +64,6 @@ export function ArticleView({
   article,
   related = [],
   categories = [],
-  categoryIllustration,
   articleHeroIllustration,
 }: ArticleViewProps) {
   // Enrichit l'HTML rich-text avec les <abbr> du glossaire. Mémoïsé
@@ -108,11 +105,11 @@ export function ArticleView({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  // Image du hero = illustration ÉDITORIALE dédiée, JAMAIS la bannière.
-  // Priorité : illustration hero de l'article > illustration de la catégorie.
-  // `article.image` est volontairement EXCLUE : c'est la bannière « image à la
-  // une » (titre/ONEM cuits dedans) → réservée à l'aperçu OG + aux vignettes.
-  const heroImage = articleHeroIllustration ?? categoryIllustration;
+  // Image du hero = illustration ÉDITORIALE dédiée à l'article, et RIEN d'autre.
+  // Plus de repli sur l'illustration de catégorie : chaque article publié porte
+  // sa propre illustration (obligatoire à la publication). `article.image` reste
+  // exclue (bannière « image à la une », titre/ONEM cuits → OG + vignettes).
+  const heroImage = articleHeroIllustration;
 
   const hasSummary = Boolean(article.summary?.length);
   const hasDocs = Boolean(article.linkedDocs?.length);

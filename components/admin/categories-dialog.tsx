@@ -14,13 +14,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Save } from 'lucide-react';
-import { HeroIllustrationGenerator } from '@/components/admin/hero-illustration-generator';
 
 export interface EditableCategory {
   id: string;
   name: string;
   color: string;
-  illustrationUrl?: string | null;
 }
 
 interface CategoriesDialogProps {
@@ -43,7 +41,6 @@ export function CategoriesDialog({
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
   const [color, setColor] = useState(DEFAULT_COLOR);
-  const [illustrationUrl, setIllustrationUrl] = useState('');
 
   // Pré-remplit (édition) ou réinitialise (création) chaque fois que le
   // dialog s'ouvre ou que la catégorie cible change.
@@ -52,11 +49,9 @@ export function CategoriesDialog({
     if (category) {
       setName(category.name);
       setColor(category.color || DEFAULT_COLOR);
-      setIllustrationUrl(category.illustrationUrl ?? '');
     } else {
       setName('');
       setColor(DEFAULT_COLOR);
-      setIllustrationUrl('');
     }
   }, [open, category]);
 
@@ -75,7 +70,7 @@ export function CategoriesDialog({
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, color, illustrationUrl }),
+        body: JSON.stringify({ name, color }),
       });
 
       if (!res.ok) {
@@ -132,21 +127,6 @@ export function CategoriesDialog({
                   className="font-mono text-sm flex-1"
                 />
               </div>
-            </div>
-            <div>
-              <Label className="text-sm">Illustration (URL PNG)</Label>
-              <Input
-                value={illustrationUrl}
-                onChange={(e) => setIllustrationUrl(e.target.value)}
-                placeholder="https://…/illustration.png"
-                className="mt-1"
-                type="url"
-              />
-              <HeroIllustrationGenerator
-                defaultSubject={name}
-                onUse={(url) => setIllustrationUrl(url)}
-                className="mt-2"
-              />
             </div>
             <Button
               onClick={handleSubmit}

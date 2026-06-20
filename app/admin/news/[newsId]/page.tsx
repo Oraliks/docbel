@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { slugify } from '@/lib/news/slug';
+import { HERO_REQUIRED_MESSAGE } from '@/lib/news/publish-guard';
 
 interface NewsArticle {
   id: string;
@@ -240,7 +241,11 @@ export default function NewsEditorPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!res.ok) throw new Error(t('toastPublishFailed'));
+      if (!res.ok) {
+        // Surface le message serveur (ex. illustration de hero manquante).
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || t('toastPublishFailed'));
+      }
       await res.json();
       setForm((prev) => ({ ...prev, status: 'published' }));
       setLastSavedAt(new Date());
@@ -250,7 +255,7 @@ export default function NewsEditorPage() {
     } catch (error) {
       console.error('Error publishing:', error);
       toast.dismiss(loadingToast);
-      toast.error(t('toastPublishError'));
+      toast.error(error instanceof Error ? error.message : t('toastPublishError'));
       throw error;
     }
   }, [currentId, t]);
@@ -258,9 +263,14 @@ export default function NewsEditorPage() {
   // Publish now (directly without dialog)
   const handlePublishNow = useCallback(async () => {
     const newErrors = validateForm(form, t);
+    // Illustration de hero obligatoire pour mettre en ligne.
+    if (!form.heroIllustration?.trim()) {
+      newErrors.heroIllustration = HERO_REQUIRED_MESSAGE;
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      if (newErrors.heroIllustration) toast.error(HERO_REQUIRED_MESSAGE);
       return;
     }
 
@@ -278,9 +288,14 @@ export default function NewsEditorPage() {
   // Open schedule dialog
   const handleOpenSchedule = useCallback(async () => {
     const newErrors = validateForm(form, t);
+    // Une planification débouche sur une publication → illustration requise.
+    if (!form.heroIllustration?.trim()) {
+      newErrors.heroIllustration = HERO_REQUIRED_MESSAGE;
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      if (newErrors.heroIllustration) toast.error(HERO_REQUIRED_MESSAGE);
       return;
     }
 

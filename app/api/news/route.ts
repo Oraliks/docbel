@@ -6,6 +6,7 @@ import { requireAdminAuth } from "@/lib/auth-check";
 import { getCurrentUser, actorLabel } from "@/lib/news/session";
 import { newsCreateSchema, newsListQuerySchema } from "@/lib/news/validation";
 import { slugify } from "@/lib/news/slug";
+import { HERO_REQUIRED_MESSAGE, hasHeroIllustration } from "@/lib/news/publish-guard";
 
 const PUBLIC_LIST_FIELDS = {
   id: true,
@@ -156,6 +157,15 @@ export async function POST(req: NextRequest) {
           { status: 400, headers: jsonHeaders }
         );
       }
+    }
+
+    // Garde : créer directement un article en ligne (publié/planifié) exige
+    // une illustration de hero.
+    if (
+      (data.status === "published" || data.status === "scheduled") &&
+      !hasHeroIllustration(data.heroIllustration)
+    ) {
+      return NextResponse.json({ error: HERO_REQUIRED_MESSAGE }, { status: 422, headers: jsonHeaders });
     }
 
     const plainText = data.content.replace(/<[^>]+>/g, "").trim();

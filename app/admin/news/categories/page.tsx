@@ -15,13 +15,11 @@ import { Plus, Trash2, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { CategoriesDialog } from '@/components/admin/categories-dialog';
-import { SmartImage } from '@/components/ui/smart-image';
 
 interface Category {
   id: string;
   name: string;
   color: string;
-  illustrationUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -133,7 +131,6 @@ export default function CategoriesPage() {
                 <TableRow>
                   <TableHead>{t('catColColor')}</TableHead>
                   <TableHead>{t('catColName')}</TableHead>
-                  <TableHead>Illustration</TableHead>
                   <TableHead>{t('catColCreatedAt')}</TableHead>
                   <TableHead className="text-right">{t('actions')}</TableHead>
                 </TableRow>
@@ -152,22 +149,6 @@ export default function CategoriesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell>
-                      {category.illustrationUrl ? (
-                        <div className="relative w-10 h-10 rounded overflow-hidden">
-                          <SmartImage
-                            src={category.illustrationUrl}
-                            alt={`Illustration ${category.name}`}
-                            type="generic"
-                            fit="contain"
-                            compactFallback
-                            className="absolute inset-0"
-                          />
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(category.createdAt).toLocaleDateString('fr-FR')}
                     </TableCell>

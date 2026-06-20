@@ -556,11 +556,14 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
               </div>
             </Card>
 
-            {/* Illustration du hero (optionnel) */}
-            <Card className="border bg-card p-5 shadow-none gap-0">
-              <label className="block text-sm font-semibold mb-3">Illustration du hero (optionnel)</label>
+            {/* Illustration du hero — obligatoire pour publier */}
+            <Card className={`border bg-card p-5 shadow-none gap-0 ${errors.heroIllustration ? 'border-red-500' : ''}`}>
+              <label className="block text-sm font-semibold mb-3">
+                Illustration du hero <span className="text-red-600">*</span>
+              </label>
               <p className="text-xs text-muted-foreground mb-3">
-                Illustration 3D dédiée au hero de la page article. Prioritaire sur l&apos;illustration de la catégorie.
+                Illustration 3D dédiée au hero de la page article, générée ci-dessous.{' '}
+                <strong>Obligatoire pour publier ou planifier l&apos;article.</strong>{' '}
                 Ne jamais utiliser l&apos;image de présentation ici (réservée OG + listes).
               </p>
               <label
@@ -575,8 +578,11 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                 onChange={(e) => onFieldChange('heroIllustration', e.target.value)}
                 placeholder="https://…/hero.png"
                 type="url"
-                className="h-10"
+                className={`h-10 ${errors.heroIllustration ? 'border-red-500 focus:border-red-500' : ''}`}
               />
+              {errors.heroIllustration && (
+                <p className="text-red-600 text-sm mt-2">⚠️ {errors.heroIllustration}</p>
+              )}
               {form.heroIllustration && (
                 <div className="mt-3 aspect-square w-32 overflow-hidden rounded-lg border border-border bg-muted/30">
                   {/* eslint-disable-next-line @next/next/no-img-element */}

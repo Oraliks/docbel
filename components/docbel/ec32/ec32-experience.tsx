@@ -18,7 +18,8 @@
 // =====================================================================
 
 import { useState } from 'react'
-import { Check, ShieldCheck } from 'lucide-react'
+import Link from 'next/link'
+import { ArrowRight, Check, ShieldCheck, UserPlus } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Ec32Content } from '@/lib/ec32/schema'
@@ -133,6 +134,36 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
         onScenarioConsumed={() => setScenarioKey(null)}
         startLoginSignal={guidedTick}
       />
+
+      {/* Sous-système : donner accès à un proche (page distincte). */}
+      <Link
+        href="/onem/ec32/acces"
+        className="group flex flex-col items-start gap-3 rounded-3xl border border-primary/15 bg-primary/[0.04] p-5 transition-colors hover:border-primary/30 hover:bg-primary/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:flex-row sm:items-center sm:gap-5"
+      >
+        <span
+          className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary"
+          aria-hidden
+        >
+          <UserPlus className="size-6" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-foreground">
+            Donner accès à un proche (mandat)
+          </span>
+          <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
+            Vous pouvez autoriser un proche à remplir votre carte de chômage
+            temporaire à votre place. Découvrez en simulation la gestion des
+            accès et la demande de mandat.
+          </span>
+        </span>
+        <span
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition-transform group-hover:translate-x-0.5"
+          aria-hidden
+        >
+          Ouvrir
+          <ArrowRight className="size-4" />
+        </span>
+      </Link>
 
       {/* Explorateur à onglets — un seul contenu à la fois (rendu conditionnel
           pour garantir qu'un seul panneau est monté/visible). La barre base-ui

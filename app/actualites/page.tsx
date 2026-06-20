@@ -28,6 +28,7 @@ export default async function ActualitesRoute({ searchParams }: { searchParams: 
         readingTime: true,
         featured: true,
         image: true,
+        heroIllustration: true,
         publishedAt: true,
         createdAt: true,
       },
@@ -56,6 +57,7 @@ export default async function ActualitesRoute({ searchParams }: { searchParams: 
     readingTime: article.readingTime ?? undefined,
     popular: article.featured,
     image: resolveArticleImage({
+      heroIllustration: article.heroIllustration,
       manualImage: article.image,
       title: article.title,
       category: article.category,

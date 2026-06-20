@@ -31,7 +31,13 @@ export function buildFeaturedImageUrl(p: FeaturedImageParams): string {
 }
 
 export interface ResolveArticleImageArgs {
-  /** Image manuelle saisie en admin (prioritaire si présente). */
+  /**
+   * Illustration UNIQUE de l'article (champ `News.heroIllustration`) — sert à
+   * la fois au hero, aux vignettes/listes et à l'aperçu de partage. Prioritaire
+   * sur tout le reste.
+   */
+  heroIllustration?: string | null;
+  /** Image « présentation » héritée (legacy) — repli si pas d'illustration. */
   manualImage?: string | null;
   title: string;
   category?: string | null;
@@ -49,16 +55,17 @@ export interface ResolveArticleImageArgs {
 }
 
 /**
- * Image à la une effective d'un article :
- * - image manuelle définie → elle gagne (override),
- * - sinon → image générée (cadre brandé + illustration de la catégorie,
- *   ou scène vectorielle de repli si la catégorie n'a pas d'illustration).
+ * Image effective d'un article (UNE seule image partout) :
+ * - illustration unique (hero) définie → elle gagne,
+ * - sinon image « présentation » héritée (legacy) → elle gagne,
+ * - sinon (rare : brouillon sans illustration) → carte brandée générée.
  */
 export function resolveArticleImage(args: ResolveArticleImageArgs): string {
-  if (args.manualImage && args.manualImage.trim()) {
-    const m = args.manualImage.trim();
-    if (args.base && !/^https?:\/\//i.test(m)) return `${args.base}${m}`;
-    return m;
+  // URL directe : l'illustration (hero) prime, puis l'image héritée.
+  const single = args.heroIllustration?.trim() || args.manualImage?.trim();
+  if (single) {
+    if (args.base && !/^https?:\/\//i.test(single)) return `${args.base}${single}`;
+    return single;
   }
   const rel = buildFeaturedImageUrl({
     title: args.title,

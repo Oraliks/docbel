@@ -1,9 +1,10 @@
 /**
- * Prompt OpenAI Images DÉDIÉ aux illustrations du HERO d'article.
+ * Prompt OpenAI Images pour l'illustration UNIQUE d'un article
+ * (`News.heroIllustration`).
  *
- * Distinct de `featured-image-prompt.ts`, qui produit la BANNIÈRE complète
- * (`News.image`, avec titre/cadre cuits) réservée à l'aperçu de partage OG et
- * aux vignettes de liste.
+ * Cette illustration sert PARTOUT : hero de la page article, vignettes des
+ * listes et aperçu de partage OG. (L'ancienne bannière `News.image` avec
+ * titre/cadre cuits est retirée — une seule image par article.)
  *
  * Le hero utilise cette illustration comme VISUEL DE FOND fusionné (couche
  * `absolute inset-0`, opacité réduite, sous un voile clair, texte HTML

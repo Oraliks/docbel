@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,8 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import dynamic from 'next/dynamic';
-import { Folder, CheckCircle2, ImagePlus, X, Loader2 } from 'lucide-react';
-import { FeaturedImageGenerator } from '@/components/admin/news/featured-image-generator';
+import { Folder, CheckCircle2, X, Loader2 } from 'lucide-react';
 import { HeroIllustrationGenerator } from '@/components/admin/hero-illustration-generator';
 
 // Tiptap = client-only (DOM requis). dynamic ssr:false évite l'hydratation SSR
@@ -85,38 +84,6 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
   const [activeTab, setActiveTab] = useState<'content' | 'seo'>('content');
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [imageDragging, setImageDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImageUpload = useCallback(async (file: File) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowed.includes(file.type)) {
-      alert('Type non supporté. Utilisez JPG, PNG, WebP ou GIF.');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Fichier trop volumineux. Taille maximale : 5 Mo.');
-      return;
-    }
-    setImageUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/upload/image', { method: 'POST', body: fd });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Erreur upload');
-      }
-      const { url } = await res.json();
-      onFieldChange('image', url);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erreur lors du téléchargement');
-    } finally {
-      setImageUploading(false);
-    }
-  }, [onFieldChange]);
-
   // Load categories from API
   useEffect(() => {
     const fetchCategories = async () => {
@@ -482,89 +449,16 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
               {errors.category && <p className="text-red-600 text-sm mt-2">⚠️ {errors.category}</p>}
             </Card>
 
-            {/* Image de présentation */}
-            <Card className="border bg-card p-5 shadow-none gap-0">
-              <label className="block text-sm font-semibold mb-3">Image de présentation</label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload(file);
-                  e.target.value = '';
-                }}
-              />
-              {form.image ? (
-                <div className="relative rounded-lg overflow-hidden border border-border">
-                  {/* The preview may point to any uploaded or external URL and is intentionally rendered without next/image. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={form.image}
-                    alt="Image de présentation"
-                    className="w-full h-36 object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => onFieldChange('image', '')}
-                    className="absolute top-2 right-2 bg-card rounded-full p-1 shadow-md hover:bg-destructive/10 transition-colors"
-                    title="Supprimer l'image"
-                  >
-                    <X className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  disabled={imageUploading}
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => { e.preventDefault(); setImageDragging(true); }}
-                  onDragLeave={() => setImageDragging(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setImageDragging(false);
-                    const file = e.dataTransfer.files?.[0];
-                    if (file) handleImageUpload(file);
-                  }}
-                  className={`w-full border-2 border-dashed rounded-lg p-6 flex flex-col items-center gap-2 transition-colors cursor-pointer ${
-                    imageDragging
-                      ? 'border-primary/60 bg-primary/5'
-                      : 'border-input hover:border-muted-foreground hover:bg-muted/50'
-                  }`}
-                >
-                  {imageUploading ? (
-                    <Loader2 className="w-7 h-7 text-muted-foreground animate-spin" />
-                  ) : (
-                    <ImagePlus className="w-7 h-7 text-muted-foreground" />
-                  )}
-                  <span className="text-sm text-muted-foreground">
-                    {imageUploading ? 'Téléchargement...' : 'Cliquer ou glisser une image'}
-                  </span>
-                  <span className="text-xs text-muted-foreground/70">JPG, PNG, WebP, GIF · max 5 Mo</span>
-                </button>
-              )}
-
-              {/* Génération IA de l'image à la une — manuel, sous l'upload existant.
-                  Le composant lit l'id de l'article via useParams (clé newsId). */}
-              <div className="mt-4">
-                <FeaturedImageGenerator
-                  title={form.title}
-                  defaultSummary={form.excerpt}
-                  onUse={(url) => onFieldChange('image', url)}
-                />
-              </div>
-            </Card>
-
-            {/* Illustration du hero — obligatoire pour publier */}
+            {/* Illustration de l'article — image unique (hero + listes + partage) */}
             <Card className={`border bg-card p-5 shadow-none gap-0 ${errors.heroIllustration ? 'border-red-500' : ''}`}>
               <label className="block text-sm font-semibold mb-3">
-                Illustration du hero <span className="text-red-600">*</span>
+                Illustration de l&apos;article <span className="text-red-600">*</span>
               </label>
               <p className="text-xs text-muted-foreground mb-3">
-                Illustration 3D dédiée au hero de la page article, générée ci-dessous.{' '}
+                Image 3D UNIQUE de l&apos;article — utilisée partout : hero, vignettes
+                des listes et aperçu de partage.{' '}
                 <strong>Obligatoire pour publier ou planifier l&apos;article.</strong>{' '}
-                Ne jamais utiliser l&apos;image de présentation ici (réservée OG + listes).
+                Générez-la ci-dessous ou collez une URL.
               </p>
               <label
                 htmlFor="hero-illustration-url"

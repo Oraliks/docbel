@@ -67,6 +67,7 @@ export default async function HomePage() {
           readingTime: true,
           featured: true,
           image: true,
+          heroIllustration: true,
         },
       })
       .catch(() => []),
@@ -120,7 +121,8 @@ export default async function HomePage() {
     color: article.color,
     readingTime: article.readingTime ?? undefined,
     popular: article.featured,
-    image: article.image ?? undefined,
+    // Image unique = illustration (hero) ; repli sur l'image héritée (legacy).
+    image: article.heroIllustration ?? article.image ?? undefined,
   }));
 
   // Les 5 premières « unes » alimentent le carrousel du hero (points de nav).

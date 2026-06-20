@@ -49,6 +49,7 @@ async function loadRelated(slug: string, category: string) {
     color: true,
     readingTime: true,
     image: true,
+    heroIllustration: true,
     publishedAt: true,
     createdAt: true,
   };
@@ -118,8 +119,9 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
       })
     : null;
 
-  // Manual image wins; otherwise the branded /api/featured card is used.
+  // Image unique = illustration (hero) ; repli image héritée, puis carte brandée.
   const ogImage = resolveArticleImage({
+    heroIllustration: article.heroIllustration,
     manualImage: article.image,
     title: article.title,
     category: article.category,
@@ -173,7 +175,8 @@ export default async function ArticleRoute({ params }: RouteParams) {
     color: article.color || "#7C3AED",
     readingTime: article.readingTime ?? undefined,
     popular: article.featured,
-    image: article.image ?? undefined,
+    // Image unique = illustration (hero) ; repli sur l'image héritée (legacy).
+    image: article.heroIllustration ?? article.image ?? undefined,
     heroIllustration: article.heroIllustration ?? undefined,
     content: article.content,
     // Champs éditoriaux enrichis (Json en base) → typés sur NewsItem.
@@ -194,7 +197,7 @@ export default async function ArticleRoute({ params }: RouteParams) {
     date: frDate(a.publishedAt ?? a.createdAt),
     color: a.color || "#7C3AED",
     readingTime: a.readingTime ?? undefined,
-    image: a.image ?? undefined,
+    image: a.heroIllustration ?? a.image ?? undefined,
   }));
 
   return (

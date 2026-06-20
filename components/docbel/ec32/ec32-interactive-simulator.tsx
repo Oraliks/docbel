@@ -643,6 +643,7 @@ export function Ec32InteractiveSimulator({
               getNotice={getNotice}
               revealed={revealedLogin}
               onReveal={setRevealedLogin}
+              onRestart={restart}
               onContinue={() => goToStep('declaration')}
             />
           )}
@@ -659,6 +660,8 @@ export function Ec32InteractiveSimulator({
                 selectMonth(k)
               }}
               onCheckedChange={setDeclarationChecked}
+              onRestart={restart}
+              onPrev={goPrevStep}
               onContinue={() => goToStep('employer')}
             />
           )}
@@ -670,6 +673,8 @@ export function Ec32InteractiveSimulator({
               employers={sim.employers}
               employerId={employerId}
               onSelect={selectEmployer}
+              onRestart={restart}
+              onPrev={goPrevStep}
               onContinue={() => goToStep('month')}
             />
           )}
@@ -683,6 +688,8 @@ export function Ec32InteractiveSimulator({
               onSelect={(k) => {
                 selectMonth(k)
               }}
+              onRestart={restart}
+              onPrev={goPrevStep}
               onContinue={() => goToStep('calendar')}
             />
           )}
@@ -740,22 +747,6 @@ export function Ec32InteractiveSimulator({
             />
           )}
 
-          {/* Étapes formulaire : recommencer + navigation sous le contenu.
-              (Sur l'étape carte, ces contrôles vivent DANS la carte.) */}
-          {!isAppStep && (
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-              <Button type="button" variant="ghost" size="sm" onClick={restart}>
-                <RotateCcw className="size-3.5" aria-hidden />
-                {getLabel('nav.restart')}
-              </Button>
-              <StepNavButtons
-                activeStep={activeStep}
-                getLabel={getLabel}
-                onPrev={goPrevStep}
-                onNext={goNextStep}
-              />
-            </div>
-          )}
         </div>
 
         {/* Rail droit : simulation pédagogique non officielle. */}
@@ -806,51 +797,19 @@ export function Ec32InteractiveSimulator({
 
 // ═════════════════════════ Sous-composants d'étape ═════════════════════════
 
-function StepNavButtons({
-  activeStep,
-  getLabel,
-  onPrev,
-  onNext,
-}: {
-  activeStep: Ec32StepKey
-  getLabel: (key: string, fallback?: string) => string
-  onPrev: () => void
-  onNext: () => void
-}) {
-  const idx = EC32_STEPS.indexOf(activeStep)
-  // Les étapes « formulaire » (avant le calendrier) ont déjà leur propre bouton
-  // « Continuer » : pas de second « Étape suivante » redondant.
-  const hasOwnContinue = idx < CALENDAR_STEP_INDEX
-  return (
-    <div className="flex gap-2">
-      <Button type="button" variant="outline" size="sm" onClick={onPrev} disabled={idx <= 0}>
-        {getLabel('nav.back')}
-      </Button>
-      {!hasOwnContinue && (
-        <Button
-          type="button"
-          size="sm"
-          onClick={onNext}
-          disabled={idx >= EC32_STEPS.length - 1}
-        >
-          {getLabel('nav.next')}
-        </Button>
-      )}
-    </div>
-  )
-}
-
 function StepLogin({
   getLabel,
   getNotice,
   revealed,
   onReveal,
+  onRestart,
   onContinue,
 }: {
   getLabel: (key: string, fallback?: string) => string
   getNotice: (key: string) => string
   revealed: string | null
   onReveal: (key: string) => void
+  onRestart: () => void
   onContinue: () => void
 }) {
   return (
@@ -887,7 +846,11 @@ function StepLogin({
         </Ec32InfoBox>
       )}
 
-      <div className="mt-5">
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
+        <Button type="button" variant="ghost" size="sm" onClick={onRestart}>
+          <RotateCcw className="size-3.5" aria-hidden />
+          {getLabel('nav.restart')}
+        </Button>
         <Button type="button" onClick={onContinue}>
           {getLabel('login.continue')}
         </Button>
@@ -904,6 +867,8 @@ function StepDeclaration({
   checked,
   onMonthChange,
   onCheckedChange,
+  onRestart,
+  onPrev,
   onContinue,
 }: {
   getLabel: (key: string, fallback?: string) => string
@@ -913,6 +878,8 @@ function StepDeclaration({
   checked: boolean
   onMonthChange: (key: string) => void
   onCheckedChange: (v: boolean) => void
+  onRestart: () => void
+  onPrev: () => void
   onContinue: () => void
 }) {
   return (
@@ -952,10 +919,19 @@ function StepDeclaration({
         </span>
       </label>
 
-      <div className="mt-5">
-        <Button type="button" onClick={onContinue} disabled={!checked}>
-          {getLabel('declaration.continue')}
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
+        <Button type="button" variant="ghost" size="sm" onClick={onRestart}>
+          <RotateCcw className="size-3.5" aria-hidden />
+          {getLabel('nav.restart')}
         </Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={onPrev}>
+            {getLabel('nav.back')}
+          </Button>
+          <Button type="button" onClick={onContinue} disabled={!checked}>
+            {getLabel('declaration.continue')}
+          </Button>
+        </div>
       </div>
     </Ec32Card>
   )
@@ -967,6 +943,8 @@ function StepEmployer({
   employers,
   employerId,
   onSelect,
+  onRestart,
+  onPrev,
   onContinue,
 }: {
   getLabel: (key: string, fallback?: string) => string
@@ -974,6 +952,8 @@ function StepEmployer({
   employers: Ec32EmployerContent[]
   employerId: string
   onSelect: (id: string) => void
+  onRestart: () => void
+  onPrev: () => void
   onContinue: () => void
 }) {
   const selected = employers.find((e) => e.id === employerId)
@@ -1031,10 +1011,19 @@ function StepEmployer({
         </Ec32InfoBox>
       )}
 
-      <div className="mt-5">
-        <Button type="button" onClick={onContinue} disabled={!selected}>
-          {getLabel('employer.continue')}
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
+        <Button type="button" variant="ghost" size="sm" onClick={onRestart}>
+          <RotateCcw className="size-3.5" aria-hidden />
+          {getLabel('nav.restart')}
         </Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={onPrev}>
+            {getLabel('nav.back')}
+          </Button>
+          <Button type="button" onClick={onContinue} disabled={!selected}>
+            {getLabel('employer.continue')}
+          </Button>
+        </div>
       </div>
     </Ec32Card>
   )
@@ -1046,6 +1035,8 @@ function StepMonth({
   months,
   monthKey,
   onSelect,
+  onRestart,
+  onPrev,
   onContinue,
 }: {
   getLabel: (key: string, fallback?: string) => string
@@ -1053,6 +1044,8 @@ function StepMonth({
   months: Ec32MonthContent[]
   monthKey: string
   onSelect: (key: string) => void
+  onRestart: () => void
+  onPrev: () => void
   onContinue: () => void
 }) {
   const [pastActivated, setPastActivated] = useState(false)
@@ -1132,10 +1125,19 @@ function StepMonth({
         )}
       </div>
 
-      <div className="mt-5">
-        <Button type="button" onClick={onContinue}>
-          {getLabel('nav.toCalendar')}
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
+        <Button type="button" variant="ghost" size="sm" onClick={onRestart}>
+          <RotateCcw className="size-3.5" aria-hidden />
+          {getLabel('nav.restart')}
         </Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={onPrev}>
+            {getLabel('nav.back')}
+          </Button>
+          <Button type="button" onClick={onContinue}>
+            {getLabel('nav.toCalendar')}
+          </Button>
+        </div>
       </div>
     </Ec32Card>
   )
@@ -1283,8 +1285,18 @@ function CardWorkspace({
       </div>
 
       {/* Navigation entre étapes — dans la carte. */}
-      <div className="mt-5 flex justify-end border-t border-border pt-4">
-        <StepNavButtons activeStep={activeStep} getLabel={getLabel} onPrev={onPrev} onNext={onNext} />
+      <div className="mt-5 flex justify-end gap-2 border-t border-border pt-4">
+        <Button type="button" variant="outline" size="sm" onClick={onPrev}>
+          {getLabel('nav.back')}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          onClick={onNext}
+          disabled={EC32_STEPS.indexOf(activeStep) >= EC32_STEPS.length - 1}
+        >
+          {getLabel('nav.next')}
+        </Button>
       </div>
     </Ec32Card>
   )

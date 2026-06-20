@@ -57,10 +57,7 @@ import {
   isSendAllowed,
 } from '@/lib/ec32/rules'
 import { ec32Label, ec32Notice } from '@/lib/ec32/labels'
-import {
-  exportEc32SimulationPdf,
-  type Ec32PdfRow,
-} from '@/lib/ec32/export-pdf'
+import { exportEc32SimulationPdf } from '@/lib/ec32/export-pdf'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -550,26 +547,26 @@ export function Ec32InteractiveSimulator({
   // ─────────────── Export PDF ───────────────
 
   const handleExportPdf = useCallback(async () => {
-    const rows: Ec32PdfRow[] = cells
-      .filter((c) => c.inMonth)
-      .map((c) => ({
-        date: formatDate(c.date),
-        situationLabel: situationLabel(c.situation),
-        note: c.correction ? `Correction : ${c.correction.reason}` : undefined,
-      }))
-
     await exportEc32SimulationPdf({
-      docTitle: sim.pdf.docTitle || 'Aperçu pédagogique eC3.2 — simulation',
-      fictionMention:
-        sim.pdf.fictionMention ||
-        'Document fictif — ne remplace pas une carte officielle.',
-      warning: sim.pdf.warning || 'Ce document n’est pas une carte officielle.',
       monthLabel,
       employerName: employer?.name || '—',
       enterpriseNumber: employer?.enterpriseNumber || '—',
-      rows,
+      occupationPeriod: employer?.sector || undefined,
+      // Données travailleur fictives (jamais de NISS/identité réelle).
+      workerName: 'Citoyen·ne (simulation)',
+      workerNiss: 'non communiqué (simulation)',
+      generatedAtLabel: formatDate(
+        new Date(behavior?.year ?? 2025, (behavior?.month ?? 1) - 1, simulatedDay)
+          .toISOString()
+          .slice(0, 10),
+      ),
+      sent: isLocked,
+      cells,
+      fictionMention:
+        sim.pdf.fictionMention ||
+        'Simulation pédagogique — document fictif, aucune donnée réelle.',
     })
-  }, [cells, formatDate, situationLabel, sim.pdf, monthLabel, employer])
+  }, [cells, formatDate, sim.pdf, monthLabel, employer, isLocked, behavior, simulatedDay])
 
   // ─────────────── Réinitialisation complète ───────────────
 

@@ -125,9 +125,6 @@ const LOGIN_METHODS: Array<{
 const DEFAULT_EMPLOYER_ID = 'emp-a'
 const DEFAULT_MONTH_KEY = '2025-05'
 
-/** Étape affichée au chargement : le calendrier (cœur de l'expérience, comme
- *  une vraie application). La connexion simulée reste accessible via le
- *  stepper, mais n'est plus l'écran principal par défaut. */
 const CALENDAR_STEP_INDEX = EC32_STEPS.indexOf('calendar')
 
 // ─────────────────────────── État persisté ───────────────────────────
@@ -190,10 +187,10 @@ export function Ec32InteractiveSimulator({
   )
 
   // ── État de navigation ──
-  const [activeStep, setActiveStep] = useState<Ec32StepKey>('calendar')
-  const [maxReachedIndex, setMaxReachedIndex] = useState(CALENDAR_STEP_INDEX)
+  const [activeStep, setActiveStep] = useState<Ec32StepKey>('login')
+  const [maxReachedIndex, setMaxReachedIndex] = useState(0)
   const [revealedLogin, setRevealedLogin] = useState<string | null>(null)
-  const [declarationChecked, setDeclarationChecked] = useState(true)
+  const [declarationChecked, setDeclarationChecked] = useState(false)
   const [declarationMonth, setDeclarationMonth] = useState<string>(DEFAULT_MONTH_KEY)
 
   // ── État du dossier (employeur / mois / carte) ──
@@ -524,8 +521,8 @@ export function Ec32InteractiveSimulator({
   // ─────────────── Réinitialisation complète ───────────────
 
   const restart = useCallback(() => {
-    setActiveStep('calendar')
-    setMaxReachedIndex(CALENDAR_STEP_INDEX)
+    setActiveStep('login')
+    setMaxReachedIndex(0)
     setRevealedLogin(null)
     setDeclarationChecked(true)
     setDeclarationMonth(DEFAULT_MONTH_KEY)

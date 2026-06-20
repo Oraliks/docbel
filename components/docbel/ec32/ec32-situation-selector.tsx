@@ -30,34 +30,32 @@ export function Ec32SituationSelector({
   suggestedSituation,
   situationLabel,
   situationDescription,
+  compact = false,
   onChange,
   onSave,
   onCancel,
 }: {
-  /** Nombre de jours sélectionnés (active/désactive l'enregistrement). */
   selectedCount: number
-  /** Situation en cours de choix dans le panneau. */
   value: Ec32SituationType
-  /** Titre du sous-groupe « Travail ailleurs ». */
   groupLabel: string
   saveLabel: string
   cancelLabel: string
-  /** Situation suggérée (mise en avant via un cas pratique). */
   suggestedSituation?: Ec32SituationType | null
   situationLabel: (situation: Ec32SituationType) => string
   situationDescription: (situation: Ec32SituationType) => string
+  /** Mode compact : cache les descriptions, réduit les icônes et le padding. */
+  compact?: boolean
   onChange: (situation: Ec32SituationType) => void
   onSave: () => void
   onCancel: () => void
 }) {
-  // Sépare les situations « simples » du sous-groupe « Travail ailleurs ».
   const simpleSituations = EC32_SELECTABLE_SITUATIONS.filter(
     (s) => !WORK_ELSEWHERE_SET.has(s),
   )
 
   return (
-    <div className="space-y-4">
-      <fieldset className="space-y-2">
+    <div className={compact ? 'space-y-2' : 'space-y-4'}>
+      <fieldset className={compact ? 'space-y-1' : 'space-y-2'}>
         <legend className="sr-only">Situations encodables</legend>
 
         {simpleSituations.map((situation) => (
@@ -68,15 +66,16 @@ export function Ec32SituationSelector({
             suggested={suggestedSituation === situation}
             label={situationLabel(situation)}
             description={situationDescription(situation)}
+            compact={compact}
             onSelect={() => onChange(situation)}
           />
         ))}
 
-        <div className="rounded-2xl border border-border/70 bg-muted/30 p-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className={cn('rounded-2xl border border-border/70 bg-muted/30', compact ? 'p-2' : 'p-3')}>
+          <p className={cn('font-semibold uppercase tracking-wide text-muted-foreground', compact ? 'mb-1 text-[0.6rem]' : 'mb-2 text-xs')}>
             {groupLabel}
           </p>
-          <div className="space-y-2">
+          <div className={compact ? 'space-y-1' : 'space-y-2'}>
             {EC32_WORK_ELSEWHERE_SITUATIONS.map((situation) => (
               <SituationOption
                 key={situation}
@@ -85,6 +84,7 @@ export function Ec32SituationSelector({
                 suggested={suggestedSituation === situation}
                 label={situationLabel(situation)}
                 description={situationDescription(situation)}
+                compact={compact}
                 onSelect={() => onChange(situation)}
               />
             ))}
@@ -92,12 +92,12 @@ export function Ec32SituationSelector({
         </div>
       </fieldset>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          {cancelLabel}
-        </Button>
-        <Button type="button" onClick={onSave} disabled={selectedCount === 0}>
+      <div className="flex flex-col gap-2">
+        <Button type="button" size={compact ? 'sm' : 'default'} onClick={onSave} disabled={selectedCount === 0}>
           {saveLabel}
+        </Button>
+        <Button type="button" variant="ghost" size={compact ? 'sm' : 'default'} onClick={onCancel}>
+          {cancelLabel}
         </Button>
       </div>
     </div>
@@ -110,6 +110,7 @@ function SituationOption({
   suggested,
   label,
   description,
+  compact = false,
   onSelect,
 }: {
   situation: Ec32SituationType
@@ -117,6 +118,7 @@ function SituationOption({
   suggested: boolean
   label: string
   description: string
+  compact?: boolean
   onSelect: () => void
 }) {
   const visual = SITUATION_VISUALS[situation]
@@ -128,7 +130,8 @@ function SituationOption({
       aria-checked={checked}
       onClick={onSelect}
       className={cn(
-        'flex w-full items-start gap-3 rounded-2xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+        'flex w-full items-center rounded-xl border text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+        compact ? 'gap-2 p-1.5' : 'gap-3 rounded-2xl p-3',
         checked
           ? 'border-primary bg-primary/5 ring-1 ring-primary/40'
           : 'border-border bg-card/60 hover:bg-primary/5',
@@ -136,23 +139,24 @@ function SituationOption({
     >
       <span
         className={cn(
-          'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border',
+          'flex shrink-0 items-center justify-center rounded-full border',
+          compact ? 'size-5' : 'size-8 mt-0.5',
           visual.chip,
         )}
         aria-hidden
       >
-        <Icon className={cn('size-4', visual.accent)} />
+        <Icon className={cn(compact ? 'size-3' : 'size-4', visual.accent)} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">{label}</span>
+        <span className="flex items-center gap-1.5">
+          <span className={cn('font-medium text-foreground', compact ? 'text-xs' : 'text-sm')}>{label}</span>
           {suggested && (
-            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[0.65rem] font-semibold text-primary">
+            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[0.6rem] font-semibold text-primary">
               Suggéré
             </span>
           )}
         </span>
-        {description && (
+        {!compact && description && (
           <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
             {description}
           </span>

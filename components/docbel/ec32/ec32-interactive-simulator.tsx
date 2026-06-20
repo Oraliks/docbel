@@ -26,11 +26,12 @@ import {
   PencilLine,
   RotateCcw,
   Send,
+  ShieldCheck,
   Smartphone,
   Globe,
   KeyRound,
 } from 'lucide-react'
-import type { ComponentType } from 'react'
+import type { ComponentType, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import {
   EC32_STEPS,
@@ -81,7 +82,6 @@ import {
 } from '@/components/docbel/ec32/ec32-guided-steps'
 import { Ec32Calendar } from '@/components/docbel/ec32/ec32-calendar'
 import { Ec32SituationSelector } from '@/components/docbel/ec32/ec32-situation-selector'
-import { Ec32CoachPanel } from '@/components/docbel/ec32/ec32-coach-panel'
 import {
   Ec32CorrectionModal,
   type Ec32CorrectionModalLabels,
@@ -634,9 +634,8 @@ export function Ec32InteractiveSimulator({
         </Ec32InfoBox>
       )}
 
-      {/* Grille « application » : contenu à gauche, rail contextuel à droite
-          (le rail passe sous le contenu en mobile). */}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_clamp(340px,38%,460px)] lg:items-start">
+      {/* Grille : contenu à gauche, disclaimer à droite. */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_clamp(200px,22%,260px)] lg:items-start">
         <div className="min-w-0 space-y-5">
           {activeStep === 'login' && (
             <StepLogin
@@ -708,6 +707,36 @@ export function Ec32InteractiveSimulator({
               onRestart={restart}
               onPrev={goPrevStep}
               onNext={goNextStep}
+              rightPanel={
+                selectedDates.size > 0 && !isLocked ? (
+                  <Ec32AdaptPanel
+                    getLabel={getLabel}
+                    selectedDates={selectedDates}
+                    cells={cells}
+                    selectorSituation={selectorSituation}
+                    suggestedSituation={suggestedSituation}
+                    situationLabel={situationLabel}
+                    situationDescription={situationDescription}
+                    formatDate={formatDate}
+                    onSelectorSituation={setSelectorSituation}
+                    onApplySituation={applySituationToSelection}
+                    onClearSelection={clearSelection}
+                  />
+                ) : (
+                  <Ec32ControlsPanel
+                    getLabel={getLabel}
+                    getNotice={getNotice}
+                    affiliated={affiliated}
+                    onAffiliationChange={setAffiliated}
+                    firstSendLabel={firstSendLabel}
+                    sendAllowed={sendAllowed}
+                    isLocked={isLocked}
+                    onAdvanceToSend={advanceToFirstSendDay}
+                    onExportPdf={handleExportPdf}
+                    onOpenSend={() => setSendOpen(true)}
+                  />
+                )
+              }
             />
           )}
 
@@ -729,49 +758,24 @@ export function Ec32InteractiveSimulator({
           )}
         </div>
 
-        {/* Rail contextuel : coach Docbel + (pour l'étape carte) légende des
-            statuts, jour sélectionné et contrôles/validation. */}
-        <div className="space-y-5">
-          <Ec32CoachPanel
-            title={sim.coach.title}
-            intro={sim.coach.intro}
-            tips={sim.coach.tips}
-            activeStep={activeStep}
-            scenarioHint={scenarioHint}
-          />
-
-          {isAppStep && (
-            <>
-              {selectedDates.size > 0 && !isLocked ? (
-                <Ec32AdaptPanel
-                  getLabel={getLabel}
-                  selectedDates={selectedDates}
-                  cells={cells}
-                  selectorSituation={selectorSituation}
-                  suggestedSituation={suggestedSituation}
-                  situationLabel={situationLabel}
-                  situationDescription={situationDescription}
-                  formatDate={formatDate}
-                  onSelectorSituation={setSelectorSituation}
-                  onApplySituation={applySituationToSelection}
-                  onClearSelection={clearSelection}
-                />
-              ) : (
-                <Ec32ControlsPanel
-                  getLabel={getLabel}
-                  getNotice={getNotice}
-                  affiliated={affiliated}
-                  onAffiliationChange={setAffiliated}
-                  firstSendLabel={firstSendLabel}
-                  sendAllowed={sendAllowed}
-                  isLocked={isLocked}
-                  onAdvanceToSend={advanceToFirstSendDay}
-                  onExportPdf={handleExportPdf}
-                  onOpenSend={() => setSendOpen(true)}
-                />
-              )}
-            </>
-          )}
+        {/* Rail droit : simulation pédagogique non officielle. */}
+        <div className="hidden lg:block">
+          <Ec32Card className="space-y-3 p-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="size-4 shrink-0 text-primary" aria-hidden />
+              <p className="text-xs font-semibold text-foreground">{content.legal.simulationLabel}</p>
+            </div>
+            <ul className="space-y-2">
+              {[content.legal.noRealData, content.legal.noTransmission, content.legal.notReplacement]
+                .filter(Boolean)
+                .map((point, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <Check className="mt-0.5 size-3 shrink-0 text-primary" aria-hidden />
+                    <span className="text-xs text-muted-foreground">{point}</span>
+                  </li>
+                ))}
+            </ul>
+          </Ec32Card>
         </div>
       </div>
 
@@ -1158,6 +1162,7 @@ function CardWorkspace({
   onRestart,
   onPrev,
   onNext,
+  rightPanel,
 }: {
   activeStep: Ec32StepKey
   content: Ec32Content
@@ -1178,6 +1183,8 @@ function CardWorkspace({
   onRestart: () => void
   onPrev: () => void
   onNext: () => void
+  /** Panel contextuel affiché à droite du calendrier dans la carte. */
+  rightPanel?: ReactNode
 }) {
   // Aperçu live : les jours sélectionnés adoptent la couleur de la situation en
   // cours de choix dans le rail, avant même l'enregistrement.
@@ -1239,38 +1246,40 @@ function CardWorkspace({
         {content.simulator.fictitiousDataNotice}
       </p>
 
-      {/* Notice par défaut chômage (étape calendrier) */}
-      {activeStep === 'calendar' && (
-        <Ec32InfoBox tone="info" className="mt-3">
-          {getNotice('calendar.defaultChomage')}
-        </Ec32InfoBox>
-      )}
+      {/* Corps : calendrier gauche + panel contextuel droit. */}
+      <div className={cn('mt-3', rightPanel && 'grid gap-4 lg:grid-cols-[minmax(0,1fr)_clamp(200px,33%,260px)] lg:items-start')}>
+        <div className="space-y-3">
+          {activeStep === 'calendar' && (
+            <Ec32InfoBox tone="info">
+              {getNotice('calendar.defaultChomage')}
+            </Ec32InfoBox>
+          )}
+          {activeStep === 'verify' && (
+            <Ec32InfoBox tone="neutral" icon={ListChecks} title={getLabel('verify.title')}>
+              {getLabel('verify.intro')}
+            </Ec32InfoBox>
+          )}
+          {activeStep === 'correction' && (
+            <Ec32InfoBox tone="info" icon={PencilLine}>
+              {getNotice('correction.help')}
+            </Ec32InfoBox>
+          )}
+          <Ec32Calendar
+            cells={calendarCells}
+            selectedDates={selectedDates}
+            situationLabel={situationLabel}
+            legendTitle={getLabel('calendar.legend')}
+            selectHint={getLabel('calendar.selectHint')}
+            disabled={isLocked}
+            onToggleDay={activeStep === 'correction' ? onEditDay : onToggleDay}
+          />
+        </div>
 
-      {activeStep === 'verify' && (
-        <Ec32InfoBox tone="neutral" className="mt-3" icon={ListChecks} title={getLabel('verify.title')}>
-          {getLabel('verify.intro')}
-        </Ec32InfoBox>
-      )}
-
-      {activeStep === 'correction' && (
-        <Ec32InfoBox tone="info" className="mt-3" icon={PencilLine}>
-          {getNotice('correction.help')}
-        </Ec32InfoBox>
-      )}
-
-      {/* Corps : calendrier. Sur l'étape « Corriger une erreur », un clic sur
-          un jour ouvre la modale de correction (motif obligatoire) ; sinon il
-          sélectionne le jour pour adapter son statut. */}
-      <div className="mt-4 max-w-[500px]">
-        <Ec32Calendar
-          cells={calendarCells}
-          selectedDates={selectedDates}
-          situationLabel={situationLabel}
-          legendTitle={getLabel('calendar.legend')}
-          selectHint={getLabel('calendar.selectHint')}
-          disabled={isLocked}
-          onToggleDay={activeStep === 'correction' ? onEditDay : onToggleDay}
-        />
+        {rightPanel && (
+          <div className="border-t border-border/60 pt-3 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+            {rightPanel}
+          </div>
+        )}
       </div>
 
       {/* Navigation entre étapes — dans la carte. */}
@@ -1317,36 +1326,32 @@ function Ec32AdaptPanel({
   const firstCell = firstDate ? cells.find((c) => c.date === firstDate) : undefined
 
   return (
-    <Ec32Card className="space-y-3 p-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <span
-            className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary"
-            aria-hidden
-          >
-            <CalendarDays className="size-4" />
-          </span>
-          <h3 className="truncate text-sm font-bold text-foreground">{getLabel('card.adapt')}</h3>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <CalendarDays className="size-3.5 shrink-0 text-primary" aria-hidden />
+          <h3 className="truncate text-xs font-bold text-foreground">{getLabel('card.adapt')}</h3>
         </div>
-        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[0.65rem] font-medium text-primary">
           {count} {getLabel('selector.selected')}
         </span>
       </div>
 
-      <p className="text-xs leading-relaxed text-muted-foreground">
+      <p className="text-[0.7rem] leading-relaxed text-muted-foreground">
         {count === 1 && firstDate ? (
           <>
             <span className="font-medium text-foreground">{formatDate(firstDate)}</span>
-            {firstCell && <> · Statut actuel : {situationLabel(firstCell.situation)}</>}
+            {firstCell && <> · {situationLabel(firstCell.situation)}</>}
           </>
         ) : (
-          <>Choisissez le statut à appliquer à ces {count} jours.</>
+          <>Statut à appliquer à ces {count} jours :</>
         )}
       </p>
 
       <Ec32SituationSelector
         selectedCount={count}
         value={selectorSituation}
+        compact
         groupLabel={getLabel('selector.workElsewhereGroup')}
         saveLabel={count > 1 ? getLabel('selector.saveMulti') : getLabel('selector.save')}
         cancelLabel={getLabel('selector.cancel')}
@@ -1357,7 +1362,7 @@ function Ec32AdaptPanel({
         onSave={onApplySituation}
         onCancel={onClearSelection}
       />
-    </Ec32Card>
+    </div>
   )
 }
 
@@ -1386,20 +1391,11 @@ function Ec32ControlsPanel({
   onOpenSend: () => void
 }) {
   return (
-    <Ec32Card className="space-y-4 p-4">
-      <div className="flex items-center gap-2">
-        <span
-          className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary"
-          aria-hidden
-        >
-          <ListChecks className="size-4" />
-        </span>
-        <h3 className="text-sm font-bold text-foreground">Contrôles &amp; validation</h3>
+    <div className="space-y-3">
+      <div className="flex items-center gap-1.5">
+        <ListChecks className="size-3.5 shrink-0 text-primary" aria-hidden />
+        <h3 className="text-xs font-bold text-foreground">Contrôles &amp; validation</h3>
       </div>
-
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        Tous les jours du mois doivent avoir un statut. Vérifiez les règles avant d’envoyer.
-      </p>
 
       {/* Affiliation organisme de paiement */}
       <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3">
@@ -1459,13 +1455,13 @@ function Ec32ControlsPanel({
           </Button>
         )}
         {isLocked && (
-          <span className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
-            <Check className="size-4" aria-hidden />
+          <span className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+            <Check className="size-3.5" aria-hidden />
             Carte envoyée — simulation
           </span>
         )}
       </div>
-    </Ec32Card>
+    </div>
   )
 }
 

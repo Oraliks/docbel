@@ -66,3 +66,6 @@ playwright/.cache/
 
 # WECH 506 réels (données personnelles) — fixtures de test locales uniquement
 lib/agr/__tests__/fixtures/*.pdf
+
+# Logs du hook post-commit (mise à jour mémoire Claude)
+.claude/logs/

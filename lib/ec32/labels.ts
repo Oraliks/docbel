@@ -48,6 +48,7 @@ export const EC32_LABELS: Record<string, string> = {
   'month.intro':
     'Sélectionnez la carte du mois à compléter. Les cartes déjà envoyées sont verrouillées.',
   'month.locked': 'Envoyée — verrouillée',
+  'month.notYet': 'Pas encore disponible',
   'month.activatePast': 'Activer un mois antérieur',
 
   // La carte
@@ -107,9 +108,11 @@ export const EC32_NOTICES: Record<string, string> = {
   // Déclaration & mois
   'declaration.monthImportance':
     'Dans la vraie application, le choix du mois est important : il détermine à partir de quand vous utilisez l’eC3.2.',
-  'month.activatePast':
-    'Si vous avez activé l’eC3.2 à partir d’un mois donné mais que vous étiez déjà en chômage temporaire avant, vous pouvez activer un mois antérieur. Une nouvelle déclaration sur l’honneur vous est alors demandée.',
-  'month.cards':
+  ‘month.rule’:
+    ‘La carte eC3.2 est accessible uniquement pour le mois précédent. En juin → seul mai est disponible. Dès le 1er juillet, mai disparaît et juin devient accessible à son tour.’,
+  ‘month.activatePast’:
+    ‘Si vous avez activé l’eC3.2 à partir d’un mois donné mais que vous étiez déjà en chômage temporaire avant, vous pouvez activer un mois antérieur. Une nouvelle déclaration sur l’honneur vous est alors demandée.’,
+  ‘month.cards’:
     'Pour chaque employeur, vous voyez la carte du mois en cours, celle du mois suivant, les cartes des mois précédents non envoyées, et les cartes non utilisées pour les mois sans chômage temporaire.',
 
   // Calendrier — situations par défaut & icônes auto

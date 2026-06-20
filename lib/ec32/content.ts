@@ -176,7 +176,7 @@ export const ec32DefaultContent: Ec32Content = {
     ],
     months: [
       { key: '2025-05', label: 'Mai 2025', statusNote: 'En cours' },
-      { key: '2025-06', label: 'Juin 2025', statusNote: 'Mois suivant' },
+      { key: '2025-06', label: 'Juin 2025', statusNote: 'Pas encore disponible' },
       { key: '2025-04', label: 'Avril 2025', statusNote: 'Non envoyé' },
       { key: '2025-03', label: 'Mars 2025', statusNote: 'Envoyé · verrouillé' },
     ],

@@ -1058,10 +1058,16 @@ function StepMonth({
       <h3 className="text-lg font-bold text-foreground">{getLabel('month.title')}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{getLabel('month.intro')}</p>
 
+      <Ec32InfoBox tone="warning" className="mt-4">
+        {getNotice('month.rule')}
+      </Ec32InfoBox>
+
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {months.map((m) => {
           const b = getMonthBehavior(m.key)
-          const locked = b?.status === 'sent' || b?.status === 'locked'
+          const isSent = b?.status === 'sent'
+          const isFuture = b?.status === 'locked'
+          const locked = isSent || isFuture
           const isActive = m.key === monthKey
           return (
             <button
@@ -1091,7 +1097,11 @@ function StepMonth({
                 )}
               </span>
               <span className="text-xs text-muted-foreground">
-                {locked ? getLabel('month.locked') : m.statusNote}
+                {isSent
+                  ? getLabel('month.locked')
+                  : isFuture
+                    ? getLabel('month.notYet')
+                    : m.statusNote}
               </span>
             </button>
           )
@@ -1251,7 +1261,7 @@ function CardWorkspace({
       {/* Corps : calendrier. Sur l'étape « Corriger une erreur », un clic sur
           un jour ouvre la modale de correction (motif obligatoire) ; sinon il
           sélectionne le jour pour adapter son statut. */}
-      <div className="mt-4">
+      <div className="mt-4 max-w-[500px]">
         <Ec32Calendar
           cells={calendarCells}
           selectedDates={selectedDates}

@@ -50,7 +50,7 @@ export function Ec32Calendar({
     <div className="w-full">
       <p className="mb-3 text-xs text-muted-foreground">{selectHint}</p>
 
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1.5">
         {WEEKDAY_LABELS.map((label) => (
           <div
             key={label}
@@ -137,7 +137,7 @@ function Ec32CalendarCell({
     return (
       <div
         className={cn(
-          'flex aspect-square min-h-11 flex-col items-center justify-center rounded-xl border border-dashed border-border/40 text-xs',
+          'flex aspect-square min-h-8 flex-col items-center justify-center rounded-xl border border-dashed border-border/40 text-xs',
           visual.cell,
           cell.inMonth ? 'opacity-60' : 'opacity-35',
         )}
@@ -164,14 +164,14 @@ function Ec32CalendarCell({
       aria-label={label}
       title={situationLabel(cell.situation)}
       className={cn(
-        'relative flex aspect-square min-h-11 flex-col items-center justify-center gap-1 rounded-xl border text-xs transition-all duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0',
+        'relative flex aspect-square min-h-8 flex-col items-center justify-center gap-0.5 rounded-xl border text-xs transition-all duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0',
         visual.cell,
         selected
           ? 'border-primary ring-2 ring-primary/60 shadow-[0_8px_20px_-12px_rgba(91,70,229,0.45)]'
           : 'border-border/60 hover:border-primary/40 hover:shadow-[0_8px_18px_-14px_rgba(91,70,229,0.35)]',
       )}
     >
-      <span className="text-sm font-semibold text-foreground">{cell.day}</span>
+      <span className="text-xs font-semibold text-foreground">{cell.day}</span>
       <span className="flex items-center gap-0.5">
         {isFirstEffective ? (
           <Flag className="size-3 text-primary" aria-hidden />

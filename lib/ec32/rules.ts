@@ -37,7 +37,7 @@ export const EC32_MONTH_BEHAVIORS: Record<string, Ec32MonthBehavior> = {
     key: '2025-06',
     year: 2025,
     month: 6,
-    status: 'draft',
+    status: 'locked',
     firstSendDay: 27,
   },
   '2025-04': {

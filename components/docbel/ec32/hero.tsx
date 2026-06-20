@@ -13,7 +13,7 @@
 
 import { ArrowRight, BookOpenCheck, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Ec32Eyebrow } from '@/components/docbel/ec32/ui'
+import { Ec32Eyebrow, Ec32InfoBox } from '@/components/docbel/ec32/ui'
 import { Ec32HeroIllustration } from '@/components/docbel/ec32/ec32-hero-illustration'
 import type { Ec32Content } from '@/lib/ec32/schema'
 
@@ -36,7 +36,7 @@ export function Ec32Hero({
         <div className="absolute bottom-0 left-1/3 size-[20rem] rounded-full bg-sky-300/10 blur-3xl" />
       </div>
 
-      <div className="relative grid items-center gap-8 py-8 md:gap-12 md:py-14 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="relative grid items-center gap-8 pb-8 md:gap-12 md:pb-12 lg:grid-cols-[1.1fr_0.9fr]">
         {/* Colonne gauche : accroche + CTA */}
         <div className="flex flex-col items-start gap-6">
           {hero.badge && (
@@ -94,9 +94,9 @@ export function Ec32Hero({
           </div>
 
           {hero.disclaimer && (
-            <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground/80">
+            <Ec32InfoBox tone="warning" className="max-w-2xl">
               {hero.disclaimer}
-            </p>
+            </Ec32InfoBox>
           )}
         </div>
 

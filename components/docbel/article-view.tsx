@@ -101,10 +101,13 @@ export function ArticleView({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  // Image du hero : image perso de l'article (bannière IA en priorité), sinon
-  // illustration de la catégorie. Le doublon de titre éventuel est neutralisé
-  // par l'overlay pastel qui fond l'image dans la carte (cf. zone droite).
-  const heroImage = article.image ?? categoryIllustration;
+  // Image du hero = ILLUSTRATION DÉDIÉE de la catégorie (configurée par
+  // l'admin dans /admin/news/categories : 3D, sans texte, fond doux).
+  // On n'utilise JAMAIS `article.image` ici : c'est la thumbnail/bannière de
+  // l'article (souvent avec texte/cadre cuits dedans), qui casse la composition
+  // du hero. Elle reste réservée à l'aperçu de partage (OG) et aux vignettes
+  // de liste.
+  const heroImage = categoryIllustration;
 
   const hasSummary = Boolean(article.summary?.length);
   const hasDocs = Boolean(article.linkedDocs?.length);
@@ -332,33 +335,39 @@ export function ArticleView({
                 />
 
                 {heroImage ? (
-                  /* `object-contain` par défaut : adapté aux illustrations IA
-                     et aux PNG transparents (pas de crop). Pour des photos,
-                     l'image conservera ses marges, ce qui reste propre. */
+                  /* Illustration ANCRÉE À DROITE (object-right) avec un
+                     padding-gauche généreux → de l'air à gauche pour la
+                     fusion ; pas de centrage. `object-contain` préserve
+                     l'illustration sans crop. */
                   <SmartImage
                     src={heroImage}
                     alt=""
                     fit="contain"
                     fallbackMode="hide"
-                    className="relative z-[1] size-full max-h-[320px] p-4 sm:p-6"
-                    imgClassName="object-contain object-center"
+                    className="relative z-[1] size-full max-h-[320px] pt-4 pr-4 pb-4 pl-12 sm:pt-6 sm:pr-6 sm:pb-6 sm:pl-16"
+                    imgClassName="object-contain object-right"
                   />
                 ) : (
-                  /* Fallback : pastel + icône document — pas d'image cassée. */
-                  <FileTextIcon
-                    className="relative z-[1] size-20 opacity-40"
-                    style={{ color: "var(--glass-accent-deep)" }}
-                  />
+                  /* Fallback : pastel + icône document, ancrée à droite. */
+                  <div className="relative z-[1] flex size-full items-center justify-end pr-8">
+                    <FileTextIcon
+                      className="size-20 opacity-40"
+                      style={{ color: "var(--glass-accent-deep)" }}
+                    />
+                  </div>
                 )}
 
-                {/* Overlay pastel fondant l'image dans la carte (bord gauche
-                    + léger voile global) → pas de rectangle brutal. */}
+                {/* Overlay de fusion — RENFORCÉ : voile horizontal qui fond
+                    le bord gauche de l'illustration dans la carte sur plus
+                    de surface, + voile vertical doux. L'illustration n'a
+                    pas l'air d'une carte autonome ; elle se confond avec le
+                    hero. */}
                 <div
                   aria-hidden
                   className="pointer-events-none absolute inset-0"
                   style={{
                     background:
-                      "linear-gradient(to right, var(--glass-surface) 0%, color-mix(in oklab, var(--glass-surface) 35%, transparent) 22%, transparent 55%)",
+                      "linear-gradient(to right, var(--glass-surface) 0%, color-mix(in oklab, var(--glass-surface) 55%, transparent) 35%, transparent 72%)",
                   }}
                 />
                 <div
@@ -366,7 +375,7 @@ export function ArticleView({
                   className="pointer-events-none absolute inset-0"
                   style={{
                     background:
-                      "linear-gradient(180deg, transparent 60%, color-mix(in oklab, var(--glass-surface) 35%, transparent) 100%)",
+                      "linear-gradient(180deg, transparent 55%, color-mix(in oklab, var(--glass-surface) 35%, transparent) 100%)",
                   }}
                 />
               </div>

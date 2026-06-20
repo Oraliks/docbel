@@ -135,9 +135,9 @@ const INFO_TONES: Record<
     iconCls: 'text-sky-600 dark:text-sky-300',
   },
   warning: {
-    wrap: 'border-amber-300/60 bg-amber-50/70 text-amber-950 dark:border-amber-400/30 dark:bg-amber-950/40 dark:text-amber-100',
+    wrap: 'border-orange-400/70 bg-orange-100/80 text-orange-950 dark:border-orange-500/40 dark:bg-orange-950/50 dark:text-orange-100',
     icon: TriangleAlert,
-    iconCls: 'text-amber-600 dark:text-amber-300',
+    iconCls: 'text-orange-600 dark:text-orange-300',
   },
   success: {
     wrap: 'border-emerald-300/50 bg-emerald-50/70 text-emerald-950 dark:border-emerald-400/30 dark:bg-emerald-950/40 dark:text-emerald-100',
@@ -150,9 +150,9 @@ const INFO_TONES: Record<
     iconCls: 'text-muted-foreground',
   },
   legal: {
-    wrap: 'border-primary/30 bg-primary/8 text-foreground dark:bg-primary/15',
+    wrap: 'border-red-400/70 bg-red-100/80 text-red-950 dark:border-red-500/40 dark:bg-red-950/50 dark:text-red-100',
     icon: ShieldAlert,
-    iconCls: 'text-primary',
+    iconCls: 'text-red-600 dark:text-red-300',
   },
 }
 

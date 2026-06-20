@@ -9,7 +9,6 @@
 // =====================================================================
 
 import { BookOpen, ExternalLink, Link2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import type { Ec32Content } from '@/lib/ec32/schema'
 import { Ec32Card, Ec32InfoBox, Ec32Section } from './ui'
 
@@ -25,35 +24,9 @@ export function Ec32ResourcesSection({ content }: { content: Ec32Content }) {
       title={resources.title}
       subtitle={resources.subtitle}
     >
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        {/* Bloc « site officiel » — bien séparé de la simulation */}
-        {(resources.intro || (resources.officialUrl && resources.officialButtonLabel)) && (
-          <Ec32Card className="flex flex-col gap-4 border-primary/30 bg-primary/5 lg:col-span-1">
-            {resources.intro && (
-              <p className="text-sm leading-relaxed text-foreground">{resources.intro}</p>
-            )}
-            {resources.officialUrl && resources.officialButtonLabel && (
-              <Button
-                size="lg"
-                className="w-full"
-                render={
-                  <a href={resources.officialUrl} target="_blank" rel="noopener noreferrer" />
-                }
-              >
-                <ExternalLink className="size-4" aria-hidden />
-                {resources.officialButtonLabel}
-              </Button>
-            )}
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Vous quittez la simulation Docbel : ce lien ouvre un site externe et officiel,
-              distinct de cette page pédagogique.
-            </p>
-          </Ec32Card>
-        )}
-
-        {/* Liste des ressources complémentaires */}
-        {items.length > 0 && (
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:col-span-2" role="list">
+      {/* Liste des ressources & liens officiels */}
+      {items.length > 0 && (
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" role="list">
             {items.map((item, index) => {
               const hasUrl = item.url.trim().length > 0
               return (
@@ -87,7 +60,6 @@ export function Ec32ResourcesSection({ content }: { content: Ec32Content }) {
             })}
           </ul>
         )}
-      </div>
 
       {resources.note && (
         <Ec32InfoBox tone="neutral" className="mt-5 max-w-3xl text-xs">

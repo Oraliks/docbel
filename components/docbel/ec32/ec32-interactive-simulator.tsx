@@ -150,10 +150,13 @@ export function Ec32InteractiveSimulator({
   content,
   scenarioKey,
   onScenarioConsumed,
+  startLoginSignal,
 }: {
   content: Ec32Content
   scenarioKey?: string | null
   onScenarioConsumed?: () => void
+  /** Incrémenté par « Mode guidé pas à pas » pour démarrer à l'étape connexion. */
+  startLoginSignal?: number
 }) {
   const sim = content.simulator
 
@@ -380,6 +383,13 @@ export function Ec32InteractiveSimulator({
     onScenarioConsumed?.()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenarioKey])
+
+  // Mode guidé pas à pas : démarrer la simulation à l'étape « Connexion simulée ».
+  useEffect(() => {
+    if (!startLoginSignal) return
+    goToStep('login', true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startLoginSignal])
 
   // ─────────────── Navigation ───────────────
 
@@ -626,7 +636,7 @@ export function Ec32InteractiveSimulator({
 
       {/* Grille « application » : contenu à gauche, rail contextuel à droite
           (le rail passe sous le contenu en mobile). */}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_clamp(320px,30%,400px)] lg:items-start">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_clamp(340px,38%,460px)] lg:items-start">
         <div className="min-w-0 space-y-5">
           {activeStep === 'login' && (
             <StepLogin
@@ -690,19 +700,11 @@ export function Ec32InteractiveSimulator({
               cardView={cardView}
               onCardView={setCardView}
               selectedDates={selectedDates}
-              selectorOpen={selectorOpen}
-              selectorSituation={selectorSituation}
-              suggestedSituation={suggestedSituation}
               situationLabel={situationLabel}
-              situationDescription={situationDescription}
               isLocked={isLocked}
               cardStatus={cardStatus}
               formatDate={formatDate}
               onToggleDay={toggleDay}
-              onClearSelection={clearSelection}
-              onSelectorSituation={setSelectorSituation}
-              onApplySituation={applySituationToSelection}
-              onOpenSelector={() => setSelectorOpen(true)}
               onEditDay={openCorrection}
             />
           )}
@@ -745,24 +747,34 @@ export function Ec32InteractiveSimulator({
                 situationLabel={situationLabel}
                 legendTitle={getLabel('calendar.legend')}
               />
-              <Ec32SelectedDayPanel
-                selectedDates={selectedDates}
-                cells={cells}
-                situationLabel={situationLabel}
-                formatDate={formatDate}
-              />
-              <Ec32ControlsPanel
-                getLabel={getLabel}
-                getNotice={getNotice}
-                affiliated={affiliated}
-                onAffiliationChange={setAffiliated}
-                firstSendLabel={firstSendLabel}
-                sendAllowed={sendAllowed}
-                isLocked={isLocked}
-                onAdvanceToSend={advanceToFirstSendDay}
-                onExportPdf={handleExportPdf}
-                onOpenSend={() => setSendOpen(true)}
-              />
+              {selectedDates.size > 0 && !isLocked ? (
+                <Ec32AdaptPanel
+                  getLabel={getLabel}
+                  selectedDates={selectedDates}
+                  cells={cells}
+                  selectorSituation={selectorSituation}
+                  suggestedSituation={suggestedSituation}
+                  situationLabel={situationLabel}
+                  situationDescription={situationDescription}
+                  formatDate={formatDate}
+                  onSelectorSituation={setSelectorSituation}
+                  onApplySituation={applySituationToSelection}
+                  onClearSelection={clearSelection}
+                />
+              ) : (
+                <Ec32ControlsPanel
+                  getLabel={getLabel}
+                  getNotice={getNotice}
+                  affiliated={affiliated}
+                  onAffiliationChange={setAffiliated}
+                  firstSendLabel={firstSendLabel}
+                  sendAllowed={sendAllowed}
+                  isLocked={isLocked}
+                  onAdvanceToSend={advanceToFirstSendDay}
+                  onExportPdf={handleExportPdf}
+                  onOpenSend={() => setSendOpen(true)}
+                />
+              )}
             </>
           )}
         </div>
@@ -807,19 +819,24 @@ function StepNavButtons({
   onNext: () => void
 }) {
   const idx = EC32_STEPS.indexOf(activeStep)
+  // Les étapes « formulaire » (avant le calendrier) ont déjà leur propre bouton
+  // « Continuer » : pas de second « Étape suivante » redondant.
+  const hasOwnContinue = idx < CALENDAR_STEP_INDEX
   return (
     <div className="flex gap-2">
       <Button type="button" variant="outline" size="sm" onClick={onPrev} disabled={idx <= 0}>
         {getLabel('nav.back')}
       </Button>
-      <Button
-        type="button"
-        size="sm"
-        onClick={onNext}
-        disabled={idx >= EC32_STEPS.length - 1}
-      >
-        {getLabel('nav.next')}
-      </Button>
+      {!hasOwnContinue && (
+        <Button
+          type="button"
+          size="sm"
+          onClick={onNext}
+          disabled={idx >= EC32_STEPS.length - 1}
+        >
+          {getLabel('nav.next')}
+        </Button>
+      )}
     </div>
   )
 }
@@ -1128,19 +1145,11 @@ function CardWorkspace({
   cardView,
   onCardView,
   selectedDates,
-  selectorOpen,
-  selectorSituation,
-  suggestedSituation,
   situationLabel,
-  situationDescription,
   isLocked,
   cardStatus,
   formatDate,
   onToggleDay,
-  onClearSelection,
-  onSelectorSituation,
-  onApplySituation,
-  onOpenSelector,
   onEditDay,
 }: {
   activeStep: Ec32StepKey
@@ -1153,23 +1162,13 @@ function CardWorkspace({
   cardView: Ec32CardView
   onCardView: (v: Ec32CardView) => void
   selectedDates: Set<string>
-  selectorOpen: boolean
-  selectorSituation: Ec32SituationType
-  suggestedSituation: Ec32SituationType | null
   situationLabel: (s: Ec32SituationType) => string
-  situationDescription: (s: Ec32SituationType) => string
   isLocked: boolean
   cardStatus: Ec32CardStatus
   formatDate: (iso: string) => string
   onToggleDay: (date: string) => void
-  onClearSelection: () => void
-  onSelectorSituation: (s: Ec32SituationType) => void
-  onApplySituation: () => void
-  onOpenSelector: () => void
   onEditDay: (date: string) => void
 }) {
-  const selectedCount = selectedDates.size
-
   return (
     <Ec32Card>
       {/* En-tête de carte fictive */}
@@ -1290,33 +1289,6 @@ function CardWorkspace({
         )}
       </div>
 
-      {/* Sélecteur de situation pour jours sélectionnés */}
-      {cardView === 'calendar' && !isLocked && (selectorOpen || selectedCount > 0) && (
-        <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/[0.03] p-4">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h4 className="text-sm font-semibold text-foreground">
-              {getLabel('card.adapt')}
-            </h4>
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              {selectedCount} {getLabel('selector.selected')}
-            </span>
-          </div>
-          <Ec32SituationSelector
-            selectedCount={selectedCount}
-            value={selectorSituation}
-            groupLabel={getLabel('selector.workElsewhereGroup')}
-            saveLabel={selectedCount > 1 ? getLabel('selector.saveMulti') : getLabel('selector.save')}
-            cancelLabel={getLabel('selector.cancel')}
-            suggestedSituation={suggestedSituation}
-            situationLabel={situationLabel}
-            situationDescription={situationDescription}
-            onChange={onSelectorSituation}
-            onSave={onApplySituation}
-            onCancel={onClearSelection}
-          />
-        </div>
-      )}
-
     </Ec32Card>
   )
 }
@@ -1351,17 +1323,33 @@ function Ec32LegendPanel({
   )
 }
 
-/** Récapitulatif du / des jour(s) sélectionné(s) dans le calendrier (rail). */
-function Ec32SelectedDayPanel({
+/** « Adapter les jours sélectionnés » (rail) : récap du jour sélectionné +
+ *  sélecteur de situation. Remplace « Contrôles & validation » dès qu'au moins
+ *  un jour est sélectionné dans le calendrier. */
+function Ec32AdaptPanel({
+  getLabel,
   selectedDates,
   cells,
+  selectorSituation,
+  suggestedSituation,
   situationLabel,
+  situationDescription,
   formatDate,
+  onSelectorSituation,
+  onApplySituation,
+  onClearSelection,
 }: {
+  getLabel: (key: string, fallback?: string) => string
   selectedDates: Set<string>
   cells: Ec32DayCell[]
+  selectorSituation: Ec32SituationType
+  suggestedSituation: Ec32SituationType | null
   situationLabel: (s: Ec32SituationType) => string
+  situationDescription: (s: Ec32SituationType) => string
   formatDate: (iso: string) => string
+  onSelectorSituation: (s: Ec32SituationType) => void
+  onApplySituation: () => void
+  onClearSelection: () => void
 }) {
   const dates = Array.from(selectedDates).sort()
   const count = dates.length
@@ -1370,40 +1358,45 @@ function Ec32SelectedDayPanel({
 
   return (
     <Ec32Card className="space-y-3 p-4">
-      <div className="flex items-center gap-2">
-        <span
-          className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary"
-          aria-hidden
-        >
-          <CalendarDays className="size-4" />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary"
+            aria-hidden
+          >
+            <CalendarDays className="size-4" />
+          </span>
+          <h3 className="truncate text-sm font-bold text-foreground">{getLabel('card.adapt')}</h3>
+        </div>
+        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+          {count} {getLabel('selector.selected')}
         </span>
-        <h3 className="text-sm font-bold text-foreground">Jour sélectionné</h3>
       </div>
 
-      {count === 0 ? (
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          Cliquez sur un ou plusieurs jours du calendrier pour voir leur statut et les règles
-          applicables.
-        </p>
-      ) : (
-        <div className="space-y-1.5 text-sm">
-          <p className="font-semibold text-foreground">
-            {count === 1 ? formatDate(firstDate) : `${count} jours sélectionnés`}
-          </p>
-          {count === 1 && firstCell && (
-            <p className="text-muted-foreground">
-              <span className="font-medium text-foreground">Statut actuel : </span>
-              {situationLabel(firstCell.situation)}
-            </p>
-          )}
-          <p className="text-muted-foreground">
-            <span className="font-medium text-foreground">Action requise : </span>
-            {count === 1
-              ? 'choisissez le statut de ce jour ci-contre.'
-              : 'choisissez un statut à appliquer à ces jours.'}
-          </p>
-        </div>
-      )}
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        {count === 1 && firstDate ? (
+          <>
+            <span className="font-medium text-foreground">{formatDate(firstDate)}</span>
+            {firstCell && <> · Statut actuel : {situationLabel(firstCell.situation)}</>}
+          </>
+        ) : (
+          <>Choisissez le statut à appliquer à ces {count} jours.</>
+        )}
+      </p>
+
+      <Ec32SituationSelector
+        selectedCount={count}
+        value={selectorSituation}
+        groupLabel={getLabel('selector.workElsewhereGroup')}
+        saveLabel={count > 1 ? getLabel('selector.saveMulti') : getLabel('selector.save')}
+        cancelLabel={getLabel('selector.cancel')}
+        suggestedSituation={suggestedSituation}
+        situationLabel={situationLabel}
+        situationDescription={situationDescription}
+        onChange={onSelectorSituation}
+        onSave={onApplySituation}
+        onCancel={onClearSelection}
+      />
     </Ec32Card>
   )
 }

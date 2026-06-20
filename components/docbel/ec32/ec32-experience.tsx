@@ -55,6 +55,8 @@ const TABS: Array<{ value: string; label: string }> = [
 export function Ec32Experience({ content }: { content: Ec32Content }) {
   const [scenarioKey, setScenarioKey] = useState<string | null>(null)
   const [tab, setTab] = useState<string>('demo')
+  // Incrémenté par « Mode guidé pas à pas » pour démarrer le simulateur à la connexion.
+  const [guidedTick, setGuidedTick] = useState(0)
 
   const { legal, builderMetadata } = content
   const legalChecks = [legal.noRealData, legal.noTransmission, legal.useOfficial].filter(
@@ -89,7 +91,13 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
           <div className="flex flex-col gap-12">
             <Ec32LearningModes
               content={content}
-              onAction={(key) => (key === 'scenarios' ? goToTab('cas') : scrollTo('simulateur'))}
+              onAction={(key) => {
+                if (key === 'scenarios') goToTab('cas')
+                else if (key === 'guided') {
+                  setGuidedTick((t) => t + 1)
+                  scrollTo('simulateur')
+                } else scrollTo('simulateur')
+              }}
             />
             <Ec32ScenarioCards
               content={content}
@@ -133,6 +141,7 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
         content={content}
         scenarioKey={scenarioKey}
         onScenarioConsumed={() => setScenarioKey(null)}
+        startLoginSignal={guidedTick}
       />
 
       {/* Explorateur à onglets — un seul contenu à la fois (rendu conditionnel

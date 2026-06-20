@@ -190,7 +190,14 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
   entries.push({
     id: 'correction',
     title: 'Corriger une erreur',
-    body: <Paragraphs texts={[notice('correction.help')]} />,
+    body: (
+      <Paragraphs
+        texts={[
+          notice('correction.help'),
+          'Si la carte a déjà été envoyée et qu’elle contient une erreur, vous pouvez la corriger au moyen d’un formulaire disponible auprès de votre organisme de paiement (CAPAC, CSC, FGTB ou CGSLB).',
+        ]}
+      />
+    ),
   })
 
   // 7 — Première date d'envoi possible

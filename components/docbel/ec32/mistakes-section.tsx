@@ -9,7 +9,7 @@
 //  `limit` : aperçu compact (N cartes, pas d'accordéon).
 // =====================================================================
 
-import { ArrowRight, Lightbulb, TriangleAlert } from 'lucide-react'
+import { Lightbulb, TriangleAlert } from 'lucide-react'
 import {
   Accordion,
   AccordionContent,
@@ -50,16 +50,6 @@ function MistakeCard({ item, index }: { item: Ec32MistakeItem; index: number }) 
             {item.advice}
           </p>
         </div>
-      )}
-
-      {item.link && (
-        <a
-          href={item.link}
-          className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-full text-sm font-semibold text-primary underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-        >
-          En savoir plus
-          <ArrowRight className="size-3.5" aria-hidden />
-        </a>
       )}
     </Ec32Card>
   )

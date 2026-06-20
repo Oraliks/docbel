@@ -298,16 +298,22 @@ export const ec32DefaultContent: Ec32Content = {
         url: 'https://www.socialsecurity.be',
       },
       {
-        label: 'Application mobile eC3.2',
+        label: 'eC3.2 sur Google Play (Android)',
         description:
-          'L’application officielle permettant de compléter et d’envoyer votre carte de contrôle de chômage temporaire.',
-        url: 'https://www.onem.be',
+          'L’application officielle pour compléter et envoyer votre carte de contrôle de chômage temporaire sur Android.',
+        url: 'https://play.google.com/store/apps/details?id=be.onemrvalfa.ec32',
+      },
+      {
+        label: 'eC3.2 sur l’App Store (iPhone)',
+        description:
+          'L’application officielle pour compléter et envoyer votre carte de contrôle de chômage temporaire sur iPhone.',
+        url: 'https://apps.apple.com/be/app/ec3-2-ch%C3%B4mage-temporaire/id1435477924',
       },
       {
         label: 'Organismes de paiement (CAPAC, CSC, FGTB, CGSLB)',
         description:
           'Pour percevoir vos allocations, vous devez être affilié à un organisme de paiement : la CAPAC (publique) ou un syndicat (CSC, FGTB, CGSLB).',
-        url: 'https://www.onem.be',
+        url: '/organisme-de-paiement',
       },
       {
         label: 'ONEM — Office national de l’emploi',

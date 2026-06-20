@@ -22,7 +22,6 @@ import { Check, ShieldCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Ec32Content } from '@/lib/ec32/schema'
-import { Ec32DisclaimerBanner } from '@/components/docbel/ec32/disclaimer-banner'
 import { Ec32Hero } from '@/components/docbel/ec32/hero'
 import { Ec32LearningModes } from '@/components/docbel/ec32/learning-modes'
 import { Ec32InteractiveSimulator } from '@/components/docbel/ec32/ec32-interactive-simulator'
@@ -125,8 +124,6 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
 
   return (
     <div className="flex w-full flex-col gap-8 md:gap-10">
-      <Ec32DisclaimerBanner content={content} />
-
       <Ec32Hero content={content} onSecondary={() => goToTab('cas')} />
 
       {/* Élément principal : le simulateur, toujours visible. */}

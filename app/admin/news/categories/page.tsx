@@ -31,6 +31,8 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
+  // Catégorie ciblée par le dialog. `null` = mode création ; sinon = édition.
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   const [refreshTick, setRefreshTick] = useState(0);
 
@@ -89,7 +91,13 @@ export default function CategoriesPage() {
           <h1 className="text-3xl font-bold tracking-tight">{t('catTitle')}</h1>
           <p className="text-muted-foreground mt-1">{t('catSubtitle')}</p>
         </div>
-        <Button onClick={() => setShowDialog(true)} className="gap-2">
+        <Button
+          onClick={() => {
+            setEditingCategory(null);
+            setShowDialog(true);
+          }}
+          className="gap-2"
+        >
           <Plus className="w-4 h-4" />
           {t('catCreate')}
         </Button>
@@ -108,7 +116,14 @@ export default function CategoriesPage() {
           ) : categories.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">{t('catEmpty')}</p>
-              <Button onClick={() => setShowDialog(true)} variant="outline" size="sm">
+              <Button
+                onClick={() => {
+                  setEditingCategory(null);
+                  setShowDialog(true);
+                }}
+                variant="outline"
+                size="sm"
+              >
                 {t('catCreateFirst')}
               </Button>
             </div>
@@ -161,7 +176,10 @@ export default function CategoriesPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setShowDialog(true)}
+                          onClick={() => {
+                            setEditingCategory(category);
+                            setShowDialog(true);
+                          }}
                           title={t('edit')}
                         >
                           <Edit2 className="w-4 h-4" />
@@ -187,8 +205,13 @@ export default function CategoriesPage() {
 
       <CategoriesDialog
         open={showDialog}
-        onOpenChange={setShowDialog}
+        onOpenChange={(open) => {
+          setShowDialog(open);
+          // Reset à la fermeture pour ne pas conserver une édition orpheline.
+          if (!open) setEditingCategory(null);
+        }}
         onCategoriesUpdated={handleCategoriesUpdated}
+        category={editingCategory}
       />
     </div>
   );

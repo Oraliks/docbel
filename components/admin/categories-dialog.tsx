@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -13,45 +13,78 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus } from 'lucide-react';
+import { Plus, Save } from 'lucide-react';
 import { HeroIllustrationGenerator } from '@/components/admin/hero-illustration-generator';
+
+export interface EditableCategory {
+  id: string;
+  name: string;
+  color: string;
+  illustrationUrl?: string | null;
+}
 
 interface CategoriesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCategoriesUpdated?: () => void;
+  /** Catégorie à éditer ; absent = mode création. */
+  category?: EditableCategory | null;
 }
 
-export function CategoriesDialog({ open, onOpenChange, onCategoriesUpdated }: CategoriesDialogProps) {
-  const [loading, setLoading] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newColor, setNewColor] = useState('#7C3AED');
-  const [newIllustrationUrl, setNewIllustrationUrl] = useState('');
+const DEFAULT_COLOR = '#7C3AED';
 
-  const handleAddCategory = async () => {
-    if (!newName.trim()) {
+export function CategoriesDialog({
+  open,
+  onOpenChange,
+  onCategoriesUpdated,
+  category,
+}: CategoriesDialogProps) {
+  const isEdit = Boolean(category);
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [color, setColor] = useState(DEFAULT_COLOR);
+  const [illustrationUrl, setIllustrationUrl] = useState('');
+
+  // Pré-remplit (édition) ou réinitialise (création) chaque fois que le
+  // dialog s'ouvre ou que la catégorie cible change.
+  useEffect(() => {
+    if (!open) return;
+    if (category) {
+      setName(category.name);
+      setColor(category.color || DEFAULT_COLOR);
+      setIllustrationUrl(category.illustrationUrl ?? '');
+    } else {
+      setName('');
+      setColor(DEFAULT_COLOR);
+      setIllustrationUrl('');
+    }
+  }, [open, category]);
+
+  const handleSubmit = async () => {
+    if (!name.trim()) {
       toast.error('Entrez un nom de catégorie');
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch('/api/categories', {
-        method: 'POST',
+      // Mode édition : PATCH /api/categories/:id, sinon création POST.
+      const url = isEdit ? `/api/categories/${category!.id}` : '/api/categories';
+      const method = isEdit ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName, color: newColor, illustrationUrl: newIllustrationUrl })
+        body: JSON.stringify({ name, color, illustrationUrl }),
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Erreur lors de la création');
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || (isEdit ? 'Erreur lors de la modification' : 'Erreur lors de la création'));
       }
 
       await res.json();
-      setNewName('');
-      setNewColor('#7C3AED');
-      setNewIllustrationUrl('');
-      toast.success('Catégorie créée');
+      toast.success(isEdit ? 'Catégorie modifiée' : 'Catégorie créée');
       onCategoriesUpdated?.();
       onOpenChange(false);
     } catch (error) {
@@ -61,25 +94,25 @@ export function CategoriesDialog({ open, onOpenChange, onCategoriesUpdated }: Ca
     }
   };
 
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Créer une catégorie</DialogTitle>
+          <DialogTitle>{isEdit ? 'Modifier la catégorie' : 'Créer une catégorie'}</DialogTitle>
           <DialogDescription>
-            Ajoutez une nouvelle catégorie pour les articles
+            {isEdit
+              ? 'Mettez à jour les informations de la catégorie.'
+              : 'Ajoutez une nouvelle catégorie pour les articles.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Add new category */}
           <div className="space-y-3">
             <div>
               <Label className="text-sm">Nom</Label>
               <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="Ex: Mise à jour"
                 className="mt-1"
               />
@@ -89,13 +122,13 @@ export function CategoriesDialog({ open, onOpenChange, onCategoriesUpdated }: Ca
               <div className="flex items-center gap-2 mt-1">
                 <input
                   type="color"
-                  value={newColor}
-                  onChange={(e) => setNewColor(e.target.value)}
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
                   className="w-12 h-10 rounded cursor-pointer"
                 />
                 <Input
-                  value={newColor}
-                  onChange={(e) => setNewColor(e.target.value)}
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
                   className="font-mono text-sm flex-1"
                 />
               </div>
@@ -103,26 +136,35 @@ export function CategoriesDialog({ open, onOpenChange, onCategoriesUpdated }: Ca
             <div>
               <Label className="text-sm">Illustration (URL PNG)</Label>
               <Input
-                value={newIllustrationUrl}
-                onChange={(e) => setNewIllustrationUrl(e.target.value)}
+                value={illustrationUrl}
+                onChange={(e) => setIllustrationUrl(e.target.value)}
                 placeholder="https://…/illustration.png"
                 className="mt-1"
                 type="url"
               />
               <HeroIllustrationGenerator
-                defaultSubject={newName}
-                onUse={(url) => setNewIllustrationUrl(url)}
+                defaultSubject={name}
+                onUse={(url) => setIllustrationUrl(url)}
                 className="mt-2"
               />
             </div>
             <Button
-              onClick={handleAddCategory}
+              onClick={handleSubmit}
               disabled={loading}
               className="w-full"
               size="sm"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Créer la catégorie
+              {isEdit ? (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Enregistrer les modifications
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Créer la catégorie
+                </>
+              )}
             </Button>
           </div>
         </div>

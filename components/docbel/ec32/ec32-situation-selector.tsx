@@ -3,97 +3,127 @@
 // =====================================================================
 //  eC3.2 — Sélecteur de situation pour les jours sélectionnés
 // ---------------------------------------------------------------------
-//  Deux axes pour un jour :
-//   1. Situation PRINCIPALE (EC32_PRIMARY_SITUATIONS) — radio :
-//      Chômage / Travail employeur (T1) / Inaptitude (M) / Vacances (V) /
-//      Autre (A).
-//   2. Seconde activité « Travail ailleurs » (T2) — case à cocher CUMULABLE
-//      avec n'importe quelle situation principale (T1/T2, M/T2, V/T2, ou
-//      « T2 » seul si chômage). Indique qu'il y a eu deux activités dans la
-//      journée (p. ex. chômage prévu mais travail ailleurs ⇒ pas de CT).
-//  100 % pédagogique.
+//  Modèle ALIGNÉ sur le vrai eC3.2 :
+//   1. SITUATION PRINCIPALE (radio, 1 seul) :
+//      Chômage / Travail (employeur) / Vacances (V) / Inaptitude (M) / Autre (A)
+//   2. TRAVAIL AILLEURS QUE CHEZ L'EMPLOYEUR (3 cases à cocher cumulables avec le
+//      primaire ; les 2 premières sont mutuellement exclusives ■ XOR ▲ ; la 3ᵉ
+//      🧑‍🤝‍🧑 se cumule indépendamment).
+//  Libellés ONEM verbatim. 100 % pédagogique.
 // =====================================================================
 
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { EC32_PRIMARY_SITUATIONS, type Ec32SituationType } from '@/lib/ec32/types'
+import {
+  EC32_PRIMARY_SITUATIONS,
+  EC32_WORK_ELSEWHERE_EXCLUSIVE,
+  EC32_WORK_ELSEWHERE_SITUATIONS,
+  type Ec32SituationType,
+} from '@/lib/ec32/types'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { SITUATION_VISUALS } from '@/components/docbel/ec32/ui'
+
+const EXCLUSIVE_SET = new Set<Ec32SituationType>(EC32_WORK_ELSEWHERE_EXCLUSIVE)
+
+/** Libellés ONEM verbatim des 3 cases « Travail ailleurs ». `{employer}` = nom employeur. */
+function workElsewhereLabel(
+  situation: Ec32SituationType,
+  employerName: string,
+): string {
+  switch (situation) {
+    case 'work_elsewhere_usual_day':
+      return `Un jour où vous travaillez normalement pour ${employerName}`
+    case 'work_elsewhere_non_usual_day':
+      return `Un jour où vous ne travaillez normalement pas pour ${employerName}`
+    case 'work_other_regular_employer':
+      return "Auprès d'un autre employeur fixe (pas de flexijob, pas d'activité indépendante)"
+    default:
+      return ''
+  }
+}
+
+/** Icône glyphe pleine pour ■ / ▲ (👥 reste en trait). */
+function isFilledGlyph(situation: Ec32SituationType): boolean {
+  return EXCLUSIVE_SET.has(situation)
+}
 
 export function Ec32SituationSelector({
   selectedCount,
   value,
   secondaryWork,
+  employerName,
   saveLabel,
   cancelLabel,
   suggestedSituation,
   situationLabel,
   onChange,
-  onSecondaryChange,
+  onSecondaryToggle,
   onSave,
   onCancel,
 }: {
   selectedCount: number
   /** Situation principale en cours de choix (axe « statut »). */
   value: Ec32SituationType
-  /** Seconde activité T2 (travail ailleurs) cochée ? */
-  secondaryWork: boolean
+  /** Secondaires « travail ailleurs » cochés (sous-ensemble des 3 cases). */
+  secondaryWork: Ec32SituationType[]
+  /** Nom de l'employeur (injecté dans les libellés ONEM). */
+  employerName: string
   saveLabel: string
   cancelLabel: string
   suggestedSituation?: Ec32SituationType | null
   situationLabel: (situation: Ec32SituationType) => string
   onChange: (situation: Ec32SituationType) => void
-  onSecondaryChange: (checked: boolean) => void
+  /** Bascule l'état d'une des 3 cases (gère l'exclusion ■/▲ en amont). */
+  onSecondaryToggle: (situation: Ec32SituationType, checked: boolean) => void
   onSave: () => void
   onCancel: () => void
 }) {
+  const secondarySet = new Set(secondaryWork)
+  // Règle d'exclusion : si ■ coché, ▲ doit être désactivée (et vice-versa).
+  const isExclusiveDisabled = (s: Ec32SituationType): boolean => {
+    if (!EXCLUSIVE_SET.has(s)) return false
+    const other = EC32_WORK_ELSEWHERE_EXCLUSIVE.find((x) => x !== s)
+    return other ? secondarySet.has(other) : false
+  }
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Bloc principal : radio des 5 situations. */}
       <fieldset className="space-y-1.5">
         <legend className="sr-only">Situation principale du jour</legend>
         {EC32_PRIMARY_SITUATIONS.map((situation) => (
-          <SituationOption
+          <PrimaryOption
             key={situation}
             situation={situation}
             checked={value === situation}
             suggested={suggestedSituation === situation}
-            label={situationLabel(situation)}
+            label={
+              situation === 'work_own_employer'
+                ? `Travail chez ${employerName}`
+                : situationLabel(situation)
+            }
             onSelect={() => onChange(situation)}
           />
         ))}
       </fieldset>
 
-      {/* Seconde activité cumulable : travail ailleurs (T2). */}
-      <label
-        className={cn(
-          'flex cursor-pointer items-center gap-2 rounded-xl border p-2 transition-colors',
-          secondaryWork
-            ? 'border-primary bg-primary/5'
-            : 'border-border bg-card/60 hover:bg-primary/5',
-        )}
-      >
-        <Checkbox
-          checked={secondaryWork}
-          onCheckedChange={(v) => onSecondaryChange(v === true)}
-          aria-label="A aussi travaillé ailleurs ce jour-là (T2)"
-        />
-        <span className="min-w-0 flex-1 text-xs leading-snug text-foreground">
-          <span className="font-medium">A aussi travaillé ailleurs (T2)</span>
-          <span className="block text-[0.7rem] text-muted-foreground">
-            Seconde activité dans la journée — se cumule (T1/T2, M/T2, V/T2…).
-          </span>
-        </span>
-        <span
-          className={cn(
-            'shrink-0 rounded px-1 text-[0.65rem] font-bold',
-            SITUATION_VISUALS.work_elsewhere_usual_day.accent,
-          )}
-          aria-hidden
-        >
-          T2
-        </span>
-      </label>
+      {/* Bloc secondaire : 3 cases « Travail ailleurs que chez {employeur} ». */}
+      <fieldset className="space-y-2 border-t border-border/60 pt-3">
+        <legend className="text-xs font-semibold text-foreground">
+          Travail ailleurs que chez {employerName}
+        </legend>
+        {EC32_WORK_ELSEWHERE_SITUATIONS.map((s) => (
+          <SecondaryOption
+            key={s}
+            situation={s}
+            checked={secondarySet.has(s)}
+            disabled={isExclusiveDisabled(s)}
+            label={workElsewhereLabel(s, employerName)}
+            onToggle={(v) => onSecondaryToggle(s, v)}
+          />
+        ))}
+      </fieldset>
 
       <div className="flex flex-col gap-2 pt-1">
         <Button type="button" size="sm" onClick={onSave} disabled={selectedCount === 0}>
@@ -107,8 +137,8 @@ export function Ec32SituationSelector({
   )
 }
 
-/** Une option de situation principale : pastille colorée + lettre + libellé. */
-function SituationOption({
+/** Option de situation principale : pastille colorée + libellé + check. */
+function PrimaryOption({
   situation,
   checked,
   suggested,
@@ -163,5 +193,50 @@ function SituationOption({
         {checked && <Check className="size-2.5" />}
       </span>
     </button>
+  )
+}
+
+/** Une des 3 cases « Travail ailleurs ». Disabled = exclusion ■/▲. */
+function SecondaryOption({
+  situation,
+  checked,
+  disabled,
+  label,
+  onToggle,
+}: {
+  situation: Ec32SituationType
+  checked: boolean
+  disabled: boolean
+  label: string
+  onToggle: (checked: boolean) => void
+}) {
+  const visual = SITUATION_VISUALS[situation]
+  const Icon = visual.icon
+  return (
+    <label
+      className={cn(
+        'flex w-full cursor-pointer items-center gap-2 rounded-xl border p-2 transition-colors',
+        checked
+          ? 'border-primary bg-primary/5'
+          : 'border-border bg-card/60 hover:bg-primary/5',
+        disabled && 'cursor-not-allowed opacity-50 hover:bg-card/60',
+      )}
+    >
+      <Icon
+        className={cn(
+          'size-4 shrink-0',
+          isFilledGlyph(situation) && 'fill-current',
+          visual.accent,
+        )}
+        aria-hidden
+      />
+      <span className="min-w-0 flex-1 text-[0.7rem] leading-snug text-foreground">{label}</span>
+      <Checkbox
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={(v) => onToggle(v === true)}
+        aria-label={label}
+      />
+    </label>
   )
 }

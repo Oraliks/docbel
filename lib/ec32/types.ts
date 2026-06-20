@@ -60,10 +60,13 @@ export const EC32_PRIMARY_SITUATIONS = [
 ] as const satisfies readonly Ec32SituationType[]
 
 /**
- * Sous-groupe "Travail ailleurs" — l'axe SECONDAIRE T2 (seconde activité dans
- * la journée, chez un autre employeur / pour soi-même). Cumulable avec n'importe
- * quelle situation principale. `work_elsewhere_usual_day` sert de valeur
- * canonique quand T2 est marqué sans précision.
+ * Sous-groupe "Travail ailleurs que chez l'employeur" — l'axe SECONDAIRE
+ * (seconde activité dans la journée), CUMULABLE avec n'importe quelle situation
+ * principale. Reproduit fidèlement les 3 cases à cocher de l'eC3.2 réel :
+ *  - `work_elsewhere_usual_day`   (■) : un jour normalement travaillé pour l'employeur
+ *  - `work_elsewhere_non_usual_day`(▲): un jour normalement NON travaillé pour l'employeur
+ *  - `work_other_regular_employer`(👥): auprès d'un autre employeur fixe
+ * Les deux premières (■/▲) sont MUTUELLEMENT EXCLUSIVES ; la 3ᵉ se cumule.
  */
 export const EC32_WORK_ELSEWHERE_SITUATIONS = [
   'work_elsewhere_usual_day',
@@ -71,8 +74,11 @@ export const EC32_WORK_ELSEWHERE_SITUATIONS = [
   'work_other_regular_employer',
 ] as const satisfies readonly Ec32SituationType[]
 
-/** Valeur canonique de l'axe secondaire T2 (travail ailleurs). */
-export const EC32_T2_SITUATION = 'work_elsewhere_usual_day' as const satisfies Ec32SituationType
+/** Paire d'options secondaires mutuellement exclusives (■ jour travaillé / ▲ jour non travaillé). */
+export const EC32_WORK_ELSEWHERE_EXCLUSIVE = [
+  'work_elsewhere_usual_day',
+  'work_elsewhere_non_usual_day',
+] as const satisfies readonly Ec32SituationType[]
 
 /** Situations automatiques (jamais choisies à la main). */
 export const EC32_AUTO_SITUATIONS = [
@@ -137,13 +143,15 @@ export interface Ec32DayCell {
   /** Situation principale actuellement enregistrée (axe « statut »). */
   situation: Ec32SituationType
   /**
-   * Seconde activité dans la journée : travail ailleurs (T2). Cumulable avec
-   * la situation principale. `true` ⇒ la cellule affiche « …/T2 » (ou « T2 »
-   * seul si la situation principale est le chômage).
+   * Secondes activités « travail ailleurs » cumulées avec la situation
+   * principale (sous-ensemble de `EC32_WORK_ELSEWHERE_SITUATIONS`). Affichées
+   * en icônes empilées (■/▲/👥). ■ et ▲ sont mutuellement exclusives.
    */
-  secondaryWork?: boolean
+  secondaryWork?: Ec32SituationType[]
   /** Premier jour de chômage effectif (icône automatique). */
   isFirstEffectiveDay?: boolean
+  /** Première date d'envoi possible (pastille pêche, automatique). */
+  isFirstSendDay?: boolean
   /** Dernière correction appliquée à ce jour (le cas échéant). */
   correction?: Ec32Correction | null
 }

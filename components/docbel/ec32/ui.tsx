@@ -13,18 +13,18 @@ import type { ComponentType, ReactNode } from 'react'
 import {
   Ban,
   Briefcase,
-  Building,
-  Building2,
   Flag,
   Hourglass,
   Info,
-  Layers,
   Palmtree,
   ShieldAlert,
   Sparkles,
+  Square,
   Stethoscope,
   Tag,
+  Triangle,
   TriangleAlert,
+  UserPlus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Ec32SituationType } from '@/lib/ec32/types'
@@ -216,22 +216,25 @@ export const SITUATION_VISUALS: Record<Ec32SituationType, SituationVisual> = {
     dot: 'bg-indigo-500',
     accent: 'text-indigo-600 dark:text-indigo-300',
   },
+  // Axe secondaire « travail ailleurs » — icônes glyphes (■ carré plein).
   work_elsewhere_usual_day: {
-    icon: Building2,
+    icon: Square,
     chip: 'border-sky-300/60 bg-sky-100/70 text-sky-800 dark:border-sky-400/30 dark:bg-sky-950/50 dark:text-sky-200',
     cell: 'bg-sky-200/70 dark:bg-sky-800/40',
     dot: 'bg-sky-500',
     accent: 'text-sky-600 dark:text-sky-300',
   },
+  // ▲ triangle plein.
   work_elsewhere_non_usual_day: {
-    icon: Building,
+    icon: Triangle,
     chip: 'border-cyan-300/60 bg-cyan-100/70 text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-950/50 dark:text-cyan-200',
     cell: 'bg-cyan-200/70 dark:bg-cyan-800/40',
     dot: 'bg-cyan-500',
     accent: 'text-cyan-600 dark:text-cyan-300',
   },
+  // 👥 autre employeur fixe.
   work_other_regular_employer: {
-    icon: Layers,
+    icon: UserPlus,
     chip: 'border-fuchsia-300/60 bg-fuchsia-100/70 text-fuchsia-800 dark:border-fuchsia-400/30 dark:bg-fuchsia-950/50 dark:text-fuchsia-200',
     cell: 'bg-fuchsia-200/70 dark:bg-fuchsia-800/40',
     dot: 'bg-fuchsia-500',

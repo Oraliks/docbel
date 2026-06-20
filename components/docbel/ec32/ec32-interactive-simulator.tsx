@@ -35,6 +35,7 @@ import type { ComponentType, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import {
   EC32_STEPS,
+  EC32_WORK_ELSEWHERE_EXCLUSIVE,
   type Ec32CardStatus,
   type Ec32Correction,
   type Ec32DayCell,
@@ -134,8 +135,8 @@ interface PersistedState {
   monthKey: string
   affiliated: boolean
   encodings: Record<string, Ec32SituationType>
-  /** Axe secondaire T2 (travail ailleurs) par date. */
-  secondaryWork: Record<string, boolean>
+  /** Axe secondaire « travail ailleurs » par date (sous-ensemble ■/▲/👥). */
+  secondaryWork: Record<string, Ec32SituationType[]>
   corrections: Record<string, Ec32Correction>
 }
 
@@ -192,18 +193,23 @@ export function Ec32InteractiveSimulator({
   const [monthKey, setMonthKey] = useState<string>(DEFAULT_MONTH_KEY)
   const [affiliated, setAffiliated] = useState(true)
 
-  // Encodages persistés par date (situation principale) + axe secondaire T2
-  // (travail ailleurs, cumulable) + corrections.
+  // Encodages persistés par date (situation principale) + axe secondaire
+  // « travail ailleurs » (sous-ensemble des 3 cases ■/▲/👥) + corrections.
   const [encodings, setEncodings] = useState<Record<string, Ec32SituationType>>({})
-  const [secondaryWork, setSecondaryWork] = useState<Record<string, boolean>>({})
+  const [secondaryWork, setSecondaryWork] = useState<
+    Record<string, Ec32SituationType[]>
+  >({})
   const [corrections, setCorrections] = useState<Record<string, Ec32Correction>>({})
 
   // ── État d'interaction ──
   const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())
   const [selectorSituation, setSelectorSituation] =
     useState<Ec32SituationType>('temporary_unemployment')
-  // Axe secondaire T2 en cours de choix dans le rail (avant enregistrement).
-  const [selectorSecondaryWork, setSelectorSecondaryWork] = useState(false)
+  // Axe secondaire en cours de choix dans le rail (avant enregistrement) :
+  // sous-ensemble des 3 cases ■/▲/👥. ■ et ▲ sont mutuellement exclusives.
+  const [selectorSecondaryWork, setSelectorSecondaryWork] = useState<
+    Ec32SituationType[]
+  >([])
   const [selectorOpen, setSelectorOpen] = useState(false)
 
   const [cardStatus, setCardStatus] = useState<Ec32CardStatus>('draft')
@@ -244,7 +250,7 @@ export function Ec32InteractiveSimulator({
       return {
         ...cell,
         situation: encoded ?? cell.situation,
-        secondaryWork: secondaryWork[cell.date] ?? false,
+        secondaryWork: secondaryWork[cell.date] ?? [],
         correction,
       }
     })
@@ -426,7 +432,7 @@ export function Ec32InteractiveSimulator({
         // avec l'état actuel de ce jour (situation principale + T2).
         if (prev.size === 0 && next.size === 1) {
           setSelectorSituation(encodings[date] ?? 'temporary_unemployment')
-          setSelectorSecondaryWork(secondaryWork[date] ?? false)
+          setSelectorSecondaryWork(secondaryWork[date] ?? [])
         }
         return next
       })
@@ -440,8 +446,31 @@ export function Ec32InteractiveSimulator({
     setSelectorOpen(false)
     setShowUnsaved(false)
     setSelectorSituation('temporary_unemployment')
-    setSelectorSecondaryWork(false)
+    setSelectorSecondaryWork([])
   }, [])
+
+  /** Bascule une des 3 cases ■/▲/👥 dans le sélecteur (gère l'exclusion ■⊕▲). */
+  const toggleSelectorSecondary = useCallback(
+    (situation: Ec32SituationType, checked: boolean) => {
+      setSelectorSecondaryWork((prev) => {
+        const isExclusive = (
+          EC32_WORK_ELSEWHERE_EXCLUSIVE as readonly Ec32SituationType[]
+        ).includes(situation)
+        let next = prev.filter((s) => s !== situation)
+        if (checked) {
+          if (isExclusive) {
+            // Retire l'autre option exclusive (exclusion ■/▲).
+            next = next.filter(
+              (s) => !(EC32_WORK_ELSEWHERE_EXCLUSIVE as readonly Ec32SituationType[]).includes(s),
+            )
+          }
+          next.push(situation)
+        }
+        return next
+      })
+    },
+    [],
+  )
 
   const applySituationToSelection = useCallback(() => {
     if (selectedDates.size === 0) return
@@ -455,7 +484,7 @@ export function Ec32InteractiveSimulator({
     setSecondaryWork((prev) => {
       const next = { ...prev }
       for (const date of selectedDates) {
-        if (selectorSecondaryWork) next[date] = true
+        if (selectorSecondaryWork.length > 0) next[date] = [...selectorSecondaryWork]
         else delete next[date]
       }
       return next
@@ -551,7 +580,7 @@ export function Ec32InteractiveSimulator({
     setCorrections({})
     clearSelection()
     setSelectorSituation('temporary_unemployment')
-    setSelectorSecondaryWork(false)
+    setSelectorSecondaryWork([])
     setSuggestedSituation(null)
     setScenarioHint(null)
     setSendOpen(false)
@@ -725,6 +754,7 @@ export function Ec32InteractiveSimulator({
               selectedDates={selectedDates}
               previewSituation={selectorSituation}
               previewSecondaryWork={selectorSecondaryWork}
+              employerName={employer?.name || ''}
               situationLabel={situationLabel}
               isLocked={isLocked}
               cardStatus={cardStatus}
@@ -742,11 +772,12 @@ export function Ec32InteractiveSimulator({
                     cells={cells}
                     selectorSituation={selectorSituation}
                     selectorSecondaryWork={selectorSecondaryWork}
+                    employerName={employer?.name || ''}
                     suggestedSituation={suggestedSituation}
                     situationLabel={situationLabel}
                     formatDate={formatDate}
                     onSelectorSituation={setSelectorSituation}
-                    onSelectorSecondaryWork={setSelectorSecondaryWork}
+                    onToggleSelectorSecondary={toggleSelectorSecondary}
                     onApplySituation={applySituationToSelection}
                     onClearSelection={clearSelection}
                   />
@@ -1177,6 +1208,7 @@ function CardWorkspace({
   selectedDates,
   previewSituation,
   previewSecondaryWork,
+  employerName: _employerName,
   situationLabel,
   isLocked,
   cardStatus,
@@ -1198,8 +1230,10 @@ function CardWorkspace({
   selectedDates: Set<string>
   /** Situation en cours de choix dans le rail (aperçu live sur les jours sélectionnés). */
   previewSituation: Ec32SituationType
-  /** Axe secondaire T2 en cours de choix (aperçu live). */
-  previewSecondaryWork: boolean
+  /** Axe secondaire en cours de choix (aperçu live). */
+  previewSecondaryWork: Ec32SituationType[]
+  /** Nom de l'employeur (injecté dans les libellés du sélecteur). */
+  employerName: string
   situationLabel: (s: Ec32SituationType) => string
   isLocked: boolean
   cardStatus: Ec32CardStatus
@@ -1218,7 +1252,11 @@ function CardWorkspace({
     selectedDates.size > 0
       ? cells.map((c) =>
           selectedDates.has(c.date)
-            ? { ...c, situation: previewSituation, secondaryWork: previewSecondaryWork }
+            ? {
+                ...c,
+                situation: previewSituation,
+                secondaryWork: previewSecondaryWork,
+              }
             : c,
         )
       : cells
@@ -1348,11 +1386,12 @@ function Ec32AdaptPanel({
   cells,
   selectorSituation,
   selectorSecondaryWork,
+  employerName,
   suggestedSituation,
   situationLabel,
   formatDate,
   onSelectorSituation,
-  onSelectorSecondaryWork,
+  onToggleSelectorSecondary,
   onApplySituation,
   onClearSelection,
 }: {
@@ -1360,12 +1399,13 @@ function Ec32AdaptPanel({
   selectedDates: Set<string>
   cells: Ec32DayCell[]
   selectorSituation: Ec32SituationType
-  selectorSecondaryWork: boolean
+  selectorSecondaryWork: Ec32SituationType[]
+  employerName: string
   suggestedSituation: Ec32SituationType | null
   situationLabel: (s: Ec32SituationType) => string
   formatDate: (iso: string) => string
   onSelectorSituation: (s: Ec32SituationType) => void
-  onSelectorSecondaryWork: (checked: boolean) => void
+  onToggleSelectorSecondary: (situation: Ec32SituationType, checked: boolean) => void
   onApplySituation: () => void
   onClearSelection: () => void
 }) {
@@ -1394,7 +1434,7 @@ function Ec32AdaptPanel({
               <>
                 {' · '}
                 {situationLabel(firstCell.situation)}
-                {firstCell.secondaryWork && ' + T2'}
+                {(firstCell.secondaryWork ?? []).length > 0 && ' + travail ailleurs'}
               </>
             )}
           </>
@@ -1407,12 +1447,13 @@ function Ec32AdaptPanel({
         selectedCount={count}
         value={selectorSituation}
         secondaryWork={selectorSecondaryWork}
+        employerName={employerName || "l’employeur"}
         saveLabel={count > 1 ? getLabel('selector.saveMulti') : getLabel('selector.save')}
         cancelLabel={getLabel('selector.cancel')}
         suggestedSituation={suggestedSituation}
         situationLabel={situationLabel}
         onChange={onSelectorSituation}
-        onSecondaryChange={onSelectorSecondaryWork}
+        onSecondaryToggle={onToggleSelectorSecondary}
         onSave={onApplySituation}
         onCancel={onClearSelection}
       />

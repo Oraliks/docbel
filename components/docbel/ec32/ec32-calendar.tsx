@@ -1,48 +1,43 @@
 'use client'
 
 // =====================================================================
-//  eC3.2 — Grille calendrier (sélection multi-jours) + légende discrète
+//  eC3.2 — Grille calendrier (sélection multi-jours) + légende
 // ---------------------------------------------------------------------
-//  La grille s'affiche directement (plus d'onglets, plus de vue liste).
-//  Une légende DISCRÈTE (petits points colorés) est rappelée sous le
-//  calendrier. Les cases sélectionnables sont des <button> (aria-pressed +
-//  aria-label parlant), les cases grisées (`not_applicable`) sont inertes.
-//  Le premier jour de chômage effectif porte une icône automatique (Flag).
-//  100 % pédagogique.
+//  Reproduit le rendu réel de l'eC3.2 :
+//   • Chômage  → case vide (rien à indiquer)
+//   • Travail  → case PLEINE (violet), sans lettre
+//   • Vacances/Inaptitude/Autre → lettre V / M / A
+//   • Travail ailleurs (secondaire, cumulable) → icônes empilées ■ / ▲ / 👥
+//   • 1er jour de chômage effectif → case verte (auto)
+//   • Pas d'application → case grise (auto, inerte)
+//   • 1ʳᵉ date d'envoi possible → pastille pêche derrière le numéro (auto)
+//  100 % pédagogique, palette Docbel (jamais l'orange officiel ONEM).
 // =====================================================================
 
-import { Flag } from 'lucide-react'
+import { Phone } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Ec32DayCell, Ec32SituationType } from '@/lib/ec32/types'
-import { EC32_PRIMARY_SITUATIONS, EC32_T2_SITUATION } from '@/lib/ec32/types'
+import {
+  EC32_PRIMARY_SITUATIONS,
+  EC32_WORK_ELSEWHERE_SITUATIONS,
+} from '@/lib/ec32/types'
 import { SITUATION_VISUALS } from '@/components/docbel/ec32/ui'
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const
 
-/** Lettre de la situation PRINCIPALE (le chômage reste vide). */
-const SITUATION_LETTER: Partial<Record<Ec32SituationType, string>> = {
-  work_own_employer: 'T1',
-  // Les types « travail ailleurs » sont l'axe secondaire T2 (cumulable) ;
-  // conservés ici comme repli au cas où ils seraient la situation principale.
-  work_elsewhere_usual_day: 'T2',
-  work_elsewhere_non_usual_day: 'T2',
-  work_other_regular_employer: 'T2',
-  incapacity: 'M',
+/** Lettre de la situation PRINCIPALE (chômage = vide, travail = case pleine). */
+const PRIMARY_LETTER: Partial<Record<Ec32SituationType, string>> = {
   vacation: 'V',
+  incapacity: 'M',
   other: 'A',
 }
 
-/**
- * Code affiché dans une case : situation principale + éventuel T2 cumulé.
- * Ex. `T1/T2`, `M/T2`, `V/T2`, `A/T2`, ou `T2` seul (chômage + travail ailleurs),
- * ou la lettre principale seule, ou rien (chômage pur).
- */
-function cellCode(cell: Ec32DayCell): string {
-  const primary = SITUATION_LETTER[cell.situation] ?? ''
-  const secondary = cell.secondaryWork ? 'T2' : ''
-  // Évite « T2/T2 » si la situation principale est déjà un travail ailleurs.
-  if (primary === 'T2' && secondary === 'T2') return 'T2'
-  return [primary, secondary].filter(Boolean).join('/')
+/** Icône glyphe pleine pour ■ / ▲ (👥 reste en trait). */
+function isFilledGlyph(situation: Ec32SituationType): boolean {
+  return (
+    situation === 'work_elsewhere_usual_day' ||
+    situation === 'work_elsewhere_non_usual_day'
+  )
 }
 
 export function Ec32Calendar({
@@ -66,7 +61,6 @@ export function Ec32Calendar({
   disabled?: boolean
   onToggleDay: (date: string) => void
 }) {
-  // Découpe en semaines de 7 cases (la grille est déjà alignée lundi→dimanche).
   const weeks: Ec32DayCell[][] = []
   for (let i = 0; i < cells.length; i += 7) {
     weeks.push(cells.slice(i, i + 7))
@@ -88,85 +82,137 @@ export function Ec32Calendar({
         ))}
 
         {weeks.map((week, wi) =>
-          week.map((cell, di) => {
-            const key = `${wi}-${di}-${cell.date}`
-            return (
-              <Ec32CalendarCell
-                key={key}
-                cell={cell}
-                selected={selectedDates.has(cell.date)}
-                situationLabel={situationLabel}
-                disabled={disabled}
-                onToggle={() => onToggleDay(cell.date)}
-              />
-            )
-          }),
+          week.map((cell, di) => (
+            <Ec32CalendarCell
+              key={`${wi}-${di}-${cell.date}`}
+              cell={cell}
+              selected={selectedDates.has(cell.date)}
+              situationLabel={situationLabel}
+              disabled={disabled}
+              onToggle={() => onToggleDay(cell.date)}
+            />
+          )),
         )}
       </div>
 
-      {/* Légende discrète rappelée sous le calendrier (petits points colorés). */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/60 pt-3">
-        {legendTitle && (
-          <span className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">
-            {legendTitle}
-          </span>
-        )}
-        {EC32_PRIMARY_SITUATIONS.map((situation) => (
-          <LegendDot
-            key={situation}
-            situation={situation}
-            code={SITUATION_LETTER[situation]}
-            label={situationLabel(situation)}
-          />
-        ))}
-        <LegendDot
-          situation={EC32_T2_SITUATION}
-          code="T2"
-          label="Travail ailleurs (2ᵉ activité)"
-        />
-        <LegendDot
-          situation="first_effective_unemployment_day"
-          label={situationLabel('first_effective_unemployment_day')}
-        />
-        <LegendDot situation="not_applicable" label={situationLabel('not_applicable')} />
-      </div>
+      <Ec32Legend legendTitle={legendTitle} situationLabel={situationLabel} />
     </div>
   )
 }
 
-/** Point de légende discret : code (lettre) + pastille colorée + libellé muté. */
-function LegendDot({
-  situation,
-  label,
-  code,
+// ─────────────────────────── Légende (12 types) ───────────────────────────
+
+function Ec32Legend({
+  legendTitle,
+  situationLabel,
 }: {
-  situation: Ec32SituationType
-  label: string
-  /** Lettre/code affiché dans les cases (T1, T2, M, V, A). Absent = chômage. */
-  code?: string
+  legendTitle: string
+  situationLabel: (situation: Ec32SituationType) => string
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-      {code ? (
-        <span
-          className={cn(
-            'text-[0.65rem] font-bold leading-none',
-            SITUATION_VISUALS[situation].accent,
-          )}
-          aria-hidden
-        >
-          {code}
+    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/60 pt-3">
+      {legendTitle && (
+        <span className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">
+          {legendTitle}
         </span>
-      ) : (
-        <span
-          className={cn('size-2 shrink-0 rounded-full', SITUATION_VISUALS[situation].dot)}
-          aria-hidden
-        />
       )}
+
+      {/* Chômage = case vide */}
+      <LegendItem
+        swatch={<span className="size-3 shrink-0 rounded border border-border bg-card" />}
+        label={situationLabel('temporary_unemployment')}
+      />
+      {/* Travail = case pleine violette */}
+      <LegendItem
+        swatch={<span className="size-3 shrink-0 rounded bg-primary" />}
+        label={situationLabel('work_own_employer')}
+      />
+      {/* Lettres V / M / A */}
+      <LegendItem
+        swatch={<LegendLetter letter="V" situation="vacation" />}
+        label={situationLabel('vacation')}
+      />
+      <LegendItem
+        swatch={<LegendLetter letter="M" situation="incapacity" />}
+        label={situationLabel('incapacity')}
+      />
+      <LegendItem
+        swatch={<LegendLetter letter="A" situation="other" />}
+        label={situationLabel('other')}
+      />
+      {/* Travail ailleurs (secondaire) : ■ / ▲ / 👥 */}
+      {EC32_WORK_ELSEWHERE_SITUATIONS.map((situation) => {
+        const Icon = SITUATION_VISUALS[situation].icon
+        return (
+          <LegendItem
+            key={situation}
+            swatch={
+              <Icon
+                className={cn(
+                  'size-3 shrink-0',
+                  isFilledGlyph(situation) && 'fill-current',
+                  SITUATION_VISUALS[situation].accent,
+                )}
+              />
+            }
+            label={situationLabel(situation)}
+          />
+        )
+      })}
+      {/* Notification téléphonique (auto) */}
+      <LegendItem
+        swatch={<Phone className="size-3 shrink-0 text-red-500" />}
+        label="Notification téléphonique"
+      />
+      {/* 1er jour de chômage effectif (case verte, auto) */}
+      <LegendItem
+        swatch={<span className="size-3 shrink-0 rounded bg-emerald-400" />}
+        label={situationLabel('first_effective_unemployment_day')}
+      />
+      {/* Pas d'application (case grise, auto) */}
+      <LegendItem
+        swatch={<span className="size-3 shrink-0 rounded bg-slate-300 dark:bg-slate-600" />}
+        label={situationLabel('not_applicable')}
+      />
+      {/* 1ʳᵉ date d'envoi possible (pastille pêche) */}
+      <LegendItem
+        swatch={<span className="size-3 shrink-0 rounded-full bg-orange-200" />}
+        label="1ʳᵉ date d'envoi possible"
+      />
+    </div>
+  )
+}
+
+function LegendItem({ swatch, label }: { swatch: React.ReactNode; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+      {swatch}
       {label}
     </span>
   )
 }
+
+function LegendLetter({
+  letter,
+  situation,
+}: {
+  letter: string
+  situation: Ec32SituationType
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex w-3 shrink-0 justify-center text-[0.7rem] font-bold leading-none',
+        SITUATION_VISUALS[situation].accent,
+      )}
+      aria-hidden
+    >
+      {letter}
+    </span>
+  )
+}
+
+// ─────────────────────────── Case ───────────────────────────
 
 function Ec32CalendarCell({
   cell,
@@ -181,15 +227,12 @@ function Ec32CalendarCell({
   disabled: boolean
   onToggle: () => void
 }) {
-  const visual = SITUATION_VISUALS[cell.situation]
-
   // Cases non encodables (hors mois / hors contrat) : inertes & grisées.
   if (!cell.selectable) {
     return (
       <div
         className={cn(
-          'flex aspect-square min-h-8 flex-col items-center justify-center rounded-xl border border-dashed border-border/40 text-xs',
-          visual.cell,
+          'flex aspect-square min-h-8 flex-col items-center justify-center rounded-xl border border-dashed border-border/40 bg-slate-200/50 text-xs dark:bg-slate-800/40',
           cell.inMonth ? 'opacity-60' : 'opacity-35',
         )}
         aria-hidden
@@ -199,21 +242,32 @@ function Ec32CalendarCell({
     )
   }
 
-  const label = `Jour ${cell.day}, situation : ${situationLabel(cell.situation)}${
-    cell.secondaryWork ? ' + travail ailleurs (T2)' : ''
-  }${cell.isFirstEffectiveDay ? ' (premier jour de chômage effectif)' : ''}${
+  const isWork = cell.situation === 'work_own_employer'
+  const isFirstEffective =
+    cell.isFirstEffectiveDay && cell.situation === 'temporary_unemployment'
+  const letter = PRIMARY_LETTER[cell.situation]
+  const secondary = cell.secondaryWork ?? []
+
+  // Libellé accessible.
+  const secondaryLabel =
+    secondary.length > 0
+      ? ` + ${secondary.map((s) => situationLabel(s)).join(', ')}`
+      : ''
+  const label = `Jour ${cell.day}, situation : ${situationLabel(cell.situation)}${secondaryLabel}${
+    isFirstEffective ? ' (premier jour de chômage effectif)' : ''
+  }${cell.isFirstSendDay ? ' (première date d’envoi possible)' : ''}${
     selected ? ' — sélectionné' : ''
   }`
 
-  const isFirstEffective =
-    cell.isFirstEffectiveDay && cell.situation === 'temporary_unemployment'
-  const code = cellCode(cell)
-  // Couleur : si une situation principale porte une lettre, sa teinte ; sinon
-  // (chômage + T2) on prend la teinte « travail ailleurs ».
-  const codeAccent =
-    SITUATION_LETTER[cell.situation] && cell.situation !== 'temporary_unemployment'
-      ? visual.accent
-      : SITUATION_VISUALS.work_elsewhere_usual_day.accent
+  // Fond de la case.
+  const cellTone = isWork
+    ? 'bg-primary text-primary-foreground'
+    : isFirstEffective
+      ? 'bg-emerald-200/70 dark:bg-emerald-800/40'
+      : 'bg-card'
+
+  const markerColor = (situation: Ec32SituationType) =>
+    isWork ? 'text-primary-foreground' : SITUATION_VISUALS[situation].accent
 
   return (
     <button
@@ -222,25 +276,49 @@ function Ec32CalendarCell({
       disabled={disabled}
       aria-pressed={selected}
       aria-label={label}
-      title={`${situationLabel(cell.situation)}${cell.secondaryWork ? ' + travail ailleurs (T2)' : ''}`}
+      title={`${situationLabel(cell.situation)}${secondaryLabel}`}
       className={cn(
         'relative flex aspect-square min-h-8 flex-col items-center justify-center gap-0.5 rounded-xl border text-xs transition-all duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0',
-        visual.cell,
+        cellTone,
         selected
           ? 'border-primary ring-2 ring-primary/60 shadow-[0_8px_20px_-12px_rgba(91,70,229,0.45)]'
           : 'border-border/60 hover:border-primary/40 hover:shadow-[0_8px_18px_-14px_rgba(91,70,229,0.35)]',
       )}
     >
-      <span className="text-xs font-semibold text-foreground">{cell.day}</span>
-      <span className="flex h-3 items-center justify-center">
-        {isFirstEffective && !code ? (
-          <Flag className="size-3 text-primary" aria-hidden />
-        ) : code ? (
-          <span className={cn('text-[0.6rem] font-bold leading-none', codeAccent)} aria-hidden>
-            {code}
-          </span>
-        ) : null}
+      {/* Numéro du jour (pastille pêche si 1ʳᵉ date d'envoi). */}
+      <span
+        className={cn(
+          'flex size-5 items-center justify-center rounded-full text-xs font-semibold',
+          isWork ? 'text-primary-foreground' : 'text-foreground',
+          cell.isFirstSendDay && 'bg-orange-200/90 text-orange-900',
+        )}
+      >
+        {cell.day}
       </span>
+
+      {/* Marqueurs : lettre principale + icônes secondaires empilées. */}
+      {(letter || secondary.length > 0) && (
+        <span className="flex h-3 items-center justify-center gap-0.5">
+          {letter && (
+            <span
+              className={cn('text-[0.6rem] font-bold leading-none', markerColor(cell.situation))}
+              aria-hidden
+            >
+              {letter}
+            </span>
+          )}
+          {secondary.map((s) => {
+            const Icon = SITUATION_VISUALS[s].icon
+            return (
+              <Icon
+                key={s}
+                className={cn('size-2.5', isFilledGlyph(s) && 'fill-current', markerColor(s))}
+                aria-hidden
+              />
+            )
+          })}
+        </span>
+      )}
     </button>
   )
 }

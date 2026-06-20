@@ -847,8 +847,11 @@ export function Ec32InteractiveSimulator({
         open={sendOpen}
         affiliated={affiliated}
         labels={sendLabels}
+        monthLabel={monthLabel}
+        employerName={employer?.name}
         onOpenChange={setSendOpen}
         onConfirm={confirmSend}
+        onDownloadPdf={handleExportPdf}
       />
     </Ec32Section>
   )

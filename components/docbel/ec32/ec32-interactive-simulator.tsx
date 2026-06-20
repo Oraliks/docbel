@@ -34,9 +34,7 @@ import type { ComponentType } from 'react'
 import { cn } from '@/lib/utils'
 import {
   EC32_STEPS,
-  EC32_SELECTABLE_SITUATIONS,
   type Ec32CardStatus,
-  type Ec32CardView,
   type Ec32Correction,
   type Ec32DayCell,
   type Ec32PaymentAffiliationStatus,
@@ -76,7 +74,6 @@ import {
   Ec32Card,
   Ec32InfoBox,
   Ec32Section,
-  Ec32SituationChip,
 } from '@/components/docbel/ec32/ui'
 import {
   Ec32GuidedSteps,
@@ -93,7 +90,6 @@ import {
   Ec32SendModal,
   type Ec32SendModalLabels,
 } from '@/components/docbel/ec32/ec32-send-modal'
-import { Ec32ListView } from '@/components/docbel/ec32/ec32-list-view'
 
 // ─────────────────────────── Constantes ───────────────────────────
 
@@ -210,7 +206,6 @@ export function Ec32InteractiveSimulator({
   const [corrections, setCorrections] = useState<Record<string, Ec32Correction>>({})
 
   // ── État d'interaction ──
-  const [cardView, setCardView] = useState<Ec32CardView>('calendar')
   const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())
   const [selectorSituation, setSelectorSituation] =
     useState<Ec32SituationType>('temporary_unemployment')
@@ -539,7 +534,6 @@ export function Ec32InteractiveSimulator({
     setAffiliated(true)
     setEncodings({})
     setCorrections({})
-    setCardView('calendar')
     clearSelection()
     setSelectorSituation('temporary_unemployment')
     setSuggestedSituation(null)
@@ -697,8 +691,6 @@ export function Ec32InteractiveSimulator({
               employer={employer}
               monthLabel={monthLabel}
               cells={cells}
-              cardView={cardView}
-              onCardView={setCardView}
               selectedDates={selectedDates}
               situationLabel={situationLabel}
               isLocked={isLocked}
@@ -743,10 +735,6 @@ export function Ec32InteractiveSimulator({
 
           {isAppStep && (
             <>
-              <Ec32LegendPanel
-                situationLabel={situationLabel}
-                legendTitle={getLabel('calendar.legend')}
-              />
               {selectedDates.size > 0 && !isLocked ? (
                 <Ec32AdaptPanel
                   getLabel={getLabel}
@@ -1142,8 +1130,6 @@ function CardWorkspace({
   employer,
   monthLabel,
   cells,
-  cardView,
-  onCardView,
   selectedDates,
   situationLabel,
   isLocked,
@@ -1159,8 +1145,6 @@ function CardWorkspace({
   employer: Ec32EmployerContent | undefined
   monthLabel: string
   cells: Ec32DayCell[]
-  cardView: Ec32CardView
-  onCardView: (v: Ec32CardView) => void
   selectedDates: Set<string>
   situationLabel: (s: Ec32SituationType) => string
   isLocked: boolean
@@ -1203,35 +1187,6 @@ function CardWorkspace({
           </dl>
         </div>
 
-        {/* Bascule vue calendrier / liste */}
-        <div className="inline-flex rounded-full border border-border p-0.5">
-          <button
-            type="button"
-            onClick={() => onCardView('calendar')}
-            aria-pressed={cardView === 'calendar'}
-            className={cn(
-              'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-              cardView === 'calendar'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {getLabel('card.calendarView')}
-          </button>
-          <button
-            type="button"
-            onClick={() => onCardView('list')}
-            aria-pressed={cardView === 'list'}
-            className={cn(
-              'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-              cardView === 'list'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {getLabel('card.listView')}
-          </button>
-        </div>
       </div>
 
       <p className="mt-3 text-xs italic text-muted-foreground">
@@ -1257,36 +1212,19 @@ function CardWorkspace({
         </Ec32InfoBox>
       )}
 
-      {/* Corps : calendrier ou liste */}
+      {/* Corps : calendrier. Sur l'étape « Corriger une erreur », un clic sur
+          un jour ouvre la modale de correction (motif obligatoire) ; sinon il
+          sélectionne le jour pour adapter son statut. */}
       <div className="mt-4">
-        {cardView === 'calendar' ? (
-          <Ec32Calendar
-            cells={cells}
-            selectedDates={selectedDates}
-            situationLabel={situationLabel}
-            legendTitle={getLabel('calendar.legend')}
-            calendarTabLabel={getLabel('card.calendarTab')}
-            legendTabLabel={getLabel('card.legendTab')}
-            selectHint={getLabel('calendar.selectHint')}
-            disabled={isLocked}
-            onToggleDay={onToggleDay}
-          />
-        ) : (
-          <Ec32ListView
-            cells={cells}
-            locked={isLocked}
-            labels={{
-              date: getLabel('list.date'),
-              situation: getLabel('list.situation'),
-              correction: getLabel('list.correction'),
-              edit: getLabel('list.edit'),
-              empty: getLabel('list.empty'),
-            }}
-            formatDate={formatDate}
-            situationLabel={situationLabel}
-            onEdit={onEditDay}
-          />
-        )}
+        <Ec32Calendar
+          cells={cells}
+          selectedDates={selectedDates}
+          situationLabel={situationLabel}
+          legendTitle={getLabel('calendar.legend')}
+          selectHint={getLabel('calendar.selectHint')}
+          disabled={isLocked}
+          onToggleDay={activeStep === 'correction' ? onEditDay : onToggleDay}
+        />
       </div>
 
     </Ec32Card>
@@ -1294,34 +1232,6 @@ function CardWorkspace({
 }
 
 // ═════════════════════════ Rail contextuel (étape carte) ═════════════════════════
-
-/** Légende des statuts (rail) — mêmes pastilles que sous le calendrier. */
-function Ec32LegendPanel({
-  situationLabel,
-  legendTitle,
-}: {
-  situationLabel: (s: Ec32SituationType) => string
-  legendTitle: string
-}) {
-  return (
-    <Ec32Card className="space-y-3 p-4">
-      <h3 className="text-sm font-bold text-foreground">{legendTitle}</h3>
-      <ul className="flex flex-wrap gap-2">
-        {EC32_SELECTABLE_SITUATIONS.map((situation) => (
-          <li key={situation}>
-            <Ec32SituationChip situation={situation} label={situationLabel(situation)} />
-          </li>
-        ))}
-        <li>
-          <Ec32SituationChip
-            situation="not_applicable"
-            label={situationLabel('not_applicable')}
-          />
-        </li>
-      </ul>
-    </Ec32Card>
-  )
-}
 
 /** « Adapter les jours sélectionnés » (rail) : récap du jour sélectionné +
  *  sélecteur de situation. Remplace « Contrôles & validation » dès qu'au moins

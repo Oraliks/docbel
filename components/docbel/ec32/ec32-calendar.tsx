@@ -1,23 +1,21 @@
 'use client'
 
 // =====================================================================
-//  eC3.2 — Grille calendrier (sélection multi-jours) + légende
+//  eC3.2 — Grille calendrier (sélection multi-jours) + légende discrète
 // ---------------------------------------------------------------------
-//  Onglets Calendrier / Légende. Les cases sélectionnables sont des
-//  <button> (aria-pressed + aria-label parlant), les cases grisées
-//  (`not_applicable`) sont inertes. Le premier jour de chômage effectif
-//  porte une icône automatique (Flag). 100 % pédagogique.
+//  La grille s'affiche directement (plus d'onglets, plus de vue liste).
+//  Une légende DISCRÈTE (petits points colorés) est rappelée sous le
+//  calendrier. Les cases sélectionnables sont des <button> (aria-pressed +
+//  aria-label parlant), les cases grisées (`not_applicable`) sont inertes.
+//  Le premier jour de chômage effectif porte une icône automatique (Flag).
+//  100 % pédagogique.
 // =====================================================================
 
 import { Flag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Ec32DayCell, Ec32SituationType } from '@/lib/ec32/types'
 import { EC32_SELECTABLE_SITUATIONS } from '@/lib/ec32/types'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  SITUATION_VISUALS,
-  Ec32SituationChip,
-} from '@/components/docbel/ec32/ui'
+import { SITUATION_VISUALS } from '@/components/docbel/ec32/ui'
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const
 
@@ -26,8 +24,6 @@ export function Ec32Calendar({
   selectedDates,
   situationLabel,
   legendTitle,
-  calendarTabLabel,
-  legendTabLabel,
   selectHint,
   disabled = false,
   onToggleDay,
@@ -37,9 +33,8 @@ export function Ec32Calendar({
   selectedDates: Set<string>
   /** Libellé lisible d'une situation (pour aria + légende). */
   situationLabel: (situation: Ec32SituationType) => string
+  /** Intitulé discret de la légende sous le calendrier. */
   legendTitle: string
-  calendarTabLabel: string
-  legendTabLabel: string
   selectHint: string
   /** Carte verrouillée : les cases ne sont plus cliquables. */
   disabled?: boolean
@@ -52,67 +47,73 @@ export function Ec32Calendar({
   }
 
   return (
-    <Tabs defaultValue="calendar" className="w-full">
-      <TabsList className="w-full max-w-xs">
-        <TabsTrigger value="calendar">{calendarTabLabel}</TabsTrigger>
-        <TabsTrigger value="legend">{legendTabLabel}</TabsTrigger>
-      </TabsList>
+    <div className="w-full">
+      <p className="mb-3 text-xs text-muted-foreground">{selectHint}</p>
 
-      <TabsContent value="calendar" className="mt-4">
-        <p className="mb-3 text-xs text-muted-foreground">{selectHint}</p>
+      <div className="grid grid-cols-7 gap-2">
+        {WEEKDAY_LABELS.map((label) => (
+          <div
+            key={label}
+            className="pb-1 text-center text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
+            aria-hidden
+          >
+            {label}
+          </div>
+        ))}
 
-        <div className="grid grid-cols-7 gap-2">
-          {WEEKDAY_LABELS.map((label) => (
-            <div
-              key={label}
-              className="pb-1 text-center text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
-              aria-hidden
-            >
-              {label}
-            </div>
-          ))}
+        {weeks.map((week, wi) =>
+          week.map((cell, di) => {
+            const key = `${wi}-${di}-${cell.date}`
+            return (
+              <Ec32CalendarCell
+                key={key}
+                cell={cell}
+                selected={selectedDates.has(cell.date)}
+                situationLabel={situationLabel}
+                disabled={disabled}
+                onToggle={() => onToggleDay(cell.date)}
+              />
+            )
+          }),
+        )}
+      </div>
 
-          {weeks.map((week, wi) =>
-            week.map((cell, di) => {
-              const key = `${wi}-${di}-${cell.date}`
-              return (
-                <Ec32CalendarCell
-                  key={key}
-                  cell={cell}
-                  selected={selectedDates.has(cell.date)}
-                  situationLabel={situationLabel}
-                  disabled={disabled}
-                  onToggle={() => onToggleDay(cell.date)}
-                />
-              )
-            }),
-          )}
-        </div>
-      </TabsContent>
+      {/* Légende discrète rappelée sous le calendrier (petits points colorés). */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/60 pt-3">
+        {legendTitle && (
+          <span className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">
+            {legendTitle}
+          </span>
+        )}
+        {EC32_SELECTABLE_SITUATIONS.map((situation) => (
+          <LegendDot key={situation} situation={situation} label={situationLabel(situation)} />
+        ))}
+        <LegendDot
+          situation="first_effective_unemployment_day"
+          label={situationLabel('first_effective_unemployment_day')}
+        />
+        <LegendDot situation="not_applicable" label={situationLabel('not_applicable')} />
+      </div>
+    </div>
+  )
+}
 
-      <TabsContent value="legend" className="mt-4">
-        <h4 className="mb-3 text-sm font-semibold text-foreground">{legendTitle}</h4>
-        <ul className="flex flex-wrap gap-2">
-          {EC32_SELECTABLE_SITUATIONS.map((situation) => (
-            <li key={situation}>
-              <Ec32SituationChip situation={situation} label={situationLabel(situation)} />
-            </li>
-          ))}
-          <li>
-            <Ec32SituationChip
-              situation="first_effective_unemployment_day"
-              label={situationLabel('first_effective_unemployment_day')}
-            />
-          </li>
-          <li>
-            <Ec32SituationChip
-              situation="not_applicable"
-              label={situationLabel('not_applicable')}
-            />
-          </li>
-        </ul>
-      </TabsContent>
-    </Tabs>
+/** Point de légende discret : petite pastille colorée + libellé muté. */
+function LegendDot({
+  situation,
+  label,
+}: {
+  situation: Ec32SituationType
+  label: string
+}) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+      <span
+        className={cn('size-2 shrink-0 rounded-full', SITUATION_VISUALS[situation].dot)}
+        aria-hidden
+      />
+      {label}
+    </span>
   )
 }
 

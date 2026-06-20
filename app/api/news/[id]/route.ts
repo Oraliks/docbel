@@ -86,6 +86,7 @@ export async function PATCH(
       ...(body.color !== undefined && { color: body.color }),
       ...(body.emoji !== undefined && { emoji: body.emoji }),
       ...(body.image !== undefined && { image: body.image || null }),
+      ...(body.heroIllustration !== undefined && { heroIllustration: body.heroIllustration || null }),
       ...(body.status !== undefined && { status: body.status }),
       ...(body.featured !== undefined && { featured: body.featured }),
       ...(body.readingTime !== undefined && { readingTime: body.readingTime }),

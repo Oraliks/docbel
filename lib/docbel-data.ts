@@ -14,6 +14,7 @@ export interface NewsItem {
   summary?: string[];
   linkedDocs?: { title: string; url: string }[];
   faqs?: { q: string; a: string }[];
+  heroIllustration?: string;
 }
 
 import type { AudienceId } from "@/lib/audience";

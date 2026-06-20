@@ -26,6 +26,7 @@ interface NewsArticle {
   emoji: string;
   color: string;
   image: string | null;
+  heroIllustration?: string | null;
   status: string;
   featured: boolean;
   readingTime: number;
@@ -94,6 +95,7 @@ export default function NewsEditorPage() {
     emoji: '📰',
     color: '#7C3AED',
     image: '',
+    heroIllustration: '',
     status: 'draft',
     featured: false,
     readingTime: 0,
@@ -121,6 +123,7 @@ export default function NewsEditorPage() {
           emoji: data.emoji || '📰',
           color: data.color || '#7C3AED',
           image: data.image || '',
+          heroIllustration: data.heroIllustration ?? '',
           status: data.status || 'draft',
           featured: data.featured || false,
           readingTime: data.readingTime || 0,

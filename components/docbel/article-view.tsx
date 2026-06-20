@@ -32,6 +32,12 @@ interface ArticleViewProps {
   categories?: string[];
   /** Illustration de la catégorie — repli du hero si l'article n'a pas d'image perso. */
   categoryIllustration?: string;
+  /**
+   * Illustration dédiée du hero, définie par article (champ heroIllustration
+   * en base). Prioritaire sur categoryIllustration. Ne jamais confondre avec
+   * article.image qui est la thumbnail/bannière OG réservée aux listes.
+   */
+  articleHeroIllustration?: string;
   // Kept for API compatibility with the route. Unused — glass tokens drive
   // the accent now.
   accent?: string;
@@ -61,6 +67,7 @@ export function ArticleView({
   related = [],
   categories = [],
   categoryIllustration,
+  articleHeroIllustration,
 }: ArticleViewProps) {
   // Enrichit l'HTML rich-text avec les <abbr> du glossaire. Mémoïsé
   // pour ne pas re-tokeniser à chaque re-render (le contenu d'un
@@ -101,13 +108,12 @@ export function ArticleView({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  // Image du hero = ILLUSTRATION DÉDIÉE de la catégorie (configurée par
-  // l'admin dans /admin/news/categories : 3D, sans texte, fond doux).
+  // Image du hero — priorité : illustration article > illustration catégorie > rien.
   // On n'utilise JAMAIS `article.image` ici : c'est la thumbnail/bannière de
   // l'article (souvent avec texte/cadre cuits dedans), qui casse la composition
   // du hero. Elle reste réservée à l'aperçu de partage (OG) et aux vignettes
   // de liste.
-  const heroImage = categoryIllustration;
+  const heroImage = articleHeroIllustration ?? categoryIllustration;
 
   const hasSummary = Boolean(article.summary?.length);
   const hasDocs = Boolean(article.linkedDocs?.length);

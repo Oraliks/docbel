@@ -178,6 +178,7 @@ export default async function ArticleRoute({ params }: RouteParams) {
     readingTime: article.readingTime ?? undefined,
     popular: article.featured,
     image: article.image ?? undefined,
+    heroIllustration: article.heroIllustration ?? undefined,
     content: article.content,
     // Champs éditoriaux enrichis (Json en base) → typés sur NewsItem.
     keyTakeaway: article.keyTakeaway ?? undefined,
@@ -206,6 +207,7 @@ export default async function ArticleRoute({ params }: RouteParams) {
       related={relatedItems}
       categories={categories}
       categoryIllustration={articleCategory?.illustrationUrl ?? undefined}
+      articleHeroIllustration={newsItem.heroIllustration}
       accent="#7C3AED"
     />
   );

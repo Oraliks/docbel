@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import dynamic from 'next/dynamic';
 import { Folder, CheckCircle2, ImagePlus, X, Loader2 } from 'lucide-react';
 import { FeaturedImageGenerator } from '@/components/admin/news/featured-image-generator';
+import { HeroIllustrationGenerator } from '@/components/admin/hero-illustration-generator';
 
 // Tiptap = client-only (DOM requis). dynamic ssr:false évite l'hydratation SSR
 // et sort l'éditeur riche (~250 Ko) du bundle initial de /admin/news/[newsId].
@@ -64,6 +65,7 @@ export interface NewsEditorForm {
   emoji: string;
   color: string;
   image: string;
+  heroIllustration: string;
   status: string;
   featured: boolean;
   readingTime: number;
@@ -552,6 +554,44 @@ export function NewsEditor({ form, onFieldChange, errors = {} }: NewsEditorProps
                   onUse={(url) => onFieldChange('image', url)}
                 />
               </div>
+            </Card>
+
+            {/* Illustration du hero (optionnel) */}
+            <Card className="border bg-card p-5 shadow-none gap-0">
+              <label className="block text-sm font-semibold mb-3">Illustration du hero (optionnel)</label>
+              <p className="text-xs text-muted-foreground mb-3">
+                Illustration 3D dédiée au hero de la page article. Prioritaire sur l&apos;illustration de la catégorie.
+                Ne jamais utiliser l&apos;image de présentation ici (réservée OG + listes).
+              </p>
+              <label
+                htmlFor="hero-illustration-url"
+                className="text-xs font-medium text-muted-foreground mb-1 block"
+              >
+                URL de l&apos;illustration
+              </label>
+              <Input
+                id="hero-illustration-url"
+                value={form.heroIllustration}
+                onChange={(e) => onFieldChange('heroIllustration', e.target.value)}
+                placeholder="https://…/hero.png"
+                type="url"
+                className="h-10"
+              />
+              {form.heroIllustration && (
+                <div className="mt-3 aspect-square w-32 overflow-hidden rounded-lg border border-border bg-muted/30">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={form.heroIllustration}
+                    alt="Aperçu de l'illustration du hero"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              )}
+              <HeroIllustrationGenerator
+                defaultSubject={form.excerpt || form.title}
+                onUse={(url) => onFieldChange('heroIllustration', url)}
+                className="mt-4"
+              />
             </Card>
 
             {/* Options */}

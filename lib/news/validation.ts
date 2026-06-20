@@ -12,6 +12,7 @@ export const newsCreateSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   emoji: z.string().max(10).optional(),
   image: z.string().max(2048).nullable().optional(),
+  heroIllustration: z.string().max(2048).nullable().optional(),
   status: z.enum(NEWS_STATUSES).optional(),
   featured: z.boolean().optional(),
   scheduledAt: z.string().datetime().nullable().optional(),

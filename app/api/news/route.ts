@@ -174,6 +174,7 @@ export async function POST(req: NextRequest) {
         status: data.status || "draft",
         featured: data.featured ?? false,
         image: data.image || null,
+        heroIllustration: data.heroIllustration ?? null,
         readingTime: calcReadingTime,
         scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
         keyTakeaway: data.keyTakeaway ?? null,

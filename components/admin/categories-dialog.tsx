@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus } from 'lucide-react';
+import { HeroIllustrationGenerator } from '@/components/admin/hero-illustration-generator';
 
 interface CategoriesDialogProps {
   open: boolean;
@@ -107,6 +108,11 @@ export function CategoriesDialog({ open, onOpenChange, onCategoriesUpdated }: Ca
                 placeholder="https://…/illustration.png"
                 className="mt-1"
                 type="url"
+              />
+              <HeroIllustrationGenerator
+                defaultSubject={newName}
+                onUse={(url) => setNewIllustrationUrl(url)}
+                className="mt-2"
               />
             </div>
             <Button

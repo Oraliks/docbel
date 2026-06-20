@@ -116,32 +116,9 @@ export function ArticleView({
       {/* ── Grille 3 colonnes (desktop ≥ lg). Mobile → 1 colonne empilée.
           Largeur pleine : pas de max-w sur la racine (le shell 1840px borne
           déjà). ─────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[230px_minmax(0,1fr)] xl:grid-cols-[230px_minmax(0,1fr)_320px]">
-        {/* ── COLONNE GAUCHE (navigation) ──────────────────────────────── */}
-        <aside className="hidden flex-col gap-4 lg:flex">
-          <div className="sticky top-6 flex flex-col gap-4">
-            <Link
-              href="/actualites"
-              className="inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-            >
-              <ArrowLeftIcon className="size-4" />
-              Retour aux actualités
-            </Link>
-
-          </div>
-        </aside>
-
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         {/* ── COLONNE CENTRALE (contenu principal) ─────────────────────── */}
         <article className="flex min-w-0 flex-col gap-6">
-          {/* Retour : visible uniquement quand la nav gauche est masquée. */}
-          <Link
-            href="/actualites"
-            className="inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] lg:hidden"
-          >
-            <ArrowLeftIcon className="size-4" />
-            Toutes les actualités
-          </Link>
-
           <div className="glass-surface flex flex-col overflow-hidden">
             {/* ── HERO — image IA en COUCHE DE FOND ─────────────────────────
                 Une seule carte (pas de grille texte/image). L'image IA couvre
@@ -178,7 +155,17 @@ export function ArticleView({
               {/* Contenu textuel — par-dessus la couche de fond. Pleine
                   largeur (plus de padding-right réservé). */}
               <div className="relative z-[1] flex flex-col gap-3 p-6 sm:p-7">
-                <CategoryBadge>{article.tag}</CategoryBadge>
+                <Link
+                  href="/actualites"
+                  className="inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em] outline-none transition-opacity hover:opacity-75 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+                  style={{
+                    background: `color-mix(in oklab, ${article.color ?? "var(--glass-accent-deep)"} 15%, transparent)`,
+                    color: article.color ?? "var(--glass-accent-deep)",
+                  }}
+                >
+                  <ArrowLeftIcon className="size-3" />
+                  Retour aux actualités
+                </Link>
 
                 <h1 className="glass-display text-[27px] font-semibold leading-[1.05] sm:text-[40px]">
                   <AcronymText>{article.title}</AcronymText>
@@ -345,7 +332,7 @@ export function ArticleView({
         {/* ── COLONNE DROITE (sticky desktop). Chaque carte = données non
             vides uniquement. ──────────────────────────────────────────── */}
         {hasRightRail ? (
-          <aside className="flex min-w-0 flex-col gap-4 lg:col-span-2 xl:col-span-1">
+          <aside className="flex min-w-0 flex-col gap-4">
             <div className="flex flex-col gap-4 xl:sticky xl:top-6">
               {/* Résumé en 30 sec */}
               {hasSummary ? (

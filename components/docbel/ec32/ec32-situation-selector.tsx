@@ -137,7 +137,39 @@ export function Ec32SituationSelector({
   )
 }
 
-/** Option de situation principale : pastille colorée + libellé + check. */
+/** Lettre principale (V/M/A) — absent pour Chômage et Travail. */
+const PRIMARY_LETTER: Partial<Record<Ec32SituationType, string>> = {
+  vacation: 'V',
+  incapacity: 'M',
+  other: 'A',
+}
+
+/**
+ * Swatch d'une situation principale, ALIGNÉ sur la légende du calendrier :
+ *  - Chômage  → petit carré vide (case blanche bordée)
+ *  - Travail  → petit carré plein violet (case pleine)
+ *  - V/M/A    → lettre colorée centrée dans la case
+ */
+function PrimarySwatch({ situation }: { situation: Ec32SituationType }) {
+  if (situation === 'temporary_unemployment') {
+    return <span className="size-5 shrink-0 rounded border border-border bg-card" aria-hidden />
+  }
+  if (situation === 'work_own_employer') {
+    return <span className="size-5 shrink-0 rounded bg-primary" aria-hidden />
+  }
+  const letter = PRIMARY_LETTER[situation]
+  const visual = SITUATION_VISUALS[situation]
+  return (
+    <span
+      className="flex size-5 shrink-0 items-center justify-center rounded border border-border bg-card"
+      aria-hidden
+    >
+      <span className={cn('text-[0.7rem] font-bold leading-none', visual.accent)}>{letter}</span>
+    </span>
+  )
+}
+
+/** Option de situation principale : swatch légende + libellé + check. */
 function PrimaryOption({
   situation,
   checked,
@@ -151,8 +183,6 @@ function PrimaryOption({
   label: string
   onSelect: () => void
 }) {
-  const visual = SITUATION_VISUALS[situation]
-  const Icon = visual.icon
   return (
     <button
       type="button"
@@ -166,15 +196,7 @@ function PrimaryOption({
           : 'border-border bg-card/60 hover:bg-primary/5',
       )}
     >
-      <span
-        className={cn(
-          'flex size-6 shrink-0 items-center justify-center rounded-full border',
-          visual.chip,
-        )}
-        aria-hidden
-      >
-        <Icon className={cn('size-3.5', visual.accent)} />
-      </span>
+      <PrimarySwatch situation={situation} />
       <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
         {label}
       </span>
@@ -222,14 +244,19 @@ function SecondaryOption({
         disabled && 'cursor-not-allowed opacity-50 hover:bg-card/60',
       )}
     >
-      <Icon
-        className={cn(
-          'size-4 shrink-0',
-          isFilledGlyph(situation) && 'fill-current',
-          visual.accent,
-        )}
+      {/* Swatch : case bordée avec le glyphe (■/▲/👥) — même rendu que la légende. */}
+      <span
+        className="flex size-5 shrink-0 items-center justify-center rounded border border-border bg-card"
         aria-hidden
-      />
+      >
+        <Icon
+          className={cn(
+            'size-3',
+            isFilledGlyph(situation) && 'fill-current',
+            visual.accent,
+          )}
+        />
+      </span>
       <span className="min-w-0 flex-1 text-[0.7rem] leading-snug text-foreground">{label}</span>
       <Checkbox
         checked={checked}

@@ -117,17 +117,17 @@ function Ec32Legend({
         </span>
       )}
 
-      {/* Chômage = case vide */}
+      {/* Chômage = case vide bordée. */}
       <LegendItem
-        swatch={<span className="size-3 shrink-0 rounded border border-border bg-card" />}
+        swatch={<span className="size-3.5 shrink-0 rounded border border-border bg-card" />}
         label={situationLabel('temporary_unemployment')}
       />
-      {/* Travail = case pleine violette */}
+      {/* Travail = case pleine violette. */}
       <LegendItem
-        swatch={<span className="size-3 shrink-0 rounded bg-primary" />}
+        swatch={<span className="size-3.5 shrink-0 rounded bg-primary" />}
         label={situationLabel('work_own_employer')}
       />
-      {/* Lettres V / M / A */}
+      {/* Lettres V / M / A dans une case bordée. */}
       <LegendItem
         swatch={<LegendLetter letter="V" situation="vacation" />}
         label={situationLabel('vacation')}
@@ -140,20 +140,25 @@ function Ec32Legend({
         swatch={<LegendLetter letter="A" situation="other" />}
         label={situationLabel('other')}
       />
-      {/* Travail ailleurs (secondaire) : ■ / ▲ / 👥 */}
+      {/* Travail ailleurs (secondaire) : ■ / ▲ / 👥 dans une case bordée. */}
       {EC32_WORK_ELSEWHERE_SITUATIONS.map((situation) => {
         const Icon = SITUATION_VISUALS[situation].icon
         return (
           <LegendItem
             key={situation}
             swatch={
-              <Icon
-                className={cn(
-                  'size-3 shrink-0',
-                  isFilledGlyph(situation) && 'fill-current',
-                  SITUATION_VISUALS[situation].accent,
-                )}
-              />
+              <span
+                className="flex size-3.5 shrink-0 items-center justify-center rounded border border-border bg-card"
+                aria-hidden
+              >
+                <Icon
+                  className={cn(
+                    'size-2.5',
+                    isFilledGlyph(situation) && 'fill-current',
+                    SITUATION_VISUALS[situation].accent,
+                  )}
+                />
+              </span>
             }
             label={situationLabel(situation)}
           />
@@ -201,13 +206,12 @@ function LegendLetter({
 }) {
   return (
     <span
-      className={cn(
-        'inline-flex w-3 shrink-0 justify-center text-[0.7rem] font-bold leading-none',
-        SITUATION_VISUALS[situation].accent,
-      )}
+      className="flex size-3.5 shrink-0 items-center justify-center rounded border border-border bg-card"
       aria-hidden
     >
-      {letter}
+      <span className={cn('text-[0.6rem] font-bold leading-none', SITUATION_VISUALS[situation].accent)}>
+        {letter}
+      </span>
     </span>
   )
 }

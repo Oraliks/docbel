@@ -274,14 +274,45 @@ const LANGUAGE_OPTIONS: Array<{ id: Ec32MandateLanguage; label: string }> = [
   { id: 'de', label: 'DE' },
 ]
 
+/** Motif décoratif fixe pour le faux QR (5×5, true = case noire). */
+const QR_PATTERN: boolean[] = [
+  true, true, true, false, true,
+  true, false, true, false, true,
+  true, true, false, true, false,
+  false, false, true, true, true,
+  true, false, true, false, true,
+]
+
+/** Lien fictif + bouton « Copier » (simulation, aucun lien réel). */
+function LinkPreview() {
+  const [copied, setCopied] = useState(false)
+  const fakeLink = 'https://acces.simulation.docbel/mandat/ec32?demo=1'
+  const handleCopy = () => {
+    try {
+      void navigator.clipboard?.writeText(fakeLink)
+      setCopied(true)
+    } catch {
+      setCopied(true)
+    }
+  }
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl border border-primary/10 bg-card p-4 sm:flex-row sm:items-center">
+      <code className="min-w-0 flex-1 truncate rounded-lg bg-muted/60 px-3 py-2 text-xs text-foreground">
+        {fakeLink}
+      </code>
+      <Button type="button" variant="outline" size="sm" onClick={handleCopy}>
+        {copied ? 'Copié ✓' : 'Copier le lien'}
+      </Button>
+    </div>
+  )
+}
+
 function StepSend({
   draft,
   onChange,
-  submitted,
 }: {
   draft: Ec32MandateDraft
   onChange: (next: Ec32MandateDraft) => void
-  submitted: boolean
 }) {
   return (
     <div className="space-y-5">
@@ -389,14 +420,34 @@ function StepSend({
             description="Un lien personnel à partager par le canal de votre choix."
           />
         </div>
+
+        {/* Aperçu du canal choisi (QR / lien) — décoratif, pédagogique. */}
+        {draft.channel === 'qr' && (
+          <div className="flex items-center gap-4 rounded-2xl border border-primary/10 bg-card p-4">
+            <div
+              aria-hidden
+              className="grid size-20 shrink-0 grid-cols-5 grid-rows-5 gap-0.5 rounded-lg border border-border bg-white p-1.5"
+            >
+              {QR_PATTERN.map((on, i) => (
+                <span
+                  key={i}
+                  className={cn('rounded-[1px]', on ? 'bg-foreground' : 'bg-transparent')}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Demandez à la personne de scanner ce code QR avec son smartphone.
+              <span className="mt-1 block italic">Code illustratif (simulation).</span>
+            </p>
+          </div>
+        )}
+        {draft.channel === 'link' && <LinkPreview />}
       </div>
 
-      {submitted && (
-        <Ec32InfoBox tone="success" title="Demande créée — simulation pédagogique">
-          Aucune donnée n&apos;a réellement été transmise. Cet écran illustre le parcours
-          de mandat eC3.2.
-        </Ec32InfoBox>
-      )}
+      <Ec32InfoBox tone="info">
+        Aucune donnée n&apos;est réellement transmise — cet écran illustre le parcours de
+        mandat eC3.2. La demande créée apparaîtra dans « Accès demandés ».
+      </Ec32InfoBox>
     </div>
   )
 }
@@ -416,14 +467,12 @@ export function Ec32MandateWizard({
 }: Ec32MandateWizardProps) {
   const [step, setStep] = useState<StepNumber>(1)
   const [draft, setDraft] = useState<Ec32MandateDraft>(INITIAL_DRAFT)
-  const [submitted, setSubmitted] = useState(false)
 
   // Reset au montage / chaque réouverture
   useEffect(() => {
     if (open) {
       setStep(1)
       setDraft(INITIAL_DRAFT)
-      setSubmitted(false)
     }
   }, [open])
 
@@ -444,6 +493,12 @@ export function Ec32MandateWizard({
     return true
   }, [step, draft])
 
+  const handleSubmit = () => {
+    if (!canSubmit) return
+    onSubmitted?.(draft)
+    onOpenChange(false)
+  }
+
   const handleNext = () => {
     if (step === 1 && canGoNext) setStep(2)
     else if (step === 2 && canGoNext) setStep(3)
@@ -452,12 +507,6 @@ export function Ec32MandateWizard({
   const handlePrev = () => {
     if (step === 2) setStep(1)
     else if (step === 3) setStep(2)
-  }
-
-  const handleSubmit = () => {
-    if (!canSubmit || submitted) return
-    setSubmitted(true)
-    onSubmitted?.(draft)
   }
 
   const handleCancel = () => {
@@ -480,9 +529,7 @@ export function Ec32MandateWizard({
             </h3>
             {step === 1 && <StepScope draft={draft} onChange={setDraft} />}
             {step === 2 && <StepDuration draft={draft} onChange={setDraft} />}
-            {step === 3 && (
-              <StepSend draft={draft} onChange={setDraft} submitted={submitted} />
-            )}
+            {step === 3 && <StepSend draft={draft} onChange={setDraft} />}
           </div>
 
           {/* Boutons */}
@@ -519,7 +566,7 @@ export function Ec32MandateWizard({
                   variant="default"
                   size="lg"
                   onClick={handleSubmit}
-                  disabled={!canSubmit || submitted}
+                  disabled={!canSubmit}
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   <Send className="size-4" aria-hidden />

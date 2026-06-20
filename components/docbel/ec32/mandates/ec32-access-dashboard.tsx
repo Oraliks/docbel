@@ -93,10 +93,13 @@ function StatusBadge({ status }: { status: Ec32MandateAccess['status'] }) {
 
 function AccessRow({
   access,
-  onRevoke,
+  actionLabel,
+  onAction,
 }: {
   access: Ec32MandateAccess
-  onRevoke?: (id: string) => void
+  /** Libellé du bouton d'action (ex. « Révoquer », « Annuler la demande »). */
+  actionLabel?: string
+  onAction?: (id: string) => void
 }) {
   return (
     <li
@@ -121,16 +124,19 @@ function AccessRow({
         <StatusBadge status={access.status} />
         <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
           <CalendarDays className="size-3.5" aria-hidden />
-          Valable jusqu&apos;au {formatIsoDate(access.validUntil)}
+          {access.status === 'pending' ? 'Demandé' : 'Valable'} jusqu&apos;au{' '}
+          {formatIsoDate(access.validUntil)}
         </span>
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-          onClick={() => onRevoke?.(access.id)}
-        >
-          Révoquer
-        </Button>
+        {actionLabel && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+            onClick={() => onAction?.(access.id)}
+          >
+            {actionLabel}
+          </Button>
+        )}
       </div>
     </li>
   )
@@ -164,18 +170,38 @@ export interface Ec32AccessDashboardProps {
   grantedAccesses?: Ec32MandateAccess[]
   requestedAccesses?: Ec32MandateAccess[]
   receivedAccesses?: Ec32MandateAccess[]
+  /** Onglet contrôlé (optionnel). Sinon état interne. */
+  tab?: DashboardTab
+  onTabChange?: (tab: DashboardTab) => void
   onNewRequest?: () => void
+  /** Révoquer un accès accordé. */
   onRevoke?: (id: string) => void
+  /** Annuler une demande en attente. */
+  onCancelRequest?: (id: string) => void
 }
 
 export function Ec32AccessDashboard({
   grantedAccesses = DEFAULT_GRANTED,
   requestedAccesses = [],
   receivedAccesses = [],
+  tab,
+  onTabChange,
   onNewRequest,
   onRevoke,
+  onCancelRequest,
 }: Ec32AccessDashboardProps) {
-  const [activeTab, setActiveTab] = useState<DashboardTab>('granted')
+  const [internalTab, setInternalTab] = useState<DashboardTab>('granted')
+  const activeTab = tab ?? internalTab
+  const setActiveTab = (next: DashboardTab) => {
+    setInternalTab(next)
+    onTabChange?.(next)
+  }
+
+  const counts: Record<DashboardTab, number> = {
+    requested: requestedAccesses.length,
+    granted: grantedAccesses.length,
+    received: receivedAccesses.length,
+  }
 
   return (
     <section className="w-full">
@@ -217,13 +243,25 @@ export function Ec32AccessDashboard({
               aria-selected={isActive}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'relative rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                'relative inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-primary/10 text-primary'
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {tab.label}
+              {counts[tab.id] > 0 && (
+                <span
+                  className={cn(
+                    'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold',
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground',
+                  )}
+                >
+                  {counts[tab.id]}
+                </span>
+              )}
               {isActive && (
                 <span
                   aria-hidden
@@ -246,7 +284,12 @@ export function Ec32AccessDashboard({
             ) : (
               <ul className="space-y-3">
                 {grantedAccesses.map((access) => (
-                  <AccessRow key={access.id} access={access} onRevoke={onRevoke} />
+                  <AccessRow
+                    key={access.id}
+                    access={access}
+                    actionLabel="Révoquer"
+                    onAction={onRevoke}
+                  />
                 ))}
               </ul>
             )}
@@ -262,7 +305,12 @@ export function Ec32AccessDashboard({
             ) : (
               <ul className="space-y-3">
                 {requestedAccesses.map((access) => (
-                  <AccessRow key={access.id} access={access} onRevoke={onRevoke} />
+                  <AccessRow
+                    key={access.id}
+                    access={access}
+                    actionLabel="Annuler la demande"
+                    onAction={onCancelRequest}
+                  />
                 ))}
               </ul>
             )}
@@ -281,7 +329,7 @@ export function Ec32AccessDashboard({
             ) : (
               <ul className="space-y-3">
                 {receivedAccesses.map((access) => (
-                  <AccessRow key={access.id} access={access} onRevoke={onRevoke} />
+                  <AccessRow key={access.id} access={access} />
                 ))}
               </ul>
             )}

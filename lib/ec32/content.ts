@@ -36,9 +36,9 @@ export const ec32DefaultContent: Ec32Content = {
 
   hero: {
     badge: 'Simulation pédagogique non officielle',
-    title: 'Comprenez l’eC3.2 avant d’utiliser l’application officielle',
+    title: 'eC3.2, expliqué simplement',
     subtitle:
-      'Entraînez-vous à remplir votre carte de contrôle électronique de chômage temporaire dans un simulateur clair et sans risque. Vous voyez chaque étape, vous testez des cas concrets, et vous apprenez à éviter les erreurs — le tout avec des données entièrement fictives.',
+      'Testez vos démarches de contrôle électronique de chômage dans un simulateur clair, sans risque et 100 % confidentiel.',
     primaryCta: 'Lancer la simulation',
     secondaryCta: 'Voir les cas pratiques',
     disclaimer:

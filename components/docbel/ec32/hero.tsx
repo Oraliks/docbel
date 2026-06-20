@@ -17,7 +17,14 @@ import { Ec32Eyebrow } from '@/components/docbel/ec32/ui'
 import { Ec32HeroIllustration } from '@/components/docbel/ec32/ec32-hero-illustration'
 import type { Ec32Content } from '@/lib/ec32/schema'
 
-export function Ec32Hero({ content }: { content: Ec32Content }) {
+export function Ec32Hero({
+  content,
+  onSecondary,
+}: {
+  content: Ec32Content
+  /** Action du CTA secondaire (ex. ouvrir l'onglet « Cas pratiques »). */
+  onSecondary?: () => void
+}) {
   const { hero } = content
 
   return (
@@ -62,17 +69,28 @@ export function Ec32Hero({ content }: { content: Ec32Content }) {
                 <ArrowRight className="size-4" aria-hidden />
               </Button>
             )}
-            {hero.secondaryCta && (
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full sm:w-auto"
-                render={<a href="#cas-pratiques" />}
-              >
-                <BookOpenCheck className="size-4" aria-hidden />
-                {hero.secondaryCta}
-              </Button>
-            )}
+            {hero.secondaryCta &&
+              (onSecondary ? (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={onSecondary}
+                >
+                  <BookOpenCheck className="size-4" aria-hidden />
+                  {hero.secondaryCta}
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  render={<a href="#cas-pratiques" />}
+                >
+                  <BookOpenCheck className="size-4" aria-hidden />
+                  {hero.secondaryCta}
+                </Button>
+              ))}
           </div>
 
           {hero.disclaimer && (

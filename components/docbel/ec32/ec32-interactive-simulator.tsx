@@ -595,6 +595,15 @@ export function Ec32InteractiveSimulator({
     blockedBody: sim.sendModal.blockedBody || getNotice('send.noPaymentOrg'),
   }
 
+  const goPrevStep = () => {
+    const idx = stepIndex(activeStep)
+    if (idx > 0) goToStep(EC32_STEPS[idx - 1])
+  }
+  const goNextStep = () => {
+    const idx = stepIndex(activeStep)
+    if (idx < EC32_STEPS.length - 1) goToStep(EC32_STEPS[idx + 1])
+  }
+
   // ─────────────── Rendu ───────────────
 
   return (
@@ -692,34 +701,35 @@ export function Ec32InteractiveSimulator({
               monthLabel={monthLabel}
               cells={cells}
               selectedDates={selectedDates}
+              previewSituation={selectorSituation}
               situationLabel={situationLabel}
               isLocked={isLocked}
               cardStatus={cardStatus}
               formatDate={formatDate}
               onToggleDay={toggleDay}
               onEditDay={openCorrection}
+              onRestart={restart}
+              onPrev={goPrevStep}
+              onNext={goNextStep}
             />
           )}
 
-          {/* Navigation bas + reset */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-            <Button type="button" variant="ghost" size="sm" onClick={restart}>
-              <RotateCcw className="size-3.5" aria-hidden />
-              {getLabel('nav.restart')}
-            </Button>
-            <StepNavButtons
-              activeStep={activeStep}
-              getLabel={getLabel}
-              onPrev={() => {
-                const idx = stepIndex(activeStep)
-                if (idx > 0) goToStep(EC32_STEPS[idx - 1])
-              }}
-              onNext={() => {
-                const idx = stepIndex(activeStep)
-                if (idx < EC32_STEPS.length - 1) goToStep(EC32_STEPS[idx + 1])
-              }}
-            />
-          </div>
+          {/* Étapes formulaire : recommencer + navigation sous le contenu.
+              (Sur l'étape carte, ces contrôles vivent DANS la carte.) */}
+          {!isAppStep && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+              <Button type="button" variant="ghost" size="sm" onClick={restart}>
+                <RotateCcw className="size-3.5" aria-hidden />
+                {getLabel('nav.restart')}
+              </Button>
+              <StepNavButtons
+                activeStep={activeStep}
+                getLabel={getLabel}
+                onPrev={goPrevStep}
+                onNext={goNextStep}
+              />
+            </div>
+          )}
         </div>
 
         {/* Rail contextuel : coach Docbel + (pour l'étape carte) légende des
@@ -1131,12 +1141,16 @@ function CardWorkspace({
   monthLabel,
   cells,
   selectedDates,
+  previewSituation,
   situationLabel,
   isLocked,
   cardStatus,
   formatDate,
   onToggleDay,
   onEditDay,
+  onRestart,
+  onPrev,
+  onNext,
 }: {
   activeStep: Ec32StepKey
   content: Ec32Content
@@ -1146,13 +1160,27 @@ function CardWorkspace({
   monthLabel: string
   cells: Ec32DayCell[]
   selectedDates: Set<string>
+  /** Situation en cours de choix dans le rail (aperçu live sur les jours sélectionnés). */
+  previewSituation: Ec32SituationType
   situationLabel: (s: Ec32SituationType) => string
   isLocked: boolean
   cardStatus: Ec32CardStatus
   formatDate: (iso: string) => string
   onToggleDay: (date: string) => void
   onEditDay: (date: string) => void
+  onRestart: () => void
+  onPrev: () => void
+  onNext: () => void
 }) {
+  // Aperçu live : les jours sélectionnés adoptent la couleur de la situation en
+  // cours de choix dans le rail, avant même l'enregistrement.
+  const calendarCells =
+    selectedDates.size > 0
+      ? cells.map((c) =>
+          selectedDates.has(c.date) ? { ...c, situation: previewSituation } : c,
+        )
+      : cells
+
   return (
     <Ec32Card>
       {/* En-tête de carte fictive */}
@@ -1187,6 +1215,17 @@ function CardWorkspace({
           </dl>
         </div>
 
+        {/* Recommencer la simulation — en haut à droite de la carte. */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onRestart}
+          className="shrink-0"
+        >
+          <RotateCcw className="size-3.5" aria-hidden />
+          {getLabel('nav.restart')}
+        </Button>
       </div>
 
       <p className="mt-3 text-xs italic text-muted-foreground">
@@ -1217,7 +1256,7 @@ function CardWorkspace({
           sélectionne le jour pour adapter son statut. */}
       <div className="mt-4">
         <Ec32Calendar
-          cells={cells}
+          cells={calendarCells}
           selectedDates={selectedDates}
           situationLabel={situationLabel}
           legendTitle={getLabel('calendar.legend')}
@@ -1227,6 +1266,10 @@ function CardWorkspace({
         />
       </div>
 
+      {/* Navigation entre étapes — dans la carte. */}
+      <div className="mt-5 flex justify-end border-t border-border pt-4">
+        <StepNavButtons activeStep={activeStep} getLabel={getLabel} onPrev={onPrev} onNext={onNext} />
+      </div>
     </Ec32Card>
   )
 }

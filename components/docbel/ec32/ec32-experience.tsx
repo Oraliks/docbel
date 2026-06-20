@@ -58,7 +58,7 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
   // Incrémenté par « Mode guidé pas à pas » pour démarrer le simulateur à la connexion.
   const [guidedTick, setGuidedTick] = useState(0)
 
-  const { legal, builderMetadata } = content
+  const { legal } = content
   const legalChecks = [legal.noRealData, legal.noTransmission, legal.useOfficial].filter(
     (point) => point.trim().length > 0,
   )
@@ -87,26 +87,19 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
   const renderPanel = (): ReactNode => {
     switch (tab) {
       case 'demo':
+        // Les cas pratiques ont leur propre onglet ; on ne les répète pas ici
+        // (le mode « Cas pratiques » ci-dessous y renvoie).
         return (
-          <div className="flex flex-col gap-12">
-            <Ec32LearningModes
-              content={content}
-              onAction={(key) => {
-                if (key === 'scenarios') goToTab('cas')
-                else if (key === 'guided') {
-                  setGuidedTick((t) => t + 1)
-                  scrollTo('simulateur')
-                } else scrollTo('simulateur')
-              }}
-            />
-            <Ec32ScenarioCards
-              content={content}
-              onSelect={loadScenario}
-              limit={4}
-              onViewAll={() => goToTab('cas')}
-              anchorId="cas-pratiques"
-            />
-          </div>
+          <Ec32LearningModes
+            content={content}
+            onAction={(key) => {
+              if (key === 'scenarios') goToTab('cas')
+              else if (key === 'guided') {
+                setGuidedTick((t) => t + 1)
+                scrollTo('simulateur')
+              } else scrollTo('simulateur')
+            }}
+          />
         )
       case 'cas':
         return <Ec32ScenarioCards content={content} onSelect={loadScenario} />
@@ -134,7 +127,7 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
     <div className="flex w-full flex-col gap-8 md:gap-10">
       <Ec32DisclaimerBanner content={content} />
 
-      <Ec32Hero content={content} />
+      <Ec32Hero content={content} onSecondary={() => goToTab('cas')} />
 
       {/* Élément principal : le simulateur, toujours visible. */}
       <Ec32InteractiveSimulator
@@ -174,7 +167,7 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
       </section>
 
       {/* ── Bande légale finale ──────────────────────────────────── */}
-      {(hasLegal || builderMetadata.lastReviewedNote) && (
+      {hasLegal && (
         <footer className="w-full">
           <div className="flex w-full flex-col gap-6 rounded-[2rem] border border-primary/12 bg-primary/[0.04] px-6 py-8 shadow-[0_1px_3px_rgba(26,26,36,0.04),0_16px_38px_-24px_rgba(91,70,229,0.18)] md:px-10">
             <div className="grid gap-6 md:grid-cols-[1.2fr_1fr] md:items-center">
@@ -215,13 +208,6 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
                 </ul>
               )}
             </div>
-
-            {builderMetadata.lastReviewedNote && (
-              <p className="max-w-3xl border-t border-primary/10 pt-4 text-xs leading-relaxed text-muted-foreground/80">
-                {builderMetadata.lastReviewedNote}
-                {builderMetadata.version ? ` · Version ${builderMetadata.version}` : ''}
-              </p>
-            )}
           </div>
         </footer>
       )}

@@ -53,7 +53,7 @@ export function Ec32GuidedSteps({
     <nav aria-label="Étapes de la simulation" className="w-full">
       {/* ── Desktop : stepper numéroté connecté ── */}
       <ol
-        className="hidden items-center gap-1 overflow-x-auto md:flex"
+        className="hidden flex-wrap items-center gap-x-1 gap-y-2 md:flex"
         role="list"
       >
         {orderedSteps.map((step, i) => {

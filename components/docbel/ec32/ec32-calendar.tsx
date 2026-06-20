@@ -14,19 +14,35 @@
 import { Flag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Ec32DayCell, Ec32SituationType } from '@/lib/ec32/types'
-import { EC32_SELECTABLE_SITUATIONS } from '@/lib/ec32/types'
+import { EC32_PRIMARY_SITUATIONS, EC32_T2_SITUATION } from '@/lib/ec32/types'
 import { SITUATION_VISUALS } from '@/components/docbel/ec32/ui'
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const
 
+/** Lettre de la situation PRINCIPALE (le chômage reste vide). */
 const SITUATION_LETTER: Partial<Record<Ec32SituationType, string>> = {
   work_own_employer: 'T1',
+  // Les types « travail ailleurs » sont l'axe secondaire T2 (cumulable) ;
+  // conservés ici comme repli au cas où ils seraient la situation principale.
   work_elsewhere_usual_day: 'T2',
   work_elsewhere_non_usual_day: 'T2',
   work_other_regular_employer: 'T2',
   incapacity: 'M',
   vacation: 'V',
   other: 'A',
+}
+
+/**
+ * Code affiché dans une case : situation principale + éventuel T2 cumulé.
+ * Ex. `T1/T2`, `M/T2`, `V/T2`, `A/T2`, ou `T2` seul (chômage + travail ailleurs),
+ * ou la lettre principale seule, ou rien (chômage pur).
+ */
+function cellCode(cell: Ec32DayCell): string {
+  const primary = SITUATION_LETTER[cell.situation] ?? ''
+  const secondary = cell.secondaryWork ? 'T2' : ''
+  // Évite « T2/T2 » si la situation principale est déjà un travail ailleurs.
+  if (primary === 'T2' && secondary === 'T2') return 'T2'
+  return [primary, secondary].filter(Boolean).join('/')
 }
 
 export function Ec32Calendar({
@@ -95,9 +111,19 @@ export function Ec32Calendar({
             {legendTitle}
           </span>
         )}
-        {EC32_SELECTABLE_SITUATIONS.map((situation) => (
-          <LegendDot key={situation} situation={situation} label={situationLabel(situation)} />
+        {EC32_PRIMARY_SITUATIONS.map((situation) => (
+          <LegendDot
+            key={situation}
+            situation={situation}
+            code={SITUATION_LETTER[situation]}
+            label={situationLabel(situation)}
+          />
         ))}
+        <LegendDot
+          situation={EC32_T2_SITUATION}
+          code="T2"
+          label="Travail ailleurs (2ᵉ activité)"
+        />
         <LegendDot
           situation="first_effective_unemployment_day"
           label={situationLabel('first_effective_unemployment_day')}
@@ -108,20 +134,35 @@ export function Ec32Calendar({
   )
 }
 
-/** Point de légende discret : petite pastille colorée + libellé muté. */
+/** Point de légende discret : code (lettre) + pastille colorée + libellé muté. */
 function LegendDot({
   situation,
   label,
+  code,
 }: {
   situation: Ec32SituationType
   label: string
+  /** Lettre/code affiché dans les cases (T1, T2, M, V, A). Absent = chômage. */
+  code?: string
 }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-      <span
-        className={cn('size-2 shrink-0 rounded-full', SITUATION_VISUALS[situation].dot)}
-        aria-hidden
-      />
+      {code ? (
+        <span
+          className={cn(
+            'text-[0.65rem] font-bold leading-none',
+            SITUATION_VISUALS[situation].accent,
+          )}
+          aria-hidden
+        >
+          {code}
+        </span>
+      ) : (
+        <span
+          className={cn('size-2 shrink-0 rounded-full', SITUATION_VISUALS[situation].dot)}
+          aria-hidden
+        />
+      )}
       {label}
     </span>
   )
@@ -159,12 +200,20 @@ function Ec32CalendarCell({
   }
 
   const label = `Jour ${cell.day}, situation : ${situationLabel(cell.situation)}${
-    cell.isFirstEffectiveDay ? ' (premier jour de chômage effectif)' : ''
-  }${selected ? ' — sélectionné' : ''}`
+    cell.secondaryWork ? ' + travail ailleurs (T2)' : ''
+  }${cell.isFirstEffectiveDay ? ' (premier jour de chômage effectif)' : ''}${
+    selected ? ' — sélectionné' : ''
+  }`
 
   const isFirstEffective =
     cell.isFirstEffectiveDay && cell.situation === 'temporary_unemployment'
-  const letter = SITUATION_LETTER[cell.situation]
+  const code = cellCode(cell)
+  // Couleur : si une situation principale porte une lettre, sa teinte ; sinon
+  // (chômage + T2) on prend la teinte « travail ailleurs ».
+  const codeAccent =
+    SITUATION_LETTER[cell.situation] && cell.situation !== 'temporary_unemployment'
+      ? visual.accent
+      : SITUATION_VISUALS.work_elsewhere_usual_day.accent
 
   return (
     <button
@@ -173,7 +222,7 @@ function Ec32CalendarCell({
       disabled={disabled}
       aria-pressed={selected}
       aria-label={label}
-      title={situationLabel(cell.situation)}
+      title={`${situationLabel(cell.situation)}${cell.secondaryWork ? ' + travail ailleurs (T2)' : ''}`}
       className={cn(
         'relative flex aspect-square min-h-8 flex-col items-center justify-center gap-0.5 rounded-xl border text-xs transition-all duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0',
         visual.cell,
@@ -184,11 +233,11 @@ function Ec32CalendarCell({
     >
       <span className="text-xs font-semibold text-foreground">{cell.day}</span>
       <span className="flex h-3 items-center justify-center">
-        {isFirstEffective ? (
+        {isFirstEffective && !code ? (
           <Flag className="size-3 text-primary" aria-hidden />
-        ) : letter ? (
-          <span className={cn('text-[0.6rem] font-bold leading-none', visual.accent)} aria-hidden>
-            {letter}
+        ) : code ? (
+          <span className={cn('text-[0.6rem] font-bold leading-none', codeAccent)} aria-hidden>
+            {code}
           </span>
         ) : null}
       </span>

@@ -44,12 +44,35 @@ export const EC32_SELECTABLE_SITUATIONS = [
   'other',
 ] as const satisfies readonly Ec32SituationType[]
 
-/** Sous-groupe "Travail ailleurs" du sélecteur. */
+/**
+ * Situations PRINCIPALES d'un jour (axe « première activité / statut »).
+ * Le travail ailleurs (T2) est un axe SECONDAIRE cumulable, pas une situation
+ * principale — voir `EC32_WORK_ELSEWHERE_SITUATIONS` et `Ec32DayCell.secondaryWork`.
+ * Un jour combine donc une situation principale + éventuellement T2 :
+ * `T1/T2`, `M/T2`, `V/T2`, `A/T2`, ou `T2` seul (chômage + travail ailleurs).
+ */
+export const EC32_PRIMARY_SITUATIONS = [
+  'temporary_unemployment',
+  'work_own_employer',
+  'incapacity',
+  'vacation',
+  'other',
+] as const satisfies readonly Ec32SituationType[]
+
+/**
+ * Sous-groupe "Travail ailleurs" — l'axe SECONDAIRE T2 (seconde activité dans
+ * la journée, chez un autre employeur / pour soi-même). Cumulable avec n'importe
+ * quelle situation principale. `work_elsewhere_usual_day` sert de valeur
+ * canonique quand T2 est marqué sans précision.
+ */
 export const EC32_WORK_ELSEWHERE_SITUATIONS = [
   'work_elsewhere_usual_day',
   'work_elsewhere_non_usual_day',
   'work_other_regular_employer',
 ] as const satisfies readonly Ec32SituationType[]
+
+/** Valeur canonique de l'axe secondaire T2 (travail ailleurs). */
+export const EC32_T2_SITUATION = 'work_elsewhere_usual_day' as const satisfies Ec32SituationType
 
 /** Situations automatiques (jamais choisies à la main). */
 export const EC32_AUTO_SITUATIONS = [
@@ -111,8 +134,14 @@ export interface Ec32DayCell {
   inMonth: boolean
   /** Encodable (faux ⇒ grisé, `not_applicable` : hors mois / hors contrat). */
   selectable: boolean
-  /** Situation actuellement enregistrée. */
+  /** Situation principale actuellement enregistrée (axe « statut »). */
   situation: Ec32SituationType
+  /**
+   * Seconde activité dans la journée : travail ailleurs (T2). Cumulable avec
+   * la situation principale. `true` ⇒ la cellule affiche « …/T2 » (ou « T2 »
+   * seul si la situation principale est le chômage).
+   */
+  secondaryWork?: boolean
   /** Premier jour de chômage effectif (icône automatique). */
   isFirstEffectiveDay?: boolean
   /** Dernière correction appliquée à ce jour (le cas échéant). */

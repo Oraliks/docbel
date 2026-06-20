@@ -12,7 +12,7 @@
 import { useEffect, useState } from 'react'
 import { Lock } from 'lucide-react'
 import {
-  EC32_SELECTABLE_SITUATIONS,
+  EC32_PRIMARY_SITUATIONS,
   type Ec32SituationType,
 } from '@/lib/ec32/types'
 import {
@@ -131,7 +131,7 @@ export function Ec32CorrectionModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {EC32_SELECTABLE_SITUATIONS.map((situation) => (
+                  {EC32_PRIMARY_SITUATIONS.map((situation) => (
                     <SelectItem key={situation} value={situation}>
                       {situationLabel(situation)}
                     </SelectItem>

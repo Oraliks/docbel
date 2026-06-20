@@ -91,6 +91,13 @@ import {
   Ec32SendModal,
   type Ec32SendModalLabels,
 } from '@/components/docbel/ec32/ec32-send-modal'
+import { Ec32OAuthConsent } from '@/components/docbel/ec32/auth/ec32-oauth-consent'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 // ─────────────────────────── Constantes ───────────────────────────
 
@@ -864,6 +871,11 @@ function StepLogin({
   onRestart: () => void
   onContinue: () => void
 }) {
+  const [consentOpen, setConsentOpen] = useState(false)
+  // Le consentement OAuth (durée 23 mois) s'applique aux moyens fédéraux
+  // eID/itsme dans la vraie app. On le propose en aperçu pédagogique.
+  const canShowConsent = revealed === 'eid' || revealed === 'itsme'
+
   return (
     <Ec32Card>
       <h3 className="text-lg font-bold text-foreground">{getLabel('login.title')}</h3>
@@ -898,6 +910,28 @@ function StepLogin({
         </Ec32InfoBox>
       )}
 
+      {canShowConsent && (
+        <div className="mt-3 rounded-2xl border border-primary/20 bg-primary/5 p-3">
+          <p className="text-xs font-semibold text-foreground">
+            Lors de la première connexion, un écran d’autorisation s’affiche
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            L’application demande l’accès à vos données pour une durée de{' '}
+            <strong className="text-foreground">23 mois</strong>, renouvelée à
+            l’expiration.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="mt-2"
+            onClick={() => setConsentOpen(true)}
+          >
+            Voir l’écran de consentement
+          </Button>
+        </div>
+      )}
+
       <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
         <Button type="button" variant="ghost" size="sm" onClick={onRestart}>
           <RotateCcw className="size-3.5" aria-hidden />
@@ -907,6 +941,20 @@ function StepLogin({
           {getLabel('login.continue')}
         </Button>
       </div>
+
+      <Dialog open={consentOpen} onOpenChange={setConsentOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="sr-only">
+              Écran de consentement — simulation
+            </DialogTitle>
+          </DialogHeader>
+          <Ec32OAuthConsent
+            onConfirm={() => setConsentOpen(false)}
+            onCancel={() => setConsentOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </Ec32Card>
   )
 }

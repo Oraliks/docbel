@@ -94,9 +94,12 @@ export function Ec32Card({
   return (
     <Tag
       className={cn(
-        'rounded-3xl border border-white/60 bg-card/80 p-5 shadow-sm backdrop-blur-sm',
+        // Carte premium « blanche » : surface opaque (≈ #FAF7FF), hairline violet
+        // discret et ombre douce élevée. Plus de glass translucide lourd.
+        'rounded-3xl border border-primary/10 bg-card p-5',
+        'shadow-[0_1px_3px_rgba(26,26,36,0.05),0_16px_38px_-22px_rgba(91,70,229,0.24)]',
         interactive &&
-          'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-within:-translate-y-0.5',
+          'transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_2px_8px_rgba(26,26,36,0.07),0_26px_52px_-26px_rgba(91,70,229,0.34)] focus-within:-translate-y-0.5',
         className,
       )}
     >

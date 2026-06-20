@@ -8,37 +8,13 @@
 //  + flèches précédent/suivant). 100 % pédagogique, aucune donnée réelle.
 // =====================================================================
 
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  FileSignature,
-  CalendarDays,
-  CalendarCheck,
-  LogIn,
-  Building2,
-  PencilLine,
-  ListChecks,
-  Send,
-} from 'lucide-react'
-import type { ComponentType } from 'react'
+import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { EC32_STEPS, type Ec32StepKey } from '@/lib/ec32/types'
 
 export interface Ec32GuidedStep {
   key: Ec32StepKey
   title: string
-}
-
-const STEP_ICONS: Record<Ec32StepKey, ComponentType<{ className?: string }>> = {
-  login: LogIn,
-  declaration: FileSignature,
-  employer: Building2,
-  month: CalendarDays,
-  calendar: CalendarCheck,
-  correction: PencilLine,
-  verify: ListChecks,
-  send: Send,
 }
 
 export function Ec32GuidedSteps({
@@ -75,49 +51,64 @@ export function Ec32GuidedSteps({
 
   return (
     <nav aria-label="Étapes de la simulation" className="w-full">
-      {/* ── Desktop : rail horizontal ── */}
-      <ol className="hidden flex-wrap items-stretch gap-1.5 md:flex" role="list">
-        {orderedSteps.map((step) => {
+      {/* ── Desktop : stepper numéroté connecté ── */}
+      <ol
+        className="hidden items-center gap-1 overflow-x-auto md:flex"
+        role="list"
+      >
+        {orderedSteps.map((step, i) => {
           const isActive = step.key === activeStep
           const isDone = step.index < activeIndex
           const reachable = step.index <= maxReachedIndex
-          const Icon = STEP_ICONS[step.key]
+          // Le connecteur AVANT ce nœud est violet si le nœud est atteint (fait/actif).
+          const connectorOn = isDone || isActive
           return (
-            <li key={step.key} className="min-w-0 flex-1">
+            <li key={step.key} className="flex flex-none items-center">
+              {i > 0 && (
+                <span
+                  aria-hidden
+                  className={cn(
+                    'mx-1 h-px w-5 shrink-0 rounded-full lg:w-8',
+                    connectorOn ? 'bg-primary/40' : 'bg-border',
+                  )}
+                />
+              )}
               <button
                 type="button"
                 onClick={() => reachable && onSelectStep(step.key)}
                 disabled={!reachable}
                 aria-current={isActive ? 'step' : undefined}
                 className={cn(
-                  'flex w-full items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+                  'flex flex-none items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
                   isActive
-                    ? 'border-primary/50 bg-primary/10 text-foreground shadow-sm'
+                    ? 'bg-primary/10'
                     : reachable
-                      ? 'border-border bg-card/60 text-foreground hover:bg-primary/5'
-                      : 'cursor-not-allowed border-border/60 bg-muted/30 text-muted-foreground',
+                      ? 'hover:bg-primary/5'
+                      : 'cursor-not-allowed',
                 )}
               >
                 <span
                   className={cn(
-                    'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
-                    isActive
+                    'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors',
+                    isActive || isDone
                       ? 'bg-primary text-primary-foreground'
-                      : isDone
-                        ? 'bg-primary/20 text-primary'
-                        : 'bg-muted text-muted-foreground',
+                      : 'bg-muted text-muted-foreground',
                   )}
                   aria-hidden
                 >
-                  {isDone ? <Check className="size-3.5" /> : <Icon className="size-3.5" />}
+                  {isDone ? <Check className="size-3.5" /> : step.index + 1}
                 </span>
-                <span className="min-w-0">
-                  <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Étape {step.index + 1}
-                  </span>
-                  <span className="block truncate text-xs font-medium leading-tight">
-                    {step.title}
-                  </span>
+                <span
+                  className={cn(
+                    'whitespace-nowrap text-xs leading-tight',
+                    isActive
+                      ? 'font-semibold text-foreground'
+                      : isDone
+                        ? 'font-medium text-foreground'
+                        : 'font-medium text-muted-foreground',
+                  )}
+                >
+                  {step.title}
                 </span>
               </button>
             </li>

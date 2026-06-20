@@ -253,9 +253,16 @@ export const ec32Page = defineBlock({
                 rows={3}
                 className={taClass}
               />
+              <Field label="Lien (CTA) — vide = aucun lien">
+                <Input
+                  value={it.cta}
+                  onChange={(e) => set({ cta: e.target.value })}
+                  placeholder="Commencer"
+                />
+              </Field>
             </>
           )}
-          addItem={() => ({ key: '', icon: 'sparkles', title: '', description: '' })}
+          addItem={() => ({ key: '', icon: 'sparkles', title: '', description: '', cta: '' })}
         />
       </Group>
 

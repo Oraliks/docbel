@@ -18,7 +18,7 @@
 // =====================================================================
 
 import { useState } from 'react'
-import { ShieldCheck } from 'lucide-react'
+import { Check, ShieldCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Ec32Content } from '@/lib/ec32/schema'
@@ -57,13 +57,12 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
   const [tab, setTab] = useState<string>('demo')
 
   const { legal, builderMetadata } = content
-  const legalPoints = [
-    legal.simulationLabel,
-    legal.noRealData,
-    legal.noTransmission,
-    legal.notReplacement,
-    legal.useOfficial,
-  ].filter((point) => point.trim().length > 0)
+  const legalChecks = [legal.noRealData, legal.noTransmission, legal.useOfficial].filter(
+    (point) => point.trim().length > 0,
+  )
+  const hasLegal = Boolean(
+    legal.simulationLabel.trim() || legal.notReplacement.trim() || legalChecks.length,
+  )
 
   const scrollTo = (id: string) => {
     if (typeof document !== 'undefined') {
@@ -88,7 +87,10 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
       case 'demo':
         return (
           <div className="flex flex-col gap-12">
-            <Ec32LearningModes content={content} />
+            <Ec32LearningModes
+              content={content}
+              onAction={(key) => (key === 'scenarios' ? goToTab('cas') : scrollTo('simulateur'))}
+            />
             <Ec32ScenarioCards
               content={content}
               onSelect={loadScenario}
@@ -163,21 +165,50 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
       </section>
 
       {/* ── Bande légale finale ──────────────────────────────────── */}
-      {(legalPoints.length > 0 || builderMetadata.lastReviewedNote) && (
+      {(hasLegal || builderMetadata.lastReviewedNote) && (
         <footer className="w-full">
-          <div className="flex w-full flex-col gap-4 rounded-[2rem] border border-white/60 bg-card/50 px-6 py-8 text-sm leading-relaxed text-muted-foreground shadow-sm backdrop-blur-sm md:px-10">
-            {legalPoints.length > 0 && (
-              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {legalPoints.map((point, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
-                    <span className="min-w-0">{point}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <div className="flex w-full flex-col gap-6 rounded-[2rem] border border-primary/12 bg-primary/[0.04] px-6 py-8 shadow-[0_1px_3px_rgba(26,26,36,0.04),0_16px_38px_-24px_rgba(91,70,229,0.18)] md:px-10">
+            <div className="grid gap-6 md:grid-cols-[1.2fr_1fr] md:items-center">
+              {/* Intro : bouclier + titre + description */}
+              <div className="flex items-start gap-3">
+                <span
+                  className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary"
+                  aria-hidden
+                >
+                  <ShieldCheck className="size-5" />
+                </span>
+                <div className="min-w-0">
+                  {legal.simulationLabel.trim() && (
+                    <p className="text-sm font-semibold text-foreground">{legal.simulationLabel}</p>
+                  )}
+                  {legal.notReplacement.trim() && (
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                      {legal.notReplacement}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Garanties : 3 points cochés */}
+              {legalChecks.length > 0 && (
+                <ul className="grid grid-cols-1 gap-2.5">
+                  {legalChecks.map((point, index) => (
+                    <li key={index} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                      <span
+                        className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary"
+                        aria-hidden
+                      >
+                        <Check className="size-3" strokeWidth={3} />
+                      </span>
+                      <span className="min-w-0">{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             {builderMetadata.lastReviewedNote && (
-              <p className="max-w-3xl text-xs leading-relaxed text-muted-foreground/80">
+              <p className="max-w-3xl border-t border-primary/10 pt-4 text-xs leading-relaxed text-muted-foreground/80">
                 {builderMetadata.lastReviewedNote}
                 {builderMetadata.version ? ` · Version ${builderMetadata.version}` : ''}
               </p>

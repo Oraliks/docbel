@@ -63,6 +63,10 @@ const ec32LearningModeSchema = z.object({
   icon: z.string().max(40).default(''),
   title: z.string().max(160).default(''),
   description: z.string().max(800).default(''),
+  /** Libellé du lien d'action de la carte (ex. « Commencer »). Vide = pas de lien.
+   *  L'action est dérivée de `key` : `scenarios` → onglet « Cas pratiques »,
+   *  sinon → défilement vers le simulateur. */
+  cta: z.string().max(80).default(''),
 })
 
 const ec32EmployerSchema = z.object({

@@ -4,17 +4,68 @@
 //  eC3.2 — Cartes de cas pratiques
 // ---------------------------------------------------------------------
 //  Catalogue des scénarios chargeables dans le simulateur. Chaque carte
-//  affiche le titre, les badges niveau/durée, un court extrait, et un
-//  bouton « Charger dans le simulateur » qui remonte la clé via onSelect.
+//  est cliquable en entier (charge la clé via onSelect) et affiche un
+//  badge d'icône coloré selon la situation, le titre, un court extrait,
+//  puis une rangée niveau/durée.
 //  `limit` : n'affiche que les N premiers + bouton « Voir tous les cas
 //  pratiques » (onViewAll) — utilisé pour l'aperçu compact de l'onglet Démo.
 // =====================================================================
 
-import { ArrowRight, PlayCircle } from 'lucide-react'
+import { ArrowRight, Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Ec32Card, Ec32Section } from '@/components/docbel/ec32/ui'
+import { Ec32Section, SITUATION_VISUALS } from '@/components/docbel/ec32/ui'
 import type { Ec32Content } from '@/lib/ec32/schema'
+import type { Ec32SituationType } from '@/lib/ec32/types'
+
+/** Mappe une clé de scénario vers un type de situation (pour la couleur/icône). */
+const SCENARIO_SITUATION: Record<string, Ec32SituationType> = {
+  'all-month': 'temporary_unemployment',
+  'work-own': 'work_own_employer',
+  'work-elsewhere-usual': 'work_elsewhere_usual_day',
+  'work-elsewhere-weekend': 'work_elsewhere_non_usual_day',
+  'other-regular': 'work_other_regular_employer',
+  sick: 'incapacity',
+  vacation: 'vacation',
+  'other-situation': 'other',
+  'multiple-employers': 'work_other_regular_employer',
+  'no-payment-org': 'other',
+  correction: 'other',
+  'construction-cp124': 'work_own_employer',
+  'first-effective-day': 'first_effective_unemployment_day',
+  'wrong-month': 'other',
+}
+
+/** Tinte le badge de niveau selon son libellé (repli secondary). */
+function levelBadge(level: string) {
+  const normalized = level.trim().toLowerCase()
+  if (normalized.startsWith('débutant') || normalized.startsWith('debutant')) {
+    return (
+      <Badge className="border-transparent bg-emerald-100 font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+        {level}
+      </Badge>
+    )
+  }
+  if (normalized.startsWith('intermédiaire') || normalized.startsWith('intermediaire')) {
+    return (
+      <Badge className="border-transparent bg-amber-100 font-medium text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+        {level}
+      </Badge>
+    )
+  }
+  if (normalized.startsWith('avancé') || normalized.startsWith('avance')) {
+    return (
+      <Badge className="border-transparent bg-rose-100 font-medium text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+        {level}
+      </Badge>
+    )
+  }
+  return (
+    <Badge variant="secondary" className="font-medium">
+      {level}
+    </Badge>
+  )
+}
 
 export function Ec32ScenarioCards({
   content,
@@ -43,36 +94,33 @@ export function Ec32ScenarioCards({
   const limited = typeof limit === 'number' ? all.slice(0, limit) : all
   const hasMore = typeof limit === 'number' && all.length > limited.length
 
-  return (
-    <Ec32Section
-      id={anchorId}
-      title={withHeader ? scenarios.title || undefined : undefined}
-      subtitle={withHeader ? scenarios.subtitle || undefined : undefined}
-    >
-      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {limited.map((item, index) => {
-          const excerpt = item.context || item.objective
-          return (
-            <Ec32Card key={item.key || index} as="li" interactive className="flex flex-col gap-3">
+  const grid = (
+    <ul className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {limited.map((item, index) => {
+        const excerpt = item.context || item.objective
+        const situation = SCENARIO_SITUATION[item.key] ?? 'temporary_unemployment'
+        const visual = SITUATION_VISUALS[situation]
+        const Icon = visual.icon
+        return (
+          <li key={item.key || index} className="flex">
+            <button
+              type="button"
+              onClick={() => onSelect?.(item.key)}
+              disabled={!onSelect}
+              aria-label={`Charger le cas pratique « ${item.title || item.key} » dans le simulateur`}
+              className="flex w-full flex-col gap-3 rounded-3xl border border-primary/10 bg-card p-5 text-left shadow-[0_1px_3px_rgba(26,26,36,0.05),0_16px_38px_-22px_rgba(91,70,229,0.24)] transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_2px_6px_rgba(26,26,36,0.06),0_22px_46px_-22px_rgba(91,70,229,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:border-primary/10 disabled:hover:shadow-[0_1px_3px_rgba(26,26,36,0.05),0_16px_38px_-22px_rgba(91,70,229,0.24)]"
+            >
+              <span
+                className={`flex size-11 items-center justify-center rounded-2xl ${visual.chip}`}
+                aria-hidden
+              >
+                <Icon className={`size-5 ${visual.accent}`} />
+              </span>
+
               {item.title && (
                 <h3 className="text-base font-semibold leading-snug text-foreground">
                   {item.title}
                 </h3>
-              )}
-
-              {(item.level || item.duration) && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {item.level && (
-                    <Badge variant="secondary" className="font-medium">
-                      {item.level}
-                    </Badge>
-                  )}
-                  {item.duration && (
-                    <Badge variant="outline" className="font-medium">
-                      {item.duration}
-                    </Badge>
-                  )}
-                </div>
               )}
 
               {excerpt && (
@@ -81,33 +129,62 @@ export function Ec32ScenarioCards({
                 </p>
               )}
 
-              <div className="mt-auto pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => onSelect?.(item.key)}
-                  disabled={!onSelect}
-                  aria-label={`Charger le cas pratique « ${item.title || item.key} » dans le simulateur`}
-                >
-                  <PlayCircle className="size-4" aria-hidden />
-                  Charger dans le simulateur
-                </Button>
-              </div>
-            </Ec32Card>
-          )
-        })}
-      </ul>
+              {(item.level || item.duration) && (
+                <div className="mt-auto flex items-center gap-2 pt-1">
+                  {item.level && levelBadge(item.level)}
+                  {item.duration && (
+                    <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                      <Clock className="size-3.5" aria-hidden />
+                      {item.duration}
+                    </span>
+                  )}
+                </div>
+              )}
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
 
-      {hasMore && onViewAll && (
-        <div className="mt-5 flex justify-center">
-          <Button type="button" variant="ghost" onClick={onViewAll} className="font-semibold text-primary">
+  // Mode COMPACT : header avec titre à gauche + « Voir tous » à droite.
+  if (hasMore && onViewAll) {
+    return (
+      <section id={anchorId} className="space-y-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="space-y-1">
+            {withHeader && scenarios.title && (
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">
+                {scenarios.title}
+              </h2>
+            )}
+            {withHeader && scenarios.subtitle && (
+              <p className="text-sm text-muted-foreground">{scenarios.subtitle}</p>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onViewAll}
+            className="font-semibold text-primary"
+          >
             Voir tous les cas pratiques ({all.length})
             <ArrowRight className="size-4" aria-hidden />
           </Button>
         </div>
-      )}
+        {grid}
+      </section>
+    )
+  }
+
+  // Mode complet : header classique <Ec32Section>.
+  return (
+    <Ec32Section
+      id={anchorId}
+      title={withHeader ? scenarios.title || undefined : undefined}
+      subtitle={withHeader ? scenarios.subtitle || undefined : undefined}
+    >
+      {grid}
     </Ec32Section>
   )
 }

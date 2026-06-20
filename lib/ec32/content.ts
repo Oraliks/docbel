@@ -73,6 +73,7 @@ export const ec32DefaultContent: Ec32Content = {
         title: 'Mode guidé pas à pas',
         description:
           'Avancez étape par étape, de la connexion simulée à l’envoi fictif. À chaque écran, une explication et un conseil du coach vous accompagnent.',
+        cta: 'Commencer',
       },
       {
         key: 'scenarios',
@@ -80,6 +81,7 @@ export const ec32DefaultContent: Ec32Content = {
         title: 'Cas pratiques',
         description:
           'Chargez un cas concret (travail un jour de chômage, maladie, vacances, plusieurs employeurs…) directement dans le simulateur pour vous entraîner.',
+        cta: 'Explorer les cas',
       },
       {
         key: 'free',
@@ -87,6 +89,7 @@ export const ec32DefaultContent: Ec32Content = {
         title: 'Exploration libre',
         description:
           'Manipulez le calendrier à votre rythme : changez les situations, testez les corrections et observez ce qui se passe, sans aucune contrainte.',
+        cta: 'Ouvrir le simulateur',
       },
     ],
   },

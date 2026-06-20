@@ -36,7 +36,7 @@ export function Ec32CoachPanel({
   return (
     <aside
       aria-label={title || 'Coach Docbel'}
-      className="rounded-3xl border border-primary/20 bg-primary/5 p-5 shadow-sm backdrop-blur-sm"
+      className="rounded-3xl border border-primary/15 bg-primary/[0.04] p-5 shadow-[0_1px_3px_rgba(26,26,36,0.05),0_16px_38px_-22px_rgba(91,70,229,0.20)]"
     >
       <div className="mb-3 flex items-center gap-2">
         <span
@@ -53,7 +53,7 @@ export function Ec32CoachPanel({
       )}
 
       {tip && (
-        <div className="flex gap-3 rounded-2xl border border-primary/20 bg-card/70 p-3">
+        <div className="flex gap-3 rounded-2xl border border-primary/[0.12] bg-card p-3">
           <Lightbulb className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
           <p className="text-sm leading-relaxed text-foreground">{tip}</p>
         </div>

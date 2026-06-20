@@ -206,7 +206,7 @@ export const SITUATION_VISUALS: Record<Ec32SituationType, SituationVisual> = {
     icon: Hourglass,
     chip: 'border-violet-300/60 bg-violet-100/70 text-violet-800 dark:border-violet-400/30 dark:bg-violet-950/50 dark:text-violet-200',
     cell: 'bg-violet-100/60 dark:bg-violet-900/30',
-    dot: 'bg-violet-500',
+    dot: 'bg-white ring-1 ring-violet-400 dark:ring-violet-300',
     accent: 'text-violet-600 dark:text-violet-300',
   },
   work_own_employer: {
@@ -246,10 +246,10 @@ export const SITUATION_VISUALS: Record<Ec32SituationType, SituationVisual> = {
   },
   vacation: {
     icon: Palmtree,
-    chip: 'border-emerald-300/60 bg-emerald-100/70 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-950/50 dark:text-emerald-200',
-    cell: 'bg-emerald-200/70 dark:bg-emerald-800/40',
-    dot: 'bg-emerald-500',
-    accent: 'text-emerald-600 dark:text-emerald-300',
+    chip: 'border-primary/40 bg-primary/15 text-primary',
+    cell: 'bg-violet-100/60 dark:bg-violet-900/30',
+    dot: 'bg-primary',
+    accent: 'text-primary',
   },
   other: {
     icon: Tag,
@@ -267,10 +267,10 @@ export const SITUATION_VISUALS: Record<Ec32SituationType, SituationVisual> = {
   },
   first_effective_unemployment_day: {
     icon: Flag,
-    chip: 'border-primary/40 bg-primary/15 text-primary',
-    cell: 'bg-violet-100/60 dark:bg-violet-900/30',
-    dot: 'bg-primary',
-    accent: 'text-primary',
+    chip: 'border-emerald-300/60 bg-emerald-100/70 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-950/50 dark:text-emerald-200',
+    cell: 'bg-emerald-200/70 dark:bg-emerald-800/40',
+    dot: 'bg-emerald-500',
+    accent: 'text-emerald-600 dark:text-emerald-300',
   },
 }
 

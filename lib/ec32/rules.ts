@@ -243,7 +243,7 @@ const FRENCH_MONTHS: readonly string[] = [
  * - `correction` initialisée à `null`.
  */
 export function generateMonthGrid(behavior: Ec32MonthBehavior): Ec32DayCell[] {
-  const { year, month, firstEffectiveDay, contractStartDay, contractEndDay } =
+  const { year, month, firstEffectiveDay, firstSendDay, contractStartDay, contractEndDay } =
     behavior
   const daysInMonth = lastDayOfMonth(year, month)
 
@@ -292,6 +292,7 @@ export function generateMonthGrid(behavior: Ec32MonthBehavior): Ec32DayCell[] {
         inMonth &&
         firstEffectiveDay !== undefined &&
         day === firstEffectiveDay,
+      isFirstSendDay: inMonth && day === firstSendDay,
       correction: null,
     })
   }

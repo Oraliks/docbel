@@ -236,12 +236,19 @@ function Ec32CalendarCell({
     return (
       <div
         className={cn(
-          'flex aspect-square min-h-8 flex-col items-center justify-center rounded-xl border border-dashed border-border/40 bg-slate-200/50 text-xs dark:bg-slate-800/40',
+          'flex aspect-square min-h-8 flex-col rounded-xl border border-dashed border-border/40 bg-slate-200/50 p-1.5 text-xs dark:bg-slate-800/40',
           cell.inMonth ? 'opacity-60' : 'opacity-35',
         )}
         aria-hidden
       >
-        <span className="font-medium text-muted-foreground">{cell.day}</span>
+        <span className="self-start text-[0.8rem] font-medium text-muted-foreground">
+          {cell.day}
+        </span>
+        {cell.inMonth && (
+          <span className="mt-auto w-full text-center text-[0.6rem] font-semibold uppercase text-muted-foreground/70">
+            NA
+          </span>
+        )}
       </div>
     )
   }
@@ -282,17 +289,17 @@ function Ec32CalendarCell({
       aria-label={label}
       title={`${situationLabel(cell.situation)}${secondaryLabel}`}
       className={cn(
-        'relative flex aspect-square min-h-8 flex-col items-center justify-center gap-0.5 rounded-xl border text-xs transition-all duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0',
+        'relative flex aspect-square min-h-8 flex-col rounded-xl border p-1.5 text-xs transition-all duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0',
         cellTone,
         selected
           ? 'border-primary ring-2 ring-primary/60 shadow-[0_8px_20px_-12px_rgba(91,70,229,0.45)]'
           : 'border-border/60 hover:border-primary/40 hover:shadow-[0_8px_18px_-14px_rgba(91,70,229,0.35)]',
       )}
     >
-      {/* Numéro du jour (pastille pêche si 1ʳᵉ date d'envoi). */}
+      {/* Numéro du jour en haut-gauche (pastille pêche si 1ʳᵉ date d'envoi). */}
       <span
         className={cn(
-          'flex size-5 items-center justify-center rounded-full text-xs font-semibold',
+          'flex size-5 items-center justify-center self-start rounded-full text-[0.8rem] font-semibold',
           isWork ? 'text-primary-foreground' : 'text-foreground',
           cell.isFirstSendDay && 'bg-orange-200/90 text-orange-900',
         )}
@@ -300,12 +307,12 @@ function Ec32CalendarCell({
         {cell.day}
       </span>
 
-      {/* Marqueurs : lettre principale + icônes secondaires empilées. */}
+      {/* Marqueurs : lettre principale + icônes secondaires, en bas-centre. */}
       {(letter || secondary.length > 0) && (
-        <span className="flex h-3 items-center justify-center gap-0.5">
+        <span className="mt-auto flex w-full items-center justify-center gap-1 pb-0.5">
           {letter && (
             <span
-              className={cn('text-[0.6rem] font-bold leading-none', markerColor(cell.situation))}
+              className={cn('text-[0.8rem] font-bold leading-none', markerColor(cell.situation))}
               aria-hidden
             >
               {letter}
@@ -316,7 +323,7 @@ function Ec32CalendarCell({
             return (
               <Icon
                 key={s}
-                className={cn('size-2.5', isFilledGlyph(s) && 'fill-current', markerColor(s))}
+                className={cn('size-3', isFilledGlyph(s) && 'fill-current', markerColor(s))}
                 aria-hidden
               />
             )

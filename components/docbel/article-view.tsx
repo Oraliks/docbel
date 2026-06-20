@@ -108,15 +108,11 @@ export function ArticleView({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  // Image du hero — priorité :
-  //   1. articleHeroIllustration  — illustration dédiée hero (la plus propre)
-  //   2. article.image            — image à la une de l'article (peut contenir
-  //      titre/cadre cuits, mais elle a été choisie pour CET article)
-  //   3. categoryIllustration     — illustration générique de la catégorie
-  // L'overlay pastel/voile fond toujours l'image dans le hero, quel que soit
-  // le cas. `article.image` reste utilisée par ailleurs pour l'OG + listings.
-  const heroImage =
-    articleHeroIllustration ?? article.image ?? categoryIllustration;
+  // Image du hero = illustration ÉDITORIALE dédiée, JAMAIS la bannière.
+  // Priorité : illustration hero de l'article > illustration de la catégorie.
+  // `article.image` est volontairement EXCLUE : c'est la bannière « image à la
+  // une » (titre/ONEM cuits dedans) → réservée à l'aperçu OG + aux vignettes.
+  const heroImage = articleHeroIllustration ?? categoryIllustration;
 
   const hasSummary = Boolean(article.summary?.length);
   const hasDocs = Boolean(article.linkedDocs?.length);

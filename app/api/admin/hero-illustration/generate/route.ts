@@ -49,14 +49,14 @@ export async function POST(req: NextRequest) {
   // Variation aléatoire pour DIVERSIFIER les générations d'un même thème.
   // Sans ça, un prompt très contraint produit quasi toujours le même rendu.
   const VARIATIONS = [
-    "vue de 3/4 légèrement de dessus, lumière douce venant de la gauche",
-    "vue frontale équilibrée, sujet flottant un peu plus haut",
-    "vue de 3/4 légèrement de dessous, ombre projetée allongée",
-    "perspective latérale, sujet principal légèrement incliné",
-    "cadrage proche, focus sur un seul élément avec petits objets en orbite",
-    "cadrage aéré, sujet plus petit avec quelques éléments secondaires flottants",
-    "vue plongeante très douce, objets disposés en éventail",
-    "vue à hauteur de regard, deux objets principaux côte à côte",
+    "un conseiller accueille une personne à son bureau, vue de 3/4",
+    "deux personnes regardent ensemble un ordinateur portable, ambiance d'entraide",
+    "une personne est accompagnée à un guichet d'accueil, silhouettes douces en arrière-plan",
+    "un petit groupe autour d'une table de bureau avec des dossiers",
+    "une personne tend un document à une autre, geste d'accompagnement",
+    "bureau ouvert et lumineux, quelques personnages à différentes distances",
+    "un conseiller souriant explique quelque chose, cadrage rapproché et chaleureux",
+    "une personne travaille sereinement à un bureau, plante et laptop, lumière douce",
   ];
   const variationHint =
     VARIATIONS[Math.floor(Math.random() * VARIATIONS.length)];

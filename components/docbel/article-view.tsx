@@ -213,47 +213,41 @@ export function ArticleView({
           </Link>
 
           <div className="glass-surface flex flex-col overflow-hidden">
-            {/* ── HERO — SINGLE LAYER (vraie fusion) ────────────────────────
-                Plus de grille à 2 cellules avec un fond propre à droite : ça
-                créait une frontière visible. Ici l'illustration est posée en
-                `position: absolute` SUR TOUTE LA CARTE, ancrée à droite, et
-                le voile horizontal — dans la MÊME couleur (`--glass-surface`)
-                que le fond du hero — s'étale sur toute la largeur. Aucune
-                bordure visible, l'image fait partie de la carte.
-                Sur mobile (< sm), l'illustration est masquée pour ne pas
-                écraser le texte. ──────────────────────────────────────── */}
+            {/* ── HERO — image IA en COUCHE DE FOND ─────────────────────────
+                Une seule carte (pas de grille texte/image). L'image IA couvre
+                TOUT le hero (`absolute inset-0`, `object-cover`) avec une
+                opacité réduite, surmontée d'un voile clair pour la lisibilité,
+                et le contenu (titre HTML, méta, À retenir, actions) passe
+                AU-DESSUS. Le titre cuit dans l'image IA devient un wash /
+                texture d'ambiance, le titre HTML reste le texte principal. ── */}
             <div className="relative overflow-hidden">
-              {/* Illustration en FOND de la carte, ancrée à droite (>= sm) */}
               {heroImage ? (
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-y-0 right-0 hidden w-[55%] sm:block lg:w-[48%]"
-                >
+                <>
+                  {/* Image IA en COUCHE DE FOND : couvre tout, opacité réduite */}
                   <SmartImage
                     src={heroImage}
                     alt=""
-                    fit="contain"
+                    fit="cover"
                     fallbackMode="hide"
-                    className="size-full"
-                    imgClassName="object-contain object-right p-4 sm:p-6"
+                    className="pointer-events-none absolute inset-0 size-full"
+                    imgClassName="object-cover opacity-30"
                   />
-                  {/* Voile horizontal : la MÊME couleur que le fond du hero
-                      → la transition ne se voit pas. Opaque à gauche, totalement
-                      transparent à droite. */}
+                  {/* Voile clair (couleur du hero) pour assurer la lisibilité
+                      du texte HTML et adoucir le rendu de l'image en fond. */}
                   <div
-                    className="absolute inset-0"
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
                     style={{
                       background:
-                        "linear-gradient(to right, var(--glass-surface) 0%, color-mix(in oklab, var(--glass-surface) 50%, transparent) 35%, transparent 80%)",
+                        "color-mix(in oklab, var(--glass-surface) 62%, transparent)",
                     }}
                   />
-                </div>
+                </>
               ) : null}
 
-              {/* Contenu textuel — par-dessus l'illustration. Le padding-right
-                  desktop réserve la place de l'illustration absolue (≈ même
-                  largeur que la zone d'illustration). */}
-              <div className="relative z-[1] flex flex-col gap-3 p-6 sm:p-7 sm:pr-[44%] lg:pr-[40%]">
+              {/* Contenu textuel — par-dessus la couche de fond. Pleine
+                  largeur (plus de padding-right réservé). */}
+              <div className="relative z-[1] flex flex-col gap-3 p-6 sm:p-7">
                 <CategoryBadge>{article.tag}</CategoryBadge>
 
                 <h1 className="glass-display text-[27px] font-semibold leading-[1.05] sm:text-[40px]">

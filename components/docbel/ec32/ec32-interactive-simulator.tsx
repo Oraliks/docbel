@@ -1248,9 +1248,18 @@ function CardWorkspace({
         {content.simulator.fictitiousDataNotice}
       </p>
 
-      {/* Corps : calendrier gauche + panel contextuel droit. */}
-      <div className={cn('mt-3', rightPanel && 'grid gap-4 lg:grid-cols-[minmax(0,1fr)_clamp(200px,33%,260px)] lg:items-start')}>
-        <div className="max-w-[500px] space-y-3">
+      {/* Corps : calendrier gauche + panel contextuel droit.
+          Deux colonnes équilibrées et centrées (le calendrier garde sa taille
+          idéale ~500px, le panel respire au lieu d'être écrasé). Empilées en
+          mobile/tablette, côte à côte dès lg. */}
+      <div
+        className={cn(
+          'mt-3',
+          rightPanel &&
+            'grid gap-6 lg:grid-cols-[minmax(0,500px)_minmax(300px,440px)] lg:items-start lg:justify-center lg:gap-10',
+        )}
+      >
+        <div className="mx-auto w-full max-w-[500px] space-y-3 lg:mx-0">
           {activeStep === 'calendar' && (
             <Ec32InfoBox tone="info">
               {getNotice('calendar.defaultChomage')}
@@ -1278,7 +1287,7 @@ function CardWorkspace({
         </div>
 
         {rightPanel && (
-          <div className="border-t border-border/60 pt-3 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+          <div className="mx-auto w-full max-w-[500px] border-t border-border/60 pt-4 lg:mx-0 lg:max-w-none lg:border-l lg:border-t-0 lg:pl-6 lg:pt-1">
             {rightPanel}
           </div>
         )}
@@ -1338,18 +1347,18 @@ function Ec32AdaptPanel({
   const firstCell = firstDate ? cells.find((c) => c.date === firstDate) : undefined
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <CalendarDays className="size-3.5 shrink-0 text-primary" aria-hidden />
-          <h3 className="truncate text-xs font-bold text-foreground">{getLabel('card.adapt')}</h3>
+        <div className="flex min-w-0 items-center gap-2">
+          <CalendarDays className="size-4 shrink-0 text-primary" aria-hidden />
+          <h3 className="truncate text-sm font-bold text-foreground">{getLabel('card.adapt')}</h3>
         </div>
-        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[0.65rem] font-medium text-primary">
+        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
           {count} {getLabel('selector.selected')}
         </span>
       </div>
 
-      <p className="text-[0.7rem] leading-relaxed text-muted-foreground">
+      <p className="text-xs leading-relaxed text-muted-foreground">
         {count === 1 && firstDate ? (
           <>
             <span className="font-medium text-foreground">{formatDate(firstDate)}</span>
@@ -1363,7 +1372,6 @@ function Ec32AdaptPanel({
       <Ec32SituationSelector
         selectedCount={count}
         value={selectorSituation}
-        compact
         groupLabel={getLabel('selector.workElsewhereGroup')}
         saveLabel={count > 1 ? getLabel('selector.saveMulti') : getLabel('selector.save')}
         cancelLabel={getLabel('selector.cancel')}
@@ -1403,10 +1411,10 @@ function Ec32ControlsPanel({
   onOpenSend: () => void
 }) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-1.5">
-        <ListChecks className="size-3.5 shrink-0 text-primary" aria-hidden />
-        <h3 className="text-xs font-bold text-foreground">Contrôles &amp; validation</h3>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <ListChecks className="size-4 shrink-0 text-primary" aria-hidden />
+        <h3 className="text-sm font-bold text-foreground">Contrôles &amp; validation</h3>
       </div>
 
       {/* Affiliation organisme de paiement */}

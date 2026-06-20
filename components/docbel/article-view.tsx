@@ -101,11 +101,10 @@ export function ArticleView({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  // Illustration du hero = illustration PROPRE de la catégorie (sans texte).
-  // On n'utilise PAS `article.image` ici : c'est la bannière générée (titre cuit
-  // dedans), réservée à l'aperçu de partage (OG) et aux vignettes de liste —
-  // l'afficher dans le hero (qui a déjà le titre en HTML) doublonnait le titre.
-  const heroImage = categoryIllustration;
+  // Image du hero : image perso de l'article (bannière IA en priorité), sinon
+  // illustration de la catégorie. Le doublon de titre éventuel est neutralisé
+  // par l'overlay pastel qui fond l'image dans la carte (cf. zone droite).
+  const heroImage = article.image ?? categoryIllustration;
 
   const hasSummary = Boolean(article.summary?.length);
   const hasDocs = Boolean(article.linkedDocs?.length);
@@ -202,47 +201,14 @@ export function ArticleView({
           </Link>
 
           <div className="glass-surface flex flex-col overflow-hidden">
-            {/* ── HERO FUSIONNÉ : une seule couche, titre PLEINE LARGEUR,
-                illustration fondue en fond à droite (pas deux colonnes), compact. ── */}
-            <div className="relative overflow-hidden">
-              {/* Illustration fondue, ancrée à droite (masquée < sm) */}
-              {heroImage ? (
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-y-0 right-0 hidden w-[44%] items-center justify-center p-6 sm:flex lg:w-[40%]"
-                >
-                  <SmartImage
-                    src={heroImage}
-                    alt=""
-                    fit="contain"
-                    fallbackMode="hide"
-                    className="size-full"
-                    imgClassName="object-contain object-center"
-                  />
-                  {/* Voile léger : fond seulement le bord GAUCHE de l'illustration
-                      dans la carte (lisibilité du titre) ; elle reste nette à droite. */}
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background:
-                        "linear-gradient(to right, var(--glass-surface) 0%, color-mix(in oklab, var(--glass-surface) 30%, transparent) 24%, transparent 54%)",
-                    }}
-                  />
-                </div>
-              ) : null}
-
-              {/* Voile violet doux sur tout le hero (effet « fusion », même sans image) */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(115deg, transparent 46%, color-mix(in oklab, var(--glass-accent-deep) 10%, transparent) 100%)",
-                }}
-              />
-
-              {/* Contenu — pleine largeur, par-dessus l'illustration */}
-              <div className="relative flex flex-col gap-3 p-6 pb-16 sm:p-7 sm:pb-7">
+            {/* ── HERO — carte éditoriale 2 zones, fusion par overlays ─────
+                Gauche : badge, titre, méta, À retenir (compact), boutons icônes.
+                Droite : image intégrée (radial gradient derrière + overlay
+                pastel fondu vers la gauche). Bords arrondis via overflow-hidden
+                de la carte parente. ──────────────────────────────────────── */}
+            <div className="grid grid-cols-1 items-stretch lg:grid-cols-[1.45fr_minmax(0,1fr)]">
+              {/* ── GAUCHE : contenu textuel ─────────────────────────────── */}
+              <div className="flex flex-col gap-3 p-6 sm:p-7">
                 <CategoryBadge>{article.tag}</CategoryBadge>
 
                 <h1 className="glass-display text-[27px] font-semibold leading-[1.05] sm:text-[40px]">
@@ -325,29 +291,84 @@ export function ArticleView({
                     </div>
                   </div>
                 ) : null}
+
+                {/* Actions — icônes SEULES (pas de label) */}
+                <div className="mt-1 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleSaved}
+                    aria-pressed={saved}
+                    aria-label={saved ? "Retirer des enregistrements" : "Enregistrer l'article"}
+                    className="inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+                    style={
+                      saved
+                        ? {
+                            background: "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
+                            borderColor: "color-mix(in oklab, var(--glass-accent-deep) 40%, transparent)",
+                            color: "var(--glass-accent-deep)",
+                          }
+                        : undefined
+                    }
+                  >
+                    <BookmarkIcon className="size-4" fill={saved ? "currentColor" : "none"} />
+                  </button>
+                  <ShareMenu compact title={article.title} text={article.desc} />
+                </div>
               </div>
 
-              {/* Actions (partager / enregistrer) — bas-droite, façon maquette */}
-              <div className="absolute right-4 bottom-4 z-10 flex items-center gap-2 sm:right-5 sm:bottom-5">
-                <ShareMenu compact title={article.title} text={article.desc} />
-                <button
-                  type="button"
-                  onClick={toggleSaved}
-                  aria-pressed={saved}
-                  aria-label={saved ? "Retirer des enregistrements" : "Enregistrer l'article"}
-                  className="inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-                  style={
-                    saved
-                      ? {
-                          background: "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
-                          borderColor: "color-mix(in oklab, var(--glass-accent-deep) 40%, transparent)",
-                          color: "var(--glass-accent-deep)",
-                        }
-                      : undefined
-                  }
-                >
-                  <BookmarkIcon className="size-4" fill={saved ? "currentColor" : "none"} />
-                </button>
+              {/* ── DROITE : image intégrée (overlays de fusion) ─────────── */}
+              <div
+                className="relative flex aspect-[5/4] items-center justify-center overflow-hidden sm:aspect-auto sm:h-full sm:min-h-[280px]"
+                aria-hidden={heroImage ? undefined : true}
+              >
+                {/* Radial gradient pastel derrière l'image */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 60% 50%, color-mix(in oklab, var(--glass-accent-deep) 14%, transparent) 0%, transparent 65%)",
+                  }}
+                />
+
+                {heroImage ? (
+                  /* `object-contain` par défaut : adapté aux illustrations IA
+                     et aux PNG transparents (pas de crop). Pour des photos,
+                     l'image conservera ses marges, ce qui reste propre. */
+                  <SmartImage
+                    src={heroImage}
+                    alt=""
+                    fit="contain"
+                    fallbackMode="hide"
+                    className="relative z-[1] size-full max-h-[320px] p-4 sm:p-6"
+                    imgClassName="object-contain object-center"
+                  />
+                ) : (
+                  /* Fallback : pastel + icône document — pas d'image cassée. */
+                  <FileTextIcon
+                    className="relative z-[1] size-20 opacity-40"
+                    style={{ color: "var(--glass-accent-deep)" }}
+                  />
+                )}
+
+                {/* Overlay pastel fondant l'image dans la carte (bord gauche
+                    + léger voile global) → pas de rectangle brutal. */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(to right, var(--glass-surface) 0%, color-mix(in oklab, var(--glass-surface) 35%, transparent) 22%, transparent 55%)",
+                  }}
+                />
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, transparent 60%, color-mix(in oklab, var(--glass-surface) 35%, transparent) 100%)",
+                  }}
+                />
               </div>
             </div>
 

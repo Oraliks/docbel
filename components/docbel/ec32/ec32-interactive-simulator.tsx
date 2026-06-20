@@ -1250,7 +1250,7 @@ function CardWorkspace({
 
       {/* Corps : calendrier gauche + panel contextuel droit. */}
       <div className={cn('mt-3', rightPanel && 'grid gap-4 lg:grid-cols-[minmax(0,1fr)_clamp(200px,33%,260px)] lg:items-start')}>
-        <div className="space-y-3">
+        <div className="max-w-[500px] space-y-3">
           {activeStep === 'calendar' && (
             <Ec32InfoBox tone="info">
               {getNotice('calendar.defaultChomage')}

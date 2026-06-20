@@ -19,6 +19,16 @@ import { SITUATION_VISUALS } from '@/components/docbel/ec32/ui'
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const
 
+const SITUATION_LETTER: Partial<Record<Ec32SituationType, string>> = {
+  work_own_employer: 'T1',
+  work_elsewhere_usual_day: 'T2',
+  work_elsewhere_non_usual_day: 'T2',
+  work_other_regular_employer: 'T2',
+  incapacity: 'M',
+  vacation: 'V',
+  other: 'A',
+}
+
 export function Ec32Calendar({
   cells,
   selectedDates,
@@ -154,6 +164,7 @@ function Ec32CalendarCell({
 
   const isFirstEffective =
     cell.isFirstEffectiveDay && cell.situation === 'temporary_unemployment'
+  const letter = SITUATION_LETTER[cell.situation]
 
   return (
     <button
@@ -172,12 +183,14 @@ function Ec32CalendarCell({
       )}
     >
       <span className="text-xs font-semibold text-foreground">{cell.day}</span>
-      <span className="flex items-center gap-0.5">
+      <span className="flex h-3 items-center justify-center">
         {isFirstEffective ? (
           <Flag className="size-3 text-primary" aria-hidden />
-        ) : (
-          <span className={cn('inline-block size-2 rounded-full', visual.dot)} aria-hidden />
-        )}
+        ) : letter ? (
+          <span className={cn('text-[0.6rem] font-bold leading-none', visual.accent)} aria-hidden>
+            {letter}
+          </span>
+        ) : null}
       </span>
     </button>
   )

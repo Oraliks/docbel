@@ -34,6 +34,7 @@ import type { ComponentType } from 'react'
 import { cn } from '@/lib/utils'
 import {
   EC32_STEPS,
+  EC32_SELECTABLE_SITUATIONS,
   type Ec32CardStatus,
   type Ec32CardView,
   type Ec32Correction,
@@ -75,6 +76,7 @@ import {
   Ec32Card,
   Ec32InfoBox,
   Ec32Section,
+  Ec32SituationChip,
 } from '@/components/docbel/ec32/ui'
 import {
   Ec32GuidedSteps,
@@ -126,6 +128,11 @@ const LOGIN_METHODS: Array<{
 
 const DEFAULT_EMPLOYER_ID = 'emp-a'
 const DEFAULT_MONTH_KEY = '2025-05'
+
+/** Étape affichée au chargement : le calendrier (cœur de l'expérience, comme
+ *  une vraie application). La connexion simulée reste accessible via le
+ *  stepper, mais n'est plus l'écran principal par défaut. */
+const CALENDAR_STEP_INDEX = EC32_STEPS.indexOf('calendar')
 
 // ─────────────────────────── État persisté ───────────────────────────
 
@@ -184,10 +191,10 @@ export function Ec32InteractiveSimulator({
   )
 
   // ── État de navigation ──
-  const [activeStep, setActiveStep] = useState<Ec32StepKey>('login')
-  const [maxReachedIndex, setMaxReachedIndex] = useState(0)
+  const [activeStep, setActiveStep] = useState<Ec32StepKey>('calendar')
+  const [maxReachedIndex, setMaxReachedIndex] = useState(CALENDAR_STEP_INDEX)
   const [revealedLogin, setRevealedLogin] = useState<string | null>(null)
-  const [declarationChecked, setDeclarationChecked] = useState(false)
+  const [declarationChecked, setDeclarationChecked] = useState(true)
   const [declarationMonth, setDeclarationMonth] = useState<string>(DEFAULT_MONTH_KEY)
 
   // ── État du dossier (employeur / mois / carte) ──
@@ -250,6 +257,14 @@ export function Ec32InteractiveSimulator({
   }, [behavior, encodings, corrections])
 
   const isLocked = cardStatus === 'sent' || cardStatus === 'locked'
+
+  // Étapes « application » (carte / calendrier) : on bascule en layout 2 colonnes
+  // avec un rail contextuel (coach, légende, jour sélectionné, contrôles).
+  const isAppStep =
+    activeStep === 'calendar' ||
+    activeStep === 'correction' ||
+    activeStep === 'verify' ||
+    activeStep === 'send'
 
   const firstSendLabel = useMemo(
     () => (behavior ? getFirstSendDateLabel(behavior, monthLabel) : ''),
@@ -504,10 +519,10 @@ export function Ec32InteractiveSimulator({
   // ─────────────── Réinitialisation complète ───────────────
 
   const restart = useCallback(() => {
-    setActiveStep('login')
-    setMaxReachedIndex(0)
+    setActiveStep('calendar')
+    setMaxReachedIndex(CALENDAR_STEP_INDEX)
     setRevealedLogin(null)
-    setDeclarationChecked(false)
+    setDeclarationChecked(true)
     setDeclarationMonth(DEFAULT_MONTH_KEY)
     setEmployerId(DEFAULT_EMPLOYER_ID)
     setMonthKey(DEFAULT_MONTH_KEY)
@@ -609,8 +624,9 @@ export function Ec32InteractiveSimulator({
         </Ec32InfoBox>
       )}
 
-      {/* Grille : contenu + coach (coach passe dessous en mobile) */}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+      {/* Grille « application » : contenu à gauche, rail contextuel à droite
+          (le rail passe sous le contenu en mobile). */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_clamp(320px,30%,400px)] lg:items-start">
         <div className="min-w-0 space-y-5">
           {activeStep === 'login' && (
             <StepLogin
@@ -662,10 +678,7 @@ export function Ec32InteractiveSimulator({
             />
           )}
 
-          {(activeStep === 'calendar' ||
-            activeStep === 'correction' ||
-            activeStep === 'verify' ||
-            activeStep === 'send') && (
+          {isAppStep && (
             <CardWorkspace
               activeStep={activeStep}
               content={content}
@@ -684,19 +697,12 @@ export function Ec32InteractiveSimulator({
               situationDescription={situationDescription}
               isLocked={isLocked}
               cardStatus={cardStatus}
-              affiliated={affiliated}
-              firstSendLabel={firstSendLabel}
-              sendAllowed={sendAllowed}
               formatDate={formatDate}
               onToggleDay={toggleDay}
               onClearSelection={clearSelection}
               onSelectorSituation={setSelectorSituation}
               onApplySituation={applySituationToSelection}
               onOpenSelector={() => setSelectorOpen(true)}
-              onAffiliationChange={setAffiliated}
-              onAdvanceToSend={advanceToFirstSendDay}
-              onExportPdf={handleExportPdf}
-              onOpenSend={() => setSendOpen(true)}
               onEditDay={openCorrection}
             />
           )}
@@ -722,14 +728,44 @@ export function Ec32InteractiveSimulator({
           </div>
         </div>
 
-        {/* Coach */}
-        <Ec32CoachPanel
-          title={sim.coach.title}
-          intro={sim.coach.intro}
-          tips={sim.coach.tips}
-          activeStep={activeStep}
-          scenarioHint={scenarioHint}
-        />
+        {/* Rail contextuel : coach Docbel + (pour l'étape carte) légende des
+            statuts, jour sélectionné et contrôles/validation. */}
+        <div className="space-y-5">
+          <Ec32CoachPanel
+            title={sim.coach.title}
+            intro={sim.coach.intro}
+            tips={sim.coach.tips}
+            activeStep={activeStep}
+            scenarioHint={scenarioHint}
+          />
+
+          {isAppStep && (
+            <>
+              <Ec32LegendPanel
+                situationLabel={situationLabel}
+                legendTitle={getLabel('calendar.legend')}
+              />
+              <Ec32SelectedDayPanel
+                selectedDates={selectedDates}
+                cells={cells}
+                situationLabel={situationLabel}
+                formatDate={formatDate}
+              />
+              <Ec32ControlsPanel
+                getLabel={getLabel}
+                getNotice={getNotice}
+                affiliated={affiliated}
+                onAffiliationChange={setAffiliated}
+                firstSendLabel={firstSendLabel}
+                sendAllowed={sendAllowed}
+                isLocked={isLocked}
+                onAdvanceToSend={advanceToFirstSendDay}
+                onExportPdf={handleExportPdf}
+                onOpenSend={() => setSendOpen(true)}
+              />
+            </>
+          )}
+        </div>
       </div>
 
       {/* Modales */}
@@ -1099,19 +1135,12 @@ function CardWorkspace({
   situationDescription,
   isLocked,
   cardStatus,
-  affiliated,
-  firstSendLabel,
-  sendAllowed,
   formatDate,
   onToggleDay,
   onClearSelection,
   onSelectorSituation,
   onApplySituation,
   onOpenSelector,
-  onAffiliationChange,
-  onAdvanceToSend,
-  onExportPdf,
-  onOpenSend,
   onEditDay,
 }: {
   activeStep: Ec32StepKey
@@ -1131,19 +1160,12 @@ function CardWorkspace({
   situationDescription: (s: Ec32SituationType) => string
   isLocked: boolean
   cardStatus: Ec32CardStatus
-  affiliated: boolean
-  firstSendLabel: string
-  sendAllowed: boolean
   formatDate: (iso: string) => string
   onToggleDay: (date: string) => void
   onClearSelection: () => void
   onSelectorSituation: (s: Ec32SituationType) => void
   onApplySituation: () => void
   onOpenSelector: () => void
-  onAffiliationChange: (v: boolean) => void
-  onAdvanceToSend: () => void
-  onExportPdf: () => void
-  onOpenSend: () => void
   onEditDay: (date: string) => void
 }) {
   const selectedCount = selectedDates.size
@@ -1295,8 +1317,139 @@ function CardWorkspace({
         </div>
       )}
 
+    </Ec32Card>
+  )
+}
+
+// ═════════════════════════ Rail contextuel (étape carte) ═════════════════════════
+
+/** Légende des statuts (rail) — mêmes pastilles que sous le calendrier. */
+function Ec32LegendPanel({
+  situationLabel,
+  legendTitle,
+}: {
+  situationLabel: (s: Ec32SituationType) => string
+  legendTitle: string
+}) {
+  return (
+    <Ec32Card className="space-y-3 p-4">
+      <h3 className="text-sm font-bold text-foreground">{legendTitle}</h3>
+      <ul className="flex flex-wrap gap-2">
+        {EC32_SELECTABLE_SITUATIONS.map((situation) => (
+          <li key={situation}>
+            <Ec32SituationChip situation={situation} label={situationLabel(situation)} />
+          </li>
+        ))}
+        <li>
+          <Ec32SituationChip
+            situation="not_applicable"
+            label={situationLabel('not_applicable')}
+          />
+        </li>
+      </ul>
+    </Ec32Card>
+  )
+}
+
+/** Récapitulatif du / des jour(s) sélectionné(s) dans le calendrier (rail). */
+function Ec32SelectedDayPanel({
+  selectedDates,
+  cells,
+  situationLabel,
+  formatDate,
+}: {
+  selectedDates: Set<string>
+  cells: Ec32DayCell[]
+  situationLabel: (s: Ec32SituationType) => string
+  formatDate: (iso: string) => string
+}) {
+  const dates = Array.from(selectedDates).sort()
+  const count = dates.length
+  const firstDate = dates[0]
+  const firstCell = firstDate ? cells.find((c) => c.date === firstDate) : undefined
+
+  return (
+    <Ec32Card className="space-y-3 p-4">
+      <div className="flex items-center gap-2">
+        <span
+          className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary"
+          aria-hidden
+        >
+          <CalendarDays className="size-4" />
+        </span>
+        <h3 className="text-sm font-bold text-foreground">Jour sélectionné</h3>
+      </div>
+
+      {count === 0 ? (
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          Cliquez sur un ou plusieurs jours du calendrier pour voir leur statut et les règles
+          applicables.
+        </p>
+      ) : (
+        <div className="space-y-1.5 text-sm">
+          <p className="font-semibold text-foreground">
+            {count === 1 ? formatDate(firstDate) : `${count} jours sélectionnés`}
+          </p>
+          {count === 1 && firstCell && (
+            <p className="text-muted-foreground">
+              <span className="font-medium text-foreground">Statut actuel : </span>
+              {situationLabel(firstCell.situation)}
+            </p>
+          )}
+          <p className="text-muted-foreground">
+            <span className="font-medium text-foreground">Action requise : </span>
+            {count === 1
+              ? 'choisissez le statut de ce jour ci-contre.'
+              : 'choisissez un statut à appliquer à ces jours.'}
+          </p>
+        </div>
+      )}
+    </Ec32Card>
+  )
+}
+
+/** Contrôles & validation (rail) : affiliation, première date d'envoi, actions. */
+function Ec32ControlsPanel({
+  getLabel,
+  getNotice,
+  affiliated,
+  onAffiliationChange,
+  firstSendLabel,
+  sendAllowed,
+  isLocked,
+  onAdvanceToSend,
+  onExportPdf,
+  onOpenSend,
+}: {
+  getLabel: (key: string, fallback?: string) => string
+  getNotice: (key: string) => string
+  affiliated: boolean
+  onAffiliationChange: (v: boolean) => void
+  firstSendLabel: string
+  sendAllowed: boolean
+  isLocked: boolean
+  onAdvanceToSend: () => void
+  onExportPdf: () => void
+  onOpenSend: () => void
+}) {
+  return (
+    <Ec32Card className="space-y-4 p-4">
+      <div className="flex items-center gap-2">
+        <span
+          className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary"
+          aria-hidden
+        >
+          <ListChecks className="size-4" />
+        </span>
+        <h3 className="text-sm font-bold text-foreground">Contrôles &amp; validation</h3>
+      </div>
+
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        Tous les jours du mois doivent avoir un statut. Vérifiez les règles avant d’envoyer.
+      </p>
+
       {/* Affiliation organisme de paiement */}
-      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/60 p-3">
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3">
         <Label htmlFor="ec32-affiliation" className="text-sm text-foreground">
           {getLabel('card.affiliation')}
         </Label>
@@ -1310,7 +1463,7 @@ function CardWorkspace({
       </div>
 
       {/* Première date d'envoi */}
-      <div className="mt-4 rounded-2xl border border-border bg-muted/30 p-3">
+      <div className="rounded-2xl border border-border bg-muted/30 p-3">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {getLabel('card.firstSend')}
         </p>
@@ -1324,25 +1477,26 @@ function CardWorkspace({
               type="button"
               variant="outline"
               size="sm"
-              className="mt-3"
+              className="mt-3 w-full"
               onClick={onAdvanceToSend}
             >
               <FastForward className="size-3.5" aria-hidden />
-              Avancer jusqu’à la première date d’envoi (simulation)
+              Avancer jusqu’à la première date d’envoi
             </Button>
           </>
         )}
       </div>
 
       {/* Actions */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button type="button" variant="outline" onClick={onExportPdf}>
+      <div className="flex flex-col gap-2">
+        <Button type="button" variant="outline" className="w-full" onClick={onExportPdf}>
           <Download className="size-4" aria-hidden />
           {getLabel('card.download')}
         </Button>
         {!isLocked && (
           <Button
             type="button"
+            className="w-full"
             onClick={onOpenSend}
             disabled={!sendAllowed}
             aria-disabled={!sendAllowed}
@@ -1352,7 +1506,7 @@ function CardWorkspace({
           </Button>
         )}
         {isLocked && (
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+          <span className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
             <Check className="size-4" aria-hidden />
             Carte envoyée — simulation
           </span>

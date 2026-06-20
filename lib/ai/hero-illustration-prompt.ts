@@ -14,7 +14,19 @@
  * Le prompt reste STABLE pour garder une cohérence visuelle de catégorie en
  * catégorie. Seul le `subject` (résumé court du thème) change.
  */
-export function buildHeroIllustrationPrompt(subject: string): string {
+export function buildHeroIllustrationPrompt(
+  subject: string,
+  /**
+   * Indice de variation à injecter (composition, angle, mise en scène) pour
+   * forcer OpenAI à diversifier les générations d'un appel à l'autre — sans
+   * ça, un prompt très contraint produit des résultats quasi identiques.
+   */
+  variationHint?: string,
+): string {
+  const variationLine = variationHint
+    ? `\n\nVariante visuelle (cette génération uniquement) : ${variationHint}. Compose un cadrage, des objets ou un angle SENSIBLEMENT DIFFÉRENTS de toute génération précédente pour ce thème.`
+    : "";
+
   return `Crée une illustration 3D pour la zone droite d'un hero d'article Docbel.
 
 Style visuel (TRÈS IMPORTANT) :
@@ -46,5 +58,5 @@ Fond :
 
 Format : carré 1:1, sujet à droite, marge gauche très claire.
 
-Le rendu doit pouvoir se SUPERPOSER à une carte hero pastel via un voile horizontal (de gauche vers la droite) sans paraître être une vignette posée.`;
+Le rendu doit pouvoir se SUPERPOSER à une carte hero pastel via un voile horizontal (de gauche vers la droite) sans paraître être une vignette posée.${variationLine}`;
 }

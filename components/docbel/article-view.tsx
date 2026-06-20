@@ -108,12 +108,15 @@ export function ArticleView({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  // Image du hero — priorité : illustration article > illustration catégorie > rien.
-  // On n'utilise JAMAIS `article.image` ici : c'est la thumbnail/bannière de
-  // l'article (souvent avec texte/cadre cuits dedans), qui casse la composition
-  // du hero. Elle reste réservée à l'aperçu de partage (OG) et aux vignettes
-  // de liste.
-  const heroImage = articleHeroIllustration ?? categoryIllustration;
+  // Image du hero — priorité :
+  //   1. articleHeroIllustration  — illustration dédiée hero (la plus propre)
+  //   2. article.image            — image à la une de l'article (peut contenir
+  //      titre/cadre cuits, mais elle a été choisie pour CET article)
+  //   3. categoryIllustration     — illustration générique de la catégorie
+  // L'overlay pastel/voile fond toujours l'image dans le hero, quel que soit
+  // le cas. `article.image` reste utilisée par ailleurs pour l'OG + listings.
+  const heroImage =
+    articleHeroIllustration ?? article.image ?? categoryIllustration;
 
   const hasSummary = Boolean(article.summary?.length);
   const hasDocs = Boolean(article.linkedDocs?.length);
@@ -210,14 +213,47 @@ export function ArticleView({
           </Link>
 
           <div className="glass-surface flex flex-col overflow-hidden">
-            {/* ── HERO — carte éditoriale 2 zones, fusion par overlays ─────
-                Gauche : badge, titre, méta, À retenir (compact), boutons icônes.
-                Droite : image intégrée (radial gradient derrière + overlay
-                pastel fondu vers la gauche). Bords arrondis via overflow-hidden
-                de la carte parente. ──────────────────────────────────────── */}
-            <div className="grid grid-cols-1 items-stretch lg:grid-cols-[1.45fr_minmax(0,1fr)]">
-              {/* ── GAUCHE : contenu textuel ─────────────────────────────── */}
-              <div className="flex flex-col gap-3 p-6 sm:p-7">
+            {/* ── HERO — SINGLE LAYER (vraie fusion) ────────────────────────
+                Plus de grille à 2 cellules avec un fond propre à droite : ça
+                créait une frontière visible. Ici l'illustration est posée en
+                `position: absolute` SUR TOUTE LA CARTE, ancrée à droite, et
+                le voile horizontal — dans la MÊME couleur (`--glass-surface`)
+                que le fond du hero — s'étale sur toute la largeur. Aucune
+                bordure visible, l'image fait partie de la carte.
+                Sur mobile (< sm), l'illustration est masquée pour ne pas
+                écraser le texte. ──────────────────────────────────────── */}
+            <div className="relative overflow-hidden">
+              {/* Illustration en FOND de la carte, ancrée à droite (>= sm) */}
+              {heroImage ? (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 right-0 hidden w-[55%] sm:block lg:w-[48%]"
+                >
+                  <SmartImage
+                    src={heroImage}
+                    alt=""
+                    fit="contain"
+                    fallbackMode="hide"
+                    className="size-full"
+                    imgClassName="object-contain object-right p-4 sm:p-6"
+                  />
+                  {/* Voile horizontal : la MÊME couleur que le fond du hero
+                      → la transition ne se voit pas. Opaque à gauche, totalement
+                      transparent à droite. */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        "linear-gradient(to right, var(--glass-surface) 0%, color-mix(in oklab, var(--glass-surface) 50%, transparent) 35%, transparent 80%)",
+                    }}
+                  />
+                </div>
+              ) : null}
+
+              {/* Contenu textuel — par-dessus l'illustration. Le padding-right
+                  desktop réserve la place de l'illustration absolue (≈ même
+                  largeur que la zone d'illustration). */}
+              <div className="relative z-[1] flex flex-col gap-3 p-6 sm:p-7 sm:pr-[44%] lg:pr-[40%]">
                 <CategoryBadge>{article.tag}</CategoryBadge>
 
                 <h1 className="glass-display text-[27px] font-semibold leading-[1.05] sm:text-[40px]">
@@ -323,67 +359,6 @@ export function ArticleView({
                   </button>
                   <ShareMenu compact title={article.title} text={article.desc} />
                 </div>
-              </div>
-
-              {/* ── DROITE : image intégrée (overlays de fusion) ─────────── */}
-              <div
-                className="relative flex aspect-[5/4] items-center justify-center overflow-hidden sm:aspect-auto sm:h-full sm:min-h-[280px]"
-                aria-hidden={heroImage ? undefined : true}
-              >
-                {/* Radial gradient pastel derrière l'image */}
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0"
-                  style={{
-                    background:
-                      "radial-gradient(circle at 60% 50%, color-mix(in oklab, var(--glass-accent-deep) 14%, transparent) 0%, transparent 65%)",
-                  }}
-                />
-
-                {heroImage ? (
-                  /* Illustration ANCRÉE À DROITE (object-right) avec un
-                     padding-gauche généreux → de l'air à gauche pour la
-                     fusion ; pas de centrage. `object-contain` préserve
-                     l'illustration sans crop. */
-                  <SmartImage
-                    src={heroImage}
-                    alt=""
-                    fit="contain"
-                    fallbackMode="hide"
-                    className="relative z-[1] size-full max-h-[320px] pt-4 pr-4 pb-4 pl-12 sm:pt-6 sm:pr-6 sm:pb-6 sm:pl-16"
-                    imgClassName="object-contain object-right"
-                  />
-                ) : (
-                  /* Fallback : pastel + icône document, ancrée à droite. */
-                  <div className="relative z-[1] flex size-full items-center justify-end pr-8">
-                    <FileTextIcon
-                      className="size-20 opacity-40"
-                      style={{ color: "var(--glass-accent-deep)" }}
-                    />
-                  </div>
-                )}
-
-                {/* Overlay de fusion — RENFORCÉ : voile horizontal qui fond
-                    le bord gauche de l'illustration dans la carte sur plus
-                    de surface, + voile vertical doux. L'illustration n'a
-                    pas l'air d'une carte autonome ; elle se confond avec le
-                    hero. */}
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0"
-                  style={{
-                    background:
-                      "linear-gradient(to right, var(--glass-surface) 0%, color-mix(in oklab, var(--glass-surface) 55%, transparent) 35%, transparent 72%)",
-                  }}
-                />
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, transparent 55%, color-mix(in oklab, var(--glass-surface) 35%, transparent) 100%)",
-                  }}
-                />
               </div>
             </div>
 

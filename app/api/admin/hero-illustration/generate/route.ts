@@ -46,9 +46,24 @@ export async function POST(req: NextRequest) {
 
   const { subject } = parsed.data;
 
+  // Variation aléatoire pour DIVERSIFIER les générations d'un même thème.
+  // Sans ça, un prompt très contraint produit quasi toujours le même rendu.
+  const VARIATIONS = [
+    "vue de 3/4 légèrement de dessus, lumière douce venant de la gauche",
+    "vue frontale équilibrée, sujet flottant un peu plus haut",
+    "vue de 3/4 légèrement de dessous, ombre projetée allongée",
+    "perspective latérale, sujet principal légèrement incliné",
+    "cadrage proche, focus sur un seul élément avec petits objets en orbite",
+    "cadrage aéré, sujet plus petit avec quelques éléments secondaires flottants",
+    "vue plongeante très douce, objets disposés en éventail",
+    "vue à hauteur de regard, deux objets principaux côte à côte",
+  ];
+  const variationHint =
+    VARIATIONS[Math.floor(Math.random() * VARIATIONS.length)];
+
   // 4. Generate image and persist — no association to any model here
   try {
-    const prompt = buildHeroIllustrationPrompt(subject);
+    const prompt = buildHeroIllustrationPrompt(subject, variationHint);
     const raw = await generateImage({ prompt, size: "1024x1024" });
     const url = await saveFeaturedImage(raw, "png");
     return json({ url }, 200);

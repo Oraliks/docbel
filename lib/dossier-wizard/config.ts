@@ -1,5 +1,14 @@
 // Configuration de l'orientation wizard de `/mon-dossier`.
 //
+// ⚠️ EN COURS DE DÉPRÉCIATION (Decision Builder, migration 54).
+// Cet arbre codé en dur est désormais éditable visuellement dans l'admin
+// (/admin/decision-trees) et importé en DB par le seed `chomage-orientation`.
+// Tant que le flag `DECISION_TREE_RUNTIME_ENABLED` est OFF (ou qu'aucun arbre
+// publié n'existe), ce fichier reste le FALLBACK de `/mon-dossier` — d'où sa
+// conservation. Suppression effective prévue dans un PR séparé, après ≥ 2
+// semaines de validation en prod du runtime DB. La parité 1:1 est garantie par
+// `lib/decision-builder/__tests__/seed-parity.test.ts`.
+//
 // Arbre à 1 à 3 niveaux :
 //
 //   Situation (step 1)

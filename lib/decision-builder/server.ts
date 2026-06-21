@@ -10,6 +10,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
+import { trackDecisionTreeEvent } from "./analytics";
 import { computeTreeDiff } from "./diff";
 import { safeParseTreeContent } from "./schema";
 import {
@@ -92,7 +93,14 @@ export async function publishTree(
   if (!content) return { ok: false, reason: "invalid_content" };
 
   const report = await validateTreeContentAgainstDb(content);
-  if (!report.publishable) return { ok: false, reason: "not_publishable", report };
+  if (!report.publishable) {
+    await trackDecisionTreeEvent("decision_tree_validation_failed", {
+      treeId,
+      userId: actor,
+      metadata: { errors: report.errors.length },
+    });
+    return { ok: false, reason: "not_publishable", report };
+  }
 
   // Version monotone : dernière révision + 1.
   const last = await withDbRetry(() =>
@@ -142,6 +150,11 @@ export async function publishTree(
     treeId,
     `Version ${nextVersion}${changeNotes ? ` — ${changeNotes}` : ""}`,
   );
+  await trackDecisionTreeEvent("decision_tree_published", {
+    treeId,
+    userId: actor,
+    metadata: { version: nextVersion },
+  });
 
   return { ok: true, report, version: nextVersion, revisionId: revision.id };
 }
@@ -190,6 +203,11 @@ export async function restoreRevisionToDraft(
     treeId,
     `Restauration de la version ${revision.version} vers le brouillon`,
   );
+  await trackDecisionTreeEvent("decision_tree_restored", {
+    treeId,
+    userId: actor,
+    metadata: { version: revision.version },
+  });
 
   return { ok: true, restoredFrom: revision.version };
 }

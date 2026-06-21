@@ -6,6 +6,7 @@ import type { NextRequest } from "next/server";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { runDecisionTree } from "@/lib/decision-builder/engine";
+import { trackDecisionTreeEvent } from "@/lib/decision-builder/analytics";
 import {
   OrientationAnswersSchema,
   safeParseTreeContent,
@@ -52,5 +53,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const result = runDecisionTree(content, answersParse.data);
+  await trackDecisionTreeEvent("decision_tree_simulated", {
+    treeId: id,
+    userId: auth.user.id,
+    metadata: { resultCount: result.results.length },
+  });
   return jsonOk(result);
 }

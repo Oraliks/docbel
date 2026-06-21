@@ -7,6 +7,7 @@ import { seedFieldValidationPresets } from "./seeds/field-validation-presets";
 import { seedBureaus } from "./seeds/bureaus";
 import { seedBookingTenants } from "./seeds/booking";
 import { seedFormations } from "./seeds/formations";
+import { seedDecisionTrees } from "./seeds/decision-trees";
 
 const prisma = new PrismaClient();
 
@@ -465,6 +466,9 @@ async function main() {
 
   console.log("🌱 Seeding formations (catégories, tags, Boussole, démo)...");
   await seedFormations(prisma);
+
+  console.log("🌱 Seeding decision tree (orientation chômage)...");
+  await seedDecisionTrees(prisma);
 }
 
 main()

@@ -16,12 +16,18 @@
 /// moteur AND/OR récursif déjà testé (22 tests, 12 opérateurs).
 
 import { z } from "zod";
+import type {
+  BundleCondition as LibBundleCondition,
+  ConditionGroup as LibConditionGroup,
+} from "@/lib/bundles/conditions";
 
 // ---------------------------------------------------------------------------
 // Réutilisation : BundleCondition (lib/bundles/conditions.ts)
 //
-// On ré-exprime le type en Zod pour validation runtime. Le moteur
-// `evaluateCondition` accepte exactement ces formes.
+// On ré-exprime le type en Zod pour validation runtime, MAIS on annote les
+// schémas avec les types canoniques de `lib/bundles/conditions.ts` : ainsi
+// `z.infer` rend EXACTEMENT ces types (et non une variante structurelle), ce
+// qui permet de passer directement le résultat à `evaluateCondition` sans cast.
 // ---------------------------------------------------------------------------
 
 export const ConditionOpSchema = z.enum([
@@ -55,11 +61,9 @@ export const ConditionLeafSchema = z.object({
   value: ConditionValueSchema.optional(),
 });
 
-// Groupe AND/OR récursif — z.lazy() pour briser le cycle de type.
-export const ConditionGroupSchema: z.ZodType<{
-  type: "and" | "or";
-  rules: Array<z.infer<typeof ConditionLeafSchema> | { type: "and" | "or"; rules: unknown[] }>;
-}> = z.lazy(() =>
+// Groupe AND/OR récursif — z.lazy() pour briser le cycle de type. Annoté avec
+// le type canonique `LibConditionGroup` pour que `z.infer` coïncide.
+export const ConditionGroupSchema: z.ZodType<LibConditionGroup> = z.lazy(() =>
   z.object({
     type: z.enum(["and", "or"]),
     rules: z.array(z.union([ConditionLeafSchema, ConditionGroupSchema])),
@@ -78,7 +82,9 @@ export const LegacyRuleSchema = z.object({
 /// - `null` → toujours requis (pas de condition)
 /// - `LegacyRule[]` → format legacy V1 (ANDé implicite)
 /// - `ConditionGroup` → format V2 (arbre récursif)
-export const BundleConditionSchema = z.union([
+/// Annoté avec le type canonique pour que `z.infer` rende exactement
+/// `LibBundleCondition` (assignable à `evaluateCondition`).
+export const BundleConditionSchema: z.ZodType<LibBundleCondition> = z.union([
   z.null(),
   z.array(LegacyRuleSchema),
   ConditionGroupSchema,

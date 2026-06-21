@@ -33,6 +33,7 @@ export type ValidationCode =
   | "cycle"                     // cycle détecté dans le graphe
   // Avertissements
   | "result_no_bundle"          // result.bundleSlug === null (bientôt disponible)
+  | "missing_form"              // bundle ciblé n'a aucun PdfForm rattaché (cul-de-sac)
   | "unreachable";              // nœud non atteignable depuis root
 
 export interface Violation {
@@ -54,12 +55,21 @@ export interface ValidationReport {
   publishable: boolean;
 }
 
+/// Options de validation (toutes facultatives → signature rétro-compatible).
+export interface ValidateOptions {
+  /// Slugs de bundles actifs MAIS sans aucun PdfForm rattaché (cul-de-sac
+  /// fonctionnel). Émet un warning `missing_form` pour chaque résultat qui
+  /// les cible. Fourni par l'appelant côté serveur (la fonction reste pure).
+  bundlesWithoutForm?: Set<string>;
+}
+
 /// Valide un arbre. `knownBundleSlugs` = ensemble des slugs `DocumentBundle`
 /// actifs en DB ; à fournir par l'appelant (la fonction reste pure, pas de
 /// dépendance Prisma).
 export function validateDecisionTree(
   content: DecisionTreeContent,
   knownBundleSlugs: Set<string>,
+  opts: ValidateOptions = {},
 ): ValidationReport {
   const v: Violation[] = [];
   const nodes = content.nodes;
@@ -159,6 +169,14 @@ export function validateDecisionTree(
           code: "unknown_bundle",
           nodeId,
           message: `Le dossier "${node.bundleSlug}" n'existe pas ou n'est pas actif.`,
+          meta: { bundleSlug: node.bundleSlug },
+        });
+      } else if (opts.bundlesWithoutForm?.has(node.bundleSlug)) {
+        v.push({
+          severity: "warning",
+          code: "missing_form",
+          nodeId,
+          message: `Le dossier "${node.bundleSlug}" n'a aucun formulaire rattaché.`,
           meta: { bundleSlug: node.bundleSlug },
         });
       }

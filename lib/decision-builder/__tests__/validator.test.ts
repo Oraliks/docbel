@@ -243,6 +243,34 @@ describe("validateDecisionTree — warnings", () => {
     expect(r.publishable).toBe(true); // warning n'empêche pas la publication
   });
 
+  it("'missing_form' when result targets a bundle without any PdfForm", () => {
+    const t = tree(
+      {
+        q: { type: "question", id: "q", text: "?", optionIds: ["a"] },
+        a: { type: "option", id: "a", label: "A", nextId: "r" },
+        r: {
+          type: "result",
+          id: "r",
+          bundleSlug: "chomage-complet",
+          title: "T",
+          rationale: "R",
+          matchLevel: "recommande",
+        },
+      },
+      "q",
+    );
+    const r = validateDecisionTree(t, VALID_BUNDLES, {
+      bundlesWithoutForm: new Set(["chomage-complet"]),
+    });
+    expect(
+      r.warnings.some(
+        (e) => e.code === "missing_form" && e.nodeId === "r",
+      ),
+    ).toBe(true);
+    // un warning n'empêche pas la publication
+    expect(r.publishable).toBe(true);
+  });
+
   it("'unreachable' when a node isn't reachable from root", () => {
     const t = tree(
       {

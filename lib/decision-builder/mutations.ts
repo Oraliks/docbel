@@ -101,7 +101,7 @@ export function addOption(
 // ---------------------------------------------------------------------------
 
 type QuestionPatch = Partial<Pick<QuestionNode, "text" | "helpText" | "icon" | "description">>;
-type OptionPatch = Partial<Pick<OptionNode, "label" | "helpText" | "conditions">>;
+type OptionPatch = Partial<Pick<OptionNode, "label" | "helpText" | "icon" | "conditions">>;
 type ResultPatch = Partial<
   Pick<
     ResultNode,

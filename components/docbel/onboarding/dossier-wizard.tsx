@@ -17,7 +17,7 @@
 // requis pour quitter step 1. Aucun `defaultValue`, aucune redirection
 // possible sans choix explicite.
 
-import { useRef, useState } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -87,6 +87,17 @@ interface Props {
   /// (documents, points d'attention, dossiers proches). Optionnel : si vide,
   /// le résultat se limite au titre + explication de la config.
   catalog?: WizardCatalog;
+  /// Mode « test » (simulation admin) : désactive l'envoi d'analytics ET
+  /// neutralise la navigation des CTA de résultat (on ne quitte pas l'éditeur).
+  /// Additif, défaut `false` → comportement public inchangé.
+  dryRun?: boolean;
+}
+
+/// Contexte de mode test, lu par les sous-composants de résultat pour gater
+/// l'analytics et la navigation.
+const DryRunContext = createContext(false);
+function useDryRun() {
+  return useContext(DryRunContext);
 }
 
 type StepNumber = 1 | 2 | 3 | 4;
@@ -98,10 +109,12 @@ const STEP_LABELS: Record<StepNumber, string> = {
   4: "Résultat",
 };
 
-export function DossierWizard({ situations, catalog = {} }: Props) {
+export function DossierWizard({ situations, catalog = {}, dryRun = false }: Props) {
   const [currentStep, setCurrentStep] = useState<StepNumber>(1);
   // N'émet `wizard_started` qu'une fois par session de wizard.
   const startedRef = useRef(false);
+  // En mode test, on n'émet aucun event analytics.
+  const track: typeof trackBundleEventClient = dryRun ? () => {} : trackBundleEventClient;
   const [selectedSituation, setSelectedSituation] = useState<string | null>(
     null,
   );
@@ -131,9 +144,9 @@ export function DossierWizard({ situations, catalog = {} }: Props) {
     if (!next) return;
     if (!startedRef.current) {
       startedRef.current = true;
-      trackBundleEventClient("wizard_started");
+      track("wizard_started");
     }
-    trackBundleEventClient("wizard_step_completed", {
+    track("wizard_step_completed", {
       metadata: { step: 1, situation: value },
     });
     setSelectedSituation(value);
@@ -144,7 +157,7 @@ export function DossierWizard({ situations, catalog = {} }: Props) {
   }
 
   function handleSubOptionSelect(value: string) {
-    trackBundleEventClient("wizard_step_completed", { metadata: { step: 2 } });
+    track("wizard_step_completed", { metadata: { step: 2 } });
     setSelectedSubOption(value);
     setSelectedRefine(null);
     const opt = situation?.subQuestion?.options.find((o) => o.value === value);
@@ -153,7 +166,7 @@ export function DossierWizard({ situations, catalog = {} }: Props) {
   }
 
   function handleRefineSelect(value: string) {
-    trackBundleEventClient("wizard_step_completed", { metadata: { step: 3 } });
+    track("wizard_step_completed", { metadata: { step: 3 } });
     setSelectedRefine(value);
     setCurrentStep(4);
   }
@@ -203,7 +216,7 @@ export function DossierWizard({ situations, catalog = {} }: Props) {
     // Reset avant d'avoir atteint un résultat = abandon ; au step 4 = simple
     // « recommencer » (pas un abandon).
     if (currentStep < 4) {
-      trackBundleEventClient("wizard_abandoned", {
+      track("wizard_abandoned", {
         metadata: { step: currentStep },
       });
     }
@@ -214,6 +227,7 @@ export function DossierWizard({ situations, catalog = {} }: Props) {
   }
 
   return (
+    <DryRunContext.Provider value={dryRun}>
     <Card className={cn(GLASS_CARD, "h-full")}>
       <CardHeader>
         <CardTitle className="flex items-center gap-3 text-base">
@@ -280,6 +294,7 @@ export function DossierWizard({ situations, catalog = {} }: Props) {
         )}
       </CardContent>
     </Card>
+    </DryRunContext.Provider>
   );
 }
 
@@ -696,6 +711,7 @@ function PrimaryAvailable({
   result: WizardResult;
   onReset: () => void;
 }) {
+  const dryRun = useDryRun();
   return (
     <div className="space-y-3 rounded-2xl border border-[color:var(--glass-accent-a)]/30 bg-[color:var(--glass-accent-a)]/5 p-4">
       <div className="flex items-start gap-2">
@@ -737,22 +753,29 @@ function PrimaryAvailable({
           <RotateCcw className="size-4" aria-hidden />
           Recommencer le guide
         </Button>
-        <Button
-          render={
-            <Link
-              href={`/d/${primary.slug}`}
-              onClick={() =>
-                trackBundleEventClient("bundle_opened", {
-                  bundleId: primary.slug ?? undefined,
-                  metadata: { from: "wizard" },
-                })
-              }
-            />
-          }
-        >
-          Démarrer la démarche
-          <ArrowRight className="size-4" aria-hidden />
-        </Button>
+        {dryRun ? (
+          <Button disabled title="Navigation désactivée en mode test">
+            Démarrer la démarche
+            <ArrowRight className="size-4" aria-hidden />
+          </Button>
+        ) : (
+          <Button
+            render={
+              <Link
+                href={`/d/${primary.slug}`}
+                onClick={() =>
+                  trackBundleEventClient("bundle_opened", {
+                    bundleId: primary.slug ?? undefined,
+                    metadata: { from: "wizard" },
+                  })
+                }
+              />
+            }
+          >
+            Démarrer la démarche
+            <ArrowRight className="size-4" aria-hidden />
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -765,6 +788,7 @@ function PrimaryUnavailable({
   primary: DerivedDossier;
   onReset: () => void;
 }) {
+  const dryRun = useDryRun();
   return (
     <div className="space-y-3 rounded-2xl border border-amber-500/30 bg-amber-50/60 p-4 dark:bg-amber-950/20">
       <div className="flex items-start gap-2">
@@ -792,16 +816,24 @@ function PrimaryUnavailable({
           <RotateCcw className="size-4" aria-hidden />
           Recommencer le guide
         </Button>
-        <Button render={<Link href="/contact" />}>
-          Contacter le service
-          <ArrowRight className="size-4" aria-hidden />
-        </Button>
+        {dryRun ? (
+          <Button disabled title="Navigation désactivée en mode test">
+            Contacter le service
+            <ArrowRight className="size-4" aria-hidden />
+          </Button>
+        ) : (
+          <Button render={<Link href="/contact" />}>
+            Contacter le service
+            <ArrowRight className="size-4" aria-hidden />
+          </Button>
+        )}
       </div>
     </div>
   );
 }
 
 function RelatedCard({ dossier }: { dossier: DerivedDossier }) {
+  const dryRun = useDryRun();
   return (
     <div className="flex items-center gap-3 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2.5">
       <div className="min-w-0 flex-1">
@@ -817,7 +849,13 @@ function RelatedCard({ dossier }: { dossier: DerivedDossier }) {
           </p>
         )}
       </div>
-      {dossier.slug && (
+      {dossier.slug && dryRun && (
+        <Button variant="outline" disabled title="Navigation désactivée en mode test">
+          Ouvrir le dossier
+          <ArrowRight className="size-3.5" aria-hidden />
+        </Button>
+      )}
+      {dossier.slug && !dryRun && (
         <Button
           variant="outline"
           render={

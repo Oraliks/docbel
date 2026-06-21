@@ -258,6 +258,13 @@ function OptionFields({
           onChange={(e) => update({ helpText: e.target.value || undefined })}
         />
       </Field>
+      <Field label="Icône (Lucide) — réponses de 1er niveau uniquement">
+        <Input
+          value={node.icon ?? ""}
+          onChange={(e) => update({ icon: e.target.value || undefined })}
+          placeholder="Briefcase"
+        />
+      </Field>
 
       <Separator />
 

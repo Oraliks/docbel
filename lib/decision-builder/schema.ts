@@ -126,6 +126,10 @@ export const OptionNodeSchema = z.object({
   label: z.string().min(1),
   /// Texte d'aide optionnel.
   helpText: z.string().optional(),
+  /// Icône (nom Lucide) — utilisée uniquement pour les options de PREMIER
+  /// niveau, qui deviennent des « situations » dans le wizard public (chaque
+  /// situation a une icône). Ignorée aux niveaux plus profonds.
+  icon: z.string().optional(),
   /// Conditions de visibilité/activation (réutilise BundleCondition).
   conditions: BundleConditionSchema.optional(),
   /// ID du nœud suivant (question ou result). Validé par `validator.ts`.

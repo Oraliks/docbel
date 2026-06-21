@@ -90,9 +90,9 @@ export function Ec32OAuthConsent({
   onCancel,
 }: Ec32OAuthConsentProps) {
   return (
-    <Ec32Card className="mx-auto max-w-2xl space-y-7 p-6 md:p-8">
+    <Ec32Card className="mx-auto max-w-2xl space-y-5 p-5 md:p-6">
       {/* En-tête : pastille décorative violette + eyebrow */}
-      <header className="space-y-4">
+      <header className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <Ec32Eyebrow>
             <ShieldCheck className="size-3.5" aria-hidden />
@@ -100,17 +100,17 @@ export function Ec32OAuthConsent({
           </Ec32Eyebrow>
           <span
             aria-hidden
-            className="inline-flex size-11 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20"
+            className="inline-flex size-10 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20"
           >
             <ShieldCheck className="size-5 text-primary" />
           </span>
         </div>
 
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold leading-tight tracking-tight text-foreground md:text-3xl">
+        <div className="space-y-1.5">
+          <h2 className="text-xl font-bold leading-tight tracking-tight text-foreground md:text-2xl">
             Bonjour {userName},
           </h2>
-          <p className="text-base leading-relaxed text-muted-foreground">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             L'application <span className="font-semibold text-foreground">eC3.2 — Carte de contrôle chômage temporaire</span>{' '}
             requiert les accès suivants :
           </p>
@@ -118,19 +118,19 @@ export function Ec32OAuthConsent({
       </header>
 
       {/* Liste des 7 scopes */}
-      <ul className="space-y-3">
+      <ul className="space-y-2">
         {SCOPES.map((scope) => (
           <li
             key={scope.title}
             className={cn(
-              'flex items-start gap-3 rounded-2xl border border-primary/10 bg-card/60 p-4',
+              'flex items-start gap-3 rounded-2xl border border-primary/10 bg-card/60 p-3',
               'shadow-[0_1px_2px_rgba(26,26,36,0.03)]',
             )}
           >
             <ScopeBadge className="mt-0.5" />
             <div className="min-w-0 flex-1 space-y-0.5">
               <p className="text-sm font-semibold leading-snug text-foreground">{scope.title}</p>
-              <p className="text-sm leading-relaxed text-muted-foreground">{scope.description}</p>
+              <p className="text-[0.8rem] leading-snug text-muted-foreground">{scope.description}</p>
             </div>
           </li>
         ))}

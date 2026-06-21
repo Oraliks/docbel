@@ -92,7 +92,6 @@ import { Ec32OAuthConsent } from '@/components/docbel/ec32/auth/ec32-oauth-conse
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
 
@@ -943,12 +942,13 @@ function StepLogin({
       </div>
 
       <Dialog open={consentOpen} onOpenChange={setConsentOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="sr-only">
-              Écran de consentement — simulation
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent
+          showCloseButton={false}
+          className="border-0 bg-transparent p-0 shadow-none ring-0 sm:max-w-2xl"
+        >
+          <DialogTitle className="sr-only">
+            Écran de consentement — simulation
+          </DialogTitle>
           <Ec32OAuthConsent
             onConfirm={() => setConsentOpen(false)}
             onCancel={() => setConsentOpen(false)}

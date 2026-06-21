@@ -146,7 +146,7 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
 
 export default async function ArticleRoute({ params }: RouteParams) {
   const { slug } = await params;
-  const article = await loadArticle(slug);
+  const [article, user] = await Promise.all([loadArticle(slug), getCurrentUser()]);
   if (!article) notFound();
 
   const related = await loadRelated(article.slug, article.category);
@@ -191,6 +191,7 @@ export default async function ArticleRoute({ params }: RouteParams) {
       article={newsItem}
       related={relatedItems}
       articleHeroIllustration={newsItem.heroIllustration}
+      isAdmin={user?.isAdmin === true}
       accent="#7C3AED"
     />
   );

@@ -12,6 +12,7 @@ import {
   ChevronDownIcon,
   ClockIcon,
   FileTextIcon,
+  PencilIcon,
   StarIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -32,6 +33,8 @@ interface ArticleViewProps {
    * article.image qui est la thumbnail/bannière OG réservée aux listes.
    */
   articleHeroIllustration?: string;
+  /** Passé depuis le server component via getCurrentUser() — zéro flash côté client. */
+  isAdmin?: boolean;
   // Kept for API compatibility with the route. Unused — glass tokens drive
   // the accent now.
   accent?: string;
@@ -60,6 +63,7 @@ export function ArticleView({
   article,
   related = [],
   articleHeroIllustration,
+  isAdmin = false,
 }: ArticleViewProps) {
   // Enrichit l'HTML rich-text avec les <abbr> du glossaire. Mémoïsé
   // pour ne pas re-tokeniser à chaque re-render (le contenu d'un
@@ -250,6 +254,17 @@ export function ArticleView({
 
                 {/* Actions — icônes SEULES (pas de label) */}
                 <div className="mt-1 flex items-center gap-2">
+                  {isAdmin && (
+                    <a
+                      href={`/admin/news/${article.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Éditer l'article"
+                      className="inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
+                    >
+                      <PencilIcon className="size-4" />
+                    </a>
+                  )}
                   <button
                     type="button"
                     onClick={toggleSaved}

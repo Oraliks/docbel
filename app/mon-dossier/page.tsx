@@ -6,6 +6,8 @@ import {
   parseWarningLevel,
 } from "@/lib/bundles/types";
 import type { WizardCatalog } from "@/lib/dossier-wizard/derive-results";
+import { WIZARD_SITUATIONS } from "@/lib/dossier-wizard/config";
+import { loadPublishedDecisionTree } from "@/lib/decision-builder/loader";
 import { loadActiveBundleRun } from "@/lib/landing/resume";
 import { MonDossierClient, type MonDossierBundle } from "./mon-dossier-client";
 
@@ -84,11 +86,18 @@ export default async function MonDossierPage() {
   // fermeture de la bande home : ici c'est une zone permanente, pas une bande.
   const activeRun = await loadActiveBundleRun({ respectDismiss: false });
 
+  // Decision Builder (phase 6) : si un arbre est publié pour le segment chômage
+  // ET que le flag runtime est actif, il pilote le wizard ; sinon fallback sur
+  // la config TS `WIZARD_SITUATIONS` (try/catch dans le loader → zéro régression).
+  const dbSituations = await loadPublishedDecisionTree("chomage");
+  const situations = dbSituations ?? WIZARD_SITUATIONS;
+
   return (
     <MonDossierClient
       bundles={serializable}
       catalog={catalog}
       activeRun={activeRun}
+      situations={situations}
     />
   );
 }

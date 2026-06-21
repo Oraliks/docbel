@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -12,6 +13,32 @@ import { trackBundleEvent } from "@/lib/bundles/analytics";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
 const COOKIE_NAME = "beldoc-bundle-session";
+const ORIENTATION_COOKIE = "beldoc-orientation";
+
+/// Lit (et efface) le cookie d'orientation posé par le wizard. Renvoie un objet
+/// JSON validé sommairement (objet plat, ≤ 10 clés) ou `null`. Best-effort :
+/// toute anomalie → null, l'orientation reste fonctionnelle sans persistance.
+async function readOrientationAnswers(): Promise<Record<string, unknown> | null> {
+  try {
+    const cookieStore = await cookies();
+    const raw = cookieStore.get(ORIENTATION_COOKIE)?.value;
+    if (!raw) return null;
+    // Consommé une fois → on l'efface.
+    cookieStore.set(ORIENTATION_COOKIE, "", { path: "/", maxAge: 0 });
+    const parsed: unknown = JSON.parse(decodeURIComponent(raw));
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed) ||
+      Object.keys(parsed as object).length > 10
+    ) {
+      return null;
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
 
 async function resolveSessionId(): Promise<string> {
   const cookieStore = await cookies();
@@ -103,6 +130,9 @@ export async function POST(
     return !!found;
   });
 
+  // Réponses du wizard d'orientation (cookie posé par DossierWizard, phase 6).
+  const orientationAnswers = await readOrientationAnswers();
+
   const run = await prisma.bundleRun.create({
     data: {
       bundleId: id,
@@ -111,6 +141,9 @@ export async function POST(
       resumeCodeHash: hashResumeCode(resumeCodePlain),
       resumeCodeExpiresAt: defaultResumeCodeExpiresAt(),
       eligibilityAnswers,
+      ...(orientationAnswers
+        ? { orientationAnswers: orientationAnswers as Prisma.InputJsonValue }
+        : {}),
     },
   });
 

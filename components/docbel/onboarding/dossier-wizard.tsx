@@ -17,7 +17,7 @@
 // requis pour quitter step 1. Aucun `defaultValue`, aucune redirection
 // possible sans choix explicite.
 
-import { createContext, useContext, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -225,6 +225,26 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
     setSelectedSubOption(null);
     setSelectedRefine(null);
   }
+
+  // Capture des réponses d'orientation à l'affichage du résultat (hors test).
+  // Stockées dans un cookie court, lu par POST /api/documents/bundles/[id]/run
+  // qui les persiste sur le BundleRun (reprise orientation + dossier, analytics).
+  useEffect(() => {
+    if (dryRun || currentStep !== 4 || !result) return;
+    try {
+      const answers = {
+        situation: { value: selectedSituation ?? "" },
+        ...(selectedSubOption ? { subOption: { value: selectedSubOption } } : {}),
+        ...(selectedRefine ? { refine: { value: selectedRefine } } : {}),
+        ...(result.dossierSlug ? { slug: { value: result.dossierSlug } } : {}),
+      };
+      document.cookie = `beldoc-orientation=${encodeURIComponent(
+        JSON.stringify(answers),
+      )}; path=/; max-age=600; samesite=lax`;
+    } catch {
+      // best-effort — l'orientation reste fonctionnelle sans ce cookie.
+    }
+  }, [dryRun, currentStep, result, selectedSituation, selectedSubOption, selectedRefine]);
 
   return (
     <DryRunContext.Provider value={dryRun}>

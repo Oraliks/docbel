@@ -22,7 +22,7 @@ import { DossierWizard } from "@/components/docbel/onboarding/dossier-wizard";
 import { LIFE_EVENT_CATEGORIES } from "@/lib/bundles/types";
 import { scoreBundleMatch } from "@/lib/bundles/vocabulary";
 import { trackBundleEventClient } from "@/lib/bundles/analytics-client";
-import { WIZARD_SITUATIONS } from "@/lib/dossier-wizard/config";
+import type { WizardSituation } from "@/lib/dossier-wizard/config";
 import type { WizardCatalog } from "@/lib/dossier-wizard/derive-results";
 import type { ActiveBundleRun } from "@/lib/landing/resume";
 
@@ -47,6 +47,9 @@ interface Props {
   catalog: WizardCatalog;
   /// Dernier dossier local en cours (zone « Reprendre »), ou null.
   activeRun: ActiveBundleRun | null;
+  /// Situations du wizard : arbre publié (Decision Builder) si dispo, sinon
+  /// fallback `WIZARD_SITUATIONS` (résolu côté serveur dans page.tsx).
+  situations: WizardSituation[];
 }
 
 /* Route réelle d'un dossier (identique à life-event-card.tsx → /d/[slug]). */
@@ -292,7 +295,7 @@ const MODE_TABS: {
   },
 ];
 
-export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
+export function MonDossierClient({ bundles, catalog, activeRun, situations }: Props) {
   const [mode, setMode] = useState<Mode>("guide");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("populaires");
@@ -583,7 +586,7 @@ export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
               aria-labelledby="tab-guide"
               className={mode === "guide" ? "outils-rise" : "hidden"}
             >
-              <DossierWizard situations={WIZARD_SITUATIONS} catalog={catalog} />
+              <DossierWizard situations={situations} catalog={catalog} />
             </div>
 
             {/* Accès direct */}

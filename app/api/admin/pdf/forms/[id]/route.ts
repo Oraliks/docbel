@@ -6,6 +6,7 @@ import { deleteSourcePdf } from "@/lib/pdf-forms/storage";
 import { isLocale, Locale, PdfFormField } from "@/lib/pdf-forms/types";
 import { sanitizeFields } from "@/lib/pdf-forms/sanitize-fields";
 import { parseTriggers } from "@/lib/pdf-forms/triggers";
+import { isStaleWrite, STALE_WRITE_CODE } from "@/lib/pdf-forms/concurrency";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -41,6 +42,19 @@ export async function PATCH(
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400, headers: json });
+  }
+
+  // --- Verrou optimiste (optimistic concurrency) ---
+  // Le client renvoie `expectedUpdatedAt` = le `updatedAt` du form tel qu'il l'a
+  // chargé. S'il diffère de la ligne en base, une autre session a écrit entre-temps
+  // → 409 (au lieu d'écraser silencieusement). Vérifié AVANT toute écriture pour ne
+  // pas créer de révision orpheline. Rétrocompat : précondition absente = pas de
+  // verrou (comportement historique conservé). Le `where` composé de l'update final
+  // ferme la fenêtre TOCTOU restante (entre ce findUnique et l'update).
+  const expectedUpdatedAt =
+    typeof body.expectedUpdatedAt === "string" ? body.expectedUpdatedAt : undefined;
+  if (isStaleWrite(expectedUpdatedAt, existing.updatedAt.getTime())) {
+    return staleWriteResponse(existing.updatedAt);
   }
 
   const data: Prisma.PdfFormUpdateInput = {};
@@ -83,24 +97,82 @@ export async function PATCH(
     }
   }
 
-  if (createRevision) {
-    await prisma.pdfFormRevision.create({
-      data: {
-        formId: existing.id,
-        version: existing.version,
-        fields: existing.fields as Prisma.InputJsonValue,
-        technicalSchema: existing.technicalSchema as Prisma.InputJsonValue,
-        sourceSha256: existing.sourceSha256,
-        sourceFileName: existing.sourceFileName,
-        changeType: typeof body.changeType === "string" ? (body.changeType as string) : "minor",
-        changeNotes: typeof body.changeNotes === "string" ? (body.changeNotes as string) : null,
-        createdBy: auth.user.id,
-      },
+  try {
+    // Écritures groupées en transaction : la révision (snapshot de l'état AVANT
+    // modification) et l'update doivent réussir ou échouer ensemble. L'update final
+    // porte un `where` composé `{ id, updatedAt: existing.updatedAt }` : si une autre
+    // session a écrit entre le findUnique et ici, aucune ligne ne matche → P2025,
+    // attrapé plus bas et renvoyé en 409. La transaction garantit alors qu'aucune
+    // révision orpheline n'est laissée derrière.
+    const updated = await prisma.$transaction(async (tx) => {
+      if (createRevision) {
+        await tx.pdfFormRevision.create({
+          data: {
+            formId: existing.id,
+            version: existing.version,
+            fields: existing.fields as Prisma.InputJsonValue,
+            technicalSchema: existing.technicalSchema as Prisma.InputJsonValue,
+            sourceSha256: existing.sourceSha256,
+            sourceFileName: existing.sourceFileName,
+            changeType: typeof body.changeType === "string" ? (body.changeType as string) : "minor",
+            changeNotes: typeof body.changeNotes === "string" ? (body.changeNotes as string) : null,
+            createdBy: auth.user.id,
+          },
+        });
+      }
+      return tx.pdfForm.update({
+        where: { id, updatedAt: existing.updatedAt },
+        data,
+      });
     });
+    return NextResponse.json(updated, { headers: json });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      // P2025 : record not found. Soit l'update n'a matché aucune ligne (le `where`
+      // updatedAt a changé = course gagnée par une autre session → conflit), soit une
+      // relation pointe vers un id inexistant (ex: organisme.connect) → référence invalide.
+      if (err.code === "P2025") {
+        // Si la ligne existe toujours mais avec un autre updatedAt, c'est un conflit.
+        const current = await prisma.pdfForm.findUnique({
+          where: { id },
+          select: { updatedAt: true },
+        });
+        if (current && current.updatedAt.getTime() !== existing.updatedAt.getTime()) {
+          return staleWriteResponse(current.updatedAt);
+        }
+        return NextResponse.json(
+          { error: "Référence invalide : un élément lié est introuvable.", code: "invalid_reference" },
+          { status: 400, headers: json }
+        );
+      }
+      // P2002 : contrainte d'unicité violée.
+      if (err.code === "P2002") {
+        return NextResponse.json(
+          { error: "Conflit d'unicité : une valeur déjà utilisée empêche l'enregistrement.", code: "unique_conflict" },
+          { status: 409, headers: json }
+        );
+      }
+    }
+    console.error("PATCH /api/admin/pdf/forms/[id] — échec d'écriture", err);
+    return NextResponse.json(
+      { error: "Erreur serveur lors de l'enregistrement." },
+      { status: 500, headers: json }
+    );
   }
+}
 
-  const updated = await prisma.pdfForm.update({ where: { id }, data });
-  return NextResponse.json(updated, { headers: json });
+/// Réponse 409 standard pour un conflit d'édition (verrou optimiste).
+/// `currentUpdatedAt` permet au client de se resynchroniser sans refetch s'il le souhaite.
+function staleWriteResponse(currentUpdatedAt: Date) {
+  return NextResponse.json(
+    {
+      error:
+        "Conflit d'édition : ce formulaire a été modifié depuis votre dernier chargement. Rechargez pour voir la dernière version.",
+      code: STALE_WRITE_CODE,
+      currentUpdatedAt,
+    },
+    { status: 409, headers: json }
+  );
 }
 
 /// DELETE — archive par défaut. `?hard=true&confirmSlug=<slug>` = définitif

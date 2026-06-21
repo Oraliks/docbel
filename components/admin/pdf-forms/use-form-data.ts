@@ -14,6 +14,10 @@ export interface EditorForm {
   organismeId: string | null;
   status: "draft" | "published" | "archived";
   version: number;
+  /// Jeton de verrou optimiste : `updatedAt` ISO du form tel que reçu au dernier
+  /// GET/PATCH réussi. Renvoyé au serveur dans `expectedUpdatedAt` à chaque save
+  /// pour détecter qu'une autre session a modifié le form entre-temps (→ 409).
+  updatedAt: string;
   defaultLocale: Locale;
   locales: Locale[];
   allowDownload: boolean;
@@ -104,17 +108,36 @@ export function useFormData(formId: string): UseFormData {
           active: form.active, disabledMessage: form.disabledMessage,
           fields: form.fields,
           triggers: form.triggers,
+          // Verrou optimiste : on renvoie le jeton reçu au dernier chargement.
+          expectedUpdatedAt: form.updatedAt,
         }),
       });
+      // Conflit d'édition : une autre session a modifié le form depuis notre
+      // chargement. On informe sans écraser et sans perdre les saisies locales :
+      // l'admin choisit de recharger (bouton « Recharger ») ou de garder son travail.
+      if (res.status === 409) {
+        const data = await res.json().catch(() => null);
+        if (data?.code === "stale_write") {
+          toast.error("Ce formulaire a été modifié ailleurs.", {
+            description: "Rechargez pour récupérer la dernière version (vos saisies actuelles ne sont pas enregistrées).",
+            action: { label: "Recharger", onClick: () => load() },
+          });
+          return;
+        }
+        toast.error(data?.error ?? "Conflit lors de l'enregistrement.");
+        return;
+      }
       if (!res.ok) { toast.error("Échec de l'enregistrement."); return; }
       const updated = await res.json();
-      patchForm({ version: updated.version });
+      // On rafraîchit le jeton de verrou avec le `updatedAt` renvoyé par le PATCH,
+      // sinon un 2e save d'affilée se croirait périmé (jeton resté sur l'ancien GET).
+      patchForm({ version: updated.version, updatedAt: updated.updatedAt });
       toast.success("Enregistré.");
       loadIssues();
     } finally {
       setSaving(false);
     }
-  }, [form, formId, patchForm, loadIssues]);
+  }, [form, formId, patchForm, loadIssues, load]);
 
   const publish = useCallback(async () => {
     setBusy("publish");
@@ -124,24 +147,42 @@ export function useFormData(formId: string): UseFormData {
       setIssues(data.issues ?? []);
       if (!res.ok) { toast.error("Corrigez les erreurs avant de publier."); return; }
       patchForm({ status: "published" });
+      // La publication fait un update serveur → `updatedAt` a changé. La réponse
+      // /publish ne renvoie pas le form complet, donc on recharge pour resynchroniser
+      // le jeton de verrou ; sans ça, le prochain save croirait l'état périmé (409).
+      load();
       toast.success("Formulaire publié.");
     } finally {
       setBusy(null);
     }
-  }, [formId, patchForm]);
+  }, [formId, patchForm, load]);
 
   const unpublish = useCallback(async () => {
+    if (!form) return;
     setBusy("unpublish");
     try {
       const res = await fetch(`/api/admin/pdf/forms/${formId}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "draft" }),
+        // Participe au verrou optimiste comme `save` : envoie le jeton et le
+        // rafraîchit au succès pour ne pas périmer le prochain enregistrement.
+        body: JSON.stringify({ status: "draft", expectedUpdatedAt: form.updatedAt }),
       });
-      if (res.ok) { patchForm({ status: "draft" }); toast.success("Dépublié."); }
+      if (res.status === 409) {
+        toast.error("Ce formulaire a été modifié ailleurs.", {
+          description: "Rechargez pour récupérer la dernière version.",
+          action: { label: "Recharger", onClick: () => load() },
+        });
+        return;
+      }
+      if (res.ok) {
+        const updated = await res.json();
+        patchForm({ status: "draft", updatedAt: updated.updatedAt });
+        toast.success("Dépublié.");
+      }
     } finally {
       setBusy(null);
     }
-  }, [formId, patchForm]);
+  }, [form, formId, patchForm, load]);
 
   const testPdf = useCallback(async () => {
     if (!form) return;
@@ -169,7 +210,10 @@ export function useFormData(formId: string): UseFormData {
       const res = await fetch(`/api/admin/pdf/forms/${formId}/reparse`, { method: "POST" });
       if (!res.ok) { toast.error("Échec de la ré-analyse."); return; }
       const data = await res.json();
-      setFields(data.form.fields);
+      // La ré-analyse fait un update serveur (technicalSchema/fields/pageCount) →
+      // `updatedAt` a changé. On le rafraîchit en même temps que les champs pour
+      // garder le jeton de verrou à jour (sinon le prochain save 409 à tort).
+      patchForm({ fields: data.form.fields, updatedAt: data.form.updatedAt });
       const total = Array.isArray(data.form.fields) ? data.form.fields.length : 0;
       toast.success(
         `Ré-analyse OK : ${total} champ${total > 1 ? "s" : ""} détecté${total > 1 ? "s" : ""} (${data.diff.added.length} ajout${data.diff.added.length > 1 ? "s" : ""}, ${data.diff.removed.length} retrait${data.diff.removed.length > 1 ? "s" : ""}).`
@@ -178,7 +222,7 @@ export function useFormData(formId: string): UseFormData {
     } finally {
       setBusy(null);
     }
-  }, [formId, setFields, loadIssues]);
+  }, [formId, patchForm, loadIssues]);
 
   const hasForeignAcroForm = useMemo(() => {
     if (!form) return false;

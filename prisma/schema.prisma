@@ -1020,6 +1020,26 @@ model DocumentBundle {
   /// avant le 1er du mois). Format: BundleWarning[] (cf. lib/bundles/types.ts).
   warnings Json @default("[]")
 
+  // ── Contenu enrichi (migration 53) — tous optionnels, rétro-compatibles ──
+  /// Organisme responsable de la démarche (ex. "ONEM", "CAPAC", "Syndicat").
+  organism String?
+  /// Sources officielles citées. Format: { title, url }[] (cf. lib/bundles/types.ts).
+  officialSources Json @default("[]")
+  /// Date de dernière vérification humaine du contenu (fraîcheur).
+  lastVerifiedAt DateTime?
+  /// Mots-clés de recherche additionnels (string[]).
+  keywords Json @default("[]")
+  /// Synonymes de recherche (string[]).
+  synonyms Json @default("[]")
+  /// Slugs de dossiers proches / liés (string[]).
+  relatedBundles Json @default("[]")
+  /// Durée estimée de la démarche, en minutes.
+  estimatedTime Int?
+  /// Documents à préparer (libellés lisibles par l'utilisateur, string[]).
+  requiredDocuments Json @default("[]")
+  /// Niveau d'alerte global : "none" | "info" | "warning" | "critical".
+  warningLevel String?
+
   createdBy String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1067,6 +1087,9 @@ model BundleRun {
   /// Permet de reprendre un dossier depuis un autre appareil / après expiration du cookie.
   /// Généré au premier `POST /api/documents/bundles/[id]/run` quand le run est créé.
   resumeCode           String?        @unique
+  /// Hash HMAC du code de reprise normalisé (migration 53). Le code en CLAIR
+  /// n'est jamais stocké : la reprise se résout par ce hash. cf. lib/bundles/resume-code.ts.
+  resumeCodeHash       String?        @unique
   resumeCodeExpiresAt  DateTime? // TTL par défaut = 30 jours
   /// Email optionnel saisi par l'utilisateur pour se faire envoyer le code par mail.
   /// Pas une donnée d'identification — purement pratique pour la reprise.
@@ -1082,12 +1105,35 @@ model BundleRun {
   startedAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
   completedAt          DateTime?
+  /// Date d'anonymisation RGPD (payloads + PII vidés) — posée par le cron de
+  /// rétention `bundle-runs-purge` (migration 53). Null = run non anonymisé.
+  anonymizedAt         DateTime?
 
   @@index([bundleId])
   @@index([userId])
   @@index([sessionId])
   @@index([status])
   @@index([resumeCodeExpiresAt])
+  @@index([status, updatedAt])
+}
+
+/// Événements analytiques internes de /mon-dossier (recherche, wizard, runs,
+/// reprise). Best-effort, feature-flaggé "analytics". Calque de
+/// TrainingAnalyticsEvent. Aucune donnée nominative — sessionId/userId pseudonymes.
+model BundleAnalyticsEvent {
+  id           String   @id @default(cuid())
+  /// search_performed | search_no_result | wizard_started | wizard_step_completed
+  /// | wizard_abandoned | bundle_opened | run_created | resume_success | resume_failed
+  eventType    String
+  bundleId     String?
+  sessionId    String?
+  userId       String?
+  source       String?
+  metadataJson Json     @default("{}")
+  createdAt    DateTime @default(now())
+
+  @@index([eventType, createdAt])
+  @@index([bundleId, eventType])
 }
 
 /// Profil utilisateur enrichi pour pré-remplissage des formulaires (Phase 8).

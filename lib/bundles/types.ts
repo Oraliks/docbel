@@ -72,3 +72,55 @@ function parseSeverity(v: unknown): WarningSeverity {
   if (v === "info" || v === "warning" || v === "critical") return v;
   return "info";
 }
+
+// ---------------------------------------------------------------------------
+// Contenu enrichi (migration 53) : sources, mots-clés, niveau d'alerte…
+// ---------------------------------------------------------------------------
+
+export type WarningLevel = "none" | "info" | "warning" | "critical";
+
+export interface OfficialSource {
+  /// Libellé lisible de la source (ex. "ONEM — Feuille info T17").
+  title: string;
+  /// URL officielle.
+  url: string;
+}
+
+/// Parse un tableau JSON de chaînes (keywords, synonyms, relatedBundles,
+/// requiredDocuments). Filtre les valeurs vides/non-string. Tolère le `null`.
+export function parseStringArray(input: unknown): string[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .filter((x): x is string => typeof x === "string")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+/// Parse un tableau de sources officielles { title, url }[].
+export function parseOfficialSources(input: unknown): OfficialSource[] {
+  if (!Array.isArray(input)) return [];
+  const out: OfficialSource[] = [];
+  for (const raw of input) {
+    if (!raw || typeof raw !== "object") continue;
+    const r = raw as Record<string, unknown>;
+    if (typeof r.title !== "string" || typeof r.url !== "string") continue;
+    const title = r.title.trim();
+    const url = r.url.trim();
+    if (!title || !url) continue;
+    out.push({ title, url });
+  }
+  return out;
+}
+
+/// Normalise le niveau d'alerte global d'un bundle. `null`/inconnu → null.
+export function parseWarningLevel(input: unknown): WarningLevel | null {
+  if (
+    input === "none" ||
+    input === "info" ||
+    input === "warning" ||
+    input === "critical"
+  ) {
+    return input;
+  }
+  return null;
+}

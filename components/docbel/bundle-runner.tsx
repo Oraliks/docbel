@@ -22,9 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
-  evaluateCondition,
   describeCondition,
-  type BundleCondition,
   type CollectedPayloads,
 } from "@/lib/bundles/conditions";
 import {
@@ -36,41 +34,13 @@ import { parseBundleWarnings, type BundleWarning } from "@/lib/bundles/types";
 import { EligibilityPrequalifier } from "./onboarding/eligibility-prequalifier";
 import { BundleWarnings } from "./onboarding/bundle-warnings";
 import { ResumeCodeBanner } from "./onboarding/resume-code-banner";
-
-interface BundleItem {
-  id: string;
-  templateId: string | null;
-  pdfFormId: string | null;
-  order: number;
-  required: boolean;
-  condition: BundleCondition;
-  template: null;
-  /// True si cet item a été matérialisé dynamiquement par un trigger d'un
-  /// autre formulaire (cf. lib/pdf-forms/triggers.ts). Affiché avec un
-  /// badge spécifique « Suite à tes réponses ».
-  triggered?: boolean;
-  pdfForm: {
-    id: string;
-    slug: string;
-    title: string;
-    description: string | null;
-    issuer: string | null;
-  } | null;
-}
-
-function itemSourceId(item: BundleItem): string {
-  return item.pdfFormId ?? item.id;
-}
-function itemTitle(item: BundleItem): string {
-  return item.pdfForm?.title ?? "Document";
-}
-function itemDescription(item: BundleItem): string | null {
-  return item.pdfForm?.description ?? null;
-}
-function itemOrganismeLabel(item: BundleItem): { label: string; color: string } | null {
-  if (item.pdfForm?.issuer) return { label: item.pdfForm.issuer, color: "#666" };
-  return null;
-}
+import {
+  computeItemStatuses,
+  itemDescription,
+  itemOrganismeLabel,
+  itemTitle,
+  type BundleItem,
+} from "./bundle-runner/compute";
 
 interface Bundle {
   id: string;
@@ -303,30 +273,19 @@ export function BundleRunner({
     }
   }
 
-  // Calculer le statut de chaque item.
-  // `applicableSlugs` (si fourni par un dossier codé) écrase la visibilité :
-  // un item dont le slug n'est pas applicable aux réponses d'orientation est
-  // caché, peu importe la condition JSON V1/V2.
-  const applicableSet = applicableSlugs ? new Set(applicableSlugs) : null;
-  const itemStatuses = bundle.items.map((item) => {
-    const completed = completedTemplateIds.includes(itemSourceId(item));
-    const slug = item.pdfForm?.slug ?? null;
-    const inDossier = applicableSet === null || (slug !== null && applicableSet.has(slug));
-    const conditionRes = evaluateCondition(item.condition, payloads);
-    const eligibility = inDossier ? conditionRes : false;
-    return { item, completed, eligibility };
-  });
-
-  const visibleItems = itemStatuses.filter(
-    ({ eligibility }) => eligibility !== false
-  );
-  const hiddenItems = itemStatuses.filter(({ eligibility }) => eligibility === false);
-
-  const completedCount = visibleItems.filter((s) => s.completed).length;
-  const requiredVisible = visibleItems.filter(
-    (s) => s.item.required && s.eligibility === true
-  );
-  const allRequiredDone = requiredVisible.every((s) => s.completed);
+  // Statuts des items — logique PURE extraite (cf. ./bundle-runner/compute).
+  const {
+    visibleItems,
+    hiddenItems,
+    completedCount,
+    requiredVisible,
+    allRequiredDone,
+  } = computeItemStatuses(
+      bundle.items,
+      completedTemplateIds,
+      payloads,
+      applicableSlugs,
+    );
 
   return (
     <div className="space-y-6">

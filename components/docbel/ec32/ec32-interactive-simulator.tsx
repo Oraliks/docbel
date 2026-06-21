@@ -14,7 +14,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  AlertTriangle,
   Building2,
   CalendarDays,
   Check,
@@ -672,9 +671,10 @@ export function Ec32InteractiveSimulator({
         />
       </div>
 
-      {/* Avertissement fictif global */}
+      {/* Note pédagogique « données fictives » — ton informatif (bleu),
+          rassurant plutôt qu'alarmant. */}
       {sim.fictitiousDataNotice && (
-        <Ec32InfoBox tone="legal" icon={AlertTriangle} className="mb-5">
+        <Ec32InfoBox tone="info" className="mb-5">
           {sim.fictitiousDataNotice}
         </Ec32InfoBox>
       )}

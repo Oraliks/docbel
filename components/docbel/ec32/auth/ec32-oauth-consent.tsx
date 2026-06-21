@@ -65,13 +65,13 @@ function ScopeBadge({ className }: { className?: string }) {
       role="img"
       aria-label="Accès demandé"
       className={cn(
-        'inline-flex size-6 shrink-0 items-center justify-center rounded-full',
+        'inline-flex size-5 shrink-0 items-center justify-center rounded-full',
         'bg-primary/15 ring-1 ring-primary/30',
         'text-primary',
         className,
       )}
     >
-      <Check className="size-3.5" aria-hidden />
+      <Check className="size-3" aria-hidden />
     </span>
   )
 }
@@ -90,9 +90,9 @@ export function Ec32OAuthConsent({
   onCancel,
 }: Ec32OAuthConsentProps) {
   return (
-    <Ec32Card className="mx-auto max-w-2xl space-y-5 p-5 md:p-6">
+    <Ec32Card className="mx-auto max-w-2xl space-y-3.5 p-4 md:p-5">
       {/* En-tête : pastille décorative violette + eyebrow */}
-      <header className="space-y-3">
+      <header className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <Ec32Eyebrow>
             <ShieldCheck className="size-3.5" aria-hidden />
@@ -100,17 +100,17 @@ export function Ec32OAuthConsent({
           </Ec32Eyebrow>
           <span
             aria-hidden
-            className="inline-flex size-10 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20"
+            className="inline-flex size-9 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20"
           >
-            <ShieldCheck className="size-5 text-primary" />
+            <ShieldCheck className="size-[1.1rem] text-primary" />
           </span>
         </div>
 
-        <div className="space-y-1.5">
-          <h2 className="text-xl font-bold leading-tight tracking-tight text-foreground md:text-2xl">
+        <div className="space-y-1">
+          <h2 className="text-lg font-bold leading-tight tracking-tight text-foreground md:text-xl">
             Bonjour {userName},
           </h2>
-          <p className="text-sm leading-relaxed text-muted-foreground">
+          <p className="text-[0.8rem] leading-snug text-muted-foreground">
             L'application <span className="font-semibold text-foreground">eC3.2 — Carte de contrôle chômage temporaire</span>{' '}
             requiert les accès suivants :
           </p>
@@ -118,26 +118,26 @@ export function Ec32OAuthConsent({
       </header>
 
       {/* Liste des 7 scopes */}
-      <ul className="space-y-2">
+      <ul className="space-y-1.5">
         {SCOPES.map((scope) => (
           <li
             key={scope.title}
             className={cn(
-              'flex items-start gap-3 rounded-2xl border border-primary/10 bg-card/60 p-3',
+              'flex items-start gap-2.5 rounded-xl border border-primary/10 bg-card/60 p-2.5',
               'shadow-[0_1px_2px_rgba(26,26,36,0.03)]',
             )}
           >
             <ScopeBadge className="mt-0.5" />
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="text-sm font-semibold leading-snug text-foreground">{scope.title}</p>
-              <p className="text-[0.8rem] leading-snug text-muted-foreground">{scope.description}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-[0.8rem] font-semibold leading-snug text-foreground">{scope.title}</p>
+              <p className="text-[0.74rem] leading-snug text-muted-foreground">{scope.description}</p>
             </div>
           </li>
         ))}
       </ul>
 
       {/* Encadré durée de validité */}
-      <Ec32InfoBox tone="info" icon={Hourglass}>
+      <Ec32InfoBox tone="info" icon={Hourglass} className="p-3">
         Cet accès est valable pour une durée de <strong>23 mois</strong>. À l'expiration,
         l'autorisation vous sera redemandée (renouvellement).
       </Ec32InfoBox>
@@ -147,7 +147,6 @@ export function Ec32OAuthConsent({
         <Button
           type="button"
           variant="outline"
-          size="lg"
           onClick={onCancel}
           className="sm:min-w-32"
         >
@@ -156,7 +155,6 @@ export function Ec32OAuthConsent({
         <Button
           type="button"
           variant="default"
-          size="lg"
           onClick={onConfirm}
           className="sm:min-w-32"
         >
@@ -165,7 +163,7 @@ export function Ec32OAuthConsent({
       </div>
 
       {/* Pied de page pédagogique */}
-      <p className="border-t border-primary/10 pt-4 text-center text-xs italic text-muted-foreground">
+      <p className="border-t border-primary/10 pt-2.5 text-center text-[0.7rem] italic text-muted-foreground">
         Simulation pédagogique — aucune donnée n'est réellement transmise.
       </p>
     </Ec32Card>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import {
   parseBundleWarnings,
+  parseOfficialSources,
   parseStringArray,
   parseWarningLevel,
 } from "@/lib/bundles/types";
@@ -45,6 +46,8 @@ export default async function MonDossierPage() {
         relatedBundles: true,
         estimatedTime: true,
         warningLevel: true,
+        officialSources: true,
+        lastVerifiedAt: true,
         items: { select: { id: true } },
       },
     })
@@ -79,6 +82,10 @@ export default async function MonDossierPage() {
       estimatedTime: bundle.estimatedTime ?? null,
       relatedBundles: parseStringArray(bundle.relatedBundles),
       available: true, // la requête ne ramène que des bundles actifs
+      officialSources: parseOfficialSources(bundle.officialSources),
+      lastVerifiedAt: bundle.lastVerifiedAt
+        ? bundle.lastVerifiedAt.toISOString()
+        : null,
     };
   }
 

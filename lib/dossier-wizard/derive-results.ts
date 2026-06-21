@@ -9,7 +9,7 @@
 /// Fonction PURE (aucune dépendance React/DB) → testable unitairement.
 
 import type { WizardResult } from "./config";
-import type { WarningLevel } from "@/lib/bundles/types";
+import type { OfficialSource, WarningLevel } from "@/lib/bundles/types";
 
 export type MatchLevel = "recommande" | "pertinent" | "a_verifier";
 
@@ -25,6 +25,10 @@ export interface WizardBundleMeta {
   estimatedTime: number | null;
   relatedBundles: string[];
   available: boolean;
+  /// Sources officielles citées sur le dossier (ONEM…). Signal de confiance.
+  officialSources?: OfficialSource[];
+  /// Date de dernière vérification humaine du contenu (ISO string), ou null.
+  lastVerifiedAt?: string | null;
 }
 
 export type WizardCatalog = Record<string, WizardBundleMeta>;
@@ -47,6 +51,10 @@ export interface DerivedDossier {
   availability: Availability;
   /// Étape suivante non engageante (optionnelle).
   nextStep: string | null;
+  /// Sources officielles du dossier (affichées sous le résultat).
+  officialSources: OfficialSource[];
+  /// Date de dernière vérification (ISO), ou null.
+  lastVerifiedAt: string | null;
 }
 
 export interface DerivedResults {
@@ -85,6 +93,8 @@ function enrich(
     available: availability === "disponible" && base.slug !== null,
     availability,
     nextStep: base.nextStep ?? null,
+    officialSources: meta?.officialSources ?? [],
+    lastVerifiedAt: meta?.lastVerifiedAt ?? null,
   };
 }
 

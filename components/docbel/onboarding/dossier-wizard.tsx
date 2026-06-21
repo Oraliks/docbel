@@ -31,6 +31,7 @@ import {
   ChevronRight,
   Clock,
   Construction,
+  ExternalLink,
   FileText,
   GraduationCap,
   HelpCircle,
@@ -275,6 +276,11 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
       <CardContent className="space-y-6">
         <Stepper currentStep={currentStep} />
 
+        {/* Annonce du changement d'étape pour les lecteurs d'écran. */}
+        <p className="sr-only" role="status" aria-live="polite">
+          {`Étape ${currentStep} sur 4 : ${STEP_LABELS[currentStep]}`}
+        </p>
+
         {currentStep === 1 && (
           <StepSituation
             situations={situations}
@@ -312,6 +318,25 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
             onReset={handleReset}
           />
         )}
+
+        {/* Échappatoire « je ne suis pas sûr » sur les étapes de questions. */}
+        {currentStep < 4 &&
+          (dryRun ? (
+            <p className="text-center text-xs text-muted-foreground">
+              Vous hésitez ? Un organisme de paiement peut vous aider.
+            </p>
+          ) : (
+            <p className="text-center text-xs text-muted-foreground">
+              Vous hésitez ?{" "}
+              <Link
+                href="/contact"
+                className="font-medium text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
+              >
+                Faites-vous aider par un organisme de paiement
+              </Link>
+              .
+            </p>
+          ))}
       </CardContent>
     </Card>
     </DryRunContext.Provider>
@@ -1002,6 +1027,8 @@ function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
         </div>
       )}
 
+      <ResultFooter primary={primary} />
+
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="size-4" aria-hidden />
@@ -1014,4 +1041,55 @@ function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
       </div>
     </div>
   );
+}
+
+/// Pied de résultat : sources officielles + date de vérification + rappel que
+/// le guide n'est pas un calculateur de droits. Renforce la confiance.
+function ResultFooter({ primary }: { primary: DerivedDossier }) {
+  const hasSources = primary.officialSources.length > 0;
+  return (
+    <div className="space-y-2 border-t border-[color:var(--glass-ink-line)] pt-3">
+      {hasSources && (
+        <div className="space-y-1">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--glass-ink-faint)]">
+            Sources officielles
+          </p>
+          <ul className="space-y-0.5">
+            {primary.officialSources.map((s) => (
+              <li key={s.url}>
+                <a
+                  href={s.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-1 text-xs text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
+                >
+                  <ExternalLink className="size-3 shrink-0" aria-hidden />
+                  {s.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p className="text-[11px] leading-snug text-[color:var(--glass-ink-faint)]">
+        {primary.lastVerifiedAt
+          ? `Vérifié le ${formatFrDate(primary.lastVerifiedAt)} · `
+          : ""}
+        Ce guide vous oriente vers la bonne démarche — il ne calcule pas vos
+        droits ni vos montants.
+      </p>
+    </div>
+  );
+}
+
+function formatFrDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("fr-BE", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return "";
+  }
 }

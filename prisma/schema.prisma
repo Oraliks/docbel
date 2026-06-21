@@ -1108,6 +1108,10 @@ model BundleRun {
   /// Date d'anonymisation RGPD (payloads + PII vidés) — posée par le cron de
   /// rétention `bundle-runs-purge` (migration 53). Null = run non anonymisé.
   anonymizedAt         DateTime?
+  /// Réponses au wizard d'orientation (Decision Builder, migration 54).
+  /// Permet de reprendre orientation + dossier avec un seul code BELDOC.
+  /// Forme : { [nodeId]: { value: string | string[] } } — typage Zod côté `lib/decision-builder/schema.ts`.
+  orientationAnswers   Json?
 
   @@index([bundleId])
   @@index([userId])
@@ -1134,6 +1138,59 @@ model BundleAnalyticsEvent {
 
   @@index([eventType, createdAt])
   @@index([bundleId, eventType])
+}
+
+/// Decision Builder (migration 54) — arbre d'orientation édité visuellement par
+/// l'admin et publié vers /mon-dossier. Versioning draft/published/archived,
+/// snapshots à chaque publication (DecisionTreeRevision), restauration =
+/// clone vers draft. Le contenu JSON suit le schéma Zod défini dans
+/// `lib/decision-builder/schema.ts` (forme plate par ID).
+model DecisionTree {
+  id                  String                 @id @default(cuid())
+  slug                String                 @unique
+  title               String
+  description         String?
+  /// "chomage" | "employeur" | … (segment d'usage côté public).
+  segment             String                 @default("chomage")
+  /// "draft" | "published" | "archived"
+  status              String                 @default("draft")
+  /// Contenu en cours d'édition (auto-save). Default = arbre vide valide.
+  draftContent        Json                   @default("{\"version\":1,\"rootNodeId\":null,\"nodes\":{}}")
+  /// Dernier snapshot publié (lecture publique).
+  publishedContent    Json?
+  publishedAt         DateTime?
+  publishedRevisionId String?
+  createdBy           String?
+  updatedBy           String?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  revisions           DecisionTreeRevision[]
+
+  @@index([status])
+  @@index([segment, status])
+}
+
+/// Snapshot d'un arbre lors d'une publication. Calque PdfFormRevision :
+/// version monotone, changeType, changeNotes, diffSummary. La restauration
+/// d'une révision = clone vers `draftContent` (jamais d'écrasement direct
+/// du `publishedContent` — l'admin doit re-publier explicitement).
+model DecisionTreeRevision {
+  id          String       @id @default(cuid())
+  treeId      String
+  tree        DecisionTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  /// Version monotone par arbre (1, 2, 3…), incrémentée à chaque publication.
+  version     Int
+  content     Json
+  /// "minor" | "major" — sémantique laissée à l'admin (champ libre côté UI).
+  changeType  String       @default("minor")
+  changeNotes String?
+  /// { added: [], removed: [], modified: [] } — cf. lib/decision-builder/diff.ts
+  diffSummary Json?
+  publishedBy String?
+  publishedAt DateTime     @default(now())
+
+  @@unique([treeId, version])
+  @@index([treeId, publishedAt])
 }
 
 /// Profil utilisateur enrichi pour pré-remplissage des formulaires (Phase 8).

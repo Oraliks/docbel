@@ -17,17 +17,21 @@
 // requis pour quitter step 1. Aucun `defaultValue`, aucune redirection
 // possible sans choix explicite.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
   Accessibility,
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Briefcase,
+  Building2,
   Check,
   ChevronRight,
+  Clock,
   Construction,
+  FileText,
   GraduationCap,
   HelpCircle,
   Hourglass,
@@ -45,6 +49,13 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { GLASS_CARD } from "@/lib/glass-classes";
 import { AllocationEstimateBlock } from "@/components/docbel/onboarding/allocation-estimate-block";
+import { trackBundleEventClient } from "@/lib/bundles/analytics-client";
+import {
+  deriveWizardResults,
+  type DerivedDossier,
+  type MatchLevel,
+  type WizardCatalog,
+} from "@/lib/dossier-wizard/derive-results";
 import type {
   WizardRefineOption,
   WizardResult,
@@ -72,6 +83,10 @@ function resolveIcon(name: string): LucideIcon {
 
 interface Props {
   situations: WizardSituation[];
+  /// Catalogue des bundles (slug → méta) pour enrichir le résultat
+  /// (documents, points d'attention, dossiers proches). Optionnel : si vide,
+  /// le résultat se limite au titre + explication de la config.
+  catalog?: WizardCatalog;
 }
 
 type StepNumber = 1 | 2 | 3 | 4;
@@ -83,8 +98,10 @@ const STEP_LABELS: Record<StepNumber, string> = {
   4: "Résultat",
 };
 
-export function DossierWizard({ situations }: Props) {
+export function DossierWizard({ situations, catalog = {} }: Props) {
   const [currentStep, setCurrentStep] = useState<StepNumber>(1);
+  // N'émet `wizard_started` qu'une fois par session de wizard.
+  const startedRef = useRef(false);
   const [selectedSituation, setSelectedSituation] = useState<string | null>(
     null,
   );
@@ -112,6 +129,13 @@ export function DossierWizard({ situations }: Props) {
   function handleSituationSelect(value: string) {
     const next = situations.find((s) => s.value === value);
     if (!next) return;
+    if (!startedRef.current) {
+      startedRef.current = true;
+      trackBundleEventClient("wizard_started");
+    }
+    trackBundleEventClient("wizard_step_completed", {
+      metadata: { step: 1, situation: value },
+    });
     setSelectedSituation(value);
     setSelectedSubOption(null);
     setSelectedRefine(null);
@@ -120,6 +144,7 @@ export function DossierWizard({ situations }: Props) {
   }
 
   function handleSubOptionSelect(value: string) {
+    trackBundleEventClient("wizard_step_completed", { metadata: { step: 2 } });
     setSelectedSubOption(value);
     setSelectedRefine(null);
     const opt = situation?.subQuestion?.options.find((o) => o.value === value);
@@ -128,6 +153,7 @@ export function DossierWizard({ situations }: Props) {
   }
 
   function handleRefineSelect(value: string) {
+    trackBundleEventClient("wizard_step_completed", { metadata: { step: 3 } });
     setSelectedRefine(value);
     setCurrentStep(4);
   }
@@ -174,6 +200,13 @@ export function DossierWizard({ situations }: Props) {
   }
 
   function handleReset() {
+    // Reset avant d'avoir atteint un résultat = abandon ; au step 4 = simple
+    // « recommencer » (pas un abandon).
+    if (currentStep < 4) {
+      trackBundleEventClient("wizard_abandoned", {
+        metadata: { step: currentStep },
+      });
+    }
     setCurrentStep(1);
     setSelectedSituation(null);
     setSelectedSubOption(null);
@@ -238,8 +271,9 @@ export function DossierWizard({ situations }: Props) {
         )}
 
         {currentStep === 4 && result && (
-          <StepResult
+          <StepResults
             result={result}
+            catalog={catalog}
             onBack={handleBack}
             onReset={handleReset}
           />
@@ -583,85 +617,256 @@ function StepRefine({
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 4 — result
 
-interface StepResultProps {
+const MATCH_BADGE: Record<MatchLevel, string> = {
+  recommande: "Recommandé",
+  pertinent: "Pertinent",
+  a_verifier: "À vérifier",
+};
+
+function MatchBadge({ level }: { level: MatchLevel }) {
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-full bg-[color:var(--glass-accent-a)]/15 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-[color:var(--glass-accent-a)]">
+      {MATCH_BADGE[level]}
+    </span>
+  );
+}
+
+function MetaChips({ dossier }: { dossier: DerivedDossier }) {
+  if (!dossier.organism && dossier.estimatedTime == null) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {dossier.organism && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+          <Building2 className="size-3" aria-hidden /> {dossier.organism}
+        </span>
+      )}
+      {dossier.estimatedTime != null && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+          <Clock className="size-3" aria-hidden /> ≈ {dossier.estimatedTime} min
+        </span>
+      )}
+    </div>
+  );
+}
+
+function BulletList({
+  icon: Icon,
+  title,
+  items,
+  tone,
+}: {
+  icon: LucideIcon;
+  title: string;
+  items: string[];
+  tone: "neutral" | "warn";
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div className="space-y-1">
+      <p
+        className={cn(
+          "flex items-center gap-1.5 text-xs font-semibold",
+          tone === "warn"
+            ? "text-amber-700 dark:text-amber-300"
+            : "text-[color:var(--glass-ink-soft)]",
+        )}
+      >
+        <Icon className="size-3.5" aria-hidden /> {title}
+      </p>
+      <ul className="ml-1 space-y-0.5">
+        {items.map((it) => (
+          <li key={it} className="flex gap-1.5 text-xs text-muted-foreground">
+            <span aria-hidden className="select-none">
+              •
+            </span>
+            <span>{it}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function PrimaryAvailable({
+  primary,
+  result,
+  onReset,
+}: {
+  primary: DerivedDossier;
   result: WizardResult;
+  onReset: () => void;
+}) {
+  return (
+    <div className="space-y-3 rounded-2xl border border-[color:var(--glass-accent-a)]/30 bg-[color:var(--glass-accent-a)]/5 p-4">
+      <div className="flex items-start gap-2">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-accent-a)] text-white">
+          <Sparkles className="size-4" aria-hidden />
+        </span>
+        <div className="flex-1 space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-[color:var(--glass-accent-a)]">
+              Dossier recommandé
+            </p>
+            <MatchBadge level={primary.matchLevel} />
+          </div>
+          <h3 className="text-base font-semibold">{primary.title}</h3>
+          <p className="text-sm text-muted-foreground">{primary.rationale}</p>
+          <MetaChips dossier={primary} />
+        </div>
+      </div>
+
+      <BulletList
+        icon={FileText}
+        title="Documents à préparer"
+        items={primary.requiredDocuments}
+        tone="neutral"
+      />
+      <BulletList
+        icon={AlertTriangle}
+        title="Points d'attention"
+        items={primary.points}
+        tone="warn"
+      />
+
+      {/* Estimation indicative — ne se rend que pour les dossiers dont le revenu
+          est une allocation proportionnelle au salaire (early-return null sinon). */}
+      {result.allocationEstimate && <AllocationEstimateBlock result={result} />}
+
+      <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
+        <Button variant="outline" onClick={onReset}>
+          <RotateCcw className="size-4" aria-hidden />
+          Recommencer le guide
+        </Button>
+        <Button
+          render={
+            <Link
+              href={`/d/${primary.slug}`}
+              onClick={() =>
+                trackBundleEventClient("bundle_opened", {
+                  bundleId: primary.slug ?? undefined,
+                  metadata: { from: "wizard" },
+                })
+              }
+            />
+          }
+        >
+          Démarrer la démarche
+          <ArrowRight className="size-4" aria-hidden />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function PrimaryUnavailable({
+  primary,
+  onReset,
+}: {
+  primary: DerivedDossier;
+  onReset: () => void;
+}) {
+  return (
+    <div className="space-y-3 rounded-2xl border border-amber-500/30 bg-amber-50/60 p-4 dark:bg-amber-950/20">
+      <div className="flex items-start gap-2">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
+          <Construction className="size-4" aria-hidden />
+        </span>
+        <div className="flex-1 space-y-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-amber-900 dark:text-amber-200">
+            Bientôt disponible
+          </p>
+          <h3 className="text-base font-semibold">{primary.title}</h3>
+          <p className="text-sm text-amber-900/80 dark:text-amber-100/80">
+            {primary.rationale} Ce dossier est en construction. En attendant,
+            vous pouvez contacter le service via{" "}
+            <Link href="/contact" className="underline">
+              /contact
+            </Link>
+            .
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
+        <Button variant="outline" onClick={onReset}>
+          <RotateCcw className="size-4" aria-hidden />
+          Recommencer le guide
+        </Button>
+        <Button render={<Link href="/contact" />}>
+          Contacter le service
+          <ArrowRight className="size-4" aria-hidden />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function RelatedCard({ dossier }: { dossier: DerivedDossier }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2.5">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <h4 className="truncate text-sm font-semibold text-[color:var(--glass-ink)]">
+            {dossier.title}
+          </h4>
+          <MatchBadge level={dossier.matchLevel} />
+        </div>
+        {dossier.organism && (
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            {dossier.organism}
+          </p>
+        )}
+      </div>
+      {dossier.slug && (
+        <Button
+          variant="outline"
+          render={
+            <Link
+              href={`/d/${dossier.slug}`}
+              onClick={() =>
+                trackBundleEventClient("bundle_opened", {
+                  bundleId: dossier.slug ?? undefined,
+                  metadata: { from: "wizard_related" },
+                })
+              }
+            />
+          }
+        >
+          Ouvrir le dossier
+          <ArrowRight className="size-3.5" aria-hidden />
+        </Button>
+      )}
+    </div>
+  );
+}
+
+interface StepResultsProps {
+  result: WizardResult;
+  catalog: WizardCatalog;
   onBack: () => void;
   onReset: () => void;
 }
 
-function StepResult({ result, onBack, onReset }: StepResultProps) {
-  const isAvailable = result.dossierSlug !== null;
+function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
+  const { primary, related } = deriveWizardResults(result, catalog);
+
   return (
     <div className="space-y-4 transition-opacity duration-200">
-      {isAvailable ? (
-        <div className="space-y-3 rounded-2xl border border-[color:var(--glass-accent-a)]/30 bg-[color:var(--glass-accent-a)]/5 p-4">
-          <div className="flex items-start gap-2">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--glass-accent-a)] text-white">
-              <Sparkles className="size-4" aria-hidden />
-            </span>
-            <div className="flex-1 space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-[color:var(--glass-accent-a)]">
-                Dossier recommandé
-              </p>
-              <h3 className="text-base font-semibold">{result.dossierTitle}</h3>
-              <p className="text-sm text-muted-foreground">
-                {result.rationale}
-              </p>
-            </div>
-          </div>
-
-          {/* Estimation indicative — ne se rend que pour les dossiers dont le
-              revenu est une allocation proportionnelle au salaire (le bloc
-              early-return null sinon). */}
-          {result.allocationEstimate && (
-            <AllocationEstimateBlock result={result} />
-          )}
-
-          <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
-            {/* Reset du wizard (pas un Link vers /mon-dossier : on est déjà
-                sur cette page, un Link soft ne réinitialiserait pas l'état
-                client et ne ferait donc rien visiblement). */}
-            <Button variant="outline" onClick={onReset}>
-              <RotateCcw className="size-4" aria-hidden />
-              Recommencer le guide
-            </Button>
-            <Button render={<Link href={`/d/${result.dossierSlug}`} />}>
-              Commencer ce dossier
-              <ArrowRight className="size-4" aria-hidden />
-            </Button>
-          </div>
-        </div>
+      {primary.available ? (
+        <PrimaryAvailable primary={primary} result={result} onReset={onReset} />
       ) : (
-        <div className="space-y-3 rounded-2xl border border-amber-500/30 bg-amber-50/60 p-4 dark:bg-amber-950/20">
-          <div className="flex items-start gap-2">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
-              <Construction className="size-4" aria-hidden />
-            </span>
-            <div className="flex-1 space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-amber-900 dark:text-amber-200">
-                Bientôt disponible
-              </p>
-              <h3 className="text-base font-semibold">{result.dossierTitle}</h3>
-              <p className="text-sm text-amber-900/80 dark:text-amber-100/80">
-                {result.rationale} Ce dossier est en construction. En attendant,
-                vous pouvez contacter le service via{" "}
-                <Link href="/contact" className="underline">
-                  /contact
-                </Link>
-                .
-              </p>
-            </div>
-          </div>
+        <PrimaryUnavailable primary={primary} onReset={onReset} />
+      )}
 
-          <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
-            <Button variant="outline" onClick={onReset}>
-              <RotateCcw className="size-4" aria-hidden />
-              Recommencer le guide
-            </Button>
-            <Button render={<Link href="/contact" />}>
-              Contacter le service
-              <ArrowRight className="size-4" aria-hidden />
-            </Button>
+      {related.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--glass-ink-faint)]">
+            Dossiers proches
+          </p>
+          <div className="grid gap-2">
+            {related.map((d) => (
+              <RelatedCard key={d.slug ?? d.title} dossier={d} />
+            ))}
           </div>
         </div>
       )}

@@ -40,6 +40,12 @@ export interface WizardResult {
   ///     période d'indemnisation simulée ici) ;
   ///   - les cartes « bientôt disponible » (dossierSlug = null).
   allocationEstimate?: boolean;
+  /// Niveau de correspondance du dossier principal (par défaut "recommande").
+  /// Le wizard reste un PRÉ-GUIDE : pas de score numérique, juste un niveau.
+  matchLevel?: "recommande" | "pertinent" | "a_verifier";
+  /// Slugs de dossiers proches à proposer en complément du principal.
+  /// Fusionnés avec `DocumentBundle.relatedBundles` à la résolution.
+  related?: string[];
 }
 
 /// Option de la 3ᵉ étape (« Affinons »). Résout toujours vers un résultat.

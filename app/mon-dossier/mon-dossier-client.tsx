@@ -23,6 +23,7 @@ import { LIFE_EVENT_CATEGORIES } from "@/lib/bundles/types";
 import { scoreBundleMatch } from "@/lib/bundles/vocabulary";
 import { trackBundleEventClient } from "@/lib/bundles/analytics-client";
 import { WIZARD_SITUATIONS } from "@/lib/dossier-wizard/config";
+import type { WizardCatalog } from "@/lib/dossier-wizard/derive-results";
 
 export interface MonDossierBundle {
   slug: string;
@@ -42,6 +43,7 @@ export interface MonDossierBundle {
 
 interface Props {
   bundles: MonDossierBundle[];
+  catalog: WizardCatalog;
 }
 
 /* Route réelle d'un dossier (identique à life-event-card.tsx → /d/[slug]). */
@@ -202,7 +204,7 @@ const SORT_PILLS: { id: Sort; label: string }[] = [
 
 type Mode = "guide" | "direct";
 
-export function MonDossierClient({ bundles }: Props) {
+export function MonDossierClient({ bundles, catalog }: Props) {
   const [mode, setMode] = useState<Mode>("guide");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("populaires");
@@ -441,7 +443,7 @@ export function MonDossierClient({ bundles }: Props) {
           className={`outils-rise ${mode === "guide" ? "block" : "hidden"} lg:block`}
           style={{ animationDelay: "0ms" }}
         >
-          <DossierWizard situations={WIZARD_SITUATIONS} />
+          <DossierWizard situations={WIZARD_SITUATIONS} catalog={catalog} />
         </section>
 
         {/* ════ Colonne 2 — Accès direct ════ */}

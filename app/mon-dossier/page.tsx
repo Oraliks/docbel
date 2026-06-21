@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { parseStringArray } from "@/lib/bundles/types";
+import {
+  parseBundleWarnings,
+  parseStringArray,
+  parseWarningLevel,
+} from "@/lib/bundles/types";
+import type { WizardCatalog } from "@/lib/dossier-wizard/derive-results";
 import { MonDossierClient, type MonDossierBundle } from "./mon-dossier-client";
 
 export const metadata: Metadata = {
@@ -32,6 +37,11 @@ export default async function MonDossierPage() {
         vocabularyTags: true,
         keywords: true,
         synonyms: true,
+        warnings: true,
+        requiredDocuments: true,
+        relatedBundles: true,
+        estimatedTime: true,
+        warningLevel: true,
         items: { select: { id: true } },
       },
     })
@@ -53,5 +63,21 @@ export default async function MonDossierPage() {
     synonyms: parseStringArray(bundle.synonyms),
   }));
 
-  return <MonDossierClient bundles={serializable} />;
+  // Catalogue passé au wizard pour résoudre documents/points/proches.
+  const catalog: WizardCatalog = {};
+  for (const bundle of bundles) {
+    catalog[bundle.slug] = {
+      slug: bundle.slug,
+      name: bundle.name,
+      organism: bundle.organism,
+      requiredDocuments: parseStringArray(bundle.requiredDocuments),
+      points: parseBundleWarnings(bundle.warnings).map((w) => w.title),
+      warningLevel: parseWarningLevel(bundle.warningLevel),
+      estimatedTime: bundle.estimatedTime ?? null,
+      relatedBundles: parseStringArray(bundle.relatedBundles),
+      available: true, // la requête ne ramène que des bundles actifs
+    };
+  }
+
+  return <MonDossierClient bundles={serializable} catalog={catalog} />;
 }

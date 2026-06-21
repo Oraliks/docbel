@@ -499,13 +499,13 @@ export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
         </p>
       </header>
 
-      {/* ═══════ Cluster centré : parcours (toggle) + panneau actif + aide ═══════ */}
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      {/* ═══════ Parcours (toggle) + panneau actif + aide — pleine largeur ═══════ */}
+      <div className="flex w-full flex-col gap-6">
         {/* ── Segmented control : choix RÉEL du parcours (pastille glissante) ── */}
         <div
           role="tablist"
           aria-label="Choisissez votre parcours"
-          className="glass-surface-strong relative flex w-full max-w-xl rounded-2xl p-1.5"
+          className="glass-surface-strong relative flex w-full max-w-2xl rounded-2xl p-1.5"
         >
           {/* Pastille glissante = onglet actif */}
           <span
@@ -569,8 +569,11 @@ export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
           })}
         </div>
 
-        {/* ── 2 colonnes : panneau actif (guide OU accès direct) + aide ── */}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start xl:grid-cols-[minmax(0,1fr)_340px]">
+        {/* ── 2 colonnes : panneau actif (guide OU accès direct) + aide ──
+             Largeurs aside augmentées progressivement (lg → 2xl) : sur très
+             large (≥ 1600px) l'aide a plus de présence pour équilibrer le
+             panneau qui devient très large. */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
           {/* ════ Panneau principal — swap selon le parcours ════ */}
           <div className="min-w-0">
             {/* Parcours guidé */}

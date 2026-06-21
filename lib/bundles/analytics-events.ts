@@ -8,6 +8,9 @@ export const BUNDLE_EVENT_TYPES = [
   "wizard_started",
   "wizard_step_completed",
   "wizard_abandoned",
+  /// Résultat affiché à l'utilisateur (metadata: slug, availability). Sert à
+  /// mesurer la « demande orpheline » (résultats a_creer/externe atteints).
+  "wizard_result_shown",
   "bundle_opened",
   "run_created",
   "resume_success",
@@ -31,6 +34,7 @@ export const CLIENT_BUNDLE_EVENTS: readonly BundleEventType[] = [
   "wizard_started",
   "wizard_step_completed",
   "wizard_abandoned",
+  "wizard_result_shown",
   "bundle_opened",
 ];
 

@@ -245,6 +245,14 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
     } catch {
       // best-effort — l'orientation reste fonctionnelle sans ce cookie.
     }
+    // Mesure de la demande (dont « orpheline » : a_creer / externe).
+    const availability =
+      result.availability ??
+      (result.dossierSlug ? "disponible" : "a_creer");
+    trackBundleEventClient("wizard_result_shown", {
+      bundleId: result.dossierSlug ?? undefined,
+      metadata: { slug: result.dossierSlug ?? "", availability },
+    });
   }, [dryRun, currentStep, result, selectedSituation, selectedSubOption, selectedRefine]);
 
   return (

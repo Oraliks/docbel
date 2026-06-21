@@ -119,6 +119,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Decision Builder",
       url: "/admin/decision-trees",
       icon: <GitBranchIcon className="size-4" />,
+      items: [
+        { title: "Arbres", url: "/admin/decision-trees" },
+        { title: "Analytics", url: "/admin/decision-trees/analytics" },
+      ],
     },
     {
       title: t("comptesAcces"),

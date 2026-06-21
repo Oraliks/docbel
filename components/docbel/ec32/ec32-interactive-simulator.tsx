@@ -17,6 +17,8 @@ import {
   Building2,
   CalendarDays,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Download,
   FastForward,
   Fingerprint,
@@ -855,6 +857,73 @@ export function Ec32InteractiveSimulator({
 
 // ═════════════════════════ Sous-composants d'étape ═════════════════════════
 
+/**
+ * Barre de navigation entre étapes (pied de carte), partagée par toutes les
+ * étapes. Reste TOUJOURS dans la carte : `flex-wrap` empêche tout débordement,
+ * et les libellés se raccourcissent sous le breakpoint `sm` (mobile) — le texte
+ * complet réapparaît dès l'espace disponible. `primary*` = action principale
+ * (Continuer / Choisir / Suivant…), step-spécifique.
+ */
+function Ec32StepNav({
+  getLabel,
+  onRestart,
+  onPrev,
+  onPrimary,
+  primaryLabel,
+  primaryShortLabel,
+  primaryDisabled = false,
+  primaryIconEnd,
+}: {
+  getLabel: (key: string, fallback?: string) => string
+  onRestart?: () => void
+  onPrev?: () => void
+  onPrimary?: () => void
+  /** Libellé complet de l'action principale (≥ sm). */
+  primaryLabel?: string
+  /** Libellé court affiché sous `sm` (défaut : `primaryLabel`). */
+  primaryShortLabel?: string
+  primaryDisabled?: boolean
+  /** Icône optionnelle après le libellé (ex. flèche « Suivant »). */
+  primaryIconEnd?: ReactNode
+}) {
+  return (
+    <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
+      {onRestart ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onRestart}
+          className="min-w-0 shrink"
+        >
+          <RotateCcw className="size-3.5 shrink-0" aria-hidden />
+          <span className="hidden sm:inline">{getLabel('nav.restart')}</span>
+          <span className="sm:hidden">Recommencer</span>
+        </Button>
+      ) : (
+        <span aria-hidden />
+      )}
+
+      <div className="flex shrink-0 items-center gap-2">
+        {onPrev && (
+          <Button type="button" variant="outline" size="sm" onClick={onPrev}>
+            <ChevronLeft className="size-3.5 shrink-0" aria-hidden />
+            <span className="hidden sm:inline">{getLabel('nav.back')}</span>
+            <span className="sm:hidden">Précédent</span>
+          </Button>
+        )}
+        {onPrimary && (
+          <Button type="button" onClick={onPrimary} disabled={primaryDisabled}>
+            <span className="hidden sm:inline">{primaryLabel}</span>
+            <span className="sm:hidden">{primaryShortLabel ?? primaryLabel}</span>
+            {primaryIconEnd}
+          </Button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function StepLogin({
   getLabel,
   getNotice,
@@ -931,15 +1000,13 @@ function StepLogin({
         </div>
       )}
 
-      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
-        <Button type="button" variant="ghost" size="sm" onClick={onRestart}>
-          <RotateCcw className="size-3.5" aria-hidden />
-          {getLabel('nav.restart')}
-        </Button>
-        <Button type="button" onClick={onContinue}>
-          {getLabel('login.continue')}
-        </Button>
-      </div>
+      <Ec32StepNav
+        getLabel={getLabel}
+        onRestart={onRestart}
+        onPrimary={onContinue}
+        primaryLabel={getLabel('login.continue')}
+        primaryShortLabel="Démarrer"
+      />
 
       <Dialog open={consentOpen} onOpenChange={setConsentOpen}>
         <DialogContent
@@ -1019,20 +1086,15 @@ function StepDeclaration({
         </span>
       </label>
 
-      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
-        <Button type="button" variant="ghost" size="sm" onClick={onRestart}>
-          <RotateCcw className="size-3.5" aria-hidden />
-          {getLabel('nav.restart')}
-        </Button>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={onPrev}>
-            {getLabel('nav.back')}
-          </Button>
-          <Button type="button" onClick={onContinue} disabled={!checked}>
-            {getLabel('declaration.continue')}
-          </Button>
-        </div>
-      </div>
+      <Ec32StepNav
+        getLabel={getLabel}
+        onRestart={onRestart}
+        onPrev={onPrev}
+        onPrimary={onContinue}
+        primaryLabel={getLabel('declaration.continue')}
+        primaryShortLabel="Continuer"
+        primaryDisabled={!checked}
+      />
     </Ec32Card>
   )
 }
@@ -1111,20 +1173,15 @@ function StepEmployer({
         </Ec32InfoBox>
       )}
 
-      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
-        <Button type="button" variant="ghost" size="sm" onClick={onRestart}>
-          <RotateCcw className="size-3.5" aria-hidden />
-          {getLabel('nav.restart')}
-        </Button>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={onPrev}>
-            {getLabel('nav.back')}
-          </Button>
-          <Button type="button" onClick={onContinue} disabled={!selected}>
-            {getLabel('employer.continue')}
-          </Button>
-        </div>
-      </div>
+      <Ec32StepNav
+        getLabel={getLabel}
+        onRestart={onRestart}
+        onPrev={onPrev}
+        onPrimary={onContinue}
+        primaryLabel={getLabel('employer.continue')}
+        primaryShortLabel="Choisir"
+        primaryDisabled={!selected}
+      />
     </Ec32Card>
   )
 }
@@ -1225,20 +1282,14 @@ function StepMonth({
         )}
       </div>
 
-      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
-        <Button type="button" variant="ghost" size="sm" onClick={onRestart}>
-          <RotateCcw className="size-3.5" aria-hidden />
-          {getLabel('nav.restart')}
-        </Button>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={onPrev}>
-            {getLabel('nav.back')}
-          </Button>
-          <Button type="button" onClick={onContinue}>
-            {getLabel('nav.toCalendar')}
-          </Button>
-        </div>
-      </div>
+      <Ec32StepNav
+        getLabel={getLabel}
+        onRestart={onRestart}
+        onPrev={onPrev}
+        onPrimary={onContinue}
+        primaryLabel={getLabel('nav.toCalendar')}
+        primaryShortLabel="Calendrier"
+      />
     </Ec32Card>
   )
 }
@@ -1406,19 +1457,15 @@ function CardWorkspace({
       </div>
 
       {/* Navigation entre étapes — dans la carte. */}
-      <div className="mt-5 flex justify-end gap-2 border-t border-border pt-4">
-        <Button type="button" variant="outline" size="sm" onClick={onPrev}>
-          {getLabel('nav.back')}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          onClick={onNext}
-          disabled={EC32_STEPS.indexOf(activeStep) >= EC32_STEPS.length - 1}
-        >
-          {getLabel('nav.next')}
-        </Button>
-      </div>
+      <Ec32StepNav
+        getLabel={getLabel}
+        onPrev={onPrev}
+        onPrimary={onNext}
+        primaryLabel={getLabel('nav.next')}
+        primaryShortLabel="Suivant"
+        primaryDisabled={EC32_STEPS.indexOf(activeStep) >= EC32_STEPS.length - 1}
+        primaryIconEnd={<ChevronRight className="size-3.5 shrink-0" aria-hidden />}
+      />
     </Ec32Card>
   )
 }

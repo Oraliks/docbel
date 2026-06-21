@@ -105,9 +105,24 @@ type OptionPatch = Partial<Pick<OptionNode, "label" | "helpText" | "icon" | "con
 type ResultPatch = Partial<
   Pick<
     ResultNode,
-    "bundleSlug" | "title" | "rationale" | "matchLevel" | "allocationEstimate" | "related" | "conditions"
+    | "bundleSlug"
+    | "title"
+    | "rationale"
+    | "matchLevel"
+    | "allocationEstimate"
+    | "related"
+    | "conditions"
+    | "availability"
+    | "nextStep"
   >
 >;
+
+/// Options de disponibilité (modèle ONEM 2026) — pour l'inspecteur.
+export const AVAILABILITIES: { value: NonNullable<ResultNode["availability"]>; label: string }[] = [
+  { value: "disponible", label: "Disponible (dossier réel)" },
+  { value: "a_creer", label: "À créer (bientôt disponible)" },
+  { value: "orientation_externe", label: "Orientation externe (contact)" },
+];
 
 /// Patch typé selon le type du nœud. Ignore silencieusement les clés non
 /// applicables au type (sécurité). Retourne le contenu inchangé si nœud absent.

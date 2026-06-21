@@ -156,7 +156,14 @@ export function validateDecisionTree(
     }
 
     if (node.type === "result") {
-      if (node.bundleSlug === null) {
+      // `availability` pilote la sévérité : seul un résultat "disponible"
+      // (ou sans availability = rétro-compat) exige un bundle actif réel.
+      // "a_creer"/"orientation_externe" ne bloquent jamais la publication.
+      const availability = node.availability ?? "disponible";
+
+      if (availability === "orientation_externe") {
+        // Orientation externe : pas un dossier Docbel → aucune exigence.
+      } else if (node.bundleSlug === null) {
         v.push({
           severity: "warning",
           code: "result_no_bundle",
@@ -164,13 +171,24 @@ export function validateDecisionTree(
           message: "Résultat sans dossier (« bientôt disponible »).",
         });
       } else if (!knownBundleSlugs.has(node.bundleSlug)) {
-        v.push({
-          severity: "error",
-          code: "unknown_bundle",
-          nodeId,
-          message: `Le dossier "${node.bundleSlug}" n'existe pas ou n'est pas actif.`,
-          meta: { bundleSlug: node.bundleSlug },
-        });
+        if (availability === "a_creer") {
+          // Dossier prévu mais pas encore actif → simple avertissement.
+          v.push({
+            severity: "warning",
+            code: "result_no_bundle",
+            nodeId,
+            message: `Le dossier "${node.bundleSlug}" est prévu mais pas encore disponible.`,
+            meta: { bundleSlug: node.bundleSlug },
+          });
+        } else {
+          v.push({
+            severity: "error",
+            code: "unknown_bundle",
+            nodeId,
+            message: `Le dossier "${node.bundleSlug}" n'existe pas ou n'est pas actif.`,
+            meta: { bundleSlug: node.bundleSlug },
+          });
+        }
       } else if (opts.bundlesWithoutForm?.has(node.bundleSlug)) {
         v.push({
           severity: "warning",

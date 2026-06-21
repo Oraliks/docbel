@@ -9,13 +9,42 @@
 /// juste l'arbre pour pouvoir basculer en douceur.
 
 import { PrismaClient, Prisma } from "@prisma/client";
-import { WIZARD_SITUATIONS } from "../../lib/dossier-wizard/config";
 import { wizardSituationsToTreeContent } from "../../lib/decision-builder/from-wizard";
+import {
+  mapOnem2026ToWizardSituations,
+  ONEM_2026_STUB_BUNDLES,
+} from "./data/onem-2026-tree";
 
 const SLUG = "chomage-orientation";
 
+/// Crée les dossiers "à créer" en stubs INACTIFS (active=false) : invisibles du
+/// public, éditables dans l'admin pour être complétés plus tard. Idempotent.
+async function seedStubBundles(prisma: PrismaClient): Promise<void> {
+  for (const stub of ONEM_2026_STUB_BUNDLES) {
+    const exists = await prisma.documentBundle.findUnique({
+      where: { slug: stub.slug },
+      select: { id: true },
+    });
+    if (exists) continue; // ne JAMAIS écraser un dossier existant
+    await prisma.documentBundle.create({
+      data: {
+        slug: stub.slug,
+        name: stub.name,
+        description: "Dossier en préparation — orientation disponible, formulaires à venir.",
+        organism: "ONEM",
+        lifeEventCategory: "emploi",
+        active: false, // masqué du public tant qu'il n'est pas prêt
+        createdBy: "seed",
+      },
+    });
+  }
+  console.log(`   ✓ ${ONEM_2026_STUB_BUNDLES.length} dossiers stub vérifiés/créés (inactifs)`);
+}
+
 export async function seedDecisionTrees(prisma: PrismaClient): Promise<void> {
-  const content = wizardSituationsToTreeContent(WIZARD_SITUATIONS);
+  await seedStubBundles(prisma);
+
+  const content = wizardSituationsToTreeContent(mapOnem2026ToWizardSituations());
   const contentJson = content as unknown as Prisma.InputJsonValue;
   const now = new Date();
 

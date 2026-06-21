@@ -139,5 +139,7 @@ function resultNode(id: string, wr: WizardResult): ResultNode {
     matchLevel: wr.matchLevel ?? "recommande",
     ...(wr.allocationEstimate ? { allocationEstimate: true } : {}),
     ...(wr.related && wr.related.length ? { related: wr.related } : {}),
+    ...(wr.availability ? { availability: wr.availability } : {}),
+    ...(wr.nextStep ? { nextStep: wr.nextStep } : {}),
   };
 }

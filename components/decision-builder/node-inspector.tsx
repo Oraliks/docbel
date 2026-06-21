@@ -24,6 +24,7 @@ import { BundleConditionEditor } from "@/components/admin/documents/bundle-condi
 import { ResultPicker } from "./result-picker";
 import {
   addOption,
+  AVAILABILITIES,
   branchOptionToNewQuestion,
   branchOptionToNewResult,
   buildConditionSchemas,
@@ -360,6 +361,25 @@ function ResultFields({
 
   return (
     <>
+      <Field label="Disponibilité">
+        <Select
+          value={node.availability ?? "disponible"}
+          onValueChange={(v) => {
+            if (v) update({ availability: v as ResultNode["availability"] });
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {AVAILABILITIES.map((a) => (
+              <SelectItem key={a.value} value={a.value}>
+                {a.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
       <Field label="Dossier ciblé">
         <ResultPicker
           value={node.bundleSlug}
@@ -377,6 +397,14 @@ function ResultFields({
           value={node.rationale}
           onChange={(e) => update({ rationale: e.target.value })}
           rows={3}
+        />
+      </Field>
+      <Field label="Étape suivante (optionnel)">
+        <Textarea
+          value={node.nextStep ?? ""}
+          onChange={(e) => update({ nextStep: e.target.value || undefined })}
+          rows={2}
+          placeholder="Ex. Adressez-vous à votre organisme de paiement…"
         />
       </Field>
       <Field label="Niveau de correspondance">

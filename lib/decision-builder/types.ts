@@ -3,6 +3,7 @@
 
 import type { z } from "zod";
 import type {
+  AvailabilitySchema,
   BundleConditionSchema,
   ConditionGroupSchema,
   ConditionLeafSchema,
@@ -25,6 +26,7 @@ export type LegacyRule = z.infer<typeof LegacyRuleSchema>;
 export type BundleCondition = z.infer<typeof BundleConditionSchema>;
 
 export type MatchLevel = z.infer<typeof MatchLevelSchema>;
+export type Availability = z.infer<typeof AvailabilitySchema>;
 export type QuestionNode = z.infer<typeof QuestionNodeSchema>;
 export type OptionNode = z.infer<typeof OptionNodeSchema>;
 export type ResultNode = z.infer<typeof ResultNodeSchema>;

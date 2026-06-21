@@ -97,6 +97,16 @@ export const BundleConditionSchema: z.ZodType<LibBundleCondition> = z.union([
 /// Niveau de correspondance affiché à l'utilisateur (badge sur le résultat).
 export const MatchLevelSchema = z.enum(["recommande", "pertinent", "a_verifier"]);
 
+/// Disponibilité du dossier ciblé (modèle inspiré de l'arbre ONEM 2026) :
+/// - "disponible"          → dossier réel, parcours /d/[slug] démarrable
+/// - "a_creer"             → dossier prévu dans Docbel, pas encore prêt ("bientôt")
+/// - "orientation_externe" → pas un dossier Docbel (mutuelle, pension, contact…)
+export const AvailabilitySchema = z.enum([
+  "disponible",
+  "a_creer",
+  "orientation_externe",
+]);
+
 /// Nœud "question" : pose une question, propose un ensemble d'options.
 /// Les options sont elles-mêmes des nœuds (référencées par `optionIds`).
 export const QuestionNodeSchema = z.object({
@@ -156,6 +166,16 @@ export const ResultNodeSchema = z.object({
   related: z.array(z.string().min(1)).optional(),
   /// Conditions optionnelles pour filtrer les résultats applicables.
   conditions: BundleConditionSchema.optional(),
+  /// Disponibilité (modèle ONEM 2026). Absent = déduit de bundleSlug
+  /// (null → indisponible, sinon disponible) pour la rétro-compatibilité.
+  availability: AvailabilitySchema.optional(),
+  /// Étape suivante non engageante affichée à l'utilisateur (« Préparez… »,
+  /// « Adressez-vous à votre mutuelle… »).
+  nextStep: z.string().optional(),
+  /// Références de sources ONEM internes (documentation admin, non publiques).
+  sourceIds: z.array(z.string()).optional(),
+  /// Notes internes admin (non publiques).
+  adminNotes: z.string().optional(),
 });
 
 /// Union discriminée de tous les types de nœuds.

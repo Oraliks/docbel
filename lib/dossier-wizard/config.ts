@@ -55,6 +55,12 @@ export interface WizardResult {
   /// Slugs de dossiers proches à proposer en complément du principal.
   /// Fusionnés avec `DocumentBundle.relatedBundles` à la résolution.
   related?: string[];
+  /// Disponibilité (modèle ONEM 2026, optionnel). Absent ⇒ déduit de
+  /// `dossierSlug` (null = indisponible). Pilote le rendu : "disponible"
+  /// (Démarrer), "a_creer" (bientôt), "orientation_externe" (carte contact).
+  availability?: "disponible" | "a_creer" | "orientation_externe";
+  /// Étape suivante non engageante affichée sous le résultat.
+  nextStep?: string;
 }
 
 /// Option de la 3ᵉ étape (« Affinons »). Résout toujours vers un résultat.

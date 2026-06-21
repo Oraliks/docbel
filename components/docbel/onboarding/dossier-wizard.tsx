@@ -751,6 +751,8 @@ function PrimaryAvailable({
         </div>
       </div>
 
+      <NextStep text={primary.nextStep} />
+
       <BulletList
         icon={FileText}
         title="Documents à préparer"
@@ -831,6 +833,8 @@ function PrimaryUnavailable({
         </div>
       </div>
 
+      <NextStep text={primary.nextStep} />
+
       <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
         <Button variant="outline" onClick={onReset}>
           <RotateCcw className="size-4" aria-hidden />
@@ -844,6 +848,73 @@ function PrimaryUnavailable({
         ) : (
           <Button render={<Link href="/contact" />}>
             Contacter le service
+            <ArrowRight className="size-4" aria-hidden />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/// Encadré « étape suivante » non engageante (affiché sous le résultat).
+function NextStep({ text }: { text: string | null }) {
+  if (!text) return null;
+  return (
+    <div className="flex items-start gap-2 rounded-lg border border-[color:var(--glass-ink-line)] bg-[color:var(--glass-surface)] px-3 py-2">
+      <ArrowRight
+        className="mt-0.5 size-3.5 shrink-0 text-[color:var(--glass-accent-deep)]"
+        aria-hidden
+      />
+      <p className="text-xs text-[color:var(--glass-ink-soft)]">
+        <span className="font-semibold">Étape suivante : </span>
+        {text}
+      </p>
+    </div>
+  );
+}
+
+/// Résultat d'ORIENTATION EXTERNE (mutuelle, pension, service régional…) :
+/// pas un dossier Docbel → carte de contact dédiée, aucun lien /d/.
+function PrimaryExternal({
+  primary,
+  onReset,
+}: {
+  primary: DerivedDossier;
+  onReset: () => void;
+}) {
+  const dryRun = useDryRun();
+  return (
+    <div className="space-y-3 rounded-2xl border border-sky-500/30 bg-sky-50/60 p-4 dark:bg-sky-950/20">
+      <div className="flex items-start gap-2">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sky-500 text-white">
+          <Building2 className="size-4" aria-hidden />
+        </span>
+        <div className="flex-1 space-y-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-sky-900 dark:text-sky-200">
+            Orientation
+          </p>
+          <h3 className="text-base font-semibold">{primary.title}</h3>
+          <p className="text-sm text-sky-900/80 dark:text-sky-100/80">
+            {primary.rationale}
+          </p>
+        </div>
+      </div>
+
+      <NextStep text={primary.nextStep} />
+
+      <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
+        <Button variant="outline" onClick={onReset}>
+          <RotateCcw className="size-4" aria-hidden />
+          Recommencer le guide
+        </Button>
+        {dryRun ? (
+          <Button disabled title="Navigation désactivée en mode test">
+            Voir les contacts utiles
+            <ArrowRight className="size-4" aria-hidden />
+          </Button>
+        ) : (
+          <Button render={<Link href="/contact" />}>
+            Voir les contacts utiles
             <ArrowRight className="size-4" aria-hidden />
           </Button>
         )}
@@ -910,7 +981,9 @@ function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
 
   return (
     <div className="space-y-4 transition-opacity duration-200">
-      {primary.available ? (
+      {primary.availability === "orientation_externe" ? (
+        <PrimaryExternal primary={primary} onReset={onReset} />
+      ) : primary.available ? (
         <PrimaryAvailable primary={primary} result={result} onReset={onReset} />
       ) : (
         <PrimaryUnavailable primary={primary} onReset={onReset} />

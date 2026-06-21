@@ -29,6 +29,8 @@ export interface WizardBundleMeta {
 
 export type WizardCatalog = Record<string, WizardBundleMeta>;
 
+export type Availability = "disponible" | "a_creer" | "orientation_externe";
+
 export interface DerivedDossier {
   /// `null` ⇒ « bientôt disponible » (pas de bundle publié).
   slug: string | null;
@@ -41,6 +43,10 @@ export interface DerivedDossier {
   estimatedTime: number | null;
   /// true si un parcours `/d/[slug]` peut être démarré.
   available: boolean;
+  /// Disponibilité explicite (modèle ONEM 2026). Absent ⇒ déduit du slug.
+  availability: Availability;
+  /// Étape suivante non engageante (optionnelle).
+  nextStep: string | null;
 }
 
 export interface DerivedResults {
@@ -51,10 +57,21 @@ export interface DerivedResults {
 const MAX_RELATED = 3;
 
 function enrich(
-  base: { slug: string | null; title: string; rationale: string; matchLevel: MatchLevel },
+  base: {
+    slug: string | null;
+    title: string;
+    rationale: string;
+    matchLevel: MatchLevel;
+    availability?: Availability;
+    nextStep?: string | null;
+  },
   catalog: WizardCatalog,
 ): DerivedDossier {
   const meta = base.slug ? catalog[base.slug] : undefined;
+  // `availability` explicite pilote le rendu ; sinon on déduit du slug
+  // (rétro-compat avec les résultats sans availability).
+  const availability: Availability =
+    base.availability ?? (base.slug !== null ? "disponible" : "a_creer");
   return {
     slug: base.slug,
     title: base.title,
@@ -64,7 +81,10 @@ function enrich(
     requiredDocuments: meta?.requiredDocuments ?? [],
     points: meta?.points ?? [],
     estimatedTime: meta?.estimatedTime ?? null,
-    available: base.slug !== null,
+    // Démarrable seulement si "disponible" ET bundle réellement présent.
+    available: availability === "disponible" && base.slug !== null,
+    availability,
+    nextStep: base.nextStep ?? null,
   };
 }
 
@@ -78,6 +98,8 @@ export function deriveWizardResults(
       title: result.dossierTitle,
       rationale: result.rationale,
       matchLevel: result.matchLevel ?? "recommande",
+      availability: result.availability,
+      nextStep: result.nextStep,
     },
     catalog,
   );

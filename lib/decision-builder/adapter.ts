@@ -132,6 +132,8 @@ function mapResult(r: ResultNode): WizardResult {
     ...(r.matchLevel ? { matchLevel: r.matchLevel } : {}),
     ...(r.allocationEstimate ? { allocationEstimate: r.allocationEstimate } : {}),
     ...(r.related && r.related.length ? { related: r.related } : {}),
+    ...(r.availability ? { availability: r.availability } : {}),
+    ...(r.nextStep ? { nextStep: r.nextStep } : {}),
   };
 }
 

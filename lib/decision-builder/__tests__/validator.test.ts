@@ -271,6 +271,74 @@ describe("validateDecisionTree — warnings", () => {
     expect(r.publishable).toBe(true);
   });
 
+  it("availability 'a_creer' with an unknown slug → warning, NOT blocking", () => {
+    const t = tree(
+      {
+        q: { type: "question", id: "q", text: "?", optionIds: ["a"] },
+        a: { type: "option", id: "a", label: "A", nextId: "r" },
+        r: {
+          type: "result",
+          id: "r",
+          bundleSlug: "rcc", // n'existe pas
+          title: "RCC",
+          rationale: "R",
+          matchLevel: "recommande",
+          availability: "a_creer",
+        },
+      },
+      "q",
+    );
+    const r = validateDecisionTree(t, VALID_BUNDLES);
+    expect(r.errors).toEqual([]);
+    expect(r.publishable).toBe(true);
+    expect(r.warnings.some((w) => w.code === "result_no_bundle")).toBe(true);
+  });
+
+  it("availability 'orientation_externe' with null slug → no error, publishable", () => {
+    const t = tree(
+      {
+        q: { type: "question", id: "q", text: "?", optionIds: ["a"] },
+        a: { type: "option", id: "a", label: "A", nextId: "r" },
+        r: {
+          type: "result",
+          id: "r",
+          bundleSlug: null,
+          title: "Mutuelle",
+          rationale: "Adressez-vous à votre mutuelle.",
+          matchLevel: "a_verifier",
+          availability: "orientation_externe",
+        },
+      },
+      "q",
+    );
+    const r = validateDecisionTree(t, VALID_BUNDLES);
+    expect(r.errors).toEqual([]);
+    expect(r.publishable).toBe(true);
+    // externe = pas de dossier → aucun warning result_no_bundle non plus
+    expect(r.warnings.some((w) => w.code === "result_no_bundle")).toBe(false);
+  });
+
+  it("availability 'disponible' with unknown slug STILL blocks (error)", () => {
+    const t = tree(
+      {
+        q: { type: "question", id: "q", text: "?", optionIds: ["a"] },
+        a: { type: "option", id: "a", label: "A", nextId: "r" },
+        r: {
+          type: "result",
+          id: "r",
+          bundleSlug: "ghost",
+          title: "T",
+          rationale: "R",
+          matchLevel: "recommande",
+          availability: "disponible",
+        },
+      },
+      "q",
+    );
+    const r = validateDecisionTree(t, VALID_BUNDLES);
+    expect(r.errors.some((e) => e.code === "unknown_bundle")).toBe(true);
+  });
+
   it("'unreachable' when a node isn't reachable from root", () => {
     const t = tree(
       {

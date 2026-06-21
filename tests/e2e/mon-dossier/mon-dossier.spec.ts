@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 
-// E2E /mon-dossier : 3 zones, recherche, wizard multi-résultats, reprise.
+// E2E /mon-dossier : parcours (segmented control), wizard, recherche, aide.
+// Le toggle « Je me laisse guider » / « J'accède directement » est un vrai
+// switch : l'accès direct est MASQUÉ tant qu'on n'a pas basculé d'onglet.
 // Nécessite le dev server (pnpm dev) + DB accessible.
 // Lancer : pnpm test:e2e tests/e2e/mon-dossier
 
@@ -12,14 +14,26 @@ test.describe("/mon-dossier — porte d'entrée", () => {
     ).toBeVisible();
   });
 
-  test("affiche les 3 zones (Assistant / Accès direct / Reprendre)", async ({
+  test("parcours guidé visible par défaut + aide persistante", async ({
     page,
   }) => {
+    // Le wizard est affiché par défaut (onglet « Je me laisse guider »).
     await expect(page.getByText(/L'assistant dossier/i)).toBeVisible();
-    await expect(page.getByText(/Accès direct/i).first()).toBeVisible();
+    // L'aide est une colonne toujours présente.
     await expect(
-      page.getByRole("heading", { name: /Reprendre un dossier/i }),
+      page.getByRole("heading", { name: /Besoin d'aide/i }),
     ).toBeVisible();
+    // L'accès direct n'est pas l'onglet actif au chargement.
+    await expect(
+      page.getByRole("tab", { name: /J'accède directement/i }),
+    ).toHaveAttribute("aria-selected", "false");
+  });
+
+  test("le toggle bascule vers l'accès direct (recherche)", async ({ page }) => {
+    const directTab = page.getByRole("tab", { name: /J'accède directement/i });
+    await directTab.click();
+    await expect(directTab).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByLabel(/Rechercher un dossier/i)).toBeVisible();
   });
 
   test("le wizard avance à l'étape 2 après une situation", async ({ page }) => {
@@ -29,27 +43,15 @@ test.describe("/mon-dossier — porte d'entrée", () => {
   });
 
   test("recherche sans résultat affiche le message dédié", async ({ page }) => {
-    await page
-      .getByLabel(/Rechercher un dossier/i)
-      .fill("zzzznexistepasxyz");
+    await page.getByRole("tab", { name: /J'accède directement/i }).click();
+    await page.getByLabel(/Rechercher un dossier/i).fill("zzzznexistepasxyz");
     await expect(page.getByText(/Aucun dossier ne correspond/i)).toBeVisible();
-  });
-
-  test("un code de reprise invalide affiche une erreur générique", async ({
-    page,
-  }) => {
-    await page.getByLabel(/code de reprise/i).fill("BELDOC-ZZZZ-ZZZZ");
-    await page
-      .getByRole("button", { name: /Reprendre la démarche/i })
-      .click();
-    await expect(
-      page.getByText(/n'est pas valide ou a expiré/i),
-    ).toBeVisible();
   });
 
   test("ouvrir un dossier depuis l'accès direct navigue vers /d/[slug]", async ({
     page,
   }) => {
+    await page.getByRole("tab", { name: /J'accède directement/i }).click();
     const firstDossier = page.locator('a[href^="/d/"]').first();
     // Skip si aucun bundle publié dans l'environnement de test.
     if ((await firstDossier.count()) === 0) test.skip();

@@ -257,6 +257,28 @@ const SORT_PILLS: { id: Sort; label: string }[] = [
 
 type Mode = "guide" | "direct";
 
+/* Les deux parcours du segmented control. Chaque onglet porte un sous-titre
+   qui clarifie ce qu'il fait (le toggle devient un vrai choix, pas un gadget). */
+const MODE_TABS: {
+  id: Mode;
+  label: string;
+  sub: string;
+  icon: typeof Sparkles;
+}[] = [
+  {
+    id: "guide",
+    label: "Je me laisse guider",
+    sub: "Quelques questions simples",
+    icon: Sparkles,
+  },
+  {
+    id: "direct",
+    label: "J'accède directement",
+    sub: "Recherche & catégories",
+    icon: FolderOpen,
+  },
+];
+
 export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
   const [mode, setMode] = useState<Mode>("guide");
   const [search, setSearch] = useState("");
@@ -449,64 +471,100 @@ export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
         </p>
       </header>
 
-      {/* ───────── TOGGLE Guide / Accès direct ───────── */}
-      <div
-        role="tablist"
-        aria-label="Mode de recherche"
-        className="glass-surface-strong flex w-full items-center gap-1 rounded-2xl p-1"
-      >
-        {(
-          [
-            { id: "guide" as const, label: "Je me laisse guider", icon: Sparkles },
-            { id: "direct" as const, label: "J'accède directement", icon: FolderOpen },
-          ]
-        ).map((t) => {
-          const active = mode === t.id;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setMode(t.id)}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-[12.5px] font-semibold transition-all sm:gap-2 sm:px-4 sm:text-[13.5px]"
-              style={{
-                background: active
-                  ? "color-mix(in oklab, var(--glass-accent-deep) 16%, var(--glass-surface-strong))"
-                  : "transparent",
-                color: active
-                  ? "var(--glass-accent-deep)"
-                  : "var(--glass-ink-soft)",
-                boxShadow: active
-                  ? "0 6px 18px color-mix(in oklab, var(--glass-accent-deep) 22%, transparent), inset 0 1px 0 rgba(255,255,255,0.5)"
-                  : "none",
-              }}
+      {/* ═══════ Cluster centré : parcours (toggle) + panneau actif + aide ═══════ */}
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        {/* ── Segmented control : choix RÉEL du parcours (pastille glissante) ── */}
+        <div
+          role="tablist"
+          aria-label="Choisissez votre parcours"
+          className="glass-surface-strong relative flex w-full max-w-xl rounded-2xl p-1.5"
+        >
+          {/* Pastille glissante = onglet actif */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-y-1.5 left-1.5 rounded-xl transition-transform duration-300 ease-out motion-reduce:transition-none"
+            style={{
+              width: "calc(50% - 0.375rem)",
+              transform:
+                mode === "direct" ? "translateX(100%)" : "translateX(0)",
+              background:
+                "linear-gradient(135deg, var(--glass-accent-deep), color-mix(in oklab, var(--glass-accent-deep) 72%, var(--glass-accent-a)))",
+              boxShadow:
+                "0 10px 24px color-mix(in oklab, var(--glass-accent-deep) 38%, transparent), inset 0 1px 0 rgba(255,255,255,0.35)",
+            }}
+          />
+          {MODE_TABS.map((t) => {
+            const active = mode === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                id={`tab-${t.id}`}
+                aria-selected={active}
+                aria-controls={`panel-${t.id}`}
+                onClick={() => setMode(t.id)}
+                className="relative z-10 flex flex-1 items-center justify-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors sm:justify-start sm:px-4"
+              >
+                <span
+                  className="flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors"
+                  style={{
+                    background: active
+                      ? "rgba(255,255,255,0.20)"
+                      : "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
+                    color: active ? "#fff" : "var(--glass-accent-deep)",
+                  }}
+                  aria-hidden
+                >
+                  <t.icon className="size-[18px]" />
+                </span>
+                <span className="min-w-0">
+                  <span
+                    className="block truncate text-[13px] font-bold leading-tight transition-colors sm:text-[13.5px]"
+                    style={{ color: active ? "#fff" : "var(--glass-ink)" }}
+                  >
+                    {t.label}
+                  </span>
+                  <span
+                    className="mt-0.5 hidden truncate text-[11.5px] leading-tight transition-colors sm:block"
+                    style={{
+                      color: active
+                        ? "rgba(255,255,255,0.82)"
+                        : "var(--glass-ink-faint)",
+                    }}
+                  >
+                    {t.sub}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── 2 colonnes : panneau actif (guide OU accès direct) + aide ── */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start xl:grid-cols-[minmax(0,1fr)_340px]">
+          {/* ════ Panneau principal — swap selon le parcours ════ */}
+          <div className="min-w-0">
+            {/* Parcours guidé */}
+            <div
+              role="tabpanel"
+              id="panel-guide"
+              aria-labelledby="tab-guide"
+              className={mode === "guide" ? "outils-rise" : "hidden"}
             >
-              <t.icon className="size-4" aria-hidden />
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
+              <DossierWizard situations={WIZARD_SITUATIONS} catalog={catalog} />
+            </div>
 
-      {/* ───────── 3 COLONNES ───────── */}
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-[1.05fr_1.05fr_0.72fr] xl:items-start">
-        {/* ════ Colonne 1 — Assistant guidé ════ */}
-        <section
-          className={`outils-rise ${mode === "guide" ? "block" : "hidden"} lg:block`}
-          style={{ animationDelay: "0ms" }}
-        >
-          <DossierWizard situations={WIZARD_SITUATIONS} catalog={catalog} />
-        </section>
-
-        {/* ════ Colonne 2 — Accès direct ════ */}
-        <section
-          className={`glass-surface outils-rise ${
-            mode === "direct" ? "flex" : "hidden"
-          } flex-col gap-4 p-6 lg:flex`}
-          style={{ animationDelay: "80ms" }}
-        >
-          <div className="flex items-center gap-3">
+            {/* Accès direct */}
+            <section
+              role="tabpanel"
+              id="panel-direct"
+              aria-labelledby="tab-direct"
+              className={`glass-surface flex-col gap-4 p-6 ${
+                mode === "direct" ? "outils-rise flex" : "hidden"
+              }`}
+            >
+              <div className="flex items-center gap-3">
             <span
               className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--glass-accent-deep)]"
               style={{
@@ -717,13 +775,14 @@ export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
               </button>
             </div>
           ) : null}
-        </section>
+            </section>
+          </div>
 
-        {/* ════ Colonne 3 — Besoin d'aide ? ════ */}
-        <aside
-          className="glass-surface outils-rise flex flex-col gap-4 p-6 lg:col-span-2 xl:col-span-1"
-          style={{ animationDelay: "160ms" }}
-        >
+          {/* ════ Aide — sidebar persistante ════ */}
+          <aside
+            className="glass-surface outils-rise flex flex-col gap-4 p-6 lg:sticky lg:top-6"
+            style={{ animationDelay: "120ms" }}
+          >
           <div className="flex items-center gap-3">
             <span
               className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--glass-accent-deep)]"
@@ -820,7 +879,8 @@ export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
             <Lock className="size-3.5" aria-hidden />
             Vos données restent confidentielles et ne sont jamais transmises.
           </p>
-        </aside>
+          </aside>
+        </div>
       </div>
     </section>
   );

@@ -86,6 +86,19 @@ function hueForBundle(b: MonDossierBundle): string {
   return "var(--glass-accent-deep)";
 }
 
+/* Feuilles qui « tombent » dans le dossier du hero (décalage, inclinaison,
+   teinte d'en-tête, délai). Peintes SOUS le PNG du dossier (cf. .hero-doc). */
+const HERO_DOCS: {
+  dx: string;
+  r: string;
+  delay: string;
+  tint: string;
+}[] = [
+  { dx: "-12px", r: "-10deg", delay: "0s", tint: "var(--glass-accent-a)" },
+  { dx: "13px", r: "8deg", delay: "0.95s", tint: "var(--glass-accent-c)" },
+  { dx: "1px", r: "-3deg", delay: "1.9s", tint: "var(--glass-accent-deep)" },
+];
+
 /* ── Pastille d'icône teintée (glow) pour une ligne de dossier ── */
 function RowIconTile({ bundle, size = 36 }: { bundle: MonDossierBundle; size?: number }) {
   const hue = hueForBundle(bundle);
@@ -422,32 +435,47 @@ export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
     <section className="relative isolate flex flex-col gap-7">
       {/* ───────── HERO ───────── */}
       <header className="relative flex flex-col gap-3 px-1">
-        {/* Illustration 3D dossier + boussole (coin haut-droit) */}
+        {/* Illustration 3D : dossier + feuilles qui s'y classent (coin haut-droit) */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-6 right-0 hidden h-[200px] w-[300px] lg:block"
+          className="pointer-events-none absolute -top-6 right-6 hidden h-[200px] w-[230px] lg:block"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/3d/folder.png"
-            alt=""
-            className="hero-float absolute right-16 top-0 h-[180px] w-[180px] object-contain"
-            style={{
-              filter:
-                "drop-shadow(0 20px 36px rgba(20,10,45,0.30)) drop-shadow(0 0 50px color-mix(in oklab, var(--glass-accent-deep) 35%, transparent))",
-            }}
-          />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/3d/compass.png"
-            alt=""
-            className="hero-float absolute right-0 top-12 h-[120px] w-[120px] object-contain"
-            style={{
-              animationDelay: "0.8s",
-              filter:
-                "drop-shadow(0 16px 28px rgba(20,10,45,0.32)) drop-shadow(0 0 32px color-mix(in oklab, var(--glass-accent-c) 30%, transparent))",
-            }}
-          />
+          {/* Le wrapper flotte ; les feuilles (hero-doc) descendent à l'intérieur
+              puis passent DERRIÈRE le PNG du dossier (occlusion) → effet rangement. */}
+          <div className="hero-float absolute right-4 top-0 h-[185px] w-[185px]">
+            {HERO_DOCS.map((d, i) => (
+              <span
+                key={i}
+                className="hero-doc absolute left-1/2 top-0 -ml-[15px] block h-[36px] w-[30px] overflow-hidden rounded-[5px] bg-white"
+                style={
+                  {
+                    "--dx": d.dx,
+                    "--r": d.r,
+                    animationDelay: d.delay,
+                    boxShadow: "0 9px 16px rgba(20,10,45,0.30)",
+                  } as React.CSSProperties
+                }
+              >
+                <span
+                  className="block h-[8px] w-full"
+                  style={{ background: d.tint }}
+                />
+                <span className="mx-[4px] mt-[5px] block h-[2.5px] rounded-full bg-[rgba(42,15,77,0.18)]" />
+                <span className="mx-[4px] mt-[3px] block h-[2.5px] w-[68%] rounded-full bg-[rgba(42,15,77,0.13)]" />
+                <span className="mx-[4px] mt-[3px] block h-[2.5px] w-[82%] rounded-full bg-[rgba(42,15,77,0.13)]" />
+              </span>
+            ))}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/3d/folder.png"
+              alt=""
+              className="absolute inset-0 h-full w-full object-contain"
+              style={{
+                filter:
+                  "drop-shadow(0 20px 36px rgba(20,10,45,0.30)) drop-shadow(0 0 50px color-mix(in oklab, var(--glass-accent-deep) 35%, transparent))",
+              }}
+            />
+          </div>
         </div>
 
         <nav

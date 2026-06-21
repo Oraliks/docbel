@@ -362,6 +362,27 @@
   animation: hero-float 5s ease-in-out infinite;
 }
 
+/* Documents qui se glissent dans le dossier du hero. Peints SOUS le PNG du
+   dossier : en descendant ils passent DERRIÈRE le panneau avant (occlusion)
+   → illusion de classement. La sortie en opacity 0 évite le flash au bouclage.
+   --dx / --r décalent et inclinent chaque feuille pour un effet naturel. */
+@keyframes hero-doc {
+  0% {
+    transform: translate(var(--dx, 0), -24px) rotate(var(--r, 0deg)) scale(0.82);
+    opacity: 0;
+  }
+  22% { opacity: 1; }
+  70% { opacity: 1; }
+  100% {
+    transform: translate(var(--dx, 0), 42px) rotate(var(--r, 0deg)) scale(1);
+    opacity: 0;
+  }
+}
+.hero-doc {
+  opacity: 0;
+  animation: hero-doc 2.8s cubic-bezier(0.45, 0.05, 0.3, 1) infinite both;
+}
+
 /* Anneau orbital du hero — rotation très lente (pur décor). Le centrage est
    porté par la propriété CSS `translate` (utilitaires Tailwind `-translate-*`,
    séparée de `transform` en v4) ; la keyframe ne fait QUE tourner, sinon le
@@ -389,6 +410,7 @@
   .animate-heart-pop,
   .animate-soft-sheen,
   .hero-float,
+  .hero-doc,
   .hero-spin,
   .hero-twinkle {
     animation: none;

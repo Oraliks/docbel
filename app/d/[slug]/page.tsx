@@ -4,6 +4,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { BundleRunner } from "@/components/docbel/bundle-runner";
+import { DossierEnConstruction } from "@/components/docbel/dossier-en-construction";
+import { parseOfficialSources } from "@/lib/bundles/types";
 import type { FormPayload, PdfFormField } from "@/lib/pdf-forms/types";
 import { collectTriggeredSlugs, parseTriggers } from "@/lib/pdf-forms/triggers";
 import type { BundleCondition } from "@/lib/bundles/conditions";
@@ -39,7 +41,19 @@ export default async function BundleRoute({
     },
   });
 
-  if (!bundle || !bundle.active) notFound();
+  if (!bundle) notFound();
+  // Dossier existant mais inactif (stub « à créer ») → page « en construction »
+  // plutôt qu'un 404 sec (l'utilisateur a été orienté ici par le wizard).
+  if (!bundle.active) {
+    return (
+      <DossierEnConstruction
+        name={bundle.name}
+        description={bundle.description}
+        organism={bundle.organism}
+        officialSources={parseOfficialSources(bundle.officialSources)}
+      />
+    );
+  }
 
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user?.id || null;

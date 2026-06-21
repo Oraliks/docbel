@@ -339,6 +339,60 @@ describe("validateDecisionTree — warnings", () => {
     expect(r.errors.some((e) => e.code === "unknown_bundle")).toBe(true);
   });
 
+  it("'deep_branch' warns on a 4th-level question (non rendue en public)", () => {
+    // root(1) → opt → q2(2) → opt → q3(3) → opt → q4(4 = trop profond)
+    const t = tree(
+      {
+        q1: { type: "question", id: "q1", text: "?", optionIds: ["o1"] },
+        o1: { type: "option", id: "o1", label: "A", nextId: "q2" },
+        q2: { type: "question", id: "q2", text: "?", optionIds: ["o2"] },
+        o2: { type: "option", id: "o2", label: "A", nextId: "q3" },
+        q3: { type: "question", id: "q3", text: "?", optionIds: ["o3"] },
+        o3: { type: "option", id: "o3", label: "A", nextId: "q4" },
+        q4: { type: "question", id: "q4", text: "?", optionIds: ["o4"] },
+        o4: { type: "option", id: "o4", label: "A", nextId: "r" },
+        r: {
+          type: "result",
+          id: "r",
+          bundleSlug: "chomage-complet",
+          title: "T",
+          rationale: "R",
+          matchLevel: "recommande",
+        },
+      },
+      "q1",
+    );
+    const r = validateDecisionTree(t, VALID_BUNDLES);
+    expect(
+      r.warnings.some((w) => w.code === "deep_branch" && w.nodeId === "q4"),
+    ).toBe(true);
+    expect(r.publishable).toBe(true); // warning, pas erreur
+  });
+
+  it("ne déclenche PAS 'deep_branch' sur un arbre 3 niveaux", () => {
+    const t = tree(
+      {
+        q1: { type: "question", id: "q1", text: "?", optionIds: ["o1"] },
+        o1: { type: "option", id: "o1", label: "A", nextId: "q2" },
+        q2: { type: "question", id: "q2", text: "?", optionIds: ["o2"] },
+        o2: { type: "option", id: "o2", label: "A", nextId: "q3" },
+        q3: { type: "question", id: "q3", text: "?", optionIds: ["o3"] },
+        o3: { type: "option", id: "o3", label: "A", nextId: "r" },
+        r: {
+          type: "result",
+          id: "r",
+          bundleSlug: "chomage-complet",
+          title: "T",
+          rationale: "R",
+          matchLevel: "recommande",
+        },
+      },
+      "q1",
+    );
+    const r = validateDecisionTree(t, VALID_BUNDLES);
+    expect(r.warnings.some((w) => w.code === "deep_branch")).toBe(false);
+  });
+
   it("'unreachable' when a node isn't reachable from root", () => {
     const t = tree(
       {

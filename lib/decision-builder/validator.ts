@@ -34,6 +34,7 @@ export type ValidationCode =
   // Avertissements
   | "result_no_bundle"          // result.bundleSlug === null (bientôt disponible)
   | "missing_form"              // bundle ciblé n'a aucun PdfForm rattaché (cul-de-sac)
+  | "deep_branch"               // question au-delà du 3e niveau (non rendue en public)
   | "unreachable";              // nœud non atteignable depuis root
 
 export interface Violation {
@@ -233,6 +234,23 @@ export function validateDecisionTree(
     }
   }
 
+  // ── 5. Branches trop profondes (warning) ─────────────────────────────────
+  // Le wizard public ne rend que 3 niveaux de questions (situation →
+  // sous-question → affinage). Une 4e question est collapsée → on avertit.
+  if (content.rootNodeId && nodes[content.rootNodeId]) {
+    for (const [nodeId, qDepth] of computeQuestionDepths(content)) {
+      if (qDepth > 3) {
+        v.push({
+          severity: "warning",
+          code: "deep_branch",
+          nodeId,
+          message: `Question au-delà du 3e niveau : elle ne sera pas affichée telle quelle dans le wizard public (le parcours sera raccourci jusqu'au premier résultat).`,
+          meta: { questionDepth: qDepth },
+        });
+      }
+    }
+  }
+
   const errors = v.filter((x) => x.severity === "error");
   const warnings = v.filter((x) => x.severity === "warning");
   return {
@@ -341,6 +359,36 @@ function outgoingEdges(node: DecisionTreeContent["nodes"][string]): string[] {
   if (node.type === "question") return node.optionIds;
   if (node.type === "option") return [node.nextId];
   return [];
+}
+
+/// Profondeur en QUESTIONS de chaque question (root question = 1, sa
+/// sous-question = 2, etc.). Sert à détecter les branches > 3 niveaux que le
+/// wizard public ne peut pas rendre.
+function computeQuestionDepths(content: DecisionTreeContent): Map<string, number> {
+  const nodes = content.nodes;
+  const out = new Map<string, number>();
+  if (!content.rootNodeId) return out;
+  const seen = new Set<string>();
+  const queue: { id: string; qd: number }[] = [{ id: content.rootNodeId, qd: 1 }];
+  while (queue.length) {
+    const { id, qd } = queue.shift()!;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const node = nodes[id];
+    if (!node) continue;
+    if (node.type === "question") {
+      out.set(id, qd);
+      for (const optId of node.optionIds) {
+        if (nodes[optId]) queue.push({ id: optId, qd });
+      }
+    } else if (node.type === "option") {
+      const next = nodes[node.nextId];
+      if (next) {
+        queue.push({ id: node.nextId, qd: next.type === "question" ? qd + 1 : qd });
+      }
+    }
+  }
+  return out;
 }
 
 function computeReachable(content: DecisionTreeContent): Set<string> {

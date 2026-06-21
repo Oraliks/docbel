@@ -58,10 +58,10 @@ export function Ec32GuidedSteps({
   return (
     <nav aria-label="Étapes de la simulation" className="w-full">
       {/* ── Desktop : stepper numéroté connecté (chiffres seuls, libellé en
-          tooltip pour rester compact sur une seule ligne) ── */}
+          tooltip pour rester compact sur une seule ligne), centré ── */}
       <TooltipProvider delay={120}>
         <ol
-          className="hidden flex-wrap items-center gap-y-2 md:flex"
+          className="hidden flex-wrap items-center justify-center gap-y-2 md:flex"
           role="list"
         >
           {orderedSteps.map((step, i) => {

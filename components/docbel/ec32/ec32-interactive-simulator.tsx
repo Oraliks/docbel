@@ -79,6 +79,7 @@ import {
   Ec32GuidedSteps,
   type Ec32GuidedStep,
 } from '@/components/docbel/ec32/ec32-guided-steps'
+import { Ec32SimulatorArt } from '@/components/docbel/ec32/ec32-simulator-art'
 import { Ec32Calendar } from '@/components/docbel/ec32/ec32-calendar'
 import { Ec32SituationSelector } from '@/components/docbel/ec32/ec32-situation-selector'
 import {
@@ -662,6 +663,7 @@ export function Ec32InteractiveSimulator({
       title={sim.title}
       subtitle={sim.subtitle}
       icon={CalendarDays}
+      headerAside={<Ec32SimulatorArt />}
     >
       {/* Stepper */}
       <div className="mb-5">

@@ -37,6 +37,7 @@ export function Ec32Section({
   title,
   subtitle,
   icon: Icon,
+  headerAside,
   children,
   className,
 }: {
@@ -45,6 +46,8 @@ export function Ec32Section({
   title?: string
   subtitle?: string
   icon?: ComponentType<{ className?: string }>
+  /** Élément décoratif/complémentaire affiché à droite de l'en-tête (≥ lg). */
+  headerAside?: ReactNode
   children: ReactNode
   className?: string
 }) {
@@ -55,23 +58,35 @@ export function Ec32Section({
       aria-labelledby={id && title ? `${id}-title` : undefined}
     >
       {(eyebrow || title || subtitle) && (
-        <header className="mb-6 max-w-3xl">
-          {eyebrow && (
-            <div className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--glass-accent-deep,#5B46E5)]">
-              {Icon && <Icon className="size-3.5" />}
-              {eyebrow}
-            </div>
+        <header
+          className={cn(
+            'mb-6',
+            headerAside
+              ? 'flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between'
+              : 'max-w-3xl',
           )}
-          {title && (
-            <h2
-              id={id ? `${id}-title` : undefined}
-              className="text-2xl font-bold leading-tight tracking-tight text-foreground md:text-3xl"
-            >
-              {title}
-            </h2>
-          )}
-          {subtitle && (
-            <p className="mt-2 text-base leading-relaxed text-muted-foreground">{subtitle}</p>
+        >
+          <div className={cn(headerAside && 'min-w-0 max-w-3xl flex-1')}>
+            {eyebrow && (
+              <div className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--glass-accent-deep,#5B46E5)]">
+                {Icon && <Icon className="size-3.5" />}
+                {eyebrow}
+              </div>
+            )}
+            {title && (
+              <h2
+                id={id ? `${id}-title` : undefined}
+                className="text-2xl font-bold leading-tight tracking-tight text-foreground md:text-3xl"
+              >
+                {title}
+              </h2>
+            )}
+            {subtitle && (
+              <p className="mt-2 text-base leading-relaxed text-muted-foreground">{subtitle}</p>
+            )}
+          </div>
+          {headerAside && (
+            <div className="hidden shrink-0 lg:block">{headerAside}</div>
           )}
         </header>
       )}

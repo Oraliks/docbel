@@ -194,12 +194,18 @@ export const DecisionNodeSchema = z.discriminatedUnion("type", [
 /// non rétro-compatible (parser devra alors migrer V1 → V2 etc.).
 export const CONTENT_VERSION = 1 as const;
 
+export const NodePositionSchema = z.object({ x: z.number(), y: z.number() });
+
 export const DecisionTreeContentSchema = z.object({
   version: z.literal(CONTENT_VERSION),
   /// ID du nœud racine. `null` = arbre vide (non publiable).
   rootNodeId: z.string().min(1).nullable(),
   /// Tous les nœuds (questions / options / results) indexés par leur ID.
   nodes: z.record(z.string().min(1), DecisionNodeSchema),
+  /// Positions manuelles (drag dans le canvas admin). Optionnel : un nœud
+  /// sans position utilise le layout auto (BFS). N'affecte JAMAIS le runtime
+  /// public (purement éditorial).
+  positions: z.record(z.string().min(1), NodePositionSchema).optional(),
 });
 
 /// Forme initiale d'un arbre vide (utilisée comme default DB + reset admin).

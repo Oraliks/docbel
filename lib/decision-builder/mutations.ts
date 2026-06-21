@@ -270,6 +270,21 @@ export function deleteNode(
 // Helpers de lecture (pour construire les props du condition-editor)
 // ---------------------------------------------------------------------------
 
+/// Fixe la position manuelle d'un nœud (drag dans le canvas). Purement
+/// éditorial — n'affecte pas le runtime public.
+export function setNodePosition(
+  content: DecisionTreeContent,
+  id: string,
+  x: number,
+  y: number,
+): DecisionTreeContent {
+  if (!content.nodes[id]) return content;
+  return {
+    ...content,
+    positions: { ...(content.positions ?? {}), [id]: { x, y } },
+  };
+}
+
 /// Liste les questions de l'arbre (sources possibles d'une condition).
 export function listQuestions(content: DecisionTreeContent): QuestionNode[] {
   return Object.values(content.nodes).filter(

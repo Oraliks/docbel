@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { addRootQuestion } from "@/lib/decision-builder/mutations";
+import { addRootQuestion, setNodePosition } from "@/lib/decision-builder/mutations";
 import type { ValidationReport, Violation } from "@/lib/decision-builder/validator";
 import type { DecisionTreeContent } from "@/lib/decision-builder/types";
 import { DecisionCanvas } from "./canvas";
@@ -161,6 +161,9 @@ export function TreeEditor({ treeId }: { treeId: string }) {
                 content={content}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
+                onMoveNode={(id, x, y) =>
+                  setContent(setNodePosition(content, id, x, y))
+                }
                 violations={violations}
               />
             </div>

@@ -6,7 +6,9 @@ import {
   generateUniqueResumeCode,
   defaultResumeCodeExpiresAt,
 } from "@/lib/bundles/resume-code";
+import { hashResumeCode } from "@/lib/bundles/resume-code-hash";
 import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
+import { trackBundleEvent } from "@/lib/bundles/analytics";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
 const COOKIE_NAME = "beldoc-bundle-session";
@@ -92,9 +94,12 @@ export async function POST(
     return NextResponse.json(existing);
   }
 
-  // Nouveau run : génère un code de reprise unique
-  const resumeCode = await generateUniqueResumeCode(async (code) => {
-    const found = await prisma.bundleRun.findUnique({ where: { resumeCode: code } });
+  // Nouveau run : génère un code de reprise unique. Le code en CLAIR n'est
+  // jamais persisté — on ne stocke que son hash HMAC (migration 53).
+  const resumeCodePlain = await generateUniqueResumeCode(async (code) => {
+    const found = await prisma.bundleRun.findUnique({
+      where: { resumeCodeHash: hashResumeCode(code) },
+    });
     return !!found;
   });
 
@@ -103,12 +108,20 @@ export async function POST(
       bundleId: id,
       userId,
       sessionId,
-      resumeCode,
+      resumeCodeHash: hashResumeCode(resumeCodePlain),
       resumeCodeExpiresAt: defaultResumeCodeExpiresAt(),
       eligibilityAnswers,
     },
   });
-  return NextResponse.json(run, { status: 201 });
+
+  await trackBundleEvent("run_created", { bundleId: id, sessionId, userId });
+
+  // Le code en CLAIR n'est renvoyé QU'ICI (affichage unique côté client) ; il
+  // n'est pas stocké. Sur les visites suivantes, le run ne le contient plus.
+  return NextResponse.json(
+    { ...run, resumeCode: resumeCodePlain },
+    { status: 201 },
+  );
 }
 
 /// PATCH → met à jour les réponses de pré-qualification d'un run existant.

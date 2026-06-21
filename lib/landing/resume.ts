@@ -40,13 +40,20 @@ export interface ActiveBundleRun {
  * Fail-soft : toute erreur (DB froide Neon, session indisponible) renvoie
  * null — la home ne doit jamais casser pour une bande de reprise.
  */
-export async function loadActiveBundleRun(): Promise<ActiveBundleRun | null> {
+export async function loadActiveBundleRun(
+  opts: { respectDismiss?: boolean } = {},
+): Promise<ActiveBundleRun | null> {
+  // Par défaut on respecte le cookie de fermeture (bande de la home). Sur
+  // /mon-dossier la zone « Reprendre » n'est pas une bande fermable → false.
+  const respectDismiss = opts.respectDismiss ?? true;
   try {
     const cookieStore = await cookies();
 
     // L'utilisateur a fermé la bande pour cette session de navigation :
     // on s'épargne la requête et on ne rend rien côté serveur.
-    if (cookieStore.get(RESUME_DISMISS_COOKIE)?.value === "1") return null;
+    if (respectDismiss && cookieStore.get(RESUME_DISMISS_COOKIE)?.value === "1") {
+      return null;
+    }
 
     const session = await getServerAuthSession().catch(() => null);
     const userId = session?.user?.id || null;

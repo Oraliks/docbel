@@ -2,17 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   ChevronRight,
   FileQuestion,
   FolderOpen,
   HelpCircle,
+  KeyRound,
   Layers,
   Lightbulb,
+  Loader2,
   Lock,
   Phone,
-  ReceiptText,
+  RotateCcw,
   Search as SearchIcon,
   SlidersHorizontal,
   Sparkles,
@@ -24,6 +27,7 @@ import { scoreBundleMatch } from "@/lib/bundles/vocabulary";
 import { trackBundleEventClient } from "@/lib/bundles/analytics-client";
 import { WIZARD_SITUATIONS } from "@/lib/dossier-wizard/config";
 import type { WizardCatalog } from "@/lib/dossier-wizard/derive-results";
+import type { ActiveBundleRun } from "@/lib/landing/resume";
 
 export interface MonDossierBundle {
   slug: string;
@@ -44,6 +48,8 @@ export interface MonDossierBundle {
 interface Props {
   bundles: MonDossierBundle[];
   catalog: WizardCatalog;
+  /// Dernier dossier local en cours (zone « Reprendre »), ou null.
+  activeRun: ActiveBundleRun | null;
 }
 
 /* Route réelle d'un dossier (identique à life-event-card.tsx → /d/[slug]). */
@@ -193,6 +199,180 @@ function HelpRow({
   );
 }
 
+/* ── Zone « Reprendre un dossier » : dernier dossier local + code BELDOC ── */
+function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
+  const pct = run.total > 0 ? Math.round((run.completed / run.total) * 100) : 0;
+  const hue = run.color || "var(--glass-accent-deep)";
+  return (
+    <Link
+      href={bundleHref(run.slug)}
+      onClick={() =>
+        trackBundleEventClient("bundle_opened", {
+          bundleId: run.slug,
+          metadata: { slug: run.slug, from: "resume_local" },
+        })
+      }
+      className="glass-interactive group flex flex-col gap-2 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3.5"
+    >
+      <div className="flex items-center gap-3">
+        <span
+          className="size-2.5 shrink-0 rounded-full"
+          style={{ background: hue }}
+          aria-hidden
+        />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13.5px] font-bold text-[color:var(--glass-ink)]">
+            {run.name}
+          </span>
+          <span className="text-[12px] text-[color:var(--glass-ink-faint)]">
+            {run.completed} sur {run.total} document{run.total > 1 ? "s" : ""}
+          </span>
+        </span>
+        <span className="inline-flex items-center gap-1 text-[12.5px] font-bold text-[color:var(--glass-accent-deep)]">
+          Reprendre
+          <ArrowRight
+            className="size-3.5 transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          />
+        </span>
+      </div>
+      <span
+        className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--glass-ink-line)]"
+        aria-hidden
+      >
+        <span
+          className="block h-full rounded-full transition-all"
+          style={{ width: `${pct}%`, background: hue }}
+        />
+      </span>
+    </Link>
+  );
+}
+
+function ReprendreZone({
+  activeRun,
+  onUseGuide,
+}: {
+  activeRun: ActiveBundleRun | null;
+  onUseGuide: () => void;
+}) {
+  const router = useRouter();
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (loading) return;
+    if (code.trim().length < 8) {
+      setError("Entrez votre code de reprise (format BELDOC-XXXX-XXXX).");
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/bundles/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code.trim() }),
+      });
+      const data: { bundleSlug?: string; error?: string } = await res
+        .json()
+        .catch(() => ({}));
+      if (res.ok && data.bundleSlug) {
+        router.push(bundleHref(data.bundleSlug));
+        return;
+      }
+      setError(
+        data.error || "Ce code de reprise n'est pas valide ou a expiré.",
+      );
+    } catch {
+      setError("Une erreur est survenue. Réessayez dans un instant.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {activeRun ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
+            Sur cet appareil
+          </p>
+          <ActiveRunCard run={activeRun} />
+        </div>
+      ) : null}
+
+      <form onSubmit={submit} className="flex flex-col gap-2">
+        <label
+          htmlFor="resume-code"
+          className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]"
+        >
+          J&apos;ai un code de reprise
+        </label>
+        <div className="relative">
+          <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[color:var(--glass-ink-faint)]" />
+          <input
+            id="resume-code"
+            value={code}
+            onChange={(e) => {
+              setCode(e.target.value);
+              if (error) setError(null);
+            }}
+            placeholder="BELDOC-XXXX-XXXX"
+            autoComplete="off"
+            spellCheck={false}
+            className="glass-surface-strong h-11 w-full rounded-xl border-0 pl-9 pr-3 text-[13.5px] font-medium uppercase tracking-wide text-[color:var(--glass-ink)] placeholder:font-normal placeholder:tracking-normal placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none focus:ring-2 focus:ring-[color:var(--glass-accent-deep)]/40"
+            aria-invalid={error ? true : undefined}
+          />
+        </div>
+        {error ? (
+          <p className="text-[12px] text-[color:var(--glass-pop-fg)]">{error}</p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={loading}
+          className="glass-cta inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-[13px] font-bold disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+          Reprendre la démarche
+        </button>
+      </form>
+
+      <Link
+        href="/reprendre"
+        className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
+      >
+        Plus d&apos;options de reprise
+        <ArrowRight className="size-3.5" aria-hidden />
+      </Link>
+
+      {/* Aide rapide */}
+      <div className="flex flex-col gap-2 border-t border-[color:var(--glass-ink-line)] pt-3">
+        <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
+          Besoin d&apos;aide ?
+        </p>
+        <HelpRow
+          icon={HelpCircle}
+          label="Comment trouver le bon dossier ?"
+          onClick={onUseGuide}
+        />
+        <HelpRow
+          icon={FileQuestion}
+          label="Je ne trouve pas mon dossier"
+          href="/contact"
+        />
+        <HelpRow
+          icon={Phone}
+          label="Comment joindre le support ?"
+          href="/contact"
+        />
+      </div>
+    </div>
+  );
+}
+
 type Sort = "populaires" | "az" | "categories" | "recents";
 
 const SORT_PILLS: { id: Sort; label: string }[] = [
@@ -204,7 +384,7 @@ const SORT_PILLS: { id: Sort; label: string }[] = [
 
 type Mode = "guide" | "direct";
 
-export function MonDossierClient({ bundles, catalog }: Props) {
+export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
   const [mode, setMode] = useState<Mode>("guide");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("populaires");
@@ -666,7 +846,7 @@ export function MonDossierClient({ bundles, catalog }: Props) {
           ) : null}
         </section>
 
-        {/* ════ Colonne 3 — Besoin d'aide ════ */}
+        {/* ════ Colonne 3 — Reprendre un dossier ════ */}
         <aside
           className="glass-surface outils-rise flex flex-col gap-4 p-6 lg:col-span-2 xl:col-span-1"
           style={{ animationDelay: "160ms" }}
@@ -681,40 +861,22 @@ export function MonDossierClient({ bundles, catalog }: Props) {
               } as React.CSSProperties}
               aria-hidden
             >
-              <HelpCircle className="size-4" />
+              <RotateCcw className="size-4" />
             </span>
             <div className="min-w-0">
               <h2 className="text-[17px] font-semibold leading-tight text-[color:var(--glass-ink)]">
-                Besoin d&apos;aide&nbsp;?
+                Reprendre un dossier
               </h2>
               <p className="text-xs text-[color:var(--glass-ink-faint)]">
-                Trouvez rapidement une réponse.
+                Retrouvez un dossier déjà commencé.
               </p>
             </div>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-            <HelpRow
-              icon={HelpCircle}
-              label="Comment trouver le bon dossier ?"
-              onClick={() => setMode("guide")}
-            />
-            <HelpRow
-              icon={FileQuestion}
-              label="Je ne trouve pas mon dossier"
-              href="/contact"
-            />
-            <HelpRow
-              icon={ReceiptText}
-              label="Où en est ma demande ?"
-              href="/reprendre"
-            />
-            <HelpRow
-              icon={Phone}
-              label="Comment joindre le support ?"
-              href="/contact"
-            />
-          </div>
+          <ReprendreZone
+            activeRun={activeRun}
+            onUseGuide={() => setMode("guide")}
+          />
 
           {/* Conseil */}
           <div

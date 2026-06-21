@@ -24,6 +24,7 @@
     "seed:formations": "dotenv -e .env.local -- tsx scripts/seed-formations.ts",
     "db:setup": "dotenv -e .env.local -- prisma db push && pnpm seed && tsx scripts/setup-local-auth.ts",
     "auth:backfill": "tsx scripts/backfill-better-auth-accounts.ts",
+    "backfill:resume-hash": "dotenv -e .env.local -- tsx scripts/backfill-resume-code-hash.ts",
     "seed:canonical": "dotenv -e .env.local -- tsx scripts/seed-canonical-fields.ts",
     "seed:lookup": "dotenv -e .env.local -- tsx scripts/seed-lookup-onem.ts",
     "lookup:audit": "dotenv -e .env.local -- tsx scripts/lookup-onem-freshness-audit.ts",

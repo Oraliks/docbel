@@ -3,18 +3,24 @@ import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
+import { normalizeResumeCode } from "@/lib/bundles/resume-code";
+import { hashResumeCode } from "@/lib/bundles/resume-code-hash";
 import { ensureWriteAllowed } from "@/lib/admin/readonly-guard";
 
 const BodySchema = z.object({
   email: z.string().email("Email invalide").max(200),
+  // Le code en CLAIR est fourni par le client (qui le détient à la création) :
+  // on ne le stocke plus en base, on ne peut donc plus le « relire » pour
+  // l'envoyer. On vérifie qu'il correspond bien au run via son hash.
+  code: z.string().min(8).max(40),
 });
 
 /// POST /api/bundles/runs/[runId]/email-code
 ///
-/// Envoie le code de reprise du run à l'adresse email indiquée.
-/// **Volontairement non-authentifié** (pas de comptes). La preuve de propriété
-/// est le fait de connaître l'`id` du run (= clé interne, jamais exposée hors
-/// session de création du dossier).
+/// Envoie PAR EMAIL le code de reprise — uniquement à la CRÉATION (le client
+/// fournit le code en clair qu'il vient de recevoir). Le code n'étant stocké
+/// que sous forme de hash, il ne peut plus être renvoyé après coup.
+/// **Volontairement non-authentifié** (le couple runId + code fait preuve).
 ///
 /// Rate-limit : 5 envois / 15 min / IP.
 export async function POST(
@@ -54,15 +60,25 @@ export async function POST(
     );
   }
 
+  const code = normalizeResumeCode(parsed.code);
+
   const run = await prisma.bundleRun.findUnique({
     where: { id: runId },
     include: { bundle: { select: { name: true, slug: true } } },
   });
 
-  if (!run || !run.resumeCode) {
+  if (!run) {
+    return NextResponse.json({ error: "Dossier introuvable" }, { status: 404 });
+  }
+
+  // Le code fourni doit correspondre à ce run (hash, ou legacy clair).
+  const matches =
+    (run.resumeCodeHash && run.resumeCodeHash === hashResumeCode(code)) ||
+    (run.resumeCode && run.resumeCode === code);
+  if (!matches) {
     return NextResponse.json(
-      { error: "Dossier introuvable" },
-      { status: 404 }
+      { error: "Le code ne correspond pas à ce dossier." },
+      { status: 400 },
     );
   }
 
@@ -95,7 +111,7 @@ export async function POST(
         ``,
         `Voici votre code de reprise pour le dossier en cours :`,
         ``,
-        `    ${run.resumeCode}`,
+        `    ${code}`,
         ``,
         `Pour reprendre votre dossier, rendez-vous sur la page :`,
         `https://beldoc.be/reprendre`,

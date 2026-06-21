@@ -6,6 +6,7 @@ import {
   parseWarningLevel,
 } from "@/lib/bundles/types";
 import type { WizardCatalog } from "@/lib/dossier-wizard/derive-results";
+import { loadActiveBundleRun } from "@/lib/landing/resume";
 import { MonDossierClient, type MonDossierBundle } from "./mon-dossier-client";
 
 export const metadata: Metadata = {
@@ -79,5 +80,15 @@ export default async function MonDossierPage() {
     };
   }
 
-  return <MonDossierClient bundles={serializable} catalog={catalog} />;
+  // Dernier dossier local en cours (zone « Reprendre »). On ignore le cookie de
+  // fermeture de la bande home : ici c'est une zone permanente, pas une bande.
+  const activeRun = await loadActiveBundleRun({ respectDismiss: false });
+
+  return (
+    <MonDossierClient
+      bundles={serializable}
+      catalog={catalog}
+      activeRun={activeRun}
+    />
+  );
 }

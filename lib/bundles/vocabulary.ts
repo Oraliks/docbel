@@ -59,6 +59,13 @@ export interface BundleMatchInput {
   description?: string | null;
   vocabularyTags?: string[];
   toolNames?: string[];
+  /// Mots-clés additionnels (migration 53). Scorés comme des tags.
+  keywords?: string[];
+  /// Synonymes (migration 53). Scorés comme des tags.
+  synonyms?: string[];
+  /// Organisme responsable (ex. "ONEM"). Une recherche par organisme remonte
+  /// ses dossiers.
+  organism?: string | null;
 }
 
 export interface BundleMatchScore {
@@ -73,6 +80,7 @@ const WEIGHTS = {
   tagExact: 10, // un tag est intégralement présent dans la requête
   tagPartial: 5, // au moins 70 % des tokens du tag présents
   nameToken: 3,
+  organismToken: 4, // un token de l'organisme (ex. "onem") présent dans la requête
   toolToken: 2,
   descToken: 1,
 };
@@ -85,8 +93,13 @@ export function scoreBundleMatch(query: string, bundle: BundleMatchInput): Bundl
   const matchedTags: string[] = [];
   let score = 0;
 
-  // Tags vocabulaire — match prioritaire
-  for (const tag of bundle.vocabularyTags ?? []) {
+  // Tags vocabulaire + mots-clés + synonymes — match prioritaire (même barème).
+  const allTags = [
+    ...(bundle.vocabularyTags ?? []),
+    ...(bundle.keywords ?? []),
+    ...(bundle.synonyms ?? []),
+  ];
+  for (const tag of allTags) {
     if (!tag) continue;
     const tagNormalized = normalizeText(tag);
     if (!tagNormalized) continue;
@@ -126,6 +139,13 @@ export function scoreBundleMatch(query: string, bundle: BundleMatchInput): Bundl
   for (const toolName of bundle.toolNames ?? []) {
     for (const t of tokenize(toolName)) {
       if (queryTokens.has(t)) score += WEIGHTS.toolToken;
+    }
+  }
+
+  // Organisme responsable (ex. recherche "ONEM" / "CAPAC").
+  if (bundle.organism) {
+    for (const t of tokenize(bundle.organism)) {
+      if (queryTokens.has(t)) score += WEIGHTS.organismToken;
     }
   }
 

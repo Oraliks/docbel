@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -20,6 +20,8 @@ import {
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
 import { DossierWizard } from "@/components/docbel/onboarding/dossier-wizard";
 import { LIFE_EVENT_CATEGORIES } from "@/lib/bundles/types";
+import { scoreBundleMatch } from "@/lib/bundles/vocabulary";
+import { trackBundleEventClient } from "@/lib/bundles/analytics-client";
 import { WIZARD_SITUATIONS } from "@/lib/dossier-wizard/config";
 
 export interface MonDossierBundle {
@@ -32,6 +34,10 @@ export interface MonDossierBundle {
   itemCount: number;
   createdAt: string | null;
   popular: boolean;
+  organism: string | null;
+  vocabularyTags: string[];
+  keywords: string[];
+  synonyms: string[];
 }
 
 interface Props {
@@ -41,6 +47,18 @@ interface Props {
 /* Route réelle d'un dossier (identique à life-event-card.tsx → /d/[slug]). */
 function bundleHref(slug: string): string {
   return `/d/${slug}`;
+}
+
+/* Repli « sous-chaîne » pour la frappe partielle (ex. "chom" → "chômage"),
+   que le scorer par tokens entiers ne capterait pas. Score faible (1). */
+function substringHit(b: MonDossierBundle, q: string): boolean {
+  if (!q) return false;
+  if (b.name.toLowerCase().includes(q)) return true;
+  if ((b.description ?? "").toLowerCase().includes(q)) return true;
+  if ((b.organism ?? "").toLowerCase().includes(q)) return true;
+  return [...b.vocabularyTags, ...b.keywords, ...b.synonyms].some((t) =>
+    t.toLowerCase().includes(q),
+  );
 }
 
 /* Teintes de repli par catégorie (charte mauve), quand bundle.color manque. */
@@ -94,14 +112,22 @@ function RowIconTile({ bundle, size = 36 }: { bundle: MonDossierBundle; size?: n
 
 /* ── Ligne « Accès direct » (icône + nom + sous-titre + chevron) ── */
 function AccessRow({ bundle }: { bundle: MonDossierBundle }) {
+  // Organisme en sous-titre (façon mockup) ; repli sur le nombre de documents.
   const subtitle =
-    bundle.itemCount > 0
+    bundle.organism?.trim() ||
+    (bundle.itemCount > 0
       ? `${bundle.itemCount} document${bundle.itemCount > 1 ? "s" : ""} à préparer`
-      : "Dossier guidé";
+      : "Dossier guidé");
 
   return (
     <Link
       href={bundleHref(bundle.slug)}
+      onClick={() =>
+        trackBundleEventClient("bundle_opened", {
+          bundleId: bundle.slug,
+          metadata: { slug: bundle.slug, from: "direct" },
+        })
+      }
       className="group flex items-center gap-3 rounded-2xl border border-transparent px-2.5 py-2.5 transition-all hover:-translate-y-px hover:border-[color:var(--glass-border)] hover:bg-[color:var(--glass-surface)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]/40"
     >
       <RowIconTile bundle={bundle} />
@@ -187,23 +213,37 @@ export function MonDossierClient({ bundles }: Props) {
   const trimmed = search.trim().toLowerCase();
   const isSearching = trimmed.length > 0;
 
-  // ── Recherche (nom + description) ──
-  const filtered = useMemo(() => {
-    let list = bundles;
-    if (trimmed) {
-      list = list.filter(
-        (b) =>
-          b.name.toLowerCase().includes(trimmed) ||
-          (b.description ?? "").toLowerCase().includes(trimmed),
-      );
+  // ── Filtre par catégorie (puces « Filtres ») ──
+  const catFiltered = useMemo(() => {
+    if (activeCats.size === 0) return bundles;
+    return bundles.filter(
+      (b) => b.lifeEventCategory && activeCats.has(b.lifeEventCategory),
+    );
+  }, [bundles, activeCats]);
+
+  // ── Recherche CLASSÉE par score (scorer vocabulaire : tags + mots-clés +
+  //    synonymes + organisme + nom + description), avec repli sous-chaîne pour
+  //    la frappe partielle. cf. lib/bundles/vocabulary.ts ──
+  const searchResults = useMemo(() => {
+    if (!isSearching) return [] as MonDossierBundle[];
+    const scored: { b: MonDossierBundle; score: number }[] = [];
+    for (const b of catFiltered) {
+      const s = scoreBundleMatch(search, {
+        id: b.slug,
+        slug: b.slug,
+        name: b.name,
+        description: b.description,
+        vocabularyTags: b.vocabularyTags,
+        keywords: b.keywords,
+        synonyms: b.synonyms,
+        organism: b.organism,
+      }).score;
+      const fallback = s === 0 && substringHit(b, trimmed) ? 1 : 0;
+      const total = s + fallback;
+      if (total > 0) scored.push({ b, score: total });
     }
-    if (activeCats.size > 0) {
-      list = list.filter(
-        (b) => b.lifeEventCategory && activeCats.has(b.lifeEventCategory),
-      );
-    }
-    return list;
-  }, [bundles, trimmed, activeCats]);
+    return scored.sort((a, b) => b.score - a.score).map((x) => x.b);
+  }, [catFiltered, search, trimmed, isSearching]);
 
   // ── Tri intra-groupe ──
   const sortItems = useMemo(() => {
@@ -224,11 +264,11 @@ export function MonDossierClient({ bundles }: Props) {
     };
   }, [sort]);
 
-  // ── Regroupement par catégorie ──
+  // ── Regroupement par catégorie (vue sans recherche) ──
   const groups = useMemo(() => {
     const map = new Map<string, MonDossierBundle[]>();
     const uncategorized: MonDossierBundle[] = [];
-    for (const b of filtered) {
+    for (const b of catFiltered) {
       if (b.lifeEventCategory && CATEGORY_HUE[b.lifeEventCategory]) {
         const arr = map.get(b.lifeEventCategory) ?? [];
         arr.push(b);
@@ -257,7 +297,7 @@ export function MonDossierClient({ bundles }: Props) {
       });
     }
     return ordered;
-  }, [filtered, sortItems]);
+  }, [catFiltered, sortItems]);
 
   // Catégories disponibles (pour les puces de filtre).
   const availableCats = useMemo(
@@ -282,7 +322,24 @@ export function MonDossierClient({ bundles }: Props) {
     });
   }
 
-  const isEmpty = filtered.length === 0;
+  const isEmpty = isSearching
+    ? searchResults.length === 0
+    : catFiltered.length === 0;
+
+  // ── Analytics recherche (débouncé) : search_performed / search_no_result ──
+  useEffect(() => {
+    if (!isSearching || trimmed.length < 2) return;
+    const t = setTimeout(() => {
+      if (searchResults.length === 0) {
+        trackBundleEventClient("search_no_result", { metadata: { q: trimmed } });
+      } else {
+        trackBundleEventClient("search_performed", {
+          metadata: { q: trimmed, results: searchResults.length },
+        });
+      }
+    }, 700);
+    return () => clearTimeout(t);
+  }, [trimmed, isSearching, searchResults.length]);
 
   return (
     <section className="relative isolate flex flex-col gap-7">
@@ -552,7 +609,7 @@ export function MonDossierClient({ bundles }: Props) {
             </div>
           ) : isSearching ? (
             <div className="flex flex-col gap-1">
-              {sortItems(filtered).map((b) => (
+              {searchResults.map((b) => (
                 <AccessRow key={b.slug} bundle={b} />
               ))}
             </div>

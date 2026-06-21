@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { parseStringArray } from "@/lib/bundles/types";
 import { MonDossierClient, type MonDossierBundle } from "./mon-dossier-client";
 
 export const metadata: Metadata = {
@@ -27,6 +28,10 @@ export default async function MonDossierPage() {
         lifeEventCategory: true,
         createdAt: true,
         showOnOnboarding: true,
+        organism: true,
+        vocabularyTags: true,
+        keywords: true,
+        synonyms: true,
         items: { select: { id: true } },
       },
     })
@@ -42,6 +47,10 @@ export default async function MonDossierPage() {
     itemCount: bundle.items.length,
     createdAt: bundle.createdAt ? bundle.createdAt.toISOString() : null,
     popular: bundle.showOnOnboarding,
+    organism: bundle.organism,
+    vocabularyTags: parseStringArray(bundle.vocabularyTags),
+    keywords: parseStringArray(bundle.keywords),
+    synonyms: parseStringArray(bundle.synonyms),
   }));
 
   return <MonDossierClient bundles={serializable} />;

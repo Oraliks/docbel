@@ -1,6 +1,6 @@
 "use client";
 
-// Bloc « Estimation indicative de ton allocation » du résultat du wizard
+// Bloc « Estimation indicative de votre allocation » du résultat du wizard
 // (`/mon-dossier`, étape 4). Micro-formulaire à 3 entrées branché sur le moteur
 // PUR `estimerAllocation` de `lib/simulateur-chomage` — AUCUN barème dupliqué
 // ici (mêmes chiffres que la carte du hero et le calculateur de /outils).
@@ -95,11 +95,11 @@ export function AllocationEstimateBlock({ result }: Props) {
         </span>
         <div className="flex-1 space-y-0.5">
           <h4 className="text-sm font-semibold">
-            Estimation indicative de ton allocation
+            Estimation indicative de votre allocation
           </h4>
           <p className="text-xs text-muted-foreground">
             Trois infos pour un ordre de grandeur. Ce n&apos;est pas une
-            décision : seul l&apos;ONEM fixe ton montant réel.
+            décision : seul l&apos;ONEM fixe votre montant réel.
           </p>
         </div>
       </div>
@@ -107,7 +107,7 @@ export function AllocationEstimateBlock({ result }: Props) {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={catId} className="text-xs font-medium">
-            Ta situation familiale
+            Votre situation familiale
           </Label>
           <select
             id={catId}
@@ -161,7 +161,7 @@ export function AllocationEstimateBlock({ result }: Props) {
         <div className="space-y-2.5">
           <div className="rounded-xl border border-[color:var(--glass-accent-a)]/25 bg-[color:var(--glass-accent-a)]/8 px-3.5 py-3">
             <p className="text-xs text-muted-foreground">
-              Tu toucherais environ
+              Vous toucheriez environ
             </p>
             <p className="mt-0.5 text-2xl font-semibold leading-none text-[color:var(--glass-ink)]">
               {FMT_JOUR.format(estimate.parJour)} €
@@ -202,8 +202,8 @@ export function AllocationEstimateBlock({ result }: Props) {
       ) : (
         <p className="text-xs text-muted-foreground">
           {brutTouched
-            ? "Indique un salaire mensuel brut réaliste (en euros) pour voir une estimation."
-            : "Renseigne ton salaire brut mensuel pour estimer ton allocation."}
+            ? "Indiquez un salaire mensuel brut réaliste (en euros) pour voir une estimation."
+            : "Renseignez votre salaire brut mensuel pour estimer votre allocation."}
         </p>
       )}
     </div>

@@ -70,6 +70,9 @@ export interface WizardSituation {
   /// `components/docbel/onboarding/dossier-wizard.tsx` (config sérialisable).
   icon: string;
   label: string;
+  /// Sous-titre court affiché sous le label dans la carte de situation
+  /// (step 1 du wizard). Purement descriptif, aide l'utilisateur à se situer.
+  description?: string;
   subQuestion?: {
     question: string;
     helpText?: string;
@@ -84,14 +87,14 @@ const R_CT: WizardResult = {
   dossierSlug: "chomage-temporaire",
   dossierTitle: "Chômage temporaire",
   rationale:
-    "Ton contrat est suspendu pour un temps : tu peux toucher des allocations pendant cette période, puis reprendre ton travail.",
+    "Votre contrat est suspendu pour un temps : vous pouvez toucher des allocations pendant cette période, puis reprendre votre travail.",
 };
 
 const R_COMPLET_PREMIERE: WizardResult = {
   dossierSlug: "chomage-complet",
   dossierTitle: "Chômage complet — première demande",
   rationale:
-    "Tu as assez travaillé pour ouvrir un droit au chômage complet pour la première fois.",
+    "Vous avez assez travaillé pour ouvrir un droit au chômage complet pour la première fois.",
   allocationEstimate: true,
 };
 
@@ -99,7 +102,7 @@ const R_COMPLET_REDEMANDE: WizardResult = {
   dossierSlug: "chomage-complet",
   dossierTitle: "Chômage complet — redemande",
   rationale:
-    "Tu as déjà été indemnisé par le passé : on rouvre ton droit au chômage complet.",
+    "Vous avez déjà été indemnisé par le passé : on rouvre votre droit au chômage complet.",
   allocationEstimate: true,
 };
 
@@ -107,14 +110,14 @@ const R_INSERTION: WizardResult = {
   dossierSlug: "allocations-insertion",
   dossierTitle: "Allocations d'insertion (jeunes)",
   rationale:
-    "Tu sors des études sans avoir (assez) travaillé : c'est la voie des allocations d'insertion, après un stage d'insertion de 310 jours.",
+    "Vous sortez des études sans avoir (assez) travaillé : c'est la voie des allocations d'insertion, après un stage d'insertion de 310 jours.",
 };
 
 const R_FRONTALIER: WizardResult = {
   dossierSlug: "chomage-frontalier",
   dossierTitle: "Chômage frontalier",
   rationale:
-    "Tu résides dans un pays et tu travaillais dans un autre (UE/EEE) : ton dossier passe par le régime frontalier (formulaire U1).",
+    "Vous résidez dans un pays et vous travailliez dans un autre (UE/EEE) : votre dossier passe par le régime frontalier (formulaire U1).",
   allocationEstimate: true,
 };
 
@@ -126,7 +129,7 @@ const R_COMPLET_AGREGATION: WizardResult = {
   dossierSlug: "chomage-complet",
   dossierTitle: "Chômage complet (après travail à l'étranger)",
   rationale:
-    "Tu as retravaillé en Belgique après ton occupation à l'étranger : tu peux ouvrir un droit belge complet, en rattachant tes périodes étrangères via le formulaire U1.",
+    "Vous avez retravaillé en Belgique après votre occupation à l'étranger : vous pouvez ouvrir un droit belge complet, en rattachant vos périodes étrangères via le formulaire U1.",
   allocationEstimate: true,
 };
 
@@ -134,7 +137,7 @@ const R_RCC: WizardResult = {
   dossierSlug: "prepension",
   dossierTitle: "Régime de chômage avec complément d'entreprise (RCC)",
   rationale:
-    "Licencié en fin de carrière, tu peux cumuler allocations de chômage et complément payé par ton ex-employeur.",
+    "Licencié en fin de carrière, vous pouvez cumuler allocations de chômage et complément payé par votre ex-employeur.",
   allocationEstimate: true,
 };
 
@@ -144,10 +147,11 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
     value: "contrat-suspendu",
     icon: "Briefcase",
     label: "Mon travail est à l'arrêt temporairement",
+    description: "Chômage temporaire, contrat suspendu",
     subQuestion: {
-      question: "Ton employeur t'a mis en chômage temporaire ?",
+      question: "Votre employeur vous a mis en chômage temporaire ?",
       helpText:
-        "Chômage temporaire = ton contrat continue mais le travail est suspendu un moment (manque de travail, intempéries, force majeure, grève, fermeture collective…). Tu reprendras chez le même employeur.",
+        "Chômage temporaire = votre contrat continue mais le travail est suspendu un moment (manque de travail, intempéries, force majeure, grève, fermeture collective…). Vous reprendrez chez le même employeur.",
       options: [
         {
           value: "oui-ct",
@@ -168,21 +172,22 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
     value: "perte-emploi",
     icon: "UserMinus",
     label: "J'ai perdu mon emploi",
+    description: "Licenciement, fin de contrat ou de CDD",
     subQuestion: {
-      question: "Quel est ton parcours ?",
+      question: "Quel est votre parcours ?",
       helpText:
-        "On veut savoir si tu as déjà travaillé assez longtemps pour ouvrir un droit, ou si tu sors juste des études.",
+        "On veut savoir si vous avez déjà travaillé assez longtemps pour ouvrir un droit, ou si vous sortez juste des études.",
       options: [
         {
           value: "passe-travail-be",
           label: "J'ai travaillé un bon moment en Belgique",
           helpText:
-            "Tu as un passé professionnel salarié en Belgique (plusieurs mois à plusieurs années).",
+            "Vous avez un passé professionnel salarié en Belgique (plusieurs mois à plusieurs années).",
           // TPV (1ère demande, art. 33) vs NCO/NPE/ORD (redemande)
           refineQuestion: {
-            question: "Est-ce ta toute première demande de chômage ?",
+            question: "Est-ce votre toute première demande de chômage ?",
             helpText:
-              "« Première fois » = tu n'as jamais touché d'allocations de chômage avant. Si tu en as déjà reçu un jour, même il y a longtemps, c'est une redemande.",
+              "« Première fois » = vous n'avez jamais touché d'allocations de chômage avant. Si vous en avez déjà reçu un jour, même il y a longtemps, c'est une redemande.",
             options: [
               {
                 value: "premiere",
@@ -201,19 +206,19 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
           value: "sors-etudes",
           label: "Je sors des études, j'ai peu ou pas travaillé",
           helpText:
-            "Tu n'as pas (assez) travaillé pour ouvrir un droit classique — c'est la voie de l'insertion.",
+            "Vous n'avez pas (assez) travaillé pour ouvrir un droit classique — c'est la voie de l'insertion.",
           result: R_INSERTION,
         },
         {
           value: "travail-etranger",
           label: "J'ai travaillé à l'étranger (UE/EEE)",
           helpText:
-            "Tu as travaillé dans un pays de l'Union européenne / EEE et tu reviens en Belgique.",
+            "Vous avez travaillé dans un pays de l'Union européenne / EEE et vous revenez en Belgique.",
           // Agrégation UE : DE3/E303/U1. Retravailler en BE ouvre le droit complet.
           refineQuestion: {
-            question: "As-tu retravaillé en Belgique depuis ton retour ?",
+            question: "Avez-vous retravaillé en Belgique depuis votre retour ?",
             helpText:
-              "Reprendre un travail en Belgique (en pratique au moins 3 mois selon la règle en vigueur) permet d'ouvrir un droit belge complet. Sinon, ton dossier passe par le régime frontalier avec le formulaire U1.",
+              "Reprendre un travail en Belgique (en pratique au moins 3 mois selon la règle en vigueur) permet d'ouvrir un droit belge complet. Sinon, votre dossier passe par le régime frontalier avec le formulaire U1.",
             options: [
               {
                 value: "retravaille-be",
@@ -237,8 +242,9 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
     value: "jeune-etudes",
     icon: "GraduationCap",
     label: "Je sors des études / je suis jeune",
+    description: "Allocations d'insertion, premier emploi",
     subQuestion: {
-      question: "Quel âge as-tu ?",
+      question: "Quel âge avez-vous ?",
       helpText:
         "L'âge est déterminant : les allocations d'insertion doivent en principe être demandées avant 25 ans.",
       options: [
@@ -251,9 +257,9 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
           value: "25-plus",
           label: "25 ans ou plus",
           helpText:
-            "Au-delà de 25 ans, l'insertion n'est en principe plus ouverte — tout dépend de si tu as déjà travaillé.",
+            "Au-delà de 25 ans, l'insertion n'est en principe plus ouverte — tout dépend de si vous avez déjà travaillé.",
           refineQuestion: {
-            question: "As-tu déjà travaillé (salarié) ?",
+            question: "Avez-vous déjà travaillé (salarié) ?",
             options: [
               {
                 value: "a-travaille",
@@ -267,7 +273,7 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
                   dossierSlug: "allocations-insertion",
                   dossierTitle: "Allocations d'insertion — vérifier l'âge",
                   rationale:
-                    "Au-delà de 25 ans, le droit aux allocations d'insertion n'est généralement plus ouvert (sauf exceptions). On t'oriente vers ce dossier pour vérifier ta situation précise.",
+                    "Au-delà de 25 ans, le droit aux allocations d'insertion n'est généralement plus ouvert (sauf exceptions). On vous oriente vers ce dossier pour vérifier votre situation précise.",
                 },
               },
             ],
@@ -282,16 +288,17 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
     value: "frontalier",
     icon: "MapPinned",
     label: "Je suis frontalier ou j'ai travaillé à l'étranger",
+    description: "Travail transfrontalier, retour UE/EEE",
     subQuestion: {
-      question: "Ta situation transfrontalière ?",
+      question: "Votre situation transfrontalière ?",
       helpText:
-        "Frontalier = tu habites un pays et travailles dans un autre, en rentrant chez toi régulièrement.",
+        "Frontalier = vous habitez un pays et travaillez dans un autre, en rentrant chez vous régulièrement.",
       options: [
         {
           value: "frontalier-classique",
           label: "Je rentre chez moi chaque semaine",
           helpText:
-            "Tu habites en Belgique (ou pays voisin) et tu travailles de l'autre côté de la frontière, en rentrant au moins 1 fois par semaine.",
+            "Vous habitez en Belgique (ou pays voisin) et vous travaillez de l'autre côté de la frontière, en rentrant au moins 1 fois par semaine.",
           result: R_FRONTALIER,
         },
         {
@@ -299,7 +306,7 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
           label: "Je rentre d'une occupation à l'étranger (UE/EEE)",
           // Même refine que perte-emploi → cohérence sur l'agrégation
           refineQuestion: {
-            question: "As-tu retravaillé en Belgique depuis ton retour ?",
+            question: "Avez-vous retravaillé en Belgique depuis votre retour ?",
             helpText:
               "Reprendre un travail en Belgique (≈ 3 mois minimum) permet d'ouvrir un droit belge complet. Sinon, c'est le régime frontalier avec le formulaire U1.",
             options: [
@@ -325,8 +332,9 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
     value: "fin-carriere",
     icon: "Hourglass",
     label: "Je suis en fin de carrière (licencié·e)",
+    description: "RCC, complément d'entreprise",
     subQuestion: {
-      question: "As-tu été licencié·e par ton employeur ?",
+      question: "Avez-vous été licencié·e par votre employeur ?",
       helpText:
         "Le régime de chômage avec complément d'entreprise (RCC, ex-prépension) suppose un LICENCIEMENT — pas une démission.",
       options: [
@@ -354,8 +362,9 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
     value: "handicap",
     icon: "Accessibility",
     label: "Je suis en situation de handicap",
+    description: "Incapacité de travail, allocations",
     subQuestion: {
-      question: "Tu travailles actuellement ?",
+      question: "Vous travaillez actuellement ?",
       options: [
         {
           value: "handicap-travaille",
@@ -364,7 +373,7 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
             dossierSlug: "chomage-temporaire",
             dossierTitle: "Chômage temporaire (force majeure médicale)",
             rationale:
-              "Si ton incapacité de travail est temporaire, c'est la voie standard.",
+              "Si votre incapacité de travail est temporaire, c'est la voie standard.",
           },
         },
         {
@@ -386,11 +395,12 @@ export const WIZARD_SITUATIONS: WizardSituation[] = [
     value: "autre",
     icon: "HelpCircle",
     label: "Autre situation",
+    description: "Décrivez votre besoin, on vous oriente",
     result: {
       dossierSlug: null,
-      dossierTitle: "Décris ta situation",
+      dossierTitle: "Décrivez votre situation",
       rationale:
-        "Décris ta situation via le formulaire de contact — on t'orientera vers la bonne démarche.",
+        "Décrivez votre situation via le formulaire de contact — on vous orientera vers la bonne démarche.",
     },
   },
 ];

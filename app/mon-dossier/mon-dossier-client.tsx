@@ -1,15 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
-  ArrowRightIcon,
-  BookmarkSimpleIcon,
-  ClockIcon,
-  StackIcon,
-} from "@phosphor-icons/react";
-import { LayoutGridIcon, ListIcon, SearchIcon, XIcon } from "lucide-react";
+  ArrowRight,
+  ChevronRight,
+  FileQuestion,
+  FolderOpen,
+  HelpCircle,
+  Layers,
+  Lightbulb,
+  Lock,
+  Phone,
+  ReceiptText,
+  Search as SearchIcon,
+  SlidersHorizontal,
+  Sparkles,
+} from "lucide-react";
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
 import { DossierWizard } from "@/components/docbel/onboarding/dossier-wizard";
 import { LIFE_EVENT_CATEGORIES } from "@/lib/bundles/types";
@@ -56,59 +63,8 @@ function hueForBundle(b: MonDossierBundle): string {
   return "var(--glass-accent-deep)";
 }
 
-/* ── localStorage : dossiers mis en favori (par slug). SSR-safe. ── */
-const BOOKMARKS_KEY = "docbel-dossier-bookmarks";
-
-function readBookmarks(): string[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(BOOKMARKS_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((x): x is string => typeof x === "string");
-  } catch {
-    return [];
-  }
-}
-
-function writeBookmarks(value: string[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(value));
-  } catch {
-    // Ignore (mode privé, quota dépassé…).
-  }
-}
-
-function useDossierBookmarks() {
-  const [bookmarks, setBookmarks] = useState<string[]>([]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setBookmarks(readBookmarks());
-  }, []);
-
-  const isBookmarked = useCallback(
-    (slug: string) => bookmarks.includes(slug),
-    [bookmarks],
-  );
-
-  const toggleBookmark = useCallback((slug: string) => {
-    setBookmarks((prev) => {
-      const next = prev.includes(slug)
-        ? prev.filter((s) => s !== slug)
-        : [...prev, slug];
-      writeBookmarks(next);
-      return next;
-    });
-  }, []);
-
-  return { bookmarks, isBookmarked, toggleBookmark };
-}
-
-/* ── Tuile d'icône teintée (glow) pour un dossier ── */
-function DossierIconTile({ bundle, size = 44 }: { bundle: MonDossierBundle; size?: number }) {
+/* ── Pastille d'icône teintée (glow) pour une ligne de dossier ── */
+function RowIconTile({ bundle, size = 36 }: { bundle: MonDossierBundle; size?: number }) {
   const hue = hueForBundle(bundle);
   const category = bundle.lifeEventCategory
     ? LIFE_EVENT_CATEGORIES.find((c) => c.id === bundle.lifeEventCategory)
@@ -116,7 +72,7 @@ function DossierIconTile({ bundle, size = 44 }: { bundle: MonDossierBundle; size
 
   return (
     <span
-      className="glass-icon-tile flex shrink-0 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-[1.06] group-hover:-translate-y-px motion-reduce:transform-none"
+      className="glass-icon-tile flex shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-[1.06] motion-reduce:transform-none"
       style={{
         width: size,
         height: size,
@@ -125,84 +81,87 @@ function DossierIconTile({ bundle, size = 44 }: { bundle: MonDossierBundle; size
         "--tile-hue": hue,
       } as React.CSSProperties}
     >
-      {/* IconDisplay = même rendu lucide/emoji que life-event-card (composant stable). */}
       {bundle.icon ? (
-        <IconDisplay value={bundle.icon} className="size-[46%]" />
+        <IconDisplay value={bundle.icon} className="size-[48%]" />
       ) : category ? (
         <span style={{ fontSize: size * 0.5, lineHeight: 1 }}>{category.emoji}</span>
       ) : (
-        <StackIcon size={size * 0.46} weight="duotone" />
+        <Layers size={size * 0.46} />
       )}
     </span>
   );
 }
 
-/* ── Carte dossier (réutilise glass-surface + glass-interactive) ── */
-function DossierCard({
-  bundle,
-  bookmarked,
-  onToggleBookmark,
-  onOpen,
-  listView,
-}: {
-  bundle: MonDossierBundle;
-  bookmarked: boolean;
-  onToggleBookmark: () => void;
-  onOpen: () => void;
-  listView: boolean;
-}) {
+/* ── Ligne « Accès direct » (icône + nom + sous-titre + chevron) ── */
+function AccessRow({ bundle }: { bundle: MonDossierBundle }) {
+  const subtitle =
+    bundle.itemCount > 0
+      ? `${bundle.itemCount} document${bundle.itemCount > 1 ? "s" : ""} à préparer`
+      : "Dossier guidé";
+
   return (
-    <div
-      className={`glass-surface glass-interactive group relative flex p-5 ${
-        listView ? "flex-row items-center gap-4" : "flex-col gap-3"
-      }`}
+    <Link
+      href={bundleHref(bundle.slug)}
+      className="group flex items-center gap-3 rounded-2xl border border-transparent px-2.5 py-2.5 transition-all hover:-translate-y-px hover:border-[color:var(--glass-border)] hover:bg-[color:var(--glass-surface)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]/40"
     >
-      {/* Favori (coin haut droit) */}
-      <button
-        type="button"
-        onClick={onToggleBookmark}
-        aria-label={bookmarked ? "Retirer des favoris" : "Enregistrer le dossier"}
-        aria-pressed={bookmarked}
-        className="absolute right-3 top-3 z-10 rounded-full p-1.5 transition hover:bg-white/55 dark:hover:bg-white/10"
-        style={{ color: bookmarked ? "var(--glass-accent-c)" : "var(--glass-ink-faint)" }}
+      <RowIconTile bundle={bundle} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13.5px] font-bold leading-tight text-[color:var(--glass-ink)]">
+          {bundle.name}
+        </span>
+        <span className="mt-0.5 block truncate text-[12px] text-[color:var(--glass-ink-faint)]">
+          {subtitle}
+        </span>
+      </span>
+      <ChevronRight className="size-4 shrink-0 text-[color:var(--glass-ink-faint)] transition-transform group-hover:translate-x-0.5 group-hover:text-[color:var(--glass-accent-deep)]" />
+    </Link>
+  );
+}
+
+/* ── Lien de la colonne « Besoin d'aide » ── */
+function HelpRow({
+  icon: Icon,
+  label,
+  href,
+  onClick,
+}: {
+  icon: typeof HelpCircle;
+  label: string;
+  href?: string;
+  onClick?: () => void;
+}) {
+  const inner = (
+    <>
+      <span
+        className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--glass-accent-deep)] transition-colors"
+        style={{
+          background: "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
+        }}
+        aria-hidden
       >
-        <BookmarkSimpleIcon
-          key={`${bundle.slug}-${bookmarked}`}
-          size={18}
-          weight={bookmarked ? "fill" : "duotone"}
-          className={bookmarked ? "animate-heart-pop" : ""}
-        />
-      </button>
+        <Icon className="size-[18px]" />
+      </span>
+      <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-[color:var(--glass-ink)]">
+        {label}
+      </span>
+      <ChevronRight className="size-4 shrink-0 text-[color:var(--glass-ink-faint)] transition-transform group-hover:translate-x-0.5 group-hover:text-[color:var(--glass-accent-deep)]" />
+    </>
+  );
 
-      <div className={`flex items-start gap-3 ${listView ? "flex-1 min-w-0" : ""}`}>
-        <DossierIconTile bundle={bundle} size={44} />
-        <div className="min-w-0 flex-1 pr-7">
-          <h3 className="text-[14.5px] font-bold leading-tight tracking-tight text-[color:var(--glass-ink)]">
-            {bundle.name}
-          </h3>
-          <span className="mt-1 inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
-            <ClockIcon className="size-3" />
-            {bundle.itemCount} document{bundle.itemCount > 1 ? "s" : ""}
-          </span>
-          {bundle.description ? (
-            <p className="mt-2 line-clamp-2 text-[12.5px] leading-snug text-[color:var(--glass-ink-soft)]">
-              {bundle.description}
-            </p>
-          ) : null}
-        </div>
-      </div>
+  const cls =
+    "glass-interactive group flex w-full items-center gap-3 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2.5 text-left";
 
-      <div className={listView ? "shrink-0" : "mt-auto pt-1"}>
-        <button
-          type="button"
-          onClick={onOpen}
-          className="glass-cta inline-flex w-full items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-bold"
-        >
-          Créer
-          <ArrowRightIcon size={15} weight="bold" className="transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
-        </button>
-      </div>
-    </div>
+  if (href) {
+    return (
+      <Link href={href} className={cls}>
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={cls}>
+      {inner}
+    </button>
   );
 }
 
@@ -215,50 +174,58 @@ const SORT_PILLS: { id: Sort; label: string }[] = [
   { id: "recents", label: "Récents" },
 ];
 
-export function MonDossierClient({ bundles }: Props) {
-  const router = useRouter();
-  const { isBookmarked, toggleBookmark } = useDossierBookmarks();
+type Mode = "guide" | "direct";
 
+export function MonDossierClient({ bundles }: Props) {
+  const [mode, setMode] = useState<Mode>("guide");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("populaires");
-  const [listView, setListView] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [activeCats, setActiveCats] = useState<Set<string>>(new Set());
+  const [showAllCats, setShowAllCats] = useState(false);
 
-  const openBundle = useCallback(
-    (slug: string) => router.push(bundleHref(slug)),
-    [router],
-  );
+  const trimmed = search.trim().toLowerCase();
+  const isSearching = trimmed.length > 0;
 
   // ── Recherche (nom + description) ──
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return bundles;
-    return bundles.filter(
-      (b) =>
-        b.name.toLowerCase().includes(q) ||
-        (b.description ?? "").toLowerCase().includes(q),
-    );
-  }, [bundles, search]);
-
-  // ── Tri (hors regroupement par catégorie, géré séparément) ──
-  const sorted = useMemo(() => {
-    const list = [...filtered];
-    switch (sort) {
-      case "az":
-        list.sort((a, b) => a.name.localeCompare(b.name, "fr"));
-        break;
-      case "recents":
-        list.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
-        break;
-      case "populaires":
-      default:
-        list.sort((a, b) => Number(b.popular) - Number(a.popular));
-        break;
+    let list = bundles;
+    if (trimmed) {
+      list = list.filter(
+        (b) =>
+          b.name.toLowerCase().includes(trimmed) ||
+          (b.description ?? "").toLowerCase().includes(trimmed),
+      );
+    }
+    if (activeCats.size > 0) {
+      list = list.filter(
+        (b) => b.lifeEventCategory && activeCats.has(b.lifeEventCategory),
+      );
     }
     return list;
-  }, [filtered, sort]);
+  }, [bundles, trimmed, activeCats]);
 
-  // ── Regroupement par catégorie (vue "Catégories") ──
-  const grouped = useMemo(() => {
+  // ── Tri intra-groupe ──
+  const sortItems = useMemo(() => {
+    return (list: MonDossierBundle[]) => {
+      const arr = [...list];
+      switch (sort) {
+        case "az":
+          arr.sort((a, b) => a.name.localeCompare(b.name, "fr"));
+          break;
+        case "recents":
+          arr.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+          break;
+        default:
+          arr.sort((a, b) => Number(b.popular) - Number(a.popular));
+          break;
+      }
+      return arr;
+    };
+  }, [sort]);
+
+  // ── Regroupement par catégorie ──
+  const groups = useMemo(() => {
     const map = new Map<string, MonDossierBundle[]>();
     const uncategorized: MonDossierBundle[] = [];
     for (const b of filtered) {
@@ -270,45 +237,85 @@ export function MonDossierClient({ bundles }: Props) {
         uncategorized.push(b);
       }
     }
-    return { map, uncategorized };
-  }, [filtered]);
+    const ordered: {
+      id: string;
+      label: string;
+      emoji: string;
+      items: MonDossierBundle[];
+    }[] = LIFE_EVENT_CATEGORIES.filter((c) => map.has(c.id)).map((c) => ({
+      id: c.id,
+      label: c.label,
+      emoji: c.emoji,
+      items: sortItems(map.get(c.id) ?? []),
+    }));
+    if (uncategorized.length > 0) {
+      ordered.push({
+        id: "_autres",
+        label: "Autres dossiers",
+        emoji: "📁",
+        items: sortItems(uncategorized),
+      });
+    }
+    return ordered;
+  }, [filtered, sortItems]);
 
-  const gridClass = listView
-    ? "grid grid-cols-1 gap-4"
-    : "grid gap-4 sm:grid-cols-2";
-
-  const renderCard = (b: MonDossierBundle) => (
-    <DossierCard
-      key={b.slug}
-      bundle={b}
-      bookmarked={isBookmarked(b.slug)}
-      onToggleBookmark={() => toggleBookmark(b.slug)}
-      onOpen={() => openBundle(b.slug)}
-      listView={listView}
-    />
+  // Catégories disponibles (pour les puces de filtre).
+  const availableCats = useMemo(
+    () =>
+      LIFE_EVENT_CATEGORIES.filter((c) =>
+        bundles.some((b) => b.lifeEventCategory === c.id),
+      ),
+    [bundles],
   );
+
+  // « Catégories » → déplie tout ; « Populaires/Récents » → limite à 3 groupes.
+  const collapsed = !isSearching && !showAllCats && sort !== "categories";
+  const visibleGroups = collapsed ? groups.slice(0, 3) : groups;
+  const hiddenCount = groups.length - visibleGroups.length;
+
+  function toggleCat(id: string) {
+    setActiveCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const isEmpty = filtered.length === 0;
 
   return (
-    <section className="relative isolate flex flex-col gap-8">
-      {/* Décor 3D de fond (boussole) — coin haut-droit, estompé, derrière le
-          contenu (-z-10 + isolate), ne capte pas les clics. Remplit le vide en
-          haut à droite et libère de la place dans la carte guide. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/3d/compass.png"
-        alt=""
-        aria-hidden
-        className="hero-float pointer-events-none absolute -top-10 right-0 -z-10 hidden h-[280px] w-[280px] object-contain opacity-50 sm:block lg:-top-16 lg:right-4 lg:h-[360px] lg:w-[360px]"
-        style={{
-          filter:
-            "drop-shadow(0 20px 36px rgba(20,10,45,0.35)) drop-shadow(0 0 50px color-mix(in oklab, var(--glass-accent-deep) 45%, transparent))",
-        }}
-      />
+    <section className="relative isolate flex flex-col gap-7">
+      {/* ───────── HERO ───────── */}
+      <header className="relative flex flex-col gap-3 px-1">
+        {/* Illustration 3D dossier + boussole (coin haut-droit) */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-6 right-0 hidden h-[200px] w-[300px] lg:block"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/3d/folder.png"
+            alt=""
+            className="hero-float absolute right-16 top-0 h-[180px] w-[180px] object-contain"
+            style={{
+              filter:
+                "drop-shadow(0 20px 36px rgba(20,10,45,0.30)) drop-shadow(0 0 50px color-mix(in oklab, var(--glass-accent-deep) 35%, transparent))",
+            }}
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/3d/compass.png"
+            alt=""
+            className="hero-float absolute right-0 top-12 h-[120px] w-[120px] object-contain"
+            style={{
+              animationDelay: "0.8s",
+              filter:
+                "drop-shadow(0 16px 28px rgba(20,10,45,0.32)) drop-shadow(0 0 32px color-mix(in oklab, var(--glass-accent-c) 30%, transparent))",
+            }}
+          />
+        </div>
 
-      {/* ───────── EN-TÊTE ───────── */}
-      <header className="flex flex-col gap-3 px-1">
         <nav
           aria-label="Fil d'Ariane"
           className="flex items-center gap-1.5 text-[11.5px] text-[color:var(--glass-ink-faint)]"
@@ -317,12 +324,11 @@ export function MonDossierClient({ bundles }: Props) {
             Accueil
           </Link>
           <span aria-hidden>/</span>
-          <span className="font-semibold text-[color:var(--glass-ink-soft)]">Mon dossier</span>
+          <span className="font-semibold text-[color:var(--glass-ink-soft)]">
+            Mon dossier
+          </span>
         </nav>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-          Mon dossier
-        </p>
-        <h1 className="glass-display text-[36px] font-semibold leading-[1.05] sm:text-[46px]">
+        <h1 className="glass-display max-w-2xl text-[36px] font-semibold leading-[1.05] sm:text-[46px]">
           Créer ou retrouver <em>le bon dossier</em>
         </h1>
         <p className="max-w-2xl text-[14px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
@@ -331,40 +337,105 @@ export function MonDossierClient({ bundles }: Props) {
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-        {/* ═════════ COLONNE GAUCHE — Assistant guidé ═════════ */}
+      {/* ───────── TOGGLE Guide / Accès direct ───────── */}
+      <div
+        role="tablist"
+        aria-label="Mode de recherche"
+        className="glass-surface-strong flex w-full items-center gap-1 rounded-2xl p-1 lg:hidden"
+      >
+        {(
+          [
+            { id: "guide" as const, label: "Je me laisse guider", icon: Sparkles },
+            { id: "direct" as const, label: "J'accède directement", icon: FolderOpen },
+          ]
+        ).map((t) => {
+          const active = mode === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setMode(t.id)}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-[12.5px] font-semibold transition-all sm:gap-2 sm:px-4 sm:text-[13.5px]"
+              style={{
+                background: active
+                  ? "color-mix(in oklab, var(--glass-accent-deep) 16%, var(--glass-surface-strong))"
+                  : "transparent",
+                color: active
+                  ? "var(--glass-accent-deep)"
+                  : "var(--glass-ink-soft)",
+                boxShadow: active
+                  ? "0 6px 18px color-mix(in oklab, var(--glass-accent-deep) 22%, transparent), inset 0 1px 0 rgba(255,255,255,0.5)"
+                  : "none",
+              }}
+            >
+              <t.icon className="size-4" aria-hidden />
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ───────── 3 COLONNES ───────── */}
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-[1.05fr_1.05fr_0.72fr] xl:items-start">
+        {/* ════ Colonne 1 — Assistant guidé ════ */}
         <section
-          className="outils-rise flex flex-col gap-4"
+          className={`outils-rise ${mode === "guide" ? "block" : "hidden"} lg:block`}
           style={{ animationDelay: "0ms" }}
         >
           <DossierWizard situations={WIZARD_SITUATIONS} />
         </section>
 
-        {/* ═════════ COLONNE DROITE — Accès direct ═════════ */}
+        {/* ════ Colonne 2 — Accès direct ════ */}
         <section
-          className="glass-surface outils-rise flex flex-col gap-4 p-7"
+          className={`glass-surface outils-rise ${
+            mode === "direct" ? "flex" : "hidden"
+          } flex-col gap-4 p-6 lg:flex`}
           style={{ animationDelay: "80ms" }}
         >
-          <h2 className="glass-display text-[24px] font-semibold leading-tight">
-            Accès direct
-          </h2>
+          <div className="flex items-center gap-3">
+            <span
+              className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--glass-accent-deep)]"
+              style={{
+                background:
+                  "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
+                "--tile-hue": "var(--glass-accent-deep)",
+              } as React.CSSProperties}
+              aria-hidden
+            >
+              <FolderOpen className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-[17px] font-semibold leading-tight text-[color:var(--glass-ink)]">
+                Accès direct
+              </h2>
+              <p className="text-xs text-[color:var(--glass-ink-faint)]">
+                Recherchez ou parcourez vos dossiers par catégorie.
+              </p>
+            </div>
+          </div>
 
           {/* Recherche */}
           <div className="relative">
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-[color:var(--glass-ink-faint)]" />
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-[color:var(--glass-ink-faint)]" />
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un dossier (ex. : chômage, APL, carte grise…)"
-              className="search-glow glass-surface-strong h-13 w-full rounded-2xl border-0 py-3.5 pr-4 pl-12 text-[14px] text-[color:var(--glass-ink)] shadow-none placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none"
+              placeholder="Rechercher un dossier (ex. : chômage, RCC, insertion…)"
+              className="search-glow glass-surface-strong h-12 w-full rounded-2xl border-0 py-3 pr-4 pl-11 text-[14px] text-[color:var(--glass-ink)] shadow-none placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none"
               aria-label="Rechercher un dossier"
             />
           </div>
 
-          {/* Pills de tri + bascule de vue */}
+          {/* Pills de tri + Filtres */}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Trier les dossiers">
+            <div
+              className="flex flex-wrap items-center gap-1.5"
+              role="group"
+              aria-label="Trier les dossiers"
+            >
               {SORT_PILLS.map((pill) => {
                 const active = sort === pill.id;
                 return (
@@ -392,47 +463,81 @@ export function MonDossierClient({ bundles }: Props) {
               })}
             </div>
 
-            <div className="flex items-center gap-1 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-0.5">
-              <button
-                type="button"
-                onClick={() => setListView(false)}
-                aria-label="Vue grille"
-                aria-pressed={!listView}
-                className="rounded-full p-1.5 transition"
-                style={{
-                  background: !listView
-                    ? "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)"
-                    : "transparent",
-                  color: !listView
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((v) => !v)}
+              aria-pressed={filtersOpen}
+              aria-label="Filtres par catégorie"
+              className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition"
+              style={{
+                borderColor:
+                  filtersOpen || activeCats.size > 0
                     ? "var(--glass-accent-deep)"
-                    : "var(--glass-ink-faint)",
-                }}
-              >
-                <LayoutGridIcon className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setListView(true)}
-                aria-label="Vue liste"
-                aria-pressed={listView}
-                className="rounded-full p-1.5 transition"
-                style={{
-                  background: listView
-                    ? "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)"
-                    : "transparent",
-                  color: listView
+                    : "var(--glass-border)",
+                background:
+                  filtersOpen || activeCats.size > 0
+                    ? "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)"
+                    : "var(--glass-surface)",
+                color:
+                  filtersOpen || activeCats.size > 0
                     ? "var(--glass-accent-deep)"
-                    : "var(--glass-ink-faint)",
-                }}
-              >
-                <ListIcon className="size-4" />
-              </button>
-            </div>
+                    : "var(--glass-ink-soft)",
+              }}
+            >
+              <SlidersHorizontal className="size-3.5" />
+              Filtres
+              {activeCats.size > 0 ? (
+                <span className="ml-0.5 rounded-full bg-[color:var(--glass-accent-deep)] px-1.5 text-[10px] font-bold text-white">
+                  {activeCats.size}
+                </span>
+              ) : null}
+            </button>
           </div>
 
-          {/* Grille de dossiers */}
+          {/* Puces de filtre par catégorie (repliables) */}
+          {filtersOpen && availableCats.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5 rounded-2xl border border-[color:var(--glass-ink-line)] p-2.5">
+              {availableCats.map((c) => {
+                const on = activeCats.has(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => toggleCat(c.id)}
+                    aria-pressed={on}
+                    className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] font-medium transition"
+                    style={{
+                      borderColor: on
+                        ? "var(--glass-accent-deep)"
+                        : "var(--glass-border)",
+                      background: on
+                        ? "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)"
+                        : "transparent",
+                      color: on
+                        ? "var(--glass-accent-deep)"
+                        : "var(--glass-ink-soft)",
+                    }}
+                  >
+                    <span aria-hidden>{c.emoji}</span>
+                    {c.label}
+                  </button>
+                );
+              })}
+              {activeCats.size > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveCats(new Set())}
+                  className="ml-auto text-[12px] font-semibold text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
+                >
+                  Réinitialiser
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Liste groupée / résultats de recherche */}
           {isEmpty ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl px-6 py-14 text-center">
+            <div className="flex flex-col items-center gap-2 rounded-2xl px-6 py-12 text-center">
               <SearchIcon className="size-6 text-[color:var(--glass-ink-faint)]" />
               <p className="text-[14px] font-semibold text-[color:var(--glass-ink)]">
                 {bundles.length === 0
@@ -442,80 +547,158 @@ export function MonDossierClient({ bundles }: Props) {
               <p className="max-w-sm text-[12.5px] text-[color:var(--glass-ink-soft)]">
                 {bundles.length === 0
                   ? "Les dossiers ne sont pas encore disponibles. Réessayez dans un instant."
-                  : "Essayez un autre mot-clé plus court, ou lancez le guide à gauche."}
+                  : "Essayez un autre mot-clé, ou lancez le guide à gauche."}
               </p>
-              {search ? (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className="mt-1 inline-flex items-center gap-1 text-[12.5px] font-semibold text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
-                >
-                  <XIcon className="size-3.5" />
-                  Effacer la recherche
-                </button>
-              ) : null}
             </div>
-          ) : sort === "categories" ? (
-            <div className="flex flex-col gap-6">
-              {LIFE_EVENT_CATEGORIES.map((cat) => {
-                const list = grouped.map.get(cat.id);
-                if (!list || list.length === 0) return null;
-                return (
-                  <div key={cat.id} className="flex flex-col gap-3">
-                    <h3 className="flex items-center gap-2 text-[14px] font-bold text-[color:var(--glass-ink)]">
-                      <span aria-hidden>{cat.emoji}</span>
-                      {cat.label}
-                      <span className="text-[color:var(--glass-ink-faint)]">
-                        ({list.length})
-                      </span>
-                    </h3>
-                    <div className={gridClass}>{list.map(renderCard)}</div>
-                  </div>
-                );
-              })}
-              {grouped.uncategorized.length > 0 ? (
-                <div className="flex flex-col gap-3">
-                  <h3 className="text-[14px] font-bold text-[color:var(--glass-ink)]">
-                    Autres dossiers{" "}
-                    <span className="text-[color:var(--glass-ink-faint)]">
-                      ({grouped.uncategorized.length})
-                    </span>
-                  </h3>
-                  <div className={gridClass}>
-                    {grouped.uncategorized.map(renderCard)}
-                  </div>
-                </div>
-              ) : null}
+          ) : isSearching ? (
+            <div className="flex flex-col gap-1">
+              {sortItems(filtered).map((b) => (
+                <AccessRow key={b.slug} bundle={b} />
+              ))}
             </div>
           ) : (
-            <div className={gridClass}>{sorted.map(renderCard)}</div>
+            <div className="flex flex-col gap-5">
+              {visibleGroups.map((g) => (
+                <div key={g.id} className="flex flex-col gap-1.5">
+                  <h3 className="flex items-center gap-2 px-1 text-[13px] font-bold text-[color:var(--glass-ink)]">
+                    <span aria-hidden>{g.emoji}</span>
+                    {g.label}
+                    <span
+                      className="ml-auto min-w-[1.25rem] rounded-full px-1.5 py-1 text-center text-[11px] font-bold leading-none tabular-nums"
+                      style={{
+                        background:
+                          "color-mix(in oklab, var(--glass-accent-deep) 12%, transparent)",
+                        color: "var(--glass-accent-deep)",
+                      }}
+                    >
+                      {g.items.length}
+                    </span>
+                  </h3>
+                  <div className="flex flex-col gap-0.5">
+                    {g.items.map((b) => (
+                      <AccessRow key={b.slug} bundle={b} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
 
-          {/* Pied : catégories + aide */}
-          <div className="mt-2 flex flex-col gap-2 border-t border-[color:var(--glass-ink-line)] pt-4 text-[12.5px] sm:flex-row sm:items-center sm:justify-between">
-            <button
-              type="button"
-              onClick={() => setSort("categories")}
-              className="group inline-flex items-center gap-1 font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
-            >
-              Voir toutes les catégories
-              <ArrowRightIcon
-                size={14}
-                weight="bold"
-                className="-translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transform-none"
-              />
-            </button>
-            <p className="text-[color:var(--glass-ink-faint)]">
-              Vous ne trouvez pas votre dossier ?{" "}
-              <Link
-                href="/contact"
-                className="font-semibold text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
+          {/* Pied : voir toutes les catégories */}
+          {!isSearching && groups.length > 0 ? (
+            <div className="mt-1 border-t border-[color:var(--glass-ink-line)] pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAllCats((v) => !v);
+                  if (!showAllCats) setSort("categories");
+                }}
+                className="group inline-flex w-full items-center justify-between gap-1 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
               >
-                Nous aider à l&apos;améliorer
-              </Link>
-            </p>
-          </div>
+                {collapsed && hiddenCount > 0
+                  ? `Voir toutes les catégories (${groups.length})`
+                  : "Voir moins"}
+                <ArrowRight
+                  className="size-4 transition-transform group-hover:translate-x-0.5"
+                  aria-hidden
+                />
+              </button>
+            </div>
+          ) : null}
         </section>
+
+        {/* ════ Colonne 3 — Besoin d'aide ════ */}
+        <aside
+          className="glass-surface outils-rise flex flex-col gap-4 p-6 lg:col-span-2 xl:col-span-1"
+          style={{ animationDelay: "160ms" }}
+        >
+          <div className="flex items-center gap-3">
+            <span
+              className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--glass-accent-deep)]"
+              style={{
+                background:
+                  "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
+                "--tile-hue": "var(--glass-accent-deep)",
+              } as React.CSSProperties}
+              aria-hidden
+            >
+              <HelpCircle className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-[17px] font-semibold leading-tight text-[color:var(--glass-ink)]">
+                Besoin d&apos;aide&nbsp;?
+              </h2>
+              <p className="text-xs text-[color:var(--glass-ink-faint)]">
+                Trouvez rapidement une réponse.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+            <HelpRow
+              icon={HelpCircle}
+              label="Comment trouver le bon dossier ?"
+              onClick={() => setMode("guide")}
+            />
+            <HelpRow
+              icon={FileQuestion}
+              label="Je ne trouve pas mon dossier"
+              href="/contact"
+            />
+            <HelpRow
+              icon={ReceiptText}
+              label="Où en est ma demande ?"
+              href="/reprendre"
+            />
+            <HelpRow
+              icon={Phone}
+              label="Comment joindre le support ?"
+              href="/contact"
+            />
+          </div>
+
+          {/* Conseil */}
+          <div
+            className="relative flex items-start gap-3 overflow-hidden rounded-2xl border p-4"
+            style={{
+              borderColor: "color-mix(in oklab, var(--glass-accent-c) 35%, transparent)",
+              background: "color-mix(in oklab, var(--glass-accent-c) 12%, transparent)",
+              boxShadow:
+                "inset 0 1px 0 rgba(255,255,255,0.5), 0 8px 22px color-mix(in oklab, var(--glass-accent-c) 18%, transparent)",
+            }}
+          >
+            {/* Reflet lent (réutilise l'animation globale .animate-soft-sheen) */}
+            <span
+              aria-hidden
+              className="animate-soft-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+            />
+            <span
+              className="relative flex size-9 shrink-0 items-center justify-center rounded-xl"
+              style={{
+                background:
+                  "color-mix(in oklab, var(--glass-accent-c) 30%, var(--glass-surface-strong))",
+                color: "var(--glass-pop-fg)",
+              }}
+              aria-hidden
+            >
+              <Lightbulb className="size-[18px]" />
+            </span>
+            <div className="relative min-w-0">
+              <p className="text-[13.5px] font-bold text-[color:var(--glass-ink)]">
+                Conseil
+              </p>
+              <p className="mt-0.5 text-[12.5px] leading-snug text-[color:var(--glass-ink-soft)]">
+                Préparez vos informations avant de commencer : vos identifiants,
+                documents et informations personnelles.
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-auto inline-flex items-center gap-1.5 text-[11.5px] text-[color:var(--glass-ink-faint)]">
+            <Lock className="size-3.5" aria-hidden />
+            Vos données restent confidentielles et ne sont jamais transmises.
+          </p>
+        </aside>
       </div>
     </section>
   );

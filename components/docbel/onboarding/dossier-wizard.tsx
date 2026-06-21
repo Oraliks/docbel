@@ -2,7 +2,7 @@
 
 // Orientation wizard de `/mon-dossier` (colonne gauche du mockup).
 //
-// Parcours guidé : « Quelle est ta situation ? » → sous-question éventuelle →
+// Parcours guidé : « Quelle est votre situation ? » → sous-question éventuelle →
 // dossier recommandé. 4 étapes visibles dans le stepper :
 //
 //   1. Votre situation   ✱ active dès le chargement
@@ -31,6 +31,7 @@ import {
   GraduationCap,
   HelpCircle,
   Hourglass,
+  Lock,
   MapPinned,
   RotateCcw,
   Search,
@@ -135,7 +136,7 @@ export function DossierWizard({ situations }: Props) {
     // GARDE-FOU CRITIQUE : sans sélection, on REFUSE d'avancer. Pas de
     // défaut implicite vers chômage temporaire.
     if (!selectedSituation) {
-      toast.error("Choisis d'abord ta situation pour qu'on puisse te guider.");
+      toast.error("Choisissez d'abord votre situation pour qu'on puisse vous guider.");
       return;
     }
     // Re-déclenche la sélection effective (utile si l'utilisateur a cliqué
@@ -180,16 +181,29 @@ export function DossierWizard({ situations }: Props) {
   }
 
   return (
-    <Card className={cn(GLASS_CARD, "p-2")}>
+    <Card className={cn(GLASS_CARD, "h-full")}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Sparkles className="size-4" aria-hidden />
-          Trouvons ton dossier en 4 étapes
+        <CardTitle className="flex items-center gap-3 text-base">
+          <span
+            className="glass-icon-tile flex size-9 shrink-0 items-center justify-center rounded-xl text-[color:var(--glass-accent-deep)]"
+            style={{
+              background:
+                "color-mix(in oklab, var(--glass-accent-deep) 14%, transparent)",
+              "--tile-hue": "var(--glass-accent-deep)",
+            } as React.CSSProperties}
+            aria-hidden
+          >
+            <Sparkles className="size-4" />
+          </span>
+          <span className="flex flex-col gap-0.5">
+            <span className="text-[17px] font-semibold leading-tight">
+              L&apos;assistant dossier
+            </span>
+            <span className="text-xs font-normal text-muted-foreground">
+              Répondez à quelques questions pour trouver le bon dossier.
+            </span>
+          </span>
         </CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Réponds à 1 ou 2 questions, on te propose le bon dossier — pas de
-          défaut implicite, on attend ton choix.
-        </p>
       </CardHeader>
       <CardContent className="space-y-6">
         <Stepper currentStep={currentStep} />
@@ -246,52 +260,55 @@ function Stepper({ currentStep }: StepperProps) {
   const steps: StepNumber[] = [1, 2, 3, 4];
   return (
     <ol
-      className="flex items-center gap-1 sm:gap-2"
+      className="flex items-center gap-2"
       aria-label="Progression du guide"
     >
-      {steps.map((step, idx) => {
+      {steps.map((step) => {
         const isCurrent = step === currentStep;
         const isPast = step < currentStep;
         const isFuture = !isCurrent && !isPast;
+        const isLast = step === 4;
         return (
           <li
             key={step}
-            className="flex flex-1 items-center gap-1 sm:gap-2"
+            className={cn(
+              "flex items-center gap-2",
+              isLast ? "flex-none" : "flex-1",
+            )}
             aria-current={isCurrent ? "step" : undefined}
           >
-            <div className="flex min-w-0 items-center gap-2">
+            <span
+              className={cn(
+                "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors",
+                isCurrent &&
+                  "bg-[color:var(--glass-accent-deep)] text-white shadow-[0_4px_12px_color-mix(in_oklab,var(--glass-accent-deep)_45%,transparent)]",
+                isPast && "bg-[color:var(--glass-accent-deep)] text-white",
+                isFuture &&
+                  "bg-[color:var(--glass-ink-line)] text-[color:var(--glass-ink-faint)]",
+              )}
+              aria-hidden
+            >
+              {isPast ? <Check className="size-3.5" /> : step}
+            </span>
+            <span
+              className={cn(
+                "hidden truncate text-[12.5px] font-semibold transition-colors sm:inline",
+                isCurrent && "text-[color:var(--glass-ink)]",
+                isPast && "text-[color:var(--glass-ink-soft)]",
+                isFuture && "text-[color:var(--glass-ink-faint)]",
+              )}
+            >
+              {STEP_LABELS[step]}
+            </span>
+            {!isLast && (
               <span
-                className={cn(
-                  "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
-                  isCurrent &&
-                    "bg-[color:var(--glass-accent-a)] text-white ring-2 ring-[color:var(--glass-accent-a)]/30",
-                  isPast &&
-                    "bg-emerald-500 text-white",
-                  isFuture &&
-                    "bg-muted text-muted-foreground",
-                )}
                 aria-hidden
-              >
-                {isPast ? <Check className="size-3.5" /> : step}
-              </span>
-              <span
                 className={cn(
-                  "hidden truncate text-xs font-medium sm:inline",
-                  isCurrent && "text-foreground",
-                  isPast && "text-foreground/80",
-                  isFuture && "text-muted-foreground",
+                  "h-px flex-1 rounded-full transition-colors",
+                  isPast
+                    ? "bg-[color:var(--glass-accent-deep)]"
+                    : "bg-[color:var(--glass-ink-line)]",
                 )}
-              >
-                {STEP_LABELS[step]}
-              </span>
-            </div>
-            {idx < steps.length - 1 && (
-              <span
-                className={cn(
-                  "h-px flex-1 transition-colors",
-                  step < currentStep ? "bg-emerald-500/60" : "bg-border",
-                )}
-                aria-hidden
               />
             )}
           </li>
@@ -320,14 +337,18 @@ function StepSituation({
   return (
     <div className="space-y-4 transition-opacity duration-200">
       <div className="space-y-1.5">
-        <Label className="text-sm font-medium">Quelle est ta situation ?</Label>
+        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
+          Question 1 sur 4
+        </p>
+        <Label className="block text-[16px] font-semibold text-[color:var(--glass-ink)]">
+          Quelle est votre situation actuelle ?
+        </Label>
         <p className="text-xs text-muted-foreground">
-          Choisis la case qui te correspond le mieux. Tu pourras revenir en
-          arrière à tout moment.
+          Choisissez la situation qui vous correspond le mieux.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {situations.map((s) => {
           const Icon = resolveIcon(s.icon);
           const isSelected = selected === s.value;
@@ -348,16 +369,25 @@ function StepSituation({
             >
               <span
                 className={cn(
-                  "flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors",
+                  "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors",
                   isSelected
                     ? "bg-[color:var(--glass-accent-a)] text-white"
                     : "bg-muted text-muted-foreground group-hover:bg-[color:var(--glass-accent-a)]/10 group-hover:text-[color:var(--glass-accent-a)]",
                 )}
                 aria-hidden
               >
-                <Icon className="size-4" />
+                <Icon className="size-[18px]" />
               </span>
-              <span className="flex-1 font-medium">{s.label}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold text-[color:var(--glass-ink)]">
+                  {s.label}
+                </span>
+                {s.description ? (
+                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                    {s.description}
+                  </span>
+                ) : null}
+              </span>
               <ChevronRight
                 className={cn(
                   "size-4 shrink-0 text-muted-foreground transition-transform",
@@ -370,14 +400,13 @@ function StepSituation({
         })}
       </div>
 
-      <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-muted-foreground">
-          {selected
-            ? "Situation sélectionnée — clique sur « Commencer le guide » pour continuer."
-            : "Sélectionne une case ci-dessus avant de continuer."}
+      <div className="flex items-center justify-between gap-3 border-t border-[color:var(--glass-ink-line)] pt-4">
+        <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Lock className="size-3.5" aria-hidden />
+          Votre réponse est confidentielle
         </p>
         <Button onClick={onStart} variant={selected ? "default" : "outline"}>
-          Commencer le guide
+          Continuer
           <ArrowRight className="size-4" aria-hidden />
         </Button>
       </div>
@@ -411,7 +440,7 @@ function StepSubQuestion({
         </p>
         <Label className="text-sm font-medium">{subQuestion.question}</Label>
         {subQuestion.helpText && (
-          <p className="rounded-md border-l-2 border-blue-300 bg-blue-50/60 px-2.5 py-1.5 text-xs text-blue-900 dark:border-blue-700 dark:bg-blue-950/30 dark:text-blue-200">
+          <p className="rounded-md border-l-2 border-[color:var(--glass-accent-a)]/45 bg-[color:var(--glass-accent-a)]/8 px-2.5 py-1.5 text-xs text-[color:var(--glass-ink-soft)]">
             {subQuestion.helpText}
           </p>
         )}
@@ -461,7 +490,7 @@ function StepSubQuestion({
           Précédent
         </Button>
         <p className="text-xs text-muted-foreground">
-          Clique sur une réponse pour voir le dossier recommandé.
+          Cliquez sur une réponse pour voir le dossier recommandé.
         </p>
       </div>
     </div>
@@ -494,7 +523,7 @@ function StepRefine({
         </p>
         <Label className="text-sm font-medium">{refineQuestion.question}</Label>
         {refineQuestion.helpText && (
-          <p className="rounded-md border-l-2 border-blue-300 bg-blue-50/60 px-2.5 py-1.5 text-xs text-blue-900 dark:border-blue-700 dark:bg-blue-950/30 dark:text-blue-200">
+          <p className="rounded-md border-l-2 border-[color:var(--glass-accent-a)]/45 bg-[color:var(--glass-accent-a)]/8 px-2.5 py-1.5 text-xs text-[color:var(--glass-ink-soft)]">
             {refineQuestion.helpText}
           </p>
         )}
@@ -544,7 +573,7 @@ function StepRefine({
           Précédent
         </Button>
         <p className="text-xs text-muted-foreground">
-          Encore une précision pour t&apos;orienter au mieux.
+          Encore une précision pour vous orienter au mieux.
         </p>
       </div>
     </div>
@@ -615,7 +644,7 @@ function StepResult({ result, onBack, onReset }: StepResultProps) {
               <h3 className="text-base font-semibold">{result.dossierTitle}</h3>
               <p className="text-sm text-amber-900/80 dark:text-amber-100/80">
                 {result.rationale} Ce dossier est en construction. En attendant,
-                tu peux contacter le service via{" "}
+                vous pouvez contacter le service via{" "}
                 <Link href="/contact" className="underline">
                   /contact
                 </Link>

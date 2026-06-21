@@ -2,17 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   ChevronRight,
   FileQuestion,
   FolderOpen,
   HelpCircle,
-  KeyRound,
   Layers,
   Lightbulb,
-  Loader2,
   Lock,
   Phone,
   RotateCcw,
@@ -249,130 +246,6 @@ function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
   );
 }
 
-function ReprendreZone({
-  activeRun,
-  onUseGuide,
-}: {
-  activeRun: ActiveBundleRun | null;
-  onUseGuide: () => void;
-}) {
-  const router = useRouter();
-  const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (loading) return;
-    if (code.trim().length < 8) {
-      setError("Entrez votre code de reprise (format BELDOC-XXXX-XXXX).");
-      return;
-    }
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await fetch("/api/bundles/resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim() }),
-      });
-      const data: { bundleSlug?: string; error?: string } = await res
-        .json()
-        .catch(() => ({}));
-      if (res.ok && data.bundleSlug) {
-        router.push(bundleHref(data.bundleSlug));
-        return;
-      }
-      setError(
-        data.error || "Ce code de reprise n'est pas valide ou a expiré.",
-      );
-    } catch {
-      setError("Une erreur est survenue. Réessayez dans un instant.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      {activeRun ? (
-        <div className="flex flex-col gap-2">
-          <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
-            Sur cet appareil
-          </p>
-          <ActiveRunCard run={activeRun} />
-        </div>
-      ) : null}
-
-      <form onSubmit={submit} className="flex flex-col gap-2">
-        <label
-          htmlFor="resume-code"
-          className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]"
-        >
-          J&apos;ai un code de reprise
-        </label>
-        <div className="relative">
-          <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[color:var(--glass-ink-faint)]" />
-          <input
-            id="resume-code"
-            value={code}
-            onChange={(e) => {
-              setCode(e.target.value);
-              if (error) setError(null);
-            }}
-            placeholder="BELDOC-XXXX-XXXX"
-            autoComplete="off"
-            spellCheck={false}
-            className="glass-surface-strong h-11 w-full rounded-xl border-0 pl-9 pr-3 text-[13.5px] font-medium uppercase tracking-wide text-[color:var(--glass-ink)] placeholder:font-normal placeholder:tracking-normal placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none focus:ring-2 focus:ring-[color:var(--glass-accent-deep)]/40"
-            aria-invalid={error ? true : undefined}
-          />
-        </div>
-        {error ? (
-          <p className="text-[12px] text-[color:var(--glass-pop-fg)]">{error}</p>
-        ) : null}
-        <button
-          type="submit"
-          disabled={loading}
-          className="glass-cta inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-[13px] font-bold disabled:opacity-60"
-        >
-          {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-          Reprendre la démarche
-        </button>
-      </form>
-
-      <Link
-        href="/reprendre"
-        className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
-      >
-        Plus d&apos;options de reprise
-        <ArrowRight className="size-3.5" aria-hidden />
-      </Link>
-
-      {/* Aide rapide */}
-      <div className="flex flex-col gap-2 border-t border-[color:var(--glass-ink-line)] pt-3">
-        <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
-          Besoin d&apos;aide ?
-        </p>
-        <HelpRow
-          icon={HelpCircle}
-          label="Comment trouver le bon dossier ?"
-          onClick={onUseGuide}
-        />
-        <HelpRow
-          icon={FileQuestion}
-          label="Je ne trouve pas mon dossier"
-          href="/contact"
-        />
-        <HelpRow
-          icon={Phone}
-          label="Comment joindre le support ?"
-          href="/contact"
-        />
-      </div>
-    </div>
-  );
-}
-
 type Sort = "populaires" | "az" | "categories" | "recents";
 
 const SORT_PILLS: { id: Sort; label: string }[] = [
@@ -580,7 +453,7 @@ export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
       <div
         role="tablist"
         aria-label="Mode de recherche"
-        className="glass-surface-strong flex w-full items-center gap-1 rounded-2xl p-1 lg:hidden"
+        className="glass-surface-strong flex w-full items-center gap-1 rounded-2xl p-1"
       >
         {(
           [
@@ -846,7 +719,7 @@ export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
           ) : null}
         </section>
 
-        {/* ════ Colonne 3 — Reprendre un dossier ════ */}
+        {/* ════ Colonne 3 — Besoin d'aide ? ════ */}
         <aside
           className="glass-surface outils-rise flex flex-col gap-4 p-6 lg:col-span-2 xl:col-span-1"
           style={{ animationDelay: "160ms" }}
@@ -861,22 +734,51 @@ export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
               } as React.CSSProperties}
               aria-hidden
             >
-              <RotateCcw className="size-4" />
+              <HelpCircle className="size-4" />
             </span>
             <div className="min-w-0">
               <h2 className="text-[17px] font-semibold leading-tight text-[color:var(--glass-ink)]">
-                Reprendre un dossier
+                Besoin d&apos;aide ?
               </h2>
               <p className="text-xs text-[color:var(--glass-ink-faint)]">
-                Retrouvez un dossier déjà commencé.
+                Trouvez rapidement une réponse.
               </p>
             </div>
           </div>
 
-          <ReprendreZone
-            activeRun={activeRun}
-            onUseGuide={() => setMode("guide")}
-          />
+          {/* Dossier en cours sur cet appareil (dynamique — absent du mockup statique) */}
+          {activeRun ? (
+            <div className="flex flex-col gap-1.5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
+                Dossier en cours
+              </p>
+              <ActiveRunCard run={activeRun} />
+            </div>
+          ) : null}
+
+          {/* 4 liens d'aide (identiques au mockup) */}
+          <div className="flex flex-col gap-2">
+            <HelpRow
+              icon={HelpCircle}
+              label="Comment trouver le bon dossier ?"
+              onClick={() => setMode("guide")}
+            />
+            <HelpRow
+              icon={FileQuestion}
+              label="Je ne trouve pas mon dossier"
+              href="/contact"
+            />
+            <HelpRow
+              icon={RotateCcw}
+              label="Où en est ma demande ?"
+              href="/reprendre"
+            />
+            <HelpRow
+              icon={Phone}
+              label="Comment joindre le support ?"
+              href="/contact"
+            />
+          </div>
 
           {/* Conseil */}
           <div
@@ -888,7 +790,6 @@ export function MonDossierClient({ bundles, catalog, activeRun }: Props) {
                 "inset 0 1px 0 rgba(255,255,255,0.5), 0 8px 22px color-mix(in oklab, var(--glass-accent-c) 18%, transparent)",
             }}
           >
-            {/* Reflet lent (réutilise l'animation globale .animate-soft-sheen) */}
             <span
               aria-hidden
               className="animate-soft-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"

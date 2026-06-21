@@ -23,7 +23,6 @@ import { ArrowRight, Check, ShieldCheck, UserPlus } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Ec32Content } from '@/lib/ec32/schema'
-import { Ec32Hero } from '@/components/docbel/ec32/hero'
 import { Ec32LearningModes } from '@/components/docbel/ec32/learning-modes'
 import { Ec32InteractiveSimulator } from '@/components/docbel/ec32/ec32-interactive-simulator'
 import { Ec32ScenarioCards } from '@/components/docbel/ec32/scenario-cards'
@@ -125,8 +124,6 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
 
   return (
     <div className="flex w-full flex-col gap-8 md:gap-10">
-      <Ec32Hero content={content} onSecondary={() => goToTab('cas')} />
-
       {/* Élément principal : le simulateur, toujours visible. */}
       <Ec32InteractiveSimulator
         content={content}

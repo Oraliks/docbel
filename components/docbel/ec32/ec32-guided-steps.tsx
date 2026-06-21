@@ -11,6 +11,12 @@
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { EC32_STEPS, type Ec32StepKey } from '@/lib/ec32/types'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 export interface Ec32GuidedStep {
   key: Ec32StepKey
@@ -51,70 +57,63 @@ export function Ec32GuidedSteps({
 
   return (
     <nav aria-label="Étapes de la simulation" className="w-full">
-      {/* ── Desktop : stepper numéroté connecté ── */}
-      <ol
-        className="hidden flex-wrap items-center gap-x-1 gap-y-2 md:flex"
-        role="list"
-      >
-        {orderedSteps.map((step, i) => {
-          const isActive = step.key === activeStep
-          const isDone = step.index < activeIndex
-          const reachable = step.index <= maxReachedIndex
-          // Le connecteur AVANT ce nœud est violet si le nœud est atteint (fait/actif).
-          const connectorOn = isDone || isActive
-          return (
-            <li key={step.key} className="flex flex-none items-center">
-              {i > 0 && (
-                <span
-                  aria-hidden
-                  className={cn(
-                    'mx-1 h-px w-5 shrink-0 rounded-full lg:w-8',
-                    connectorOn ? 'bg-primary/40' : 'bg-border',
-                  )}
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => reachable && onSelectStep(step.key)}
-                disabled={!reachable}
-                aria-current={isActive ? 'step' : undefined}
-                className={cn(
-                  'flex flex-none items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-                  isActive
-                    ? 'bg-primary/10'
-                    : reachable
-                      ? 'hover:bg-primary/5'
-                      : 'cursor-not-allowed',
+      {/* ── Desktop : stepper numéroté connecté (chiffres seuls, libellé en
+          tooltip pour rester compact sur une seule ligne) ── */}
+      <TooltipProvider delay={120}>
+        <ol
+          className="hidden flex-wrap items-center gap-y-2 md:flex"
+          role="list"
+        >
+          {orderedSteps.map((step, i) => {
+            const isActive = step.key === activeStep
+            const isDone = step.index < activeIndex
+            const reachable = step.index <= maxReachedIndex
+            // Le connecteur AVANT ce nœud est violet si le nœud est atteint (fait/actif).
+            const connectorOn = isDone || isActive
+            return (
+              <li key={step.key} className="flex flex-none items-center">
+                {i > 0 && (
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'mx-1.5 h-px w-6 shrink-0 rounded-full lg:w-9',
+                      connectorOn ? 'bg-primary/40' : 'bg-border',
+                    )}
+                  />
                 )}
-              >
-                <span
-                  className={cn(
-                    'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors',
-                    isActive || isDone
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground',
-                  )}
-                  aria-hidden
-                >
-                  {isDone ? <Check className="size-3.5" /> : step.index + 1}
-                </span>
-                <span
-                  className={cn(
-                    'whitespace-nowrap text-xs leading-tight',
-                    isActive
-                      ? 'font-semibold text-foreground'
-                      : isDone
-                        ? 'font-medium text-foreground'
-                        : 'font-medium text-muted-foreground',
-                  )}
-                >
-                  {step.title}
-                </span>
-              </button>
-            </li>
-          )
-        })}
-      </ol>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        type="button"
+                        onClick={() => reachable && onSelectStep(step.key)}
+                        aria-disabled={!reachable}
+                        aria-current={isActive ? 'step' : undefined}
+                        aria-label={`Étape ${step.index + 1} : ${step.title}`}
+                        className={cn(
+                          'flex size-8 flex-none items-center justify-center rounded-full text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+                          isActive
+                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background'
+                            : isDone
+                              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                              : reachable
+                                ? 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-foreground'
+                                : 'cursor-not-allowed bg-muted text-muted-foreground/50',
+                        )}
+                      >
+                        {isDone ? <Check className="size-4" aria-hidden /> : step.index + 1}
+                      </button>
+                    }
+                  />
+                  <TooltipContent side="bottom">
+                    Étape {step.index + 1} — {step.title}
+                  </TooltipContent>
+                </Tooltip>
+              </li>
+            )
+          })}
+        </ol>
+      </TooltipProvider>
 
       {/* ── Mobile : compact ── */}
       <div className="flex items-center gap-3 rounded-2xl border border-border bg-card/70 p-3 md:hidden">

@@ -56,6 +56,12 @@ describe("DecisionTreeContentSchema — valid", () => {
     expect(() => parseTreeContent(tree)).not.toThrow();
   });
 
+  it("accepts a question with empty optionIds (draft en cours d'édition)", () => {
+    expect(() =>
+      QuestionNodeSchema.parse({ ...validQuestion, optionIds: [] }),
+    ).not.toThrow();
+  });
+
   it("accepts a result with bundleSlug = null (bientôt disponible)", () => {
     const r = ResultNodeSchema.safeParse({
       ...validResult,
@@ -107,12 +113,6 @@ describe("DecisionTreeContentSchema — invalid", () => {
   it("rejects missing nodes record", () => {
     expect(() =>
       parseTreeContent({ version: 1, rootNodeId: null }),
-    ).toThrow();
-  });
-
-  it("rejects a question with empty optionIds", () => {
-    expect(() =>
-      QuestionNodeSchema.parse({ ...validQuestion, optionIds: [] }),
     ).toThrow();
   });
 

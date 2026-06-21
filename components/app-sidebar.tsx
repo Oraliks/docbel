@@ -18,7 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, FileInputIcon, UsersIcon, CalendarClock, BriefcaseIcon, GraduationCapIcon, ImageIcon } from "lucide-react"
+import { FolderIcon, CommandIcon, NewspaperIcon, MailIcon, Wrench, MapPinIcon, FileInputIcon, UsersIcon, CalendarClock, BriefcaseIcon, GraduationCapIcon, ImageIcon, GitBranchIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultUser = {
@@ -112,6 +112,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         { title: t("presets"), url: "/admin/pdf/presets" },
         { title: t("acroformSources"), url: "/admin/pdf-sources" },
       ],
+    },
+    {
+      // Decision Builder : arbres d'orientation versionnés vers les dossiers.
+      // Libellé en dur (pas de clé i18n) — module récent.
+      title: "Decision Builder",
+      url: "/admin/decision-trees",
+      icon: <GitBranchIcon className="size-4" />,
     },
     {
       title: t("comptesAcces"),

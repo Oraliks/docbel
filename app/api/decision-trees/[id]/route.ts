@@ -63,6 +63,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (typeof body.segment === "string" && body.segment.trim()) {
     data.segment = body.segment.trim();
   }
+  // Statut éditable seulement vers draft/archived. La publication passe
+  // obligatoirement par /publish (snapshot + révision).
+  if (body.status === "draft" || body.status === "archived") {
+    data.status = body.status;
+  }
 
   // draftContent : validé strictement par Zod avant écriture.
   if (body.draftContent !== undefined) {

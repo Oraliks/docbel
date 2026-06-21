@@ -110,8 +110,10 @@ export const QuestionNodeSchema = z.object({
   icon: z.string().optional(),
   /// Description courte (sous-titre) — surtout pour les questions racines.
   description: z.string().optional(),
-  /// Liste des IDs d'options proposées (ordre préservé).
-  optionIds: z.array(z.string().min(1)).min(1),
+  /// Liste des IDs d'options proposées (ordre préservé). Peut être vide pendant
+  /// l'édition d'un brouillon (le validateur exige ≥1 option pour publier —
+  /// séparation forme « bien formé » / publiabilité).
+  optionIds: z.array(z.string().min(1)),
 });
 
 /// Nœud "option" : une réponse possible à une question. Pointe vers le nœud

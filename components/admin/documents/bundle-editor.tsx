@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -62,8 +63,8 @@ export interface BundleEditorItem {
 function itemSourceKey(it: BundleEditorItem): string {
   return it.pdfFormId ?? (it.id ?? "");
 }
-function itemDisplayName(it: BundleEditorItem): string {
-  return it.pdfForm?.title ?? "Document";
+function itemDisplayName(it: BundleEditorItem, fallback: string): string {
+  return it.pdfForm?.title ?? fallback;
 }
 function itemSourceBadge(it: BundleEditorItem): string {
   return it.pdfForm?.issuer ?? "PDF";
@@ -121,6 +122,7 @@ export function BundleEditor({
   templateSchemas,
 }: Props) {
   const router = useRouter();
+  const t = useTranslations("admin.documents");
   const isEdit = !!initial;
 
   const [saving, setSaving] = useState(false);
@@ -155,7 +157,7 @@ export function BundleEditor({
     const pdf = availablePdfForms.find((p) => p.id === id);
     if (!pdf) return;
     if (formItems.some((it) => it.pdfFormId === id)) {
-      toast.warning("PDF déjà dans le dossier");
+      toast.warning(t("pdfAlreadyInBundle"));
       return;
     }
     setFormItems((prev) => [
@@ -180,11 +182,11 @@ export function BundleEditor({
 
   async function handleSave() {
     if (!formName) {
-      toast.error("Nom requis");
+      toast.error(t("nameRequired"));
       return;
     }
     if (!isEdit && !formSlug) {
-      toast.error("Slug requis");
+      toast.error(t("slugRequired"));
       return;
     }
 
@@ -211,7 +213,7 @@ export function BundleEditor({
         });
         if (!res.ok) {
           const j = await res.json().catch(() => ({}));
-          throw new Error(j.error || "Échec de création");
+          throw new Error(j.error || t("createFailed"));
         }
         const created = await res.json();
         bundleId = created.id;
@@ -240,14 +242,14 @@ export function BundleEditor({
       });
       if (!res2.ok) {
         const j = await res2.json().catch(() => ({}));
-        throw new Error(j.error || "Échec d'enregistrement");
+        throw new Error(j.error || t("saveFailed"));
       }
 
-      toast.success(isEdit ? "Bundle mis à jour" : "Bundle créé");
+      toast.success(isEdit ? t("bundleUpdated") : t("bundleCreated"));
       router.push("/admin/pdf/dossiers");
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("error"));
     } finally {
       setSaving(false);
     }
@@ -259,7 +261,7 @@ export function BundleEditor({
       <div className="flex items-center gap-3 flex-wrap">
         <Button render={<Link href="/admin/pdf/dossiers" />} variant="ghost" size="sm">
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Retour
+          {t("back")}
         </Button>
         <div className="flex items-center gap-2 flex-1">
           <div
@@ -270,12 +272,12 @@ export function BundleEditor({
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold truncate">
-              {isEdit ? `Modifier « ${initial?.name || formName} »` : "Nouveau bundle"}
+              {isEdit ? t("editBundleTitle", { name: initial?.name || formName }) : t("newBundle")}
             </h1>
             <p className="text-xs text-muted-foreground">
               {isEdit
-                ? "Un bundle regroupe plusieurs documents liés en un parcours."
-                : "Créer un nouveau parcours regroupant plusieurs documents."}
+                ? t("editBundleSubtitle")
+                : t("newBundleSubtitle")}
             </p>
           </div>
         </div>
@@ -289,19 +291,19 @@ export function BundleEditor({
               size="sm"
             >
               <Eye className="w-4 h-4 mr-1" />
-              Aperçu citoyen
+              {t("citizenPreview")}
             </Button>
           )}
           <Button onClick={handleSave} disabled={saving || !formName}>
             {saving ? (
               <>
                 <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                Enregistrement…
+                {t("savingProgress")}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4 mr-1" />
-                {isEdit ? "Enregistrer" : "Créer"}
+                {isEdit ? t("saveAction") : t("create")}
               </>
             )}
           </Button>
@@ -311,12 +313,12 @@ export function BundleEditor({
       {/* Section : Identité */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Identité</CardTitle>
+          <CardTitle className="text-base">{t("identitySection")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Slug *</Label>
+              <Label className="text-xs">{t("slugLabel")}</Label>
               <Input
                 value={formSlug}
                 onChange={(e) =>
@@ -327,11 +329,11 @@ export function BundleEditor({
                 className="font-mono text-sm"
               />
               <p className="text-[11px] text-muted-foreground">
-                URL publique : <code>/d/{formSlug || "<slug>"}</code>
+                {t("publicUrlPrefix")} <code>/d/{formSlug || "<slug>"}</code>
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Couleur</Label>
+              <Label className="text-xs">{t("colorLabel")}</Label>
               <div className="flex gap-2">
                 <input
                   type="color"
@@ -349,21 +351,21 @@ export function BundleEditor({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Nom *</Label>
+            <Label className="text-xs">{t("nameLabel")}</Label>
             <Input
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
-              placeholder="Dossier complet de demande de chômage"
+              placeholder={t("bundleNamePlaceholder")}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Description</Label>
+            <Label className="text-xs">{t("descriptionLabel")}</Label>
             <Textarea
               value={formDescription}
               onChange={(e) => setFormDescription(e.target.value)}
               rows={2}
-              placeholder="Affichée sur la carte d'onboarding et en tête du parcours citoyen."
+              placeholder={t("bundleDescriptionPlaceholder")}
             />
           </div>
         </CardContent>
@@ -373,7 +375,7 @@ export function BundleEditor({
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Documents inclus
+            {t("includedDocuments")}
             <span className="ml-2 text-xs font-normal text-muted-foreground">
               ({formItems.length})
             </span>
@@ -382,7 +384,7 @@ export function BundleEditor({
         <CardContent className="space-y-3">
           <Select value="" onValueChange={(v) => v && addItem(v)}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="+ Ajouter un document" />
+              <SelectValue placeholder={t("addDocument")} />
             </SelectTrigger>
             <SelectContent>
               {availablePdfForms
@@ -398,7 +400,7 @@ export function BundleEditor({
 
           {formItems.length === 0 ? (
             <p className="text-xs text-muted-foreground italic">
-              Aucun document. Ajoutez-en au moins un pour activer ce bundle.
+              {t("noDocumentYet")}
             </p>
           ) : (
             <div className="space-y-2 border rounded-md p-2 bg-muted/20">
@@ -406,7 +408,7 @@ export function BundleEditor({
                 const key = itemSourceKey(it);
                 const availableSources = formItems
                   .filter((x) => itemSourceKey(x) !== key)
-                  .map((x) => ({ id: itemSourceKey(x), name: itemDisplayName(x) }));
+                  .map((x) => ({ id: itemSourceKey(x), name: itemDisplayName(x, t("documentFallback")) }));
                 return (
                   <div key={key} className="bg-background rounded border p-2 space-y-2">
                     <div className="flex items-center gap-2">
@@ -416,7 +418,7 @@ export function BundleEditor({
                           onClick={() => moveItem(idx, -1)}
                           disabled={idx === 0}
                           className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs leading-none"
-                          title="Monter"
+                          title={t("moveUp")}
                         >
                           ▲
                         </button>
@@ -425,17 +427,17 @@ export function BundleEditor({
                           onClick={() => moveItem(idx, 1)}
                           disabled={idx === formItems.length - 1}
                           className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs leading-none"
-                          title="Descendre"
+                          title={t("moveDown")}
                         >
                           ▼
                         </button>
                       </div>
                       <GripVertical className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm flex-1 truncate font-medium">
-                        {idx + 1}. {itemDisplayName(it)}
+                        {idx + 1}. {itemDisplayName(it, t("documentFallback"))}
                       </span>
                       <span className="text-[10px] uppercase rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
-                        PDF · {itemSourceBadge(it)}
+                        {t("pdfSourceBadge", { issuer: itemSourceBadge(it) })}
                       </span>
                       <label className="flex items-center gap-1 text-xs">
                         <Checkbox
@@ -450,7 +452,7 @@ export function BundleEditor({
                             )
                           }
                         />
-                        Obligatoire
+                        {t("required")}
                       </label>
                       <Button
                         type="button"
@@ -487,18 +489,18 @@ export function BundleEditor({
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Onboarding « Quelle est ma situation ? »
+            {t("onboardingSection")}
           </CardTitle>
           <p className="text-xs text-muted-foreground">
-            Configure comment ce bundle apparaît sur la page d&apos;accueil
+            {t("onboardingHintBefore")}
             <code className="mx-1">/creer-ma-demande</code>
-            et comment la recherche libre le trouve.
+            {t("onboardingHintAfter")}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Catégorie événement de vie</Label>
+              <Label className="text-xs">{t("lifeEventCategoryLabel")}</Label>
               <Select
                 value={formLifeEventCategory || "__none__"}
                 onValueChange={(v) =>
@@ -506,17 +508,17 @@ export function BundleEditor({
                 }
               >
                 <SelectTrigger className="w-full text-sm">
-                  <SelectValue placeholder="Aucune">
+                  <SelectValue placeholder={t("noneLabel")}>
                     {(value: string) => {
                       const cat = getLifeEventCategory(
                         value === "__none__" ? null : value
                       );
-                      return cat ? `${cat.emoji} ${cat.label}` : "— Aucune —";
+                      return cat ? `${cat.emoji} ${cat.label}` : t("noneDash");
                     }}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">— Aucune —</SelectItem>
+                  <SelectItem value="__none__">{t("noneDash")}</SelectItem>
                   {LIFE_EVENT_CATEGORIES.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.emoji} {cat.label}
@@ -526,13 +528,13 @@ export function BundleEditor({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Affichage</Label>
+              <Label className="text-xs">{t("displayLabel")}</Label>
               <label className="flex items-center gap-2 text-sm cursor-pointer h-9 px-3 border rounded-md bg-background">
                 <Checkbox
                   checked={formShowOnOnboarding}
                   onCheckedChange={(checked) => setFormShowOnOnboarding(checked === true)}
                 />
-                Afficher sur la page de création
+                {t("showOnCreationPage")}
               </label>
             </div>
           </div>
@@ -546,7 +548,7 @@ export function BundleEditor({
       {/* Section : Pré-qualification */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Pré-qualification</CardTitle>
+          <CardTitle className="text-base">{t("prequalSection")}</CardTitle>
         </CardHeader>
         <CardContent>
           <EligibilityQuestionsEditor
@@ -559,7 +561,7 @@ export function BundleEditor({
       {/* Section : Avertissements */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Avertissements</CardTitle>
+          <CardTitle className="text-base">{t("warningsSection")}</CardTitle>
         </CardHeader>
         <CardContent>
           <BundleWarningsEditor
@@ -575,18 +577,18 @@ export function BundleEditor({
           render={<Link href="/admin/pdf/dossiers" />}
           variant="outline"
         >
-          Annuler
+          {t("cancel")}
         </Button>
         <Button onClick={handleSave} disabled={saving || !formName}>
           {saving ? (
             <>
               <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-              Enregistrement…
+              {t("savingProgress")}
             </>
           ) : (
             <>
               <Save className="w-4 h-4 mr-1" />
-              {isEdit ? "Enregistrer" : "Créer le bundle"}
+              {isEdit ? t("saveAction") : t("createBundle")}
             </>
           )}
         </Button>

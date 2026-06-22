@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { PlusIcon, FileInputIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,13 +25,14 @@ interface FormRow {
   updatedAt: string;
 }
 
-const STATUS_BADGE: Record<FormRow["status"], { label: string; variant: "default" | "secondary" | "outline" }> = {
-  published: { label: "Publié", variant: "default" },
-  draft: { label: "Brouillon", variant: "secondary" },
-  archived: { label: "Archivé", variant: "outline" },
+const STATUS_VARIANT: Record<FormRow["status"], "default" | "secondary" | "outline"> = {
+  published: "default",
+  draft: "secondary",
+  archived: "outline",
 };
 
 export function PdfFormsList() {
+  const t = useTranslations("admin.pdf");
   const router = useRouter();
   const [forms, setForms] = useState<FormRow[] | null>(null);
 
@@ -47,7 +49,7 @@ export function PdfFormsList() {
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
         <Button onClick={() => router.push("/admin/pdf/new")}>
-          <PlusIcon className="size-4" /> Nouveau formulaire
+          <PlusIcon className="size-4" /> {t("newForm")}
         </Button>
       </div>
 
@@ -61,8 +63,8 @@ export function PdfFormsList() {
         <Empty className="rounded-lg border py-12">
           <EmptyHeader>
             <EmptyMedia variant="icon"><FileInputIcon className="size-6" /></EmptyMedia>
-            <EmptyTitle>Aucun formulaire</EmptyTitle>
-            <EmptyDescription>Importez un PDF officiel à champs pour créer votre premier formulaire.</EmptyDescription>
+            <EmptyTitle>{t("emptyFormsTitle")}</EmptyTitle>
+            <EmptyDescription>{t("emptyFormsDesc")}</EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
@@ -70,16 +72,15 @@ export function PdfFormsList() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Titre</TableHead>
-                <TableHead className="hidden sm:table-cell">Organisme</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead className="hidden sm:table-cell">Langues</TableHead>
-                <TableHead className="text-right">Version</TableHead>
+                <TableHead>{t("colTitle")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("colIssuer")}</TableHead>
+                <TableHead>{t("colStatus")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("colLocales")}</TableHead>
+                <TableHead className="text-right">{t("colVersion")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {forms.map((f) => {
-                const badge = STATUS_BADGE[f.status];
                 return (
                   <TableRow
                     key={f.id}
@@ -88,7 +89,7 @@ export function PdfFormsList() {
                   >
                     <TableCell className="font-medium">{f.title}</TableCell>
                     <TableCell className="hidden text-muted-foreground sm:table-cell">{f.issuer || "—"}</TableCell>
-                    <TableCell><Badge variant={badge.variant}>{badge.label}</Badge></TableCell>
+                    <TableCell><Badge variant={STATUS_VARIANT[f.status]}>{t("status", { status: f.status })}</Badge></TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <span className="text-xs uppercase text-muted-foreground">{f.locales.join(" · ")}</span>
                     </TableCell>

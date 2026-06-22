@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,6 +26,7 @@ interface ForwardDialogProps {
 }
 
 export function ForwardDialog({ open, onOpenChange, email, signature = "" }: ForwardDialogProps) {
+  const t = useTranslations("admin.messagerie");
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [html, setHtml] = useState("");
@@ -50,15 +52,15 @@ export function ForwardDialog({ open, onOpenChange, email, signature = "" }: For
         body: JSON.stringify({ to: to.trim(), subject: subject.trim(), text, html }),
       });
       if (response.ok) {
-        toast.success("Email transféré", { description: `À ${to.trim()}` });
+        toast.success(t("emailForwarded"), { description: t("toRecipient", { recipient: to.trim() }) });
         onOpenChange(false);
       } else {
         const err = await response.json().catch(() => ({}));
-        toast.error(err.error || "Échec du transfert");
+        toast.error(err.error || t("forwardFailed"));
       }
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setSending(false);
     }
@@ -68,32 +70,32 @@ export function ForwardDialog({ open, onOpenChange, email, signature = "" }: For
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Transférer</DialogTitle>
-          <DialogDescription>Depuis contact@docbel.be</DialogDescription>
+          <DialogTitle>{t("forward")}</DialogTitle>
+          <DialogDescription>{t("fromAccount")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">À</label>
+            <label className="mb-1 block text-xs text-muted-foreground">{t("toLabel")}</label>
             <Input
               type="email"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              placeholder="destinataire@exemple.be"
+              placeholder={t("recipientPlaceholder")}
               autoFocus
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Sujet</label>
+            <label className="mb-1 block text-xs text-muted-foreground">{t("subjectLabel")}</label>
             <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Message</label>
+            <label className="mb-1 block text-xs text-muted-foreground">{t("messageLabel")}</label>
             <EmailEditor value={html} onChange={setHtml} />
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button
             onClick={handleSend}
@@ -101,7 +103,7 @@ export function ForwardDialog({ open, onOpenChange, email, signature = "" }: For
             className="gap-1.5"
           >
             <Send className="size-3.5" />
-            {sending ? "Envoi..." : "Transférer"}
+            {sending ? t("sending") : t("forward")}
           </Button>
         </DialogFooter>
       </DialogContent>

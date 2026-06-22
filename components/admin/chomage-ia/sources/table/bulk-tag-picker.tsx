@@ -18,6 +18,7 @@
 
 import { useMemo, useState } from "react";
 import { Plus, X, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -41,6 +42,7 @@ export function BulkTagPicker({
   submitting,
   onApply,
 }: BulkTagPickerProps) {
+  const t = useTranslations("admin.chomageIa");
   const [mode, setMode] = useState<"add" | "remove">(defaultMode);
   const [input, setInput] = useState("");
   const [chips, setChips] = useState<string[]>([]);
@@ -105,7 +107,7 @@ export function BulkTagPicker({
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Ajouter
+          {t("tagAdd")}
         </button>
         <button
           type="button"
@@ -118,22 +120,22 @@ export function BulkTagPicker({
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Retirer
+          {t("tagRemove")}
         </button>
       </div>
 
       {/* Chips + input */}
       <div className="flex min-h-[36px] flex-wrap items-center gap-1 rounded-md border border-input bg-background px-1.5 py-1">
-        {chips.map((t) => (
+        {chips.map((tag) => (
           <span
-            key={t}
+            key={tag}
             className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-primary"
           >
-            {t}
+            {tag}
             <button
               type="button"
-              aria-label={`Retirer ${t}`}
-              onClick={() => removeChip(t)}
+              aria-label={t("removeTag", { tag })}
+              onClick={() => removeChip(tag)}
               className="rounded-sm transition-colors hover:bg-primary/20"
             >
               <X className="size-2.5" />
@@ -145,7 +147,7 @@ export function BulkTagPicker({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKey}
           onBlur={() => commitChip(input)}
-          placeholder={chips.length === 0 ? "tag, autre-tag…" : ""}
+          placeholder={chips.length === 0 ? t("tagInputPlaceholder") : ""}
           className="h-6 flex-1 min-w-[80px] border-0 px-1 text-[12px] shadow-none focus-visible:ring-0"
         />
       </div>
@@ -153,15 +155,15 @@ export function BulkTagPicker({
       {/* Suggestions */}
       {suggestions.length > 0 ? (
         <div className="flex flex-wrap gap-1">
-          {suggestions.map((t) => (
+          {suggestions.map((tag) => (
             <button
-              key={t}
+              key={tag}
               type="button"
-              onClick={() => commitChip(t)}
+              onClick={() => commitChip(tag)}
               className="inline-flex items-center gap-0.5 rounded-full border border-border bg-muted/30 px-1.5 py-0.5 text-[10.5px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <Plus className="size-2.5 opacity-70" />
-              {t}
+              {tag}
             </button>
           ))}
         </div>
@@ -170,8 +172,9 @@ export function BulkTagPicker({
       {/* Footer */}
       <div className="flex items-center justify-between pt-1">
         <span className="text-[10.5px] text-muted-foreground">
-          {mode === "add" ? "Ajouter à" : "Retirer de"} {count} source
-          {count > 1 ? "s" : ""}
+          {mode === "add"
+            ? t("tagApplyAddTo", { count })
+            : t("tagApplyRemoveFrom", { count })}
         </span>
         <Button
           size="sm"
@@ -181,7 +184,7 @@ export function BulkTagPicker({
           {submitting ? (
             <Loader2 className="size-3 animate-spin" />
           ) : null}
-          Appliquer
+          {t("apply")}
         </Button>
       </div>
     </div>

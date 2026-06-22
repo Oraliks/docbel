@@ -20,6 +20,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   CheckCircle2,
   ExternalLink,
@@ -40,7 +41,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import type { KnowledgeSourceListItem } from "@/lib/chomage-ia/types";
-import { getKindIcon, getKindLabel, getKindColor, fmtRelative } from "../../_shared";
+import { getKindIcon, getKindColor, fmtRelative } from "../../_shared";
 import { ConfirmDeleteDialog } from "../../_shared-alerts";
 import { getValidityMeta } from "./_shared-table";
 
@@ -79,6 +80,7 @@ export function SourceDetailDrawer({
   onSaved,
   onDeleted,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [reindexing, setReindexing] = useState(false);
@@ -118,7 +120,7 @@ export function SourceDetailDrawer({
         setState(next);
         setInitial(next);
       } catch (e) {
-        toast.error("Impossible de charger la source", {
+        toast.error(t("sourceLoadError"), {
           description: e instanceof Error ? e.message : String(e),
         });
       } finally {
@@ -128,7 +130,7 @@ export function SourceDetailDrawer({
     return () => {
       cancelled = true;
     };
-  }, [open, sourceId]);
+  }, [open, sourceId, t]);
 
   const dirty = useMemo(() => {
     if (!state || !initial) return false;
@@ -171,11 +173,11 @@ export function SourceDetailDrawer({
   async function handleSave() {
     if (!state) return;
     if (state.title.trim().length < 2) {
-      toast.error("Titre trop court (2 caractères minimum)");
+      toast.error(t("titleTooShort"));
       return;
     }
     if (state.content.trim().length < 10) {
-      toast.error("Contenu trop court (10 caractères minimum)");
+      toast.error(t("contentTooShort"));
       return;
     }
     setSaving(true);
@@ -194,11 +196,11 @@ export function SourceDetailDrawer({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      toast.success("Source mise à jour");
+      toast.success(t("sourceUpdated"));
       setInitial(state);
       onSaved();
     } catch (e) {
-      toast.error("Échec de l'enregistrement", {
+      toast.error(t("saveError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -217,15 +219,13 @@ export function SourceDetailDrawer({
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       if (data.indexError) {
-        toast.warning("Indexation partielle", { description: data.indexError });
+        toast.warning(t("indexPartial"), { description: data.indexError });
       } else {
-        toast.success(
-          `Indexation OK · ${data.reindexedCount ?? 0} chunk(s) (re)embeddés`
-        );
+        toast.success(t("indexOkChunks", { count: data.reindexedCount ?? 0 }));
       }
       onSaved();
     } catch (e) {
-      toast.error("Échec indexation", {
+      toast.error(t("indexFailed"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -240,11 +240,11 @@ export function SourceDetailDrawer({
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.success("Source supprimée");
+      toast.success(t("sourceDeleted"));
       onDeleted();
       onOpenChange(false);
     } catch (e) {
-      toast.error("Échec de la suppression", {
+      toast.error(t("deleteError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -285,10 +285,10 @@ export function SourceDetailDrawer({
       };
       setState(next);
       setInitial(next);
-      toast.success("Source marquée comme à jour");
+      toast.success(t("sourceMarkedUpToDate"));
       onSaved();
     } catch (e) {
-      toast.error("Échec de la revalidation", {
+      toast.error(t("revalidationError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -308,14 +308,14 @@ export function SourceDetailDrawer({
                 <KindBadge kind={display.kind} />
               ) : null}
               <span className="truncate">
-                {display?.title || "Détail de la source"}
+                {display?.title || t("sourceDetail")}
               </span>
             </SheetTitle>
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={() => onOpenChange(false)}
-              aria-label="Fermer"
+              aria-label={t("close")}
               className="shrink-0"
             >
               <X className="size-4" />
@@ -334,12 +334,12 @@ export function SourceDetailDrawer({
                 <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
                   <div className="flex flex-col">
                     <span className="text-[12px] font-semibold">
-                      {state.enabled ? "Active" : "Désactivée"}
+                      {state.enabled ? t("active") : t("disabled")}
                     </span>
                     <span className="text-[10.5px] text-muted-foreground">
                       {state.enabled
-                        ? "Cette source est envoyée à l'IA."
-                        : "Ignorée par l'IA tant que désactivée."}
+                        ? t("sourceSentToAi")
+                        : t("sourceIgnoredByAi")}
                     </span>
                   </div>
                   <Switch
@@ -355,12 +355,12 @@ export function SourceDetailDrawer({
                       className={`text-[12px] font-semibold ${getValidityMeta(state.validityStatus).className}`}
                     >
                       {getValidityMeta(state.validityStatus).emoji}{" "}
-                      {getValidityMeta(state.validityStatus).label}
+                      {t("validityLabel", { status: state.validityStatus })}
                     </span>
                     <span className="text-[10.5px] text-muted-foreground">
                       {state.lastValidatedAt
-                        ? `Revalidée ${fmtRelative(state.lastValidatedAt)}`
-                        : "Jamais revalidée manuellement"}
+                        ? t("revalidatedAt", { when: fmtRelative(state.lastValidatedAt) })
+                        : t("neverRevalidated")}
                     </span>
                   </div>
                   <Button
@@ -370,14 +370,14 @@ export function SourceDetailDrawer({
                     className="shrink-0"
                   >
                     <CheckCircle2 className="size-3.5" />
-                    Toujours en vigueur
+                    {t("stillValid")}
                   </Button>
                 </div>
 
                 {/* Titre */}
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="drawer-title" className="text-[11px]">
-                    Titre
+                    {t("titleField")}
                   </Label>
                   <Input
                     id="drawer-title"
@@ -389,11 +389,11 @@ export function SourceDetailDrawer({
 
                 {/* Kind (read-only) */}
                 <div className="flex flex-col gap-1">
-                  <Label className="text-[11px]">Type</Label>
+                  <Label className="text-[11px]">{t("typeField")}</Label>
                   <div className="flex h-8 items-center rounded-md border border-border bg-muted/30 px-2.5 text-[12px] text-muted-foreground">
-                    {getKindLabel(state.kind)}{" "}
+                    {t("kind", { kind: state.kind })}{" "}
                     <span className="ml-1 text-[10.5px] opacity-70">
-                      (re-uploader pour changer)
+                      {t("reuploadToChange")}
                     </span>
                   </div>
                 </div>
@@ -401,7 +401,7 @@ export function SourceDetailDrawer({
                 {/* URL source */}
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="drawer-url" className="text-[11px]">
-                    URL source
+                    {t("sourceUrlField")}
                   </Label>
                   <div className="relative">
                     <Input
@@ -418,7 +418,7 @@ export function SourceDetailDrawer({
                         target="_blank"
                         rel="noopener noreferrer"
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
-                        title="Ouvrir"
+                        title={t("open")}
                       >
                         <ExternalLink className="size-3.5" />
                       </a>
@@ -429,19 +429,19 @@ export function SourceDetailDrawer({
                 {/* Tags */}
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="drawer-tags" className="text-[11px]">
-                    Tags
+                    {t("tagsField")}
                   </Label>
                   <div className="flex min-h-[34px] flex-wrap items-center gap-1 rounded-md border border-input bg-background px-1.5 py-1">
-                    {state.tags.map((t) => (
+                    {state.tags.map((tag) => (
                       <span
-                        key={t}
+                        key={tag}
                         className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10.5px] font-medium text-muted-foreground"
                       >
-                        {t}
+                        {tag}
                         <button
                           type="button"
-                          aria-label={`Retirer ${t}`}
-                          onClick={() => removeTag(t)}
+                          aria-label={t("removeTag", { tag })}
+                          onClick={() => removeTag(tag)}
                           className="rounded-sm hover:bg-foreground/10"
                         >
                           <X className="size-2.5" />
@@ -469,7 +469,7 @@ export function SourceDetailDrawer({
                       onBlur={() => commitTag(tagInput)}
                       placeholder={
                         state.tags.length === 0
-                          ? "ONEM, admissibilité, …"
+                          ? t("tagsInlinePlaceholder")
                           : ""
                       }
                       className="h-6 flex-1 min-w-[80px] border-0 px-1 text-[12px] shadow-none focus-visible:ring-0"
@@ -480,7 +480,7 @@ export function SourceDetailDrawer({
                 {/* Summary */}
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="drawer-summary" className="text-[11px]">
-                    Résumé court (optionnel)
+                    {t("summaryOptionalLabel")}
                   </Label>
                   <Textarea
                     id="drawer-summary"
@@ -494,7 +494,7 @@ export function SourceDetailDrawer({
                 {/* Content full */}
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="drawer-content" className="text-[11px]">
-                    Contenu (envoyé à l&apos;IA)
+                    {t("contentSentToAi")}
                   </Label>
                   <Textarea
                     id="drawer-content"
@@ -504,15 +504,17 @@ export function SourceDetailDrawer({
                     className="font-mono text-[11.5px] max-h-[420px]"
                   />
                   <p className="text-[10.5px] text-muted-foreground">
-                    {state.content.length} caractères (~
-                    {Math.ceil(state.content.length / 4)} tokens)
+                    {t("charsAndTokens", {
+                      chars: state.content.length,
+                      tokens: Math.ceil(state.content.length / 4),
+                    })}
                   </p>
                 </div>
 
                 {/* Index status hint */}
                 {state.indexError ? (
                   <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] leading-relaxed text-amber-800 dark:text-amber-200">
-                    Indexation : {state.indexError}
+                    {t("indexationLabel", { error: state.indexError })}
                   </div>
                 ) : null}
               </div>
@@ -530,7 +532,7 @@ export function SourceDetailDrawer({
                 className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
                 <Trash2 className="size-3.5" />
-                Supprimer
+                {t("delete")}
               </Button>
               <div className="flex items-center gap-1.5">
                 <Button
@@ -544,7 +546,7 @@ export function SourceDetailDrawer({
                   ) : (
                     <RefreshCcw className="size-3.5" />
                   )}
-                  Réindexer
+                  {t("reindex")}
                 </Button>
                 <Button
                   size="sm"
@@ -552,7 +554,7 @@ export function SourceDetailDrawer({
                   onClick={handleSave}
                 >
                   {saving ? <Loader2 className="size-3.5 animate-spin" /> : null}
-                  Enregistrer
+                  {t("save")}
                 </Button>
               </div>
             </div>
@@ -561,15 +563,17 @@ export function SourceDetailDrawer({
       </Sheet>
 
       <ConfirmDeleteDialog
-        requireText="supprimer"
+        requireText={t("deleteKeyword")}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Supprimer cette source ?"
+        title={t("deleteSourceTitle")}
         description={
           state
-            ? `« ${state.title.slice(0, 80)}${
-                state.title.length > 80 ? "…" : ""
-              } » sera supprimée définitivement.`
+            ? t("deleteSourceNamedDescription", {
+                title: `${state.title.slice(0, 80)}${
+                  state.title.length > 80 ? "…" : ""
+                }`,
+              })
             : ""
         }
         onConfirm={async () => {
@@ -581,13 +585,14 @@ export function SourceDetailDrawer({
 }
 
 function KindBadge({ kind }: { kind: string }) {
+  const t = useTranslations("admin.chomageIa");
   const Icon = getKindIcon(kind);
   const color = getKindColor(kind);
   return (
     <span
       className="inline-flex size-5 shrink-0 items-center justify-center rounded-md"
       style={{ background: `${color}1A`, color }}
-      title={getKindLabel(kind)}
+      title={t("kind", { kind })}
     >
       <Icon className="size-3" />
     </span>

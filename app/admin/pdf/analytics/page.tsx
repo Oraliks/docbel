@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { prisma } from "@/lib/prisma";
 import {
@@ -31,6 +32,7 @@ export default async function PdfAnalyticsPage() {
   const auth = await requireAdminAuth();
   if (!auth.isAuthorized) redirect("/login");
 
+  const t = await getTranslations("admin.pdf");
   const now = new Date();
   const windowStart = new Date(now);
   windowStart.setDate(windowStart.getDate() - (WINDOW_DAYS - 1));
@@ -116,11 +118,8 @@ export default async function PdfAnalyticsPage() {
   return (
     <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-        <p className="text-muted-foreground mt-2">
-          Usage des formulaires PDF — soumissions, taux de succès, brouillons
-          RGPD et signalements de validation. Aucune donnée nominative.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("analyticsTitle")}</h1>
+        <p className="text-muted-foreground mt-2">{t("analyticsIntro")}</p>
       </div>
       <PdfAnalyticsDashboard data={viewModel} />
     </div>

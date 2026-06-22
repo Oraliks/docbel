@@ -14,6 +14,7 @@ import {
   RefreshCw,
   XCircle,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { fmtRelative } from "../_shared";
 import type { IngestedDocumentListItem } from "@/lib/chomage-ia/types";
@@ -36,11 +37,12 @@ export function IngestionQueueList({
   onRefresh,
   onAct,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   return (
     <>
       <header className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-[14px] font-semibold">
-          À valider
+          {t("toValidate")}
           <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[11px] tabular-nums">
             {items.length}
           </span>
@@ -52,7 +54,7 @@ export function IngestionQueueList({
           disabled={loading}
         >
           <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
-          Rafraîchir
+          {t("refresh")}
         </Button>
       </header>
       <div className="mt-2 flex flex-col gap-2">
@@ -62,7 +64,7 @@ export function IngestionQueueList({
           </div>
         ) : items.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-[12.5px] text-muted-foreground">
-            File d&apos;attente vide. Lance un check pour scanner les sources.
+            {t("queueEmpty")}
           </div>
         ) : (
           items.map((doc) => (
@@ -81,10 +83,10 @@ export function IngestionQueueList({
                   <ExternalLink className="ml-1 inline size-3" />
                 </a>
                 <div className="mt-0.5 flex flex-wrap gap-2 text-[10.5px] text-muted-foreground">
-                  <span>Source : {doc.ingestionSourceName}</span>
-                  <span>Détecté {fmtRelative(doc.fetchedAt)}</span>
+                  <span>{t("queueSource", { name: doc.ingestionSourceName })}</span>
+                  <span>{t("queueDetected", { when: fmtRelative(doc.fetchedAt) })}</span>
                   {doc.publishedAt ? (
-                    <span>Publié {fmtRelative(doc.publishedAt)}</span>
+                    <span>{t("queuePublished", { when: fmtRelative(doc.publishedAt) })}</span>
                   ) : null}
                 </div>
               </div>
@@ -96,7 +98,7 @@ export function IngestionQueueList({
                   onClick={() => onAct(doc, "validate")}
                 >
                   <CheckCircle2 className="size-3.5" />
-                  Valider
+                  {t("validate")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -105,7 +107,7 @@ export function IngestionQueueList({
                   onClick={() => onAct(doc, "reject")}
                 >
                   <XCircle className="size-3.5" />
-                  Rejeter
+                  {t("reject")}
                 </Button>
               </div>
             </article>

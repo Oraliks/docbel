@@ -19,6 +19,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { MessageSquarePlus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -28,6 +29,7 @@ import { MiniThread, type MiniMessage } from "./mini-thread";
 import { MiniInputBar } from "./mini-input-bar";
 
 export function FloatingChatFab() {
+  const t = useTranslations("admin.chomageIa");
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<MiniMessage[]>([]);
   const [sending, setSending] = useState(false);
@@ -75,7 +77,7 @@ export function FloatingChatFab() {
     const userMsg: MiniMessage = {
       role: "user",
       content: pageContext
-        ? `${text}\n\n*📎 Page jointe : ${pageContext.url}*`
+        ? `${text}\n\n${t("pageAttachedSuffix", { url: pageContext.url })}`
         : text,
       createdAt: Date.now(),
     };
@@ -161,7 +163,7 @@ export function FloatingChatFab() {
             ...m,
             pending: false,
             streaming: false,
-            content: data?.message?.content ?? "Réponse indisponible.",
+            content: data?.message?.content ?? t("answerUnavailable"),
           }));
         }
       }
@@ -171,14 +173,14 @@ export function FloatingChatFab() {
           ...m,
           pending: false,
           streaming: false,
-          content: m.content + "\n\n— *Interrompu.*",
+          content: m.content + `\n\n${t("interruptedShort")}`,
         }));
       } else {
         patchLast((m) => ({
           ...m,
           pending: false,
           streaming: false,
-          content: `⚠️ ${err instanceof Error ? err.message : "Erreur inconnue"}`,
+          content: `⚠️ ${err instanceof Error ? err.message : t("unknownError")}`,
         }));
       }
     } finally {
@@ -198,8 +200,8 @@ export function FloatingChatFab() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Ouvrir l'assistant IA chômage"
-        title="Assistant IA chômage (Alt+I)"
+        aria-label={t("openAssistant")}
+        title={t("assistantTitleShortcut")}
         className={cn(
           "fixed bottom-4 right-4 z-40 inline-flex size-12 items-center justify-center rounded-full",
           "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg",
@@ -224,12 +226,14 @@ export function FloatingChatFab() {
             </span>
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-[12.5px] font-bold leading-tight">
-                Assistant IA chômage
+                {t("assistantTitle")}
               </span>
               <span className="truncate text-[10.5px] text-muted-foreground leading-tight">
                 {messages.length === 0
-                  ? "Mini-chat · KB chômage + mémoire"
-                  : `${messages.filter((m) => m.role === "user").length} question${messages.filter((m) => m.role === "user").length > 1 ? "s" : ""}`}
+                  ? t("miniChatSubtitle")
+                  : t("questionCount", {
+                      count: messages.filter((m) => m.role === "user").length,
+                    })}
               </span>
             </div>
             <Button
@@ -237,8 +241,8 @@ export function FloatingChatFab() {
               variant="ghost"
               size="icon-sm"
               onClick={() => setOpen(false)}
-              aria-label="Fermer"
-              title="Fermer (Esc)"
+              aria-label={t("close")}
+              title={t("closeEsc")}
             >
               <X className="size-3.5" />
             </Button>
@@ -249,11 +253,10 @@ export function FloatingChatFab() {
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center text-muted-foreground">
               <MessageSquarePlus className="size-8 opacity-40" />
               <p className="text-[12.5px] font-medium">
-                Pose une question sur le chômage belge
+                {t("miniEmptyTitle")}
               </p>
               <p className="text-[10.5px]">
-                Réponses sourcées depuis la KB. Le fil est réinitialisé à la
-                fermeture (mini-chat jetable).
+                {t("miniEmptyDesc")}
               </p>
             </div>
           ) : (

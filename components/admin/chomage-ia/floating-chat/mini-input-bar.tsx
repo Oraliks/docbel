@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Loader2, Paperclip, SendHorizontal, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ export function MiniInputBar({
   onStop,
   maxChars = DEFAULT_MAX,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [value, setValue] = useState("");
   const [attachPage, setAttachPage] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -78,11 +80,11 @@ export function MiniInputBar({
           disabled={disabled || sending}
           onClick={() => setAttachPage((v) => !v)}
           aria-pressed={attachPage}
-          aria-label="Joindre la page courante"
+          aria-label={t("attachPage")}
           title={
             attachPage
-              ? "Page courante JOINTE au prochain message (cliquer pour annuler)"
-              : "Joindre l'URL + un extrait de la page courante au prochain message"
+              ? t("attachPageOnTitle")
+              : t("attachPageOffTitle")
           }
           className="mb-0.5"
         >
@@ -95,8 +97,8 @@ export function MiniInputBar({
           onKeyDown={onKeyDown}
           disabled={disabled || sending}
           rows={1}
-          placeholder="Question rapide…"
-          aria-label="Question rapide"
+          placeholder={t("quickQuestion")}
+          aria-label={t("quickQuestion")}
           className={cn(
             "min-h-[28px] max-h-[150px] flex-1 resize-none bg-transparent text-[12.5px] leading-relaxed",
             "focus:outline-none placeholder:text-muted-foreground",
@@ -109,8 +111,8 @@ export function MiniInputBar({
             variant="destructive"
             size="icon-sm"
             onClick={onStop}
-            aria-label="Arrêter"
-            title="Arrêter la génération"
+            aria-label={t("stopShort")}
+            title={t("stopGeneration")}
           >
             <Square className="size-3 fill-current" />
           </Button>
@@ -120,8 +122,8 @@ export function MiniInputBar({
             size="icon-sm"
             onClick={submit}
             disabled={disabled || isEmpty}
-            aria-label="Envoyer"
-            title="Envoyer (Entrée)"
+            aria-label={t("send")}
+            title={t("sendEnter")}
           >
             {sending ? (
               <Loader2 className="size-3 animate-spin" />
@@ -133,10 +135,10 @@ export function MiniInputBar({
       </div>
       <div className="flex items-center justify-between px-1 text-[10px] text-muted-foreground">
         <span>
-          Entrée envoie
+          {t("enterSends")}
           {attachPage ? (
             <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-px text-primary">
-              <Paperclip className="size-2.5" /> page jointe
+              <Paperclip className="size-2.5" /> {t("pageAttached")}
             </span>
           ) : null}
         </span>

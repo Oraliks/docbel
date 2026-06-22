@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Search, Smile, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,7 @@ export function IconPicker({
   emojiAllowed = true,
   trigger,
 }: IconPickerProps) {
+  const t = useTranslations("admin.documents");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [emojiInput, setEmojiInput] = useState("");
@@ -93,8 +95,8 @@ export function IconPicker({
         {value
           ? isLucide
             ? value
-            : `Emoji : ${value}`
-          : "Choisir une icône…"}
+            : t("emojiValue", { value })
+          : t("chooseIcon")}
       </span>
       {value && (
         <span
@@ -113,7 +115,7 @@ export function IconPicker({
             }
           }}
           className="ml-auto p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
-          aria-label="Retirer l'icône"
+          aria-label={t("removeIcon")}
         >
           <X className="w-3.5 h-3.5" />
         </span>
@@ -126,9 +128,9 @@ export function IconPicker({
       <DialogTrigger render={trigger ?? defaultTrigger} />
       <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Choisir une icône</DialogTitle>
+          <DialogTitle>{t("iconDialogTitle")}</DialogTitle>
           <DialogDescription>
-            Cherchez parmi les icônes disponibles ou collez un emoji personnalisé.
+            {t("iconDialogDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -138,7 +140,7 @@ export function IconPicker({
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Chercher : document, euro, calendrier…"
+              placeholder={t("iconSearchPlaceholder")}
               className="pl-8"
               autoFocus
             />
@@ -147,7 +149,7 @@ export function IconPicker({
           <div className="flex-1 overflow-y-auto rounded border bg-muted/20 p-2">
             {filtered.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-12">
-                Aucune icône ne correspond à « {query} ».
+                {t("noIconMatch", { query })}
               </p>
             ) : (
               <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
@@ -176,13 +178,13 @@ export function IconPicker({
               </div>
             )}
             <p className="text-xs text-muted-foreground text-center mt-3">
-              {filtered.length} / {ICON_CATALOG.length} icônes
+              {t("iconCount", { shown: filtered.length, total: ICON_CATALOG.length })}
             </p>
           </div>
 
           {emojiAllowed && (
             <div className="border-t pt-3 space-y-2">
-              <p className="text-xs font-medium">Ou utiliser un emoji personnalisé :</p>
+              <p className="text-xs font-medium">{t("orUseCustomEmoji")}</p>
               <div className="flex gap-2">
                 <Input
                   value={emojiInput}
@@ -192,7 +194,7 @@ export function IconPicker({
                   className="h-9"
                 />
                 <Button type="button" onClick={applyEmoji} disabled={!emojiInput.trim()}>
-                  Utiliser
+                  {t("use")}
                 </Button>
               </div>
             </div>
@@ -202,11 +204,11 @@ export function IconPicker({
         <DialogFooter>
           {value && (
             <Button type="button" variant="ghost" onClick={clear} className="text-destructive">
-              Retirer l&apos;icône
+              {t("removeIcon")}
             </Button>
           )}
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-            Fermer
+            {t("close")}
           </Button>
         </DialogFooter>
       </DialogContent>

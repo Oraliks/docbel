@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +43,7 @@ export function FormSettings({
   form: SettingsForm;
   onChange: (p: Partial<SettingsForm>) => void;
 }) {
+  const t = useTranslations("admin.pdf");
   const [organismes, setOrganismes] = useState<OrganismeOption[]>([]);
 
   // Charge la liste des organismes pour le sélecteur. Fail-soft : si l'API
@@ -71,12 +73,12 @@ export function FormSettings({
     <Card>
       <CardContent className="grid gap-4 py-5 sm:grid-cols-2">
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Titre</Label>
+          <Label className="text-xs text-muted-foreground">{t("titleLabel")}</Label>
           <Input value={form.title} onChange={(e) => onChange({ title: e.target.value })} />
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Organisme émetteur</Label>
+          <Label className="text-xs text-muted-foreground">{t("issuerLabel")}</Label>
           {organismes.length > 0 ? (
             <Select
               value={form.organismeId ?? "__none__"}
@@ -91,10 +93,10 @@ export function FormSettings({
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="— Aucun —" />
+                <SelectValue placeholder={t("noneDashed")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">— Aucun —</SelectItem>
+                <SelectItem value="__none__">{t("noneDashed")}</SelectItem>
                 {organismes.map((o) => (
                   <SelectItem key={o.id} value={o.id}>
                     {o.shortName ? `${o.shortName} — ${o.name}` : o.name}
@@ -105,19 +107,19 @@ export function FormSettings({
           ) : (
             <Input
               value={form.issuer ?? ""}
-              placeholder="ONEM, CPAS… (référentiel non disponible)"
+              placeholder={t("issuerFreePlaceholder")}
               onChange={(e) => onChange({ issuer: e.target.value || null })}
             />
           )}
         </div>
 
         <div className="flex flex-col gap-1 sm:col-span-2">
-          <Label className="text-xs text-muted-foreground">Description</Label>
+          <Label className="text-xs text-muted-foreground">{t("descriptionLabel")}</Label>
           <Textarea rows={2} value={form.description ?? ""} onChange={(e) => onChange({ description: e.target.value || null })} />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs text-muted-foreground">Langues disponibles</Label>
+          <Label className="text-xs text-muted-foreground">{t("availableLocales")}</Label>
           <div className="flex gap-3">
             {(["fr", "nl", "de"] as Locale[]).map((l) => (
               <label key={l} className="flex items-center gap-1.5 text-sm">
@@ -129,17 +131,17 @@ export function FormSettings({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label className="text-xs text-muted-foreground">Modes de réception</Label>
+          <Label className="text-xs text-muted-foreground">{t("deliveryModes")}</Label>
           <label className="flex items-center justify-between gap-2 text-sm">
-            Téléchargement direct
+            {t("deliveryDownload")}
             <Switch checked={form.allowDownload} onCheckedChange={(c) => onChange({ allowDownload: c })} />
           </label>
           <label className="flex items-center justify-between gap-2 text-sm">
-            Envoi via Doccle
+            {t("deliveryDoccle")}
             <Switch checked={form.allowDoccle} onCheckedChange={(c) => onChange({ allowDoccle: c })} />
           </label>
           <label className="flex items-center justify-between gap-2 text-sm">
-            Pré-remplissage itsme
+            {t("prefillItsme")}
             <Switch checked={form.allowItsme} onCheckedChange={(c) => onChange({ allowItsme: c })} />
           </label>
         </div>

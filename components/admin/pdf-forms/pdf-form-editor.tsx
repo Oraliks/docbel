@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   SaveIcon, UploadCloudIcon, FileDownIcon, HistoryIcon,
   CheckCircle2Icon, Loader2Icon, ExternalLinkIcon,
@@ -24,6 +25,7 @@ const TABS = ["champs", "document", "parametres", "declencheurs", "publication"]
 type TabValue = (typeof TABS)[number];
 
 export function PdfFormEditor({ formId }: { formId: string }) {
+  const t = useTranslations("admin.pdf");
   const router = useRouter();
   const searchParams = useSearchParams();
   const data = useFormData(formId);
@@ -57,21 +59,21 @@ export function PdfFormEditor({ formId }: { formId: string }) {
   const publishDisabled = busy === "publish" || errors.length > 0;
   const publishReason =
     errors.length > 0
-      ? `Corrigez ${errors.length} erreur${errors.length > 1 ? "s" : ""} dans l'onglet Publication.`
+      ? t("publishReasonErrorsTab", { count: errors.length })
       : form.fields.length === 0
-      ? "Ajoutez au moins un champ avant de publier."
-      : "Publier le formulaire.";
+      ? t("publishReasonNoFields")
+      : t("publishReasonReady");
 
   return (
     <div className="p-6">
       {/* Barre d'action persistante : indépendante de l'onglet courant. */}
       <div className="sticky top-0 z-30 -mx-6 flex flex-wrap items-center gap-2 border-b bg-background/95 px-6 py-3 backdrop-blur">
         <div className="mr-auto flex items-center gap-2">
-          <button onClick={() => router.push("/admin/pdf")} className="text-sm text-muted-foreground hover:text-foreground">← Formulaires</button>
+          <button onClick={() => router.push("/admin/pdf")} className="text-sm text-muted-foreground hover:text-foreground">← {t("breadcrumbForms")}</button>
           <span className="text-muted-foreground">/</span>
           <span className="font-medium">{form.title}</span>
           <Badge variant={form.status === "published" ? "default" : "secondary"}>
-            {form.status === "published" ? "Publié" : form.status === "draft" ? "Brouillon" : "Archivé"}
+            {t("status", { status: form.status })}
           </Badge>
           <span className="text-xs text-muted-foreground">v{form.version}</span>
           {form.status === "published" && (
@@ -81,15 +83,15 @@ export function PdfFormEditor({ formId }: { formId: string }) {
           )}
         </div>
         <Button variant="outline" size="sm" onClick={testPdf} disabled={busy === "test"}>
-          {busy === "test" ? <Loader2Icon className="size-4 animate-spin" /> : <FileDownIcon className="size-4" />} PDF test
+          {busy === "test" ? <Loader2Icon className="size-4 animate-spin" /> : <FileDownIcon className="size-4" />} {t("testPdf")}
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setRevsOpen(true)}><HistoryIcon className="size-4" /> Historique</Button>
-        <Button variant="outline" size="sm" onClick={() => setVersionOpen(true)}><UploadCloudIcon className="size-4" /> Remplacer le PDF</Button>
+        <Button variant="outline" size="sm" onClick={() => setRevsOpen(true)}><HistoryIcon className="size-4" /> {t("history")}</Button>
+        <Button variant="outline" size="sm" onClick={() => setVersionOpen(true)}><UploadCloudIcon className="size-4" /> {t("replacePdf")}</Button>
         <Button size="sm" onClick={save} disabled={saving}>
-          {saving ? <Loader2Icon className="size-4 animate-spin" /> : <SaveIcon className="size-4" />} Enregistrer
+          {saving ? <Loader2Icon className="size-4 animate-spin" /> : <SaveIcon className="size-4" />} {t("save")}
         </Button>
         {form.status === "published" ? (
-          <Button variant="secondary" size="sm" onClick={unpublish} disabled={busy === "unpublish"}>Dépublier</Button>
+          <Button variant="secondary" size="sm" onClick={unpublish} disabled={busy === "unpublish"}>{t("unpublish")}</Button>
         ) : (
           <Tooltip>
             {/* Un <button disabled> ne déclenche pas les events souris, donc le
@@ -97,7 +99,7 @@ export function PdfFormEditor({ formId }: { formId: string }) {
                 pour exposer l'explication même bouton désactivé. */}
             <TooltipTrigger render={<span tabIndex={publishDisabled ? 0 : -1} className="inline-flex" />}>
               <Button size="sm" onClick={publish} disabled={publishDisabled}>
-                {busy === "publish" ? <Loader2Icon className="size-4 animate-spin" /> : <CheckCircle2Icon className="size-4" />} Publier
+                {busy === "publish" ? <Loader2Icon className="size-4 animate-spin" /> : <CheckCircle2Icon className="size-4" />} {t("publish")}
               </Button>
             </TooltipTrigger>
             <TooltipContent>{publishReason}</TooltipContent>
@@ -108,11 +110,11 @@ export function PdfFormEditor({ formId }: { formId: string }) {
       <Tabs value={activeTab} onValueChange={onTabChange} className="mt-4 w-full">
         {/* Rangée de tabs collante sous la barre d'action (py-3 + bordure ≈ 56px). */}
         <TabsList variant="line" className="sticky top-14 z-20 -mx-6 w-auto justify-start rounded-none border-b bg-background/95 px-6 py-2 backdrop-blur">
-          <TabsTrigger value="champs">Champs</TabsTrigger>
-          <TabsTrigger value="document">Document</TabsTrigger>
-          <TabsTrigger value="parametres">Paramètres</TabsTrigger>
-          <TabsTrigger value="declencheurs">Déclencheurs</TabsTrigger>
-          <TabsTrigger value="publication">Publication</TabsTrigger>
+          <TabsTrigger value="champs">{t("tabFields")}</TabsTrigger>
+          <TabsTrigger value="document">{t("tabDocument")}</TabsTrigger>
+          <TabsTrigger value="parametres">{t("tabSettings")}</TabsTrigger>
+          <TabsTrigger value="declencheurs">{t("tabTriggers")}</TabsTrigger>
+          <TabsTrigger value="publication">{t("tabPublication")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="champs" className="pt-4">

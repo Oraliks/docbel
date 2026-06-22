@@ -16,6 +16,7 @@
  * gère l'ouverture du modal upload simplifié.
  */
 
+import { useTranslations } from "next-intl";
 import { Sparkles, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ export function MissingSourcesHint({
   onDismiss,
   className,
 }: MissingSourcesHintProps) {
+  const t = useTranslations("admin.chomageIa");
   if (!missingRefs || missingRefs.length === 0) return null;
 
   return (
@@ -50,7 +52,7 @@ export function MissingSourcesHint({
       <Sparkles className="size-3.5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
       <div className="flex-1 min-w-0">
         <p className="font-medium leading-snug">
-          L&apos;IA mentionne des sources qui ne sont pas dans la KB
+          {t("missingSourcesTitle")}
         </p>
         <p className="mt-0.5 leading-snug">
           {missingRefs.map((ref, i) => (
@@ -71,11 +73,10 @@ export function MissingSourcesHint({
             onClick={onOpenUpload}
           >
             <Upload className="size-3" />
-            Uploader maintenant
+            {t("uploadNow")}
           </Button>
           <span className="text-[10.5px] text-amber-700 dark:text-amber-300/70">
-            Une fois la source ajoutée, relance la question pour une réponse
-            sourcée.
+            {t("missingSourcesHint")}
           </span>
         </div>
       </div>
@@ -84,8 +85,8 @@ export function MissingSourcesHint({
           type="button"
           onClick={onDismiss}
           className="shrink-0 text-amber-700/70 hover:text-amber-900 dark:text-amber-200/70 dark:hover:text-amber-100"
-          aria-label="Masquer la suggestion"
-          title="Masquer"
+          aria-label={t("dismissSuggestion")}
+          title={t("dismiss")}
         >
           <X className="size-3.5" />
         </button>

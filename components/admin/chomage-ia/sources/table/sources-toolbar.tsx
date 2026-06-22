@@ -10,6 +10,7 @@
  */
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import {
   ChevronDown,
   Filter as FilterIcon,
@@ -36,20 +37,34 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { KIND_LABELS } from "../../_shared";
 import type { StatusFilter, ValidityFilter } from "./_shared-table";
 
-const STATUS_OPTIONS: Array<{ value: StatusFilter; label: string }> = [
-  { value: "all", label: "Tous les statuts" },
-  { value: "active", label: "Actives uniquement" },
-  { value: "disabled", label: "Désactivées" },
-  { value: "extraction-failed", label: "Extraction échouée" },
-  { value: "not-indexed", label: "Non indexées (RAG)" },
+type StatusOptionKey =
+  | "statusAll"
+  | "statusActive"
+  | "statusDisabledFilter"
+  | "statusExtractionFailed"
+  | "statusNotIndexed";
+
+const STATUS_OPTIONS: Array<{ value: StatusFilter; labelKey: StatusOptionKey }> = [
+  { value: "all", labelKey: "statusAll" },
+  { value: "active", labelKey: "statusActive" },
+  { value: "disabled", labelKey: "statusDisabledFilter" },
+  { value: "extraction-failed", labelKey: "statusExtractionFailed" },
+  { value: "not-indexed", labelKey: "statusNotIndexed" },
 ];
 
-const VALIDITY_OPTIONS: Array<{ value: ValidityFilter; label: string }> = [
-  { value: "all", label: "Toute fraîcheur" },
-  { value: "fresh", label: "🟢 Fraîches" },
-  { value: "stale", label: "🟡 À vérifier" },
-  { value: "obsolete", label: "🔴 Périmées" },
-  { value: "unknown", label: "⚪ Non scannées" },
+type ValidityOptionKey =
+  | "validityAll"
+  | "validityFresh"
+  | "validityStale"
+  | "validityObsolete"
+  | "validityUnknown";
+
+const VALIDITY_OPTIONS: Array<{ value: ValidityFilter; labelKey: ValidityOptionKey }> = [
+  { value: "all", labelKey: "validityAll" },
+  { value: "fresh", labelKey: "validityFresh" },
+  { value: "stale", labelKey: "validityStale" },
+  { value: "obsolete", labelKey: "validityObsolete" },
+  { value: "unknown", labelKey: "validityUnknown" },
 ];
 
 interface Props {
@@ -100,6 +115,7 @@ export function SourcesToolbar({
   onCreate,
   onUpload,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const hasFilters =
     statusFilter !== "all" ||
     kindFilter !== "all" ||
@@ -107,24 +123,20 @@ export function SourcesToolbar({
     tagFilters.length > 0 ||
     search.length > 0;
 
-  const statusLabel = useMemo(
-    () =>
-      STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label ?? "Statut",
+  const statusLabelKey = useMemo(
+    () => STATUS_OPTIONS.find((o) => o.value === statusFilter)?.labelKey,
     [statusFilter]
   );
-  const kindLabel = useMemo(
-    () => (kindFilter === "all" ? "Type" : KIND_LABELS[kindFilter] ?? kindFilter),
-    [kindFilter]
-  );
+  const statusLabel = statusLabelKey ? t(statusLabelKey) : t("statusFallback");
+  const kindLabel =
+    kindFilter === "all" ? t("typeFallback") : t("kind", { kind: kindFilter });
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Counter */}
       <div className="text-[12px] font-semibold tabular-nums text-muted-foreground">
         {filteredCount === totalCount ? (
-          <span>
-            {totalCount} source{totalCount > 1 ? "s" : ""}
-          </span>
+          <span>{t("sourcesCount", { count: totalCount })}</span>
         ) : (
           <span>
             <span className="text-foreground">{filteredCount}</span>
@@ -137,7 +149,7 @@ export function SourcesToolbar({
       <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Rechercher…"
+          placeholder={t("searchPlaceholder")}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="h-9 pl-8 pr-8 text-[12.5px]"
@@ -145,7 +157,7 @@ export function SourcesToolbar({
         {search.length > 0 ? (
           <button
             type="button"
-            aria-label="Clear"
+            aria-label={t("clear")}
             onClick={() => onSearchChange("")}
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
@@ -178,7 +190,7 @@ export function SourcesToolbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-52">
             <DropdownMenuLabel className="text-[10.5px] uppercase tracking-wider">
-              Filtrer par statut
+              {t("filterByStatus")}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup
@@ -191,7 +203,7 @@ export function SourcesToolbar({
                   value={opt.value}
                   className="text-[12px]"
                 >
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
@@ -219,7 +231,7 @@ export function SourcesToolbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-44">
             <DropdownMenuLabel className="text-[10.5px] uppercase tracking-wider">
-              Filtrer par type
+              {t("filterByType")}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup
@@ -227,15 +239,15 @@ export function SourcesToolbar({
               onValueChange={(v) => onKindChange(v)}
             >
               <DropdownMenuRadioItem value="all" className="text-[12px]">
-                Tous les types
+                {t("allTypes")}
               </DropdownMenuRadioItem>
-              {Object.entries(KIND_LABELS).map(([value, label]) => (
+              {Object.keys(KIND_LABELS).map((value) => (
                 <DropdownMenuRadioItem
                   key={value}
                   value={value}
                   className="text-[12px]"
                 >
-                  {label}
+                  {t("kind", { kind: value })}
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
@@ -254,7 +266,7 @@ export function SourcesToolbar({
             }
           >
             <Tag className="size-3.5" />
-            Tags
+            {t("tagsLabel")}
             {tagFilters.length > 0 ? (
               <span className="ml-1 rounded-full bg-primary/10 px-1.5 text-[10px] font-bold tabular-nums text-primary">
                 {tagFilters.length}
@@ -264,7 +276,7 @@ export function SourcesToolbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-52 max-h-72 overflow-y-auto">
             <DropdownMenuLabel className="flex items-center justify-between text-[10.5px] uppercase tracking-wider">
-              <span>Filtrer par tag (OR)</span>
+              <span>{t("filterByTagOr")}</span>
               {tagFilters.length > 0 ? (
                 <button
                   type="button"
@@ -274,14 +286,14 @@ export function SourcesToolbar({
                   }}
                   className="text-[10px] font-normal text-primary normal-case tracking-normal hover:underline"
                 >
-                  clear
+                  {t("clearLower")}
                 </button>
               ) : null}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {allTags.length === 0 ? (
               <div className="px-2 py-3 text-center text-[11px] text-muted-foreground">
-                Aucun tag dans la KB pour l&apos;instant.
+                {t("noTagsYet")}
               </div>
             ) : (
               allTags.map((tag) => {
@@ -323,7 +335,10 @@ export function SourcesToolbar({
               />
             }
           >
-            {VALIDITY_OPTIONS.find((o) => o.value === validityFilter)?.label ?? "Fraîcheur"}
+            {(() => {
+              const opt = VALIDITY_OPTIONS.find((o) => o.value === validityFilter);
+              return opt ? t(opt.labelKey) : t("validityFallback");
+            })()}
             {validityFilter !== "all" ? (
               <span className="ml-1 rounded-full bg-primary/10 px-1.5 text-[10px] font-bold tabular-nums text-primary">
                 1
@@ -333,7 +348,7 @@ export function SourcesToolbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-44">
             <DropdownMenuLabel className="text-[10.5px] uppercase tracking-wider">
-              Filtrer par fraîcheur
+              {t("filterByValidity")}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup
@@ -346,7 +361,7 @@ export function SourcesToolbar({
                   value={opt.value}
                   className="text-[12px]"
                 >
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
@@ -367,7 +382,7 @@ export function SourcesToolbar({
             }}
           >
             <X className="size-3.5" />
-            Reset
+            {t("reset")}
           </Button>
         ) : null}
       </div>
@@ -379,18 +394,18 @@ export function SourcesToolbar({
           size="icon-sm"
           onClick={onRefresh}
           disabled={loading}
-          aria-label="Rafraîchir"
-          title="Rafraîchir"
+          aria-label={t("refresh")}
+          title={t("refresh")}
         >
           <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
         </Button>
         <Button variant="secondary" size="sm" onClick={onUpload}>
           <Upload className="size-3.5" />
-          Upload fichiers
+          {t("uploadFiles")}
         </Button>
         <Button size="sm" onClick={onCreate}>
           <Plus className="size-3.5" />
-          Nouvelle source
+          {t("newSource")}
         </Button>
       </div>
     </div>

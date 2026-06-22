@@ -10,6 +10,7 @@
  */
 
 import { useMemo, type RefObject } from "react";
+import { useTranslations } from "next-intl";
 import { Loader2, Sparkles, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { renderMarkdownReact } from "../chat/markdown";
@@ -41,6 +42,7 @@ export function MiniThread({ messages, threadEndRef }: Props) {
 }
 
 function MiniBubble({ message }: { message: MiniMessage }) {
+  const t = useTranslations("admin.chomageIa");
   const isUser = message.role === "user";
 
   const sourcesById = useMemo(() => {
@@ -78,7 +80,7 @@ function MiniBubble({ message }: { message: MiniMessage }) {
         {message.pending ? (
           <span className="inline-flex items-center gap-1.5 text-muted-foreground">
             <Loader2 className="size-3 animate-spin" />
-            Réflexion en cours…
+            {t("thinking")}
           </span>
         ) : isUser ? (
           <span className="whitespace-pre-wrap">{message.content}</span>
@@ -94,10 +96,11 @@ function MiniBubble({ message }: { message: MiniMessage }) {
 }
 
 function StreamCursor() {
+  const t = useTranslations("admin.chomageIa");
   return (
     <span
       className="ml-0.5 inline-block h-3 w-1 translate-y-0.5 animate-pulse rounded-sm bg-primary/70 align-middle"
-      aria-label="Génération en cours"
+      aria-label={t("generatingLabel")}
     />
   );
 }

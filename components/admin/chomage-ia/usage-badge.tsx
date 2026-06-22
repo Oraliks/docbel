@@ -16,6 +16,7 @@
 
 import * as React from "react";
 import { Coins, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -77,6 +78,7 @@ export function UsageBadge({
   revalidateKey,
   className,
 }: UsageBadgeProps) {
+  const t = useTranslations("admin.chomageIa");
   const [data, setData] = React.useState<UsageResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -98,13 +100,13 @@ export function UsageBadge({
         const json = (await res.json()) as UsageResponse;
         setData(json);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erreur réseau");
+        setError(err instanceof Error ? err.message : t("networkError"));
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [domain]
+    [domain, t]
   );
 
   React.useEffect(() => {
@@ -122,7 +124,7 @@ export function UsageBadge({
         aria-busy="true"
       >
         <Loader2 className="size-3 animate-spin" />
-        <span className="hidden sm:inline">Crédit…</span>
+        <span className="hidden sm:inline">{t("creditLoading")}</span>
       </div>
     );
   }
@@ -136,10 +138,10 @@ export function UsageBadge({
           "inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground hover:text-foreground",
           className
         )}
-        title={error ?? "Erreur"}
+        title={error ?? t("error")}
       >
         <AlertCircle className="size-3" />
-        <span className="hidden sm:inline">N/A</span>
+        <span className="hidden sm:inline">{t("notAvailable")}</span>
       </button>
     );
   }
@@ -157,8 +159,15 @@ export function UsageBadge({
             "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-amber-300/60 bg-gradient-to-br from-amber-50 to-amber-100/40 px-2.5 text-[12px] font-semibold text-amber-900 shadow-sm transition-all hover:shadow-md dark:border-amber-500/30 dark:from-amber-950/40 dark:to-amber-900/20 dark:text-amber-200",
             className
           )}
-          title={`${fmtTokensCompact(totalTokens)} tokens · ${eurStr} (${usdStr})`}
-          aria-label={`Crédit IA consommé : ${eurStr} (${fmtTokensCompact(totalTokens)} tokens)`}
+          title={t("badgeTitle", {
+            tokens: fmtTokensCompact(totalTokens),
+            eur: eurStr,
+            usd: usdStr,
+          })}
+          aria-label={t("badgeAria", {
+            eur: eurStr,
+            tokens: fmtTokensCompact(totalTokens),
+          })}
         >
           <Coins className="size-3.5 shrink-0" />
           <span className="tabular-nums">≈ {eurStr}</span>
@@ -187,14 +196,17 @@ function UsageDetail({
   onRefresh: () => void;
   refreshing: boolean;
 }) {
+  const t = useTranslations("admin.chomageIa");
   return (
     <div className="flex flex-col">
       {/* Header */}
       <div className="flex items-start justify-between gap-2 border-b border-border px-4 py-3">
         <div>
-          <div className="text-[13px] font-bold">Crédit IA — {data.domain}</div>
+          <div className="text-[13px] font-bold">
+            {t("creditDomain", { domain: data.domain })}
+          </div>
           <div className="text-[11px] text-muted-foreground">
-            Estimation indicative (hors réductions éventuelles)
+            {t("creditEstimateNote")}
           </div>
         </div>
         <button
@@ -202,8 +214,8 @@ function UsageDetail({
           onClick={onRefresh}
           disabled={refreshing}
           className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
-          title="Actualiser"
-          aria-label="Actualiser"
+          title={t("refresh")}
+          aria-label={t("refresh")}
         >
           <RefreshCw className={cn("size-3.5", refreshing && "animate-spin")} />
         </button>
@@ -213,25 +225,30 @@ function UsageDetail({
       <div className="grid grid-cols-2 gap-px bg-border">
         <div className="bg-popover px-4 py-3">
           <div className="text-[10.5px] uppercase tracking-wide text-muted-foreground">
-            Tokens totaux
+            {t("totalTokens")}
           </div>
           <div className="mt-1 text-lg font-bold tabular-nums">
             {fmtTokensCompact(data.totalTokens.all)}
           </div>
           <div className="text-[11px] text-muted-foreground tabular-nums">
-            {fmtTokensCompact(data.totalTokens.input)} in ·{" "}
-            {fmtTokensCompact(data.totalTokens.output)} out
+            {t("tokensInOut", {
+              in: fmtTokensCompact(data.totalTokens.input),
+              out: fmtTokensCompact(data.totalTokens.output),
+            })}
           </div>
         </div>
         <div className="bg-popover px-4 py-3">
           <div className="text-[10.5px] uppercase tracking-wide text-muted-foreground">
-            Coût estimé
+            {t("estimatedCost")}
           </div>
           <div className="mt-1 text-lg font-bold tabular-nums text-amber-700 dark:text-amber-300">
             ≈ {fmtCostEur(data.totalCost.eur)}
           </div>
           <div className="text-[11px] text-muted-foreground tabular-nums">
-            ({fmtCostUsd(data.totalCost.usd)} · taux {data.rate.usdToEur})
+            {t("costUsdRate", {
+              usd: fmtCostUsd(data.totalCost.usd),
+              rate: data.rate.usdToEur,
+            })}
           </div>
         </div>
       </div>
@@ -240,7 +257,7 @@ function UsageDetail({
       {data.byModel.length > 0 ? (
         <div className="border-t border-border px-4 py-3">
           <div className="mb-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Chat par modèle
+            {t("chatByModel")}
           </div>
           <ul className="flex flex-col gap-1.5">
             {data.byModel.map((row) => (
@@ -261,12 +278,12 @@ function UsageDetail({
                     {shortModelName(row.model)}
                   </span>
                   <span className="text-[10.5px] text-muted-foreground">
-                    ({row.messages} msg)
+                    {t("msgCount", { count: row.messages })}
                   </span>
                 </span>
                 <span className="flex items-baseline gap-2 tabular-nums">
                   <span className="text-[11px] text-muted-foreground">
-                    {fmtTokensCompact(row.input + row.output)} tk
+                    {t("tkValue", { tokens: fmtTokensCompact(row.input + row.output) })}
                   </span>
                   <span className="font-semibold text-amber-700 dark:text-amber-300">
                     ≈ {fmtCostEur(row.eur)}
@@ -278,24 +295,23 @@ function UsageDetail({
         </div>
       ) : (
         <div className="border-t border-border px-4 py-3 text-[12px] text-muted-foreground">
-          Aucun message chat persisté.
+          {t("noChatMessage")}
         </div>
       )}
 
       {/* Prompts */}
       <div className="border-t border-border px-4 py-3">
         <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Prompt-builder
+          {t("promptBuilder")}
         </div>
         {data.prompts.count > 0 ? (
           <div className="flex items-center justify-between text-[12px]">
             <span className="text-muted-foreground">
-              {data.prompts.count} prompt
-              {data.prompts.count > 1 ? "s" : ""} générés
+              {t("promptsGenerated", { count: data.prompts.count })}
             </span>
             <span className="flex items-baseline gap-2 tabular-nums">
               <span className="text-[11px] text-muted-foreground">
-                ~{fmtTokensCompact(data.prompts.estimatedOutputTokens)} tk
+                {t("tkApprox", { tokens: fmtTokensCompact(data.prompts.estimatedOutputTokens) })}
               </span>
               <span className="font-semibold text-amber-700 dark:text-amber-300">
                 ≈ {fmtCostEur(data.prompts.estimatedEur)}
@@ -304,17 +320,19 @@ function UsageDetail({
           </div>
         ) : (
           <div className="text-[12px] text-muted-foreground">
-            Aucun prompt généré.
+            {t("noPromptGenerated")}
           </div>
         )}
         <div className="mt-1 text-[10.5px] italic text-muted-foreground">
-          Estimation : longueur de l&apos;output ÷ 4 (≈ 1 token / 4 chars).
+          {t("promptEstimateNote")}
         </div>
       </div>
 
       {/* Footer */}
       <div className="border-t border-border bg-muted/30 px-4 py-2 text-[10.5px] text-muted-foreground">
-        Mis à jour : {new Date(data.lastUpdated).toLocaleTimeString("fr-BE")}
+        {t("lastUpdatedAt", {
+          time: new Date(data.lastUpdated).toLocaleTimeString("fr-BE"),
+        })}
       </div>
     </div>
   );

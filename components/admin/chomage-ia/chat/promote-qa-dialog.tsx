@@ -20,6 +20,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
@@ -56,6 +57,7 @@ export function PromoteQaDialog({
   assistantAnswer,
   onCreated,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [title, setTitle] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [notes, setNotes] = useState("");
@@ -105,13 +107,13 @@ export function PromoteQaDialog({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      toast.success("Source créée dans la KB", {
+      toast.success(t("qaSourceCreated"), {
         description: data.title,
       });
       onCreated?.(data.id);
       onOpenChange(false);
     } catch (e) {
-      toast.error("Échec de la création", {
+      toast.error(t("qaCreateError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -123,22 +125,21 @@ export function PromoteQaDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Valider cette réponse comme source KB</DialogTitle>
+          <DialogTitle>{t("qaDialogTitle")}</DialogTitle>
           <DialogDescription>
-            La Q&A sera ajoutée à la knowledge base avec kind « Q&A validée »,
-            indexée pour la recherche sémantique et taggée automatiquement.
+            {t("qaDialogDesc")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3 py-1">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="qa-title">Titre de la source *</Label>
+            <Label htmlFor="qa-title">{t("qaTitleLabel")}</Label>
             <Input
               id="qa-title"
               value={title}
               autoFocus
               onChange={(e) => setTitle(e.target.value.slice(0, 200))}
-              placeholder="Ex. « Délais admissibilité après stage »"
+              placeholder={t("qaTitlePlaceholder")}
               className="h-9 text-[12.5px]"
             />
           </div>
@@ -146,7 +147,7 @@ export function PromoteQaDialog({
           <div className="grid grid-cols-1 gap-3">
             <div className="flex flex-col gap-1">
               <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                Question
+                {t("qaQuestionLabel")}
               </Label>
               <p className="max-h-24 overflow-y-auto rounded-md border border-border bg-muted/30 px-2.5 py-1.5 text-[12px] leading-relaxed">
                 {userQuestion}
@@ -155,7 +156,7 @@ export function PromoteQaDialog({
 
             <div className="flex flex-col gap-1">
               <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                Réponse
+                {t("qaAnswerLabel")}
               </Label>
               <p className="max-h-40 overflow-y-auto rounded-md border border-border bg-muted/30 px-2.5 py-1.5 text-[12px] leading-relaxed whitespace-pre-wrap">
                 {assistantAnswer}
@@ -164,12 +165,12 @@ export function PromoteQaDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="qa-tags">Tags (séparés par virgules)</Label>
+            <Label htmlFor="qa-tags">{t("qaTagsLabel")}</Label>
             <Input
               id="qa-tags"
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value.slice(0, 500))}
-              placeholder="ONEM, admissibilité, 2026"
+              placeholder={t("qaTagsPlaceholder")}
               className="h-9 text-[12.5px]"
             />
             {tags.length > 0 ? (
@@ -187,13 +188,13 @@ export function PromoteQaDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="qa-notes">Notes admin (optionnel)</Label>
+            <Label htmlFor="qa-notes">{t("qaNotesLabel")}</Label>
             <Textarea
               id="qa-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value.slice(0, 4000))}
               rows={3}
-              placeholder="Précisions, sources externes vérifiées, dates de validité…"
+              placeholder={t("qaNotesPlaceholder")}
               className="text-[12.5px]"
             />
           </div>
@@ -205,16 +206,16 @@ export function PromoteQaDialog({
             onClick={() => onOpenChange(false)}
             disabled={pending}
           >
-            Annuler
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit}>
             {pending ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />
-                Création…
+                {t("creating")}
               </>
             ) : (
-              "Créer la source"
+              t("qaCreateSource")
             )}
           </Button>
         </DialogFooter>

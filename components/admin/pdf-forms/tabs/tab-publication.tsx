@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { CheckCircle2Icon, AlertTriangleIcon, Loader2Icon, EyeOffIcon, EyeIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import type { UseFormData } from "../use-form-data";
 
 export function TabPublication({ data }: { data: UseFormData }) {
+  const t = useTranslations("admin.pdf");
   const { form, issues, busy, publish, unpublish, patchForm } = data;
   if (!form) return null;
 
@@ -21,10 +23,10 @@ export function TabPublication({ data }: { data: UseFormData }) {
   const disabled = busy === "publish" || errors.length > 0;
   const reason =
     errors.length > 0
-      ? `Corrigez ${errors.length} erreur${errors.length > 1 ? "s" : ""} ci-dessous pour publier.`
+      ? t("publishReasonErrorsBelow", { count: errors.length })
       : form.fields.length === 0
-      ? "Ajoutez au moins un champ avant de publier."
-      : "Publier le formulaire.";
+      ? t("publishReasonNoFields")
+      : t("publishReasonReady");
 
   return (
     <div className="flex flex-col gap-4">
@@ -33,11 +35,11 @@ export function TabPublication({ data }: { data: UseFormData }) {
           {errors.length === 0 && warnings.length === 0 ? (
             form.status === "published" ? (
               <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-                <CheckCircle2Icon className="size-4 shrink-0" /> Formulaire publié — aucune anomalie détectée.
+                <CheckCircle2Icon className="size-4 shrink-0" /> {t("publishedNoIssues")}
               </div>
             ) : (
               <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-                <CheckCircle2Icon className="size-4 shrink-0" /> Prêt à publier — aucune erreur ni avertissement.
+                <CheckCircle2Icon className="size-4 shrink-0" /> {t("readyNoIssues")}
               </div>
             )
           ) : (
@@ -60,7 +62,7 @@ export function TabPublication({ data }: { data: UseFormData }) {
       <div className="flex items-center gap-2">
         {form.status === "published" ? (
           <Button variant="secondary" size="sm" onClick={unpublish} disabled={busy === "unpublish"}>
-            Dépublier
+            {t("unpublish")}
           </Button>
         ) : (
           <Tooltip>
@@ -69,7 +71,7 @@ export function TabPublication({ data }: { data: UseFormData }) {
                 pour exposer l'explication même bouton désactivé. */}
             <TooltipTrigger render={<span tabIndex={disabled ? 0 : -1} className="inline-flex" />}>
               <Button size="sm" onClick={publish} disabled={disabled}>
-                {busy === "publish" ? <Loader2Icon className="size-4 animate-spin" /> : <CheckCircle2Icon className="size-4" />} Publier
+                {busy === "publish" ? <Loader2Icon className="size-4 animate-spin" /> : <CheckCircle2Icon className="size-4" />} {t("publish")}
               </Button>
             </TooltipTrigger>
             <TooltipContent>{reason}</TooltipContent>
@@ -103,6 +105,7 @@ function AvailabilityCard({
   disabledMessage: string | null;
   onChange: (next: { active?: boolean; disabledMessage?: string | null }) => void;
 }) {
+  const t = useTranslations("admin.pdf");
   const [savingActive, setSavingActive] = useState(false);
   const [savingMessage, setSavingMessage] = useState(false);
   const [draftMessage, setDraftMessage] = useState(disabledMessage ?? "");
@@ -122,7 +125,7 @@ function AvailabilityCard({
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      toast.error("Échec de l'enregistrement.");
+      toast.error(t("toastSaveError"));
       throw new Error("patch failed");
     }
     onChange(payload);
@@ -132,7 +135,7 @@ function AvailabilityCard({
     setSavingActive(true);
     try {
       await patch({ active: next });
-      toast.success(next ? "Formulaire remis en ligne." : "Formulaire mis en pause.");
+      toast.success(next ? t("toastFormOnline") : t("toastFormPaused"));
     } catch {
       // toast déjà émis
     } finally {
@@ -145,7 +148,7 @@ function AvailabilityCard({
     setSavingMessage(true);
     try {
       await patch({ disabledMessage: value });
-      toast.success("Message enregistré.");
+      toast.success(t("toastMessageSaved"));
     } catch {
       // toast déjà émis
     } finally {
@@ -162,12 +165,10 @@ function AvailabilityCard({
           <div className="flex flex-col gap-0.5">
             <Label className="flex items-center gap-2 text-sm font-medium">
               {active ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
-              Disponibilité publique
+              {t("publicAvailability")}
             </Label>
             <p className="text-xs text-muted-foreground">
-              {active
-                ? "Les utilisateurs peuvent ouvrir et compléter ce formulaire."
-                : "Le formulaire est temporairement mis en pause. Un message s'affiche à la place."}
+              {active ? t("availabilityOnDesc") : t("availabilityOffDesc")}
             </p>
           </div>
           <Switch checked={active} disabled={savingActive} onCheckedChange={toggleActive} />
@@ -176,19 +177,19 @@ function AvailabilityCard({
         {!active && (
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="disabled-message" className="text-xs">
-              Message affiché aux utilisateurs (optionnel)
+              {t("disabledMessageLabel")}
             </Label>
             <Textarea
               id="disabled-message"
               rows={3}
               maxLength={500}
               value={draftMessage}
-              placeholder="Ex. Mise à jour de la dernière version officielle du document — disponible à nouveau dès demain."
+              placeholder={t("disabledMessagePlaceholder")}
               onChange={(e) => setDraftMessage(e.target.value)}
             />
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-muted-foreground">
-                Vide = message générique « formulaire temporairement indisponible ».
+                {t("disabledMessageHint")}
               </p>
               <Button
                 size="sm"
@@ -197,7 +198,7 @@ function AvailabilityCard({
                 disabled={!messageDirty || savingMessage}
               >
                 {savingMessage && <Loader2Icon className="size-3.5 animate-spin" />}
-                Enregistrer le message
+                {t("saveMessage")}
               </Button>
             </div>
           </div>

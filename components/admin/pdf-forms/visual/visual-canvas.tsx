@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { htmlToPdf, type PageGeometry } from "@/lib/pdf-canvas/coords";
 import { generateFieldName } from "@/lib/pdf-forms/visual/validation";
@@ -32,6 +33,7 @@ const MIN_DRAW_H = 10;
 /// pas de click-targets, pas de mode preview, pas de contextmenu — focus
 /// strict sur drag-to-draw + sélection.
 export function VisualCanvas({ formId, onNumPages }: VisualCanvasProps) {
+  const t = useTranslations("admin.pdf");
   const {
     doc,
     ui,
@@ -147,7 +149,7 @@ export function VisualCanvas({ formId, onNumPages }: VisualCanvasProps) {
   };
 
   if (!pdfWorkerReady) {
-    return <div className="p-12 text-center text-sm text-muted-foreground">Initialisation du moteur PDF…</div>;
+    return <div className="p-12 text-center text-sm text-muted-foreground">{t("pdfEngineInit")}</div>;
   }
 
   return (
@@ -165,8 +167,8 @@ export function VisualCanvas({ formId, onNumPages }: VisualCanvasProps) {
         <PDFDocument
           file={`/api/admin/pdf/forms/${formId}/source`}
           onLoadSuccess={handleDocumentLoadSuccess}
-          loading={<div className="p-12 text-center text-sm text-muted-foreground">Chargement du PDF…</div>}
-          error={<div className="p-12 text-center text-sm text-destructive">Erreur de chargement du PDF</div>}
+          loading={<div className="p-12 text-center text-sm text-muted-foreground">{t("pdfLoading")}</div>}
+          error={<div className="p-12 text-center text-sm text-destructive">{t("pdfLoadError")}</div>}
         >
           <PDFPage
             pageNumber={ui.page + 1}

@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   CheckCircle2,
   ExternalLink,
@@ -33,13 +34,14 @@ interface Props {
   domain: string;
 }
 
-const TABS: Array<{ value: KnowledgeGapStatus; label: string }> = [
-  { value: "open", label: "Ouverts" },
-  { value: "resolved", label: "Résolus" },
-  { value: "ignored", label: "Ignorés" },
+const TABS: Array<{ value: KnowledgeGapStatus; labelKey: "gapsTabOpen" | "gapsTabResolved" | "gapsTabIgnored" }> = [
+  { value: "open", labelKey: "gapsTabOpen" },
+  { value: "resolved", labelKey: "gapsTabResolved" },
+  { value: "ignored", labelKey: "gapsTabIgnored" },
 ];
 
 export function GapsWorkspace({ domain }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [items, setItems] = useState<KnowledgeGapListItem[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({
     open: 0,
@@ -47,27 +49,27 @@ export function GapsWorkspace({ domain }: Props) {
     ignored: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<KnowledgeGapStatus>("open");
+  const [tabValue, setTab] = useState<KnowledgeGapStatus>("open");
   const [actingId, setActingId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ domain, status: tab });
+      const params = new URLSearchParams({ domain, status: tabValue });
       const res = await fetch(`/api/chomage-ia/gaps?${params.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setItems(data.items);
       setCounts(data.countsByStatus ?? counts);
     } catch (e) {
-      toast.error("Impossible de charger les gaps", {
+      toast.error(t("gapsLoadError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [domain, tab]);
+  }, [domain, tabValue]);
 
   useEffect(() => {
     refresh();
@@ -87,14 +89,14 @@ export function GapsWorkspace({ domain }: Props) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       toast.success(
         nextStatus === "resolved"
-          ? "Gap marqué résolu"
+          ? t("gapResolvedToast")
           : nextStatus === "ignored"
-            ? "Gap ignoré"
-            : "Gap rouvert",
+            ? t("gapIgnoredToast")
+            : t("gapReopenedToast"),
       );
       refresh();
     } catch (e) {
-      toast.error("Échec de la mise à jour", {
+      toast.error(t("updateError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -116,21 +118,21 @@ export function GapsWorkspace({ domain }: Props) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <div className="inline-flex rounded-lg border border-border bg-background/80 p-0.5">
-          {TABS.map((t) => {
-            const active = tab === t.value;
-            const count = counts[t.value] ?? 0;
+          {TABS.map((tab) => {
+            const active = tab.value === tabValue;
+            const count = counts[tab.value] ?? 0;
             return (
               <button
-                key={t.value}
+                key={tab.value}
                 type="button"
-                onClick={() => setTab(t.value)}
+                onClick={() => setTab(tab.value)}
                 className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold transition ${
                   active
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                {t.label}
+                {t(tab.labelKey)}
                 <span
                   className={`rounded-full px-1.5 text-[10px] tabular-nums ${
                     active ? "bg-primary-foreground/20" : "bg-muted-foreground/10"
@@ -149,7 +151,7 @@ export function GapsWorkspace({ domain }: Props) {
           disabled={loading}
         >
           <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
-          Rafraîchir
+          {t("refresh")}
         </Button>
       </div>
 
@@ -159,7 +161,7 @@ export function GapsWorkspace({ domain }: Props) {
         </div>
       ) : items.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-10 text-center text-[12.5px] text-muted-foreground">
-          Aucun gap dans cette catégorie.
+          {t("gapsEmpty")}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -174,8 +176,10 @@ export function GapsWorkspace({ domain }: Props) {
                     {g.query}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    Détecté {fmtRelative(g.detectedAt)} ·{" "}
-                    {g.occurrences} fois
+                    {t("gapDetected", {
+                      when: fmtRelative(g.detectedAt),
+                      count: g.occurrences,
+                    })}
                     {g.sessionId ? (
                       <>
                         {" · "}
@@ -183,7 +187,7 @@ export function GapsWorkspace({ domain }: Props) {
                           href={`/admin/chomage/ia/chat?session=${g.sessionId}${g.messageId ? `&msg=${g.messageId}` : ""}`}
                           className="text-primary hover:underline"
                         >
-                          voir la conversation
+                          {t("gapViewConversation")}
                         </a>
                       </>
                     ) : null}
@@ -198,7 +202,7 @@ export function GapsWorkspace({ domain }: Props) {
                         : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                   }`}
                 >
-                  {g.status}
+                  {t("gapStatus", { status: g.status })}
                 </span>
               </header>
               {g.notes ? (
@@ -216,7 +220,7 @@ export function GapsWorkspace({ domain }: Props) {
                       onClick={() => updateStatus(g.id, "resolved")}
                     >
                       <CheckCircle2 className="size-3.5" />
-                      Marquer résolu
+                      {t("gapMarkResolved")}
                     </Button>
                     <Button
                       variant="ghost"
@@ -225,7 +229,7 @@ export function GapsWorkspace({ domain }: Props) {
                       onClick={() => updateStatus(g.id, "ignored")}
                     >
                       <XCircle className="size-3.5" />
-                      Ignorer
+                      {t("gapIgnore")}
                     </Button>
                   </>
                 ) : (
@@ -236,7 +240,7 @@ export function GapsWorkspace({ domain }: Props) {
                     onClick={() => updateStatus(g.id, "open")}
                   >
                     <RefreshCw className="size-3.5" />
-                    Rouvrir
+                    {t("gapReopen")}
                   </Button>
                 )}
                 <span className="mx-1 text-muted-foreground/40">·</span>
@@ -244,20 +248,20 @@ export function GapsWorkspace({ domain }: Props) {
                   variant="ghost"
                   size="sm"
                   onClick={() => openMoniteurSearch(g.query)}
-                  title="Rechercher dans le Moniteur belge"
+                  title={t("searchInMoniteur")}
                 >
                   <Search className="size-3.5" />
-                  Moniteur belge
+                  {t("moniteurBelge")}
                   <ExternalLink className="size-3 opacity-60" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => openOnemSearch(g.query)}
-                  title="Rechercher sur onem.be"
+                  title={t("searchOnOnem")}
                 >
                   <MessageCircle className="size-3.5" />
-                  ONEM
+                  {t("onem")}
                   <ExternalLink className="size-3 opacity-60" />
                 </Button>
               </footer>

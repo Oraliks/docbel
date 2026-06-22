@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Plus, Trash2, GripVertical, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,10 +24,10 @@ interface Props {
   onChange: (next: EligibilityQuestion[]) => void;
 }
 
-const VERDICT_OPTIONS: { value: EligibilityVerdict; label: string; color: string }[] = [
-  { value: "eligible", label: "→ Éligible", color: "text-green-700" },
-  { value: "neutral", label: "→ Neutre", color: "text-amber-700" },
-  { value: "ineligible", label: "→ Non éligible", color: "text-red-700" },
+const VERDICT_OPTIONS: { value: EligibilityVerdict; labelKey: "verdictEligible" | "verdictNeutral" | "verdictIneligible"; color: string }[] = [
+  { value: "eligible", labelKey: "verdictEligible", color: "text-green-700" },
+  { value: "neutral", labelKey: "verdictNeutral", color: "text-amber-700" },
+  { value: "ineligible", labelKey: "verdictIneligible", color: "text-red-700" },
 ];
 
 function newQuestion(): EligibilityQuestion {
@@ -44,6 +45,7 @@ function newOption(): EligibilityOption {
 }
 
 export function EligibilityQuestionsEditor({ value, onChange }: Props) {
+  const t = useTranslations("admin.documents");
   const questions = value || [];
 
   function updateQ(idx: number, patch: Partial<EligibilityQuestion>) {
@@ -119,22 +121,20 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
       <div className="flex items-center justify-between">
         <Label className="text-sm font-medium flex items-center gap-1.5">
           <HelpCircle className="w-4 h-4" />
-          Pré-qualification (informatif)
+          {t("prequalLabel")}
         </Label>
         <Button type="button" variant="ghost" size="sm" onClick={() => onChange([...questions, newQuestion()])}>
           <Plus className="w-3 h-3 mr-1" />
-          Ajouter une question
+          {t("addQuestion")}
         </Button>
       </div>
       <p className="text-[11px] text-muted-foreground italic">
-        Questions posées AVANT le parcours pour orienter le citoyen. Le résultat
-        est purement indicatif — le parcours est toujours accessible même en
-        verdict défavorable.
+        {t("prequalHint")}
       </p>
 
       {questions.length === 0 ? (
         <p className="text-xs text-muted-foreground italic">
-          Aucune question. Ce bundle ne montrera pas de pré-qualification.
+          {t("noQuestion")}
         </p>
       ) : (
         <div className="space-y-3">
@@ -147,7 +147,7 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                     onClick={() => moveQ(idx, -1)}
                     disabled={idx === 0}
                     className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs leading-none"
-                    title="Monter"
+                    title={t("moveUp")}
                   >
                     ▲
                   </button>
@@ -156,14 +156,14 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                     onClick={() => moveQ(idx, 1)}
                     disabled={idx === questions.length - 1}
                     className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs leading-none"
-                    title="Descendre"
+                    title={t("moveDown")}
                   >
                     ▼
                   </button>
                 </div>
                 <GripVertical className="w-4 h-4 text-muted-foreground" />
                 <span className="text-xs font-medium text-muted-foreground">
-                  Question {idx + 1}
+                  {t("questionN", { n: idx + 1 })}
                 </span>
                 <Select
                   value={q.type}
@@ -173,8 +173,8 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="boolean">Oui / Non</SelectItem>
-                    <SelectItem value="select">Choix multiple</SelectItem>
+                    <SelectItem value="boolean">{t("typeBoolean")}</SelectItem>
+                    <SelectItem value="select">{t("typeSelect")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button
@@ -189,28 +189,28 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Question</Label>
+                <Label className="text-xs">{t("questionLabel")}</Label>
                 <Input
                   value={q.label}
                   onChange={(e) => updateQ(idx, { label: e.target.value })}
-                  placeholder="Êtes-vous inscrit comme demandeur d'emploi chez Actiris ?"
+                  placeholder={t("questionPlaceholder")}
                   className="h-8 text-sm"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Aide (info-bulle)</Label>
+                  <Label className="text-xs">{t("helpTooltipLabel")}</Label>
                   <Textarea
                     value={q.helpText ?? ""}
                     onChange={(e) => updateQ(idx, { helpText: e.target.value || undefined })}
-                    placeholder="Vous devez être inscrit sur actiris.brussels…"
+                    placeholder={t("helpTooltipPlaceholder")}
                     rows={2}
                     className="text-xs"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">URL référence (optionnel)</Label>
+                  <Label className="text-xs">{t("refUrlLabel")}</Label>
                   <Input
                     value={q.helpUrl ?? ""}
                     onChange={(e) => updateQ(idx, { helpUrl: e.target.value || undefined })}
@@ -224,7 +224,7 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1 border-t">
                   <div className="space-y-1">
                     <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      Si réponse = Oui
+                      {t("ifAnswerYes")}
                     </Label>
                     <Select
                       value={q.verdictTrue}
@@ -236,7 +236,7 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                       <SelectContent>
                         {VERDICT_OPTIONS.map((o) => (
                           <SelectItem key={o.value} value={o.value} className="text-xs">
-                            {o.label}
+                            {t(o.labelKey)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -244,7 +244,7 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                   </div>
                   <div className="space-y-1">
                     <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      Si réponse = Non
+                      {t("ifAnswerNo")}
                     </Label>
                     <Select
                       value={q.verdictFalse}
@@ -256,7 +256,7 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                       <SelectContent>
                         {VERDICT_OPTIONS.map((o) => (
                           <SelectItem key={o.value} value={o.value} className="text-xs">
-                            {o.label}
+                            {t(o.labelKey)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -267,7 +267,7 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                 <div className="space-y-1.5 pt-1 border-t">
                   <div className="flex items-center justify-between">
                     <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      Options de réponse
+                      {t("answerOptions")}
                     </Label>
                     <Button
                       type="button"
@@ -275,12 +275,12 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                       size="sm"
                       onClick={() => addOption(idx)}
                     >
-                      <Plus className="w-3 h-3 mr-1" /> Option
+                      <Plus className="w-3 h-3 mr-1" /> {t("option")}
                     </Button>
                   </div>
                   {q.options.length === 0 && (
                     <p className="text-[11px] text-muted-foreground italic">
-                      Ajoutez au moins une option.
+                      {t("addAtLeastOneOption")}
                     </p>
                   )}
                   {q.options.map((opt, oIdx) => (
@@ -288,13 +288,13 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                       <Input
                         value={opt.value}
                         onChange={(e) => updateOption(idx, oIdx, { value: e.target.value })}
-                        placeholder="valeur"
+                        placeholder={t("optionValuePlaceholder")}
                         className="h-7 text-xs font-mono"
                       />
                       <Input
                         value={opt.label}
                         onChange={(e) => updateOption(idx, oIdx, { label: e.target.value })}
-                        placeholder="Libellé"
+                        placeholder={t("optionLabelPlaceholder")}
                         className="h-7 text-xs"
                       />
                       <Select
@@ -307,7 +307,7 @@ export function EligibilityQuestionsEditor({ value, onChange }: Props) {
                         <SelectContent>
                           {VERDICT_OPTIONS.map((o) => (
                             <SelectItem key={o.value} value={o.value} className="text-xs">
-                              {o.label}
+                              {t(o.labelKey)}
                             </SelectItem>
                           ))}
                         </SelectContent>

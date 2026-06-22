@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { PlusIcon, Trash2Icon, Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ interface Preset {
 }
 
 export function PdfPresetsManager() {
+  const t = useTranslations("admin.pdf");
   const [presets, setPresets] = useState<Preset[] | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -45,14 +47,14 @@ export function PdfPresetsManager() {
 
   async function remove(p: Preset) {
     const res = await fetch(`/api/admin/pdf/presets/${p.id}`, { method: "DELETE" });
-    if (res.ok) { toast.success("Preset supprimé."); load(); }
-    else { const d = await res.json().catch(() => ({})); toast.error(d.error || "Échec."); }
+    if (res.ok) { toast.success(t("toastPresetDeleted")); load(); }
+    else { const d = await res.json().catch(() => ({})); toast.error(d.error || t("toastFailure")); }
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
-        <Button onClick={() => setOpen(true)}><PlusIcon className="size-4" /> Nouveau preset</Button>
+        <Button onClick={() => setOpen(true)}><PlusIcon className="size-4" /> {t("newPreset")}</Button>
       </div>
 
       {presets === null ? (
@@ -62,10 +64,10 @@ export function PdfPresetsManager() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Clé</TableHead>
-                <TableHead>Libellé</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Usage</TableHead>
+                <TableHead>{t("colKey")}</TableHead>
+                <TableHead>{t("colLabel")}</TableHead>
+                <TableHead>{t("colType")}</TableHead>
+                <TableHead className="text-right">{t("colUsage")}</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
@@ -75,7 +77,7 @@ export function PdfPresetsManager() {
                   <TableCell className="font-mono text-xs">{p.key}</TableCell>
                   <TableCell>
                     {p.label}{" "}
-                    {p.builtin && <Badge variant="outline" className="ml-1 text-[10px]">intégré</Badge>}
+                    {p.builtin && <Badge variant="outline" className="ml-1 text-[10px]">{t("builtinBadge")}</Badge>}
                   </TableCell>
                   <TableCell><Badge variant="secondary" className="text-[10px]">{p.fieldType}</Badge></TableCell>
                   <TableCell className="text-right tabular-nums text-muted-foreground">{p.usageCount}</TableCell>
@@ -105,6 +107,7 @@ function NewPresetDialog({
   onOpenChange: (v: boolean) => void;
   onCreated: () => void;
 }) {
+  const t = useTranslations("admin.pdf");
   const [key, setKey] = useState("");
   const [label, setLabel] = useState("");
   const [fieldType, setFieldType] = useState("text");
@@ -116,7 +119,7 @@ function NewPresetDialog({
   function reset() { setKey(""); setLabel(""); setFieldType("text"); setRegex(""); setMaxLength(""); setErrorFr(""); }
 
   async function submit() {
-    if (!key.trim() || !label.trim()) { toast.error("Clé et libellé requis."); return; }
+    if (!key.trim() || !label.trim()) { toast.error(t("toastKeyLabelRequired")); return; }
     setBusy(true);
     try {
       const res = await fetch("/api/admin/pdf/presets", {
@@ -130,8 +133,8 @@ function NewPresetDialog({
         }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(d.error || "Échec."); return; }
-      toast.success("Preset créé.");
+      if (!res.ok) { toast.error(d.error || t("toastFailure")); return; }
+      toast.success(t("toastPresetCreated"));
       reset(); onOpenChange(false); onCreated();
     } finally {
       setBusy(false);
@@ -141,46 +144,46 @@ function NewPresetDialog({
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>Nouveau preset</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t("newPreset")}</DialogTitle></DialogHeader>
         <div className="flex flex-col gap-3 py-2">
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="p-key">Clé</Label>
+              <Label htmlFor="p-key">{t("keyLabel")}</Label>
               <Input id="p-key" value={key} placeholder="be_custom" onChange={(e) => setKey(e.target.value)} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Type</Label>
+              <Label>{t("typeLabel")}</Label>
               <Select value={fieldType} onValueChange={(v) => setFieldType(v ?? "text")}>
                 <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {SEMANTIC_FIELD_TYPES.map((t) => <SelectItem key={t} value={t}>{FIELD_TYPE_LABELS[t]}</SelectItem>)}
+                  {SEMANTIC_FIELD_TYPES.map((ft) => <SelectItem key={ft} value={ft}>{FIELD_TYPE_LABELS[ft]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="p-label">Libellé</Label>
+            <Label htmlFor="p-label">{t("labelLabel")}</Label>
             <Input id="p-label" value={label} onChange={(e) => setLabel(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="p-regex">Regex (optionnel)</Label>
+              <Label htmlFor="p-regex">{t("regexOptionalLabel")}</Label>
               <Input id="p-regex" value={regex} onChange={(e) => setRegex(e.target.value)} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="p-max">Longueur max</Label>
+              <Label htmlFor="p-max">{t("maxLengthLabel")}</Label>
               <Input id="p-max" type="number" value={maxLength} onChange={(e) => setMaxLength(e.target.value)} />
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="p-err">Message d&apos;erreur FR (optionnel)</Label>
+            <Label htmlFor="p-err">{t("errorMsgFrLabel")}</Label>
             <Input id="p-err" value={errorFr} onChange={(e) => setErrorFr(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t("cancel")}</Button>
           <Button onClick={submit} disabled={busy}>
-            {busy && <Loader2Icon className="size-4 animate-spin" />} Créer
+            {busy && <Loader2Icon className="size-4 animate-spin" />} {t("create")}
           </Button>
         </DialogFooter>
       </DialogContent>

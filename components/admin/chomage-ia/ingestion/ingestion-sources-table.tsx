@@ -15,6 +15,7 @@ import {
   PlayCircle,
   Trash2,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { fmtRelative } from "../_shared";
@@ -39,26 +40,27 @@ export function IngestionSourcesTable({
   onEdit,
   onDelete,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   return (
     <div className="rounded-lg border border-border bg-card">
       <table className="w-full text-[12.5px]">
         <thead className="border-b border-border bg-muted/50">
           <tr>
-            <th className="px-3 py-2 text-left font-semibold">Nom</th>
+            <th className="px-3 py-2 text-left font-semibold">{t("colName")}</th>
             <th className="px-3 py-2 text-left font-semibold w-[80px]">
-              Type
+              {t("colType")}
             </th>
             <th className="px-3 py-2 text-right font-semibold w-[110px]">
-              Dernier check
+              {t("colLastCheck")}
             </th>
             <th className="px-3 py-2 text-right font-semibold w-[80px]">
-              En attente
+              {t("colPending")}
             </th>
             <th className="px-3 py-2 text-right font-semibold w-[70px]">
-              Actif
+              {t("colActive")}
             </th>
             <th className="px-3 py-2 text-right font-semibold w-[170px]">
-              Actions
+              {t("colActions")}
             </th>
           </tr>
         </thead>
@@ -66,14 +68,13 @@ export function IngestionSourcesTable({
           {loading ? (
             <tr>
               <td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">
-                Chargement…
+                {t("loading")}
               </td>
             </tr>
           ) : items.length === 0 ? (
             <tr>
               <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
-                Aucune source. Ajoute par exemple
-                « https://www.onem.be » ou un flux RSS du Moniteur belge.
+                {t("watchSourcesEmpty")}
               </td>
             </tr>
           ) : (
@@ -97,11 +98,11 @@ export function IngestionSourcesTable({
                   </div>
                 </td>
                 <td className="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-                  {s.kind}
+                  {t("ingestionKindShort", { kind: s.kind })}
                 </td>
                 <td className="px-3 py-2 text-right text-[11px] text-muted-foreground">
                   {s.lastCheckedAt ? (
-                    <span title={s.lastError ?? "OK"}>
+                    <span title={s.lastError ?? t("ok")}>
                       {fmtRelative(s.lastCheckedAt)}
                       {s.lastError ? " ⚠" : ""}
                     </span>
@@ -131,7 +132,7 @@ export function IngestionSourcesTable({
                       size="icon-sm"
                       disabled={checkingId === s.id || !s.enabled}
                       onClick={() => onCheckNow(s)}
-                      title="Vérifier maintenant"
+                      title={t("checkNow")}
                     >
                       {checkingId === s.id ? (
                         <Loader2 className="size-3.5 animate-spin" />
@@ -143,7 +144,7 @@ export function IngestionSourcesTable({
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => onEdit(s)}
-                      title="Éditer"
+                      title={t("edit")}
                     >
                       <Pencil className="size-3.5" />
                     </Button>
@@ -151,7 +152,7 @@ export function IngestionSourcesTable({
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => onDelete(s)}
-                      title="Supprimer"
+                      title={t("delete")}
                     >
                       <Trash2 className="size-3.5" />
                     </Button>

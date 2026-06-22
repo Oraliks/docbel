@@ -14,6 +14,7 @@
 
 import { useEffect, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useTranslations } from "next-intl";
 import {
   ArrowDown,
   ArrowUp,
@@ -72,6 +73,7 @@ export function SourcesTable({
   onRowAction,
   onCreate,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const scrollRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
     count: items.length,
@@ -96,7 +98,7 @@ export function SourcesTable({
             checked={selectAllState === true ? true : false}
             indeterminate={selectAllState === "indeterminate"}
             onCheckedChange={(c) => onSelectAll(!!c)}
-            aria-label="Tout sélectionner"
+            aria-label={t("selectAll")}
             disabled={items.length === 0}
           />
         </div>
@@ -105,16 +107,16 @@ export function SourcesTable({
         <div className="w-8 shrink-0" aria-hidden />
         <SortHeader
           column="title"
-          label="Nom"
+          label={t("colNameSource")}
           sortColumn={sortColumn}
           sortDirection={sortDirection}
           onSortChange={onSortChange}
           className="min-w-0 flex-1"
         />
-        <div className="hidden w-[88px] shrink-0 sm:block">Statut</div>
+        <div className="hidden w-[88px] shrink-0 sm:block">{t("colStatus")}</div>
         <SortHeader
           column="size"
-          label="Taille"
+          label={t("colSize")}
           sortColumn={sortColumn}
           sortDirection={sortDirection}
           onSortChange={onSortChange}
@@ -123,7 +125,7 @@ export function SourcesTable({
         />
         <SortHeader
           column="date"
-          label="Date"
+          label={t("colDate")}
           sortColumn={sortColumn}
           sortDirection={sortDirection}
           onSortChange={onSortChange}
@@ -137,7 +139,7 @@ export function SourcesTable({
       {loading && items.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
-          <span className="text-[12.5px]">Chargement…</span>
+          <span className="text-[12.5px]">{t("loading")}</span>
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 p-10 text-center">
@@ -146,16 +148,15 @@ export function SourcesTable({
           </span>
           <div className="flex flex-col gap-1">
             <h3 className="text-[14px] font-bold">
-              Aucune source pour l&apos;instant
+              {t("noSourcesYet")}
             </h3>
             <p className="max-w-md text-[12.5px] text-muted-foreground">
-              Crée ta première source (texte, URL, tutoriel, transcript, PDF,
-              image) pour alimenter la knowledge base.
+              {t("noSourcesYetHint")}
             </p>
           </div>
           {onCreate ? (
             <Button size="sm" onClick={onCreate}>
-              Créer une source
+              {t("createSource")}
             </Button>
           ) : null}
         </div>

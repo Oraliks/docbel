@@ -17,6 +17,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Check, FolderTree, Search, X } from "lucide-react";
 import {
   Popover,
@@ -45,6 +46,7 @@ export function ScopeSelector({
   onChange,
   disabled = false,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -70,13 +72,13 @@ export function ScopeSelector({
   const allFolders = value.length === 0;
 
   const label = useMemo(() => {
-    if (allFolders) return "Toutes les sources";
+    if (allFolders) return t("scopeAllSources");
     if (selectedCount === 1) {
       const f = folders.find((x) => x.id === value[0]);
-      return f?.name ?? "1 dossier";
+      return f?.name ?? t("scopeFolderCount", { count: 1 });
     }
-    return `${selectedCount} dossiers`;
-  }, [allFolders, selectedCount, value, folders]);
+    return t("scopeFolderCount", { count: selectedCount });
+  }, [allFolders, selectedCount, value, folders, t]);
 
   function toggle(id: string) {
     if (selectedSet.has(id)) {
@@ -103,8 +105,8 @@ export function ScopeSelector({
               : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15",
             disabled && "opacity-50 cursor-not-allowed",
           )}
-          title="Scoper la recherche IA sur certains dossiers de la KB"
-          aria-label={`Scope KB — ${label}`}
+          title={t("scopeTriggerTitle")}
+          aria-label={t("scopeAriaLabel", { label })}
         >
           <FolderTree className="size-3" />
           <span className="max-w-[160px] truncate">{label}</span>
@@ -114,11 +116,10 @@ export function ScopeSelector({
         <div className="flex flex-col gap-1.5 border-b border-border px-3 py-2">
           <div className="flex items-center gap-1.5">
             <FolderTree className="size-3.5 text-muted-foreground" />
-            <span className="text-[12px] font-semibold">Scope KB</span>
+            <span className="text-[12px] font-semibold">{t("scopeKbTitle")}</span>
           </div>
           <p className="text-[11px] text-muted-foreground leading-snug">
-            Limite la recherche IA à certains dossiers. Vide = toute la KB.
-            Inclut automatiquement les sous-dossiers.
+            {t("scopeKbDesc")}
           </p>
         </div>
 
@@ -129,9 +130,9 @@ export function ScopeSelector({
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Filtrer…"
+              placeholder={t("filter")}
               className="w-full rounded-md bg-transparent pl-6 pr-2 py-1 text-[11.5px] focus:outline-none"
-              aria-label="Filtrer les dossiers"
+              aria-label={t("filterFolders")}
             />
           </div>
         ) : null}
@@ -158,13 +159,13 @@ export function ScopeSelector({
               >
                 {allFolders ? <Check className="size-2.5" /> : null}
               </span>
-              <span className="font-medium">Toutes les sources</span>
+              <span className="font-medium">{t("scopeAllSources")}</span>
             </button>
           </li>
 
           {filtered.length === 0 && query ? (
             <li className="px-2 py-3 text-center text-[11.5px] text-muted-foreground">
-              Aucun dossier pour « {query} »
+              {t("scopeNoFolder", { query })}
             </li>
           ) : (
             filtered.map((folder) => {
@@ -205,7 +206,7 @@ export function ScopeSelector({
         {selectedCount > 0 ? (
           <div className="flex items-center justify-between border-t border-border px-2 py-1.5">
             <span className="text-[11px] text-muted-foreground">
-              {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
+              {t("scopeSelectedCount", { count: selectedCount })}
             </span>
             <Button
               type="button"
@@ -215,7 +216,7 @@ export function ScopeSelector({
               className="h-6 gap-1 text-[11px]"
             >
               <X className="size-3" />
-              Effacer
+              {t("clear")}
             </Button>
           </div>
         ) : null}

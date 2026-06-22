@@ -18,6 +18,7 @@
 import { useState, type CSSProperties } from "react";
 import { ChevronRight, MoreHorizontal, FolderPlus, Pencil, Palette, Trash2 } from "lucide-react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import {
   ContextMenu,
@@ -75,6 +76,7 @@ function FolderTreeItem({
   onDelete,
   nodes: _ignored, // évite eslint unused
 }: Props & { node: FolderNode }) {
+  const t = useTranslations("admin.chomageIa");
   const [menuOpen, setMenuOpen] = useState(false);
   const expanded = expandedIds.has(node.id);
   const selected = selectedIds.has(node.id);
@@ -140,7 +142,7 @@ function FolderTreeItem({
                   e.stopPropagation();
                   onToggleExpand(node.id);
                 }}
-                aria-label={expanded ? "Replier" : "Déplier"}
+                aria-label={expanded ? t("collapse") : t("expand")}
                 className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground"
               >
                 <ChevronRight
@@ -175,7 +177,7 @@ function FolderTreeItem({
                 e.stopPropagation();
                 setMenuOpen(true);
               }}
-              aria-label={`Actions ${node.name}`}
+              aria-label={t("actionsFor", { name: node.name })}
               className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
             >
               <MoreHorizontal className="size-3" />
@@ -188,7 +190,7 @@ function FolderTreeItem({
             className="text-[12px]"
           >
             <Pencil className="size-3.5" />
-            Renommer / Couleur / Icône
+            {t("renameColorIcon")}
           </ContextMenuItem>
           {node.depth < 3 ? (
             <ContextMenuItem
@@ -196,7 +198,7 @@ function FolderTreeItem({
               className="text-[12px]"
             >
               <FolderPlus className="size-3.5" />
-              Sous-dossier
+              {t("subfolder")}
             </ContextMenuItem>
           ) : null}
           <ContextMenuSeparator />
@@ -206,7 +208,7 @@ function FolderTreeItem({
             className="text-[12px]"
           >
             <Trash2 className="size-3.5" />
-            Supprimer
+            {t("delete")}
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PlusIcon, TrashIcon, ZapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +25,7 @@ interface AvailableForm {
 /// follow-up), un autre PdfForm (référencé par slug) est ajouté au parcours
 /// utilisateur. Cf. lib/pdf-forms/triggers.ts pour l'évaluation runtime.
 export function TabTriggers({ data }: { data: UseFormData }) {
+  const t = useTranslations("admin.pdf");
   const { form, patchForm } = data;
   const [availableForms, setAvailableForms] = useState<AvailableForm[]>([]);
   const [saving, setSaving] = useState(false);
@@ -74,7 +76,7 @@ export function TabTriggers({ data }: { data: UseFormData }) {
   }
 
   function updateTrigger(idx: number, patch: Partial<PdfFormTrigger>) {
-    const next = triggers.map((t, i) => (i === idx ? { ...t, ...patch } : t));
+    const next = triggers.map((tr, i) => (i === idx ? { ...tr, ...patch } : tr));
     void persist(next);
   }
 
@@ -102,31 +104,30 @@ export function TabTriggers({ data }: { data: UseFormData }) {
         <CardContent className="flex flex-col gap-2 py-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2 text-foreground">
             <ZapIcon className="size-4 text-amber-500" />
-            <span className="font-medium">Déclencheurs de sous-formulaires</span>
+            <span className="font-medium">{t("triggersHeading")}</span>
           </div>
           <p>
-            Un déclencheur ajoute automatiquement un autre formulaire au parcours
-            utilisateur quand la réponse à un champ de <em>ce</em> formulaire
-            satisfait la règle. L&apos;exclusion (<code>sauf si</code>) permet
-            d&apos;ignorer le déclenchement si un follow-up (« déjà déclaré ? »)
-            indique que la situation a déjà été communiquée.
+            {t.rich("triggersIntro", {
+              em: (chunks) => <em>{chunks}</em>,
+              code: (chunks) => <code>{chunks}</code>,
+            })}
           </p>
         </CardContent>
       </Card>
 
       {triggers.length === 0 ? (
         <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-          Aucun déclencheur configuré pour ce formulaire.
+          {t("noTriggers")}
         </div>
       ) : (
-        triggers.map((t, idx) => (
+        triggers.map((tr, idx) => (
           <Card key={idx}>
             <CardContent className="grid gap-3 py-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Quand le champ</Label>
-                <Select value={t.whenFieldId || undefined} onValueChange={(v) => updateTrigger(idx, { whenFieldId: v ?? "" })}>
+                <Label className="text-xs">{t("whenField")}</Label>
+                <Select value={tr.whenFieldId || undefined} onValueChange={(v) => updateTrigger(idx, { whenFieldId: v ?? "" })}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Choisir un champ…" />
+                    <SelectValue placeholder={t("chooseFieldPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {fieldChoices.map((f) => (
@@ -140,31 +141,31 @@ export function TabTriggers({ data }: { data: UseFormData }) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">vaut</Label>
+                <Label className="text-xs">{t("equalsLabel")}</Label>
                 <Input
-                  value={String(t.whenValue)}
+                  value={String(tr.whenValue)}
                   onChange={(e) => updateTrigger(idx, { whenValue: e.target.value })}
-                  placeholder="oui"
+                  placeholder={t("valuePlaceholder")}
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-muted-foreground">Sauf si le champ (optionnel)</Label>
+                <Label className="text-xs text-muted-foreground">{t("unlessField")}</Label>
                 <Select
-                  value={t.unlessFieldId || "__none__"}
+                  value={tr.unlessFieldId || "__none__"}
                   onValueChange={(v) => {
                     const safe = v ?? "__none__";
                     updateTrigger(idx, {
                       unlessFieldId: safe === "__none__" ? undefined : safe,
-                      unlessValue: safe === "__none__" ? undefined : (t.unlessValue ?? "oui"),
+                      unlessValue: safe === "__none__" ? undefined : (tr.unlessValue ?? "oui"),
                     });
                   }}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Aucun" />
+                    <SelectValue placeholder={t("noneOption")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">— Aucun —</SelectItem>
+                    <SelectItem value="__none__">{t("noneDashed")}</SelectItem>
                     {fieldChoices.map((f) => (
                       <SelectItem key={f.id} value={f.id}>
                         {f.label}{" "}
@@ -176,26 +177,26 @@ export function TabTriggers({ data }: { data: UseFormData }) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-muted-foreground">vaut</Label>
+                <Label className="text-xs text-muted-foreground">{t("equalsLabel")}</Label>
                 <Input
-                  value={t.unlessValue !== undefined ? String(t.unlessValue) : ""}
+                  value={tr.unlessValue !== undefined ? String(tr.unlessValue) : ""}
                   onChange={(e) => updateTrigger(idx, { unlessValue: e.target.value })}
-                  disabled={!t.unlessFieldId}
-                  placeholder="oui"
+                  disabled={!tr.unlessFieldId}
+                  placeholder={t("valuePlaceholder")}
                 />
               </div>
 
               <div className="flex flex-col gap-1.5 sm:col-span-2">
-                <Label className="text-xs">Alors ajouter le formulaire</Label>
+                <Label className="text-xs">{t("thenAddForm")}</Label>
                 <Select
-                  value={t.requiresFormSlug || undefined}
+                  value={tr.requiresFormSlug || undefined}
                   onValueChange={(v) => updateTrigger(idx, { requiresFormSlug: v ?? "" })}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Choisir un formulaire…">
+                    <SelectValue placeholder={t("chooseFormPlaceholder")}>
                       {(v) => {
                         const match = slugChoices.find((s) => s.slug === v);
-                        return match ? `${match.title} (${match.slug})` : v || "Choisir un formulaire…";
+                        return match ? `${match.title} (${match.slug})` : v || t("chooseFormPlaceholder");
                       }}
                     </SelectValue>
                   </SelectTrigger>
@@ -211,15 +212,15 @@ export function TabTriggers({ data }: { data: UseFormData }) {
               </div>
 
               <div className="flex flex-col gap-1.5 sm:col-span-2">
-                <Label className="text-xs">Raison affichée à l&apos;utilisateur (FR)</Label>
+                <Label className="text-xs">{t("triggerReasonLabel")}</Label>
                 <Input
-                  value={t.reason?.fr ?? ""}
+                  value={tr.reason?.fr ?? ""}
                   onChange={(e) =>
                     updateTrigger(idx, {
-                      reason: { ...(t.reason ?? {}), fr: e.target.value },
+                      reason: { ...(tr.reason ?? {}), fr: e.target.value },
                     })
                   }
-                  placeholder="Ex. Tremplin-indépendants à déclarer"
+                  placeholder={t("triggerReasonPlaceholder")}
                 />
               </div>
 
@@ -232,7 +233,7 @@ export function TabTriggers({ data }: { data: UseFormData }) {
                   className="text-destructive hover:text-destructive"
                 >
                   <TrashIcon className="size-4" />
-                  Supprimer ce déclencheur
+                  {t("removeTrigger")}
                 </Button>
               </div>
             </CardContent>
@@ -242,7 +243,7 @@ export function TabTriggers({ data }: { data: UseFormData }) {
 
       <Button onClick={addTrigger} disabled={saving} variant="outline" className="self-start">
         <PlusIcon className="size-4" />
-        Ajouter un déclencheur
+        {t("addTrigger")}
       </Button>
     </div>
   );

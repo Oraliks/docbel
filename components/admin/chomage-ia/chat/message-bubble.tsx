@@ -20,6 +20,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Loader2,
   User,
@@ -96,6 +97,7 @@ export function MessageBubble({
   onPromoteToSource,
   alreadyPromoted = false,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
   const [draft, setDraft] = useState(message.content);
@@ -139,31 +141,31 @@ export function MessageBubble({
       .writeText(message.content)
       .then(() => {
         setCopied(true);
-        toast.success("Message copié");
+        toast.success(t("messageCopied"));
         setTimeout(() => setCopied(false), 1500);
       })
-      .catch(() => toast.error("Échec de la copie"));
+      .catch(() => toast.error(t("copyError")));
   }
 
   function copyPermalink() {
     if (!message.id) {
-      toast.error("Permalink indisponible (message non persisté)");
+      toast.error(t("permalinkUnavailable"));
       return;
     }
     const url = new URL(window.location.href);
     url.searchParams.set("msg", message.id);
     navigator.clipboard
       .writeText(url.toString())
-      .then(() => toast.success("Lien copié"))
-      .catch(() => toast.error("Échec de la copie"));
+      .then(() => toast.success(t("linkCopied")))
+      .catch(() => toast.error(t("copyError")));
   }
 
   function handleRegenerate() {
     if (!onRegenerate) {
       // TODO(backend): brancher la régénération sur l'API. Pour l'instant,
       // on signale juste à l'utilisateur que la feature est en préparation.
-      toast("Régénération bientôt disponible", {
-        description: "Cette action nécessite un endpoint dédié.",
+      toast(t("regenSoon"), {
+        description: t("actionNeedsEndpoint"),
       });
       return;
     }
@@ -175,15 +177,15 @@ export function MessageBubble({
 
   function handleFork() {
     if (!message.id) {
-      toast.error("Fork indisponible (message non persisté)");
+      toast.error(t("forkUnavailable"));
       return;
     }
     if (onFork) {
       onFork(message.id);
     } else {
       // TODO(backend): brancher /api/chomage-ia/sessions/[id]/fork
-      toast("Fork bientôt disponible", {
-        description: "Cette action nécessite un endpoint dédié.",
+      toast(t("forkSoon"), {
+        description: t("actionNeedsEndpoint"),
       });
     }
   }
@@ -192,7 +194,7 @@ export function MessageBubble({
     if (onOpenSources) {
       onOpenSources();
     } else {
-      toast("Ouvre le drawer « Sources citées » depuis l'en-tête.");
+      toast(t("openSourcesHint"));
     }
   }
 
@@ -250,12 +252,12 @@ export function MessageBubble({
       <ContextMenuContent className="min-w-52">
         <ContextMenuItem onClick={copyToClipboard}>
           <Copy className="size-3.5" />
-          Copier le contenu
+          {t("copyContent")}
         </ContextMenuItem>
         {message.id ? (
           <ContextMenuItem onClick={copyPermalink}>
             <Link2 className="size-3.5" />
-            Copier le permalien
+            {t("copyPermalink")}
           </ContextMenuItem>
         ) : null}
 
@@ -264,25 +266,25 @@ export function MessageBubble({
             <ContextMenuSeparator />
             <ContextMenuItem onClick={handleRegenerate}>
               <RefreshCw className="size-3.5" />
-              Régénérer la réponse
+              {t("regenAnswer")}
             </ContextMenuItem>
             <ContextMenuItem onClick={handleFork}>
               <GitBranch className="size-3.5" />
-              Forker la conversation ici
+              {t("forkHere")}
             </ContextMenuItem>
             {message.citedSourceIds.length > 0 ? (
               <ContextMenuItem onClick={handleOpenSources}>
                 <BookOpen className="size-3.5" />
-                Voir les sources citées
+                {t("viewCitedSources")}
               </ContextMenuItem>
             ) : null}
             {message.id && onPromoteToSource && !alreadyPromoted ? (
               <ContextMenuItem
                 onClick={() => onPromoteToSource(message.id!)}
-                title="Convertir cette réponse en source permanente de la KB"
+                title={t("promoteSourceTitle")}
               >
                 <Star className="size-3.5" />
-                Valider comme source KB
+                {t("promoteSource")}
               </ContextMenuItem>
             ) : null}
           </>
@@ -293,7 +295,7 @@ export function MessageBubble({
             <ContextMenuSeparator />
             <ContextMenuItem onClick={() => onRequestEdit()}>
               <Pencil className="size-3.5" />
-              Éditer le message
+              {t("editMessage")}
             </ContextMenuItem>
           </>
         ) : null}
@@ -306,7 +308,7 @@ export function MessageBubble({
               onClick={() => setDeleteOpen(true)}
             >
               <Trash2 className="size-3.5" />
-              Supprimer ce message
+              {t("deleteMessage")}
             </ContextMenuItem>
           </>
         ) : null}
@@ -352,10 +354,10 @@ export function MessageBubble({
               onClick={handleRegenerate}
               disabled={disabled}
               className="mt-1 self-start gap-1.5"
-              title="Relancer Claude depuis la même question (le contenu partiel sera remplacé)"
+              title={t("regenAbortedTitle")}
             >
               <RefreshCw className="size-3.5" />
-              Régénérer la réponse
+              {t("regenAnswer")}
             </Button>
           ) : null}
 
@@ -366,23 +368,23 @@ export function MessageBubble({
               {message.elapsedMs != null && message.elapsedMs > 0 ? (
                 <span
                   className="inline-flex items-center gap-0.5"
-                  title="Durée de l'appel IA"
+                  title={t("aiCallDuration")}
                 >
                   · <Clock className="size-2.5" /> {fmtElapsed(message.elapsedMs)}
                 </span>
               ) : null}
               {message.tokensIn != null || message.tokensOut != null ? (
                 <span>
-                  · {fmtTokens(message.tokensIn)}/{fmtTokens(message.tokensOut)} tk
+                  · {fmtTokens(message.tokensIn)}/{fmtTokens(message.tokensOut)} {t("tk")}
                 </span>
               ) : null}
               {message.streaming ? (
                 <span
                   className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
-                  title="Réponse en cours de génération via Claude streaming"
+                  title={t("streamingTitle")}
                 >
                   <span className="size-1.5 animate-pulse rounded-full bg-primary" />
-                  Live
+                  {t("live")}
                 </span>
               ) : !message.pending ? (
                 <div className="ml-auto inline-flex items-center gap-0.5">
@@ -392,24 +394,24 @@ export function MessageBubble({
                       onClick={onRequestEdit}
                       disabled={disabled}
                       className="inline-flex items-center gap-1 rounded-sm px-1 hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
-                      title="Éditer ce message et régénérer la suite"
+                      title={t("editAndRegenTitle")}
                     >
                       <Pencil className="size-3" />
-                      Éditer
+                      {t("edit")}
                     </button>
                   ) : null}
                   <button
                     type="button"
                     onClick={copyToClipboard}
                     className="inline-flex items-center gap-1 rounded-sm px-1 hover:bg-muted hover:text-foreground"
-                    title="Copier (ou clic droit pour plus d'actions)"
+                    title={t("copyOrRightClick")}
                   >
                     {copied ? (
                       <CheckCheck className="size-3" />
                     ) : (
                       <Copy className="size-3" />
                     )}
-                    {copied ? "Copié" : "Copier"}
+                    {copied ? t("copied") : t("copy")}
                   </button>
                 </div>
               ) : null}
@@ -444,7 +446,7 @@ export function MessageBubble({
               })}
               {message.citedSourceIds.length > 8 ? (
                 <span className="text-[10.5px] text-muted-foreground">
-                  +{message.citedSourceIds.length - 8} autres
+                  {t("plusMore", { count: message.citedSourceIds.length - 8 })}
                 </span>
               ) : null}
             </div>
@@ -453,24 +455,24 @@ export function MessageBubble({
       </div>
 
       <ConfirmDeleteDialog
-        requireText="supprimer"
+        requireText={t("confirmDeleteWord")}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Supprimer ce message ?"
+        title={t("deleteMessageConfirmTitle")}
         description={
           isUser
-            ? "Ce message utilisateur sera supprimé définitivement de la conversation."
-            : "Cette réponse IA sera supprimée définitivement. Les sources citées restent dans la KB."
+            ? t("deleteUserMessageDesc")
+            : t("deleteAiMessageDesc")
         }
         onConfirm={async () => {
           if (!message.id) {
-            toast.error("Message non persisté, suppression impossible.");
+            toast.error(t("messageNotPersisted"));
             return;
           }
           if (!onDelete) {
             // TODO(backend): brancher DELETE /api/chomage-ia/messages/[id]
-            toast("Suppression bientôt disponible", {
-              description: "Cette action nécessite un endpoint dédié.",
+            toast(t("deleteSoon"), {
+              description: t("actionNeedsEndpoint"),
             });
             return;
           }
@@ -500,6 +502,7 @@ function EditModeContent({
   onCancel: () => void;
   disabled: boolean;
 }) {
+  const t = useTranslations("admin.chomageIa");
   const isEmpty = draft.trim().length === 0;
   return (
     <div className="flex flex-col gap-2">
@@ -520,7 +523,7 @@ function EditModeContent({
         }}
         disabled={disabled}
         rows={3}
-        aria-label="Éditer le message"
+        aria-label={t("editMessage")}
         className={cn(
           "min-h-[60px] max-h-64 w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-[13px] leading-relaxed",
           "focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60",
@@ -529,7 +532,7 @@ function EditModeContent({
       />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10.5px] text-muted-foreground">
-          Ctrl/Cmd+Entrée : renvoyer · Échap : annuler
+          {t("editHint")}
         </span>
         <div className="flex items-center gap-1.5">
           <Button
@@ -540,18 +543,18 @@ function EditModeContent({
             disabled={disabled}
           >
             <X className="size-3.5" />
-            Annuler
+            {t("cancel")}
           </Button>
           <Button
             type="button"
             size="sm"
             onClick={onSubmit}
             disabled={disabled || isEmpty}
-            title="Renvoyer le message édité et régénérer la suite"
+            title={t("resendTitle")}
             className="gap-1"
           >
             <SendHorizontal className="size-3.5" />
-            Renvoyer
+            {t("resend")}
           </Button>
         </div>
       </div>
@@ -564,20 +567,21 @@ function EditModeContent({
 /* ------------------------------------------------------------------ */
 
 const PENDING_STEPS = [
-  { atSec: 0, label: "Lecture des sources de la KB…" },
-  { atSec: 4, label: "Synthèse et identification des citations…" },
-  { atSec: 10, label: "Rédaction de la réponse…" },
-  { atSec: 25, label: "Réponse longue en cours, encore un instant…" },
-  { atSec: 60, label: "Toujours en cours — la requête peut prendre 1-2 min." },
+  { atSec: 0, key: "pendingStep0" },
+  { atSec: 4, key: "pendingStep1" },
+  { atSec: 10, key: "pendingStep2" },
+  { atSec: 25, key: "pendingStep3" },
+  { atSec: 60, key: "pendingStep4" },
 ] as const;
 
 function PendingIndicator({ startedAt }: { startedAt?: number }) {
+  const t = useTranslations("admin.chomageIa");
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!startedAt) return;
-    const t = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(timer);
   }, [startedAt]);
 
   const elapsedMs = startedAt ? Math.max(0, now - startedAt) : 0;
@@ -589,11 +593,11 @@ function PendingIndicator({ startedAt }: { startedAt?: number }) {
   return (
     <div className="flex items-center gap-2 text-muted-foreground">
       <Loader2 className="size-3.5 animate-spin" />
-      <span className="text-[12.5px]">{step.label}</span>
+      <span className="text-[12.5px]">{t(step.key as Parameters<typeof t>[0])}</span>
       {startedAt ? (
         <span
           className="ml-auto inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[10.5px] tabular-nums"
-          title="Temps écoulé"
+          title={t("elapsedTime")}
         >
           <Clock className="size-2.5" />
           {fmtElapsed(elapsedMs)}
@@ -610,10 +614,11 @@ function PendingIndicator({ startedAt }: { startedAt?: number }) {
  * Inline-block + animate-pulse pour un effet "ChatGPT-like" discret.
  */
 function StreamCursor() {
+  const t = useTranslations("admin.chomageIa");
   return (
     <span
       className="ml-0.5 inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse rounded-sm bg-primary/70 align-middle"
-      aria-label="Réponse en cours de génération"
+      aria-label={t("streamCursorLabel")}
     />
   );
 }

@@ -19,6 +19,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Code2, FolderCog, MessageSquareWarning } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -58,6 +59,7 @@ export function SnippetCommandPalette({
   onClose,
   onOpenManage,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [hoverIndex, setHoverIndex] = useState(0);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -177,7 +179,7 @@ export function SnippetCommandPalette({
       ref={popoverRef}
       data-snippet-palette
       role="listbox"
-      aria-label="Snippets disponibles"
+      aria-label={t("paletteAvailable")}
       style={{
         position: "fixed",
         left: pos.left,
@@ -195,7 +197,7 @@ export function SnippetCommandPalette({
       <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/30 px-2.5 py-1.5">
         <span className="flex items-center gap-1.5 text-[11px] font-semibold">
           <Code2 className="size-3 text-indigo-600 dark:text-indigo-400" />
-          Snippets
+          {t("snippets")}
           {token.query ? (
             <span className="text-muted-foreground">
               · <code className="font-mono">/{token.query}</code>
@@ -212,12 +214,12 @@ export function SnippetCommandPalette({
           <li className="flex flex-col items-center justify-center gap-1.5 px-4 py-6 text-center text-muted-foreground">
             <MessageSquareWarning className="size-5 opacity-50" />
             <p className="max-w-xs text-[11px] leading-relaxed">
-              Pas encore de snippet. Crée-en un pour pouvoir l&apos;insérer rapidement.
+              {t("paletteEmpty")}
             </p>
           </li>
         ) : filtered.length === 0 ? (
           <li className="px-3 py-4 text-center text-[11px] text-muted-foreground">
-            Aucun snippet ne matche{" "}
+            {t("paletteNoMatch")}{" "}
             <code className="rounded bg-muted px-1 font-mono text-[10.5px]">
               /{token.query}
             </code>
@@ -275,7 +277,7 @@ export function SnippetCommandPalette({
           >
             <FolderCog className="size-3.5 text-muted-foreground" />
             <span className="text-[11.5px] font-semibold">
-              Gérer les snippets…
+              {t("paletteManage")}
             </span>
           </button>
         </li>
@@ -286,17 +288,17 @@ export function SnippetCommandPalette({
           <kbd className="rounded border border-border bg-background px-1 py-px font-mono">
             ↑↓
           </kbd>{" "}
-          naviguer ·{" "}
+          {t("paletteNavigate")} ·{" "}
           <kbd className="rounded border border-border bg-background px-1 py-px font-mono">
             Enter
           </kbd>{" "}
-          insérer
+          {t("paletteInsert")}
         </span>
         <span>
           <kbd className="rounded border border-border bg-background px-1 py-px font-mono">
             Esc
           </kbd>{" "}
-          fermer
+          {t("paletteClose")}
         </span>
       </div>
     </div>

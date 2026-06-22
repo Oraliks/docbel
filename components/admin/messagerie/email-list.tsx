@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Paperclip, CornerUpLeft, Star, MessagesSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,31 +20,9 @@ interface EmailListProps {
   searchQuery?: string;
 }
 
-function formatRelativeDate(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) return "à l'instant";
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}j`;
-  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
-}
-
 function previewText(s: string): string {
   return s.replace(/\s+/g, " ").trim().slice(0, 120);
 }
-
-const EMPTY_LABEL: Record<Folder, string> = {
-  INBOX: "Aucun email reçu",
-  SENT: "Aucun email envoyé",
-  SPAM: "Aucun spam",
-  ARCHIVE: "Aucun email archivé",
-  TRASH: "Corbeille vide",
-};
 
 function safeFirstAddress(jsonString: string): string | null {
   try {
@@ -66,6 +45,22 @@ export function EmailList({
   onToggleStar,
   searchQuery,
 }: EmailListProps) {
+  const t = useTranslations("admin.messagerie");
+
+  function formatRelativeDate(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60_000);
+    if (minutes < 1) return t("listJustNow");
+    if (minutes < 60) return t("listMinutesShort", { count: minutes });
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return t("listHoursShort", { count: hours });
+    const days = Math.floor(hours / 24);
+    if (days < 7) return t("listDaysShort", { count: days });
+    return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+  }
+
   if (loading) {
     return (
       <div className="p-3 space-y-2">
@@ -85,7 +80,9 @@ export function EmailList({
   if (emails.length === 0) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center text-sm text-muted-foreground">
-        {searchQuery ? `Aucun résultat pour "${searchQuery}"` : EMPTY_LABEL[folder]}
+        {searchQuery
+          ? t("noResults", { query: searchQuery })
+          : t(`empty_${folder}` as Parameters<typeof t>[0])}
       </div>
     );
   }
@@ -125,7 +122,7 @@ export function EmailList({
                 <Checkbox
                   checked={isChecked}
                   onCheckedChange={() => onToggleSelected(email.id)}
-                  aria-label="Sélectionner"
+                  aria-label={t("select")}
                   className="mt-1"
                 />
               </div>
@@ -139,7 +136,7 @@ export function EmailList({
                   (isChecked) && "hidden",
                   "group-hover/item:hidden"
                 )}
-                aria-label="Ouvrir l'email"
+                aria-label={t("openEmail")}
               >
                 <div
                   className={cn(
@@ -183,7 +180,7 @@ export function EmailList({
                   {email.isReplied && (
                     <CornerUpLeft className="size-3 shrink-0 text-green-600 dark:text-green-500" />
                   )}
-                  <span className="truncate">{email.subject || "(sans objet)"}</span>
+                  <span className="truncate">{email.subject || t("noSubject")}</span>
                   {email.threadSize && email.threadSize > 1 && (
                     <span className="inline-flex items-center gap-0.5 shrink-0 rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
                       <MessagesSquare className="size-2.5" />
@@ -212,7 +209,7 @@ export function EmailList({
                     ? "text-amber-500"
                     : "text-muted-foreground/40 hover:text-amber-500"
                 )}
-                aria-label={email.isFlagged ? "Retirer le suivi" : "Suivre"}
+                aria-label={email.isFlagged ? t("unstar") : t("star")}
               >
                 <Star className={cn("size-3.5", email.isFlagged && "fill-current")} />
               </button>

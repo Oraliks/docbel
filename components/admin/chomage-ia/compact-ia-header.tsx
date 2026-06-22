@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Sparkles,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { cn } from "@/lib/utils";
 import { UsageBadge } from "@/components/admin/chomage-ia/usage-badge";
 
@@ -36,22 +37,23 @@ const TABS = [
   {
     id: "chat" as const,
     href: "/admin/chomage/ia/chat",
-    label: "Chat",
+    labelKey: "tabChat" as const,
     icon: MessageSquare,
   },
   {
     id: "sources" as const,
     href: "/admin/chomage/ia/sources",
-    label: "Sources",
+    labelKey: "tabSources" as const,
     icon: BookOpen,
   },
 ];
 
-export function CompactIaHeader({
+export async function CompactIaHeader({
   activeTab,
   stats,
   domain = "chomage",
 }: CompactIaHeaderProps) {
+  const t = await getTranslations("admin.chomageIa");
   return (
     <header
       role="banner"
@@ -62,10 +64,10 @@ export function CompactIaHeader({
         <Link
           href="/admin"
           className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[11.5px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-          title="Retour au dashboard admin"
+          title={t("backToAdminDashboard")}
         >
           <ArrowLeft className="size-3.5" />
-          <span className="hidden sm:inline">Retour</span>
+          <span className="hidden sm:inline">{t("back")}</span>
         </Link>
         <span className="text-muted-foreground/40">/</span>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -73,7 +75,7 @@ export function CompactIaHeader({
             <Sparkles className="size-3.5" />
           </span>
           <span className="text-[13px] font-bold leading-none">
-            Assistant IA Chômage
+            {t("appTitle")}
           </span>
         </div>
       </div>
@@ -81,7 +83,7 @@ export function CompactIaHeader({
       {/* Tabs centrés (sous-élément flex-1) */}
       <nav
         role="tablist"
-        aria-label="Sections IA chômage"
+        aria-label={t("sectionsAriaLabel")}
         className="ml-2 flex shrink-0 items-center gap-0.5 rounded-lg border border-border bg-background/80 p-0.5"
       >
         {TABS.map((tab) => {
@@ -102,7 +104,7 @@ export function CompactIaHeader({
               )}
             >
               <Icon className="size-3.5" />
-              {tab.label}
+              {t(tab.labelKey)}
             </Link>
           );
         })}
@@ -117,10 +119,10 @@ export function CompactIaHeader({
           {typeof stats.sources === "number" ? (
             <StatPill
               value={stats.sources}
-              label={stats.sources > 1 ? "sources" : "source"}
+              label={t("statSources", { count: stats.sources })}
               hint={
                 typeof stats.enabledSources === "number"
-                  ? `${stats.enabledSources} activée${stats.enabledSources > 1 ? "s" : ""}`
+                  ? t("statEnabledHint", { count: stats.enabledSources })
                   : undefined
               }
             />
@@ -128,13 +130,13 @@ export function CompactIaHeader({
           {typeof stats.sessions === "number" ? (
             <StatPill
               value={stats.sessions}
-              label={stats.sessions > 1 ? "conv." : "conv."}
+              label={t("statConversations", { count: stats.sessions })}
             />
           ) : null}
           {typeof stats.prompts === "number" ? (
             <StatPill
               value={stats.prompts}
-              label={stats.prompts > 1 ? "prompts" : "prompt"}
+              label={t("statPrompts", { count: stats.prompts })}
             />
           ) : null}
         </div>

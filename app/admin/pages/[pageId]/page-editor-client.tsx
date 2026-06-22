@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -20,9 +21,14 @@ import { generateSlug } from '@/lib/page-builder/validation'
 import type { AuditResult } from '@/components/page-builder/audit-dialog'
 import type { BlockProps, PageVariable, ThemeTokens } from '@/lib/page-builder/types'
 
+function EditorLoading() {
+  const t = useTranslations('admin.pages')
+  return <div className="flex-1 p-8 text-sm text-muted-foreground">{t('editorLoading')}</div>
+}
+
 const Editor = dynamic(
   () => import('@/components/page-builder/editor').then((m) => ({ default: m.Editor })),
-  { ssr: false, loading: () => <div className="flex-1 p-8 text-sm text-muted-foreground">Chargement de l&apos;éditeur…</div> }
+  { ssr: false, loading: () => <EditorLoading /> }
 )
 const Topbar = dynamic(
   () => import('@/components/page-builder/topbar').then((m) => ({ default: m.Topbar })),
@@ -69,6 +75,7 @@ function isoToDatetimeLocal(iso: string | null | undefined): string {
 }
 
 export default function PageEditorClient({ params }: PageEditorPageProps) {
+  const t = useTranslations('admin.pages')
   const router = useRouter()
 
   const page = usePageBuilderStore((s) => s.page)
@@ -146,13 +153,13 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         setIsDirty(false)
       } catch (error) {
         console.error('Failed to fetch page:', error)
-        toast.error('Impossible de charger la page')
+        toast.error(t('editorLoadError'))
         router.push('/admin/pages')
       } finally {
         setLoading(false)
       }
     },
-    [router, setBlocks, setIsDirty, setPage, setThemeTokens, setVariables]
+    [router, setBlocks, setIsDirty, setPage, setThemeTokens, setVariables, t]
   )
 
   useEffect(() => {
@@ -193,7 +200,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
           signal: ctrl.signal,
         })
         if (!res.ok) {
-          let msg = 'Erreur lors de la sauvegarde'
+          let msg = t('saveError')
           try {
             const err = await res.json()
             msg = err.error || msg
@@ -212,7 +219,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
       } catch (error) {
         if ((error as Error).name === 'AbortError') return null
         console.error('Failed to save:', error)
-        toast.error('Erreur lors de la sauvegarde')
+        toast.error(t('saveError'))
         return null
       } finally {
         if (inflightRef.current === ctrl) {
@@ -221,7 +228,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         }
       }
     },
-    [setIsDirty, setPage]
+    [setIsDirty, setPage, t]
   )
 
   const scheduleAutosave = useCallback(
@@ -282,12 +289,12 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         e.preventDefault()
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
         void persist({ title, content: blocks })
-        toast.success('Sauvegardé')
+        toast.success(t('saved'))
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [blocks, persist, title])
+  }, [blocks, persist, title, t])
 
   // beforeunload guard
   useEffect(() => {
@@ -319,23 +326,23 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
       if (res.ok) {
         const updated = await res.json()
         setPage(updated)
-        toast.success(newStatus === 'published' ? 'Page publiée 🚀' : 'Remise en brouillon')
+        toast.success(newStatus === 'published' ? t('toastPagePublished') : t('toastBackToDraft'))
       } else {
-        toast.error('Erreur lors du changement d’état')
+        toast.error(t('toggleStatusError'))
       }
     } catch (error) {
       console.error('Failed to toggle publish:', error)
-      toast.error('Erreur lors du changement d’état')
+      toast.error(t('toggleStatusError'))
     } finally {
       setIsSaving(false)
     }
-  }, [page, setPage])
+  }, [page, setPage, t])
 
   const handleSaveSettings = async () => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     const cleanSlug = generateSlug(slug.startsWith('/') ? slug.slice(1) : slug)
     if (!cleanSlug) {
-      toast.error('Slug invalide')
+      toast.error(t('invalidSlug'))
       return
     }
     // Schedule publication when a FUTURE date is set. A past/empty date clears
@@ -361,27 +368,31 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
     setSlug(cleanSlug)
     if (isFutureSchedule) {
       toast.success(
-        `Publication planifiée le ${scheduledDate!.toLocaleString('fr-FR', {
-          dateStyle: 'long',
-          timeStyle: 'short',
-        })}`
+        t('toastScheduledAt', {
+          date: scheduledDate!.toLocaleString('fr-FR', {
+            dateStyle: 'long',
+            timeStyle: 'short',
+          }),
+        })
       )
     } else {
-      toast.success('Paramètres sauvegardés')
+      toast.success(t('toastSettingsSaved'))
     }
     setShowSettingsDialog(false)
   }
 
   const saveLabel = useMemo(() => {
-    if (isSaving) return 'Enregistrement…'
-    if (isDirty) return 'Modifications non sauvegardées'
+    if (isSaving) return t('saving')
+    if (isDirty) return t('unsavedChanges')
     if (lastSaved)
-      return `Sauvé à ${lastSaved.toLocaleTimeString('fr-FR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      })}`
-    return 'Nouvelle page'
-  }, [isSaving, isDirty, lastSaved])
+      return t('savedAt', {
+        time: lastSaved.toLocaleTimeString('fr-FR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      })
+    return t('newPage')
+  }, [isSaving, isDirty, lastSaved, t])
 
   if (loading) {
     return (
@@ -405,7 +416,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   if (!page) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p className="text-muted-foreground">Page non trouvée</p>
+        <p className="text-muted-foreground">{t('pageNotFound')}</p>
       </div>
     )
   }
@@ -416,19 +427,19 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
         `/api/page-builder/preview-token?id=${encodeURIComponent(page.id)}`
       )
       if (!res.ok) {
-        toast.error('Impossible de générer le lien d’aperçu')
+        toast.error(t('previewLinkGenerateError'))
         return
       }
       const data = await res.json()
       if (!data?.token) {
-        toast.error('Lien d’aperçu indisponible (secret non configuré)')
+        toast.error(t('previewLinkUnavailable'))
         return
       }
       const url = `${window.location.origin}/preview/${page.id}?token=${data.token}`
       await navigator.clipboard.writeText(url)
-      toast.success('Lien d’aperçu copié 🔗')
+      toast.success(t('previewLinkCopied'))
     } catch {
-      toast.error('Impossible de copier le lien d’aperçu')
+      toast.error(t('previewLinkCopyError'))
     }
   }
 
@@ -454,13 +465,13 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
     a.download = `${slug || 'page'}.json`
     a.click()
     URL.revokeObjectURL(url)
-    toast.success('Page exportée en JSON')
+    toast.success(t('toastExported'))
   }
 
   const handleAiMeta = async () => {
     const content = flattenBlocksText(blocks)
     if (!content) {
-      toast.error('Ajoutez du contenu à la page d’abord')
+      toast.error(t('addContentFirst'))
       return
     }
     setAiMetaLoading(true)
@@ -472,18 +483,18 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
       })
       const data = await res.json()
       if (data?.aiDisabled) {
-        toast.error('Assistant IA non configuré')
+        toast.error(t('aiAssistantNotConfigured'))
         return
       }
       if (!res.ok || data?.error) {
-        toast.error(data?.error || 'Échec de la génération')
+        toast.error(data?.error || t('generationFailed'))
         return
       }
       if (data.title) setMetaTitle(String(data.title).slice(0, 60))
       if (data.desc) setMetaDesc(String(data.desc).slice(0, 160))
-      toast.success('Métadonnées générées')
+      toast.success(t('metaGenerated'))
     } catch {
-      toast.error('Échec de la génération')
+      toast.error(t('generationFailed'))
     } finally {
       setAiMetaLoading(false)
     }
@@ -492,7 +503,7 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
   const handleAudit = async () => {
     const content = flattenBlocksText(blocks)
     if (!content) {
-      toast.error('Ajoutez du contenu à la page d’abord')
+      toast.error(t('addContentFirst'))
       return
     }
     setAuditResult(null)
@@ -507,18 +518,18 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
       const data = await res.json()
       if (data?.aiDisabled) {
         setShowAuditDialog(false)
-        toast.error('IA non configurée')
+        toast.error(t('aiNotConfigured'))
         return
       }
       if (!res.ok || data?.error) {
         setShowAuditDialog(false)
-        toast.error(data?.error || 'Échec de l’audit')
+        toast.error(data?.error || t('auditFailed'))
         return
       }
       setAuditResult(data as AuditResult)
     } catch {
       setShowAuditDialog(false)
-      toast.error('Échec de l’audit')
+      toast.error(t('auditFailed'))
     } finally {
       setAuditLoading(false)
     }
@@ -588,21 +599,21 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
       <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Paramètres de la page</DialogTitle>
+            <DialogTitle>{t('settingsDialogTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Slug (URL)</label>
+              <label className="text-sm font-medium">{t('slugLabel')}</label>
               <Input
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
-                placeholder="mon-slug"
+                placeholder={t('slugPlaceholder')}
                 className="font-mono"
               />
               <p className="text-xs text-muted-foreground">
-                URL : /{slug ? generateSlug(slug) : '…'}
+                {t('urlPrefix')} /{slug ? generateSlug(slug) : '…'}
                 {slug && generateSlug(slug) !== slug && (
-                  <span className="ml-2 italic">(normalisé à la sauvegarde)</span>
+                  <span className="ml-2 italic">{t('normalizedOnSave')}</span>
                 )}
               </p>
             </div>
@@ -615,17 +626,17 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
                 disabled={aiMetaLoading}
               >
                 <Sparkles className="mr-1.5 size-3.5" />
-                {aiMetaLoading ? 'Génération…' : 'Générer titre + description (IA)'}
+                {aiMetaLoading ? t('generating') : t('generateMeta')}
               </Button>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Meta title (SEO)</label>
+              <label className="text-sm font-medium">{t('metaTitleLabel')}</label>
               <div className="relative">
                 <Input
                   value={metaTitle}
                   onChange={(e) => setMetaTitle(e.target.value)}
                   maxLength={60}
-                  placeholder="Titre pour les moteurs de recherche"
+                  placeholder={t('metaTitlePlaceholder')}
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
                   {metaTitle.length}/60
@@ -633,14 +644,14 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Meta description (SEO)</label>
+              <label className="text-sm font-medium">{t('metaDescLabel')}</label>
               <div className="relative">
                 <textarea
                   value={metaDesc}
                   onChange={(e) => setMetaDesc(e.target.value)}
                   maxLength={160}
                   rows={3}
-                  placeholder="Description pour les résultats de recherche"
+                  placeholder={t('metaDescPlaceholder')}
                   className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
                 />
                 <span className="absolute right-2 bottom-2 text-[10px] text-muted-foreground bg-card px-1">
@@ -649,16 +660,16 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Image de partage (OG image)</label>
+              <label className="text-sm font-medium">{t('ogImageLabel')}</label>
               <Input
                 value={ogImage}
                 onChange={(e) => setOgImage(e.target.value)}
                 placeholder="https://exemple.com/image.jpg"
               />
-              <p className="text-xs text-muted-foreground">Recommandé : 1200×630 px</p>
+              <p className="text-xs text-muted-foreground">{t('ogImageHint')}</p>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Planifier la publication</label>
+              <label className="text-sm font-medium">{t('scheduleLabel')}</label>
               <div className="flex items-center gap-2">
                 <Input
                   type="datetime-local"
@@ -671,23 +682,23 @@ export default function PageEditorClient({ params }: PageEditorPageProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => setScheduledAt('')}
-                    title="Effacer la planification"
+                    title={t('clearSchedule')}
                   >
-                    Effacer
+                    {t('clear')}
                   </Button>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                Une date future planifie la mise en ligne automatique. Laissez vide pour publier manuellement.
+                {t('scheduleHint')}
               </p>
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t pt-4">
             <Button variant="outline" onClick={() => setShowSettingsDialog(false)}>
-              Annuler
+              {t('cancel')}
             </Button>
             <Button onClick={handleSaveSettings} disabled={isSaving}>
-              {isSaving ? 'Enregistrement…' : 'Enregistrer'}
+              {isSaving ? t('saving') : t('save')}
             </Button>
           </div>
         </DialogContent>

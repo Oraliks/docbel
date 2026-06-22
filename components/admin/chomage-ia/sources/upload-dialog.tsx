@@ -19,6 +19,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   CheckCircle2,
   FileSpreadsheet,
@@ -110,14 +111,6 @@ const EXT_TO_KIND: Record<string, Kind> = {
   gif: "image_caption",
 };
 
-const KIND_LABELS: Record<Kind, string> = {
-  pdf: "PDF",
-  docx: "Word",
-  xlsx: "Excel",
-  pptx: "PowerPoint",
-  image_caption: "Image",
-};
-
 function inferKind(file: File): Kind | "unsupported" {
   if (MIME_TO_KIND[file.type]) return MIME_TO_KIND[file.type];
   const ext = (file.name.split(".").pop() || "").toLowerCase();
@@ -163,6 +156,7 @@ export function UploadDialog({
   domain,
   onSuccess,
 }: UploadDialogProps) {
+  const t = useTranslations("admin.chomageIa");
   const [slots, setSlots] = useState<FileSlot[]>([]);
   const [baseTitle, setBaseTitle] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
@@ -187,14 +181,17 @@ export function UploadDialog({
     for (const file of incoming) {
       const kind = inferKind(file);
       if (kind === "unsupported") {
-        toast.error(`${file.name} : format non supporté`, {
-          description: "Accepté : PDF, Word, Excel, PowerPoint, images.",
+        toast.error(t("fileUnsupported", { name: file.name }), {
+          description: t("acceptedFormats"),
         });
         continue;
       }
       if (file.size > MAX_FILE_SIZE) {
-        toast.error(`${file.name} : fichier trop volumineux`, {
-          description: `Max ${MAX_FILE_SIZE / 1024 / 1024} Mo (taille actuelle : ${fmtBytes(file.size)}).`,
+        toast.error(t("fileTooLarge", { name: file.name }), {
+          description: t("maxSizeWithCurrent", {
+            max: MAX_FILE_SIZE / 1024 / 1024,
+            current: fmtBytes(file.size),
+          }),
         });
         continue;
       }
@@ -279,7 +276,7 @@ export function UploadDialog({
                   ...s,
                   status: "duplicate" as SlotStatus,
                   duplicateExistingId: data.existingId,
-                  duplicateExistingTitle: data.existingTitle ?? "Source existante",
+                  duplicateExistingTitle: data.existingTitle ?? t("existingSource"),
                 }
               : s
           )
@@ -338,7 +335,7 @@ export function UploadDialog({
   async function uploadAll() {
     const queue = slots.filter((s) => s.status === "pending");
     if (queue.length === 0) {
-      toast.error("Aucun fichier à uploader");
+      toast.error(t("noFileToUpload"));
       return;
     }
     // Caption images : plus obligatoire — le backend tente OCR automatiquement
@@ -366,23 +363,21 @@ export function UploadDialog({
     setUploading(false);
 
     if (errorCount === 0 && duplicateCount === 0) {
-      toast.success(
-        `${successCount} fichier${successCount > 1 ? "s" : ""} uploadé${successCount > 1 ? "s" : ""}`
-      );
+      toast.success(t("filesUploaded", { count: successCount }));
       reset();
       onSuccess();
     } else {
       const parts: string[] = [];
-      if (successCount > 0) parts.push(`${successCount} succès`);
+      if (successCount > 0) parts.push(t("partSuccess", { count: successCount }));
       if (duplicateCount > 0)
-        parts.push(`${duplicateCount} doublon${duplicateCount > 1 ? "s" : ""}`);
+        parts.push(t("partDuplicates", { count: duplicateCount }));
       if (errorCount > 0)
-        parts.push(`${errorCount} erreur${errorCount > 1 ? "s" : ""}`);
+        parts.push(t("partErrors", { count: errorCount }));
       toast.warning(parts.join(", "), {
         description:
           duplicateCount > 0
-            ? "Vérifie les doublons et clique « Re-uploader » si tu veux les ajouter quand même."
-            : "Les fichiers en erreur restent dans la liste — corrige et relance.",
+            ? t("uploadDuplicatesHint")
+            : t("uploadErrorsHint"),
       });
       onSuccess();
     }
@@ -409,11 +404,9 @@ export function UploadDialog({
         {/* Click-outside et ESC sont déjà interceptés via onOpenChange ci-dessus
             qui bloque la fermeture pendant l'upload ou s'il reste des erreurs. */}
         <DialogHeader className="border-b border-border px-6 py-4">
-          <DialogTitle>Upload de fichiers vers la KB</DialogTitle>
+          <DialogTitle>{t("uploadDialogTitle")}</DialogTitle>
           <DialogDescription>
-            Glissez plusieurs fichiers à la fois. Formats : PDF, Word (.docx),
-            Excel (.xlsx), PowerPoint (.pptx), images. Le texte est extrait
-            automatiquement quand c&apos;est possible. Max 20 Mo par fichier.
+            {t("uploadDialogDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -437,10 +430,10 @@ export function UploadDialog({
               )}
             />
             <p className="text-[13px] font-medium">
-              Glissez vos fichiers ici ou cliquez pour parcourir
+              {t("dropOrBrowseMulti")}
             </p>
             <p className="text-[11px] text-muted-foreground">
-              PDF · Word · Excel · PowerPoint · Images — multi-fichiers
+              {t("formatsLineMulti")}
             </p>
             <input
               ref={fileInputRef}
@@ -461,20 +454,20 @@ export function UploadDialog({
           <div className="shrink-0 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
               <Label htmlFor="upload-base-title" className="text-[12.5px]">
-                Préfixe de titre (optionnel)
+                {t("titlePrefixLabel")}
               </Label>
               <Input
                 id="upload-base-title"
                 value={baseTitle}
                 onChange={(e) => setBaseTitle(e.target.value)}
-                placeholder="Ex: Barème ONEM 2026"
+                placeholder={t("titlePrefixPlaceholder")}
                 disabled={uploading}
               />
             </div>
 
             <div className="flex flex-col gap-1">
               <Label htmlFor="upload-url" className="text-[12.5px]">
-                URL source (optionnel)
+                {t("sourceUrlOptionalLabel")}
               </Label>
               <Input
                 id="upload-url"
@@ -488,13 +481,13 @@ export function UploadDialog({
 
             <div className="flex flex-col gap-1 sm:col-span-2">
               <Label htmlFor="upload-tags" className="text-[12.5px]">
-                Tags (séparés par des virgules)
+                {t("tagsCommaLabel")}
               </Label>
               <Input
                 id="upload-tags"
                 value={tagsRaw}
                 onChange={(e) => setTagsRaw(e.target.value)}
-                placeholder="ex: ONEM, barèmes, 2026"
+                placeholder={t("tagsPlaceholder")}
                 disabled={uploading}
               />
             </div>
@@ -502,16 +495,16 @@ export function UploadDialog({
             {hasImages && (
               <div className="flex flex-col gap-1 sm:col-span-2">
                 <Label htmlFor="upload-caption" className="text-[12.5px]">
-                  Description des images{" "}
+                  {t("imageDescriptionLabel")}{" "}
                   <span className="text-muted-foreground font-normal">
-                    (optionnel — OCR auto si vide)
+                    {t("imageDescriptionHint")}
                   </span>
                 </Label>
                 <Textarea
                   id="upload-caption"
                   value={imageCaption}
                   onChange={(e) => setImageCaption(e.target.value)}
-                  placeholder="Laisse vide → OCR Tesseract automatique (fr+nl+en). Sinon décris ce que montre l'image."
+                  placeholder={t("imageCaptionPlaceholder")}
                   rows={2}
                   disabled={uploading}
                 />
@@ -526,26 +519,26 @@ export function UploadDialog({
             <div className="flex flex-1 min-h-0 flex-col gap-1.5">
               <div className="flex shrink-0 items-center justify-between">
                 <Label className="text-[12.5px]">
-                  File d&apos;attente ({slots.length})
+                  {t("queueLabel", { count: slots.length })}
                 </Label>
                 <div className="flex items-center gap-2 text-[11.5px] text-muted-foreground">
                   {stats.success > 0 && (
                     <span className="text-emerald-600 dark:text-emerald-400">
-                      {stats.success} ok
+                      {t("statOk", { count: stats.success })}
                     </span>
                   )}
                   {stats.duplicate > 0 && (
                     <span className="text-amber-700 dark:text-amber-400">
-                      {stats.duplicate} doublon{stats.duplicate > 1 ? "s" : ""}
+                      {t("statDuplicates", { count: stats.duplicate })}
                     </span>
                   )}
                   {stats.error > 0 && (
                     <span className="text-destructive">
-                      {stats.error} erreur{stats.error > 1 ? "s" : ""}
+                      {t("statErrors", { count: stats.error })}
                     </span>
                   )}
                   {stats.pending > 0 && (
-                    <span>{stats.pending} en attente</span>
+                    <span>{t("statPending", { count: stats.pending })}</span>
                   )}
                 </div>
               </div>
@@ -579,18 +572,21 @@ export function UploadDialog({
             }}
             disabled={uploading}
           >
-            {stats.success > 0 || hasErrors ? "Fermer" : "Annuler"}
+            {stats.success > 0 || hasErrors ? t("close") : t("cancel")}
           </Button>
           <Button onClick={uploadAll} disabled={!canSubmit}>
             {uploading ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />
-                Upload… ({stats.uploading + stats.success}/{stats.total})
+                {t("uploadingProgress", {
+                  done: stats.uploading + stats.success,
+                  total: stats.total,
+                })}
               </>
             ) : (
               <>
                 <UploadIcon className="size-3.5" />
-                Uploader {stats.pending} fichier{stats.pending > 1 ? "s" : ""}
+                {t("uploadNFiles", { count: stats.pending })}
               </>
             )}
           </Button>
@@ -611,8 +607,9 @@ function SlotRow({
   onRemove: () => void;
   onForceReupload: () => void;
 }) {
+  const t = useTranslations("admin.chomageIa");
   const label =
-    slot.kind === "unsupported" ? "?" : KIND_LABELS[slot.kind as Kind];
+    slot.kind === "unsupported" ? "?" : t("uploadKind", { kind: slot.kind });
 
   return (
     <div
@@ -653,7 +650,7 @@ function SlotRow({
                 className="text-amber-700 dark:text-amber-400 truncate"
                 title={slot.warning}
               >
-                extraction partielle
+                {t("partialExtraction")}
               </span>
             </>
           )}
@@ -662,9 +659,11 @@ function SlotRow({
               <span>·</span>
               <span
                 className="text-amber-700 dark:text-amber-400 truncate"
-                title={slot.duplicateExistingTitle ?? "Source existante"}
+                title={slot.duplicateExistingTitle ?? t("existingSource")}
               >
-                doublon : « {slot.duplicateExistingTitle ?? "Source existante"} »
+                {t("duplicateOf", {
+                  title: slot.duplicateExistingTitle ?? t("existingSource"),
+                })}
               </span>
             </>
           )}
@@ -679,8 +678,8 @@ function SlotRow({
             onClick={onRemove}
             disabled={disabled}
             className="text-muted-foreground hover:text-destructive disabled:opacity-50"
-            aria-label="Retirer"
-            title="Retirer de la liste"
+            aria-label={t("remove")}
+            title={t("removeFromList")}
           >
             <X className="size-4" />
           </button>
@@ -703,17 +702,17 @@ function SlotRow({
               className="h-6 px-2 text-[10.5px] border-amber-400 text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/30"
               disabled={disabled}
               onClick={onForceReupload}
-              title="Ignorer le doublon et uploader quand même"
+              title={t("reuploadIgnoreDuplicate")}
             >
-              Re-uploader
+              {t("reupload")}
             </Button>
             <button
               type="button"
               onClick={onRemove}
               disabled={disabled}
               className="text-muted-foreground hover:text-destructive disabled:opacity-50"
-              aria-label="Retirer"
-              title="Retirer de la liste"
+              aria-label={t("remove")}
+              title={t("removeFromList")}
             >
               <X className="size-4" />
             </button>

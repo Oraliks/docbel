@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Plus, Settings, Wand2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +57,7 @@ function slugify(s: string): string {
 }
 
 export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
+  const t = useTranslations("admin.booking");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -72,20 +74,22 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
     setForm((f) => ({ ...f, ...patch }));
   }
 
-  async function toggleActive(t: TenantRow) {
-    setToggling(t.id);
+  async function toggleActive(tenant: TenantRow) {
+    setToggling(tenant.id);
     try {
-      const res = await fetch(`/api/booking/partner/tenants/${t.id}`, {
+      const res = await fetch(`/api/booking/partner/tenants/${tenant.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active: !t.active }),
+        body: JSON.stringify({ active: !tenant.active }),
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error ?? "Erreur");
+        toast.error(data.error ?? t("errorGeneric"));
         return;
       }
-      toast.success(t.active ? "Guichet désactivé (invisible au public)" : "Guichet activé");
+      toast.success(
+        tenant.active ? t("toastDeactivated") : t("toastActivated"),
+      );
       router.refresh();
     } finally {
       setToggling(null);
@@ -94,7 +98,7 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
 
   async function create() {
     if (!form.name.trim() || !form.slug.trim()) {
-      toast.error("Nom et slug requis");
+      toast.error(t("errorNameSlugRequired"));
       return;
     }
     setSaving(true);
@@ -111,10 +115,10 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error ?? "Erreur");
+        toast.error(data.error ?? t("errorGeneric"));
         return;
       }
-      toast.success("Guichet créé");
+      toast.success(t("toastCreated"));
       setOpen(false);
       router.push(`/admin/booking/${data.id}/configuration`);
     } finally {
@@ -127,22 +131,22 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={() => router.push("/admin/booking/nouveau")}>
           <Wand2 className="size-4" />
-          Assistant guidé
+          {t("guidedWizard")}
         </Button>
         <Button onClick={() => setOpen(true)}>
           <Plus className="size-4" />
-          Créer un guichet
+          {t("createTenant")}
         </Button>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
             <DialogHeader>
-              <DialogTitle>Nouveau guichet de rendez-vous</DialogTitle>
+              <DialogTitle>{t("dialogTitle")}</DialogTitle>
             </DialogHeader>
             <div className="flex flex-col gap-4 py-2">
               <div className="flex flex-col gap-1.5">
-                <Label>Nom de l&apos;organisation</Label>
+                <Label>{t("fieldNameLabel")}</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => {
@@ -152,11 +156,11 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
                       ...(slugEdited ? {} : { slug: slugify(name) }),
                     });
                   }}
-                  placeholder="Ex : Entreprise Dupont, CPAS de Namur…"
+                  placeholder={t("fieldNamePlaceholder")}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Slug (URL publique)</Label>
+                <Label>{t("fieldSlugLabel")}</Label>
                 <Input
                   value={form.slug}
                   onChange={(e) => {
@@ -166,11 +170,14 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
                   placeholder="entreprise-dupont"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Page publique : <code>/{form.slug || "slug"}/rendez-vous</code>
+                  {t.rich("fieldSlugHelper", {
+                    slug: form.slug || "slug",
+                    code: (chunks) => <code>{chunks}</code>,
+                  })}
                 </p>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Catégorie</Label>
+                <Label>{t("fieldCategoryLabel")}</Label>
                 <Select
                   value={form.category}
                   onValueChange={(v) => update({ category: v ?? "private" })}
@@ -188,106 +195,108 @@ export function AdminBookingList({ tenants }: { tenants: TenantRow[] }) {
                 </Select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Organisation partenaire (optionnel)</Label>
+                <Label>{t("fieldPartnerOrgLabel")}</Label>
                 <Input
                   value={form.partnerOrganization}
                   onChange={(e) => update({ partnerOrganization: e.target.value })}
-                  placeholder="Ex : FGTB"
+                  placeholder={t("fieldPartnerOrgPlaceholder")}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Donne l&apos;accès automatique aux responsables de cette
-                  organisation. Sinon, ajoute les gestionnaires dans l&apos;onglet
-                  Équipe.
+                  {t("fieldPartnerOrgHelper")}
                 </p>
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>
-                Annuler
+                {t("cancel")}
               </Button>
               <Button onClick={create} disabled={saving}>
-                {saving ? "Création…" : "Créer"}
+                {saving ? t("creating") : t("create")}
               </Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {tenants.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Aucun guichet pour l&apos;instant. Créez-en un pour commencer.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("emptyState")}</p>
       ) : (
         <div className="rounded-xl border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Catégorie</TableHead>
-                <TableHead>Organisation</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>En attente</TableHead>
-                <TableHead>Ce mois</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("colName")}</TableHead>
+                <TableHead>{t("colCategory")}</TableHead>
+                <TableHead>{t("colOrganization")}</TableHead>
+                <TableHead>{t("colStatus")}</TableHead>
+                <TableHead>{t("colPending")}</TableHead>
+                <TableHead>{t("colThisMonth")}</TableHead>
+                <TableHead className="text-right">{t("colActions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tenants.map((t) => (
-                <TableRow key={t.id}>
+              {tenants.map((tenant) => (
+                <TableRow key={tenant.id}>
                   <TableCell>
-                    <div className="font-medium">{t.name}</div>
-                    <div className="text-xs text-muted-foreground">/{t.slug}</div>
+                    <div className="font-medium">{tenant.name}</div>
+                    <div className="text-xs text-muted-foreground">/{tenant.slug}</div>
                   </TableCell>
-                  <TableCell>{CATEGORY_LABELS[t.category] ?? t.category}</TableCell>
+                  <TableCell>
+                    {CATEGORY_LABELS[tenant.category] ?? tenant.category}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {t.partnerOrganization ?? "—"}
+                    {tenant.partnerOrganization ?? "—"}
                   </TableCell>
                   <TableCell>
-                    {t.active ? (
-                      <Badge className="bg-emerald-100 text-emerald-800">Actif</Badge>
+                    {tenant.active ? (
+                      <Badge className="bg-emerald-100 text-emerald-800">
+                        {t("statusActive")}
+                      </Badge>
                     ) : (
-                      <Badge className="bg-gray-100 text-gray-700">Inactif</Badge>
+                      <Badge className="bg-gray-100 text-gray-700">
+                        {t("statusInactive")}
+                      </Badge>
                     )}
                   </TableCell>
                   <TableCell>
-                    {t.pendingCount > 0 ? (
+                    {tenant.pendingCount > 0 ? (
                       <Badge className="bg-amber-100 text-amber-800">
-                        {t.pendingCount}
+                        {tenant.pendingCount}
                       </Badge>
                     ) : (
                       <span className="text-muted-foreground">0</span>
                     )}
                   </TableCell>
                   <TableCell className="text-sm tabular-nums text-muted-foreground">
-                    {t.monthCount}
+                    {tenant.monthCount}
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-2">
                       <Button
-                        variant={t.active ? "outline" : "default"}
+                        variant={tenant.active ? "outline" : "default"}
                         size="sm"
-                        disabled={toggling === t.id}
-                        onClick={() => toggleActive(t)}
+                        disabled={toggling === tenant.id}
+                        onClick={() => toggleActive(tenant)}
                       >
-                        {toggling === t.id
+                        {toggling === tenant.id
                           ? "…"
-                          : t.active
-                            ? "Désactiver"
-                            : "Activer"}
+                          : tenant.active
+                            ? t("deactivate")
+                            : t("activate")}
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/admin/booking/${t.id}/agenda`)}
+                        onClick={() => router.push(`/admin/booking/${tenant.id}/agenda`)}
                       >
                         <Settings className="size-4" />
-                        Gérer
+                        {t("manage")}
                       </Button>
                       <a
-                        href={`/${t.slug}/rendez-vous`}
+                        href={`/${tenant.slug}/rendez-vous`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-muted-foreground hover:text-foreground inline-flex items-center"
-                        title="Page publique"
+                        title={t("publicPage")}
                       >
                         <ExternalLink className="size-4" />
                       </a>

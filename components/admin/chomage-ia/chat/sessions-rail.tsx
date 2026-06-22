@@ -20,6 +20,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Archive,
   ArchiveRestore,
@@ -157,6 +158,7 @@ export function SessionsRail({
   onToggleShowArchived,
   archivedCount = 0,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   // expanded = sidebar large avec titres + actions
   const [expanded, setExpanded] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -193,8 +195,8 @@ export function SessionsRail({
       onTogglePin(id);
     } else {
       // TODO(backend): ajouter colonne `pinnedAt` sur ChatSession + endpoint.
-      toast("Épinglage bientôt disponible", {
-        description: "Cette action nécessite une évolution du schéma.",
+      toast(t("pinSoon"), {
+        description: t("actionNeedsSchema"),
       });
     }
   }
@@ -204,8 +206,8 @@ export function SessionsRail({
       onArchive(id);
     } else {
       // TODO(backend): ajouter colonne `archivedAt` sur ChatSession + filtre liste.
-      toast("Archivage bientôt disponible", {
-        description: "Cette action nécessite une évolution du schéma.",
+      toast(t("archiveSoon"), {
+        description: t("actionNeedsSchema"),
       });
     }
   }
@@ -215,8 +217,8 @@ export function SessionsRail({
       onDuplicate(id);
     } else {
       // TODO(backend): endpoint POST /api/chomage-ia/sessions/[id]/duplicate.
-      toast("Duplication bientôt disponible", {
-        description: "Cette action nécessite un endpoint dédié.",
+      toast(t("duplicateSoon"), {
+        description: t("actionNeedsEndpoint"),
       });
     }
   }
@@ -225,7 +227,7 @@ export function SessionsRail({
     if (onExportMarkdown) {
       onExportMarkdown(id);
     } else {
-      toast("Export bientôt disponible");
+      toast(t("exportSoon"));
     }
   }
 
@@ -235,7 +237,7 @@ export function SessionsRail({
         "flex shrink-0 flex-col border-r border-border bg-muted/30 transition-[width] duration-200",
         expanded ? "w-64" : "w-12"
       )}
-      aria-label="Conversations"
+      aria-label={t("conversations")}
     >
       {/* Header rail : bouton nouvelle conversation */}
       <div
@@ -246,7 +248,7 @@ export function SessionsRail({
       >
         {expanded ? (
           <span className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">
-            Conversations
+            {t("conversations")}
           </span>
         ) : null}
         <Tooltip>
@@ -256,14 +258,14 @@ export function SessionsRail({
                 variant="default"
                 size="icon-sm"
                 onClick={onNew}
-                aria-label="Nouvelle conversation"
+                aria-label={t("newConversation")}
               />
             }
           >
             <Plus className="size-4" />
           </TooltipTrigger>
           {!expanded ? (
-            <TooltipContent side="right">Nouvelle conversation</TooltipContent>
+            <TooltipContent side="right">{t("newConversation")}</TooltipContent>
           ) : null}
         </Tooltip>
       </div>
@@ -277,8 +279,7 @@ export function SessionsRail({
         ) : sessions.length === 0 ? (
           expanded ? (
             <p className="px-3 py-3 text-[11px] leading-relaxed text-muted-foreground">
-              Aucune conversation — démarre en posant une question dans le
-              chat.
+              {t("noConversations")}
             </p>
           ) : null
         ) : (
@@ -367,13 +368,13 @@ export function SessionsRail({
                 variant="ghost"
                 size="icon-sm"
                 onClick={onOpenPrompts}
-                aria-label="Historique des prompts générés"
+                aria-label={t("promptsHistoryAria")}
               />
             }
           >
             <History className="size-4" />
           </TooltipTrigger>
-          <TooltipContent side="right">Historique prompts générés</TooltipContent>
+          <TooltipContent side="right">{t("promptsHistoryTooltip")}</TooltipContent>
         </Tooltip>
         {onOpenSnippets ? (
           <Tooltip>
@@ -383,13 +384,13 @@ export function SessionsRail({
                   variant="ghost"
                   size="icon-sm"
                   onClick={onOpenSnippets}
-                  aria-label="Snippets (insertion via /)"
+                  aria-label={t("snippetsInsert")}
                 />
               }
             >
               <Code2 className="size-4" />
             </TooltipTrigger>
-            <TooltipContent side="right">Snippets (insertion via /)</TooltipContent>
+            <TooltipContent side="right">{t("snippetsInsert")}</TooltipContent>
           </Tooltip>
         ) : null}
         {onToggleShowArchived ? (
@@ -402,8 +403,8 @@ export function SessionsRail({
                   onClick={onToggleShowArchived}
                   aria-label={
                     showArchived
-                      ? "Masquer les archives"
-                      : "Afficher les archives"
+                      ? t("hideArchives")
+                      : t("showArchives")
                   }
                   aria-pressed={showArchived}
                 />
@@ -417,8 +418,8 @@ export function SessionsRail({
             </TooltipTrigger>
             <TooltipContent side="right">
               {showArchived
-                ? "Masquer les archives"
-                : `Afficher les archives${archivedCount > 0 ? ` (${archivedCount})` : ""}`}
+                ? t("hideArchives")
+                : t("showArchivesCount", { count: archivedCount })}
             </TooltipContent>
           </Tooltip>
         ) : null}
@@ -429,7 +430,7 @@ export function SessionsRail({
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => setExpanded((v) => !v)}
-                aria-label={expanded ? "Replier" : "Déployer"}
+                aria-label={expanded ? t("collapse") : t("expand")}
               />
             }
           >
@@ -440,7 +441,7 @@ export function SessionsRail({
             )}
           </TooltipTrigger>
           {!expanded ? (
-            <TooltipContent side="right">Déployer</TooltipContent>
+            <TooltipContent side="right">{t("expand")}</TooltipContent>
           ) : null}
         </Tooltip>
       </div>
@@ -449,24 +450,27 @@ export function SessionsRail({
       <RenameDialog
         open={!!renameTarget}
         onOpenChange={(v) => !v && setRenameTargetId(null)}
-        title="Renommer la conversation"
-        description="Le nouveau titre apparaît dans le rail et l'historique."
-        label="Titre"
+        title={t("renameConversationTitle")}
+        description={t("renameConversationDesc")}
+        label={t("titleLabel")}
         initialValue={renameTarget?.title ?? ""}
-        placeholder="Ex: Rupture amiable et préavis…"
+        placeholder={t("renameConversationPlaceholder")}
         onConfirm={async (value) => {
           if (renameTargetId) await onRename(renameTargetId, value);
         }}
       />
       <ConfirmDeleteDialog
-        requireText="supprimer"
+        requireText={t("confirmDeleteWord")}
         open={!!deleteTarget}
         onOpenChange={(v) => !v && setDeleteTargetId(null)}
-        title="Supprimer cette conversation ?"
+        title={t("deleteConversationTitle")}
         description={
           deleteTarget
-            ? `« ${truncate(deleteTarget.title, 60)} » sera supprimée définitivement (${deleteTarget.messageCount} message${deleteTarget.messageCount > 1 ? "s" : ""}).`
-            : "Cette action est irréversible."
+            ? t("deleteConversationDesc", {
+                title: truncate(deleteTarget.title, 60),
+                count: deleteTarget.messageCount,
+              })
+            : t("actionIrreversible")
         }
         onConfirm={async () => {
           if (deleteTargetId) await onDelete(deleteTargetId);
@@ -501,24 +505,25 @@ function SessionContextMenu({
   onExport: () => void;
   onDelete: () => void;
 }) {
+  const t = useTranslations("admin.chomageIa");
   return (
     <ContextMenu>
       <ContextMenuTrigger render={<div>{children}</div>} />
       <ContextMenuContent className="min-w-48">
         <ContextMenuItem onClick={onRename}>
           <Pencil className="size-3.5" />
-          Renommer
+          {t("rename")}
         </ContextMenuItem>
         <ContextMenuItem onClick={onTogglePin}>
           {pinned ? (
             <>
               <PinOff className="size-3.5" />
-              Désépingler
+              {t("unpin")}
             </>
           ) : (
             <>
               <Pin className="size-3.5" />
-              Épingler
+              {t("pin")}
             </>
           )}
         </ContextMenuItem>
@@ -526,28 +531,28 @@ function SessionContextMenu({
           {archived ? (
             <>
               <ArchiveRestore className="size-3.5" />
-              Restaurer
+              {t("restore")}
             </>
           ) : (
             <>
               <Archive className="size-3.5" />
-              Archiver
+              {t("archive")}
             </>
           )}
         </ContextMenuItem>
         <ContextMenuItem onClick={onDuplicate}>
           <Copy className="size-3.5" />
-          Dupliquer
+          {t("duplicate")}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={onExport}>
           <Download className="size-3.5" />
-          Exporter en .md
+          {t("exportMd")}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem variant="destructive" onClick={onDelete}>
           <Trash2 className="size-3.5" />
-          Supprimer
+          {t("delete")}
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
@@ -571,6 +576,7 @@ function CompactRow({
   initials: string;
   onSelect: () => void;
 }) {
+  const t = useTranslations("admin.chomageIa");
   return (
     <Tooltip>
       <TooltipTrigger
@@ -594,7 +600,7 @@ function CompactRow({
         {session.pinned ? (
           <span
             className="absolute -right-0.5 -top-0.5 flex size-3 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm"
-            aria-label="Épinglée"
+            aria-label={t("pinned")}
           >
             <Pin className="size-2" />
           </span>
@@ -602,7 +608,7 @@ function CompactRow({
         {session.archived && !session.pinned ? (
           <span
             className="absolute -right-0.5 -top-0.5 flex size-3 items-center justify-center rounded-full bg-muted-foreground/80 text-background"
-            aria-label="Archivée"
+            aria-label={t("archived")}
           >
             <Archive className="size-2" />
           </span>
@@ -611,20 +617,20 @@ function CompactRow({
       <TooltipContent side="right" className="max-w-xs">
         <span className="font-semibold">{truncate(session.title, 60)}</span>
         <span className="block text-[10px] opacity-80">
-          {session.messageCount} msg · {fmtRelative(session.updatedAt)}
+          {t("msgCount", { count: session.messageCount })} · {fmtRelative(session.updatedAt)}
         </span>
         {session.pinned ? (
           <span className="mt-0.5 block text-[10px] opacity-80">
-            Épinglée
+            {t("pinned")}
           </span>
         ) : null}
         {session.archived ? (
           <span className="mt-0.5 block text-[10px] opacity-80">
-            Archivée
+            {t("archived")}
           </span>
         ) : null}
         <span className="mt-0.5 block text-[10px] opacity-60">
-          Clic droit pour les actions
+          {t("rightClickActions")}
         </span>
       </TooltipContent>
     </Tooltip>
@@ -650,6 +656,7 @@ function ExpandedRow({
   onDelete: () => void;
   onChangeModel?: (model: ChatModelValue | null) => void | Promise<void>;
 }) {
+  const t = useTranslations("admin.chomageIa");
   return (
     <div
       className={cn(
@@ -675,7 +682,7 @@ function ExpandedRow({
           {session.pinned ? (
             <span
               className="absolute -right-0.5 -top-0.5 flex size-2.5 items-center justify-center rounded-full bg-primary text-primary-foreground"
-              aria-label="Épinglée"
+              aria-label={t("pinned")}
             >
               <Pin className="size-1.5" />
             </span>
@@ -692,7 +699,7 @@ function ExpandedRow({
             {session.archived ? (
               <Archive
                 className="size-3 shrink-0 text-muted-foreground"
-                aria-label="Archivée"
+                aria-label={t("archived")}
               />
             ) : null}
           </span>
@@ -705,7 +712,7 @@ function ExpandedRow({
               />
             ) : null}
             <span className="truncate">
-              {session.messageCount} msg · {fmtRelative(session.updatedAt)}
+              {t("msgCount", { count: session.messageCount })} · {fmtRelative(session.updatedAt)}
             </span>
           </span>
         </span>
@@ -718,8 +725,8 @@ function ExpandedRow({
             e.stopPropagation();
             onStartEdit();
           }}
-          title="Renommer (inline)"
-          aria-label="Renommer"
+          title={t("renameInline")}
+          aria-label={t("rename")}
         >
           <Pencil className="size-3" />
         </Button>
@@ -730,8 +737,8 @@ function ExpandedRow({
             e.stopPropagation();
             onDelete();
           }}
-          title="Supprimer"
-          aria-label="Supprimer"
+          title={t("delete")}
+          aria-label={t("delete")}
         >
           <Trash2 className="size-3" />
         </Button>
@@ -751,6 +758,7 @@ function ExpandedEditRow({
   onCommit: () => void;
   onCancel: () => void;
 }) {
+  const t = useTranslations("admin.chomageIa");
   return (
     <div className="flex items-center gap-1 rounded-md border border-border bg-background px-1.5 py-1">
       <input
@@ -762,12 +770,12 @@ function ExpandedEditRow({
           if (e.key === "Escape") onCancel();
         }}
         className="flex-1 bg-transparent text-[11.5px] outline-none"
-        aria-label="Nouveau titre"
+        aria-label={t("newTitle")}
       />
-      <Button variant="ghost" size="icon-xs" onClick={onCommit} aria-label="Valider">
+      <Button variant="ghost" size="icon-xs" onClick={onCommit} aria-label={t("validate")}>
         <Check className="size-3" />
       </Button>
-      <Button variant="ghost" size="icon-xs" onClick={onCancel} aria-label="Annuler">
+      <Button variant="ghost" size="icon-xs" onClick={onCancel} aria-label={t("cancel")}>
         <X className="size-3" />
       </Button>
     </div>

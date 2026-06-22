@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
@@ -72,19 +73,12 @@ function formatBytes(n: number): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
-const FOLDER_LABEL: Record<Folder, string> = {
-  INBOX: "Reçu",
-  SENT: "Envoyé",
-  SPAM: "Spam",
-  ARCHIVE: "Archivé",
-  TRASH: "Corbeille",
-};
-
 function draftKey(emailId: string): string {
   return `messagerie-draft-${emailId}`;
 }
 
 export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onToggleStar }: EmailDetailProps) {
+  const t = useTranslations("admin.messagerie");
   const [email, setEmail] = useState<EmailFull | EmailListItem>(initial);
   const [thread, setThread] = useState<ThreadEmail[]>([]);
   const [loadingFull, setLoadingFull] = useState(false);
@@ -190,16 +184,16 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
     setBusy(true);
     const description =
       patch.moveTo === "ARCHIVE"
-        ? "Archivé"
+        ? t("statusArchived")
         : patch.moveTo === "INBOX"
-        ? "Remis dans Reçus"
+        ? t("statusMovedToInbox")
         : patch.moveTo === "SPAM"
-        ? "Marqué comme spam"
+        ? t("statusMarkedSpam")
         : patch.isRead === true
-        ? "Marqué comme lu"
+        ? t("statusMarkedRead")
         : patch.isRead === false
-        ? "Marqué comme non lu"
-        : "Mis à jour";
+        ? t("statusMarkedUnread")
+        : t("statusUpdated");
     try {
       const response = await fetch(`/api/inbox/${email.id}`, {
         method: "PATCH",
@@ -218,11 +212,11 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
         }
       } else {
         const err = await response.json().catch(() => ({}));
-        toast.error(err.error || "Action échouée");
+        toast.error(err.error || t("actionFailed"));
       }
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setBusy(false);
     }
@@ -231,15 +225,11 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
   async function deleteEmail() {
     const isAlreadyTrashed = folder === "TRASH";
     const ok = await confirm({
-      title: isAlreadyTrashed
-        ? "Supprimer définitivement cet email ?"
-        : "Mettre cet email à la corbeille ?",
-      description: isAlreadyTrashed
-        ? "L'email, ses pièces jointes et le fil seront effacés définitivement. Action irréversible."
-        : "L'email sera déplacé dans la corbeille. Vous pourrez le restaurer.",
-      confirmText: isAlreadyTrashed ? "Supprimer définitivement" : "Mettre à la corbeille",
+      title: isAlreadyTrashed ? t("deletePermanentlyTitle") : t("moveToTrashTitle"),
+      description: isAlreadyTrashed ? t("deletePermanentlyDescription") : t("moveToTrashDescription"),
+      confirmText: isAlreadyTrashed ? t("deletePermanently") : t("moveToTrash"),
       destructive: true,
-      requireText: isAlreadyTrashed ? "supprimer" : undefined,
+      requireText: isAlreadyTrashed ? t("deleteRequireText") : undefined,
     });
     if (!ok) return;
     setBusy(true);
@@ -247,14 +237,14 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
       const response = await fetch(`/api/inbox/${email.id}`, { method: "DELETE" });
       if (response.ok) {
         onRemoved(email.id);
-        toast.success(isAlreadyTrashed ? "Email supprimé définitivement" : "Email mis à la corbeille");
+        toast.success(isAlreadyTrashed ? t("emailDeletedPermanently") : t("emailMovedToTrash"));
       } else {
         const err = await response.json().catch(() => ({}));
-        toast.error(err.error || "Suppression échouée");
+        toast.error(err.error || t("deleteFailed"));
       }
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setBusy(false);
     }
@@ -279,8 +269,8 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
         body: JSON.stringify({ subject: replySubject, text, html: replyHtml }),
       });
       if (response.ok) {
-        toast.success("Réponse envoyée", {
-          description: `À ${replyDestName || replyDest}`,
+        toast.success(t("replySent"), {
+          description: t("toRecipient", { recipient: replyDestName || replyDest }),
         });
         clearDraft();
         setReplyHtml("");
@@ -297,11 +287,11 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
           });
       } else {
         const err = await response.json().catch(() => ({}));
-        toast.error(err.error || "Envoi échoué");
+        toast.error(err.error || t("sendFailed"));
       }
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setSending(false);
     }
@@ -359,10 +349,10 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
             variant="ghost"
             className="gap-1.5 h-8"
             onClick={() => openReply(true)}
-            title="Répondre (R)"
+            title={t("replyTitle")}
           >
             <Reply className="size-3.5" />
-            <span className="hidden sm:inline">Répondre</span>
+            <span className="hidden sm:inline">{t("reply")}</span>
           </Button>
         )}
         <Button
@@ -370,20 +360,20 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
           variant="ghost"
           className="gap-1.5 h-8"
           onClick={() => setShowForward(true)}
-          title="Transférer (F)"
+          title={t("forwardTitle")}
         >
           <ForwardIcon className="size-3.5" />
-          <span className="hidden sm:inline">Transférer</span>
+          <span className="hidden sm:inline">{t("forward")}</span>
         </Button>
         <Button
           size="sm"
           variant="ghost"
           className={cn("gap-1.5 h-8", email.isFlagged && "text-amber-500")}
           onClick={() => onToggleStar(email.id, !email.isFlagged)}
-          title="Suivre (S)"
+          title={t("starTitle")}
         >
           <Star className={cn("size-3.5", email.isFlagged && "fill-current")} />
-          <span className="hidden sm:inline">{email.isFlagged ? "Suivi" : "Suivre"}</span>
+          <span className="hidden sm:inline">{email.isFlagged ? t("starred") : t("star")}</span>
         </Button>
         {(folder === "INBOX" || folder === "SPAM") && (
           <Button
@@ -392,10 +382,10 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
             className="gap-1.5 h-8"
             disabled={busy}
             onClick={() => patchEmail({ isRead: !email.isRead })}
-            title="Marquer non lu (U)"
+            title={t("markUnreadTitle")}
           >
             {email.isRead ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-            <span className="hidden md:inline">{email.isRead ? "Non lu" : "Lu"}</span>
+            <span className="hidden md:inline">{email.isRead ? t("markUnread") : t("markRead")}</span>
           </Button>
         )}
         {folder !== "ARCHIVE" && folder !== "SENT" && (
@@ -405,10 +395,10 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
             className="gap-1.5 h-8"
             disabled={busy}
             onClick={() => patchEmail({ moveTo: "ARCHIVE" })}
-            title="Archiver (E)"
+            title={t("archiveTitle")}
           >
             <Archive className="size-3.5" />
-            <span className="hidden md:inline">Archiver</span>
+            <span className="hidden md:inline">{t("archive")}</span>
           </Button>
         )}
         {folder === "SPAM" && (
@@ -420,7 +410,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
             onClick={() => patchEmail({ moveTo: "INBOX" })}
           >
             <Inbox className="size-3.5" />
-            <span className="hidden md:inline">Pas spam</span>
+            <span className="hidden md:inline">{t("notSpam")}</span>
           </Button>
         )}
         {folder !== "SPAM" && folder !== "TRASH" && folder !== "SENT" && (
@@ -432,7 +422,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
             onClick={() => patchEmail({ moveTo: "SPAM" })}
           >
             <AlertOctagon className="size-3.5" />
-            <span className="hidden md:inline">Spam</span>
+            <span className="hidden md:inline">{t("spam")}</span>
           </Button>
         )}
         <div className="ml-auto" />
@@ -442,10 +432,10 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
           className="gap-1.5 h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
           disabled={busy}
           onClick={deleteEmail}
-          title="Supprimer (#)"
+          title={t("deleteTitle")}
         >
           <Trash2 className="size-3.5" />
-          <span className="hidden md:inline">{folder === "TRASH" ? "Supprimer" : "Corbeille"}</span>
+          <span className="hidden md:inline">{folder === "TRASH" ? t("delete") : t("trash")}</span>
         </Button>
       </div>
 
@@ -454,13 +444,13 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
         <div className="mx-auto max-w-3xl p-4 md:p-6">
           <div className="mb-4 flex items-start justify-between gap-4">
             <h2 className="text-lg font-semibold leading-tight tracking-tight md:text-xl">
-              {email.subject || "(sans objet)"}
+              {email.subject || t("noSubject")}
             </h2>
             <div className="flex shrink-0 items-center gap-2">
               {(initial.isReplied || folder === "SENT") && (
                 <Badge variant="secondary" className="gap-1">
                   <CornerUpLeft className="size-3" />
-                  {folder === "SENT" ? "Envoyé" : "Répondu"}
+                  {folder === "SENT" ? t("statusSent") : t("statusReplied")}
                 </Badge>
               )}
             </div>
@@ -470,7 +460,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
           {conversationOthers.length > 0 && (
             <div className="mb-4 space-y-2">
               <div className="text-xs font-medium text-muted-foreground">
-                Conversation ({thread.length} message{thread.length > 1 ? "s" : ""})
+                {t("conversationCount", { count: thread.length })}
               </div>
               {conversationOthers.map((m) => {
                 const isExpanded = expandedThreadIds.has(m.id);
@@ -499,7 +489,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
                         {tAvatar.initials}
                       </div>
                       <Badge variant="outline" className="shrink-0 h-5 px-1.5 text-[10px]">
-                        {FOLDER_LABEL[m.folder]}
+                        {t(`folderSingular_${m.folder}` as Parameters<typeof t>[0])}
                       </Badge>
                       <span className="font-medium truncate">
                         {m.fromName || m.fromAddress}
@@ -526,7 +516,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
                             }}
                           />
                         ) : (
-                          <div className="whitespace-pre-wrap">{m.textBody || "(message vide)"}</div>
+                          <div className="whitespace-pre-wrap">{m.textBody || t("emptyMessage")}</div>
                         )}
                       </div>
                     )}
@@ -562,7 +552,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
               </div>
               {fullEmail.replyToAddress && fullEmail.replyToAddress !== email.fromAddress && (
                 <div className="text-xs text-muted-foreground">
-                  Répondre à : {fullEmail.replyToAddress}
+                  {t("replyTo", { address: fullEmail.replyToAddress })}
                 </div>
               )}
             </div>
@@ -572,7 +562,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
             <div className="mb-4 rounded-md border bg-background p-3">
               <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Paperclip className="size-3" />
-                Pièces jointes ({email.attachments.length})
+                {t("attachments", { count: email.attachments.length })}
               </div>
               <ul className="space-y-1 text-sm">
                 {email.attachments.map((a, i) => (
@@ -583,7 +573,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
                 ))}
               </ul>
               <p className="mt-2 text-[11px] text-muted-foreground italic">
-                Pour télécharger, ouvre l&apos;email sur OVH webmail.
+                {t("attachmentsDownloadNote")}
               </p>
             </div>
           )}
@@ -593,8 +583,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
             <div className="mb-4 flex items-center gap-3 rounded-md border bg-amber-50 px-3 py-2 text-sm dark:bg-amber-950/20">
               <ImageIcon className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
               <span className="flex-1 text-amber-900 dark:text-amber-200">
-                {sanitized.blockedImageCount} image{sanitized.blockedImageCount > 1 ? "s" : ""}{" "}
-                bloquée{sanitized.blockedImageCount > 1 ? "s" : ""} pour ta confidentialité (pixels de tracking).
+                {t("blockedImages", { count: sanitized.blockedImageCount })}
               </span>
               <Button
                 size="sm"
@@ -602,7 +591,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
                 className="h-7 shrink-0"
                 onClick={() => setShowImages(true)}
               >
-                Afficher
+                {t("showImages")}
               </Button>
             </div>
           )}
@@ -610,7 +599,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
           <Separator className="mb-4" />
 
           {loadingFull && !fullEmail.htmlBody ? (
-            <div className="text-sm text-muted-foreground">Chargement du contenu...</div>
+            <div className="text-sm text-muted-foreground">{t("loadingContent")}</div>
           ) : sanitized ? (
             <div
               className="prose prose-sm dark:prose-invert max-w-none rounded-md border bg-background p-4"
@@ -618,7 +607,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
             />
           ) : (
             <div className="rounded-md border bg-background p-4 whitespace-pre-wrap text-sm">
-              {email.textBody || "(message vide)"}
+              {email.textBody || t("emptyMessage")}
             </div>
           )}
 
@@ -647,12 +636,12 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
                     );
                   }}
                 >
-                  Citer le message
+                  {t("quoteMessage")}
                 </button>
               </div>
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1 block text-xs text-muted-foreground">Sujet</label>
+                  <label className="mb-1 block text-xs text-muted-foreground">{t("subjectLabel")}</label>
                   <Input
                     value={replySubject}
                     onChange={(e) => setReplySubject(e.target.value)}
@@ -660,11 +649,11 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-muted-foreground">Message</label>
+                  <label className="mb-1 block text-xs text-muted-foreground">{t("messageLabel")}</label>
                   <EmailEditor
                     value={replyHtml}
                     onChange={setReplyHtml}
-                    placeholder="Écrivez votre réponse..."
+                    placeholder={t("replyPlaceholder")}
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -675,7 +664,7 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
                     className="gap-1.5"
                   >
                     <Send className="size-3.5" />
-                    {sending ? "Envoi..." : "Envoyer"}
+                    {sending ? t("sending") : t("send")}
                   </Button>
                   <Button
                     size="sm"
@@ -687,11 +676,11 @@ export function EmailDetail({ email: initial, folder, onUpdated, onRemoved, onTo
                     }}
                     disabled={sending}
                   >
-                    Annuler
+                    {t("cancel")}
                   </Button>
                   <span className="ml-auto text-xs text-muted-foreground">
                     {!isEditorEmpty(replyHtml) && (
-                      <span className="text-green-600 dark:text-green-500">brouillon sauvegardé</span>
+                      <span className="text-green-600 dark:text-green-500">{t("draftSaved")}</span>
                     )}
                   </span>
                 </div>

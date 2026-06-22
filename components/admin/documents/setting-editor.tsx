@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft, Save, RotateCcw, Eye, EyeOff } from "lucide-react";
@@ -34,6 +35,7 @@ interface FieldState {
 }
 
 export function SettingEditor({ title, subtitle, backHref, fields }: SettingEditorProps) {
+  const t = useTranslations("admin.documents");
   const [state, setState] = useState<Record<string, FieldState>>(
     Object.fromEntries(fields.map((f) => [f.key, { value: "", defaultValue: "", loaded: false }]))
   );
@@ -44,7 +46,7 @@ export function SettingEditor({ title, subtitle, backHref, fields }: SettingEdit
     fields.forEach(async (f) => {
       try {
         const res = await fetch(`/api/admin/settings/${f.key}`);
-        if (!res.ok) throw new Error("Erreur de chargement");
+        if (!res.ok) throw new Error(t("loadError"));
         const data = await res.json();
         setState((s) => ({
           ...s,
@@ -55,7 +57,7 @@ export function SettingEditor({ title, subtitle, backHref, fields }: SettingEdit
           },
         }));
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Erreur de chargement");
+        toast.error(err instanceof Error ? err.message : t("loadError"));
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -66,7 +68,7 @@ export function SettingEditor({ title, subtitle, backHref, fields }: SettingEdit
   }
 
   function resetToDefault(key: string) {
-    if (!confirm("Restaurer le texte par défaut ? Vos modifications non sauvegardées seront perdues.")) {
+    if (!confirm(t("resetConfirm"))) {
       return;
     }
     setState((s) => ({ ...s, [key]: { ...s[key], value: s[key].defaultValue } }));
@@ -83,12 +85,12 @@ export function SettingEditor({ title, subtitle, backHref, fields }: SettingEdit
         });
         if (!res.ok) {
           const j = await res.json().catch(() => ({}));
-          throw new Error(j.error || `Erreur sur ${f.label}`);
+          throw new Error(j.error || t("saveFieldError", { field: f.label }));
         }
       }
-      toast.success("Paramètres sauvegardés");
+      toast.success(t("settingsSaved"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("error"));
     } finally {
       setSaving(false);
     }
@@ -101,7 +103,7 @@ export function SettingEditor({ title, subtitle, backHref, fields }: SettingEdit
       <div className="flex items-center gap-3">
         <Button render={<Link href={backHref} />} variant="ghost" size="sm">
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Retour
+          {t("back")}
         </Button>
         <div>
           <h1 className="text-2xl font-bold">{title}</h1>
@@ -111,7 +113,7 @@ export function SettingEditor({ title, subtitle, backHref, fields }: SettingEdit
 
       {!allLoaded ? (
         <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">Chargement…</CardContent>
+          <CardContent className="py-12 text-center text-muted-foreground">{t("loading")}</CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -127,7 +129,7 @@ export function SettingEditor({ title, subtitle, backHref, fields }: SettingEdit
               }`}
             >
               <Eye className="w-4 h-4" />
-              Éditer
+              {t("tabEdit")}
             </button>
             <button
               type="button"
@@ -139,7 +141,7 @@ export function SettingEditor({ title, subtitle, backHref, fields }: SettingEdit
               }`}
             >
               <EyeOff className="w-4 h-4" />
-              Aperçu
+              {t("tabPreview")}
             </button>
           </div>
 
@@ -158,10 +160,10 @@ export function SettingEditor({ title, subtitle, backHref, fields }: SettingEdit
                         variant="ghost"
                         size="sm"
                         onClick={() => resetToDefault(f.key)}
-                        title="Restaurer le texte par défaut"
+                        title={t("resetTitle")}
                       >
                         <RotateCcw className="w-4 h-4 mr-1" />
-                        Défaut
+                        {t("default")}
                       </Button>
                     </div>
                   </CardHeader>
@@ -170,7 +172,7 @@ export function SettingEditor({ title, subtitle, backHref, fields }: SettingEdit
                       <Alert>
                         <AlertDescription>
                           <p className="text-xs font-medium mb-1.5">
-                            Variables utilisables (remplacées à l&apos;envoi) :
+                            {t("variablesAvailable")}
                           </p>
                           <div className="flex flex-wrap gap-1.5">
                             {f.placeholders.map((p) => (
@@ -209,7 +211,7 @@ export function SettingEditor({ title, subtitle, backHref, fields }: SettingEdit
                         />
                       )}
                       <p className="text-xs text-muted-foreground mt-1">
-                        {state[f.key].value.length} caractères
+                        {t("charCount", { count: state[f.key].value.length })}
                       </p>
                     </div>
                   </CardContent>
@@ -239,11 +241,11 @@ export function SettingEditor({ title, subtitle, backHref, fields }: SettingEdit
 
       <div className="flex justify-end gap-2 sticky bottom-0 bg-background/95 backdrop-blur py-3 border-t">
         <Button render={<Link href={backHref} />} variant="outline">
-          Annuler
+          {t("cancel")}
         </Button>
         <Button onClick={save} disabled={saving || !allLoaded}>
           <Save className="w-4 h-4 mr-2" />
-          {saving ? "Sauvegarde…" : "Sauvegarder"}
+          {saving ? t("saving") : t("save")}
         </Button>
       </div>
     </div>

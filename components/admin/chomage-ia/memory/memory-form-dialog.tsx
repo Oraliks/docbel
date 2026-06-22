@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -49,6 +50,7 @@ export function MemoryFormDialog({
   editing,
   onCreated,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [content, setContent] = useState("");
   const [importance, setImportance] = useState<MemoryImportance>("medium");
   const [enabled, setEnabled] = useState(true);
@@ -87,10 +89,10 @@ export function MemoryFormDialog({
         const data = await res.json().catch(() => null);
         throw new Error(data?.error || `HTTP ${res.status}`);
       }
-      toast.success(editing ? "Fait mis à jour" : "Fait ajouté");
+      toast.success(editing ? t("factUpdated") : t("factAdded"));
       onCreated();
     } catch (e) {
-      toast.error("Échec de l'enregistrement", {
+      toast.error(t("saveError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -103,34 +105,33 @@ export function MemoryFormDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {editing ? "Éditer le fait permanent" : "Nouveau fait permanent"}
+            {editing ? t("memoryEditTitle") : t("memoryNewTitle")}
           </DialogTitle>
           <DialogDescription>
-            Sera injecté en tête de toutes les conversations IA chômage. Reste
-            concis (1-3 phrases) pour économiser le budget tokens.
+            {t("memoryFormDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3 py-1">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="memory-content">Contenu</Label>
+            <Label htmlFor="memory-content">{t("contentLabel")}</Label>
             <Textarea
               id="memory-content"
               value={content}
               autoFocus
               onChange={(e) => setContent(e.target.value.slice(0, 2000))}
               rows={4}
-              placeholder={`Ex. "ONEM = Office National de l'Emploi (autorité chômage Belgique)"`}
+              placeholder={t("memoryContentPlaceholder")}
               className="min-h-[96px] max-h-64 resize-y text-[13px] leading-relaxed"
             />
             <span className="text-[10.5px] text-muted-foreground tabular-nums text-right">
-              {trimmed.length} / 2000
+              {t("charCounter", { count: trimmed.length, max: 2000 })}
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="memory-importance">Importance</Label>
+              <Label htmlFor="memory-importance">{t("importanceLabelField")}</Label>
               <Select
                 value={importance}
                 onValueChange={(v) => setImportance(v as MemoryImportance)}
@@ -139,18 +140,18 @@ export function MemoryFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="high">Haute (jamais tronqué)</SelectItem>
-                  <SelectItem value="medium">Moyenne</SelectItem>
-                  <SelectItem value="low">Basse</SelectItem>
+                  <SelectItem value="high">{t("importanceHighNeverTruncated")}</SelectItem>
+                  <SelectItem value="medium">{t("importanceMedium")}</SelectItem>
+                  <SelectItem value="low">{t("importanceLow")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Statut</Label>
+              <Label>{t("statusLabel")}</Label>
               <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-background px-2">
                 <Switch checked={enabled} onCheckedChange={setEnabled} />
                 <span className="text-[12px] text-muted-foreground">
-                  {enabled ? "Activé" : "Désactivé"}
+                  {enabled ? t("statusEnabled") : t("statusDisabled")}
                 </span>
               </div>
             </div>
@@ -163,18 +164,18 @@ export function MemoryFormDialog({
             onClick={() => onOpenChange(false)}
             disabled={pending}
           >
-            Annuler
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit}>
             {pending ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />
-                Enregistrement…
+                {t("saving")}
               </>
             ) : editing ? (
-              "Mettre à jour"
+              t("update")
             ) : (
-              "Créer"
+              t("create")
             )}
           </Button>
         </DialogFooter>

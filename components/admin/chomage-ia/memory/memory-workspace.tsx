@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Brain, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -35,12 +36,6 @@ import type {
 
 type FilterValue = "all" | MemoryImportance;
 
-const IMPORTANCE_LABELS: Record<MemoryImportance, string> = {
-  high: "Haute",
-  medium: "Moyenne",
-  low: "Basse",
-};
-
 const IMPORTANCE_COLORS: Record<MemoryImportance, string> = {
   high: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
   medium: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
@@ -52,6 +47,7 @@ interface Props {
 }
 
 export function MemoryWorkspace({ domain }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [items, setItems] = useState<ChatMemoryListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterValue>("all");
@@ -69,13 +65,13 @@ export function MemoryWorkspace({ domain }: Props) {
       const data = (await res.json()) as { items: ChatMemoryListItem[] };
       setItems(data.items);
     } catch (e) {
-      toast.error("Impossible de charger la mémoire", {
+      toast.error(t("memoryLoadError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
       setLoading(false);
     }
-  }, [domain, filter]);
+  }, [domain, filter, t]);
 
   useEffect(() => {
     refresh();
@@ -97,7 +93,7 @@ export function MemoryWorkspace({ domain }: Props) {
       setItems((prev) =>
         prev.map((m) => (m.id === item.id ? { ...m, enabled: !next } : m)),
       );
-      toast.error("Échec du toggle", {
+      toast.error(t("toggleError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -109,10 +105,10 @@ export function MemoryWorkspace({ domain }: Props) {
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.success("Fait supprimé");
+      toast.success(t("factDeleted"));
       setItems((prev) => prev.filter((m) => m.id !== item.id));
     } catch (e) {
-      toast.error("Échec de la suppression", {
+      toast.error(t("deleteError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -125,10 +121,10 @@ export function MemoryWorkspace({ domain }: Props) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Brain className="size-4 text-primary" />
-          <h2 className="text-[14px] font-semibold">Mémoire long-terme</h2>
+          <h2 className="text-[14px] font-semibold">{t("memoryTitle")}</h2>
           <span className="text-[11.5px] text-muted-foreground">
-            {items.length} fait{items.length > 1 ? "s" : ""} ·{" "}
-            {enabledCount} actif{enabledCount > 1 ? "s" : ""}
+            {t("memoryFactsCount", { count: items.length })} ·{" "}
+            {t("memoryActiveCount", { count: enabledCount })}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -136,8 +132,11 @@ export function MemoryWorkspace({ domain }: Props) {
             <DropdownMenuTrigger
               render={
                 <Button variant="outline" size="sm" className="h-9 text-[12px]">
-                  Importance :{" "}
-                  {filter === "all" ? "toutes" : IMPORTANCE_LABELS[filter]}
+                  {filter === "all"
+                    ? t("importanceFilterAll")
+                    : t("importanceFilter", {
+                        importance: t("importanceLabel", { importance: filter }),
+                      })}
                 </Button>
               }
             />
@@ -147,23 +146,23 @@ export function MemoryWorkspace({ domain }: Props) {
                 onValueChange={(v) => setFilter(v as FilterValue)}
               >
                 <DropdownMenuRadioItem value="all" className="text-[12px]">
-                  Toutes
+                  {t("importanceAll")}
                 </DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="high" className="text-[12px]">
-                  Haute
+                  {t("importanceHigh")}
                 </DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="medium" className="text-[12px]">
-                  Moyenne
+                  {t("importanceMedium")}
                 </DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="low" className="text-[12px]">
-                  Basse
+                  {t("importanceLow")}
                 </DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="size-3.5" />
-            Nouveau fait
+            {t("newFact")}
           </Button>
         </div>
       </div>
@@ -173,17 +172,17 @@ export function MemoryWorkspace({ domain }: Props) {
           <thead className="border-b border-border bg-muted/50">
             <tr>
               <th className="px-3 py-2 text-left font-semibold w-[110px]">
-                Importance
+                {t("colImportance")}
               </th>
-              <th className="px-3 py-2 text-left font-semibold">Fait</th>
+              <th className="px-3 py-2 text-left font-semibold">{t("colFact")}</th>
               <th className="px-3 py-2 text-right font-semibold w-[130px]">
-                Mis à jour
+                {t("colUpdated")}
               </th>
               <th className="px-3 py-2 text-right font-semibold w-[90px]">
-                Actif
+                {t("colActive")}
               </th>
               <th className="px-3 py-2 text-right font-semibold w-[110px]">
-                Actions
+                {t("colActions")}
               </th>
             </tr>
           </thead>
@@ -194,7 +193,7 @@ export function MemoryWorkspace({ domain }: Props) {
                   colSpan={5}
                   className="px-3 py-6 text-center text-muted-foreground"
                 >
-                  Chargement…
+                  {t("loading")}
                 </td>
               </tr>
             ) : items.length === 0 ? (
@@ -203,8 +202,7 @@ export function MemoryWorkspace({ domain }: Props) {
                   colSpan={5}
                   className="px-3 py-10 text-center text-muted-foreground"
                 >
-                  Aucun fait permanent. Ajoute du vocabulaire (« ONEM = … »), des
-                  règles de style, ou des préférences récurrentes.
+                  {t("memoryEmpty")}
                 </td>
               </tr>
             ) : (
@@ -217,7 +215,7 @@ export function MemoryWorkspace({ domain }: Props) {
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${IMPORTANCE_COLORS[item.importance]}`}
                     >
-                      {IMPORTANCE_LABELS[item.importance]}
+                      {t("importanceLabel", { importance: item.importance })}
                     </span>
                   </td>
                   <td className="px-3 py-2 align-top text-[12.5px] leading-relaxed">
@@ -230,7 +228,7 @@ export function MemoryWorkspace({ domain }: Props) {
                     <Switch
                       checked={item.enabled}
                       onCheckedChange={() => toggleEnabled(item)}
-                      aria-label="Activer/désactiver"
+                      aria-label={t("toggleEnabledAria")}
                     />
                   </td>
                   <td className="px-3 py-2 text-right align-top">
@@ -239,7 +237,7 @@ export function MemoryWorkspace({ domain }: Props) {
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => setEditing(item)}
-                        title="Éditer"
+                        title={t("edit")}
                       >
                         <Pencil className="size-3.5" />
                       </Button>
@@ -247,7 +245,7 @@ export function MemoryWorkspace({ domain }: Props) {
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => setToDelete(item)}
-                        title="Supprimer"
+                        title={t("delete")}
                       >
                         <Trash2 className="size-3.5" />
                       </Button>
@@ -280,11 +278,11 @@ export function MemoryWorkspace({ domain }: Props) {
         }}
       />
       <ConfirmDeleteDialog
-        requireText="supprimer"
+        requireText={t("deleteKeyword")}
         open={toDelete !== null}
         onOpenChange={(open) => !open && setToDelete(null)}
-        title="Supprimer ce fait permanent ?"
-        description="Ce fait ne sera plus injecté dans les conversations IA. L'action est définitive."
+        title={t("deleteFactTitle")}
+        description={t("deleteFactDescription")}
         onConfirm={async () => {
           if (!toDelete) return;
           await deleteItem(toDelete);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/card";
 import { VisualEditorProvider, useVisualEditor } from "./provider/visual-editor-context";
 import { VisualEditorToolbar } from "./visual-editor-toolbar";
@@ -24,6 +25,7 @@ interface VisualEditorProps {
 /// mode read-only avec bannière d'information — l'édition de positions
 /// précises n'a pas de sens en dessous de 768px.
 export function VisualEditor({ formId, onMaterialized }: VisualEditorProps) {
+  const t = useTranslations("admin.pdf");
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export function VisualEditor({ formId, onMaterialized }: VisualEditorProps) {
     <VisualEditorProvider formId={formId} readOnly={isMobile} onMaterialized={onMaterialized}>
       {isMobile && (
         <div className="mb-3 rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-200">
-          L’éditeur visuel est en lecture seule sous 768px. Passez en mode bureau pour modifier.
+          {t("visualMobileReadOnly")}
         </div>
       )}
       <VisualEditorShell />
@@ -47,6 +49,7 @@ export function VisualEditor({ formId, onMaterialized }: VisualEditorProps) {
 }
 
 function VisualEditorShell() {
+  const t = useTranslations("admin.pdf");
   const ed = useVisualEditor();
   const { serverSnapshot, save, doc } = ed;
   // numPages réel arrive via react-pdf onLoadSuccess ; on initialise au
@@ -101,12 +104,16 @@ function VisualEditorShell() {
         <aside className="flex flex-col gap-3">
           <VisualFieldProperties />
           <div className="rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">
-            <div className="mb-1 font-medium text-foreground">Astuce</div>
-            <p>Tapez <kbd className="rounded border bg-background px-1">T</kbd> ou <kbd className="rounded border bg-background px-1">C</kbd> puis dessinez un rectangle. <kbd className="rounded border bg-background px-1">Suppr</kbd> retire la sélection. <kbd className="rounded border bg-background px-1">Ctrl+S</kbd> sauvegarde.</p>
+            <div className="mb-1 font-medium text-foreground">{t("tipHeading")}</div>
+            <p>
+              {t.rich("visualTip", {
+                kbd: (chunks) => <kbd className="rounded border bg-background px-1">{chunks}</kbd>,
+              })}
+            </p>
           </div>
           {doc.fields.length > 0 && (
             <div className="rounded-md border p-3 text-xs">
-              <div className="mb-1 font-medium">Champs ({doc.fields.length})</div>
+              <div className="mb-1 font-medium">{t("fieldsCount", { count: doc.fields.length })}</div>
               <ul className="flex flex-col gap-1">
                 {doc.fields.map((f) => (
                   <li key={f.id} className="flex items-center justify-between gap-2">

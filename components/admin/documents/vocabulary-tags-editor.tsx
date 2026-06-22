@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { X, Tag, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -17,8 +18,9 @@ interface Props {
 export function VocabularyTagsEditor({
   value,
   onChange,
-  placeholder = "intempéries, chômage technique, mise au chômage…",
+  placeholder,
 }: Props) {
+  const t = useTranslations("admin.documents");
   const [draft, setDraft] = useState("");
   const tags = value || [];
 
@@ -49,24 +51,22 @@ export function VocabularyTagsEditor({
     <div className="space-y-2">
       <Label className="text-sm font-medium flex items-center gap-1.5">
         <Tag className="w-4 h-4" />
-        Mots-clés (synonymes / langage courant)
+        {t("vocabTagsLabel")}
       </Label>
       <p className="text-[11px] text-muted-foreground italic">
-        Utilisés par la recherche libre et le détecteur d&apos;intention IA.
-        Pensez aux expressions que les citoyens utilisent vraiment (« intempéries »
-        plutôt que « chômage temporaire force majeure »).
+        {t("vocabTagsHint")}
       </p>
       <div className="border rounded-md p-2 bg-background space-y-2">
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {tags.map((t, idx) => (
+            {tags.map((tagValue, idx) => (
               <Badge key={idx} variant="secondary" className="text-xs gap-1 pr-1">
-                {t}
+                {tagValue}
                 <button
                   type="button"
                   onClick={() => removeTag(idx)}
                   className="rounded-full hover:bg-muted-foreground/20 p-0.5"
-                  aria-label={`Retirer ${t}`}
+                  aria-label={t("removeTagLabel", { tag: tagValue })}
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -79,7 +79,7 @@ export function VocabularyTagsEditor({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder}
+            placeholder={placeholder ?? t("vocabTagsPlaceholder")}
             className="h-7 text-xs flex-1 border-0 focus-visible:ring-0 px-0"
           />
           <button
@@ -90,7 +90,7 @@ export function VocabularyTagsEditor({
             }}
             disabled={!draft.trim()}
             className="text-muted-foreground hover:text-foreground disabled:opacity-30"
-            aria-label="Ajouter"
+            aria-label={t("add")}
           >
             <Plus className="w-3.5 h-3.5" />
           </button>

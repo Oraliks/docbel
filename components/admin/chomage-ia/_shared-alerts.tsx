@@ -19,6 +19,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,11 +55,14 @@ export function ConfirmDeleteDialog({
   onOpenChange,
   title,
   description,
-  confirmText = "Supprimer",
-  cancelText = "Annuler",
+  confirmText,
+  cancelText,
   onConfirm,
   requireText,
 }: ConfirmDeleteDialogProps) {
+  const t = useTranslations("admin.chomageIa");
+  const resolvedConfirm = confirmText ?? t("delete");
+  const resolvedCancel = cancelText ?? t("cancel");
   const [pending, setPending] = useState(false);
   const [typed, setTyped] = useState("");
 
@@ -104,11 +108,11 @@ export function ConfirmDeleteDialog({
         {needle ? (
           <div className="space-y-2 py-1">
             <Label htmlFor="confirm-delete-typed" className="text-sm">
-              Pour confirmer, tape{" "}
+              {t("confirmTypePrefix")}{" "}
               <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
                 {needle}
               </code>{" "}
-              ci-dessous :
+              {t("confirmTypeSuffix")}
             </Label>
             <Input
               id="confirm-delete-typed"
@@ -124,7 +128,7 @@ export function ConfirmDeleteDialog({
         ) : null}
 
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>{cancelText}</AlertDialogCancel>
+          <AlertDialogCancel disabled={pending}>{resolvedCancel}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={pending || !matches}
@@ -133,10 +137,10 @@ export function ConfirmDeleteDialog({
             {pending ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />
-                Suppression…
+                {t("deleting")}
               </>
             ) : (
-              confirmText
+              resolvedConfirm
             )}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -163,11 +167,11 @@ export function RenameDialog({
   onOpenChange,
   title,
   description,
-  label = "Nouveau nom",
+  label,
   initialValue,
   placeholder,
-  confirmText = "Renommer",
-  cancelText = "Annuler",
+  confirmText,
+  cancelText,
   onConfirm,
 }: RenameDialogProps) {
   return (
@@ -211,14 +215,18 @@ function RenameBody({
 }: {
   title: string;
   description?: string;
-  label: string;
+  label?: string;
   initialValue: string;
   placeholder?: string;
-  confirmText: string;
-  cancelText: string;
+  confirmText?: string;
+  cancelText?: string;
   onConfirm: (value: string) => void | Promise<void>;
   onClose: () => void;
 }) {
+  const t = useTranslations("admin.chomageIa");
+  const resolvedLabel = label ?? t("newName");
+  const resolvedConfirm = confirmText ?? t("rename");
+  const resolvedCancel = cancelText ?? t("cancel");
   const [value, setValue] = useState(initialValue);
   const [pending, setPending] = useState(false);
 
@@ -246,7 +254,7 @@ function RenameBody({
       </AlertDialogHeader>
       <div className="space-y-2 py-1">
         <Label htmlFor="rename-input" className="text-sm">
-          {label}
+          {resolvedLabel}
         </Label>
         <Input
           id="rename-input"
@@ -264,7 +272,7 @@ function RenameBody({
         />
       </div>
       <AlertDialogFooter>
-        <AlertDialogCancel disabled={pending}>{cancelText}</AlertDialogCancel>
+        <AlertDialogCancel disabled={pending}>{resolvedCancel}</AlertDialogCancel>
         <AlertDialogAction
           onClick={handleConfirm}
           disabled={!canConfirm || pending}
@@ -272,10 +280,10 @@ function RenameBody({
           {pending ? (
             <>
               <Loader2 className="size-3.5 animate-spin" />
-              Enregistrement…
+              {t("saving")}
             </>
           ) : (
-            confirmText
+            resolvedConfirm
           )}
         </AlertDialogAction>
       </AlertDialogFooter>

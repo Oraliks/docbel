@@ -24,6 +24,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -61,6 +62,7 @@ export function BulkActionsBar({
   onClear,
   onAction,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -71,7 +73,7 @@ export function BulkActionsBar({
       <div className="pointer-events-none fixed bottom-4 left-1/2 z-40 -translate-x-1/2">
         <div
           role="toolbar"
-          aria-label="Actions en lot sur les sources sélectionnées"
+          aria-label={t("bulkToolbarAria")}
           className="pointer-events-auto flex items-center gap-1 rounded-full border border-border bg-popover/95 px-2 py-1.5 shadow-lg ring-1 ring-foreground/5 backdrop-blur-md"
         >
           {/* Counter + clear */}
@@ -80,11 +82,11 @@ export function BulkActionsBar({
               {count}
             </span>
             <span className="text-[12px] text-muted-foreground">
-              sélectionnée{count > 1 ? "s" : ""}
+              {t("selectedCount", { count })}
             </span>
             <button
               type="button"
-              aria-label="Clear sélection"
+              aria-label={t("clearSelection")}
               onClick={onClear}
               disabled={submitting}
               className="ml-1 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
@@ -104,7 +106,7 @@ export function BulkActionsBar({
             className="h-7 px-2 text-[12px]"
           >
             <Eye className="size-3.5" />
-            Activer
+            {t("enable")}
           </Button>
           <Button
             variant="ghost"
@@ -114,7 +116,7 @@ export function BulkActionsBar({
             className="h-7 px-2 text-[12px]"
           >
             <EyeOff className="size-3.5" />
-            Désactiver
+            {t("disable")}
           </Button>
           <Button
             variant="ghost"
@@ -124,7 +126,7 @@ export function BulkActionsBar({
             className="h-7 px-2 text-[12px]"
           >
             <RefreshCcw className="size-3.5" />
-            Réindexer
+            {t("reindex")}
           </Button>
 
           <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
@@ -136,7 +138,7 @@ export function BulkActionsBar({
                 className="h-7 px-2 text-[12px]"
               >
                 <Tag className="size-3.5" />
-                Tagger
+                {t("tagAction")}
               </Button>
             </PopoverTrigger>
             <PopoverContent
@@ -174,19 +176,17 @@ export function BulkActionsBar({
             ) : (
               <Trash2 className="size-3.5" />
             )}
-            Supprimer
+            {t("delete")}
           </Button>
         </div>
       </div>
 
       <ConfirmDeleteDialog
-        requireText="supprimer"
+        requireText={t("deleteKeyword")}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title={`Supprimer ${count} source${count > 1 ? "s" : ""} ?`}
-        description={`${count} source${count > 1 ? "s" : ""} seront supprimée${
-          count > 1 ? "s" : ""
-        } définitivement de la knowledge base. Les conversations qui les citaient garderont les références (mais les pills seront grisées).`}
+        title={t("bulkDeleteTitle", { count })}
+        description={t("bulkDeleteDescription", { count })}
         onConfirm={async () => {
           await onAction({ kind: "delete" });
         }}

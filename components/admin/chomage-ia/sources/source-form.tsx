@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -31,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { KIND_LABELS } from "../_shared";
 
 interface SourceFormDialogProps {
   open: boolean;
@@ -73,6 +73,7 @@ export function SourceFormDialog({
   sourceId,
   onSuccess,
 }: SourceFormDialogProps) {
+  const t = useTranslations("admin.chomageIa");
   const [state, setState] = useState<FormState>(EMPTY);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -113,7 +114,7 @@ export function SourceFormDialog({
         });
         setLockedKind(isEditable ? null : data.kind);
       } catch (e) {
-        toast.error("Impossible de charger la source", {
+        toast.error(t("sourceLoadError"), {
           description: e instanceof Error ? e.message : String(e),
         });
       } finally {
@@ -123,15 +124,15 @@ export function SourceFormDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, mode, sourceId]);
+  }, [open, mode, sourceId, t]);
 
   async function save() {
     if (state.title.trim().length < 2) {
-      toast.error("Titre trop court (2 caractères minimum)");
+      toast.error(t("titleTooShort"));
       return;
     }
     if (state.content.trim().length < 10) {
-      toast.error("Contenu trop court (10 caractères minimum)");
+      toast.error(t("contentTooShort"));
       return;
     }
     const tags = state.tagsRaw
@@ -166,11 +167,11 @@ export function SourceFormDialog({
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       toast.success(
-        mode === "create" ? "Source créée" : "Source mise à jour"
+        mode === "create" ? t("sourceCreated") : t("sourceUpdated")
       );
       onSuccess();
     } catch (e) {
-      toast.error("Échec de l'enregistrement", {
+      toast.error(t("saveError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -184,13 +185,13 @@ export function SourceFormDialog({
         <DialogHeader>
           <DialogTitle>
             {mode === "create"
-              ? "Nouvelle source de connaissance"
-              : "Éditer la source"}
+              ? t("sourceNewTitle")
+              : t("sourceEditTitle")}
           </DialogTitle>
           <DialogDescription>
             {mode === "create"
-              ? "Ajoute un contenu (texte, URL, tutoriel, transcript) qui alimentera l'IA chômage."
-              : "Modifie le contenu, les tags ou désactive temporairement."}
+              ? t("sourceCreateDescription")
+              : t("sourceEditDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -202,21 +203,21 @@ export function SourceFormDialog({
           <div className="flex flex-col gap-3">
             {/* Titre */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ks-title">Titre *</Label>
+              <Label htmlFor="ks-title">{t("titleRequired")}</Label>
               <Input
                 id="ks-title"
                 value={state.title}
                 onChange={(e) =>
                   setState((s) => ({ ...s, title: e.target.value }))
                 }
-                placeholder="Ex: AR du 25/11/1991 — art. 110 : conditions d'admissibilité"
+                placeholder={t("sourceTitlePlaceholder")}
               />
             </div>
 
             {/* Kind (sélecteur seulement si kind n'est pas un PDF/image édité) */}
             {!lockedKind ? (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="ks-kind">Type *</Label>
+                <Label htmlFor="ks-kind">{t("typeRequired")}</Label>
                 <Select
                   value={state.kind}
                   onValueChange={(v) =>
@@ -229,25 +230,26 @@ export function SourceFormDialog({
                   <SelectContent>
                     {(EDITABLE_KINDS as readonly string[]).map((k) => (
                       <SelectItem key={k} value={k}>
-                        {KIND_LABELS[k]}
+                        {t("kind", { kind: k })}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="text-[11px] text-muted-foreground">
-                  PDF / image : utilise le bouton « Upload » de la page.
+                  {t("pdfImageUploadHint")}
                 </p>
               </div>
             ) : (
               <div className="rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-[12px] text-muted-foreground">
-                Type : <strong>{KIND_LABELS[lockedKind] ?? lockedKind}</strong>{" "}
-                (modifiable uniquement par re-upload).
+                {t("typeLockedHint", {
+                  type: t("kind", { kind: lockedKind }),
+                })}
               </div>
             )}
 
             {/* URL source */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ks-url">URL source (optionnel)</Label>
+              <Label htmlFor="ks-url">{t("sourceUrlOptionalLabel")}</Label>
               <Input
                 id="ks-url"
                 type="url"
@@ -261,47 +263,49 @@ export function SourceFormDialog({
 
             {/* Contenu */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ks-content">Contenu *</Label>
+              <Label htmlFor="ks-content">{t("contentRequired")}</Label>
               <Textarea
                 id="ks-content"
                 value={state.content}
                 onChange={(e) =>
                   setState((s) => ({ ...s, content: e.target.value }))
                 }
-                placeholder="Texte brut, markdown ou étapes structurées. L'IA lira ce contenu intégralement."
+                placeholder={t("contentPlaceholder")}
                 rows={10}
                 className="font-mono text-[12.5px]"
               />
               <p className="text-[11px] text-muted-foreground">
-                {state.content.length} caractères (~
-                {Math.ceil(state.content.length / 4)} tokens)
+                {t("charsAndTokens", {
+                  chars: state.content.length,
+                  tokens: Math.ceil(state.content.length / 4),
+                })}
               </p>
             </div>
 
             {/* Summary */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ks-summary">Résumé court (optionnel)</Label>
+              <Label htmlFor="ks-summary">{t("summaryOptionalLabel")}</Label>
               <Textarea
                 id="ks-summary"
                 value={state.summary}
                 onChange={(e) =>
                   setState((s) => ({ ...s, summary: e.target.value }))
                 }
-                placeholder="Une ou deux phrases. Laisse vide pour générer via IA."
+                placeholder={t("summaryPlaceholder")}
                 rows={2}
               />
             </div>
 
             {/* Tags */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ks-tags">Tags (séparés par des virgules)</Label>
+              <Label htmlFor="ks-tags">{t("tagsCommaLabel")}</Label>
               <Input
                 id="ks-tags"
                 value={state.tagsRaw}
                 onChange={(e) =>
                   setState((s) => ({ ...s, tagsRaw: e.target.value }))
                 }
-                placeholder="ex: ONEM, admissibilité, AR, art-110"
+                placeholder={t("sourceTagsPlaceholder")}
               />
             </div>
 
@@ -313,7 +317,7 @@ export function SourceFormDialog({
                   setState((s) => ({ ...s, enabled: checked === true }))
                 }
               />
-              Activée (envoyée à l&apos;IA)
+              {t("enabledSentToAi")}
             </label>
           </div>
         )}
@@ -324,18 +328,18 @@ export function SourceFormDialog({
             onClick={() => onOpenChange(false)}
             disabled={saving}
           >
-            Annuler
+            {t("cancel")}
           </Button>
           <Button onClick={save} disabled={saving || loading}>
             {saving ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />
-                Enregistrement…
+                {t("saving")}
               </>
             ) : mode === "create" ? (
-              "Créer"
+              t("create")
             ) : (
-              "Enregistrer"
+              t("save")
             )}
           </Button>
         </DialogFooter>

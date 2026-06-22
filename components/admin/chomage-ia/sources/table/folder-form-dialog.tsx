@@ -20,6 +20,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -56,16 +57,26 @@ import {
 import { cn } from "@/lib/utils";
 import type { KnowledgeFolderListItem } from "@/lib/chomage-ia/types";
 
+type ColorKey =
+  | "colorBlue"
+  | "colorViolet"
+  | "colorGreen"
+  | "colorAmber"
+  | "colorRed"
+  | "colorCyan"
+  | "colorPink"
+  | "colorGray";
+
 /** Palette de 8 couleurs (hex Tailwind 500). */
-const FOLDER_COLORS: Array<{ value: string; label: string }> = [
-  { value: "#3b82f6", label: "Bleu" },
-  { value: "#a855f7", label: "Violet" },
-  { value: "#22c55e", label: "Vert" },
-  { value: "#f59e0b", label: "Ambre" },
-  { value: "#ef4444", label: "Rouge" },
-  { value: "#06b6d4", label: "Cyan" },
-  { value: "#ec4899", label: "Rose" },
-  { value: "#64748b", label: "Gris" },
+const FOLDER_COLORS: Array<{ value: string; labelKey: ColorKey }> = [
+  { value: "#3b82f6", labelKey: "colorBlue" },
+  { value: "#a855f7", labelKey: "colorViolet" },
+  { value: "#22c55e", labelKey: "colorGreen" },
+  { value: "#f59e0b", labelKey: "colorAmber" },
+  { value: "#ef4444", labelKey: "colorRed" },
+  { value: "#06b6d4", labelKey: "colorCyan" },
+  { value: "#ec4899", labelKey: "colorPink" },
+  { value: "#64748b", labelKey: "colorGray" },
 ];
 
 /** 12 icônes lucide pertinentes pour des dossiers de KB. */
@@ -111,6 +122,7 @@ export function FolderFormDialog({
   initialParentId = null,
   onSuccess,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [name, setName] = useState("");
   const [color, setColor] = useState<string>(FOLDER_COLORS[0].value);
   const [icon, setIcon] = useState<string>(FOLDER_ICONS[0].name);
@@ -165,7 +177,7 @@ export function FolderFormDialog({
   async function submit() {
     const trimmed = name.trim();
     if (trimmed.length === 0) {
-      toast.error("Le nom du dossier est requis");
+      toast.error(t("folderNameRequired"));
       return;
     }
     setSubmitting(true);
@@ -186,11 +198,11 @@ export function FolderFormDialog({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      toast.success(mode === "create" ? "Dossier créé" : "Dossier mis à jour");
+      toast.success(mode === "create" ? t("folderCreated") : t("folderUpdated"));
       onSuccess();
       onOpenChange(false);
     } catch (e) {
-      toast.error("Échec", {
+      toast.error(t("failure"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -203,10 +215,10 @@ export function FolderFormDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {mode === "create" ? "Nouveau dossier" : "Éditer le dossier"}
+            {mode === "create" ? t("folderNewTitle") : t("folderEditTitle")}
           </DialogTitle>
           <DialogDescription className="text-[12px]">
-            Range les sources de la KB en arborescence (3 niveaux max).
+            {t("folderFormDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -214,29 +226,29 @@ export function FolderFormDialog({
           {/* Nom */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="folder-name" className="text-[12px]">
-              Nom <span className="text-destructive">*</span>
+              {t("nameLabel")} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="folder-name"
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value.slice(0, 80))}
-              placeholder="Ex: Législation chômage temporaire"
+              placeholder={t("folderNamePlaceholder")}
               className="h-9"
             />
           </div>
 
           {/* Couleur */}
           <div className="flex flex-col gap-1.5">
-            <Label className="text-[12px]">Couleur</Label>
+            <Label className="text-[12px]">{t("colorLabel")}</Label>
             <div className="flex flex-wrap gap-1.5">
               {FOLDER_COLORS.map((c) => (
                 <button
                   key={c.value}
                   type="button"
                   onClick={() => setColor(c.value)}
-                  aria-label={c.label}
-                  title={c.label}
+                  aria-label={t(c.labelKey)}
+                  title={t(c.labelKey)}
                   className={cn(
                     "size-7 rounded-md ring-2 ring-transparent transition-all",
                     color === c.value &&
@@ -250,7 +262,7 @@ export function FolderFormDialog({
 
           {/* Icône */}
           <div className="flex flex-col gap-1.5">
-            <Label className="text-[12px]">Icône</Label>
+            <Label className="text-[12px]">{t("iconLabel")}</Label>
             <div className="grid grid-cols-6 gap-1.5">
               {FOLDER_ICONS.map(({ name: n, Icon }) => (
                 <button
@@ -274,7 +286,7 @@ export function FolderFormDialog({
           {/* Parent */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="folder-parent" className="text-[12px]">
-              Dossier parent
+              {t("parentFolderLabel")}
             </Label>
             <Select
               value={parentId ?? "__root__"}
@@ -286,7 +298,7 @@ export function FolderFormDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__root__">— Racine (pas de parent)</SelectItem>
+                <SelectItem value="__root__">{t("rootNoParent")}</SelectItem>
                 {parentOptions.map((f) => (
                   <SelectItem key={f.id} value={f.id}>
                     {f.name}
@@ -295,8 +307,7 @@ export function FolderFormDialog({
               </SelectContent>
             </Select>
             <p className="text-[10.5px] text-muted-foreground">
-              Profondeur max : 3 niveaux. L&apos;API refuse les déplacements qui
-              dépassent cette limite.
+              {t("maxDepthHint")}
             </p>
           </div>
         </div>
@@ -308,18 +319,18 @@ export function FolderFormDialog({
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            Annuler
+            {t("cancel")}
           </Button>
           <Button size="sm" onClick={submit} disabled={submitting}>
             {submitting ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />
-                {mode === "create" ? "Création…" : "Enregistrement…"}
+                {mode === "create" ? t("creating") : t("saving")}
               </>
             ) : mode === "create" ? (
-              "Créer"
+              t("create")
             ) : (
-              "Enregistrer"
+              t("save")
             )}
           </Button>
         </DialogFooter>

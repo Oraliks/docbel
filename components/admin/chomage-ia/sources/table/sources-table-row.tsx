@@ -19,6 +19,7 @@
 
 import { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
+import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
   Database,
@@ -42,7 +43,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import type { KnowledgeSourceListItem } from "@/lib/chomage-ia/types";
-import { getKindIcon, getKindColor, getKindLabel } from "../../_shared";
+import { getKindIcon, getKindColor } from "../../_shared";
 import {
   deriveIndexStatus,
   fmtCompactDate,
@@ -85,6 +86,7 @@ export function SourcesTableRow({
   onOpen,
   onAction,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [reindexing, setReindexing] = useState(false);
   const Icon = getKindIcon(source.kind);
   const color = getKindColor(source.kind);
@@ -144,7 +146,7 @@ export function SourcesTableRow({
         <Checkbox
           checked={selected}
           onCheckedChange={() => onSelect()}
-          aria-label={`Sélectionner ${source.title}`}
+          aria-label={t("selectItem", { title: source.title })}
         />
       </div>
 
@@ -155,8 +157,8 @@ export function SourcesTableRow({
         {...listeners}
         type="button"
         onClick={(e) => e.stopPropagation()}
-        aria-label="Glisser pour déplacer"
-        title="Glisser pour déplacer vers un dossier"
+        aria-label={t("dragToMove")}
+        title={t("dragToMoveFolder")}
         className="flex size-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground/50 opacity-0 transition-opacity hover:bg-muted hover:text-foreground active:cursor-grabbing group-hover:opacity-100"
       >
         <GripVertical className="size-3.5" />
@@ -166,7 +168,7 @@ export function SourcesTableRow({
       <div
         className="flex size-8 shrink-0 items-center justify-center rounded-md"
         style={{ background: `${color}1A`, color }}
-        title={getKindLabel(source.kind)}
+        title={t("kind", { kind: source.kind })}
       >
         <Icon className="size-4" />
       </div>
@@ -181,10 +183,10 @@ export function SourcesTableRow({
         <div className="flex items-center gap-1 truncate text-[10.5px] text-muted-foreground">
           {source.tags.length > 0 ? (
             <>
-              {source.tags.slice(0, 3).map((t, i) => (
-                <span key={t} className="truncate">
+              {source.tags.slice(0, 3).map((tag, i) => (
+                <span key={tag} className="truncate">
                   {i > 0 ? <span className="px-0.5">·</span> : null}
-                  {t}
+                  {tag}
                 </span>
               ))}
               {source.tags.length > 3 ? (
@@ -207,7 +209,7 @@ export function SourcesTableRow({
           className={`inline-block size-1.5 rounded-full ${
             source.enabled ? "bg-emerald-500" : "bg-muted-foreground/40"
           }`}
-          title={source.enabled ? "Active" : "Désactivée"}
+          title={source.enabled ? t("active") : t("disabled")}
         />
         <IndexDot
           status={indexStatus}
@@ -215,7 +217,9 @@ export function SourcesTableRow({
         />
         <span
           className="text-[10px]"
-          title={`Fraîcheur : ${getValidityMeta(source.validityStatus).label}`}
+          title={t("freshnessTitle", {
+            label: t("validityLabel", { status: source.validityStatus }),
+          })}
         >
           {getValidityMeta(source.validityStatus).emoji}
         </span>
@@ -226,7 +230,7 @@ export function SourcesTableRow({
               : "text-muted-foreground"
           }`}
         >
-          {source.enabled ? "ON" : "OFF"}
+          {source.enabled ? t("on") : t("off")}
         </span>
       </div>
 
@@ -254,7 +258,7 @@ export function SourcesTableRow({
               <Button
                 variant="ghost"
                 size="icon-xs"
-                aria-label="Actions"
+                aria-label={t("actions")}
                 className="opacity-60 group-hover:opacity-100"
               />
             }
@@ -270,7 +274,7 @@ export function SourcesTableRow({
               className="text-[12px]"
             >
               <Pencil className="size-3.5" />
-              Éditer
+              {t("edit")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleReindexClick}
@@ -282,7 +286,7 @@ export function SourcesTableRow({
               ) : (
                 <RefreshCcw className="size-3.5" />
               )}
-              Réindexer
+              {t("reindex")}
             </DropdownMenuItem>
             {aiAvailable ? (
               <DropdownMenuItem
@@ -293,7 +297,7 @@ export function SourcesTableRow({
                 className="text-[12px]"
               >
                 <Sparkles className="size-3.5" />
-                Résumé IA
+                {t("aiSummary")}
               </DropdownMenuItem>
             ) : null}
             <DropdownMenuItem
@@ -308,7 +312,7 @@ export function SourcesTableRow({
               ) : (
                 <Eye className="size-3.5" />
               )}
-              {source.enabled ? "Désactiver" : "Activer"}
+              {source.enabled ? t("disable") : t("enable")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -320,7 +324,7 @@ export function SourcesTableRow({
               className="text-[12px]"
             >
               <Trash2 className="size-3.5" />
-              Supprimer
+              {t("delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -336,11 +340,12 @@ function IndexDot({
   status: "none" | "pending" | "ok" | "error";
   indexError: string | null;
 }) {
+  const t = useTranslations("admin.chomageIa");
   if (status === "ok") {
     return (
       <span
         className="inline-flex size-2.5 items-center justify-center text-emerald-600 dark:text-emerald-400"
-        title="Indexée pour la recherche sémantique (RAG)"
+        title={t("indexOk")}
       >
         <Database className="size-2.5" />
       </span>
@@ -350,7 +355,7 @@ function IndexDot({
     return (
       <span
         className="inline-flex size-2.5 items-center justify-center text-amber-600 dark:text-amber-400"
-        title={indexError ?? "Erreur d'indexation"}
+        title={indexError ?? t("indexError")}
       >
         <AlertTriangle className="size-2.5" />
       </span>
@@ -361,7 +366,7 @@ function IndexDot({
       className="inline-flex size-2.5 items-center justify-center text-muted-foreground/50"
       title={
         indexError ??
-        "Pas encore indexée (le chat utilise le fallback complet)"
+        t("indexNone")
       }
     >
       <Database className="size-2.5 opacity-60" />

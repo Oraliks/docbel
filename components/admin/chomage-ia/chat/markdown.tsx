@@ -19,6 +19,7 @@
  */
 
 import { type ReactNode, Fragment } from "react";
+import { useTranslations } from "next-intl";
 import { ExternalLink } from "lucide-react";
 import {
   HoverCard,
@@ -39,13 +40,14 @@ interface CitationPillProps {
 }
 
 export function CitationPill({ rawId, source }: CitationPillProps) {
+  const t = useTranslations("admin.chomageIa");
   // Source non trouvée (ex: cite à un id absent de la KB envoyée) → pill grisée
   // sans HoverCard mais avec title pour debug.
   if (!source) {
     return (
       <span
         className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10.5px] font-mono text-muted-foreground"
-        title="Source citée non trouvée dans la KB envoyée"
+        title={t("citationNotFound")}
       >
         {rawId.slice(0, 8)}
       </span>
@@ -88,7 +90,7 @@ export function CitationPill({ rawId, source }: CitationPillProps) {
             </p>
           ) : (
             <p className="text-[11.5px] italic text-muted-foreground/70">
-              Pas de résumé disponible.
+              {t("noSummary")}
             </p>
           )}
           {hasUrl ? (
@@ -98,12 +100,12 @@ export function CitationPill({ rawId, source }: CitationPillProps) {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-primary hover:underline"
             >
-              Voir la source complète
+              {t("viewFullSource")}
               <ExternalLink className="size-3" />
             </a>
           ) : (
             <p className="text-[10.5px] text-muted-foreground/80">
-              Pas d&apos;URL externe — source interne à la KB.
+              {t("noExternalUrl")}
             </p>
           )}
         </div>

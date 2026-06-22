@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export function VersionDialog({
   onOpenChange: (v: boolean) => void;
   onApplied: () => void;
 }) {
+  const t = useTranslations("admin.pdf");
   const [file, setFile] = useState<File | null>(null);
   const [diff, setDiff] = useState<Diff | null>(null);
   const [notes, setNotes] = useState("");
@@ -43,7 +45,7 @@ export function VersionDialog({
       fd.set("file", file);
       const res = await fetch(`/api/admin/pdf/forms/${formId}/version`, { method: "POST", body: fd });
       const data = await res.json();
-      if (!res.ok) { toast.error(data.error || "PDF invalide."); return; }
+      if (!res.ok) { toast.error(data.error || t("toastInvalidPdf")); return; }
       setDiff(data.diff);
     } finally {
       setBusy(false);
@@ -59,8 +61,8 @@ export function VersionDialog({
       fd.set("apply", "true");
       if (notes.trim()) fd.set("changeNotes", notes.trim());
       const res = await fetch(`/api/admin/pdf/forms/${formId}/version`, { method: "POST", body: fd });
-      if (!res.ok) { toast.error("Échec de l'application."); return; }
-      toast.success("Nouvelle version appliquée. Formulaire repassé en brouillon.");
+      if (!res.ok) { toast.error(t("toastApplyError")); return; }
+      toast.success(t("toastVersionApplied"));
       reset(); onOpenChange(false); onApplied();
     } finally {
       setBusy(false);
@@ -71,29 +73,27 @@ export function VersionDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Remplacer le PDF source</DialogTitle>
-          <DialogDescription>
-            Importez la nouvelle version officielle. L&apos;enrichissement des champs conservés est migré automatiquement.
-          </DialogDescription>
+          <DialogTitle>{t("replacePdfTitle")}</DialogTitle>
+          <DialogDescription>{t("replacePdfDesc")}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3 py-2">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ver-file">Nouveau PDF</Label>
+            <Label htmlFor="ver-file">{t("newPdf")}</Label>
             <Input id="ver-file" type="file" accept="application/pdf" onChange={(e) => { setFile(e.target.files?.[0] ?? null); setDiff(null); }} />
           </div>
 
           {!diff ? (
             <Button variant="outline" onClick={preview} disabled={!file || busy}>
-              {busy && <Loader2Icon className="size-4 animate-spin" />} Comparer les champs
+              {busy && <Loader2Icon className="size-4 animate-spin" />} {t("compareFields")}
             </Button>
           ) : (
             <div className="flex flex-col gap-2 rounded-md border p-3 text-sm">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="default">+{diff.added.length} ajout(s)</Badge>
-                <Badge variant="destructive">-{diff.removed.length} retrait(s)</Badge>
-                <Badge variant="secondary">{diff.renamed.length} renommage(s)</Badge>
-                <Badge variant="outline">{diff.unchanged.length} inchangé(s)</Badge>
+                <Badge variant="default">{t("diffAdded", { count: diff.added.length })}</Badge>
+                <Badge variant="destructive">{t("diffRemoved", { count: diff.removed.length })}</Badge>
+                <Badge variant="secondary">{t("diffRenamed", { count: diff.renamed.length })}</Badge>
+                <Badge variant="outline">{t("diffUnchanged", { count: diff.unchanged.length })}</Badge>
               </div>
               {diff.renamed.length > 0 && (
                 <ul className="text-xs text-muted-foreground">
@@ -101,17 +101,17 @@ export function VersionDialog({
                 </ul>
               )}
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="ver-notes" className="text-xs text-muted-foreground">Note de version (optionnel)</Label>
-                <Input id="ver-notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Mise à jour ONEM 2026" />
+                <Label htmlFor="ver-notes" className="text-xs text-muted-foreground">{t("versionNoteLabel")}</Label>
+                <Input id="ver-notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t("versionNotePlaceholder")} />
               </div>
             </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t("cancel")}</Button>
           <Button onClick={apply} disabled={!diff || busy}>
-            {busy && <Loader2Icon className="size-4 animate-spin" />} Appliquer la nouvelle version
+            {busy && <Loader2Icon className="size-4 animate-spin" />} {t("applyNewVersion")}
           </Button>
         </DialogFooter>
       </DialogContent>

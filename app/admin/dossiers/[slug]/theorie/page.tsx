@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { BookOpenIcon, ScrollTextIcon } from "lucide-react";
 import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
 import { getDossier } from "@/lib/dossiers/registry";
@@ -30,6 +31,7 @@ export default async function DossierTheoriePage({
   const auth = await requirePartnerOrAdminAuth();
   if (!auth.isAuthorized) redirect("/login");
 
+  const t = await getTranslations("admin.dossiers");
   const { slug } = await params;
   const sp = await searchParams;
   const def = getDossier(slug);
@@ -51,7 +53,7 @@ export default async function DossierTheoriePage({
       <header className="flex flex-col gap-1">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <BookOpenIcon className="size-3.5" />
-          {tab === "procedure" ? "Procédures" : "Théorie"} · {def.slug}
+          {tab === "procedure" ? t("tabProcedures") : t("tabTheory")} · {def.slug}
         </div>
         <h1 className="text-2xl font-semibold">{def.title}</h1>
         <p className="text-sm text-muted-foreground">{def.description}</p>
@@ -69,7 +71,7 @@ export default async function DossierTheoriePage({
           }
         >
           <BookOpenIcon className="size-4" />
-          Théorie
+          {t("tabTheory")}
           {sections.length > 0 && (
             <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
               {sections.length}
@@ -87,7 +89,7 @@ export default async function DossierTheoriePage({
           }
         >
           <ScrollTextIcon className="size-4" />
-          Procédure d&apos;introduction
+          {t("tabProcedureIntro")}
           {procedures.length > 0 && (
             <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
               {procedures.length}
@@ -99,13 +101,13 @@ export default async function DossierTheoriePage({
       {tab === "theorie" ? (
         sections.length === 0 ? (
           <div className="rounded-lg border bg-muted/30 p-6 text-sm text-muted-foreground">
-            Aucune section théorique disponible pour ce dossier.
+            {t("theoryEmpty")}
           </div>
         ) : (
           <>
-            <nav aria-label="Sommaire" className="rounded-lg border bg-card p-4 text-sm">
+            <nav aria-label={t("toc")} className="rounded-lg border bg-card p-4 text-sm">
               <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Sommaire
+                {t("toc")}
               </div>
               <ol className="flex flex-col gap-1">
                 {sections.map((s) => (
@@ -127,7 +129,7 @@ export default async function DossierTheoriePage({
                       <h2 className="text-lg font-semibold">{s.title}</h2>
                       {s.lastReviewedAt && (
                         <span className="text-[11px] text-muted-foreground">
-                          Revu le {s.lastReviewedAt}
+                          {t("reviewedOn", { date: s.lastReviewedAt })}
                         </span>
                       )}
                     </header>
@@ -140,7 +142,7 @@ export default async function DossierTheoriePage({
         )
       ) : procedures.length === 0 ? (
         <div className="rounded-lg border bg-muted/30 p-6 text-sm text-muted-foreground">
-          Aucune procédure d&apos;introduction documentée pour ce dossier.
+          {t("procedureEmpty")}
         </div>
       ) : (
         <ProcedureTabContent
@@ -155,7 +157,7 @@ export default async function DossierTheoriePage({
 
 /// Sous-vue de l'onglet "Procédure" : sélecteur de nature de DA en haut,
 /// rendu de la procédure sélectionnée en dessous.
-function ProcedureTabContent({
+async function ProcedureTabContent({
   procedures,
   activeNature,
   baseTabUrl,
@@ -164,6 +166,7 @@ function ProcedureTabContent({
   activeNature: string | undefined;
   baseTabUrl: (t: Tab, extra?: Record<string, string>) => string;
 }) {
+  const t = await getTranslations("admin.dossiers");
   const selected =
     procedures.find((p) => p.natureDA === activeNature) ??
     procedures.find((p) => p.id === activeNature) ??
@@ -171,7 +174,7 @@ function ProcedureTabContent({
 
   return (
     <>
-      <nav aria-label="Sélection nature de DA" className="flex flex-wrap gap-1">
+      <nav aria-label={t("procedureNatureSelect")} className="flex flex-wrap gap-1">
         {procedures.map((p) => {
           const isActive = selected?.id === p.id;
           return (

@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Code2,
@@ -71,6 +72,7 @@ export function SnippetsSheet({
   domain,
   onSnippetsChange,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [items, setItems] = useState<SnippetItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState("");
@@ -105,13 +107,13 @@ export function SnippetsSheet({
       const data = (await res.json()) as { items: SnippetItem[] };
       setItems(data.items);
     } catch (e) {
-      toast.error("Impossible de charger les snippets", {
+      toast.error(t("loadSnippetsError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
       setLoading(false);
     }
-  }, [domain]);
+  }, [domain, t]);
 
   useEffect(() => {
     if (open) refresh();
@@ -155,12 +157,12 @@ export function SnippetsSheet({
     const title = newTitle.trim();
     const content = newContent;
     if (!shortcut || !title || !content.trim()) {
-      toast.error("Tous les champs sont requis");
+      toast.error(t("allFieldsRequired"));
       return;
     }
     if (!SHORTCUT_REGEX.test(shortcut)) {
-      toast.error("Shortcut invalide", {
-        description: "Lettres, chiffres, tirets et underscores uniquement",
+      toast.error(t("invalidShortcut"), {
+        description: t("invalidShortcutDesc"),
       });
       return;
     }
@@ -176,12 +178,12 @@ export function SnippetsSheet({
         const data = await res.json().catch(() => null);
         throw new Error(data?.error || `HTTP ${res.status}`);
       }
-      toast.success("Snippet créé");
+      toast.success(t("snippetCreated"));
       resetCreate();
       refresh();
       onSnippetsChange?.();
     } catch (e) {
-      toast.error("Échec de la création", {
+      toast.error(t("createError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -195,11 +197,11 @@ export function SnippetsSheet({
     const title = editTitle.trim();
     const content = editContent;
     if (!shortcut || !title || !content.trim()) {
-      toast.error("Tous les champs sont requis");
+      toast.error(t("allFieldsRequired"));
       return;
     }
     if (!SHORTCUT_REGEX.test(shortcut)) {
-      toast.error("Shortcut invalide");
+      toast.error(t("invalidShortcut"));
       return;
     }
 
@@ -214,12 +216,12 @@ export function SnippetsSheet({
         const data = await res.json().catch(() => null);
         throw new Error(data?.error || `HTTP ${res.status}`);
       }
-      toast.success("Snippet enregistré");
+      toast.success(t("snippetSaved"));
       resetEdit();
       refresh();
       onSnippetsChange?.();
     } catch (e) {
-      toast.error("Échec de l'enregistrement", {
+      toast.error(t("saveError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -233,11 +235,11 @@ export function SnippetsSheet({
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.success("Snippet supprimé");
+      toast.success(t("snippetDeleted"));
       refresh();
       onSnippetsChange?.();
     } catch (e) {
-      toast.error("Échec de la suppression", {
+      toast.error(t("deleteError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -252,14 +254,14 @@ export function SnippetsSheet({
         <SheetHeader className="border-b border-border">
           <SheetTitle className="flex items-center gap-2">
             <Code2 className="size-4" />
-            Snippets ({items.length})
+            {t("snippetsTitle", { count: items.length })}
           </SheetTitle>
           <SheetDescription>
-            Phrases et templates fréquents insérables via{" "}
+            {t("snippetsDescPart1")}{" "}
             <kbd className="rounded border border-border bg-muted px-1 py-px font-mono text-[10.5px]">
               /
             </kbd>{" "}
-            dans la textarea du chat ou du brief.
+            {t("snippetsDescPart2")}
           </SheetDescription>
         </SheetHeader>
 
@@ -269,7 +271,7 @@ export function SnippetsSheet({
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Filtrer (shortcut, titre, contenu)…"
+              placeholder={t("filterSnippets")}
               className="pl-8"
             />
           </div>
@@ -281,19 +283,19 @@ export function SnippetsSheet({
               className="gap-1.5"
             >
               <Plus className="size-3.5" />
-              Nouveau snippet
+              {t("newSnippet")}
             </Button>
           ) : (
             <div className="flex flex-col gap-2 rounded-lg border border-amber-300/40 bg-amber-50/40 p-2 dark:border-amber-500/30 dark:bg-amber-950/15">
               <div className="flex items-center justify-between">
                 <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-200">
-                  Nouveau snippet
+                  {t("newSnippet")}
                 </span>
                 <Button
                   variant="ghost"
                   size="icon-xs"
                   onClick={resetCreate}
-                  aria-label="Annuler"
+                  aria-label={t("cancel")}
                 >
                   <X className="size-3" />
                 </Button>
@@ -304,13 +306,13 @@ export function SnippetsSheet({
                     htmlFor="new-shortcut"
                     className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
                   >
-                    Shortcut <span className="text-destructive">*</span>
+                    {t("shortcutLabel")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="new-shortcut"
                     value={newShortcut}
                     onChange={(e) => setNewShortcut(e.target.value)}
-                    placeholder="calc-pattern"
+                    placeholder={t("shortcutPlaceholder")}
                     disabled={submitting}
                   />
                 </div>
@@ -319,13 +321,13 @@ export function SnippetsSheet({
                     htmlFor="new-title"
                     className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
                   >
-                    Titre <span className="text-destructive">*</span>
+                    {t("titleLabel")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="new-title"
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="Pattern Calculateur"
+                    placeholder={t("snippetTitlePlaceholder")}
                     disabled={submitting}
                   />
                 </div>
@@ -335,13 +337,13 @@ export function SnippetsSheet({
                   htmlFor="new-content"
                   className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
                 >
-                  Contenu <span className="text-destructive">*</span>
+                  {t("contentLabel")} <span className="text-destructive">*</span>
                 </Label>
                 <Textarea
                   id="new-content"
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
-                  placeholder="Le texte qui sera inséré dans la textarea quand tu tapes /shortcut…"
+                  placeholder={t("snippetContentPlaceholder")}
                   rows={5}
                   disabled={submitting}
                   className="text-[12px]"
@@ -356,12 +358,12 @@ export function SnippetsSheet({
                 {submitting ? (
                   <>
                     <Loader2 className="size-3.5 animate-spin" />
-                    Création…
+                    {t("creating")}
                   </>
                 ) : (
                   <>
                     <Save className="size-3.5" />
-                    Créer le snippet
+                    {t("createSnippet")}
                   </>
                 )}
               </Button>
@@ -378,13 +380,13 @@ export function SnippetsSheet({
             <li className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center text-muted-foreground">
               <MessageSquareWarning className="size-6 opacity-50" />
               <p className="max-w-xs text-[11.5px] leading-relaxed">
-                Pas encore de snippet. Crée ton premier pour pouvoir l&apos;insérer
-                via <kbd className="rounded border border-border bg-muted px-1 font-mono text-[10.5px]">/</kbd> dans le chat.
+                {t("snippetsEmptyPart1")}{" "}
+                <kbd className="rounded border border-border bg-muted px-1 font-mono text-[10.5px]">/</kbd> {t("snippetsEmptyPart2")}
               </p>
             </li>
           ) : filtered.length === 0 ? (
             <li className="px-4 py-6 text-center text-[11.5px] text-muted-foreground">
-              Aucun résultat pour « {q} »
+              {t("noResultsFor", { query: q })}
             </li>
           ) : (
             filtered.map((it) => {
@@ -397,13 +399,13 @@ export function SnippetsSheet({
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10.5px] font-bold uppercase tracking-wider text-primary">
-                        Édition
+                        {t("editing")}
                       </span>
                       <Button
                         variant="ghost"
                         size="icon-xs"
                         onClick={resetEdit}
-                        aria-label="Annuler"
+                        aria-label={t("cancel")}
                       >
                         <X className="size-3" />
                       </Button>
@@ -412,13 +414,13 @@ export function SnippetsSheet({
                       <Input
                         value={editShortcut}
                         onChange={(e) => setEditShortcut(e.target.value)}
-                        placeholder="shortcut"
+                        placeholder={t("shortcutPlaceholderShort")}
                         disabled={savingEdit}
                       />
                       <Input
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
-                        placeholder="Titre"
+                        placeholder={t("titleLabel")}
                         disabled={savingEdit}
                       />
                     </div>
@@ -438,12 +440,12 @@ export function SnippetsSheet({
                       {savingEdit ? (
                         <>
                           <Loader2 className="size-3.5 animate-spin" />
-                          Enregistrement…
+                          {t("saving")}
                         </>
                       ) : (
                         <>
                           <Save className="size-3.5" />
-                          Enregistrer
+                          {t("save")}
                         </>
                       )}
                     </Button>
@@ -479,8 +481,8 @@ export function SnippetsSheet({
                       variant="ghost"
                       size="icon-xs"
                       onClick={() => startEdit(it)}
-                      title="Éditer"
-                      aria-label="Éditer"
+                      title={t("edit")}
+                      aria-label={t("edit")}
                       className="opacity-0 group-hover:opacity-100"
                     >
                       <Pencil className="size-3" />
@@ -489,8 +491,8 @@ export function SnippetsSheet({
                       variant="ghost"
                       size="icon-xs"
                       onClick={() => setDeleteTargetId(it.id)}
-                      title="Supprimer"
-                      aria-label="Supprimer"
+                      title={t("delete")}
+                      aria-label={t("delete")}
                       className="opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 className="size-3" />
@@ -503,14 +505,17 @@ export function SnippetsSheet({
         </ul>
 
         <ConfirmDeleteDialog
-          requireText="supprimer"
+          requireText={t("confirmDeleteWord")}
           open={!!deleteTarget}
           onOpenChange={(v) => !v && setDeleteTargetId(null)}
-          title="Supprimer ce snippet ?"
+          title={t("deleteSnippetTitle")}
           description={
             deleteTarget
-              ? `« /${deleteTarget.shortcut} — ${truncate(deleteTarget.title, 60)} » sera supprimé définitivement.`
-              : "Cette action est irréversible."
+              ? t("deleteSnippetDesc", {
+                  shortcut: deleteTarget.shortcut,
+                  title: truncate(deleteTarget.title, 60),
+                })
+              : t("actionIrreversible")
           }
           onConfirm={async () => {
             if (deleteTargetId) {

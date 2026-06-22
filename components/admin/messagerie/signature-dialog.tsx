@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -16,6 +17,7 @@ import {
 import { Settings } from "lucide-react";
 
 export function SignatureDialog() {
+  const t = useTranslations("admin.messagerie");
   const [open, setOpen] = useState(false);
   const [signature, setSignature] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,15 +43,15 @@ export function SignatureDialog() {
         body: JSON.stringify({ signature }),
       });
       if (response.ok) {
-        toast.success("Signature enregistrée");
+        toast.success(t("signatureSaved"));
         setOpen(false);
       } else {
         const err = await response.json().catch(() => ({}));
-        toast.error(err.error || "Erreur");
+        toast.error(err.error || t("error"));
       }
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setSaving(false);
     }
@@ -59,37 +61,33 @@ export function SignatureDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button size="sm" variant="ghost" className="gap-2 h-8" title="Paramètres">
+          <Button size="sm" variant="ghost" className="gap-2 h-8" title={t("settings")}>
             <Settings className="size-3.5" />
           </Button>
         }
       />
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Signature</DialogTitle>
-          <DialogDescription>
-            Ajoutée automatiquement à la fin de tes réponses et nouveaux emails.
-          </DialogDescription>
+          <DialogTitle>{t("signatureTitle")}</DialogTitle>
+          <DialogDescription>{t("signatureDescription")}</DialogDescription>
         </DialogHeader>
         <div>
           <Textarea
             value={signature}
             onChange={(e) => setSignature(e.target.value)}
             disabled={loading}
-            placeholder={"Cordialement,\nL'équipe DocBel\ncontact@docbel.be"}
+            placeholder={t("signaturePlaceholder")}
             rows={8}
             className="resize-y font-mono text-sm"
           />
-          <p className="mt-2 text-xs text-muted-foreground">
-            Laisse vide pour désactiver. Pas de HTML — texte brut uniquement.
-          </p>
+          <p className="mt-2 text-xs text-muted-foreground">{t("signatureHelper")}</p>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button onClick={handleSave} disabled={saving || loading}>
-            {saving ? "Enregistrement..." : "Enregistrer"}
+            {saving ? t("saving") : t("save")}
           </Button>
         </DialogFooter>
       </DialogContent>

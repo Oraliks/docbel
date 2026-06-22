@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 import { ChevronLeftIcon, ChevronRightIcon, FileTextIcon, FilePlus2Icon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,7 @@ const TYPE_BADGE: Record<string, string> = {
 };
 
 export function PdfSourceInspector() {
+  const t = useTranslations("admin.pdf");
   const [sources, setSources] = useState<SourceItem[] | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [data, setData] = useState<WidgetsResponse | null>(null);
@@ -123,12 +125,12 @@ export function PdfSourceInspector() {
       {/* Colonne 1 : liste des PDFs */}
       <aside className="flex min-h-0 flex-col gap-1 overflow-auto rounded-lg border bg-card p-2">
         <h2 className="px-2 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-          Sources ({sources?.length ?? 0})
+          {t("sourcesCount", { count: sources?.length ?? 0 })}
         </h2>
-        {sources === null && <p className="px-2 text-xs text-muted-foreground">Chargement…</p>}
+        {sources === null && <p className="px-2 text-xs text-muted-foreground">{t("loading")}</p>}
         {sources?.length === 0 && (
           <p className="px-2 text-xs text-muted-foreground">
-            Aucun PDF sous <code>private/pdfs/</code>.
+            {t.rich("noSourcesPath", { code: (chunks) => <code>{chunks}</code> })}
           </p>
         )}
         {sources?.map((s) => (
@@ -163,12 +165,12 @@ export function PdfSourceInspector() {
                   className="size-7"
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={page <= 0}
-                  aria-label="Page précédente"
+                  aria-label={t("prevPage")}
                 >
                   <ChevronLeftIcon className="size-4" />
                 </Button>
                 <span className="min-w-16 text-center text-xs text-muted-foreground tabular-nums">
-                  Page {page + 1} / {data.pageCount}
+                  {t("pageOf", { current: page + 1, total: data.pageCount })}
                 </span>
                 <Button
                   size="icon"
@@ -176,7 +178,7 @@ export function PdfSourceInspector() {
                   className="size-7"
                   onClick={() => setPage((p) => Math.min(data.pageCount - 1, p + 1))}
                   disabled={page >= data.pageCount - 1}
-                  aria-label="Page suivante"
+                  aria-label={t("nextPage")}
                 >
                   <ChevronRightIcon className="size-4" />
                 </Button>
@@ -189,7 +191,7 @@ export function PdfSourceInspector() {
                   className="size-7"
                   onClick={() => setScale((s) => Math.max(0.5, s - 0.1))}
                   disabled={scale <= 0.5}
-                  aria-label="Dézoomer"
+                  aria-label={t("zoomOut")}
                 >
                   <ZoomOutIcon className="size-4" />
                 </Button>
@@ -202,14 +204,14 @@ export function PdfSourceInspector() {
                   className="size-7"
                   onClick={() => setScale((s) => Math.min(2.5, s + 0.1))}
                   disabled={scale >= 2.5}
-                  aria-label="Zoomer"
+                  aria-label={t("zoomIn")}
                 >
                   <ZoomInIcon className="size-4" />
                 </Button>
               </div>
               <span className="ml-auto text-xs text-muted-foreground">
-                {data.widgets.length} widget{data.widgets.length > 1 ? "s" : ""} total
-                {data.pageCount > 1 ? ` · ${widgetsOnPage.length} sur cette page` : ""}
+                {t("widgetsTotal", { count: data.widgets.length })}
+                {data.pageCount > 1 ? t("widgetsOnPageSuffix", { count: widgetsOnPage.length }) : ""}
               </span>
               <Button
                 size="sm"
@@ -218,21 +220,21 @@ export function PdfSourceInspector() {
                 render={<Link href={`/admin/pdf/new?source=${encodeURIComponent(selected)}`} />}
               >
                 <FilePlus2Icon className="size-4" />
-                Créer un formulaire
+                {t("createForm")}
               </Button>
             </div>
 
             <div className="min-h-0 flex-1 overflow-auto p-4">
               {!workerReady ? (
                 <div className="p-12 text-center text-sm text-muted-foreground">
-                  Initialisation du moteur PDF…
+                  {t("pdfEngineInit")}
                 </div>
               ) : (
                 <div className="relative inline-block">
                   <PDFDocument
                     file={`/api/admin/pdf-sources/${encodeURIComponent(selected)}/pdf`}
-                    loading={<div className="p-12 text-center text-sm text-muted-foreground">Chargement…</div>}
-                    error={<div className="p-12 text-center text-sm text-destructive">Erreur de chargement.</div>}
+                    loading={<div className="p-12 text-center text-sm text-muted-foreground">{t("loading")}</div>}
+                    error={<div className="p-12 text-center text-sm text-destructive">{t("loadError")}</div>}
                   >
                     <PDFPage
                       pageNumber={page + 1}
@@ -269,7 +271,7 @@ export function PdfSourceInspector() {
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-            {selected ? "Chargement des widgets…" : "Choisis un PDF dans la liste à gauche."}
+            {selected ? t("loadingWidgets") : t("choosePdf")}
           </div>
         )}
       </main>
@@ -278,7 +280,7 @@ export function PdfSourceInspector() {
       <aside className="flex min-h-0 flex-col rounded-lg border bg-card">
         <div className="border-b p-2">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Widgets {data ? `(page ${page + 1})` : ""}
+            {data ? t("widgetsOnPage", { page: page + 1 }) : t("widgetsHeading")}
           </h2>
         </div>
         <div className="min-h-0 flex-1 overflow-auto">
@@ -286,9 +288,9 @@ export function PdfSourceInspector() {
             <table className="w-full text-xs">
               <thead className="sticky top-0 bg-card text-[10px] uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="px-2 py-1.5 text-left">Nom</th>
-                  <th className="px-2 py-1.5 text-left">Type</th>
-                  <th className="px-2 py-1.5 text-left">Tooltip</th>
+                  <th className="px-2 py-1.5 text-left">{t("colName")}</th>
+                  <th className="px-2 py-1.5 text-left">{t("colType")}</th>
+                  <th className="px-2 py-1.5 text-left">{t("colTooltip")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -310,17 +312,17 @@ export function PdfSourceInspector() {
                         <code className="text-[11px]">{w.pdfFieldName}</code>
                         {(w.required || w.readOnly || w.multiline) && (
                           <div className="mt-0.5 flex flex-wrap gap-1">
-                            {w.required && <span className="text-[9px] font-bold text-destructive">REQUIS</span>}
-                            {w.readOnly && <span className="text-[9px] font-bold text-muted-foreground">READONLY</span>}
-                            {w.multiline && <span className="text-[9px] font-bold text-muted-foreground">MULTI</span>}
+                            {w.required && <span className="text-[9px] font-bold text-destructive">{t("flagRequired")}</span>}
+                            {w.readOnly && <span className="text-[9px] font-bold text-muted-foreground">{t("flagReadonly")}</span>}
+                            {w.multiline && <span className="text-[9px] font-bold text-muted-foreground">{t("flagMulti")}</span>}
                           </div>
                         )}
                         {w.maxLen && (
-                          <div className="text-[9px] text-muted-foreground">max {w.maxLen}</div>
+                          <div className="text-[9px] text-muted-foreground">{t("maxLenShort", { value: w.maxLen })}</div>
                         )}
                         {w.options?.length ? (
                           <div className="mt-0.5 text-[9px] text-muted-foreground">
-                            opt: {w.options.join(" | ")}
+                            {t("optPrefix", { options: w.options.join(" | ") })}
                           </div>
                         ) : null}
                       </td>
@@ -338,7 +340,7 @@ export function PdfSourceInspector() {
                 {widgetsOnPage.length === 0 && (
                   <tr>
                     <td colSpan={3} className="p-3 text-center text-xs text-muted-foreground">
-                      Pas de widget sur cette page.
+                      {t("noWidgetsOnPage")}
                     </td>
                   </tr>
                 )}

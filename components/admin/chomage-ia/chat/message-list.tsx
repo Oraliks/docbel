@@ -11,6 +11,7 @@
  * `onCancelEdit` pour piloter le flux edit → regenerate.
  */
 
+import { useTranslations } from "next-intl";
 import { Loader2, MessageSquare } from "lucide-react";
 import type { ChatMessageItem, CitedSourceLite } from "./types";
 import { MessageBubble } from "./message-bubble";
@@ -60,11 +61,12 @@ export function MessageList({
   onPromoteToSource,
   promotedMessageIds,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   if (loading) {
     return (
       <div className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground">
         <Loader2 className="size-5 animate-spin" />
-        <span className="text-[12.5px]">Chargement…</span>
+        <span className="text-[12.5px]">{t("loading")}</span>
       </div>
     );
   }
@@ -76,15 +78,15 @@ export function MessageList({
         </span>
         <div>
           <p className="text-[13px] font-bold text-foreground">
-            Pose ta première question
+            {t("emptyTitle")}
           </p>
           <p className="max-w-md text-[12.5px]">
-            L&apos;IA citera les sources de la KB avec des marqueurs <code className="rounded bg-muted px-1 py-0.5 text-[11px]">[SRC:id]</code>{" "}
-            cliquables. Bouton{" "}
+            {t("emptyDescPart1")} <code className="rounded bg-muted px-1 py-0.5 text-[11px]">[SRC:id]</code>{" "}
+            {t("emptyDescPart2")}{" "}
             <span className="inline-flex items-baseline gap-0.5 font-semibold">
-              baguette
+              {t("emptyDescWand")}
             </span>{" "}
-            pour générer un prompt Claude Code à coller.
+            {t("emptyDescPart3")}
           </p>
         </div>
       </div>

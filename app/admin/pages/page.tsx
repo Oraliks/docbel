@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { PageData } from '@/lib/page-builder/types'
 import { PAGE_TEMPLATES, getTemplateBlocks } from '@/lib/page-builder/page-templates'
 import { Button } from '@/components/ui/button'
@@ -68,6 +69,7 @@ function formatScheduledAt(page: PageData): string {
 }
 
 export default function PagesListPage() {
+  const t = useTranslations('admin.pages')
   const router = useRouter()
   const [viewCounts, setViewCounts] = useState<Record<string, number>>({})
   const [pages, setPages] = useState<PageData[]>([])
@@ -135,7 +137,7 @@ export default function PagesListPage() {
         method: 'POST',
       })
       if (!res.ok) {
-        toast.error('Erreur lors de la modification du statut')
+        toast.error(t('toastStatusError'))
         return
       }
       const updated = await res.json()
@@ -143,11 +145,11 @@ export default function PagesListPage() {
         prev.map((p) => (p.id === id ? { ...p, status: updated.status } : p))
       )
       toast.success(
-        updated.status === 'published' ? 'Page publiée' : 'Page dépubliée'
+        updated.status === 'published' ? t('toastPublished') : t('toastUnpublished')
       )
     } catch (error) {
       console.error('Failed to toggle publish:', error)
-      toast.error('Erreur lors de la modification du statut')
+      toast.error(t('toastStatusError'))
     }
   }
 
@@ -158,7 +160,7 @@ export default function PagesListPage() {
         method: 'DELETE',
       })
       if (!res.ok) {
-        toast.error('Erreur lors de la suppression')
+        toast.error(t('toastDeleteError'))
         return
       }
       setPages((prev) => prev.filter((p) => p.id !== deleteId))
@@ -168,10 +170,10 @@ export default function PagesListPage() {
         return next
       })
       setDeleteId(null)
-      toast.success('Page supprimée')
+      toast.success(t('toastDeleted'))
     } catch (error) {
       console.error('Failed to delete page:', error)
-      toast.error('Erreur lors de la suppression')
+      toast.error(t('toastDeleteError'))
     }
   }
 
@@ -185,17 +187,17 @@ export default function PagesListPage() {
         body: JSON.stringify({ ids, action: 'delete' }),
       })
       if (!res.ok) {
-        toast.error('Erreur lors de la suppression')
+        toast.error(t('toastDeleteError'))
         return
       }
       const { deleted } = await res.json()
       setPages((prev) => prev.filter((p) => !selectedIds.has(p.id)))
       setSelectedIds(new Set())
       setBulkDeleteOpen(false)
-      toast.success(`${deleted} page${deleted > 1 ? 's' : ''} supprimée${deleted > 1 ? 's' : ''}`)
+      toast.success(t('toastBulkDeleted', { count: deleted }))
     } catch (error) {
       console.error('Failed to bulk delete:', error)
-      toast.error('Erreur lors de la suppression')
+      toast.error(t('toastDeleteError'))
     }
   }
 
@@ -205,7 +207,7 @@ export default function PagesListPage() {
       return p && p.status !== target
     })
     if (ids.length === 0) {
-      toast.info(target === 'published' ? 'Toutes déjà publiées' : 'Toutes déjà en brouillon')
+      toast.info(target === 'published' ? t('toastAllPublished') : t('toastAllDraft'))
       return
     }
     try {
@@ -218,7 +220,7 @@ export default function PagesListPage() {
         }),
       })
       if (!res.ok) {
-        toast.error('Erreur lors de la mise à jour')
+        toast.error(t('toastUpdateError'))
         return
       }
       const { updated } = await res.json()
@@ -228,12 +230,12 @@ export default function PagesListPage() {
       )
       toast.success(
         target === 'published'
-          ? `${updated} page${updated > 1 ? 's' : ''} publiée${updated > 1 ? 's' : ''}`
-          : `${updated} page${updated > 1 ? 's' : ''} dépubliée${updated > 1 ? 's' : ''}`
+          ? t('toastBulkPublished', { count: updated })
+          : t('toastBulkUnpublished', { count: updated })
       )
     } catch (error) {
       console.error('Failed to bulk toggle:', error)
-      toast.error('Erreur lors de la mise à jour')
+      toast.error(t('toastUpdateError'))
     }
   }
 
@@ -252,13 +254,13 @@ export default function PagesListPage() {
           ? data.content
           : null
       if (!blocks) {
-        toast.error('Fichier JSON invalide (aucun bloc trouvé)')
+        toast.error(t('toastImportInvalid'))
         return
       }
       const title =
         (typeof data?.title === 'string' && data.title.trim()) ||
         file.name.replace(/\.json$/i, '') ||
-        'Page importée'
+        t('importedPageFallback')
       const res = await fetch('/api/pages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -266,20 +268,20 @@ export default function PagesListPage() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        toast.error(err.error || "Erreur lors de l'import")
+        toast.error(err.error || t('toastImportError'))
         return
       }
       const newPage = await res.json()
-      toast.success(`Page « ${title} » importée`)
+      toast.success(t('toastImported', { title }))
       router.push(`/admin/pages/${newPage.id}`)
     } catch {
-      toast.error('Fichier JSON illisible')
+      toast.error(t('toastImportUnreadable'))
     }
   }
 
   const handleCreatePage = async () => {
     if (!newPageTitle.trim()) {
-      toast.error('Le titre de la page est requis')
+      toast.error(t('toastTitleRequired'))
       return
     }
 
@@ -297,12 +299,12 @@ export default function PagesListPage() {
 
       if (!res.ok) {
         const error = await res.json()
-        toast.error(error.error || 'Erreur lors de la création de la page')
+        toast.error(error.error || t('toastCreateError'))
         return
       }
 
       const newPage = await res.json()
-      toast.success(`Page "${newPageTitle}" créée avec le modèle`)
+      toast.success(t('toastCreated', { title: newPageTitle }))
       setShowCreateDialog(false)
       setShowTemplateDialog(false)
       setNewPageTitle('')
@@ -312,7 +314,7 @@ export default function PagesListPage() {
       router.push(`/admin/pages/${newPage.id}`)
     } catch (error) {
       console.error('Failed to create page:', error)
-      toast.error('Erreur lors de la création de la page')
+      toast.error(t('toastCreateError'))
     } finally {
       setIsCreating(false)
     }
@@ -339,11 +341,11 @@ export default function PagesListPage() {
       if (!res.ok) throw new Error('Failed to duplicate')
 
       const newPage = await res.json()
-      toast.success('Page dupliquée')
+      toast.success(t('toastDuplicated'))
       router.push(`/admin/pages/${newPage.id}`)
     } catch (error) {
       console.error('Failed to duplicate page:', error)
-      toast.error('Erreur lors de la duplication de la page')
+      toast.error(t('toastDuplicateError'))
     }
   }
 
@@ -393,7 +395,7 @@ export default function PagesListPage() {
   }
 
   if (loading) {
-    return <div className="p-8">Chargement...</div>
+    return <div className="p-8">{t('loading')}</div>
   }
 
   return (
@@ -401,11 +403,11 @@ export default function PagesListPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Pages</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
           <p className="text-muted-foreground mt-2">
-            {pages.length} page{pages.length !== 1 ? 's' : ''}
+            {t('pagesCount', { count: pages.length })}
             {(search || statusFilter !== 'all') && (
-              <> · {filteredPages.length} résultat{filteredPages.length !== 1 ? 's' : ''}</>
+              <> · {t('resultsCount', { count: filteredPages.length })}</>
             )}
           </p>
         </div>
@@ -419,11 +421,11 @@ export default function PagesListPage() {
           />
           <Button variant="outline" onClick={() => importInputRef.current?.click()}>
             <Upload className="h-4 w-4 mr-2" />
-            Importer JSON
+            {t('importJson')}
           </Button>
           <Button onClick={() => setShowCreateDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Créer une page
+            {t('createPage')}
           </Button>
         </div>
       </div>
@@ -434,7 +436,7 @@ export default function PagesListPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Rechercher par titre ou slug..."
+              placeholder={t('searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 pr-9"
@@ -444,7 +446,7 @@ export default function PagesListPage() {
                 type="button"
                 onClick={() => setSearch('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
-                aria-label="Effacer la recherche"
+                aria-label={t('clearSearch')}
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -456,21 +458,21 @@ export default function PagesListPage() {
               size="sm"
               onClick={() => setStatusFilter('all')}
             >
-              Tous ({pages.length})
+              {t('filterAll', { count: pages.length })}
             </Button>
             <Button
               variant={statusFilter === 'published' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('published')}
             >
-              Publiés ({pages.filter((p) => p.status === 'published').length})
+              {t('filterPublished', { count: pages.filter((p) => p.status === 'published').length })}
             </Button>
             <Button
               variant={statusFilter === 'draft' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('draft')}
             >
-              Brouillons ({pages.filter((p) => p.status === 'draft').length})
+              {t('filterDraft', { count: pages.filter((p) => p.status === 'draft').length })}
             </Button>
           </div>
         </div>
@@ -480,8 +482,10 @@ export default function PagesListPage() {
       {selectedIds.size > 0 && (
         <div className="flex items-center justify-between gap-3 px-4 py-2.5 border rounded-lg bg-muted/40">
           <div className="text-sm">
-            <span className="font-medium">{selectedIds.size}</span> page
-            {selectedIds.size > 1 ? 's' : ''} sélectionnée{selectedIds.size > 1 ? 's' : ''}
+            {t.rich('selectedCount', {
+              count: selectedIds.size,
+              strong: (chunks) => <span className="font-medium">{chunks}</span>,
+            })}
           </div>
           <div className="flex gap-2">
             <Button
@@ -490,7 +494,7 @@ export default function PagesListPage() {
               onClick={() => handleBulkPublishToggle('published')}
             >
               <Eye className="h-4 w-4 mr-1.5" />
-              Publier
+              {t('publish')}
             </Button>
             <Button
               variant="outline"
@@ -498,7 +502,7 @@ export default function PagesListPage() {
               onClick={() => handleBulkPublishToggle('draft')}
             >
               <EyeOff className="h-4 w-4 mr-1.5" />
-              Dépublier
+              {t('unpublish')}
             </Button>
             <Button
               variant="outline"
@@ -507,14 +511,14 @@ export default function PagesListPage() {
               onClick={() => setBulkDeleteOpen(true)}
             >
               <Trash2 className="h-4 w-4 mr-1.5" />
-              Supprimer
+              {t('delete')}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSelectedIds(new Set())}
             >
-              Annuler
+              {t('cancel')}
             </Button>
           </div>
         </div>
@@ -523,17 +527,17 @@ export default function PagesListPage() {
       {/* Table */}
       {pages.length === 0 ? (
         <div className="text-center py-12 border rounded-lg">
-          <p className="text-muted-foreground mb-4">Aucune page créée</p>
+          <p className="text-muted-foreground mb-4">{t('emptyNoPages')}</p>
           <Button
             className=""
             onClick={() => setShowCreateDialog(true)}
           >
-            Créer la première page
+            {t('createFirstPage')}
           </Button>
         </div>
       ) : filteredPages.length === 0 ? (
         <div className="text-center py-12 border rounded-lg">
-          <p className="text-muted-foreground mb-2">Aucune page ne correspond à vos critères</p>
+          <p className="text-muted-foreground mb-2">{t('emptyNoMatch')}</p>
           <Button
             variant="outline"
             size="sm"
@@ -542,7 +546,7 @@ export default function PagesListPage() {
               setStatusFilter('all')
             }}
           >
-            Réinitialiser les filtres
+            {t('resetFilters')}
           </Button>
         </div>
       ) : (
@@ -558,14 +562,14 @@ export default function PagesListPage() {
                       onCheckedChange={(checked) =>
                         toggleSelectAllVisible(checked)
                       }
-                      aria-label="Tout sélectionner"
+                      aria-label={t('selectAll')}
                     />
                   </TableHead>
-                  <TableHead className="w-1/3">Titre</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead className="text-center">Blocs</TableHead>
-                  <TableHead className="text-center">Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-1/3">{t('colTitle')}</TableHead>
+                  <TableHead>{t('colSlug')}</TableHead>
+                  <TableHead className="text-center">{t('colBlocks')}</TableHead>
+                  <TableHead className="text-center">{t('colStatus')}</TableHead>
+                  <TableHead className="text-right">{t('colActions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -580,7 +584,7 @@ export default function PagesListPage() {
                         onCheckedChange={(checked) =>
                           toggleRow(page.id, checked)
                         }
-                        aria-label={`Sélectionner ${page.title}`}
+                        aria-label={t('selectRow', { title: page.title })}
                       />
                     </TableCell>
                     <TableCell className="font-medium">
@@ -604,7 +608,9 @@ export default function PagesListPage() {
                     <TableCell className="text-center">
                       {page.status === 'scheduled' ? (
                         <Badge variant="info" title={formatScheduledAt(page)}>
-                          🕒 Planifié{formatScheduledAt(page) ? ` · ${formatScheduledAt(page)}` : ''}
+                          {formatScheduledAt(page)
+                            ? t('badgeScheduledAt', { date: formatScheduledAt(page) })
+                            : t('badgeScheduled')}
                         </Badge>
                       ) : (
                         <Badge
@@ -612,7 +618,7 @@ export default function PagesListPage() {
                             page.status === 'published' ? 'default' : 'secondary'
                           }
                         >
-                          {page.status === 'published' ? '✓ Publié' : '- Brouillon'}
+                          {page.status === 'published' ? t('badgePublished') : t('badgeDraft')}
                         </Badge>
                       )}
                     </TableCell>
@@ -623,7 +629,7 @@ export default function PagesListPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            title="Éditer"
+                            title={t('actionEdit')}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -638,7 +644,7 @@ export default function PagesListPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            title="Voir sur le site"
+                            title={t('actionView')}
                           >
                             <ExternalLink className="h-4 w-4" />
                           </Button>
@@ -651,8 +657,8 @@ export default function PagesListPage() {
                           onClick={() => handlePublishToggle(page.id)}
                           title={
                             page.status === 'published'
-                              ? 'Dépublier'
-                              : 'Publier'
+                              ? t('unpublish')
+                              : t('publish')
                           }
                         >
                           {page.status === 'published' ? (
@@ -667,7 +673,7 @@ export default function PagesListPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleDuplicate(page.id)}
-                          title="Dupliquer"
+                          title={t('actionDuplicate')}
                         >
                           <Copy className="h-4 w-4" />
                         </Button>
@@ -678,7 +684,7 @@ export default function PagesListPage() {
                           size="sm"
                           className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30"
                           onClick={() => setDeleteId(page.id)}
-                          title="Supprimer"
+                          title={t('delete')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -694,8 +700,11 @@ export default function PagesListPage() {
           {totalPages > 1 && (
             <div className="flex justify-between items-center pt-4">
               <div className="text-sm text-muted-foreground">
-                Page {safeCurrentPage} sur {totalPages} • {filteredPages.length} résultat
-                {filteredPages.length !== 1 ? 's' : ''}
+                {t('paginationInfo', {
+                  current: safeCurrentPage,
+                  total: totalPages,
+                  count: filteredPages.length,
+                })}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -703,7 +712,7 @@ export default function PagesListPage() {
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={safeCurrentPage === 1}
                 >
-                  Précédent
+                  {t('previous')}
                 </Button>
                 <Button
                   variant="outline"
@@ -712,7 +721,7 @@ export default function PagesListPage() {
                   }
                   disabled={safeCurrentPage === totalPages}
                 >
-                  Suivant
+                  {t('next')}
                 </Button>
               </div>
             </div>
@@ -724,16 +733,16 @@ export default function PagesListPage() {
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Créer une nouvelle page</DialogTitle>
+            <DialogTitle>{t('createDialogTitle')}</DialogTitle>
             <DialogDescription>
-              Entrez le titre de la page et choisissez un modèle. Vous pourrez l&apos;éditer après la création.
+              {t('createDialogDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Titre de la page</label>
+              <label className="text-sm font-medium">{t('pageTitleLabel')}</label>
               <Input
-                placeholder="Ex: À propos"
+                placeholder={t('pageTitlePlaceholder')}
                 value={newPageTitle}
                 onChange={(e) => setNewPageTitle(e.target.value)}
                 onKeyDown={(e) => {
@@ -746,14 +755,14 @@ export default function PagesListPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Modèle</label>
+              <label className="text-sm font-medium">{t('templateLabel')}</label>
               <Button
                 variant="outline"
                 className="w-full justify-start text-left"
                 onClick={() => setShowTemplateDialog(true)}
               >
-                {PAGE_TEMPLATES.find((t) => t.id === selectedTemplate)?.name ||
-                  'Choisir un modèle'}
+                {PAGE_TEMPLATES.find((tpl) => tpl.id === selectedTemplate)?.name ||
+                  t('chooseTemplate')}
               </Button>
             </div>
           </div>
@@ -766,14 +775,14 @@ export default function PagesListPage() {
               }}
               disabled={isCreating}
             >
-              Annuler
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleCreatePage}
               disabled={isCreating || !newPageTitle.trim()}
               className=""
             >
-              {isCreating ? 'Création...' : 'Créer'}
+              {isCreating ? t('creating') : t('create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -783,9 +792,9 @@ export default function PagesListPage() {
       <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Choisir un modèle</DialogTitle>
+            <DialogTitle>{t('chooseTemplate')}</DialogTitle>
             <DialogDescription>
-              Sélectionnez un modèle de page pour commencer rapidement.
+              {t('chooseTemplateDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
@@ -808,7 +817,7 @@ export default function PagesListPage() {
                 </p>
                 {template.blocks.length > 0 && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    {template.blocks.length} bloc(s)
+                    {t('blocksCount', { count: template.blocks.length })}
                   </p>
                 )}
               </button>
@@ -821,24 +830,24 @@ export default function PagesListPage() {
       <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cette page?</AlertDialogTitle>
+            <AlertDialogTitle>{t('deleteDialogTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible. La page et tous ses blocs seront supprimés.
+              {t('deleteDialogDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <TypeToConfirmField
-            requireText="supprimer"
+            requireText={t('confirmWord')}
             value={deleteTyped}
             onChange={setDeleteTyped}
           />
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               variant="destructive"
-              disabled={!typeToConfirmMatches(deleteTyped, 'supprimer')}
+              disabled={!typeToConfirmMatches(deleteTyped, t('confirmWord'))}
             >
-              Supprimer
+              {t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -849,25 +858,25 @@ export default function PagesListPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Supprimer {selectedIds.size} page{selectedIds.size > 1 ? 's' : ''}?
+              {t('bulkDeleteDialogTitle', { count: selectedIds.size })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible. Toutes les pages sélectionnées et leurs blocs seront supprimés.
+              {t('bulkDeleteDialogDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <TypeToConfirmField
-            requireText="supprimer"
+            requireText={t('confirmWord')}
             value={deleteTyped}
             onChange={setDeleteTyped}
           />
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
               variant="destructive"
-              disabled={!typeToConfirmMatches(deleteTyped, 'supprimer')}
+              disabled={!typeToConfirmMatches(deleteTyped, t('confirmWord'))}
             >
-              Supprimer
+              {t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

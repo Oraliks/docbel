@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +14,13 @@ import { FIELD_NAME_RE, isNameAvailable } from "@/lib/pdf-forms/visual/validatio
 /// une aide rapide à la place. Les saisies sont appliquées on-blur pour ne
 /// pas spammer le reducer à chaque keystroke.
 export function VisualFieldProperties() {
+  const t = useTranslations("admin.pdf");
   const { selectedField, doc, updateField, removeField, isReadOnlyMode } = useVisualEditor();
 
   if (!selectedField) {
     return (
       <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-        Sélectionnez un champ sur le PDF pour modifier ses propriétés. Pour créer un champ, choisissez l’outil
-        « Texte » ou « Case », puis dessinez un rectangle.
+        {t("propsEmptyHint")}
       </div>
     );
   }
@@ -33,7 +34,7 @@ export function VisualFieldProperties() {
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">
-            {f.type === "text" ? "Champ texte" : "Case à cocher"}
+            {f.type === "text" ? t("fieldTypeText") : t("fieldTypeCheckbox")}
           </div>
           <div className="font-medium">{f.name}</div>
         </div>
@@ -42,14 +43,14 @@ export function VisualFieldProperties() {
           size="icon"
           onClick={() => removeField(f.id)}
           disabled={isReadOnlyMode}
-          aria-label="Supprimer le champ"
+          aria-label={t("removeFieldAria")}
         >
           <Trash2Icon className="size-4 text-destructive" />
         </Button>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="vf-name">Nom AcroForm</Label>
+        <Label htmlFor="vf-name">{t("acroFormName")}</Label>
         <Input
           id="vf-name"
           defaultValue={f.name}
@@ -60,12 +61,12 @@ export function VisualFieldProperties() {
           disabled={isReadOnlyMode}
           aria-invalid={nameInvalid || nameTaken}
         />
-        {nameInvalid && <p className="text-xs text-destructive">Nom invalide (a-z, 0-9, _ ou -, max 127).</p>}
-        {!nameInvalid && nameTaken && <p className="text-xs text-destructive">Ce nom est déjà utilisé.</p>}
+        {nameInvalid && <p className="text-xs text-destructive">{t("nameInvalid")}</p>}
+        {!nameInvalid && nameTaken && <p className="text-xs text-destructive">{t("nameTaken")}</p>}
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="vf-tooltip">Tooltip (info-bulle / TU)</Label>
+        <Label htmlFor="vf-tooltip">{t("tooltipLabel")}</Label>
         <Textarea
           id="vf-tooltip"
           rows={2}
@@ -80,7 +81,7 @@ export function VisualFieldProperties() {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex items-center justify-between rounded border px-3 py-2">
-          <Label htmlFor="vf-required" className="text-xs">Requis</Label>
+          <Label htmlFor="vf-required" className="text-xs">{t("requiredShort")}</Label>
           <Switch
             id="vf-required"
             checked={!!f.required}
@@ -89,7 +90,7 @@ export function VisualFieldProperties() {
           />
         </div>
         <div className="flex items-center justify-between rounded border px-3 py-2">
-          <Label htmlFor="vf-readonly" className="text-xs">Lecture seule</Label>
+          <Label htmlFor="vf-readonly" className="text-xs">{t("readOnlyLabel")}</Label>
           <Switch
             id="vf-readonly"
             checked={!!f.readOnly}
@@ -102,7 +103,7 @@ export function VisualFieldProperties() {
       {f.type === "text" && (
         <>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="vf-maxlen">Longueur max (MaxLen)</Label>
+            <Label htmlFor="vf-maxlen">{t("maxLenLabel")}</Label>
             <Input
               id="vf-maxlen"
               type="number"
@@ -117,7 +118,7 @@ export function VisualFieldProperties() {
             />
           </div>
           <div className="flex items-center justify-between rounded border px-3 py-2">
-            <Label htmlFor="vf-multiline" className="text-xs">Multiligne</Label>
+            <Label htmlFor="vf-multiline" className="text-xs">{t("multilineLabel")}</Label>
             <Switch
               id="vf-multiline"
               checked={!!f.multiline}
@@ -126,7 +127,7 @@ export function VisualFieldProperties() {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="vf-default">Valeur par défaut</Label>
+            <Label htmlFor="vf-default">{t("defaultValueLabel")}</Label>
             <Input
               id="vf-default"
               defaultValue={f.defaultValue ?? ""}
@@ -139,7 +140,7 @@ export function VisualFieldProperties() {
 
       {f.type === "checkbox" && (
         <div className="flex items-center justify-between rounded border px-3 py-2">
-          <Label htmlFor="vf-checked" className="text-xs">Cochée par défaut</Label>
+          <Label htmlFor="vf-checked" className="text-xs">{t("defaultCheckedLabel")}</Label>
           <Switch
             id="vf-checked"
             checked={!!f.defaultChecked}
@@ -150,7 +151,13 @@ export function VisualFieldProperties() {
       )}
 
       <div className="rounded border bg-muted/40 px-2 py-1.5 font-mono text-[11px] text-muted-foreground">
-        rect : x={f.rect.x.toFixed(1)} y={f.rect.y.toFixed(1)} w={f.rect.w.toFixed(1)} h={f.rect.h.toFixed(1)} (pt) — page {f.page + 1}
+        {t("rectReadout", {
+          x: f.rect.x.toFixed(1),
+          y: f.rect.y.toFixed(1),
+          w: f.rect.w.toFixed(1),
+          h: f.rect.h.toFixed(1),
+          page: f.page + 1,
+        })}
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ExternalLink } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { BookingTabs } from "@/components/booking/booking-tabs";
 
@@ -12,6 +13,7 @@ interface LayoutProps {
 // tous les droits → role="owner" pour les composants partagés.
 export default async function AdminTenantLayout({ params, children }: LayoutProps) {
   const { tenantId } = await params;
+  const t = await getTranslations("admin.booking");
   const tenant = await prisma.bookingTenant.findUnique({
     where: { id: tenantId },
     select: { name: true, slug: true },
@@ -25,7 +27,7 @@ export default async function AdminTenantLayout({ params, children }: LayoutProp
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{tenant.name}</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Gestion admin du guichet
+              {t("tenantSubtitle")}
             </p>
           </div>
           <a
@@ -35,7 +37,7 @@ export default async function AdminTenantLayout({ params, children }: LayoutProp
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground underline underline-offset-4"
           >
             <ExternalLink className="size-4" />
-            Page publique
+            {t("publicPage")}
           </a>
         </div>
       </div>

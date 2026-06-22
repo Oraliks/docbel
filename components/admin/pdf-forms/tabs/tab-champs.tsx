@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Accordion } from "@/components/ui/accordion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FieldEditor } from "../field-editor";
@@ -11,23 +12,24 @@ import type { UseFormData } from "../use-form-data";
 /// nous matérialisons via l'éditeur visuel — seul le premier désactive
 /// l'onglet Visuel (la fusion d'AcroForm tiers est out-of-scope v1).
 export function TabChamps({ data }: { data: UseFormData }) {
+  const t = useTranslations("admin.pdf");
   const { form, presets, hasForeignAcroForm, setFields, load, loadIssues } = data;
   if (!form) return null;
 
   return (
     <Tabs defaultValue="schema" className="w-full">
       <TabsList variant="line">
-        <TabsTrigger value="schema">Schéma ({form.fields.length})</TabsTrigger>
+        <TabsTrigger value="schema">{t("subTabSchema", { count: form.fields.length })}</TabsTrigger>
         <TabsTrigger
           value="visual"
           disabled={hasForeignAcroForm}
           title={
             hasForeignAcroForm
-              ? "Désactivé : le PDF contient déjà un AcroForm tiers (fusion out-of-scope v1)."
-              : "Éditeur visuel d'AcroForms (Text + Checkbox)"
+              ? t("visualDisabledForeign")
+              : t("visualEditorHint")
           }
         >
-          Visuel
+          {t("subTabVisual")}
         </TabsTrigger>
       </TabsList>
 

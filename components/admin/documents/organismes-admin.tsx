@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -72,17 +73,17 @@ interface Organisme {
   updatedAt: string;
 }
 
-const TYPE_OPTIONS: { value: string; label: string }[] = [
-  { value: "federal", label: "Fédéral" },
-  { value: "regional", label: "Régional" },
-  { value: "local", label: "Local (commune, CPAS)" },
-  { value: "social", label: "Social (mutuelle, syndicat)" },
-  { value: "professional", label: "Professionnel (SS, fiduciaire)" },
-  { value: "other", label: "Autre" },
+const TYPE_OPTIONS: { value: string; labelKey: string }[] = [
+  { value: "federal", labelKey: "orgTypeFederal" },
+  { value: "regional", labelKey: "orgTypeRegional" },
+  { value: "local", labelKey: "orgTypeLocal" },
+  { value: "social", labelKey: "orgTypeSocial" },
+  { value: "professional", labelKey: "orgTypeProfessional" },
+  { value: "other", labelKey: "orgTypeOther" },
 ];
 
-const TYPE_LABEL: Record<string, string> = Object.fromEntries(
-  TYPE_OPTIONS.map((t) => [t.value, t.label])
+const TYPE_LABEL_KEY: Record<string, string> = Object.fromEntries(
+  TYPE_OPTIONS.map((o) => [o.value, o.labelKey])
 );
 
 interface FormState {
@@ -113,6 +114,7 @@ const EMPTY: FormState = {
 
 export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
   const router = useRouter();
+  const t = useTranslations("admin.documents");
   const [organismes, setOrganismes] = useState(initial);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -177,7 +179,7 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || "Échec");
+        throw new Error(j.error || t("failed"));
       }
       const saved = await res.json();
       if (isUpdate) {
@@ -187,11 +189,11 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
       } else {
         setOrganismes((prev) => [...prev, { ...saved, templateCount: 0 }]);
       }
-      toast.success(isUpdate ? "Organisme mis à jour" : "Organisme créé");
+      toast.success(isUpdate ? t("orgUpdated") : t("orgCreated"));
       closeDialog();
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("error"));
     } finally {
       setSaving(false);
     }
@@ -202,21 +204,21 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
       const res = await fetch(`/api/documents/organismes/${o.id}`, { method: "DELETE" });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || "Échec");
+        throw new Error(j.error || t("failed"));
       }
       const result = await res.json();
       if (result.softDelete) {
         setOrganismes((prev) =>
           prev.map((x) => (x.id === o.id ? { ...x, active: false } : x))
         );
-        toast.warning(result.message || "Désactivé");
+        toast.warning(result.message || t("deactivated"));
       } else {
         setOrganismes((prev) => prev.filter((x) => x.id !== o.id));
-        toast.success("Supprimé");
+        toast.success(t("deleted"));
       }
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("error"));
     } finally {
       setDeleteTarget(null);
     }
@@ -229,13 +231,13 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: !o.active }),
       });
-      if (!res.ok) throw new Error("Échec");
+      if (!res.ok) throw new Error(t("failed"));
       const updated = await res.json();
       setOrganismes((prev) => prev.map((x) => (x.id === o.id ? { ...x, active: updated.active } : x)));
-      toast.success(updated.active ? "Activé" : "Désactivé");
+      toast.success(updated.active ? t("activated") : t("deactivated"));
       router.refresh();
     } catch {
-      toast.error("Erreur");
+      toast.error(t("error"));
     }
   }
 
@@ -244,20 +246,20 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
       <div className="flex items-center gap-3 flex-wrap">
         <Button render={<Link href="/admin/documents" />} variant="ghost" size="sm">
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Retour
+          {t("back")}
         </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Building2 className="w-7 h-7" />
-            Organismes
+            {t("organismesTitle")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {filtered.length} sur {organismes.length} organisme{organismes.length !== 1 ? "s" : ""}
+            {t("organismesSubtitle", { shown: filtered.length, total: organismes.length })}
           </p>
         </div>
         <Button onClick={openCreate} size="sm">
           <Plus className="w-4 h-4 mr-2" />
-          Nouvel organisme
+          {t("newOrganisme")}
         </Button>
       </div>
 
@@ -266,7 +268,7 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
         <div className="relative flex-1 min-w-[220px] max-w-md">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par nom, code…"
+            placeholder={t("organismesSearchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 pr-8"
@@ -285,10 +287,10 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous types</SelectItem>
-            {TYPE_OPTIONS.map((t) => (
-              <SelectItem key={t.value} value={t.value}>
-                {t.label}
+            <SelectItem value="all">{t("allTypes")}</SelectItem>
+            {TYPE_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {t(opt.labelKey as Parameters<typeof t>[0])}
               </SelectItem>
             ))}
           </SelectContent>
@@ -299,7 +301,7 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
           onClick={() => setShowInactive((v) => !v)}
         >
           {showInactive ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
-          {showInactive ? "Tous" : "Actifs uniquement"}
+          {showInactive ? t("allLabel") : t("activeOnly")}
         </Button>
       </div>
 
@@ -308,12 +310,12 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/40">
-              <TableHead>Organisme</TableHead>
-              <TableHead>Code</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Documents</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("colOrganisme")}</TableHead>
+              <TableHead>{t("colCode")}</TableHead>
+              <TableHead>{t("colType")}</TableHead>
+              <TableHead>{t("colDocuments")}</TableHead>
+              <TableHead>{t("colStatus")}</TableHead>
+              <TableHead className="text-right">{t("colActions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -342,7 +344,7 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="text-xs">
-                    {TYPE_LABEL[o.type] || o.type}
+                    {TYPE_LABEL_KEY[o.type] ? t(TYPE_LABEL_KEY[o.type] as Parameters<typeof t>[0]) : o.type}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -351,11 +353,11 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
                 <TableCell>
                   {o.active ? (
                     <Badge variant="default" className="text-xs">
-                      Actif
+                      {t("statusActive")}
                     </Badge>
                   ) : (
                     <Badge variant="secondary" className="text-xs">
-                      Inactif
+                      {t("statusInactive")}
                     </Badge>
                   )}
                 </TableCell>
@@ -391,7 +393,7 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
             {filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
-                  Aucun organisme.
+                  {t("noOrganisme")}
                 </TableCell>
               </TableRow>
             )}
@@ -403,18 +405,18 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
       <Dialog open={creating || !!editing} onOpenChange={(v) => !v && closeDialog()}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editing ? "Modifier l'organisme" : "Nouvel organisme"}</DialogTitle>
+            <DialogTitle>{editing ? t("editOrganisme") : t("newOrganisme")}</DialogTitle>
             <DialogDescription>
               {editing
-                ? "Modifiez les informations de l'organisme."
-                : "Créez un nouvel organisme émetteur (ONEM, CPAS, mutuelle, etc.)."}
+                ? t("editOrganismeDescription")
+                : t("newOrganismeDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Code interne *</Label>
+                <Label className="text-xs">{t("internalCodeLabel")}</Label>
                 <Input
                   value={form.code}
                   onChange={(e) =>
@@ -426,7 +428,7 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Type *</Label>
+                <Label className="text-xs">{t("typeLabel")}</Label>
                 <Select
                   value={form.type}
                   onValueChange={(v) => v && setForm({ ...form, type: v })}
@@ -435,9 +437,9 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TYPE_OPTIONS.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
+                    {TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {t(opt.labelKey as Parameters<typeof t>[0])}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -446,18 +448,18 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">Nom complet *</Label>
+              <Label className="text-xs">{t("fullNameLabel")}</Label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Office National de l'Emploi"
+                placeholder={t("fullNamePlaceholder")}
                 className="h-9"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Nom court</Label>
+                <Label className="text-xs">{t("shortNameLabel")}</Label>
                 <Input
                   value={form.shortName}
                   onChange={(e) => setForm({ ...form, shortName: e.target.value })}
@@ -466,7 +468,7 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Couleur</Label>
+                <Label className="text-xs">{t("colorLabel")}</Label>
                 <div className="flex gap-2">
                   <input
                     type="color"
@@ -484,7 +486,7 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">Site web</Label>
+              <Label className="text-xs">{t("websiteLabel")}</Label>
               <Input
                 value={form.website}
                 onChange={(e) => setForm({ ...form, website: e.target.value })}
@@ -494,7 +496,7 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">URL du logo (optionnel)</Label>
+              <Label className="text-xs">{t("logoUrlLabel")}</Label>
               <Input
                 value={form.logoUrl}
                 onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
@@ -504,17 +506,17 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">Description</Label>
+              <Label className="text-xs">{t("descriptionLabel")}</Label>
               <Textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 rows={2}
-                placeholder="Sécurité sociale fédérale…"
+                placeholder={t("orgDescriptionPlaceholder")}
               />
             </div>
 
             <div className="space-y-1.5 max-w-[150px]">
-              <Label className="text-xs">Ordre d&apos;affichage</Label>
+              <Label className="text-xs">{t("displayOrderLabel")}</Label>
               <Input
                 type="number"
                 value={form.order}
@@ -526,13 +528,13 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
 
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog} disabled={saving}>
-              Annuler
+              {t("cancel")}
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={saving || !form.code || !form.name}
             >
-              {saving ? "Enregistrement…" : editing ? "Enregistrer" : "Créer"}
+              {saving ? t("saving") : editing ? t("saveAction") : t("create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -542,20 +544,23 @@ export function OrganismesAdmin({ initial }: { initial: Organisme[] }) {
       <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cet organisme ?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteOrgTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {deleteTarget && deleteTarget.templateCount > 0
-                ? `"${deleteTarget.name}" est utilisé par ${deleteTarget.templateCount} document(s). Il sera désactivé pour préserver les références.`
-                : `Cette action supprimera définitivement "${deleteTarget?.name}".`}
+                ? t("deleteOrgSoftDescription", {
+                    name: deleteTarget.name,
+                    count: deleteTarget.templateCount,
+                  })
+                : t("deleteOrgHardDescription", { name: deleteTarget?.name ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteTarget && handleDelete(deleteTarget)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteTarget && deleteTarget.templateCount > 0 ? "Désactiver" : "Supprimer"}
+              {deleteTarget && deleteTarget.templateCount > 0 ? t("deactivate") : t("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

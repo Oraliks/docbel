@@ -14,6 +14,7 @@
  */
 
 import { useDroppable } from "@dnd-kit/core";
+import { useTranslations } from "next-intl";
 import { ConfirmDeleteDialog } from "../../_shared-alerts";
 import {
   Folder,
@@ -88,6 +89,7 @@ export function FoldersSidebar({
   onConfirmDelete,
   onCancelDelete,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const allActive = selectedFolderIds.length === 0 && !unassignedSelected;
   const selectedSet = new Set(selectedFolderIds);
 
@@ -96,14 +98,14 @@ export function FoldersSidebar({
       {/* Header */}
       <div className="flex h-9 shrink-0 items-center justify-between border-b border-border px-3">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Dossiers
+          {t("foldersHeader")}
         </span>
         <Button
           variant="ghost"
           size="icon-xs"
           onClick={onCreateRoot}
-          title="Créer un dossier racine"
-          aria-label="Créer un dossier"
+          title={t("createRootFolder")}
+          aria-label={t("createFolder")}
         >
           <Plus className="size-3.5" />
         </Button>
@@ -118,7 +120,7 @@ export function FoldersSidebar({
           active={allActive}
           onClick={onSelectAll}
           icon={<Layers className="size-3.5" />}
-          label="Toutes les sources"
+          label={t("allSources")}
           count={totalCount}
         />
         <RootDropItem
@@ -127,7 +129,7 @@ export function FoldersSidebar({
           active={unassignedSelected}
           onClick={onSelectUnassigned}
           icon={<Inbox className="size-3.5" />}
-          label="Sans dossier"
+          label={t("noFolder")}
           count={unassignedCount}
         />
 
@@ -136,7 +138,7 @@ export function FoldersSidebar({
         {loading && tree.length === 0 ? (
           <div className="flex items-center gap-1.5 px-2 py-1.5 text-[11px] text-muted-foreground">
             <Loader2 className="size-3 animate-spin" />
-            Chargement…
+            {t("loading")}
           </div>
         ) : tree.length === 0 ? (
           <button
@@ -145,7 +147,7 @@ export function FoldersSidebar({
             className="flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left text-[11.5px] text-muted-foreground hover:bg-muted/40 hover:text-foreground"
           >
             <FolderPlus className="size-3.5" />
-            <span>Crée ton 1er dossier pour organiser la KB.</span>
+            <span>{t("createFirstFolder")}</span>
           </button>
         ) : (
           <FoldersTree
@@ -163,16 +165,16 @@ export function FoldersSidebar({
 
       {/* Confirm delete */}
       <ConfirmDeleteDialog
-        requireText="supprimer"
+        requireText={t("deleteKeyword")}
         open={pendingDelete !== null}
         onOpenChange={(open) => {
           if (!open) onCancelDelete();
         }}
-        title={`Supprimer « ${pendingDelete?.name ?? ""} » ?`}
+        title={t("deleteFolderTitle", { name: pendingDelete?.name ?? "" })}
         description={
           pendingDelete && pendingDelete.sourceCount > 0
-            ? `Les ${pendingDelete.sourceCount} source(s) contenue(s) seront déplacées à la racine (Sans dossier). Les sous-dossiers remonteront aussi à la racine.`
-            : "Les sous-dossiers éventuels remonteront à la racine."
+            ? t("deleteFolderWithSources", { count: pendingDelete.sourceCount })
+            : t("deleteFolderEmpty")
         }
         onConfirm={onConfirmDelete}
       />

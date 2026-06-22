@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   History,
@@ -77,6 +78,7 @@ export function PromptsHistorySheet({
   onInject,
   revalidateKey,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [items, setItems] = useState<PromptHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState("");
@@ -98,13 +100,13 @@ export function PromptsHistorySheet({
       const data = (await res.json()) as { items: PromptHistoryItem[] };
       setItems(data.items);
     } catch (e) {
-      toast.error("Impossible de charger l'historique des prompts", {
+      toast.error(t("loadPromptsError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
       setLoading(false);
     }
-  }, [domain]);
+  }, [domain, t]);
 
   // (Re)charge à l'ouverture et quand revalidateKey change.
   useEffect(() => {
@@ -145,7 +147,7 @@ export function PromptsHistorySheet({
       });
       onOpenChange(false);
     } catch (e) {
-      toast.error("Impossible d'ouvrir ce prompt", {
+      toast.error(t("openPromptError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -159,10 +161,10 @@ export function PromptsHistorySheet({
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.success("Prompt supprimé");
+      toast.success(t("promptDeleted"));
       refresh();
     } catch (e) {
-      toast.error("Échec de la suppression", {
+      toast.error(t("deleteError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -174,11 +176,10 @@ export function PromptsHistorySheet({
         <SheetHeader className="border-b border-border">
           <SheetTitle className="flex items-center gap-2">
             <History className="size-4" />
-            Historique des prompts ({items.length})
+            {t("promptsHistoryTitle", { count: items.length })}
           </SheetTitle>
           <SheetDescription>
-            Prompts Claude Code générés via le mode <Wand2 className="inline size-3" /> de la barre
-            de chat. Click pour ré-afficher dans la conversation courante.
+            {t("promptsHistoryDescPart1")} <Wand2 className="inline size-3" /> {t("promptsHistoryDescPart2")}
           </SheetDescription>
         </SheetHeader>
 
@@ -188,7 +189,7 @@ export function PromptsHistorySheet({
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Filtrer (titre, brief)…"
+              placeholder={t("filterTitleBrief")}
               className="pl-8"
               disabled={loading && items.length === 0}
             />
@@ -204,14 +205,13 @@ export function PromptsHistorySheet({
             <li className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center text-muted-foreground">
               <MessageSquareWarning className="size-6 opacity-50" />
               <p className="max-w-xs text-[11.5px] leading-relaxed">
-                Pas encore de prompt généré. Utilise le bouton{" "}
-                <Wand2 className="inline size-3" /> dans la barre de chat pour
-                lancer ton premier brief.
+                {t("promptsEmptyPart1")}{" "}
+                <Wand2 className="inline size-3" /> {t("promptsEmptyPart2")}
               </p>
             </li>
           ) : filtered.length === 0 ? (
             <li className="px-4 py-6 text-center text-[11.5px] text-muted-foreground">
-              Aucun résultat pour « {q} »
+              {t("noResultsFor", { query: q })}
             </li>
           ) : (
             filtered.map((it) => {
@@ -238,7 +238,7 @@ export function PromptsHistorySheet({
                     <p className="mt-0.5 text-[10.5px] text-muted-foreground/80">
                       {fmtRelative(it.createdAt)}
                       {it.citedCount > 0
-                        ? ` · ${it.citedCount} source${it.citedCount > 1 ? "s" : ""}`
+                        ? ` · ${t("sourceCountSuffix", { count: it.citedCount })}`
                         : ""}
                     </p>
                   </div>
@@ -253,8 +253,8 @@ export function PromptsHistorySheet({
                           e.stopPropagation();
                           setDeleteTargetId(it.id);
                         }}
-                        title="Supprimer"
-                        aria-label="Supprimer"
+                        title={t("delete")}
+                        aria-label={t("delete")}
                         className="opacity-0 group-hover:opacity-100"
                       >
                         <Trash2 className="size-3" />
@@ -268,14 +268,14 @@ export function PromptsHistorySheet({
         </ul>
 
         <ConfirmDeleteDialog
-          requireText="supprimer"
+          requireText={t("confirmDeleteWord")}
           open={!!deleteTarget}
           onOpenChange={(v) => !v && setDeleteTargetId(null)}
-          title="Supprimer ce prompt ?"
+          title={t("deletePromptTitle")}
           description={
             deleteTarget
-              ? `« ${truncate(deleteTarget.title, 80)} » sera supprimé définitivement de l'historique.`
-              : "Cette action est irréversible."
+              ? t("deletePromptDesc", { title: truncate(deleteTarget.title, 80) })
+              : t("actionIrreversible")
           }
           onConfirm={async () => {
             if (deleteTargetId) {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   MousePointer2Icon,
   TypeIcon,
@@ -26,12 +27,13 @@ interface ToolbarProps {
 }
 
 const TOOLS = [
-  { value: "select" as const, label: "Sélection", Icon: MousePointer2Icon, shortcut: "V" },
-  { value: "text" as const, label: "Texte", Icon: TypeIcon, shortcut: "T" },
-  { value: "checkbox" as const, label: "Case à cocher", Icon: CheckSquareIcon, shortcut: "C" },
+  { value: "select" as const, labelKey: "toolSelect", Icon: MousePointer2Icon, shortcut: "V" },
+  { value: "text" as const, labelKey: "toolText", Icon: TypeIcon, shortcut: "T" },
+  { value: "checkbox" as const, labelKey: "toolCheckbox", Icon: CheckSquareIcon, shortcut: "C" },
 ];
 
 export function VisualEditorToolbar({ numPages, onMaterialize, hasRotatedPages, sourceHasAcroForm }: ToolbarProps) {
+  const t = useTranslations("admin.pdf");
   const { ui, setTool, setPage, setScale, save, doc, isReadOnlyMode, saveState } = useVisualEditor();
 
   const blockMaterialize = sourceHasAcroForm || hasRotatedPages || doc.fields.length === 0 || saveState === "dirty" || saveState === "saving";
@@ -40,21 +42,24 @@ export function VisualEditorToolbar({ numPages, onMaterialize, hasRotatedPages, 
     <div className="flex flex-wrap items-center gap-2 p-2">
       {/* Palette d'outils */}
       <div className="flex items-center rounded border p-0.5">
-        {TOOLS.map(({ value, label, Icon, shortcut }) => (
-          <Button
-            key={value}
-            type="button"
-            size="sm"
-            variant={ui.tool === value ? "default" : "ghost"}
-            onClick={() => setTool(value)}
-            disabled={isReadOnlyMode}
-            className="h-7 px-2"
-            title={`${label} (${shortcut})`}
-          >
-            <Icon className="size-4" />
-            <span className="ml-1 hidden lg:inline">{label}</span>
-          </Button>
-        ))}
+        {TOOLS.map(({ value, labelKey, Icon, shortcut }) => {
+          const label = t(labelKey as Parameters<typeof t>[0]);
+          return (
+            <Button
+              key={value}
+              type="button"
+              size="sm"
+              variant={ui.tool === value ? "default" : "ghost"}
+              onClick={() => setTool(value)}
+              disabled={isReadOnlyMode}
+              className="h-7 px-2"
+              title={`${label} (${shortcut})`}
+            >
+              <Icon className="size-4" />
+              <span className="ml-1 hidden lg:inline">{label}</span>
+            </Button>
+          );
+        })}
       </div>
 
       <div className="mx-1 h-6 w-px bg-border" />
@@ -68,12 +73,12 @@ export function VisualEditorToolbar({ numPages, onMaterialize, hasRotatedPages, 
           className="size-7"
           onClick={() => setPage(Math.max(0, ui.page - 1))}
           disabled={ui.page <= 0}
-          aria-label="Page précédente"
+          aria-label={t("prevPage")}
         >
           <ChevronLeftIcon className="size-4" />
         </Button>
         <span className="min-w-16 text-center text-xs text-muted-foreground tabular-nums">
-          Page {ui.page + 1} / {numPages || "?"}
+          {t("pageOf", { current: ui.page + 1, total: numPages || "?" })}
         </span>
         <Button
           type="button"
@@ -82,7 +87,7 @@ export function VisualEditorToolbar({ numPages, onMaterialize, hasRotatedPages, 
           className="size-7"
           onClick={() => setPage(Math.min(numPages - 1, ui.page + 1))}
           disabled={ui.page >= numPages - 1}
-          aria-label="Page suivante"
+          aria-label={t("nextPage")}
         >
           <ChevronRightIcon className="size-4" />
         </Button>
@@ -99,7 +104,7 @@ export function VisualEditorToolbar({ numPages, onMaterialize, hasRotatedPages, 
           className="size-7"
           onClick={() => setScale(Math.max(0.5, ui.scale - 0.1))}
           disabled={ui.scale <= 0.5}
-          aria-label="Dézoomer"
+          aria-label={t("zoomOut")}
         >
           <ZoomOutIcon className="size-4" />
         </Button>
@@ -111,7 +116,7 @@ export function VisualEditorToolbar({ numPages, onMaterialize, hasRotatedPages, 
           className="size-7"
           onClick={() => setScale(Math.min(3, ui.scale + 0.1))}
           disabled={ui.scale >= 3}
-          aria-label="Zoomer"
+          aria-label={t("zoomIn")}
         >
           <ZoomInIcon className="size-4" />
         </Button>
@@ -127,7 +132,7 @@ export function VisualEditorToolbar({ numPages, onMaterialize, hasRotatedPages, 
           disabled={isReadOnlyMode || saveState === "saving" || saveState === "saved"}
         >
           {saveState === "saving" ? <Loader2Icon className="size-4 animate-spin" /> : <SaveIcon className="size-4" />}
-          Enregistrer
+          {t("save")}
         </Button>
         <Button
           type="button"
@@ -136,18 +141,18 @@ export function VisualEditorToolbar({ numPages, onMaterialize, hasRotatedPages, 
           disabled={isReadOnlyMode || blockMaterialize}
           title={
             sourceHasAcroForm
-              ? "Désactivé : le PDF contient déjà un AcroForm."
+              ? t("materializeDisabledAcroForm")
               : hasRotatedPages
-              ? "Désactivé : une page du PDF est pivotée."
+              ? t("materializeDisabledRotated")
               : doc.fields.length === 0
-              ? "Aucun champ à matérialiser."
+              ? t("materializeNoFields")
               : saveState === "dirty"
-              ? "Enregistrez d'abord."
-              : "Matérialise les champs dans le PDF source."
+              ? t("materializeSaveFirst")
+              : t("materializeHint")
           }
         >
           <WandSparklesIcon className="size-4" />
-          Appliquer au PDF
+          {t("applyToPdf")}
         </Button>
       </div>
     </div>
@@ -155,30 +160,31 @@ export function VisualEditorToolbar({ numPages, onMaterialize, hasRotatedPages, 
 }
 
 function SaveBadge({ state, fieldCount }: { state: ReturnType<typeof useVisualEditor>["saveState"]; fieldCount: number }) {
+  const t = useTranslations("admin.pdf");
   if (state === "saving") {
     return (
       <Badge variant="secondary" className="gap-1">
-        <Loader2Icon className="size-3 animate-spin" /> Sauvegarde…
+        <Loader2Icon className="size-3 animate-spin" /> {t("saving")}
       </Badge>
     );
   }
   if (state === "dirty") {
     return (
       <Badge variant="outline" className="gap-1 text-amber-700 dark:text-amber-400">
-        <AlertCircleIcon className="size-3" /> Modifications non sauvegardées
+        <AlertCircleIcon className="size-3" /> {t("unsavedChanges")}
       </Badge>
     );
   }
   if (state === "error") {
     return (
       <Badge variant="destructive" className="gap-1">
-        <AlertCircleIcon className="size-3" /> Erreur
+        <AlertCircleIcon className="size-3" /> {t("error")}
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="gap-1">
-      <CheckIcon className="size-3" /> {fieldCount} champ{fieldCount > 1 ? "s" : ""}
+      <CheckIcon className="size-3" /> {t("fieldsCount", { count: fieldCount })}
     </Badge>
   );
 }

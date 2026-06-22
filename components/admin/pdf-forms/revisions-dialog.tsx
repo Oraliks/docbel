@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,7 @@ export function RevisionsDialog({
   onOpenChange: (v: boolean) => void;
   onRestored: () => void;
 }) {
+  const t = useTranslations("admin.pdf");
   const [revs, setRevs] = useState<Revision[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -43,8 +45,11 @@ export function RevisionsDialog({
     try {
       const res = await fetch(`/api/admin/pdf/forms/${formId}/revisions/${rev.id}/restore`, { method: "POST" });
       const data = await res.json();
-      if (!res.ok) { toast.error("Échec de la restauration."); return; }
-      toast.success(`Version ${rev.version} restaurée.${data.sourceMismatch ? " (PDF source différent — vérifiez les champs)" : ""}`);
+      if (!res.ok) { toast.error(t("toastRestoreError")); return; }
+      toast.success(
+        t("toastVersionRestored", { version: rev.version }) +
+          (data.sourceMismatch ? t("toastSourceMismatchSuffix") : "")
+      );
       onOpenChange(false);
       onRestored();
     } finally {
@@ -56,18 +61,18 @@ export function RevisionsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Historique des versions</DialogTitle>
-          <DialogDescription>Restaure le schéma enrichi d&apos;une version antérieure.</DialogDescription>
+          <DialogTitle>{t("revisionsTitle")}</DialogTitle>
+          <DialogDescription>{t("revisionsDesc")}</DialogDescription>
         </DialogHeader>
 
         <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto py-2">
           {revs === null ? (
-            <p className="text-sm text-muted-foreground">Chargement…</p>
+            <p className="text-sm text-muted-foreground">{t("loading")}</p>
           ) : revs.length === 0 ? (
             <Empty>
               <EmptyHeader>
-                <EmptyTitle>Aucune révision</EmptyTitle>
-                <EmptyDescription>L&apos;historique apparaîtra après vos premières modifications.</EmptyDescription>
+                <EmptyTitle>{t("emptyRevisionsTitle")}</EmptyTitle>
+                <EmptyDescription>{t("emptyRevisionsDesc")}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           ) : (
@@ -84,7 +89,7 @@ export function RevisionsDialog({
                   </span>
                 </div>
                 <Button variant="outline" size="sm" disabled={busy === r.id} onClick={() => restore(r)}>
-                  Restaurer
+                  {t("restore")}
                 </Button>
               </div>
             ))

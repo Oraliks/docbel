@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Plus, Trash2, GitBranch, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,20 +53,20 @@ interface ConditionEditorProps {
   templateSchemas: Record<string, SchemaField[]>;
 }
 
-const OPS: { value: ConditionOp; label: string; needsValue: boolean }[] = [
-  { value: "equals", label: "=", needsValue: true },
-  { value: "notEquals", label: "≠", needsValue: true },
-  { value: "in", label: "∈ (dans la liste)", needsValue: true },
-  { value: "notIn", label: "∉ (hors liste)", needsValue: true },
-  { value: "contains", label: "contient", needsValue: true },
-  { value: "gt", label: "> (supérieur à)", needsValue: true },
-  { value: "lt", label: "< (inférieur à)", needsValue: true },
-  { value: "gte", label: "≥ (supérieur ou égal)", needsValue: true },
-  { value: "lte", label: "≤ (inférieur ou égal)", needsValue: true },
-  { value: "truthy", label: "est cochée / vrai", needsValue: false },
-  { value: "falsy", label: "n'est pas cochée / faux", needsValue: false },
-  { value: "isEmpty", label: "est vide", needsValue: false },
-  { value: "isNotEmpty", label: "est rempli", needsValue: false },
+const OPS: { value: ConditionOp; labelKey: `op_${ConditionOp}`; needsValue: boolean }[] = [
+  { value: "equals", labelKey: "op_equals", needsValue: true },
+  { value: "notEquals", labelKey: "op_notEquals", needsValue: true },
+  { value: "in", labelKey: "op_in", needsValue: true },
+  { value: "notIn", labelKey: "op_notIn", needsValue: true },
+  { value: "contains", labelKey: "op_contains", needsValue: true },
+  { value: "gt", labelKey: "op_gt", needsValue: true },
+  { value: "lt", labelKey: "op_lt", needsValue: true },
+  { value: "gte", labelKey: "op_gte", needsValue: true },
+  { value: "lte", labelKey: "op_lte", needsValue: true },
+  { value: "truthy", labelKey: "op_truthy", needsValue: false },
+  { value: "falsy", labelKey: "op_falsy", needsValue: false },
+  { value: "isEmpty", labelKey: "op_isEmpty", needsValue: false },
+  { value: "isNotEmpty", labelKey: "op_isNotEmpty", needsValue: false },
 ];
 
 /// Éditeur de conditions d'inclusion d'un item de bundle.
@@ -80,6 +81,7 @@ export function BundleConditionEditor({
   availableSources,
   templateSchemas,
 }: ConditionEditorProps) {
+  const t = useTranslations("admin.documents");
   const normalized = useMemo(() => normalizeCondition(value), [value]);
   const isFlat = useMemo(() => isFlatAndCondition(value) || isFlatOrCondition(value), [value]);
 
@@ -131,10 +133,10 @@ export function BundleConditionEditor({
         <div className="flex items-center justify-between">
           <Label className="text-xs flex items-center gap-1.5">
             <AlertTriangle className="w-3.5 h-3.5" />
-            Conditions imbriquées (édition avancée)
+            {t("nestedConditions")}
           </Label>
           <Button type="button" variant="ghost" size="sm" onClick={resetToSimple}>
-            Convertir en mode simple
+            {t("convertToSimple")}
           </Button>
         </div>
         <textarea
@@ -151,10 +153,7 @@ export function BundleConditionEditor({
           spellCheck={false}
         />
         <p className="text-[11px] text-muted-foreground">
-          Le mode simple supporte uniquement un groupe plat (toutes les conditions
-          combinées avec ET ou OU). Pour des combinaisons plus complexes (ex.
-          AND imbriqué dans un OR), éditez le JSON ci-dessus. Le moteur les
-          évaluera correctement.
+          {t("nestedConditionsHint")}
         </p>
       </div>
     );
@@ -165,7 +164,7 @@ export function BundleConditionEditor({
       <div className="flex items-center justify-between flex-wrap gap-2">
         <Label className="text-xs flex items-center gap-1.5">
           <GitBranch className="w-3.5 h-3.5" />
-          Conditions d&apos;inclusion
+          {t("inclusionConditions")}
           {leaves.length > 0 && (
             <span className="text-muted-foreground">({leaves.length})</span>
           )}
@@ -183,7 +182,7 @@ export function BundleConditionEditor({
                 }`}
                 aria-pressed={groupOp === "and"}
               >
-                ET (toutes)
+                {t("opAndAll")}
               </button>
               <button
                 type="button"
@@ -195,7 +194,7 @@ export function BundleConditionEditor({
                 }`}
                 aria-pressed={groupOp === "or"}
               >
-                OU (au moins une)
+                {t("opOrAny")}
               </button>
             </div>
           )}
@@ -207,21 +206,20 @@ export function BundleConditionEditor({
             disabled={availableSources.length === 0}
           >
             <Plus className="w-3 h-3 mr-1" />
-            Ajouter
+            {t("add")}
           </Button>
         </div>
       </div>
 
       {availableSources.length === 0 && (
         <p className="text-xs text-muted-foreground italic">
-          Ajoutez d&apos;autres documents au bundle pour pouvoir définir des conditions basées sur
-          leurs réponses.
+          {t("noSourceHint")}
         </p>
       )}
 
       {leaves.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          Aucune condition — ce document est toujours inclus.
+          {t("noConditionAlwaysIncluded")}
         </p>
       ) : (
         <div className="space-y-2 border rounded p-2 bg-muted/20">
@@ -236,7 +234,7 @@ export function BundleConditionEditor({
                 className="flex flex-col gap-1.5 p-2 border rounded bg-background"
               >
                 <div className="flex items-center gap-1 text-[10px] uppercase text-muted-foreground">
-                  {idx > 0 && <span className="font-bold">{groupOp === "or" ? "OU" : "ET"}</span>}
+                  {idx > 0 && <span className="font-bold">{groupOp === "or" ? t("orShort") : t("andShort")}</span>}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-1.5">
                   <Select
@@ -249,7 +247,7 @@ export function BundleConditionEditor({
                     }
                   >
                     <SelectTrigger className="h-8 text-xs w-full">
-                      <SelectValue placeholder="Document source" />
+                      <SelectValue placeholder={t("sourceDocument")} />
                     </SelectTrigger>
                     <SelectContent>
                       {availableSources.map((s) => (
@@ -266,12 +264,12 @@ export function BundleConditionEditor({
                     }
                   >
                     <SelectTrigger className="h-8 text-xs w-full">
-                      <SelectValue placeholder="Champ" />
+                      <SelectValue placeholder={t("field")} />
                     </SelectTrigger>
                     <SelectContent>
                       {fields.length === 0 ? (
                         <SelectItem value="__none__" disabled>
-                          (aucun champ)
+                          {t("noField")}
                         </SelectItem>
                       ) : (
                         fields.map((f) => (
@@ -306,7 +304,7 @@ export function BundleConditionEditor({
                     <SelectContent>
                       {OPS.map((o) => (
                         <SelectItem key={o.value} value={o.value} className="text-xs">
-                          {o.label}
+                          {t(o.labelKey as Parameters<typeof t>[0])}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -321,7 +319,7 @@ export function BundleConditionEditor({
                           }
                         >
                           <SelectTrigger className="h-8 text-xs w-full">
-                            <SelectValue placeholder="Valeur attendue" />
+                            <SelectValue placeholder={t("expectedValue")} />
                           </SelectTrigger>
                           <SelectContent>
                             {selectedField.options.map((opt) => (
@@ -337,8 +335,8 @@ export function BundleConditionEditor({
                           onChange={(e) => updateLeaf(idx, { value: e.target.value })}
                           placeholder={
                             leaf.op === "in" || leaf.op === "notIn"
-                              ? "valeur1,valeur2 (CSV)"
-                              : "valeur attendue"
+                              ? t("csvValuePlaceholder")
+                              : t("expectedValuePlaceholder")
                           }
                           className="h-8 text-xs"
                         />

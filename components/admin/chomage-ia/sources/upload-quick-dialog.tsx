@@ -14,6 +14,7 @@
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   FileSpreadsheet,
   FileText,
@@ -127,6 +128,7 @@ export function UploadQuickDialog({
   domain,
   onSuccess,
 }: UploadQuickDialogProps) {
+  const t = useTranslations("admin.chomageIa");
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -145,22 +147,23 @@ export function UploadQuickDialog({
     const f = files[0];
     const kind = inferKind(f);
     if (kind === "unsupported") {
-      toast.error(`${f.name} : format non supporté`, {
-        description: "Accepté : PDF, Word, Excel, PowerPoint, images.",
+      toast.error(t("fileUnsupported", { name: f.name }), {
+        description: t("acceptedFormats"),
       });
       return;
     }
     if (f.size > MAX_FILE_SIZE) {
-      toast.error(`${f.name} : fichier trop volumineux`, {
-        description: `Max ${MAX_FILE_SIZE / 1024 / 1024} Mo (taille actuelle : ${fmtBytes(f.size)}).`,
+      toast.error(t("fileTooLarge", { name: f.name }), {
+        description: t("maxSizeWithCurrent", {
+          max: MAX_FILE_SIZE / 1024 / 1024,
+          current: fmtBytes(f.size),
+        }),
       });
       return;
     }
     setFile(f);
     if (files.length > 1) {
-      toast.message(
-        "Un seul fichier à la fois ici — utilise la page Sources pour un batch.",
-      );
+      toast.message(t("singleFileHint"));
     }
   }
 
@@ -195,7 +198,9 @@ export function UploadQuickDialog({
       // 409 = doublon détecté côté serveur. On propose au user de confirmer.
       if (res.status === 409 && data?.existingId) {
         const ok = window.confirm(
-          `Cette source existe déjà : « ${data.existingTitle ?? "Source existante"} ».\n\nRe-uploader quand même ?`
+          t("duplicateConfirm", {
+            title: data.existingTitle ?? t("existingSource"),
+          })
         );
         if (ok) {
           // Retry avec ?force=1 — le finally remettra uploading=false avant.
@@ -203,23 +208,23 @@ export function UploadQuickDialog({
           await upload(true);
           return;
         }
-        toast.message("Upload annulé — la source existe déjà");
+        toast.message(t("uploadCancelledDuplicate"));
         return;
       }
       if (!res.ok) {
         const msg = data?.error ?? `HTTP ${res.status}`;
         throw new Error(data?.detail ? `${msg} — ${data.detail}` : msg);
       }
-      toast.success("Source ajoutée à la KB", {
+      toast.success(t("sourceAddedToKb"), {
         description: data?.extractWarning
-          ? `Attention : extraction partielle (${data.extractWarning})`
+          ? t("partialExtractionWarning", { warning: data.extractWarning })
           : finalTitle,
       });
       reset();
       onOpenChange(false);
       onSuccess();
     } catch (e) {
-      toast.error("Échec de l'upload", {
+      toast.error(t("uploadError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -239,12 +244,10 @@ export function UploadQuickDialog({
       <DialogContent className="sm:max-w-md gap-0 p-0">
         <DialogHeader className="border-b border-border px-5 py-3">
           <DialogTitle className="text-[15px]">
-            Ajouter une source à la KB
+            {t("quickUploadTitle")}
           </DialogTitle>
           <DialogDescription className="text-[12px]">
-            Glisse un fichier (PDF, Word, Excel, PowerPoint, image). Le texte
-            est extrait automatiquement. Pour un batch ou des tags, va sur la
-            page Sources.
+            {t("quickUploadDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -263,7 +266,7 @@ export function UploadQuickDialog({
               )}
               role="button"
               tabIndex={0}
-              aria-label="Choisir un fichier ou glisser-déposer"
+              aria-label={t("chooseOrDropFile")}
             >
               <UploadCloud
                 className={cn(
@@ -272,10 +275,10 @@ export function UploadQuickDialog({
                 )}
               />
               <p className="text-[12.5px] font-medium">
-                Glisse un fichier ou clique pour parcourir
+                {t("dropOrBrowseSingle")}
               </p>
               <p className="text-[10.5px] text-muted-foreground">
-                PDF · Word · Excel · PowerPoint · Image — max 20 Mo
+                {t("formatsLineSingle")}
               </p>
               <input
                 ref={inputRef}
@@ -309,7 +312,7 @@ export function UploadQuickDialog({
                 size="icon-xs"
                 onClick={() => setFile(null)}
                 disabled={uploading}
-                aria-label="Retirer le fichier"
+                aria-label={t("removeFile")}
               >
                 <X className="size-3" />
               </Button>
@@ -319,7 +322,7 @@ export function UploadQuickDialog({
           {/* Titre (optionnel) */}
           <div className="flex flex-col gap-1">
             <Label htmlFor="upload-quick-title" className="text-[11.5px]">
-              Titre <span className="text-muted-foreground font-normal">(optionnel)</span>
+              {t("titleLabel")} <span className="text-muted-foreground font-normal">{t("optionalParen")}</span>
             </Label>
             <Input
               id="upload-quick-title"
@@ -327,7 +330,7 @@ export function UploadQuickDialog({
               onChange={(e) => setTitle(e.target.value.slice(0, 200))}
               disabled={uploading}
               placeholder={
-                file ? stripExt(file.name) : "Vide → nom du fichier sera utilisé"
+                file ? stripExt(file.name) : t("titleEmptyPlaceholder")
               }
             />
           </div>
@@ -343,18 +346,18 @@ export function UploadQuickDialog({
             }}
             disabled={uploading}
           >
-            Annuler
+            {t("cancel")}
           </Button>
           <Button onClick={() => upload(false)} disabled={!file || uploading}>
             {uploading ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />
-                Upload…
+                {t("uploadingShort")}
               </>
             ) : (
               <>
                 <UploadIcon className="size-3.5" />
-                Uploader
+                {t("upload")}
               </>
             )}
           </Button>

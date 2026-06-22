@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -69,6 +70,7 @@ interface Props {
 
 export function BundlesList({ initialBundles }: Props) {
   const router = useRouter();
+  const t = useTranslations("admin.documents");
   const [bundles, setBundles] = useState<BundleRow[]>(initialBundles);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -105,14 +107,14 @@ export function BundlesList({ initialBundles }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: !b.active }),
       });
-      if (!res.ok) throw new Error("Échec");
+      if (!res.ok) throw new Error(t("failed"));
       setBundles((prev) =>
         prev.map((x) => (x.id === b.id ? { ...x, active: !b.active } : x))
       );
-      toast.success(b.active ? "Désactivé" : "Activé");
+      toast.success(b.active ? t("deactivated") : t("activated"));
       router.refresh();
     } catch {
-      toast.error("Erreur");
+      toast.error(t("error"));
     } finally {
       setBusy(null);
     }
@@ -122,20 +124,20 @@ export function BundlesList({ initialBundles }: Props) {
     setBusy(b.id);
     try {
       const res = await fetch(`/api/documents/bundles/${b.id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Échec");
+      if (!res.ok) throw new Error(t("failed"));
       const data = await res.json();
       if (data.softDeleted) {
         setBundles((prev) =>
           prev.map((x) => (x.id === b.id ? { ...x, active: false } : x))
         );
-        toast.success(data.message || "Bundle désactivé");
+        toast.success(data.message || t("bundleDeactivated"));
       } else {
         setBundles((prev) => prev.filter((x) => x.id !== b.id));
-        toast.success("Supprimé");
+        toast.success(t("deleted"));
       }
       router.refresh();
     } catch {
-      toast.error("Erreur");
+      toast.error(t("error"));
     } finally {
       setBusy(null);
       setDeleteTarget(null);
@@ -159,21 +161,20 @@ export function BundlesList({ initialBundles }: Props) {
       <div className="flex items-center gap-3 flex-wrap">
         <Button render={<Link href="/admin/pdf" />} variant="ghost" size="sm">
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Retour
+          {t("back")}
         </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Package className="w-7 h-7" />
-            Bundles de documents
+            {t("bundlesTitle")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {bundles.length} bundle{bundles.length !== 1 ? "s" : ""} · Groupez
-            plusieurs documents en un parcours.
+            {t("bundlesSubtitle", { count: bundles.length })}
           </p>
         </div>
         <Button render={<Link href="/admin/pdf/dossiers/new" />} size="sm">
           <Plus className="w-4 h-4 mr-2" />
-          Nouveau bundle
+          {t("newBundle")}
         </Button>
       </div>
 
@@ -184,17 +185,17 @@ export function BundlesList({ initialBundles }: Props) {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher (nom, slug, description)…"
+            placeholder={t("bundlesSearchPlaceholder")}
             className="pl-9 h-9 text-sm"
           />
         </div>
         <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v ?? "all")}>
           <SelectTrigger className="h-9 w-full lg:w-56 text-sm">
-            <SelectValue placeholder="Toutes catégories" />
+            <SelectValue placeholder={t("allCategories")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes catégories</SelectItem>
-            <SelectItem value="__none__">— Sans catégorie —</SelectItem>
+            <SelectItem value="all">{t("allCategories")}</SelectItem>
+            <SelectItem value="__none__">{t("noCategory")}</SelectItem>
             {LIFE_EVENT_CATEGORIES.map((cat) => (
               <SelectItem key={cat.id} value={cat.id}>
                 {cat.emoji} {cat.label}
@@ -207,20 +208,20 @@ export function BundlesList({ initialBundles }: Props) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous statuts</SelectItem>
-            <SelectItem value="active">Actifs</SelectItem>
-            <SelectItem value="inactive">Inactifs</SelectItem>
-            <SelectItem value="onboarding">Sur onboarding</SelectItem>
+            <SelectItem value="all">{t("allStatuses")}</SelectItem>
+            <SelectItem value="active">{t("statusActivePlural")}</SelectItem>
+            <SelectItem value="inactive">{t("statusInactivePlural")}</SelectItem>
+            <SelectItem value="onboarding">{t("statusOnboarding")}</SelectItem>
           </SelectContent>
         </Select>
         {activeFilters > 0 && (
           <Button variant="ghost" size="sm" onClick={resetFilters}>
             <X className="w-3.5 h-3.5 mr-1" />
-            Réinitialiser ({activeFilters})
+            {t("resetFilters", { count: activeFilters })}
           </Button>
         )}
         <span className="text-xs text-muted-foreground ml-auto">
-          {filtered.length} affiché{filtered.length > 1 ? "s" : ""}
+          {t("shownCount", { count: filtered.length })}
         </span>
       </div>
 
@@ -228,29 +229,29 @@ export function BundlesList({ initialBundles }: Props) {
       {bundles.length === 0 ? (
         <div className="border border-dashed rounded-md py-16 text-center">
           <Package className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-          <p className="text-muted-foreground">Aucun bundle pour l&apos;instant.</p>
+          <p className="text-muted-foreground">{t("noBundleYet")}</p>
           <Button
             render={<Link href="/admin/pdf/dossiers/new" />}
             className="mt-3"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Créer le premier bundle
+            {t("createFirstBundle")}
           </Button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="border border-dashed rounded-md py-12 text-center text-sm text-muted-foreground">
-          Aucun bundle ne correspond aux filtres.
+          {t("noBundleMatchesFilters")}
         </div>
       ) : (
         <div className="border rounded-md overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40%]">Bundle</TableHead>
-                <TableHead className="hidden md:table-cell">Catégorie</TableHead>
-                <TableHead className="hidden lg:table-cell text-center">Docs</TableHead>
-                <TableHead className="text-center">Statut</TableHead>
-                <TableHead className="w-[1%] text-right">Actions</TableHead>
+                <TableHead className="w-[40%]">{t("colBundle")}</TableHead>
+                <TableHead className="hidden md:table-cell">{t("colCategory")}</TableHead>
+                <TableHead className="hidden lg:table-cell text-center">{t("colDocs")}</TableHead>
+                <TableHead className="text-center">{t("colStatus")}</TableHead>
+                <TableHead className="w-[1%] text-right">{t("colActions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -303,11 +304,11 @@ export function BundlesList({ initialBundles }: Props) {
                           variant={b.active ? "default" : "secondary"}
                           className="text-[10px]"
                         >
-                          {b.active ? "Actif" : "Inactif"}
+                          {b.active ? t("statusActive") : t("statusInactive")}
                         </Badge>
                         {b.showOnOnboarding && (
                           <Badge variant="outline" className="text-[10px]">
-                            Onboarding
+                            {t("onboarding")}
                           </Badge>
                         )}
                       </div>
@@ -324,7 +325,7 @@ export function BundlesList({ initialBundles }: Props) {
                             }
                             variant="ghost"
                             size="icon-sm"
-                            title="Aperçu citoyen"
+                            title={t("citizenPreview")}
                           >
                             <ExternalLink className="w-4 h-4" />
                           </Button>
@@ -334,7 +335,7 @@ export function BundlesList({ initialBundles }: Props) {
                           size="icon-sm"
                           onClick={() => toggleActive(b)}
                           disabled={busy === b.id}
-                          title={b.active ? "Désactiver" : "Activer"}
+                          title={b.active ? t("deactivate") : t("activate")}
                         >
                           {b.active ? (
                             <EyeOff className="w-4 h-4" />
@@ -350,7 +351,7 @@ export function BundlesList({ initialBundles }: Props) {
                           }
                           variant="ghost"
                           size="icon-sm"
-                          title="Modifier"
+                          title={t("edit")}
                         >
                           <Edit2 className="w-4 h-4" />
                         </Button>
@@ -360,7 +361,7 @@ export function BundlesList({ initialBundles }: Props) {
                           onClick={() => setDeleteTarget(b)}
                           disabled={busy === b.id}
                           className="text-destructive"
-                          title="Supprimer"
+                          title={t("delete")}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -380,21 +381,18 @@ export function BundlesList({ initialBundles }: Props) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce bundle ?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteBundleTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action supprime définitivement &quot;{deleteTarget?.name}&quot;
-              et la liste des documents associés. Les documents eux-mêmes ne
-              sont pas supprimés. Si des parcours utilisateurs sont en cours, le
-              bundle sera désactivé plutôt que supprimé.
+              {t("deleteBundleDescription", { name: deleteTarget?.name ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteTarget && handleDelete(deleteTarget)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Supprimer
+              {t("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

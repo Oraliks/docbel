@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { initialState, visualEditorReducer } from "./visual-editor-reducer";
@@ -60,6 +61,7 @@ interface ProviderProps {
 }
 
 export function VisualEditorProvider({ formId, readOnly = false, onMaterialized, children }: ProviderProps) {
+  const t = useTranslations("admin.pdf");
   const [state, dispatch] = useReducer(visualEditorReducer, initialState);
   const [serverSnapshot, setServerSnapshot] = useState<ServerSnapshot | null>(null);
 
@@ -143,7 +145,7 @@ export function VisualEditorProvider({ formId, readOnly = false, onMaterialized,
     if (readOnly) return;
     const v = validateVisualFieldsDoc(state.doc);
     if (!v.ok) {
-      toast.error(`Doc invalide : ${v.errors?.[0]?.message ?? ""}`);
+      toast.error(t("toastDocInvalid", { detail: v.errors?.[0]?.message ?? "" }));
       dispatch({ type: "SET_SAVE", state: "error" });
       return;
     }
@@ -157,13 +159,13 @@ export function VisualEditorProvider({ formId, readOnly = false, onMaterialized,
       body: JSON.stringify({ doc: state.doc }),
     });
     if (res.status === 412) {
-      toast.error("Modification concurrente — rechargement.");
+      toast.error(t("toastConcurrentEdit"));
       await reload();
       return;
     }
     if (!res.ok) {
       const detail = await res.json().catch(() => ({}));
-      toast.error(detail.error ?? "Échec de l'enregistrement.");
+      toast.error(detail.error ?? t("toastSaveError"));
       dispatch({ type: "SET_SAVE", state: "error" });
       return;
     }
@@ -173,13 +175,13 @@ export function VisualEditorProvider({ formId, readOnly = false, onMaterialized,
       savedDoc: state.doc,
       serverUpdatedAt: data.updatedAt,
     });
-    toast.success("Brouillon visuel enregistré.");
-  }, [formId, readOnly, reload, state.doc, state.serverUpdatedAt]);
+    toast.success(t("toastVisualDraftSaved"));
+  }, [formId, readOnly, reload, state.doc, state.serverUpdatedAt, t]);
 
   const materialize: VisualEditorContextValue["materialize"] = useCallback(async () => {
     if (readOnly) return { ok: false, error: "Lecture seule" };
     if (state.saveState === "dirty") {
-      toast.error("Enregistrez le brouillon avant la matérialisation.");
+      toast.error(t("toastSaveBeforeMaterialize"));
       return { ok: false, error: "Save first" };
     }
     const res = await fetch(`/api/admin/pdf/forms/${formId}/visual-fields/materialize`, {
@@ -187,20 +189,20 @@ export function VisualEditorProvider({ formId, readOnly = false, onMaterialized,
       headers: state.serverUpdatedAt ? { "If-Match": state.serverUpdatedAt } : {},
     });
     if (res.status === 412) {
-      toast.error("Modification concurrente — rechargement.");
+      toast.error(t("toastConcurrentEdit"));
       await reload();
       return { ok: false, error: "Stale" };
     }
     const data = (await res.json().catch(() => ({}))) as { error?: string; updatedAt?: string; materializedAt?: string | null };
     if (!res.ok) {
-      toast.error(data.error ?? "Échec de la matérialisation.");
+      toast.error(data.error ?? t("toastMaterializeError"));
       return { ok: false, error: data.error };
     }
-    toast.success("Champs matérialisés dans le PDF.");
+    toast.success(t("toastMaterialized"));
     await reload();
     onMaterialized?.();
     return { ok: true };
-  }, [formId, readOnly, reload, state.saveState, state.serverUpdatedAt, onMaterialized]);
+  }, [formId, readOnly, reload, state.saveState, state.serverUpdatedAt, onMaterialized, t]);
 
   const selectedField = useMemo(
     () => state.doc.fields.find((f) => f.id === state.ui.selectedId) ?? null,

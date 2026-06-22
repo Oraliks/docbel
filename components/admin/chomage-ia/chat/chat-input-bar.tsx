@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   ChevronDown,
   Globe,
@@ -114,8 +115,6 @@ interface Props {
   onScopeChange?: (next: string[]) => void;
 }
 
-const DEFAULT_PLACEHOLDER =
-  "Pose une question sur le chômage — l'IA répondra en citant les sources de la KB…";
 const DEFAULT_MAX = 2000;
 const WARN_RATIO = 0.85;
 
@@ -138,7 +137,7 @@ function ChatModeBar({
   onSendChat,
   onOpenUpload,
   onStop,
-  placeholder = DEFAULT_PLACEHOLDER,
+  placeholder,
   maxChars = DEFAULT_MAX,
   snippets = [],
   onOpenSnippetsManage,
@@ -148,6 +147,8 @@ function ChatModeBar({
   scopeFolderIds = [],
   onScopeChange,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
+  const effectivePlaceholder = placeholder ?? t("chatPlaceholder");
   const [value, setValue] = useState("");
   const [webSearchOnce, setWebSearchOnce] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -265,8 +266,8 @@ function ChatModeBar({
           size="icon"
           disabled={disabled || sending}
           onClick={onOpenUpload}
-          title="Ajouter une source (upload fichier)"
-          aria-label="Uploader un fichier vers la KB"
+          title={t("uploadSourceTitle")}
+          aria-label={t("uploadSourceAria")}
           className="size-9 shrink-0 rounded-xl"
         >
           <Paperclip className="size-4" />
@@ -279,8 +280,8 @@ function ChatModeBar({
           size="icon"
           disabled={disabled || sending}
           onClick={() => onModeChange("prompt")}
-          title="Générer un prompt Claude Code"
-          aria-label="Basculer en mode générateur de prompt"
+          title={t("promptModeTitle")}
+          aria-label={t("promptModeAria")}
           className="size-9 shrink-0 rounded-xl text-amber-700 hover:bg-amber-100/50 dark:text-amber-300 dark:hover:bg-amber-900/30"
         >
           <Wand2 className="size-4" />
@@ -307,11 +308,11 @@ function ChatModeBar({
             onClick={() => setWebSearchOnce((v) => !v)}
             title={
               webSearchOnce
-                ? "Web search ACTIVÉ pour ce message (cliquer pour désactiver)"
-                : "Autoriser la recherche web pour ce message (3 résultats max)"
+                ? t("webSearchOnTitle")
+                : t("webSearchOffTitle")
             }
             aria-pressed={webSearchOnce}
-            aria-label="Autoriser la recherche web pour ce message"
+            aria-label={t("webSearchAria")}
             className="size-9 shrink-0 rounded-xl"
           >
             <Globe className="size-4" />
@@ -352,8 +353,8 @@ function ChatModeBar({
           onKeyDown={onKeyDown}
           disabled={disabled}
           rows={1}
-          placeholder={placeholder}
-          aria-label="Message à envoyer"
+          placeholder={effectivePlaceholder}
+          aria-label={t("messageToSend")}
           className={cn(
             "min-h-[36px] max-h-48 flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-[13.5px] leading-relaxed shadow-sm",
             "focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60",
@@ -372,12 +373,12 @@ function ChatModeBar({
             size="icon"
             variant="destructive"
             onClick={onStop}
-            title="Interrompre la réponse (Stop)"
-            aria-label="Interrompre la réponse en cours"
+            title={t("stopTitle")}
+            aria-label={t("stopAria")}
             className="size-9 shrink-0 rounded-xl"
           >
             <Square className="size-3.5 fill-current" />
-            <span className="sr-only">Stop</span>
+            <span className="sr-only">{t("stop")}</span>
           </Button>
         ) : (
           <Button
@@ -387,10 +388,10 @@ function ChatModeBar({
             onClick={submit}
             title={
               disabled
-                ? "IA désactivée"
+                ? t("aiDisabled")
                 : sending
-                  ? "Envoi en cours…"
-                  : "Envoyer (Entrée)"
+                  ? t("sending")
+                  : t("sendEnter")
             }
             className="size-9 shrink-0 rounded-xl"
           >
@@ -399,7 +400,7 @@ function ChatModeBar({
             ) : (
               <SendHorizontal className="size-4" />
             )}
-            <span className="sr-only">Envoyer</span>
+            <span className="sr-only">{t("send")}</span>
           </Button>
         )}
 
@@ -416,22 +417,22 @@ function ChatModeBar({
       <div className="flex items-center justify-between px-1 text-[10.5px] text-muted-foreground">
         <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 opacity-70">
           <span>
-            Entrée pour envoyer · Maj+Entrée saut de ligne
+            {t("enterToSend")}
           </span>
           <span className="hidden md:inline">·</span>
           <span className="hidden md:inline-flex items-center gap-1">
             <kbd className="rounded border border-border bg-muted/60 px-1 py-px font-mono text-[9.5px]">
               Ctrl+K
             </kbd>
-            nouveau
+            {t("shortcutNew")}
             <kbd className="ml-1 rounded border border-border bg-muted/60 px-1 py-px font-mono text-[9.5px]">
               Ctrl+/
             </kbd>
-            mode
+            {t("shortcutMode")}
             <kbd className="ml-1 rounded border border-border bg-muted/60 px-1 py-px font-mono text-[9.5px]">
               Esc
             </kbd>
-            fermer
+            {t("shortcutClose")}
           </span>
         </span>
         <span
@@ -462,6 +463,7 @@ function PromptModeBar({
   snippets = [],
   onOpenSnippetsManage,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [brief, setBrief] = useState("");
   const [hint, setHint] = useState("");
   /** Template courant sélectionné (null = aucun, mode libre). */
@@ -513,7 +515,7 @@ function PromptModeBar({
     const userHasContent = brief.trim().length > 0 || hint.trim().length > 0;
     if (userHasContent) {
       const ok = window.confirm(
-        "Écraser le brief et le contexte technique actuels avec ce template ?"
+        t("templateOverwriteConfirm")
       );
       if (!ok) return;
     }
@@ -553,7 +555,7 @@ function PromptModeBar({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 text-[12px] font-bold text-amber-900 dark:text-amber-200">
           <Wand2 className="size-3.5" />
-          Brief Claude Code
+          {t("briefClaudeCode")}
         </div>
         <div className="flex items-center gap-1">
           {/* Sélecteur de template */}
@@ -570,7 +572,7 @@ function PromptModeBar({
                       : "border-amber-300/60 bg-background text-amber-800 hover:bg-amber-100/40 dark:border-amber-500/30 dark:text-amber-200 dark:hover:bg-amber-900/30",
                     (disabled || sending) && "cursor-not-allowed opacity-60"
                   )}
-                  aria-label="Choisir un template de prompt"
+                  aria-label={t("chooseTemplate")}
                 />
               }
             >
@@ -580,13 +582,13 @@ function PromptModeBar({
                   {activeTemplate.label}
                 </>
               ) : (
-                <>Template</>
+                <>{t("template")}</>
               )}
               <ChevronDown className="size-3 opacity-70" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-72">
               <DropdownMenuLabel className="text-[10.5px] uppercase tracking-wider">
-                Templates pré-définis
+                {t("predefinedTemplates")}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {PROMPT_TEMPLATES_LIST.map((tpl) => {
@@ -606,7 +608,7 @@ function PromptModeBar({
                       {tpl.label}
                       {selected ? (
                         <span className="ml-auto rounded-full bg-primary/15 px-1.5 text-[9.5px] font-bold uppercase tracking-wider text-primary">
-                          actif
+                          {t("modelActive")}
                         </span>
                       ) : null}
                     </span>
@@ -622,7 +624,7 @@ function PromptModeBar({
                 className="text-[12px]"
               >
                 <X className="size-3.5" />
-                Effacer le template (brief libre)
+                {t("clearTemplate")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -631,8 +633,8 @@ function PromptModeBar({
             variant="ghost"
             size="icon-xs"
             onClick={() => onModeChange("chat")}
-            title="Revenir au chat"
-            aria-label="Fermer le mode générateur"
+            title={t("backToChat")}
+            aria-label={t("closeGeneratorMode")}
           >
             <X className="size-3.5" />
           </Button>
@@ -645,10 +647,10 @@ function PromptModeBar({
           htmlFor="prompt-brief"
           className="mb-1 block text-[10.5px] font-semibold uppercase tracking-wider text-amber-800/80 dark:text-amber-200/80"
         >
-          Brief <span className="text-destructive">*</span>
+          {t("brief")} <span className="text-destructive">*</span>
           {activeTemplate ? (
             <span className="ml-2 normal-case font-normal opacity-70">
-              · Template « {activeTemplate.label} » — remplis les{" "}
+              {t("briefTemplateHint", { label: activeTemplate.label })}{" "}
               <code className="rounded bg-muted px-1 font-mono text-[10px]">
                 [...]
               </code>
@@ -685,8 +687,8 @@ function PromptModeBar({
             }}
             disabled={disabled || sending}
             rows={3}
-            placeholder="Ex : Crée un calculateur AGR pour temps partiels involontaires…"
-            aria-label="Brief à générer"
+            placeholder={t("briefPlaceholder")}
+            aria-label={t("briefAria")}
             className={cn(
               "w-full resize-y rounded-lg border border-amber-300/60 bg-background px-2.5 py-1.5 text-[12.5px] leading-relaxed shadow-sm",
               "focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400",
@@ -711,8 +713,8 @@ function PromptModeBar({
           htmlFor="prompt-hint"
           className="mb-1 block text-[10.5px] font-semibold uppercase tracking-wider text-amber-800/70 dark:text-amber-200/70"
         >
-          Contexte technique{" "}
-          <span className="opacity-60 font-normal normal-case">(optionnel)</span>
+          {t("techContext")}{" "}
+          <span className="opacity-60 font-normal normal-case">{t("optionalParen")}</span>
         </label>
         <textarea
           id="prompt-hint"
@@ -720,8 +722,8 @@ function PromptModeBar({
           onChange={(e) => setHint(e.target.value.slice(0, 500))}
           disabled={disabled || sending}
           rows={2}
-          placeholder="Ex : Réutiliser le pattern Pension (layout 2-col, jspdf, CountryFlag)…"
-          aria-label="Contexte technique optionnel"
+          placeholder={t("techContextPlaceholder")}
+          aria-label={t("techContextAria")}
           className={cn(
             "w-full resize-y rounded-lg border border-amber-300/60 bg-background px-2.5 py-1.5 text-[12px] leading-relaxed shadow-sm",
             "focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400",
@@ -745,12 +747,12 @@ function PromptModeBar({
           {sending ? (
             <>
               <Loader2 className="size-3.5 animate-spin" />
-              Génération…
+              {t("generating")}
             </>
           ) : (
             <>
               <Wand2 className="size-3.5" />
-              Générer
+              {t("generate")}
             </>
           )}
         </Button>

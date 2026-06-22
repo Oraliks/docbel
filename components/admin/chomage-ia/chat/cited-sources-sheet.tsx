@@ -9,6 +9,7 @@
  * principal du chat.
  */
 
+import { useTranslations } from "next-intl";
 import { ExternalLink, Inbox } from "lucide-react";
 import {
   Sheet,
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export function CitedSourcesSheet({ open, onOpenChange, sources }: Props) {
+  const t = useTranslations("admin.chomageIa");
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -34,10 +36,9 @@ export function CitedSourcesSheet({ open, onOpenChange, sources }: Props) {
         className="w-[340px] sm:max-w-[340px]"
       >
         <SheetHeader className="border-b border-border">
-          <SheetTitle>Sources citées ({sources.length})</SheetTitle>
+          <SheetTitle>{t("citedSourcesTitle", { count: sources.length })}</SheetTitle>
           <SheetDescription>
-            Sources de la knowledge base référencées par l&apos;IA dans cette
-            conversation.
+            {t("citedSourcesDesc")}
           </SheetDescription>
         </SheetHeader>
 
@@ -46,8 +47,7 @@ export function CitedSourcesSheet({ open, onOpenChange, sources }: Props) {
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-8 text-center text-muted-foreground">
               <Inbox className="size-6 opacity-50" />
               <p className="text-[12px] leading-relaxed">
-                Les sources citées par l&apos;IA dans cette conversation
-                apparaîtront ici.
+                {t("citedSourcesEmpty")}
               </p>
             </div>
           ) : (

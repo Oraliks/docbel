@@ -16,6 +16,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { CheckCheck, Copy, ExternalLink, Wand2, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export function GeneratedPromptMessage({ message, citedSources }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [copied, setCopied] = useState(false);
 
   const sourcesById = useMemo(() => {
@@ -41,13 +43,13 @@ export function GeneratedPromptMessage({ message, citedSources }: Props) {
       .writeText(message.content)
       .then(() => {
         setCopied(true);
-        toast.success("Prompt copié — colle-le dans Claude Code");
+        toast.success(t("promptCopied"));
         setTimeout(() => setCopied(false), 2000);
       })
-      .catch(() => toast.error("Échec de la copie"));
+      .catch(() => toast.error(t("copyError")));
   }
 
-  const title = message.promptTitle ?? "Prompt généré";
+  const title = message.promptTitle ?? t("promptGenerated");
 
   return (
     <div className="flex gap-2">
@@ -68,7 +70,7 @@ export function GeneratedPromptMessage({ message, citedSources }: Props) {
               </div>
               {message.promptBrief ? (
                 <p className="mt-0.5 line-clamp-2 text-[11px] text-amber-800/80 dark:text-amber-300/80">
-                  Brief : « {message.promptBrief} »
+                  {t("promptBrief", { brief: message.promptBrief })}
                 </p>
               ) : null}
             </div>
@@ -78,17 +80,17 @@ export function GeneratedPromptMessage({ message, citedSources }: Props) {
               variant={copied ? "secondary" : "default"}
               onClick={copy}
               className="shrink-0 gap-1.5"
-              title="Copier le prompt dans le presse-papiers"
+              title={t("copyPromptTitle")}
             >
               {copied ? (
                 <>
                   <CheckCheck className="size-3.5" />
-                  Copié
+                  {t("copied")}
                 </>
               ) : (
                 <>
                   <Copy className="size-3.5" />
-                  Copier
+                  {t("copy")}
                 </>
               )}
             </Button>
@@ -105,7 +107,7 @@ export function GeneratedPromptMessage({ message, citedSources }: Props) {
               {message.citedSourceIds.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-1">
                   <span className="text-[10.5px] font-semibold uppercase tracking-wider text-amber-800/70 dark:text-amber-200/70">
-                    Sources ({message.citedSourceIds.length})
+                    {t("sourcesCount", { count: message.citedSourceIds.length })}
                   </span>
                   {message.citedSourceIds.slice(0, 5).map((id) => {
                     const src = sourcesById.get(id);
@@ -144,7 +146,7 @@ export function GeneratedPromptMessage({ message, citedSources }: Props) {
               ) : null}
               <div className="ml-auto flex items-center gap-2 text-[10.5px] text-amber-800/70 tabular-nums dark:text-amber-200/70">
                 {message.tokensOut != null ? (
-                  <span>~{fmtTokens(message.tokensOut)} tk</span>
+                  <span>{t("tokensOutShort", { n: fmtTokens(message.tokensOut) })}</span>
                 ) : null}
                 {message.elapsedMs != null && message.elapsedMs > 0 ? (
                   <span className="inline-flex items-center gap-0.5">
@@ -162,7 +164,7 @@ export function GeneratedPromptMessage({ message, citedSources }: Props) {
           <span>{fmtDateTime(message.createdAt)}</span>
           <span className="ml-auto inline-flex items-center gap-1 text-amber-700/80 dark:text-amber-300/80">
             <Wand2 className="size-2.5" />
-            Prompt généré · sauvegardé dans l&apos;historique
+            {t("promptGeneratedSaved")}
           </span>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ function asPairs(data: unknown): Array<[string, string]> {
 }
 
 export default async function FormSubmissionsPage() {
+  const t = await getTranslations("admin.formSubmissions");
   const submissions: Submission[] = await prisma.formSubmission
     .findMany({ orderBy: { createdAt: "desc" }, take: 200 })
     .catch(() => []);
@@ -32,10 +34,10 @@ export default async function FormSubmissionsPage() {
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Soumissions de formulaires
+            {t("title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Les envois des blocs « Formulaire » des pages (200 plus récents).
+            {t("description")}
           </p>
         </div>
         <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium">
@@ -45,7 +47,7 @@ export default async function FormSubmissionsPage() {
 
       {submissions.length === 0 ? (
         <div className="rounded-xl border border-dashed px-4 py-16 text-center text-sm text-muted-foreground">
-          Aucune soumission pour le moment.
+          {t("empty")}
         </div>
       ) : (
         <div className="space-y-3">
@@ -59,7 +61,7 @@ export default async function FormSubmissionsPage() {
                 {asPairs(s.data).map(([k, v], i) => (
                   <div key={i} className="flex gap-2 text-sm">
                     <dt className="shrink-0 font-medium text-muted-foreground">
-                      {k} :
+                      {t("fieldLabel", { label: k })}
                     </dt>
                     <dd className="min-w-0 break-words whitespace-pre-wrap">{v}</dd>
                   </div>

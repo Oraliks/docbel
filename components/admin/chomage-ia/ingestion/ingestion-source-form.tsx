@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -46,6 +47,7 @@ export function IngestionSourceForm({
   editing,
   onSaved,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [name, setName] = useState("");
   const [kind, setKind] = useState<IngestionKind>("scrape");
   const [url, setUrl] = useState("");
@@ -89,11 +91,11 @@ export function IngestionSourceForm({
         const data = await res.json().catch(() => null);
         throw new Error(data?.error || `HTTP ${res.status}`);
       }
-      toast.success(editing ? "Source mise à jour" : "Source de veille créée");
+      toast.success(editing ? t("sourceUpdated") : t("watchSourceCreated"));
       onSaved();
       onOpenChange(false);
     } catch (e) {
-      toast.error("Échec de l'enregistrement", {
+      toast.error(t("saveError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -106,29 +108,29 @@ export function IngestionSourceForm({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {editing ? "Éditer la source de veille" : "Nouvelle source de veille"}
+            {editing ? t("watchSourceEditTitle") : t("watchSourceNewTitle")}
           </DialogTitle>
           <DialogDescription>
-            URL d&apos;un flux RSS ou d&apos;une page HTML à scanner périodiquement.
+            {t("watchSourceFormDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3 py-1">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ing-name">Nom</Label>
+            <Label htmlFor="ing-name">{t("nameLabel")}</Label>
             <Input
               id="ing-name"
               value={name}
               autoFocus
               onChange={(e) => setName(e.target.value.slice(0, 120))}
-              placeholder="ONEM - Documentation"
+              placeholder={t("ingNamePlaceholder")}
               className="h-9 text-[12.5px]"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ing-kind">Type</Label>
+              <Label htmlFor="ing-kind">{t("typeLabel")}</Label>
               <Select
                 value={kind}
                 onValueChange={(v) => setKind(v as IngestionKind)}
@@ -139,14 +141,14 @@ export function IngestionSourceForm({
                 <SelectContent>
                   {INGESTION_KINDS.map((k) => (
                     <SelectItem key={k} value={k}>
-                      {k === "rss" ? "RSS / Atom" : "Scrape HTML"}
+                      {t("ingestionKind", { kind: k })}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="ing-schedule">Fréquence</Label>
+              <Label htmlFor="ing-schedule">{t("frequencyLabel")}</Label>
               <Select
                 value={schedule}
                 onValueChange={(v) => setSchedule(v as IngestionSchedule)}
@@ -157,11 +159,7 @@ export function IngestionSourceForm({
                 <SelectContent>
                   {INGESTION_SCHEDULES.map((s) => (
                     <SelectItem key={s} value={s}>
-                      {s === "hourly"
-                        ? "Toutes les heures"
-                        : s === "daily"
-                          ? "Quotidienne"
-                          : "Hebdomadaire"}
+                      {t("ingestionSchedule", { schedule: s })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -170,7 +168,7 @@ export function IngestionSourceForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="ing-url">URL</Label>
+            <Label htmlFor="ing-url">{t("urlLabel")}</Label>
             <Input
               id="ing-url"
               type="url"
@@ -180,7 +178,7 @@ export function IngestionSourceForm({
               className="h-9 text-[12.5px]"
             />
             <span className="text-[10.5px] text-muted-foreground">
-              Uniquement ONEM, SPF, Moniteur belge ou autres sources publiques.
+              {t("watchSourceUrlHint")}
             </span>
           </div>
         </div>
@@ -191,18 +189,18 @@ export function IngestionSourceForm({
             onClick={() => onOpenChange(false)}
             disabled={pending}
           >
-            Annuler
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit}>
             {pending ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />
-                Enregistrement…
+                {t("saving")}
               </>
             ) : editing ? (
-              "Mettre à jour"
+              t("update")
             ) : (
-              "Créer"
+              t("create")
             )}
           </Button>
         </DialogFooter>

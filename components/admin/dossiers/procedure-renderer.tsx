@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   AlertCircleIcon,
   CalendarClockIcon,
@@ -17,16 +18,17 @@ interface Props {
   procedure: DossierProcedure;
 }
 
-const PURPOSE_BADGE: Record<string, { label: string; className: string }> = {
-  demande: { label: "Demande", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200" },
-  paiement: { label: "Paiement", className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200" },
-  support: { label: "Support", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200" },
-  controle: { label: "Contrôle", className: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200" },
+const PURPOSE_BADGE: Record<string, { labelKey: string; className: string }> = {
+  demande: { labelKey: "purposeDemande", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200" },
+  paiement: { labelKey: "purposePaiement", className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200" },
+  support: { labelKey: "purposeSupport", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200" },
+  controle: { labelKey: "purposeControle", className: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200" },
 };
 
 /// Rendu d'une procédure d'introduction (réglementation, conditions, délais,
 /// formulaires, étapes paraphrasées, codes ONEM avec deep-links lookup).
 export function ProcedureRenderer({ procedure: p }: Props) {
+  const t = useTranslations("admin.dossiers");
   const steps = [...p.steps].sort((a, b) => a.order - b.order);
 
   return (
@@ -34,8 +36,8 @@ export function ProcedureRenderer({ procedure: p }: Props) {
       <header className="flex flex-col gap-2 border-b pb-4">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <ScrollTextIcon className="size-3.5" />
-          Procédure · Nature de DA <code className="rounded bg-muted px-1 py-0.5 font-mono">{p.natureDA}</code>
-          {p.lastReviewedAt && <span className="ml-auto">Revu le {p.lastReviewedAt}</span>}
+          {t("procedureNatureLabel")} <code className="rounded bg-muted px-1 py-0.5 font-mono">{p.natureDA}</code>
+          {p.lastReviewedAt && <span className="ml-auto">{t("reviewedOn", { date: p.lastReviewedAt })}</span>}
         </div>
         <h2 className="text-xl font-semibold">{p.title}</h2>
         <p className="text-sm text-muted-foreground">{p.summary}</p>
@@ -45,7 +47,7 @@ export function ProcedureRenderer({ procedure: p }: Props) {
         <section className="flex flex-col gap-2">
           <h3 className="flex items-center gap-2 text-sm font-semibold">
             <GavelIcon className="size-4 text-muted-foreground" />
-            Réglementation
+            {t("regulation")}
           </h3>
           <ul className="ml-6 list-disc text-sm text-muted-foreground">
             {p.reglementation.map((r) => (
@@ -60,7 +62,7 @@ export function ProcedureRenderer({ procedure: p }: Props) {
           {p.conditionsObligatoire && (
             <div className="rounded-lg border bg-card p-4">
               <h3 className="mb-2 text-sm font-semibold text-red-700 dark:text-red-300">
-                DA obligatoire
+                {t("daMandatory")}
               </h3>
               <ul className="ml-5 list-disc space-y-1 text-sm">
                 {p.conditionsObligatoire.map((c, i) => (
@@ -72,7 +74,7 @@ export function ProcedureRenderer({ procedure: p }: Props) {
           {p.conditionsFacultative && (
             <div className="rounded-lg border bg-card p-4">
               <h3 className="mb-2 text-sm font-semibold text-amber-700 dark:text-amber-300">
-                DA facultative
+                {t("daOptional")}
               </h3>
               <ul className="ml-5 list-disc space-y-1 text-sm">
                 {p.conditionsFacultative.map((c, i) => (
@@ -88,13 +90,13 @@ export function ProcedureRenderer({ procedure: p }: Props) {
         <section className="flex flex-col gap-2">
           <h3 className="flex items-center gap-2 text-sm font-semibold">
             <CalendarClockIcon className="size-4 text-muted-foreground" />
-            Délais d&apos;introduction
+            {t("deadlines")}
           </h3>
           <dl className="grid gap-2 text-sm md:grid-cols-2">
             {p.delais.obligatoire && (
               <div className="rounded border bg-muted/30 p-3">
                 <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Obligatoire
+                  {t("deadlineMandatory")}
                 </dt>
                 <dd className="mt-1">{p.delais.obligatoire}</dd>
               </div>
@@ -102,7 +104,7 @@ export function ProcedureRenderer({ procedure: p }: Props) {
             {p.delais.facultative && (
               <div className="rounded border bg-muted/30 p-3">
                 <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Facultative
+                  {t("deadlineOptional")}
                 </dt>
                 <dd className="mt-1">{p.delais.facultative}</dd>
               </div>
@@ -110,7 +112,7 @@ export function ProcedureRenderer({ procedure: p }: Props) {
             {p.delais.exceptions && (
               <div className="rounded border border-dashed bg-muted/30 p-3 md:col-span-2">
                 <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Exception
+                  {t("deadlineException")}
                 </dt>
                 <dd className="mt-1 italic">{p.delais.exceptions}</dd>
               </div>
@@ -123,16 +125,16 @@ export function ProcedureRenderer({ procedure: p }: Props) {
         <section className="flex flex-col gap-2">
           <h3 className="flex items-center gap-2 text-sm font-semibold">
             <FileTextIcon className="size-4 text-muted-foreground" />
-            Formulaires
+            {t("forms")}
           </h3>
           <div className="overflow-hidden rounded-lg border">
             <table className="w-full text-sm">
               <thead className="bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="px-3 py-2 text-left">Code</th>
-                  <th className="px-3 py-2 text-left">Libellé</th>
-                  <th className="px-3 py-2 text-left">Rôle</th>
-                  <th className="px-3 py-2 text-left">Référence</th>
+                  <th className="px-3 py-2 text-left">{t("colCode")}</th>
+                  <th className="px-3 py-2 text-left">{t("colLabel")}</th>
+                  <th className="px-3 py-2 text-left">{t("colRole")}</th>
+                  <th className="px-3 py-2 text-left">{t("colReference")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,7 +160,7 @@ export function ProcedureRenderer({ procedure: p }: Props) {
                           <span
                             className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium ${badge.className}`}
                           >
-                            {badge.label}
+                            {t(badge.labelKey as Parameters<typeof t>[0])}
                           </span>
                         )}
                       </td>
@@ -177,7 +179,7 @@ export function ProcedureRenderer({ procedure: p }: Props) {
       <section className="flex flex-col gap-3">
         <h3 className="flex items-center gap-2 text-sm font-semibold">
           <ListChecksIcon className="size-4 text-muted-foreground" />
-          Étapes opérationnelles
+          {t("operationalSteps")}
         </h3>
         <ol className="flex flex-col gap-3">
           {steps.map((s) => (
@@ -203,7 +205,7 @@ export function ProcedureRenderer({ procedure: p }: Props) {
 
       {p.codeReferences && p.codeReferences.length > 0 && (
         <section className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold">Codes ONEM référencés</h3>
+          <h3 className="text-sm font-semibold">{t("onemCodes")}</h3>
           <ul className="flex flex-col gap-1.5 text-sm">
             {p.codeReferences.map((c, i) => (
               <li key={`${c.tableSlug}-${c.code ?? "*"}-${i}`} className="flex items-baseline gap-2">
@@ -228,7 +230,7 @@ export function ProcedureRenderer({ procedure: p }: Props) {
         <section className="rounded-lg border-l-4 border-amber-400 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
           <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-amber-900 dark:text-amber-200">
             <AlertCircleIcon className="size-3.5" />
-            À retenir
+            {t("keyTakeaway")}
           </div>
           <TheoryRenderer markdown={p.notes} />
         </section>

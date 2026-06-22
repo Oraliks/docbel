@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, Mic, MicOff, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export function VoiceInputButton({ disabled, onTranscript }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const recorder = useVoiceRecorder();
   const [transcribing, setTranscribing] = useState(false);
 
@@ -40,22 +42,24 @@ export function VoiceInputButton({ disabled, onTranscript }: Props) {
     if (disabled || recorder.isRecording || transcribing) return;
     const err = await recorder.start();
     if (err) {
-      toast.error("Impossible de démarrer l'enregistrement", {
+      toast.error(t("voiceStartError"), {
         description: err,
       });
     }
-  }, [disabled, recorder, transcribing]);
+  }, [disabled, recorder, transcribing, t]);
 
   const handleStop = useCallback(async () => {
     if (!recorder.isRecording) return;
     const blob = await recorder.stop();
     if (!blob) {
-      toast("Enregistrement vide");
+      toast(t("voiceEmpty"));
       return;
     }
     if (blob.size > VOICE_MAX_BYTES) {
-      toast.error("Audio trop long", {
-        description: `Limite : 25 Mo. Enregistré : ${Math.round(blob.size / 1024 / 1024)} Mo.`,
+      toast.error(t("voiceTooLong"), {
+        description: t("voiceTooLongDesc", {
+          mb: Math.round(blob.size / 1024 / 1024),
+        }),
       });
       return;
     }
@@ -74,33 +78,33 @@ export function VoiceInputButton({ disabled, onTranscript }: Props) {
       if (!res.ok) {
         const msg = data?.error || `HTTP ${res.status}`;
         if (res.status === 503) {
-          toast.warning("Voice input non configuré", {
+          toast.warning(t("voiceNotConfigured"), {
             description: msg,
           });
         } else if (res.status === 429) {
-          toast.warning("Trop de transcriptions", { description: msg });
+          toast.warning(t("voiceTooMany"), { description: msg });
         } else {
-          toast.error("Échec de la transcription", { description: msg });
+          toast.error(t("voiceTranscribeError"), { description: msg });
         }
         return;
       }
       const text = (data?.text || "").trim();
       if (!text) {
-        toast("Aucune voix détectée", {
-          description: "Réessaie en parlant plus fort et plus longtemps.",
+        toast(t("voiceNoSpeech"), {
+          description: t("voiceNoSpeechDesc"),
         });
         return;
       }
       onTranscript(text);
-      toast.success("Transcription insérée");
+      toast.success(t("voiceInserted"));
     } catch (e) {
-      toast.error("Erreur réseau pendant la transcription", {
+      toast.error(t("voiceNetworkError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
       setTranscribing(false);
     }
-  }, [recorder, onTranscript]);
+  }, [recorder, onTranscript, t]);
 
   /** Toggle handler — démarre OU stoppe selon l'état courant. */
   const handleClick = useCallback(() => {
@@ -122,7 +126,7 @@ export function VoiceInputButton({ disabled, onTranscript }: Props) {
               variant="ghost"
               size="icon"
               disabled
-              aria-label="Micro non supporté par ce navigateur"
+              aria-label={t("micUnsupported")}
               className="size-9 shrink-0 rounded-xl opacity-60"
             />
           }
@@ -130,17 +134,17 @@ export function VoiceInputButton({ disabled, onTranscript }: Props) {
           <MicOff className="size-4" />
         </TooltipTrigger>
         <TooltipContent side="top">
-          Micro non supporté par ce navigateur
+          {t("micUnsupported")}
         </TooltipContent>
       </Tooltip>
     );
   }
 
   const buttonTitle = transcribing
-    ? "Transcription en cours…"
+    ? t("voiceTranscribing")
     : recorder.isRecording
-      ? `Stopper l'enregistrement (${recorder.durationSec}s)`
-      : "Enregistrement vocal (Whisper)";
+      ? t("voiceStopRecording", { sec: recorder.durationSec })
+      : t("voiceRecord");
 
   return (
     <Tooltip>

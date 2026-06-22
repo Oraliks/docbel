@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Plus, Rss } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "../_shared-alerts";
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export function IngestionWorkspace({ domain }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const [sources, setSources] = useState<IngestionSourceListItem[]>([]);
   const [queue, setQueue] = useState<IngestedDocumentListItem[]>([]);
   const [loadingSources, setLoadingSources] = useState(true);
@@ -56,14 +58,14 @@ export function IngestionWorkspace({ domain }: Props) {
       setSources(sData.items);
       setQueue(qData.items);
     } catch (e) {
-      toast.error("Impossible de charger les données", {
+      toast.error(t("dataLoadError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
       setLoadingSources(false);
       setLoadingQueue(false);
     }
-  }, [domain]);
+  }, [domain, t]);
 
   useEffect(() => {
     refresh();
@@ -85,7 +87,7 @@ export function IngestionWorkspace({ domain }: Props) {
       setSources((prev) =>
         prev.map((x) => (x.id === s.id ? { ...x, enabled: !next } : x)),
       );
-      toast.error("Échec du toggle", {
+      toast.error(t("toggleError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -102,15 +104,15 @@ export function IngestionWorkspace({ domain }: Props) {
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       const { result } = data;
       if (result.error) {
-        toast.warning(`Check terminé avec erreur : ${result.error}`);
+        toast.warning(t("checkDoneWithError", { error: result.error }));
       } else {
         toast.success(
-          `Check OK · ${result.created} nouveau${result.created > 1 ? "x" : ""} · ${result.skipped} déjà connu${result.skipped > 1 ? "s" : ""}`,
+          t("checkOk", { created: result.created, skipped: result.skipped }),
         );
       }
       refresh();
     } catch (e) {
-      toast.error("Échec du check", {
+      toast.error(t("checkError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -124,10 +126,10 @@ export function IngestionWorkspace({ domain }: Props) {
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.success("Source supprimée");
+      toast.success(t("sourceDeleted"));
       refresh();
     } catch (e) {
-      toast.error("Échec suppression", {
+      toast.error(t("deleteError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -151,12 +153,12 @@ export function IngestionWorkspace({ domain }: Props) {
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       toast.success(
         action === "validate"
-          ? "Document validé et ajouté à la KB"
-          : "Document rejeté",
+          ? t("docValidated")
+          : t("docRejected"),
       );
       setQueue((prev) => prev.filter((d) => d.id !== doc.id));
     } catch (e) {
-      toast.error("Échec de l'action", {
+      toast.error(t("actionError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -170,11 +172,11 @@ export function IngestionWorkspace({ domain }: Props) {
         <header className="flex items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-[14px] font-semibold">
             <Rss className="size-4 text-primary" />
-            Sources de veille
+            {t("watchSources")}
           </h2>
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="size-3.5" />
-            Nouvelle source
+            {t("newSource")}
           </Button>
         </header>
         <div className="mt-2">
@@ -215,11 +217,11 @@ export function IngestionWorkspace({ domain }: Props) {
         }}
       />
       <ConfirmDeleteDialog
-        requireText="supprimer"
+        requireText={t("deleteKeyword")}
         open={toDelete !== null}
         onOpenChange={(o) => !o && setToDelete(null)}
-        title="Supprimer cette source de veille ?"
-        description="La source ne sera plus pollée. Les IngestedDocument déjà détectés restent en file d'attente."
+        title={t("deleteWatchSourceTitle")}
+        description={t("deleteWatchSourceDescription")}
         onConfirm={async () => {
           if (!toDelete) return;
           await deleteSource(toDelete);

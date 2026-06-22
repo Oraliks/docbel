@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, type ComponentType } from "react";
+import { useTranslations } from "next-intl";
 import {
   Bar,
   BarChart as RBarChart,
@@ -148,6 +149,7 @@ function ChartEmpty({ message }: { message: string }) {
  * champ). Tout en données déjà agrégées côté serveur ; aucun fetch ici.
  */
 export function PdfAnalyticsDashboard({ data }: Props) {
+  const t = useTranslations("admin.pdf");
   const successPct = Math.round(data.successRate30d * 100);
 
   // Données du graphe quotidien, avec un libellé court par point.
@@ -169,45 +171,41 @@ export function PdfAnalyticsDashboard({ data }: Props) {
       {/* Cartes KPI ------------------------------------------------- */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
-          label="Formulaires publiés"
+          label={t("kpiPublishedForms")}
           value={data.publishedForms}
-          hint={`${data.draftForms} brouillon${
-            data.draftForms > 1 ? "s" : ""
-          } · ${data.archivedForms} archivé${data.archivedForms > 1 ? "s" : ""}`}
+          hint={t("kpiPublishedHint", { drafts: data.draftForms, archived: data.archivedForms })}
           icon={FileCheck}
           accent="violet"
         />
         <KpiCard
-          label={`Soumissions (${data.windowDays} j)`}
+          label={t("kpiSubmissions", { days: data.windowDays })}
           value={data.submissions30d}
           hint={
             data.submissions30d > 0
-              ? `${successPct}% de succès`
-              : "Aucune soumission"
+              ? t("kpiSuccessHint", { pct: successPct })
+              : t("kpiNoSubmissions")
           }
           icon={Send}
           accent="emerald"
         />
         <KpiCard
-          label="Brouillons actifs"
+          label={t("kpiActiveDrafts")}
           value={data.activeDrafts}
           hint={
             data.draftsExpiringSoon > 0
-              ? `${data.draftsExpiringSoon} expire${
-                  data.draftsExpiringSoon > 1 ? "nt" : ""
-                } < 48 h`
-              : "RGPD · purge auto à expiration"
+              ? t("kpiExpiringHint", { count: data.draftsExpiringSoon })
+              : t("kpiDraftsGdpr")
           }
           icon={Clock}
           accent="amber"
         />
         <KpiCard
-          label="Signalements en attente"
+          label={t("kpiPendingReports")}
           value={data.pendingReports}
           hint={
             data.pendingReports > 0
-              ? "Validation à revoir"
-              : "Aucun signalement ouvert"
+              ? t("kpiReportsToReview")
+              : t("kpiNoReports")
           }
           icon={TriangleAlert}
           accent="rose"
@@ -220,10 +218,8 @@ export function PdfAnalyticsDashboard({ data }: Props) {
         <Card>
           <CardContent className="flex flex-col gap-4">
             <div>
-              <p className="text-sm font-semibold">Soumissions par jour</p>
-              <p className="text-xs text-muted-foreground">
-                {data.windowDays} derniers jours — par canal de livraison
-              </p>
+              <p className="text-sm font-semibold">{t("chartSubmissionsTitle")}</p>
+              <p className="text-xs text-muted-foreground">{t("chartSubmissionsSubtitle", { days: data.windowDays })}</p>
             </div>
             {hasSubmissions ? (
               <ResponsiveContainer width="100%" height={260}>
@@ -260,7 +256,7 @@ export function PdfAnalyticsDashboard({ data }: Props) {
                   />
                   <Bar
                     dataKey="download"
-                    name="Téléchargement"
+                    name={t("legendDownload")}
                     stackId="delivery"
                     fill="var(--chart-1)"
                     radius={[0, 0, 0, 0]}
@@ -268,7 +264,7 @@ export function PdfAnalyticsDashboard({ data }: Props) {
                   />
                   <Bar
                     dataKey="doccle"
-                    name="Doccle"
+                    name={t("legendDoccle")}
                     stackId="delivery"
                     fill="var(--chart-2)"
                     radius={[4, 4, 0, 0]}
@@ -277,12 +273,12 @@ export function PdfAnalyticsDashboard({ data }: Props) {
                 </RBarChart>
               </ResponsiveContainer>
             ) : (
-              <ChartEmpty message="Aucune soumission sur la période." />
+              <ChartEmpty message={t("chartNoSubmissions")} />
             )}
             {hasSubmissions ? (
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <LegendDot color="var(--chart-1)" label="Téléchargement" />
-                <LegendDot color="var(--chart-2)" label="Doccle" />
+                <LegendDot color="var(--chart-1)" label={t("legendDownload")} />
+                <LegendDot color="var(--chart-2)" label={t("legendDoccle")} />
               </div>
             ) : null}
           </CardContent>
@@ -292,12 +288,8 @@ export function PdfAnalyticsDashboard({ data }: Props) {
         <Card>
           <CardContent className="flex flex-col gap-4">
             <div>
-              <p className="text-sm font-semibold">
-                Signalements par type de champ
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Quels validateurs sont le plus contestés
-              </p>
+              <p className="text-sm font-semibold">{t("chartReportsTitle")}</p>
+              <p className="text-xs text-muted-foreground">{t("chartReportsSubtitle")}</p>
             </div>
             {hasReports ? (
               <ResponsiveContainer width="100%" height={reportsHeight}>
@@ -332,7 +324,7 @@ export function PdfAnalyticsDashboard({ data }: Props) {
                     cursor={{ fill: "var(--muted)", opacity: 0.3 }}
                     contentStyle={tooltipContentStyle}
                     labelStyle={tooltipLabelStyle}
-                    formatter={(value) => [value as number, "Signalements"]}
+                    formatter={(value) => [value as number, t("reportsTooltipName")]}
                   />
                   <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={26}>
                     {reports.map((entry) => (
@@ -342,7 +334,7 @@ export function PdfAnalyticsDashboard({ data }: Props) {
                 </RBarChart>
               </ResponsiveContainer>
             ) : (
-              <ChartEmpty message="Aucun signalement de validation." />
+              <ChartEmpty message={t("chartNoReports")} />
             )}
           </CardContent>
         </Card>

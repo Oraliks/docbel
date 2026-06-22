@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   DndContext,
   PointerSensor,
@@ -79,6 +80,25 @@ export function SourcesTableWorkspace({
   aiAvailable,
   initialSources,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
+
+  function labelForAction(kind: BulkAction["kind"], count: number): string {
+    switch (kind) {
+      case "enable":
+        return t("bulkEnabled", { count });
+      case "disable":
+        return t("bulkDisabled", { count });
+      case "delete":
+        return t("bulkDeleted", { count });
+      case "reindex":
+        return t("bulkReindexed", { count });
+      case "add-tags":
+        return t("bulkTagsAdded", { count });
+      case "remove-tags":
+        return t("bulkTagsRemoved", { count });
+    }
+  }
+
   /* ----------------------------------------------------------------- */
   /*  Sources state                                                    */
   /* ----------------------------------------------------------------- */
@@ -343,11 +363,11 @@ export function SourcesTableWorkspace({
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.success(`Dossier supprimé`);
+      toast.success(t("folderDeleted"));
       await Promise.all([refreshFolders(), refresh()]);
       setSelectedFolderIds((prev) => prev.filter((x) => x !== id));
     } catch (e) {
-      toast.error("Échec de la suppression", {
+      toast.error(t("deleteError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -400,12 +420,10 @@ export function SourcesTableWorkspace({
           }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        toast.success(
-          `${idsToMove.length} source${idsToMove.length > 1 ? "s" : ""} déplacée${idsToMove.length > 1 ? "s" : ""}`
-        );
+        toast.success(t("sourcesMoved", { count: idsToMove.length }));
         await refresh();
       } catch (e) {
-        toast.error("Échec du déplacement", {
+        toast.error(t("moveError"), {
           description: e instanceof Error ? e.message : String(e),
         });
       }
@@ -439,14 +457,14 @@ export function SourcesTableWorkspace({
             body: JSON.stringify({ enabled: !item.enabled }),
           });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          toast.success(item.enabled ? "Source désactivée" : "Source activée");
+          toast.success(item.enabled ? t("sourceDisabled") : t("sourceEnabled"));
           setSources((arr) =>
             arr.map((s) =>
               s.id === id ? { ...s, enabled: !item.enabled } : s
             )
           );
         } catch (e) {
-          toast.error("Échec de la mise à jour", {
+          toast.error(t("updateError"), {
             description: e instanceof Error ? e.message : String(e),
           });
         }
@@ -461,17 +479,15 @@ export function SourcesTableWorkspace({
           const data = await res.json();
           if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
           if (data.indexError) {
-            toast.warning("Indexation partielle", {
+            toast.warning(t("indexPartial"), {
               description: data.indexError,
             });
           } else {
-            toast.success(
-              `Indexation OK · ${data.reindexedCount ?? 0} chunk(s) (re)embeddés`
-            );
+            toast.success(t("indexOkChunks", { count: data.reindexedCount ?? 0 }));
           }
           await refresh();
         } catch (e) {
-          toast.error("Échec indexation", {
+          toast.error(t("indexFailed"), {
             description: e instanceof Error ? e.message : String(e),
           });
         }
@@ -485,10 +501,10 @@ export function SourcesTableWorkspace({
           );
           const data = await res.json();
           if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-          toast.success("Résumé généré");
+          toast.success(t("summaryGenerated"));
           await refresh();
         } catch (e) {
-          toast.error("Échec du résumé", {
+          toast.error(t("summaryError"), {
             description: e instanceof Error ? e.message : String(e),
           });
         }
@@ -506,7 +522,7 @@ export function SourcesTableWorkspace({
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.success("Source supprimée");
+      toast.success(t("sourceDeleted"));
       setSources((arr) => arr.filter((s) => s.id !== id));
       setSelectedIds((prev) => {
         if (!prev.has(id)) return prev;
@@ -516,7 +532,7 @@ export function SourcesTableWorkspace({
       });
       if (currentDetailId === id) setCurrentDetailId(null);
     } catch (e) {
-      toast.error("Échec de la suppression", {
+      toast.error(t("deleteError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -560,8 +576,11 @@ export function SourcesTableWorkspace({
       const failedCount = Array.isArray(data.failed) ? data.failed.length : 0;
       const verb = labelForAction(action.kind, data.updated);
       if (failedCount > 0) {
-        toast.warning(`${verb} avec ${failedCount} échec(s)`, {
-          description: `${data.updated} ok, ${failedCount} en erreur.`,
+        toast.warning(t("bulkActionWithFailures", { verb, failed: failedCount }), {
+          description: t("bulkActionFailuresDescription", {
+            ok: data.updated,
+            failed: failedCount,
+          }),
         });
       } else {
         toast.success(verb);
@@ -580,7 +599,7 @@ export function SourcesTableWorkspace({
         await refresh();
       }
     } catch (e) {
-      toast.error("Action en lot échouée", {
+      toast.error(t("bulkActionFailed"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -647,7 +666,7 @@ export function SourcesTableWorkspace({
 
           {error ? (
             <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-[12px] text-destructive">
-              Erreur : {error}
+              {t("errorWithMessage", { message: error })}
             </div>
           ) : null}
 
@@ -731,13 +750,13 @@ export function SourcesTableWorkspace({
       />
 
       <ConfirmDeleteDialog
-        requireText="supprimer"
+        requireText={t("deleteKeyword")}
         open={singleDeleteId !== null}
         onOpenChange={(open) => {
           if (!open) setSingleDeleteId(null);
         }}
-        title="Supprimer cette source ?"
-        description="La source sera supprimée définitivement de la knowledge base."
+        title={t("deleteSourceTitle")}
+        description={t("deleteSourceDescription")}
         onConfirm={async () => {
           if (singleDeleteId) await deleteSource(singleDeleteId);
         }}
@@ -746,20 +765,3 @@ export function SourcesTableWorkspace({
   );
 }
 
-function labelForAction(kind: BulkAction["kind"], count: number): string {
-  const suffix = count > 1 ? "s" : "";
-  switch (kind) {
-    case "enable":
-      return `${count} source${suffix} activée${suffix}`;
-    case "disable":
-      return `${count} source${suffix} désactivée${suffix}`;
-    case "delete":
-      return `${count} source${suffix} supprimée${suffix}`;
-    case "reindex":
-      return `${count} source${suffix} relancée${suffix} en indexation`;
-    case "add-tags":
-      return `${count} source${suffix} mise${suffix} à jour (tags ajoutés)`;
-    case "remove-tags":
-      return `${count} source${suffix} mise${suffix} à jour (tags retirés)`;
-  }
-}

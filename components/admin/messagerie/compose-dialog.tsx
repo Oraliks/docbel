@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,6 +25,7 @@ interface ComposeDialogProps {
 }
 
 export function ComposeDialog({ onSent }: ComposeDialogProps) {
+  const t = useTranslations("admin.messagerie");
   const [open, setOpen] = useState(false);
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
@@ -113,17 +115,17 @@ export function ComposeDialog({ onSent }: ComposeDialogProps) {
         body: JSON.stringify({ to: to.trim(), subject: subject.trim(), text, html }),
       });
       if (response.ok) {
-        toast.success("Email envoyé", { description: `À ${to.trim()}` });
+        toast.success(t("emailSent"), { description: t("toRecipient", { recipient: to.trim() }) });
         reset();
         setOpen(false);
         onSent?.();
       } else {
         const err = await response.json().catch(() => ({}));
-        toast.error(err.error || "Envoi échoué");
+        toast.error(err.error || t("sendFailed"));
       }
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setSending(false);
     }
@@ -143,41 +145,41 @@ export function ComposeDialog({ onSent }: ComposeDialogProps) {
         render={
           <Button size="sm" className="gap-2 h-8">
             <PenSquare className="size-3.5" />
-            <span className="hidden sm:inline">Nouveau</span>
+            <span className="hidden sm:inline">{t("compose")}</span>
           </Button>
         }
       />
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Nouveau message</DialogTitle>
-          <DialogDescription>Envoyé depuis contact@docbel.be</DialogDescription>
+          <DialogTitle>{t("composeTitle")}</DialogTitle>
+          <DialogDescription>{t("sentFrom")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">À</label>
+            <label className="mb-1 block text-xs text-muted-foreground">{t("toLabel")}</label>
             <Input
               type="email"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              placeholder="destinataire@exemple.be"
+              placeholder={t("recipientPlaceholder")}
               autoFocus
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Sujet</label>
+            <label className="mb-1 block text-xs text-muted-foreground">{t("subjectLabel")}</label>
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Sujet du message"
+              placeholder={t("subjectPlaceholder")}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Message</label>
+            <label className="mb-1 block text-xs text-muted-foreground">{t("messageLabel")}</label>
             <EmailEditor value={html} onChange={setHtml} />
           </div>
           {(to.trim() || subject.trim() || !isEditorEmpty(html)) && (
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600 dark:text-green-500">·</span> Brouillon sauvegardé localement
+              <span className="text-green-600 dark:text-green-500">·</span> {t("draftSavedLocally")}
             </p>
           )}
         </div>
@@ -190,10 +192,10 @@ export function ComposeDialog({ onSent }: ComposeDialogProps) {
             }}
             disabled={sending}
           >
-            Effacer
+            {t("clearAction")}
           </Button>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={sending}>
-            Fermer
+            {t("close")}
           </Button>
           <Button
             onClick={handleSend}
@@ -201,7 +203,7 @@ export function ComposeDialog({ onSent }: ComposeDialogProps) {
             className="gap-1.5"
           >
             <Send className="size-3.5" />
-            {sending ? "Envoi..." : "Envoyer"}
+            {sending ? t("sending") : t("send")}
           </Button>
         </DialogFooter>
       </DialogContent>

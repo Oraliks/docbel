@@ -24,6 +24,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   BookOpen,
@@ -72,6 +73,7 @@ export function ChatFullShell({
   webSearchAvailable = false,
   enabledSourcesCount,
 }: ChatFullShellProps) {
+  const t = useTranslations("admin.chomageIa");
   const searchParams = useSearchParams();
 
   // ----- State principal -----
@@ -179,11 +181,11 @@ export function ChatFullShell({
       (m) => m.id === assistantMessageId && m.role === "assistant",
     );
     if (aIdx === -1) {
-      toast.error("Message introuvable");
+      toast.error(t("messageNotFound"));
       return;
     }
     const assistantContent = messages[aIdx].content;
-    let userContent = "(question d'origine introuvable)";
+    let userContent = t("originalQuestionNotFound");
     for (let i = aIdx - 1; i >= 0; i--) {
       if (messages[i].role === "user" && messages[i].kind !== "generated_prompt") {
         userContent = messages[i].content;
@@ -226,13 +228,13 @@ export function ChatFullShell({
       const data = (await res.json()) as { items: ChatSessionItem[] };
       setSessions(data.items);
     } catch (e) {
-      toast.error("Impossible de charger les conversations", {
+      toast.error(t("loadConversationsError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
       setLoadingSessions(false);
     }
-  }, [domain]);
+  }, [domain, t]);
 
   useEffect(() => {
     refreshSessions();
@@ -262,13 +264,13 @@ export function ChatFullShell({
       );
       setCitedSources(data.citedSources ?? []);
     } catch (e) {
-      toast.error("Impossible de charger la conversation", {
+      toast.error(t("loadConversationError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
       setLoadingMessages(false);
     }
-  }, []);
+  }, [t]);
 
   function newSession() {
     setCurrentSessionId(null);
@@ -285,11 +287,11 @@ export function ChatFullShell({
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      toast.success("Conversation supprimée");
+      toast.success(t("conversationDeleted"));
       if (currentSessionId === id) newSession();
       refreshSessions();
     } catch (e) {
-      toast.error("Échec de la suppression", {
+      toast.error(t("deleteError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -305,7 +307,7 @@ export function ChatFullShell({
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       refreshSessions();
     } catch (e) {
-      toast.error("Échec du renommage", {
+      toast.error(t("renameError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -334,16 +336,16 @@ export function ChatFullShell({
         throw new Error(data?.error || `HTTP ${res.status}`);
       }
       const labelMap: Record<string, string> = {
-        "claude-sonnet-4-5-20250929": "Sonnet 4.5 (qualité)",
-        "claude-haiku-4-5-20251001": "Haiku 4.5 (rapide)",
+        "claude-sonnet-4-5-20250929": t("modelSonnetQuality"),
+        "claude-haiku-4-5-20251001": t("modelHaikuFast"),
       };
-      const label = model ? labelMap[model] ?? model : "défaut (auto)";
-      toast.success(`Modèle changé : ${label}`);
+      const label = model ? labelMap[model] ?? model : t("modelDefaultAutoShort");
+      toast.success(t("modelChanged", { label }));
       refreshSessions();
     } catch (e) {
       // Rollback optimiste en cas d'erreur.
       refreshSessions();
-      toast.error("Échec du changement de modèle", {
+      toast.error(t("modelChangeError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -382,7 +384,7 @@ export function ChatFullShell({
     } catch (e) {
       // Rollback
       refreshSessions();
-      toast.error("Échec du changement de scope", {
+      toast.error(t("scopeChangeError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -411,12 +413,12 @@ export function ChatFullShell({
         throw new Error(data?.error || `HTTP ${res.status}`);
       }
       toast.success(
-        nextPinned ? "Conversation épinglée" : "Conversation désépinglée",
+        nextPinned ? t("conversationPinned") : t("conversationUnpinned"),
       );
       refreshSessions();
     } catch (e) {
       refreshSessions();
-      toast.error("Échec de l'épinglage", {
+      toast.error(t("pinError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -447,8 +449,8 @@ export function ChatFullShell({
       }
       toast.success(
         nextArchived
-          ? "Conversation archivée"
-          : "Conversation restaurée",
+          ? t("conversationArchived")
+          : t("conversationRestored"),
       );
       // Si on archive la session courante, on revient à un état "nouvelle conv".
       if (nextArchived && currentSessionId === id) {
@@ -457,7 +459,7 @@ export function ChatFullShell({
       refreshSessions();
     } catch (e) {
       refreshSessions();
-      toast.error("Échec de l'archivage", {
+      toast.error(t("archiveError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -477,12 +479,12 @@ export function ChatFullShell({
         throw new Error(data?.error || `HTTP ${res.status}`);
       }
       const data = (await res.json()) as { id: string; title: string };
-      toast.success("Conversation dupliquée", { description: data.title });
+      toast.success(t("conversationDuplicated"), { description: data.title });
       await refreshSessions();
       // Ouvre la nouvelle session pour que l'admin voie le résultat.
       openSession(data.id);
     } catch (e) {
-      toast.error("Échec de la duplication", {
+      toast.error(t("duplicateError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -626,7 +628,7 @@ export function ChatFullShell({
               ? `${m.content}\n\n⚠️ ${ev.message}`
               : `⚠️ ${ev.message}`,
           }));
-          toast.error("Erreur côté serveur", { description: ev.message });
+          toast.error(t("serverError"), { description: ev.message });
         } else if (ev.type === "json_fallback") {
           // Cas du fail-soft "ANTHROPIC_API_KEY manquante" (le backend renvoie
           // du JSON même si on a demandé du SSE).
@@ -636,7 +638,7 @@ export function ChatFullShell({
             error?: string;
           } | null;
           const fallbackContent =
-            data?.message?.content ?? data?.error ?? "Réponse indisponible.";
+            data?.message?.content ?? data?.error ?? t("answerUnavailable");
           patchLastAssistant((m) => ({
             ...m,
             pending: false,
@@ -644,7 +646,7 @@ export function ChatFullShell({
             content: fallbackContent,
           }));
           if (data?.aiDisabled) {
-            toast.warning("IA non configurée — réponse simulée");
+            toast.warning(t("aiNotConfigured"));
           }
         }
       }
@@ -664,9 +666,9 @@ export function ChatFullShell({
           streaming: false,
           content: m.content
             ? `${m.content}\n\n⚠️ ${errMsg}`
-            : `⚠️ ${errMsg}\n\nRéessaie ou vérifie la console serveur.`,
+            : `⚠️ ${errMsg}\n\n${t("retryOrCheckConsole")}`,
         }));
-        toast.error("Échec de la requête", { description: errMsg });
+        toast.error(t("requestError"), { description: errMsg });
       }
     } finally {
       if (aborted) {
@@ -681,11 +683,11 @@ export function ChatFullShell({
           streaming: false,
           aborted: true,
           content: m.content
-            ? `${m.content}\n\n— *Réponse interrompue par l'utilisateur.*`
-            : "— *Réponse interrompue avant le premier token.*",
+            ? `${m.content}\n\n${t("answerInterruptedByUser")}`
+            : t("answerInterruptedBeforeToken"),
         }));
-        toast("Réponse interrompue", {
-          description: "Le streaming a été arrêté.",
+        toast(t("answerInterrupted"), {
+          description: t("streamStopped"),
         });
       }
       abortControllerRef.current = null;
@@ -703,15 +705,15 @@ export function ChatFullShell({
     const userMsg: ChatMessageItem = {
       role: "user",
       content: contextHint
-        ? `🪄 Brief : ${brief}\n\nContexte technique : ${contextHint}`
-        : `🪄 Brief : ${brief}`,
+        ? `${t("briefPrefix", { brief })}\n\n${t("techContextPrefix", { hint: contextHint })}`
+        : t("briefPrefix", { brief }),
       citedSourceIds: [],
       createdAt: new Date().toISOString(),
       kind: "chat",
     };
     const pendingAssistant: ChatMessageItem = {
       role: "assistant",
-      content: "Génération du prompt Claude Code en cours…",
+      content: t("generatingPromptInProgress"),
       citedSourceIds: [],
       pending: true,
       pendingStartedAt: startedAt,
@@ -779,7 +781,7 @@ export function ChatFullShell({
         });
       }
 
-      toast.success("Prompt généré et sauvegardé dans l'historique");
+      toast.success(t("promptGeneratedSavedToast"));
       setPromptsRevalidateKey((k) => k + 1);
     } catch (e) {
       setMessages((prev) => {
@@ -788,9 +790,9 @@ export function ChatFullShell({
         if (last && last.pending) {
           next[next.length - 1] = {
             role: "assistant",
-            content:
-              "⚠️ Échec de la génération : " +
-              (e instanceof Error ? e.message : "Erreur inconnue"),
+            content: t("generationFailedInline", {
+              error: e instanceof Error ? e.message : t("unknownError"),
+            }),
             citedSourceIds: [],
             createdAt: new Date().toISOString(),
             kind: "chat",
@@ -798,7 +800,7 @@ export function ChatFullShell({
         }
         return next;
       });
-      toast.error("Échec de la génération", {
+      toast.error(t("generationError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -830,7 +832,7 @@ export function ChatFullShell({
       });
     }
     scrollThreadToBottom();
-    toast.success("Prompt réaffiché dans la conversation");
+    toast.success(t("promptReinjected"));
   }
 
   // ----- Edit + regenerate -----
@@ -848,7 +850,7 @@ export function ChatFullShell({
     const trimmed = newContent.trim();
     if (!trimmed || sending) return;
     if (!currentSessionId) {
-      toast.error("Impossible d'éditer : aucune session active");
+      toast.error(t("editNoSession"));
       return;
     }
 
@@ -865,7 +867,7 @@ export function ChatFullShell({
 
     const targetMessage = messages[messageIndex];
     if (!targetMessage || targetMessage.role !== "user") {
-      toast.error("Le message à éditer doit être un message utilisateur");
+      toast.error(t("editMustBeUserMessage"));
       return;
     }
 
@@ -978,14 +980,14 @@ export function ChatFullShell({
               ? `${m.content}\n\n⚠️ ${ev.message}`
               : `⚠️ ${ev.message}`,
           }));
-          toast.error("Erreur côté serveur", { description: ev.message });
+          toast.error(t("serverError"), { description: ev.message });
         } else if (ev.type === "json_fallback") {
           const data = ev.payload as {
             message?: { content?: string };
             error?: string;
           } | null;
           const fallbackContent =
-            data?.message?.content ?? data?.error ?? "Réponse indisponible.";
+            data?.message?.content ?? data?.error ?? t("answerUnavailable");
           patchLastAssistant((m) => ({
             ...m,
             pending: false,
@@ -996,7 +998,7 @@ export function ChatFullShell({
       }
       refreshSessions();
       if (!aborted) {
-        toast.success("Message édité et réponse régénérée");
+        toast.success(t("messageEditedRegenerated"));
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
@@ -1007,10 +1009,9 @@ export function ChatFullShell({
           ...m,
           pending: false,
           streaming: false,
-          content:
-            "⚠️ Échec de la régénération : " + errMsg,
+          content: t("regenFailedInline", { error: errMsg }),
         }));
-        toast.error("Échec de la régénération", { description: errMsg });
+        toast.error(t("regenError"), { description: errMsg });
       }
     } finally {
       if (aborted) {
@@ -1020,11 +1021,11 @@ export function ChatFullShell({
           streaming: false,
           aborted: true,
           content: m.content
-            ? `${m.content}\n\n— *Réponse interrompue par l'utilisateur.*`
-            : "— *Réponse interrompue avant le premier token.*",
+            ? `${m.content}\n\n${t("answerInterruptedByUser")}`
+            : t("answerInterruptedBeforeToken"),
         }));
-        toast("Réponse interrompue", {
-          description: "Le streaming a été arrêté.",
+        toast(t("answerInterrupted"), {
+          description: t("streamStopped"),
         });
       }
       abortControllerRef.current = null;
@@ -1061,11 +1062,11 @@ export function ChatFullShell({
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast.success("Conversation exportée", {
+      toast.success(t("conversationExported"), {
         description: filename,
       });
     } catch (e) {
-      toast.error("Échec de l'export", {
+      toast.error(t("exportError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -1089,13 +1090,13 @@ export function ChatFullShell({
         const data = await res.json().catch(() => null);
         throw new Error(data?.error || `HTTP ${res.status}`);
       }
-      toast.success("Message supprimé");
+      toast.success(t("messageDeleted"));
       // Re-fetch les sessions pour mettre à jour le messageCount du rail.
       refreshSessions();
     } catch (e) {
       // Rollback si l'API a échoué.
       setMessages(snapshot);
-      toast.error("Échec de la suppression", {
+      toast.error(t("deleteError"), {
         description: e instanceof Error ? e.message : String(e),
       });
     }
@@ -1135,7 +1136,7 @@ export function ChatFullShell({
       }
     }
     if (assistantIdx === -1) {
-      toast.error("Message introuvable");
+      toast.error(t("messageNotFound"));
       return;
     }
     // Cherche le dernier message user AVANT cette réponse assistant.
@@ -1147,7 +1148,7 @@ export function ChatFullShell({
       }
     }
     if (userIdx === -1) {
-      toast.error("Aucun message utilisateur à régénérer en amont");
+      toast.error(t("noUserMessageUpstream"));
       return;
     }
     const userContent = messages[userIdx].content;
@@ -1195,7 +1196,7 @@ export function ChatFullShell({
   const currentSession = currentSessionId
     ? sessions.find((s) => s.id === currentSessionId)
     : null;
-  const currentTitle = currentSession?.title ?? "Nouvelle conversation";
+  const currentTitle = currentSession?.title ?? t("newConversation");
 
   // Filtre les archivées dans le rail si le toggle n'est pas activé.
   // Si une session est à la fois `pinned` ET `archived` : on l'affiche QUAND
@@ -1239,7 +1240,7 @@ export function ChatFullShell({
           </span>
           <span className="ml-2 hidden items-center gap-1 text-[11px] text-muted-foreground sm:inline-flex">
             <Database className="size-3" />
-            {enabledSourcesCount} source{enabledSourcesCount > 1 ? "s" : ""} active{enabledSourcesCount > 1 ? "s" : ""}
+            {t("activeSourcesCount", { count: enabledSourcesCount })}
           </span>
           {/* Sélecteur de modèle Claude pour la session courante (migration 18).
               Visible seulement si on a une session active — sinon le sélecteur
@@ -1261,11 +1262,11 @@ export function ChatFullShell({
               variant="ghost"
               size="sm"
               onClick={() => setSourcesSheetOpen(true)}
-              title="Voir les sources citées dans cette conversation"
+              title={t("viewCitedSourcesTitle")}
               className="gap-1.5"
             >
               <BookOpen className="size-3.5" />
-              <span className="hidden sm:inline">Sources citées</span>
+              <span className="hidden sm:inline">{t("citedSources")}</span>
               {citedSources.length > 0 ? (
                 <span className="rounded-full bg-primary/20 px-1.5 text-[10.5px] font-bold text-primary tabular-nums">
                   {citedSources.length}
@@ -1341,8 +1342,7 @@ export function ChatFullShell({
           />
           {!aiAvailable ? (
             <p className="border-t border-border bg-amber-50/40 px-4 py-1.5 text-[11px] text-amber-800 dark:bg-amber-950/20 dark:text-amber-300">
-              L&apos;IA est désactivée — l&apos;envoi de messages et la
-              génération sont indisponibles.
+              {t("aiDisabledBanner")}
             </p>
           ) : null}
         </div>

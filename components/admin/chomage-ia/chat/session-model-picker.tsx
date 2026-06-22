@@ -18,6 +18,7 @@
  * callback de mutation (PATCH côté API).
  */
 
+import { useTranslations } from "next-intl";
 import { Sparkles, Zap, Wand } from "lucide-react";
 import {
   DropdownMenu,
@@ -62,6 +63,7 @@ export function SessionModelPicker({
   disabled = false,
   stopPropagation = true,
 }: Props) {
+  const t = useTranslations("admin.chomageIa");
   const current = findChatModelOption(value);
   const isAuto = current === null;
 
@@ -75,8 +77,8 @@ export function SessionModelPicker({
         }
         tooltipLabel={
           isAuto
-            ? "Défaut (Sonnet 4.5) — cliquer pour changer"
-            : `${current!.label} — cliquer pour changer`
+            ? t("modelTooltipDefault")
+            : t("modelTooltipChange", { label: current!.label })
         }
         isAuto={isAuto}
         disabled={disabled}
@@ -84,7 +86,7 @@ export function SessionModelPicker({
     ) : (
       <InlineTrigger
         label={current?.label ?? "Sonnet 4.5"}
-        tagline={isAuto ? "défaut auto" : "forcé pour cette session"}
+        tagline={isAuto ? t("modelTaglineAuto") : t("modelTaglineForced")}
         badgeClass={
           current?.badgeClass ??
           "bg-muted text-muted-foreground ring-border/60"
@@ -101,7 +103,7 @@ export function SessionModelPicker({
         render={
           <button
             type="button"
-            aria-label="Choisir le modèle Claude pour cette session"
+            aria-label={t("modelAriaLabel")}
             onClick={(e) => {
               if (stopPropagation) e.stopPropagation();
             }}
@@ -125,7 +127,7 @@ export function SessionModelPicker({
         }}
       >
         <DropdownMenuLabel className="text-[10.5px] uppercase tracking-wider">
-          Modèle pour cette conversation
+          {t("modelMenuLabel")}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {CHAT_MODEL_OPTIONS.map((opt) => {
@@ -145,7 +147,7 @@ export function SessionModelPicker({
                 {opt.label}
                 {selected ? (
                   <span className="ml-auto rounded-full bg-primary/15 px-1.5 text-[9.5px] font-bold uppercase tracking-wider text-primary">
-                    actif
+                    {t("modelActive")}
                   </span>
                 ) : null}
               </span>
@@ -168,15 +170,15 @@ export function SessionModelPicker({
         >
           <span className="flex w-full items-center gap-1.5 text-[12px] font-semibold">
             <Wand className="size-3.5" />
-            Défaut (auto)
+            {t("modelDefaultAuto")}
             {isAuto ? (
               <span className="ml-auto rounded-full bg-primary/15 px-1.5 text-[9.5px] font-bold uppercase tracking-wider text-primary">
-                actif
+                {t("modelActive")}
               </span>
             ) : null}
           </span>
           <span className="text-[10.5px] text-muted-foreground">
-            Utilise le modèle par défaut serveur (Sonnet 4.5).
+            {t("modelDefaultAutoDesc")}
           </span>
         </DropdownMenuItem>
       </DropdownMenuContent>

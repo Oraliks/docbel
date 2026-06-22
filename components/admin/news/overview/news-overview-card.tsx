@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowRight, Copy, ExternalLink, Eye, Star, Trash2 } from "lucide-react";
 import {
   ContextMenu,
@@ -36,7 +37,6 @@ const STATUS_TONE: Record<
     badge: string;
     iconBg: string;
     iconText: string;
-    label: string;
   }
 > = {
   published: {
@@ -44,28 +44,24 @@ const STATUS_TONE: Record<
       "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300",
     iconBg: "bg-emerald-500/10 dark:bg-emerald-500/15",
     iconText: "text-emerald-700 dark:text-emerald-300",
-    label: "Publié",
   },
   draft: {
     badge:
       "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
     iconBg: "bg-amber-500/10 dark:bg-amber-500/15",
     iconText: "text-amber-700 dark:text-amber-300",
-    label: "Brouillon",
   },
   scheduled: {
     badge:
       "bg-violet-500/10 text-violet-700 border-violet-500/30 dark:bg-violet-500/15 dark:text-violet-300",
     iconBg: "bg-violet-500/10 dark:bg-violet-500/15",
     iconText: "text-violet-700 dark:text-violet-300",
-    label: "Planifié",
   },
   archived: {
     badge:
       "bg-slate-500/10 text-slate-700 border-slate-500/30 dark:bg-slate-500/15 dark:text-slate-300",
     iconBg: "bg-slate-500/10 dark:bg-slate-500/15",
     iconText: "text-slate-700 dark:text-slate-300",
-    label: "Archivé",
   },
 };
 
@@ -95,6 +91,7 @@ function formatDate(iso: string | null | undefined): string {
  * verticale max, badge à droite, icône audience à gauche.
  */
 export function NewsOverviewCard({ item, onMutated }: NewsOverviewCardProps) {
+  const t = useTranslations("admin.news");
   const router = useRouter();
   const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
@@ -105,20 +102,19 @@ export function NewsOverviewCard({ item, onMutated }: NewsOverviewCardProps) {
   // de planification, sinon date de publication, sinon date de création.
   const dateLabel = (() => {
     if (item.status === "scheduled" && item.scheduledAt) {
-      return `Planifié ${formatDate(item.scheduledAt)}`;
+      return t("dateScheduled", { date: formatDate(item.scheduledAt) });
     }
     if (item.publishedAt) {
-      return `Publié ${formatDate(item.publishedAt)}`;
+      return t("datePublished", { date: formatDate(item.publishedAt) });
     }
-    return `Créé ${formatDate(item.createdAt)}`;
+    return t("dateCreated", { date: formatDate(item.createdAt) });
   })();
 
   async function handleDelete() {
     const ok = await confirm({
-      title: `Supprimer "${item.title}" ?`,
-      description:
-        "L'article sera supprimé définitivement. Cette action est irréversible.",
-      confirmText: "Supprimer définitivement",
+      title: t("deleteConfirmTitle", { title: item.title }),
+      description: t("deleteConfirmDescription"),
+      confirmText: t("deleteConfirmButton"),
       destructive: true,
       requireText: item.title,
     });
@@ -128,12 +124,12 @@ export function NewsOverviewCard({ item, onMutated }: NewsOverviewCardProps) {
       const res = await fetch(`/api/news/${item.id}`, { method: "DELETE" });
       if (!res.ok) {
         const j = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(j.error ?? "Échec de la suppression");
+        throw new Error(j.error ?? t("toastDeleteFailed"));
       }
-      toast.success("Article supprimé");
+      toast.success(t("toastDeleted"));
       onMutated();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("toastError"));
     } finally {
       setBusy(false);
     }
@@ -143,7 +139,7 @@ export function NewsOverviewCard({ item, onMutated }: NewsOverviewCardProps) {
     setBusy(true);
     try {
       const res = await fetch(`/api/news/${item.id}`);
-      if (!res.ok) throw new Error("Article introuvable");
+      if (!res.ok) throw new Error(t("toastArticleNotFound"));
       const article = (await res.json()) as Record<string, unknown>;
 
       const create = await fetch("/api/news", {
@@ -151,19 +147,19 @@ export function NewsOverviewCard({ item, onMutated }: NewsOverviewCardProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...article,
-          title: `${item.title} (Copie)`,
+          title: t("duplicateTitleSuffix", { title: item.title }),
           slug: `${item.slug}-copy-${Date.now()}`,
           status: "draft",
         }),
       });
       if (!create.ok) {
         const j = (await create.json().catch(() => ({}))) as { error?: string };
-        throw new Error(j.error ?? "Échec de la duplication");
+        throw new Error(j.error ?? t("toastDuplicateFailed"));
       }
-      toast.success("Article dupliqué");
+      toast.success(t("toastDuplicated"));
       onMutated();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("toastError"));
     } finally {
       setBusy(false);
     }
@@ -206,7 +202,7 @@ export function NewsOverviewCard({ item, onMutated }: NewsOverviewCardProps) {
               {item.featured ? (
                 <Star
                   className="size-3 shrink-0 fill-amber-400 text-amber-400"
-                  aria-label="Vedette"
+                  aria-label={t("featuredLabel")}
                 />
               ) : null}
             </div>
@@ -232,7 +228,7 @@ export function NewsOverviewCard({ item, onMutated }: NewsOverviewCardProps) {
                 tone.badge,
               )}
             >
-              {tone.label}
+              {t("status", { status: item.status })}
             </span>
             <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
           </div>
@@ -243,15 +239,15 @@ export function NewsOverviewCard({ item, onMutated }: NewsOverviewCardProps) {
           onClick={() => router.push(`/admin/news/${item.id}`)}
         >
           <Eye className="size-3.5" />
-          Éditer
+          {t("contextEdit")}
         </ContextMenuItem>
         <ContextMenuItem onClick={handlePreview}>
           <ExternalLink className="size-3.5" />
-          Voir le rendu public
+          {t("contextViewPublic")}
         </ContextMenuItem>
         <ContextMenuItem onClick={handleDuplicate} disabled={busy}>
           <Copy className="size-3.5" />
-          Dupliquer
+          {t("contextDuplicate")}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem
@@ -260,7 +256,7 @@ export function NewsOverviewCard({ item, onMutated }: NewsOverviewCardProps) {
           className="text-red-600 dark:text-red-400"
         >
           <Trash2 className="size-3.5" />
-          Supprimer
+          {t("delete")}
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

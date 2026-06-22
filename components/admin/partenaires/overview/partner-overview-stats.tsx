@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { PartnerCounts } from "./types";
 
@@ -16,25 +17,26 @@ interface PartnerOverviewStatsProps {
  *   - Inactives : red   (toutes les organisations sans domaine actif)
  */
 export function PartnerOverviewStats({ counts }: PartnerOverviewStatsProps) {
+  const t = useTranslations("admin.partenaires");
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StatCard value={counts.total} label="Total" tone="slate" />
+      <StatCard value={counts.total} label={t("statTotal")} tone="slate" />
       <StatCard
         symbol="✓"
         value={counts.active}
-        label="Actives"
+        label={t("statActive")}
         tone="emerald"
       />
       <StatCard
         symbol="⏳"
         value={counts.pending}
-        label="En attente"
+        label={t("statPending")}
         tone="amber"
       />
       <StatCard
         symbol="∅"
         value={counts.inactive}
-        label="Inactives"
+        label={t("statInactive")}
         tone="red"
       />
     </div>

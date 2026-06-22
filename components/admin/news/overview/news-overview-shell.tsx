@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Newspaper, Plus, Tag, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ const PAGE_LIMIT = 100;
  *   - Vue table (uniquement vue grille de cards horizontales)
  */
 export function NewsOverviewShell() {
+  const t = useTranslations("admin.news");
   const [items, setItems] = useState<NewsItem[]>([]);
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,7 +106,7 @@ export function NewsOverviewShell() {
       } catch (err) {
         if (cancelled) return;
         console.error("Error fetching news:", err);
-        toast.error("Erreur lors du chargement des articles");
+        toast.error(t("toastListLoadError"));
       } finally {
         if (!cancelled && requestId === requestIdRef.current) {
           setIsLoading(false);
@@ -177,11 +179,10 @@ export function NewsOverviewShell() {
           </span>
           <div className="flex flex-col">
             <h1 className="text-2xl font-bold leading-tight">
-              Articles &amp; Actualités
+              {t("overviewTitle")}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {counts.total} article{counts.total > 1 ? "s" : ""} — gérez vos
-              actualités, brouillons et planifications.
+              {t("overviewSubtitle", { count: counts.total })}
             </p>
           </div>
         </div>
@@ -192,7 +193,7 @@ export function NewsOverviewShell() {
             size="sm"
           >
             <BarChart3 className="size-4" />
-            Statistiques
+            {t("statistics")}
           </Button>
           <Button
             render={<Link href="/admin/news/categories" prefetch={false} />}
@@ -200,14 +201,14 @@ export function NewsOverviewShell() {
             size="sm"
           >
             <Tag className="size-4" />
-            Catégories
+            {t("categories")}
           </Button>
           <Button
             render={<Link href="/admin/news/new" prefetch={false} />}
             size="sm"
           >
             <Plus className="size-4" />
-            Créer un article
+            {t("createArticle")}
           </Button>
         </div>
       </header>

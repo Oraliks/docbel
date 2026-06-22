@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -37,6 +38,7 @@ export function CategoriesDialog({
   onCategoriesUpdated,
   category,
 }: CategoriesDialogProps) {
+  const t = useTranslations('admin.news');
   const isEdit = Boolean(category);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
@@ -57,7 +59,7 @@ export function CategoriesDialog({
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      toast.error('Entrez un nom de catégorie');
+      toast.error(t('catNameRequired'));
       return;
     }
 
@@ -75,15 +77,15 @@ export function CategoriesDialog({
 
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(error.error || (isEdit ? 'Erreur lors de la modification' : 'Erreur lors de la création'));
+        throw new Error(error.error || (isEdit ? t('catUpdateError') : t('catCreateError')));
       }
 
       await res.json();
-      toast.success(isEdit ? 'Catégorie modifiée' : 'Catégorie créée');
+      toast.success(isEdit ? t('catUpdated') : t('catCreated'));
       onCategoriesUpdated?.();
       onOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erreur');
+      toast.error(error instanceof Error ? error.message : t('toastError'));
     } finally {
       setLoading(false);
     }
@@ -93,27 +95,27 @@ export function CategoriesDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Modifier la catégorie' : 'Créer une catégorie'}</DialogTitle>
+          <DialogTitle>{isEdit ? t('catEditTitle') : t('catCreate')}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Mettez à jour les informations de la catégorie.'
-              : 'Ajoutez une nouvelle catégorie pour les articles.'}
+              ? t('catEditDescription')
+              : t('catCreateDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-3">
             <div>
-              <Label className="text-sm">Nom</Label>
+              <Label className="text-sm">{t('catColName')}</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Mise à jour"
+                placeholder={t('catNamePlaceholder')}
                 className="mt-1"
               />
             </div>
             <div>
-              <Label className="text-sm">Couleur</Label>
+              <Label className="text-sm">{t('catColColor')}</Label>
               <div className="flex items-center gap-2 mt-1">
                 <input
                   type="color"
@@ -137,12 +139,12 @@ export function CategoriesDialog({
               {isEdit ? (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Enregistrer les modifications
+                  {t('catSaveChanges')}
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4 mr-2" />
-                  Créer la catégorie
+                  {t('catCreateButton')}
                 </>
               )}
             </Button>
@@ -151,7 +153,7 @@ export function CategoriesDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Fermer
+            {t('close')}
           </Button>
         </DialogFooter>
       </DialogContent>

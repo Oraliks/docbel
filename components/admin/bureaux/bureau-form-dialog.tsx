@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -38,14 +39,14 @@ type Organisme = {
   type: string;
 };
 
-const TYPE_LABELS: Record<BureauTypeCode, string> = {
-  CPAS: "CPAS",
-  COMMUNE: "Maison communale",
-  ONEM: "ONEM / RVA",
-  SYNDICAT: "Syndicat",
-  PERMANENCE: "Permanence",
-  AUTRE: "Autre",
-};
+const TYPE_CODES: BureauTypeCode[] = [
+  "CPAS",
+  "COMMUNE",
+  "ONEM",
+  "SYNDICAT",
+  "PERMANENCE",
+  "AUTRE",
+];
 
 type FormState = {
   organismeId: string;
@@ -92,36 +93,40 @@ export function BureauFormDialog({
   onSubmit,
   submitting,
 }: Props) {
+  const t = useTranslations("admin.bureaux");
   const [tab, setTab] = useState<"general" | "address" | "contact" | "hours" | "extra">(
     "general"
   );
+
+  const typeLabel = (code: BureauTypeCode) =>
+    t(`type${code}` as Parameters<typeof t>[0]);
 
   const selectedOrganisme = organismes.find((o) => o.id === form.organismeId);
 
   async function geocode() {
     const addr = `${form.street} ${form.streetNum}, ${form.postalCode} ${form.city}, Belgique`.trim();
     if (!form.street || !form.city) {
-      toast.error("Renseignez d'abord rue et ville");
+      toast.error(t("geocodeNeedStreetCity"));
       return;
     }
-    toast.info("Géocodage en cours...");
+    toast.info(t("geocodeInProgress"));
     try {
       const res = await fetch(`/api/geocode?q=${encodeURIComponent(addr)}`);
       if (!res.ok) throw new Error("Échec");
       const j = await res.json();
       const data = Array.isArray(j?.data) ? j.data[0] : null;
       if (!data) {
-        toast.error("Adresse introuvable");
+        toast.error(t("geocodeNotFound"));
         return;
       }
       const lat = Number(data.lat);
       const lng = Number(data.lon);
       if (Number.isFinite(lat) && Number.isFinite(lng)) {
         setForm((f) => ({ ...f, lat: lat.toFixed(6), lng: lng.toFixed(6) }));
-        toast.success("Coordonnées récupérées");
+        toast.success(t("geocodeSuccess"));
       }
     } catch {
-      toast.error("Géocodage indisponible");
+      toast.error(t("geocodeUnavailable"));
     }
   }
 
@@ -143,12 +148,9 @@ export function BureauFormDialog({
       <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-hidden flex flex-col gap-0 p-0">
         <DialogHeader className="px-6 pt-5 pb-4 border-b shrink-0">
           <DialogTitle className="text-lg">
-            {editing ? `Modifier — ${editing.name}` : "Nouveau bureau"}
+            {editing ? t("dialogEditTitle", { name: editing.name }) : t("dialogNewTitle")}
           </DialogTitle>
-          <DialogDescription>
-            CPAS et Maisons communales nécessitent une commune attitrée. ONEM = mappé via la
-            matrice des compétences territoriales.
-          </DialogDescription>
+          <DialogDescription>{t("dialogDescription")}</DialogDescription>
         </DialogHeader>
 
         <Tabs
@@ -159,25 +161,25 @@ export function BureauFormDialog({
           <div className="px-6 pt-3 pb-2 border-b shrink-0">
             <TabsList className="flex w-full">
               <TabsTrigger value="general" className="gap-1.5 flex-1 min-w-fit">
-                <Building2 className="h-3.5 w-3.5" /> Identité
+                <Building2 className="h-3.5 w-3.5" /> {t("tabIdentity")}
                 {!requiredOK.general && (
                   <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-red-500" />
                 )}
               </TabsTrigger>
               <TabsTrigger value="address" className="gap-1.5 flex-1 min-w-fit">
-                <MapPinned className="h-3.5 w-3.5" /> Adresse
+                <MapPinned className="h-3.5 w-3.5" /> {t("tabAddress")}
                 {!requiredOK.address && (
                   <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-red-500" />
                 )}
               </TabsTrigger>
               <TabsTrigger value="contact" className="gap-1.5 flex-1 min-w-fit">
-                <Phone className="h-3.5 w-3.5" /> Contact
+                <Phone className="h-3.5 w-3.5" /> {t("tabContact")}
               </TabsTrigger>
               <TabsTrigger value="hours" className="gap-1.5 flex-1 min-w-fit">
-                <Clock className="h-3.5 w-3.5" /> Horaires
+                <Clock className="h-3.5 w-3.5" /> {t("tabHours")}
               </TabsTrigger>
               <TabsTrigger value="extra" className="gap-1.5 flex-1 min-w-fit">
-                <FileText className="h-3.5 w-3.5" /> Services
+                <FileText className="h-3.5 w-3.5" /> {t("tabServices")}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -186,7 +188,7 @@ export function BureauFormDialog({
             {/* ===== Identité ===== */}
             <TabsContent value="general" className="mt-0 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Type *">
+                <Field label={t("fieldTypeRequired")}>
                   <Select
                     value={form.type}
                     onValueChange={(v) =>
@@ -194,18 +196,18 @@ export function BureauFormDialog({
                     }
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue>{TYPE_LABELS[form.type]}</SelectValue>
+                      <SelectValue>{typeLabel(form.type)}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {(Object.keys(TYPE_LABELS) as BureauTypeCode[]).map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {TYPE_LABELS[t]}
+                      {TYPE_CODES.map((code) => (
+                        <SelectItem key={code} value={code}>
+                          {typeLabel(code)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Organisme *">
+                <Field label={t("fieldOrganismeRequired")}>
                   <Select
                     value={form.organismeId}
                     onValueChange={(v) =>
@@ -213,7 +215,7 @@ export function BureauFormDialog({
                     }
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choisir un organisme...">
+                      <SelectValue placeholder={t("organismePlaceholder")}>
                         {selectedOrganisme ? (
                           <span className="flex items-center gap-2">
                             <span
@@ -242,27 +244,27 @@ export function BureauFormDialog({
                 </Field>
               </div>
 
-              <Field label="Nom *">
+              <Field label={t("fieldNameRequired")}>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="Ex : CPAS de Saint-Gilles, Commune de Bruxelles, ONEM Liège..."
+                  placeholder={t("namePlaceholder")}
                 />
               </Field>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Nom NL" optional>
+                <Field label={t("fieldNameNl")} optional>
                   <Input
                     value={form.nameNl}
                     onChange={(e) => setForm((f) => ({ ...f, nameNl: e.target.value }))}
-                    placeholder="OCMW Sint-Gillis"
+                    placeholder={t("nameNlPlaceholder")}
                   />
                 </Field>
-                <Field label="Nom DE" optional>
+                <Field label={t("fieldNameDe")} optional>
                   <Input
                     value={form.nameDe}
                     onChange={(e) => setForm((f) => ({ ...f, nameDe: e.target.value }))}
-                    placeholder="ÖSHZ"
+                    placeholder={t("nameDePlaceholder")}
                   />
                 </Field>
               </div>
@@ -273,9 +275,9 @@ export function BureauFormDialog({
                   onCheckedChange={(v: boolean) => setForm((f) => ({ ...f, active: v }))}
                 />
                 <Label className="cursor-pointer">
-                  Bureau actif{" "}
+                  {t("activeLabel")}{" "}
                   <span className="text-xs text-muted-foreground">
-                    (visible côté public)
+                    {t("activeHint")}
                   </span>
                 </Label>
               </div>
@@ -284,14 +286,14 @@ export function BureauFormDialog({
             {/* ===== Adresse ===== */}
             <TabsContent value="address" className="mt-0 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-[1fr_120px] gap-4">
-                <Field label="Rue *">
+                <Field label={t("fieldStreetRequired")}>
                   <Input
                     value={form.street}
                     onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))}
-                    placeholder="Rue Van Lint"
+                    placeholder={t("streetPlaceholder")}
                   />
                 </Field>
-                <Field label="N°" optional>
+                <Field label={t("fieldStreetNum")} optional>
                   <Input
                     value={form.streetNum}
                     onChange={(e) => setForm((f) => ({ ...f, streetNum: e.target.value }))}
@@ -301,7 +303,7 @@ export function BureauFormDialog({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[140px_1fr] gap-4">
-                <Field label="CP *">
+                <Field label={t("fieldPostalCodeRequired")}>
                   <Input
                     value={form.postalCode}
                     onChange={(e) =>
@@ -314,23 +316,25 @@ export function BureauFormDialog({
                     inputMode="numeric"
                   />
                 </Field>
-                <Field label="Ville *">
+                <Field label={t("fieldCityRequired")}>
                   <Input
                     value={form.city}
                     onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                    placeholder="Anderlecht"
+                    placeholder={t("cityPlaceholder")}
                   />
                 </Field>
               </div>
 
               <Field
-                label={`Commune attitrée ${
-                  form.type === "CPAS" || form.type === "COMMUNE" ? "*" : ""
-                }`}
+                label={
+                  form.type === "CPAS" || form.type === "COMMUNE"
+                    ? t("fieldCommuneRequired")
+                    : t("fieldCommune")
+                }
                 helper={
                   form.type === "CPAS" || form.type === "COMMUNE"
-                    ? "Obligatoire : la commune que ce bureau dessert."
-                    : "Optionnel pour SYNDICAT/PERMANENCE."
+                    ? t("communeHelperRequired")
+                    : t("communeHelperOptional")
                 }
               >
                 <CommuneCombobox
@@ -342,14 +346,14 @@ export function BureauFormDialog({
               <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Coordonnées GPS
+                    {t("gpsLabel")}
                   </Label>
                   <Button type="button" variant="outline" size="sm" onClick={geocode}>
-                    <MapPin className="mr-2 h-3.5 w-3.5" /> Auto-géocoder
+                    <MapPin className="mr-2 h-3.5 w-3.5" /> {t("autoGeocode")}
                   </Button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Latitude" compact>
+                  <Field label={t("fieldLatitude")} compact>
                     <Input
                       value={form.lat}
                       onChange={(e) => setForm((f) => ({ ...f, lat: e.target.value }))}
@@ -357,7 +361,7 @@ export function BureauFormDialog({
                       className="font-mono text-sm"
                     />
                   </Field>
-                  <Field label="Longitude" compact>
+                  <Field label={t("fieldLongitude")} compact>
                     <Input
                       value={form.lng}
                       onChange={(e) => setForm((f) => ({ ...f, lng: e.target.value }))}
@@ -367,7 +371,7 @@ export function BureauFormDialog({
                   </Field>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  Utilisées pour le calcul de distance dans le résolveur public.
+                  {t("gpsHint")}
                 </p>
               </div>
             </TabsContent>
@@ -375,14 +379,14 @@ export function BureauFormDialog({
             {/* ===== Contact ===== */}
             <TabsContent value="contact" className="mt-0 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Field label="Téléphone">
+                <Field label={t("fieldPhone")}>
                   <Input
                     value={form.phone}
                     onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                     placeholder="02 000 00 00"
                   />
                 </Field>
-                <Field label="Email">
+                <Field label={t("fieldEmail")}>
                   <Input
                     type="email"
                     value={form.email}
@@ -391,7 +395,7 @@ export function BureauFormDialog({
                   />
                 </Field>
               </div>
-              <Field label="Site web officiel">
+              <Field label={t("fieldWebsite")}>
                 <Input
                   value={form.website}
                   onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
@@ -399,8 +403,8 @@ export function BureauFormDialog({
                 />
               </Field>
               <Field
-                label="URL prise de rendez-vous en ligne"
-                helper="Lien direct vers la page RDV (apparaît comme CTA principal sur la carte publique)."
+                label={t("fieldAppointmentUrl")}
+                helper={t("appointmentUrlHelper")}
               >
                 <Input
                   value={form.appointmentUrl}
@@ -419,13 +423,13 @@ export function BureauFormDialog({
                 onChange={(h) => setForm((f) => ({ ...f, hours: h }))}
               />
               <Field
-                label="Note sur les horaires"
-                helper="Affichée en encadré jaune sur la card publique. Utile pour préciser une exception."
+                label={t("fieldHoursNotes")}
+                helper={t("hoursNotesHelper")}
               >
                 <Input
                   value={form.hoursNotes}
                   onChange={(e) => setForm((f) => ({ ...f, hoursNotes: e.target.value }))}
-                  placeholder="Permanence sociale uniquement le mercredi matin"
+                  placeholder={t("hoursNotesPlaceholder")}
                 />
               </Field>
             </TabsContent>
@@ -433,8 +437,8 @@ export function BureauFormDialog({
             {/* ===== Services + Notes ===== */}
             <TabsContent value="extra" className="mt-0 space-y-4">
               <Field
-                label="Services proposés"
-                helper="Cochez ceux disponibles. Vous pouvez ajouter des services personnalisés."
+                label={t("fieldServices")}
+                helper={t("servicesHelper")}
               >
                 <ServicesChips
                   value={form.services}
@@ -442,14 +446,14 @@ export function BureauFormDialog({
                 />
               </Field>
               <Field
-                label="Notes internes"
-                helper="Visibles uniquement par les admins (pas publié)."
+                label={t("fieldNotes")}
+                helper={t("notesHelper")}
               >
                 <Textarea
                   value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                   rows={4}
-                  placeholder="Remarques, sources, dernière vérification..."
+                  placeholder={t("notesPlaceholder")}
                 />
               </Field>
             </TabsContent>
@@ -458,15 +462,15 @@ export function BureauFormDialog({
 
         <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted/20">
           <div className="flex items-center gap-2 mr-auto text-xs text-muted-foreground">
-            {!canSubmit && <span>⚠ Champs obligatoires manquants</span>}
-            {canSubmit && <span className="text-green-700">✓ Prêt à enregistrer</span>}
+            {!canSubmit && <span>{t("requiredFieldsMissing")}</span>}
+            {canSubmit && <span className="text-green-700">{t("readyToSave")}</span>}
           </div>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button onClick={onSubmit} disabled={submitting || !canSubmit}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {editing ? "Enregistrer les modifications" : "Créer le bureau"}
+            {editing ? t("saveChanges") : t("createBureau")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -487,11 +491,12 @@ function Field({
   compact?: boolean;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("admin.bureaux");
   return (
     <div className={compact ? "space-y-1" : "space-y-1.5"}>
       <Label className="text-xs font-medium flex items-center gap-1">
         {label}
-        {optional && <span className="text-[10px] text-muted-foreground font-normal">— facultatif</span>}
+        {optional && <span className="text-[10px] text-muted-foreground font-normal">{t("optionalSuffix")}</span>}
       </Label>
       {children}
       {helper && <p className="text-[11px] text-muted-foreground">{helper}</p>}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   Table,
   TableBody,
@@ -23,17 +24,8 @@ import { IMPERSONATION_READ_ONLY_REASON } from "../use-impersonation-read-only";
 import type { SerializedBureau, BureauTypeCode } from "@/lib/bureaus/types";
 import { displayBureauName } from "@/lib/bureaus/format";
 
-// Labels et couleurs locaux : la table est self-contained pour le rendu
+// Couleurs locales : la table est self-contained pour le rendu
 // d'une ligne, le parent n'a pas à passer ces constantes en prop.
-const TYPE_LABELS: Record<BureauTypeCode, string> = {
-  CPAS: "CPAS",
-  COMMUNE: "Commune",
-  ONEM: "ONEM",
-  SYNDICAT: "Syndicat",
-  PERMANENCE: "Permanence",
-  AUTRE: "Autre",
-};
-
 const TYPE_COLORS: Record<BureauTypeCode, string> = {
   CPAS: "#5E3A8E",
   COMMUNE: "#2E7D32",
@@ -65,6 +57,8 @@ export function BureauxTable({
   onShowRevisions,
   readOnly = false,
 }: Props) {
+  const t = useTranslations("admin.bureaux");
+
   if (loading) {
     return (
       <div className="flex h-48 items-center justify-center">
@@ -76,7 +70,7 @@ export function BureauxTable({
   if (items.length === 0) {
     return (
       <div className="py-8 text-center text-muted-foreground text-sm">
-        Aucun bureau trouvé.
+        {t("tableEmpty")}
       </div>
     );
   }
@@ -85,13 +79,13 @@ export function BureauxTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Nom</TableHead>
-          <TableHead>Type</TableHead>
-          <TableHead>Localisation</TableHead>
-          <TableHead>Commune</TableHead>
-          <TableHead>Statut</TableHead>
-          <TableHead>Vérif.</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
+          <TableHead>{t("colName")}</TableHead>
+          <TableHead>{t("colType")}</TableHead>
+          <TableHead>{t("colLocation")}</TableHead>
+          <TableHead>{t("colCommune")}</TableHead>
+          <TableHead>{t("colStatus")}</TableHead>
+          <TableHead>{t("colVerif")}</TableHead>
+          <TableHead className="text-right">{t("colActions")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -114,7 +108,7 @@ export function BureauxTable({
                   borderColor: TYPE_COLORS[b.type] + "40",
                 }}
               >
-                {TYPE_LABELS[b.type]}
+                {t(`typeShort${b.type}` as Parameters<typeof t>[0])}
               </Badge>
             </TableCell>
             <TableCell>
@@ -136,11 +130,11 @@ export function BureauxTable({
             <TableCell>
               {b.active ? (
                 <Badge variant="outline" className="border-green-500 text-green-700">
-                  Actif
+                  {t("statusActive")}
                 </Badge>
               ) : (
                 <Badge variant="outline" className="border-gray-400 text-gray-500">
-                  Désactivé
+                  {t("statusInactive")}
                 </Badge>
               )}
             </TableCell>
@@ -158,8 +152,8 @@ export function BureauxTable({
                     readOnly
                       ? IMPERSONATION_READ_ONLY_REASON
                       : b.verified
-                        ? "Retirer la vérification"
-                        : "Marquer vérifié"
+                        ? t("unverifyTitle")
+                        : t("verifyTitle")
                   }
                 >
                   {b.verified ? (
@@ -172,7 +166,7 @@ export function BureauxTable({
                   variant="ghost"
                   size="icon"
                   onClick={() => onShowRevisions(b)}
-                  title="Historique"
+                  title={t("historyTitle")}
                 >
                   <History className="h-4 w-4" />
                 </Button>
@@ -181,7 +175,7 @@ export function BureauxTable({
                   size="icon"
                   onClick={() => onEdit(b)}
                   disabled={readOnly}
-                  title={readOnly ? IMPERSONATION_READ_ONLY_REASON : "Modifier"}
+                  title={readOnly ? IMPERSONATION_READ_ONLY_REASON : t("editTitle")}
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -190,7 +184,7 @@ export function BureauxTable({
                   size="icon"
                   onClick={() => onDelete(b)}
                   disabled={readOnly}
-                  title={readOnly ? IMPERSONATION_READ_ONLY_REASON : "Désactiver"}
+                  title={readOnly ? IMPERSONATION_READ_ONLY_REASON : t("disableTitle")}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -206,6 +200,7 @@ export function BureauxTable({
 // Badge "vérifié" / "à revérifier" basé sur l'âge de lastVerifiedAt.
 // Local à la table puisque c'est son seul lieu d'usage.
 function VerifyBadge({ bureau }: { bureau: SerializedBureau }) {
+  const t = useTranslations("admin.bureaux");
   if (!bureau.verified) {
     return <span className="text-xs text-muted-foreground">—</span>;
   }
@@ -213,7 +208,7 @@ function VerifyBadge({ bureau }: { bureau: SerializedBureau }) {
   if (!lastVerified) {
     return (
       <Badge variant="outline" className="border-green-500 text-green-700">
-        <ShieldCheck className="h-3 w-3 mr-1" /> Vérifié
+        <ShieldCheck className="h-3 w-3 mr-1" /> {t("verified")}
       </Badge>
     );
   }
@@ -233,10 +228,10 @@ function VerifyBadge({ bureau }: { bureau: SerializedBureau }) {
         ) : (
           <ShieldCheck className="h-3 w-3 mr-1" />
         )}
-        {isStale ? "À revérifier" : "Vérifié"}
+        {isStale ? t("toReverify") : t("verified")}
       </Badge>
       <span className="text-[10px] text-muted-foreground">
-        {Math.round(ageMonths)} mois
+        {t("monthsAgo", { count: Math.round(ageMonths) })}
       </span>
     </div>
   );

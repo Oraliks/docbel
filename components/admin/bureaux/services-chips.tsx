@@ -1,27 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SERVICE_CODES } from "@/lib/bureaus/types";
-
-const SERVICE_LABELS: Record<string, string> = {
-  RIS: "RIS",
-  aide_juridique: "Aide juridique",
-  aide_alimentaire: "Aide alimentaire",
-  domiciliation: "Domiciliation",
-  energie: "Énergie",
-  logement: "Logement",
-  etat_civil: "État civil",
-  population: "Population",
-  urbanisme: "Urbanisme",
-  chomage: "Chômage",
-  controle: "Contrôle ONEM",
-  permanence_sociale: "Permanence sociale",
-  rdv_obligatoire: "RDV obligatoire",
-};
 
 export function ServicesChips({
   value,
@@ -30,7 +15,11 @@ export function ServicesChips({
   value: string[];
   onChange: (next: string[]) => void;
 }) {
+  const t = useTranslations("admin.bureaux");
   const [custom, setCustom] = useState("");
+
+  const serviceLabel = (code: string) =>
+    t(`serviceLabels.${code}` as Parameters<typeof t>[0]);
 
   function toggle(code: string) {
     if (value.includes(code)) onChange(value.filter((v) => v !== code));
@@ -56,7 +45,7 @@ export function ServicesChips({
               className="cursor-pointer select-none"
               onClick={() => toggle(code)}
             >
-              {SERVICE_LABELS[code] ?? code}
+              {serviceLabel(code)}
             </Badge>
           );
         })}
@@ -81,7 +70,7 @@ export function ServicesChips({
       )}
       <div className="flex gap-1">
         <Input
-          placeholder="Ajouter un service personnalisé..."
+          placeholder={t("customServicePlaceholder")}
           value={custom}
           onChange={(e) => setCustom(e.target.value)}
           onKeyDown={(e) => {
@@ -93,7 +82,7 @@ export function ServicesChips({
           className="h-8"
         />
         <Button type="button" variant="outline" size="sm" onClick={addCustom}>
-          Ajouter
+          {t("add")}
         </Button>
       </div>
     </div>

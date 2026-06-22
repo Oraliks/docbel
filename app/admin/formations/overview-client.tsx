@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { GraduationCap, Search, ShieldCheck, Flag, Building2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ interface Props {
 type StatusFilter = TrainingStatus | "all";
 
 export function FormationsOverviewClient({ rows, counts }: Props) {
+  const t = useTranslations("admin.formations");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
 
@@ -66,10 +68,9 @@ export function FormationsOverviewClient({ rows, counts }: Props) {
             <GraduationCap className="size-5" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Formations</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {counts.total} formation{counts.total > 1 ? "s" : ""} — modération,
-              taxonomie et permissions du module Docbel Formations.
+              {t("overviewSubtitle", { n: counts.total })}
             </p>
           </div>
         </div>
@@ -80,38 +81,38 @@ export function FormationsOverviewClient({ rows, counts }: Props) {
             size="sm"
           >
             <ShieldCheck className="size-4" />
-            File de validation
+            {t("validationQueue")}
           </Button>
         </div>
       </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatCard label="Total" value={counts.total} />
+        <StatCard label={t("statTotal")} value={counts.total} />
         <StatCard
-          label="En validation"
+          label={t("statPendingReview")}
           value={counts.byStatus.pending_review}
           tone={counts.byStatus.pending_review ? "warn" : "muted"}
           href="/admin/formations/validation"
         />
         <StatCard
-          label="Publiées"
+          label={t("statPublished")}
           value={counts.byStatus.published}
           tone="success"
         />
         <StatCard
-          label="Privées / internes"
+          label={t("statPrivateInternal")}
           value={counts.privateInternal}
           tone="info"
         />
         <StatCard
-          label="Organisations"
+          label={t("statOrganizations")}
           value={counts.organizations}
           icon={<Building2 className="size-4" />}
           href="/admin/formations/permissions"
         />
         <StatCard
-          label="Signalements ouverts"
+          label={t("statOpenReports")}
           value={counts.openReports}
           tone={counts.openReports ? "error" : "muted"}
           icon={<Flag className="size-4" />}
@@ -125,7 +126,7 @@ export function FormationsOverviewClient({ rows, counts }: Props) {
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher une formation, un slug, une organisation…"
+              placeholder={t("searchTrainingPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -147,7 +148,7 @@ export function FormationsOverviewClient({ rows, counts }: Props) {
                       : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
                   }`}
                 >
-                  {s === "all" ? "Toutes" : TRAINING_STATUS_LABELS[s as TrainingStatus]}
+                  {s === "all" ? t("filterAll") : TRAINING_STATUS_LABELS[s as TrainingStatus]}
                   <span className="tabular-nums opacity-70">{n}</span>
                 </button>
               );
@@ -161,20 +162,20 @@ export function FormationsOverviewClient({ rows, counts }: Props) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Formation</TableHead>
-              <TableHead>Organisation</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead>Visibilité</TableHead>
-              <TableHead>Prix</TableHead>
-              <TableHead className="text-right">Sessions</TableHead>
-              <TableHead>Mise à jour</TableHead>
+              <TableHead>{t("colTraining")}</TableHead>
+              <TableHead>{t("colOrganization")}</TableHead>
+              <TableHead>{t("colStatus")}</TableHead>
+              <TableHead>{t("colVisibility")}</TableHead>
+              <TableHead>{t("colPrice")}</TableHead>
+              <TableHead className="text-right">{t("colSessions")}</TableHead>
+              <TableHead>{t("colUpdatedAt")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                  Aucune formation ne correspond.
+                  {t("noTrainingMatch")}
                 </TableCell>
               </TableRow>
             )}
@@ -191,17 +192,17 @@ export function FormationsOverviewClient({ rows, counts }: Props) {
                   <div className="mt-1 flex flex-wrap items-center gap-1">
                     {r.isVerifiedByDocbel && (
                       <Badge variant="success" className="text-[10px]">
-                        Validée Docbel
+                        {t("badgeVerifiedDocbel")}
                       </Badge>
                     )}
                     {r.isDocbelRecommended && (
                       <Badge variant="info" className="text-[10px]">
-                        Recommandée
+                        {t("badgeRecommended")}
                       </Badge>
                     )}
                     {r.isFeatured && (
                       <Badge variant="warning" className="text-[10px]">
-                        À la une
+                        {t("badgeFeatured")}
                       </Badge>
                     )}
                     {r.category && (

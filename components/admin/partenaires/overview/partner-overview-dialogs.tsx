@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -79,6 +80,7 @@ export function PartnerCreateDialog({
   defaultSegment = "partenaire",
   onCreate,
 }: PartnerCreateDialogProps) {
+  const t = useTranslations("admin.partenaires");
   const [form, setForm] = useState({
     kind: "domain" as PartnerDomainKind,
     domains: "",
@@ -122,7 +124,7 @@ export function PartnerCreateDialog({
     if (isEmailKind) {
       const email = form.email.trim().toLowerCase();
       if (!email) {
-        toast.error("Saisissez une adresse email");
+        toast.error(t("toastEnterEmail"));
         return;
       }
       payload = {
@@ -141,7 +143,7 @@ export function PartnerCreateDialog({
         .filter((d) => d.length > 0);
 
       if (parsedDomains.length === 0) {
-        toast.error("Saisissez au moins un domaine");
+        toast.error(t("toastEnterDomain"));
         return;
       }
       payload = {
@@ -163,7 +165,7 @@ export function PartnerCreateDialog({
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Echec de l'ajout");
+        toast.error(data.error || t("toastAddFailed"));
         return;
       }
 
@@ -199,7 +201,7 @@ export function PartnerCreateDialog({
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("toastNetworkError"));
     }
   }
 
@@ -207,22 +209,23 @@ export function PartnerCreateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Ajouter une entrée d&apos;accès</DialogTitle>
+          <DialogTitle>{t("createTitle")}</DialogTitle>
           <DialogDescription>
-            Autorisez un <strong>domaine entier</strong> (ex :{" "}
-            <code>cpas.brussels</code>) ou une <strong>adresse email</strong>{" "}
-            précise (utile pour un privé en gmail/hotmail).
+            {t.rich("createDescription", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+              code: (chunks) => <code>{chunks}</code>,
+            })}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Type d'entrée : domaine entier vs adresse email --------- */}
           <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
             <Label htmlFor="create-kind" className="cursor-pointer">
-              {isEmailKind ? "Adresse email" : "Domaine entier"}
+              {isEmailKind ? t("kindEmail") : t("kindDomain")}
             </Label>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className={isEmailKind ? "" : "font-semibold text-foreground"}>
-                Domaine
+                {t("kindDomainShort")}
               </span>
               <Switch
                 id="create-kind"
@@ -232,14 +235,14 @@ export function PartnerCreateDialog({
                 }
               />
               <span className={isEmailKind ? "font-semibold text-foreground" : ""}>
-                Email
+                {t("kindEmailShort")}
               </span>
             </div>
           </div>
 
           {isEmailKind ? (
             <div className="space-y-1.5">
-              <Label htmlFor="create-email">Adresse email</Label>
+              <Label htmlFor="create-email">{t("kindEmail")}</Label>
               <Input
                 id="create-email"
                 type="email"
@@ -252,12 +255,12 @@ export function PartnerCreateDialog({
                 autoFocus
               />
               <p className="text-xs text-muted-foreground">
-                Seule cette adresse exacte sera autorisée.
+                {t("emailHint")}
               </p>
             </div>
           ) : (
             <div className="space-y-1.5">
-              <Label htmlFor="create-domains">Domaine(s)</Label>
+              <Label htmlFor="create-domains">{t("domainsLabel")}</Label>
               <Textarea
                 id="create-domains"
                 placeholder={"fgtb.be\nabvv.be\n…"}
@@ -270,8 +273,7 @@ export function PartnerCreateDialog({
                 autoFocus
               />
               <p className="text-xs text-muted-foreground">
-                Un domaine par ligne (ou séparés par virgule / espace). Les
-                doublons sont ignorés.
+                {t("domainsHint")}
               </p>
             </div>
           )}
@@ -279,7 +281,7 @@ export function PartnerCreateDialog({
           {/* Segment + sous-type partenaire --------------------------- */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="create-segment">Segment</Label>
+              <Label htmlFor="create-segment">{t("segmentLabel")}</Label>
               <Select
                 value={form.segment}
                 onValueChange={(v) =>
@@ -295,14 +297,14 @@ export function PartnerCreateDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="partenaire">Partenaire</SelectItem>
-                  <SelectItem value="employeur">Employeur</SelectItem>
+                  <SelectItem value="partenaire">{t("segmentPartner")}</SelectItem>
+                  <SelectItem value="employeur">{t("segmentEmployer")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {form.segment === "partenaire" && (
               <div className="space-y-1.5">
-                <Label htmlFor="create-partnerType">Sous-type</Label>
+                <Label htmlFor="create-partnerType">{t("subtypeLabel")}</Label>
                 <Select
                   value={form.partnerType || undefined}
                   onValueChange={(v) =>
@@ -325,7 +327,7 @@ export function PartnerCreateDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="create-organizationName">Organisation</Label>
+            <Label htmlFor="create-organizationName">{t("organizationLabel")}</Label>
             <Input
               id="create-organizationName"
               list="org-suggestions-create"
@@ -342,15 +344,14 @@ export function PartnerCreateDialog({
               ))}
             </datalist>
             <p className="text-xs text-muted-foreground">
-              Tapez un nom existant pour grouper avec, ou un nouveau pour créer
-              une organisation.
+              {t("organizationHint")}
             </p>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="create-notes">Notes (optionnel)</Label>
+            <Label htmlFor="create-notes">{t("notesOptionalLabel")}</Label>
             <Input
               id="create-notes"
-              placeholder="Contact, date d'autorisation, etc."
+              placeholder={t("notesPlaceholder")}
               value={form.notes}
               onChange={(e) =>
                 setForm((f) => ({ ...f, notes: e.target.value }))
@@ -366,7 +367,7 @@ export function PartnerCreateDialog({
               }
             />
             <Label htmlFor="create-isTest" className="cursor-pointer">
-              Entrée de test
+              {t("testEntryLabel")}
             </Label>
           </div>
           <DialogFooter>
@@ -376,11 +377,11 @@ export function PartnerCreateDialog({
               onClick={() => onOpenChange(false)}
               disabled={isPending}
             >
-              Annuler
+              {t("cancel")}
             </Button>
             <Button type="submit" disabled={isPending}>
               <Plus className="size-4" />
-              {isPending ? "Ajout…" : "Ajouter"}
+              {isPending ? t("adding") : t("add")}
             </Button>
           </DialogFooter>
         </form>
@@ -418,6 +419,7 @@ export function PartnerEditDomainDialog({
   isPending,
   onSave,
 }: PartnerEditDomainDialogProps) {
+  const t = useTranslations("admin.partenaires");
   const [form, setForm] = useState({
     kind: "domain" as PartnerDomainKind,
     domain: "",
@@ -469,21 +471,20 @@ export function PartnerEditDomainDialog({
     <Dialog open={!!target} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Modifier l&apos;entrée</DialogTitle>
+          <DialogTitle>{t("editTitle")}</DialogTitle>
           <DialogDescription>
-            Vous pouvez aussi déplacer cette entrée vers une autre organisation
-            en changeant son nom.
+            {t("editDescription")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           {/* Type d'entrée : domaine entier vs adresse email --------- */}
           <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
             <Label htmlFor="edit-kind" className="cursor-pointer">
-              {isEmailKind ? "Adresse email" : "Domaine entier"}
+              {isEmailKind ? t("kindEmail") : t("kindDomain")}
             </Label>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className={isEmailKind ? "" : "font-semibold text-foreground"}>
-                Domaine
+                {t("kindDomainShort")}
               </span>
               <Switch
                 id="edit-kind"
@@ -493,14 +494,14 @@ export function PartnerEditDomainDialog({
                 }
               />
               <span className={isEmailKind ? "font-semibold text-foreground" : ""}>
-                Email
+                {t("kindEmailShort")}
               </span>
             </div>
           </div>
 
           {isEmailKind ? (
             <div className="space-y-1.5">
-              <Label htmlFor="edit-email">Adresse email</Label>
+              <Label htmlFor="edit-email">{t("kindEmail")}</Label>
               <Input
                 id="edit-email"
                 type="email"
@@ -513,7 +514,7 @@ export function PartnerEditDomainDialog({
             </div>
           ) : (
             <div className="space-y-1.5">
-              <Label htmlFor="edit-domain">Domaine</Label>
+              <Label htmlFor="edit-domain">{t("domainLabel")}</Label>
               <Input
                 id="edit-domain"
                 placeholder="cpas.brussels"
@@ -528,7 +529,7 @@ export function PartnerEditDomainDialog({
           {/* Segment + sous-type partenaire --------------------------- */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-segment">Segment</Label>
+              <Label htmlFor="edit-segment">{t("segmentLabel")}</Label>
               <Select
                 value={form.segment}
                 onValueChange={(v) =>
@@ -543,14 +544,14 @@ export function PartnerEditDomainDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="partenaire">Partenaire</SelectItem>
-                  <SelectItem value="employeur">Employeur</SelectItem>
+                  <SelectItem value="partenaire">{t("segmentPartner")}</SelectItem>
+                  <SelectItem value="employeur">{t("segmentEmployer")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {form.segment === "partenaire" && (
               <div className="space-y-1.5">
-                <Label htmlFor="edit-partnerType">Sous-type</Label>
+                <Label htmlFor="edit-partnerType">{t("subtypeLabel")}</Label>
                 <Select
                   value={form.partnerType || undefined}
                   onValueChange={(v) =>
@@ -573,7 +574,7 @@ export function PartnerEditDomainDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="edit-org">Organisation</Label>
+            <Label htmlFor="edit-org">{t("organizationLabel")}</Label>
             <Input
               id="edit-org"
               list="org-suggestions-edit"
@@ -592,7 +593,7 @@ export function PartnerEditDomainDialog({
             </datalist>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="edit-notes">Notes</Label>
+            <Label htmlFor="edit-notes">{t("notesLabel")}</Label>
             <Input
               id="edit-notes"
               value={form.notes}
@@ -611,7 +612,7 @@ export function PartnerEditDomainDialog({
                 }
               />
               <Label htmlFor="edit-isActive" className="cursor-pointer">
-                Actif
+                {t("activeLabel")}
               </Label>
             </div>
             <div className="flex items-center gap-2">
@@ -623,7 +624,7 @@ export function PartnerEditDomainDialog({
                 }
               />
               <Label htmlFor="edit-isTest" className="cursor-pointer">
-                Test
+                {t("testLabel")}
               </Label>
             </div>
           </div>
@@ -634,10 +635,10 @@ export function PartnerEditDomainDialog({
             onClick={() => onOpenChange(false)}
             disabled={isPending}
           >
-            Annuler
+            {t("cancel")}
           </Button>
           <Button onClick={handleSave} disabled={isPending}>
-            Enregistrer
+            {t("save")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -662,6 +663,7 @@ export function PartnerRenameDialog({
   isPending,
   onRename,
 }: PartnerRenameDialogProps) {
+  const t = useTranslations("admin.partenaires");
   const [value, setValue] = useState("");
 
   useEffect(() => {
@@ -672,20 +674,18 @@ export function PartnerRenameDialog({
     <Dialog open={!!from} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Renommer l&apos;organisation</DialogTitle>
+          <DialogTitle>{t("renameTitle")}</DialogTitle>
           <DialogDescription>
-            Le nouveau nom sera appliqué en cascade à tous les domaines et tous
-            les utilisateurs de l&apos;organisation. Si le nouveau nom
-            correspond à une organisation existante, les deux fusionneront.
+            {t("renameDescription")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="rename-from">Nom actuel</Label>
+            <Label htmlFor="rename-from">{t("currentNameLabel")}</Label>
             <Input id="rename-from" value={from ?? ""} disabled readOnly />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="rename-to">Nouveau nom</Label>
+            <Label htmlFor="rename-to">{t("newNameLabel")}</Label>
             <Input
               id="rename-to"
               value={value}
@@ -700,10 +700,10 @@ export function PartnerRenameDialog({
             onClick={() => onOpenChange(false)}
             disabled={isPending}
           >
-            Annuler
+            {t("cancel")}
           </Button>
           <Button onClick={() => onRename(value)} disabled={isPending}>
-            Renommer
+            {t("rename")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -728,6 +728,7 @@ export function PartnerDeleteDomainDialog({
   isPending,
   onConfirm,
 }: PartnerDeleteDomainDialogProps) {
+  const t = useTranslations("admin.partenaires");
   const [typed, setTyped] = useState("");
   // Reset du champ type-to-confirm à chaque changement de cible.
   useEffect(() => {
@@ -735,23 +736,26 @@ export function PartnerDeleteDomainDialog({
   }, [target]);
 
   const needle =
-    (target?.kind === "email" ? target?.email : target?.domain) || "supprimer";
+    (target?.kind === "email" ? target?.email : target?.domain) ||
+    t("deleteFallbackWord");
+
+  const entry =
+    target?.kind === "email"
+      ? (target?.email ?? "—")
+      : target?.domain
+        ? `@${target.domain}`
+        : "—";
 
   return (
     <AlertDialog open={!!target} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Supprimer cette entrée ?</AlertDialogTitle>
+          <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            L&apos;entrée{" "}
-            <strong>
-              {target?.kind === "email"
-                ? target?.email
-                : target?.domain
-                  ? `@${target.domain}`
-                  : "—"}
-            </strong>{" "}
-            sera définitivement retirée. Cette action est irréversible.
+            {t.rich("deleteDescription", {
+              entry,
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         {target ? (
@@ -763,12 +767,12 @@ export function PartnerDeleteDomainDialog({
           />
         ) : null}
         <AlertDialogFooter>
-          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isPending || !typeToConfirmMatches(typed, needle)}
           >
-            Supprimer
+            {t("delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

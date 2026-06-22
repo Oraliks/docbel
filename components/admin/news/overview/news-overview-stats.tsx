@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { NewsCounts } from "./types";
 
@@ -19,25 +22,26 @@ interface NewsOverviewStatsProps {
  * Présentationnel — purement props-driven.
  */
 export function NewsOverviewStats({ counts }: NewsOverviewStatsProps) {
+  const t = useTranslations("admin.news");
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StatCard value={counts.total} label="Total" tone="slate" />
+      <StatCard value={counts.total} label={t("kpiTotal")} tone="slate" />
       <StatCard
         symbol="✓"
         value={counts.published}
-        label="Publiés"
+        label={t("kpiPublished")}
         tone="emerald"
       />
       <StatCard
         symbol="✎"
         value={counts.draft}
-        label="Brouillons"
+        label={t("kpiDrafts")}
         tone="amber"
       />
       <StatCard
         symbol="⏱"
         value={counts.scheduled}
-        label="Planifiés"
+        label={t("kpiScheduled")}
         tone="violet"
       />
     </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Tags, Plus, Loader2, Check, X, Pencil, Award } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export function CategoriesClient({ categories, tags, badges }: Props) {
+  const t = useTranslations("admin.formations");
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <div className="flex items-center gap-3">
@@ -39,10 +41,10 @@ export function CategoriesClient({ categories, tags, badges }: Props) {
         </span>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Taxonomie des formations
+            {t("taxonomyTitle")}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Catégories, tags et badges du catalogue.
+            {t("taxonomySubtitle")}
           </p>
         </div>
       </div>
@@ -50,10 +52,10 @@ export function CategoriesClient({ categories, tags, badges }: Props) {
       <Tabs defaultValue="categories">
         <TabsList>
           <TabsTrigger value="categories">
-            Catégories ({categories.length})
+            {t("tabCategories", { n: categories.length })}
           </TabsTrigger>
-          <TabsTrigger value="tags">Tags ({tags.length})</TabsTrigger>
-          <TabsTrigger value="badges">Badges ({badges.length})</TabsTrigger>
+          <TabsTrigger value="tags">{t("tabTags", { n: tags.length })}</TabsTrigger>
+          <TabsTrigger value="badges">{t("tabBadges", { n: badges.length })}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="categories" className="mt-4">
@@ -73,6 +75,7 @@ export function CategoriesClient({ categories, tags, badges }: Props) {
 // ---------------------------------------------------------------- Catégories
 
 function CategoriesTab({ rows }: { rows: AdminCategoryRow[] }) {
+  const t = useTranslations("admin.formations");
   const router = useRouter();
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -88,12 +91,12 @@ function CategoriesTab({ rows }: { rows: AdminCategoryRow[] }) {
         body: JSON.stringify({ name: newName.trim() }),
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error ?? "Échec de la création");
-      toast.success("Catégorie créée.");
+      if (!res.ok) throw new Error(body.error ?? t("createFailed"));
+      toast.success(t("categoryCreated"));
       setNewName("");
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("genericError"));
     } finally {
       setCreating(false);
     }
@@ -110,7 +113,7 @@ function CategoriesTab({ rows }: { rows: AdminCategoryRow[] }) {
       if (!res.ok) throw new Error("Échec");
       router.refresh();
     } catch {
-      toast.error("Impossible de modifier la catégorie.");
+      toast.error(t("categoryUpdateFailed"));
     } finally {
       setBusyId(null);
     }
@@ -125,10 +128,10 @@ function CategoriesTab({ rows }: { rows: AdminCategoryRow[] }) {
         body: JSON.stringify({ name }),
       });
       if (!res.ok) throw new Error("Échec");
-      toast.success("Catégorie renommée.");
+      toast.success(t("categoryRenamed"));
       router.refresh();
     } catch {
-      toast.error("Impossible de renommer la catégorie.");
+      toast.error(t("categoryRenameFailed"));
     } finally {
       setBusyId(null);
     }
@@ -141,16 +144,16 @@ function CategoriesTab({ rows }: { rows: AdminCategoryRow[] }) {
         onChange={setNewName}
         onSubmit={create}
         loading={creating}
-        placeholder="Nom de la catégorie…"
+        placeholder={t("categoryNamePlaceholder")}
       />
       <Card>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Catégorie</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead className="text-right">Formations</TableHead>
-              <TableHead className="w-24 text-center">Active</TableHead>
+              <TableHead>{t("colCategory")}</TableHead>
+              <TableHead>{t("colSlug")}</TableHead>
+              <TableHead className="text-right">{t("colTrainings")}</TableHead>
+              <TableHead className="w-24 text-center">{t("colActive")}</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -158,7 +161,7 @@ function CategoriesTab({ rows }: { rows: AdminCategoryRow[] }) {
             {rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                  Aucune catégorie.
+                  {t("noCategory")}
                 </TableCell>
               </TableRow>
             )}
@@ -185,6 +188,7 @@ function CategoriesTab({ rows }: { rows: AdminCategoryRow[] }) {
 // --------------------------------------------------------------------- Tags
 
 function TagsTab({ rows }: { rows: AdminTagRow[] }) {
+  const t = useTranslations("admin.formations");
   const router = useRouter();
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -200,12 +204,12 @@ function TagsTab({ rows }: { rows: AdminTagRow[] }) {
         body: JSON.stringify({ name: newName.trim() }),
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error ?? "Échec de la création");
-      toast.success("Tag créé.");
+      if (!res.ok) throw new Error(body.error ?? t("createFailed"));
+      toast.success(t("tagCreated"));
       setNewName("");
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("genericError"));
     } finally {
       setCreating(false);
     }
@@ -222,7 +226,7 @@ function TagsTab({ rows }: { rows: AdminTagRow[] }) {
       if (!res.ok) throw new Error("Échec");
       router.refresh();
     } catch {
-      toast.error("Impossible de modifier le tag.");
+      toast.error(t("tagUpdateFailed"));
     } finally {
       setBusyId(null);
     }
@@ -237,10 +241,10 @@ function TagsTab({ rows }: { rows: AdminTagRow[] }) {
         body: JSON.stringify({ name }),
       });
       if (!res.ok) throw new Error("Échec");
-      toast.success("Tag renommé.");
+      toast.success(t("tagRenamed"));
       router.refresh();
     } catch {
-      toast.error("Impossible de renommer le tag.");
+      toast.error(t("tagRenameFailed"));
     } finally {
       setBusyId(null);
     }
@@ -253,16 +257,16 @@ function TagsTab({ rows }: { rows: AdminTagRow[] }) {
         onChange={setNewName}
         onSubmit={create}
         loading={creating}
-        placeholder="Nom du tag…"
+        placeholder={t("tagNamePlaceholder")}
       />
       <Card>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tag</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead className="text-right">Formations</TableHead>
-              <TableHead className="w-32 text-center">Orientation</TableHead>
+              <TableHead>{t("colTag")}</TableHead>
+              <TableHead>{t("colSlug")}</TableHead>
+              <TableHead className="text-right">{t("colTrainings")}</TableHead>
+              <TableHead className="w-32 text-center">{t("colOrientation")}</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -270,7 +274,7 @@ function TagsTab({ rows }: { rows: AdminTagRow[] }) {
             {rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                  Aucun tag.
+                  {t("noTag")}
                 </TableCell>
               </TableRow>
             )}
@@ -296,22 +300,23 @@ function TagsTab({ rows }: { rows: AdminTagRow[] }) {
 // ------------------------------------------------------------------- Badges
 
 function BadgesTab({ rows }: { rows: AdminBadgeRow[] }) {
+  const t = useTranslations("admin.formations");
   return (
     <Card>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Badge</TableHead>
-            <TableHead>Slug</TableHead>
-            <TableHead>Contrôle</TableHead>
-            <TableHead className="text-right">Formations</TableHead>
+            <TableHead>{t("colBadge")}</TableHead>
+            <TableHead>{t("colSlug")}</TableHead>
+            <TableHead>{t("colControl")}</TableHead>
+            <TableHead className="text-right">{t("colTrainings")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.length === 0 && (
             <TableRow>
               <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
-                Aucun badge. Les badges officiels sont définis au seed.
+                {t("noBadge")}
               </TableCell>
             </TableRow>
           )}
@@ -337,11 +342,11 @@ function BadgesTab({ rows }: { rows: AdminBadgeRow[] }) {
               <TableCell>
                 {row.controlledByAdmin ? (
                   <Badge variant="info" className="text-[10px]">
-                    Admin uniquement
+                    {t("badgeAdminOnly")}
                   </Badge>
                 ) : (
                   <Badge variant="secondary" className="text-[10px]">
-                    Libre
+                    {t("badgeFree")}
                   </Badge>
                 )}
               </TableCell>
@@ -371,6 +376,7 @@ function CreateBar({
   loading: boolean;
   placeholder: string;
 }) {
+  const t = useTranslations("admin.formations");
   return (
     <Card>
       <CardContent className="p-3 flex items-center gap-2">
@@ -388,7 +394,7 @@ function CreateBar({
           ) : (
             <Plus className="size-4" />
           )}
-          Créer
+          {t("create")}
         </Button>
       </CardContent>
     </Card>

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   BarChart3,
   Building2,
@@ -99,16 +100,26 @@ export function PartnerOverviewShell({
   initialOrganizations,
   existingOrganizationNames,
   billingEnabled,
-  title = "Partenaires",
+  title,
   showBilling = true,
   createDefaultSegment = "partenaire",
   showExport = true,
   exportHref = "/api/admin/partner-users/export",
-  headerLinks = [
-    { href: "/admin/partenaires/stats", label: "Statistiques", icon: "stats" },
-    { href: "/admin/partenaires/email", label: "Email d'invitation", icon: "mail" },
-  ],
+  headerLinks,
 }: PartnerOverviewShellProps) {
+  const t = useTranslations("admin.partenaires");
+
+  // Défauts i18n (cas /admin/partenaires) ; /admin/employeurs passe les siens.
+  const resolvedTitle = title ?? t("title");
+  const resolvedHeaderLinks =
+    headerLinks ?? [
+      { href: "/admin/partenaires/stats", label: t("linkStats"), icon: "stats" as const },
+      {
+        href: "/admin/partenaires/email",
+        label: t("linkEmail"),
+        icon: "mail" as const,
+      },
+    ];
   const [organizations, setOrganizations] =
     useState<OrganizationGroup[]>(initialOrganizations);
   const [orgNames, setOrgNames] = useState<string[]>(existingOrganizationNames);
@@ -294,14 +305,14 @@ export function PartnerOverviewShell({
         });
         const data = await res.json();
         if (!res.ok) {
-          toast.error(data.error || "Echec");
+          toast.error(data.error || t("toastFailed"));
           return;
         }
         patchDomainLocally(orgName, domain.id, { isActive: next });
-        toast.success(next ? "Domaine activé" : "Domaine désactivé");
+        toast.success(next ? t("toastDomainActivated") : t("toastDomainDeactivated"));
       } catch (err) {
         console.error(err);
-        toast.error("Erreur réseau");
+        toast.error(t("toastNetworkError"));
       }
     });
   }
@@ -317,13 +328,13 @@ export function PartnerOverviewShell({
         });
         const data = await res.json();
         if (!res.ok) {
-          toast.error(data.error || "Echec");
+          toast.error(data.error || t("toastFailed"));
           return;
         }
         patchDomainLocally(orgName, domain.id, { isTest: next });
       } catch (err) {
         console.error(err);
-        toast.error("Erreur réseau");
+        toast.error(t("toastNetworkError"));
       }
     });
   }
@@ -345,15 +356,15 @@ export function PartnerOverviewShell({
         });
         if (!res.ok) {
           const data = await res.json();
-          toast.error(data.error || "Echec de la suppression");
+          toast.error(data.error || t("toastDeleteFailed"));
           return;
         }
         removeDomainLocally(org.organizationName, target.id);
         setDeleteTarget(null);
-        toast.success(`Entrée ${entryLabel(target)} supprimée`);
+        toast.success(t("toastEntryDeleted", { entry: entryLabel(target) }));
       } catch (err) {
         console.error(err);
-        toast.error("Erreur réseau");
+        toast.error(t("toastNetworkError"));
       }
     });
   }
@@ -383,7 +394,7 @@ export function PartnerOverviewShell({
         );
         const data = await res.json();
         if (!res.ok) {
-          toast.error(data.error || "Echec de la modification");
+          toast.error(data.error || t("toastEditFailed"));
           return;
         }
 
@@ -491,10 +502,10 @@ export function PartnerOverviewShell({
           );
         }
         setEditTarget(null);
-        toast.success("Domaine mis à jour");
+        toast.success(t("toastDomainUpdated"));
       } catch (err) {
         console.error(err);
-        toast.error("Erreur réseau");
+        toast.error(t("toastNetworkError"));
       }
     });
   }
@@ -516,7 +527,7 @@ export function PartnerOverviewShell({
         });
         const data = await res.json();
         if (!res.ok) {
-          toast.error(data.error || "Echec du renommage");
+          toast.error(data.error || t("toastRenameFailed"));
           return;
         }
 
@@ -568,15 +579,16 @@ export function PartnerOverviewShell({
 
         setRenameTarget(null);
         toast.success(
-          `Renommé "${from}" → "${to}" (${data.domainsUpdated} domaine${
-            data.domainsUpdated > 1 ? "s" : ""
-          }, ${data.usersUpdated} utilisateur${
-            data.usersUpdated > 1 ? "s" : ""
-          })`,
+          t("toastRenamed", {
+            from,
+            to,
+            domains: data.domainsUpdated,
+            users: data.usersUpdated,
+          }),
         );
       } catch (err) {
         console.error(err);
-        toast.error("Erreur réseau");
+        toast.error(t("toastNetworkError"));
       }
     });
   }
@@ -595,13 +607,13 @@ export function PartnerOverviewShell({
         });
         const data = await res.json();
         if (!res.ok) {
-          toast.error(data.error || "Echec");
+          toast.error(data.error || t("toastFailed"));
           return;
         }
-        toast.success(data.message || "Email renvoyé");
+        toast.success(data.message || t("toastEmailResent"));
       } catch (err) {
         console.error(err);
-        toast.error("Erreur réseau");
+        toast.error(t("toastNetworkError"));
       }
     });
   }
@@ -616,7 +628,7 @@ export function PartnerOverviewShell({
         });
         const data = await res.json();
         if (!res.ok) {
-          toast.error(data.error || "Echec");
+          toast.error(data.error || t("toastFailed"));
           return;
         }
         setOrganizations((prev) =>
@@ -629,10 +641,10 @@ export function PartnerOverviewShell({
             ),
           })),
         );
-        toast.success(data.message || "Compte activé");
+        toast.success(data.message || t("toastAccountActivated"));
       } catch (err) {
         console.error(err);
-        toast.error("Erreur réseau");
+        toast.error(t("toastNetworkError"));
       }
     });
   }
@@ -647,7 +659,7 @@ export function PartnerOverviewShell({
         });
         const data = await res.json();
         if (!res.ok) {
-          toast.error(data.error || "Echec");
+          toast.error(data.error || t("toastFailed"));
           return;
         }
         setOrganizations((prev) =>
@@ -658,10 +670,10 @@ export function PartnerOverviewShell({
             ),
           })),
         );
-        toast.success(`Statut mis à jour: ${nextStatus}`);
+        toast.success(t("toastStatusUpdated", { status: nextStatus }));
       } catch (err) {
         console.error(err);
-        toast.error("Erreur réseau");
+        toast.error(t("toastNetworkError"));
       }
     });
   }
@@ -680,7 +692,7 @@ export function PartnerOverviewShell({
         });
         const data = await res.json();
         if (!res.ok) {
-          toast.error(data.error || "Echec");
+          toast.error(data.error || t("toastFailed"));
           return;
         }
         setOrganizations((prev) =>
@@ -691,10 +703,10 @@ export function PartnerOverviewShell({
             ),
           })),
         );
-        toast.success(value ? "Accès accordé" : "Accès retiré");
+        toast.success(value ? t("toastAccessGranted") : t("toastAccessRevoked"));
       } catch (err) {
         console.error(err);
-        toast.error("Erreur réseau");
+        toast.error(t("toastNetworkError"));
       }
     });
   }
@@ -720,16 +732,16 @@ export function PartnerOverviewShell({
         if (!res.ok) {
           const data = await res.json().catch(() => null);
           setBilling(prev); // rollback
-          toast.error(data?.error || "Echec de l'enregistrement");
+          toast.error(data?.error || t("toastSaveFailed"));
           return;
         }
         toast.success(
-          next ? "Verrou payant activé" : "Verrou payant désactivé",
+          next ? t("toastBillingLockEnabled") : t("toastBillingLockDisabled"),
         );
       } catch (err) {
         console.error(err);
         setBilling(prev);
-        toast.error("Erreur réseau");
+        toast.error(t("toastNetworkError"));
       } finally {
         setBillingSaving(false);
       }
@@ -758,15 +770,14 @@ export function PartnerOverviewShell({
             <Building2 className="size-5" />
           </span>
           <div className="flex flex-col">
-            <h1 className="text-2xl font-bold leading-tight">{title}</h1>
+            <h1 className="text-2xl font-bold leading-tight">{resolvedTitle}</h1>
             <p className="text-sm text-muted-foreground">
-              {counts.total} organisation{counts.total > 1 ? "s" : ""} —
-              gérez les domaines email autorisés et les utilisateurs inscrits.
+              {t("headerSubtitle", { count: counts.total })}
             </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {headerLinks.map((link) => (
+          {resolvedHeaderLinks.map((link) => (
             <Button
               key={link.href}
               render={<Link href={link.href} prefetch={false} />}
@@ -788,15 +799,15 @@ export function PartnerOverviewShell({
               onClick={() => {
                 window.location.href = exportHref;
               }}
-              title="Télécharger un CSV de tous les utilisateurs"
+              title={t("exportCsvTitle")}
             >
               <Download className="size-4" />
-              Export CSV
+              {t("exportCsv")}
             </Button>
           )}
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="size-4" />
-            Ajouter un domaine
+            {t("addDomain")}
           </Button>
         </div>
       </header>
@@ -808,12 +819,10 @@ export function PartnerOverviewShell({
           <CardContent className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-col gap-0.5">
               <Label htmlFor="billing-enabled" className="cursor-pointer text-sm font-medium">
-                Facturation / verrou payant — désactivé pendant la beta
+                {t("billingLabel")}
               </Label>
               <p className="text-xs text-muted-foreground">
-                Sans effet pour l&apos;instant : tant qu&apos;il est désactivé,
-                tout membre d&apos;un segment accède aux outils de son segment. Le
-                branchement du paiement (Mollie/Stripe) viendra plus tard.
+                {t("billingDescription")}
               </p>
             </div>
             <Switch
@@ -866,15 +875,22 @@ export function PartnerOverviewShell({
           upsertCreatedDomains(created);
           if (errors.length > 0) {
             toast.warning(
-              `${created.length} ajouté(s), ${errors.length} ignoré(s) : ${errors
-                .map((e) => `${e.domain} (${e.error})`)
-                .join(", ")}`,
+              t("toastCreatePartial", {
+                added: created.length,
+                ignored: errors.length,
+                details: errors
+                  .map((e) => `${e.domain} (${e.error})`)
+                  .join(", "),
+              }),
             );
           } else if (created.length === 1) {
-            toast.success(`Entrée ${entryLabel(created[0])} ajoutée`);
+            toast.success(t("toastEntryAdded", { entry: entryLabel(created[0]) }));
           } else {
             toast.success(
-              `${created.length} entrées ajoutées à ${created[0].organizationName}`,
+              t("toastEntriesAdded", {
+                count: created.length,
+                organization: created[0].organizationName,
+              }),
             );
           }
         }}

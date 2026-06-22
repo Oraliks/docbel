@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,9 +18,9 @@ type Day = { day: number; slots: Slot[] };
 
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
-const PRESETS: Array<{ label: string; build: () => Day[] }> = [
+const PRESETS: Array<{ labelKey: string; build: () => Day[] }> = [
   {
-    label: "Bureau standard (Lu-Ve 9h-12h / 13h-16h)",
+    labelKey: "presetStandard",
     build: () =>
       [1, 2, 3, 4, 5].map((d) => ({
         day: d,
@@ -33,7 +34,7 @@ const PRESETS: Array<{ label: string; build: () => Day[] }> = [
       ]),
   },
   {
-    label: "Standard avec fermeture mer/ven aprem",
+    labelKey: "presetStandardHalfDays",
     build: () => [
       { day: 1, slots: [{ open: "08:30", close: "12:00" }, { open: "13:00", close: "16:00" }] },
       { day: 2, slots: [{ open: "08:30", close: "12:00" }, { open: "13:00", close: "16:00" }] },
@@ -45,7 +46,7 @@ const PRESETS: Array<{ label: string; build: () => Day[] }> = [
     ],
   },
   {
-    label: "Permanence : Lu/Me/Ve matin uniquement",
+    labelKey: "presetPermanence",
     build: () => [
       { day: 1, slots: [{ open: "09:00", close: "12:00" }] },
       { day: 2, slots: [] },
@@ -57,7 +58,7 @@ const PRESETS: Array<{ label: string; build: () => Day[] }> = [
     ],
   },
   {
-    label: "Continue Lu-Ve 8h30-17h",
+    labelKey: "presetContinuous",
     build: () =>
       [1, 2, 3, 4, 5].map((d) => ({
         day: d,
@@ -68,7 +69,7 @@ const PRESETS: Array<{ label: string; build: () => Day[] }> = [
       ]),
   },
   {
-    label: "Tout effacer (fermé tous les jours)",
+    labelKey: "presetClearAll",
     build: () => DAY_ORDER.map((d) => ({ day: d, slots: [] })),
   },
 ];
@@ -80,6 +81,8 @@ export function HoursEditor({
   value: Day[];
   onChange: (next: Day[]) => void;
 }) {
+  const t = useTranslations("admin.bureaux");
+
   function update(day: number, slots: Slot[]) {
     const next = value.map((d) => (d.day === day ? { day, slots } : d));
     if (!next.find((d) => d.day === day)) next.push({ day, slots });
@@ -133,14 +136,14 @@ export function HoursEditor({
           <DropdownMenuTrigger
             render={
               <Button type="button" variant="outline" size="sm">
-                <Wand2 className="mr-2 h-3.5 w-3.5" /> Modèles d&apos;horaires
+                <Wand2 className="mr-2 h-3.5 w-3.5" /> {t("hoursPresets")}
               </Button>
             }
           />
           <DropdownMenuContent align="end" className="w-72">
             {PRESETS.map((p, i) => (
               <DropdownMenuItem key={i} onClick={() => applyPreset(p.build)}>
-                {p.label}
+                {t(p.labelKey as Parameters<typeof t>[0])}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -154,7 +157,7 @@ export function HoursEditor({
             <div className="text-sm font-medium pt-2">{dayLabelFr(d)}</div>
             <div className="flex flex-col gap-1">
               {slots.length === 0 && (
-                <div className="text-xs text-muted-foreground py-2">Fermé</div>
+                <div className="text-xs text-muted-foreground py-2">{t("closed")}</div>
               )}
               {slots.map((s, i) => (
                 <div key={i} className="flex items-center gap-1">
@@ -190,7 +193,7 @@ export function HoursEditor({
                 size="sm"
                 onClick={() => addSlot(d)}
                 className="h-8"
-                title="Ajouter une plage"
+                title={t("addSlot")}
               >
                 <Plus className="h-3.5 w-3.5" />
               </Button>
@@ -203,7 +206,7 @@ export function HoursEditor({
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0"
-                        title="Copier ces horaires"
+                        title={t("copyHours")}
                       >
                         <Copy className="h-3.5 w-3.5" />
                       </Button>
@@ -211,10 +214,10 @@ export function HoursEditor({
                   />
                   <DropdownMenuContent>
                     <DropdownMenuItem onClick={() => copyDayToWeekdays(d)}>
-                      Copier sur Lu→Ve
+                      {t("copyToWeekdays")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => copyDayToAll(d)}>
-                      Copier sur tous les jours
+                      {t("copyToAllDays")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     {DAY_ORDER.filter((x) => x !== d).map((target) => (
@@ -225,7 +228,7 @@ export function HoursEditor({
                           update(target, cur);
                         }}
                       >
-                        Copier sur {dayLabelFr(target)}
+                        {t("copyToDay", { day: dayLabelFr(target) })}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Dialog,
   DialogContent,
@@ -30,18 +31,19 @@ export function PublishDialog({
   category,
   onSchedule
 }: PublishDialogProps) {
+  const t = useTranslations('admin.news');
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('09:00');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSchedule = async () => {
     if (!scheduledDate) {
-      alert('Veuillez sélectionner une date');
+      alert(t('scheduleSelectDate'));
       return;
     }
     const target = new Date(`${scheduledDate}T${scheduledTime}`);
     if (Number.isNaN(target.getTime()) || target.getTime() <= Date.now()) {
-      alert('La date et l\'heure de publication doivent être dans le futur');
+      alert(t('scheduleFutureRequired'));
       return;
     }
 
@@ -60,9 +62,9 @@ export function PublishDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Planifier la publication</DialogTitle>
+          <DialogTitle>{t('schedulePublication')}</DialogTitle>
           <DialogDescription>
-            Choisissez la date et l&apos;heure de publication de l&apos;article
+            {t('scheduleDialogDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -74,7 +76,7 @@ export function PublishDialog({
 
           <div className="space-y-3">
             <div>
-              <Label htmlFor="date" className="text-sm">Date</Label>
+              <Label htmlFor="date" className="text-sm">{t('dateLabel')}</Label>
               <Input
                 id="date"
                 type="date"
@@ -84,7 +86,7 @@ export function PublishDialog({
               />
             </div>
             <div>
-              <Label htmlFor="time" className="text-sm">Heure</Label>
+              <Label htmlFor="time" className="text-sm">{t('timeLabel')}</Label>
               <Input
                 id="time"
                 type="time"
@@ -98,10 +100,10 @@ export function PublishDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-            Annuler
+            {t('cancel')}
           </Button>
           <Button onClick={handleSchedule} disabled={isLoading}>
-            {isLoading ? 'Planification...' : 'Planifier'}
+            {isLoading ? t('scheduling') : t('scheduleButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

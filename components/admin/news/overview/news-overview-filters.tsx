@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -61,26 +62,27 @@ export function NewsOverviewFilters({
   onSearchChange,
   counts,
 }: NewsOverviewFiltersProps) {
+  const t = useTranslations("admin.news");
   const tabs: TabDef[] = [
-    { id: "all", label: `Tous (${counts.total})`, tone: "violet" },
+    { id: "all", label: t("tabAll", { count: counts.total }), tone: "violet" },
     {
       id: "published",
-      label: `Publiés (${counts.published})`,
+      label: t("tabPublished", { count: counts.published }),
       tone: "emerald",
     },
     {
       id: "draft",
-      label: `Brouillons (${counts.draft})`,
+      label: t("tabDrafts", { count: counts.draft }),
       tone: "amber",
     },
     {
       id: "scheduled",
-      label: `Planifiés (${counts.scheduled})`,
+      label: t("tabScheduled", { count: counts.scheduled }),
       tone: "violet",
     },
     {
       id: "archived",
-      label: `Archivés (${counts.archived})`,
+      label: t("tabArchived", { count: counts.archived }),
       tone: "slate",
     },
   ];
@@ -88,13 +90,13 @@ export function NewsOverviewFilters({
   return (
     <div
       role="toolbar"
-      aria-label="Filtres articles"
+      aria-label={t("filtersToolbarLabel")}
       className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between"
     >
       {/* Tabs --------------------------------------------------------- */}
       <div
         role="tablist"
-        aria-label="Filtrer par statut"
+        aria-label={t("filterByStatusLabel")}
         className="flex flex-wrap items-center gap-1.5"
       >
         {tabs.map((tab) => {
@@ -125,8 +127,8 @@ export function NewsOverviewFilters({
           <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            aria-label="Rechercher un article"
-            placeholder="Rechercher un article..."
+            aria-label={t("searchLabel")}
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             className="h-9 pl-9"
@@ -138,12 +140,12 @@ export function NewsOverviewFilters({
         >
           <SelectTrigger
             className="h-9 w-full sm:w-44"
-            aria-label="Filtrer par catégorie"
+            aria-label={t("filterByCategoryLabel")}
           >
-            <SelectValue placeholder="Catégorie" />
+            <SelectValue placeholder={t("categoryPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes catégories</SelectItem>
+            <SelectItem value="all">{t("allCategories")}</SelectItem>
             {categories.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}

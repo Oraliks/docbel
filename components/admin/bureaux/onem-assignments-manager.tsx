@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Card,
@@ -50,7 +51,28 @@ type Commune = {
   postalCodes: string[];
 };
 
+const PROVINCE_IDS = [
+  "bruxelles",
+  "antwerpen",
+  "vlaams-brabant",
+  "brabant-wallon",
+  "hainaut",
+  "liege",
+  "limburg",
+  "luxembourg",
+  "namur",
+  "oost-vlaanderen",
+  "west-vlaanderen",
+];
+
+const REGION_IDS = ["brussels", "wallonia", "flanders", "germanophone"];
+
 export function OnemAssignmentsManager() {
+  const t = useTranslations("admin.bureaux");
+  const provinceLabel = (id: string) =>
+    t(`province_${id}` as Parameters<typeof t>[0]);
+  const regionLabel = (id: string) =>
+    t(`region_${id}` as Parameters<typeof t>[0]);
   const [bureaus, setBureaus] = useState<Onem[]>([]);
   const [communes, setCommunes] = useState<Commune[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +104,7 @@ export function OnemAssignmentsManager() {
       })
       .catch((err) => {
         console.error(err);
-        toast.error("Échec du chargement");
+        toast.error(t("loadFailed"));
         setLoading(false);
       });
     return () => {
@@ -162,10 +184,10 @@ export function OnemAssignmentsManager() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data?.error ?? "Échec");
+        toast.error(data?.error ?? t("actionFailed"));
         return;
       }
-      toast.success(`${data.applied} commune(s) assignée(s)`);
+      toast.success(t("communesAssigned", { count: data.applied }));
       // Reload data
       const [oData, cData] = await Promise.all([
         fetch("/api/admin/bureaux/service-assignments?serviceType=chomage").then((r) => r.json()),
@@ -196,17 +218,17 @@ export function OnemAssignmentsManager() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        toast.error(data?.error ?? "Échec de la sauvegarde");
+        toast.error(data?.error ?? t("saveFailed"));
         return;
       }
       // Met à jour le state local
       setBureaus((prev) =>
         prev.map((b) => (b.id === selectedBureauId ? { ...b, communeIds: [...selection] } : b))
       );
-      toast.success(`${selection.size} commune(s) assignée(s)`);
+      toast.success(t("communesAssigned", { count: selection.size }));
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setSaving(false);
     }
@@ -222,7 +244,7 @@ export function OnemAssignmentsManager() {
       <Card>
         <CardContent className="py-16">
           <div className="flex items-center justify-center text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Chargement...
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("loading")}
           </div>
         </CardContent>
       </Card>
@@ -234,14 +256,14 @@ export function OnemAssignmentsManager() {
       {/* Liste des bureaux ONEM */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Bureaux ONEM ({bureaus.length})</CardTitle>
+          <CardTitle className="text-base">{t("onemBureausTitle", { count: bureaus.length })}</CardTitle>
           <div className="flex gap-2 text-xs text-muted-foreground mt-2">
             <Badge variant="outline" className="border-green-500 text-green-700">
-              {assignedCount} assignées
+              {t("assignedCount", { count: assignedCount })}
             </Badge>
             {orphanCount > 0 && (
               <Badge variant="outline" className="border-orange-500 text-orange-700">
-                {orphanCount} orphelines
+                {t("orphanCount", { count: orphanCount })}
               </Badge>
             )}
           </div>
@@ -266,7 +288,7 @@ export function OnemAssignmentsManager() {
                     variant="outline"
                     style={{ borderColor: b.color, color: b.color }}
                   >
-                    {b.communeIds.length} commune{b.communeIds.length > 1 ? "s" : ""}
+                    {t("communeCount", { count: b.communeIds.length })}
                   </Badge>
                 </div>
               </button>
@@ -281,12 +303,11 @@ export function OnemAssignmentsManager() {
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle className="text-base">
-                {selectedBureau ? selectedBureau.name : "Sélectionner un bureau"}
+                {selectedBureau ? selectedBureau.name : t("selectBureau")}
               </CardTitle>
               {selectedBureau && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  {selection.size} commune{selection.size > 1 ? "s" : ""} sélectionnée
-                  {selection.size > 1 ? "s" : ""}
+                  {t("communesSelected", { count: selection.size })}
                 </p>
               )}
             </div>
@@ -295,58 +316,41 @@ export function OnemAssignmentsManager() {
                 <DropdownMenuTrigger
                   render={
                     <Button variant="outline" size="sm" disabled={!selectedBureauId || saving}>
-                      <Wand2 className="mr-2 h-4 w-4" /> Auto-assigner
+                      <Wand2 className="mr-2 h-4 w-4" /> {t("autoAssign")}
                     </Button>
                   }
                 />
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Par province (ajout)</DropdownMenuLabel>
-                  {[
-                    { id: "bruxelles", label: "Bruxelles-Capitale" },
-                    { id: "antwerpen", label: "Anvers" },
-                    { id: "vlaams-brabant", label: "Brabant flamand" },
-                    { id: "brabant-wallon", label: "Brabant wallon" },
-                    { id: "hainaut", label: "Hainaut" },
-                    { id: "liege", label: "Liège" },
-                    { id: "limburg", label: "Limbourg" },
-                    { id: "luxembourg", label: "Luxembourg" },
-                    { id: "namur", label: "Namur" },
-                    { id: "oost-vlaanderen", label: "Flandre orientale" },
-                    { id: "west-vlaanderen", label: "Flandre occidentale" },
-                  ].map((p) => (
+                  <DropdownMenuLabel>{t("byProvinceAdd")}</DropdownMenuLabel>
+                  {PROVINCE_IDS.map((id) => (
                     <DropdownMenuItem
-                      key={p.id}
-                      onClick={() => autoAssign({ province: p.id }, "merge")}
+                      key={id}
+                      onClick={() => autoAssign({ province: id }, "merge")}
                     >
-                      {p.label}
+                      {provinceLabel(id)}
                     </DropdownMenuItem>
                   ))}
                   <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Par région (remplace)</DropdownMenuLabel>
-                  {[
-                    { id: "brussels", label: "Bruxelles" },
-                    { id: "wallonia", label: "Wallonie" },
-                    { id: "flanders", label: "Flandre" },
-                    { id: "germanophone", label: "Communauté germanophone" },
-                  ].map((r) => (
+                  <DropdownMenuLabel>{t("byRegionReplace")}</DropdownMenuLabel>
+                  {REGION_IDS.map((id) => (
                     <DropdownMenuItem
-                      key={r.id}
-                      onClick={() => autoAssign({ region: r.id }, "replace")}
+                      key={id}
+                      onClick={() => autoAssign({ region: id }, "replace")}
                     >
-                      {r.label}
+                      {regionLabel(id)}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button variant="outline" size="sm" onClick={selectAllVisible}>
-                Tout cocher (visible)
+                {t("checkAllVisible")}
               </Button>
               <Button variant="outline" size="sm" onClick={deselectAllVisible}>
-                Tout décocher
+                {t("uncheckAll")}
               </Button>
               <Button size="sm" onClick={save} disabled={!selectedBureauId || saving}>
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                <Save className="mr-2 h-4 w-4" /> Enregistrer
+                <Save className="mr-2 h-4 w-4" /> {t("save")}
               </Button>
             </div>
           </div>
@@ -355,7 +359,7 @@ export function OnemAssignmentsManager() {
             <div className="relative md:col-span-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Recherche : nom, INS, CP"
+                placeholder={t("communeSearchShort")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -366,11 +370,11 @@ export function OnemAssignmentsManager() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Toutes régions</SelectItem>
-                <SelectItem value="brussels">Bruxelles</SelectItem>
-                <SelectItem value="wallonia">Wallonie</SelectItem>
-                <SelectItem value="flanders">Flandre</SelectItem>
-                <SelectItem value="germanophone">Communauté germanophone</SelectItem>
+                <SelectItem value="all">{t("regionAll")}</SelectItem>
+                <SelectItem value="brussels">{t("regionBrussels")}</SelectItem>
+                <SelectItem value="wallonia">{t("regionWallonia")}</SelectItem>
+                <SelectItem value="flanders">{t("regionFlanders")}</SelectItem>
+                <SelectItem value="germanophone">{t("regionGermanophone")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? "all")}>
@@ -378,10 +382,10 @@ export function OnemAssignmentsManager() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Toutes</SelectItem>
-                <SelectItem value="selected">Sélectionnées (ce bureau)</SelectItem>
-                <SelectItem value="assigned">Déjà assignées (autre bureau)</SelectItem>
-                <SelectItem value="unassigned">Non assignées</SelectItem>
+                <SelectItem value="all">{t("statusFilterAll")}</SelectItem>
+                <SelectItem value="selected">{t("statusFilterSelectedThis")}</SelectItem>
+                <SelectItem value="assigned">{t("statusFilterAssignedOther")}</SelectItem>
+                <SelectItem value="unassigned">{t("statusFilterUnassigned")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -410,7 +414,7 @@ export function OnemAssignmentsManager() {
                         {c.nameFr}
                         {ownedByOther && (
                           <span
-                            title="Déjà assignée à un autre bureau ONEM"
+                            title={t("assignedToOtherOnem")}
                             className="text-xs text-orange-600"
                           >
                             ⚠
@@ -428,7 +432,7 @@ export function OnemAssignmentsManager() {
             </div>
             {filteredCommunes.length === 0 && (
               <div className="py-8 text-center text-sm text-muted-foreground">
-                Aucune commune correspond aux filtres.
+                {t("noCommuneMatchFilters")}
               </div>
             )}
           </ScrollArea>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ export function CommuneCombobox({
   value: string;
   onChange: (id: string) => void;
 }) {
+  const t = useTranslations("admin.bureaux");
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Commune[]>([]);
   const [search, setSearch] = useState("");
@@ -71,7 +73,7 @@ export function CommuneCombobox({
                 <span className="text-xs text-muted-foreground">({selected.insCode})</span>
               </span>
             ) : (
-              <span className="text-muted-foreground">— Choisir une commune —</span>
+              <span className="text-muted-foreground">{t("communeChoose")}</span>
             )}
             <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
           </Button>
@@ -79,7 +81,7 @@ export function CommuneCombobox({
         <PopoverContent className="w-[420px] p-0">
           <div className="p-2 border-b">
             <Input
-              placeholder="Recherche par nom, INS ou CP"
+              placeholder={t("communeSearchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-9"
@@ -88,10 +90,10 @@ export function CommuneCombobox({
           </div>
           <ScrollArea className="h-72">
             {!loaded && (
-              <div className="p-4 text-center text-xs text-muted-foreground">Chargement…</div>
+              <div className="p-4 text-center text-xs text-muted-foreground">{t("loading")}</div>
             )}
             {loaded && filtered.length === 0 && (
-              <div className="p-4 text-center text-xs text-muted-foreground">Aucune commune.</div>
+              <div className="p-4 text-center text-xs text-muted-foreground">{t("communeNone")}</div>
             )}
             {filtered.map((c) => (
               <button
@@ -130,7 +132,7 @@ export function CommuneCombobox({
           variant="ghost"
           size="icon"
           onClick={() => onChange("")}
-          title="Retirer"
+          title={t("remove")}
         >
           <X className="h-4 w-4" />
         </Button>

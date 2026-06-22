@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   ShieldCheck,
@@ -29,18 +30,20 @@ type ReviewAction =
   | "reject"
   | "suspend";
 
-const ACTION_LABELS: Record<ReviewAction, string> = {
-  approve: "Approuver",
-  publish: "Publier",
-  request_changes: "Demander une correction",
-  reject: "Refuser",
-  suspend: "Suspendre",
+/** Action → clé i18n du libellé de bouton. */
+const ACTION_LABEL_KEYS: Record<ReviewAction, string> = {
+  approve: "actionApprove",
+  publish: "actionPublish",
+  request_changes: "actionRequestChanges",
+  reject: "actionReject",
+  suspend: "actionSuspend",
 };
 
 /** Actions qui exigent une note (obligatoire en prod). */
 const NOTE_REQUIRED: ReviewAction[] = ["request_changes", "reject"];
 
 export function ValidationClient({ rows }: { rows: AdminTrainingRow[] }) {
+  const t = useTranslations("admin.formations");
   const router = useRouter();
   const [items, setItems] = useState(rows);
 
@@ -51,7 +54,7 @@ export function ValidationClient({ rows }: { rows: AdminTrainingRow[] }) {
         <Card>
           <CardContent className="py-16 text-center text-muted-foreground">
             <ShieldCheck className="mx-auto mb-3 size-8 opacity-40" />
-            Aucune formation en attente de validation.
+            {t("validationEmpty")}
           </CardContent>
         </Card>
       </div>
@@ -78,16 +81,16 @@ export function ValidationClient({ rows }: { rows: AdminTrainingRow[] }) {
 }
 
 function Header({ count }: { count: number }) {
+  const t = useTranslations("admin.formations");
   return (
     <div className="flex items-center gap-3">
       <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
         <ShieldCheck className="size-5" />
       </span>
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">File de validation</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t("validationQueue")}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          {count} formation{count > 1 ? "s" : ""} en attente (soumissions et
-          corrections demandées).
+          {t("validationSubtitle", { n: count })}
         </p>
       </div>
     </div>
@@ -101,13 +104,17 @@ function ReviewCard({
   training: AdminTrainingRow;
   onDone: (id: string) => void;
 }) {
+  const t = useTranslations("admin.formations");
   const [activeAction, setActiveAction] = useState<ReviewAction | null>(null);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const actionLabel = (action: ReviewAction) =>
+    t(ACTION_LABEL_KEYS[action] as Parameters<typeof t>[0]);
+
   const submit = async (action: ReviewAction) => {
     if (NOTE_REQUIRED.includes(action) && !note.trim()) {
-      toast.error("Une note est requise pour cette action.");
+      toast.error(t("noteRequiredError"));
       return;
     }
     setSubmitting(true);
@@ -118,11 +125,11 @@ function ReviewCard({
         body: JSON.stringify({ action, note: note.trim() || undefined }),
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error ?? "Échec de l'action");
-      toast.success(`${ACTION_LABELS[action]} — fait.`);
+      if (!res.ok) throw new Error(body.error ?? t("actionFailed"));
+      toast.success(t("actionDone", { action: actionLabel(action) }));
       onDone(training.id);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("genericError"));
     } finally {
       setSubmitting(false);
     }
@@ -147,19 +154,19 @@ function ReviewCard({
               <StatusBadge status={training.status} />
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {training.organization?.name ?? "Organisation inconnue"}
+              {training.organization?.name ?? t("unknownOrganization")}
               {training.category ? ` · ${training.category.name}` : ""}
             </p>
           </div>
           <div className="text-right text-xs text-muted-foreground shrink-0">
-            Soumise le {formatDate(training.submittedAt)}
+            {t("submittedOn", { date: formatDate(training.submittedAt) })}
           </div>
         </div>
 
         {/* Détails */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <Badge variant="secondary">
-            Visibilité :{" "}
+            {t("visibilityLabel")}{" "}
             {VISIBILITY_LABELS[
               training.visibility as keyof typeof VISIBILITY_LABELS
             ] ?? training.visibility}
@@ -170,7 +177,7 @@ function ReviewCard({
               : formatPrice(training.priceAmount, training.currency)}
           </Badge>
           <Badge variant="secondary">
-            {training.sessionsCount} session{training.sessionsCount > 1 ? "s" : ""}
+            {t("sessionsCount", { n: training.sessionsCount })}
           </Badge>
           {training.tags.map((tag) => (
             <Badge key={tag.slug} variant="outline">
@@ -181,7 +188,7 @@ function ReviewCard({
 
         {training.adminReviewNote && (
           <p className="text-xs rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 px-2.5 py-1.5 text-amber-800 dark:text-amber-300">
-            Dernière note de correction : {training.adminReviewNote}
+            {t("lastReviewNote", { note: training.adminReviewNote })}
           </p>
         )}
 
@@ -189,17 +196,19 @@ function ReviewCard({
         {activeAction && (
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-muted-foreground">
-              Note {NOTE_REQUIRED.includes(activeAction) ? "(requise)" : "(optionnelle)"}
+              {NOTE_REQUIRED.includes(activeAction)
+                ? t("noteLabelRequired")
+                : t("noteLabelOptional")}
             </label>
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={
                 activeAction === "reject"
-                  ? "Motif du refus communiqué à l'organisation…"
+                  ? t("notePlaceholderReject")
                   : activeAction === "request_changes"
-                    ? "Éléments à corriger avant re-soumission…"
-                    : "Note interne (optionnelle)…"
+                    ? t("notePlaceholderRequestChanges")
+                    : t("notePlaceholderInternal")
               }
               rows={3}
             />
@@ -230,7 +239,9 @@ function ReviewCard({
                 }
               >
                 {icon}
-                {isActive ? `Confirmer : ${ACTION_LABELS[action]}` : ACTION_LABELS[action]}
+                {isActive
+                  ? t("confirmAction", { action: actionLabel(action) })
+                  : actionLabel(action)}
               </Button>
             );
           })}
@@ -244,7 +255,7 @@ function ReviewCard({
                 setNote("");
               }}
             >
-              Annuler
+              {t("cancel")}
             </Button>
           )}
         </div>

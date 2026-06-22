@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   KeyRound,
@@ -24,58 +25,59 @@ type PermKey = keyof AdminOrgPermission;
 
 interface PermMeta {
   key: PermKey;
-  label: string;
+  /** Clé i18n du libellé de la capacité. */
+  labelKey: string;
   /** Capacité sensible : OFF par défaut, encadrée visuellement. */
   sensitive?: boolean;
 }
 
-const PERM_GROUPS: { title: string; perms: PermMeta[] }[] = [
+const PERM_GROUPS: { titleKey: string; perms: PermMeta[] }[] = [
   {
-    title: "Création & soumission",
+    titleKey: "permGroupCreation",
     perms: [
-      { key: "canCreateTraining", label: "Créer des formations" },
-      { key: "canSubmitTraining", label: "Soumettre à validation" },
+      { key: "canCreateTraining", labelKey: "permCreateTraining" },
+      { key: "canSubmitTraining", labelKey: "permSubmitTraining" },
       {
         key: "canPublishDirectly",
-        label: "Publier sans validation",
+        labelKey: "permPublishDirectly",
         sensitive: true,
       },
     ],
   },
   {
-    title: "Types de formation autorisés",
+    titleKey: "permGroupTypes",
     perms: [
-      { key: "canCreatePublicTraining", label: "Formations publiques" },
-      { key: "canCreatePaidTraining", label: "Formations payantes" },
+      { key: "canCreatePublicTraining", labelKey: "permCreatePublic" },
+      { key: "canCreatePaidTraining", labelKey: "permCreatePaid" },
       {
         key: "canCreatePrivateTraining",
-        label: "Formations privées",
+        labelKey: "permCreatePrivate",
         sensitive: true,
       },
       {
         key: "canCreateInternalTraining",
-        label: "Formations internes",
+        labelKey: "permCreateInternal",
         sensitive: true,
       },
     ],
   },
   {
-    title: "Sessions & participants",
+    titleKey: "permGroupSessions",
     perms: [
-      { key: "canManageSessions", label: "Gérer les sessions" },
-      { key: "canManageEnrollments", label: "Gérer les inscriptions" },
-      { key: "canViewParticipantData", label: "Voir les données participants" },
-      { key: "canExportParticipants", label: "Exporter les participants" },
-      { key: "canIssueCertificate", label: "Délivrer des attestations" },
+      { key: "canManageSessions", labelKey: "permManageSessions" },
+      { key: "canManageEnrollments", labelKey: "permManageEnrollments" },
+      { key: "canViewParticipantData", labelKey: "permViewParticipants" },
+      { key: "canExportParticipants", labelKey: "permExportParticipants" },
+      { key: "canIssueCertificate", labelKey: "permIssueCertificate" },
     ],
   },
   {
-    title: "Distinctions Docbel",
+    titleKey: "permGroupDocbel",
     perms: [
-      { key: "canUseDocbelBadge", label: "Utiliser le badge Docbel" },
+      { key: "canUseDocbelBadge", labelKey: "permUseDocbelBadge" },
       {
         key: "canRequestFeaturedPlacement",
-        label: "Demander une mise en avant",
+        labelKey: "permRequestFeatured",
       },
     ],
   },
@@ -100,6 +102,7 @@ const DEFAULT_PERM: AdminOrgPermission = {
 };
 
 export function PermissionsClient({ orgs }: { orgs: AdminOrgRow[] }) {
+  const t = useTranslations("admin.formations");
   const [search, setSearch] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -122,19 +125,19 @@ export function PermissionsClient({ orgs }: { orgs: AdminOrgRow[] }) {
         </span>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Permissions des organisations
+            {t("permissionsTitle")}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Capacités de création de formations octroyées à chaque organisation.
+            {t("permissionsSubtitle")}
           </p>
         </div>
       </div>
 
       <p className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50/60 dark:bg-amber-950/20 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
         <ShieldAlert className="size-4 shrink-0 mt-0.5" />
-        Les capacités sensibles (publication directe, formations privées et
-        internes) sont <strong>désactivées par défaut</strong> — n'activez-les que
-        pour des organisations de confiance.
+        {t.rich("sensitiveCapabilitiesWarning", {
+          strong: (chunks) => <strong>{chunks}</strong>,
+        })}
       </p>
 
       <Card>
@@ -142,7 +145,7 @@ export function PermissionsClient({ orgs }: { orgs: AdminOrgRow[] }) {
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher une organisation…"
+              placeholder={t("searchOrganizationPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -155,7 +158,7 @@ export function PermissionsClient({ orgs }: { orgs: AdminOrgRow[] }) {
         {filtered.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
-              Aucune organisation.
+              {t("noOrganization")}
             </CardContent>
           </Card>
         )}
@@ -181,6 +184,7 @@ function OrgRow({
   open: boolean;
   onToggle: () => void;
 }) {
+  const t = useTranslations("admin.formations");
   const [perm, setPerm] = useState<AdminOrgPermission>(
     org.permission ?? DEFAULT_PERM,
   );
@@ -204,11 +208,11 @@ function OrgRow({
         },
       );
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error ?? "Échec de l'enregistrement");
-      toast.success(`Permissions de « ${org.name} » enregistrées.`);
+      if (!res.ok) throw new Error(body.error ?? t("saveFailed"));
+      toast.success(t("permissionsSaved", { org: org.name }));
       setDirty(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("genericError"));
     } finally {
       setSaving(false);
     }
@@ -230,13 +234,13 @@ function OrgRow({
             </Badge>
             {!org.permission && (
               <Badge variant="secondary" className="text-[10px]">
-                Défauts
+                {t("defaultsBadge")}
               </Badge>
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {org.trainingsCount} formation{org.trainingsCount > 1 ? "s" : ""} ·{" "}
-            {org.membersCount} membre{org.membersCount > 1 ? "s" : ""}
+            {t("trainingsCount", { n: org.trainingsCount })} ·{" "}
+            {t("membersCount", { n: org.membersCount })}
           </p>
         </div>
         <ChevronRight
@@ -246,47 +250,53 @@ function OrgRow({
 
       {open && (
         <CardContent className="border-t p-4 pt-4 flex flex-col gap-5">
-          {PERM_GROUPS.map((group) => (
-            <div key={group.title} className="flex flex-col gap-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {group.title}
-              </h3>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {group.perms.map((meta) => (
-                  <label
-                    key={meta.key}
-                    className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ${
-                      meta.sensitive
-                        ? "border-amber-300/70 dark:border-amber-900/70 bg-amber-50/40 dark:bg-amber-950/10"
-                        : "border-border"
-                    }`}
-                  >
-                    <span className="flex items-center gap-1.5 text-sm">
-                      {meta.label}
-                      {meta.sensitive && (
-                        <ShieldAlert className="size-3.5 text-amber-600" />
-                      )}
-                    </span>
-                    <Switch
-                      checked={perm[meta.key]}
-                      onCheckedChange={(v) => update(meta.key, v)}
-                      aria-label={meta.label}
-                    />
-                  </label>
-                ))}
+          {PERM_GROUPS.map((group) => {
+            const groupTitle = t(group.titleKey as Parameters<typeof t>[0]);
+            return (
+              <div key={group.titleKey} className="flex flex-col gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {groupTitle}
+                </h3>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {group.perms.map((meta) => {
+                    const permLabel = t(meta.labelKey as Parameters<typeof t>[0]);
+                    return (
+                      <label
+                        key={meta.key}
+                        className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ${
+                          meta.sensitive
+                            ? "border-amber-300/70 dark:border-amber-900/70 bg-amber-50/40 dark:bg-amber-950/10"
+                            : "border-border"
+                        }`}
+                      >
+                        <span className="flex items-center gap-1.5 text-sm">
+                          {permLabel}
+                          {meta.sensitive && (
+                            <ShieldAlert className="size-3.5 text-amber-600" />
+                          )}
+                        </span>
+                        <Switch
+                          checked={perm[meta.key]}
+                          onCheckedChange={(v) => update(meta.key, v)}
+                          aria-label={permLabel}
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           <div className="flex items-center justify-end gap-2 pt-1">
             {dirty && (
               <span className="text-xs text-muted-foreground">
-                Modifications non enregistrées
+                {t("unsavedChanges")}
               </span>
             )}
             <Button size="sm" onClick={save} disabled={!dirty || saving}>
               {saving && <Loader2 className="size-4 animate-spin" />}
-              Enregistrer
+              {t("save")}
             </Button>
           </div>
         </CardContent>

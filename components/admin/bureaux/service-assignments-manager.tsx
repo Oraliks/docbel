@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Card,
@@ -51,20 +52,45 @@ type Commune = {
   postalCodes: string[];
 };
 
-const SERVICES = [
-  { value: "chomage", label: "ONEM (chômage)", helper: "Bureaux régionaux ONEM/RVA" },
-  { value: "paiement_capac", label: "CAPAC (caisse publique)", helper: "Bureaux CAPAC/HVW" },
-  { value: "paiement_fgtb", label: "FGTB (org. paiement)", helper: "Caisses FGTB/ABVV" },
-  { value: "paiement_csc", label: "CSC (org. paiement)", helper: "Caisses CSC/ACV" },
-  { value: "paiement_cgslb", label: "CGSLB (org. paiement)", helper: "Caisses CGSLB/ACLVB" },
-  { value: "mutuelle_solidaris", label: "Mutuelle Solidaris", helper: "—" },
-  { value: "mutuelle_mc", label: "Mutualité Chrétienne", helper: "—" },
-  { value: "mutuelle_mloz", label: "MLOZ (Mut. libres)", helper: "—" },
-  { value: "emploi_regional", label: "Forem / VDAB / Actiris / ADG", helper: "Emploi régional" },
-  { value: "pension", label: "SFP — pensions", helper: "Bureaux régionaux SFP" },
+const SERVICE_VALUES = [
+  "chomage",
+  "paiement_capac",
+  "paiement_fgtb",
+  "paiement_csc",
+  "paiement_cgslb",
+  "mutuelle_solidaris",
+  "mutuelle_mc",
+  "mutuelle_mloz",
+  "emploi_regional",
+  "pension",
 ];
 
+const PROVINCE_IDS = [
+  "bruxelles",
+  "antwerpen",
+  "vlaams-brabant",
+  "brabant-wallon",
+  "hainaut",
+  "liege",
+  "limburg",
+  "luxembourg",
+  "namur",
+  "oost-vlaanderen",
+  "west-vlaanderen",
+];
+
+const REGION_IDS = ["brussels", "wallonia", "flanders", "germanophone"];
+
 export function ServiceAssignmentsManager() {
+  const t = useTranslations("admin.bureaux");
+  const provinceLabel = (id: string) =>
+    t(`province_${id}` as Parameters<typeof t>[0]);
+  const regionLabel = (id: string) =>
+    t(`region_${id}` as Parameters<typeof t>[0]);
+  const serviceLabel = (v: string) =>
+    t(`svcType_${v}` as Parameters<typeof t>[0]);
+  const serviceHelper = (v: string) =>
+    t(`svcTypeHelper_${v}` as Parameters<typeof t>[0]);
   const [serviceType, setServiceType] = useState("chomage");
   const [bureaus, setBureaus] = useState<ServiceBureau[]>([]);
   const [communes, setCommunes] = useState<Commune[]>([]);
@@ -97,13 +123,13 @@ export function ServiceAssignmentsManager() {
       })
       .catch(() => {
         if (cancelled) return;
-        toast.error("Échec du chargement");
+        toast.error(t("loadFailed"));
         setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [serviceType]);
+  }, [serviceType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load communes once
   useEffect(() => {
@@ -182,10 +208,10 @@ export function ServiceAssignmentsManager() {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          toast.error(data?.error ?? "Échec");
+          toast.error(data?.error ?? t("actionFailed"));
           return;
         }
-        toast.success(`${data.applied} commune(s) assignée(s)`);
+        toast.success(t("communesAssigned", { count: data.applied }));
         // Reload
         const r = await fetch(`/api/admin/bureaux/service-assignments?serviceType=${serviceType}`);
         const j = await r.json();
@@ -203,7 +229,7 @@ export function ServiceAssignmentsManager() {
       const newSel = mode === "replace" ? new Set<string>() : new Set(selection);
       for (const c of targetCommunes) newSel.add(c.id);
       setSelection(newSel);
-      toast.success(`${targetCommunes.length} commune(s) ajoutées au panier`);
+      toast.success(t("communesAddedToCart", { count: targetCommunes.length }));
     }
   }
 
@@ -222,13 +248,13 @@ export function ServiceAssignmentsManager() {
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        toast.error(d?.error ?? "Échec");
+        toast.error(d?.error ?? t("actionFailed"));
         return;
       }
       setBureaus((prev) =>
         prev.map((b) => (b.id === selectedBureauId ? { ...b, communeIds: [...selection] } : b))
       );
-      toast.success(`${selection.size} commune(s) assignée(s)`);
+      toast.success(t("communesAssigned", { count: selection.size }));
     } finally {
       setSaving(false);
     }
@@ -242,16 +268,16 @@ export function ServiceAssignmentsManager() {
     <div className="space-y-4">
       <Card>
         <CardContent className="pt-6">
-          <Label className="text-xs">Service à configurer</Label>
+          <Label className="text-xs">{t("serviceToConfigure")}</Label>
           <Select value={serviceType} onValueChange={(v) => setServiceType(v ?? "chomage")}>
             <SelectTrigger className="mt-1">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SERVICES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                  <span className="text-muted-foreground ml-2 text-xs">— {s.helper}</span>
+              {SERVICE_VALUES.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {serviceLabel(v)}
+                  <span className="text-muted-foreground ml-2 text-xs">— {serviceHelper(v)}</span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -263,32 +289,34 @@ export function ServiceAssignmentsManager() {
         <Card>
           <CardContent className="py-16">
             <div className="flex items-center justify-center text-muted-foreground">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Chargement...
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("loading")}
             </div>
           </CardContent>
         </Card>
       ) : bureaus.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center text-muted-foreground text-sm">
-            Aucun bureau actif pour ce service. Créez-en d&apos;abord via{" "}
-            <a href="/admin/bureaux" className="underline">
-              Tous les bureaux
-            </a>
-            .
+            {t.rich("noActiveBureauForService", {
+              link: (chunks) => (
+                <a href="/admin/bureaux" className="underline">
+                  {chunks}
+                </a>
+              ),
+            })}
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{bureaus.length} bureau(x)</CardTitle>
+              <CardTitle className="text-base">{t("bureauxCount", { count: bureaus.length })}</CardTitle>
               <div className="flex gap-2 text-xs text-muted-foreground mt-2">
                 <Badge variant="outline" className="border-green-500 text-green-700">
-                  {assignedCount} assignées
+                  {t("assignedCount", { count: assignedCount })}
                 </Badge>
                 {orphanCount > 0 && (
                   <Badge variant="outline" className="border-orange-500 text-orange-700">
-                    {orphanCount} orphelines
+                    {t("orphanCount", { count: orphanCount })}
                   </Badge>
                 )}
               </div>
@@ -310,7 +338,7 @@ export function ServiceAssignmentsManager() {
                     </div>
                     <div className="mt-1">
                       <Badge variant="outline" style={{ borderColor: b.color, color: b.color }}>
-                        {b.communeIds.length} commune{b.communeIds.length > 1 ? "s" : ""}
+                        {t("communeCount", { count: b.communeIds.length })}
                       </Badge>
                     </div>
                   </button>
@@ -324,12 +352,11 @@ export function ServiceAssignmentsManager() {
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                   <CardTitle className="text-base">
-                    {selectedBureau ? selectedBureau.name : "Sélectionner un bureau"}
+                    {selectedBureau ? selectedBureau.name : t("selectBureau")}
                   </CardTitle>
                   {selectedBureau && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      {selection.size} commune{selection.size > 1 ? "s" : ""} sélectionnée
-                      {selection.size > 1 ? "s" : ""}
+                      {t("communesSelected", { count: selection.size })}
                     </p>
                   )}
                 </div>
@@ -338,58 +365,41 @@ export function ServiceAssignmentsManager() {
                     <DropdownMenuTrigger
                       render={
                         <Button variant="outline" size="sm" disabled={!selectedBureauId || saving}>
-                          <Wand2 className="mr-2 h-4 w-4" /> Auto-assigner
+                          <Wand2 className="mr-2 h-4 w-4" /> {t("autoAssign")}
                         </Button>
                       }
                     />
                     <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Par province (ajout)</DropdownMenuLabel>
-                      {[
-                        { id: "bruxelles", label: "Bruxelles-Capitale" },
-                        { id: "antwerpen", label: "Anvers" },
-                        { id: "vlaams-brabant", label: "Brabant flamand" },
-                        { id: "brabant-wallon", label: "Brabant wallon" },
-                        { id: "hainaut", label: "Hainaut" },
-                        { id: "liege", label: "Liège" },
-                        { id: "limburg", label: "Limbourg" },
-                        { id: "luxembourg", label: "Luxembourg" },
-                        { id: "namur", label: "Namur" },
-                        { id: "oost-vlaanderen", label: "Flandre orientale" },
-                        { id: "west-vlaanderen", label: "Flandre occidentale" },
-                      ].map((p) => (
+                      <DropdownMenuLabel>{t("byProvinceAdd")}</DropdownMenuLabel>
+                      {PROVINCE_IDS.map((id) => (
                         <DropdownMenuItem
-                          key={p.id}
-                          onClick={() => autoAssign({ province: p.id }, "merge")}
+                          key={id}
+                          onClick={() => autoAssign({ province: id }, "merge")}
                         >
-                          {p.label}
+                          {provinceLabel(id)}
                         </DropdownMenuItem>
                       ))}
                       <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Par région (remplace)</DropdownMenuLabel>
-                      {[
-                        { id: "brussels", label: "Bruxelles" },
-                        { id: "wallonia", label: "Wallonie" },
-                        { id: "flanders", label: "Flandre" },
-                        { id: "germanophone", label: "Communauté germanophone" },
-                      ].map((r) => (
+                      <DropdownMenuLabel>{t("byRegionReplace")}</DropdownMenuLabel>
+                      {REGION_IDS.map((id) => (
                         <DropdownMenuItem
-                          key={r.id}
-                          onClick={() => autoAssign({ region: r.id }, "replace")}
+                          key={id}
+                          onClick={() => autoAssign({ region: id }, "replace")}
                         >
-                          {r.label}
+                          {regionLabel(id)}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button variant="outline" size="sm" onClick={selectAllVisible}>
-                    Tout cocher (visible)
+                    {t("checkAllVisible")}
                   </Button>
                   <Button variant="outline" size="sm" onClick={deselectAllVisible}>
-                    Tout décocher
+                    {t("uncheckAll")}
                   </Button>
                   <Button size="sm" onClick={save} disabled={!selectedBureauId || saving}>
                     {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <Save className="mr-2 h-4 w-4" /> Enregistrer
+                    <Save className="mr-2 h-4 w-4" /> {t("save")}
                   </Button>
                 </div>
               </div>
@@ -398,7 +408,7 @@ export function ServiceAssignmentsManager() {
                 <div className="relative md:col-span-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Recherche : nom, INS, CP"
+                    placeholder={t("communeSearchShort")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-9"
@@ -409,11 +419,11 @@ export function ServiceAssignmentsManager() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Toutes régions</SelectItem>
-                    <SelectItem value="brussels">Bruxelles</SelectItem>
-                    <SelectItem value="wallonia">Wallonie</SelectItem>
-                    <SelectItem value="flanders">Flandre</SelectItem>
-                    <SelectItem value="germanophone">Communauté germanophone</SelectItem>
+                    <SelectItem value="all">{t("regionAll")}</SelectItem>
+                    <SelectItem value="brussels">{t("regionBrussels")}</SelectItem>
+                    <SelectItem value="wallonia">{t("regionWallonia")}</SelectItem>
+                    <SelectItem value="flanders">{t("regionFlanders")}</SelectItem>
+                    <SelectItem value="germanophone">{t("regionGermanophone")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? "all")}>
@@ -421,10 +431,10 @@ export function ServiceAssignmentsManager() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Toutes</SelectItem>
-                    <SelectItem value="selected">Sélectionnées</SelectItem>
-                    <SelectItem value="assigned">Déjà assignées (autre bureau)</SelectItem>
-                    <SelectItem value="unassigned">Non assignées</SelectItem>
+                    <SelectItem value="all">{t("statusFilterAll")}</SelectItem>
+                    <SelectItem value="selected">{t("statusFilterSelected")}</SelectItem>
+                    <SelectItem value="assigned">{t("statusFilterAssignedOther")}</SelectItem>
+                    <SelectItem value="unassigned">{t("statusFilterUnassigned")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -453,7 +463,7 @@ export function ServiceAssignmentsManager() {
                             {c.nameFr}
                             {ownedByOther && (
                               <span
-                                title="Déjà assignée à un autre bureau"
+                                title={t("assignedToOther")}
                                 className="text-xs text-orange-600"
                               >
                                 ⚠
@@ -471,7 +481,7 @@ export function ServiceAssignmentsManager() {
                 </div>
                 {filteredCommunes.length === 0 && (
                   <div className="py-8 text-center text-sm text-muted-foreground">
-                    Aucune commune correspond aux filtres.
+                    {t("noCommuneMatchFilters")}
                   </div>
                 )}
               </ScrollArea>

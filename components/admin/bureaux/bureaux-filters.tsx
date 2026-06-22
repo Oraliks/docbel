@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -11,16 +12,15 @@ import {
 import { Search } from "lucide-react";
 import type { BureauTypeCode } from "@/lib/bureaus/types";
 
-// Labels dupliqués depuis bureaux-manager : on les garde locaux pour
-// éviter un couplage circulaire avec le parent (le dialog en a aussi).
-const TYPE_LABELS: Record<BureauTypeCode, string> = {
-  CPAS: "CPAS",
-  COMMUNE: "Commune",
-  ONEM: "ONEM",
-  SYNDICAT: "Syndicat",
-  PERMANENCE: "Permanence",
-  AUTRE: "Autre",
-};
+// Ordre des types pour le filtre ; libellés via i18n (typeShort*).
+const TYPE_CODES: BureauTypeCode[] = [
+  "CPAS",
+  "COMMUNE",
+  "ONEM",
+  "SYNDICAT",
+  "PERMANENCE",
+  "AUTRE",
+];
 
 type Props = {
   search: string;
@@ -47,13 +47,14 @@ export function BureauxFilters({
   filterVerified,
   onFilterVerifiedChange,
 }: Props) {
+  const t = useTranslations("admin.bureaux");
   return (
     <>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-5 mt-4">
         <div className="relative md:col-span-2">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Recherche : nom, ville, rue, CP..."
+            placeholder={t("filterSearchPlaceholder")}
             className="pl-9"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -64,37 +65,37 @@ export function BureauxFilters({
           onValueChange={(v) => onFilterTypeChange((v ?? "all") as BureauTypeCode | "all")}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Type" />
+            <SelectValue placeholder={t("filterTypePlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous types</SelectItem>
-            {(Object.keys(TYPE_LABELS) as BureauTypeCode[]).map((t) => (
-              <SelectItem key={t} value={t}>
-                {TYPE_LABELS[t]}
+            <SelectItem value="all">{t("filterTypeAll")}</SelectItem>
+            {TYPE_CODES.map((code) => (
+              <SelectItem key={code} value={code}>
+                {t(`typeShort${code}` as Parameters<typeof t>[0])}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={filterRegion} onValueChange={(v) => onFilterRegionChange(v ?? "all")}>
           <SelectTrigger>
-            <SelectValue placeholder="Région" />
+            <SelectValue placeholder={t("filterRegionPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes régions</SelectItem>
-            <SelectItem value="brussels">Bruxelles</SelectItem>
-            <SelectItem value="wallonia">Wallonie</SelectItem>
-            <SelectItem value="flanders">Flandre</SelectItem>
-            <SelectItem value="germanophone">Communauté germanophone</SelectItem>
+            <SelectItem value="all">{t("regionAll")}</SelectItem>
+            <SelectItem value="brussels">{t("regionBrussels")}</SelectItem>
+            <SelectItem value="wallonia">{t("regionWallonia")}</SelectItem>
+            <SelectItem value="flanders">{t("regionFlanders")}</SelectItem>
+            <SelectItem value="germanophone">{t("regionGermanophone")}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterActive} onValueChange={(v) => onFilterActiveChange(v ?? "all")}>
           <SelectTrigger>
-            <SelectValue placeholder="Statut" />
+            <SelectValue placeholder={t("filterStatusPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="active">Actifs</SelectItem>
-            <SelectItem value="false">Désactivés</SelectItem>
-            <SelectItem value="all">Tous</SelectItem>
+            <SelectItem value="active">{t("filterStatusActive")}</SelectItem>
+            <SelectItem value="false">{t("filterStatusInactive")}</SelectItem>
+            <SelectItem value="all">{t("filterStatusAll")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -102,13 +103,13 @@ export function BureauxFilters({
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mt-2">
         <Select value={filterVerified} onValueChange={(v) => onFilterVerifiedChange(v ?? "all")}>
           <SelectTrigger>
-            <SelectValue placeholder="Vérification" />
+            <SelectValue placeholder={t("filterVerifPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes vérifications</SelectItem>
-            <SelectItem value="true">Vérifiés</SelectItem>
-            <SelectItem value="false">Non vérifiés</SelectItem>
-            <SelectItem value="stale">À revérifier (+6 mois ou jamais)</SelectItem>
+            <SelectItem value="all">{t("filterVerifAll")}</SelectItem>
+            <SelectItem value="true">{t("filterVerifVerified")}</SelectItem>
+            <SelectItem value="false">{t("filterVerifNotVerified")}</SelectItem>
+            <SelectItem value="stale">{t("filterVerifStale")}</SelectItem>
           </SelectContent>
         </Select>
       </div>

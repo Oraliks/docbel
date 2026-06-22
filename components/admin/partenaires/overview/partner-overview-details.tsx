@@ -18,6 +18,7 @@ import {
   XCircleIcon,
   ZapIcon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,21 +81,22 @@ export function PartnerOverviewDetails({
   onSetUserStatus,
   onSetUserFlag,
 }: PartnerOverviewDetailsProps) {
+  const t = useTranslations("admin.partenaires");
   return (
     <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
       <section>
         <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <GlobeIcon className="size-3.5" />
-          Accès autorisés ({org.domains.length})
+          {t("authorizedAccessHeading", { count: org.domains.length })}
         </h3>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Domaine / Email</TableHead>
-              <TableHead>Segment</TableHead>
-              <TableHead>Notes</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("colDomainEmail")}</TableHead>
+              <TableHead>{t("colSegment")}</TableHead>
+              <TableHead>{t("colNotes")}</TableHead>
+              <TableHead>{t("colStatus")}</TableHead>
+              <TableHead className="text-right">{t("colActions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -140,12 +142,12 @@ export function PartnerOverviewDetails({
                         className="gap-1 border-green-200 bg-green-50 text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300"
                       >
                         <CheckCircle2Icon className="size-3" />
-                        Actif
+                        {t("statusActive")}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="gap-1">
                         <XCircleIcon className="size-3" />
-                        Désactivé
+                        {t("statusDisabled")}
                       </Badge>
                     )}
                     {d.isTest && (
@@ -154,7 +156,7 @@ export function PartnerOverviewDetails({
                         className="gap-1 border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
                       >
                         <FlaskConicalIcon className="size-3" />
-                        Test
+                        {t("badgeTest")}
                       </Badge>
                     )}
                   </div>
@@ -166,7 +168,7 @@ export function PartnerOverviewDetails({
                       size="sm"
                       onClick={() => onEditDomain(d)}
                       disabled={isPending}
-                      title="Modifier"
+                      title={t("actionEdit")}
                     >
                       <PencilIcon className="size-4" />
                     </Button>
@@ -175,7 +177,7 @@ export function PartnerOverviewDetails({
                       size="sm"
                       onClick={() => onToggleActive(d)}
                       disabled={isPending}
-                      title={d.isActive ? "Désactiver" : "Activer"}
+                      title={d.isActive ? t("actionDisable") : t("actionActivate")}
                     >
                       <PowerIcon className="size-4" />
                     </Button>
@@ -185,7 +187,7 @@ export function PartnerOverviewDetails({
                       onClick={() => onToggleTest(d)}
                       disabled={isPending}
                       title={
-                        d.isTest ? "Retirer le marquage test" : "Marquer comme test"
+                        d.isTest ? t("actionUnmarkTest") : t("actionMarkTest")
                       }
                     >
                       <FlaskConicalIcon className="size-4" />
@@ -196,7 +198,7 @@ export function PartnerOverviewDetails({
                       onClick={() => onDeleteDomain(d)}
                       disabled={isPending}
                       className="text-destructive hover:text-destructive"
-                      title="Supprimer"
+                      title={t("actionDelete")}
                     >
                       <Trash2Icon className="size-4" />
                     </Button>
@@ -211,22 +213,22 @@ export function PartnerOverviewDetails({
       <section>
         <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <UsersIcon className="size-3.5" />
-          Utilisateurs inscrits ({org.users.length})
+          {t("registeredUsersHeading", { count: org.users.length })}
         </h3>
         {org.users.length === 0 ? (
           <p className="rounded-md border border-dashed bg-background p-4 text-center text-xs text-muted-foreground">
-            Aucun utilisateur inscrit pour cette organisation.
+            {t("noUsersForOrg")}
           </p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Inscrit le</TableHead>
-                <TableHead>Dernière connexion</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("colName")}</TableHead>
+                <TableHead>{t("colEmail")}</TableHead>
+                <TableHead>{t("colStatus")}</TableHead>
+                <TableHead>{t("colRegisteredOn")}</TableHead>
+                <TableHead>{t("colLastLogin")}</TableHead>
+                <TableHead className="text-right">{t("colActions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -259,7 +261,7 @@ export function PartnerOverviewDetails({
                             className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
                           >
                             <MailCheckIcon className="size-3" />
-                            Vérifié
+                            {t("badgeVerified")}
                           </Badge>
                         ) : (
                           <Badge
@@ -267,7 +269,7 @@ export function PartnerOverviewDetails({
                             className="gap-1 border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
                           >
                             <MailWarningIcon className="size-3" />
-                            En attente
+                            {t("badgePending")}
                           </Badge>
                         )}
                         {u.isOrgManager ? (
@@ -276,7 +278,7 @@ export function PartnerOverviewDetails({
                             className="gap-1 border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300"
                           >
                             <ShieldCheckIcon className="size-3" />
-                            Responsable
+                            {t("badgeOrgManager")}
                           </Badge>
                         ) : u.canViewRdvHistory ? (
                           <Badge
@@ -284,7 +286,7 @@ export function PartnerOverviewDetails({
                             className="gap-1 border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300"
                           >
                             <HistoryIcon className="size-3" />
-                            Accès historique
+                            {t("badgeHistoryAccess")}
                           </Badge>
                         ) : null}
                       </div>
@@ -305,7 +307,7 @@ export function PartnerOverviewDetails({
                             size="sm"
                             onClick={() => onResendUserConfirmation(u)}
                             disabled={isPending}
-                            title="Renvoyer l'email de confirmation"
+                            title={t("actionResendConfirmation")}
                           >
                             <MailIcon className="size-4" />
                           </Button>
@@ -316,7 +318,7 @@ export function PartnerOverviewDetails({
                             size="sm"
                             onClick={() => onActivateUser(u)}
                             disabled={isPending}
-                            title="Activer le compte"
+                            title={t("actionActivateAccount")}
                             className="text-emerald-600 hover:text-emerald-700"
                           >
                             <ZapIcon className="size-4" />
@@ -328,7 +330,7 @@ export function PartnerOverviewDetails({
                             size="sm"
                             onClick={() => onSetUserStatus(u, "disabled")}
                             disabled={isPending}
-                            title="Désactiver le compte"
+                            title={t("actionDisableAccount")}
                             className="text-amber-600 hover:text-amber-700"
                           >
                             <PauseIcon className="size-4" />
@@ -343,8 +345,8 @@ export function PartnerOverviewDetails({
                           disabled={isPending}
                           title={
                             u.isOrgManager
-                              ? "Responsable (accès historique RDV) — cliquer pour retirer"
-                              : "Désigner responsable (accès historique RDV)"
+                              ? t("actionOrgManagerRemove")
+                              : t("actionOrgManagerGrant")
                           }
                           className={
                             u.isOrgManager
@@ -367,8 +369,8 @@ export function PartnerOverviewDetails({
                           disabled={isPending}
                           title={
                             u.canViewRdvHistory
-                              ? "Accès historique RDV accordé — cliquer pour retirer"
-                              : "Donner accès à l'historique des RDV"
+                              ? t("actionRdvHistoryRemove")
+                              : t("actionRdvHistoryGrant")
                           }
                           className={
                             u.canViewRdvHistory

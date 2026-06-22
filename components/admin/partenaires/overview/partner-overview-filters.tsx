@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { PartnerCounts, PartnerStatusFilter } from "./types";
@@ -50,24 +51,37 @@ export function PartnerOverviewFilters({
   counts,
   testCount,
 }: PartnerOverviewFiltersProps) {
+  const t = useTranslations("admin.partenaires");
   const tabs: TabDef[] = [
-    { id: "all", label: `Toutes (${counts.total})`, tone: "violet" },
-    { id: "active", label: `Actives (${counts.active})`, tone: "emerald" },
-    { id: "pending", label: `En attente (${counts.pending})`, tone: "amber" },
-    { id: "inactive", label: `Inactives (${counts.inactive})`, tone: "red" },
-    { id: "test", label: `Test (${testCount})`, tone: "slate" },
+    { id: "all", label: t("filterAll", { count: counts.total }), tone: "violet" },
+    {
+      id: "active",
+      label: t("filterActive", { count: counts.active }),
+      tone: "emerald",
+    },
+    {
+      id: "pending",
+      label: t("filterPending", { count: counts.pending }),
+      tone: "amber",
+    },
+    {
+      id: "inactive",
+      label: t("filterInactive", { count: counts.inactive }),
+      tone: "red",
+    },
+    { id: "test", label: t("filterTest", { count: testCount }), tone: "slate" },
   ];
 
   return (
     <div
       role="toolbar"
-      aria-label="Filtres organisations partenaires"
+      aria-label={t("filtersToolbarLabel")}
       className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between"
     >
       {/* Tabs --------------------------------------------------------- */}
       <div
         role="tablist"
-        aria-label="Filtrer par statut"
+        aria-label={t("filterByStatusLabel")}
         className="flex flex-wrap items-center gap-1.5"
       >
         {tabs.map((tab) => {
@@ -97,8 +111,8 @@ export function PartnerOverviewFilters({
         <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
-          aria-label="Rechercher une organisation"
-          placeholder="Nom, domaine ou email..."
+          aria-label={t("searchLabel")}
+          placeholder={t("searchPlaceholder")}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="h-9 pl-9"

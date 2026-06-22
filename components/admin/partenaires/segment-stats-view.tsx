@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import {
   ArrowLeftIcon,
   Building2Icon,
@@ -29,31 +30,14 @@ import type { PartnerStats } from "@/lib/partner-stats";
  */
 export type StatsVariant = "partenaire" | "employeur";
 
-const MONTH_LABELS_FR = [
-  "Jan",
-  "Fév",
-  "Mar",
-  "Avr",
-  "Mai",
-  "Juin",
-  "Juil",
-  "Août",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Déc",
-];
-
-function formatMonthLabel(key: string): string {
+function formatMonthLabel(key: string, monthLabels: string[]): string {
   const [year, month] = key.split("-").map((p) => parseInt(p, 10));
-  return `${MONTH_LABELS_FR[month - 1]} ${String(year).slice(2)}`;
+  return `${monthLabels[month - 1]} ${String(year).slice(2)}`;
 }
 
 const THEME: Record<
   StatsVariant,
   {
-    title: string;
-    subtitle: string;
     backHref: string;
     primaryCard: string;
     bar: string;
@@ -61,9 +45,6 @@ const THEME: Record<
   }
 > = {
   partenaire: {
-    title: "Statistiques partenaires",
-    subtitle:
-      "Vue d'ensemble des organisations, domaines et utilisateurs inscrits.",
     backHref: "/admin/partenaires",
     primaryCard:
       "bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300",
@@ -72,9 +53,6 @@ const THEME: Record<
       "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
   },
   employeur: {
-    title: "Statistiques employeurs",
-    subtitle:
-      "Vue d'ensemble des organisations, accès et comptes employeurs inscrits.",
     backHref: "/admin/employeurs",
     primaryCard:
       "bg-teal-100 text-teal-600 dark:bg-teal-500/15 dark:text-teal-300",
@@ -119,14 +97,29 @@ function StatCard({
   );
 }
 
-export function SegmentStatsView({
+export async function SegmentStatsView({
   stats,
   variant,
 }: {
   stats: PartnerStats;
   variant: StatsVariant;
 }) {
-  const t = THEME[variant];
+  const t = await getTranslations("admin.partenaires");
+  const theme = THEME[variant];
+  const monthLabels = [
+    t("monthJan"),
+    t("monthFeb"),
+    t("monthMar"),
+    t("monthApr"),
+    t("monthMay"),
+    t("monthJun"),
+    t("monthJul"),
+    t("monthAug"),
+    t("monthSep"),
+    t("monthOct"),
+    t("monthNov"),
+    t("monthDec"),
+  ];
   const maxMonth = Math.max(...stats.signupsByMonth.map((m) => m.count), 1);
   const verifiedRate =
     stats.totalUsers > 0
@@ -136,67 +129,83 @@ export function SegmentStatsView({
   return (
     <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
       <div className="flex flex-wrap items-center gap-3">
-        <Button render={<Link href={t.backHref} />} variant="ghost" size="sm">
+        <Button render={<Link href={theme.backHref} />} variant="ghost" size="sm">
           <ArrowLeftIcon className="size-4" />
-          Retour
+          {t("back")}
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
-          <p className="text-muted-foreground">{t.subtitle}</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {variant === "employeur" ? t("statsTitleEmployer") : t("statsTitlePartner")}
+          </h1>
+          <p className="text-muted-foreground">
+            {variant === "employeur"
+              ? t("statsSubtitleEmployer")
+              : t("statsSubtitlePartner")}
+          </p>
         </div>
       </div>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Organisations"
+          title={t("statCardOrganizations")}
           value={stats.totalOrganizations}
           icon={Building2Icon}
-          accentClass={t.primaryCard}
+          accentClass={theme.primaryCard}
         />
         <StatCard
-          title="Domaines (actifs)"
+          title={t("statCardActiveDomains")}
           value={stats.activeDomains}
           icon={GlobeIcon}
-          description={`${stats.totalDomains} au total · ${stats.testDomains} de test`}
+          description={t("statCardActiveDomainsDesc", {
+            total: stats.totalDomains,
+            test: stats.testDomains,
+          })}
           accentClass="bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300"
         />
         <StatCard
-          title="Utilisateurs"
+          title={t("statCardUsers")}
           value={stats.totalUsers}
           icon={UsersIcon}
-          description={`${stats.activeUsers} actifs · ${stats.pendingUsers} en attente`}
+          description={t("statCardUsersDesc", {
+            active: stats.activeUsers,
+            pending: stats.pendingUsers,
+          })}
           accentClass="bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300"
         />
         <StatCard
-          title="Email vérifié"
+          title={t("statCardEmailVerified")}
           value={verifiedRate}
           icon={MailCheckIcon}
-          description={`${stats.verifiedUsers} / ${stats.totalUsers} utilisateurs (${verifiedRate}%)`}
+          description={t("statCardEmailVerifiedDesc", {
+            verified: stats.verifiedUsers,
+            total: stats.totalUsers,
+            rate: verifiedRate,
+          })}
           accentClass="bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300"
         />
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Comptes actifs"
+          title={t("statCardActiveAccounts")}
           value={stats.activeUsers}
           icon={CheckCircle2Icon}
           accentClass="bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300"
         />
         <StatCard
-          title="Comptes en attente"
+          title={t("statCardPendingAccounts")}
           value={stats.pendingUsers}
           icon={ClockIcon}
           accentClass="bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
         />
         <StatCard
-          title="Comptes désactivés"
+          title={t("statCardDisabledAccounts")}
           value={stats.disabledUsers}
           icon={PauseCircleIcon}
           accentClass="bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
         />
         <StatCard
-          title="Domaines de test"
+          title={t("statCardTestDomains")}
           value={stats.testDomains}
           icon={FlaskConicalIcon}
           accentClass="bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300"
@@ -207,13 +216,13 @@ export function SegmentStatsView({
         <Card>
           <CardContent className="flex items-start gap-3 p-5">
             <span
-              className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${t.primaryCard}`}
+              className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${theme.primaryCard}`}
             >
               <TrendingUpIcon className="size-5" />
             </span>
             <div>
               <p className="text-sm text-muted-foreground">
-                Inscriptions (7 derniers jours)
+                {t("signups7Days")}
               </p>
               <p className="mt-0.5 text-2xl font-bold tracking-tight">
                 {stats.recentSignups}
@@ -228,7 +237,7 @@ export function SegmentStatsView({
             </span>
             <div>
               <p className="text-sm text-muted-foreground">
-                Connexions (7 derniers jours)
+                {t("logins7Days")}
               </p>
               <p className="mt-0.5 text-2xl font-bold tracking-tight">
                 {stats.recentLogins}
@@ -241,8 +250,8 @@ export function SegmentStatsView({
       <section className="grid gap-3 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Inscriptions par mois</CardTitle>
-            <CardDescription>6 derniers mois</CardDescription>
+            <CardTitle className="text-base">{t("signupsByMonth")}</CardTitle>
+            <CardDescription>{t("last6Months")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-end gap-2 h-40">
@@ -253,18 +262,18 @@ export function SegmentStatsView({
                 >
                   <div className="flex h-32 w-full items-end">
                     <div
-                      className={`w-full rounded-t-md transition-all ${t.bar}`}
+                      className={`w-full rounded-t-md transition-all ${theme.bar}`}
                       style={{
                         height: `${(m.count / maxMonth) * 100}%`,
                         minHeight: m.count > 0 ? "4px" : "0",
                       }}
-                      title={`${m.count} inscription${m.count > 1 ? "s" : ""}`}
+                      title={t("signupsTooltip", { count: m.count })}
                     />
                   </div>
                   <div className="text-center">
                     <p className="text-xs font-semibold">{m.count}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {formatMonthLabel(m.month)}
+                      {formatMonthLabel(m.month, monthLabels)}
                     </p>
                   </div>
                 </div>
@@ -276,14 +285,14 @@ export function SegmentStatsView({
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
-              Top organisations (par utilisateurs)
+              {t("topOrganizations")}
             </CardTitle>
-            <CardDescription>5 plus actives</CardDescription>
+            <CardDescription>{t("top5Active")}</CardDescription>
           </CardHeader>
           <CardContent>
             {stats.topOrganizations.length === 0 ? (
               <p className="py-4 text-center text-sm text-muted-foreground">
-                Aucun utilisateur inscrit pour le moment.
+                {t("noUsersYet")}
               </p>
             ) : (
               <ol className="space-y-2">
@@ -293,7 +302,7 @@ export function SegmentStatsView({
                     className="flex items-center gap-3 rounded-md border bg-muted/20 p-2.5"
                   >
                     <span
-                      className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${t.badge}`}
+                      className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${theme.badge}`}
                     >
                       {idx + 1}
                     </span>
@@ -301,7 +310,7 @@ export function SegmentStatsView({
                       {o.organizationName}
                     </span>
                     <span className="text-sm tabular-nums text-muted-foreground">
-                      {o.userCount} user{o.userCount > 1 ? "s" : ""}
+                      {t("userCountShort", { count: o.userCount })}
                     </span>
                   </li>
                 ))}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   GraduationCap,
   Globe,
@@ -51,79 +52,79 @@ interface Props {
 
 const SPACE_TOGGLES: {
   key: "publicEnabled" | "citizenEnabled" | "employerEnabled" | "partnerEnabled";
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   icon: typeof Globe;
 }[] = [
   {
     key: "publicEnabled",
-    label: "Espace public",
-    description: "Catalogue et pages visibles sans compte.",
+    labelKey: "spacePublicLabel",
+    descriptionKey: "spacePublicDescription",
     icon: Globe,
   },
   {
     key: "citizenEnabled",
-    label: "Espace citoyen",
-    description: "Accès depuis le tableau de bord citoyen.",
+    labelKey: "spaceCitizenLabel",
+    descriptionKey: "spaceCitizenDescription",
     icon: Users,
   },
   {
     key: "employerEnabled",
-    label: "Espace employeur",
-    description: "Formations dans l'espace employeur.",
+    labelKey: "spaceEmployerLabel",
+    descriptionKey: "spaceEmployerDescription",
     icon: Building2,
   },
   {
     key: "partnerEnabled",
-    label: "Espace partenaire",
-    description: "Formations dans l'espace partenaire.",
+    labelKey: "spacePartnerLabel",
+    descriptionKey: "spacePartnerDescription",
     icon: Handshake,
   },
 ];
 
-const LAUNCH_MODES: { value: LaunchMode; label: string; helper: string }[] = [
+const LAUNCH_MODES: { value: LaunchMode; labelKey: string; helperKey: string }[] = [
   {
     value: "HIDDEN",
-    label: "Masqué",
-    helper: "Invisible partout (sauf admin). Aucune trace côté public.",
+    labelKey: "launchHiddenLabel",
+    helperKey: "launchHiddenHelper",
   },
   {
     value: "COMING_SOON",
-    label: "Bientôt disponible",
-    helper: "Teaser affiché dans la navigation, contenu non accessible.",
+    labelKey: "launchComingSoonLabel",
+    helperKey: "launchComingSoonHelper",
   },
   {
     value: "PRIVATE_BETA",
-    label: "Bêta privée",
-    helper: "Réservé aux pros (employeurs/partenaires) et aux admins.",
+    labelKey: "launchPrivateBetaLabel",
+    helperKey: "launchPrivateBetaHelper",
   },
   {
     value: "PUBLIC",
-    label: "Public",
-    helper: "Ouvert à tous selon les espaces activés ci-dessus.",
+    labelKey: "launchPublicLabel",
+    helperKey: "launchPublicHelper",
   },
 ];
 
-const FLAG_LABELS: Record<FormationsFlag, string> = {
-  catalog: "Catalogue",
-  orientation: "Boussole",
-  organizationCreation: "Création par organisation",
-  privateTrainings: "Formations privées",
-  internalTrainings: "Formations internes",
-  enrollments: "Inscriptions",
-  certificates: "Attestations",
-  notifications: "Notifications",
-  analytics: "Analytics",
-  lms: "Mini-LMS",
-  quizzes: "Quiz",
-  paths: "Parcours",
-  payments: "Paiement",
-  marketplace: "Marketplace",
-  ai: "IA orientation",
-  partnerApi: "API partenaires",
-  qualityScore: "Score qualité",
-  docbelCertified: "Docbel Certified",
-  sponsored: "Sponsorisé",
+const FLAG_LABEL_KEYS: Record<FormationsFlag, string> = {
+  catalog: "flagCatalog",
+  orientation: "flagOrientation",
+  organizationCreation: "flagOrganizationCreation",
+  privateTrainings: "flagPrivateTrainings",
+  internalTrainings: "flagInternalTrainings",
+  enrollments: "flagEnrollments",
+  certificates: "flagCertificates",
+  notifications: "flagNotifications",
+  analytics: "flagAnalytics",
+  lms: "flagLms",
+  quizzes: "flagQuizzes",
+  paths: "flagPaths",
+  payments: "flagPayments",
+  marketplace: "flagMarketplace",
+  ai: "flagAi",
+  partnerApi: "flagPartnerApi",
+  qualityScore: "flagQualityScore",
+  docbelCertified: "flagDocbelCertified",
+  sponsored: "flagSponsored",
 };
 
 // V1 = socle déjà développé ; le reste = préparé, activable quand développé.
@@ -154,6 +155,7 @@ function diff<T extends object>(base: T, next: T): Partial<T> {
 }
 
 export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
+  const t = useTranslations("admin.formations");
   const [baseModule, setBaseModule] = useState(initialModule);
   const [module, setModule] = useState(initialModule);
   const [savingModule, setSavingModule] = useState(false);
@@ -187,15 +189,13 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
         body: JSON.stringify(moduleChanges),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Échec de l'enregistrement");
+      if (!res.ok) throw new Error(data?.error || t("saveFailed"));
       const saved = data.module as FormationsModuleConfig;
       setBaseModule(saved);
       setModule(saved);
-      toast.success("État du module enregistré.");
+      toast.success(t("moduleStateSaved"));
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Échec de l'enregistrement",
-      );
+      toast.error(err instanceof Error ? err.message : t("saveFailed"));
     } finally {
       setSavingModule(false);
     }
@@ -211,15 +211,13 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
         body: JSON.stringify(flagChanges),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Échec de l'enregistrement");
+      if (!res.ok) throw new Error(data?.error || t("saveFailed"));
       const saved = data.flags as FormationsFlags;
       setBaseFlags(saved);
       setFlags(saved);
-      toast.success("Feature flags enregistrés.");
+      toast.success(t("flagsSaved"));
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Échec de l'enregistrement",
-      );
+      toast.error(err instanceof Error ? err.message : t("saveFailed"));
     } finally {
       setSavingFlags(false);
     }
@@ -237,15 +235,15 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
           </span>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              Module Formations
+              {t("moduleTitle")}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Activation, espaces, maintenance et feature flags du module.
+              {t("moduleSubtitle")}
             </p>
           </div>
         </div>
         <Badge variant={module.enabled ? "success" : "secondary"}>
-          {module.enabled ? "Activé" : "Désactivé"}
+          {module.enabled ? t("moduleEnabled") : t("moduleDisabled")}
         </Badge>
       </div>
 
@@ -254,10 +252,10 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
         <CardHeader className="border-b">
           <CardTitle className="flex items-center gap-2">
             <Rocket className="size-4 text-primary" />
-            État du module
+            {t("moduleStateCardTitle")}
           </CardTitle>
           <CardDescription>
-            Active le module globalement et contrôle sa visibilité par espace.
+            {t("moduleStateCardDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
@@ -275,15 +273,15 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
                 htmlFor="module-enabled"
                 className="text-base font-semibold"
               >
-                Module activé
+                {t("moduleEnabledLabel")}
               </Label>
               <p className="text-sm text-muted-foreground max-w-xl">
-                Interrupteur principal du module Formations.
+                {t("moduleEnabledHelper")}
               </p>
               {!module.enabled && (
                 <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400">
                   <AlertTriangle className="size-4 shrink-0" />
-                  Le module est masqué partout, sauf dans l'administration.
+                  {t("moduleHiddenWarning")}
                 </p>
               )}
             </div>
@@ -292,48 +290,51 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
               className="mt-1 scale-125 origin-right"
               checked={module.enabled}
               onCheckedChange={(v) => patchModule("enabled", v)}
-              aria-label="Activer le module Formations"
+              aria-label={t("moduleEnabledAria")}
             />
           </div>
 
           {/* Espaces */}
           <div className="grid gap-3 sm:grid-cols-2">
-            {SPACE_TOGGLES.map(({ key, label, description, icon: Icon }) => (
-              <div
-                key={key}
-                className={cn(
-                  "flex items-start justify-between gap-3 rounded-lg border p-3",
-                  !module.enabled && "opacity-60",
-                )}
-              >
-                <div className="flex items-start gap-2.5">
-                  <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                    <Icon className="size-4" />
-                  </span>
-                  <div>
-                    <Label htmlFor={`space-${key}`} className="font-medium">
-                      {label}
-                    </Label>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {description}
-                    </p>
+            {SPACE_TOGGLES.map(({ key, labelKey, descriptionKey, icon: Icon }) => {
+              const label = t(labelKey as Parameters<typeof t>[0]);
+              return (
+                <div
+                  key={key}
+                  className={cn(
+                    "flex items-start justify-between gap-3 rounded-lg border p-3",
+                    !module.enabled && "opacity-60",
+                  )}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                      <Icon className="size-4" />
+                    </span>
+                    <div>
+                      <Label htmlFor={`space-${key}`} className="font-medium">
+                        {label}
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {t(descriptionKey as Parameters<typeof t>[0])}
+                      </p>
+                    </div>
                   </div>
+                  <Switch
+                    id={`space-${key}`}
+                    checked={module[key]}
+                    onCheckedChange={(v) => patchModule(key, v)}
+                    disabled={!module.enabled}
+                    aria-label={label}
+                  />
                 </div>
-                <Switch
-                  id={`space-${key}`}
-                  checked={module[key]}
-                  onCheckedChange={(v) => patchModule(key, v)}
-                  disabled={!module.enabled}
-                  aria-label={label}
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Mode de lancement */}
           <div className="grid gap-2">
             <Label htmlFor="launch-mode" className="font-medium">
-              Mode de lancement
+              {t("launchModeLabel")}
             </Label>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Select
@@ -348,14 +349,14 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
                 <SelectContent>
                   {LAUNCH_MODES.map((m) => (
                     <SelectItem key={m.value} value={m.value}>
-                      {m.label}
+                      {t(m.labelKey as Parameters<typeof t>[0])}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {currentMode && (
                 <p className="text-xs text-muted-foreground sm:flex-1">
-                  {currentMode.helper}
+                  {t(currentMode.helperKey as Parameters<typeof t>[0])}
                 </p>
               )}
             </div>
@@ -370,11 +371,10 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
                 </span>
                 <div>
                   <Label htmlFor="maintenance-mode" className="font-medium">
-                    Mode maintenance
+                    {t("maintenanceModeLabel")}
                   </Label>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Affiche un message au lieu du contenu (les admins gardent
-                    l'accès).
+                    {t("maintenanceModeHelper")}
                   </p>
                 </div>
               </div>
@@ -382,7 +382,7 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
                 id="maintenance-mode"
                 checked={module.maintenanceMode}
                 onCheckedChange={(v) => patchModule("maintenanceMode", v)}
-                aria-label="Mode maintenance"
+                aria-label={t("maintenanceModeLabel")}
               />
             </div>
             <div className="mt-3 grid gap-1.5">
@@ -390,7 +390,7 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
                 htmlFor="maintenance-message"
                 className="text-xs text-muted-foreground"
               >
-                Message de maintenance
+                {t("maintenanceMessageLabel")}
               </Label>
               <Textarea
                 id="maintenance-message"
@@ -400,7 +400,7 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
                 onChange={(e) =>
                   patchModule("maintenanceMessage", e.target.value)
                 }
-                placeholder="Message affiché aux visiteurs pendant la maintenance…"
+                placeholder={t("maintenanceMessagePlaceholder")}
               />
             </div>
           </div>
@@ -409,7 +409,7 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
           <div className="flex items-center justify-end gap-3">
             {moduleDirty && (
               <span className="text-xs text-muted-foreground">
-                Modifications non enregistrées
+                {t("unsavedChanges")}
               </span>
             )}
             <Button
@@ -421,7 +421,7 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
               ) : (
                 <Save className="size-4" />
               )}
-              Enregistrer
+              {t("save")}
             </Button>
           </div>
         </CardContent>
@@ -430,15 +430,14 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
       {/* ===================== Feature flags ===================== */}
       <Card>
         <CardHeader className="border-b">
-          <CardTitle>Feature flags</CardTitle>
+          <CardTitle>{t("featureFlagsTitle")}</CardTitle>
           <CardDescription>
-            Active les grandes fonctionnalités du module au fur et à mesure de
-            leur développement.
+            {t("featureFlagsDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
           <FlagGroup
-            title="Socle (V1)"
+            title={t("flagGroupCore")}
             keys={V1_FLAGS}
             flags={flags}
             disabled={!module.enabled}
@@ -447,13 +446,13 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold">Évolutions (V2 → V4)</h3>
+              <h3 className="text-sm font-semibold">{t("flagGroupFuture")}</h3>
               <Badge variant="outline" className="text-[0.7rem]">
-                préparées
+                {t("flagGroupFutureBadge")}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground -mt-1">
-              Ces fonctionnalités sont préparées, activables quand développées.
+              {t("flagGroupFutureHelper")}
             </p>
             <FlagGroup
               keys={FUTURE_FLAGS}
@@ -466,14 +465,14 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
           {!module.enabled && (
             <p className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
               <AlertTriangle className="size-3.5 shrink-0" />
-              Les flags restent sans effet tant que le module est désactivé.
+              {t("flagsDisabledWarning")}
             </p>
           )}
 
           <div className="flex items-center justify-end gap-3">
             {flagsDirty && (
               <span className="text-xs text-muted-foreground">
-                Modifications non enregistrées
+                {t("unsavedChanges")}
               </span>
             )}
             <Button onClick={saveFlags} disabled={!flagsDirty || savingFlags}>
@@ -482,7 +481,7 @@ export function ModuleSettingsClient({ initialModule, initialFlags }: Props) {
               ) : (
                 <Save className="size-4" />
               )}
-              Enregistrer les flags
+              {t("saveFlags")}
             </Button>
           </div>
         </CardContent>
@@ -506,30 +505,34 @@ function FlagGroup({
   disabled: boolean;
   onToggle: (key: FormationsFlag, value: boolean) => void;
 }) {
+  const t = useTranslations("admin.formations");
   return (
     <div className="flex flex-col gap-2">
       {title && <h3 className="text-sm font-semibold">{title}</h3>}
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {keys.map((key) => (
-          <div
-            key={key}
-            className={cn(
-              "flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5",
-              disabled && "opacity-60",
-            )}
-          >
-            <Label htmlFor={`flag-${key}`} className="font-normal">
-              {FLAG_LABELS[key]}
-            </Label>
-            <Switch
-              id={`flag-${key}`}
-              checked={flags[key]}
-              onCheckedChange={(v) => onToggle(key, v)}
-              disabled={disabled}
-              aria-label={FLAG_LABELS[key]}
-            />
-          </div>
-        ))}
+        {keys.map((key) => {
+          const flagLabel = t(FLAG_LABEL_KEYS[key] as Parameters<typeof t>[0]);
+          return (
+            <div
+              key={key}
+              className={cn(
+                "flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5",
+                disabled && "opacity-60",
+              )}
+            >
+              <Label htmlFor={`flag-${key}`} className="font-normal">
+                {flagLabel}
+              </Label>
+              <Switch
+                id={`flag-${key}`}
+                checked={flags[key]}
+                onCheckedChange={(v) => onToggle(key, v)}
+                disabled={disabled}
+                aria-label={flagLabel}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

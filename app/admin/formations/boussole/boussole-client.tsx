@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Compass, Layers } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function BoussoleClient({ questions, branches }: Props) {
+  const t = useTranslations("admin.formations");
   const activeCount = questions.filter((q) => q.isActive).length;
 
   return (
@@ -29,12 +31,14 @@ export function BoussoleClient({ questions, branches }: Props) {
         </span>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Boussole d'orientation
+            {t("boussoleTitle")}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {activeCount}/{questions.length} question
-            {questions.length > 1 ? "s" : ""} active{activeCount > 1 ? "s" : ""} ·{" "}
-            {branches.length} branche{branches.length > 1 ? "s" : ""}.
+            {t("boussoleSubtitle", {
+              active: activeCount,
+              total: questions.length,
+              branches: branches.length,
+            })}
           </p>
         </div>
       </div>
@@ -42,10 +46,10 @@ export function BoussoleClient({ questions, branches }: Props) {
       <Tabs defaultValue="questions">
         <TabsList>
           <TabsTrigger value="questions">
-            Questions ({questions.length})
+            {t("tabQuestions", { n: questions.length })}
           </TabsTrigger>
           <TabsTrigger value="branches">
-            Branches ({branches.length})
+            {t("tabBranches", { n: branches.length })}
           </TabsTrigger>
         </TabsList>
 
@@ -54,7 +58,7 @@ export function BoussoleClient({ questions, branches }: Props) {
             {questions.length === 0 && (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
-                  Aucune question. Elles sont définies au seed de la Boussole.
+                  {t("noQuestion")}
                 </CardContent>
               </Card>
             )}
@@ -78,7 +82,7 @@ export function BoussoleClient({ questions, branches }: Props) {
                       variant={b.isActive ? "success" : "secondary"}
                       className="text-[10px]"
                     >
-                      {b.isActive ? "Active" : "Inactive"}
+                      {b.isActive ? t("statusActive") : t("statusInactive")}
                     </Badge>
                   </div>
                   {b.description && (
@@ -112,6 +116,7 @@ function QuestionCard({
   question: AdminOrientationQuestion;
   index: number;
 }) {
+  const t = useTranslations("admin.formations");
   const router = useRouter();
   const [active, setActive] = useState(question.isActive);
   const [busy, setBusy] = useState(false);
@@ -129,11 +134,11 @@ function QuestionCard({
         },
       );
       if (!res.ok) throw new Error("Échec");
-      toast.success(value ? "Question activée." : "Question désactivée.");
+      toast.success(value ? t("questionActivated") : t("questionDeactivated"));
       router.refresh();
     } catch {
       setActive(!value);
-      toast.error("Impossible de modifier la question.");
+      toast.error(t("questionUpdateFailed"));
     } finally {
       setBusy(false);
     }
@@ -148,7 +153,7 @@ function QuestionCard({
               Q{index + 1}
             </span>
             <Badge variant="outline" className="text-[10px]">
-              {question.type === "multi" ? "Choix multiple" : "Choix unique"}
+              {question.type === "multi" ? t("choiceMulti") : t("choiceSingle")}
             </Badge>
           </div>
           <p className="font-medium mt-1">{question.text}</p>
@@ -170,7 +175,7 @@ function QuestionCard({
         <div className="shrink-0 flex flex-col items-end gap-1">
           <Switch checked={active} onCheckedChange={toggle} disabled={busy} />
           <span className="text-[10px] text-muted-foreground">
-            {active ? "Active" : "Inactive"}
+            {active ? t("statusActive") : t("statusInactive")}
           </span>
         </div>
       </CardContent>

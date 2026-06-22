@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -54,12 +55,7 @@ interface ResolveResponse {
   warnings: string[];
 }
 
-const TYPE_LABEL: Record<string, string> = {
-  CPAS: "CPAS",
-  COMMUNE: "Maison communale",
-  ONEM: "ONEM",
-  SYNDICAT: "Organisme de paiement",
-};
+const PREVIEW_TYPES = ["CPAS", "COMMUNE", "ONEM", "SYNDICAT"];
 
 /**
  * Preview "côté utilisateur" intégré à l'admin.
@@ -78,6 +74,7 @@ const TYPE_LABEL: Record<string, string> = {
  * référencé", "ONEM trouvé via fallback").
  */
 export function PreviewFinder() {
+  const t = useTranslations("admin.bureaux");
   const [cp, setCp] = useState("");
   const [data, setData] = useState<ResolveResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -102,12 +99,12 @@ export function PreviewFinder() {
       const r = await fetch(`/api/bureaux/resolve?cp=${postalCode}`, {
         signal: ac.signal,
       });
-      if (!r.ok) throw new Error("Échec de la résolution");
+      if (!r.ok) throw new Error(t("resolveFailed"));
       const json = (await r.json()) as ResolveResponse;
       if (!ac.signal.aborted) setData(json);
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return;
-      setError(e instanceof Error ? e.message : "Erreur");
+      setError(e instanceof Error ? e.message : t("errorGeneric"));
       setData(null);
     } finally {
       if (!ac.signal.aborted) setLoading(false);
@@ -116,9 +113,9 @@ export function PreviewFinder() {
 
   // Debounce 200 ms
   useEffect(() => {
-    const t = setTimeout(() => void resolve(cp.trim()), 200);
-    return () => clearTimeout(t);
-  }, [cp]);
+    const timer = setTimeout(() => void resolve(cp.trim()), 200);
+    return () => clearTimeout(timer);
+  }, [cp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const allBureaus = useMemo<BureauResult[]>(() => {
     if (!data) return [];
@@ -136,11 +133,10 @@ export function PreviewFinder() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
-            <Eye className="size-4" /> Preview côté utilisateur
+            <Eye className="size-4" /> {t("previewTitle")}
           </CardTitle>
           <p className="text-xs text-muted-foreground">
-            Tape un code postal pour voir ce qu'un utilisateur public verrait sur /outils/bureaux.
-            Utilise les mêmes données et le même resolver — utile pour tester l'impact d'une modif.
+            {t("previewDescription")}
           </p>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -152,7 +148,7 @@ export function PreviewFinder() {
                 inputMode="numeric"
                 pattern="[0-9]{4}"
                 maxLength={4}
-                placeholder="Ex: 1030"
+                placeholder={t("cpExample")}
                 value={cp}
                 onChange={(e) => setCp(e.target.value.replace(/\D/g, ""))}
                 className="border-0 px-0 h-auto text-sm font-medium tabular-nums shadow-none focus-visible:ring-0 bg-transparent w-[80px]"
@@ -170,11 +166,11 @@ export function PreviewFinder() {
               size="sm"
               className="gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
-              Voir en vrai <ExternalLink className="size-3" />
+              {t("seeReal")} <ExternalLink className="size-3" />
             </Button>
           </div>
           <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-            <span className="text-muted-foreground">Quick test :</span>
+            <span className="text-muted-foreground">{t("quickTest")}</span>
             {QUICK_CPS.map((c) => (
               <button
                 key={c}
@@ -192,7 +188,7 @@ export function PreviewFinder() {
       {/* États */}
       {loading && (
         <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
-          <Loader2 className="size-4 animate-spin mr-2" /> Résolution…
+          <Loader2 className="size-4 animate-spin mr-2" /> {t("resolving")}
         </div>
       )}
       {error && (
@@ -205,7 +201,7 @@ export function PreviewFinder() {
       {data && data.warnings.length > 0 && (
         <div className="rounded-md border border-orange-300 bg-orange-50/60 dark:bg-orange-950/10 p-3 text-xs text-orange-900 dark:text-orange-200 space-y-1">
           <p className="font-medium text-[11px] uppercase tracking-wider mb-1">
-            Warnings resolver
+            {t("resolverWarnings")}
           </p>
           {data.warnings.map((w, i) => (
             <div key={i} className="flex items-start gap-2">
@@ -223,7 +219,7 @@ export function PreviewFinder() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
-                  Commune résolue
+                  {t("resolvedCommune")}
                 </p>
                 <h3 className="text-lg font-semibold">
                   {data.commune?.nameFr ?? "—"}
@@ -251,7 +247,7 @@ export function PreviewFinder() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
-              {allBureaus.length} bureau{allBureaus.length > 1 ? "x" : ""} retourné{allBureaus.length > 1 ? "s" : ""}
+              {t("bureausReturned", { count: allBureaus.length })}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 pt-0">
@@ -264,7 +260,7 @@ export function PreviewFinder() {
 
       {data && allBureaus.length === 0 && (
         <div className="rounded-md border border-dashed py-8 text-center text-sm text-muted-foreground">
-          Aucun bureau résolu pour ce code postal.
+          {t("noBureauResolved")}
         </div>
       )}
     </div>
@@ -274,7 +270,10 @@ export function PreviewFinder() {
 // ─────────────────────────────────────────────────────────────────
 
 function PreviewBureauRow({ bureau }: { bureau: BureauResult }) {
-  const typeLabel = TYPE_LABEL[bureau.type] ?? bureau.type;
+  const t = useTranslations("admin.bureaux");
+  const typeLabel = PREVIEW_TYPES.includes(bureau.type)
+    ? t(`previewType_${bureau.type}` as Parameters<typeof t>[0])
+    : bureau.type;
   const accent = bureau.organismeColor ?? "#5E3A8E";
   return (
     <div className="flex items-start gap-3 rounded-md border p-3 hover:bg-muted/30 transition">
@@ -304,7 +303,7 @@ function PreviewBureauRow({ bureau }: { bureau: BureauResult }) {
           )}
           {bureau.lat === null && (
             <Badge variant="destructive" className="text-[10px] gap-1">
-              <MapPin className="size-2.5" /> sans coords
+              <MapPin className="size-2.5" /> {t("noCoords")}
             </Badge>
           )}
         </div>
@@ -331,13 +330,13 @@ function PreviewBureauRow({ bureau }: { bureau: BureauResult }) {
 
       {/* Lien admin */}
       <Button
-        render={<a href="#annuaire" title="Éditer dans l'annuaire" />}
+        render={<a href="#annuaire" title={t("editInDirectory")} />}
         variant="ghost"
         size="sm"
         className="shrink-0 h-7 text-[11px] gap-1"
       >
         <ExternalLink className="size-3" />
-        Éditer
+        {t("edit")}
       </Button>
     </div>
   );

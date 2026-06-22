@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,23 +47,6 @@ interface HealthData {
   byRegion: Record<string, Record<string, number>>;
 }
 
-const REGION_LABEL: Record<string, string> = {
-  brussels: "Bruxelles-Capitale",
-  wallonia: "Wallonie",
-  flanders: "Flandre",
-  germanophone: "Communauté germanophone",
-  unknown: "Sans région",
-};
-
-const TYPE_LABEL: Record<string, string> = {
-  CPAS: "CPAS",
-  COMMUNE: "Maisons communales",
-  ONEM: "ONEM",
-  SYNDICAT: "Syndicats / OP",
-  PERMANENCE: "Permanences",
-  AUTRE: "Autres",
-};
-
 /**
  * Dashboard santé des données bureaux.
  *
@@ -74,7 +58,19 @@ const TYPE_LABEL: Record<string, string> = {
  *  4. Stubs (adresses placeholder à enrichir)
  *  5. Répartition par région
  */
+const KNOWN_TYPES = ["CPAS", "COMMUNE", "ONEM", "SYNDICAT", "PERMANENCE", "AUTRE"];
+const KNOWN_REGIONS = ["brussels", "wallonia", "flanders", "germanophone", "unknown"];
+
 export function HealthDashboard() {
+  const t = useTranslations("admin.bureaux");
+  const typeLabel = (type: string) =>
+    KNOWN_TYPES.includes(type)
+      ? t(`healthType_${type}` as Parameters<typeof t>[0])
+      : type;
+  const regionLabel = (region: string) =>
+    KNOWN_REGIONS.includes(region)
+      ? t(`healthRegion_${region}` as Parameters<typeof t>[0])
+      : region;
   const [data, setData] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -83,17 +79,17 @@ export function HealthDashboard() {
     fetch("/api/admin/bureaux/health")
       .then((r) => (r.ok ? r.json() : Promise.reject(r)))
       .then(setData)
-      .catch(() => toast.error("Échec du chargement"))
+      .catch(() => toast.error(t("loadFailed")))
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, []);
+  useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="size-5 animate-spin mr-2" />
-        Analyse des données…
+        {t("analyzingData")}
       </div>
     );
   }
@@ -109,13 +105,13 @@ export function HealthDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           icon={<Database className="size-4" />}
-          label="Bureaux actifs"
+          label={t("statActiveBureaus")}
           value={data.total}
           tone="neutral"
         />
         <StatCard
           icon={<ShieldCheck className="size-4" />}
-          label="Vérifiés"
+          label={t("statVerified")}
           value={
             data.total -
             Object.values(data.verification.notVerified).reduce((s, x) => s + x, 0)
@@ -125,13 +121,13 @@ export function HealthDashboard() {
         />
         <StatCard
           icon={<AlertTriangle className="size-4" />}
-          label="Stubs à enrichir"
+          label={t("statStubs")}
           value={data.stubs.count}
           tone={data.stubs.count > 0 ? "warn" : "success"}
         />
         <StatCard
           icon={<AlertCircle className="size-4" />}
-          label="Signalements pending"
+          label={t("statPendingReports")}
           value={data.reports.pending}
           suffix={`/ ${data.reports.total}`}
           tone={data.reports.pending > 0 ? "warn" : "success"}
@@ -142,22 +138,22 @@ export function HealthDashboard() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
-            <MapPin className="size-4" /> Couverture territoriale
+            <MapPin className="size-4" /> {t("coverageTitle")}
           </CardTitle>
           <p className="text-xs text-muted-foreground">
-            Sur {data.coverage.totalCommunes} communes belges — combien ont un CPAS et une Maison communale liés.
+            {t("coverageDescription", { count: data.coverage.totalCommunes })}
           </p>
         </CardHeader>
         <CardContent className="space-y-3 pt-0">
           <CoverageBar
-            label="CPAS"
+            label={t("coverageCpas")}
             value={data.coverage.communesWithCpas}
             total={data.coverage.totalCommunes}
             missing={data.coverage.missingCpas}
             pct={cpasPct}
           />
           <CoverageBar
-            label="Maisons communales"
+            label={t("coverageCommunes")}
             value={data.coverage.communesWithCommune}
             total={data.coverage.totalCommunes}
             missing={data.coverage.missingCommune}
@@ -171,14 +167,14 @@ export function HealthDashboard() {
         <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
           <div>
             <CardTitle className="text-base flex items-center gap-2">
-              <Activity className="size-4" /> Trous data par type
+              <Activity className="size-4" /> {t("dataGapsTitle")}
             </CardTitle>
             <p className="text-xs text-muted-foreground">
-              Champs manquants — clique sur un type pour filtrer l'annuaire dessus.
+              {t("dataGapsDescription")}
             </p>
           </div>
           <Button variant="ghost" size="sm" onClick={load} className="text-xs gap-1.5">
-            <RefreshCw className="size-3.5" /> Rafraîchir
+            <RefreshCw className="size-3.5" /> {t("refresh")}
           </Button>
         </CardHeader>
         <CardContent className="pt-0">
@@ -186,19 +182,19 @@ export function HealthDashboard() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th className="text-left font-medium py-2">Type</th>
-                  <th className="text-right font-medium py-2">Total</th>
+                  <th className="text-left font-medium py-2">{t("colType")}</th>
+                  <th className="text-right font-medium py-2">{t("colTotal")}</th>
                   <th className="text-right font-medium py-2 pr-2">
-                    <MapPin className="size-3 inline" /> lat/lng
+                    <MapPin className="size-3 inline" /> {t("colLatLng")}
                   </th>
                   <th className="text-right font-medium py-2 pr-2">
-                    <Phone className="size-3 inline" /> Tél
+                    <Phone className="size-3 inline" /> {t("colPhoneShort")}
                   </th>
                   <th className="text-right font-medium py-2 pr-2">
-                    <Globe className="size-3 inline" /> Site
+                    <Globe className="size-3 inline" /> {t("colSite")}
                   </th>
                   <th className="text-right font-medium py-2">
-                    <ShieldOff className="size-3 inline" /> Non vérifié
+                    <ShieldOff className="size-3 inline" /> {t("colNotVerified")}
                   </th>
                 </tr>
               </thead>
@@ -208,7 +204,7 @@ export function HealthDashboard() {
                   .map(([type, count]) => (
                     <tr key={type} className="border-b last:border-0">
                       <td className="py-2 font-medium">
-                        {TYPE_LABEL[type] ?? type}
+                        {typeLabel(type)}
                       </td>
                       <td className="text-right py-2 tabular-nums">{count}</td>
                       <DataCell value={data.missing.latLng[type] ?? 0} total={count} />
@@ -232,11 +228,10 @@ export function HealthDashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <AlertTriangle className="size-4 text-orange-500" />
-              {data.stubs.count} stub{data.stubs.count > 1 ? "s" : ""} à enrichir
+              {t("stubsTitle", { count: data.stubs.count })}
             </CardTitle>
             <p className="text-xs text-muted-foreground">
-              Bureaux avec adresse placeholder (&quot;Adresse à confirmer&quot;, &quot;TODO&quot;) ou CP=0000.
-              Idéalement à compléter pour qu'ils apparaissent sur la map.
+              {t("stubsDescription")}
             </p>
           </CardHeader>
           <CardContent className="pt-0">
@@ -244,7 +239,7 @@ export function HealthDashboard() {
               {data.stubs.sample.slice(0, 10).map((s) => (
                 <li key={s.id} className="flex items-center gap-2 py-1 border-b last:border-0">
                   <Badge variant="outline" className="text-[10px] shrink-0">
-                    {TYPE_LABEL[s.type] ?? s.type}
+                    {typeLabel(s.type)}
                   </Badge>
                   <span className="text-foreground truncate">{s.name}</span>
                   <span className="text-muted-foreground ml-auto shrink-0">
@@ -255,7 +250,7 @@ export function HealthDashboard() {
             </ul>
             {data.stubs.count > 10 && (
               <p className="text-[11px] text-muted-foreground mt-2 italic">
-                … et {data.stubs.count - 10} autres
+                {t("stubsMore", { count: data.stubs.count - 10 })}
               </p>
             )}
           </CardContent>
@@ -266,10 +261,10 @@ export function HealthDashboard() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
-            <MapPin className="size-4" /> Répartition par région
+            <MapPin className="size-4" /> {t("byRegionTitle")}
           </CardTitle>
           <p className="text-xs text-muted-foreground">
-            Combien de bureaux de chaque type par région — utile pour spotter les zones sous-couvertes.
+            {t("byRegionDescription")}
           </p>
         </CardHeader>
         <CardContent className="pt-0">
@@ -277,14 +272,14 @@ export function HealthDashboard() {
             {Object.entries(data.byRegion).map(([region, types]) => (
               <div key={region} className="rounded-md border p-3 space-y-1.5">
                 <p className="text-xs font-semibold">
-                  {REGION_LABEL[region] ?? region}
+                  {regionLabel(region)}
                 </p>
                 <ul className="space-y-0.5 text-[11px] text-muted-foreground">
                   {Object.entries(types)
                     .sort(([, a], [, b]) => b - a)
-                    .map(([t, c]) => (
-                      <li key={t} className="flex justify-between">
-                        <span>{TYPE_LABEL[t] ?? t}</span>
+                    .map(([type, c]) => (
+                      <li key={type} className="flex justify-between">
+                        <span>{typeLabel(type)}</span>
                         <span className="tabular-nums">{c}</span>
                       </li>
                     ))}

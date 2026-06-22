@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { SearchX } from "lucide-react";
 import { NewsOverviewCard } from "./news-overview-card";
 import type { NewsItem } from "./types";
@@ -24,6 +27,7 @@ export function NewsOverviewGrid({
   onResetFilters,
   onMutated,
 }: NewsOverviewGridProps) {
+  const t = useTranslations("admin.news");
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -44,14 +48,14 @@ export function NewsOverviewGrid({
           <SearchX className="size-5" />
         </div>
         <p className="text-sm text-muted-foreground">
-          Aucun article ne correspond à ces critères.
+          {t("emptyNoMatch")}
         </p>
         <button
           type="button"
           onClick={onResetFilters}
           className="text-[12.5px] font-semibold text-primary underline-offset-2 hover:underline"
         >
-          Réinitialiser les filtres
+          {t("resetFilters")}
         </button>
       </div>
     );

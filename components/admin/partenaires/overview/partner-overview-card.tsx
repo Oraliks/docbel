@@ -11,6 +11,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { OrganizationGroup } from "./types";
@@ -42,6 +43,7 @@ export function PartnerOverviewCard({
   onToggleExpanded,
   onRename,
 }: PartnerOverviewCardProps) {
+  const t = useTranslations("admin.partenaires");
   return (
     <div
       role="button"
@@ -93,18 +95,18 @@ export function PartnerOverviewCard({
               className="gap-1 border-amber-200 bg-amber-50 px-1.5 py-0 text-[10px] font-bold uppercase text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
             >
               <FlaskConical className="size-2.5" />
-              Test
+              {t("badgeTest")}
             </Badge>
           ) : null}
         </div>
         <p className="flex items-center gap-3 text-[11.5px] text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <Globe className="size-2.5" />
-            {org.domainCount} accès
+            {t("accessCount", { count: org.domainCount })}
           </span>
           <span className="inline-flex items-center gap-1">
             <Users className="size-2.5" />
-            {org.userCount} utilisateur{org.userCount > 1 ? "s" : ""}
+            {t("userCount", { count: org.userCount })}
           </span>
         </p>
       </div>
@@ -114,12 +116,12 @@ export function PartnerOverviewCard({
         {org.isActive ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
             <CheckCircle2 className="size-2.5" />
-            Active
+            {t("badgeActive")}
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-500/30 bg-slate-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700 dark:bg-slate-500/15 dark:text-slate-300">
             <XCircle className="size-2.5" />
-            Inactive
+            {t("badgeInactive")}
           </span>
         )}
         <button
@@ -128,8 +130,8 @@ export function PartnerOverviewCard({
             e.stopPropagation();
             onRename();
           }}
-          aria-label={`Renommer ${org.organizationName}`}
-          title="Renommer l'organisation"
+          aria-label={t("renameOrgAria", { name: org.organizationName })}
+          title={t("renameOrgTitle")}
           className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
         >
           <Pencil className="size-3.5" />

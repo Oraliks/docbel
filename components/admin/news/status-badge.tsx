@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 
 interface StatusBadgeProps {
@@ -8,29 +9,30 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, onClick }: StatusBadgeProps) {
+  const t = useTranslations('admin.news');
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'published':
         return {
-          label: 'Publié',
+          label: t('status', { status }),
           variant: 'success' as const,
           className: ''
         };
       case 'draft':
         return {
-          label: 'Brouillon',
+          label: t('status', { status }),
           variant: 'outline' as const,
           className: 'bg-muted text-muted-foreground'
         };
       case 'scheduled':
         return {
-          label: 'Planifié',
+          label: t('status', { status }),
           variant: 'info' as const,
           className: ''
         };
       case 'archived':
         return {
-          label: 'Archivé',
+          label: t('status', { status }),
           variant: 'destructive' as const,
           className: ''
         };

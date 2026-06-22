@@ -1,6 +1,7 @@
 "use client";
 
 import { SearchX } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { PartnerOverviewCard } from "./partner-overview-card";
 import { PartnerOverviewDetails } from "./partner-overview-details";
 import type {
@@ -56,6 +57,7 @@ export function PartnerOverviewGrid({
   onSetUserStatus,
   onSetUserFlag,
 }: PartnerOverviewGridProps) {
+  const t = useTranslations("admin.partenaires");
   if (organizations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-card/40 px-4 py-10 text-center">
@@ -63,14 +65,14 @@ export function PartnerOverviewGrid({
           <SearchX className="size-5" />
         </div>
         <p className="text-sm text-muted-foreground">
-          Aucune organisation ne correspond à ces critères.
+          {t("emptyNoMatch")}
         </p>
         <button
           type="button"
           onClick={onResetFilters}
           className="text-[12.5px] font-semibold text-primary underline-offset-2 hover:underline"
         >
-          Réinitialiser les filtres
+          {t("resetFilters")}
         </button>
       </div>
     );

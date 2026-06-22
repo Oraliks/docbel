@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
@@ -48,21 +49,13 @@ type Report = {
   createdAt: string;
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  hours: "Horaires",
-  address: "Adresse",
-  phone: "Téléphone",
-  closed: "Fermé/déménagé",
-  other: "Autre",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "En attente",
-  resolved: "Résolu",
-  dismissed: "Rejeté",
-};
-
 export function ReportsManager() {
+  const t = useTranslations("admin.bureaux");
+  const categoryLabel = (c: string) =>
+    t(`reportCategory_${c}` as Parameters<typeof t>[0]);
+  const statusLabel = (s: string) =>
+    t(`reportStatus_${s}` as Parameters<typeof t>[0]);
+
   const [items, setItems] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("pending");
@@ -82,7 +75,7 @@ export function ReportsManager() {
         if (cancelled || !j) return;
         setItems(j.items ?? []);
       })
-      .catch(() => toast.error("Échec du chargement"))
+      .catch(() => toast.error(t("loadFailed")))
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -105,10 +98,10 @@ export function ReportsManager() {
         body: JSON.stringify({ status: resolveStatus, adminNotes: adminNotes || null }),
       });
       if (!res.ok) {
-        toast.error("Échec");
+        toast.error(t("actionFailed"));
         return;
       }
-      toast.success(resolveStatus === "resolved" ? "Marqué comme résolu" : "Rejeté");
+      toast.success(resolveStatus === "resolved" ? t("markedResolved") : t("dismissed"));
       setResolving(null);
       setAdminNotes("");
       setResolveStatus("resolved");
@@ -122,16 +115,16 @@ export function ReportsManager() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>{items.length} signalement{items.length > 1 ? "s" : ""}</CardTitle>
+          <CardTitle>{t("reportsCount", { count: items.length })}</CardTitle>
           <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? "pending")}>
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="pending">En attente</SelectItem>
-              <SelectItem value="resolved">Résolus</SelectItem>
-              <SelectItem value="dismissed">Rejetés</SelectItem>
-              <SelectItem value="all">Tous</SelectItem>
+              <SelectItem value="pending">{t("reportFilterPending")}</SelectItem>
+              <SelectItem value="resolved">{t("reportFilterResolved")}</SelectItem>
+              <SelectItem value="dismissed">{t("reportFilterDismissed")}</SelectItem>
+              <SelectItem value="all">{t("reportFilterAll")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -143,18 +136,18 @@ export function ReportsManager() {
           </div>
         ) : items.length === 0 ? (
           <div className="py-8 text-center text-sm text-muted-foreground">
-            Aucun signalement {STATUS_LABELS[filterStatus]?.toLowerCase()}.
+            {t("reportsEmpty")}
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Bureau</TableHead>
-                <TableHead>Catégorie</TableHead>
-                <TableHead>Message</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("reportColBureau")}</TableHead>
+                <TableHead>{t("reportColCategory")}</TableHead>
+                <TableHead>{t("reportColMessage")}</TableHead>
+                <TableHead>{t("reportColDate")}</TableHead>
+                <TableHead>{t("reportColStatus")}</TableHead>
+                <TableHead className="text-right">{t("colActions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -169,7 +162,7 @@ export function ReportsManager() {
                         {r.bureau.name} <ExternalLink className="h-3 w-3" />
                       </Link>
                     ) : (
-                      <span className="text-muted-foreground">[supprimé]</span>
+                      <span className="text-muted-foreground">{t("deleted")}</span>
                     )}
                     {r.bureau && (
                       <div className="text-xs text-muted-foreground">
@@ -178,7 +171,7 @@ export function ReportsManager() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{CATEGORY_LABELS[r.category] ?? r.category}</Badge>
+                    <Badge variant="outline">{categoryLabel(r.category)}</Badge>
                   </TableCell>
                   <TableCell className="max-w-md">
                     <div className="text-sm">{r.message}</div>
@@ -189,7 +182,7 @@ export function ReportsManager() {
                     )}
                     {r.adminNotes && (
                       <div className="text-xs italic text-muted-foreground mt-0.5">
-                        Note admin : {r.adminNotes}
+                        {t("adminNotePrefix")} {r.adminNotes}
                       </div>
                     )}
                   </TableCell>
@@ -207,7 +200,7 @@ export function ReportsManager() {
                           : "border-gray-400 text-gray-500"
                       }
                     >
-                      {STATUS_LABELS[r.status]}
+                      {statusLabel(r.status)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -247,12 +240,12 @@ export function ReportsManager() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {resolveStatus === "resolved" ? "Marquer comme résolu" : "Rejeter le signalement"}
+              {resolveStatus === "resolved" ? t("resolveDialogTitle") : t("dismissDialogTitle")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <Textarea
-              placeholder="Note interne (facultatif)"
+              placeholder={t("adminNotePlaceholder")}
               value={adminNotes}
               onChange={(e) => setAdminNotes(e.target.value)}
               rows={3}
@@ -260,11 +253,11 @@ export function ReportsManager() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setResolving(null)} disabled={busy}>
-              Annuler
+              {t("cancel")}
             </Button>
             <Button onClick={submitResolution} disabled={busy}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirmer
+              {t("confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Flag, Loader2, PauseCircle, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,12 +19,12 @@ import { formatDate } from "../_ui";
 
 type ReportStatus = "new" | "in_progress" | "resolved" | "rejected";
 
-const STATUS_TABS: { key: "all" | ReportStatus; label: string }[] = [
-  { key: "all", label: "Tous" },
-  { key: "new", label: REPORT_STATUS_LABELS.new },
-  { key: "in_progress", label: REPORT_STATUS_LABELS.in_progress },
-  { key: "resolved", label: REPORT_STATUS_LABELS.resolved },
-  { key: "rejected", label: REPORT_STATUS_LABELS.rejected },
+const STATUS_TAB_KEYS: ("all" | ReportStatus)[] = [
+  "all",
+  "new",
+  "in_progress",
+  "resolved",
+  "rejected",
 ];
 
 const STATUS_VARIANT: Record<ReportStatus, "warning" | "info" | "success" | "secondary"> = {
@@ -40,6 +41,7 @@ export function SignalementsClient({
   reports: AdminReportRow[];
   counts: Record<string, number>;
 }) {
+  const t = useTranslations("admin.formations");
   const [status, setStatus] = useState<"all" | ReportStatus>("all");
 
   const filtered = useMemo(
@@ -57,30 +59,31 @@ export function SignalementsClient({
           <Flag className="size-5" />
         </span>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Signalements</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("reportsTitle")}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {counts.all ?? 0} signalement{(counts.all ?? 0) > 1 ? "s" : ""} —
-            modération des formations publiées.
+            {t("reportsSubtitle", { n: counts.all ?? 0 })}
           </p>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-1.5">
-        {STATUS_TABS.map((tab) => {
-          const active = status === tab.key;
-          const n = counts[tab.key] ?? 0;
+        {STATUS_TAB_KEYS.map((key) => {
+          const active = status === key;
+          const n = counts[key] ?? 0;
+          const label =
+            key === "all" ? t("filterAll") : REPORT_STATUS_LABELS[key];
           return (
             <button
-              key={tab.key}
+              key={key}
               type="button"
-              onClick={() => setStatus(tab.key)}
+              onClick={() => setStatus(key)}
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
                 active
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
               }`}
             >
-              {tab.label}
+              {label}
               <span className="tabular-nums opacity-70">{n}</span>
             </button>
           );
@@ -91,7 +94,7 @@ export function SignalementsClient({
         {filtered.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
-              Aucun signalement.
+              {t("noReport")}
             </CardContent>
           </Card>
         )}
@@ -104,6 +107,7 @@ export function SignalementsClient({
 }
 
 function ReportCard({ report }: { report: AdminReportRow }) {
+  const t = useTranslations("admin.formations");
   const router = useRouter();
   const [note, setNote] = useState(report.adminNote ?? "");
   const [busy, setBusy] = useState(false);
@@ -117,11 +121,11 @@ function ReportCard({ report }: { report: AdminReportRow }) {
         body: JSON.stringify(payload),
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error ?? "Échec");
+      if (!res.ok) throw new Error(body.error ?? t("actionFailed"));
       toast.success(successMsg);
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("genericError"));
     } finally {
       setBusy(false);
     }
@@ -137,19 +141,19 @@ function ReportCard({ report }: { report: AdminReportRow }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "suspend",
-            note: `Suite au signalement ${report.id.slice(0, 8)}`,
+            note: t("suspendFollowingReport", { id: report.id.slice(0, 8) }),
           }),
         },
       );
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error ?? "Échec");
-      toast.success("Formation suspendue.");
+      if (!res.ok) throw new Error(body.error ?? t("actionFailed"));
+      toast.success(t("trainingSuspended"));
       await patch(
-        { status: "resolved", actionTaken: "Formation suspendue", adminNote: note.trim() || undefined },
-        "Signalement traité.",
+        { status: "resolved", actionTaken: t("trainingSuspended"), adminNote: note.trim() || undefined },
+        t("reportHandled"),
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("genericError"));
       setBusy(false);
     }
   };
@@ -183,7 +187,7 @@ function ReportCard({ report }: { report: AdminReportRow }) {
                 </Link>
               ) : (
                 <span className="italic">
-                  Formation supprimée ({report.trainingId.slice(0, 8)})
+                  {t("deletedTraining", { id: report.trainingId.slice(0, 8) })}
                 </span>
               )}
             </p>
@@ -204,12 +208,12 @@ function ReportCard({ report }: { report: AdminReportRow }) {
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-muted-foreground">
-            Note interne
+            {t("internalNote")}
           </label>
           <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Décision / suite donnée…"
+            placeholder={t("reportNotePlaceholder")}
             rows={2}
           />
         </div>
@@ -222,11 +226,11 @@ function ReportCard({ report }: { report: AdminReportRow }) {
             onClick={() =>
               patch(
                 { status: "in_progress", adminNote: note.trim() || undefined },
-                "Marqué en cours.",
+                t("markedInProgress"),
               )
             }
           >
-            Marquer en cours
+            {t("markInProgress")}
           </Button>
           <Button
             size="sm"
@@ -235,11 +239,11 @@ function ReportCard({ report }: { report: AdminReportRow }) {
             onClick={() =>
               patch(
                 { status: "resolved", adminNote: note.trim() || undefined },
-                "Marqué traité.",
+                t("markedResolved"),
               )
             }
           >
-            Marquer traité
+            {t("markResolved")}
           </Button>
           <Button
             size="sm"
@@ -248,11 +252,11 @@ function ReportCard({ report }: { report: AdminReportRow }) {
             onClick={() =>
               patch(
                 { status: "rejected", adminNote: note.trim() || undefined },
-                "Signalement rejeté.",
+                t("reportRejected"),
               )
             }
           >
-            Rejeter
+            {t("reject")}
           </Button>
           <Button
             size="sm"
@@ -266,7 +270,7 @@ function ReportCard({ report }: { report: AdminReportRow }) {
             ) : (
               <PauseCircle className="size-4" />
             )}
-            Suspendre la formation
+            {t("suspendTraining")}
           </Button>
         </div>
       </CardContent>

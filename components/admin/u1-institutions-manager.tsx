@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Card,
@@ -117,7 +118,10 @@ function institutionToForm(inst: Institution): FormState {
   };
 }
 
-function parseExtraJson(value: string): { ok: true; extra: unknown } | { ok: false; error: string } {
+function parseExtraJson(
+  value: string,
+  invalidJsonLabel: string
+): { ok: true; extra: unknown } | { ok: false; error: string } {
   const trimmed = value.trim();
   if (!trimmed) return { ok: true, extra: null };
   try {
@@ -125,16 +129,19 @@ function parseExtraJson(value: string): { ok: true; extra: unknown } | { ok: fal
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "JSON invalide",
+      error: err instanceof Error ? err.message : invalidJsonLabel,
     };
   }
 }
 
-function formToPayload(form: FormState):
+function formToPayload(
+  form: FormState,
+  labels: { invalidJson: string; extraJsonError: (error: string) => string }
+):
   | { ok: true; data: Record<string, unknown> }
   | { ok: false; error: string } {
-  const extraResult = parseExtraJson(form.extraJson);
-  if (!extraResult.ok) return { ok: false, error: `JSON "extra" : ${extraResult.error}` };
+  const extraResult = parseExtraJson(form.extraJson, labels.invalidJson);
+  if (!extraResult.ok) return { ok: false, error: labels.extraJsonError(extraResult.error) };
   const fallbackCode = COUNTRY_CODE_MAP[form.country.trim()] ?? "";
   return {
     ok: true,
@@ -162,6 +169,7 @@ function formToPayload(form: FormState):
 }
 
 export function U1InstitutionsManager() {
+  const t = useTranslations("admin.u1Institutions");
   const [items, setItems] = useState<Institution[]>([]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -220,7 +228,7 @@ export function U1InstitutionsManager() {
       } catch (err) {
         if (cancelled) return;
         console.error(err);
-        toast.error("Échec du chargement des institutions");
+        toast.error(t("loadError"));
         setLoading(false);
       }
     }
@@ -246,16 +254,16 @@ export function U1InstitutionsManager() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        toast.error(data?.error ?? "Échec de la sauvegarde");
+        toast.error(data?.error ?? t("saveError"));
         return;
       }
       const data = await res.json();
       setLastUpdated(data.lastUpdated);
       setLastUpdatedDraft(data.lastUpdated);
-      toast.success("Date de mise à jour enregistrée");
+      toast.success(t("dateSaved"));
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setSavingDate(false);
     }
@@ -274,7 +282,10 @@ export function U1InstitutionsManager() {
   }
 
   async function submitForm() {
-    const payload = formToPayload(form);
+    const payload = formToPayload(form, {
+      invalidJson: t("invalidJson"),
+      extraJsonError: (error) => t("extraJsonError", { error }),
+    });
     if (!payload.ok) {
       toast.error(payload.error);
       return;
@@ -295,17 +306,17 @@ export function U1InstitutionsManager() {
         if (Array.isArray(data?.details) && data.details.length > 0) {
           toast.error(data.details.map((d: { message: string }) => d.message).join(" • "));
         } else {
-          toast.error(data?.error ?? "Erreur lors de l'enregistrement");
+          toast.error(data?.error ?? t("saveRecordError"));
         }
         return;
       }
-      toast.success(editing ? "Institution mise à jour" : "Institution créée");
+      toast.success(editing ? t("updateSuccess") : t("createSuccess"));
       setFormOpen(false);
       setEditing(null);
       refresh();
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setSubmitting(false);
     }
@@ -320,15 +331,15 @@ export function U1InstitutionsManager() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        toast.error(data?.error ?? "Suppression impossible");
+        toast.error(data?.error ?? t("deleteError"));
         return;
       }
-      toast.success("Institution supprimée");
+      toast.success(t("deleteSuccess"));
       setConfirmDelete(null);
       refresh();
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setDeleting(false);
     }
@@ -349,7 +360,7 @@ export function U1InstitutionsManager() {
             <div className="space-y-1.5 flex-1 max-w-xs">
               <Label htmlFor="u1-last-updated" className="flex items-center gap-1.5">
                 <CalendarIcon size={14} />
-                Date de mise à jour (affichée sur le front)
+                {t("lastUpdatedLabel")}
               </Label>
               <Input
                 id="u1-last-updated"
@@ -364,7 +375,7 @@ export function U1InstitutionsManager() {
               variant={dateChanged ? "default" : "outline"}
             >
               {savingDate && <Loader2 className="animate-spin" size={16} />}
-              Enregistrer la date
+              {t("saveDate")}
             </Button>
           </div>
         </CardContent>
@@ -382,13 +393,13 @@ export function U1InstitutionsManager() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher par pays, organisme…"
+                placeholder={t("searchPlaceholder")}
                 className="pl-9"
               />
             </div>
             <Button onClick={openCreate}>
               <Plus size={16} />
-              Nouvelle institution
+              {t("newInstitution")}
             </Button>
           </div>
         </CardContent>
@@ -398,9 +409,9 @@ export function U1InstitutionsManager() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Institutions U1 (EEE + Suisse)</span>
+            <span>{t("tableTitle")}</span>
             <span className="text-sm font-normal text-muted-foreground">
-              {items.length} entrée{items.length > 1 ? "s" : ""}
+              {t("entryCount", { count: items.length })}
             </span>
           </CardTitle>
         </CardHeader>
@@ -409,10 +420,10 @@ export function U1InstitutionsManager() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="font-semibold w-[200px]">Pays</TableHead>
-                  <TableHead className="font-semibold">Organisme</TableHead>
-                  <TableHead className="font-semibold w-[200px]">Site web</TableHead>
-                  <TableHead className="font-semibold text-right w-[120px]">Actions</TableHead>
+                  <TableHead className="font-semibold w-[200px]">{t("columnCountry")}</TableHead>
+                  <TableHead className="font-semibold">{t("columnOrganization")}</TableHead>
+                  <TableHead className="font-semibold w-[200px]">{t("columnWebsite")}</TableHead>
+                  <TableHead className="font-semibold text-right w-[120px]">{t("columnActions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -425,7 +436,7 @@ export function U1InstitutionsManager() {
                 ) : items.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
-                      Aucune institution
+                      {t("emptyState")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -456,7 +467,7 @@ export function U1InstitutionsManager() {
                             onClick={() => openEdit(inst)}
                             variant="ghost"
                             size="sm"
-                            title="Modifier"
+                            title={t("edit")}
                             className="h-8 w-8 p-0"
                           >
                             <Pencil size={16} />
@@ -468,7 +479,7 @@ export function U1InstitutionsManager() {
                             }}
                             variant="ghost"
                             size="sm"
-                            title="Supprimer"
+                            title={t("delete")}
                             className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30"
                           >
                             <Trash2 size={16} />
@@ -489,18 +500,16 @@ export function U1InstitutionsManager() {
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editing ? "Modifier l'institution" : "Nouvelle institution"}
+              {editing ? t("editTitle") : t("createTitle")}
             </DialogTitle>
             <DialogDescription>
-              {editing
-                ? "Modifiez les champs puis enregistrez."
-                : "Remplissez les champs pour ajouter une institution U1."}
+              {editing ? t("editDescription") : t("createDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-2 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="u1-country">Pays *</Label>
+              <Label htmlFor="u1-country">{t("fieldCountry")}</Label>
               <Input
                 id="u1-country"
                 value={form.country}
@@ -510,7 +519,7 @@ export function U1InstitutionsManager() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="u1-countryCode" className="flex items-center gap-2">
-                <span>Code pays (ISO 2 lettres)</span>
+                <span>{t("fieldCountryCode")}</span>
                 {previewCode && (
                   <CountryFlag code={previewCode} country={form.country} size={18} />
                 )}
@@ -519,13 +528,13 @@ export function U1InstitutionsManager() {
                 id="u1-countryCode"
                 value={form.countryCode}
                 onChange={(e) => setForm({ ...form, countryCode: e.target.value.toUpperCase() })}
-                placeholder="IT (auto si vide)"
+                placeholder={t("fieldCountryCodePlaceholder")}
                 maxLength={2}
                 className="uppercase"
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="u1-organization">Organisme *</Label>
+              <Label htmlFor="u1-organization">{t("fieldOrganization")}</Label>
               <Input
                 id="u1-organization"
                 value={form.organization}
@@ -534,7 +543,7 @@ export function U1InstitutionsManager() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="u1-department">Département / Service</Label>
+              <Label htmlFor="u1-department">{t("fieldDepartment")}</Label>
               <Input
                 id="u1-department"
                 value={form.department}
@@ -543,7 +552,7 @@ export function U1InstitutionsManager() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="u1-alternateName">Nom alternatif</Label>
+              <Label htmlFor="u1-alternateName">{t("fieldAlternateName")}</Label>
               <Input
                 id="u1-alternateName"
                 value={form.alternateName}
@@ -552,7 +561,7 @@ export function U1InstitutionsManager() {
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="u1-address">Adresse (une ligne par champ)</Label>
+              <Label htmlFor="u1-address">{t("fieldAddress")}</Label>
               <Textarea
                 id="u1-address"
                 rows={3}
@@ -562,16 +571,16 @@ export function U1InstitutionsManager() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="u1-postal">Adresse postale (BP)</Label>
+              <Label htmlFor="u1-postal">{t("fieldPostalAddress")}</Label>
               <Input
                 id="u1-postal"
                 value={form.postalAddress}
                 onChange={(e) => setForm({ ...form, postalAddress: e.target.value })}
-                placeholder="BP 289, 4003 …"
+                placeholder={t("fieldPostalAddressPlaceholder")}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="u1-phone">Téléphone</Label>
+              <Label htmlFor="u1-phone">{t("fieldPhone")}</Label>
               <Input
                 id="u1-phone"
                 value={form.phone}
@@ -580,7 +589,7 @@ export function U1InstitutionsManager() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="u1-fax">Fax</Label>
+              <Label htmlFor="u1-fax">{t("fieldFax")}</Label>
               <Input
                 id="u1-fax"
                 value={form.fax}
@@ -588,7 +597,7 @@ export function U1InstitutionsManager() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="u1-website">Site web</Label>
+              <Label htmlFor="u1-website">{t("fieldWebsite")}</Label>
               <Input
                 id="u1-website"
                 type="url"
@@ -598,7 +607,7 @@ export function U1InstitutionsManager() {
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="u1-emails">Emails (séparés par virgule)</Label>
+              <Label htmlFor="u1-emails">{t("fieldEmails")}</Label>
               <Input
                 id="u1-emails"
                 value={form.emails}
@@ -608,7 +617,7 @@ export function U1InstitutionsManager() {
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="u1-extra">
-                Données additionnelles (JSON — services annexes, infos, etc.)
+                {t("fieldExtra")}
               </Label>
               <Textarea
                 id="u1-extra"
@@ -619,18 +628,18 @@ export function U1InstitutionsManager() {
                 className="font-mono text-xs"
               />
               <p className="text-xs text-muted-foreground">
-                Optionnel. Laisser vide pour effacer.
+                {t("fieldExtraHint")}
               </p>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setFormOpen(false)} disabled={submitting}>
-              Annuler
+              {t("cancel")}
             </Button>
             <Button onClick={submitForm} disabled={submitting}>
               {submitting && <Loader2 className="animate-spin" size={16} />}
-              {editing ? "Enregistrer" : "Créer"}
+              {editing ? t("save") : t("create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -643,10 +652,13 @@ export function U1InstitutionsManager() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cette institution ?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteConfirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {confirmDelete
-                ? `Vous êtes sur le point de supprimer ${confirmDelete.country} (${confirmDelete.organization}). Cette action est irréversible.`
+                ? t("deleteConfirmDescription", {
+                    country: confirmDelete.country,
+                    organization: confirmDelete.organization,
+                  })
                 : null}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -659,7 +671,7 @@ export function U1InstitutionsManager() {
             />
           ) : null}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={(e) => {
@@ -669,7 +681,7 @@ export function U1InstitutionsManager() {
               disabled={deleting || !typeToConfirmMatches(deleteTyped, confirmDelete?.country ?? "")}
             >
               {deleting && <Loader2 className="animate-spin" size={16} />}
-              Supprimer
+              {t("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

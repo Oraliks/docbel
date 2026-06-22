@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Card,
@@ -121,6 +122,7 @@ function typeLabel(type: string): string {
 }
 
 export function CommissionsManager() {
+  const t = useTranslations("admin.commissions");
   const [items, setItems] = useState<Commission[]>([]);
   const [total, setTotal] = useState(0);
   const [skip, setSkip] = useState(0);
@@ -190,7 +192,7 @@ export function CommissionsManager() {
       } catch (err) {
         if (cancelled) return;
         console.error(err);
-        toast.error("Échec du chargement des commissions");
+        toast.error(t("loadError"));
         setLoading(false);
       }
     }
@@ -216,16 +218,16 @@ export function CommissionsManager() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        toast.error(data?.error ?? "Échec de la sauvegarde");
+        toast.error(data?.error ?? t("saveDateError"));
         return;
       }
       const data = await res.json();
       setLastUpdated(data.lastUpdated);
       setLastUpdatedDraft(data.lastUpdated);
-      toast.success("Date de mise à jour enregistrée");
+      toast.success(t("saveDateSuccess"));
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setSavingDate(false);
     }
@@ -279,18 +281,18 @@ export function CommissionsManager() {
         if (Array.isArray(data?.details) && data.details.length > 0) {
           toast.error(data.details.map((d: { message: string }) => d.message).join(" • "));
         } else {
-          toast.error(data?.error ?? "Erreur lors de l'enregistrement");
+          toast.error(data?.error ?? t("saveError"));
         }
         return;
       }
 
-      toast.success(editing ? "Commission mise à jour" : "Commission créée");
+      toast.success(editing ? t("updateSuccess") : t("createSuccess"));
       setFormOpen(false);
       setEditing(null);
       refresh();
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setSubmitting(false);
     }
@@ -305,15 +307,15 @@ export function CommissionsManager() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        toast.error(data?.error ?? "Suppression impossible");
+        toast.error(data?.error ?? t("deleteError"));
         return;
       }
-      toast.success("Commission supprimée");
+      toast.success(t("deleteSuccess"));
       setConfirmDelete(null);
       refresh();
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setDeleting(false);
     }
@@ -330,7 +332,7 @@ export function CommissionsManager() {
             <div className="space-y-1.5 flex-1 max-w-xs">
               <Label htmlFor="cp-last-updated" className="flex items-center gap-1.5">
                 <CalendarIcon size={14} />
-                Date de mise à jour (affichée sur le front)
+                {t("lastUpdatedLabel")}
               </Label>
               <Input
                 id="cp-last-updated"
@@ -345,7 +347,7 @@ export function CommissionsManager() {
               variant={dateChanged ? "default" : "outline"}
             >
               {savingDate && <Loader2 className="animate-spin" size={16} />}
-              Enregistrer la date
+              {t("saveDate")}
             </Button>
           </div>
         </CardContent>
@@ -364,7 +366,7 @@ export function CommissionsManager() {
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Rechercher par code, numéro ou nom…"
+                  placeholder={t("searchPlaceholder")}
                   className="pl-9"
                 />
               </div>
@@ -376,10 +378,10 @@ export function CommissionsManager() {
                 }}
               >
                 <SelectTrigger className="w-[220px]">
-                  <SelectValue placeholder="Tous les types" />
+                  <SelectValue placeholder={t("allTypes")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">Tous les types</SelectItem>
+                  <SelectItem value="ALL">{t("allTypes")}</SelectItem>
                   {COMMISSION_TYPES.map((t) => (
                     <SelectItem key={t} value={t}>
                       {COMMISSION_TYPE_LABELS[t]}
@@ -390,7 +392,7 @@ export function CommissionsManager() {
             </div>
             <Button onClick={openCreate}>
               <Plus size={16} />
-              Nouvelle commission
+              {t("newCommission")}
             </Button>
           </div>
         </CardContent>
@@ -400,9 +402,9 @@ export function CommissionsManager() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Commissions paritaires</span>
+            <span>{t("tableTitle")}</span>
             <span className="text-sm font-normal text-muted-foreground">
-              {stats.total} entrée{stats.total > 1 ? "s" : ""}
+              {t("entriesCount", { n: stats.total })}
             </span>
           </CardTitle>
         </CardHeader>
@@ -411,11 +413,11 @@ export function CommissionsManager() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="font-semibold w-[120px]">Code</TableHead>
-                  <TableHead className="font-semibold w-[120px]">Numéro</TableHead>
-                  <TableHead className="font-semibold w-[180px]">Type</TableHead>
-                  <TableHead className="font-semibold">Nom</TableHead>
-                  <TableHead className="font-semibold text-right w-[120px]">Actions</TableHead>
+                  <TableHead className="font-semibold w-[120px]">{t("colCode")}</TableHead>
+                  <TableHead className="font-semibold w-[120px]">{t("colNumero")}</TableHead>
+                  <TableHead className="font-semibold w-[180px]">{t("colType")}</TableHead>
+                  <TableHead className="font-semibold">{t("colNom")}</TableHead>
+                  <TableHead className="font-semibold text-right w-[120px]">{t("colActions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -428,7 +430,7 @@ export function CommissionsManager() {
                 ) : items.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                      Aucune commission ne correspond à ces filtres
+                      {t("emptyState")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -450,7 +452,7 @@ export function CommissionsManager() {
                             onClick={() => openEdit(c)}
                             variant="ghost"
                             size="sm"
-                            title="Modifier"
+                            title={t("edit")}
                             className="h-8 w-8 p-0"
                           >
                             <Pencil size={16} />
@@ -462,7 +464,7 @@ export function CommissionsManager() {
                             }}
                             variant="ghost"
                             size="sm"
-                            title="Supprimer"
+                            title={t("delete")}
                             className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30"
                           >
                             <Trash2 size={16} />
@@ -480,7 +482,7 @@ export function CommissionsManager() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">
-                Page {currentPage} / {totalPages}
+                {t("pageOf", { current: currentPage, total: totalPages })}
               </p>
               <div className="flex gap-2">
                 <Button
@@ -489,7 +491,7 @@ export function CommissionsManager() {
                   onClick={() => setSkip(Math.max(0, skip - PAGE_SIZE))}
                   disabled={skip === 0}
                 >
-                  <ChevronLeft size={16} /> Précédent
+                  <ChevronLeft size={16} /> {t("previous")}
                 </Button>
                 <Button
                   variant="outline"
@@ -497,7 +499,7 @@ export function CommissionsManager() {
                   onClick={() => setSkip(skip + PAGE_SIZE)}
                   disabled={skip + PAGE_SIZE >= total}
                 >
-                  Suivant <ChevronRight size={16} />
+                  {t("next")} <ChevronRight size={16} />
                 </Button>
               </div>
             </div>
@@ -510,18 +512,16 @@ export function CommissionsManager() {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              {editing ? "Modifier la commission" : "Nouvelle commission"}
+              {editing ? t("editTitle") : t("createTitle")}
             </DialogTitle>
             <DialogDescription>
-              {editing
-                ? "Modifiez les champs puis enregistrez."
-                : "Remplissez les champs pour créer une nouvelle commission paritaire."}
+              {editing ? t("editDescription") : t("createDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-2 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="cp-code">Code (7 chiffres) *</Label>
+              <Label htmlFor="cp-code">{t("fieldCode")}</Label>
               <Input
                 id="cp-code"
                 value={form.code}
@@ -532,7 +532,7 @@ export function CommissionsManager() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cp-numero">Numéro *</Label>
+              <Label htmlFor="cp-numero">{t("fieldNumero")}</Label>
               <Input
                 id="cp-numero"
                 value={form.numero}
@@ -542,7 +542,7 @@ export function CommissionsManager() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cp-numeroOfficiel">Numéro officiel *</Label>
+              <Label htmlFor="cp-numeroOfficiel">{t("fieldNumeroOfficiel")}</Label>
               <Input
                 id="cp-numeroOfficiel"
                 value={form.numeroOfficiel}
@@ -552,7 +552,7 @@ export function CommissionsManager() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cp-codeOfficiel5">Code officiel (5 chiffres) *</Label>
+              <Label htmlFor="cp-codeOfficiel5">{t("fieldCodeOfficiel5")}</Label>
               <Input
                 id="cp-codeOfficiel5"
                 value={form.codeOfficiel5}
@@ -563,7 +563,7 @@ export function CommissionsManager() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cp-suffixe">Suffixe interne (2 chiffres) *</Label>
+              <Label htmlFor="cp-suffixe">{t("fieldSuffixe")}</Label>
               <Input
                 id="cp-suffixe"
                 value={form.suffixeInterne}
@@ -574,7 +574,7 @@ export function CommissionsManager() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cp-type">Type *</Label>
+              <Label htmlFor="cp-type">{t("fieldType")}</Label>
               <Select
                 value={form.type}
                 onValueChange={(v) => setForm({ ...form, type: v as CommissionType })}
@@ -592,7 +592,7 @@ export function CommissionsManager() {
               </Select>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="cp-nom">Nom *</Label>
+              <Label htmlFor="cp-nom">{t("fieldNom")}</Label>
               <Input
                 id="cp-nom"
                 value={form.nom}
@@ -604,11 +604,11 @@ export function CommissionsManager() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setFormOpen(false)} disabled={submitting}>
-              Annuler
+              {t("cancel")}
             </Button>
             <Button onClick={submitForm} disabled={submitting}>
               {submitting && <Loader2 className="animate-spin" size={16} />}
-              {editing ? "Enregistrer" : "Créer"}
+              {editing ? t("save") : t("create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -621,10 +621,13 @@ export function CommissionsManager() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cette commission ?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteConfirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {confirmDelete
-                ? `Vous êtes sur le point de supprimer ${confirmDelete.numero} - ${confirmDelete.nom}. Cette action est irréversible.`
+                ? t("deleteConfirmDescription", {
+                    numero: confirmDelete.numero,
+                    nom: confirmDelete.nom,
+                  })
                 : null}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -637,7 +640,7 @@ export function CommissionsManager() {
             />
           ) : null}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={(e) => {
@@ -647,7 +650,7 @@ export function CommissionsManager() {
               disabled={deleting || !typeToConfirmMatches(deleteTyped, confirmDelete?.numero ?? "")}
             >
               {deleting && <Loader2 className="animate-spin" size={16} />}
-              Supprimer
+              {t("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

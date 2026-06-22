@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,16 @@ import {
 } from "@/lib/changelog/validation";
 import dynamic from "next/dynamic";
 
+function EditorLoading() {
+  const t = useTranslations("admin.changelog");
+  return (
+    <div className="rounded-md border bg-muted/30 px-3 py-8 text-center text-sm text-muted-foreground">
+      <Loader2Icon className="inline size-4 animate-spin mr-2" />
+      {t("editorLoading")}
+    </div>
+  );
+}
+
 // Tiptap = client-only (DOM nécessaire). On évite l'hydratation SSR.
 const RichTextEditor = dynamic(
   () =>
@@ -37,12 +48,7 @@ const RichTextEditor = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="rounded-md border bg-muted/30 px-3 py-8 text-center text-sm text-muted-foreground">
-        <Loader2Icon className="inline size-4 animate-spin mr-2" />
-        Chargement de l&apos;éditeur…
-      </div>
-    ),
+    loading: () => <EditorLoading />,
   }
 );
 
@@ -68,12 +74,12 @@ interface FormState {
 
 const typeConfig: Record<
   ChangelogType,
-  { label: string; variant: "success" | "destructive" | "info" | "warning" }
+  { labelKey: string; variant: "success" | "destructive" | "info" | "warning" }
 > = {
-  feature: { label: "Feature", variant: "success" },
-  fix: { label: "Fix", variant: "destructive" },
-  improvement: { label: "Amélioration", variant: "info" },
-  breaking: { label: "Breaking", variant: "warning" },
+  feature: { labelKey: "typeFeature", variant: "success" },
+  fix: { labelKey: "typeFix", variant: "destructive" },
+  improvement: { labelKey: "typeImprovement", variant: "info" },
+  breaking: { labelKey: "typeBreaking", variant: "warning" },
 };
 
 const emptyForm = (): FormState => {
@@ -124,11 +130,12 @@ function FieldLabel({
   required?: boolean;
   className?: string;
 }) {
+  const t = useTranslations("admin.changelog");
   return (
     <label className={`block text-sm font-medium mb-2 ${className}`}>
       {children}
       {required && (
-        <span className="ml-0.5 text-destructive" aria-label="requis">
+        <span className="ml-0.5 text-destructive" aria-label={t("requiredAria")}>
           *
         </span>
       )}
@@ -148,6 +155,7 @@ const formatPublishedAt = (iso: string) => {
 };
 
 export function ChangelogManager() {
+  const t = useTranslations("admin.changelog");
   const confirm = useConfirm();
   const [entries, setEntries] = useState<ChangelogApiEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,11 +173,11 @@ export function ChangelogManager() {
       setEntries(data.entries);
     } catch (err) {
       console.error(err);
-      toast.error("Impossible de charger le changelog");
+      toast.error(t("toastLoadError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void refresh();
@@ -208,14 +216,14 @@ export function ChangelogManager() {
 
   const handleSave = async () => {
     if (!form.version.trim() || !form.title.trim()) {
-      toast.error("Version et titre sont requis");
+      toast.error(t("toastVersionTitleRequired"));
       return;
     }
 
     // Combine date + time into an ISO string (local → UTC).
     const local = new Date(`${form.date}T${form.time || "00:00"}:00`);
     if (Number.isNaN(local.getTime())) {
-      toast.error("Date / heure invalide");
+      toast.error(t("toastInvalidDateTime"));
       return;
     }
 
@@ -248,16 +256,16 @@ export function ChangelogManager() {
         const detail =
           data.issues && data.issues.length > 0
             ? data.issues
-                .map((i) => `${i.path.join(".") || "champ"} : ${i.message}`)
+                .map((i) => `${i.path.join(".") || t("fieldFallback")} : ${i.message}`)
                 .join(" — ")
             : data.error ?? "save failed";
         throw new Error(detail);
       }
-      toast.success(editingVersion ? "Version mise à jour" : "Version créée");
+      toast.success(editingVersion ? t("toastVersionUpdated") : t("toastVersionCreated"));
       resetForm();
       await refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Échec de l'enregistrement");
+      toast.error(err instanceof Error ? err.message : t("toastSaveError"));
     } finally {
       setSaving(false);
     }
@@ -265,9 +273,9 @@ export function ChangelogManager() {
 
   const handleDelete = async (entry: ChangelogApiEntry) => {
     const ok = await confirm({
-      title: `Supprimer la version ${entry.version} ?`,
-      description: "Cette action est irréversible.",
-      confirmText: "Supprimer",
+      title: t("deleteConfirmTitle", { version: entry.version }),
+      description: t("deleteConfirmDescription"),
+      confirmText: t("deleteConfirmAction"),
       destructive: true,
       requireText: entry.version,
     });
@@ -278,10 +286,10 @@ export function ChangelogManager() {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("delete failed");
-      toast.success("Version supprimée");
+      toast.success(t("toastVersionDeleted"));
       await refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Échec de la suppression");
+      toast.error(err instanceof Error ? err.message : t("toastDeleteError"));
     }
   };
 
@@ -317,7 +325,7 @@ export function ChangelogManager() {
         {!isFormOpen && (
           <Button onClick={handleNewClick} className="gap-2">
             <PlusIcon size={18} />
-            Nouvelle version
+            {t("newVersion")}
           </Button>
         )}
       </div>
@@ -326,13 +334,13 @@ export function ChangelogManager() {
         <Card className="border-2">
           <CardHeader>
             <CardTitle>
-              {editingVersion ? "Modifier" : "Créer"} une version
+              {editingVersion ? t("formTitleEdit") : t("formTitleCreate")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <FieldLabel required>Version</FieldLabel>
+                <FieldLabel required>{t("fieldVersion")}</FieldLabel>
                 <Input
                   placeholder="2.1.0"
                   value={form.version}
@@ -341,7 +349,7 @@ export function ChangelogManager() {
                 />
               </div>
               <div>
-                <FieldLabel required>Type</FieldLabel>
+                <FieldLabel required>{t("fieldType")}</FieldLabel>
                 <Select
                   value={form.type}
                   onValueChange={(v) =>
@@ -352,9 +360,9 @@ export function ChangelogManager() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CHANGELOG_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {typeConfig[t].label}
+                    {CHANGELOG_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {t(typeConfig[type].labelKey as Parameters<typeof t>[0])}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -364,7 +372,7 @@ export function ChangelogManager() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <FieldLabel required>Date</FieldLabel>
+                <FieldLabel required>{t("fieldDate")}</FieldLabel>
                 <Input
                   type="date"
                   value={form.date}
@@ -372,7 +380,7 @@ export function ChangelogManager() {
                 />
               </div>
               <div>
-                <FieldLabel required>Heure</FieldLabel>
+                <FieldLabel required>{t("fieldTime")}</FieldLabel>
                 <Input
                   type="time"
                   value={form.time}
@@ -382,9 +390,9 @@ export function ChangelogManager() {
             </div>
 
             <div>
-              <FieldLabel required>Titre</FieldLabel>
+              <FieldLabel required>{t("fieldTitle")}</FieldLabel>
               <Input
-                placeholder="Titre du changement"
+                placeholder={t("titlePlaceholder")}
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
               />
@@ -392,9 +400,9 @@ export function ChangelogManager() {
 
             <div>
               <div className="flex items-baseline justify-between mb-2">
-                <FieldLabel className="mb-0">Description</FieldLabel>
+                <FieldLabel className="mb-0">{t("fieldDescription")}</FieldLabel>
                 <span className="text-xs text-muted-foreground">
-                  {form.description.length}/10 000
+                  {t("descriptionCount", { count: form.description.length })}
                 </span>
               </div>
               <RichTextEditor
@@ -402,18 +410,18 @@ export function ChangelogManager() {
                 onChange={(html) =>
                   setForm((prev) => ({ ...prev, description: html }))
                 }
-                placeholder="Rédigez la description (titres, listes, gras, liens, etc.). Tapez « / » pour ouvrir le menu d'insertion…"
+                placeholder={t("descriptionPlaceholder")}
                 showVersionHistory={false}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Changements</label>
+              <label className="block text-sm font-medium mb-2">{t("changesLabel")}</label>
               <div className="space-y-2">
                 {form.changes.map((change, idx) => (
                   <div key={idx} className="flex gap-2">
                     <Input
-                      placeholder={`Changement ${idx + 1}`}
+                      placeholder={t("changePlaceholder", { index: idx + 1 })}
                       value={change}
                       onChange={(e) => updateChange(idx, e.target.value)}
                     />
@@ -435,7 +443,7 @@ export function ChangelogManager() {
                   className="gap-1 w-full"
                 >
                   <PlusIcon size={16} />
-                  Ajouter un changement
+                  {t("addChange")}
                 </Button>
               </div>
             </div>
@@ -451,7 +459,7 @@ export function ChangelogManager() {
                 ) : (
                   <SaveIcon size={18} />
                 )}
-                Enregistrer
+                {t("save")}
               </Button>
               <Button
                 variant="outline"
@@ -459,7 +467,7 @@ export function ChangelogManager() {
                 disabled={saving}
                 className="flex-1"
               >
-                Annuler
+                {t("cancel")}
               </Button>
             </div>
           </CardContent>
@@ -473,7 +481,7 @@ export function ChangelogManager() {
       ) : sortedEntries.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Aucune version enregistrée pour le moment.
+            {t("emptyState")}
           </CardContent>
         </Card>
       ) : (
@@ -481,11 +489,11 @@ export function ChangelogManager() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[88px]">Version</TableHead>
-                <TableHead className="w-[120px]">Type</TableHead>
-                <TableHead className="w-[180px]">Publié le</TableHead>
-                <TableHead>Titre &amp; aperçu</TableHead>
-                <TableHead className="w-[140px] text-right">Actions</TableHead>
+                <TableHead className="w-[88px]">{t("colVersion")}</TableHead>
+                <TableHead className="w-[120px]">{t("colType")}</TableHead>
+                <TableHead className="w-[180px]">{t("colPublishedAt")}</TableHead>
+                <TableHead>{t("colTitlePreview")}</TableHead>
+                <TableHead className="w-[140px] text-right">{t("colActions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -496,7 +504,7 @@ export function ChangelogManager() {
                   ? htmlToText(entry.description)
                   : changes.join(" · ");
                 const meta: string[] = [];
-                if (changes.length > 0) meta.push(`${changes.length} bullet${changes.length > 1 ? "s" : ""}`);
+                if (changes.length > 0) meta.push(t("bulletCount", { count: changes.length }));
                 return (
                   <TableRow
                     key={entry.id}
@@ -510,7 +518,7 @@ export function ChangelogManager() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={cfg.variant}>
-                        {cfg.label}
+                        {t(cfg.labelKey as Parameters<typeof t>[0])}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
@@ -538,7 +546,7 @@ export function ChangelogManager() {
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => handleEditClick(entry)}
-                          title="Modifier"
+                          title={t("actionEdit")}
                         >
                           <EditIcon size={14} />
                         </Button>
@@ -547,7 +555,7 @@ export function ChangelogManager() {
                           size="icon-sm"
                           className="text-destructive hover:text-destructive"
                           onClick={() => handleDelete(entry)}
-                          title="Supprimer"
+                          title={t("actionDelete")}
                         >
                           <TrashIcon size={14} />
                         </Button>

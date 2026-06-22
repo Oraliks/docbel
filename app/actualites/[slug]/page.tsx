@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 type RouteParams = { params: Promise<{ slug: string }> };
 
 function frDate(value: Date) {
-  return new Date(value).toLocaleDateString("fr-FR", {
+  return new Date(value).toLocaleDateString("fr-BE", {
     year: "numeric",
     month: "short",
     day: "numeric",

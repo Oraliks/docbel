@@ -115,13 +115,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       // Decision Builder : arbres d'orientation versionnés vers les dossiers.
-      // Libellé en dur (pas de clé i18n) — module récent.
-      title: "Decision Builder",
+      title: t("decisionBuilder"),
       url: "/admin/decision-trees",
       icon: <GitBranchIcon className="size-4" />,
       items: [
-        { title: "Arbres", url: "/admin/decision-trees" },
-        { title: "Analytics", url: "/admin/decision-trees/analytics" },
+        { title: t("decisionTrees"), url: "/admin/decision-trees" },
+        { title: t("analytics"), url: "/admin/decision-trees/analytics" },
       ],
     },
     {
@@ -158,13 +157,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       // Assistant administratif employeur (sources officielles + moteur de
-      // règles déterministe). Libellés en dur (pas de clés i18n) pour le MVP.
-      title: "Assistant Employeur",
+      // règles déterministe).
+      title: t("assistantEmployeur"),
       url: "/admin/employeur/sources",
       icon: <BriefcaseIcon className="size-4" />,
       items: [
-        { title: "Sources officielles", url: "/admin/employeur/sources" },
-        { title: "Règles métier", url: "/admin/employeur/regles" },
+        { title: t("sourcesOfficielles"), url: "/admin/employeur/sources" },
+        { title: t("reglesMetier"), url: "/admin/employeur/regles" },
       ],
     },
     {
@@ -211,9 +210,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: <MailIcon className="size-4" />,
     },
     {
-      // Santé des médias : scan des images cassées (link-rot) sur toute la
-      // base. Libellé en dur (pas de clé i18n) — page de maintenance interne.
-      title: "Médias",
+      // Santé des médias : scan des images cassées (link-rot) sur toute la base.
+      title: t("medias"),
       url: "/admin/medias",
       icon: <ImageIcon className="size-4" />,
     },

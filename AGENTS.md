@@ -30,6 +30,21 @@ L'app combine :
 - **Tailwind CSS 4** + **shadcn/ui v4**.
 - **TypeScript 5** strict.
 
+## Conventions i18n (next-intl)
+
+⚠️ **Tout nouveau texte user-facing passe par next-intl** — détails dans
+[`docs/i18n-conventions.md`](docs/i18n-conventions.md).
+
+- Client : `const t = useTranslations("admin.<section>")` ; serveur (async) :
+  `const t = await getTranslations("admin.<section>")`. Clés dans
+  `messages/fr.json` (source ; les autres langues retombent sur FR).
+- Les clés sont **typées** (`i18n/global.ts`) → une clé absente casse `tsc`.
+  Valider : `pnpm i18n:check` (syntaxe ICU + couverture par langue).
+- Dates/nombres : helpers de [`lib/i18n/format.ts`](lib/i18n/format.ts),
+  jamais de locale codée en dur (`toLocaleDateString("fr-BE")` interdit).
+- Nouveau modèle DB traduisible → pattern `ContentTranslation`
+  (cf. [`docs/i18n-rollout-plan.md`](docs/i18n-rollout-plan.md)).
+
 ## Conventions API
 
 Toutes les routes vivent dans `app/api/**/route.ts` et exportent

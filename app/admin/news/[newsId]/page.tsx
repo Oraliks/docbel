@@ -169,7 +169,7 @@ export default function NewsEditorPage() {
 
   // Save (create or update)
   const handleSave = useCallback(async (): Promise<NewsArticle | null> => {
-    const newErrors = validateForm(form, t);
+    const newErrors = validateForm(form, t as (key: string) => string);
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -262,7 +262,7 @@ export default function NewsEditorPage() {
 
   // Publish now (directly without dialog)
   const handlePublishNow = useCallback(async () => {
-    const newErrors = validateForm(form, t);
+    const newErrors = validateForm(form, t as (key: string) => string);
     // Illustration de hero obligatoire pour mettre en ligne.
     if (!form.heroIllustration?.trim()) {
       newErrors.heroIllustration = HERO_REQUIRED_MESSAGE;
@@ -287,7 +287,7 @@ export default function NewsEditorPage() {
 
   // Open schedule dialog
   const handleOpenSchedule = useCallback(async () => {
-    const newErrors = validateForm(form, t);
+    const newErrors = validateForm(form, t as (key: string) => string);
     // Une planification débouche sur une publication → illustration requise.
     if (!form.heroIllustration?.trim()) {
       newErrors.heroIllustration = HERO_REQUIRED_MESSAGE;

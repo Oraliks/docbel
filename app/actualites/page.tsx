@@ -47,7 +47,7 @@ export default async function ActualitesRoute({ searchParams }: { searchParams: 
     title: article.title,
     desc: article.excerpt,
     date: article.publishedAt
-      ? new Date(article.publishedAt).toLocaleDateString("fr-FR", {
+      ? new Date(article.publishedAt).toLocaleDateString("fr-BE", {
           year: "numeric",
           month: "short",
           day: "numeric",

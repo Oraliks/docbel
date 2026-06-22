@@ -83,7 +83,7 @@ function StatusBadge({ status }: { status: string }) {
   const labelKey = STATUS_LABEL_KEY[status]
   return (
     <span className={`inline-block text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border ${info.tone}`}>
-      {labelKey ? t(labelKey) : status}
+      {labelKey ? t(labelKey as Parameters<typeof t>[0]) : status}
     </span>
   )
 }

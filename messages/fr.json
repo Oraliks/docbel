@@ -75,7 +75,14 @@
       "formationsPermissions": "Permissions",
       "formationsCategories": "Catégories",
       "formationsSignalements": "Signalements",
-      "formationsBoussole": "Boussole"
+      "formationsBoussole": "Boussole",
+      "decisionBuilder": "Decision Builder",
+      "decisionTrees": "Arbres",
+      "analytics": "Analytics",
+      "assistantEmployeur": "Assistant Employeur",
+      "sourcesOfficielles": "Sources officielles",
+      "reglesMetier": "Règles métier",
+      "medias": "Médias"
     },
     "users": {
       "title": "Utilisateurs",

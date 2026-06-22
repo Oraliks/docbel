@@ -238,7 +238,7 @@ export function UsersListClient({ users }: UsersListClientProps) {
         <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <StatsCards stats={stats} t={t} />
+      <StatsCards stats={stats} t={t as (key: string) => string} />
 
       <div className="rounded-xl border bg-card p-3 ring-1 ring-foreground/10">
         <div className="flex flex-wrap items-center gap-3">
@@ -367,7 +367,7 @@ export function UsersListClient({ users }: UsersListClientProps) {
               </thead>
               <tbody>
                 {pageRows.map((u) => (
-                  <UserRow key={u.id} user={u} t={t} />
+                  <UserRow key={u.id} user={u} t={t as (key: string, vars?: Record<string, string | number>) => string} />
                 ))}
               </tbody>
             </table>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { ArrowRightIcon } from "lucide-react";
 import { type Tool, getToolSlug } from "@/lib/docbel-data";
 import { glyphForTool } from "@/lib/tool-glyphs";
@@ -26,7 +27,11 @@ interface LandingToolsRowProps {
  * Reste dynamique : la liste vient du catalogue réel filtré sur les outils
  * populaires (cf. app/page.tsx) — un nouvel outil marqué populaire s'ajoute ici.
  */
-export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
+export async function LandingToolsRow({
+  tools,
+  max = 8,
+}: LandingToolsRowProps) {
+  const t = await getTranslations("public.home");
   const visible = tools.slice(0, max);
 
   return (
@@ -40,9 +45,11 @@ export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
           <span className="absolute -left-[3.5px] -top-1 size-2 rounded-full bg-[color:var(--glass-accent-deep)] ring-4 ring-[color:var(--glass-accent-a)]/20" />
         </div>
         <h2 className="glass-display text-[26px] font-semibold leading-[1.05]">
-          Vos outils,
+          {t("toolsTitleLine1")}
           <br />
-          <em className="text-[color:var(--glass-accent-deep)]">en un geste.</em>
+          <em className="text-[color:var(--glass-accent-deep)]">
+            {t("toolsTitleEm")}
+          </em>
         </h2>
       </div>
 
@@ -116,9 +123,7 @@ export function LandingToolsRow({ tools, max = 8 }: LandingToolsRowProps) {
             <ArrowRightIcon className="size-5" />
           </span>
           <span className="text-[13.5px] font-bold leading-tight text-[color:var(--glass-ink)]">
-            Voir tous
-            <br />
-            les outils
+            {t.rich("seeAllTools", { br: () => <br /> })}
           </span>
         </Link>
       </div>

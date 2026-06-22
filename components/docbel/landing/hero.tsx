@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { NewsItem } from "@/lib/docbel-data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRightIcon, BookOpenIcon, FolderOpenIcon } from "lucide-react";
@@ -13,15 +14,21 @@ interface LandingHeroProps {
   loading?: boolean;
 }
 
-const FALLBACK_ARTICLE: NewsItem = {
-  id: "placeholder-c1",
-  slug: undefined,
-  tag: "Annonce ONEM · 15.04",
-  title: "Le formulaire C1 passe à 12 mois en ligne.",
-  desc: "L'ONEM simplifie la procédure : vous avez désormais une année entière pour introduire votre demande d'allocations depuis l'espace en ligne. On vous explique tout en 6 minutes.",
-  date: "09 MAI 26",
-  color: "#9F7CFF",
-};
+// Article de repli affiché si l'API ne renvoie aucune « une » (jamais de hero
+// vide). Construit à partir des traductions → contenu localisé.
+function buildFallbackArticle(
+  t: ReturnType<typeof useTranslations>,
+): NewsItem {
+  return {
+    id: "placeholder-c1",
+    slug: undefined,
+    tag: t("fallbackTag"),
+    title: t("fallbackTitle"),
+    desc: t("fallbackDesc"),
+    date: t("fallbackDate"),
+    color: "#9F7CFF",
+  };
+}
 
 function formatHeadline(title: string) {
   const segments = title.split(/(\d+\s?mois|\d+\s?€|en\s+un\s+geste|12\s+mois)/i);
@@ -148,6 +155,7 @@ function FeaturedArtwork() {
 
 function HeroCarousel({ articles }: { articles: NewsItem[] }) {
   const router = useRouter();
+  const t = useTranslations("public.home");
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const count = articles.length;
@@ -177,8 +185,8 @@ function HeroCarousel({ articles }: { articles: NewsItem[] }) {
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
-      aria-roledescription="carrousel"
-      aria-label="Actualités à la une"
+      aria-roledescription={t("carouselRoleDescription")}
+      aria-label={t("carouselLabel")}
     >
       {/*
         Nappe de couleur du BLOC UNIQUE (façon maquette) : voile lavande qui se
@@ -245,7 +253,7 @@ function HeroCarousel({ articles }: { articles: NewsItem[] }) {
                 className="glass-cta inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13.5px] font-bold"
               >
                 <FolderOpenIcon className="size-4" />
-                Créer mon dossier
+                {t("ctaCreateDossier")}
                 <ArrowRightIcon className="size-4" />
               </button>
               <button
@@ -254,7 +262,7 @@ function HeroCarousel({ articles }: { articles: NewsItem[] }) {
                 className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-3 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] dark:border-[color:var(--glass-accent-deep)]/40 dark:hover:bg-white/10 dark:hover:shadow-[0_0_18px_rgba(139,92,246,0.3)]"
               >
                 <BookOpenIcon className="size-4" />
-                Lire l&apos;article
+                {t("ctaReadArticle")}
               </button>
             </div>
           </div>
@@ -266,13 +274,17 @@ function HeroCarousel({ articles }: { articles: NewsItem[] }) {
           {count > 1 && (
             <div
               className="relative z-30 mt-3 flex items-center justify-center gap-2"
-              aria-label="Choisir une actualité"
+              aria-label={t("carouselPickLabel")}
             >
               {articles.map((a, i) => (
                 <button
                   key={a.id}
                   type="button"
-                  aria-label={`Actualité ${i + 1} sur ${count} : ${a.title}`}
+                  aria-label={t("carouselSlideLabel", {
+                    index: i + 1,
+                    total: count,
+                    title: a.title,
+                  })}
                   aria-current={i === index}
                   onClick={() => setIndex(i)}
                   className={`h-2 rounded-full transition-all duration-300 ${
@@ -320,11 +332,12 @@ function FeaturedArticleSkeleton() {
 }
 
 export function LandingHero({ articles, loading = false }: LandingHeroProps) {
+  const t = useTranslations("public.home");
   // BLOC UNIQUE (façon maquette) : texte + illustration centrale (points du
   // carrousel dessous) + simulateur posé par-dessus — le tout rendu par
   // HeroCarousel. Repli sur un article placeholder si l'API n'a rien renvoyé,
   // pour ne jamais afficher un hero vide.
-  const list = articles.length > 0 ? articles : [FALLBACK_ARTICLE];
+  const list = articles.length > 0 ? articles : [buildFallbackArticle(t)];
   return loading && articles.length === 0 ? (
     <FeaturedArticleSkeleton />
   ) : (

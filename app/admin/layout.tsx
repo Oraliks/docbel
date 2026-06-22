@@ -1,7 +1,5 @@
 import { headers } from "next/headers"
 import { notFound } from "next/navigation"
-import { NextIntlClientProvider } from "next-intl"
-import { getLocale, getMessages } from "next-intl/server"
 import { auth } from "@/lib/auth"
 import { AdminLayoutProvider } from "@/components/admin-layout-provider"
 import { FloatingChatFabLazy } from "@/components/admin/chomage-ia/floating-chat/floating-chat-fab-lazy"
@@ -30,20 +28,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     notFound()
   }
 
-  // i18n admin en mode cookie (pas de routing URL côté admin) : on lit la
-  // langue active + les messages côté serveur et on hydrate le client.
-  const locale = await getLocale()
-  const messages = await getMessages()
-
+  // NB : le NextIntlClientProvider est monté au root layout (app/layout.tsx),
+  // donc useTranslations/getTranslations marchent ici sans wrapper dédié.
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      <AdminLayoutProvider>
-        {children}
-        {/* FAB mini-chat IA chômage — visible sur toutes les pages /admin/*.
-            Stateless (réinitialisé à chaque fermeture), réutilise la KB + la
-            mémoire long-terme via /api/chomage-ia/quick-chat. */}
-        <FloatingChatFabLazy />
-      </AdminLayoutProvider>
-    </NextIntlClientProvider>
+    <AdminLayoutProvider>
+      {children}
+      {/* FAB mini-chat IA chômage — visible sur toutes les pages /admin/*.
+          Stateless (réinitialisé à chaque fermeture), réutilise la KB + la
+          mémoire long-terme via /api/chomage-ia/quick-chat. */}
+      <FloatingChatFabLazy />
+    </AdminLayoutProvider>
   )
 }

@@ -9,6 +9,7 @@
 // mon-dossier-client.tsx / dossier-wizard.tsx — donc lien simple partout.
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Accessibility,
   ArrowRight,
@@ -50,6 +51,7 @@ const TILE_HUES = [
 ] as const;
 
 export function WizardTeaser() {
+  const t = useTranslations("public.home");
   return (
     <section
       aria-labelledby="wizard-teaser-heading"
@@ -57,18 +59,16 @@ export function WizardTeaser() {
     >
       <header className="flex flex-col gap-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-          Mon dossier
+          {t("wizardEyebrow")}
         </p>
         <h2
           id="wizard-teaser-heading"
           className="glass-display text-[26px] font-semibold leading-[1.1] sm:text-[30px]"
         >
-          Trouvez le bon dossier <em>en quelques questions</em>
+          {t.rich("wizardTitle", { em: (chunks) => <em>{chunks}</em> })}
         </h2>
         <p className="max-w-2xl text-[13px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-          Choisissez la situation qui vous correspond : le guide vous pose une
-          à trois questions, puis vous oriente vers le dossier adapté — sans
-          jargon, et vous pouvez revenir en arrière à tout moment.
+          {t("wizardDescription")}
         </p>
       </header>
 
@@ -114,7 +114,7 @@ export function WizardTeaser() {
             <Sparkles className="size-5" aria-hidden />
           </span>
           <span className="flex-1 text-[13.5px] font-bold leading-snug">
-            Commencer le guide
+            {t("wizardStartGuide")}
           </span>
           <ArrowRight
             className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none"

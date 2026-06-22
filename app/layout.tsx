@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Fraunces, Manrope, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
+import { isRtl } from "@/i18n/config";
 import { Toaster } from "@/components/ui/sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -54,10 +57,15 @@ export default async function RootLayout({
   // Permet aux headers d'afficher le bon état dès le 1er render → zéro
   // flash "Invité → Compte".
   const initialSession = await getServerAuthSession();
+  // i18n (mode cookie) : locale + messages côté serveur, hydratés au provider
+  // racine → couvre tout le front (vitrine glass, espaces pros, admin).
+  const locale = await getLocale();
+  const messages = await getMessages();
 
   return (
     <html
-      lang="fr"
+      lang={locale}
+      dir={isRtl(locale) ? "rtl" : "ltr"}
       className={`${plusJakarta.variable} ${fraunces.variable} ${manrope.variable} h-full antialiased`}
       suppressHydrationWarning
     >
@@ -76,17 +84,19 @@ export default async function RootLayout({
             __html: `(function(){try{var t=localStorage.getItem('docbel-theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}else{document.documentElement.style.colorScheme='light';}}catch(e){}})();`,
           }}
         />
-        <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
-          <AuthSessionProvider initialSession={initialSession}>
-            <ImpersonationBanner />
-            <AppLayoutClient>{children}</AppLayoutClient>
-          </AuthSessionProvider>
-          <Toaster richColors position="bottom-right" duration={3500} />
-          <ConfirmDialog />
-          <VersionWatcher />
-          <AcronymHydrator />
-          <Analytics />
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
+            <AuthSessionProvider initialSession={initialSession}>
+              <ImpersonationBanner />
+              <AppLayoutClient>{children}</AppLayoutClient>
+            </AuthSessionProvider>
+            <Toaster richColors position="bottom-right" duration={3500} />
+            <ConfirmDialog />
+            <VersionWatcher />
+            <AcronymHydrator />
+            <Analytics />
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

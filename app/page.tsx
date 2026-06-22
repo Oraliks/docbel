@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { LandingBottom, type PopularBundle } from "@/components/docbel/landing/bottom";
 import { LandingHero } from "@/components/docbel/landing/hero";
@@ -13,26 +14,30 @@ import { loadActiveBundleRun } from "@/lib/landing/resume";
 
 export const dynamic = "force-dynamic";
 
-const MONTH_LABELS = [
-  "JAN",
-  "FÉV",
-  "MARS",
-  "AVR",
-  "MAI",
-  "JUIN",
-  "JUIL",
-  "AOÛT",
-  "SEPT",
-  "OCT",
-  "NOV",
-  "DÉC",
-];
+// Abréviations de mois (clés i18n) — l'ordre suit getMonth() (0 = janvier).
+const MONTH_KEYS = [
+  "monthJan",
+  "monthFeb",
+  "monthMar",
+  "monthApr",
+  "monthMay",
+  "monthJun",
+  "monthJul",
+  "monthAug",
+  "monthSep",
+  "monthOct",
+  "monthNov",
+  "monthDec",
+] as const;
 
-function formatFrenchDate(value: string): string {
+function formatShortDate(
+  value: string,
+  monthLabels: readonly string[],
+): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return `${String(parsed.getDate()).padStart(2, "0")} ${
-    MONTH_LABELS[parsed.getMonth()]
+    monthLabels[parsed.getMonth()]
   } ${String(parsed.getFullYear()).slice(2)}`;
 }
 
@@ -49,6 +54,12 @@ function formatFrenchDate(value: string): string {
  * Le persona switcher / la recherche restent des îlots client (header).
  */
 export default async function HomePage() {
+  const t = await getTranslations("public.home");
+  // Libellés de mois résolus une fois (clés dynamiques → cast requis).
+  const monthLabels = MONTH_KEYS.map((key) =>
+    t(key as Parameters<typeof t>[0]),
+  );
+
   const [articles, catalog, bundleRows, activeRun] = await Promise.all([
     prisma.news
       .findMany({
@@ -115,8 +126,9 @@ export default async function HomePage() {
     desc: article.excerpt,
     // publishedAt si dispo, sinon createdAt → une date réelle s'affiche toujours
     // dans le hero/listing (un article publié sans publishedAt reste daté).
-    date: formatFrenchDate(
+    date: formatShortDate(
       (article.publishedAt ?? article.createdAt).toISOString(),
+      monthLabels,
     ),
     color: article.color,
     readingTime: article.readingTime ?? undefined,

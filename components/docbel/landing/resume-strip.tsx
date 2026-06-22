@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowRightIcon, XIcon } from "lucide-react";
 import { FolderOpen } from "@phosphor-icons/react";
 
@@ -49,6 +50,7 @@ function readDismissed(): boolean {
  * prefers-reduced-motion via les utilitaires motion-reduce.
  */
 export function ResumeStrip({ run }: ResumeStripProps) {
+  const t = useTranslations("public.home");
   // Initialisation paresseuse (SSR-safe) : pas d'accès à window côté serveur.
   const [dismissed, setDismissed] = useState<boolean>(readDismissed);
   // Pilote la transition de largeur de la barre de progression : false au
@@ -76,7 +78,11 @@ export function ResumeStrip({ run }: ResumeStripProps) {
     run.total > 0
       ? Math.min(100, Math.round((run.completed / run.total) * 100))
       : 0;
-  const plural = run.completed > 1 ? "s" : "";
+  // Phrase de progression (pluriels via ICU) — réutilisée desktop/mobile/aria.
+  const progressText = t("resumeProgress", {
+    completed: run.completed,
+    total: run.total,
+  });
 
   const dismiss = () => {
     setDismissed(true);
@@ -93,7 +99,7 @@ export function ResumeStrip({ run }: ResumeStripProps) {
 
   return (
     <aside
-      aria-label={`Dossier en cours : ${run.name}`}
+      aria-label={t("resumeAriaLabel", { name: run.name })}
       className="glass-surface relative flex w-full animate-[fadeInUp_0.45s_ease] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 motion-reduce:animate-none sm:flex-nowrap sm:px-5"
     >
       {/* Pastille dossier — accent violet, icône Phosphor duotone. */}
@@ -116,23 +122,26 @@ export function ResumeStrip({ run }: ResumeStripProps) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] leading-snug text-[color:var(--glass-ink-soft)]">
           <span className="font-bold text-[color:var(--glass-ink)]">
-            Reprenez votre dossier «&nbsp;{run.name}&nbsp;»
+            {t("resumeTitle", { name: run.name })}
           </span>
           <span className="hidden sm:inline">
             {" — "}
-            {run.completed} document{plural} sur {run.total} complété{plural}
+            {progressText}
           </span>
         </p>
         {/* Sur mobile, le compte passe sous le titre plutôt que d'être tronqué. */}
         <p className="text-[11.5px] text-[color:var(--glass-ink-faint)] sm:hidden">
-          {run.completed} document{plural} sur {run.total} complété{plural}
+          {progressText}
         </p>
         <div
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={run.total}
           aria-valuenow={run.completed}
-          aria-label={`Progression : ${run.completed} document${plural} sur ${run.total}`}
+          aria-label={t("resumeProgressAria", {
+            completed: run.completed,
+            total: run.total,
+          })}
           className="mt-1.5 h-1 w-full max-w-[420px] overflow-hidden rounded-full"
           style={{
             background:
@@ -155,13 +164,13 @@ export function ResumeStrip({ run }: ResumeStripProps) {
           href={`/d/${run.slug}`}
           className="glass-cta inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-bold"
         >
-          Reprendre
+          {t("resumeCta")}
           <ArrowRightIcon className="size-3.5" />
         </Link>
         <button
           type="button"
           onClick={dismiss}
-          aria-label="Masquer cette bande pour cette session"
+          aria-label={t("resumeDismiss")}
           className="inline-flex size-8 items-center justify-center rounded-full text-[color:var(--glass-ink-faint)] transition-colors hover:bg-white/50 hover:text-[color:var(--glass-ink)] focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:outline-none motion-reduce:transition-none dark:hover:bg-white/10"
         >
           <XIcon className="size-4" />

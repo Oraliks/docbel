@@ -21,6 +21,7 @@
 // trim, accents, multi-tokens, fuzzy match Levenshtein, suggestions.
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowLeftIcon, SearchIcon, XIcon } from "lucide-react";
 
 import {
@@ -54,6 +55,7 @@ const COUNTS_BY_DOMAIN: Readonly<Record<AcronymDomain, number>> = (() => {
 })();
 
 export function GlossairePage() {
+  const t = useTranslations("public.glossaire");
   const [query, setQuery] = useState("");
   const [focusedDomain, setFocusedDomain] = useState<AcronymDomain | null>(null);
   // `expanded` : null = utiliser l'auto-déplier (3 résultats ou moins),
@@ -116,16 +118,16 @@ export function GlossairePage() {
                 color: "var(--glass-bg-a)",
               }}
             >
-              Aide
+              {t("badge")}
             </span>
             <h1 className="glass-display mt-2 text-[26px] font-semibold leading-[1.1] sm:text-[32px]">
-              C&apos;est quoi ce <em>sigle</em>&nbsp;?
+              {t.rich("title", { em: (chunks) => <em>{chunks}</em> })}
             </h1>
           </div>
           <div className="hidden text-right text-[11px] text-[color:var(--glass-ink-faint)] sm:block">
-            {ALL_ENTRIES.length} sigles
+            {t("countSigles", { count: ALL_ENTRIES.length })}
             <br />
-            {DOMAIN_ORDER.length} univers
+            {t("countUnivers", { count: DOMAIN_ORDER.length })}
           </div>
         </div>
 
@@ -141,7 +143,7 @@ export function GlossairePage() {
             type="text"
             value={query}
             onChange={(e) => resetSearchState(e.target.value)}
-            placeholder="Tape ton sigle, un mot, une situation…"
+            placeholder={t("searchPlaceholder")}
             spellCheck={false}
             autoComplete="off"
             className="glass-surface-strong h-14 w-full rounded-2xl border-0 pr-14 pl-14 text-[16px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
@@ -153,7 +155,7 @@ export function GlossairePage() {
                 resetSearchState("");
                 inputRef.current?.focus();
               }}
-              aria-label="Effacer la recherche"
+              aria-label={t("clearSearch")}
               className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-[color:var(--glass-ink-soft)] transition hover:bg-white/40 hover:text-[color:var(--glass-ink)]"
             >
               <XIcon className="size-4" />
@@ -164,7 +166,7 @@ export function GlossairePage() {
         {!inSearchMode ? (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-faint)]">
-              On cherche surtout
+              {t("popularLabel")}
             </span>
             {popularEntries.map((entry) => (
               <button
@@ -183,8 +185,8 @@ export function GlossairePage() {
         ) : (
           <div className="text-[12px] text-[color:var(--glass-ink-faint)]">
             {matches.length === 0
-              ? `Aucun résultat exact pour « ${trimmedQuery} »`
-              : `${matches.length} résultat${matches.length > 1 ? "s" : ""} pour « ${trimmedQuery} »`}
+              ? t("noResultExact", { query: trimmedQuery })
+              : t("resultCount", { count: matches.length, query: trimmedQuery })}
           </div>
         )}
       </header>
@@ -281,6 +283,7 @@ function DomainTile({
   count: number;
   onOpen: () => void;
 }) {
+  const t = useTranslations("public.glossaire");
   const meta = ACRONYM_DOMAINS[domain];
   const featured = meta.featured
     .map((code) => lookupAcronym(code))
@@ -320,7 +323,7 @@ function DomainTile({
         ))}
         {remaining > 0 ? (
           <span className="text-[11px] text-[color:var(--glass-ink-faint)]">
-            +{remaining} autre{remaining > 1 ? "s" : ""}
+            {t("moreCount", { count: remaining })}
           </span>
         ) : null}
       </div>
@@ -337,6 +340,7 @@ function DomainTabs({
   onSelect: (d: AcronymDomain) => void;
   onReset: () => void;
 }) {
+  const t = useTranslations("public.glossaire");
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button
@@ -345,7 +349,7 @@ function DomainTabs({
         className="glass-surface inline-flex items-center gap-1.5 rounded-full border-0 px-3 py-1.5 text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
       >
         <ArrowLeftIcon className="size-3.5" />
-        Vue d&apos;ensemble
+        {t("overview")}
       </button>
       <span className="text-[color:var(--glass-ink-faint)]">·</span>
       {DOMAIN_ORDER.map((domain) => {
@@ -447,21 +451,22 @@ function EmptyResults({
   suggestions: readonly AcronymEntry[];
   onPick: (code: string) => void;
 }) {
+  const t = useTranslations("public.glossaire");
   return (
     <div className="glass-surface flex flex-col items-center gap-4 px-6 py-12 text-center">
       <div className="flex flex-col gap-1">
         <p className="text-[15px] font-semibold text-[color:var(--glass-ink)]">
-          Aucun sigle exact pour « {query} ».
+          {t("emptyTitle", { query })}
         </p>
         <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
-          Une faute de frappe&nbsp;? Une variante&nbsp;?
+          {t("emptyHint")}
         </p>
       </div>
 
       {suggestions.length > 0 ? (
         <div className="flex flex-col items-center gap-2">
           <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
-            Tu cherchais peut-être
+            {t("suggestionsLabel")}
           </span>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {suggestions.map((entry) => (
@@ -479,8 +484,7 @@ function EmptyResults({
       ) : null}
 
       <p className="max-w-md text-[12px] text-[color:var(--glass-ink-faint)]">
-        Si un sigle administratif manque, signale-le via la page contact —
-        on l&apos;ajoutera.
+        {t("missingHint")}
       </p>
     </div>
   );

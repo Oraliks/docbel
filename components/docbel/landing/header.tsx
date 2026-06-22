@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth-client";
 import { useAuthSession } from "@/components/auth-session-provider";
 import { useTheme } from "@/components/theme-provider";
@@ -46,27 +47,28 @@ interface LandingHeaderProps {
   onSearchOpen: () => void;
 }
 
+// `tKey` is the i18n key under `public.chrome` for the item label.
 const NAV_ITEMS: ReadonlyArray<{
   id: string;
-  label: string;
+  tKey: string;
   href: string;
   icon?: LucideIcon;
 }> = [
-  { id: "accueil", label: "Accueil", href: "/" },
-  { id: "actualites", label: "Actus", href: "/actualites" },
-  { id: "mon-dossier", label: "Mon dossier", href: "/mon-dossier" },
-  { id: "outils", label: "Outils", href: "/outils" },
+  { id: "accueil", tKey: "navHome", href: "/" },
+  { id: "actualites", tKey: "navNews", href: "/actualites" },
+  { id: "mon-dossier", tKey: "navMyDossier", href: "/mon-dossier" },
+  { id: "outils", tKey: "navTools", href: "/outils" },
 ] as const;
 
 // Liens directs vers les landings marketing des segments employeur/partenaire.
 // Le citoyen est l'espace par défaut (`/`) et n'a pas de landing dédiée.
 const AUDIENCE_NAV_ITEMS: ReadonlyArray<{
   id: string;
-  label: string;
+  tKey: string;
   href: string;
   icon: LucideIcon;
 }> = [
-  { id: "employeurs", label: "Employeurs", href: "/p/employeur", icon: Building2Icon },
+  { id: "employeurs", tKey: "navEmployers", href: "/p/employeur", icon: Building2Icon },
 ] as const;
 
 // Pick the nav item whose href is the longest prefix of the current pathname.
@@ -94,6 +96,7 @@ const ITEM_BASE =
   "flex items-center gap-3 rounded-xl px-3 py-2 transition-colors";
 
 export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
+  const t = useTranslations("public.chrome");
   const router = useRouter();
   const pathname = usePathname();
   const visible = useScrollReveal();
@@ -107,7 +110,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
   const dark = resolvedTheme === "dark";
 
   const userLoggedIn = Boolean(session?.user);
-  const userName = session?.user?.name ?? "Invité";
+  const userName = session?.user?.name ?? t("guest");
   const userRole = (session?.user as { role?: string } | undefined)?.role ?? null;
   const initials = userName
     .split(" ")
@@ -131,7 +134,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetTrigger
           className="flex size-10 items-center justify-center rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] transition-colors hover:bg-white/55 dark:hover:bg-white/10 xl:hidden"
-          aria-label="Menu"
+          aria-label={t("menu")}
         >
           <MenuIcon className="size-5" />
         </SheetTrigger>
@@ -163,7 +166,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
                     className={`${className} cursor-not-allowed opacity-60`}
                   >
                     {ItemIcon ? <ItemIcon className="size-4" /> : null}
-                    {item.label}
+                    {t(item.tKey as Parameters<typeof t>[0])}
                   </span>
                 );
               }
@@ -175,14 +178,14 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
                   className={className}
                 >
                   {ItemIcon ? <ItemIcon className="size-4" /> : null}
-                  {item.label}
+                  {t(item.tKey as Parameters<typeof t>[0])}
                 </Link>
               );
             })}
           </nav>
           <div className="border-t border-[color:var(--glass-ink-line)] p-3">
             <p className="px-3 pb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-              Découvrir
+              {t("discover")}
             </p>
             {AUDIENCE_NAV_ITEMS.map((item) => {
               const ItemIcon = item.icon;
@@ -204,7 +207,9 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
                   >
                     <ItemIcon className="size-4" strokeWidth={2.2} />
                   </span>
-                  <span className="flex-1 text-[13px] font-semibold">{item.label}</span>
+                  <span className="flex-1 text-[13px] font-semibold">
+                    {t(item.tKey as Parameters<typeof t>[0])}
+                  </span>
                 </Link>
               );
             })}
@@ -215,7 +220,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
       <div className="flex items-center gap-1">
         <Link
           href="/"
-          aria-label="Retour à l'accueil"
+          aria-label={t("backToHome")}
           className="flex size-10 items-center justify-center rounded-xl text-white shadow-[0_4px_16px_rgba(159,124,255,0.45)] outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
           style={{
             backgroundImage:
@@ -255,14 +260,14 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
             return (
               <span key={item.id} className={`${className} cursor-not-allowed opacity-60`}>
                 {ItemIcon ? <ItemIcon className="size-4" /> : null}
-                {item.label}
+                {t(item.tKey as Parameters<typeof t>[0])}
               </span>
             );
           }
           return (
             <Link key={item.id} href={item.href} className={className}>
               {ItemIcon ? <ItemIcon className="size-4" /> : null}
-              {item.label}
+              {t(item.tKey as Parameters<typeof t>[0])}
             </Link>
           );
         })}
@@ -278,7 +283,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
           return (
             <Link key={item.id} href={item.href} className={className}>
               <ItemIcon className="size-4" />
-              {item.label}
+              {t(item.tKey as Parameters<typeof t>[0])}
             </Link>
           );
         })}
@@ -287,11 +292,11 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
       <button
         type="button"
         onClick={onSearchOpen}
-        aria-label="Rechercher"
+        aria-label={t("search")}
         className="ml-auto hidden min-w-[240px] items-center gap-2.5 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2.5 text-[13px] text-[color:var(--glass-ink-soft)] transition-colors hover:bg-white/55 dark:hover:bg-white/8 min-[1600px]:flex"
       >
         <SearchIcon className="size-4" />
-        <span className="truncate">Rechercher un outil, un guide, une loi…</span>
+        <span className="truncate">{t("searchPlaceholder")}</span>
         <kbd className="ml-auto rounded-md bg-[color:var(--glass-surface-strong)] px-1.5 py-0.5 text-[10px] font-semibold">
           ⌘K
         </kbd>
@@ -301,7 +306,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
         variant="ghost"
         size="icon-sm"
         onClick={onSearchOpen}
-        aria-label="Rechercher"
+        aria-label={t("search")}
         className="ml-auto size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10 min-[1600px]:hidden"
       >
         <SearchIcon />
@@ -313,7 +318,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
           size="icon-sm"
           onClick={() => setTheme(dark ? "light" : "dark")}
           className="size-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10"
-          aria-label="Changer le thème"
+          aria-label={t("toggleTheme")}
         >
           {dark ? <SunIcon /> : <MoonIcon />}
         </Button>
@@ -343,7 +348,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
             >
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-                  Mon compte
+                  {t("myAccount")}
                 </DropdownMenuLabel>
               </DropdownMenuGroup>
               <DropdownMenuItem
@@ -361,7 +366,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
                   className={`${ITEM_BASE} text-[13px]`}
                 >
                   <SettingsIcon className="size-4" />
-                  Administration
+                  {t("administration")}
                 </DropdownMenuItem>
               ) : null}
               <DropdownMenuSeparator className="my-1 bg-[color:var(--glass-ink-line)]" />
@@ -370,7 +375,7 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
                 className={`${ITEM_BASE} text-[13px] text-[color:var(--glass-ink-soft)]`}
               >
                 <LogOutIcon className="size-4" />
-                Déconnexion
+                {t("signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -378,12 +383,12 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
           // Déconnecté : pas d'avatar ni de « Invité » — lien direct de connexion.
           <Link
             href="/login"
-            aria-label="Se connecter"
+            aria-label={t("signIn")}
             className="flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2 text-[color:var(--glass-ink)] outline-none transition-colors hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] dark:hover:bg-white/8"
           >
             <LogInIcon className="size-4" />
             <span className="hidden text-[12.5px] font-bold sm:inline">
-              Se connecter
+              {t("signIn")}
             </span>
           </Link>
         )}

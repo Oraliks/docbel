@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ArrowRightIcon,
   BookOpenIcon,
@@ -44,8 +45,10 @@ interface LandingBottomProps {
 interface ResourceItem {
   Icon: LucideIcon;
   variant: "a" | "b" | "c" | "d";
-  title: string;
-  meta: string;
+  /** Clé i18n du titre. */
+  titleKey: string;
+  /** Durée de lecture (min) — injectée dans le libellé méta via ICU. */
+  minutes: number;
   href?: string;
 }
 
@@ -53,26 +56,26 @@ const RESOURCES: ResourceItem[] = [
   {
     Icon: PlayCircleIcon,
     variant: "a",
-    title: "Introduire une demande de chômage en 5 étapes",
-    meta: "Dossier · 8 min",
+    titleKey: "resource1Title",
+    minutes: 8,
   },
   {
     Icon: BookOpenIcon,
     variant: "b",
-    title: "Constituer son dossier Activa",
-    meta: "Dossier · 12 min",
+    titleKey: "resource2Title",
+    minutes: 12,
   },
   {
     Icon: FileTextIcon,
     variant: "c",
-    title: "Préparer son dossier RIS au CPAS",
-    meta: "Dossier · 10 min",
+    titleKey: "resource3Title",
+    minutes: 10,
   },
   {
     Icon: ZapIcon,
     variant: "d",
-    title: "Chômage temporaire : la marche à suivre",
-    meta: "Dossier · 6 min",
+    titleKey: "resource4Title",
+    minutes: 6,
   },
 ];
 
@@ -99,27 +102,28 @@ function bundleIcon(category: string | null): LucideIcon {
   return CATEGORY_ICONS[category.toLowerCase()] ?? FolderOpenIcon;
 }
 
-const MONTH_ABBR_FR = [
-  "JAN",
-  "FÉV",
-  "MARS",
-  "AVR",
-  "MAI",
-  "JUIN",
-  "JUIL",
-  "AOÛT",
-  "SEPT",
-  "OCT",
-  "NOV",
-  "DÉC",
-];
+// Abréviations de mois (clés i18n) — l'ordre suit getMonth() (0 = janvier).
+const MONTH_KEYS = [
+  "monthJan",
+  "monthFeb",
+  "monthMar",
+  "monthApr",
+  "monthMay",
+  "monthJun",
+  "monthJul",
+  "monthAug",
+  "monthSep",
+  "monthOct",
+  "monthNov",
+  "monthDec",
+] as const;
 
-function splitDate(date: string) {
+function splitDate(date: string, monthLabels: readonly string[]) {
   const parsed = new Date(date);
   if (!Number.isNaN(parsed.getTime())) {
     return {
       day: String(parsed.getDate()).padStart(2, "0"),
-      month: MONTH_ABBR_FR[parsed.getMonth()],
+      month: monthLabels[parsed.getMonth()],
     };
   }
   const tokens = date.split(/\s+/);
@@ -134,6 +138,9 @@ export function LandingBottom({
   bundles,
 }: LandingBottomProps) {
   const router = useRouter();
+  const t = useTranslations("public.home");
+  // Libellés de mois résolus une fois (clés dynamiques → cast requis).
+  const monthLabels = MONTH_KEYS.map((key) => t(key as Parameters<typeof t>[0]));
   const visibleNews = news.slice(0, 4);
   // Dossiers réels disponibles → ils remplacent les guides statiques du
   // panneau « Ressources » ; sinon le rendu d'origine est conservé tel quel.
@@ -145,14 +152,14 @@ export function LandingBottom({
       <div className="glass-surface p-7">
         <div className="mb-4 flex items-baseline justify-between">
           <h2 className="glass-display text-[24px] font-semibold leading-none">
-            Actualités récentes
+            {t("recentNewsTitle")}
           </h2>
           <button
             type="button"
             onClick={() => router.push("/actualites")}
             className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
           >
-            Voir tout
+            {t("seeAll")}
             <ArrowRightIcon className="size-3.5" />
           </button>
         </div>
@@ -178,11 +185,11 @@ export function LandingBottom({
             ))
           ) : visibleNews.length === 0 ? (
             <p className="py-6 text-center text-[13px] text-[color:var(--glass-ink-faint)]">
-              Aucune actualité pour le moment.
+              {t("noNews")}
             </p>
           ) : (
             visibleNews.map((item, index) => {
-              const { day, month } = splitDate(item.date);
+              const { day, month } = splitDate(item.date, monthLabels);
               return (
                 <button
                   key={item.id}
@@ -210,7 +217,9 @@ export function LandingBottom({
                   <div>
                     <div className="text-[14.5px] font-bold tracking-tight">{item.title}</div>
                     <div className="mt-1 text-[11.5px] text-[color:var(--glass-ink-faint)]">
-                      {item.readingTime ? `${item.readingTime} min de lecture` : item.desc.slice(0, 80)}
+                      {item.readingTime
+                        ? t("readingTime", { minutes: item.readingTime })
+                        : item.desc.slice(0, 80)}
                     </div>
                   </div>
                   <span
@@ -229,14 +238,14 @@ export function LandingBottom({
       <div className="glass-surface flex flex-col gap-3.5 p-7">
         <div className="mb-1 flex items-baseline justify-between">
           <h2 className="glass-display text-[24px] font-semibold leading-none">
-            {showBundles ? "Dossiers populaires" : "Ressources"}
+            {showBundles ? t("popularDossiersTitle") : t("resourcesTitle")}
           </h2>
           <button
             type="button"
             onClick={() => router.push(showBundles ? "/mon-dossier" : "/outils")}
             className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
           >
-            Voir tout
+            {t("seeAll")}
             <ArrowRightIcon className="size-3.5" />
           </button>
         </div>
@@ -266,8 +275,7 @@ export function LandingBottom({
                     {bundle.name}
                   </div>
                   <div className="mt-0.5 text-[11.5px] text-[color:var(--glass-ink-faint)]">
-                    Dossier · {bundle.itemCount} document
-                    {bundle.itemCount > 1 ? "s" : ""}
+                    {t("dossierDocCount", { count: bundle.itemCount })}
                   </div>
                 </div>
                 <ArrowRightIcon
@@ -281,7 +289,7 @@ export function LandingBottom({
           const Icon = res.Icon;
           return (
             <button
-              key={res.title}
+              key={res.titleKey}
               type="button"
               onClick={() => res.href && router.push(res.href)}
               className="group flex items-center gap-3.5 rounded-2xl p-3 text-left outline-none transition-colors hover:bg-white/60 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:hover:bg-white/[0.08]"
@@ -294,9 +302,11 @@ export function LandingBottom({
                 <Icon className="size-5" />
               </span>
               <div className="flex-1">
-                <div className="text-[13.5px] font-bold tracking-tight">{res.title}</div>
+                <div className="text-[13.5px] font-bold tracking-tight">
+                  {t(res.titleKey as Parameters<typeof t>[0])}
+                </div>
                 <div className="mt-0.5 text-[11.5px] text-[color:var(--glass-ink-faint)]">
-                  {res.meta}
+                  {t("resourceMeta", { minutes: res.minutes })}
                 </div>
               </div>
               <ArrowRightIcon

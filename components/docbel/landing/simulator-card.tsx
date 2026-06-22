@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowRightIcon, TrendingUpIcon } from "lucide-react";
 import { Sparkle } from "@phosphor-icons/react";
 import {
@@ -60,6 +61,7 @@ const PILL_CLS =
   "inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-[rgba(13,7,34,0.5)] px-5 py-3.5 text-[13.5px] font-bold text-white transition hover:bg-[rgba(13,7,34,0.72)] motion-reduce:transition-none";
 
 export function SimulatorCard() {
+  const t = useTranslations("public.home");
   const uid = useId();
   const catId = `${uid}-categorie`;
   const brutId = `${uid}-brut`;
@@ -109,7 +111,7 @@ export function SimulatorCard() {
     const brut = Number.parseFloat(brutStr.replace(",", "."));
     if (!Number.isFinite(brut) || brut <= BAREME_2026.brutMensuelMinimum) {
       setFormError(
-        `Indiquez un salaire mensuel brut réaliste (plus de ${BAREME_2026.brutMensuelMinimum} €).`,
+        t("simErrInvalidBrut", { min: BAREME_2026.brutMensuelMinimum }),
       );
       return;
     }
@@ -126,9 +128,7 @@ export function SimulatorCard() {
       res = estimerAllocation(input);
     } catch (err) {
       setFormError(
-        err instanceof Error
-          ? err.message
-          : "Estimation impossible avec ces valeurs.",
+        err instanceof Error ? err.message : t("simErrGeneric"),
       );
       return;
     }
@@ -149,7 +149,7 @@ export function SimulatorCard() {
     >
       <div className="flex items-center justify-between gap-3">
         <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-white/75">
-          Mon estimation
+          {t("simEstimateLabel")}
         </span>
         {/* Badge clair : taux appliqué quand on a un résultat, étincelle sinon. */}
         <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold text-[color:var(--glass-accent-deep)]">
@@ -172,16 +172,16 @@ export function SimulatorCard() {
           key="form"
           onSubmit={handleSubmit}
           noValidate
-          aria-label="Estimer mon allocation de chômage"
+          aria-label={t("simFormLabel")}
           className="flex flex-1 animate-[fadeInUp_0.45s_ease] flex-col gap-3 motion-reduce:animate-none"
         >
           <h2 className="glass-display text-[19px] font-semibold leading-snug">
-            Estimez votre allocation en 30 secondes
+            {t("simFormTitle")}
           </h2>
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor={catId} className={LABEL_CLS}>
-              Votre situation
+              {t("simFieldSituation")}
             </label>
             <select
               id={catId}
@@ -202,7 +202,7 @@ export function SimulatorCard() {
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor={brutId} className={LABEL_CLS}>
-              Salaire brut mensuel (€)
+              {t("simFieldBrut")}
             </label>
             <input
               id={brutId}
@@ -210,7 +210,7 @@ export function SimulatorCard() {
               min={0}
               step="0.01"
               inputMode="decimal"
-              placeholder="2 850"
+              placeholder={t("simBrutPlaceholder")}
               value={brutStr}
               onChange={(e) => setBrutStr(e.target.value)}
               aria-invalid={formError ? true : undefined}
@@ -222,7 +222,7 @@ export function SimulatorCard() {
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor={ancId} className={LABEL_CLS}>
-              Au chômage depuis
+              {t("simFieldSince")}
             </label>
             <select
               id={ancId}
@@ -252,7 +252,7 @@ export function SimulatorCard() {
           )}
 
           <button type="submit" className={`mt-auto ${PILL_CLS}`}>
-            Estimer mon allocation
+            {t("simSubmit")}
             <ArrowRightIcon className="size-4" />
           </button>
         </form>
@@ -275,16 +275,20 @@ export function SimulatorCard() {
             />
             <div className="relative">
               <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/80">
-                Allocation chômage
+                {t("simResultTitle")}
               </div>
               <div className="glass-display mt-1 text-[40px] leading-none font-semibold">
                 {FMT_JOUR.format(shown)} €
                 <small className="ml-1.5 text-[14px] font-semibold opacity-70">
-                  /jour
+                  {t("simPerDay")}
                 </small>
               </div>
               <div className="mt-1.5 text-[12px] opacity-80">
-                {`soit ~${FMT_MOIS.format(result.parMois)} €/mois (${result.tauxPct} % du salaire${result.plafondApplique ? " plafonné" : ""})`}
+                {t("simResultMonthly", {
+                  amount: FMT_MOIS.format(result.parMois),
+                  rate: result.tauxPct,
+                  capped: result.plafondApplique ? "yes" : "no",
+                })}
               </div>
             </div>
           </div>
@@ -292,26 +296,26 @@ export function SimulatorCard() {
           {/* Méta réelles, détachées du bloc chiffré par un filet clair. */}
           <div className="flex flex-col gap-2 border-t border-white/15 pt-4 text-[12px]">
             <div className="flex justify-between gap-3">
-              <span className="text-white/60">Mise à jour</span>
-              <span className="font-bold">à l&apos;instant</span>
+              <span className="text-white/60">{t("simMetaUpdated")}</span>
+              <span className="font-bold">{t("simMetaUpdatedNow")}</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="text-white/60">Catégorie</span>
+              <span className="text-white/60">{t("simMetaCategory")}</span>
               <span className="font-bold">{CATEGORIE_LABELS[categorie]}</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="text-white/60">Période</span>
+              <span className="text-white/60">{t("simMetaPeriod")}</span>
               <span className="font-bold">{result.periodeLabel}</span>
             </div>
           </div>
 
           <p className="text-[11px] leading-snug text-white/65">
-            Estimation indicative — seule la décision ONEM fait foi.{" "}
+            {t("simDisclaimer")}{" "}
             <Link
               href="/outils"
               className="font-semibold text-white underline decoration-white/40 underline-offset-2 transition hover:decoration-white motion-reduce:transition-none"
             >
-              Affiner sur nos calculateurs
+              {t("simRefineLink")}
               <ArrowRightIcon className="ml-0.5 inline size-3" aria-hidden />
             </Link>
           </p>
@@ -321,7 +325,7 @@ export function SimulatorCard() {
             onClick={() => setEditing(true)}
             className={`mt-auto ${PILL_CLS}`}
           >
-            Recalculer mon estimation
+            {t("simRecalculate")}
             <ArrowRightIcon className="size-4" />
           </button>
         </div>

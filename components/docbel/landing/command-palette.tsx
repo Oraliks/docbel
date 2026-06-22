@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Command,
   CommandDialog,
@@ -34,12 +35,13 @@ interface LandingCommandPaletteProps {
   tools: Tool[];
 }
 
+// `tKey` is the i18n key under `public.chrome` for the link label.
 const QUICK_LINKS = [
-  { icon: HomeIcon, label: "Accueil", href: "/", shortcut: "H" },
-  { icon: FolderOpenIcon, label: "Mon dossier", href: "/mon-dossier", shortcut: "D" },
-  { icon: WrenchIcon, label: "Tous les outils", href: "/outils", shortcut: "O" },
-  { icon: NewspaperIcon, label: "Actualités", href: "/actualites", shortcut: "A" },
-  { icon: PhoneIcon, label: "Contact", href: "/contact", shortcut: "C" },
+  { icon: HomeIcon, tKey: "navHome", href: "/", shortcut: "H" },
+  { icon: FolderOpenIcon, tKey: "navMyDossier", href: "/mon-dossier", shortcut: "D" },
+  { icon: WrenchIcon, tKey: "quickAllTools", href: "/outils", shortcut: "O" },
+  { icon: NewspaperIcon, tKey: "quickNews", href: "/actualites", shortcut: "A" },
+  { icon: PhoneIcon, tKey: "contact", href: "/contact", shortcut: "C" },
 ];
 
 // Rounded items need a small vertical gap so adjacent rows don't visually merge.
@@ -50,6 +52,7 @@ export function LandingCommandPalette({
   setOpen,
   tools,
 }: LandingCommandPaletteProps) {
+  const t = useTranslations("public.chrome");
   const router = useRouter();
 
   useEffect(() => {
@@ -72,15 +75,15 @@ export function LandingCommandPalette({
     <CommandDialog
       open={open}
       onOpenChange={setOpen}
-      title="Recherche globale"
-      description="Outils, espaces et raccourcis"
+      title={t("paletteTitle")}
+      description={t("paletteDescription")}
       className="sm:max-w-xl"
     >
       <Command>
-        <CommandInput placeholder="Rechercher un outil, un guide, un espace…" />
+        <CommandInput placeholder={t("palettePlaceholder")} />
         <CommandList>
-          <CommandEmpty>Aucun résultat.</CommandEmpty>
-          <CommandGroup heading="Raccourcis">
+          <CommandEmpty>{t("noResults")}</CommandEmpty>
+          <CommandGroup heading={t("groupShortcuts")}>
             {QUICK_LINKS.map((link) => {
               const Icon = link.icon;
               return (
@@ -90,14 +93,16 @@ export function LandingCommandPalette({
                   className={ITEM_CLASS}
                 >
                   <Icon />
-                  <span className="flex-1">{link.label}</span>
+                  <span className="flex-1">
+                    {t(link.tKey as Parameters<typeof t>[0])}
+                  </span>
                   <CommandShortcut>⌘{link.shortcut}</CommandShortcut>
                 </CommandItem>
               );
             })}
           </CommandGroup>
           <CommandSeparator />
-          <CommandGroup heading="Espaces">
+          <CommandGroup heading={t("groupSpaces")}>
             {AUDIENCES.map((aud) => {
               const AudIcon = aud.Icon;
               return (
@@ -116,7 +121,7 @@ export function LandingCommandPalette({
             })}
           </CommandGroup>
           <CommandSeparator />
-          <CommandGroup heading="Outils">
+          <CommandGroup heading={t("groupTools")}>
             {tools.map((tool) => (
               <CommandItem
                 key={tool.id}

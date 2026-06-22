@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export function LandingFooter() {
+  const t = useTranslations("public.chrome");
   return (
     <footer
       // `mt-auto` plus the parent <main>'s `min-h-svh` flex column pins the
@@ -11,43 +13,43 @@ export function LandingFooter() {
       className="mt-auto flex flex-col items-start justify-between gap-2 border-t px-6 py-5 text-[12px] text-[color:var(--glass-ink-faint)] sm:flex-row sm:items-center"
       style={{ borderTopColor: "var(--glass-ink-line)" }}
     >
-      <span>© 2026 Docbel — Plateforme d&apos;informations &amp; d&apos;outils légaux</span>
+      <span>{t("copyright", { year: 2026 })}</span>
       <nav className="flex flex-wrap gap-4">
         <Link
           href="/glossaire"
           className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
         >
-          Glossaire
+          {t("glossary")}
         </Link>
         <Link
           href="/contact"
           className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
         >
-          Contact
+          {t("contact")}
         </Link>
         <a
           href="#"
           className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
         >
-          Mentions légales
+          {t("legalNotice")}
         </a>
         <a
           href="#"
           className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
         >
-          Confidentialité
+          {t("privacy")}
         </a>
         <a
           href="#"
           className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
         >
-          Accessibilité
+          {t("accessibility")}
         </a>
         <a
           href="#"
           className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
         >
-          FR · NL
+          {t("langSwitch")}
         </a>
       </nav>
     </footer>

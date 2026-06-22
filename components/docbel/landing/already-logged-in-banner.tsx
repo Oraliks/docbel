@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowRightIcon, XIcon } from "lucide-react";
 import { useAuthSession } from "@/components/auth-session-provider";
 
@@ -22,6 +23,7 @@ export function AlreadyLoggedInBanner({
   targetPath,
   label,
 }: AlreadyLoggedInBannerProps) {
+  const t = useTranslations("public.home");
   const { data: session } = useAuthSession();
   const [dismissed, setDismissed] = useState(false);
 
@@ -44,20 +46,20 @@ export function AlreadyLoggedInBanner({
           aria-hidden
         />
         <span>
-          Vous êtes connecté.
+          {t("loggedInNotice")}
         </span>
         <Link
           href={targetPath}
           className="inline-flex items-center gap-1.5 font-bold text-[color:var(--glass-ink)] underline decoration-[color:var(--glass-accent-deep)] decoration-2 underline-offset-4 transition hover:opacity-80"
         >
-          Accéder à {label}
+          {t("loggedInAccess", { label })}
           <ArrowRightIcon className="size-3.5" strokeWidth={2.4} />
         </Link>
       </div>
       <button
         type="button"
         onClick={() => setDismissed(true)}
-        aria-label="Fermer la bannière"
+        aria-label={t("bannerClose")}
         className="inline-flex size-7 items-center justify-center rounded-full text-[color:var(--glass-ink-faint)] transition hover:bg-white/40 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10"
       >
         <XIcon className="size-3.5" strokeWidth={2.4} />

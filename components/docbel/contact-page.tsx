@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   CheckCircle2Icon,
   ClockIcon,
@@ -17,18 +18,20 @@ const CONTACT_EMAIL_PARTS = ["contact", "docbel", "be"];
 const getContactEmail = () =>
   CONTACT_EMAIL_PARTS.join("@").replace("@be", ".be");
 
-const SUBJECTS = [
-  "Question générale",
-  "Aide sur un formulaire",
-  "Suggestion d'outil",
-  "Signaler un bug",
-  "Partenariat",
-  "Presse",
-  "Autre",
-];
+// Stable keys for the subject options; labels resolved via i18n.
+const SUBJECT_KEYS = [
+  "general",
+  "formHelp",
+  "toolSuggestion",
+  "bugReport",
+  "partnership",
+  "press",
+  "other",
+] as const;
 
 export function ContactPage(_: ContactPageProps) {
   void _;
+  const t = useTranslations("public.contact");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -66,7 +69,7 @@ export function ContactPage(_: ContactPageProps) {
       window.setTimeout(() => setSubmitted(false), 4000);
     } catch (err) {
       console.error("Error submitting form:", err);
-      setError("Une erreur est survenue. Veuillez réessayer.");
+      setError(t("errorGeneric"));
     } finally {
       setIsLoading(false);
     }
@@ -86,15 +89,13 @@ export function ContactPage(_: ContactPageProps) {
     <section className="flex flex-col gap-6">
       <header className="flex flex-col gap-3 px-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-          Nous contacter
+          {t("eyebrow")}
         </p>
         <h1 className="glass-display text-[40px] font-semibold leading-[1.05] sm:text-[48px]">
-          Une question ? <em>Écrivez-nous.</em>
+          {t.rich("title", { em: (chunks) => <em>{chunks}</em> })}
         </h1>
         <p className="max-w-2xl text-[14px] text-[color:var(--glass-ink-soft)]">
-          On vous répond généralement sous 48h ouvrées. Pour les demandes
-          urgentes liées à un dossier ONEM, contactez directement votre bureau
-          local.
+          {t("intro")}
         </p>
       </header>
 
@@ -110,11 +111,8 @@ export function ContactPage(_: ContactPageProps) {
             >
               <CheckCircle2Icon className="mt-0.5 size-5 shrink-0" />
               <div>
-                <p className="font-bold">Message envoyé.</p>
-                <p className="opacity-80">
-                  Merci pour votre prise de contact. Notre équipe vous répond
-                  sous 48h ouvrées.
-                </p>
+                <p className="font-bold">{t("successTitle")}</p>
+                <p className="opacity-80">{t("successBody")}</p>
               </div>
             </div>
           ) : null}
@@ -134,27 +132,27 @@ export function ContactPage(_: ContactPageProps) {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
               <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
-                Nom complet
+                {t("nameLabel")}
               </span>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                placeholder="Marie Dupont"
+                placeholder={t("namePlaceholder")}
                 className={fieldClass}
               />
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
-                E-mail
+                {t("emailLabel")}
               </span>
               <input
                 type="email"
                 required
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
-                placeholder="vous@exemple.be"
+                placeholder={t("emailPlaceholder")}
                 className={fieldClass}
               />
             </label>
@@ -162,7 +160,7 @@ export function ContactPage(_: ContactPageProps) {
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
-              Sujet
+              {t("subjectLabel")}
             </span>
             <select
               required
@@ -170,25 +168,28 @@ export function ContactPage(_: ContactPageProps) {
               onChange={(e) => handleInputChange("subject", e.target.value)}
               className={fieldClass}
             >
-              <option value="">Sélectionnez un sujet…</option>
-              {SUBJECTS.map((subject) => (
-                <option key={subject} value={subject}>
-                  {subject}
-                </option>
-              ))}
+              <option value="">{t("subjectPlaceholder")}</option>
+              {SUBJECT_KEYS.map((key) => {
+                const label = t(`subject_${key}` as Parameters<typeof t>[0]);
+                return (
+                  <option key={key} value={label}>
+                    {label}
+                  </option>
+                );
+              })}
             </select>
           </label>
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
-              Message
+              {t("messageLabel")}
             </span>
             <textarea
               required
               rows={6}
               value={formData.message}
               onChange={(e) => handleInputChange("message", e.target.value)}
-              placeholder="Décrivez votre demande en quelques lignes…"
+              placeholder={t("messagePlaceholder")}
               className={`${fieldClass} resize-y`}
             />
           </label>
@@ -200,11 +201,7 @@ export function ContactPage(_: ContactPageProps) {
               onChange={(e) => setAcceptData(e.target.checked)}
               className="mt-0.5 size-4 accent-[color:var(--glass-accent-deep)]"
             />
-            <span>
-              J&apos;accepte que mes données soient utilisées pour répondre à
-              cette demande. Aucune information n&apos;est partagée avec un
-              tiers.
-            </span>
+            <span>{t("consent")}</span>
           </label>
 
           <button
@@ -216,7 +213,7 @@ export function ContactPage(_: ContactPageProps) {
               color: "var(--glass-bg-a)",
             }}
           >
-            {isLoading ? "Envoi…" : "Envoyer le message"}
+            {isLoading ? t("submitLoading") : t("submit")}
           </button>
         </form>
 
@@ -232,7 +229,7 @@ export function ContactPage(_: ContactPageProps) {
               <MailIcon className="size-5" />
             </span>
             <div>
-              <p className="text-[13.5px] font-bold">E-mail direct</p>
+              <p className="text-[13.5px] font-bold">{t("cardEmailTitle")}</p>
               <a
                 href={`mailto:${contactEmail}`}
                 className="mt-1 inline-block text-[12.5px] font-semibold text-[color:var(--glass-accent-deep)] hover:underline"
@@ -253,9 +250,9 @@ export function ContactPage(_: ContactPageProps) {
               <ClockIcon className="size-5" />
             </span>
             <div>
-              <p className="text-[13.5px] font-bold">Temps de réponse</p>
+              <p className="text-[13.5px] font-bold">{t("cardResponseTitle")}</p>
               <p className="mt-1 text-[12.5px] text-[color:var(--glass-ink-soft)]">
-                Sous 48h ouvrées pour les questions générales.
+                {t("cardResponseBody")}
               </p>
             </div>
           </div>
@@ -271,10 +268,9 @@ export function ContactPage(_: ContactPageProps) {
               <ShieldCheckIcon className="size-5" />
             </span>
             <div>
-              <p className="text-[13.5px] font-bold">Confidentialité</p>
+              <p className="text-[13.5px] font-bold">{t("cardPrivacyTitle")}</p>
               <p className="mt-1 text-[12.5px] text-[color:var(--glass-ink-soft)]">
-                Vos données ne sont utilisées que pour répondre à votre
-                message.
+                {t("cardPrivacyBody")}
               </p>
             </div>
           </div>
@@ -290,10 +286,9 @@ export function ContactPage(_: ContactPageProps) {
               <MessageCircleIcon className="size-5" />
             </span>
             <div>
-              <p className="text-[13.5px] font-bold">Vous avez un dossier urgent ?</p>
+              <p className="text-[13.5px] font-bold">{t("cardUrgentTitle")}</p>
               <p className="mt-1 text-[12.5px] text-[color:var(--glass-ink-soft)]">
-                Contactez directement votre bureau ONEM ou votre organisme de
-                paiement.
+                {t("cardUrgentBody")}
               </p>
             </div>
           </div>

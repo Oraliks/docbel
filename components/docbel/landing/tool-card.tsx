@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ArrowRightIcon,
   Building2Icon,
@@ -75,6 +76,7 @@ interface LandingToolCardProps {
 
 export function LandingToolCard({ tool, index = 0 }: LandingToolCardProps) {
   const router = useRouter();
+  const t = useTranslations("public.home");
   const visual = pickToolVisual(tool, index);
   const Icon = visual.Icon;
 
@@ -115,7 +117,7 @@ export function LandingToolCard({ tool, index = 0 }: LandingToolCardProps) {
             }}
           >
             <StarIcon className="size-2.5" strokeWidth={2.4} />
-            Populaire
+            {t("toolPopularBadge")}
           </span>
         ) : (
           <span

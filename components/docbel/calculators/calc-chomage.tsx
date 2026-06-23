@@ -13,6 +13,7 @@
  * son chiffre auprès de son organisme de paiement (CAPAC, syndicat).
  */
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import {
@@ -37,12 +38,6 @@ import {
   parseNum,
 } from "./_shared";
 
-const SITUATION_OPTIONS: { value: SituationFamiliale; label: string }[] = [
-  { value: "chef_menage", label: "Chef de ménage (charge de famille)" },
-  { value: "isole", label: "Isolé (vit seul)" },
-  { value: "cohabitant", label: "Cohabitant (sans charge)" },
-];
-
 const PHASE_OPTIONS: { value: ChomagePhase; label: string }[] = PHASES_INFO.map(
   (p) => ({
     value: p.id,
@@ -51,11 +46,18 @@ const PHASE_OPTIONS: { value: ChomagePhase; label: string }[] = PHASES_INFO.map(
 );
 
 export function CalcChomage({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
   const [salaire, setSalaire] = useState("");
   const [situation, setSituation] = useState<SituationFamiliale>("chef_menage");
   const [phase, setPhase] = useState<ChomagePhase>("1A");
   const [result, setResult] = useState<ChomageResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const SITUATION_OPTIONS: { value: SituationFamiliale; label: string }[] = [
+    { value: "chef_menage", label: t("choSituationChefMenage") },
+    { value: "isole", label: t("choSituationIsole") },
+    { value: "cohabitant", label: t("choSituationCohabitant") },
+  ];
 
   const submit = () => {
     const salaireBrut = parseNum(salaire);
@@ -75,55 +77,49 @@ export function CalcChomage({ accent }: { accent: string }) {
 
   return (
     <CalcLayout
-      intro={
-        <>
-          Estimez votre <strong>allocation de chômage mensuelle</strong> en
-          fonction de votre dernier salaire, de votre situation familiale et de
-          la phase de dégressivité ONEM. Les montants belges sont dégressifs
-          dans le temps.
-        </>
-      }
+      intro={t.rich("choIntro", {
+        strong: (chunks) => <strong>{chunks}</strong>,
+      })}
     >
       <CalcField
         id="chomage-salaire"
-        label="Salaire mensuel brut (€)"
+        label={t("choSalaireLabel")}
         type="number"
         value={salaire}
         onChange={setSalaire}
-        placeholder="ex : 2 500"
+        placeholder={t("choSalairePlaceholder")}
         min={0}
         step={10}
         suffix="€"
-        hint="Votre dernier salaire de référence avant le chômage."
+        hint={t("choSalaireHint")}
       />
 
       <CalcGrid cols={2}>
         <CalcSelect
           id="chomage-situation"
-          label="Situation familiale"
+          label={t("choSituationLabel")}
           value={situation}
           onChange={setSituation}
           options={SITUATION_OPTIONS}
         />
         <CalcSelect
           id="chomage-phase"
-          label="Phase de chômage"
+          label={t("choPhaseLabel")}
           value={phase}
           onChange={setPhase}
           options={PHASE_OPTIONS}
-          hint="Plus la période est longue, plus l'allocation diminue."
+          hint={t("choPhaseHint")}
         />
       </CalcGrid>
 
       <CalcInfo>
-        Le chômage en Belgique est <strong>dégressif</strong> : taux et plafonds
-        baissent progressivement (mois 1-3 → 4-6 → 7-12 → 13-24 → an 2-3 → au-delà).
-        Le montant final est borné par un minimum et un maximum forfaitaires
-        selon la situation familiale.
+        {t.rich("choInfo", {
+          strong: (chunks) => <strong>{chunks}</strong>,
+        })}
       </CalcInfo>
 
       <CalcSubmitButton accent={accent} onClick={submit}>
-        Calculer mon allocation
+        {t("choSubmit")}
       </CalcSubmitButton>
 
       {error ? <CalcError>{error}</CalcError> : null}
@@ -132,47 +128,39 @@ export function CalcChomage({ accent }: { accent: string }) {
         <CalcResult
           accent={accent}
           headline={fmtEUR(result.allocationMensuelle)}
-          unit="/ mois"
-          subtext={
-            <>
-              ≈ <strong>{fmtEUR(result.allocationJournaliere)}</strong> / jour
-              (régime 6 jours/semaine)
-            </>
-          }
+          unit={t("choResultUnit")}
+          subtext={t.rich("choResultSubtext", {
+            amount: fmtEUR(result.allocationJournaliere),
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
           rows={[
             {
-              label: "Salaire pris en compte",
+              label: t("choRowSalaire"),
               value:
                 result.salairePlafonne < parseNum(salaire)
-                  ? `${fmtEUR(result.salairePlafonne)} (plafonné)`
+                  ? t("choPlafonneSuffix", {
+                      amount: fmtEUR(result.salairePlafonne),
+                    })
                   : fmtEUR(result.salairePlafonne),
             },
             {
-              label: "Plafond applicable",
+              label: t("choRowPlafond"),
               value: fmtEUR(result.plafondApplique),
             },
             {
-              label: "Taux appliqué",
+              label: t("choRowTaux"),
               value: fmtPct(result.tauxApplique * 100, 0),
             },
-            { label: "Phase", value: result.phaseLabel },
+            { label: t("choRowPhase"), value: result.phaseLabel },
             {
-              label: "Situation",
+              label: t("choRowSituation"),
               value: result.situationLabel,
               emphasis: true,
             },
           ]}
-          footer={
-            <>
-              Estimation indicative basée sur les barèmes ONEM 2026 simplifiés.
-              Le montant réel intègre votre carrière, le précompte
-              professionnel et d&apos;éventuels compléments.{" "}
-              <strong>
-                Source : ONEM. Pour votre cas exact, contactez votre organisme
-                de paiement (CAPAC, syndicat).
-              </strong>
-            </>
-          }
+          footer={t.rich("choFooter", {
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         />
       ) : null}
     </CalcLayout>

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/prisma'
 import { BureauxFinder } from './bureaux-finder'
 import { DisabledToolView } from '../[slug]/disabled-tool-view'
@@ -30,14 +31,14 @@ export default async function BureauxToolPage() {
     return <DisabledToolView toolName={dbTool.name} />
   }
 
+  const t = await getTranslations('public.outils')
+
   return (
     <div className="flex flex-col gap-6 py-6 px-4 lg:px-6 w-full">
       <div>
-        <h1 className="text-2xl font-bold">Trouver un bureau</h1>
+        <h1 className="text-2xl font-bold">{t('bureauxTitle')}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Indique ton code postal — on te dit immédiatement quel ONEM, CPAS,
-          organisme de paiement et aide juridique sont compétents pour toi.
-          Données officielles ONEM, mises à jour régulièrement.
+          {t('bureauxIntro')}
         </p>
       </div>
       <BureauxFinder />

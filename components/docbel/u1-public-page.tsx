@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Building2Icon,
   CheckIcon,
@@ -140,6 +141,7 @@ function AdditionalServiceCard({ service }: { service: AdditionalService }) {
 }
 
 function InstitutionDetail({ inst }: { inst: Institution }) {
+  const t = useTranslations("public.shared");
   return (
     <Card className={GLASS_CARD}>
       <CardContent className="space-y-5 p-7 sm:p-8">
@@ -203,7 +205,7 @@ function InstitutionDetail({ inst }: { inst: Institution }) {
 
           {inst.fax ? (
             <InfoRow icon={<PrinterIcon className="size-4" />}>
-              <span className="text-[color:var(--glass-ink-soft)]">Fax : </span>
+              <span className="text-[color:var(--glass-ink-soft)]">{t("faxLabel")} </span>
               {inst.fax}
             </InfoRow>
           ) : null}
@@ -240,7 +242,7 @@ function InstitutionDetail({ inst }: { inst: Institution }) {
         </div>
 
         {inst.extra?.visitorAddress && inst.extra.visitorAddress.length > 0 ? (
-          <DetailSection title="Adresse visiteurs">
+          <DetailSection title={t("visitorAddress")}>
             <div className="text-[13px] text-[color:var(--glass-ink-soft)]">
               {inst.extra.visitorAddress.map((line, i) => (
                 <div key={i}>{line}</div>
@@ -250,7 +252,7 @@ function InstitutionDetail({ inst }: { inst: Institution }) {
         ) : null}
 
         {inst.extra?.regionalServicesU1 ? (
-          <DetailSection title="Services régionaux U1">
+          <DetailSection title={t("regionalServicesU1")}>
             <a
               href={inst.extra.regionalServicesU1}
               target="_blank"
@@ -264,7 +266,7 @@ function InstitutionDetail({ inst }: { inst: Institution }) {
         ) : null}
 
         {inst.extra?.additionalServices && inst.extra.additionalServices.length > 0 ? (
-          <DetailSection title="Services complémentaires">
+          <DetailSection title={t("additionalServices")}>
             <div className="space-y-3">
               {inst.extra.additionalServices.map((svc, i) => (
                 <AdditionalServiceCard key={i} service={svc} />
@@ -274,7 +276,7 @@ function InstitutionDetail({ inst }: { inst: Institution }) {
         ) : null}
 
         {inst.extra?.additionalInfo ? (
-          <DetailSection title="Informations complémentaires">
+          <DetailSection title={t("additionalInfo")}>
             <dl className="grid grid-cols-1 gap-x-4 gap-y-1.5 text-[13px] sm:grid-cols-[max-content_1fr]">
               {Object.entries(inst.extra.additionalInfo).map(([k, v]) => (
                 <div key={k} className="contents">
@@ -332,13 +334,15 @@ function CountryCombobox({
   items,
   value,
   onChange,
-  placeholder = "Sélectionnez un pays…",
+  placeholder,
 }: {
   items: Institution[];
   value: string;
   onChange: (id: string) => void;
   placeholder?: string;
 }) {
+  const t = useTranslations("public.shared");
+  const placeholderText = placeholder ?? t("countrySelectPlaceholder");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [triggerWidth, setTriggerWidth] = useState(0);
@@ -387,7 +391,7 @@ function CountryCombobox({
           </span>
         ) : (
           <span className="text-[color:var(--glass-ink-faint)]">
-            {placeholder}
+            {placeholderText}
           </span>
         )}
         <ChevronDownIcon className="size-4 shrink-0 text-[color:var(--glass-ink-faint)]" />
@@ -408,7 +412,7 @@ function CountryCombobox({
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Rechercher un pays…"
+              placeholder={t("countrySearchPlaceholder")}
               className={`${GLASS_INPUT} h-9 pl-8`}
             />
           </div>
@@ -416,7 +420,7 @@ function CountryCombobox({
         <div className="max-h-[280px] overflow-y-auto py-1">
           {filtered.length === 0 ? (
             <div className="px-3 py-6 text-center text-[13px] text-[color:var(--glass-ink-soft)]">
-              Aucun pays ne correspond
+              {t("noCountryMatch")}
             </div>
           ) : (
             filtered.map((inst) => {
@@ -459,6 +463,7 @@ function CountryCombobox({
 }
 
 export function U1PublicPage() {
+  const t = useTranslations("public.shared");
   const [items, setItems] = useState<Institution[]>([]);
   const [lastUpdated, setLastUpdated] = useState("");
   const [loading, setLoading] = useState(true);
@@ -495,7 +500,7 @@ export function U1PublicPage() {
     <section className="flex w-full flex-col gap-6">
       <header className="flex flex-col gap-3 px-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-          Attestations européennes
+          {t("u1Eyebrow")}
         </p>
         <div className="flex items-center gap-3">
           <span
@@ -508,26 +513,26 @@ export function U1PublicPage() {
             <Building2Icon className="size-5" />
           </span>
           <h1 className="glass-display text-[34px] font-semibold leading-[1.05] sm:text-[40px]">
-            Attestation U1 — institutions européennes
+            {t("u1Title")}
           </h1>
         </div>
         <p className="max-w-2xl text-[14px] text-[color:var(--glass-ink-soft)]">
-          Sélectionnez un pays pour voir l&apos;institution compétente où
-          demander votre attestation U1 (ex-E301), équivalent du C4 au niveau
-          européen. Données issues de l&apos;
-          <a
-            href="https://www.onem.be/page/attestations-europeennes---adresses-des-services-competents-en-matiere-de-chomage-dans-les-pays-de-l-eee-et-en-suisse"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold text-[color:var(--glass-accent-deep)] hover:underline"
-          >
-            ONEM
-          </a>
-          .
+          {t.rich("u1Intro", {
+            onem: (chunks) => (
+              <a
+                href="https://www.onem.be/page/attestations-europeennes---adresses-des-services-competents-en-matiere-de-chomage-dans-les-pays-de-l-eee-et-en-suisse"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-[color:var(--glass-accent-deep)] hover:underline"
+              >
+                {chunks}
+              </a>
+            ),
+          })}
         </p>
         {lastUpdated ? (
           <p className="text-[12px] text-[color:var(--glass-ink-faint)]">
-            Dernière mise à jour : {formatDate(lastUpdated)}
+            {t("lastUpdated", { date: formatDate(lastUpdated) })}
           </p>
         ) : null}
       </header>
@@ -541,10 +546,10 @@ export function U1PublicPage() {
           <div className="glass-surface flex flex-col items-center gap-2 px-6 py-12 text-center">
             <Building2Icon className="size-8 text-[color:var(--glass-ink-faint)]" />
             <p className="text-[14px] font-semibold">
-              Aucune institution disponible
+              {t("noInstitutions")}
             </p>
             <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
-              Les données ne sont pas encore en base. Réessayez plus tard.
+              {t("noInstitutionsHint")}
             </p>
           </div>
         ) : (

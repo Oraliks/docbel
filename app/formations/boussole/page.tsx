@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getBoussoleQuestions, toPublicQuestions } from "@/lib/formations/boussole/load";
 import { getFormationsViewer } from "@/lib/formations/page-auth";
 import { getTrainingAccess, isFlagEnabled } from "@/lib/formations/module";
@@ -8,11 +9,13 @@ import { BoussoleClient } from "./boussole-client";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Boussole d'orientation — Docbel Formations",
-  description:
-    "Vous ne savez pas quelle formation choisir ? Répondez à quelques questions simples : Docbel vous aide à identifier les domaines adaptés à votre situation.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.formations");
+  return {
+    title: t("metaBoussoleTitle"),
+    description: t("metaBoussoleDescription"),
+  };
+}
 
 export default async function BoussolePage() {
   const viewer = await getFormationsViewer();

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import {
   ArrowRightIcon,
@@ -27,11 +28,13 @@ import { BookingShowcase } from "@/components/docbel/p/booking-showcase";
 import { EspacePreview } from "@/components/docbel/p/espace-preview";
 import { RoiCalc } from "@/components/docbel/p/roi-calc";
 
-export const metadata: Metadata = {
-  title: "Espace Partenaire | Docbel",
-  description:
-    "L'espace partenaire qui facilite votre travail et l'accès à l'information juridique : outils, ressources et contacts centralisés pour mieux accompagner vos publics.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
+  return {
+    title: t("lpPartnerMetaTitle"),
+    description: t("lpPartnerMetaDesc"),
+  };
+}
 
 // Gradients réutilisés pour les icônes carrées des cards — inspirés du
 // VARIANT_BG de `LandingToolCard` (cf. components/docbel/landing/tool-card.tsx).
@@ -58,34 +61,34 @@ const ICON_SHADOW: Record<IconHue, string> = {
 interface BenefitItem {
   Icon: LucideIcon;
   hue: IconHue;
-  title: string;
-  desc: string;
+  titleKey: string;
+  descKey: string;
 }
 
 const PRIMARY_BENEFITS: BenefitItem[] = [
   {
     Icon: SearchIcon,
     hue: "violet",
-    title: "Moins de recherches",
-    desc: "Trouvez rapidement les bons outils et informations sans perdre de temps.",
+    titleKey: "lpPartnerBenefitSearchTitle",
+    descKey: "lpPartnerBenefitSearchDesc",
   },
   {
     Icon: FolderOpenIcon,
     hue: "orange",
-    title: "Information centralisée",
-    desc: "Accédez à toutes les ressources officielles en un seul endroit, fiables et à jour.",
+    titleKey: "lpPartnerBenefitCentralTitle",
+    descKey: "lpPartnerBenefitCentralDesc",
   },
   {
     Icon: UsersIcon,
     hue: "rose",
-    title: "Orientation plus simple",
-    desc: "Orientez vos publics vers les bonnes démarches et les bons interlocuteurs.",
+    titleKey: "lpPartnerBenefitGuideTitle",
+    descKey: "lpPartnerBenefitGuideDesc",
   },
   {
     Icon: HeartIcon,
     hue: "blue",
-    title: "Meilleur accompagnement",
-    desc: "Apportez des réponses claires, précises et adaptées à chaque situation.",
+    titleKey: "lpPartnerBenefitSupportTitle",
+    descKey: "lpPartnerBenefitSupportDesc",
   },
 ];
 
@@ -93,38 +96,38 @@ const TOOLS: BenefitItem[] = [
   {
     Icon: Building2Icon,
     hue: "violet",
-    title: "Trouver un bureau",
-    desc: "CPAS, Commune, ONEM, syndicats : trouvez le bureau compétent près de chez vous.",
+    titleKey: "lpPartnerToolOfficeTitle",
+    descKey: "lpPartnerToolOfficeDesc",
   },
   {
     Icon: ScaleIcon,
     hue: "orange",
-    title: "Institutions U1 (EEE)",
-    desc: "Trouvez l'institution compétente dans chaque pays de l'EEE et en Suisse.",
+    titleKey: "lpPartnerToolU1Title",
+    descKey: "lpPartnerToolU1Desc",
   },
   {
     Icon: Users2Icon,
     hue: "rose",
-    title: "CPAS & organismes",
-    desc: "Annuaire complet des CPAS et organismes utiles pour vos publics.",
+    titleKey: "lpPartnerToolCpasTitle",
+    descKey: "lpPartnerToolCpasDesc",
   },
   {
     Icon: BookOpenIcon,
     hue: "violet",
-    title: "Guides pratiques",
-    desc: "Guides pas à pas pour comprendre les démarches et les droits.",
+    titleKey: "lpPartnerToolGuidesTitle",
+    descKey: "lpPartnerToolGuidesDesc",
   },
   {
     Icon: BookmarkIcon,
     hue: "green",
-    title: "Référentiels",
-    desc: "Textes légaux, modèles et référentiels classés par thématique.",
+    titleKey: "lpPartnerToolRefTitle",
+    descKey: "lpPartnerToolRefDesc",
   },
   {
     Icon: FileTextIcon,
     hue: "orange",
-    title: "Documents utiles",
-    desc: "Formulaires, attestations et documents officiels téléchargeables.",
+    titleKey: "lpPartnerToolDocsTitle",
+    descKey: "lpPartnerToolDocsDesc",
   },
 ];
 
@@ -132,33 +135,33 @@ const SECONDARY_BENEFITS: BenefitItem[] = [
   {
     Icon: LayersIcon,
     hue: "violet",
-    title: "Tout est centralisé",
-    desc: "Outils, guides et contacts au même endroit, accessibles à tout moment.",
+    titleKey: "lpPartnerSecCentralTitle",
+    descKey: "lpPartnerSecCentralDesc",
   },
   {
     Icon: ClockIcon,
     hue: "orange",
-    title: "Toujours à jour",
-    desc: "Informations officielles actualisées en continu par nos experts.",
+    titleKey: "lpPartnerSecUptodateTitle",
+    descKey: "lpPartnerSecUptodateDesc",
   },
   {
     Icon: LightbulbIcon,
     hue: "mauve",
-    title: "Plus simple à expliquer",
-    desc: "Des contenus clairs pour répondre facilement aux questions.",
+    titleKey: "lpPartnerSecExplainTitle",
+    descKey: "lpPartnerSecExplainDesc",
   },
   {
     Icon: BarChart3Icon,
     hue: "rose",
-    title: "Un meilleur suivi",
-    desc: "Retrouvez l'historique et les ressources consultées en un clin d'œil.",
+    titleKey: "lpPartnerSecTrackTitle",
+    descKey: "lpPartnerSecTrackDesc",
   },
 ];
 
-const REASSURANCE_BADGES: { Icon: LucideIcon; label: string }[] = [
-  { Icon: ShieldCheckIcon, label: "Informations fiables & à jour" },
-  { Icon: BookOpenIcon, label: "Ressources centralisées" },
-  { Icon: HandshakeIcon, label: "Pensé pour les partenaires" },
+const REASSURANCE_BADGES: { Icon: LucideIcon; labelKey: string }[] = [
+  { Icon: ShieldCheckIcon, labelKey: "lpPartnerBadgeReliable" },
+  { Icon: BookOpenIcon, labelKey: "lpPartnerBadgeCentral" },
+  { Icon: HandshakeIcon, labelKey: "lpPartnerBadgePartners" },
 ];
 
 function IconTile({
@@ -200,12 +203,13 @@ function RoundIconTile({ Icon, hue }: { Icon: LucideIcon; hue: IconHue }) {
   );
 }
 
-export default function PartenaireLandingPage() {
+export default async function PartenaireLandingPage() {
+  const t = await getTranslations("public.pro");
   return (
     <div className="flex flex-col gap-12 sm:gap-16">
       <AlreadyLoggedInBanner
         targetPath="/partenaire"
-        label="votre espace partenaire"
+        label={t("lpPartnerBannerLabel")}
       />
 
       {/* Section A — Hero */}
@@ -223,19 +227,17 @@ export default function PartenaireLandingPage() {
               className="size-1.5 rounded-full"
               style={{ background: "var(--glass-accent-deep)" }}
             />
-            Plateforme d&apos;accompagnement &amp; d&apos;information
+            {t("lpPartnerHeroEyebrow")}
           </span>
 
           <h1 className="glass-display text-[40px] leading-[1.05] font-semibold tracking-tight sm:text-[52px] lg:text-[58px]">
-            L&apos;espace partenaire qui facilite{" "}
-            <em>votre travail</em> et l&apos;accès à{" "}
-            <em>l&apos;information</em>.
+            {t("lpPartnerHeroTitlePre")}{" "}
+            <em>{t("lpPartnerHeroTitleEm1")}</em> {t("lpPartnerHeroTitleMid")}{" "}
+            <em>{t("lpPartnerHeroTitleEm2")}</em>.
           </h1>
 
           <p className="max-w-[560px] text-[15.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-            Centralisez vos outils, ressources et informations juridiques
-            vérifiées pour mieux orienter, informer et accompagner vos publics
-            au quotidien.
+            {t("lpPartnerHeroLead")}
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -243,21 +245,21 @@ export default function PartenaireLandingPage() {
               href="/partenaire"
               className="glass-cta inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold"
             >
-              Découvrir l&apos;espace partenaire
+              {t("lpPartnerHeroCta")}
               <ArrowRightIcon className="size-4" strokeWidth={2.4} />
             </Link>
             <Link
               href="/contact"
               className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-6 py-3.5 text-[13.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10"
             >
-              Demander une démo
+              {t("lpPartnerCtaDemo")}
             </Link>
           </div>
 
           <ul className="flex flex-wrap gap-2 pt-2">
-            {REASSURANCE_BADGES.map(({ Icon, label }) => (
+            {REASSURANCE_BADGES.map(({ Icon, labelKey }) => (
               <li
-                key={label}
+                key={labelKey}
                 className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 py-2 text-[12px] font-semibold text-[color:var(--glass-ink-soft)]"
               >
                 <Icon
@@ -265,7 +267,7 @@ export default function PartenaireLandingPage() {
                   style={{ color: "var(--glass-accent-deep)" }}
                   strokeWidth={2.4}
                 />
-                {label}
+                {t(labelKey as Parameters<typeof t>[0])}
               </li>
             ))}
           </ul>
@@ -306,7 +308,7 @@ export default function PartenaireLandingPage() {
                 }}
               />
               <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/80">
-                Espace partenaire
+                {t("lpPartnerHeroCardLabel")}
               </span>
             </div>
           </div>
@@ -315,15 +317,17 @@ export default function PartenaireLandingPage() {
 
       {/* Section B — 4 bénéfices */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {PRIMARY_BENEFITS.map(({ Icon, hue, title, desc }) => (
+        {PRIMARY_BENEFITS.map(({ Icon, hue, titleKey, descKey }) => (
           <article
-            key={title}
+            key={titleKey}
             className="glass-surface flex flex-col gap-3 p-5"
           >
             <IconTile Icon={Icon} hue={hue} />
-            <h3 className="text-[15.5px] font-bold tracking-tight">{title}</h3>
+            <h3 className="text-[15.5px] font-bold tracking-tight">
+              {t(titleKey as Parameters<typeof t>[0])}
+            </h3>
             <p className="text-[12.5px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
-              {desc}
+              {t(descKey as Parameters<typeof t>[0])}
             </p>
           </article>
         ))}
@@ -332,18 +336,21 @@ export default function PartenaireLandingPage() {
       {/* Section C — Outils utiles */}
       <section className="flex flex-col gap-7">
         <h2 className="glass-display max-w-3xl text-[30px] leading-[1.1] font-semibold tracking-tight sm:text-[38px]">
-          Des <em>outils utiles</em> pour mieux accompagner
+          {t("lpPartnerToolsHeadingPre")} <em>{t("lpPartnerToolsHeadingEm")}</em>{" "}
+          {t("lpPartnerToolsHeadingPost")}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {TOOLS.map(({ Icon, hue, title, desc }) => (
+          {TOOLS.map(({ Icon, hue, titleKey, descKey }) => (
             <article
-              key={title}
+              key={titleKey}
               className="glass-surface glass-interactive flex min-h-[180px] flex-col gap-3.5 p-5 text-left"
             >
               <IconTile Icon={Icon} hue={hue} />
-              <h3 className="text-[15.5px] font-bold tracking-tight">{title}</h3>
+              <h3 className="text-[15.5px] font-bold tracking-tight">
+                {t(titleKey as Parameters<typeof t>[0])}
+              </h3>
               <p className="flex-1 text-[12.5px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
-                {desc}
+                {t(descKey as Parameters<typeof t>[0])}
               </p>
               <div className="flex items-center justify-end border-t border-[color:var(--glass-ink-line)] pt-3">
                 <span
@@ -373,15 +380,17 @@ export default function PartenaireLandingPage() {
 
       {/* Section D — 4 bénéfices secondaires */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {SECONDARY_BENEFITS.map(({ Icon, hue, title, desc }) => (
+        {SECONDARY_BENEFITS.map(({ Icon, hue, titleKey, descKey }) => (
           <article
-            key={title}
+            key={titleKey}
             className="glass-surface flex flex-col gap-3 p-5"
           >
             <RoundIconTile Icon={Icon} hue={hue} />
-            <h3 className="text-[14.5px] font-bold tracking-tight">{title}</h3>
+            <h3 className="text-[14.5px] font-bold tracking-tight">
+              {t(titleKey as Parameters<typeof t>[0])}
+            </h3>
             <p className="text-[12px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
-              {desc}
+              {t(descKey as Parameters<typeof t>[0])}
             </p>
           </article>
         ))}
@@ -409,23 +418,22 @@ export default function PartenaireLandingPage() {
         <div className="relative grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
           <div className="flex flex-col gap-6 text-white">
             <h3 className="glass-display max-w-2xl text-[26px] leading-[1.15] font-semibold sm:text-[32px]">
-              Rejoignez les partenaires qui informent et accompagnent mieux
-              avec Docbel.
+              {t("lpPartnerFinalTitle")}
             </h3>
             <ul className="flex flex-wrap gap-4 text-[13px] font-semibold">
               {[
-                "Mise en place rapide",
-                "Support réactif",
-                "Accès simple aux ressources",
-              ].map((label) => (
-                <li key={label} className="inline-flex items-center gap-2">
+                "lpPartnerFinalPoint1",
+                "lpPartnerFinalPoint2",
+                "lpPartnerFinalPoint3",
+              ].map((k) => (
+                <li key={k} className="inline-flex items-center gap-2">
                   <span
                     className="flex size-5 items-center justify-center rounded-full bg-white text-emerald-600"
                     aria-hidden
                   >
                     <CheckIcon className="size-3" strokeWidth={3} />
                   </span>
-                  {label}
+                  {t(k as Parameters<typeof t>[0])}
                 </li>
               ))}
             </ul>
@@ -435,14 +443,14 @@ export default function PartenaireLandingPage() {
               href="/partenaire"
               className="glass-cta inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold"
             >
-              Découvrir l&apos;espace partenaire
+              {t("lpPartnerHeroCta")}
               <ArrowRightIcon className="size-4" strokeWidth={2.4} />
             </Link>
             <Link
               href="/contact"
               className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/70 bg-white/10 px-6 py-3.5 text-[13.5px] font-semibold text-white backdrop-blur transition hover:bg-white/20"
             >
-              Demander une démo
+              {t("lpPartnerCtaDemo")}
             </Link>
           </div>
         </div>

@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { requireRdvHistoryAccess } from "@/lib/auth-check";
 import { listOrganizations } from "@/lib/partner-domains";
 import { RdvHistoryClient } from "./historique-client";
 
-export const metadata: Metadata = {
-  title: "Historique des rendez-vous | DocBel",
-  description:
-    "Consultation de l'historique des rendez-vous traités par le service.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
+  return {
+    title: t("rdvHistMetaTitle"),
+    description: t("rdvHistMetaDescription"),
+  };
+}
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

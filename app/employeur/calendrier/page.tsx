@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, CalendarDays, ExternalLink, Info } from "lucide-react";
@@ -12,10 +13,13 @@ import {
   type SocialDeadlineCategory,
 } from "@/lib/employeur/calendar/social-deadlines";
 
-export const metadata: Metadata = {
-  title: "Calendrier social | Espace Employeur",
-  description: "Vos prochaines échéances sociales et fiscales (ONSS, précompte, TVA).",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
+  return {
+    title: t("calMetaTitle"),
+    description: t("calMetaDesc"),
+  };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +39,7 @@ const longDate = (iso: string) =>
   });
 
 export default async function CalendrierPage() {
+  const t = await getTranslations("public.pro");
   const user = await getEmployerPageUser();
   if (!user) redirect("/p/employeur");
 
@@ -43,7 +48,7 @@ export default async function CalendrierPage() {
   return (
     <div className="flex w-full flex-col gap-5 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
       <Button variant="ghost" size="sm" render={<Link href="/employeur" />}>
-        <ArrowLeft /> Tableau de bord
+        <ArrowLeft /> {t("backToDashboard")}
       </Button>
 
       <div className="flex items-center gap-3">
@@ -51,10 +56,8 @@ export default async function CalendrierPage() {
           <CalendarDays className="size-5" />
         </span>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Calendrier social</h1>
-          <p className="text-sm text-muted-foreground">
-            Vos prochaines échéances sociales et fiscales récurrentes.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("calTitle")}</h1>
+          <p className="text-sm text-muted-foreground">{t("calIntro")}</p>
         </div>
       </div>
 
@@ -91,7 +94,7 @@ export default async function CalendrierPage() {
                     rel="noopener noreferrer"
                     className="inline-flex shrink-0 items-center gap-1 text-xs text-primary no-underline hover:underline"
                   >
-                    {d.sourceLabel ?? "Source"} <ExternalLink className="size-3" />
+                    {d.sourceLabel ?? t("calSource")} <ExternalLink className="size-3" />
                   </a>
                 ) : null}
               </CardContent>

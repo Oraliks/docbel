@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   ArrowLeftIcon,
@@ -38,16 +39,11 @@ interface BoussoleResultData {
   recommendations: TrainingCardData[];
 }
 
-const CONFIDENCE_LABEL: Record<string, string> = {
-  low: "à confirmer",
-  medium: "plutôt fiable",
-  high: "fiable",
-};
-
 type Phase = "intro" | "quiz" | "loading" | "result";
 
 export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
   const router = useRouter();
+  const t = useTranslations("public.formations");
   const [phase, setPhase] = useState<Phase>("intro");
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -73,14 +69,14 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error ?? "Une erreur est survenue.");
+        toast.error(data.error ?? t("errorGeneric"));
         setPhase("quiz");
         return;
       }
       setResult(data);
       setPhase("result");
     } catch {
-      toast.error("Une erreur est survenue. Réessayez.");
+      toast.error(t("errorGenericRetry"));
       setPhase("quiz");
     }
   }
@@ -113,12 +109,12 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
       });
       if (res.ok) {
         setSaved(true);
-        toast.success("Résultat sauvegardé.");
+        toast.success(t("resultSavedToast"));
       } else {
-        toast.error("Sauvegarde impossible.");
+        toast.error(t("saveFailedToast"));
       }
     } catch {
-      toast.error("Une erreur est survenue.");
+      toast.error(t("errorGeneric"));
     }
   }
 
@@ -137,12 +133,10 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
               <CompassIcon className="size-7" />
             </span>
             <h1 className="glass-display text-[32px] font-semibold leading-tight sm:text-[40px]">
-              Vous ne savez pas quelle formation choisir ?
+              {t("introTitle")}
             </h1>
             <p className="text-[15px] leading-[1.65] text-[color:var(--glass-ink-soft)]">
-              Répondez à quelques questions simples. Docbel vous aide à identifier
-              les domaines qui semblent les plus adaptés à votre situation. Il n&apos;y
-              a pas de mauvaise réponse — vous pouvez répondre « je ne sais pas ».
+              {t("introBody")}
             </p>
             <div className="mt-2 flex flex-wrap gap-2.5">
               <button
@@ -151,19 +145,18 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
                 className="glass-cta inline-flex items-center gap-2 rounded-full px-6 py-3 text-[14px] font-bold"
               >
                 <CompassIcon className="size-4" />
-                Commencer le test
+                {t("introStart")}
               </button>
               <Link
                 href="/formations"
                 className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-6 py-3 text-[14px] font-bold text-[color:var(--glass-ink)] transition hover:bg-white/55 dark:hover:bg-white/10"
               >
-                Voir directement les formations
+                {t("introSeeTrainings")}
                 <ArrowRightIcon className="size-4" />
               </Link>
             </div>
             <p className="mt-1 text-[12px] text-[color:var(--glass-ink-faint)]">
-              {total} questions · environ 2 minutes · ce résultat est une aide à
-              l&apos;orientation, il ne décide pas à votre place.
+              {t("introMeta", { total })}
             </p>
           </div>
         </section>
@@ -177,7 +170,7 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center">
         <CompassIcon className="size-10 animate-spin text-[color:var(--glass-accent-deep)]" style={{ animationDuration: "2.4s" }} />
         <p className="text-[14px] font-semibold text-[color:var(--glass-ink-soft)]">
-          Analyse de vos réponses…
+          {t("loadingAnalysis")}
         </p>
       </div>
     );
@@ -193,10 +186,15 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
         <section className="glass-surface flex flex-col gap-2 p-6">
           <p className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
             <SparklesIcon className="size-3.5 text-[color:var(--glass-accent-deep)]" />
-            Votre résultat · confiance {result.confidence}% ({CONFIDENCE_LABEL[result.confidenceLabel]})
+            {t("resultConfidence", {
+              confidence: result.confidence,
+              label: t(
+                `confidence_${result.confidenceLabel}` as Parameters<typeof t>[0],
+              ),
+            })}
           </p>
           <p className="text-[15px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-            {result.summary} Ce sont des pistes à explorer, pas une décision figée.
+            {result.summary} {t("resultSummarySuffix")}
           </p>
         </section>
 
@@ -215,7 +213,7 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
             href={`/formations${result.primaryKey ? `?branch=${result.primaryKey}` : ""}`}
             className="glass-cta inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-bold"
           >
-            Voir les formations adaptées
+            {t("resultSeeAdapted")}
             <ArrowRightIcon className="size-4" />
           </Link>
           <button
@@ -225,7 +223,7 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
             className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-ink)] transition hover:bg-white/55 disabled:opacity-60 dark:hover:bg-white/10"
           >
             <HeartIcon className={`size-4 ${saved ? "fill-current text-[color:var(--glass-accent-c)]" : ""}`} />
-            {saved ? "Résultat sauvegardé" : "Sauvegarder mon résultat"}
+            {saved ? t("resultSaved") : t("resultSave")}
           </button>
           <button
             type="button"
@@ -233,19 +231,17 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
             className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
           >
             <RotateCcwIcon className="size-4" />
-            Recommencer
+            {t("resultRestart")}
           </button>
         </div>
 
         <section className="flex flex-col gap-3">
           <h2 className="px-1 text-[16px] font-bold tracking-tight">
-            Formations recommandées
+            {t("resultRecommendedTitle")}
           </h2>
           {result.recommendations.length === 0 ? (
             <div className="glass-surface px-5 py-8 text-center text-[13px] text-[color:var(--glass-ink-soft)]">
-              Nous n&apos;avons pas encore assez de formations correspondant à votre
-              profil. Voici tout de même les domaines qui semblent les plus adaptés —
-              revenez bientôt, le catalogue s&apos;enrichit.
+              {t("resultRecommendedEmpty")}
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -267,7 +263,7 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between text-[12px] font-semibold text-[color:var(--glass-ink-faint)]">
             <span>
-              Question {index + 1} / {total}
+              {t("quizProgress", { current: index + 1, total })}
             </span>
             <span>{progress}%</span>
           </div>
@@ -327,10 +323,10 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
             className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
           >
             <ArrowLeftIcon className="size-4" />
-            Précédent
+            {t("quizPrevious")}
           </button>
           <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-            Il n&apos;y a pas de mauvaise réponse.
+            {t("quizNoWrongAnswer")}
           </p>
         </div>
       </section>
@@ -339,18 +335,20 @@ export function BoussoleClient({ questions }: { questions: PublicQuestion[] }) {
 }
 
 function BackLink() {
+  const t = useTranslations("public.formations");
   return (
     <Link
       href="/formations"
       className="inline-flex w-fit items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
     >
       <ArrowLeftIcon className="size-3.5" />
-      Toutes les formations
+      {t("allTrainings")}
     </Link>
   );
 }
 
 function PrimaryBranchCard({ branch }: { branch: BranchView }) {
+  const t = useTranslations("public.formations");
   const Icon = resolveIcon(branch.icon);
   return (
     <section
@@ -360,7 +358,7 @@ function PrimaryBranchCard({ branch }: { branch: BranchView }) {
       <Icon className="absolute -right-4 -bottom-4 size-40 text-white/15" strokeWidth={1.2} />
       <div className="relative flex flex-col gap-3">
         <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em]">
-          Domaine principal
+          {t("branchPrimary")}
         </span>
         <h2 className="glass-display text-[28px] font-semibold leading-tight">{branch.name}</h2>
         <p className="max-w-2xl text-[14px] leading-[1.6] text-white/90">{branch.description}</p>
@@ -379,6 +377,7 @@ function PrimaryBranchCard({ branch }: { branch: BranchView }) {
 }
 
 function SecondaryBranchCard({ branch }: { branch: BranchView }) {
+  const t = useTranslations("public.formations");
   const Icon = resolveIcon(branch.icon);
   return (
     <section className="glass-surface flex flex-col gap-2 p-6">
@@ -389,7 +388,7 @@ function SecondaryBranchCard({ branch }: { branch: BranchView }) {
         <Icon className="size-5" strokeWidth={1.9} />
       </span>
       <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
-        Aussi à explorer
+        {t("branchAlsoExplore")}
       </p>
       <h3 className="text-[16px] font-bold tracking-tight">{branch.name}</h3>
       <p className="text-[12.5px] leading-[1.5] text-[color:var(--glass-ink-soft)]">{branch.description}</p>

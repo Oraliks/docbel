@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, FileDown } from "lucide-react";
@@ -21,7 +22,10 @@ import {
   type ReliabilityLevel,
 } from "@/lib/employeur/constants";
 
-export const metadata: Metadata = { title: "Dossier | Espace Employeur" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
+  return { title: t("dossierMetaTitle") };
+}
 export const dynamic = "force-dynamic";
 
 interface StoredAlert {
@@ -30,12 +34,18 @@ interface StoredAlert {
   sourceCode?: string;
 }
 
-function complexityLabel(reliability: ReliabilityLevel, alerts: StoredAlert[]): string {
-  if (reliability === "needs_human_validation") return "À valider";
+type ComplexityKey =
+  | "dossierComplexityToValidate"
+  | "dossierComplexityComplex"
+  | "dossierComplexityMedium"
+  | "dossierComplexitySimple";
+
+function complexityLabel(reliability: ReliabilityLevel, alerts: StoredAlert[]): ComplexityKey {
+  if (reliability === "needs_human_validation") return "dossierComplexityToValidate";
   const serious = alerts.filter((a) => a.severity !== "info").length;
-  if (serious >= 3) return "Complexe";
-  if (serious >= 1) return "Moyen";
-  return "Simple";
+  if (serious >= 3) return "dossierComplexityComplex";
+  if (serious >= 1) return "dossierComplexityMedium";
+  return "dossierComplexitySimple";
 }
 
 export default async function DossierDetailPage({
@@ -43,6 +53,7 @@ export default async function DossierDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = await getTranslations("public.pro");
   const user = await getEmployerPageUser();
   if (!user) redirect("/p/employeur");
 
@@ -70,7 +81,7 @@ export default async function DossierDetailPage({
   return (
     <div className="w-full space-y-5 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
       <Button variant="ghost" size="sm" render={<Link href="/employeur/dossiers" />}>
-        <ArrowLeft /> Mes dossiers
+        <ArrowLeft /> {t("backToDossiers")}
       </Button>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -86,16 +97,16 @@ export default async function DossierDetailPage({
             <a href={`/api/employeur/scenarios/${scenario.id}/pdf`} target="_blank" rel="noopener noreferrer" />
           }
         >
-          <FileDown /> Exporter PDF
+          <FileDown /> {t("dossierExportPdf")}
         </Button>
       </div>
 
       <Tabs defaultValue="resume">
         <TabsList>
-          <TabsTrigger value="resume">Résumé</TabsTrigger>
-          <TabsTrigger value="checklist">Checklist ({items.length})</TabsTrigger>
-          <TabsTrigger value="alertes">Alertes ({alerts.length})</TabsTrigger>
-          <TabsTrigger value="sources">Sources ({usedCodes.length})</TabsTrigger>
+          <TabsTrigger value="resume">{t("dossierTabResume")}</TabsTrigger>
+          <TabsTrigger value="checklist">{t("dossierTabChecklist", { count: items.length })}</TabsTrigger>
+          <TabsTrigger value="alertes">{t("dossierTabAlerts", { count: alerts.length })}</TabsTrigger>
+          <TabsTrigger value="sources">{t("dossierTabSources", { count: usedCodes.length })}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="resume">
@@ -104,7 +115,9 @@ export default async function DossierDetailPage({
               <div className="flex flex-wrap items-center gap-2">
                 <ReliabilityBadge level={reliability} />
                 <span className="rounded-full border px-2.5 py-0.5 text-xs">
-                  Complexité : {complexityLabel(reliability, alerts)}
+                  {t("dossierComplexityLabel", {
+                    value: t(complexityLabel(reliability, alerts)),
+                  })}
                 </span>
                 {checklist ? (
                   <span className="rounded-full border px-2.5 py-0.5 text-xs">
@@ -113,25 +126,25 @@ export default async function DossierDetailPage({
                 ) : null}
               </div>
               <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-                <Row label="Commission paritaire" value={scenario.jointCommitteeNumber ?? "—"} />
+                <Row label={t("dossierRowJointCommittee")} value={scenario.jointCommitteeNumber ?? "—"} />
                 <Row
-                  label="Salaire brut mensuel"
+                  label={t("dossierRowGrossSalary")}
                   value={scenario.grossMonthlySalary ? `${scenario.grossMonthlySalary} €` : "—"}
                 />
                 <Row
-                  label="Horaire"
+                  label={t("dossierRowSchedule")}
                   value={scenario.weeklyHours ? `${scenario.weeklyHours} h/sem` : "—"}
                 />
-                <Row label="Fonction" value={scenario.functionTitle ?? "—"} />
+                <Row label={t("dossierRowFunction")} value={scenario.functionTitle ?? "—"} />
                 <Row
-                  label="Date d'entrée prévue"
+                  label={t("dossierRowStartDate")}
                   value={
                     scenario.plannedStartDate
                       ? new Date(scenario.plannedStartDate).toLocaleDateString("fr-BE")
                       : "—"
                   }
                 />
-                <Row label="Lieu de travail" value={scenario.workplace ?? "—"} />
+                <Row label={t("dossierRowWorkplace")} value={scenario.workplace ?? "—"} />
               </dl>
               <LegalDisclaimerBox context="checklist" />
             </CardContent>
@@ -143,7 +156,7 @@ export default async function DossierDetailPage({
             {items.length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center text-muted-foreground">
-                  Aucune tâche générée.
+                  {t("dossierChecklistEmpty")}
                 </CardContent>
               </Card>
             ) : (
@@ -173,7 +186,7 @@ export default async function DossierDetailPage({
             {alerts.length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center text-muted-foreground">
-                  Aucune alerte. Aucune incohérence évidente détectée.
+                  {t("dossierAlertsEmpty")}
                 </CardContent>
               </Card>
             ) : (
@@ -198,7 +211,7 @@ export default async function DossierDetailPage({
           {usedCodes.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
-                Aucune source référencée.
+                {t("dossierSourcesEmpty")}
               </CardContent>
             </Card>
           ) : (

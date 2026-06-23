@@ -1,4 +1,5 @@
 import { Info } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 export type DisclaimerContext =
@@ -8,17 +9,12 @@ export type DisclaimerContext =
   | "document"
   | "controle";
 
-const TEXTS: Record<DisclaimerContext, string> = {
-  general:
-    "Docbel est un outil d'aide administrative, de simulation et de préparation. Il ne remplace pas un conseil juridique individualisé, un secrétariat social agréé ni les déclarations officielles obligatoires de l'employeur.",
-  simulation:
-    "Cette simulation est indicative et ne constitue pas un calcul payroll officiel.",
-  checklist:
-    "Cette checklist est une aide administrative. Elle doit être adaptée à votre situation exacte.",
-  document:
-    "Ce document est préparatoire. Faites-le valider avant usage officiel.",
-  controle:
-    "Docbel détecte des incohérences potentielles mais ne certifie pas la conformité d'une fiche de paie.",
+const DISCLAIMER_KEYS: Record<DisclaimerContext, string> = {
+  general: "disclaimerGeneral",
+  simulation: "disclaimerSimulation",
+  checklist: "disclaimerChecklist",
+  document: "disclaimerDocument",
+  controle: "disclaimerControle",
 };
 
 /** Encart d'avertissement juridique contextuel (spec §7.3). Informatif, jamais bloquant. */
@@ -29,6 +25,8 @@ export function LegalDisclaimerBox({
   context?: DisclaimerContext;
   className?: string;
 }) {
+  const t = useTranslations("public.pro");
+  const key: string = DISCLAIMER_KEYS[context];
   return (
     <div
       className={cn(
@@ -37,7 +35,7 @@ export function LegalDisclaimerBox({
       )}
     >
       <Info className="mt-0.5 size-4 shrink-0 opacity-70" aria-hidden />
-      <p>{TEXTS[context]}</p>
+      <p>{t(key as Parameters<typeof t>[0])}</p>
     </div>
   );
 }

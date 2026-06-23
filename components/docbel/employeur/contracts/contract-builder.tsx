@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Copy, Download, Info, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,15 +31,16 @@ export interface ContractBuilderProps {
   initialValues?: Record<string, string>;
 }
 
-const GROUP_LABELS: Record<ContractField["group"], string> = {
-  employeur: "Employeur",
-  travailleur: "Travailleur",
-  contrat: "Contrat",
+const GROUP_LABEL_KEY: Record<ContractField["group"], string> = {
+  employeur: "contractGroupEmployer",
+  travailleur: "contractGroupWorker",
+  contrat: "contractGroupContract",
 };
 
 const GROUP_ORDER: ContractField["group"][] = ["employeur", "travailleur", "contrat"];
 
 export function ContractBuilder({ initialValues }: ContractBuilderProps) {
+  const t = useTranslations("public.pro");
   const [type, setType] = useState<ContractType>("cdi");
   const [regime, setRegime] = useState<WorkRegime>("temps_plein");
   const [values, setValues] = useState<Record<string, string>>(initialValues ?? {});
@@ -77,9 +79,9 @@ export function ContractBuilder({ initialValues }: ContractBuilderProps) {
   async function copyToClipboard() {
     try {
       await navigator.clipboard.writeText(result.text);
-      toast.success("Contrat copié dans le presse-papier.");
+      toast.success(t("contractCopied"));
     } catch {
-      toast.error("Impossible de copier (autorisez l'accès au presse-papier).");
+      toast.error(t("contractCopyError"));
     }
   }
 
@@ -107,17 +109,17 @@ export function ContractBuilder({ initialValues }: ContractBuilderProps) {
         {/* Type de contrat */}
         <Card>
           <CardHeader>
-            <CardTitle>Type de contrat</CardTitle>
+            <CardTitle>{t("contractTypeTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid gap-2 sm:grid-cols-2">
-              {CONTRACT_TYPES.map((t) => {
-                const active = t.type === type;
+              {CONTRACT_TYPES.map((ct) => {
+                const active = ct.type === type;
                 return (
                   <button
-                    key={t.type}
+                    key={ct.type}
                     type="button"
-                    onClick={() => setType(t.type)}
+                    onClick={() => setType(ct.type)}
                     aria-pressed={active}
                     className={cn(
                       "flex flex-col gap-1 rounded-lg border border-border bg-card p-3 text-left transition-colors hover:border-primary/40",
@@ -125,14 +127,14 @@ export function ContractBuilder({ initialValues }: ContractBuilderProps) {
                     )}
                   >
                     <span className="flex items-center gap-2 font-medium">
-                      {t.label}
-                      {t.writtenRequired ? (
+                      {ct.label}
+                      {ct.writtenRequired ? (
                         <Badge variant="secondary" className="font-normal">
-                          écrit obligatoire
+                          {t("contractWrittenRequired")}
                         </Badge>
                       ) : null}
                     </span>
-                    <span className="text-xs text-muted-foreground">{t.description}</span>
+                    <span className="text-xs text-muted-foreground">{ct.description}</span>
                   </button>
                 );
               })}
@@ -148,14 +150,14 @@ export function ContractBuilder({ initialValues }: ContractBuilderProps) {
         {/* Régime */}
         <Card>
           <CardHeader>
-            <CardTitle>Régime de travail</CardTitle>
+            <CardTitle>{t("contractRegimeTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="inline-flex rounded-lg border border-border p-1">
               {(
                 [
-                  { value: "temps_plein", label: "Temps plein" },
-                  { value: "temps_partiel", label: "Temps partiel" },
+                  { value: "temps_plein", labelKey: "contractRegimeFull" },
+                  { value: "temps_partiel", labelKey: "contractRegimePartial" },
                 ] as const
               ).map((r) => {
                 const active = r.value === regime;
@@ -172,7 +174,7 @@ export function ContractBuilder({ initialValues }: ContractBuilderProps) {
                         : "text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    {r.label}
+                    {t(r.labelKey as Parameters<typeof t>[0])}
                   </button>
                 );
               })}
@@ -184,7 +186,7 @@ export function ContractBuilder({ initialValues }: ContractBuilderProps) {
         {clauses.length > 0 ? (
           <Card>
             <CardHeader>
-              <CardTitle>Clauses optionnelles</CardTitle>
+              <CardTitle>{t("contractOptionalClauses")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {clauses.map((c) => {
@@ -222,7 +224,7 @@ export function ContractBuilder({ initialValues }: ContractBuilderProps) {
           return (
             <Card key={group}>
               <CardHeader>
-                <CardTitle>{GROUP_LABELS[group]}</CardTitle>
+                <CardTitle>{t(GROUP_LABEL_KEY[group] as Parameters<typeof t>[0])}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -246,16 +248,16 @@ export function ContractBuilder({ initialValues }: ContractBuilderProps) {
       <div className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-4 xl:self-start">
         <Card>
           <CardHeader>
-            <CardTitle>Aperçu du contrat</CardTitle>
+            <CardTitle>{t("contractPreviewTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {result.missingRequired.length > 0 ? (
               <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
                 <p className="font-medium text-foreground">
-                  Champs obligatoires à compléter
+                  {t("contractMissingTitle")}
                 </p>
                 <p className="mt-0.5">
-                  Le contrat reste généré avec des « …… » à compléter :
+                  {t("contractMissingNote")}
                 </p>
                 <ul className="mt-1.5 list-disc space-y-0.5 pl-4">
                   {result.missingRequired.map((m) => (
@@ -271,13 +273,13 @@ export function ContractBuilder({ initialValues }: ContractBuilderProps) {
 
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={copyToClipboard}>
-                <Copy /> Copier
+                <Copy /> {t("actCopy")}
               </Button>
               <Button variant="outline" size="sm" onClick={download}>
-                <Download /> Télécharger (.txt)
+                <Download /> {t("contractDownloadTxt")}
               </Button>
               <Button variant="outline" size="sm" onClick={print}>
-                <Printer /> Imprimer
+                <Printer /> {t("actPrint")}
               </Button>
             </div>
           </CardContent>

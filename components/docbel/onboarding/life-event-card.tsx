@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowRight, Clock, Layers } from "lucide-react";
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
 
@@ -23,6 +24,7 @@ export function LifeEventCard({
   itemCount,
   emoji,
 }: Props) {
+  const t = useTranslations("public.dossier");
   return (
     <Link
       href={`/d/${slug}`}
@@ -47,7 +49,7 @@ export function LifeEventCard({
           </h3>
           <span className="text-[11px] uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)] inline-flex items-center gap-1">
             <Clock className="size-3" />
-            {itemCount} document{itemCount > 1 ? "s" : ""}
+            {t("documentsCount", { count: itemCount })}
           </span>
         </div>
       </div>
@@ -60,7 +62,7 @@ export function LifeEventCard({
 
       <div className="mt-auto flex items-center justify-between pt-2">
         <span className="text-[12px] font-medium text-[color:var(--glass-ink-soft)] group-hover:text-[color:var(--glass-ink)]">
-          Démarrer le parcours
+          {t("startFlow")}
         </span>
         <ArrowRight className="size-4 text-[color:var(--glass-ink-faint)] transition-transform group-hover:translate-x-1 group-hover:text-[color:var(--glass-ink)]" />
       </div>

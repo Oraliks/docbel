@@ -22,6 +22,7 @@
  */
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   AlertCircle,
   ChevronDown,
@@ -61,18 +62,20 @@ import {
  */
 const LAST_UPDATED = "2026-05-25";
 
-const STATUTS: { value: StatutIPP; label: string }[] = [
-  { value: "isole", label: "Isolé(e)" },
-  { value: "marie_un_revenu", label: "Marié — un seul revenu" },
-  { value: "marie_deux_revenus", label: "Marié — deux revenus" },
-];
-
 const formatTrancheBorne = (n: number) =>
   n === Infinity
     ? "∞"
     : n.toLocaleString("fr-BE", { maximumFractionDigits: 0 });
 
 export function CalcIPP({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
+
+  const STATUTS: { value: StatutIPP; label: string }[] = [
+    { value: "isole", label: t("ippStatutIsole") },
+    { value: "marie_un_revenu", label: t("ippStatutMarieUnRevenu") },
+    { value: "marie_deux_revenus", label: t("ippStatutMarieDeuxRevenus") },
+  ];
+
   const [revenu, setRevenu] = useState("35000");
   const [statut, setStatut] = useState<StatutIPP>("isole");
   const [enfants, setEnfants] = useState("0");
@@ -119,21 +122,19 @@ export function CalcIPP({ accent }: { accent: string }) {
     const additionnelNum = parseNum(additionnel);
 
     if (!Number.isFinite(revenuNum)) {
-      setError("Indiquez un revenu annuel valide.");
+      setError(t("ippErrRevenu"));
       return;
     }
     if (!Number.isInteger(enfantsNum) || enfantsNum < 0) {
-      setError("Le nombre d'enfants doit être un entier positif.");
+      setError(t("ippErrEnfants"));
       return;
     }
     if (!Number.isInteger(autresNum) || autresNum < 0) {
-      setError(
-        "Le nombre d'autres personnes à charge doit être un entier positif.",
-      );
+      setError(t("ippErrAutres"));
       return;
     }
     if (!Number.isFinite(additionnelNum)) {
-      setError("Indiquez un additionnel communal valide.");
+      setError(t("ippErrAdditionnel"));
       return;
     }
 
@@ -204,7 +205,7 @@ export function CalcIPP({ accent }: { accent: string }) {
         hour: "2-digit",
         minute: "2-digit",
       });
-      doc.text(`Généré le ${dateStr} à ${timeStr}`, pageWidth - margin, y, {
+      doc.text(t("ippPdfGenere", { date: dateStr, time: timeStr }), pageWidth - margin, y, {
         align: "right",
       });
       y += 10;
@@ -214,7 +215,7 @@ export function CalcIPP({ accent }: { accent: string }) {
       doc.setFont("", "bold");
       doc.setTextColor(0, 0, 0);
       doc.text(
-        `Impôt des Personnes Physiques — EI 2026`,
+        t("ippPdfTitre"),
         margin,
         y,
       );
@@ -224,7 +225,7 @@ export function CalcIPP({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Paramètres saisis", margin, y);
+      doc.text(t("ippPdfParametres"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -235,29 +236,29 @@ export function CalcIPP({ accent }: { accent: string }) {
         STATUTS.find((s) => s.value === statut)?.label ?? statut;
 
       const inputs: [string, string][] = [
-        ["Revenu imposable annuel", fmtEUR(parseNum(revenu))],
-        ["Statut familial", statutLabel],
-        ["Enfants à charge", String(parseInt(enfants, 10) || 0)],
-        ["Autres personnes à charge", String(parseInt(autres, 10) || 0)],
-        ["Additionnel communal", `${parseNum(additionnel)} %`],
+        [t("ippPdfInRevenu"), fmtEUR(parseNum(revenu))],
+        [t("ippPdfInStatut"), statutLabel],
+        [t("ippPdfInEnfants"), String(parseInt(enfants, 10) || 0)],
+        [t("ippPdfInAutres"), String(parseInt(autres, 10) || 0)],
+        [t("ippPdfInAdditionnel"), t("ippPdfInAdditionnelVal", { pct: parseNum(additionnel) })],
       ];
       if (parentIsole && parseInt(enfants, 10) > 0 && statut === "isole") {
-        inputs.push(["Parent isolé (allocataire seul)", "Oui"]);
+        inputs.push([t("ippPdfInParentIsole"), t("ippPdfOui")]);
       }
       if (parseNum(epargnePension) > 0) {
-        inputs.push(["Épargne pension", fmtEUR(parseNum(epargnePension))]);
+        inputs.push([t("ippPdfInEpargnePension"), fmtEUR(parseNum(epargnePension))]);
       }
       if (parseNum(titresServices) > 0) {
-        inputs.push(["Titres-services", fmtEUR(parseNum(titresServices))]);
+        inputs.push([t("ippPdfInTitresServices"), fmtEUR(parseNum(titresServices))]);
       }
       if (parseNum(dons) > 0) {
-        inputs.push(["Dons", fmtEUR(parseNum(dons))]);
+        inputs.push([t("ippPdfInDons"), fmtEUR(parseNum(dons))]);
       }
       if (parseNum(pretHypo) > 0) {
-        inputs.push(["Prêt hypothécaire", fmtEUR(parseNum(pretHypo))]);
+        inputs.push([t("ippPdfInPretHypo"), fmtEUR(parseNum(pretHypo))]);
       }
       if (parseNum(gardeEnfants) > 0) {
-        inputs.push(["Frais garde enfants", fmtEUR(parseNum(gardeEnfants))]);
+        inputs.push([t("ippPdfInGardeEnfants"), fmtEUR(parseNum(gardeEnfants))]);
       }
 
       const colKey = margin + 2;
@@ -283,7 +284,7 @@ export function CalcIPP({ accent }: { accent: string }) {
       doc.setFontSize(10);
       doc.setFont("", "bold");
       doc.setTextColor(22, 130, 90);
-      doc.text("IMPÔT TOTAL ESTIMÉ", margin + 4, y + 7);
+      doc.text(t("ippPdfImpotTotalLabel"), margin + 4, y + 7);
 
       doc.setFontSize(22);
       doc.setTextColor(0, 0, 0);
@@ -293,7 +294,11 @@ export function CalcIPP({ accent }: { accent: string }) {
       doc.setFont("", "normal");
       doc.setTextColor(100, 100, 100);
       doc.text(
-        `Taux moyen ${result.tauxMoyen.toFixed(1)} % · Taux marginal ${result.tauxMarginal.toFixed(0)} % · Revenu net ${fmtEUR(result.revenuNetApresImpot)}/an`,
+        t("ippPdfTauxResume", {
+          tauxMoyen: result.tauxMoyen.toFixed(1),
+          tauxMarginal: result.tauxMarginal.toFixed(0),
+          revenuNet: fmtEUR(result.revenuNetApresImpot),
+        }),
         margin + 4,
         y + 26,
       );
@@ -303,7 +308,7 @@ export function CalcIPP({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Décomposition du calcul", margin, y);
+      doc.text(t("ippPdfDecomposition"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -311,33 +316,33 @@ export function CalcIPP({ accent }: { accent: string }) {
       doc.setTextColor(0, 0, 0);
 
       const details: [string, string][] = [
-        ["Quotité exemptée appliquée", fmtEUR(result.quotiteExemptee)],
-        ["− Réduction liée à la quotité", `− ${fmtEUR(result.reductionQuotite)}`],
-        ["Impôt fédéral brut (post-quotité)", fmtEUR(result.impotBrutFederal)],
+        [t("ippPdfDecQuotite"), fmtEUR(result.quotiteExemptee)],
+        [t("ippPdfDecReductionQuotite"), `− ${fmtEUR(result.reductionQuotite)}`],
+        [t("ippPdfDecImpotBrut"), fmtEUR(result.impotBrutFederal)],
       ];
       if (result.allegementQuotientConjugal > 0) {
         details.push([
-          "− Quotient conjugal (estimation)",
+          t("ippPdfDecQuotientConjugal"),
           `− ${fmtEUR(result.allegementQuotientConjugal)}`,
         ]);
       }
       if (result.reductionsTotales > 0) {
         details.push([
-          "− Réductions d'impôt totales",
+          t("ippPdfDecReductions"),
           `− ${fmtEUR(result.reductionsTotales)}`,
         ]);
       }
       details.push([
-        "Impôt après crédits",
+        t("ippPdfDecImpotApresCredits"),
         fmtEUR(result.impotBrutApresCredits),
       ]);
       details.push([
-        "+ Additionnel communal",
+        t("ippPdfDecAdditionnel"),
         `+ ${fmtEUR(result.additionnelCommunalEur)}`,
       ]);
       if (result.cotisationSpecialeSecu > 0) {
         details.push([
-          "+ Cotisation spéciale sécu",
+          t("ippPdfDecCotisation"),
           `+ ${fmtEUR(result.cotisationSpecialeSecu)}`,
         ]);
       }
@@ -365,29 +370,33 @@ export function CalcIPP({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Détail par tranche", margin, y);
+      doc.text(t("ippPdfDetailTranche"), margin, y);
       y += 6;
 
       doc.setFontSize(9);
       doc.setFont("", "normal");
       doc.setTextColor(0, 0, 0);
 
-      result.tranches.forEach((t, i) => {
-        if (t.impotTranche <= 0.01) return;
+      result.tranches.forEach((tr, i) => {
+        if (tr.impotTranche <= 0.01) return;
         const min = TRANCHES_IPP_2026[i].min;
         const max =
-          t.borne === Infinity
+          tr.borne === Infinity
             ? "∞"
-            : t.borne.toLocaleString("fr-BE", { maximumFractionDigits: 0 });
+            : tr.borne.toLocaleString("fr-BE", { maximumFractionDigits: 0 });
         doc.setTextColor(80, 80, 80);
         doc.text(
-          `${min.toLocaleString("fr-BE")} → ${max} € (${(t.taux * 100).toFixed(0)} %)`,
+          t("ippPdfTrancheLigne", {
+            min: min.toLocaleString("fr-BE"),
+            max,
+            taux: (tr.taux * 100).toFixed(0),
+          }),
           colKey,
           y,
         );
         doc.setFont("", "bold");
         doc.setTextColor(0, 0, 0);
-        doc.text(fmtEUR(t.impotTranche), pageWidth - margin, y, {
+        doc.text(fmtEUR(tr.impotTranche), pageWidth - margin, y, {
           align: "right",
         });
         doc.setFont("", "normal");
@@ -404,7 +413,7 @@ export function CalcIPP({ accent }: { accent: string }) {
       doc.setFont("", "italic");
       doc.setTextColor(120, 120, 120);
       const footer = doc.splitTextToSize(
-        "Estimation pédagogique — barème fédéral IPP exercice d'imposition 2026 (revenus 2025), quotité exemptée 10 910 € (art. 131 CIR 92), suppléments enfants 1 980 / 5 110 / 11 440 / 18 510 / +7 070 € (art. 132), quotient conjugal plafonné à 13 460 € (art. 134), cotisation spéciale sécu (loi 30/03/1994). Pour le calcul officiel et personnalisé : Tax-on-web (SPF Finances).",
+        t("ippPdfFooterDisclaimer"),
         pageWidth - margin * 2,
       );
       doc.text(footer, margin, y);
@@ -454,10 +463,10 @@ export function CalcIPP({ accent }: { accent: string }) {
               </span>
               <div>
                 <h2 className="text-[16px] font-bold text-[color:var(--glass-ink)]">
-                  Impôt des Personnes Physiques
+                  {t("ippTitle")}
                 </h2>
                 <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
-                  Simulateur IPP fédéral — exercice 2026 (revenus 2025)
+                  {t("ippSubtitle")}
                 </p>
               </div>
             </div>
@@ -470,10 +479,10 @@ export function CalcIPP({ accent }: { accent: string }) {
                 background: "var(--glass-surface)",
                 color: "var(--glass-ink-soft)",
               }}
-              title="Réinitialiser le formulaire"
+              title={t("ippResetForm")}
             >
               <RotateCcw className="size-3.5" />
-              Réinitialiser
+              {t("ippReset")}
             </button>
           </div>
 
@@ -490,13 +499,13 @@ export function CalcIPP({ accent }: { accent: string }) {
           {/* --- Section 1 : Revenus ------------------------------- */}
           <div className="flex flex-col gap-2.5">
             <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-[color:var(--glass-ink-faint)]">
-              1. Revenus
+              {t("ippSection1")}
             </span>
 
             <CalcField
               id="ipp-revenu"
-              label="Revenu annuel imposable net (€/an)"
-              hint="Revenu après ONSS et frais pro forfaitaires. Pour un salarié : approximativement salaire annuel brut × 0,73."
+              label={t("ippRevenuLabel")}
+              hint={t("ippRevenuHint")}
               value={revenu}
               onChange={setRevenu}
               placeholder="ex : 35 000"
@@ -508,8 +517,8 @@ export function CalcIPP({ accent }: { accent: string }) {
 
             <CalcSelect<StatutIPP>
               id="ipp-statut"
-              label="Statut familial"
-              hint="Le quotient conjugal s'applique automatiquement si « marié — un seul revenu » (Art. 134 CIR 92)."
+              label={t("ippStatutLabel")}
+              hint={t("ippStatutHint")}
               value={statut}
               onChange={setStatut}
               options={STATUTS}
@@ -519,14 +528,14 @@ export function CalcIPP({ accent }: { accent: string }) {
           {/* --- Section 2 : Personnes à charge --------------------- */}
           <div className="flex flex-col gap-2.5">
             <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-[color:var(--glass-ink-faint)]">
-              2. Personnes à charge
+              {t("ippSection2")}
             </span>
 
             <CalcGrid cols={2}>
               <CalcField
                 id="ipp-enfants"
-                label="Enfants à charge"
-                hint="Suppléments cumulés Art. 132 CIR 92 : 1 980 € / 5 110 € / 11 440 € / 18 510 €."
+                label={t("ippEnfantsLabel")}
+                hint={t("ippEnfantsHint")}
                 value={enfants}
                 onChange={setEnfants}
                 placeholder="0"
@@ -536,8 +545,8 @@ export function CalcIPP({ accent }: { accent: string }) {
               />
               <CalcField
                 id="ipp-autres"
-                label="Autres personnes à charge"
-                hint="Parent âgé, grand-parent, frère/sœur 66+ en dépendance. 1 980 €/personne (cas générique)."
+                label={t("ippAutresLabel")}
+                hint={t("ippAutresHint")}
                 value={autres}
                 onChange={setAutres}
                 placeholder="0"
@@ -571,10 +580,10 @@ export function CalcIPP({ accent }: { accent: string }) {
                 />
                 <div className="flex flex-col gap-0.5">
                   <span className="text-[13px] font-semibold text-[color:var(--glass-ink)]">
-                    Parent isolé (allocataire seul) avec enfant(s) à charge
+                    {t("ippParentIsoleLabel")}
                   </span>
                   <span className="text-[11.5px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
-                    Supplément de quotité de 1 980 € (SPF Finances EI 2026).
+                    {t("ippParentIsoleDesc")}
                   </span>
                 </div>
               </label>
@@ -582,8 +591,8 @@ export function CalcIPP({ accent }: { accent: string }) {
 
             <CalcField
               id="ipp-additionnel"
-              label="Additionnel communal (%)"
-              hint="Moyenne belge ≈ 7,5 %. Bruxelles-Ville 7 %, Anvers 7 %, Liège 8 %, Charleroi 8,5 %. Variable par commune."
+              label={t("ippAdditionnelLabel")}
+              hint={t("ippAdditionnelHint")}
               value={additionnel}
               onChange={setAdditionnel}
               placeholder="7.5"
@@ -603,8 +612,8 @@ export function CalcIPP({ accent }: { accent: string }) {
             >
               <span>
                 {showReductions
-                  ? "Masquer les réductions d'impôt"
-                  : "3. Ajouter des réductions d'impôt (optionnel)"}
+                  ? t("ippReductionsHide")
+                  : t("ippReductionsShow")}
               </span>
               {showReductions ? (
                 <ChevronUp className="size-4" />
@@ -616,20 +625,18 @@ export function CalcIPP({ accent }: { accent: string }) {
             {showReductions ? (
               <div className="flex flex-col gap-3 rounded-xl border-[1.5px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-3.5">
                 <p className="text-[11.5px] leading-[1.6] text-[color:var(--glass-ink-faint)]">
-                  Indiquez les montants <strong>annuels</strong> effectivement
-                  versés ou dépensés. Le simulateur applique le taux standard
-                  pour chaque poste (épargne pension 30 %, titres-services ≈
-                  15 %, dons 45 %, prêt hypothécaire ≈ 30 %, garde 45 %).
+                  {t.rich("ippReductionsIntro", {
+                    strong: (chunks) => <strong>{chunks}</strong>,
+                  })}
                 </p>
 
                 <CalcField
                   id="ipp-epargne-pension"
-                  label="Épargne pension (€/an)"
-                  hint={`Plafond panier de base ${fmtEUR(
-                    EPARGNE_PENSION_PLAFOND,
-                  )} à 30 % (réduction max = ${fmtEUR(
-                    EPARGNE_PENSION_PLAFOND * 0.3,
-                  )}).`}
+                  label={t("ippEpargnePensionLabel")}
+                  hint={t("ippEpargnePensionHint", {
+                    plafond: fmtEUR(EPARGNE_PENSION_PLAFOND),
+                    max: fmtEUR(EPARGNE_PENSION_PLAFOND * 0.3),
+                  })}
                   value={epargnePension}
                   onChange={setEpargnePension}
                   placeholder="0"
@@ -641,10 +648,10 @@ export function CalcIPP({ accent }: { accent: string }) {
 
                 <CalcField
                   id="ipp-titres-services"
-                  label="Titres-services achetés (€/an)"
-                  hint={`Plafond ${fmtEUR(
-                    TITRES_SERVICES_PLAFOND,
-                  )}. Taux réel : Wallonie 10 %, Bruxelles 15 %, Flandre 20 % (moyenne 15 %).`}
+                  label={t("ippTitresServicesLabel")}
+                  hint={t("ippTitresServicesHint", {
+                    plafond: fmtEUR(TITRES_SERVICES_PLAFOND),
+                  })}
                   value={titresServices}
                   onChange={setTitresServices}
                   placeholder="0"
@@ -656,8 +663,8 @@ export function CalcIPP({ accent }: { accent: string }) {
 
                 <CalcField
                   id="ipp-dons"
-                  label="Dons à associations agréées (€/an)"
-                  hint="Réduction 45 % à partir de 40 €/an par bénéficiaire (art. 145³³ CIR 92)."
+                  label={t("ippDonsLabel")}
+                  hint={t("ippDonsHint")}
                   value={dons}
                   onChange={setDons}
                   placeholder="0"
@@ -669,8 +676,8 @@ export function CalcIPP({ accent }: { accent: string }) {
 
                 <CalcField
                   id="ipp-pret-hypo"
-                  label="Prêt hypothécaire — capital + intérêts (€/an)"
-                  hint="Chèque habitation régional moyen ≈ 30 %. Varie selon région et date d'emprunt."
+                  label={t("ippPretHypoLabel")}
+                  hint={t("ippPretHypoHint")}
                   value={pretHypo}
                   onChange={setPretHypo}
                   placeholder="0"
@@ -682,8 +689,8 @@ export function CalcIPP({ accent }: { accent: string }) {
 
                 <CalcField
                   id="ipp-garde-enfants"
-                  label="Frais de garde d'enfants (€/an)"
-                  hint="Enfants < 14 ans (< 21 ans si handicap). Réduction 45 %, plafond 16,40 €/jour/enfant."
+                  label={t("ippGardeEnfantsLabel")}
+                  hint={t("ippGardeEnfantsHint")}
                   value={gardeEnfants}
                   onChange={setGardeEnfants}
                   placeholder="0"
@@ -701,7 +708,7 @@ export function CalcIPP({ accent }: { accent: string }) {
           {/* Boutons : Calculer + Réinitialiser */}
           <CalcGrid cols={2}>
             <CalcSubmitButton accent={accent} onClick={handleCalc}>
-              Calculer mon impôt
+              {t("ippCalcButton")}
             </CalcSubmitButton>
             <button
               type="button"
@@ -714,7 +721,7 @@ export function CalcIPP({ accent }: { accent: string }) {
               }}
             >
               <RotateCcw className="size-4" />
-              Réinitialiser le formulaire
+              {t("ippResetForm")}
             </button>
           </CalcGrid>
 
@@ -729,13 +736,14 @@ export function CalcIPP({ accent }: { accent: string }) {
           >
             <Info className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-ink-faint)]" />
             <div>
-              <strong className="text-[color:var(--glass-ink)]">
-                Estimation pédagogique.
-              </strong>{" "}
-              Pour le calcul officiel et personnalisé (revenus mobiliers et
-              immobiliers, pensions alimentaires, bonus à l&apos;emploi,
-              particularismes régionaux), rendez-vous sur{" "}
-              <strong>Tax-on-web</strong>.
+              {t.rich("ippDisclaimer", {
+                strong: (chunks) => (
+                  <strong className="text-[color:var(--glass-ink)]">
+                    {chunks}
+                  </strong>
+                ),
+                b: (chunks) => <strong>{chunks}</strong>,
+              })}
             </div>
           </div>
         </CalcCard>
@@ -765,45 +773,50 @@ export function CalcIPP({ accent }: { accent: string }) {
 
       {/* Footer : Mise à jour + sources */}
       <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-        Calculateur mis à jour le <strong>{lastUpdatedFr}</strong> · Exercice
-        d&apos;imposition <strong>2026</strong> (revenus 2025) · Sources
-        officielles :{" "}
-        <a
-          href="https://fin.belgium.be/fr/particuliers/declaration_impot/taux-imposition-revenus/taux-imposition"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-semibold underline-offset-2 hover:underline"
-        >
-          SPF Finances
-        </a>
-        ,{" "}
-        <a
-          href="https://finances.belgium.be/fr/E-services/tax-on-web"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-semibold underline-offset-2 hover:underline"
-        >
-          Tax-on-web
-        </a>
-        ,{" "}
-        <a
-          href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=1992041252&table_name=loi"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-semibold underline-offset-2 hover:underline"
-        >
-          Moniteur belge — CIR 92
-        </a>
-        ,{" "}
-        <a
-          href="https://www.socialsecurity.be/employer/instructions/dmfa/fr/latest/instructions/special_contributions/other_specialcontributions/specialsocialsecuritycontribution.html"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-semibold underline-offset-2 hover:underline"
-        >
-          ONSS
-        </a>
-        .
+        {t.rich("ippFooter", {
+          date: lastUpdatedFr,
+          strong: (chunks) => <strong>{chunks}</strong>,
+          spf: (chunks) => (
+            <a
+              href="https://fin.belgium.be/fr/particuliers/declaration_impot/taux-imposition-revenus/taux-imposition"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline-offset-2 hover:underline"
+            >
+              {chunks}
+            </a>
+          ),
+          tow: (chunks) => (
+            <a
+              href="https://finances.belgium.be/fr/E-services/tax-on-web"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline-offset-2 hover:underline"
+            >
+              {chunks}
+            </a>
+          ),
+          cir: (chunks) => (
+            <a
+              href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=1992041252&table_name=loi"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline-offset-2 hover:underline"
+            >
+              {chunks}
+            </a>
+          ),
+          onss: (chunks) => (
+            <a
+              href="https://www.socialsecurity.be/employer/instructions/dmfa/fr/latest/instructions/special_contributions/other_specialcontributions/specialsocialsecuritycontribution.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline-offset-2 hover:underline"
+            >
+              {chunks}
+            </a>
+          ),
+        })}
       </p>
     </div>
   );
@@ -826,7 +839,10 @@ function IPPResultPanel({
   onExportPDF: () => void;
   exporting: boolean;
 }) {
-  const tranchesUtilisees = result.tranches.filter((t) => t.impotTranche > 0.01);
+  const t = useTranslations("public.outils");
+  const tranchesUtilisees = result.tranches.filter(
+    (tr) => tr.impotTranche > 0.01,
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -835,7 +851,7 @@ function IPPResultPanel({
           className="text-[11px] font-bold uppercase tracking-[0.06em]"
           style={{ color: accent }}
         >
-          Résultat estimatif
+          {t("ippResultEyebrow")}
         </span>
         <span
           className="inline-flex items-center"
@@ -861,10 +877,13 @@ function IPPResultPanel({
           className="mt-1 text-[13px] font-semibold"
           style={{ color: "var(--glass-ink-soft)" }}
         >
-          / an d&apos;impôt total estimé
+          {t("ippPerYear")}
         </div>
         <div className="mt-1 text-[12px] text-[color:var(--glass-ink-faint)]">
-          ≈ <strong>{fmtEUR(result.impotTotal / 12)}</strong> / mois (moyenne)
+          {t.rich("ippPerMonthAvg", {
+            value: fmtEUR(result.impotTotal / 12),
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </div>
       </div>
 
@@ -878,7 +897,7 @@ function IPPResultPanel({
           }}
         >
           <div className="text-[10.5px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-faint)]">
-            Taux moyen
+            {t("ippTauxMoyen")}
           </div>
           <div
             className="mt-1 font-extrabold text-[color:var(--glass-ink)]"
@@ -895,7 +914,7 @@ function IPPResultPanel({
           }}
         >
           <div className="text-[10.5px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-faint)]">
-            Taux marginal
+            {t("ippTauxMarginal")}
           </div>
           <div
             className="mt-1 font-extrabold text-[color:var(--glass-ink)]"
@@ -915,7 +934,7 @@ function IPPResultPanel({
         }}
       >
         <div className="text-[10.5px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-faint)]">
-          Revenu net après impôt
+          {t("ippRevenuNet")}
         </div>
         <div
           className="mt-1 font-extrabold"
@@ -924,7 +943,10 @@ function IPPResultPanel({
           {fmtEUR(result.revenuNetApresImpot)}
         </div>
         <div className="mt-1 text-[11.5px] text-[color:var(--glass-ink-soft)]">
-          ≈ <strong>{fmtEUR(result.revenuNetApresImpot / 12)}</strong> / mois
+          {t.rich("ippPerMonth", {
+            value: fmtEUR(result.revenuNetApresImpot / 12),
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </div>
       </div>
 
@@ -937,12 +959,12 @@ function IPPResultPanel({
           className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em]"
           style={{ color: "var(--glass-ink-faint)" }}
         >
-          Décomposition
+          {t("ippDecomposition")}
         </div>
         <div className="flex flex-col gap-1.5 rounded-xl bg-[color:var(--glass-surface)] p-3.5 text-[12.5px]">
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              Quotité exemptée appliquée
+              {t("ippDecQuotite")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
               {fmtEUR(result.quotiteExemptee)}
@@ -950,7 +972,7 @@ function IPPResultPanel({
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              − Réduction liée à la quotité
+              {t("ippDecReductionQuotite")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
               − {fmtEUR(result.reductionQuotite)}
@@ -958,7 +980,7 @@ function IPPResultPanel({
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              Impôt fédéral brut (post-quotité)
+              {t("ippDecImpotBrut")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
               {fmtEUR(result.impotBrutFederal)}
@@ -967,7 +989,7 @@ function IPPResultPanel({
           {result.allegementQuotientConjugal > 0 ? (
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-[color:var(--glass-ink-soft)]">
-                − Quotient conjugal (Art. 134)
+                {t("ippDecQuotientConjugal")}
               </span>
               <span className="font-semibold text-[color:var(--glass-ink)]">
                 − {fmtEUR(result.allegementQuotientConjugal)}
@@ -977,7 +999,7 @@ function IPPResultPanel({
           {result.reductionsTotales > 0 ? (
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-[color:var(--glass-ink-soft)]">
-                − Réductions d&apos;impôt
+                {t("ippDecReductions")}
               </span>
               <span className="font-semibold text-[color:var(--glass-ink)]">
                 − {fmtEUR(result.reductionsTotales)}
@@ -989,7 +1011,7 @@ function IPPResultPanel({
             style={{ borderTopColor: "var(--glass-ink-line)" }}
           >
             <span className="font-semibold text-[color:var(--glass-ink)]">
-              Impôt après crédits
+              {t("ippDecImpotApresCredits")}
             </span>
             <span className="font-bold text-[color:var(--glass-ink)]">
               {fmtEUR(result.impotBrutApresCredits)}
@@ -997,7 +1019,7 @@ function IPPResultPanel({
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              + Additionnel communal
+              {t("ippDecAdditionnel")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
               + {fmtEUR(result.additionnelCommunalEur)}
@@ -1006,7 +1028,7 @@ function IPPResultPanel({
           {result.cotisationSpecialeSecu > 0 ? (
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-[color:var(--glass-ink-soft)]">
-                + Cotisation spéciale sécu
+                {t("ippDecCotisation")}
               </span>
               <span className="font-semibold text-[color:var(--glass-ink)]">
                 + {fmtEUR(result.cotisationSpecialeSecu)}
@@ -1026,11 +1048,11 @@ function IPPResultPanel({
             className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em]"
             style={{ color: "var(--glass-ink-faint)" }}
           >
-            Tranches appliquées
+            {t("ippTranchesAppliquees")}
           </div>
           <div className="flex flex-col gap-1 rounded-xl bg-[color:var(--glass-surface)] p-3 text-[11.5px]">
-            {result.tranches.map((t, i) => {
-              if (t.impotTranche <= 0.01) return null;
+            {result.tranches.map((tr, i) => {
+              if (tr.impotTranche <= 0.01) return null;
               const min = TRANCHES_IPP_2026[i].min;
               return (
                 <div
@@ -1038,11 +1060,15 @@ function IPPResultPanel({
                   className="flex items-baseline justify-between gap-3"
                 >
                   <span className="text-[color:var(--glass-ink-soft)]">
-                    {fmtNumber(min)} → {formatTrancheBorne(t.borne)} € ·{" "}
-                    <strong>{(t.taux * 100).toFixed(0)} %</strong>
+                    {t.rich("ippTrancheLigne", {
+                      min: fmtNumber(min),
+                      max: formatTrancheBorne(tr.borne),
+                      taux: (tr.taux * 100).toFixed(0),
+                      strong: (chunks) => <strong>{chunks}</strong>,
+                    })}
                   </span>
                   <span className="font-semibold text-[color:var(--glass-ink)]">
-                    {fmtEUR(t.impotTranche)}
+                    {fmtEUR(tr.impotTranche)}
                   </span>
                 </div>
               );
@@ -1061,27 +1087,31 @@ function IPPResultPanel({
         }}
       >
         <div className="mb-1 flex items-center gap-1.5 font-bold text-[color:var(--glass-ink)]">
-          <Info className="size-3.5" /> À savoir
+          <Info className="size-3.5" /> {t("ippASavoir")}
         </div>
         <ul className="list-inside list-disc space-y-1">
           <li>
-            Le calcul officiel se fait sur <strong>Tax-on-web</strong>{" "}
-            (SPF Finances) — connexion itsme/eID.
+            {t.rich("ippASavoirTaxOnWeb", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
           <li>
-            L&apos;<strong>additionnel communal</strong> varie de 0 à 9 %
-            selon la commune (moyenne belge ≈ 7,5 %).
+            {t.rich("ippASavoirAdditionnel", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
           <li>
-            La quotité exemptée de base est de{" "}
-            <strong>{fmtEUR(QUOTITE_BASE_2026)}</strong> + suppléments par
-            personne à charge (Art. 131 et 132 CIR 92).
+            {t.rich("ippASavoirQuotite", {
+              value: fmtEUR(QUOTITE_BASE_2026),
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
           {result.allegementQuotientConjugal > 0 ? (
             <li>
-              Le <strong>quotient conjugal</strong> appliqué ici est une
-              estimation : plafond de transfert{" "}
-              {fmtEUR(QUOTIENT_CONJUGAL_PLAFOND)} (Art. 134 CIR 92).
+              {t.rich("ippASavoirQuotientConjugal", {
+                value: fmtEUR(QUOTIENT_CONJUGAL_PLAFOND),
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </li>
           ) : null}
         </ul>
@@ -1099,13 +1129,10 @@ function IPPResultPanel({
         >
           <div className="mb-1 flex items-center gap-1.5 font-bold text-[color:rgb(180,83,9)]">
             <AlertCircle className="size-3.5" />
-            Vous êtes dans la tranche marginale à 50 %
+            {t("ippMarginal50Title")}
           </div>
           <p className="text-[11.5px] leading-[1.55]">
-            Au-delà de {fmtEUR(49840)}, chaque euro supplémentaire est imposé
-            à 50 %. Les revenus mobiliers, l&apos;épargne pension et les dons
-            ouvrent des réductions intéressantes — explorez les optimisations
-            fiscales légales sur Tax-on-web.
+            {t("ippMarginal50Body", { seuil: fmtEUR(49840) })}
           </p>
         </div>
       ) : null}
@@ -1123,7 +1150,7 @@ function IPPResultPanel({
         }}
       >
         <Download className="size-4" />
-        {exporting ? "Génération du PDF…" : "Exporter PDF"}
+        {exporting ? t("ippPdfGenerating") : t("ippExportPdf")}
       </button>
 
       {/* Silence "unused" — revenu sert au PDF via le state parent */}
@@ -1137,24 +1164,25 @@ function IPPResultPanel({
 /* ------------------------------------------------------------------ */
 
 function IPPResultPlaceholder({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
   return (
     <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-center">
       <span
         className="text-[11px] font-bold uppercase tracking-[0.06em]"
         style={{ color: accent }}
       >
-        Résultat estimatif
+        {t("ippResultEyebrow")}
       </span>
       <div
         className="text-[15px] font-semibold leading-snug text-[color:var(--glass-ink-soft)]"
         style={{ maxWidth: 260 }}
       >
-        Indiquez votre revenu annuel imposable et votre situation familiale,
-        puis cliquez sur <em>« Calculer mon impôt »</em>.
+        {t.rich("ippPlaceholderPrompt", {
+          em: (chunks) => <em>{chunks}</em>,
+        })}
       </div>
       <div className="mt-1 text-[11px] text-[color:var(--glass-ink-faint)]">
-        Quotité exemptée {fmtEUR(QUOTITE_BASE_2026)} · 4 tranches fédérales ·
-        EI 2026
+        {t("ippPlaceholderQuotite", { value: fmtEUR(QUOTITE_BASE_2026) })}
       </div>
       <Info
         className="mt-1 size-5"

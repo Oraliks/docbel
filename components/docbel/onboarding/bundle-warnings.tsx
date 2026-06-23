@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { AlertTriangle, AlertOctagon, Info, ExternalLink } from "lucide-react";
 import type { BundleWarning } from "@/lib/bundles/types";
 
@@ -24,6 +25,7 @@ export function BundleWarnings({ warnings }: Props) {
 }
 
 function WarningCard({ warning }: { warning: BundleWarning }) {
+  const t = useTranslations("public.dossier");
   const styles = stylesForSeverity(warning.severity);
   const Icon = styles.Icon;
   return (
@@ -42,7 +44,7 @@ function WarningCard({ warning }: { warning: BundleWarning }) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs underline mt-1"
           >
-            En savoir plus
+            {t("learnMore")}
             <ExternalLink className="size-3" />
           </a>
         )}

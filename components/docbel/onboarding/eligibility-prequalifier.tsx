@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { CheckCircle2, AlertTriangle, XCircle, HelpCircle, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,9 +44,11 @@ export function EligibilityPrequalifier({
   initialAnswers = {},
   onAnswersChange,
   onContinue,
-  continueLabel = "Continuer",
+  continueLabel,
 }: Props) {
+  const t = useTranslations("public.dossier");
   const [answers, setAnswers] = useState<EligibilityAnswers>(initialAnswers);
+  const resolvedContinueLabel = continueLabel ?? t("continue");
 
   const result = useMemo(
     () => evaluateEligibility(questions, answers),
@@ -67,11 +70,10 @@ export function EligibilityPrequalifier({
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <HelpCircle className="size-4" />
-          Quelques questions avant de commencer
+          {t("prequalTitle")}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Pour vous orienter vers les bons documents — et vous prévenir si un cas
-          particulier s&apos;applique. Vos réponses ne sont qu&apos;indicatives.
+          {t("prequalIntro")}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -98,7 +100,7 @@ export function EligibilityPrequalifier({
                       rel="noopener noreferrer"
                       className="underline"
                     >
-                      Plus d&apos;infos
+                      {t("prequalMoreInfo")}
                     </a>
                   </>
                 )}
@@ -110,11 +112,11 @@ export function EligibilityPrequalifier({
                 onValueChange={(v) => setAnswer(q.id, v ?? "")}
               >
                 <SelectTrigger id={`q-${q.id}`} className="w-full md:w-64">
-                  <SelectValue placeholder="Choisissez une réponse…" />
+                  <SelectValue placeholder={t("prequalChooseAnswer")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="true">Oui</SelectItem>
-                  <SelectItem value="false">Non</SelectItem>
+                  <SelectItem value="true">{t("yes")}</SelectItem>
+                  <SelectItem value="false">{t("no")}</SelectItem>
                 </SelectContent>
               </Select>
             ) : (
@@ -123,7 +125,7 @@ export function EligibilityPrequalifier({
                 onValueChange={(v) => setAnswer(q.id, v ?? "")}
               >
                 <SelectTrigger id={`q-${q.id}`} className="w-full md:w-64">
-                  <SelectValue placeholder="Choisissez une réponse…" />
+                  <SelectValue placeholder={t("prequalChooseAnswer")} />
                 </SelectTrigger>
                 <SelectContent>
                   {q.options.map((opt) => (
@@ -158,9 +160,7 @@ export function EligibilityPrequalifier({
             <div className="flex-1">
               <p className="font-medium">{verdictInfo.title}</p>
               <p className="text-xs mt-1 opacity-80">
-                Cette indication n&apos;engage pas l&apos;administration compétente — vérifiez
-                toujours auprès de l&apos;organisme officiel. Vous pouvez continuer la
-                constitution du dossier dans tous les cas.
+                {t("prequalVerdictDisclaimer")}
               </p>
             </div>
           </div>
@@ -169,15 +169,17 @@ export function EligibilityPrequalifier({
         <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
           {!allAnswered && (
             <p className="text-xs text-muted-foreground mr-auto">
-              {result.answered} sur {result.total} question
-              {result.total > 1 ? "s" : ""} répondue{result.answered > 1 ? "s" : ""}.
+              {t("prequalAnsweredCount", {
+                answered: result.answered,
+                total: result.total,
+              })}
             </p>
           )}
           <Button
             onClick={() => onContinue(answers, result)}
             variant={showsIneligibleWarning ? "outline" : "default"}
           >
-            {showsIneligibleWarning ? "Continuer quand même" : continueLabel}
+            {showsIneligibleWarning ? t("prequalContinueAnyway") : resolvedContinueLabel}
             <ChevronRight className="size-4" />
           </Button>
         </div>

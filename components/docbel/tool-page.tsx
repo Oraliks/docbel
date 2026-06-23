@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowLeftIcon } from "lucide-react";
 import { Tool } from "@/lib/docbel-data";
 import { IconDisplay } from "@/components/admin/documents/icon-picker";
@@ -49,6 +50,7 @@ interface PreavisMetadata {
 }
 
 export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
+  const t = useTranslations("public.outils");
   const [preavisMetadata, setPreavisMetadata] = useState<PreavisMetadata | null>(null);
   const type = tool.type || "form";
 
@@ -82,7 +84,7 @@ export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
           className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition-colors outline-none hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
         >
           <ArrowLeftIcon className="size-4" />
-          Retour
+          {t("back")}
         </button>
         <span
           className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]"
@@ -98,7 +100,7 @@ export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
               color: "var(--glass-pop-fg)",
             }}
           >
-            Populaire
+            {t("popular")}
           </span>
         ) : null}
       </div>
@@ -153,14 +155,14 @@ export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
             style={{ borderTopColor: "var(--glass-ink-line)" }}
           >
             <span>
-              Source :{" "}
+              {t("sourceLabel")}{" "}
               <span className="font-semibold text-[color:var(--glass-ink)]">
                 {preavisMetadata.source}
               </span>
             </span>
             {preavisMetadata.lastUpdated ? (
               <span>
-                Mise à jour :{" "}
+                {t("updatedLabel")}{" "}
                 <span className="font-semibold text-[color:var(--glass-ink)]">
                   {preavisMetadata.lastUpdated}
                 </span>

@@ -6,6 +6,7 @@
  * et aux accents). Chaque tuile mène à une page réelle.
  */
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   Search,
@@ -20,40 +21,41 @@ import {
 } from "lucide-react";
 
 const ACTIONS = [
-  { id: "cout", label: "Simuler un coût", href: "/employeur/simulateur-cout", icon: Calculator },
-  { id: "engagement", label: "Préparer un engagement", href: "/employeur/nouveau-dossier", icon: ClipboardList },
-  { id: "contrat", label: "Générer un contrat", href: "/employeur/contrats", icon: FileSignature },
-  { id: "document", label: "Préparer un document", href: "/employeur/documents", icon: FileText },
-  { id: "fiche", label: "Vérifier une fiche", href: "/employeur/controle", icon: FileCheck2 },
-  { id: "dossiers", label: "Mes dossiers", href: "/employeur/dossiers", icon: FolderOpen },
-  { id: "calendrier", label: "Calendrier social", href: "/employeur/calendrier", icon: CalendarDays },
-  { id: "biblio", label: "Bibliothèque", href: "/employeur/bibliotheque", icon: BookOpen },
-];
+  { id: "cout", labelKey: "dashActSimulateCost", href: "/employeur/simulateur-cout", icon: Calculator },
+  { id: "engagement", labelKey: "dashActPrepareHiring", href: "/employeur/nouveau-dossier", icon: ClipboardList },
+  { id: "contrat", labelKey: "dashActGenerateContract", href: "/employeur/contrats", icon: FileSignature },
+  { id: "document", labelKey: "dashActPrepareDocument", href: "/employeur/documents", icon: FileText },
+  { id: "fiche", labelKey: "dashActCheckPayslip", href: "/employeur/controle", icon: FileCheck2 },
+  { id: "dossiers", labelKey: "dashActMyDossiers", href: "/employeur/dossiers", icon: FolderOpen },
+  { id: "calendrier", labelKey: "dashActSocialCalendar", href: "/employeur/calendrier", icon: CalendarDays },
+  { id: "biblio", labelKey: "dashActLibrary", href: "/employeur/bibliotheque", icon: BookOpen },
+] as const;
 
 /** minuscule + suppression des accents (insensible casse/diacritiques). */
 const norm = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 
 export function QuickActions({ dossiersBadge }: { dossiersBadge: number }) {
+  const t = useTranslations("public.pro");
   const [q, setQ] = useState("");
 
   const filtered = useMemo(() => {
     const n = norm(q.trim());
     if (!n) return ACTIONS;
-    return ACTIONS.filter((a) => norm(a.label).includes(n));
-  }, [q]);
+    return ACTIONS.filter((a) => norm(t(a.labelKey)).includes(n));
+  }, [q, t]);
 
   return (
     <section className="flex h-full flex-col p-5">
-      <h2 className="text-base font-semibold tracking-tight">Actions rapides</h2>
+      <h2 className="text-base font-semibold tracking-tight">{t("dashQuickActions")}</h2>
 
       <div className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs transition-colors focus-within:border-primary/40">
         <Search className="size-4 shrink-0 text-muted-foreground" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Rechercher une action…"
-          aria-label="Rechercher une action rapide"
+          placeholder={t("dashSearchActionPlaceholder")}
+          aria-label={t("dashSearchActionAria")}
           className="w-full bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
         />
         {q ? (
@@ -61,7 +63,7 @@ export function QuickActions({ dossiersBadge }: { dossiersBadge: number }) {
             type="button"
             onClick={() => setQ("")}
             className="shrink-0 text-muted-foreground hover:text-foreground"
-            aria-label="Effacer la recherche"
+            aria-label={t("dashClearSearch")}
           >
             ✕
           </button>
@@ -70,7 +72,7 @@ export function QuickActions({ dossiersBadge }: { dossiersBadge: number }) {
 
       {filtered.length === 0 ? (
         <p className="mt-4 rounded-lg border border-dashed border-border bg-background/50 py-6 text-center text-xs text-muted-foreground">
-          Aucune action ne correspond à « {q} ».
+          {t("dashNoActionMatch", { q })}
         </p>
       ) : (
         <div className="mt-3 grid grid-cols-2 gap-2">
@@ -91,7 +93,7 @@ export function QuickActions({ dossiersBadge }: { dossiersBadge: number }) {
                 <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
                   <Icon className="size-4" />
                 </span>
-                <span className="text-[11px] font-medium leading-tight">{a.label}</span>
+                <span className="text-[11px] font-medium leading-tight">{t(a.labelKey)}</span>
               </Link>
             );
           })}

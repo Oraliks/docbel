@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { CalendarClock, CalendarDays, Download, MapPin, X } from "lucide-react";
 import { toast } from "sonner";
 import type { BookingStatus } from "@prisma/client";
@@ -56,6 +57,7 @@ const STATUS_CHIP: Record<BookingStatus, string> = {
 // ---------------------------------------------------------------------------
 
 export function ManageClient({ token }: { token: string }) {
+  const t = useTranslations("public.dossier");
   const [data, setData] = useState<ManageResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -79,7 +81,7 @@ export function ManageClient({ token }: { token: string }) {
       const json: ManageResponse = await res.json();
       setData(json);
     } catch {
-      toast.error("Erreur lors du chargement de votre rendez-vous.");
+      toast.error(t("manageLoadError"));
     } finally {
       setLoading(false);
     }
@@ -98,14 +100,14 @@ export function ManageClient({ token }: { token: string }) {
       });
       if (!res.ok) {
         const err: { error?: string } = await res.json().catch(() => ({}));
-        toast.error(err.error ?? "Impossible d'annuler ce rendez-vous.");
+        toast.error(err.error ?? t("manageCancelError"));
         return;
       }
-      toast.success("Rendez-vous annulé.");
+      toast.success(t("manageCancelSuccess"));
       setConfirmCancel(false);
       await load();
     } catch {
-      toast.error("Erreur réseau. Réessayez.");
+      toast.error(t("networkErrorRetry"));
     } finally {
       setCancelling(false);
     }
@@ -124,7 +126,7 @@ export function ManageClient({ token }: { token: string }) {
       const json: { days: DayAvailability[] } = await res.json();
       setAvailDays(json.days.filter((day) => day.slots.length > 0));
     } catch {
-      toast.error("Impossible de charger les créneaux disponibles.");
+      toast.error(t("manageSlotsLoadError"));
       setRescheduling(false);
     } finally {
       setAvailLoading(false);
@@ -142,16 +144,16 @@ export function ManageClient({ token }: { token: string }) {
       });
       if (!res.ok) {
         const err: { error?: string } = await res.json().catch(() => ({}));
-        toast.error(err.error ?? "Impossible de déplacer ce rendez-vous.");
+        toast.error(err.error ?? t("manageRescheduleError"));
         if (res.status === 409 && data) void openReschedule(data);
         return;
       }
-      toast.success("Rendez-vous déplacé.");
+      toast.success(t("manageRescheduleSuccess"));
       setRescheduling(false);
       setPicked(null);
       await load();
     } catch {
-      toast.error("Erreur réseau. Réessayez.");
+      toast.error(t("networkErrorRetry"));
     } finally {
       setSubmitting(false);
     }
@@ -160,7 +162,7 @@ export function ManageClient({ token }: { token: string }) {
   if (loading) {
     return (
       <div className="py-12 text-center text-[14px] text-[color:var(--glass-ink-faint)]">
-        Chargement…
+        {t("loading")}
       </div>
     );
   }
@@ -169,7 +171,7 @@ export function ManageClient({ token }: { token: string }) {
     return (
       <div className={`${GLASS_CARD} glass-surface rounded-2xl p-6`}>
         <p className="text-[15px] text-[color:var(--glass-ink-soft)]">
-          Rendez-vous introuvable. Le lien est peut-être expiré ou incorrect.
+          {t("manageNotFound")}
         </p>
       </div>
     );
@@ -185,7 +187,7 @@ export function ManageClient({ token }: { token: string }) {
           {/* Header: tenant + status */}
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className={GLASS_LABEL}>Organisme</p>
+              <p className={GLASS_LABEL}>{t("organism")}</p>
               <div className="mt-0.5 flex items-center gap-2">
                 {data.tenant.brandColor && (
                   <div
@@ -240,20 +242,23 @@ export function ManageClient({ token }: { token: string }) {
           {/* Citizen name */}
           {data.citizenName && (
             <p className="text-[13px] text-[color:var(--glass-ink-faint)]">
-              Demande au nom de <strong>{data.citizenName}</strong>
+              {t.rich("manageRequestOnBehalf", {
+                name: data.citizenName,
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </p>
           )}
 
           {/* Rejection / cancel reason */}
           {data.status === "rejected" && data.rejectionReason && (
             <div className="rounded-xl bg-rose-50 px-4 py-3 text-[13px] text-rose-700">
-              <strong>Motif de refus :</strong> {data.rejectionReason}
+              <strong>{t("manageRejectionReason")}</strong> {data.rejectionReason}
             </div>
           )}
           {(data.status === "cancelled_citizen" || data.status === "cancelled_partner") &&
             data.cancelReason && (
               <div className="rounded-xl bg-gray-100 px-4 py-3 text-[13px] text-gray-600">
-                <strong>Motif d&apos;annulation :</strong> {data.cancelReason}
+                <strong>{t("manageCancelReason")}</strong> {data.cancelReason}
               </div>
             )}
         </div>
@@ -268,7 +273,7 @@ export function ManageClient({ token }: { token: string }) {
               className="flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] px-4 py-2 text-[13px] font-medium text-[color:var(--glass-ink)] transition-colors hover:border-[color:var(--glass-accent-deep)]"
             >
               <Download size={14} />
-              Ajouter à mon agenda (.ics)
+              {t("manageAddToCalendar")}
             </a>
           )}
 
@@ -278,7 +283,7 @@ export function ManageClient({ token }: { token: string }) {
               className="flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] px-4 py-2 text-[13px] font-medium text-[color:var(--glass-ink)] transition-colors hover:border-[color:var(--glass-accent-deep)]"
             >
               <CalendarClock size={14} />
-              Déplacer le rendez-vous
+              {t("manageReschedule")}
             </button>
           )}
 
@@ -288,7 +293,7 @@ export function ManageClient({ token }: { token: string }) {
               className="flex items-center gap-2 rounded-full border border-rose-300 px-4 py-2 text-[13px] font-medium text-rose-600 transition-colors hover:border-rose-500 hover:text-rose-700"
             >
               <X size={14} />
-              Annuler le rendez-vous
+              {t("manageCancel")}
             </button>
           )}
         </div>
@@ -299,7 +304,7 @@ export function ManageClient({ token }: { token: string }) {
         <div className={`${GLASS_CARD} glass-surface rounded-2xl p-5`}>
           <div className="flex items-center justify-between gap-3">
             <p className="text-[15px] font-semibold text-[color:var(--glass-ink)]">
-              Choisir un nouveau créneau
+              {t("manageChooseNewSlot")}
             </p>
             <button
               onClick={() => {
@@ -307,7 +312,7 @@ export function ManageClient({ token }: { token: string }) {
                 setPicked(null);
               }}
               className="rounded-full p-1 text-[color:var(--glass-ink-faint)] transition-colors hover:text-[color:var(--glass-ink)]"
-              aria-label="Fermer"
+              aria-label={t("close")}
             >
               <X size={16} />
             </button>
@@ -315,11 +320,11 @@ export function ManageClient({ token }: { token: string }) {
 
           {availLoading ? (
             <p className="mt-4 text-[14px] text-[color:var(--glass-ink-faint)]">
-              Chargement des créneaux…
+              {t("manageSlotsLoading")}
             </p>
           ) : availDays.length === 0 ? (
             <p className="mt-4 text-[14px] text-[color:var(--glass-ink-soft)]">
-              Aucun autre créneau disponible pour le moment.
+              {t("manageNoOtherSlots")}
             </p>
           ) : (
             <div className="mt-4 flex max-h-[22rem] flex-col gap-4 overflow-y-auto pr-1">
@@ -351,7 +356,7 @@ export function ManageClient({ token }: { token: string }) {
                               ? "font-semibold"
                               : "border border-[color:var(--glass-border)] text-[color:var(--glass-ink)] hover:border-[color:var(--glass-accent-deep)]"
                           }`}
-                          title={isCurrent ? "Créneau actuel" : undefined}
+                          title={isCurrent ? t("manageCurrentSlot") : undefined}
                         >
                           {slot.startTime}
                         </button>
@@ -366,8 +371,11 @@ export function ManageClient({ token }: { token: string }) {
           {picked && (
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--glass-border)] pt-4">
               <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
-                Nouveau créneau : <strong>{frenchDate(picked.date)}</strong> à{" "}
-                <strong>{picked.startTime}</strong>
+                {t.rich("manageNewSlotSummary", {
+                  date: frenchDate(picked.date),
+                  time: picked.startTime,
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </p>
               <button
                 onClick={handleReschedule}
@@ -375,7 +383,7 @@ export function ManageClient({ token }: { token: string }) {
                 style={GLASS_PRIMARY_STYLE}
                 className="flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-60"
               >
-                {submitting ? "Déplacement…" : "Confirmer le déplacement"}
+                {submitting ? t("manageRescheduling") : t("manageConfirmReschedule")}
               </button>
             </div>
           )}
@@ -386,14 +394,14 @@ export function ManageClient({ token }: { token: string }) {
       {confirmCancel && (
         <div className={`${GLASS_CARD} glass-surface rounded-2xl p-5`}>
           <p className="text-[14px] text-[color:var(--glass-ink)]">
-            Confirmez-vous l&apos;annulation de ce rendez-vous ?
+            {t("manageCancelConfirm")}
           </p>
           <div className="mt-4 flex gap-3">
             <button
               onClick={() => setConfirmCancel(false)}
               className="rounded-full border border-[color:var(--glass-border)] px-4 py-2 text-[13px] font-medium text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
             >
-              Non, garder
+              {t("manageKeep")}
             </button>
             <button
               onClick={handleCancel}
@@ -401,7 +409,7 @@ export function ManageClient({ token }: { token: string }) {
               style={GLASS_PRIMARY_STYLE}
               className="flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-60"
             >
-              {cancelling ? "Annulation…" : "Oui, annuler"}
+              {cancelling ? t("manageCancelling") : t("manageConfirmCancel")}
             </button>
           </div>
         </div>

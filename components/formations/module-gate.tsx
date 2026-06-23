@@ -1,35 +1,35 @@
 import Link from "next/link";
 import { ClockIcon, SparklesIcon, LockIcon, WrenchIcon } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 /**
  * Vue affichée quand le module Formations n'est pas pleinement accessible
  * (maintenance / coming_soon / forbidden). Le cas `hidden` est géré par
  * notFound() dans la page. Style glass (espace public).
  */
-export function ModuleGate({
+export async function ModuleGate({
   access,
   maintenanceMessage,
 }: {
   access: "maintenance" | "coming_soon" | "forbidden";
   maintenanceMessage?: string | null;
 }) {
+  const t = await getTranslations("public.formations");
   const cfg = {
     maintenance: {
       Icon: WrenchIcon,
-      title: "Module temporairement indisponible",
-      text:
-        maintenanceMessage ||
-        "Le module Formations est temporairement indisponible. Veuillez réessayer plus tard.",
+      title: t("gateMaintenanceTitle"),
+      text: maintenanceMessage || t("gateMaintenanceText"),
     },
     coming_soon: {
       Icon: SparklesIcon,
-      title: "Bientôt disponible",
-      text: "Le module Formations arrive très prochainement sur Docbel. Revenez bientôt !",
+      title: t("gateComingSoonTitle"),
+      text: t("gateComingSoonText"),
     },
     forbidden: {
       Icon: LockIcon,
-      title: "Accès réservé",
-      text: "Le module Formations est en accès restreint pour le moment.",
+      title: t("gateForbiddenTitle"),
+      text: t("gateForbiddenText"),
     },
   }[access];
 
@@ -48,7 +48,7 @@ export function ModuleGate({
           className="glass-cta mt-1 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-bold"
         >
           <ClockIcon className="size-4" />
-          Retour à l&apos;accueil
+          {t("gateBackHome")}
         </Link>
       </section>
     </div>

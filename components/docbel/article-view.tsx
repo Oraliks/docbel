@@ -16,6 +16,7 @@ import {
   StarIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { NewsItem } from "@/lib/docbel-data";
 import { enrichHtmlWithAcronyms } from "@/lib/acronyms-html";
 import { sanitizeHtml } from "@/lib/sanitize-html";
@@ -65,6 +66,7 @@ export function ArticleView({
   articleHeroIllustration,
   isAdmin = false,
 }: ArticleViewProps) {
+  const t = useTranslations("public.contenu");
   // Enrichit l'HTML rich-text avec les <abbr> du glossaire. Mémoïsé
   // pour ne pas re-tokeniser à chaque re-render (le contenu d'un
   // article ne change pas pendant la vie de la page).
@@ -93,10 +95,10 @@ export function ArticleView({
       } catch {
         /* ignore */
       }
-      toast.success(next ? "Article enregistré" : "Article retiré de vos enregistrements");
+      toast.success(next ? t("articleSaved") : t("articleUnsaved"));
       return next;
     });
-  }, [bookmarkKey]);
+  }, [bookmarkKey, t]);
 
   const scrollToContent = useCallback(() => {
     document
@@ -168,7 +170,7 @@ export function ArticleView({
                   }}
                 >
                   <ArrowLeftIcon className="size-3" />
-                  Retour aux actualités
+                  {t("backToNews")}
                 </Link>
 
                 <h1 className="glass-display text-[27px] font-semibold leading-[1.05] sm:text-[40px]">
@@ -203,7 +205,7 @@ export function ArticleView({
                         >
                           <ClockIcon className="size-3.5" />
                         </span>
-                        {article.readingTime} min de lecture
+                        {t("readingTimeMin", { min: article.readingTime })}
                       </span>
                     </>
                   ) : null}
@@ -243,7 +245,7 @@ export function ArticleView({
                     </span>
                     <div className="flex flex-col gap-0.5">
                       <p className="text-[12.5px] font-bold text-[color:var(--glass-accent-deep)]">
-                        À retenir
+                        {t("keyTakeawayLabel")}
                       </p>
                       <p className="text-[12.5px] leading-[1.45] text-[color:var(--glass-ink-soft)]">
                         <AcronymText>{article.keyTakeaway}</AcronymText>
@@ -259,7 +261,7 @@ export function ArticleView({
                       href={`/admin/news/${article.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label="Éditer l'article"
+                      aria-label={t("editArticleAria")}
                       className="inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
                     >
                       <PencilIcon className="size-4" />
@@ -269,7 +271,7 @@ export function ArticleView({
                     type="button"
                     onClick={toggleSaved}
                     aria-pressed={saved}
-                    aria-label={saved ? "Retirer des enregistrements" : "Enregistrer l'article"}
+                    aria-label={saved ? t("unsaveArticleAria") : t("saveArticleAria")}
                     className="inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
                     style={
                       saved
@@ -302,7 +304,7 @@ export function ArticleView({
                   id={CONTENT_ANCHOR}
                   className="scroll-mt-6 text-[14px] text-[color:var(--glass-ink-soft)]"
                 >
-                  Le contenu de cet article n&apos;est pas encore disponible.
+                  {t("articleContentUnavailable")}
                 </p>
               )}
             </div>
@@ -312,7 +314,7 @@ export function ArticleView({
           {related.length > 0 ? (
             <section className="flex flex-col gap-4">
               <h2 className="glass-display px-1 text-[22px] font-semibold leading-none">
-                À lire aussi
+                {t("readAlso")}
               </h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {related.map((item) => (
@@ -333,7 +335,7 @@ export function ArticleView({
                       {item.readingTime ? (
                         <span className="inline-flex items-center gap-1.5">
                           <ClockIcon className="size-3.5" />
-                          {item.readingTime} min
+                          {t("readingMinShort", { min: item.readingTime })}
                         </span>
                       ) : null}
                     </div>
@@ -353,7 +355,7 @@ export function ArticleView({
               {hasSummary ? (
                 <div className="glass-surface flex flex-col gap-3 p-5">
                   <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-                    Résumé en 30 sec
+                    {t("summaryLabel")}
                   </p>
                   <ul className="flex flex-col gap-2.5">
                     {article.summary!.map((point, i) => (
@@ -380,7 +382,7 @@ export function ArticleView({
                       onClick={scrollToContent}
                       className="inline-flex w-fit items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-accent-deep)] outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
                     >
-                      Voir le résumé détaillé
+                      {t("seeDetailedSummary")}
                       <ArrowRightIcon className="size-3.5" />
                     </button>
                   ) : null}
@@ -391,7 +393,7 @@ export function ArticleView({
               {hasDocs ? (
                 <div className="glass-surface flex flex-col gap-3 p-5">
                   <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-                    Documents liés
+                    {t("linkedDocsLabel")}
                   </p>
                   <div className="flex flex-col gap-1">
                     {article.linkedDocs!.map((doc, i) => {
@@ -421,7 +423,7 @@ export function ArticleView({
                             className="shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]"
                             style={{ background: "var(--glass-surface-strong)" }}
                           >
-                            {isPdf ? "PDF" : "DOC"}
+                            {isPdf ? t("docBadgePdf") : t("docBadgeDoc")}
                           </span>
                         </a>
                       );
@@ -434,7 +436,7 @@ export function ArticleView({
               {hasFaqs ? (
                 <div className="glass-surface flex flex-col gap-2 p-5">
                   <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-                    Questions fréquentes
+                    {t("faqLabel")}
                   </p>
                   <div className="flex flex-col gap-1.5">
                     {article.faqs!.map((faq, i) => (

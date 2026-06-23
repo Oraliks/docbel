@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ArrowRightIcon,
   CalculatorIcon,
@@ -60,6 +61,7 @@ function ToolIconTile({ tool, size = 40 }: { tool: Tool; size?: number }) {
 
 /* ── Ligne compacte d'outil (Populaire / Récemment) ── */
 function ToolMiniRow({ tool, onOpen }: { tool: Tool; onOpen: () => void }) {
+  const t = useTranslations("public.outils");
   return (
     <button
       type="button"
@@ -83,7 +85,7 @@ function ToolMiniRow({ tool, onOpen }: { tool: Tool; onOpen: () => void }) {
         className="inline-flex h-7 shrink-0 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 text-[11.5px] font-bold text-[color:var(--glass-ink)] transition group-hover:bg-white/70 dark:group-hover:bg-white/10"
         aria-hidden
       >
-        Ouvrir
+        {t("open")}
       </span>
     </button>
   );
@@ -91,6 +93,7 @@ function ToolMiniRow({ tool, onOpen }: { tool: Tool; onOpen: () => void }) {
 
 export function OutilsCatalogClient({ tools }: Props) {
   const router = useRouter();
+  const t = useTranslations("public.outils");
   const { favorites, recents, isFavorite, toggleFavorite, pushRecent } =
     useToolFavorites();
 
@@ -170,10 +173,10 @@ export function OutilsCatalogClient({ tools }: Props) {
   }, [tools, view, selectedDomain, search, sort, favorites, recents]);
 
   const VIEW_LABEL: Record<View, string> = {
-    all: "Tous les outils",
-    favorites: "Mes outils enregistrés",
-    recents: "Récemment utilisés",
-    simulations: "Mes simulations",
+    all: t("viewAll"),
+    favorites: t("viewFavorites"),
+    recents: t("viewRecents"),
+    simulations: t("viewSimulations"),
   };
   const hasActiveFilter = view !== "all" || selectedDomain !== null || search !== "";
   const resetFilters = () => {
@@ -191,28 +194,28 @@ export function OutilsCatalogClient({ tools }: Props) {
   }[] = [
     {
       id: "recents",
-      label: "Mon historique",
+      label: t("quickHistory"),
       Icon: ClockIcon,
       onClick: () => setView(view === "recents" ? "all" : "recents"),
       active: view === "recents",
     },
     {
       id: "favorites",
-      label: "Mes favoris",
+      label: t("quickFavorites"),
       Icon: HeartIcon,
       onClick: () => setView(view === "favorites" ? "all" : "favorites"),
       active: view === "favorites",
     },
     {
       id: "simulations",
-      label: "Mes simulations",
+      label: t("quickSimulations"),
       Icon: CalculatorIcon,
       onClick: () => setView(view === "simulations" ? "all" : "simulations"),
       active: view === "simulations",
     },
     {
       id: "documents",
-      label: "Mes documents",
+      label: t("quickDocuments"),
       Icon: FileTextIcon,
       onClick: () => router.push("/creer-ma-demande"),
       active: false,
@@ -228,15 +231,13 @@ export function OutilsCatalogClient({ tools }: Props) {
       >
         <header className="flex flex-col gap-3">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-            Catalogue
+            {t("catalogEyebrow")}
           </p>
           <h1 className="glass-display text-[36px] font-semibold leading-[1.05] sm:text-[44px]">
-            Tous les outils, <em>en un endroit.</em>
+            {t.rich("catalogTitle", { em: (c) => <em>{c}</em> })}
           </h1>
           <p className="max-w-xl text-[14px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-            Formulaires officiels, calculateurs et simulateurs pour vos démarches
-            administratives belges. Filtrez par catégorie ou recherchez par
-            mot-clé.
+            {t("catalogIntro")}
           </p>
         </header>
 
@@ -247,12 +248,12 @@ export function OutilsCatalogClient({ tools }: Props) {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un outil…"
+              placeholder={t("searchPlaceholder")}
               className="search-glow glass-surface-strong h-14 w-full rounded-2xl border-0 pr-5 pl-14 text-[15px] text-[color:var(--glass-ink)] shadow-none placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none"
             />
           </div>
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 pl-1 text-[12px] text-[color:var(--glass-ink-faint)]">
-            <span>Exemples populaires :</span>
+            <span>{t("popularExamples")}</span>
             {POPULAR_SEARCH_EXAMPLES.map((ex) => (
               <button
                 key={ex}
@@ -274,7 +275,7 @@ export function OutilsCatalogClient({ tools }: Props) {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-[15px] font-bold tracking-tight">
               <SparklesIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
-              Populaire
+              {t("sectionPopular")}
             </h2>
             <button
               type="button"
@@ -284,7 +285,7 @@ export function OutilsCatalogClient({ tools }: Props) {
               }}
               className="group inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
             >
-              Voir tout
+              {t("seeAll")}
               <ArrowRightIcon className="size-3.5 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transform-none" />
             </button>
           </div>
@@ -327,7 +328,7 @@ export function OutilsCatalogClient({ tools }: Props) {
             })()}
             <span className="relative inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em]">
               <SparklesIcon className="size-3" />
-              Nouveau
+              {t("badgeNew")}
             </span>
             <div className="relative mt-4">
               <h3 className="glass-display text-[26px] font-semibold leading-tight">
@@ -342,7 +343,7 @@ export function OutilsCatalogClient({ tools }: Props) {
               onClick={() => openTool(featured)}
               className="group relative mt-5 inline-flex w-fit items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-status-to)] transition hover:bg-white"
             >
-              Ouvrir l&apos;outil
+              {t("openTool")}
               <ArrowRightIcon className="size-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
             </button>
           </section>
@@ -353,7 +354,7 @@ export function OutilsCatalogClient({ tools }: Props) {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-[15px] font-bold tracking-tight">
               <SparklesIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
-              Récemment ajoutés
+              {t("sectionRecent")}
             </h2>
             <button
               type="button"
@@ -363,7 +364,7 @@ export function OutilsCatalogClient({ tools }: Props) {
               }}
               className="group inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
             >
-              Voir tout
+              {t("seeAll")}
               <ArrowRightIcon className="size-3.5 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transform-none" />
             </button>
           </div>
@@ -384,13 +385,13 @@ export function OutilsCatalogClient({ tools }: Props) {
         {/* Catégories */}
         <section className="glass-surface glass-interactive flex flex-col p-6">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[15px] font-bold tracking-tight">Catégories</h2>
+            <h2 className="text-[15px] font-bold tracking-tight">{t("sectionCategories")}</h2>
             <button
               type="button"
               onClick={() => setSelectedDomain(null)}
               className="group inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
             >
-              Voir tout
+              {t("seeAll")}
               <ArrowRightIcon className="size-3.5 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transform-none" />
             </button>
           </div>
@@ -428,7 +429,7 @@ export function OutilsCatalogClient({ tools }: Props) {
                       {domain.label}
                     </span>
                     <span className="block text-[11px] text-[color:var(--glass-ink-faint)]">
-                      {count} outil{count > 1 ? "s" : ""}
+                      {t("toolsCount", { count })}
                     </span>
                   </span>
                 </button>
@@ -441,7 +442,7 @@ export function OutilsCatalogClient({ tools }: Props) {
         <div className="flex flex-col gap-6">
           <section className="glass-surface glass-interactive flex flex-col p-6">
             <h2 className="mb-3 text-[15px] font-bold tracking-tight">
-              Accès rapide
+              {t("quickAccess")}
             </h2>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {quickTiles.map((tile) => (
@@ -487,18 +488,17 @@ export function OutilsCatalogClient({ tools }: Props) {
             />
             <h3 className="relative flex items-center gap-2 text-[16px] font-bold">
               <SparklesIcon className="size-4" />
-              Besoin d&apos;aide pour choisir ?
+              {t("helpTitle")}
             </h3>
             <p className="relative mt-1.5 max-w-[85%] text-[12.5px] leading-[1.5] text-white/85">
-              Répondez à quelques questions et nous vous proposons les bons
-              outils.
+              {t("helpBody")}
             </p>
             <button
               type="button"
               onClick={() => router.push("/creer-ma-demande")}
               className="group relative mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-accent-deep)] transition hover:bg-white"
             >
-              Commencer
+              {t("helpStart")}
               <ArrowRightIcon className="size-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none" />
             </button>
           </section>
@@ -508,23 +508,23 @@ export function OutilsCatalogClient({ tools }: Props) {
         <section className="glass-surface glass-interactive flex flex-col p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[15px] font-bold tracking-tight">
-              Mes outils enregistrés
+              {t("viewFavorites")}
             </h2>
             <button
               type="button"
               onClick={() => setView("favorites")}
               className="group inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
             >
-              Voir tout
+              {t("seeAll")}
               <ArrowRightIcon className="size-3.5 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transform-none" />
             </button>
           </div>
           {favoriteTools.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-1.5 py-8 text-center">
               <HeartIcon className="size-6 text-[color:var(--glass-ink-faint)]" />
-              <p className="text-[12.5px] font-semibold">Aucun outil enregistré</p>
+              <p className="text-[12.5px] font-semibold">{t("favEmptyTitle")}</p>
               <p className="max-w-[85%] text-[11.5px] text-[color:var(--glass-ink-faint)]">
-                Touchez le ♥ dans la liste ci-dessous pour garder vos outils ici.
+                {t("favEmptyBody")}
               </p>
             </div>
           ) : (
@@ -553,7 +553,7 @@ export function OutilsCatalogClient({ tools }: Props) {
                   <button
                     type="button"
                     onClick={() => toggleFavorite(getToolSlug(tool))}
-                    aria-label="Retirer des favoris"
+                    aria-label={t("removeFavorite")}
                     className="shrink-0 rounded-full p-1.5 text-[color:var(--glass-accent-c)] transition hover:bg-white/45 dark:hover:bg-white/[0.06]"
                   >
                     <HeartIcon
@@ -588,20 +588,20 @@ export function OutilsCatalogClient({ tools }: Props) {
                 className="inline-flex items-center gap-1 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-1.5 text-[12px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
               >
                 <XIcon className="size-3.5" />
-                Réinitialiser
+                {t("reset")}
               </button>
             ) : null}
             <label className="flex items-center gap-2 text-[12px] text-[color:var(--glass-ink-faint)]">
-              <span className="hidden sm:inline">Trier par</span>
+              <span className="hidden sm:inline">{t("sortBy")}</span>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as Sort)}
                 className="glass-surface rounded-full border-0 px-3 py-1.5 text-[12px] font-semibold text-[color:var(--glass-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
               >
-                <option value="pertinents">Plus pertinents</option>
-                <option value="recent">Plus récents</option>
-                <option value="name">Nom (A→Z)</option>
-                <option value="duree">Durée</option>
+                <option value="pertinents">{t("sortRelevant")}</option>
+                <option value="recent">{t("sortRecent")}</option>
+                <option value="name">{t("sortName")}</option>
+                <option value="duree">{t("sortDuration")}</option>
               </select>
             </label>
           </div>
@@ -609,7 +609,7 @@ export function OutilsCatalogClient({ tools }: Props) {
 
         {selectedDomain ? (
           <div className="flex items-center gap-2 text-[12px]">
-            <span className="text-[color:var(--glass-ink-faint)]">Catégorie :</span>
+            <span className="text-[color:var(--glass-ink-faint)]">{t("categoryLabel")}</span>
             <span
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold"
               style={{
@@ -621,7 +621,7 @@ export function OutilsCatalogClient({ tools }: Props) {
               <button
                 type="button"
                 onClick={() => setSelectedDomain(null)}
-                aria-label="Retirer le filtre"
+                aria-label={t("removeFilter")}
               >
                 <XIcon className="size-3" />
               </button>
@@ -631,9 +631,9 @@ export function OutilsCatalogClient({ tools }: Props) {
 
         {tableTools.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-14 text-center">
-            <p className="text-[14px] font-semibold">Aucun outil ne correspond.</p>
+            <p className="text-[14px] font-semibold">{t("noMatch")}</p>
             <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
-              Essayez un autre filtre ou un mot-clé plus court.
+              {t("noMatchHint")}
             </p>
           </div>
         ) : (
@@ -641,11 +641,11 @@ export function OutilsCatalogClient({ tools }: Props) {
             <table className="w-full min-w-[640px] border-collapse">
               <thead>
                 <tr className="border-b border-[color:var(--glass-ink-line)] text-left text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
-                  <th className="py-2 pr-3 font-bold">Outil</th>
-                  <th className="hidden py-2 pr-3 font-bold md:table-cell">Catégorie</th>
-                  <th className="hidden py-2 pr-3 font-bold lg:table-cell">Description</th>
-                  <th className="py-2 pr-3 font-bold">Durée</th>
-                  <th className="py-2 text-right font-bold">Action</th>
+                  <th className="py-2 pr-3 font-bold">{t("colTool")}</th>
+                  <th className="hidden py-2 pr-3 font-bold md:table-cell">{t("colCategory")}</th>
+                  <th className="hidden py-2 pr-3 font-bold lg:table-cell">{t("colDescription")}</th>
+                  <th className="py-2 pr-3 font-bold">{t("colDuration")}</th>
+                  <th className="py-2 text-right font-bold">{t("colAction")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -710,7 +710,7 @@ export function OutilsCatalogClient({ tools }: Props) {
                             type="button"
                             onClick={() => toggleFavorite(slug)}
                             aria-label={
-                              fav ? "Retirer des favoris" : "Enregistrer l'outil"
+                              fav ? t("removeFavorite") : t("saveTool")
                             }
                             className="rounded-full p-1.5 transition hover:bg-white/55 dark:hover:bg-white/10"
                             style={{
@@ -729,7 +729,7 @@ export function OutilsCatalogClient({ tools }: Props) {
                             onClick={() => openTool(tool)}
                             className="glass-cta inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[12.5px] font-bold"
                           >
-                            Ouvrir
+                            {t("open")}
                           </button>
                         </div>
                       </td>
@@ -742,8 +742,7 @@ export function OutilsCatalogClient({ tools }: Props) {
         )}
 
         <p className="text-[12px] text-[color:var(--glass-ink-faint)]">
-          {tableTools.length} outil{tableTools.length > 1 ? "s" : ""} affiché
-          {tableTools.length > 1 ? "s" : ""}
+          {t("toolsShown", { count: tableTools.length })}
         </p>
       </section>
     </div>

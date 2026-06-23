@@ -21,6 +21,7 @@
  */
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Download,
   FileSignature,
@@ -56,49 +57,61 @@ type Oui = "oui" | "non";
  */
 const LAST_UPDATED = "2026-05-25";
 
+/**
+ * Statuts de protection — valeur + suffixes de clés i18n.
+ * Les libellés et hints sont résolus au rendu via `t` (le composant les
+ * mappe), car ce module est hors composant et n'a pas accès au hook.
+ */
 const PROTECTION_OPTIONS: {
   value: ProtectionSpeciale;
-  label: string;
-  hint: string;
+  labelKey: string;
+  hintKey: string;
 }[] = [
-  { value: "aucune", label: "Aucune", hint: "Pas de statut protégé." },
+  { value: "aucune", labelKey: "indProtAucuneLabel", hintKey: "indProtAucuneHint" },
   {
     value: "femme_enceinte",
-    label: "Femme enceinte (+6 mois)",
-    hint: "Loi du 16 mars 1971, art. 40 : 6 mois forfaitaires.",
+    labelKey: "indProtFemmeEnceinteLabel",
+    hintKey: "indProtFemmeEnceinteHint",
   },
   {
     value: "delegue_syndical",
-    label: "Délégué syndical CCT 5 (+~3 ans)",
-    hint: "CCT n° 5, art. 20 : 2 à 4 ans selon ancienneté.",
+    labelKey: "indProtDelegueLabel",
+    hintKey: "indProtDelegueHint",
   },
   {
     value: "travailleur_protege",
-    label: "Conseiller prévention / CPPT (+~9 mois)",
-    hint: "Loi du 19 mars 1991 : 6 à 12 mois selon ancienneté.",
+    labelKey: "indProtConseillerLabel",
+    hintKey: "indProtConseillerHint",
   },
 ];
 
+/**
+ * Sources officielles affichées en pied — URLs stables + clés de libellé
+ * i18n (résolues au rendu via `t`).
+ */
 const SOURCES_FOOTER = [
   {
-    label: "SPF Finances — Précompte professionnel 2026",
+    labelKey: "indSourcePrecompte",
     url: "https://finances.belgium.be/fr/entreprises/personnel_et_remuneration/precompte_professionnel/calcul",
   },
   {
-    label: "ONSS — Cotisation spéciale sur indemnités de rupture",
+    labelKey: "indSourceOnss",
     url: "https://www.socialsecurity.be/employer/instructions/dmfa/fr/latest/instructions/special_contributions/other_specialcontributions/terminationfeecontribution.html",
   },
   {
-    label: "Moniteur belge — Loi du 3 juillet 1978",
+    labelKey: "indSourceMoniteur",
     url: "https://www.ejustice.just.fgov.be",
   },
   {
-    label: "SPF Emploi — Fin du contrat de travail",
+    labelKey: "indSourceEmploi",
     url: "https://emploi.belgique.be/fr/themes/contrats-de-travail/fin-du-contrat-de-travail",
   },
 ];
 
 export function CalcIndemnite({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
+  // Clés dynamiques → cast vers le type de clé attendu par t() (typage strict).
+  const tk = (key: string) => t(key as Parameters<typeof t>[0]);
   const [salaire, setSalaire] = useState("3500");
   const [preavis, setPreavis] = useState("12");
   const [inclureAvantages, setInclureAvantages] = useState<Oui>("non");
@@ -130,11 +143,11 @@ export function CalcIndemnite({ accent }: { accent: string }) {
     const avantagesNum = parseNum(avantages);
 
     if (!Number.isFinite(salaireNum)) {
-      setError("Indiquez un salaire brut mensuel valide.");
+      setError(t("indErrSalaire"));
       return;
     }
     if (!Number.isFinite(preavisNum)) {
-      setError("Indiquez une durée de préavis en semaines.");
+      setError(t("indErrPreavis"));
       return;
     }
 
@@ -194,53 +207,59 @@ export function CalcIndemnite({ accent }: { accent: string }) {
         hour: "2-digit",
         minute: "2-digit",
       });
-      doc.text(`Généré le ${dateStr} à ${timeStr}`, pageWidth - margin, y, {
-        align: "right",
-      });
+      doc.text(
+        t("indPdfGeneratedOn", { date: dateStr, time: timeStr }),
+        pageWidth - margin,
+        y,
+        {
+          align: "right",
+        },
+      );
       y += 10;
 
       // Titre
       doc.setFontSize(15);
       doc.setFont("", "bold");
       doc.setTextColor(0, 0, 0);
-      doc.text(
-        `Indemnité de rupture (préavis non presté) — 2026`,
-        margin,
-        y,
-      );
+      doc.text(t("indPdfTitle"), margin, y);
       y += 10;
 
       // Section Inputs
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Paramètres saisis", margin, y);
+      doc.text(t("indPdfParams"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
       doc.setFont("", "normal");
       doc.setTextColor(0, 0, 0);
 
-      const protectionLabel =
-        PROTECTION_OPTIONS.find((p) => p.value === protection)?.label ?? "—";
+      const protectionOpt = PROTECTION_OPTIONS.find(
+        (p) => p.value === protection,
+      );
+      const protectionLabel = protectionOpt ? tk(protectionOpt.labelKey) : "—";
 
       const inputs: [string, string][] = [
-        ["Salaire mensuel brut", fmtEUR(parseNum(salaire))],
-        ["Préavis non presté", `${result.preavisSemaines} semaines`],
+        [t("indSalaire"), fmtEUR(parseNum(salaire))],
         [
-          "Avantages annuels inclus",
+          t("indPdfPreavisNonPreste"),
+          t("indPdfSemaines", { n: result.preavisSemaines }),
+        ],
+        [
+          t("indPdfAvantagesInclus"),
           inclureAvantages === "oui" && parseNum(avantages) > 0
-            ? `${fmtEUR(parseNum(avantages))}/an`
-            : "Non",
+            ? t("indPdfParAn", { x: fmtEUR(parseNum(avantages)) })
+            : t("indPdfNon"),
         ],
-        ["Statut de protection", protectionLabel],
+        [t("indProtection"), protectionLabel],
         [
-          "Calcul du net après précompte",
-          precompte === "oui" ? "Oui" : "Non",
+          t("indPdfCalculNet"),
+          precompte === "oui" ? t("indPdfOui") : t("indPdfNon"),
         ],
         [
-          "Brut annuel de référence",
-          `${fmtEUR(result.brutAnnuelReference)} (× 13,92)`,
+          t("indPdfBrutAnnuel"),
+          t("indPdfBrutAnnuelValeur", { x: fmtEUR(result.brutAnnuelReference) }),
         ],
       ];
 
@@ -267,7 +286,7 @@ export function CalcIndemnite({ accent }: { accent: string }) {
       doc.setFontSize(10);
       doc.setFont("", "bold");
       doc.setTextColor(155, 28, 28);
-      doc.text("INDEMNITÉ DE RUPTURE — TOTAL BRUT", margin + 4, y + 7);
+      doc.text(t("indPdfBoxTitle"), margin + 4, y + 7);
 
       doc.setFontSize(22);
       doc.setTextColor(0, 0, 0);
@@ -278,16 +297,15 @@ export function CalcIndemnite({ accent }: { accent: string }) {
       doc.setTextColor(100, 100, 100);
       if (precompte === "oui") {
         doc.text(
-          `≈ ${fmtEUR(result.indemniteNetEstimee)} net après précompte (${fmtNumber(result.tauxPrecompteAppliquePourcent, 2)} %)`,
+          t("indPdfNetApresPrecompte", {
+            x: fmtEUR(result.indemniteNetEstimee),
+            taux: fmtNumber(result.tauxPrecompteAppliquePourcent, 2),
+          }),
           margin + 4,
           y + 25,
         );
       } else {
-        doc.text(
-          `Brut total (précompte non calculé)`,
-          margin + 4,
-          y + 25,
-        );
+        doc.text(t("indPdfBrutTotalNonCalcule"), margin + 4, y + 25);
       }
       y += boxH + 8;
 
@@ -305,7 +323,9 @@ export function CalcIndemnite({ accent }: { accent: string }) {
         doc.setFont("", "bold");
         doc.setTextColor(180, 83, 9);
         doc.text(
-          `Cotisation spéciale employeur (${fmtNumber(result.tauxCotisationSpecialePourcent, 0)} %)`,
+          t("indPdfCotisationTitre", {
+            n: fmtNumber(result.tauxCotisationSpecialePourcent, 0),
+          }),
           margin + 4,
           y + 7,
         );
@@ -313,16 +333,14 @@ export function CalcIndemnite({ accent }: { accent: string }) {
         doc.setFont("", "normal");
         doc.setTextColor(60, 60, 60);
         doc.text(
-          `${fmtEUR(result.cotisationSpecialeEmployeur)} à charge de l'employeur (Fonds de fermeture)`,
+          t("indPdfCotisationCharge", {
+            x: fmtEUR(result.cotisationSpecialeEmployeur),
+          }),
           margin + 4,
           y + 14,
         );
         doc.setFontSize(8);
-        doc.text(
-          "ONSS 2026/1 — n'affecte pas le net du salarié",
-          margin + 4,
-          y + 20,
-        );
+        doc.text(t("indPdfCotisationOnss"), margin + 4, y + 20);
         y += 28;
       }
 
@@ -330,7 +348,7 @@ export function CalcIndemnite({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Détail du calcul", margin, y);
+      doc.text(t("indDetailTitle"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -338,38 +356,31 @@ export function CalcIndemnite({ accent }: { accent: string }) {
       doc.setTextColor(0, 0, 0);
 
       const details: [string, string][] = [
+        [t("indDetailRemunMensuelle"), fmtEUR(result.remunerationMensuelle)],
         [
-          "Rémunération mensuelle de base",
-          fmtEUR(result.remunerationMensuelle),
-        ],
-        [
-          "Rémunération hebdomadaire (× 3 / 13)",
+          t("indDetailRemunHebdo"),
           fmtEUR(result.remunerationHebdomadaire),
         ],
         [
-          "Indemnité standard (hebdo × préavis)",
+          t("indPdfDetailStandard"),
           fmtEUR(result.indemniteBrute),
         ],
       ];
       if (result.indemniteProtectionSupplement > 0) {
         details.push([
-          "Indemnité de protection",
+          t("indDetailProtection"),
           fmtEUR(result.indemniteProtectionSupplement),
         ]);
       }
-      details.push([
-        "Total brut",
-        fmtEUR(result.indemniteTotalBrute),
-      ]);
+      details.push([t("indDetailTotalBrut"), fmtEUR(result.indemniteTotalBrute)]);
       if (precompte === "oui") {
         details.push([
-          "Précompte appliqué",
-          `${fmtNumber(result.tauxPrecompteAppliquePourcent, 2)} %`,
+          t("indPdfDetailPrecompte"),
+          t("indPdfPourcent", {
+            taux: fmtNumber(result.tauxPrecompteAppliquePourcent, 2),
+          }),
         ]);
-        details.push([
-          "Net estimé",
-          fmtEUR(result.indemniteNetEstimee),
-        ]);
+        details.push([t("indDetailNetEstime"), fmtEUR(result.indemniteNetEstimee)]);
       }
 
       details.forEach(([k, v]) => {
@@ -396,7 +407,7 @@ export function CalcIndemnite({ accent }: { accent: string }) {
       doc.setFont("", "italic");
       doc.setTextColor(120, 120, 120);
       const footer = doc.splitTextToSize(
-        "Estimation indicative — Loi du 3 juillet 1978 (art. 39 et suiv.), barème précompte spécial SPF Finances 2026 par tranches (5 paliers, 17,16 → 53,50 %), cotisation spéciale de compensation employeur ONSS 2026/1 (1 / 2 / 3 % selon brut annuel ≥ 50 166 / 61 437 / 72 707 €), indemnité de protection cumulable (loi 16/03/1971, CCT 5, loi 19/03/1991). Pour un calcul officiel et personnalisé : SPF Emploi / votre secrétariat social. Sources : SPF Finances, ONSS, Moniteur belge.",
+        t("indPdfFooterDisclaimer"),
         pageWidth - margin * 2,
       );
       doc.text(footer, margin, y);
@@ -444,10 +455,10 @@ export function CalcIndemnite({ accent }: { accent: string }) {
               </span>
               <div>
                 <h2 className="text-[16px] font-bold text-[color:var(--glass-ink)]">
-                  Indemnité de rupture
+                  {t("indTitle")}
                 </h2>
                 <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
-                  Préavis non presté — Loi du 3 juillet 1978
+                  {t("indSubtitle")}
                 </p>
               </div>
             </div>
@@ -460,10 +471,10 @@ export function CalcIndemnite({ accent }: { accent: string }) {
                 background: "var(--glass-surface)",
                 color: "var(--glass-ink-soft)",
               }}
-              title="Réinitialiser le formulaire"
+              title={t("indResetForm")}
             >
               <RotateCcw className="size-3.5" />
-              Réinitialiser
+              {t("indReset")}
             </button>
           </div>
 
@@ -481,7 +492,7 @@ export function CalcIndemnite({ accent }: { accent: string }) {
           <CalcGrid cols={2}>
             <CalcField
               id="indemnite-salaire"
-              label="Salaire mensuel brut"
+              label={t("indSalaire")}
               value={salaire}
               onChange={setSalaire}
               placeholder="3500"
@@ -489,26 +500,26 @@ export function CalcIndemnite({ accent }: { accent: string }) {
               min={0}
               max={100000}
               step={50}
-              hint="Montant indiqué sur votre fiche de paie avant retenues."
+              hint={t("indSalaireHint")}
             />
             <CalcField
               id="indemnite-preavis"
-              label="Durée du préavis non presté"
+              label={t("indPreavis")}
               value={preavis}
               onChange={setPreavis}
               placeholder="12"
-              suffix="sem."
+              suffix={t("indSuffixeSem")}
               min={0}
               max={PREAVIS_MAX_SEMAINES}
               step={1}
-              hint="Voir le calculateur de préavis pour cette valeur (semaines)."
+              hint={t("indPreavisHint")}
             />
           </CalcGrid>
 
           {/* Avantages */}
           <YesNoToggle
-            label="Inclure des avantages extra-légaux ?"
-            hint="Prime fin d'année, double pécule, chèques-repas annuels, assurance groupe, voiture société…"
+            label={t("indAvantagesToggle")}
+            hint={t("indAvantagesToggleHint")}
             value={inclureAvantages}
             onChange={(v) => {
               setInclureAvantages(v);
@@ -520,15 +531,15 @@ export function CalcIndemnite({ accent }: { accent: string }) {
           {inclureAvantages === "oui" ? (
             <CalcField
               id="indemnite-avantages"
-              label="Avantages extra-légaux annualisés"
+              label={t("indAvantagesField")}
               value={avantages}
               onChange={setAvantages}
               placeholder="ex : 4500"
-              suffix="€/an"
+              suffix={t("indSuffixeParAn")}
               min={0}
               max={999999}
               step={100}
-              hint="Total annuel estimé (€/an). Mensualisé (÷ 12) puis ajouté à la rémunération de base."
+              hint={t("indAvantagesFieldHint")}
             />
           ) : null}
 
@@ -542,7 +553,7 @@ export function CalcIndemnite({ accent }: { accent: string }) {
                 className="size-3.5"
                 style={{ color: "var(--glass-ink-faint)" }}
               />
-              Statut de protection spéciale
+              {t("indProtectionLabel")}
             </label>
             <select
               id="indemnite-protection"
@@ -555,24 +566,29 @@ export function CalcIndemnite({ accent }: { accent: string }) {
             >
               {PROTECTION_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.label}
+                  {tk(o.labelKey)}
                 </option>
               ))}
             </select>
             <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-              {PROTECTION_OPTIONS.find((p) => p.value === protection)?.hint}
+              {(() => {
+                const opt = PROTECTION_OPTIONS.find(
+                  (p) => p.value === protection,
+                );
+                return opt ? tk(opt.hintKey) : null;
+              })()}
             </p>
           </div>
 
           {/* Précompte */}
           <YesNoToggle
-            label="Calculer le net (précompte spécial) ?"
-            hint="Précompte spécial cumulé selon votre tranche de revenu annuel (barème SPF Finances 2026)."
+            label={t("indPrecompteToggle")}
+            hint={t("indPrecompteToggleHint")}
             value={precompte}
             onChange={setPrecompte}
             accent={accent}
-            yesLabel="Oui"
-            noLabel="Brut seul"
+            yesLabel={t("indOui")}
+            noLabel={t("indBrutSeul")}
           />
 
           {error ? <CalcError>{error}</CalcError> : null}
@@ -580,7 +596,7 @@ export function CalcIndemnite({ accent }: { accent: string }) {
           {/* Boutons : Calculer + Réinitialiser */}
           <CalcGrid cols={2}>
             <CalcSubmitButton accent={accent} onClick={handleCalc}>
-              Calculer l&apos;indemnité
+              {t("indCalculer")}
             </CalcSubmitButton>
             <button
               type="button"
@@ -593,7 +609,7 @@ export function CalcIndemnite({ accent }: { accent: string }) {
               }}
             >
               <RotateCcw className="size-4" />
-              Réinitialiser le formulaire
+              {t("indResetForm")}
             </button>
           </CalcGrid>
 
@@ -608,13 +624,13 @@ export function CalcIndemnite({ accent }: { accent: string }) {
           >
             <Info className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-ink-faint)]" />
             <div>
-              <strong className="text-[color:var(--glass-ink)]">
-                Estimation indicative.
-              </strong>{" "}
-              Le précompte réel dépend de votre situation fiscale individuelle
-              (personnes à charge, conjoint, etc.). Pour un calcul officiel,
-              contactez votre <strong>secrétariat social</strong> ou consultez
-              le SPF Emploi.
+              {t.rich("indDisclaimer", {
+                strong: (chunks) => (
+                  <strong className="text-[color:var(--glass-ink)]">
+                    {chunks}
+                  </strong>
+                ),
+              })}
             </div>
           </div>
         </CalcCard>
@@ -645,8 +661,10 @@ export function CalcIndemnite({ accent }: { accent: string }) {
       {/* Footer : Mise à jour + sources */}
       <div className="flex flex-col gap-2">
         <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-          Calculateur mis à jour le <strong>{lastUpdatedFr}</strong> · Données
-          2026 · Sources officielles :
+          {t.rich("indFooterUpdated", {
+            date: lastUpdatedFr,
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </p>
         <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px]">
           {SOURCES_FOOTER.map((s) => (
@@ -658,7 +676,7 @@ export function CalcIndemnite({ accent }: { accent: string }) {
                 className="text-[color:var(--glass-ink-soft)] underline-offset-2 hover:underline"
                 style={{ color: accent }}
               >
-                {s.label}
+                {tk(s.labelKey)}
               </a>
             </li>
           ))}
@@ -685,6 +703,7 @@ function IndemniteResultPanel({
   onExportPDF: () => void;
   exporting: boolean;
 }) {
+  const t = useTranslations("public.outils");
   const hasProtection = result.indemniteProtectionSupplement > 0;
   const hasCotisation = result.cotisationSpecialeEmployeur > 0;
 
@@ -695,12 +714,12 @@ function IndemniteResultPanel({
           className="text-[11px] font-bold uppercase tracking-[0.06em]"
           style={{ color: accent }}
         >
-          Résultat estimatif
+          {t("indResultEyebrow")}
         </span>
         <span
           className="inline-flex items-center"
-          title="Estimation indicative — Loi du 3 juillet 1978, barème SPF Finances 2026, cotisation spéciale ONSS 2026/1"
-          aria-label="Estimation indicative — Loi du 3 juillet 1978, barème SPF Finances 2026, cotisation spéciale ONSS 2026/1"
+          title={t("indResultInfoTooltip")}
+          aria-label={t("indResultInfoTooltip")}
         >
           <Info
             className="size-4"
@@ -720,29 +739,33 @@ function IndemniteResultPanel({
           className="mt-1 text-[13px] font-semibold"
           style={{ color: "var(--glass-ink-soft)" }}
         >
-          Brut total
+          {t("indBrutTotal")}
         </div>
         {avecPrecompte ? (
           <div className="mt-1 text-[12.5px] text-[color:var(--glass-ink-soft)]">
-            ≈ <strong>{fmtEUR(result.indemniteNetEstimee)}</strong> net après
-            précompte spécial (
-            {fmtNumber(result.tauxPrecompteAppliquePourcent, 2)} %)
+            {t.rich("indNetApresPrecompte", {
+              x: fmtEUR(result.indemniteNetEstimee),
+              taux: fmtNumber(result.tauxPrecompteAppliquePourcent, 2),
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </div>
         ) : (
           <div className="mt-1 text-[12.5px] text-[color:var(--glass-ink-faint)]">
-            Précompte non calculé
+            {t("indPrecompteNonCalcule")}
           </div>
         )}
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <CalcBadge accent={accent}>
-            {result.preavisSemaines} sem. de préavis
+            {t("indBadgePreavis", { n: result.preavisSemaines })}
           </CalcBadge>
           {hasProtection ? (
-            <CalcBadge accent={accent}>+ Protection</CalcBadge>
+            <CalcBadge accent={accent}>{t("indBadgeProtection")}</CalcBadge>
           ) : null}
           {hasCotisation ? (
             <CalcBadge accent={accent}>
-              Cot. spéciale {fmtNumber(result.tauxCotisationSpecialePourcent, 0)} %
+              {t("indBadgeCotisation", {
+                n: fmtNumber(result.tauxCotisationSpecialePourcent, 0),
+              })}
             </CalcBadge>
           ) : null}
         </div>
@@ -757,12 +780,12 @@ function IndemniteResultPanel({
           className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em]"
           style={{ color: "var(--glass-ink-faint)" }}
         >
-          Détail du calcul
+          {t("indDetailTitle")}
         </div>
         <div className="flex flex-col gap-1.5 rounded-xl bg-[color:var(--glass-surface)] p-3.5 text-[12.5px]">
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              Rémunération mensuelle de base
+              {t("indDetailRemunMensuelle")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
               {fmtEUR(result.remunerationMensuelle)}
@@ -770,7 +793,7 @@ function IndemniteResultPanel({
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              Rémunération hebdomadaire (× 3 / 13)
+              {t("indDetailRemunHebdo")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
               {fmtEUR(result.remunerationHebdomadaire)}
@@ -778,7 +801,7 @@ function IndemniteResultPanel({
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              Indemnité standard (hebdo × {result.preavisSemaines} sem.)
+              {t("indDetailStandard", { n: result.preavisSemaines })}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
               {fmtEUR(result.indemniteBrute)}
@@ -787,7 +810,7 @@ function IndemniteResultPanel({
           {hasProtection ? (
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-[color:var(--glass-ink-soft)]">
-                Indemnité de protection
+                {t("indDetailProtection")}
               </span>
               <span className="font-semibold text-[color:var(--glass-ink)]">
                 {fmtEUR(result.indemniteProtectionSupplement)}
@@ -799,7 +822,7 @@ function IndemniteResultPanel({
             style={{ borderTopColor: "var(--glass-ink-line)" }}
           >
             <span className="font-bold text-[color:var(--glass-ink)]">
-              Total brut
+              {t("indDetailTotalBrut")}
             </span>
             <span className="text-[14px] font-extrabold text-[color:var(--glass-ink)]">
               {fmtEUR(result.indemniteTotalBrute)}
@@ -809,7 +832,7 @@ function IndemniteResultPanel({
             <>
               <div className="flex items-baseline justify-between gap-3">
                 <span className="text-[color:var(--glass-ink-soft)]">
-                  Précompte spécial appliqué
+                  {t("indDetailPrecompteApplique")}
                 </span>
                 <span className="font-semibold text-[color:var(--glass-ink)]">
                   {fmtNumber(result.tauxPrecompteAppliquePourcent, 2)} %
@@ -817,7 +840,7 @@ function IndemniteResultPanel({
               </div>
               <div className="flex items-baseline justify-between gap-3">
                 <span className="font-bold text-[color:var(--glass-ink)]">
-                  Net estimé
+                  {t("indDetailNetEstime")}
                 </span>
                 <span className="text-[14px] font-extrabold text-[color:var(--glass-ink)]">
                   {fmtEUR(result.indemniteNetEstimee)}
@@ -840,14 +863,15 @@ function IndemniteResultPanel({
         >
           <div className="mb-1 flex items-center gap-1.5 font-bold text-[color:rgb(180,83,9)]">
             <Info className="size-3.5" />
-            Cotisation spéciale employeur (info) —{" "}
-            {fmtNumber(result.tauxCotisationSpecialePourcent, 0)} %
+            {t("indCotisationTitre", {
+              n: fmtNumber(result.tauxCotisationSpecialePourcent, 0),
+            })}
           </div>
           <p>
-            L&apos;employeur supporte{" "}
-            <strong>{fmtEUR(result.cotisationSpecialeEmployeur)}</strong> au
-            Fonds de fermeture (ONSS 2026/1). Cette cotisation est à sa charge
-            et <strong>n&apos;affecte pas votre net</strong>.
+            {t.rich("indCotisationTexte", {
+              x: fmtEUR(result.cotisationSpecialeEmployeur),
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
         </div>
       ) : null}
@@ -862,28 +886,28 @@ function IndemniteResultPanel({
         }}
       >
         <div className="mb-1 flex items-center gap-1.5 font-bold text-[color:var(--glass-ink)]">
-          <Info className="size-3.5" /> À savoir
+          <Info className="size-3.5" /> {t("indASavoir")}
         </div>
         <ul className="list-inside list-disc space-y-1">
           <li>
-            Le <strong>précompte spécial</strong> est calculé par tranches de
-            revenu annuel de référence (17,16 → 53,50 %) — barème SPF Finances
-            2026.
+            {t.rich("indASavoir1", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
           <li>
-            La <strong>cotisation spéciale ONSS</strong> (1 / 2 / 3 %) est due
-            par l&apos;employeur quand la rémunération annuelle ≥ 50 166 €.
-            Elle finance le Fonds de fermeture.
+            {t.rich("indASavoir2", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
           <li>
-            L&apos;<strong>indemnité de protection</strong> (femme enceinte,
-            délégué syndical, conseiller prévention) est{" "}
-            <strong>exonérée de cotisations sociales</strong>.
+            {t.rich("indASavoir3", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
           <li>
-            La part d&apos;indemnité couvrant des prestations{" "}
-            <strong>avant le 01/01/2014</strong> est exonérée de la cotisation
-            spéciale employeur.
+            {t.rich("indASavoir4", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
         </ul>
       </div>
@@ -900,7 +924,7 @@ function IndemniteResultPanel({
         }}
       >
         <Download className="size-4" />
-        {exporting ? "Génération du PDF…" : "Exporter PDF"}
+        {exporting ? t("indPdfGenerating") : t("indPdfExport")}
       </button>
     </div>
   );
@@ -911,20 +935,22 @@ function IndemniteResultPanel({
 /* ------------------------------------------------------------------ */
 
 function IndemniteResultPlaceholder({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
   return (
     <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 text-center">
       <span
         className="text-[11px] font-bold uppercase tracking-[0.06em]"
         style={{ color: accent }}
       >
-        Résultat estimatif
+        {t("indResultEyebrow")}
       </span>
       <div
         className="text-[15px] font-semibold leading-snug text-[color:var(--glass-ink-soft)]"
         style={{ maxWidth: 260 }}
       >
-        Indiquez votre salaire brut mensuel et la durée du préavis non presté,
-        puis cliquez sur <em>« Calculer l&apos;indemnité »</em>.
+        {t.rich("indPlaceholder", {
+          em: (chunks) => <em>{chunks}</em>,
+        })}
       </div>
       <Info
         className="mt-1 size-5"

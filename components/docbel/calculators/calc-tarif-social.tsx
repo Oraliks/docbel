@@ -19,6 +19,7 @@
  */
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   CheckCircle2,
   Download,
@@ -112,6 +113,7 @@ function StatusToggle({
 }
 
 export function CalcTarifSocial({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
   // Statuts d'éligibilité officiels 2026
   const [bim, setBim] = useState(false);
   const [ris, setRis] = useState(false);
@@ -216,7 +218,7 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
         hour: "2-digit",
         minute: "2-digit",
       });
-      doc.text(`Généré le ${dateStr} à ${timeStr}`, pageWidth - margin, y, {
+      doc.text(t("tsPdfGenereLe", { date: dateStr, time: timeStr }), pageWidth - margin, y, {
         align: "right",
       });
       y += 10;
@@ -225,14 +227,14 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
       doc.setFontSize(15);
       doc.setFont("", "bold");
       doc.setTextColor(0, 0, 0);
-      doc.text(`Tarif social énergie — ${Q_REFERENCE}`, margin, y);
+      doc.text(t("tsPdfDocTitle", { q: Q_REFERENCE }), margin, y);
       y += 10;
 
       // Section Inputs
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Paramètres saisis", margin, y);
+      doc.text(t("tsPdfParametres"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -240,23 +242,23 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
       doc.setTextColor(0, 0, 0);
 
       const statutsCoches: string[] = [];
-      if (bim) statutsCoches.push("BIM");
-      if (ris) statutsCoches.push("RIS");
-      if (grapa) statutsCoches.push("GRAPA");
-      if (handicap) statutsCoches.push("Allocation handicap");
-      if (aideEquivalente) statutsCoches.push("Aide CPAS équivalente");
-      if (logementSocial) statutsCoches.push("Logement social");
+      if (bim) statutsCoches.push(t("tsPdfStatutBim"));
+      if (ris) statutsCoches.push(t("tsPdfStatutRis"));
+      if (grapa) statutsCoches.push(t("tsPdfStatutGrapa"));
+      if (handicap) statutsCoches.push(t("tsPdfStatutHandicap"));
+      if (aideEquivalente) statutsCoches.push(t("tsPdfStatutAide"));
+      if (logementSocial) statutsCoches.push(t("tsPdfStatutLogement"));
 
       const inputs: [string, string][] = [
         [
-          "Statuts cochés",
-          statutsCoches.length > 0 ? statutsCoches.join(", ") : "Aucun",
+          t("tsPdfStatutsCoches"),
+          statutsCoches.length > 0 ? statutsCoches.join(", ") : t("tsPdfAucun"),
         ],
-        ["Personnes dans le ménage", String(parseNum(tailleMenage) || 2)],
-        ["Conso annuelle électricité", `${fmtNumber(parseNum(consoElec) || 0)} kWh`],
-        ["Conso annuelle gaz", `${fmtNumber(parseNum(consoGaz) || 0)} kWh`],
-        ["Chauffage électrique", chauffageElec === "oui" ? "Oui" : "Non"],
-        ["Chauffage au gaz", chauffageGaz === "oui" ? "Oui" : "Non"],
+        [t("tsPdfMenage"), String(parseNum(tailleMenage) || 2)],
+        [t("tsPdfConsoElec"), t("tsPdfKwh", { x: fmtNumber(parseNum(consoElec) || 0) })],
+        [t("tsPdfConsoGaz"), t("tsPdfKwh", { x: fmtNumber(parseNum(consoGaz) || 0) })],
+        [t("tsPdfChauffageElec"), chauffageElec === "oui" ? t("tsPdfOui") : t("tsPdfNon")],
+        [t("tsPdfChauffageGaz"), chauffageGaz === "oui" ? t("tsPdfOui") : t("tsPdfNon")],
       ];
 
       const colKey = margin + 2;
@@ -284,8 +286,8 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
       doc.setTextColor(result.eligible ? 22 : 130, result.eligible ? 130 : 50, result.eligible ? 90 : 30);
       doc.text(
         result.eligible
-          ? "VOUS ÊTES ÉLIGIBLE AU TARIF SOCIAL"
-          : "PAS D'ÉLIGIBILITÉ AUTOMATIQUE DÉTECTÉE",
+          ? t("tsPdfEligibleTitle")
+          : t("tsPdfNotEligibleTitle"),
         margin + 4,
         y + 7,
       );
@@ -294,7 +296,7 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
         doc.setFontSize(22);
         doc.setTextColor(0, 0, 0);
         doc.text(
-          `${fmtEUR(result.gainAnnuel)} / an d'économie`,
+          t("tsPdfEconomieAn", { x: fmtEUR(result.gainAnnuel) }),
           margin + 4,
           y + 18,
         );
@@ -302,7 +304,7 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
         doc.setFont("", "normal");
         doc.setTextColor(100, 100, 100);
         doc.text(
-          `Soit environ ${fmtEUR(result.gainMensuel)} / mois · Tarifs ${Q_REFERENCE}`,
+          t("tsPdfSoitMois", { x: fmtEUR(result.gainMensuel), q: Q_REFERENCE }),
           margin + 4,
           y + 26,
         );
@@ -311,14 +313,14 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
         doc.setFont("", "normal");
         doc.setTextColor(0, 0, 0);
         doc.text(
-          "Vérifiez les aides régionales et l'intervention CPAS.",
+          t("tsPdfNotEligibleHint"),
           margin + 4,
           y + 18,
         );
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
         doc.text(
-          `Gain théorique : ${fmtEUR(result.gainAnnuel)}/an si vous aviez été éligible.`,
+          t("tsPdfGainTheorique", { x: fmtEUR(result.gainAnnuel) }),
           margin + 4,
           y + 26,
         );
@@ -330,7 +332,7 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
         doc.setFontSize(11);
         doc.setFont("", "bold");
         doc.setTextColor(200, 16, 46);
-        doc.text("Motifs d'éligibilité", margin, y);
+        doc.text(t("tsPdfMotifs"), margin, y);
         y += 6;
         doc.setFontSize(9.5);
         doc.setFont("", "normal");
@@ -346,7 +348,7 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Détail du calcul", margin, y);
+      doc.text(t("tsPdfDetail"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -354,29 +356,29 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
       doc.setTextColor(0, 0, 0);
 
       const details: [string, string][] = [
-        ["Économie sur l'électricité", fmtEUR(result.gainElec)],
-        ["Économie sur le gaz", fmtEUR(result.gainGaz)],
-        ["Plafond élec applicable", `${fmtNumber(result.plafondElec)} kWh`],
-        ["Plafond gaz applicable", `${fmtNumber(result.plafondGaz)} kWh`],
+        [t("tsPdfEconomieElec"), fmtEUR(result.gainElec)],
+        [t("tsPdfEconomieGaz"), fmtEUR(result.gainGaz)],
+        [t("tsPdfPlafondElec"), t("tsPdfKwh", { x: fmtNumber(result.plafondElec) })],
+        [t("tsPdfPlafondGaz"), t("tsPdfKwh", { x: fmtNumber(result.plafondGaz) })],
       ];
       if (result.consoExcedentElec > 0) {
         details.push([
-          "Excédent élec (tarif standard)",
-          `${fmtNumber(result.consoExcedentElec)} kWh`,
+          t("tsPdfExcedentElec"),
+          t("tsPdfKwh", { x: fmtNumber(result.consoExcedentElec) }),
         ]);
       }
       if (result.consoExcedentGaz > 0) {
         details.push([
-          "Excédent gaz (tarif standard)",
-          `${fmtNumber(result.consoExcedentGaz)} kWh`,
+          t("tsPdfExcedentGaz"),
+          t("tsPdfKwh", { x: fmtNumber(result.consoExcedentGaz) }),
         ]);
       }
       details.push([
-        "Coût annuel au tarif standard",
+        t("tsPdfCoutStandard"),
         fmtEUR(result.coutStandardTotal),
       ]);
       details.push([
-        "Coût annuel au tarif social",
+        t("tsPdfCoutSocial"),
         fmtEUR(result.coutSocialTotal),
       ]);
 
@@ -404,7 +406,7 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
       doc.setFont("", "italic");
       doc.setTextColor(120, 120, 120);
       const footer = doc.splitTextToSize(
-        `Estimation indicative — tarifs CREG ${Q_REFERENCE} (note trimestrielle) et liste des bénéficiaires SPF Économie 2026. Le statut BIM seul n'ouvre plus le droit au tarif social automatique depuis le 1ᵉʳ juillet 2023. Pour confirmer votre éligibilité, contactez votre fournisseur ou consultez economie.fgov.be.`,
+        t("tsPdfFooter", { q: Q_REFERENCE }),
         pageWidth - margin * 2,
       );
       doc.text(footer, margin, y);
@@ -450,11 +452,10 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
               </span>
               <div>
                 <h2 className="text-[16px] font-bold text-[color:var(--glass-ink)]">
-                  Tarif social énergie
+                  {t("tsTitle")}
                 </h2>
                 <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
-                  Vérifiez votre éligibilité + estimez l&apos;économie annuelle
-                  ({Q_REFERENCE})
+                  {t("tsSubtitle", { q: Q_REFERENCE })}
                 </p>
               </div>
             </div>
@@ -467,10 +468,10 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
                 background: "var(--glass-surface)",
                 color: "var(--glass-ink-soft)",
               }}
-              title="Réinitialiser le formulaire"
+              title={t("tsResetForm")}
             >
               <RotateCcw className="size-3.5" />
-              Réinitialiser
+              {t("tsReset")}
             </button>
           </div>
 
@@ -488,58 +489,57 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
           <div className="flex flex-col gap-2.5">
             <div className="flex items-center gap-1.5">
               <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-[color:var(--glass-ink-faint)]">
-                1. Vérifier votre éligibilité
+                {t("tsSection1Title")}
               </span>
             </div>
             <p className="text-[11.5px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
-              Cochez tous les statuts qui s&apos;appliquent à votre ménage. Un
-              seul suffit pour l&apos;application automatique du tarif social.
+              {t("tsSection1Help")}
             </p>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <StatusToggle
                 id="ts-ris"
-                label="RIS — Revenu d'Intégration Sociale"
-                description="Versé par le CPAS."
+                label={t("tsStatusRisLabel")}
+                description={t("tsStatusRisDesc")}
                 checked={ris}
                 onChange={setRis}
                 accent={accent}
               />
               <StatusToggle
                 id="ts-grapa"
-                label="GRAPA"
-                description="Garantie de Revenus Aux Personnes Âgées (SFP)."
+                label={t("tsStatusGrapaLabel")}
+                description={t("tsStatusGrapaDesc")}
                 checked={grapa}
                 onChange={setGrapa}
                 accent={accent}
               />
               <StatusToggle
                 id="ts-handicap"
-                label="Allocation handicap (DG HAN)"
-                description="DG Personnes Handicapées (SPF Sécurité Sociale)."
+                label={t("tsStatusHandicapLabel")}
+                description={t("tsStatusHandicapDesc")}
                 checked={handicap}
                 onChange={setHandicap}
                 accent={accent}
               />
               <StatusToggle
                 id="ts-aide"
-                label="Aide sociale équivalente du CPAS"
-                description="Équivalente au RIS pour les personnes non éligibles au RIS."
+                label={t("tsStatusAideLabel")}
+                description={t("tsStatusAideDesc")}
                 checked={aideEquivalente}
                 onChange={setAideEquivalente}
                 accent={accent}
               />
               <StatusToggle
                 id="ts-logement"
-                label="Logement social agréé"
-                description="Locataire d'une SLSP / SLRB / VMSW chauffé au gaz collectif."
+                label={t("tsStatusLogementLabel")}
+                description={t("tsStatusLogementDesc")}
                 checked={logementSocial}
                 onChange={setLogementSocial}
                 accent={accent}
               />
               <StatusToggle
                 id="ts-bim"
-                label="BIM (à titre indicatif)"
-                description="Le BIM seul n'ouvre PLUS le droit depuis le 01.07.2023."
+                label={t("tsStatusBimLabel")}
+                description={t("tsStatusBimDesc")}
                 checked={bim}
                 onChange={setBim}
                 accent={accent}
@@ -550,14 +550,14 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
           {/* --- Section 2 : estimation du gain ---------------------- */}
           <div className="flex flex-col gap-2.5">
             <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-[color:var(--glass-ink-faint)]">
-              2. Estimer le gain annuel
+              {t("tsSection2Title")}
             </span>
 
             <CalcGrid cols={2}>
               <CalcField
                 id="ts-taille-menage"
-                label="Personnes dans le ménage"
-                hint="Plafond élec : +200 kWh par personne supplémentaire."
+                label={t("tsFieldMenageLabel")}
+                hint={t("tsFieldMenageHint")}
                 value={tailleMenage}
                 onChange={setTailleMenage}
                 placeholder="2"
@@ -567,8 +567,8 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
               />
               <CalcField
                 id="ts-conso-elec"
-                label="Conso annuelle électricité"
-                hint="Voir votre dernière facture annuelle. Moyenne BE ≈ 3 500 kWh."
+                label={t("tsFieldElecLabel")}
+                hint={t("tsFieldElecHint")}
                 value={consoElec}
                 onChange={setConsoElec}
                 placeholder="3500"
@@ -578,8 +578,8 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
               />
               <CalcField
                 id="ts-conso-gaz"
-                label="Conso annuelle gaz"
-                hint="0 si vous n'avez pas de gaz naturel. Moyenne BE ≈ 17 000 kWh."
+                label={t("tsFieldGazLabel")}
+                hint={t("tsFieldGazHint")}
                 value={consoGaz}
                 onChange={setConsoGaz}
                 placeholder="17000"
@@ -588,15 +588,21 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
                 suffix="kWh"
               />
               <YesNoToggle
-                label="Chauffage électrique ?"
-                hint={`Plafond élec : ${PLAFONDS_2026.ELEC_CHAUFFAGE} kWh si oui (sinon ${PLAFONDS_2026.ELEC_BASE} kWh).`}
+                label={t("tsFieldChauffageElecLabel")}
+                hint={t("tsFieldChauffageElecHint", {
+                  x: PLAFONDS_2026.ELEC_CHAUFFAGE,
+                  y: PLAFONDS_2026.ELEC_BASE,
+                })}
                 value={chauffageElec}
                 onChange={setChauffageElec}
                 accent={accent}
               />
               <YesNoToggle
-                label="Chauffage au gaz ?"
-                hint={`Plafond gaz : ${PLAFONDS_2026.GAZ_CHAUFFAGE} kWh si oui (sinon ${PLAFONDS_2026.GAZ_NON_CHAUFFAGE} kWh).`}
+                label={t("tsFieldChauffageGazLabel")}
+                hint={t("tsFieldChauffageGazHint", {
+                  x: PLAFONDS_2026.GAZ_CHAUFFAGE,
+                  y: PLAFONDS_2026.GAZ_NON_CHAUFFAGE,
+                })}
                 value={chauffageGaz}
                 onChange={setChauffageGaz}
                 accent={accent}
@@ -609,7 +615,7 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
           {/* Boutons : Calculer + Réinitialiser */}
           <CalcGrid cols={2}>
             <CalcSubmitButton accent={accent} onClick={onCalc}>
-              Vérifier mon éligibilité
+              {t("tsSubmit")}
             </CalcSubmitButton>
             <button
               type="button"
@@ -622,7 +628,7 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
               }}
             >
               <RotateCcw className="size-4" />
-              Réinitialiser le formulaire
+              {t("tsResetForm")}
             </button>
           </CalcGrid>
 
@@ -637,11 +643,11 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
           >
             <Info className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-ink-faint)]" />
             <div>
-              <strong className="text-[color:var(--glass-ink)]">
-                Application automatique.
-              </strong>{" "}
-              Le SPF Économie vérifie votre éligibilité 4× par an et notifie
-              automatiquement votre fournisseur — aucune démarche à effectuer.
+              {t.rich("tsDisclaimerAuto", {
+                strong: (c) => (
+                  <strong className="text-[color:var(--glass-ink)]">{c}</strong>
+                ),
+              })}
             </div>
           </div>
         </CalcCard>
@@ -670,10 +676,11 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
 
       {/* Footer : Mise à jour + sources */}
       <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-        Calculateur mis à jour le <strong>{lastUpdatedFr}</strong> · Tarifs{" "}
-        <strong>{Q_REFERENCE}</strong> · Sources officielles :{" "}
-        <strong>CREG</strong>, <strong>SPF Économie</strong>,{" "}
-        <strong>Moniteur belge</strong>.
+        {t.rich("tsFooter", {
+          date: lastUpdatedFr,
+          q: Q_REFERENCE,
+          strong: (c) => <strong>{c}</strong>,
+        })}
       </p>
     </div>
   );
@@ -694,6 +701,7 @@ function TarifSocialResultPanel({
   onExportPDF: () => void;
   exporting: boolean;
 }) {
+  const t = useTranslations("public.outils");
   const eligibilityColor = result.eligible ? "#22a06b" : "#a87b1a";
 
   return (
@@ -703,12 +711,12 @@ function TarifSocialResultPanel({
           className="text-[11px] font-bold uppercase tracking-[0.06em]"
           style={{ color: accent }}
         >
-          Résultat estimatif
+          {t("tsResultEyebrow")}
         </span>
         <span
           className="inline-flex items-center"
-          title={`Estimation indicative — barèmes CREG ${Q_REFERENCE}, plafonds AR 29/03/2012, liste SPF Économie 2026`}
-          aria-label={`Estimation indicative — barèmes CREG ${Q_REFERENCE}, plafonds AR 29/03/2012, liste SPF Économie 2026`}
+          title={t("tsResultInfoTitle", { q: Q_REFERENCE })}
+          aria-label={t("tsResultInfoTitle", { q: Q_REFERENCE })}
         >
           <Info
             className="size-4"
@@ -729,12 +737,12 @@ function TarifSocialResultPanel({
         {result.eligible ? (
           <>
             <CheckCircle2 className="size-3.5" />
-            Vous êtes éligible
+            {t("tsBadgeEligible")}
           </>
         ) : (
           <>
             <Info className="size-3.5" />
-            Pas d&apos;éligibilité auto
+            {t("tsBadgeNotEligible")}
           </>
         )}
       </div>
@@ -751,10 +759,13 @@ function TarifSocialResultPanel({
           className="mt-1 text-[13px] font-semibold"
           style={{ color: "var(--glass-ink-soft)" }}
         >
-          {result.eligible ? "/ an d'économie estimée" : "/ an de gain théorique"}
+          {result.eligible ? t("tsGainEligibleLabel") : t("tsGainTheoriqueLabel")}
         </div>
         <div className="mt-1 text-[12px] text-[color:var(--glass-ink-faint)]">
-          ≈ <strong>{fmtEUR(result.gainMensuel)}</strong> / mois
+          {t.rich("tsGainMonthly", {
+            x: fmtEUR(result.gainMensuel),
+            strong: (c) => <strong>{c}</strong>,
+          })}
         </div>
       </div>
 
@@ -769,8 +780,7 @@ function TarifSocialResultPanel({
         >
           <div className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#22a06b]">
             <CheckCircle2 className="size-3" />
-            Motif{result.motifsEligibilite.length > 1 ? "s" : ""}{" "}
-            d&apos;éligibilité
+            {t("tsMotifsTitle", { count: result.motifsEligibilite.length })}
           </div>
           <ul className="space-y-1 text-[11.5px] leading-[1.5] text-[color:var(--glass-ink)]">
             {result.motifsEligibilite.map((m) => (
@@ -794,7 +804,7 @@ function TarifSocialResultPanel({
           }}
         >
           <div className="mb-1 flex items-center gap-1.5 font-bold">
-            <Info className="size-3.5" /> À noter
+            <Info className="size-3.5" /> {t("tsNotesTitle")}
           </div>
           <ul className="space-y-1">
             {result.notes.map((n, i) => (
@@ -813,14 +823,14 @@ function TarifSocialResultPanel({
           className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em]"
           style={{ color: "var(--glass-ink-faint)" }}
         >
-          Détail du calcul
+          {t("tsDetailTitle")}
         </div>
         <div className="flex flex-col gap-2">
           <div className="rounded-xl bg-[color:var(--glass-surface)] p-3">
             <div className="flex items-baseline justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-ink)]">
                 <Zap className="size-3.5" style={{ color: "#f59e0b" }} />
-                Électricité
+                {t("tsDetailElec")}
               </span>
               <span className="text-[14px] font-extrabold text-[color:var(--glass-ink)]">
                 {fmtEUR(result.gainElec)}
@@ -828,13 +838,13 @@ function TarifSocialResultPanel({
             </div>
             <div className="mt-1.5 flex flex-col gap-1">
               <ResultRow
-                label="plafond applicable"
-                value={`${fmtNumber(result.plafondElec)} kWh`}
+                label={t("tsDetailPlafond")}
+                value={t("tsDetailKwh", { x: fmtNumber(result.plafondElec) })}
               />
               {result.consoExcedentElec > 0 ? (
                 <ResultRow
-                  label="excédent (tarif standard)"
-                  value={`${fmtNumber(result.consoExcedentElec)} kWh`}
+                  label={t("tsDetailExcedent")}
+                  value={t("tsDetailKwh", { x: fmtNumber(result.consoExcedentElec) })}
                 />
               ) : null}
             </div>
@@ -844,7 +854,7 @@ function TarifSocialResultPanel({
             <div className="flex items-baseline justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-ink)]">
                 <Flame className="size-3.5" style={{ color: "#ef4444" }} />
-                Gaz naturel
+                {t("tsDetailGaz")}
               </span>
               <span className="text-[14px] font-extrabold text-[color:var(--glass-ink)]">
                 {fmtEUR(result.gainGaz)}
@@ -852,13 +862,13 @@ function TarifSocialResultPanel({
             </div>
             <div className="mt-1.5 flex flex-col gap-1">
               <ResultRow
-                label="plafond applicable"
-                value={`${fmtNumber(result.plafondGaz)} kWh`}
+                label={t("tsDetailPlafond")}
+                value={t("tsDetailKwh", { x: fmtNumber(result.plafondGaz) })}
               />
               {result.consoExcedentGaz > 0 ? (
                 <ResultRow
-                  label="excédent (tarif standard)"
-                  value={`${fmtNumber(result.consoExcedentGaz)} kWh`}
+                  label={t("tsDetailExcedent")}
+                  value={t("tsDetailKwh", { x: fmtNumber(result.consoExcedentGaz) })}
                 />
               ) : null}
             </div>
@@ -868,15 +878,15 @@ function TarifSocialResultPanel({
           <div className="rounded-xl bg-[color:var(--glass-surface)] p-3">
             <div className="flex flex-col gap-1">
               <ResultRow
-                label="coût au tarif standard"
+                label={t("tsDetailCoutStandard")}
                 value={fmtEUR(result.coutStandardTotal)}
               />
               <ResultRow
-                label="coût au tarif social"
+                label={t("tsDetailCoutSocial")}
                 value={fmtEUR(result.coutSocialTotal)}
               />
               <ResultRow
-                label="économie totale"
+                label={t("tsDetailEconomieTotale")}
                 value={fmtEUR(result.gainAnnuel)}
                 direction="plus"
                 emphasis
@@ -897,20 +907,12 @@ function TarifSocialResultPanel({
           }}
         >
           <div className="mb-1 flex items-center gap-1.5 font-bold text-[color:var(--glass-ink)]">
-            <Info className="size-3.5" /> Application automatique
+            <Info className="size-3.5" /> {t("tsEligibleBlockTitle")}
           </div>
           <ul className="list-inside list-disc space-y-1">
-            <li>
-              Le SPF Économie notifie votre fournisseur{" "}
-              <strong>tous les 3 mois</strong>.
-            </li>
-            <li>
-              Tarifs <strong>recalculés chaque trimestre</strong> par la CREG.
-            </li>
-            <li>
-              Au-delà des plafonds, le tarif standard s&apos;applique sur
-              l&apos;excédent uniquement.
-            </li>
+            <li>{t.rich("tsEligibleBlockItem1", { strong: (c) => <strong>{c}</strong> })}</li>
+            <li>{t.rich("tsEligibleBlockItem2", { strong: (c) => <strong>{c}</strong> })}</li>
+            <li>{t("tsEligibleBlockItem3")}</li>
           </ul>
         </div>
       ) : (
@@ -923,20 +925,12 @@ function TarifSocialResultPanel({
           }}
         >
           <div className="mb-1 flex items-center gap-1.5 font-bold">
-            <Info className="size-3.5" /> Autres aides possibles
+            <Info className="size-3.5" /> {t("tsNotEligibleBlockTitle")}
           </div>
           <ul className="list-inside list-disc space-y-1 text-[#1E3A8A]">
-            <li>
-              <strong>Prime énergie régionale</strong> (Wallonie / Bruxelles /
-              Flandre).
-            </li>
-            <li>
-              <strong>Fonds gaz et électricité</strong> auprès de votre CPAS.
-            </li>
-            <li>
-              Allocation chauffage (mazout, gaz propane, pellets) selon
-              conditions.
-            </li>
+            <li>{t.rich("tsNotEligibleBlockItem1", { strong: (c) => <strong>{c}</strong> })}</li>
+            <li>{t.rich("tsNotEligibleBlockItem2", { strong: (c) => <strong>{c}</strong> })}</li>
+            <li>{t("tsNotEligibleBlockItem3")}</li>
           </ul>
         </div>
       )}
@@ -954,7 +948,7 @@ function TarifSocialResultPanel({
         }}
       >
         <Download className="size-4" />
-        {exporting ? "Génération du PDF…" : "Télécharger le détail (PDF)"}
+        {exporting ? t("tsPdfExporting") : t("tsPdfDownload")}
       </button>
     </div>
   );
@@ -965,31 +959,34 @@ function TarifSocialResultPanel({
 /* ------------------------------------------------------------------ */
 
 function TarifSocialResultPlaceholder({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
   return (
     <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-center">
       <span
         className="text-[11px] font-bold uppercase tracking-[0.06em]"
         style={{ color: accent }}
       >
-        Résultat estimatif
+        {t("tsResultEyebrow")}
       </span>
       <div
         className="text-[15px] font-semibold leading-snug text-[color:var(--glass-ink-soft)]"
         style={{ maxWidth: 260 }}
       >
-        Cochez vos statuts éligibles, indiquez votre consommation, puis
-        cliquez sur <em>« Vérifier mon éligibilité »</em>.
+        {t.rich("tsPlaceholderInstruction", { em: (c) => <em>{c}</em> })}
       </div>
       <div className="mt-2 flex items-center gap-2 text-[11px] text-[color:var(--glass-ink-faint)]">
         <Zap className="size-3.5" />
-        <span>Électricité</span>
+        <span>{t("tsPlaceholderElec")}</span>
         <span>·</span>
         <Flame className="size-3.5" />
-        <span>Gaz naturel</span>
+        <span>{t("tsPlaceholderGaz")}</span>
       </div>
       <div className="mt-1 text-[10.5px] text-[color:var(--glass-ink-faint)]">
-        Tarifs CREG {Q_REFERENCE} · {fmtEUR(TARIFS_2026.ELEC_SOCIAL, 5)}/kWh
-        élec · {fmtEUR(TARIFS_2026.GAZ_SOCIAL, 5)}/kWh gaz
+        {t("tsPlaceholderTarifs", {
+          q: Q_REFERENCE,
+          x: fmtEUR(TARIFS_2026.ELEC_SOCIAL, 5),
+          y: fmtEUR(TARIFS_2026.GAZ_SOCIAL, 5),
+        })}
       </div>
     </div>
   );

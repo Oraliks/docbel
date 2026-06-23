@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getTrainingBySlug, seatsLeft } from "@/lib/formations/queries";
 import { getFormationsViewer } from "@/lib/formations/page-auth";
 import { canViewTraining } from "@/lib/formations/access";
@@ -17,11 +18,12 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const t = await getTrainingBySlug(slug);
-  if (!t) return { title: "Formation introuvable — Docbel" };
+  const tr = await getTranslations("public.formations");
+  const training = await getTrainingBySlug(slug);
+  if (!training) return { title: tr("metaTrainingNotFound") };
   return {
-    title: `${t.title} — Docbel Formations`,
-    description: t.shortDescription ?? undefined,
+    title: tr("metaTrainingTitle", { title: training.title }),
+    description: training.shortDescription ?? undefined,
   };
 }
 

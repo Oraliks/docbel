@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Search, Sparkles, Loader2, ArrowRight, MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GLASS_INPUT } from "@/lib/glass-classes";
@@ -24,6 +25,7 @@ interface IntentResponse {
 /// Affiche les suggestions de parcours et un éventuel message de l'IA.
 export function IntentSearch() {
   const router = useRouter();
+  const t = useTranslations("public.dossier");
   const [query, setQuery] = useState("");
   const [pending, startTransition] = useTransition();
   const [response, setResponse] = useState<IntentResponse | null>(null);
@@ -43,9 +45,9 @@ export function IntentSearch() {
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           if (res.status === 429) {
-            setError("Trop de recherches — patientez quelques secondes.");
+            setError(t("intentRateLimited"));
           } else {
-            setError(data.error || "Impossible de traiter la recherche.");
+            setError(data.error || t("intentError"));
           }
           setResponse(null);
           return;
@@ -53,7 +55,7 @@ export function IntentSearch() {
         const data = (await res.json()) as IntentResponse;
         setResponse(data);
       } catch {
-        setError("Erreur réseau.");
+        setError(t("networkError"));
         setResponse(null);
       }
     });
@@ -73,8 +75,8 @@ export function IntentSearch() {
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Décrivez votre situation en quelques mots (« j'ai perdu mon emploi », « intempéries »…)"
-          aria-label="Décrivez votre situation"
+          placeholder={t("intentPlaceholder")}
+          aria-label={t("intentAriaLabel")}
           className={`${GLASS_INPUT} h-14 w-full rounded-3xl border-0 pr-32 pl-12 text-[15px]`}
         />
         <div className="absolute top-1/2 right-2 -translate-y-1/2 flex items-center gap-1.5">
@@ -83,7 +85,7 @@ export function IntentSearch() {
               type="button"
               onClick={clear}
               className="p-1 text-[color:var(--glass-ink-faint)] hover:text-[color:var(--glass-ink)] focus-visible:outline-none"
-              aria-label="Effacer"
+              aria-label={t("clear")}
             >
               <X className="size-4" />
             </button>
@@ -95,7 +97,7 @@ export function IntentSearch() {
             className="rounded-2xl"
           >
             {pending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-            Identifier
+            {t("intentIdentify")}
           </Button>
         </div>
       </form>
@@ -113,7 +115,7 @@ export function IntentSearch() {
               <MessageCircle className="size-4 mt-0.5 flex-shrink-0 text-[color:var(--glass-ink-soft)]" />
               <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
                 <span className="font-medium text-[color:var(--glass-ink)]">
-                  L&apos;assistant suggère :
+                  {t("intentAssistantSuggests")}
                 </span>{" "}
                 {response.aiMessage}
               </p>
@@ -122,13 +124,12 @@ export function IntentSearch() {
 
           {response.suggestions.length === 0 ? (
             <p className="text-sm text-[color:var(--glass-ink-soft)]">
-              Aucun parcours évident pour cette requête. Essayez d&apos;autres mots-clés
-              ou parcourez les événements de vie ci-dessous.
+              {t("intentNoSuggestions")}
             </p>
           ) : (
             <>
               <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
-                Parcours suggérés
+                {t("intentSuggestedFlows")}
               </p>
               <div className="space-y-1.5">
                 {response.suggestions.slice(0, 3).map((s, idx) => (
@@ -161,8 +162,7 @@ export function IntentSearch() {
           )}
 
           <p className="text-[11px] italic text-[color:var(--glass-ink-faint)]">
-            Cette suggestion n&apos;engage pas l&apos;administration — vérifiez toujours
-            auprès de l&apos;organisme officiel concerné.
+            {t("intentDisclaimer")}
           </p>
         </div>
       )}

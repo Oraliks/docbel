@@ -15,6 +15,7 @@
  */
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Briefcase,
   HardHat,
@@ -117,6 +118,7 @@ function SegmentedToggle<T extends string>({
 /* ------------------------------------------------------------------ */
 
 export function CalcPecule({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
   const [statut, setStatut] = useState<Statut>("employe");
   const [brutMensuel, setBrutMensuel] = useState("");
   const [moisPrestes, setMoisPrestes] = useState("12");
@@ -148,7 +150,7 @@ export function CalcPecule({ accent }: { accent: string }) {
     const taux = parseNum(tauxOccupation);
 
     if (!Number.isFinite(brut)) {
-      setError("Indiquez un brut mensuel valide.");
+      setError(t("pecErrorBrut"));
       return;
     }
 
@@ -208,7 +210,7 @@ export function CalcPecule({ accent }: { accent: string }) {
         hour: "2-digit",
         minute: "2-digit",
       });
-      doc.text(`Généré le ${dateStr} à ${timeStr}`, pageWidth - margin, y, {
+      doc.text(t("pecPdfGenerated", { date: dateStr, time: timeStr }), pageWidth - margin, y, {
         align: "right",
       });
       y += 10;
@@ -218,9 +220,12 @@ export function CalcPecule({ accent }: { accent: string }) {
       doc.setFont("", "bold");
       doc.setTextColor(0, 0, 0);
       doc.text(
-        `Estimation Pécule de vacances 2026 — régime ${
-          result.statut === "employe" ? "employé" : "ouvrier ONVA"
-        }`,
+        t("pecPdfTitle", {
+          regime:
+            result.statut === "employe"
+              ? t("pecPdfRegimeEmploye")
+              : t("pecPdfRegimeOuvrier"),
+        }),
         margin,
         y,
       );
@@ -230,7 +235,7 @@ export function CalcPecule({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Paramètres saisis", margin, y);
+      doc.text(t("pecPdfParams"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -238,20 +243,25 @@ export function CalcPecule({ accent }: { accent: string }) {
       doc.setTextColor(0, 0, 0);
 
       const rows: [string, string][] = [
-        ["Statut", statut === "employe" ? "Employé(e) privé" : "Ouvrier (ONVA)"],
-        ["Brut mensuel", fmtEUR(parseNum(brutMensuel) || 0)],
-        ["Mois prestés en 2025", moisPrestes || "12"],
         [
-          "Temps de travail",
+          t("pecPdfRowStatut"),
+          statut === "employe"
+            ? t("pecPdfStatutEmploye")
+            : t("pecPdfStatutOuvrier"),
+        ],
+        [t("pecPdfRowBrut"), fmtEUR(parseNum(brutMensuel) || 0)],
+        [t("pecPdfRowMois"), moisPrestes || "12"],
+        [
+          t("pecPdfRowTemps"),
           tempsPartiel === "oui"
-            ? `Temps partiel (${tauxOccupation || "—"} %)`
-            : "Temps plein",
+            ? t("pecPdfTempsPartiel", { taux: tauxOccupation || "—" })
+            : t("pecPdfTempsPlein"),
         ],
       ];
       if (statut === "employe") {
         rows.push([
-          "1re année après études (< 25 ans)",
-          jeune === "oui" ? "Oui" : "Non",
+          t("pecPdfRowJeune"),
+          jeune === "oui" ? t("pecPdfOui") : t("pecPdfNon"),
         ]);
       }
 
@@ -278,7 +288,7 @@ export function CalcPecule({ accent }: { accent: string }) {
       doc.setFontSize(10);
       doc.setFont("", "bold");
       doc.setTextColor(90, 42, 140);
-      doc.text("PÉCULE TOTAL BRUT", margin + 4, y + 7);
+      doc.text(t("pecPdfTotalLabel"), margin + 4, y + 7);
 
       doc.setFontSize(22);
       doc.setTextColor(0, 0, 0);
@@ -288,11 +298,13 @@ export function CalcPecule({ accent }: { accent: string }) {
       doc.setFont("", "normal");
       doc.setTextColor(100, 100, 100);
       doc.text(
-        `≈ ${fmtEUR(result.totalNetEstime)} net estimé · versé ${
-          result.statut === "ouvrier"
-            ? "par l'ONVA en mai/juin"
-            : "par l'employeur en juin"
-        }`,
+        t("pecPdfTotalSub", {
+          net: fmtEUR(result.totalNetEstime),
+          versement:
+            result.statut === "ouvrier"
+              ? t("pecPdfVersementOnva")
+              : t("pecPdfVersementEmploye"),
+        }),
         margin + 4,
         y + 24,
       );
@@ -302,44 +314,46 @@ export function CalcPecule({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Détail du calcul", margin, y);
+      doc.text(t("pecDetailTitle"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
       doc.setFont("", "normal");
       doc.setTextColor(0, 0, 0);
 
-      const detail: [string, string][] = [
-        ["Pécule simple brut", fmtEUR(result.peculeSimpleBrut)],
-        ["Pécule simple net (estimé)", fmtEUR(result.peculeSimpleNetEstime)],
-        ["Double pécule brut", fmtEUR(result.doublePeculeBrut)],
-        ["Double pécule net (estimé)", fmtEUR(result.doublePeculeNetEstime)],
-        ["Total brut", fmtEUR(result.totalBrut)],
-        ["Total net estimé", fmtEUR(result.totalNetEstime)],
+      const detail: [string, string, boolean?][] = [
+        [t("pecRowSimpleBrut"), fmtEUR(result.peculeSimpleBrut)],
+        [t("pecPdfRowSimpleNet"), fmtEUR(result.peculeSimpleNetEstime)],
+        [t("pecRowDoubleBrut"), fmtEUR(result.doublePeculeBrut)],
+        [t("pecPdfRowDoubleNet"), fmtEUR(result.doublePeculeNetEstime)],
+        [t("pecRowTotalBrut"), fmtEUR(result.totalBrut), true],
+        [t("pecRowTotalNet"), fmtEUR(result.totalNetEstime), true],
       ];
 
       if (result.statut === "employe") {
         detail.push([
-          "Précompte spécial double pécule",
+          t("pecPdfRowPrecompte"),
           fmtPct(result.tauxPrecompteAppliquePourcent, 2),
         ]);
       } else {
         detail.push([
-          "Retenue ONVA totale",
-          `${fmtPct(result.tauxPrecompteAppliquePourcent, 2)} (ONSS 13,07 + solidarité 1 % + précompte)`,
+          t("pecPdfRowRetenueOnva"),
+          t("pecPdfRetenueOnvaValue", {
+            taux: fmtPct(result.tauxPrecompteAppliquePourcent, 2),
+          }),
         ]);
         detail.push([
-          "Coefficient de majoration ONVA",
+          t("pecPdfRowCoefOnva"),
           ONVA_COEF_MAJORATION.toLocaleString("fr-BE"),
         ]);
         detail.push([
-          "Taux ONVA global",
+          t("pecPdfRowTauxOnva"),
           fmtPct(ONVA_TAUX_TOTAL * 100, 2),
         ]);
       }
 
-      detail.forEach(([k, v], idx) => {
-        const isTotal = k === "Total brut" || k === "Total net estimé";
+      detail.forEach(([k, v, isTotalFlag]) => {
+        const isTotal = Boolean(isTotalFlag);
         if (isTotal) {
           doc.setDrawColor(220, 220, 220);
           doc.line(margin, y - 1, pageWidth - margin, y - 1);
@@ -374,11 +388,11 @@ export function CalcPecule({ accent }: { accent: string }) {
         doc.setFontSize(9.5);
         doc.setFont("", "bold");
         doc.setTextColor(30, 64, 175);
-        doc.text("Vacances-jeunes ONEM", margin + 4, y + 6);
+        doc.text(t("pecPdfJeunesTitle"), margin + 4, y + 6);
         doc.setFont("", "normal");
         doc.setTextColor(30, 58, 138);
         const infoText = doc.splitTextToSize(
-          "En tant que jeune travailleur en 1re année après études (< 25 ans), l'ONEM peut compléter votre pécule (jusqu'à 4 semaines à 65 % du salaire plafonné). Demande à introduire via le formulaire C103, à transmettre à l'ONEM avant fin février 2026.",
+          t("pecPdfJeunesText"),
           pageWidth - margin * 2 - 8,
         );
         doc.text(infoText, margin + 4, y + 12);
@@ -394,7 +408,7 @@ export function CalcPecule({ accent }: { accent: string }) {
       doc.setFont("", "italic");
       doc.setTextColor(120, 120, 120);
       const footer = doc.splitTextToSize(
-        "Estimation indicative — chiffres 2026 conformes au barème SPF Finances « pécule de vacances et allocations exceptionnelles » (Annexe III AR/CIR 92, points 53-55), aux taux ONVA officiels (15,38 % du brut majoré 1,08) et à l'ONSS (13,07 %). Régularisation finale via la fiche de paie (employé) ou le décompte ONVA officiel (ouvrier).",
+        t("pecPdfFooter"),
         pageWidth - margin * 2,
       );
       doc.text(footer, margin, y);
@@ -417,8 +431,8 @@ export function CalcPecule({ accent }: { accent: string }) {
 
   const brutHint =
     statut === "employe"
-      ? "Votre brut courant 2026 (avant retenues)."
-      : "Brut mensuel moyen 2025 (année de référence ONVA).";
+      ? t("pecBrutHintEmploye")
+      : t("pecBrutHintOuvrier");
 
   const lastUpdatedFr = new Date(LAST_UPDATED).toLocaleDateString("fr-BE", {
     day: "numeric",
@@ -445,10 +459,10 @@ export function CalcPecule({ accent }: { accent: string }) {
               </span>
               <div>
                 <h2 className="text-[16px] font-bold text-[color:var(--glass-ink)]">
-                  Pécule de vacances
+                  {t("pecTitle")}
                 </h2>
                 <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
-                  Calculez votre pécule simple et double — Belgique 2026
+                  {t("pecSubtitle")}
                 </p>
               </div>
             </div>
@@ -461,10 +475,10 @@ export function CalcPecule({ accent }: { accent: string }) {
                 background: "var(--glass-surface)",
                 color: "var(--glass-ink-soft)",
               }}
-              title="Réinitialiser le formulaire"
+              title={t("pecResetFormTitle")}
             >
               <RotateCcw className="size-3.5" />
-              Réinitialiser
+              {t("pecReset")}
             </button>
           </div>
 
@@ -480,7 +494,7 @@ export function CalcPecule({ accent }: { accent: string }) {
 
           {/* Toggle Statut (employé / ouvrier) */}
           <SegmentedToggle<Statut>
-            label="Statut"
+            label={t("pecStatut")}
             value={statut}
             onChange={(v) => {
               setStatut(v);
@@ -489,12 +503,12 @@ export function CalcPecule({ accent }: { accent: string }) {
             options={[
               {
                 value: "employe",
-                label: "Employé(e)",
+                label: t("pecStatutEmploye"),
                 icon: <Briefcase className="size-3.5" />,
               },
               {
                 value: "ouvrier",
-                label: "Ouvrier",
+                label: t("pecStatutOuvrier"),
                 icon: <HardHat className="size-3.5" />,
               },
             ]}
@@ -505,19 +519,19 @@ export function CalcPecule({ accent }: { accent: string }) {
           <CalcGrid cols={2}>
             <CalcField
               id="pecule-brut"
-              label="Salaire mensuel brut"
+              label={t("pecBrutLabel")}
               hint={brutHint}
               value={brutMensuel}
               onChange={setBrutMensuel}
-              placeholder="ex : 3000"
+              placeholder={t("pecBrutPlaceholder")}
               suffix="€"
               min={100}
               max={50000}
             />
             <CalcField
               id="pecule-mois"
-              label="Mois prestés en 2025"
-              hint="De 0 à 12. Maladie, congé maternité et chômage temporaire comptent comme prestés."
+              label={t("pecMoisLabel")}
+              hint={t("pecMoisHint")}
               value={moisPrestes}
               onChange={setMoisPrestes}
               placeholder="12"
@@ -530,8 +544,8 @@ export function CalcPecule({ accent }: { accent: string }) {
           {/* Temps partiel + (taux si oui) */}
           <CalcGrid cols={2}>
             <YesNoToggle
-              label="Temps partiel ?"
-              hint="Mi-temps, 4/5e, etc."
+              label={t("pecTempsPartielLabel")}
+              hint={t("pecTempsPartielHint")}
               value={tempsPartiel}
               onChange={setTempsPartiel}
               accent={accent}
@@ -539,8 +553,8 @@ export function CalcPecule({ accent }: { accent: string }) {
             {tempsPartiel === "oui" ? (
               <CalcField
                 id="pecule-taux"
-                label="Taux d'occupation"
-                hint="Ex : 80 pour un 4/5e, 50 pour un mi-temps."
+                label={t("pecTauxLabel")}
+                hint={t("pecTauxHint")}
                 value={tauxOccupation}
                 onChange={setTauxOccupation}
                 placeholder="80"
@@ -557,8 +571,8 @@ export function CalcPecule({ accent }: { accent: string }) {
           {/* Pécule jeunes (uniquement pour employés) */}
           {statut === "employe" ? (
             <YesNoToggle
-              label="Première année après vos études ?"
-              hint="Si oui et < 25 ans : vacances-jeunes ONEM possibles (info dans le résultat)."
+              label={t("pecJeuneLabel")}
+              hint={t("pecJeuneHint")}
               value={jeune}
               onChange={setJeune}
               accent={accent}
@@ -570,7 +584,7 @@ export function CalcPecule({ accent }: { accent: string }) {
           {/* Boutons : Calculer + Réinitialiser */}
           <CalcGrid cols={2}>
             <CalcSubmitButton accent={accent} onClick={onCalc}>
-              Calculer le pécule
+              {t("pecCalcButton")}
             </CalcSubmitButton>
             <button
               type="button"
@@ -583,7 +597,7 @@ export function CalcPecule({ accent }: { accent: string }) {
               }}
             >
               <RotateCcw className="size-4" />
-              Réinitialiser le formulaire
+              {t("pecResetForm")}
             </button>
           </CalcGrid>
 
@@ -598,11 +612,13 @@ export function CalcPecule({ accent }: { accent: string }) {
           >
             <Info className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-ink-faint)]" />
             <div>
-              <strong className="text-[color:var(--glass-ink)]">
-                Simulation indicative.
-              </strong>{" "}
-              Le pécule réel dépend de votre fiche de paie (employé) ou du
-              décompte ONVA officiel (ouvrier).
+              {t.rich("pecDisclaimer", {
+                strong: (chunks) => (
+                  <strong className="text-[color:var(--glass-ink)]">
+                    {chunks}
+                  </strong>
+                ),
+              })}
             </div>
           </div>
         </CalcCard>
@@ -631,8 +647,10 @@ export function CalcPecule({ accent }: { accent: string }) {
 
       {/* Footer : Mise à jour + sources */}
       <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-        Calculateur mis à jour le <strong>{lastUpdatedFr}</strong> · Données
-        2026 · Sources officielles : ONVA, SPF Finances et ONSS.
+        {t.rich("pecFooter", {
+          date: lastUpdatedFr,
+          strong: (chunks) => <strong>{chunks}</strong>,
+        })}
       </p>
     </div>
   );
@@ -653,12 +671,15 @@ function PeculeResultPanel({
   onExportPDF: () => void;
   exporting: boolean;
 }) {
+  const t = useTranslations("public.outils");
   const regimeLabel =
-    result.statut === "employe" ? "Régime employé" : "Régime ONVA (ouvrier)";
+    result.statut === "employe"
+      ? t("pecRegimeEmploye")
+      : t("pecRegimeOnva");
   const versementLabel =
     result.statut === "employe"
-      ? "versé par l'employeur en juin"
-      : "versé par l'ONVA en mai/juin";
+      ? t("pecVersementEmploye")
+      : t("pecVersementOnva");
 
   return (
     <div className="flex flex-col gap-4">
@@ -667,12 +688,12 @@ function PeculeResultPanel({
           className="text-[11px] font-bold uppercase tracking-[0.06em]"
           style={{ color: accent }}
         >
-          Résultat estimatif
+          {t("pecResultEyebrow")}
         </span>
         <span
           className="inline-flex items-center"
-          title="Estimation indicative — barèmes SPF Finances et ONVA 2026"
-          aria-label="Estimation indicative — barèmes SPF Finances et ONVA 2026"
+          title={t("pecResultInfoTitle")}
+          aria-label={t("pecResultInfoTitle")}
         >
           <Info
             className="size-4"
@@ -692,7 +713,7 @@ function PeculeResultPanel({
           className="mt-1 text-[13px] font-semibold"
           style={{ color: "var(--glass-ink-soft)" }}
         >
-          ≈ {fmtEUR(result.totalNetEstime)} net estimé
+          {t("pecNetEstime", { net: fmtEUR(result.totalNetEstime) })}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <CalcBadge accent={accent}>{regimeLabel}</CalcBadge>
@@ -710,31 +731,31 @@ function PeculeResultPanel({
           className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em]"
           style={{ color: "var(--glass-ink-faint)" }}
         >
-          Détail du calcul
+          {t("pecDetailTitle")}
         </div>
         <div className="flex flex-col gap-1.5">
           <ResultRow
-            label="Pécule simple brut"
+            label={t("pecRowSimpleBrut")}
             value={fmtEUR(result.peculeSimpleBrut)}
           />
           <ResultRow
-            label="Pécule simple net estimé"
+            label={t("pecRowSimpleNet")}
             value={fmtEUR(result.peculeSimpleNetEstime)}
             direction="plus"
           />
           <ResultRow
-            label="Double pécule brut"
+            label={t("pecRowDoubleBrut")}
             value={fmtEUR(result.doublePeculeBrut)}
           />
           <ResultRow
-            label="Double pécule net estimé"
+            label={t("pecRowDoubleNet")}
             value={fmtEUR(result.doublePeculeNetEstime)}
             direction="plus"
             emphasis
           />
-          <ResultRow label="Total brut" value={fmtEUR(result.totalBrut)} />
+          <ResultRow label={t("pecRowTotalBrut")} value={fmtEUR(result.totalBrut)} />
           <ResultRow
-            label="Total net estimé"
+            label={t("pecRowTotalNet")}
             value={fmtEUR(result.totalNetEstime)}
             emphasis
           />
@@ -752,14 +773,12 @@ function PeculeResultPanel({
           }}
         >
           <div className="mb-1 flex items-center gap-1.5 font-bold">
-            <Info className="size-3.5" /> Vacances-jeunes ONEM possible
+            <Info className="size-3.5" /> {t("pecJeunesTitle")}
           </div>
           <p className="text-[#1E3A8A]">
-            En tant que jeune travailleur (&lt; 25 ans) en 1re année après
-            études, l'ONEM peut compléter votre pécule (jusqu'à 4 semaines
-            à 65 % du salaire plafonné) si 2025 n'a pas suffi à constituer
-            un pécule complet. Demande via le formulaire <strong>C103</strong>,
-            à transmettre à l'ONEM avant fin février 2026.
+            {t.rich("pecJeunesText", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
           <a
             href="https://www.onem.be/citoyens/conges/avez-vous-droit-aux-vacances-jeunes-"
@@ -767,7 +786,7 @@ function PeculeResultPanel({
             rel="noopener noreferrer"
             className="mt-2 inline-flex items-center gap-1 text-[11.5px] font-semibold underline"
           >
-            En savoir plus sur onem.be
+            {t("pecJeunesLink")}
             <ExternalLink className="size-3" />
           </a>
         </div>
@@ -783,54 +802,53 @@ function PeculeResultPanel({
         }}
       >
         <div className="mb-1 flex items-center gap-1.5 font-bold text-[color:var(--glass-ink)]">
-          <Info className="size-3.5" /> À savoir
+          <Info className="size-3.5" /> {t("pecKnowTitle")}
         </div>
         <ul className="list-inside list-disc space-y-1">
           {result.statut === "employe" ? (
             <>
               <li>
-                Le <strong>pécule simple</strong> est intégré à votre salaire
-                de juin (employé) — pas un complément distinct.
+                {t.rich("pecKnowEmployeSimple", {
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </li>
               <li>
-                Le <strong>double pécule</strong> (
-                {fmtPct(TAUX_DOUBLE_PECULE_EMPLOYE * 100, 0)} du brut) se
-                décompose en 85 % « légal » (soumis ONSS 13,07 %) + 7 %
-                « complément » (sans ONSS), puis suit le barème SPF
-                « pécule de vacances » 11 tranches —{" "}
-                <strong>
-                  {fmtPct(result.tauxPrecompteAppliquePourcent, 2)}
-                </strong>{" "}
-                ici.
+                {t.rich("pecKnowEmployeDouble", {
+                  tauxDouble: fmtPct(TAUX_DOUBLE_PECULE_EMPLOYE * 100, 0),
+                  taux: fmtPct(result.tauxPrecompteAppliquePourcent, 2),
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </li>
               <li>
-                Les <strong>jours assimilés</strong> (maladie, chômage
-                temporaire, congé maternité) comptent comme prestés.
+                {t.rich("pecKnowEmployeAssimiles", {
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </li>
             </>
           ) : (
             <>
               <li>
-                L'<strong>ONVA</strong> verse en mai/juin{" "}
-                <strong>{fmtPct(ONVA_TAUX_TOTAL * 100, 2)}</strong> du brut
-                annuel majoré ({ONVA_COEF_MAJORATION.toLocaleString("fr-BE")}{" "}
-                ×).
+                {t.rich("pecKnowOuvrierOnva", {
+                  taux: fmtPct(ONVA_TAUX_TOTAL * 100, 2),
+                  coef: ONVA_COEF_MAJORATION.toLocaleString("fr-BE"),
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </li>
               <li>
-                Retenue totale :{" "}
-                <strong>
-                  {fmtPct(result.tauxPrecompteAppliquePourcent, 2)}
-                </strong>{" "}
-                = ONSS{" "}
-                {fmtPct(ONSS_SPECIALE_DOUBLE_PECULE * 100, 2)} + solidarité{" "}
-                {fmtPct(ONVA_COTISATION_SOLIDARITE * 100, 0)} + précompte{" "}
-                {fmtPct(ONVA_PRECOMPTE_BAS * 100, 2)} si pécule ≤{" "}
-                {fmtEUR(ONVA_SEUIL_PRECOMPTE, 0)} sinon{" "}
-                {fmtPct(ONVA_PRECOMPTE_HAUT * 100, 2)}.
+                {t.rich("pecKnowOuvrierRetenue", {
+                  total: fmtPct(result.tauxPrecompteAppliquePourcent, 2),
+                  onss: fmtPct(ONSS_SPECIALE_DOUBLE_PECULE * 100, 2),
+                  solidarite: fmtPct(ONVA_COTISATION_SOLIDARITE * 100, 0),
+                  precompteBas: fmtPct(ONVA_PRECOMPTE_BAS * 100, 2),
+                  seuil: fmtEUR(ONVA_SEUIL_PRECOMPTE, 0),
+                  precompteHaut: fmtPct(ONVA_PRECOMPTE_HAUT * 100, 2),
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </li>
               <li>
-                Les <strong>jours assimilés</strong> (maladie, congé
-                maternité) comptent comme prestés.
+                {t.rich("pecKnowOuvrierAssimiles", {
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </li>
             </>
           )}
@@ -849,7 +867,7 @@ function PeculeResultPanel({
         }}
       >
         <Download className="size-4" />
-        {exporting ? "Génération du PDF…" : "Télécharger le détail (PDF)"}
+        {exporting ? t("pecPdfGenerating") : t("pecPdfDownload")}
       </button>
     </div>
   );
@@ -860,20 +878,22 @@ function PeculeResultPanel({
 /* ------------------------------------------------------------------ */
 
 function PeculeResultPlaceholder({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
   return (
     <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 text-center">
       <span
         className="text-[11px] font-bold uppercase tracking-[0.06em]"
         style={{ color: accent }}
       >
-        Résultat estimatif
+        {t("pecResultEyebrow")}
       </span>
       <div
         className="text-[15px] font-semibold leading-snug text-[color:var(--glass-ink-soft)]"
         style={{ maxWidth: 260 }}
       >
-        Indiquez votre statut, votre brut mensuel et les mois prestés en 2025,
-        puis cliquez sur <em>« Calculer le pécule »</em>.
+        {t.rich("pecPlaceholder", {
+          em: (chunks) => <em>{chunks}</em>,
+        })}
       </div>
       <Info
         className="mt-1 size-5"

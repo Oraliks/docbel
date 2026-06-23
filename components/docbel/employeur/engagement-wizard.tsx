@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -83,10 +84,10 @@ const INITIAL: FormState = {
   telework: false,
 };
 
-const TRISTATE: Option[] = [
-  { value: "yes", label: "Oui" },
-  { value: "no", label: "Non" },
-  { value: "unknown", label: "Je ne sais pas" },
+const TRISTATE: { value: string; labelKey: string }[] = [
+  { value: "yes", labelKey: "wizTristateYes" },
+  { value: "no", labelKey: "wizTristateNo" },
+  { value: "unknown", labelKey: "wizTristateUnknown" },
 ];
 
 function num(s: string): number | null {
@@ -127,9 +128,10 @@ function SelectField({
 }: {
   value: string;
   onChange: (v: string) => void;
-  options: readonly Option[];
+  options: readonly (Option | { value: string; labelKey: string })[];
   placeholder?: string;
 }) {
+  const t = useTranslations("public.pro");
   return (
     <Select value={value} onValueChange={(v: string | null) => v && onChange(v)}>
       <SelectTrigger>
@@ -139,7 +141,7 @@ function SelectField({
         {placeholder ? <SelectItem value={CHOOSE}>{placeholder}</SelectItem> : null}
         {options.map((o) => (
           <SelectItem key={o.value} value={o.value}>
-            {o.label}
+            {"labelKey" in o ? t(o.labelKey as Parameters<typeof t>[0]) : o.label}
           </SelectItem>
         ))}
       </SelectContent>
@@ -148,6 +150,7 @@ function SelectField({
 }
 
 export function EngagementWizard() {
+  const t = useTranslations("public.pro");
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
   const [form, setForm] = useState<FormState>(INITIAL);
@@ -166,11 +169,11 @@ export function EngagementWizard() {
 
   async function submit() {
     if (form.workerType === CHOOSE) {
-      toast.error("Sélectionnez un type de travailleur.");
+      toast.error(t("wizErrWorkerType"));
       return;
     }
     if (form.contractType === CHOOSE) {
-      toast.error("Sélectionnez un type de contrat.");
+      toast.error(t("wizErrContractType"));
       return;
     }
 
@@ -213,10 +216,10 @@ export function EngagementWizard() {
         body: JSON.stringify(payload),
       });
       const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
-      if (!res.ok || !data.id) throw new Error(data.error ?? "Échec");
+      if (!res.ok || !data.id) throw new Error(data.error ?? t("wizErrShort"));
       router.push(`/employeur/dossiers/${data.id}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Échec de la création du dossier.");
+      toast.error(e instanceof Error ? e.message : t("wizErrCreate"));
       setSubmitting(false);
     }
   }
@@ -225,37 +228,37 @@ export function EngagementWizard() {
     <div className="space-y-4">
       <ol className="flex items-center gap-2 text-sm">
         <li className={step === 1 ? "font-semibold text-foreground" : "text-muted-foreground"}>
-          1. Profil employeur
+          {t("wizStep1")}
         </li>
         <span className="text-muted-foreground">›</span>
         <li className={step === 2 ? "font-semibold text-foreground" : "text-muted-foreground"}>
-          2. Travailleur envisagé
+          {t("wizStep2")}
         </li>
       </ol>
 
       {step === 1 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Votre organisation</CardTitle>
+            <CardTitle>{t("wizOrgTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <Field label="Nom de l'organisation" htmlFor="org">
+            <Field label={t("wizOrgName")} htmlFor="org">
               <Input
                 id="org"
                 value={form.organisationName}
                 onChange={(e) => set("organisationName", e.target.value)}
-                placeholder="Ex. Boulangerie Dupont SRL"
+                placeholder={t("wizOrgNamePlaceholder")}
               />
             </Field>
-            <Field label="Forme juridique">
+            <Field label={t("wizLegalForm")}>
               <SelectField
                 value={form.legalForm}
                 onChange={(v) => set("legalForm", v)}
                 options={LEGAL_FORMS}
-                placeholder="À préciser"
+                placeholder={t("wizToPrecise")}
               />
             </Field>
-            <Field label="Numéro BCE" htmlFor="bce" help="Numéro d'entreprise (10 chiffres).">
+            <Field label={t("wizBce")} htmlFor="bce" help={t("wizBceHelp")}>
               <Input
                 id="bce"
                 value={form.enterpriseNumber}
@@ -263,17 +266,17 @@ export function EngagementWizard() {
                 placeholder="0123.456.789"
               />
             </Field>
-            <Field label="Région principale">
+            <Field label={t("wizRegion")}>
               <SelectField
                 value={form.region}
                 onChange={(v) => set("region", v)}
                 options={REGIONS}
-                placeholder="À préciser"
+                placeholder={t("wizToPrecise")}
               />
             </Field>
             <Field
-              label="Avez-vous déjà du personnel ?"
-              help="Détermine s'il s'agit d'un premier engagement."
+              label={t("wizHasEmployees")}
+              help={t("wizHasEmployeesHelp")}
             >
               <SelectField
                 value={form.hasEmployees}
@@ -282,8 +285,8 @@ export function EngagementWizard() {
               />
             </Field>
             <Field
-              label="Avez-vous déjà un numéro ONSS employeur ?"
-              help="Sans numéro ONSS, une identification via WIDE peut être nécessaire."
+              label={t("wizHasOnss")}
+              help={t("wizHasOnssHelp")}
             >
               <SelectField
                 value={form.hasOnssNumber}
@@ -292,7 +295,7 @@ export function EngagementWizard() {
               />
             </Field>
             {form.hasOnssNumber === "yes" ? (
-              <Field label="Numéro ONSS" htmlFor="onss">
+              <Field label={t("wizOnssNumber")} htmlFor="onss">
                 <Input
                   id="onss"
                   value={form.onssNumber}
@@ -300,15 +303,15 @@ export function EngagementWizard() {
                 />
               </Field>
             ) : null}
-            <Field label="Secteur d'activité" htmlFor="sector">
+            <Field label={t("wizSector")} htmlFor="sector">
               <Input
                 id="sector"
                 value={form.sector}
                 onChange={(e) => set("sector", e.target.value)}
-                placeholder="Ex. Horeca, commerce, construction…"
+                placeholder={t("wizSectorPlaceholder")}
               />
             </Field>
-            <Field label="Code NACE (si connu)" htmlFor="nace">
+            <Field label={t("wizNace")} htmlFor="nace">
               <Input
                 id="nace"
                 value={form.naceCode}
@@ -318,40 +321,40 @@ export function EngagementWizard() {
           </CardContent>
           <CardFooter className="justify-end">
             <Button onClick={() => setStep(2)}>
-              Continuer <ArrowRight />
+              {t("wizContinue")} <ArrowRight />
             </Button>
           </CardFooter>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Le travailleur envisagé</CardTitle>
+            <CardTitle>{t("wizWorkerTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <Field label="Type de travailleur *">
+            <Field label={t("wizWorkerType")}>
               <SelectField
                 value={form.workerType}
                 onChange={(v) => set("workerType", v)}
                 options={WORKER_TYPES}
-                placeholder="— Choisir —"
+                placeholder={t("wizChoose")}
               />
             </Field>
-            <Field label="Type de contrat *">
+            <Field label={t("wizContractType")}>
               <SelectField
                 value={form.contractType}
                 onChange={(v) => set("contractType", v)}
                 options={CONTRACT_TYPES}
-                placeholder="— Choisir —"
+                placeholder={t("wizChoose")}
               />
             </Field>
-            <Field label="Fonction prévue" htmlFor="fct">
+            <Field label={t("wizFunction")} htmlFor="fct">
               <Input
                 id="fct"
                 value={form.functionTitle}
                 onChange={(e) => set("functionTitle", e.target.value)}
               />
             </Field>
-            <Field label="Date prévue d'entrée" htmlFor="start">
+            <Field label={t("wizStartDate")} htmlFor="start">
               <Input
                 id="start"
                 type="date"
@@ -359,7 +362,7 @@ export function EngagementWizard() {
                 onChange={(e) => set("plannedStartDate", e.target.value)}
               />
             </Field>
-            <Field label="Lieu de travail" htmlFor="wp">
+            <Field label={t("wizWorkplace")} htmlFor="wp">
               <Input
                 id="wp"
                 value={form.workplace}
@@ -367,39 +370,39 @@ export function EngagementWizard() {
               />
             </Field>
             <Field
-              label="Commission paritaire (si connue)"
+              label={t("wizCp")}
               htmlFor="cp"
-              help="Sans CP, le salaire minimum ne peut pas être vérifié précisément."
+              help={t("wizCpHelp")}
             >
               <Input
                 id="cp"
                 value={form.jointCommitteeNumber}
                 onChange={(e) => set("jointCommitteeNumber", e.target.value)}
-                placeholder="Ex. 200"
+                placeholder={t("wizCpPlaceholder")}
               />
             </Field>
-            <Field label="Salaire brut mensuel (€)" htmlFor="salary">
+            <Field label={t("wizGrossSalary")} htmlFor="salary">
               <Input
                 id="salary"
                 inputMode="decimal"
                 value={form.grossMonthlySalary}
                 onChange={(e) => set("grossMonthlySalary", e.target.value)}
-                placeholder="Ex. 2500"
+                placeholder={t("wizGrossSalaryPlaceholder")}
               />
             </Field>
-            <Field label="Heures / semaine" htmlFor="wh">
+            <Field label={t("wizWeeklyHours")} htmlFor="wh">
               <Input
                 id="wh"
                 inputMode="decimal"
                 value={form.weeklyHours}
                 onChange={(e) => set("weeklyHours", e.target.value)}
-                placeholder="Ex. 20"
+                placeholder={t("wizWeeklyHoursPlaceholder")}
               />
             </Field>
             <Field
-              label="Heures temps plein de référence"
+              label={t("wizRefHours")}
               htmlFor="ref"
-              help="Généralement 38h. En-dessous → temps partiel."
+              help={t("wizRefHoursHelp")}
             >
               <Input
                 id="ref"
@@ -410,7 +413,7 @@ export function EngagementWizard() {
             </Field>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label>Avantages prévus</Label>
+              <Label>{t("wizBenefits")}</Label>
               <div className="flex flex-wrap gap-x-4 gap-y-2">
                 {BENEFIT_TYPES.map((b) => (
                   <label key={b.value} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -425,22 +428,22 @@ export function EngagementWizard() {
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label>Conditions de travail</Label>
+              <Label>{t("wizConditions")}</Label>
               <div className="flex flex-wrap gap-x-4 gap-y-2">
                 {(
                   [
-                    ["nightWork", "Travail de nuit"],
-                    ["sundayWork", "Travail le dimanche"],
-                    ["saturdayWork", "Travail le samedi"],
-                    ["telework", "Télétravail"],
+                    ["nightWork", "wizCondNight"],
+                    ["sundayWork", "wizCondSunday"],
+                    ["saturdayWork", "wizCondSaturday"],
+                    ["telework", "wizCondTelework"],
                   ] as const
-                ).map(([key, label]) => (
+                ).map(([key, labelKey]) => (
                   <label key={key} className="flex cursor-pointer items-center gap-2 text-sm">
                     <Checkbox
                       checked={form[key]}
                       onCheckedChange={(c) => set(key, c === true)}
                     />
-                    {label}
+                    {t(labelKey as Parameters<typeof t>[0])}
                   </label>
                 ))}
               </div>
@@ -448,11 +451,11 @@ export function EngagementWizard() {
           </CardContent>
           <CardFooter className="justify-between">
             <Button variant="outline" onClick={() => setStep(1)} disabled={submitting}>
-              <ArrowLeft /> Retour
+              <ArrowLeft /> {t("wizBack")}
             </Button>
             <Button onClick={submit} disabled={submitting}>
               {submitting ? <Loader2 className="animate-spin" /> : null}
-              Générer mon dossier
+              {t("wizGenerate")}
             </Button>
           </CardFooter>
         </Card>

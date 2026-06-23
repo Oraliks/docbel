@@ -7,6 +7,7 @@
  */
 import Link from "next/link";
 import { ClipboardList, FileDown, BookOpen, ListChecks, FileText, AlertTriangle, Link2 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LegalDisclaimerBox } from "@/components/docbel/employeur/legal-disclaimer-box";
@@ -46,19 +47,20 @@ function BulletSection({
   );
 }
 
-export function ArticleView({
+export async function ArticleView({
   article,
   sources,
 }: {
   article: LibraryArticle;
   sources: Map<string, SourceInfo>;
 }) {
+  const t = await getTranslations("public.pro");
   return (
     <article className="space-y-5">
       <header className="space-y-2">
         <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-primary">
           <BookOpen className="size-3.5" aria-hidden />
-          Bibliothèque des démarches
+          {t("articleEyebrow")}
         </p>
         <h1 className="text-2xl font-semibold tracking-tight">{article.title}</h1>
         <p className="text-sm text-muted-foreground">{article.summary}</p>
@@ -66,22 +68,22 @@ export function ArticleView({
 
       <BulletSection
         icon={<BookOpen className="size-4 text-primary" aria-hidden />}
-        title="Ce que vous devez savoir"
+        title={t("articleWhatToKnow")}
         items={article.whatToKnow}
       />
       <BulletSection
         icon={<ListChecks className="size-4 text-primary" aria-hidden />}
-        title="À faire"
+        title={t("articleTodo")}
         items={article.todo}
       />
       <BulletSection
         icon={<FileText className="size-4 text-primary" aria-hidden />}
-        title="Documents nécessaires"
+        title={t("articleDocuments")}
         items={article.documents}
       />
       <BulletSection
         icon={<AlertTriangle className="size-4 text-primary" aria-hidden />}
-        title="Erreurs fréquentes"
+        title={t("articleCommonMistakes")}
         items={article.commonMistakes}
       />
 
@@ -90,7 +92,7 @@ export function ArticleView({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Link2 className="size-4 text-primary" aria-hidden />
-              Sources officielles
+              {t("articleOfficialSources")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -114,7 +116,7 @@ export function ArticleView({
       <div className="flex flex-wrap gap-3">
         {article.checklistCta ? (
           <Button render={<Link href="/employeur/nouveau-dossier" />}>
-            <ClipboardList /> Créer ma checklist
+            <ClipboardList /> {t("articleCreateChecklist")}
           </Button>
         ) : null}
         <Button
@@ -127,7 +129,7 @@ export function ArticleView({
             />
           }
         >
-          <FileDown /> Exporter PDF
+          <FileDown /> {t("articleExportPdf")}
         </Button>
       </div>
 

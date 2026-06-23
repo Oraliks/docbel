@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ArrowRight,
   ChevronRight,
@@ -133,12 +134,13 @@ function RowIconTile({ bundle, size = 36 }: { bundle: MonDossierBundle; size?: n
 
 /* ── Ligne « Accès direct » (icône + nom + sous-titre + chevron) ── */
 function AccessRow({ bundle }: { bundle: MonDossierBundle }) {
+  const t = useTranslations("public.dossier");
   // Organisme en sous-titre (façon mockup) ; repli sur le nombre de documents.
   const subtitle =
     bundle.organism?.trim() ||
     (bundle.itemCount > 0
-      ? `${bundle.itemCount} document${bundle.itemCount > 1 ? "s" : ""} à préparer`
-      : "Dossier guidé");
+      ? t("docsToPrepare", { count: bundle.itemCount })
+      : t("guidedDossier"));
 
   return (
     <Link
@@ -214,6 +216,7 @@ function HelpRow({
 
 /* ── Zone « Reprendre un dossier » : dernier dossier local + code BELDOC ── */
 function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
+  const t = useTranslations("public.dossier");
   const pct = run.total > 0 ? Math.round((run.completed / run.total) * 100) : 0;
   const hue = run.color || "var(--glass-accent-deep)";
   return (
@@ -238,11 +241,11 @@ function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
             {run.name}
           </span>
           <span className="text-[12px] text-[color:var(--glass-ink-faint)]">
-            {run.completed} sur {run.total} document{run.total > 1 ? "s" : ""}
+            {t("runProgress", { completed: run.completed, total: run.total })}
           </span>
         </span>
         <span className="inline-flex items-center gap-1 text-[12.5px] font-bold text-[color:var(--glass-accent-deep)]">
-          Reprendre
+          {t("resume")}
           <ArrowRight
             className="size-3.5 transition-transform group-hover:translate-x-0.5"
             aria-hidden
@@ -264,11 +267,11 @@ function ActiveRunCard({ run }: { run: ActiveBundleRun }) {
 
 type Sort = "populaires" | "az" | "categories" | "recents";
 
-const SORT_PILLS: { id: Sort; label: string }[] = [
-  { id: "populaires", label: "Populaires" },
-  { id: "az", label: "A-Z" },
-  { id: "categories", label: "Catégories" },
-  { id: "recents", label: "Récents" },
+const SORT_PILLS: { id: Sort; labelKey: string }[] = [
+  { id: "populaires", labelKey: "sortPopular" },
+  { id: "az", labelKey: "sortAz" },
+  { id: "categories", labelKey: "sortCategories" },
+  { id: "recents", labelKey: "sortRecent" },
 ];
 
 type Mode = "guide" | "direct";
@@ -277,25 +280,26 @@ type Mode = "guide" | "direct";
    qui clarifie ce qu'il fait (le toggle devient un vrai choix, pas un gadget). */
 const MODE_TABS: {
   id: Mode;
-  label: string;
-  sub: string;
+  labelKey: string;
+  subKey: string;
   icon: typeof Sparkles;
 }[] = [
   {
     id: "guide",
-    label: "Je me laisse guider",
-    sub: "Quelques questions simples",
+    labelKey: "modeGuideLabel",
+    subKey: "modeGuideSub",
     icon: Sparkles,
   },
   {
     id: "direct",
-    label: "J'accède directement",
-    sub: "Recherche & catégories",
+    labelKey: "modeDirectLabel",
+    subKey: "modeDirectSub",
     icon: FolderOpen,
   },
 ];
 
 export function MonDossierClient({ bundles, catalog, activeRun, situations }: Props) {
+  const t = useTranslations("public.dossier");
   const [mode, setMode] = useState<Mode>("guide");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("populaires");
@@ -482,23 +486,22 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
         </div>
 
         <nav
-          aria-label="Fil d'Ariane"
+          aria-label={t("breadcrumbLabel")}
           className="flex items-center gap-1.5 text-[11.5px] text-[color:var(--glass-ink-faint)]"
         >
           <Link href="/" className="transition hover:text-[color:var(--glass-ink)]">
-            Accueil
+            {t("breadcrumbHome")}
           </Link>
           <span aria-hidden>/</span>
           <span className="font-semibold text-[color:var(--glass-ink-soft)]">
-            Mon dossier
+            {t("breadcrumbCurrent")}
           </span>
         </nav>
         <h1 className="glass-display max-w-2xl text-[36px] font-semibold leading-[1.05] sm:text-[46px]">
-          Créer ou retrouver <em>le bon dossier</em>
+          {t.rich("monDossierTitle", { em: (chunks) => <em>{chunks}</em> })}
         </h1>
         <p className="max-w-2xl text-[14px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-          Laissez-vous guider en quelques questions simples, ou accédez
-          directement au dossier dont vous avez besoin.
+          {t("monDossierIntro")}
         </p>
       </header>
 
@@ -507,7 +510,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
         {/* ── Segmented control : choix RÉEL du parcours (pastille glissante) ── */}
         <div
           role="tablist"
-          aria-label="Choisissez votre parcours"
+          aria-label={t("chooseFlowLabel")}
           className="glass-surface-strong relative flex w-full max-w-2xl rounded-2xl p-1.5"
         >
           {/* Pastille glissante = onglet actif */}
@@ -524,17 +527,17 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
                 "0 10px 24px color-mix(in oklab, var(--glass-accent-deep) 38%, transparent), inset 0 1px 0 rgba(255,255,255,0.35)",
             }}
           />
-          {MODE_TABS.map((t) => {
-            const active = mode === t.id;
+          {MODE_TABS.map((tab) => {
+            const active = mode === tab.id;
             return (
               <button
-                key={t.id}
+                key={tab.id}
                 type="button"
                 role="tab"
-                id={`tab-${t.id}`}
+                id={`tab-${tab.id}`}
                 aria-selected={active}
-                aria-controls={`panel-${t.id}`}
-                onClick={() => setMode(t.id)}
+                aria-controls={`panel-${tab.id}`}
+                onClick={() => setMode(tab.id)}
                 className="relative z-10 flex flex-1 items-center justify-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors sm:justify-start sm:px-4"
               >
                 <span
@@ -547,14 +550,14 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
                   }}
                   aria-hidden
                 >
-                  <t.icon className="size-[18px]" />
+                  <tab.icon className="size-[18px]" />
                 </span>
                 <span className="min-w-0">
                   <span
                     className="block truncate text-[13px] font-bold leading-tight transition-colors sm:text-[13.5px]"
                     style={{ color: active ? "#fff" : "var(--glass-ink)" }}
                   >
-                    {t.label}
+                    {t(tab.labelKey as Parameters<typeof t>[0])}
                   </span>
                   <span
                     className="mt-0.5 hidden truncate text-[11.5px] leading-tight transition-colors sm:block"
@@ -564,7 +567,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
                         : "var(--glass-ink-faint)",
                     }}
                   >
-                    {t.sub}
+                    {t(tab.subKey as Parameters<typeof t>[0])}
                   </span>
                 </span>
               </button>
@@ -612,10 +615,10 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
             </span>
             <div className="min-w-0">
               <h2 className="text-[17px] font-semibold leading-tight text-[color:var(--glass-ink)]">
-                Accès direct
+                {t("directAccessTitle")}
               </h2>
               <p className="text-xs text-[color:var(--glass-ink-faint)]">
-                Recherchez ou parcourez vos dossiers par catégorie.
+                {t("directAccessSubtitle")}
               </p>
             </div>
           </div>
@@ -627,9 +630,9 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un dossier (ex. : chômage, RCC, insertion…)"
+              placeholder={t("searchPlaceholder")}
               className="search-glow glass-surface-strong h-12 w-full rounded-2xl border-0 py-3 pr-4 pl-11 text-[14px] text-[color:var(--glass-ink)] shadow-none placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none"
-              aria-label="Rechercher un dossier"
+              aria-label={t("searchAriaLabel")}
             />
           </div>
 
@@ -638,7 +641,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
             <div
               className="flex flex-wrap items-center gap-1.5"
               role="group"
-              aria-label="Trier les dossiers"
+              aria-label={t("sortGroupLabel")}
             >
               {SORT_PILLS.map((pill) => {
                 const active = sort === pill.id;
@@ -661,7 +664,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
                         : "var(--glass-ink-soft)",
                     }}
                   >
-                    {pill.label}
+                    {t(pill.labelKey as Parameters<typeof t>[0])}
                   </button>
                 );
               })}
@@ -671,7 +674,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
               type="button"
               onClick={() => setFiltersOpen((v) => !v)}
               aria-pressed={filtersOpen}
-              aria-label="Filtres par catégorie"
+              aria-label={t("filtersAriaLabel")}
               className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition"
               style={{
                 borderColor:
@@ -689,7 +692,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
               }}
             >
               <SlidersHorizontal className="size-3.5" />
-              Filtres
+              {t("filters")}
               {activeCats.size > 0 ? (
                 <span className="ml-0.5 rounded-full bg-[color:var(--glass-accent-deep)] px-1.5 text-[10px] font-bold text-white">
                   {activeCats.size}
@@ -733,7 +736,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
                   onClick={() => setActiveCats(new Set())}
                   className="ml-auto text-[12px] font-semibold text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
                 >
-                  Réinitialiser
+                  {t("reset")}
                 </button>
               ) : null}
             </div>
@@ -745,13 +748,13 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
               <SearchIcon className="size-6 text-[color:var(--glass-ink-faint)]" />
               <p className="text-[14px] font-semibold text-[color:var(--glass-ink)]">
                 {bundles.length === 0
-                  ? "Aucun dossier n'est encore publié."
-                  : "Aucun dossier ne correspond."}
+                  ? t("emptyNoneTitle")
+                  : t("emptyNoMatchTitle")}
               </p>
               <p className="max-w-sm text-[12.5px] text-[color:var(--glass-ink-soft)]">
                 {bundles.length === 0
-                  ? "Les dossiers ne sont pas encore disponibles. Réessayez dans un instant."
-                  : "Essayez un autre mot-clé, ou lancez le guide à gauche."}
+                  ? t("emptyNoneBody")
+                  : t("emptyNoMatchBody")}
               </p>
             </div>
           ) : isSearching ? (
@@ -800,8 +803,8 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
                 className="group inline-flex w-full items-center justify-between gap-1 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
               >
                 {collapsed && hiddenCount > 0
-                  ? `Voir toutes les catégories (${groups.length})`
-                  : "Voir moins"}
+                  ? t("seeAllCategories", { count: groups.length })
+                  : t("seeLess")}
                 <ArrowRight
                   className="size-4 transition-transform group-hover:translate-x-0.5"
                   aria-hidden
@@ -831,10 +834,10 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
             </span>
             <div className="min-w-0">
               <h2 className="text-[17px] font-semibold leading-tight text-[color:var(--glass-ink)]">
-                Besoin d&apos;aide ?
+                {t("helpTitle")}
               </h2>
               <p className="text-xs text-[color:var(--glass-ink-faint)]">
-                Trouvez rapidement une réponse.
+                {t("helpSubtitle")}
               </p>
             </div>
           </div>
@@ -843,7 +846,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
           {activeRun ? (
             <div className="flex flex-col gap-1.5">
               <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
-                Dossier en cours
+                {t("ongoingDossier")}
               </p>
               <ActiveRunCard run={activeRun} />
             </div>
@@ -853,22 +856,22 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
           <div className="flex flex-col gap-2">
             <HelpRow
               icon={HelpCircle}
-              label="Comment trouver le bon dossier ?"
+              label={t("helpFindRightDossier")}
               onClick={() => setMode("guide")}
             />
             <HelpRow
               icon={FileQuestion}
-              label="Je ne trouve pas mon dossier"
+              label={t("helpCannotFind")}
               href="/contact"
             />
             <HelpRow
               icon={RotateCcw}
-              label="Où en est ma demande ?"
+              label={t("helpWhereIsRequest")}
               href="/reprendre"
             />
             <HelpRow
               icon={Phone}
-              label="Comment joindre le support ?"
+              label={t("helpContactSupport")}
               href="/contact"
             />
           </div>
@@ -900,18 +903,17 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
             </span>
             <div className="relative min-w-0">
               <p className="text-[13.5px] font-bold text-[color:var(--glass-ink)]">
-                Conseil
+                {t("tipTitle")}
               </p>
               <p className="mt-0.5 text-[12.5px] leading-snug text-[color:var(--glass-ink-soft)]">
-                Préparez vos informations avant de commencer : vos identifiants,
-                documents et informations personnelles.
+                {t("tipBody")}
               </p>
             </div>
           </div>
 
           <p className="mt-auto inline-flex items-center gap-1.5 text-[11.5px] text-[color:var(--glass-ink-faint)]">
             <Lock className="size-3.5" aria-hidden />
-            Vos données restent confidentielles et ne sont jamais transmises.
+            {t("privacyNote")}
           </p>
           </aside>
         </div>

@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { InscriptionSplit } from "@/components/docbel/inscription-split";
 
-export const metadata: Metadata = {
-  title: "Inscription | DocBel",
-  description:
-    "Créez votre compte DocBel — partenaire (CPAS, syndicat, mutuelle, ONEM…) ou employeur.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.auth");
+  return {
+    title: t("signupMetaTitle"),
+    description: t("signupMetaDescription"),
+  };
+}
 
 export default async function InscriptionRoute() {
   const session = await auth.api

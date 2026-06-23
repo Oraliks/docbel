@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ExternalLink, CalendarDays, Clock } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { requireBookingActorAuth } from "@/lib/auth-check";
 import { listAccessibleTenants } from "@/lib/booking/access";
 import { CATEGORY_LABELS } from "@/lib/booking/status";
@@ -23,6 +24,7 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 
 export default async function BookingIndexPage() {
+  const t = await getTranslations("public.pro");
   const auth = await requireBookingActorAuth();
   if (!auth.isAuthorized) notFound();
 
@@ -49,10 +51,10 @@ export default async function BookingIndexPage() {
     <div className="flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          Plateforme de rendez-vous
+          {t("bookingTitle")}
         </h1>
         <p className="text-muted-foreground mt-1">
-          Gérez vos guichets, créneaux et réservations citoyens.
+          {t("bookingSubtitle")}
         </p>
       </div>
 
@@ -62,7 +64,7 @@ export default async function BookingIndexPage() {
             href="/partenaire/outils/fgtb-planning"
             className="underline underline-offset-4 hover:text-foreground"
           >
-            Outil planning FGTB (.ics)
+            {t("bookingFgtbPlanningTool")}
           </Link>
         </p>
       )}
@@ -70,9 +72,9 @@ export default async function BookingIndexPage() {
       {tenants.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16 text-center">
           <CalendarDays className="size-10 text-muted-foreground mb-4" />
-          <p className="font-medium">Aucun guichet configuré</p>
+          <p className="font-medium">{t("bookingEmptyTitle")}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Contactez un administrateur pour obtenir accès à un guichet.
+            {t("bookingEmptyBody")}
           </p>
         </div>
       ) : (
@@ -88,14 +90,14 @@ export default async function BookingIndexPage() {
                     </CardTitle>
                     {pending > 0 && (
                       <Badge className="shrink-0 bg-amber-100 text-amber-800 border-0">
-                        {pending} en attente
+                        {t("bookingPendingCount", { count: pending })}
                       </Badge>
                     )}
                   </div>
                   <CardDescription>
                     {CATEGORY_LABELS[tenant.category] ?? tenant.category}
                     {!tenant.active && (
-                      <span className="ml-2 text-destructive">(inactif)</span>
+                      <span className="ml-2 text-destructive">{t("bookingInactive")}</span>
                     )}
                   </CardDescription>
                 </CardHeader>
@@ -105,7 +107,7 @@ export default async function BookingIndexPage() {
                     className={buttonVariants({ className: "w-full" })}
                   >
                     <Clock className="size-4" />
-                    Ouvrir l&apos;agenda
+                    {t("bookingOpenAgenda")}
                   </Link>
                   <a
                     href={`/${tenant.slug}/rendez-vous`}
@@ -118,7 +120,7 @@ export default async function BookingIndexPage() {
                     })}
                   >
                     <ExternalLink className="size-4" />
-                    Voir la page publique
+                    {t("bookingViewPublicPage")}
                   </a>
                 </CardContent>
               </Card>

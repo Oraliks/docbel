@@ -1,20 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { KeyRound, ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { LifeEventCard } from "@/components/docbel/onboarding/life-event-card";
 import { IntentSearch } from "@/components/docbel/onboarding/intent-search";
 import { LIFE_EVENT_CATEGORIES } from "@/lib/bundles/types";
 
-export const metadata: Metadata = {
-  title: "Quelle est ma situation ? — beldoc",
-  description:
-    "Démarrez votre dossier administratif belge en partant d'une situation simple : « j'ai perdu mon emploi », « je deviens indépendant », etc.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.dossier");
+  return {
+    title: t("onboardingMetaTitle"),
+    description: t("onboardingMetaDescription"),
+  };
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
+  const t = await getTranslations("public.dossier");
   // Bundles flagués pour l'onboarding (showOnOnboarding = true)
   const featured = await prisma.documentBundle.findMany({
     where: { active: true, showOnOnboarding: true },
@@ -43,15 +47,13 @@ export default async function OnboardingPage() {
       {/* Hero */}
       <header className="flex flex-col gap-3 px-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-          Démarrer un dossier
+          {t("onboardingEyebrow")}
         </p>
         <h1 className="glass-display text-[40px] font-semibold leading-[1.05] sm:text-[52px]">
-          Quelle est <em>votre situation ?</em>
+          {t.rich("onboardingTitle", { em: (chunks) => <em>{chunks}</em> })}
         </h1>
         <p className="max-w-2xl text-[14px] text-[color:var(--glass-ink-soft)]">
-          Décrivez votre situation en langage courant ou choisissez un événement de
-          vie ci-dessous. Beldoc vous propose un parcours adapté avec les bons
-          documents à préparer.
+          {t("onboardingIntro")}
         </p>
       </header>
 
@@ -64,18 +66,16 @@ export default async function OnboardingPage() {
       {featured.length === 0 ? (
         <div className="glass-surface mx-2 flex flex-col items-center gap-2 rounded-3xl px-6 py-16 text-center">
           <p className="text-[14px] font-semibold">
-            Aucun parcours d&apos;événement de vie n&apos;est encore publié.
+            {t("onboardingEmptyTitle")}
           </p>
           <p className="max-w-md text-[12.5px] text-[color:var(--glass-ink-soft)]">
-            Les administrateurs n&apos;ont pas encore activé la mise en avant des
-            bundles sur cette page. Vous pouvez utiliser la recherche ci-dessus
-            ou consulter le catalogue.
+            {t("onboardingEmptyBody")}
           </p>
           <Link
             href="/outils"
             className="mt-3 text-[13px] font-medium text-[color:var(--glass-ink)] underline"
           >
-            Voir le catalogue complet
+            {t("onboardingSeeCatalog")}
           </Link>
         </div>
       ) : (
@@ -111,7 +111,7 @@ export default async function OnboardingPage() {
           {uncategorized.length > 0 && (
             <div className="space-y-3 px-2">
               <h2 className="text-[16px] font-semibold text-[color:var(--glass-ink)]">
-                Autres parcours
+                {t("onboardingOtherFlows")}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {uncategorized.map((b) => (
@@ -139,10 +139,10 @@ export default async function OnboardingPage() {
           </div>
           <div>
             <h3 className="text-[15px] font-semibold text-[color:var(--glass-ink)]">
-              Vous avez déjà commencé un dossier ?
+              {t("onboardingResumeTitle")}
             </h3>
             <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
-              Reprenez-le avec votre code (format <code>BELDOC-XXXX-XXXX</code>).
+              {t.rich("onboardingResumeBody", { code: (chunks) => <code>{chunks}</code> })}
             </p>
           </div>
         </div>
@@ -150,17 +150,16 @@ export default async function OnboardingPage() {
           href="/reprendre"
           className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2.5 text-[13px] font-semibold text-[color:var(--glass-ink)] transition-colors hover:bg-white/55"
         >
-          Reprendre un dossier
+          {t("onboardingResumeCta")}
           <ArrowRight className="size-4" />
         </Link>
       </div>
 
       {/* RGPD notice */}
       <p className="px-2 text-[11px] italic text-[color:var(--glass-ink-faint)]">
-        Aucune donnée nominative n&apos;est conservée au-delà du traitement de
-        votre dossier. Si vous fermez votre navigateur, conservez bien le code de
-        reprise qui s&apos;affichera dès le premier enregistrement —{" "}
-        <strong>sans ce code, les données saisies seront perdues.</strong>
+        {t.rich("onboardingRgpdNotice", {
+          strong: (chunks) => <strong>{chunks}</strong>,
+        })}
       </p>
     </section>
   );

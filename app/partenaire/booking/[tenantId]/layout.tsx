@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { requireBookingActorAuth } from "@/lib/auth-check";
 import { tenantAccess } from "@/lib/booking/access";
 import { BookingTabs } from "@/components/booking/booking-tabs";
@@ -12,6 +13,7 @@ interface LayoutProps {
 
 export default async function TenantLayout({ params, children }: LayoutProps) {
   const { tenantId } = await params;
+  const t = await getTranslations("public.pro");
 
   const auth = await requireBookingActorAuth();
   if (!auth.isAuthorized) notFound();
@@ -30,7 +32,7 @@ export default async function TenantLayout({ params, children }: LayoutProps) {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{tenant.name}</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Espace de gestion du guichet
+              {t("bookingManageSpace")}
             </p>
           </div>
           <a
@@ -40,7 +42,7 @@ export default async function TenantLayout({ params, children }: LayoutProps) {
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground underline underline-offset-4"
           >
             <ExternalLink className="size-4" />
-            Page publique
+            {t("bookingPublicPage")}
           </a>
         </div>
       </div>

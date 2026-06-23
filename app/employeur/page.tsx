@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
@@ -32,10 +33,13 @@ import { QuickCost } from "@/components/docbel/employeur/cost/quick-cost";
 import { QuickActions } from "@/components/docbel/employeur/quick-actions";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = {
-  title: "Tableau de bord | Espace Employeur",
-  description: "Gérez vos obligations sociales en toute sérénité.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
+  return {
+    title: t("dashMetaTitle"),
+    description: t("dashMetaDesc"),
+  };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +92,7 @@ export default async function EmployeurDashboard() {
   const user = await getEmployerPageUser();
   if (!user) redirect("/p/employeur");
 
+  const t = await getTranslations("public.pro");
   const data = await getEmployerDashboard(user.id);
   const { identity, kpis, socialDeadlines, alerts, recentDossiers, recentActivity, cost, resume } = data;
 
@@ -96,15 +101,15 @@ export default async function EmployeurDashboard() {
       {/* ============================== HERO ============================== */}
       <section className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/12 via-card to-pink-500/8 p-6 sm:p-8">
         <div className="relative z-10 max-w-2xl">
-          <p className="text-sm font-medium text-muted-foreground">Bonjour, {identity.firstName} 👋</p>
+          <p className="text-sm font-medium text-muted-foreground">{t("dashHello", { name: identity.firstName })}</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
-            Bienvenue dans votre{" "}
+            {t("dashWelcomePrefix")}{" "}
             <span className="bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
-              Espace Employeur
+              {t("dashWelcomeHighlight")}
             </span>
           </h1>
           <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-            Gérez vos obligations sociales en Belgique simplement, avec des outils fiables, à jour et pensés pour vous.
+            {t("dashWelcomeSub")}
           </p>
         </div>
 
@@ -126,10 +131,10 @@ export default async function EmployeurDashboard() {
 
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi icon={FolderOpen} tone="violet" value={String(kpis.activeDossiers)} label="Dossiers actifs" href="/employeur/dossiers" sub="Voir mes dossiers" />
-        <Kpi icon={CalendarClock} tone="sky" value={String(kpis.deadlinesThisWeek)} label="Échéances cette semaine" href="/employeur/dossiers" sub="Débuts de contrat à venir" />
-        <Kpi icon={FileCheck2} tone="emerald" value={String(kpis.documentsReady)} label="Documents préparés" href="/employeur/documents" sub="Consulter / télécharger" />
-        <Kpi icon={TriangleAlert} tone="red" value={String(kpis.alertsCount)} label="Alertes" href="/employeur/dossiers" sub="Actions à vérifier" />
+        <Kpi icon={FolderOpen} tone="violet" value={String(kpis.activeDossiers)} label={t("dashKpiActiveDossiers")} href="/employeur/dossiers" sub={t("dashKpiActiveDossiersSub")} />
+        <Kpi icon={CalendarClock} tone="sky" value={String(kpis.deadlinesThisWeek)} label={t("dashKpiDeadlines")} href="/employeur/dossiers" sub={t("dashKpiDeadlinesSub")} />
+        <Kpi icon={FileCheck2} tone="emerald" value={String(kpis.documentsReady)} label={t("dashKpiDocuments")} href="/employeur/documents" sub={t("dashKpiDocumentsSub")} />
+        <Kpi icon={TriangleAlert} tone="red" value={String(kpis.alertsCount)} label={t("dashKpiAlerts")} href="/employeur/dossiers" sub={t("dashKpiAlertsSub")} />
       </div>
 
       {/* Row 1 — Calendrier social · Simulateur (rapide) · Actions rapides (même hauteur) */}
@@ -141,10 +146,10 @@ export default async function EmployeurDashboard() {
               <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <CalendarDays className="size-4" />
               </span>
-              <h2 className="text-sm font-semibold">Calendrier social</h2>
+              <h2 className="text-sm font-semibold">{t("dashSocialCalendar")}</h2>
             </div>
             <Link href="/employeur/calendrier" className="flex items-center gap-1 text-xs text-primary no-underline hover:underline">
-              Voir tout <ArrowRight className="size-3" />
+              {t("dashSeeAll")} <ArrowRight className="size-3" />
             </Link>
           </div>
           <div className="flex flex-1 flex-col p-4 pt-3">
@@ -161,7 +166,7 @@ export default async function EmployeurDashboard() {
               ))}
             </div>
             <p className="mt-auto pt-3 text-[10px] leading-snug text-muted-foreground">
-              Dates indicatives (régime trimestriel) — sources sur le calendrier.
+              {t("dashSocialCalendarNote")}
             </p>
           </div>
         </div>
@@ -187,11 +192,11 @@ export default async function EmployeurDashboard() {
       <div className="grid gap-4 xl:grid-cols-3">
         {/* Alerts */}
         <div className={PANEL}>
-          <PanelHead title="Alertes & actions requises" href="/employeur/dossiers" action={alerts.length ? "Voir tout" : undefined} />
+          <PanelHead title={t("dashAlertsTitle")} href="/employeur/dossiers" action={alerts.length ? t("dashSeeAll") : undefined} />
           <div className="space-y-2 p-5 pt-3">
             {alerts.length === 0 ? (
               <EmptyState icon={ShieldCheck}>
-                Aucune alerte. Vos dossiers ne signalent aucune action requise.
+                {t("dashAlertsEmpty")}
               </EmptyState>
             ) : (
               alerts.slice(0, 4).map((a) => {
@@ -217,16 +222,16 @@ export default async function EmployeurDashboard() {
 
         {/* Recent dossiers */}
         <div className={PANEL}>
-          <PanelHead title="Mes dossiers récents" href="/employeur/dossiers" action={recentDossiers.length ? "Voir tous" : undefined} />
+          <PanelHead title={t("dashRecentDossiersTitle")} href="/employeur/dossiers" action={recentDossiers.length ? t("dashSeeAllM") : undefined} />
           <div className="px-5 pt-2 pb-3">
             {recentDossiers.length === 0 ? (
               <div className="py-3">
-                <EmptyState icon={FolderOpen}>Aucun dossier pour le moment.</EmptyState>
+                <EmptyState icon={FolderOpen}>{t("dashRecentDossiersEmpty")}</EmptyState>
                 <Link
                   href="/employeur/nouveau-dossier"
                   className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
                 >
-                  Créer mon premier dossier <ArrowRight className="size-3.5" />
+                  {t("dashCreateFirstDossier")} <ArrowRight className="size-3.5" />
                 </Link>
               </div>
             ) : (
@@ -255,10 +260,10 @@ export default async function EmployeurDashboard() {
         {/* Resume / start engagement */}
         <div className={PANEL}>
           <div className="flex items-center justify-between px-5 pt-4">
-            <h2 className="text-sm font-semibold">{resume ? "Reprendre un engagement" : "Démarrer un engagement"}</h2>
+            <h2 className="text-sm font-semibold">{t(resume ? "dashResumeTitle" : "dashStartTitle")}</h2>
             {resume ? (
               <span className="text-xs text-muted-foreground">
-                {resume.doneItems}/{resume.totalItems} étapes
+                {t("dashSteps", { done: resume.doneItems, total: resume.totalItems })}
               </span>
             ) : null}
           </div>
@@ -270,13 +275,13 @@ export default async function EmployeurDashboard() {
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                     <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${resume.pct}%` }} />
                   </div>
-                  <p className="mt-1.5 text-xs text-muted-foreground">{resume.pct}% de la checklist complétée</p>
+                  <p className="mt-1.5 text-xs text-muted-foreground">{t("dashChecklistPct", { pct: resume.pct })}</p>
                 </div>
                 {resume.nextItem ? (
                   <div className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
                     <Check className="mt-0.5 size-4 shrink-0 text-primary" />
                     <div className="min-w-0">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Prochaine étape</p>
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{t("dashNextStep")}</p>
                       <p className="text-sm">{resume.nextItem}</p>
                     </div>
                   </div>
@@ -285,19 +290,19 @@ export default async function EmployeurDashboard() {
                   href={`/employeur/dossiers/${resume.scenarioId}`}
                   className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
                 >
-                  Continuer <ArrowRight className="size-3.5" />
+                  {t("dashContinue")} <ArrowRight className="size-3.5" />
                 </Link>
               </>
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">
-                  L&apos;assistant « Puis-je engager ? » vous guide pas à pas et génère la checklist de votre engagement.
+                  {t("dashStartDesc")}
                 </p>
                 <Link
                   href="/employeur/nouveau-dossier"
                   className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground no-underline"
                 >
-                  Démarrer <ArrowRight className="size-3.5" />
+                  {t("dashStart")} <ArrowRight className="size-3.5" />
                 </Link>
               </>
             )}
@@ -309,12 +314,12 @@ export default async function EmployeurDashboard() {
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Activity */}
         <div className={PANEL}>
-          <PanelHead title="Activité récente" />
+          <PanelHead title={t("dashActivityTitle")} />
           <div className="px-5 pt-2 pb-3">
             {recentActivity.length === 0 ? (
               <div className="py-3">
                 <EmptyState icon={Activity}>
-                  Aucune activité récente. Vos actions (dossiers, documents, simulations) apparaîtront ici.
+                  {t("dashActivityEmpty")}
                 </EmptyState>
               </div>
             ) : (
@@ -342,20 +347,19 @@ export default async function EmployeurDashboard() {
 
         {/* Veille (informatif, vers bibliothèque) */}
         <div className={PANEL}>
-          <PanelHead title="Veille & conformité" href="/employeur/bibliotheque" action="Bibliothèque" />
+          <PanelHead title={t("dashWatchTitle")} href="/employeur/bibliotheque" action={t("dashLibrary")} />
           <div className="flex items-start gap-4 p-5 pt-3">
             <div className="min-w-0 flex-1">
-              <Badge variant="secondary">Sources officielles</Badge>
-              <p className="mt-2 font-medium">Démarches expliquées, à jour et sourcées</p>
+              <Badge variant="secondary">{t("dashOfficialSources")}</Badge>
+              <p className="mt-2 font-medium">{t("dashWatchHeading")}</p>
               <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
-                Dimona, DmfA, commissions paritaires, salaire minimum, contrats étudiant et flexi-job — chaque
-                fiche renvoie aux textes officiels (ONSS, SPF Emploi…).
+                {t("dashWatchBody")}
               </p>
               <Link
                 href="/employeur/bibliotheque"
                 className="mt-2 inline-flex items-center gap-1 text-xs text-primary no-underline hover:underline"
               >
-                Parcourir la bibliothèque <ArrowRight className="size-3" />
+                {t("dashBrowseLibrary")} <ArrowRight className="size-3" />
               </Link>
             </div>
             <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">

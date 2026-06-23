@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowLeftIcon, WrenchIcon } from "lucide-react";
 import { ToolPage } from "@/components/docbel/tool-page";
 import { Tool } from "@/lib/docbel-data";
@@ -11,6 +12,7 @@ interface LegacyToolViewProps {
 
 export function LegacyToolView({ tool }: LegacyToolViewProps) {
   const router = useRouter();
+  const t = useTranslations("public.outils");
 
   if (!tool) {
     return (
@@ -21,7 +23,7 @@ export function LegacyToolView({ tool }: LegacyToolViewProps) {
           className="inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition-colors outline-none hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
         >
           <ArrowLeftIcon className="size-4" />
-          Retour à l&apos;accueil
+          {t("backToHome")}
         </button>
 
         <div className="glass-surface flex flex-col items-center gap-3 px-6 py-16 text-center">
@@ -35,11 +37,10 @@ export function LegacyToolView({ tool }: LegacyToolViewProps) {
             <WrenchIcon className="size-6" />
           </span>
           <h1 className="glass-display text-[24px] font-semibold">
-            Outil introuvable
+            {t("notFoundTitle")}
           </h1>
           <p className="max-w-md text-[13px] text-[color:var(--glass-ink-soft)]">
-            L&apos;outil demandé n&apos;est pas disponible dans le catalogue
-            public. Il a peut-être été renommé ou retiré.
+            {t("notFoundBody")}
           </p>
         </div>
       </section>

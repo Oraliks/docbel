@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -15,13 +16,14 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
   const { slug } = await params;
   const article = getArticle(slug);
   if (!article) {
-    return { title: "Article introuvable | Espace Employeur" };
+    return { title: t("libArticleMetaNotFound") };
   }
   return {
-    title: `${article.title} | Bibliothèque Employeur`,
+    title: t("libArticleMetaTitle", { title: article.title }),
     description: article.summary,
   };
 }
@@ -31,6 +33,7 @@ export default async function BibliothequeArticlePage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const t = await getTranslations("public.pro");
   const user = await getEmployerPageUser();
   if (!user) redirect("/p/employeur");
 
@@ -43,7 +46,7 @@ export default async function BibliothequeArticlePage({
   return (
     <div className="w-full space-y-5 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
       <Button variant="ghost" size="sm" render={<Link href="/employeur/bibliotheque" />}>
-        <ArrowLeft /> Bibliothèque
+        <ArrowLeft /> {t("backToLibrary")}
       </Button>
       <ArticleView article={article} sources={sources} />
     </div>

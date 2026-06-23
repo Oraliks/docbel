@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/news/session";
 import { ArticleView } from "@/components/docbel/article-view";
@@ -85,7 +86,8 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
   const { slug } = await params;
   const article = await loadArticle(slug);
   if (!article) {
-    return { title: "Article introuvable" };
+    const t = await getTranslations("public.contenu");
+    return { title: t("articleNotFoundTitle") };
   }
 
   // Build the absolute base URL per-request from forwarded headers so the OG

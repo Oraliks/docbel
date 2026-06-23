@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { ChevronRightIcon, SparklesIcon } from "lucide-react";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toPublicForm } from "@/lib/pdf-forms/public-serializer";
@@ -90,10 +91,15 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const t = await getTranslations("public.contenu");
   const res = await loadForm(slug);
-  if (res.kind === "missing") return { title: "Formulaire indisponible" };
-  if (res.kind === "disabled") return { title: `${res.title} — indisponible` };
-  return { title: `${res.form.title} — DocBel`, description: res.form.description ?? undefined };
+  if (res.kind === "missing") return { title: t("formMetaUnavailable") };
+  if (res.kind === "disabled")
+    return { title: t("formMetaDisabledTitle", { title: res.title }) };
+  return {
+    title: t("formMetaTitle", { title: res.form.title }),
+    description: res.form.description ?? undefined,
+  };
 }
 
 export default async function PdfFormPage({
@@ -104,6 +110,7 @@ export default async function PdfFormPage({
   searchParams: Promise<{ bundleRun?: string; bundleSlug?: string }>;
 }) {
   const { slug } = await params;
+  const t = await getTranslations("public.contenu");
   const { bundleRun, bundleSlug } = await searchParams;
   const res = await loadForm(slug);
   if (res.kind === "missing") notFound();
@@ -179,9 +186,9 @@ export default async function PdfFormPage({
           />
           <span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
-              Complète ton profil
+              {t("profileNudgeTitle")}
             </span>{" "}
-            pour préremplir tes documents automatiquement.
+            {t("profileNudgeText")}
           </span>
           <ChevronRightIcon className="ml-auto size-4 shrink-0 text-[color:var(--glass-accent-deep)]" />
         </Link>

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   ArrowRight,
@@ -86,10 +87,10 @@ interface BundleRunnerProps {
   externalDocuments?: ExternalDocument[];
 }
 
-const RESPONSIBILITY_LABEL: Record<ExternalDocument["responsibility"], string> = {
-  employer: "À l'employeur",
-  onem: "À l'ONEM",
-  external: "À un tiers",
+const RESPONSIBILITY_LABEL_KEYS: Record<ExternalDocument["responsibility"], string> = {
+  employer: "runnerResponsibilityEmployer",
+  onem: "runnerResponsibilityOnem",
+  external: "runnerResponsibilityExternal",
 };
 
 export function BundleRunner({
@@ -106,6 +107,7 @@ export function BundleRunner({
   applicableSlugs = null,
   externalDocuments = [],
 }: BundleRunnerProps) {
+  const t = useTranslations("public.dossier");
   const router = useRouter();
   const confirm = useConfirm();
   const [runId, setRunId] = useState<string | null>(initialRunId);
@@ -153,7 +155,7 @@ export function BundleRunner({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ eligibilityAnswers: answers ?? eligibilityAnswers }),
       });
-      if (!res.ok) throw new Error("Échec démarrage parcours");
+      if (!res.ok) throw new Error(t("runnerStartError"));
       const run = await res.json();
       setRunId(run.id);
       if (run.resumeCode) setResumeCode(run.resumeCode);
@@ -161,7 +163,7 @@ export function BundleRunner({
       router.refresh();
       return run.id;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("error"));
       return null;
     } finally {
       setStarting(false);
@@ -197,7 +199,7 @@ export function BundleRunner({
       const ct = res.headers.get("content-type") || "";
       if (!res.ok || !ct.includes("application/pdf")) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Échec de génération du courrier");
+        throw new Error(data.error || t("runnerLetterError"));
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -208,9 +210,9 @@ export function BundleRunner({
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast.success("Courrier généré — pense à le compléter, le signer et l'envoyer.");
+      toast.success(t("runnerLetterSuccess"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("error"));
     } finally {
       setGeneratingLetter(null);
     }
@@ -226,10 +228,10 @@ export function BundleRunner({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ eligibilityAnswers: answers }),
         });
-        if (!res.ok) throw new Error("Échec mise à jour");
-        toast.success("Réponses mises à jour");
+        if (!res.ok) throw new Error(t("runnerUpdateError"));
+        toast.success(t("runnerAnswersUpdated"));
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Erreur");
+        toast.error(err instanceof Error ? err.message : t("error"));
       }
       setEditingEligibility(false);
       router.refresh();
@@ -241,10 +243,9 @@ export function BundleRunner({
 
   async function reset() {
     const ok = await confirm({
-      title: "Recommencer ce parcours ?",
-      description:
-        "Votre progression actuelle sera effacée (réponses au questionnaire + documents en cours). Les documents déjà téléchargés restent sur votre appareil.",
-      confirmText: "Recommencer",
+      title: t("runnerResetTitle"),
+      description: t("runnerResetDescription"),
+      confirmText: t("restart"),
       destructive: true,
     });
     if (!ok || !runId) return;
@@ -255,7 +256,7 @@ export function BundleRunner({
         method: "DELETE",
       });
       if (!res.ok && res.status !== 404) {
-        toast.error("Impossible de réinitialiser le parcours");
+        toast.error(t("runnerResetError"));
         return;
       }
       // Reset client : on perd la référence au run abandonné, on vide les
@@ -267,9 +268,9 @@ export function BundleRunner({
       setEligibilityAnswers({});
       setEditingEligibility(false);
       router.refresh();
-      toast.success("Parcours réinitialisé");
+      toast.success(t("runnerResetSuccess"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("error"));
     }
   }
 
@@ -300,15 +301,16 @@ export function BundleRunner({
           <div className="flex-1">
             <h1 className="text-2xl font-bold">{bundle.name}</h1>
             <p className="text-sm text-muted-foreground">
-              {completedCount} sur {visibleItems.length} document
-              {visibleItems.length !== 1 ? "s" : ""} complété
-              {completedCount !== 1 ? "s" : ""}
+              {t("runnerCompletedCount", {
+                completed: completedCount,
+                count: visibleItems.length,
+              })}
             </p>
           </div>
           {runId && completedCount > 0 && (
             <Button variant="ghost" size="sm" onClick={reset}>
               <RefreshCw className="w-4 h-4 mr-1" />
-              Recommencer
+              {t("restart")}
             </Button>
           )}
         </div>
@@ -327,7 +329,7 @@ export function BundleRunner({
           initialAnswers={eligibilityAnswers}
           onAnswersChange={setEligibilityAnswers}
           onContinue={handlePrequalifierContinue}
-          continueLabel={runId ? "Enregistrer" : "Démarrer le parcours"}
+          continueLabel={runId ? t("save") : t("runnerStartFlow")}
         />
       )}
 
@@ -351,7 +353,7 @@ export function BundleRunner({
             className="text-xs"
           >
             <Pencil className="w-3 h-3 mr-1" />
-            Modifier mes réponses préliminaires
+            {t("runnerEditAnswers")}
           </Button>
         </div>
       )}
@@ -363,8 +365,7 @@ export function BundleRunner({
             <Alert>
               <AlertDescription className="text-sm flex items-center justify-between gap-3 flex-wrap">
                 <span>
-                  Cliquez sur un document pour démarrer votre parcours. Les documents qui dépendent de
-                  vos réponses apparaîtront au fur et à mesure.
+                  {t("runnerStartHint")}
                 </span>
               </AlertDescription>
             </Alert>
@@ -374,14 +375,14 @@ export function BundleRunner({
             <Alert className="bg-emerald-500/10 border-emerald-500/20">
               <CheckCircle2 className="w-4 h-4 text-green-600" />
               <AlertDescription className="text-sm text-green-700 dark:text-green-400">
-                Tous les documents obligatoires de ce parcours sont complétés.
+                {t("runnerAllRequiredDone")}
               </AlertDescription>
             </Alert>
           )}
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Documents du parcours</CardTitle>
+              <CardTitle className="text-base">{t("runnerFlowDocuments")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {visibleItems.map(({ item, completed, eligibility }, idx) => {
@@ -425,7 +426,7 @@ export function BundleRunner({
                         })()}
                         {!item.required && (
                           <Badge variant="secondary" className="text-xs">
-                            Optionnel
+                            {t("optional")}
                           </Badge>
                         )}
                         {item.triggered && (
@@ -433,7 +434,7 @@ export function BundleRunner({
                             variant="outline"
                             className="text-xs border-amber-500 text-amber-700 dark:text-amber-300"
                           >
-                            Suite à tes réponses
+                            {t("runnerTriggeredBadge")}
                           </Badge>
                         )}
                       </div>
@@ -444,13 +445,12 @@ export function BundleRunner({
                       )}
                       {item.condition && (
                         <p className="text-[11px] text-muted-foreground mt-1 italic">
-                          Condition : {describeCondition(item.condition, templateNames, fieldLabels)}
+                          {t("runnerConditionLabel")} {describeCondition(item.condition, templateNames, fieldLabels)}
                         </p>
                       )}
                       {isPending && (
                         <p className="text-[11px] text-amber-700 mt-1">
-                          Complétez d&apos;abord les documents précédents pour savoir si celui-ci est
-                          requis.
+                          {t("runnerPendingHint")}
                         </p>
                       )}
                     </div>
@@ -461,10 +461,10 @@ export function BundleRunner({
                       disabled={isPending || starting}
                     >
                       {completed
-                        ? "Modifier"
+                        ? t("edit")
                         : starting
-                          ? "Démarrage…"
-                          : "Compléter"}
+                          ? t("runnerStarting")
+                          : t("complete")}
                       {!completed && <ArrowRight className="w-4 h-4 ml-1" />}
                     </Button>
                   </div>
@@ -478,11 +478,10 @@ export function BundleRunner({
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Inbox className="w-4 h-4 text-amber-700 dark:text-amber-300" />
-                  Documents à fournir par un tiers ({externalDocuments.length})
+                  {t("runnerExternalDocsTitle", { count: externalDocuments.length })}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Ces pièces sont obligatoires au dossier mais tu ne peux pas les remplir
-                  toi-même. Pense à les réclamer dès que possible.
+                  {t("runnerExternalDocsNote")}
                 </p>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -501,11 +500,11 @@ export function BundleRunner({
                           variant="outline"
                           className="text-xs border-amber-500 text-amber-700 dark:text-amber-300"
                         >
-                          {RESPONSIBILITY_LABEL[d.responsibility]}
+                          {t(RESPONSIBILITY_LABEL_KEYS[d.responsibility] as Parameters<typeof t>[0])}
                         </Badge>
                         {!d.required && (
                           <Badge variant="secondary" className="text-xs">
-                            Optionnel
+                            {t("optional")}
                           </Badge>
                         )}
                       </div>
@@ -526,8 +525,8 @@ export function BundleRunner({
                         >
                           <Mail className="w-4 h-4 mr-1" />
                           {generatingLetter === d.slug
-                            ? "Génération…"
-                            : "Générer le courrier"}
+                            ? t("runnerLetterGenerating")
+                            : t("runnerGenerateLetter")}
                         </Button>
                       </div>
                     )}
@@ -542,7 +541,7 @@ export function BundleRunner({
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
                   <EyeOff className="w-4 h-4" />
-                  Documents non requis pour votre situation ({hiddenItems.length})
+                  {t("runnerHiddenDocsTitle", { count: hiddenItems.length })}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-1.5">
@@ -555,7 +554,9 @@ export function BundleRunner({
                     <span>{itemTitle(item)}</span>
                     {item.condition && (
                       <span className="italic">
-                        (requis si : {describeCondition(item.condition, templateNames, fieldLabels)})
+                        {t("runnerRequiredIf", {
+                          condition: describeCondition(item.condition, templateNames, fieldLabels),
+                        })}
                       </span>
                     )}
                   </div>

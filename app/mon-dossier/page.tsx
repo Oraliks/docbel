@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import {
   parseBundleWarnings,
@@ -12,11 +13,13 @@ import { loadPublishedDecisionTree } from "@/lib/decision-builder/loader";
 import { loadActiveBundleRun } from "@/lib/landing/resume";
 import { MonDossierClient, type MonDossierBundle } from "./mon-dossier-client";
 
-export const metadata: Metadata = {
-  title: "Mon dossier — beldoc",
-  description:
-    "Créez ou retrouvez le bon dossier administratif belge : laissez-vous guider en quelques questions, ou accédez directement au dossier dont vous avez besoin.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.dossier");
+  return {
+    title: t("monDossierMetaTitle"),
+    description: t("monDossierMetaDescription"),
+  };
+}
 
 export const dynamic = "force-dynamic";
 

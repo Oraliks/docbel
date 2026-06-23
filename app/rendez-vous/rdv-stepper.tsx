@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CATEGORY_LABELS } from "@/lib/booking/status";
 import {
@@ -23,10 +24,14 @@ interface Props {
   tenants: TenantSummary[];
 }
 
-const STEP_LABELS = ["Démarche", "Organisme", "Code postal"];
-
 export function RdvStepper({ tenants }: Props) {
   const router = useRouter();
+  const t = useTranslations("public.dossier");
+  const STEP_LABELS = [
+    t("rdvStepDemarche"),
+    t("rdvStepOrganisme"),
+    t("rdvStepPostalCode"),
+  ];
 
   // Unique categories present among active tenants
   const presentCategories = Array.from(
@@ -117,7 +122,7 @@ export function RdvStepper({ tenants }: Props) {
       {/* Step 1: choose category */}
       {step === 1 && (
         <div className="flex flex-col gap-3">
-          <p className={GLASS_LABEL}>Quelle démarche ?</p>
+          <p className={GLASS_LABEL}>{t("rdvWhichDemarche")}</p>
           <div className="flex flex-col gap-2">
             {presentCategories.map((cat) => (
               <button
@@ -129,8 +134,9 @@ export function RdvStepper({ tenants }: Props) {
                   {CATEGORY_LABELS[cat] ?? cat}
                 </span>
                 <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
-                  {tenants.filter((t) => t.category === cat).length} organisme
-                  {tenants.filter((t) => t.category === cat).length > 1 ? "s" : ""}
+                  {t("rdvOrganismCount", {
+                    count: tenants.filter((tn) => tn.category === cat).length,
+                  })}
                 </p>
               </button>
             ))}
@@ -141,7 +147,7 @@ export function RdvStepper({ tenants }: Props) {
       {/* Step 2: choose tenant */}
       {step === 2 && (
         <div className="flex flex-col gap-3">
-          <p className={GLASS_LABEL}>Quel organisme ?</p>
+          <p className={GLASS_LABEL}>{t("rdvWhichOrganism")}</p>
           <div className="flex flex-col gap-2">
             {filteredTenants.map((tenant) => (
               <button
@@ -169,7 +175,7 @@ export function RdvStepper({ tenants }: Props) {
               className="flex items-center gap-1 self-start text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
             >
               <ChevronLeft size={14} />
-              Précédent
+              {t("previous")}
             </button>
           )}
         </div>
@@ -181,7 +187,7 @@ export function RdvStepper({ tenants }: Props) {
           <div
             className={`${GLASS_CARD} glass-surface rounded-2xl p-4`}
           >
-            <p className={GLASS_LABEL}>Organisme sélectionné</p>
+            <p className={GLASS_LABEL}>{t("rdvSelectedOrganism")}</p>
             <div className="mt-1 flex items-center gap-2">
               {selectedTenant.brandColor && (
                 <div
@@ -197,20 +203,20 @@ export function RdvStepper({ tenants }: Props) {
 
           <div className="flex flex-col gap-2">
             <label htmlFor="cp-input" className={GLASS_LABEL}>
-              Votre code postal (optionnel)
+              {t("rdvPostalCodeLabel")}
             </label>
             <input
               id="cp-input"
               type="text"
               inputMode="numeric"
               maxLength={4}
-              placeholder="ex. 1000"
+              placeholder={t("rdvPostalCodePlaceholder")}
               value={cp}
               onChange={(e) => setCp(e.target.value.replace(/\D/g, ""))}
               className={`${GLASS_INPUT} h-10 w-full rounded-2xl border px-3 text-[14px] outline-none focus:ring-2 focus:ring-[color:var(--glass-accent-deep)]`}
             />
             <p className="text-[12px] text-[color:var(--glass-ink-faint)]">
-              Permet de vous orienter vers l&apos;antenne la plus proche.
+              {t("rdvPostalCodeHelp")}
             </p>
           </div>
 
@@ -220,14 +226,14 @@ export function RdvStepper({ tenants }: Props) {
               className="flex items-center gap-1 text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
             >
               <ChevronLeft size={14} />
-              Précédent
+              {t("previous")}
             </button>
             <button
               onClick={handleSubmit}
               style={GLASS_PRIMARY_STYLE}
               className="flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-2.5 text-[14px] font-semibold transition-opacity hover:opacity-80"
             >
-              Prendre rendez-vous
+              {t("rdvSubmit")}
               <ChevronRight size={16} />
             </button>
           </div>

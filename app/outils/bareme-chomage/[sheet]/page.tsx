@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { getActiveBaremeData } from '@/lib/baremes/getActiveBaremeData'
 import { BAREME_SHEETS, buildMatrixForEntry, findSheet } from '@/lib/baremes/sheetRegistry'
 import { BaremeMatrix } from '@/components/outils/bareme-matrix'
@@ -37,6 +38,7 @@ export default async function BaremeSheetPage({
   const entry = findSheet(sheet)
   if (!entry) notFound()
 
+  const t = await getTranslations('public.outils')
   const data = await getActiveBaremeData()
   const matrix = data ? buildMatrixForEntry(entry, data) : null
 
@@ -48,15 +50,15 @@ export default async function BaremeSheetPage({
       ) : (
         <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-card p-10 text-center shadow-sm">
           <FileSpreadsheet className="mx-auto mb-4 size-10 text-muted-foreground" />
-          <h1 className="text-xl font-semibold">Barème indisponible</h1>
+          <h1 className="text-xl font-semibold">{t('baremeSheetEmptyTitle')}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Aucune donnée publiée pour « {entry.navLabel} » pour le moment.
+            {t('baremeSheetEmptyBody', { label: entry.navLabel })}
           </p>
           <Link
             href="/outils/bareme-chomage"
             className="mt-6 inline-block rounded-md border border-border px-4 py-2 text-sm hover:bg-muted"
           >
-            Voir le chômage complet
+            {t('baremeSheetSeeAll')}
           </Link>
         </div>
       )}

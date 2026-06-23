@@ -6,6 +6,7 @@
  * Boutons : Comparer (2e formulaire côte à côte), Sauvegarder, Exporter PDF.
  */
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Calculator, GitCompare, Save, FileDown, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -45,18 +46,20 @@ import { LegalDisclaimerBox } from "@/components/docbel/employeur/legal-disclaim
 
 const CHOOSE = "_choose";
 
-const REGIME_OPTIONS: Option[] = [
-  { value: "temps_plein", label: "Temps plein" },
-  { value: "temps_partiel", label: "Temps partiel" },
+type LabelKeyOption = { value: string; labelKey: string };
+
+const REGIME_OPTIONS: LabelKeyOption[] = [
+  { value: "temps_plein", labelKey: "costsimRegimeFull" },
+  { value: "temps_partiel", labelKey: "costsimRegimePartial" },
 ];
 
-const REDUCTION_OPTIONS: Option[] = [
-  { value: "a_verifier", label: "À vérifier" },
-  { value: "aucune", label: "Aucune" },
-  { value: "premier_engagement", label: "Premier engagement" },
-  { value: "groupe_cible", label: "Groupe cible" },
-  { value: "etudiant", label: "Étudiant" },
-  { value: "flexi", label: "Flexi-job" },
+const REDUCTION_OPTIONS: LabelKeyOption[] = [
+  { value: "a_verifier", labelKey: "costsimRedToCheck" },
+  { value: "aucune", labelKey: "costsimRedNone" },
+  { value: "premier_engagement", labelKey: "costsimRedFirstHire" },
+  { value: "groupe_cible", labelKey: "costsimRedTargetGroup" },
+  { value: "etudiant", labelKey: "costsimRedStudent" },
+  { value: "flexi", labelKey: "costsimRedFlexi" },
 ];
 
 interface FormState {
@@ -138,9 +141,10 @@ function SelectField({
 }: {
   value: string;
   onChange: (v: string) => void;
-  options: readonly Option[];
+  options: readonly (Option | LabelKeyOption)[];
   placeholder?: string;
 }) {
+  const t = useTranslations("public.pro");
   return (
     <Select value={value} onValueChange={(v: string | null) => v && onChange(v)}>
       <SelectTrigger>
@@ -150,7 +154,7 @@ function SelectField({
         {placeholder ? <SelectItem value={CHOOSE}>{placeholder}</SelectItem> : null}
         {options.map((o) => (
           <SelectItem key={o.value} value={o.value}>
-            {o.label}
+            {"labelKey" in o ? t(o.labelKey as Parameters<typeof t>[0]) : o.label}
           </SelectItem>
         ))}
       </SelectContent>
@@ -171,6 +175,8 @@ function SimForm({
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm({ ...form, [key]: value });
 
+  const t = useTranslations("public.pro");
+
   const toggleBenefit = (value: string) =>
     setForm({
       ...form,
@@ -182,19 +188,19 @@ function SimForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{heading ?? "Paramètres"}</CardTitle>
+        <CardTitle className="text-base">{heading ?? t("costsimParams")}</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
-        <Field label="Salaire brut mensuel (€)" htmlFor="gross">
+        <Field label={t("costsimGrossSalary")} htmlFor="gross">
           <Input
             id="gross"
             inputMode="decimal"
             value={form.grossMonthlySalary}
             onChange={(e) => set("grossMonthlySalary", e.target.value)}
-            placeholder="Ex. 2500"
+            placeholder={t("costsimGrossSalaryPlaceholder")}
           />
         </Field>
-        <Field label="Régime">
+        <Field label={t("costsimRegime")}>
           <SelectField
             value={form.regime}
             onChange={(v) => set("regime", v as CostRegime)}
@@ -203,16 +209,16 @@ function SimForm({
         </Field>
         {form.regime === "temps_partiel" ? (
           <>
-            <Field label="Heures / semaine" htmlFor="wh">
+            <Field label={t("costsimWeeklyHours")} htmlFor="wh">
               <Input
                 id="wh"
                 inputMode="decimal"
                 value={form.weeklyHours}
                 onChange={(e) => set("weeklyHours", e.target.value)}
-                placeholder="Ex. 20"
+                placeholder={t("costsimWeeklyHoursPlaceholder")}
               />
             </Field>
-            <Field label="Heures temps plein de référence" htmlFor="ref">
+            <Field label={t("costsimRefHours")} htmlFor="ref">
               <Input
                 id="ref"
                 inputMode="decimal"
@@ -222,35 +228,35 @@ function SimForm({
             </Field>
           </>
         ) : null}
-        <Field label="Type de travailleur">
+        <Field label={t("costsimWorkerType")}>
           <SelectField
             value={form.workerType}
             onChange={(v) => set("workerType", v)}
             options={WORKER_TYPES}
-            placeholder="— Choisir —"
+            placeholder={t("costsimChoose")}
           />
         </Field>
-        <Field label="Type de contrat">
+        <Field label={t("costsimContractType")}>
           <SelectField
             value={form.contractType}
             onChange={(v) => set("contractType", v)}
             options={CONTRACT_TYPES}
-            placeholder="— Choisir —"
+            placeholder={t("costsimChoose")}
           />
         </Field>
         <Field
-          label="Commission paritaire"
+          label={t("costsimCp")}
           htmlFor="cp"
-          help="Sans CP, le salaire minimum sectoriel ne peut être vérifié."
+          help={t("costsimCpHelp")}
         >
           <Input
             id="cp"
             value={form.jointCommitteeNumber}
             onChange={(e) => set("jointCommitteeNumber", e.target.value)}
-            placeholder="Ex. 200"
+            placeholder={t("costsimCpPlaceholder")}
           />
         </Field>
-        <Field label="Réductions de cotisations">
+        <Field label={t("costsimReductions")}>
           <SelectField
             value={form.reductions}
             onChange={(v) => set("reductions", v as CostReduction)}
@@ -259,7 +265,7 @@ function SimForm({
         </Field>
 
         <div className="space-y-2 sm:col-span-2">
-          <Label>Avantages prévus</Label>
+          <Label>{t("costsimBenefits")}</Label>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             {BENEFIT_TYPES.map((b) => (
               <label key={b.value} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -279,7 +285,7 @@ function SimForm({
               checked={form.thirteenthMonth}
               onCheckedChange={(c) => set("thirteenthMonth", c === true)}
             />
-            Prévoir un 13e mois (prime de fin d&apos;année)
+            {t("costsimThirteenth")}
           </label>
         </div>
       </CardContent>
@@ -295,20 +301,21 @@ function ResultsCard({
   result: EmployerCostResult;
   label?: string;
 }) {
+  const t = useTranslations("public.pro");
   const rows: [string, string, boolean?][] = [
-    ["Cotisations patronales (mensuel)", EUR(result.estimatedEmployerContributions)],
-    ["Coût employeur mensuel total", EUR(result.estimatedMonthlyEmployerCost), true],
-    ["Coût employeur annuel total", EUR(result.estimatedAnnualEmployerCost), true],
-    ["Net salarié indicatif (mensuel)", EUR(result.estimatedNetSalary)],
+    [t("costsimRowContributions"), EUR(result.estimatedEmployerContributions)],
+    [t("costsimRowMonthlyCost"), EUR(result.estimatedMonthlyEmployerCost), true],
+    [t("costsimRowAnnualCost"), EUR(result.estimatedAnnualEmployerCost), true],
+    [t("costsimRowNet"), EUR(result.estimatedNetSalary)],
   ];
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-base">{label ?? "Estimation"}</CardTitle>
+          <CardTitle className="text-base">{label ?? t("costsimEstimation")}</CardTitle>
           <ReliabilityBadge level={result.reliability} />
         </div>
-        <CardDescription>Estimation structurelle, non certifiée.</CardDescription>
+        <CardDescription>{t("costsimEstimationDesc")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <dl className="space-y-2">
@@ -333,6 +340,7 @@ function ResultsCard({
 }
 
 export function CostSimulator() {
+  const t = useTranslations("public.pro");
   const [formA, setFormA] = useState<FormState>(INITIAL);
   const [formB, setFormB] = useState<FormState>(INITIAL);
   const [comparing, setComparing] = useState(false);
@@ -345,15 +353,18 @@ export function CostSimulator() {
   function buildPdfData(form: FormState, result: EmployerCostResult) {
     const input = toInput(form);
     return {
-      title: `Simulation de coût employeur — ${EUR(input.grossMonthlySalary)} brut / mois`,
+      title: t("costsimPdfTitle", { amount: EUR(input.grossMonthlySalary) }),
       reliability: result.reliability,
       facts: [
-        ["Salaire brut mensuel", EUR(input.grossMonthlySalary)],
-        ["Régime", form.regime === "temps_plein" ? "Temps plein" : "Temps partiel"],
-        ["Type de travailleur", input.workerType || "—"],
-        ["Type de contrat", input.contractType || "—"],
-        ["Commission paritaire", input.jointCommitteeNumber || "—"],
-        ["13e mois", form.thirteenthMonth ? "Oui" : "Non"],
+        [t("costsimFactGross"), EUR(input.grossMonthlySalary)],
+        [
+          t("costsimFactRegime"),
+          form.regime === "temps_plein" ? t("costsimRegimeFull") : t("costsimRegimePartial"),
+        ],
+        [t("costsimFactWorkerType"), input.workerType || "—"],
+        [t("costsimFactContractType"), input.contractType || "—"],
+        [t("costsimFactCp"), input.jointCommitteeNumber || "—"],
+        [t("costsimFactThirteenth"), form.thirteenthMonth ? t("costsimYes") : t("costsimNo")],
       ] as [string, string][],
       estimatedEmployerContributions: result.estimatedEmployerContributions,
       estimatedMonthlyEmployerCost: result.estimatedMonthlyEmployerCost,
@@ -368,7 +379,7 @@ export function CostSimulator() {
   async function save() {
     const input = toInput(formA);
     if (input.grossMonthlySalary <= 0) {
-      toast.error("Renseignez un salaire brut valide avant d'enregistrer.");
+      toast.error(t("costsimErrGrossSave"));
       return;
     }
     setSaving(true);
@@ -377,7 +388,7 @@ export function CostSimulator() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: `Simulation — ${EUR(input.grossMonthlySalary)} brut`,
+          title: t("costsimSaveTitle", { amount: EUR(input.grossMonthlySalary) }),
           inputs: input,
           result: {
             estimatedEmployerContributions: resultA.estimatedEmployerContributions,
@@ -392,10 +403,10 @@ export function CostSimulator() {
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
-      if (!res.ok || !data.id) throw new Error(data.error ?? "Échec");
-      toast.success("Simulation enregistrée.");
+      if (!res.ok || !data.id) throw new Error(data.error ?? t("costsimErrShort"));
+      toast.success(t("costsimSaved"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Échec de l'enregistrement.");
+      toast.error(e instanceof Error ? e.message : t("costsimErrSave"));
     } finally {
       setSaving(false);
     }
@@ -404,7 +415,7 @@ export function CostSimulator() {
   async function exportPdf() {
     const input = toInput(formA);
     if (input.grossMonthlySalary <= 0) {
-      toast.error("Renseignez un salaire brut valide avant l'export.");
+      toast.error(t("costsimErrGrossExport"));
       return;
     }
     setExporting(true);
@@ -416,14 +427,14 @@ export function CostSimulator() {
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? "Échec");
+        throw new Error(data.error ?? t("costsimErrShort"));
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank", "noopener,noreferrer");
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Échec de l'export PDF.");
+      toast.error(e instanceof Error ? e.message : t("costsimErrExport"));
     } finally {
       setExporting(false);
     }
@@ -434,7 +445,7 @@ export function CostSimulator() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calculator className="size-4 text-primary" aria-hidden />
-          Recalcul en direct
+          {t("costsimLiveRecalc")}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -448,13 +459,13 @@ export function CostSimulator() {
               });
             }}
           >
-            <GitCompare /> {comparing ? "Arrêter la comparaison" : "Comparer"}
+            <GitCompare /> {comparing ? t("costsimStopCompare") : t("costsimCompare")}
           </Button>
           <Button variant="outline" size="sm" onClick={save} disabled={saving}>
-            {saving ? <Loader2 className="animate-spin" /> : <Save />} Sauvegarder
+            {saving ? <Loader2 className="animate-spin" /> : <Save />} {t("costsimSave")}
           </Button>
           <Button variant="outline" size="sm" onClick={exportPdf} disabled={exporting}>
-            {exporting ? <Loader2 className="animate-spin" /> : <FileDown />} Exporter PDF
+            {exporting ? <Loader2 className="animate-spin" /> : <FileDown />} {t("costsimExportPdf")}
           </Button>
         </div>
       </div>
@@ -462,8 +473,8 @@ export function CostSimulator() {
       <div className={comparing ? "grid gap-4 lg:grid-cols-2" : "space-y-4"}>
         {/* Colonne A */}
         <div className="space-y-4">
-          <SimForm form={formA} setForm={setFormA} heading={comparing ? "Scénario A" : "Paramètres"} />
-          <ResultsCard result={resultA} label={comparing ? "Estimation — A" : "Estimation"} />
+          <SimForm form={formA} setForm={setFormA} heading={comparing ? t("costsimScenarioA") : t("costsimParams")} />
+          <ResultsCard result={resultA} label={comparing ? t("costsimEstimationA") : t("costsimEstimation")} />
         </div>
 
         {/* Colonne B (comparaison) */}
@@ -471,11 +482,11 @@ export function CostSimulator() {
           <div className="space-y-4">
             <div className="flex items-center justify-end">
               <Button variant="ghost" size="sm" onClick={() => setComparing(false)}>
-                <X /> Fermer
+                <X /> {t("costsimClose")}
               </Button>
             </div>
-            <SimForm form={formB} setForm={setFormB} heading="Scénario B" />
-            <ResultsCard result={resultB} label="Estimation — B" />
+            <SimForm form={formB} setForm={setFormB} heading={t("costsimScenarioB")} />
+            <ResultsCard result={resultB} label={t("costsimEstimationB")} />
           </div>
         ) : null}
       </div>
@@ -502,7 +513,7 @@ export function CostSimulator() {
         {resultA.assumptions.length > 0 ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Hypothèses de calcul</CardTitle>
+              <CardTitle className="text-base">{t("costsimAssumptions")}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
@@ -516,7 +527,7 @@ export function CostSimulator() {
         {resultA.missingData.length > 0 ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Données manquantes / non chiffrées</CardTitle>
+              <CardTitle className="text-base">{t("costsimMissingData")}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">

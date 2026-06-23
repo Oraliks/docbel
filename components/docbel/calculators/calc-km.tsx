@@ -21,6 +21,7 @@
  */
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   AlertCircle,
   BadgeCheck,
@@ -63,23 +64,13 @@ import {
  */
 const LAST_UPDATED = "2026-05-25";
 
-const TRANSPORT_OPTIONS: { value: TransportMode; label: string }[] = [
-  { value: "voiture", label: "Voiture personnelle" },
-  { value: "velo", label: "Vélo (y compris électrique)" },
-  {
-    value: "transports_publics",
-    label: "Transports publics (SNCB / STIB / TEC / De Lijn)",
-  },
-  { value: "moto", label: "Moto" },
-  { value: "covoiturage", label: "Covoiturage (passager)" },
-];
-
-const TRANSPORT_BADGE: Record<TransportMode, string> = {
-  voiture: "Voiture",
-  velo: "Vélo",
-  transports_publics: "Transports publics",
-  moto: "Moto",
-  covoiturage: "Covoiturage",
+/** Maps value de transport → clé i18n du badge court (résolu dans le panneau). */
+const TRANSPORT_BADGE_KEYS: Record<TransportMode, string> = {
+  voiture: "kmBadgeVoiture",
+  velo: "kmBadgeVelo",
+  transports_publics: "kmBadgeTP",
+  moto: "kmBadgeMoto",
+  covoiturage: "kmBadgeCovoiturage",
 };
 
 /* ------------------------------------------------------------------ */
@@ -87,6 +78,16 @@ const TRANSPORT_BADGE: Record<TransportMode, string> = {
 /* ------------------------------------------------------------------ */
 
 export function CalcKm({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
+
+  const TRANSPORT_OPTIONS: { value: TransportMode; label: string }[] = [
+    { value: "voiture", label: t("kmTransportVoiture") },
+    { value: "velo", label: t("kmTransportVelo") },
+    { value: "transports_publics", label: t("kmTransportTP") },
+    { value: "moto", label: t("kmTransportMoto") },
+    { value: "covoiturage", label: t("kmTransportCovoiturage") },
+  ];
+
   const [transport, setTransport] = useState<TransportMode>("voiture");
   const [kmAllerSimple, setKmAllerSimple] = useState("25");
   const [joursParSemaine, setJoursParSemaine] = useState("5");
@@ -132,19 +133,19 @@ export function CalcKm({ accent }: { accent: string }) {
       : 0;
 
     if (!Number.isFinite(km)) {
-      setError("Indiquez une distance domicile-travail valide.");
+      setError(t("kmErrDistance"));
       return;
     }
     if (!Number.isFinite(jours)) {
-      setError("Indiquez un nombre de jours par semaine valide.");
+      setError(t("kmErrJours"));
       return;
     }
     if (!Number.isFinite(semaines)) {
-      setError("Indiquez un nombre de semaines par an valide.");
+      setError(t("kmErrSemaines"));
       return;
     }
     if (isTP && !Number.isFinite(abo)) {
-      setError("Indiquez le coût annuel de votre abonnement.");
+      setError(t("kmErrAbonnement"));
       return;
     }
 
@@ -205,7 +206,7 @@ export function CalcKm({ accent }: { accent: string }) {
         hour: "2-digit",
         minute: "2-digit",
       });
-      doc.text(`Généré le ${dateStr} à ${timeStr}`, pageWidth - margin, y, {
+      doc.text(t("kmPdfGeneratedAt", { date: dateStr, time: timeStr }), pageWidth - margin, y, {
         align: "right",
       });
       y += 10;
@@ -215,7 +216,7 @@ export function CalcKm({ accent }: { accent: string }) {
       doc.setFont("", "bold");
       doc.setTextColor(0, 0, 0);
       doc.text(
-        `Frais kilométriques domicile-travail — ${result.modeLabel}`,
+        t("kmPdfTitle", { modeLabel: result.modeLabel }),
         margin,
         y,
       );
@@ -225,7 +226,7 @@ export function CalcKm({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Paramètres saisis", margin, y);
+      doc.text(t("kmPdfInputsTitle"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -233,27 +234,27 @@ export function CalcKm({ accent }: { accent: string }) {
       doc.setTextColor(0, 0, 0);
 
       const inputs: [string, string][] = [
-        ["Mode de transport", result.modeLabel],
-        ["Distance aller simple", `${fmtNumber(parseNum(kmAllerSimple))} km`],
-        ["Jours sur place / semaine", `${parseNum(joursParSemaine)} j`],
-        ["Semaines / an", `${parseNum(semainesParAn)} sem`],
+        [t("kmPdfRowMode"), result.modeLabel],
+        [t("kmPdfRowDistance"), t("kmPdfDistanceValue", { n: fmtNumber(parseNum(kmAllerSimple)) })],
+        [t("kmPdfRowJours"), t("kmPdfJoursValue", { n: parseNum(joursParSemaine) })],
+        [t("kmPdfRowSemaines"), t("kmPdfSemainesValue", { n: parseNum(semainesParAn) })],
       ];
       if (isTP) {
         inputs.push([
-          "Coût annuel abonnement",
+          t("kmPdfRowAbonnement"),
           fmtEUR(parseNum(coutAbonnement)),
         ]);
       }
       if (parseNum(joursTelework) > 0) {
         inputs.push([
-          "Jours de télétravail / semaine",
-          `${parseNum(joursTelework)} j (info)`,
+          t("kmPdfRowTelework"),
+          t("kmPdfTeleworkValue", { n: parseNum(joursTelework) }),
         ]);
       }
       if (parseNum(indemniteEmployeur) > 0) {
         inputs.push([
-          "Indemnité employeur reçue",
-          `${fmtEUR(parseNum(indemniteEmployeur))} / an`,
+          t("kmPdfRowIndemnite"),
+          t("kmPdfIndemniteValue", { montant: fmtEUR(parseNum(indemniteEmployeur)) }),
         ]);
       }
 
@@ -280,7 +281,7 @@ export function CalcKm({ accent }: { accent: string }) {
       doc.setFontSize(10);
       doc.setFont("", "bold");
       doc.setTextColor(12, 74, 110);
-      doc.text("DÉDUCTION FISCALE ANNUELLE ESTIMÉE", margin + 4, y + 7);
+      doc.text(t("kmPdfDeductionLabel"), margin + 4, y + 7);
 
       doc.setFontSize(22);
       doc.setTextColor(0, 0, 0);
@@ -290,7 +291,12 @@ export function CalcKm({ accent }: { accent: string }) {
       doc.setFont("", "normal");
       doc.setTextColor(100, 100, 100);
       doc.text(
-        `Forfait légal CIR 92 art. 51 : ${fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0)} / an — ${result.recommandationFraisReels ? "frais réels avantageux" : "forfait légal probablement préférable"}`,
+        t("kmPdfForfaitLine", {
+          forfait: fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0),
+          reco: result.recommandationFraisReels
+            ? t("kmPdfForfaitRecoFraisReels")
+            : t("kmPdfForfaitRecoForfait"),
+        }),
         margin + 4,
         y + 26,
       );
@@ -300,7 +306,7 @@ export function CalcKm({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Détail du calcul", margin, y);
+      doc.text(t("kmPdfDetailTitle"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -309,11 +315,11 @@ export function CalcKm({ accent }: { accent: string }) {
 
       const details: [string, string][] = [
         [
-          "Kilomètres annuels (aller-retour)",
-          `${fmtNumber(result.kmTotalAnnuel)} km`,
+          t("kmPdfRowKmAnnuels"),
+          t("kmPdfKmValue", { n: fmtNumber(result.kmTotalAnnuel) }),
         ],
         [
-          "Taux appliqué",
+          t("kmPdfRowTaux"),
           typeof result.tauxApplique === "number"
             ? `${result.tauxApplique.toFixed(4).replace(".", ",")} €/km`
             : result.tauxApplique,
@@ -321,33 +327,33 @@ export function CalcKm({ accent }: { accent: string }) {
       ];
       if (result.abonnementInclus > 0) {
         details.push([
-          "Abonnement déduit (100 %)",
+          t("kmPdfRowAbonnementDeduit"),
           fmtEUR(result.abonnementInclus),
         ]);
       }
       if (result.plafondAtteint) {
         details.push([
-          isVoiture ? "Plafond 100 km aller simple" : "Plafond vélo annuel",
+          isVoiture ? t("kmPdfRowPlafondVoiture") : t("kmPdfRowPlafondVelo"),
           isVoiture
-            ? "Atteint — excédent à 0,15 €/km"
-            : `Atteint — capé à ${fmtEUR(PLAFOND_ANNUEL_VELO_2026)}/an`,
+            ? t("kmPdfPlafondVoitureValue")
+            : t("kmPdfPlafondVeloValue", { plafond: fmtEUR(PLAFOND_ANNUEL_VELO_2026) }),
         ]);
       }
       if (result.indemniteEmployeurAnnuelle > 0) {
-        details.push(["Déduction brute", fmtEUR(result.deductionKmBrute)]);
+        details.push([t("kmPdfRowDeductionBrute"), fmtEUR(result.deductionKmBrute)]);
         details.push([
-          "Indemnité employeur (à soustraire)",
+          t("kmPdfRowIndemniteSoustraire"),
           `- ${fmtEUR(result.indemniteEmployeurAnnuelle)}`,
         ]);
       }
-      details.push(["Déduction nette", fmtEUR(result.deductionKmNette)]);
+      details.push([t("kmPdfRowDeductionNette"), fmtEUR(result.deductionKmNette)]);
       if (
         typeof result.kmTeleworkEvites === "number" &&
         result.kmTeleworkEvites > 0
       ) {
         details.push([
-          "Km évités par télétravail (info)",
-          `${fmtNumber(result.kmTeleworkEvites)} km / an`,
+          t("kmPdfRowKmTelework"),
+          t("kmPdfKmTeleworkValue", { n: fmtNumber(result.kmTeleworkEvites) }),
         ]);
       }
 
@@ -380,8 +386,8 @@ export function CalcKm({ accent }: { accent: string }) {
       doc.setTextColor(result.recommandationFraisReels ? 22 : 180, result.recommandationFraisReels ? 130 : 83, result.recommandationFraisReels ? 90 : 9);
       doc.text(
         result.recommandationFraisReels
-          ? "Frais réels probablement avantageux"
-          : "Forfait légal probablement plus avantageux",
+          ? t("kmPdfRecoFraisReelsTitle")
+          : t("kmPdfRecoForfaitTitle"),
         margin + 4,
         y + 7,
       );
@@ -390,8 +396,14 @@ export function CalcKm({ accent }: { accent: string }) {
       doc.setTextColor(60, 60, 60);
       const recoTxt = doc.splitTextToSize(
         result.recommandationFraisReels
-          ? `Votre déduction kilométrique nette (${fmtEUR(result.deductionKmNette)}) couvre déjà une part importante du forfait légal (${fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0)}). Ajoutez vos autres frais réels — si le total dépasse le forfait, optez pour les frais réels dans la déclaration (cases 1254/2254).`
-          : `Votre déduction kilométrique nette (${fmtEUR(result.deductionKmNette)}) reste inférieure au forfait légal automatique (${fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0)}). L'option pour les frais réels n'est intéressante que si la somme totale (km + autres frais pro) dépasse ce forfait.`,
+          ? t("kmPdfRecoFraisReelsBody", {
+              montant: fmtEUR(result.deductionKmNette),
+              forfait: fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0),
+            })
+          : t("kmPdfRecoForfaitBody", {
+              montant: fmtEUR(result.deductionKmNette),
+              forfait: fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0),
+            }),
         pageWidth - margin * 2 - 8,
       );
       doc.text(recoTxt, margin + 4, y + 14);
@@ -406,7 +418,13 @@ export function CalcKm({ accent }: { accent: string }) {
       doc.setFont("", "italic");
       doc.setTextColor(120, 120, 120);
       const footer = doc.splitTextToSize(
-        `Estimation indicative — barèmes 2026 (revenus 2026 / EI 2027). Voiture : tarif fonctionnaires Q2 2026 ${(TAUX_KM_2026.voiture).toString().replace(".", ",")} €/km (circulaire BOSA n° 764) ou forfait CIR 92 art. 66 ${(0.15).toString().replace(".", ",")} €/km si l'employeur verse une indemnité km. Vélo ${(TAUX_KM_2026.velo).toString().replace(".", ",")} €/km plafonné à ${fmtEUR(PLAFOND_ANNUEL_VELO_2026)}/an. Forfait légal CIR 92 art. 51 : ${fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0)}/an. Sources : SPF Finances, SPF Mobilité, Moniteur belge.`,
+        t("kmPdfFooter", {
+          tauxVoiture: TAUX_KM_2026.voiture.toString().replace(".", ","),
+          tauxForfait: (0.15).toString().replace(".", ","),
+          tauxVelo: TAUX_KM_2026.velo.toString().replace(".", ","),
+          plafondVelo: fmtEUR(PLAFOND_ANNUEL_VELO_2026),
+          forfait: fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0),
+        }),
         pageWidth - margin * 2,
       );
       doc.text(footer, margin, y);
@@ -462,10 +480,10 @@ export function CalcKm({ accent }: { accent: string }) {
               </span>
               <div>
                 <h2 className="text-[16px] font-bold text-[color:var(--glass-ink)]">
-                  Frais kilométriques domicile-travail
+                  {t("kmTitle")}
                 </h2>
                 <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
-                  Déduction fiscale 2026 — voiture, vélo, transports publics
+                  {t("kmSubtitle")}
                 </p>
               </div>
             </div>
@@ -478,10 +496,10 @@ export function CalcKm({ accent }: { accent: string }) {
                 background: "var(--glass-surface)",
                 color: "var(--glass-ink-soft)",
               }}
-              title="Réinitialiser le formulaire"
+              title={t("kmResetForm")}
             >
               <RotateCcw className="size-3.5" />
-              Réinitialiser
+              {t("kmReset")}
             </button>
           </div>
 
@@ -498,48 +516,48 @@ export function CalcKm({ accent }: { accent: string }) {
           {/* --- Section 1 : trajet ----------------------------- */}
           <div className="flex flex-col gap-3">
             <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-[color:var(--glass-ink-faint)]">
-              1. Votre trajet
+              {t("kmSection1")}
             </span>
 
             <CalcField
               id="km-aller-simple"
-              label="Distance domicile-travail (aller simple)"
+              label={t("kmFieldDistance")}
               value={kmAllerSimple}
               onChange={setKmAllerSimple}
               placeholder="ex : 25"
               min={1}
               max={499}
-              suffix="km"
+              suffix={t("kmSuffixKm")}
               hint={
                 isVoiture
-                  ? "Voiture / covoiturage : tarif préférentiel jusqu'à 100 km aller simple ; au-delà = 0,15 €/km."
-                  : "Trajet aller simple — multiplié × 2 pour le retour."
+                  ? t("kmHintDistanceVoiture")
+                  : t("kmHintDistanceAutre")
               }
             />
 
             <CalcGrid cols={2}>
               <CalcField
                 id="km-jours"
-                label="Jours sur place / semaine"
+                label={t("kmFieldJours")}
                 value={joursParSemaine}
                 onChange={setJoursParSemaine}
                 placeholder="ex : 5"
                 min={1}
                 max={7}
-                suffix="j"
-                hint="Jours physiquement présents au travail (hors télétravail)."
+                suffix={t("kmSuffixJours")}
+                hint={t("kmHintJours")}
               />
               <CalcField
                 id="km-semaines"
-                label="Semaines / an"
+                label={t("kmFieldSemaines")}
                 value={semainesParAn}
                 onChange={setSemainesParAn}
                 placeholder="44"
                 min={1}
                 max={52}
                 step={1}
-                suffix="sem"
-                hint="52 − vacances − maladie. Défaut 44."
+                suffix={t("kmSuffixSem")}
+                hint={t("kmHintSemaines")}
               />
             </CalcGrid>
           </div>
@@ -547,35 +565,35 @@ export function CalcKm({ accent }: { accent: string }) {
           {/* --- Section 2 : mode de transport ---------------------- */}
           <div className="flex flex-col gap-3">
             <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-[color:var(--glass-ink-faint)]">
-              2. Mode de transport
+              {t("kmSection2")}
             </span>
 
             <CalcSelect<TransportMode>
               id="km-transport"
-              label="Mode principal"
+              label={t("kmFieldMode")}
               value={transport}
               onChange={setTransport}
               options={TRANSPORT_OPTIONS}
-              hint="En cas de combinaison (ex: voiture + train), choisissez le mode majoritaire."
+              hint={t("kmHintMode")}
             />
 
             {isTP ? (
               <CalcField
                 id="km-abonnement"
-                label="Coût annuel de l'abonnement"
+                label={t("kmFieldAbonnement")}
                 value={coutAbonnement}
                 onChange={setCoutAbonnement}
                 placeholder="ex : 750"
                 min={0}
                 suffix="€"
-                hint="100 % du coût est déductible (SNCB, STIB, TEC, De Lijn — opérateurs publics)."
+                hint={t("kmHintAbonnement")}
               />
             ) : null}
 
             {!isTP ? (
               <CalcField
                 id="km-indemnite-employeur"
-                label="Indemnité km annuelle reçue de l'employeur"
+                label={t("kmFieldIndemnite")}
                 value={indemniteEmployeur}
                 onChange={setIndemniteEmployeur}
                 placeholder="ex : 0"
@@ -583,8 +601,8 @@ export function CalcKm({ accent }: { accent: string }) {
                 suffix="€"
                 hint={
                   isVoiture
-                    ? "Si > 0 → bascule automatique vers le forfait 0,15 €/km (CIR 92 art. 66, cumul interdit) + soustraction du montant reçu."
-                    : "Soustraite de la déduction brute (règle de non-cumul)."
+                    ? t("kmHintIndemniteVoiture")
+                    : t("kmHintIndemniteAutre")
                 }
               />
             ) : null}
@@ -597,7 +615,7 @@ export function CalcKm({ accent }: { accent: string }) {
               onClick={() => setAdvancedOpen((v) => !v)}
               className="inline-flex w-fit items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.05em] text-[color:var(--glass-ink-faint)] transition hover:text-[color:var(--glass-ink)]"
             >
-              3. Avancé (télétravail)
+              {t("kmSection3")}
               {advancedOpen ? (
                 <ChevronUp className="size-3.5" />
               ) : (
@@ -607,14 +625,14 @@ export function CalcKm({ accent }: { accent: string }) {
             {advancedOpen ? (
               <CalcField
                 id="km-telework"
-                label="Jours de télétravail / semaine"
+                label={t("kmFieldTelework")}
                 value={joursTelework}
                 onChange={setJoursTelework}
                 placeholder="ex : 2"
                 min={0}
                 max={5}
-                suffix="j"
-                hint="Pédagogique : ne réduit pas la déduction (les jours sur place sont déjà comptés ci-dessus). Affiche les km évités à titre informatif."
+                suffix={t("kmSuffixJours")}
+                hint={t("kmHintTelework")}
               />
             ) : null}
           </div>
@@ -624,7 +642,7 @@ export function CalcKm({ accent }: { accent: string }) {
           {/* Boutons : Calculer + Réinitialiser */}
           <CalcGrid cols={2}>
             <CalcSubmitButton accent={accent} onClick={handleCalc}>
-              Calculer ma déduction
+              {t("kmSubmit")}
             </CalcSubmitButton>
             <button
               type="button"
@@ -637,7 +655,7 @@ export function CalcKm({ accent }: { accent: string }) {
               }}
             >
               <RotateCcw className="size-4" />
-              Réinitialiser le formulaire
+              {t("kmResetForm")}
             </button>
           </CalcGrid>
 
@@ -652,12 +670,13 @@ export function CalcKm({ accent }: { accent: string }) {
           >
             <Info className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-ink-faint)]" />
             <div>
-              <strong className="text-[color:var(--glass-ink)]">
-                Estimation indicative.
-              </strong>{" "}
-              Pour optimiser votre déclaration, simulez sur{" "}
-              <strong>Tax-on-web (MyMinfin)</strong> ou consultez votre
-              comptable. Les frais réels exigent des justificatifs.
+              {t.rich("kmDisclaimer", {
+                b: (chunks) => (
+                  <strong className="text-[color:var(--glass-ink)]">
+                    {chunks}
+                  </strong>
+                ),
+              })}
             </div>
           </div>
         </CalcCard>
@@ -688,44 +707,50 @@ export function CalcKm({ accent }: { accent: string }) {
 
       {/* Footer : Mise à jour + sources */}
       <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-        Calculateur mis à jour le <strong>{lastUpdatedFr}</strong> · Revenus
-        2026 / EI 2027 · Sources officielles :{" "}
-        <a
-          href="https://fin.belgium.be/fr/particuliers/declaration-impot/revenus/indemnites-frais-deplacement-domicile-lieu-travail"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline decoration-dotted"
-        >
-          SPF Finances
-        </a>
-        ,{" "}
-        <a
-          href="https://mobilit.belgium.be/fr/mobilite-durable/velos/avantages-fiscaux-et-primes-velo"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline decoration-dotted"
-        >
-          SPF Mobilité
-        </a>
-        ,{" "}
-        <a
-          href="https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/remuneration-et-avantages/allocations-et-indemnites-13"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline decoration-dotted"
-        >
-          BOSA (circulaire indemnité km)
-        </a>
-        ,{" "}
-        <a
-          href="https://www.ejustice.just.fgov.be"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline decoration-dotted"
-        >
-          Moniteur belge (CIR 92)
-        </a>
-        .
+        {t.rich("kmFooter", {
+          date: lastUpdatedFr,
+          b: (chunks) => <strong>{chunks}</strong>,
+          spf: () => (
+            <a
+              href="https://fin.belgium.be/fr/particuliers/declaration-impot/revenus/indemnites-frais-deplacement-domicile-lieu-travail"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-dotted"
+            >
+              {t("kmFooterSpf")}
+            </a>
+          ),
+          mob: () => (
+            <a
+              href="https://mobilit.belgium.be/fr/mobilite-durable/velos/avantages-fiscaux-et-primes-velo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-dotted"
+            >
+              {t("kmFooterMob")}
+            </a>
+          ),
+          bosa: () => (
+            <a
+              href="https://bosa.belgium.be/fr/themes/travailler-dans-la-fonction-publique/remuneration-et-avantages/allocations-et-indemnites-13"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-dotted"
+            >
+              {t("kmFooterBosa")}
+            </a>
+          ),
+          mb: () => (
+            <a
+              href="https://www.ejustice.just.fgov.be"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-dotted"
+            >
+              {t("kmFooterMb")}
+            </a>
+          ),
+        })}
       </p>
     </div>
   );
@@ -750,6 +775,8 @@ function KmResultPanel({
   exporting: boolean;
   TransportIcon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }) {
+  const t = useTranslations("public.outils");
+  const tk = (key: string) => t(key as Parameters<typeof t>[0]);
   const isVoiture = transport === "voiture";
   const isVelo = transport === "velo";
   const isTP = transport === "transports_publics";
@@ -769,12 +796,12 @@ function KmResultPanel({
           className="text-[11px] font-bold uppercase tracking-[0.06em]"
           style={{ color: accent }}
         >
-          Résultat estimatif
+          {t("kmResultEyebrow")}
         </span>
         <span
           className="inline-flex items-center"
-          title="Estimation indicative — barèmes revenus 2026 / EI 2027"
-          aria-label="Estimation indicative — barèmes revenus 2026 / EI 2027"
+          title={t("kmResultAria")}
+          aria-label={t("kmResultAria")}
         >
           <Info
             className="size-4"
@@ -793,7 +820,7 @@ function KmResultPanel({
         }}
       >
         <TransportIcon className="size-3.5" />
-        {TRANSPORT_BADGE[transport]}
+        {tk(TRANSPORT_BADGE_KEYS[transport])}
       </div>
 
       {/* Headline : déduction nette */}
@@ -808,26 +835,22 @@ function KmResultPanel({
           className="mt-1 text-[13px] font-semibold"
           style={{ color: "var(--glass-ink-soft)" }}
         >
-          / an de déduction fiscale estimée
+          {t("kmHeadlineSuffix")}
         </div>
         <div className="mt-1 text-[12.5px] text-[color:var(--glass-ink-soft)]">
-          {isTP ? (
-            <>
-              Abonnement déduit à 100 % —{" "}
-              <strong>{fmtNumber(result.kmTotalAnnuel)} km</strong> parcourus à
-              titre indicatif
-            </>
-          ) : (
-            <>
-              <strong>{fmtNumber(result.kmTotalAnnuel)} km/an</strong> au taux
-              de{" "}
-              <strong>
-                {typeof result.tauxApplique === "number"
-                  ? `${result.tauxApplique.toFixed(4).replace(".", ",")} €/km`
-                  : result.tauxApplique}
-              </strong>
-            </>
-          )}
+          {isTP
+            ? t.rich("kmHeadlineTP", {
+                n: fmtNumber(result.kmTotalAnnuel),
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })
+            : t.rich("kmHeadlineAutre", {
+                n: fmtNumber(result.kmTotalAnnuel),
+                taux:
+                  typeof result.tauxApplique === "number"
+                    ? `${result.tauxApplique.toFixed(4).replace(".", ",")} €/km`
+                    : result.tauxApplique,
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
         </div>
       </div>
 
@@ -844,33 +867,25 @@ function KmResultPanel({
           {result.recommandationFraisReels ? (
             <>
               <BadgeCheck className="size-3.5" />
-              Frais réels probablement avantageux
+              {t("kmRecoFraisReelsTitle")}
             </>
           ) : (
             <>
               <AlertCircle className="size-3.5" />
-              Forfait légal probablement plus avantageux
+              {t("kmRecoForfaitTitle")}
             </>
           )}
         </div>
         <p className="text-[11.5px] leading-[1.55]">
-          {result.recommandationFraisReels ? (
-            <>
-              Votre déduction km nette ({fmtEUR(result.deductionKmNette)})
-              couvre déjà une part importante du forfait légal (
-              {fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0)}/an). Ajoutez vos autres
-              frais réels — si le total dépasse, optez pour les frais réels
-              (cases 1254/2254).
-            </>
-          ) : (
-            <>
-              Votre déduction km nette ({fmtEUR(result.deductionKmNette)})
-              reste inférieure au forfait légal automatique (
-              {fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0)}/an). L&apos;option
-              frais réels n&apos;est intéressante que si la somme totale dépasse
-              ce forfait.
-            </>
-          )}
+          {result.recommandationFraisReels
+            ? t("kmRecoFraisReelsBody", {
+                montant: fmtEUR(result.deductionKmNette),
+                forfait: fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0),
+              })
+            : t("kmRecoForfaitBody", {
+                montant: fmtEUR(result.deductionKmNette),
+                forfait: fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0),
+              })}
         </p>
       </div>
 
@@ -883,25 +898,25 @@ function KmResultPanel({
           className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em]"
           style={{ color: "var(--glass-ink-faint)" }}
         >
-          Détail du calcul
+          {t("kmDetailTitle")}
         </div>
         <div className="flex flex-col gap-1.5 rounded-xl bg-[color:var(--glass-surface)] p-3.5 text-[12.5px]">
           <ResultRow
-            label="Mode de transport"
+            label={t("kmRowMode")}
             value={result.modeLabel}
           />
           <ResultRow
-            label="Km annuels (aller-retour × jours × sem)"
-            value={`${fmtNumber(result.kmTotalAnnuel)} km`}
+            label={t("kmRowKmAnnuels")}
+            value={t("kmRowKmValue", { n: fmtNumber(result.kmTotalAnnuel) })}
           />
           {result.abonnementInclus > 0 ? (
             <ResultRow
-              label="Abonnement déduit (100 %)"
+              label={t("kmRowAbonnement")}
               value={fmtEUR(result.abonnementInclus)}
             />
           ) : (
             <ResultRow
-              label="Taux appliqué"
+              label={t("kmRowTaux")}
               value={
                 typeof result.tauxApplique === "number"
                   ? `${result.tauxApplique.toFixed(4).replace(".", ",")} €/km`
@@ -911,31 +926,31 @@ function KmResultPanel({
           )}
           {result.plafondAtteint && isVoiture ? (
             <ResultRow
-              label="Plafond 100 km aller simple"
-              value="Atteint — excédent à 0,15 €/km"
+              label={t("kmRowPlafondVoiture")}
+              value={t("kmRowPlafondVoitureValue")}
               emphasis
             />
           ) : null}
           {veloPlafondAtteint ? (
             <ResultRow
-              label="Plafond vélo annuel"
-              value={`Atteint — capé à ${fmtEUR(PLAFOND_ANNUEL_VELO_2026)}/an`}
+              label={t("kmRowPlafondVelo")}
+              value={t("kmRowPlafondVeloValue", { plafond: fmtEUR(PLAFOND_ANNUEL_VELO_2026) })}
               emphasis
             />
           ) : null}
           {result.indemniteEmployeurAnnuelle > 0 ? (
             <>
               <ResultRow
-                label="Déduction brute"
+                label={t("kmRowDeductionBrute")}
                 value={fmtEUR(result.deductionKmBrute)}
               />
               <ResultRow
-                label="Indemnité employeur"
+                label={t("kmRowIndemnite")}
                 value={fmtEUR(result.indemniteEmployeurAnnuelle)}
                 direction="minus"
               />
               <ResultRow
-                label="Déduction nette"
+                label={t("kmRowDeductionNette")}
                 value={fmtEUR(result.deductionKmNette)}
                 direction="plus"
                 emphasis
@@ -943,7 +958,7 @@ function KmResultPanel({
             </>
           ) : (
             <ResultRow
-              label="Déduction annuelle"
+              label={t("kmRowDeductionAnnuelle")}
               value={fmtEUR(result.deductionKmNette)}
               emphasis
             />
@@ -964,13 +979,13 @@ function KmResultPanel({
         >
           <div className="mb-1 flex items-center gap-1.5 font-bold">
             <Lightbulb className="size-3.5" />
-            Km évités par le télétravail (info)
+            {t("kmTeleworkTitle")}
           </div>
           <p className="text-[#1E3A8A]">
-            <strong>{fmtNumber(result.kmTeleworkEvites)} km/an</strong>{" "}
-            économisés grâce à vos jours en télétravail. N&apos;entre pas dans
-            la déduction (jours sans déplacement), mais réduit votre empreinte
-            carbone et vos coûts réels (carburant, usure du véhicule).
+            {t.rich("kmTeleworkBody", {
+              n: fmtNumber(result.kmTeleworkEvites),
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
         </div>
       ) : null}
@@ -985,56 +1000,45 @@ function KmResultPanel({
         }}
       >
         <div className="mb-1 flex items-center gap-1.5 font-bold text-[color:var(--glass-ink)]">
-          <Info className="size-3.5" /> À savoir
+          <Info className="size-3.5" /> {t("kmToKnow")}
         </div>
         <ul className="list-inside list-disc space-y-1">
           <li>
-            L&apos;option <strong>frais réels</strong> n&apos;est intéressante
-            que si le total des frais professionnels dépasse le forfait légal
-            de <strong>{fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0)}/an</strong>{" "}
-            (CIR 92 art. 51).
+            {t.rich("kmToKnowForfait", {
+              forfait: fmtEUR(FORFAIT_LEGAL_FRAIS_PRO_2026, 0),
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
           {isVoiture ? (
             <li>
-              {voitureForfaitForcé ? (
-                <>
-                  Taux voiture appliqué :{" "}
-                  <strong>0,15 €/km</strong> (forfait CIR 92 art. 66) — votre
-                  employeur verse une indemnité km, le cumul avec le tarif
-                  fonctionnaires (0,4327 €/km Q2 2026) n&apos;est pas
-                  autorisé.
-                </>
-              ) : (
-                <>
-                  Taux voiture appliqué :{" "}
-                  <strong>0,4327 €/km</strong> (tarif fonctionnaires Q2 2026,
-                  circulaire BOSA n° 764) — aucune indemnité km de
-                  l&apos;employeur. Si vous percevez une indemnité, le taux
-                  bascule automatiquement à 0,15 €/km.
-                </>
-              )}
+              {voitureForfaitForcé
+                ? t.rich("kmToKnowVoitureForce", {
+                    strong: (chunks) => <strong>{chunks}</strong>,
+                  })
+                : t.rich("kmToKnowVoiture", {
+                    strong: (chunks) => <strong>{chunks}</strong>,
+                  })}
             </li>
           ) : null}
           {isVelo ? (
             <li>
-              Vélo : <strong>0,37 €/km</strong> plafonné à{" "}
-              <strong>{fmtEUR(PLAFOND_ANNUEL_VELO_2026)}/an</strong> (revenus
-              2026 / EI 2027) — exonération uniquement si vos frais
-              professionnels sont calculés au forfait.
+              {t.rich("kmToKnowVelo", {
+                plafond: fmtEUR(PLAFOND_ANNUEL_VELO_2026),
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </li>
           ) : null}
           {isTP ? (
             <li>
-              Transports publics : <strong>100 % du coût</strong> de
-              l&apos;abonnement SNCB / STIB / TEC / De Lijn déductible
-              (opérateurs publics).
+              {t.rich("kmToKnowTP", {
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </li>
           ) : null}
           <li>
-            <strong>Déclaration Tax-on-web</strong> : indemnité reçue à coder
-            en case <strong>1254/2254</strong>, exonération en{" "}
-            <strong>1255/2255</strong>. Frais réels à détailler dans la
-            partie 2 de la déclaration.
+            {t.rich("kmToKnowTaxOnWeb", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
         </ul>
       </div>
@@ -1051,7 +1055,7 @@ function KmResultPanel({
         }}
       >
         <Download className="size-4" />
-        {exporting ? "Génération du PDF…" : "Télécharger le détail (PDF)"}
+        {exporting ? t("kmGeneratingPdf") : t("kmDownloadPdf")}
       </button>
     </div>
   );
@@ -1062,35 +1066,38 @@ function KmResultPanel({
 /* ------------------------------------------------------------------ */
 
 function KmResultPlaceholder({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
   return (
     <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-center">
       <span
         className="text-[11px] font-bold uppercase tracking-[0.06em]"
         style={{ color: accent }}
       >
-        Résultat estimatif
+        {t("kmResultEyebrow")}
       </span>
       <div
         className="text-[15px] font-semibold leading-snug text-[color:var(--glass-ink-soft)]"
         style={{ maxWidth: 260 }}
       >
-        Renseignez votre trajet, votre mode de transport, puis cliquez sur{" "}
-        <em>« Calculer ma déduction »</em>.
+        {t.rich("kmPlaceholderText", {
+          em: (chunks) => <em>{chunks}</em>,
+        })}
       </div>
       <div className="mt-2 flex items-center gap-2 text-[11px] text-[color:var(--glass-ink-faint)]">
         <Car className="size-3.5" />
-        <span>Voiture</span>
+        <span>{t("kmPlaceholderVoiture")}</span>
         <span>·</span>
         <Bike className="size-3.5" />
-        <span>Vélo</span>
+        <span>{t("kmPlaceholderVelo")}</span>
         <span>·</span>
         <Bus className="size-3.5" />
-        <span>Transports publics</span>
+        <span>{t("kmPlaceholderTP")}</span>
       </div>
       <div className="mt-1 text-[10.5px] text-[color:var(--glass-ink-faint)]">
-        Voiture {TAUX_KM_2026.voiture.toString().replace(".", ",")} €/km · Vélo{" "}
-        {TAUX_KM_2026.velo.toString().replace(".", ",")} €/km · TP 100 %
-        abonnement
+        {t("kmPlaceholderRates", {
+          voiture: TAUX_KM_2026.voiture.toString().replace(".", ","),
+          velo: TAUX_KM_2026.velo.toString().replace(".", ","),
+        })}
       </div>
     </div>
   );

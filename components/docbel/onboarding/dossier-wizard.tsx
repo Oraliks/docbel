@@ -19,6 +19,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Accessibility,
@@ -103,14 +104,15 @@ function useDryRun() {
 
 type StepNumber = 1 | 2 | 3 | 4;
 
-const STEP_LABELS: Record<StepNumber, string> = {
-  1: "Votre situation",
-  2: "Vos besoins",
-  3: "Affinons",
-  4: "Résultat",
+const STEP_LABEL_KEYS: Record<StepNumber, string> = {
+  1: "wizardStep1",
+  2: "wizardStep2",
+  3: "wizardStep3",
+  4: "wizardStep4",
 };
 
 export function DossierWizard({ situations, catalog = {}, dryRun = false }: Props) {
+  const t = useTranslations("public.dossier");
   const [currentStep, setCurrentStep] = useState<StepNumber>(1);
   // N'émet `wizard_started` qu'une fois par session de wizard.
   const startedRef = useRef(false);
@@ -176,7 +178,7 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
     // GARDE-FOU CRITIQUE : sans sélection, on REFUSE d'avancer. Pas de
     // défaut implicite vers chômage temporaire.
     if (!selectedSituation) {
-      toast.error("Choisissez d'abord votre situation pour qu'on puisse vous guider.");
+      toast.error(t("wizardChooseSituationFirst"));
       return;
     }
     // Re-déclenche la sélection effective (utile si l'utilisateur a cliqué
@@ -273,10 +275,10 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
           </span>
           <span className="flex flex-col gap-0.5">
             <span className="text-[17px] font-semibold leading-tight">
-              L&apos;assistant dossier
+              {t("wizardAssistantTitle")}
             </span>
             <span className="text-xs font-normal text-muted-foreground">
-              Répondez à quelques questions pour trouver le bon dossier.
+              {t("wizardAssistantSubtitle")}
             </span>
           </span>
         </CardTitle>
@@ -286,7 +288,10 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
 
         {/* Annonce du changement d'étape pour les lecteurs d'écran. */}
         <p className="sr-only" role="status" aria-live="polite">
-          {`Étape ${currentStep} sur 4 : ${STEP_LABELS[currentStep]}`}
+          {t("wizardStepAnnounce", {
+            step: currentStep,
+            label: t(STEP_LABEL_KEYS[currentStep] as Parameters<typeof t>[0]),
+          })}
         </p>
 
         {currentStep === 1 && (
@@ -331,18 +336,20 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
         {currentStep < 4 &&
           (dryRun ? (
             <p className="text-center text-xs text-muted-foreground">
-              Vous hésitez ? Un organisme de paiement peut vous aider.
+              {t("wizardHesitateDryRun")}
             </p>
           ) : (
             <p className="text-center text-xs text-muted-foreground">
-              Vous hésitez ?{" "}
-              <Link
-                href="/contact"
-                className="font-medium text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
-              >
-                Faites-vous aider par un organisme de paiement
-              </Link>
-              .
+              {t.rich("wizardHesitate", {
+                link: (chunks) => (
+                  <Link
+                    href="/contact"
+                    className="font-medium text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
             </p>
           ))}
       </CardContent>
@@ -359,11 +366,12 @@ interface StepperProps {
 }
 
 function Stepper({ currentStep }: StepperProps) {
+  const t = useTranslations("public.dossier");
   const steps: StepNumber[] = [1, 2, 3, 4];
   return (
     <ol
       className="flex items-center gap-2"
-      aria-label="Progression du guide"
+      aria-label={t("wizardProgressLabel")}
     >
       {steps.map((step) => {
         const isCurrent = step === currentStep;
@@ -400,7 +408,7 @@ function Stepper({ currentStep }: StepperProps) {
                 isFuture && "text-[color:var(--glass-ink-faint)]",
               )}
             >
-              {STEP_LABELS[step]}
+              {t(STEP_LABEL_KEYS[step] as Parameters<typeof t>[0])}
             </span>
             {!isLast && (
               <span
@@ -436,17 +444,18 @@ function StepSituation({
   onSelect,
   onStart,
 }: StepSituationProps) {
+  const t = useTranslations("public.dossier");
   return (
     <div className="space-y-4 transition-opacity duration-200">
       <div className="space-y-1.5">
         <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--glass-ink-faint)]">
-          Question 1 sur 4
+          {t("wizardQuestion1")}
         </p>
         <Label className="block text-[16px] font-semibold text-[color:var(--glass-ink)]">
-          Quelle est votre situation actuelle ?
+          {t("wizardSituationQuestion")}
         </Label>
         <p className="text-xs text-muted-foreground">
-          Choisissez la situation qui vous correspond le mieux.
+          {t("wizardSituationHelp")}
         </p>
       </div>
 
@@ -505,10 +514,10 @@ function StepSituation({
       <div className="flex items-center justify-between gap-3 border-t border-[color:var(--glass-ink-line)] pt-4">
         <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
           <Lock className="size-3.5" aria-hidden />
-          Votre réponse est confidentielle
+          {t("wizardAnswerConfidential")}
         </p>
         <Button onClick={onStart} variant={selected ? "default" : "outline"}>
-          Continuer
+          {t("continue")}
           <ArrowRight className="size-4" aria-hidden />
         </Button>
       </div>
@@ -534,6 +543,7 @@ function StepSubQuestion({
   onSelect,
   onBack,
 }: StepSubQuestionProps) {
+  const t = useTranslations("public.dossier");
   return (
     <div className="space-y-4 transition-opacity duration-200">
       <div className="space-y-1.5">
@@ -589,10 +599,10 @@ function StepSubQuestion({
       <div className="flex items-center justify-between pt-1">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="size-4" aria-hidden />
-          Précédent
+          {t("previous")}
         </Button>
         <p className="text-xs text-muted-foreground">
-          Cliquez sur une réponse pour voir le dossier recommandé.
+          {t("wizardClickAnswerHint")}
         </p>
       </div>
     </div>
@@ -617,6 +627,7 @@ function StepRefine({
   onSelect,
   onBack,
 }: StepRefineProps) {
+  const t = useTranslations("public.dossier");
   return (
     <div className="space-y-4 transition-opacity duration-200">
       <div className="space-y-1.5">
@@ -672,10 +683,10 @@ function StepRefine({
       <div className="flex items-center justify-between pt-1">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="size-4" aria-hidden />
-          Précédent
+          {t("previous")}
         </Button>
         <p className="text-xs text-muted-foreground">
-          Encore une précision pour vous orienter au mieux.
+          {t("wizardRefineHint")}
         </p>
       </div>
     </div>
@@ -685,21 +696,23 @@ function StepRefine({
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 4 — result
 
-const MATCH_BADGE: Record<MatchLevel, string> = {
-  recommande: "Recommandé",
-  pertinent: "Pertinent",
-  a_verifier: "À vérifier",
+const MATCH_BADGE_KEYS: Record<MatchLevel, string> = {
+  recommande: "wizardMatchRecommande",
+  pertinent: "wizardMatchPertinent",
+  a_verifier: "wizardMatchAVerifier",
 };
 
 function MatchBadge({ level }: { level: MatchLevel }) {
+  const t = useTranslations("public.dossier");
   return (
     <span className="inline-flex shrink-0 items-center rounded-full bg-[color:var(--glass-accent-a)]/15 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-[color:var(--glass-accent-a)]">
-      {MATCH_BADGE[level]}
+      {t(MATCH_BADGE_KEYS[level] as Parameters<typeof t>[0])}
     </span>
   );
 }
 
 function MetaChips({ dossier }: { dossier: DerivedDossier }) {
+  const t = useTranslations("public.dossier");
   if (!dossier.organism && dossier.estimatedTime == null) return null;
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -710,7 +723,7 @@ function MetaChips({ dossier }: { dossier: DerivedDossier }) {
       )}
       {dossier.estimatedTime != null && (
         <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-          <Clock className="size-3" aria-hidden /> ≈ {dossier.estimatedTime} min
+          <Clock className="size-3" aria-hidden /> {t("wizardEstMinutes", { minutes: dossier.estimatedTime })}
         </span>
       )}
     </div>
@@ -764,6 +777,7 @@ function PrimaryAvailable({
   result: WizardResult;
   onReset: () => void;
 }) {
+  const t = useTranslations("public.dossier");
   const dryRun = useDryRun();
   return (
     <div className="space-y-3 rounded-2xl border border-[color:var(--glass-accent-a)]/30 bg-[color:var(--glass-accent-a)]/5 p-4">
@@ -774,7 +788,7 @@ function PrimaryAvailable({
         <div className="flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-xs font-medium uppercase tracking-wide text-[color:var(--glass-accent-a)]">
-              Dossier recommandé
+              {t("wizardRecommendedDossier")}
             </p>
             <MatchBadge level={primary.matchLevel} />
           </div>
@@ -788,13 +802,13 @@ function PrimaryAvailable({
 
       <BulletList
         icon={FileText}
-        title="Documents à préparer"
+        title={t("wizardDocsToPrepare")}
         items={primary.requiredDocuments}
         tone="neutral"
       />
       <BulletList
         icon={AlertTriangle}
-        title="Points d'attention"
+        title={t("wizardPointsOfAttention")}
         items={primary.points}
         tone="warn"
       />
@@ -806,11 +820,11 @@ function PrimaryAvailable({
       <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
         <Button variant="outline" onClick={onReset}>
           <RotateCcw className="size-4" aria-hidden />
-          Recommencer le guide
+          {t("wizardRestartGuide")}
         </Button>
         {dryRun ? (
-          <Button disabled title="Navigation désactivée en mode test">
-            Démarrer la démarche
+          <Button disabled title={t("wizardNavDisabledTest")}>
+            {t("wizardStartProcedure")}
             <ArrowRight className="size-4" aria-hidden />
           </Button>
         ) : (
@@ -827,7 +841,7 @@ function PrimaryAvailable({
               />
             }
           >
-            Démarrer la démarche
+            {t("wizardStartProcedure")}
             <ArrowRight className="size-4" aria-hidden />
           </Button>
         )}
@@ -843,6 +857,7 @@ function PrimaryUnavailable({
   primary: DerivedDossier;
   onReset: () => void;
 }) {
+  const t = useTranslations("public.dossier");
   const dryRun = useDryRun();
   return (
     <div className="space-y-3 rounded-2xl border border-amber-500/30 bg-amber-50/60 p-4 dark:bg-amber-950/20">
@@ -852,16 +867,18 @@ function PrimaryUnavailable({
         </span>
         <div className="flex-1 space-y-1">
           <p className="text-xs font-medium uppercase tracking-wide text-amber-900 dark:text-amber-200">
-            Bientôt disponible
+            {t("wizardComingSoon")}
           </p>
           <h3 className="text-base font-semibold">{primary.title}</h3>
           <p className="text-sm text-amber-900/80 dark:text-amber-100/80">
-            {primary.rationale} Ce dossier est en construction. En attendant,
-            vous pouvez contacter le service via{" "}
-            <Link href="/contact" className="underline">
-              /contact
-            </Link>
-            .
+            {primary.rationale}{" "}
+            {t.rich("wizardUnavailableInfo", {
+              link: (chunks) => (
+                <Link href="/contact" className="underline">
+                  {chunks}
+                </Link>
+              ),
+            })}
           </p>
         </div>
       </div>
@@ -871,16 +888,16 @@ function PrimaryUnavailable({
       <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
         <Button variant="outline" onClick={onReset}>
           <RotateCcw className="size-4" aria-hidden />
-          Recommencer le guide
+          {t("wizardRestartGuide")}
         </Button>
         {dryRun ? (
-          <Button disabled title="Navigation désactivée en mode test">
-            Contacter le service
+          <Button disabled title={t("wizardNavDisabledTest")}>
+            {t("wizardContactService")}
             <ArrowRight className="size-4" aria-hidden />
           </Button>
         ) : (
           <Button render={<Link href="/contact" />}>
-            Contacter le service
+            {t("wizardContactService")}
             <ArrowRight className="size-4" aria-hidden />
           </Button>
         )}
@@ -891,6 +908,7 @@ function PrimaryUnavailable({
 
 /// Encadré « étape suivante » non engageante (affiché sous le résultat).
 function NextStep({ text }: { text: string | null }) {
+  const t = useTranslations("public.dossier");
   if (!text) return null;
   return (
     <div className="flex items-start gap-2 rounded-lg border border-[color:var(--glass-ink-line)] bg-[color:var(--glass-surface)] px-3 py-2">
@@ -899,7 +917,7 @@ function NextStep({ text }: { text: string | null }) {
         aria-hidden
       />
       <p className="text-xs text-[color:var(--glass-ink-soft)]">
-        <span className="font-semibold">Étape suivante : </span>
+        <span className="font-semibold">{t("wizardNextStep")} </span>
         {text}
       </p>
     </div>
@@ -915,6 +933,7 @@ function PrimaryExternal({
   primary: DerivedDossier;
   onReset: () => void;
 }) {
+  const t = useTranslations("public.dossier");
   const dryRun = useDryRun();
   return (
     <div className="space-y-3 rounded-2xl border border-sky-500/30 bg-sky-50/60 p-4 dark:bg-sky-950/20">
@@ -924,7 +943,7 @@ function PrimaryExternal({
         </span>
         <div className="flex-1 space-y-1">
           <p className="text-xs font-medium uppercase tracking-wide text-sky-900 dark:text-sky-200">
-            Orientation
+            {t("wizardOrientation")}
           </p>
           <h3 className="text-base font-semibold">{primary.title}</h3>
           <p className="text-sm text-sky-900/80 dark:text-sky-100/80">
@@ -938,16 +957,16 @@ function PrimaryExternal({
       <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
         <Button variant="outline" onClick={onReset}>
           <RotateCcw className="size-4" aria-hidden />
-          Recommencer le guide
+          {t("wizardRestartGuide")}
         </Button>
         {dryRun ? (
-          <Button disabled title="Navigation désactivée en mode test">
-            Voir les contacts utiles
+          <Button disabled title={t("wizardNavDisabledTest")}>
+            {t("wizardSeeUsefulContacts")}
             <ArrowRight className="size-4" aria-hidden />
           </Button>
         ) : (
           <Button render={<Link href="/contact" />}>
-            Voir les contacts utiles
+            {t("wizardSeeUsefulContacts")}
             <ArrowRight className="size-4" aria-hidden />
           </Button>
         )}
@@ -957,6 +976,7 @@ function PrimaryExternal({
 }
 
 function RelatedCard({ dossier }: { dossier: DerivedDossier }) {
+  const t = useTranslations("public.dossier");
   const dryRun = useDryRun();
   return (
     <div className="flex items-center gap-3 rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-2.5">
@@ -974,8 +994,8 @@ function RelatedCard({ dossier }: { dossier: DerivedDossier }) {
         )}
       </div>
       {dossier.slug && dryRun && (
-        <Button variant="outline" disabled title="Navigation désactivée en mode test">
-          Ouvrir le dossier
+        <Button variant="outline" disabled title={t("wizardNavDisabledTest")}>
+          {t("wizardOpenDossier")}
           <ArrowRight className="size-3.5" aria-hidden />
         </Button>
       )}
@@ -994,7 +1014,7 @@ function RelatedCard({ dossier }: { dossier: DerivedDossier }) {
             />
           }
         >
-          Ouvrir le dossier
+          {t("wizardOpenDossier")}
           <ArrowRight className="size-3.5" aria-hidden />
         </Button>
       )}
@@ -1010,6 +1030,7 @@ interface StepResultsProps {
 }
 
 function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
+  const t = useTranslations("public.dossier");
   const { primary, related } = deriveWizardResults(result, catalog);
 
   return (
@@ -1025,7 +1046,7 @@ function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
       {related.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--glass-ink-faint)]">
-            Dossiers proches
+            {t("wizardRelatedDossiers")}
           </p>
           <div className="grid gap-2">
             {related.map((d) => (
@@ -1040,11 +1061,11 @@ function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="size-4" aria-hidden />
-          Précédent
+          {t("previous")}
         </Button>
         <Button variant="ghost" onClick={onReset}>
           <RotateCcw className="size-4" aria-hidden />
-          Recommencer
+          {t("restart")}
         </Button>
       </div>
     </div>
@@ -1054,13 +1075,14 @@ function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
 /// Pied de résultat : sources officielles + date de vérification + rappel que
 /// le guide n'est pas un calculateur de droits. Renforce la confiance.
 function ResultFooter({ primary }: { primary: DerivedDossier }) {
+  const t = useTranslations("public.dossier");
   const hasSources = primary.officialSources.length > 0;
   return (
     <div className="space-y-2 border-t border-[color:var(--glass-ink-line)] pt-3">
       {hasSources && (
         <div className="space-y-1">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--glass-ink-faint)]">
-            Sources officielles
+            {t("wizardOfficialSources")}
           </p>
           <ul className="space-y-0.5">
             {primary.officialSources.map((s) => (
@@ -1081,10 +1103,9 @@ function ResultFooter({ primary }: { primary: DerivedDossier }) {
       )}
       <p className="text-[11px] leading-snug text-[color:var(--glass-ink-faint)]">
         {primary.lastVerifiedAt
-          ? `Vérifié le ${formatFrDate(primary.lastVerifiedAt)} · `
+          ? t("wizardVerifiedOn", { date: formatFrDate(primary.lastVerifiedAt) })
           : ""}
-        Ce guide vous oriente vers la bonne démarche — il ne calcule pas vos
-        droits ni vos montants.
+        {t("wizardFooterDisclaimer")}
       </p>
     </div>
   );

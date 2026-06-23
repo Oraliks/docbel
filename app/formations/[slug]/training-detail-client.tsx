@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   ArrowLeftIcon,
@@ -96,6 +97,7 @@ export interface TrainingDetailView {
 }
 
 export function TrainingDetailClient({ training }: { training: TrainingDetailView }) {
+  const t = useTranslations("public.formations");
   const { isSaved, toggle } = useSavedFormations();
   const saved = isSaved(training.slug);
   const Icon = resolveIcon(training.category?.icon);
@@ -121,15 +123,15 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
         className="inline-flex w-fit items-center gap-1.5 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
       >
         <ArrowLeftIcon className="size-3.5" />
-        Toutes les formations
+        {t("allTrainings")}
       </Link>
 
       {isPrivate && (
         <div className="glass-surface flex items-center gap-2 px-4 py-3 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)]">
           <ShieldCheckIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
           {training.visibility === "internal"
-            ? "Formation interne à une organisation — vous y avez accès."
-            : "Formation privée — vous y avez accès."}
+            ? t("privateBannerInternal")
+            : t("privateBannerPrivate")}
         </div>
       )}
 
@@ -157,12 +159,12 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
             <div className="flex flex-wrap gap-2">
               {training.isVerifiedByDocbel && (
                 <Badge tone="violet" icon={<ShieldCheckIcon className="size-3" />}>
-                  Validée Docbel
+                  {t("badgeVerifiedDocbel")}
                 </Badge>
               )}
               {training.isDocbelRecommended && (
                 <Badge tone="violet" icon={<SparklesIcon className="size-3" />}>
-                  Recommandée Docbel
+                  {t("badgeRecommendedDocbel")}
                 </Badge>
               )}
               {training.category && (
@@ -180,7 +182,7 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
           </section>
 
           {training.description && (
-            <Section title="Description">
+            <Section title={t("sectionDescription")}>
               <p className="whitespace-pre-line text-[14px] leading-[1.7] text-[color:var(--glass-ink-soft)]">
                 {training.description}
               </p>
@@ -188,7 +190,7 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
           )}
 
           {training.objectives.length > 0 && (
-            <Section title="Objectifs">
+            <Section title={t("sectionObjectives")}>
               <ul className="flex flex-col gap-2">
                 {training.objectives.map((o, i) => (
                   <li key={i} className="flex items-start gap-2 text-[14px] text-[color:var(--glass-ink-soft)]">
@@ -201,12 +203,12 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
           )}
 
           {(training.targetAudience || training.prerequisites) && (
-            <Section title="Pour qui ?">
+            <Section title={t("sectionForWhom")}>
               <div className="flex flex-col gap-3">
                 {training.targetAudience && (
                   <div>
                     <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
-                      Public cible
+                      {t("targetAudience")}
                     </p>
                     <p className="mt-1 whitespace-pre-line text-[14px] text-[color:var(--glass-ink-soft)]">
                       {training.targetAudience}
@@ -216,7 +218,7 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
                 {training.prerequisites && (
                   <div>
                     <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
-                      Prérequis
+                      {t("prerequisites")}
                     </p>
                     <p className="mt-1 whitespace-pre-line text-[14px] text-[color:var(--glass-ink-soft)]">
                       {training.prerequisites}
@@ -228,11 +230,11 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
           )}
 
           {/* SESSIONS */}
-          <Section title="Sessions disponibles" id="sessions">
+          <Section title={t("sectionSessions")} id="sessions">
             {openSessions.length === 0 ? (
               <p className="text-[13.5px] text-[color:var(--glass-ink-soft)]">
-                Aucune session ouverte à l&apos;inscription pour le moment.
-                {training.contactEmail ? " Contactez l'organisateur pour être tenu informé." : ""}
+                {t("noOpenSession")}
+                {training.contactEmail ? ` ${t("noOpenSessionContact")}` : ""}
               </p>
             ) : (
               <div className="flex flex-col gap-3">
@@ -254,7 +256,7 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
           <section className="glass-surface flex flex-col gap-4 p-6">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
-                Prix
+                {t("priceLabel")}
               </p>
               <p className="glass-display text-[28px] font-semibold">
                 {formatPrice(training.priceType, training.priceAmount, training.currency)}
@@ -262,20 +264,20 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
             </div>
 
             <dl className="flex flex-col gap-2 border-t border-[color:var(--glass-ink-line)] pt-3 text-[13px]">
-              <InfoRow icon={<GlobeIcon className="size-4" />} label="Format" value={formatLabel(training.format)} />
+              <InfoRow icon={<GlobeIcon className="size-4" />} label={t("formatLabel")} value={formatLabel(training.format)} />
               {durationText(training.durationHours, training.durationLabel) && (
                 <InfoRow
                   icon={<ClockIcon className="size-4" />}
-                  label="Durée"
+                  label={t("durationLabel")}
                   value={durationText(training.durationHours, training.durationLabel)!}
                 />
               )}
               {training.rhythm && (
-                <InfoRow icon={<CalendarRangeIcon className="size-4" />} label="Rythme" value={training.rhythm} />
+                <InfoRow icon={<CalendarRangeIcon className="size-4" />} label={t("rhythmLabel")} value={training.rhythm} />
               )}
               <InfoRow
                 icon={<AwardIcon className="size-4" />}
-                label="Attestation"
+                label={t("certificateLabel")}
                 value={certificateLabel(training.certificateType)}
               />
             </dl>
@@ -286,7 +288,7 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
                 onClick={() => setActiveSession(openSessions[0].id)}
                 className="glass-cta inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-[14px] font-bold"
               >
-                Demander une inscription
+                {t("ctaRequestEnroll")}
               </a>
             ) : training.externalUrl ? (
               <a
@@ -295,7 +297,7 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
                 rel="noopener noreferrer"
                 className="glass-cta inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-[14px] font-bold"
               >
-                Plus d&apos;informations
+                {t("ctaMoreInfo")}
               </a>
             ) : null}
 
@@ -307,12 +309,12 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
                 style={{ color: saved ? "var(--glass-accent-c)" : "var(--glass-ink)" }}
               >
                 <HeartIcon className={`size-4 ${saved ? "fill-current" : ""}`} />
-                {saved ? "Sauvegardée" : "Sauvegarder"}
+                {saved ? t("saved") : t("save")}
               </button>
               <button
                 type="button"
                 onClick={() => setReportOpen((v) => !v)}
-                aria-label="Signaler la formation"
+                aria-label={t("reportAria")}
                 className="inline-flex items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2.5 text-[12.5px] font-bold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 dark:hover:bg-white/10"
               >
                 <FlagIcon className="size-4" />
@@ -321,7 +323,7 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
 
             {training.priceType === "paid" && training.externalPaymentUrl && (
               <p className="text-[11.5px] leading-[1.4] text-[color:var(--glass-ink-faint)]">
-                Le paiement s&apos;effectue auprès de l&apos;organisateur, pas via Docbel.
+                {t("paymentNotice")}
               </p>
             )}
           </section>
@@ -329,7 +331,7 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
           {/* Organisme */}
           <section className="glass-surface flex flex-col gap-2 p-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-faint)]">
-              Organisme
+              {t("organization")}
             </p>
             <p className="text-[14px] font-bold">{training.organization.name}</p>
             {(training.contactEmail || training.contactPhone || training.contactWebsite) && (
@@ -349,7 +351,7 @@ export function TrainingDetailClient({ training }: { training: TrainingDetailVie
                 {training.contactWebsite && (
                   <a href={training.contactWebsite} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-[color:var(--glass-ink)]">
                     <GlobeIcon className="size-3.5" />
-                    Site web
+                    {t("website")}
                   </a>
                 )}
               </div>
@@ -411,6 +413,7 @@ function SessionRow({
   active: boolean;
   onToggle: () => void;
 }) {
+  const t = useTranslations("public.formations");
   const full = session.seatsLeft != null && session.seatsLeft <= 0;
   return (
     <div className="rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-4">
@@ -418,7 +421,7 @@ function SessionRow({
         <div className="flex flex-col gap-1">
           <p className="inline-flex items-center gap-2 text-[14px] font-bold">
             <CalendarRangeIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
-            {session.startsAt ? formatDateTime(session.startsAt) : "Dates à confirmer"}
+            {session.startsAt ? formatDateTime(session.startsAt) : t("datesToConfirm")}
           </p>
           <p className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[color:var(--glass-ink-soft)]">
             <span className="inline-flex items-center gap-1">
@@ -434,11 +437,11 @@ function SessionRow({
             {session.seatsLeft != null && (
               <span className="inline-flex items-center gap-1">
                 <UsersIcon className="size-3.5" />
-                {session.seatsLeft > 0 ? `${session.seatsLeft} place${session.seatsLeft > 1 ? "s" : ""}` : "Complet"}
+                {session.seatsLeft > 0 ? t("seatsLeft", { count: session.seatsLeft }) : t("sessionFull")}
               </span>
             )}
             {session.registrationDeadline && (
-              <span>Clôture le {formatDate(session.registrationDeadline)}</span>
+              <span>{t("deadlineOn", { date: formatDate(session.registrationDeadline) ?? "" })}</span>
             )}
           </p>
         </div>
@@ -447,7 +450,7 @@ function SessionRow({
           onClick={onToggle}
           className="glass-cta inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-bold"
         >
-          {active ? "Fermer" : full ? "Liste d'attente" : "S'inscrire"}
+          {active ? t("sessionClose") : full ? t("sessionWaitlist") : t("sessionEnroll")}
         </button>
       </div>
       {active && <EnrollForm sessionId={session.id} full={full} onDone={onToggle} />}
@@ -456,6 +459,7 @@ function SessionRow({
 }
 
 function EnrollForm({ sessionId, full, onDone }: { sessionId: string; full: boolean; onDone: () => void }) {
+  const t = useTranslations("public.formations");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -466,7 +470,7 @@ function EnrollForm({ sessionId, full, onDone }: { sessionId: string; full: bool
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!accept) {
-      toast.error("Veuillez accepter les conditions.");
+      toast.error(t("acceptTermsRequired"));
       return;
     }
     setSubmitting(true);
@@ -485,19 +489,19 @@ function EnrollForm({ sessionId, full, onDone }: { sessionId: string; full: bool
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error ?? "Inscription impossible.");
+        toast.error(data.error ?? t("enrollFailed"));
         return;
       }
       if (data.status === "waitlisted") {
-        toast.success("Vous êtes sur la liste d'attente. Nous vous préviendrons si une place se libère.");
+        toast.success(t("enrollWaitlisted"));
       } else if (data.status === "accepted") {
-        toast.success("Inscription confirmée ! Vous recevrez les détails par email.");
+        toast.success(t("enrollAccepted"));
       } else {
-        toast.success("Demande envoyée ! L'organisateur va l'examiner.");
+        toast.success(t("enrollRequested"));
       }
       onDone();
     } catch {
-      toast.error("Une erreur est survenue. Réessayez.");
+      toast.error(t("errorGenericRetry"));
     } finally {
       setSubmitting(false);
     }
@@ -510,36 +514,37 @@ function EnrollForm({ sessionId, full, onDone }: { sessionId: string; full: bool
     <form onSubmit={submit} className="mt-4 flex flex-col gap-2.5 border-t border-[color:var(--glass-ink-line)] pt-4">
       {full && (
         <p className="text-[12px] font-semibold text-[color:var(--glass-ink-soft)]">
-          Cette session est complète — votre demande rejoindra la liste d&apos;attente.
+          {t("enrollFullNotice")}
         </p>
       )}
       <div className="grid gap-2.5 sm:grid-cols-2">
-        <input className={inputCls} placeholder="Nom complet" value={name} onChange={(e) => setName(e.target.value)} required />
-        <input className={inputCls} type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input className={inputCls} placeholder={t("fieldFullName")} value={name} onChange={(e) => setName(e.target.value)} required />
+        <input className={inputCls} type="email" placeholder={t("fieldEmail")} value={email} onChange={(e) => setEmail(e.target.value)} required />
       </div>
-      <input className={inputCls} placeholder="Téléphone (optionnel)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+      <input className={inputCls} placeholder={t("fieldPhoneOptional")} value={phone} onChange={(e) => setPhone(e.target.value)} />
       <textarea
         className="glass-surface-strong min-h-[72px] w-full rounded-xl border-0 px-3.5 py-2.5 text-[13.5px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-        placeholder="Message (optionnel)"
+        placeholder={t("fieldMessageOptional")}
         value={message}
         onChange={(e) => setMessage(e.target.value)}
       />
       <label className="flex items-start gap-2 text-[12px] text-[color:var(--glass-ink-soft)]">
         <input type="checkbox" checked={accept} onChange={(e) => setAccept(e.target.checked)} className="mt-0.5" />
-        J&apos;accepte que mes coordonnées soient transmises à l&apos;organisateur pour traiter ma demande.
+        {t("enrollConsent")}
       </label>
       <button
         type="submit"
         disabled={submitting}
         className="glass-cta inline-flex items-center justify-center rounded-full px-5 py-2.5 text-[13px] font-bold disabled:opacity-60"
       >
-        {submitting ? "Envoi…" : "Envoyer ma demande"}
+        {submitting ? t("sending") : t("enrollSubmit")}
       </button>
     </form>
   );
 }
 
 function ReportForm({ trainingId, onDone }: { trainingId: string; onDone: () => void }) {
+  const t = useTranslations("public.formations");
   const [reason, setReason] = useState<string>(REPORT_REASONS[0]);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -554,13 +559,13 @@ function ReportForm({ trainingId, onDone }: { trainingId: string; onDone: () => 
         body: JSON.stringify({ trainingId, reason, message: message || undefined }),
       });
       if (!res.ok) {
-        toast.error("Signalement impossible.");
+        toast.error(t("reportFailed"));
         return;
       }
-      toast.success("Merci, votre signalement a été transmis à Docbel.");
+      toast.success(t("reportSuccess"));
       onDone();
     } catch {
-      toast.error("Une erreur est survenue.");
+      toast.error(t("errorGeneric"));
     } finally {
       setSubmitting(false);
     }
@@ -568,7 +573,7 @@ function ReportForm({ trainingId, onDone }: { trainingId: string; onDone: () => 
 
   return (
     <form onSubmit={submit} className="glass-surface flex flex-col gap-2.5 p-5">
-      <p className="text-[13px] font-bold">Signaler cette formation</p>
+      <p className="text-[13px] font-bold">{t("reportTitle")}</p>
       <select
         value={reason}
         onChange={(e) => setReason(e.target.value)}
@@ -582,16 +587,16 @@ function ReportForm({ trainingId, onDone }: { trainingId: string; onDone: () => 
       </select>
       <textarea
         className="glass-surface-strong min-h-[64px] w-full rounded-xl border-0 px-3.5 py-2.5 text-[13px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
-        placeholder="Précisez (optionnel)"
+        placeholder={t("reportDetailsOptional")}
         value={message}
         onChange={(e) => setMessage(e.target.value)}
       />
       <div className="flex gap-2">
         <button type="submit" disabled={submitting} className="glass-cta rounded-full px-4 py-2 text-[12.5px] font-bold disabled:opacity-60">
-          {submitting ? "Envoi…" : "Envoyer"}
+          {submitting ? t("sending") : t("reportSubmit")}
         </button>
         <button type="button" onClick={onDone} className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)]">
-          Annuler
+          {t("cancel")}
         </button>
       </div>
     </form>

@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
 import { CalculAgrClient } from "./calcul-agr-client";
 
-export const metadata: Metadata = {
-  title: "Calcul AGR | DocBel",
-  description:
-    "Calculez l'Allocation de Garantie de Revenus à partir d'un WECH 506 : upload de la DRS, calcul automatique, cumul jusqu'à 4 occupations.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
+  return {
+    title: t("agrMetaTitle"),
+    description: t("agrMetaDesc"),
+  };
+}
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

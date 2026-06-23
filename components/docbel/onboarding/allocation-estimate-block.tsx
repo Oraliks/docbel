@@ -17,6 +17,7 @@
 
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowRight, Calculator } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
@@ -47,6 +48,7 @@ interface Props {
 }
 
 export function AllocationEstimateBlock({ result }: Props) {
+  const t = useTranslations("public.dossier");
   const uid = useId();
   const catId = `${uid}-categorie`;
   const brutId = `${uid}-brut`;
@@ -95,11 +97,10 @@ export function AllocationEstimateBlock({ result }: Props) {
         </span>
         <div className="flex-1 space-y-0.5">
           <h4 className="text-sm font-semibold">
-            Estimation indicative de votre allocation
+            {t("allocTitle")}
           </h4>
           <p className="text-xs text-muted-foreground">
-            Trois infos pour un ordre de grandeur. Ce n&apos;est pas une
-            décision : seul l&apos;ONEM fixe votre montant réel.
+            {t("allocIntro")}
           </p>
         </div>
       </div>
@@ -107,7 +108,7 @@ export function AllocationEstimateBlock({ result }: Props) {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={catId} className="text-xs font-medium">
-            Votre situation familiale
+            {t("allocFamilyLabel")}
           </Label>
           <select
             id={catId}
@@ -123,7 +124,7 @@ export function AllocationEstimateBlock({ result }: Props) {
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={brutId} className="text-xs font-medium">
-            Salaire brut mensuel (€)
+            {t("allocGrossLabel")}
           </Label>
           <input
             id={brutId}
@@ -131,7 +132,7 @@ export function AllocationEstimateBlock({ result }: Props) {
             min={0}
             step="0.01"
             inputMode="decimal"
-            placeholder="2 500"
+            placeholder={t("allocGrossPlaceholder")}
             value={brutStr}
             onChange={(e) => setBrutStr(e.target.value)}
             className={FIELD_CLS}
@@ -140,7 +141,7 @@ export function AllocationEstimateBlock({ result }: Props) {
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={ancId} className="text-xs font-medium">
-            Au chômage depuis
+            {t("allocSinceLabel")}
           </Label>
           <select
             id={ancId}
@@ -161,19 +162,22 @@ export function AllocationEstimateBlock({ result }: Props) {
         <div className="space-y-2.5">
           <div className="rounded-xl border border-[color:var(--glass-accent-a)]/25 bg-[color:var(--glass-accent-a)]/8 px-3.5 py-3">
             <p className="text-xs text-muted-foreground">
-              Vous toucheriez environ
+              {t("allocYouWouldGet")}
             </p>
             <p className="mt-0.5 text-2xl font-semibold leading-none text-[color:var(--glass-ink)]">
               {FMT_JOUR.format(estimate.parJour)} €
               <span className="ml-1 text-sm font-medium text-muted-foreground">
-                /jour
+                {t("allocPerDay")}
               </span>
             </p>
             <p className="mt-1 text-sm font-medium text-[color:var(--glass-ink)]">
-              ≈ {FMT_MOIS.format(estimate.parMois)} €/mois
+              {t("allocPerMonth", { amount: FMT_MOIS.format(estimate.parMois) })}
               <span className="ml-1 text-xs font-normal text-muted-foreground">
-                ({estimate.tauxPct} % du salaire
-                {estimate.plafondApplique ? " plafonné" : ""}, {estimate.periodeLabel})
+                {t("allocRateDetail", {
+                  rate: estimate.tauxPct,
+                  capped: estimate.plafondApplique ? "yes" : "no",
+                  period: estimate.periodeLabel,
+                })}
               </span>
             </p>
           </div>
@@ -194,7 +198,7 @@ export function AllocationEstimateBlock({ result }: Props) {
               href="/outils"
               className="font-medium text-[color:var(--glass-accent-deep)] underline underline-offset-2 transition hover:decoration-2 motion-reduce:transition-none"
             >
-              Affiner sur nos calculateurs
+              {t("allocRefineLink")}
               <ArrowRight className="ml-0.5 inline size-3" aria-hidden />
             </Link>
           </p>
@@ -202,8 +206,8 @@ export function AllocationEstimateBlock({ result }: Props) {
       ) : (
         <p className="text-xs text-muted-foreground">
           {brutTouched
-            ? "Indiquez un salaire mensuel brut réaliste (en euros) pour voir une estimation."
-            : "Renseignez votre salaire brut mensuel pour estimer votre allocation."}
+            ? t("allocHintTouched")
+            : t("allocHintEmpty")}
         </p>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ProfilePage } from "@/components/user/profile-page";
@@ -7,6 +8,7 @@ import { ProfilePage } from "@/components/user/profile-page";
 export const dynamic = "force-dynamic";
 
 export default async function ProfilRoute() {
+  const t = await getTranslations("public.dossier");
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) {
     redirect("/login?next=/profil");
@@ -47,14 +49,13 @@ export default async function ProfilRoute() {
     <section className="flex flex-col gap-6">
       <header className="flex flex-col gap-3 px-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-          Mon compte
+          {t("profilEyebrow")}
         </p>
         <h1 className="glass-display text-[40px] font-semibold leading-[1.05] sm:text-[48px]">
-          Profil
+          {t("profilTitle")}
         </h1>
         <p className="max-w-2xl text-[14px] text-[color:var(--glass-ink-soft)]">
-          Ces informations pré-remplissent automatiquement vos formulaires.
-          Elles ne sont jamais partagées avec un tiers.
+          {t("profilIntro")}
         </p>
       </header>
 

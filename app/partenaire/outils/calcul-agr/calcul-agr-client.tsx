@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -61,13 +62,13 @@ type NumKey =
 
 /** Champs « heures » où verser un code à vérifier. */
 type BucketField = "heures" | "heuresV" | "heuresA" | "pw1" | "pr" | "fermetureTotal";
-const BUCKETS: { label: string; field: BucketField }[] = [
-  { label: "Heures", field: "heures" },
-  { label: "Vacances", field: "heuresV" },
-  { label: "Absence", field: "heuresA" },
-  { label: "PW", field: "pw1" },
-  { label: "PR", field: "pr" },
-  { label: "Fermeture", field: "fermetureTotal" },
+const BUCKETS: { labelKey: string; field: BucketField }[] = [
+  { labelKey: "agrBucketHeures", field: "heures" },
+  { labelKey: "agrBucketVacances", field: "heuresV" },
+  { labelKey: "agrBucketAbsence", field: "heuresA" },
+  { labelKey: "agrBucketPw", field: "pw1" },
+  { labelKey: "agrBucketPr", field: "pr" },
+  { labelKey: "agrBucketFermeture", field: "fermetureTotal" },
 ];
 
 /** Lignes du tableau des occupations (ordre d'affichage = façon Excel). */
@@ -77,27 +78,27 @@ type RowSpec =
   | { kind: "cat" }
   | { kind: "qinfo" }
   | { kind: "requalif" }
-  | { kind: "num"; label: string; field: NumKey };
+  | { kind: "num"; labelKey: string; field: NumKey };
 
 const ROWS: RowSpec[] = [
   { kind: "ident" },
   { kind: "periode" },
-  { kind: "num", label: "Facteur Q", field: "q" },
-  { kind: "num", label: "Facteur S", field: "s" },
+  { kind: "num", labelKey: "agrRowFactorQ", field: "q" },
+  { kind: "num", labelKey: "agrRowFactorS", field: "s" },
   { kind: "cat" },
   { kind: "qinfo" },
-  { kind: "num", label: "Y-Brut (€)", field: "ybrut" },
-  { kind: "num", label: "Sal. théo. / mois (€)", field: "salaireTheoriqueMois" },
-  { kind: "num", label: "Sal. théo. / heure (€)", field: "salaireTheoriqueHeure" },
-  { kind: "num", label: "Heures (HT)", field: "heures" },
-  { kind: "num", label: "Vacances (V)", field: "heuresV" },
-  { kind: "num", label: "Absence (A)", field: "heuresA" },
-  { kind: "num", label: "Fermeture", field: "fermetureTotal" },
-  { kind: "num", label: "PW (CT)", field: "pw1" },
-  { kind: "num", label: "PR", field: "pr" },
-  { kind: "num", label: "Solde S×3,2", field: "soldeS32" },
-  { kind: "num", label: "Solde Q×4", field: "soldeQ4" },
-  { kind: "num", label: "Jours NI", field: "joursNI" },
+  { kind: "num", labelKey: "agrRowYBrut", field: "ybrut" },
+  { kind: "num", labelKey: "agrRowSalTheoMois", field: "salaireTheoriqueMois" },
+  { kind: "num", labelKey: "agrRowSalTheoHeure", field: "salaireTheoriqueHeure" },
+  { kind: "num", labelKey: "agrRowHeures", field: "heures" },
+  { kind: "num", labelKey: "agrRowVacances", field: "heuresV" },
+  { kind: "num", labelKey: "agrRowAbsence", field: "heuresA" },
+  { kind: "num", labelKey: "agrRowFermeture", field: "fermetureTotal" },
+  { kind: "num", labelKey: "agrRowPw", field: "pw1" },
+  { kind: "num", labelKey: "agrRowPr", field: "pr" },
+  { kind: "num", labelKey: "agrRowSoldeS32", field: "soldeS32" },
+  { kind: "num", labelKey: "agrRowSoldeQ4", field: "soldeQ4" },
+  { kind: "num", labelKey: "agrRowJoursNI", field: "joursNI" },
   { kind: "requalif" },
 ];
 
@@ -182,6 +183,7 @@ function fmtNum(v: number): string {
 }
 
 export function CalculAgrClient() {
+  const t = useTranslations("public.pro");
   const [occupations, setOccupations] = useState<OccupationInput[]>(() => fourEmpty(emptyOccupation));
   const [metas, setMetas] = useState<OccMeta[]>(() => fourEmpty(() => ({})));
   const [global, setGlobal] = useState<Omit<AgrGlobalInput, "occupations">>({
@@ -223,9 +225,9 @@ export function CalculAgrClient() {
           j === i ? { ...m, codesAVerifier: m.codesAVerifier?.filter((c) => c.code !== code) } : m,
         ),
       );
-      toast.success(`Code ${code} → ${label} (+${heures} h)`);
+      toast.success(t("agrToastCodeAssigned", { code, label, heures }));
     },
-    [],
+    [t],
   );
 
   const handleExport = useCallback(async () => {
@@ -236,19 +238,19 @@ export function CalculAgrClient() {
         metas: metas.map((m) => ({ filename: m.filename, nom: m.nom, periode: m.periode })),
         result,
       });
-      toast.success("PDF généré.");
+      toast.success(t("agrToastPdfOk"));
     } catch {
-      toast.error("Échec de la génération du PDF.");
+      toast.error(t("agrToastPdfError"));
     } finally {
       setExporting(false);
     }
-  }, [global, occupations, metas, result]);
+  }, [global, occupations, metas, result, t]);
 
   const handleFiles = useCallback(
     async (fileList: FileList | File[]) => {
       const files = Array.from(fileList).filter((f) => f.type === "application/pdf" || /\.pdf$/i.test(f.name));
       if (files.length === 0) {
-        setUploadError("Veuillez déposer des fichiers PDF (WECH 506 / 505).");
+        setUploadError(t("agrUploadErrPdfOnly"));
         return;
       }
       setUploadError(null);
@@ -259,7 +261,7 @@ export function CalculAgrClient() {
         const res = await fetch("/api/partenaire/calcul-agr/parse", { method: "POST", body: fd });
         if (!res.ok) {
           const j = await res.json().catch(() => ({}));
-          throw new Error(j.error ?? `Erreur ${res.status}`);
+          throw new Error(j.error ?? t("agrUploadErrStatus", { status: res.status }));
         }
         const { results } = (await res.json()) as { results: ParseResult[] };
 
@@ -276,7 +278,8 @@ export function CalculAgrClient() {
 
         for (const r of results) {
           if (r.error || !r.parsed) {
-            parseErrors.push(`${r.filename} : ${r.error ?? "échec"}${r.detail ? ` — ${r.detail}` : ""}`);
+            const reason = `${r.error ?? t("agrUploadErrFailed")}${r.detail ? ` — ${r.detail}` : ""}`;
+            parseErrors.push(t("agrUploadErrFile", { filename: r.filename, reason }));
             continue;
           }
           if (r.kind === "505") {
@@ -287,17 +290,17 @@ export function CalculAgrClient() {
           const p = r.parsed as ParsedWech506;
           const slot = freeSlots.shift();
           if (slot === undefined) {
-            warnings.push(`${r.filename} : aucune colonne libre (max ${MAX_OCC} occupations).`);
+            warnings.push(t("agrUploadWarnNoSlot", { filename: r.filename, max: MAX_OCC }));
             continue;
           }
           occs[slot] = parsedToOccupation(p);
           mets[slot] = metaFromWech506(r.filename, p);
           loaded++;
-          toast.success(`DRS chargée : ${mets[slot].nom ?? r.filename}`, {
+          toast.success(t("agrToastDrsLoaded", { name: mets[slot].nom ?? r.filename }), {
             description: mets[slot].periode ?? undefined,
           });
           if (p.codesAVerifier.length > 0) {
-            toast.warning(`${r.filename} : ${p.codesAVerifier.length} code(s) à classer`);
+            toast.warning(t("agrToastCodesToSort", { filename: r.filename, count: p.codesAVerifier.length }));
           }
         }
 
@@ -322,12 +325,12 @@ export function CalculAgrClient() {
             };
             mets[idx] = { ...mets[idx], ctEntries: [...(mets[idx].ctEntries ?? []), ...plan.newEntries] };
             loaded++;
-            toast.success(`${filename} : ${plan.message}`);
+            toast.success(t("agrPlanFileMessage", { filename, message: plan.message }));
           } else if (plan.status === "duplicate") {
-            toast.info(`${filename} : ${plan.message}`);
+            toast.info(t("agrPlanFileMessage", { filename, message: plan.message }));
           } else {
-            toast.warning(`${filename} : ${plan.message}`);
-            warnings.push(`${filename} : ${plan.message}`);
+            toast.warning(t("agrPlanFileMessage", { filename, message: plan.message }));
+            warnings.push(t("agrPlanFileMessage", { filename, message: plan.message }));
           }
         }
 
@@ -344,7 +347,7 @@ export function CalculAgrClient() {
           );
         }
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Échec de l'upload.";
+        const msg = e instanceof Error ? e.message : t("agrUploadErrGeneric");
         setUploadError(msg);
         toast.error(msg);
       } finally {
@@ -352,7 +355,7 @@ export function CalculAgrClient() {
         if (fileInput.current) fileInput.current.value = "";
       }
     },
-    [occupations, metas],
+    [occupations, metas, t],
   );
 
   const reset = () => {
@@ -372,15 +375,14 @@ export function CalculAgrClient() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
             <Calculator className="size-6 text-violet-600" />
-            Calcul AGR
+            {t("agrTitle")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Déposez le(s) WECH 506 : les données sont extraites automatiquement et l’allocation
-            de garantie de revenus est calculée. Jusqu’à {MAX_OCC} occupations (double/triple emploi).
+            {t("agrIntro", { max: MAX_OCC })}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={reset}>
-          <RotateCcw className="size-4" /> Réinitialiser
+          <RotateCcw className="size-4" /> {t("agrReset")}
         </Button>
       </div>
 
@@ -388,7 +390,7 @@ export function CalculAgrClient() {
       <Card className="overflow-hidden">
         <CardContent className="flex flex-col gap-0 p-0 sm:flex-row sm:items-stretch">
           <div className="flex items-center gap-2 px-5 py-4 text-sm font-medium text-muted-foreground sm:w-44 sm:border-r">
-            <FileUp className="size-4 text-violet-600" /> WECH 506 / 505
+            <FileUp className="size-4 text-violet-600" /> {t("agrWechLabel")}
           </div>
           <div className="flex-1 p-3">
             <div
@@ -409,10 +411,10 @@ export function CalculAgrClient() {
                 <Upload className="size-7 text-violet-600" />
               )}
               <p className="text-sm font-medium">
-                {uploading ? "Extraction en cours…" : "Glissez les WECH 506 (AGR) et 505 (chômage temp.) ici, ou cliquez"}
+                {uploading ? t("agrUploadExtracting") : t("agrUploadHint")}
               </p>
               <p className="text-xs text-muted-foreground">
-                PDF · 506 = 1 occupation · 505 = chômage temporaire rattaché · max {MAX_OCC}
+                {t("agrUploadSub", { max: MAX_OCC })}
               </p>
               <input ref={fileInput} type="file" accept="application/pdf" multiple hidden
                 onChange={(e) => e.target.files && handleFiles(e.target.files)} />
@@ -423,7 +425,7 @@ export function CalculAgrClient() {
       {uploadError && (
         <Alert variant="destructive">
           <AlertTriangle className="size-4" />
-          <AlertTitle>Attention</AlertTitle>
+          <AlertTitle>{t("agrAlertWarning")}</AlertTitle>
           <AlertDescription className="break-words">{uploadError}</AlertDescription>
         </Alert>
       )}
@@ -433,36 +435,36 @@ export function CalculAgrClient() {
           {/* Paramètres du dossier */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Paramètres du dossier</CardTitle>
-              <CardDescription>Données du dossier chômage (hors WECH 506).</CardDescription>
+              <CardTitle className="text-base">{t("agrParamsTitle")}</CardTitle>
+              <CardDescription>{t("agrParamsDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              <NumField label="Allocation journalière (€)" value={global.allocationJournaliere}
+              <NumField label={t("agrParamAllocJour")} value={global.allocationJournaliere}
                 onChange={(v) => setG("allocationJournaliere", v)} />
-              <NumField label="Demi-allocation (€)" value={global.demiAllocation}
+              <NumField label={t("agrParamDemiAlloc")} value={global.demiAllocation}
                 onChange={(v) => setG("demiAllocation", v)} />
               <div className="space-y-1.5">
-                <Label className="text-xs">Catégorie familiale</Label>
+                <Label className="text-xs">{t("agrParamCatFamiliale")}</Label>
                 <Select value={global.categorieFamiliale}
                   onValueChange={(v) => setG("categorieFamiliale", v as CategorieFamiliale)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="A">A — chef de ménage</SelectItem>
-                    <SelectItem value="N">N — isolé</SelectItem>
-                    <SelectItem value="B1">B1 — cohabitant 1ʳᵉ pér.</SelectItem>
-                    <SelectItem value="B2">B2 — cohabitant 2ᵉ pér.</SelectItem>
-                    <SelectItem value="P">P — cohabitant forfait</SelectItem>
+                    <SelectItem value="A">{t("agrCatFamA")}</SelectItem>
+                    <SelectItem value="N">{t("agrCatFamN")}</SelectItem>
+                    <SelectItem value="B1">{t("agrCatFamB1")}</SelectItem>
+                    <SelectItem value="B2">{t("agrCatFamB2")}</SelectItem>
+                    <SelectItem value="P">{t("agrCatFamP")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <NumField label="Solde J (jours)" value={global.soldeJ} onChange={(v) => setG("soldeJ", v)} />
-              <NumField label="Jours CC" value={global.joursCC} onChange={(v) => setG("joursCC", v)} />
+              <NumField label={t("agrParamSoldeJ")} value={global.soldeJ} onChange={(v) => setG("soldeJ", v)} />
+              <NumField label={t("agrParamJoursCC")} value={global.joursCC} onChange={(v) => setG("joursCC", v)} />
               <div className="col-span-2 flex flex-wrap items-center gap-x-6 gap-y-2 md:col-span-3">
-                <CheckRow label="Mois de décembre" checked={global.moisDecembre}
+                <CheckRow label={t("agrParamMoisDecembre")} checked={global.moisDecembre}
                   onChange={(v) => setG("moisDecembre", v)} />
-                <CheckRow label="Cumul temps partiel" checked={global.cumulTempsPartiel}
+                <CheckRow label={t("agrParamCumulTempsPartiel")} checked={global.cumulTempsPartiel}
                   onChange={(v) => setG("cumulTempsPartiel", v)} />
-                <CheckRow label="Incapacité/sanction tout le mois" checked={global.incapaciteOuSanctionTotalite}
+                <CheckRow label={t("agrParamIncapacite")} checked={global.incapaciteOuSanctionTotalite}
                   onChange={(v) => setG("incapaciteOuSanctionTotalite", v)} />
               </div>
             </CardContent>
@@ -472,8 +474,8 @@ export function CalculAgrClient() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex flex-wrap items-center gap-2">
-                <CardTitle className="text-base">Occupations</CardTitle>
-                <span className="text-xs text-muted-foreground">(jusqu’à {MAX_OCC})</span>
+                <CardTitle className="text-base">{t("agrOccupations")}</CardTitle>
+                <span className="text-xs text-muted-foreground">{t("agrOccupationsUpTo", { max: MAX_OCC })}</span>
                 {filenames.map((f) => (
                   <Badge key={f} variant="secondary" className="max-w-[180px] truncate">
                     <FileUp className="size-3" /> {f}
@@ -481,8 +483,7 @@ export function CalculAgrClient() {
                 ))}
               </div>
               <CardDescription className="flex items-center gap-1">
-                <Info className="size-3" /> Une colonne par occupation. Renseignez les colonnes ou
-                déposez un WECH 506 par occupation.
+                <Info className="size-3" /> {t("agrOccupationsDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -500,11 +501,14 @@ export function CalculAgrClient() {
             <Alert key={i}>
               <AlertTriangle className="size-4" />
               <AlertTitle className="text-sm">
-                Occupation {i + 1}{meta.nom ? ` — ${meta.nom}` : ""} : codes à classer (
-                {meta.codesAVerifier!.length})
+                {t("agrCodesToSortTitle", {
+                  n: i + 1,
+                  name: meta.nom ? ` — ${meta.nom}` : "",
+                  count: meta.codesAVerifier!.length,
+                })}
               </AlertTitle>
               <AlertDescription className="space-y-2 text-xs">
-                <p>Ces codes ne sont pas mappés automatiquement. Versez-les dans le bon champ :</p>
+                <p>{t("agrCodesToSortDesc")}</p>
                 {meta.codesAVerifier!.map((c) => (
                   <div key={c.code} className="rounded-md border bg-background/60 p-2">
                     <div className="mb-1.5">
@@ -513,8 +517,10 @@ export function CalculAgrClient() {
                     <div className="flex flex-wrap gap-1">
                       {BUCKETS.map((b) => (
                         <Button key={b.field} variant="outline" size="sm" className="h-6 px-2 text-[11px]"
-                          onClick={() => assignCode(i, b.field, c.heures, c.code, b.label)}>
-                          → {b.label}
+                          onClick={() =>
+                            assignCode(i, b.field, c.heures, c.code, t(b.labelKey as Parameters<typeof t>[0]))
+                          }>
+                          → {t(b.labelKey as Parameters<typeof t>[0])}
                         </Button>
                       ))}
                     </div>
@@ -554,6 +560,7 @@ function OccupationsTable({
   onPatch: (i: number, patch: Partial<OccupationInput>) => void;
   onClear: (i: number) => void;
 }) {
+  const t = useTranslations("public.pro");
   const cols = [0, 1, 2, 3];
   const active = (i: number) => occupations[i].q > 0;
 
@@ -573,13 +580,13 @@ function OccupationsTable({
                     variant={active(i) ? "default" : "secondary"}
                     className={active(i) ? "bg-violet-600" : "text-muted-foreground"}
                   >
-                    {active(i) ? "Actif" : "Inactif"}
+                    {active(i) ? t("agrActive") : t("agrInactive")}
                   </Badge>
                   {(active(i) || metas[i].filename) && (
                     <button
                       onClick={() => onClear(i)}
                       className="text-muted-foreground hover:text-destructive"
-                      aria-label={`Vider l'occupation ${i + 1}`}
+                      aria-label={t("agrClearOccupation", { n: i + 1 })}
                     >
                       <X className="size-3.5" />
                     </button>
@@ -593,7 +600,7 @@ function OccupationsTable({
           {ROWS.map((row, r) => (
             <tr key={r} className="border-b last:border-b-0">
               <th className="sticky left-0 z-10 min-w-[150px] bg-background px-3 py-1 text-left text-xs font-medium text-muted-foreground">
-                {rowLabel(row)}
+                {t(rowLabel(row) as Parameters<typeof t>[0])}
               </th>
               {cols.map((i) => (
                 <td
@@ -615,12 +622,12 @@ function OccupationsTable({
 
 function rowLabel(row: RowSpec): string {
   switch (row.kind) {
-    case "ident": return "Identité";
-    case "periode": return "Période";
-    case "cat": return "Cat. trav.";
-    case "qinfo": return "Qinfo";
-    case "requalif": return "Requalifier A → V";
-    case "num": return row.label;
+    case "ident": return "agrRowIdentity";
+    case "periode": return "agrRowPeriode";
+    case "cat": return "agrRowCatTrav";
+    case "qinfo": return "agrRowQinfo";
+    case "requalif": return "agrRowRequalif";
+    case "num": return row.labelKey;
   }
 }
 
@@ -635,6 +642,7 @@ function Cell({
   meta: OccMeta;
   onChange: (patch: Partial<OccupationInput>) => void;
 }) {
+  const t = useTranslations("public.pro");
   const cellInput =
     "h-8 w-full rounded border-0 bg-transparent px-1 text-center text-sm tabular-nums outline-none focus:bg-violet-50";
 
@@ -651,11 +659,11 @@ function Cell({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="1O">1O — ouvrier privé</SelectItem>
-            <SelectItem value="1E">1E — employé privé</SelectItem>
-            <SelectItem value="2E">2E — employé public</SelectItem>
-            <SelectItem value="2P">2P — ouvrier public</SelectItem>
-            <SelectItem value="3">3 — statutaire</SelectItem>
+            <SelectItem value="1O">{t("agrCatTrav1O")}</SelectItem>
+            <SelectItem value="1E">{t("agrCatTrav1E")}</SelectItem>
+            <SelectItem value="2E">{t("agrCatTrav2E")}</SelectItem>
+            <SelectItem value="2P">{t("agrCatTrav2P")}</SelectItem>
+            <SelectItem value="3">{t("agrCatTrav3")}</SelectItem>
           </SelectContent>
         </Select>
       );
@@ -666,8 +674,8 @@ function Cell({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="2">2 — même Q</SelectItem>
-            <SelectItem value="3">3 — Q moyen</SelectItem>
+            <SelectItem value="2">{t("agrQinfo2")}</SelectItem>
+            <SelectItem value="3">{t("agrQinfo3")}</SelectItem>
           </SelectContent>
         </Select>
       );
@@ -795,14 +803,15 @@ function ResultPanel({
   exporting: boolean;
   canExport: boolean;
 }) {
+  const t = useTranslations("public.pro");
   const i = result.intermediaires;
   return (
     <Card className="border-violet-200">
       <CardHeader className="bg-violet-50/60">
         <CardTitle className="flex items-center gap-2 text-base">
-          <CheckCircle2 className="size-5 text-violet-600" /> Résultat AGR (brut)
+          <CheckCircle2 className="size-5 text-violet-600" /> {t("agrResultTitle")}
         </CardTitle>
-        <CardDescription>Salaire de référence : {eur(result.salaireReference)}</CardDescription>
+        <CardDescription>{t("agrResultSalaireRef", { value: eur(result.salaireReference) })}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 pt-5">
         {result.erreur ? (
@@ -814,7 +823,7 @@ function ResultPanel({
           <>
             <div className="rounded-lg bg-violet-600 px-4 py-3 text-white shadow-sm">
               <div className="text-[11px] font-medium uppercase tracking-wide text-violet-100">
-                AGR brut — Barème 57/-
+                {t("agrResultBruteBareme57")}
               </div>
               <div key={result.bareme57 ?? "x"}
                 className="text-3xl font-bold tabular-nums duration-300 animate-in fade-in">
@@ -822,43 +831,42 @@ function ResultPanel({
               </div>
               {result.motif57 && <div className="text-xs text-violet-100">{result.motif57}</div>}
             </div>
-            <ResultRow label="Barème 05/-" value={eur(result.bareme05)} motif={result.motif05} big />
+            <ResultRow label={t("agrResultBareme05")} value={eur(result.bareme05)} motif={result.motif05} big />
             <Separator />
-            <ResultRow label="Chômage temporaire" value={eur(result.chomageTemporaire)} />
-            <ResultRow label="Total 57 (AGR+CT+CC)" value={eur(result.total57)} />
-            <ResultRow label="Total 05 (AGR+CT+CC)" value={eur(result.total05)} />
+            <ResultRow label={t("agrResultChomageTemp")} value={eur(result.chomageTemporaire)} />
+            <ResultRow label={t("agrResultTotal57")} value={eur(result.total57)} />
+            <ResultRow label={t("agrResultTotal05")} value={eur(result.total05)} />
           </>
         )}
 
         <Button variant="ghost" size="sm" className="w-full" onClick={onToggleDetails}>
-          {showDetails ? "Masquer" : "Afficher"} les résultats intermédiaires
+          {showDetails ? t("agrResultHideDetails") : t("agrResultShowDetails")}
         </Button>
         {showDetails && (
           <div className="space-y-1 rounded-md bg-muted/40 p-3 text-xs">
-            <Detail k="Nombre d'occupations" v={i.nombreOccupations} />
-            <Detail k="F1 (allocations)" v={i.f1} />
-            <Detail k="F2 (alloc. jour)" v={i.f2} />
-            <Detail k="F3 / F4" v={`${i.f3} / ${i.f4}`} />
-            <Detail k="VTL total" v={i.vtlTot} />
-            <Detail k="Bonus total" v={i.bonusTot} />
-            <Detail k="Salaire imposable" v={eur(i.totalSalaireImposable)} />
-            <Detail k="Retenues (PP)" v={eur(i.totalRetenues)} />
-            <Detail k="Y net BIS" v={eur(i.totalYnetBis)} />
+            <Detail k={t("agrDetailNbOccupations")} v={i.nombreOccupations} />
+            <Detail k={t("agrDetailF1")} v={i.f1} />
+            <Detail k={t("agrDetailF2")} v={i.f2} />
+            <Detail k={t("agrDetailF3F4")} v={`${i.f3} / ${i.f4}`} />
+            <Detail k={t("agrDetailVtlTotal")} v={i.vtlTot} />
+            <Detail k={t("agrDetailBonusTotal")} v={i.bonusTot} />
+            <Detail k={t("agrDetailSalaireImposable")} v={eur(i.totalSalaireImposable)} />
+            <Detail k={t("agrDetailRetenues")} v={eur(i.totalRetenues)} />
+            <Detail k={t("agrDetailYnetBis")} v={eur(i.totalYnetBis)} />
             <Separator className="my-1.5" />
-            <Detail k="Formule 1A" v={eur(i.formule1A)} />
-            <Detail k="Formule 1B" v={eur(i.formule1B)} />
-            <Detail k="Formule 2A" v={eur(i.formule2A)} />
-            <Detail k="Formule 2B" v={eur(i.formule2B)} />
+            <Detail k={t("agrDetailFormule1A")} v={eur(i.formule1A)} />
+            <Detail k={t("agrDetailFormule1B")} v={eur(i.formule1B)} />
+            <Detail k={t("agrDetailFormule2A")} v={eur(i.formule2A)} />
+            <Detail k={t("agrDetailFormule2B")} v={eur(i.formule2B)} />
           </div>
         )}
         <Button onClick={onExport} disabled={!canExport || exporting}
           className="w-full bg-violet-600 hover:bg-violet-700">
           {exporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
-          Télécharger le PDF
+          {t("agrDownloadPdf")}
         </Button>
         <p className="text-[11px] text-muted-foreground">
-          Montants bruts. L’AGR doit être au moins égale à la ½ allocation. Vérifiez toujours
-          les données extraites avant validation.
+          {t("agrResultDisclaimer")}
         </p>
       </CardContent>
     </Card>

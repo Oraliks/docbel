@@ -8,6 +8,7 @@ import {
   ArrowLeftIcon,
   LoaderCircleIcon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 
@@ -15,6 +16,7 @@ const FIELD =
   "w-full rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-3 text-[14px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]";
 
 function ResetForm() {
+  const t = useTranslations("public.auth");
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -35,18 +37,17 @@ function ResetForm() {
           <AlertCircleIcon className="size-6" />
         </span>
         <h1 className="glass-display text-[22px] font-semibold">
-          Lien invalide ou expiré
+          {t("invalidLinkTitle")}
         </h1>
         <p className="max-w-sm text-[13.5px] text-[color:var(--glass-ink-soft)]">
-          Ce lien de réinitialisation n&apos;est plus valable. Faites une
-          nouvelle demande.
+          {t("invalidLinkBody")}
         </p>
         <Link
           href="/mot-de-passe-oublie"
           className="mt-1 rounded-full px-5 py-2.5 text-[13px] font-bold"
           style={{ background: "var(--glass-ink)", color: "var(--glass-bg-a)" }}
         >
-          Nouvelle demande
+          {t("newRequest")}
         </Link>
       </div>
     );
@@ -56,11 +57,11 @@ function ResetForm() {
     e.preventDefault();
     setError("");
     if (password.length < 8) {
-      setError("Le mot de passe doit faire au moins 8 caractères.");
+      setError(t("errPasswordTooShort"));
       return;
     }
     if (password !== confirm) {
-      setError("Les mots de passe ne correspondent pas.");
+      setError(t("errPasswordMismatch"));
       return;
     }
     setLoading(true);
@@ -70,16 +71,13 @@ function ResetForm() {
         token,
       });
       if (resetError) {
-        setError(
-          resetError.message ||
-            "Lien invalide ou expiré. Faites une nouvelle demande.",
-        );
+        setError(resetError.message || t("errResetLinkInvalid"));
         return;
       }
-      toast.success("Mot de passe réinitialisé. Vous pouvez vous connecter.");
+      toast.success(t("resetSuccess"));
       router.push("/login");
     } catch {
-      setError("Une erreur est survenue. Réessayez dans un instant.");
+      setError(t("errGeneric"));
     } finally {
       setLoading(false);
     }
@@ -89,16 +87,16 @@ function ResetForm() {
     <>
       <header className="flex flex-col gap-2">
         <h1 className="glass-display text-[32px] font-semibold leading-[1.05]">
-          Nouveau mot de passe
+          {t("resetTitle")}
         </h1>
         <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-          Choisissez un nouveau mot de passe pour votre compte.
+          {t("resetSubtitle")}
         </p>
       </header>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
           <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
-            Nouveau mot de passe
+            {t("newPasswordLabel")}
           </span>
           <input
             type="password"
@@ -114,7 +112,7 @@ function ResetForm() {
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
-            Confirmation
+            {t("confirmationLabel")}
           </span>
           <input
             type="password"
@@ -144,7 +142,7 @@ function ResetForm() {
           style={{ background: "var(--glass-ink)", color: "var(--glass-bg-a)" }}
         >
           {loading ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
-          {loading ? "Enregistrement…" : "Réinitialiser le mot de passe"}
+          {loading ? t("saving") : t("resetSubmit")}
         </button>
       </form>
     </>
@@ -152,6 +150,7 @@ function ResetForm() {
 }
 
 export default function ResetPasswordPage() {
+  const t = useTranslations("public.auth");
   return (
     <div className="glass-root">
       <section className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col justify-center gap-6 px-4 py-10">
@@ -160,7 +159,7 @@ export default function ResetPasswordPage() {
           className="inline-flex w-fit items-center gap-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
         >
           <ArrowLeftIcon className="size-4" />
-          Retour à la connexion
+          {t("backToSignIn")}
         </Link>
         <Suspense
           fallback={

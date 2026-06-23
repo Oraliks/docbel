@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Calculator, ArrowLeft } from "lucide-react";
@@ -10,10 +11,13 @@ import { getEmployerPageUser } from "@/lib/employeur/page-auth";
 import { prisma } from "@/lib/prisma";
 import { labelReliability, type ReliabilityLevel } from "@/lib/employeur/constants";
 
-export const metadata: Metadata = {
-  title: "Simulateur de coût employeur | DocBel",
-  description: "Estimez le coût employeur d'un engagement (estimation structurelle, indicative).",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
+  return {
+    title: t("costMetaTitle"),
+    description: t("costMetaDesc"),
+  };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +27,7 @@ const EUR = (n: number | null | undefined): string =>
     : `${n.toLocaleString("fr-BE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
 export default async function SimulateurCoutPage() {
+  const t = await getTranslations("public.pro");
   const user = await getEmployerPageUser();
   if (!user) redirect("/p/employeur");
 
@@ -44,26 +49,23 @@ export default async function SimulateurCoutPage() {
     <div className="w-full space-y-6 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
       <header className="space-y-1">
         <Button variant="ghost" size="sm" render={<Link href="/employeur" />} className="-ml-2 mb-1">
-          <ArrowLeft /> Espace employeur
+          <ArrowLeft /> {t("backToEmployerSpace")}
         </Button>
         <div className="flex items-center gap-2">
           <Calculator className="size-6 text-primary" aria-hidden />
-          <h1 className="text-2xl font-semibold tracking-tight">Simulateur de coût employeur</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("costTitle")}</h1>
         </div>
-        <p className="text-muted-foreground">
-          Estimez le coût total d&apos;un engagement. Estimation structurelle et indicative :
-          elle ne remplace pas un calcul payroll officiel d&apos;un secrétariat social.
-        </p>
+        <p className="text-muted-foreground">{t("costIntro")}</p>
       </header>
 
       <CostSimulator />
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Mes simulations enregistrées</h2>
+        <h2 className="text-lg font-medium">{t("costSavedTitle")}</h2>
         {saved.length === 0 ? (
           <Card>
             <CardContent className="py-6 text-center text-sm text-muted-foreground">
-              Aucune simulation enregistrée pour le moment.
+              {t("costSavedEmpty")}
             </CardContent>
           </Card>
         ) : (
@@ -76,12 +78,17 @@ export default async function SimulateurCoutPage() {
                 <div className="min-w-0">
                   <p className="truncate font-medium">{s.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    {EUR(s.grossMonthlySalary)} brut · coût mensuel {EUR(s.estimatedMonthlyEmployerCost)} ·{" "}
-                    {new Date(s.updatedAt).toLocaleDateString("fr-BE")}
+                    {t("costSavedLine", {
+                      gross: EUR(s.grossMonthlySalary),
+                      cost: EUR(s.estimatedMonthlyEmployerCost),
+                      date: new Date(s.updatedAt).toLocaleDateString("fr-BE"),
+                    })}
                   </p>
                 </div>
                 <Badge variant="outline">
-                  Fiabilité&nbsp;: {labelReliability(s.reliability as ReliabilityLevel).toLowerCase()}
+                  {t("costReliabilityLabel", {
+                    value: labelReliability(s.reliability as ReliabilityLevel).toLowerCase(),
+                  })}
                 </Badge>
               </li>
             ))}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import {
   ArrowRightIcon,
@@ -26,11 +27,13 @@ import { EcheancierEmployeur } from "@/components/docbel/p/echeancier-employeur"
 import { EmployeurHeroBilingue } from "@/components/docbel/p/employeur-hero-bilingue";
 import { PricingEmployeur } from "@/components/docbel/p/pricing-employeur";
 
-export const metadata: Metadata = {
-  title: "Espace Employeur | Docbel",
-  description:
-    "L'espace employeur qui vous fait gagner du temps et de l'argent : outils RH, simulations et informations fiables pour simplifier votre gestion au quotidien.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
+  return {
+    title: t("lpEmployerMetaTitle"),
+    description: t("lpEmployerMetaDesc"),
+  };
+}
 
 // Mêmes gradients d'icônes que la landing partenaire (palette glass cohérente).
 type IconHue = "violet" | "orange" | "rose" | "blue" | "green" | "mauve";
@@ -54,34 +57,34 @@ const ICON_SHADOW: Record<IconHue, string> = {
 interface BenefitItem {
   Icon: LucideIcon;
   hue: IconHue;
-  title: string;
-  desc: string;
+  titleKey: string;
+  descKey: string;
 }
 
 const PRIMARY_BENEFITS: BenefitItem[] = [
   {
     Icon: FileTextIcon,
     hue: "violet",
-    title: "Moins d'administratif",
-    desc: "Centralisez vos tâches et automatisez les calculs pour gagner un temps précieux.",
+    titleKey: "lpEmployerBenefitAdminTitle",
+    descKey: "lpEmployerBenefitAdminDesc",
   },
   {
     Icon: EuroIcon,
     hue: "orange",
-    title: "Réduisez les coûts",
-    desc: "Évitez les erreurs, optimisez vos charges et identifiez les aides disponibles.",
+    titleKey: "lpEmployerBenefitCostTitle",
+    descKey: "lpEmployerBenefitCostDesc",
   },
   {
     Icon: ZapIcon,
     hue: "rose",
-    title: "Décisions plus rapides",
-    desc: "Simulez, comparez et décidez en toute confiance avec des données fiables.",
+    titleKey: "lpEmployerBenefitDecisionTitle",
+    descKey: "lpEmployerBenefitDecisionDesc",
   },
   {
     Icon: UsersIcon,
     hue: "blue",
-    title: "Outils RH au quotidien",
-    desc: "Tout ce dont vous avez besoin, dans un seul espace simple et intuitif.",
+    titleKey: "lpEmployerBenefitHrTitle",
+    descKey: "lpEmployerBenefitHrDesc",
   },
 ];
 
@@ -89,38 +92,38 @@ const TOOLS: BenefitItem[] = [
   {
     Icon: PhoneIcon,
     hue: "rose",
-    title: "Brut ↔ Net",
-    desc: "Convertissez les salaires bruts en nets.",
+    titleKey: "lpEmployerToolGrossNetTitle",
+    descKey: "lpEmployerToolGrossNetDesc",
   },
   {
     Icon: ScaleIcon,
     hue: "orange",
-    title: "Calcul du préavis",
-    desc: "Estimez les délais légaux et indemnités.",
+    titleKey: "lpEmployerToolNoticeTitle",
+    descKey: "lpEmployerToolNoticeDesc",
   },
   {
     Icon: CalculatorIcon,
     hue: "blue",
-    title: "Coût salarial",
-    desc: "Calculez le coût complet d'un collaborateur.",
+    titleKey: "lpEmployerToolPayrollCostTitle",
+    descKey: "lpEmployerToolPayrollCostDesc",
   },
   {
     Icon: CalendarIcon,
     hue: "green",
-    title: "Absences & congés",
-    desc: "Gérez les droits, soldes et report facilement.",
+    titleKey: "lpEmployerToolLeaveTitle",
+    descKey: "lpEmployerToolLeaveDesc",
   },
   {
     Icon: FolderOpenIcon,
     hue: "green",
-    title: "Documents RH",
-    desc: "Accédez à des modèles et guides prêts à l'emploi.",
+    titleKey: "lpEmployerToolDocsTitle",
+    descKey: "lpEmployerToolDocsDesc",
   },
   {
     Icon: ShieldCheckIcon,
     hue: "rose",
-    title: "Aides & obligations",
-    desc: "Identifiez vos obligations et les aides disponibles.",
+    titleKey: "lpEmployerToolAidsTitle",
+    descKey: "lpEmployerToolAidsDesc",
   },
 ];
 
@@ -128,26 +131,26 @@ const SECONDARY_BENEFITS: BenefitItem[] = [
   {
     Icon: LayersIcon,
     hue: "violet",
-    title: "Tout est centralisé",
-    desc: "Outils, documents et actualités, au même endroit.",
+    titleKey: "lpEmployerSecCentralizedTitle",
+    descKey: "lpEmployerSecCentralizedDesc",
   },
   {
     Icon: SearchIcon,
     hue: "orange",
-    title: "Tout est clair",
-    desc: "Des explications simples, rédigées pour les employeurs.",
+    titleKey: "lpEmployerSecClearTitle",
+    descKey: "lpEmployerSecClearDesc",
   },
   {
     Icon: TimerIcon,
     hue: "mauve",
-    title: "Un vrai gain de temps",
-    desc: "Moins de recherches, plus d'actions et moins d'erreurs.",
+    titleKey: "lpEmployerSecTimeTitle",
+    descKey: "lpEmployerSecTimeDesc",
   },
   {
     Icon: BarChart3Icon,
     hue: "rose",
-    title: "Une meilleure visibilité",
-    desc: "Pilotez vos RH et vos coûts avec des indicateurs clairs.",
+    titleKey: "lpEmployerSecVisibilityTitle",
+    descKey: "lpEmployerSecVisibilityDesc",
   },
 ];
 
@@ -190,12 +193,13 @@ function RoundIconTile({ Icon, hue }: { Icon: LucideIcon; hue: IconHue }) {
   );
 }
 
-export default function EmployeurLandingPage() {
+export default async function EmployeurLandingPage() {
+  const t = await getTranslations("public.pro");
   return (
     <div className="flex flex-col gap-12 sm:gap-16">
       <AlreadyLoggedInBanner
         targetPath="/employeur"
-        label="votre espace employeur"
+        label={t("lpEmployerBannerLabel")}
       />
 
       {/* Section A — Hero (bilingue FR/NL, commutateur en tête) */}
@@ -206,15 +210,17 @@ export default function EmployeurLandingPage() {
 
       {/* Section B — 4 bénéfices */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {PRIMARY_BENEFITS.map(({ Icon, hue, title, desc }) => (
+        {PRIMARY_BENEFITS.map(({ Icon, hue, titleKey, descKey }) => (
           <article
-            key={title}
+            key={titleKey}
             className="glass-surface flex flex-col gap-3 p-5"
           >
             <IconTile Icon={Icon} hue={hue} />
-            <h3 className="text-[15.5px] font-bold tracking-tight">{title}</h3>
+            <h3 className="text-[15.5px] font-bold tracking-tight">
+              {t(titleKey as Parameters<typeof t>[0])}
+            </h3>
             <p className="text-[12.5px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
-              {desc}
+              {t(descKey as Parameters<typeof t>[0])}
             </p>
           </article>
         ))}
@@ -223,18 +229,22 @@ export default function EmployeurLandingPage() {
       {/* Section C — Outils concrets */}
       <section className="flex flex-col gap-7">
         <h2 className="glass-display max-w-3xl text-[30px] leading-[1.1] font-semibold tracking-tight sm:text-[38px]">
-          Des <em>outils concrets</em> pour chaque situation
+          {t("lpEmployerToolsTitlePrefix")}{" "}
+          <em>{t("lpEmployerToolsTitleEmphasis")}</em>{" "}
+          {t("lpEmployerToolsTitleSuffix")}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {TOOLS.map(({ Icon, hue, title, desc }) => (
+          {TOOLS.map(({ Icon, hue, titleKey, descKey }) => (
             <article
-              key={title}
+              key={titleKey}
               className="glass-surface glass-interactive flex min-h-[180px] flex-col gap-3.5 p-5 text-left"
             >
               <IconTile Icon={Icon} hue={hue} />
-              <h3 className="text-[15.5px] font-bold tracking-tight">{title}</h3>
+              <h3 className="text-[15.5px] font-bold tracking-tight">
+                {t(titleKey as Parameters<typeof t>[0])}
+              </h3>
               <p className="flex-1 text-[12.5px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
-                {desc}
+                {t(descKey as Parameters<typeof t>[0])}
               </p>
               <div className="flex items-center justify-end border-t border-[color:var(--glass-ink-line)] pt-3">
                 <span
@@ -261,15 +271,17 @@ export default function EmployeurLandingPage() {
 
       {/* Section D — 4 bénéfices secondaires */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {SECONDARY_BENEFITS.map(({ Icon, hue, title, desc }) => (
+        {SECONDARY_BENEFITS.map(({ Icon, hue, titleKey, descKey }) => (
           <article
-            key={title}
+            key={titleKey}
             className="glass-surface flex flex-col gap-3 p-5"
           >
             <RoundIconTile Icon={Icon} hue={hue} />
-            <h3 className="text-[14.5px] font-bold tracking-tight">{title}</h3>
+            <h3 className="text-[14.5px] font-bold tracking-tight">
+              {t(titleKey as Parameters<typeof t>[0])}
+            </h3>
             <p className="text-[12px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
-              {desc}
+              {t(descKey as Parameters<typeof t>[0])}
             </p>
           </article>
         ))}
@@ -297,23 +309,22 @@ export default function EmployeurLandingPage() {
         <div className="relative grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
           <div className="flex flex-col gap-6 text-white">
             <h3 className="glass-display max-w-2xl text-[26px] leading-[1.15] font-semibold sm:text-[32px]">
-              Rejoignez les entreprises qui simplifient leur gestion RH avec
-              Docbel.
+              {t("lpEmployerCtaTitle")}
             </h3>
             <ul className="flex flex-wrap gap-4 text-[13px] font-semibold">
               {[
-                "Mise en place rapide",
-                "Sans engagement",
-                "Support réactif",
-              ].map((label) => (
-                <li key={label} className="inline-flex items-center gap-2">
+                "lpEmployerCtaPointSetup",
+                "lpEmployerCtaPointNoCommitment",
+                "lpEmployerCtaPointSupport",
+              ].map((k) => (
+                <li key={k} className="inline-flex items-center gap-2">
                   <span
                     className="flex size-5 items-center justify-center rounded-full bg-white text-emerald-600"
                     aria-hidden
                   >
                     <CheckIcon className="size-3" strokeWidth={3} />
                   </span>
-                  {label}
+                  {t(k as Parameters<typeof t>[0])}
                 </li>
               ))}
             </ul>
@@ -323,14 +334,14 @@ export default function EmployeurLandingPage() {
               href="/employeur"
               className="glass-cta inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold"
             >
-              Découvrir l&apos;espace employeur
+              {t("lpEmployerCtaPrimary")}
               <ArrowRightIcon className="size-4" strokeWidth={2.4} />
             </Link>
             <Link
               href="/contact"
               className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/70 bg-white/10 px-6 py-3.5 text-[13.5px] font-semibold text-white backdrop-blur transition hover:bg-white/20"
             >
-              Demander une démo
+              {t("lpEmployerCtaSecondary")}
             </Link>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   CalendarRangeIcon,
   ClockIcon,
@@ -29,6 +30,7 @@ const TONE_STYLE: Record<ChipTone, React.CSSProperties> = {
 };
 
 export function TrainingCard({ training }: { training: TrainingCardData }) {
+  const t = useTranslations("public.formations");
   const { isSaved, toggle } = useSavedFormations();
   const Icon = resolveIcon(training.category?.icon);
   const accent = training.category?.color ?? "#7C3AED";
@@ -52,7 +54,7 @@ export function TrainingCard({ training }: { training: TrainingCardData }) {
           e.stopPropagation();
           toggle(training.slug);
         }}
-        aria-label={saved ? "Retirer des sauvegardes" : "Sauvegarder la formation"}
+        aria-label={saved ? t("unsaveAria") : t("saveAria")}
         className="absolute right-3 top-3 z-10 rounded-full p-2 transition hover:bg-white/55 dark:hover:bg-white/10"
         style={{ color: saved ? "var(--glass-accent-c)" : "var(--glass-ink-faint)" }}
       >
@@ -97,7 +99,7 @@ export function TrainingCard({ training }: { training: TrainingCardData }) {
               ) : (
                 <SparklesIcon className="size-3" />
               )}
-              {training.isVerifiedByDocbel ? "Validée Docbel" : "Recommandée"}
+              {training.isVerifiedByDocbel ? t("badgeVerifiedDocbel") : t("badgeRecommended")}
             </span>
           )}
           {chips.map((c) => (
@@ -136,12 +138,12 @@ export function TrainingCard({ training }: { training: TrainingCardData }) {
                 {duration}
               </>
             ) : (
-              <span>Dates à venir</span>
+              <span>{t("datesUpcoming")}</span>
             )}
           </span>
           {training.sessionsCount > 0 ? (
             <span>
-              {training.sessionsCount} session{training.sessionsCount > 1 ? "s" : ""}
+              {t("sessionsCount", { count: training.sessionsCount })}
             </span>
           ) : null}
         </div>

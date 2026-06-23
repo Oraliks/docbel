@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useSyncExternalStore } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -36,9 +37,10 @@ export function ProShell({
   segment: ProSegment;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("public.pro");
   const { data: session } = useAuthSession();
   const user = {
-    name: session?.user?.name ?? "Compte",
+    name: session?.user?.name ?? t("navAccount"),
     email: session?.user?.email ?? "",
     avatar: "",
   };
@@ -66,6 +68,7 @@ export function ProShell({
 }
 
 function ProTopbar({ segment }: { segment: ProSegment }) {
+  const t = useTranslations("public.pro");
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
@@ -82,7 +85,7 @@ function ProTopbar({ segment }: { segment: ProSegment }) {
   };
 
   const SegmentIcon = segment === "partenaire" ? HandshakeIcon : Building2Icon;
-  const label = segment === "partenaire" ? "Espace Partenaire" : "Espace Employeur";
+  const label = t(segment === "partenaire" ? "navSpacePartner" : "navSpaceEmployer");
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center border-b bg-background/95 backdrop-blur transition-[width,height] ease-linear">
@@ -102,7 +105,7 @@ function ProTopbar({ segment }: { segment: ProSegment }) {
             size="icon-sm"
             onClick={() => setTheme(isDark ? "light" : "dark")}
             disabled={!mounted}
-            aria-label="Changer le thème"
+            aria-label={t("navToggleTheme")}
           >
             {mounted ? (
               isDark ? (
@@ -117,15 +120,15 @@ function ProTopbar({ segment }: { segment: ProSegment }) {
 
           <Link
             href="/"
-            title="Aller à l'accueil"
+            title={t("navGoHome")}
             className="inline-flex size-7 items-center justify-center rounded-[min(var(--radius-md),12px)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <HomeIcon className="size-4" />
-            <span className="sr-only">Aller à l&apos;accueil</span>
+            <span className="sr-only">{t("navGoHome")}</span>
           </Link>
 
           <Button variant="outline" size="sm" onClick={handleSignOut}>
-            Déconnexion
+            {t("navSignOut")}
           </Button>
         </div>
       </div>

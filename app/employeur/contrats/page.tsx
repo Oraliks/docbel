@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContractBuilder } from "@/components/docbel/employeur/contracts/contract-builder";
@@ -9,13 +10,15 @@ import { getProfileForUser } from "@/lib/employeur/queries";
 import { prisma } from "@/lib/prisma";
 import { CONTRACT_SOURCES } from "@/lib/employeur/contracts/legal-content";
 
-export const metadata: Metadata = {
-  title: "Générer un contrat | Espace Employeur",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
+  return { title: t("contratsMetaTitle") };
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function ContratsPage() {
+  const t = await getTranslations("public.pro");
   const user = await getEmployerPageUser();
   if (!user) redirect("/p/employeur");
 
@@ -39,22 +42,20 @@ export default async function ContratsPage() {
   return (
     <div className="flex w-full flex-col gap-5 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
       <Button variant="ghost" size="sm" render={<Link href="/employeur" />}>
-        <ArrowLeft /> Tableau de bord
+        <ArrowLeft /> {t("backToDashboard")}
       </Button>
 
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Générer un contrat</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("contratsTitle")}</h1>
         <p className="text-muted-foreground">
-          Composez un modèle de contrat de travail belge : choisissez le type et le régime,
-          adaptez les clauses, complétez les informations et obtenez un aperçu prêt à relire,
-          copier, télécharger ou imprimer.
+          {t("contratsIntro")}
         </p>
       </header>
 
       <ContractBuilder initialValues={initialValues} />
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Sources officielles</h2>
+        <h2 className="text-lg font-medium">{t("contratsSourcesTitle")}</h2>
         <ul className="space-y-1.5 text-sm">
           {CONTRACT_SOURCES.map((s) => (
             <li key={s.url}>

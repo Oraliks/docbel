@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Copy, Check, Mail, KeyRound, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ export function ResumeCodeBanner({
   resumeCodeExpiresAt,
   initialResumeEmail,
 }: Props) {
+  const t = useTranslations("public.dossier");
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState(initialResumeEmail ?? "");
   const [sending, setSending] = useState(false);
@@ -38,15 +40,15 @@ export function ResumeCodeBanner({
       () => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-        toast.success("Code copié dans le presse-papier");
+        toast.success(t("bannerCopySuccess"));
       },
-      () => toast.error("Impossible de copier — sélectionnez le code manuellement")
+      () => toast.error(t("bannerCopyError"))
     );
   }
 
   async function sendEmail() {
     if (!email || !email.includes("@")) {
-      toast.error("Entrez une adresse email valide");
+      toast.error(t("bannerInvalidEmail"));
       return;
     }
     setSending(true);
@@ -58,13 +60,13 @@ export function ResumeCodeBanner({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        toast.error(data.error || "Échec d'envoi");
+        toast.error(data.error || t("bannerSendError"));
         return;
       }
       setSent(true);
-      toast.success(`Code envoyé à ${email}`);
+      toast.success(t("bannerSendSuccess", { email }));
     } catch {
-      toast.error("Erreur réseau");
+      toast.error(t("networkError"));
     } finally {
       setSending(false);
     }
@@ -76,7 +78,7 @@ export function ResumeCodeBanner({
         month: "long",
         year: "numeric",
       })
-    : "30 jours";
+    : t("bannerExpiresFallback");
 
   return (
     <div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-3 text-sm space-y-3">
@@ -84,21 +86,20 @@ export function ResumeCodeBanner({
         <KeyRound className="size-4 mt-0.5 text-amber-700 dark:text-amber-300 flex-shrink-0" />
         <div className="flex-1 space-y-1 min-w-0">
           <p className="font-semibold text-amber-900 dark:text-amber-200">
-            Conservez votre code de reprise
+            {t("bannerTitle")}
           </p>
           <p className="text-xs text-amber-800 dark:text-amber-300">
-            Sans ce code, vous ne pourrez pas reprendre votre dossier depuis un
-            autre appareil ou après avoir effacé vos cookies. <strong>Aucune donnée
-            nominative n&apos;est conservée :</strong> si vous ne le sauvegardez pas,
-            les informations saisies seront <strong>perdues</strong> au bout du{" "}
-            {expiresAtText}.
+            {t.rich("bannerBody", {
+              expiresAt: expiresAtText,
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
         </div>
         <button
           type="button"
           onClick={() => setDismissed(true)}
           className="text-amber-700 hover:text-amber-900 dark:text-amber-300"
-          aria-label="Masquer"
+          aria-label={t("hide")}
         >
           <X className="size-4" />
         </button>
@@ -116,11 +117,11 @@ export function ResumeCodeBanner({
         >
           {copied ? (
             <>
-              <Check className="size-3.5" /> Copié
+              <Check className="size-3.5" /> {t("bannerCopied")}
             </>
           ) : (
             <>
-              <Copy className="size-3.5" /> Copier
+              <Copy className="size-3.5" /> {t("copy")}
             </>
           )}
         </Button>
@@ -131,12 +132,12 @@ export function ResumeCodeBanner({
             onClick={() => setShowEmailField(true)}
             className="bg-white/10"
           >
-            <Mail className="size-3.5" /> Recevoir par email
+            <Mail className="size-3.5" /> {t("bannerReceiveByEmail")}
           </Button>
         )}
         {sent && (
           <span className="text-xs text-amber-800 dark:text-amber-300 inline-flex items-center gap-1">
-            <Check className="size-3.5" /> Envoyé à {email}
+            <Check className="size-3.5" /> {t("bannerSentTo", { email })}
           </span>
         )}
       </div>
@@ -145,14 +146,14 @@ export function ResumeCodeBanner({
         <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end pt-1">
           <div className="flex-1">
             <Label htmlFor="resume-email" className="text-xs text-amber-900 dark:text-amber-200">
-              Adresse email
+              {t("bannerEmailLabel")}
             </Label>
             <Input
               id="resume-email"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="votre@email.be"
+              placeholder={t("bannerEmailPlaceholder")}
               className="h-9 mt-1"
               autoComplete="email"
               disabled={sending}
@@ -161,10 +162,10 @@ export function ResumeCodeBanner({
           <Button size="sm" onClick={sendEmail} disabled={sending || !email.includes("@")}>
             {sending ? (
               <>
-                <Loader2 className="size-3.5 animate-spin" /> Envoi…
+                <Loader2 className="size-3.5 animate-spin" /> {t("bannerSending")}
               </>
             ) : (
-              "Envoyer"
+              t("send")
             )}
           </Button>
         </div>

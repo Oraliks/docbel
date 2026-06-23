@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   AwardIcon,
   BookmarkIcon,
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export function MesFormationsClient({ isLoggedIn, enrollments, results, certificates, serverSavedSlugs }: Props) {
+  const t = useTranslations("public.formations");
   const { saved } = useSavedFormations();
   const [cards, setCards] = useState<TrainingCardData[]>([]);
 
@@ -70,16 +72,16 @@ export function MesFormationsClient({ isLoggedIn, enrollments, results, certific
   return (
     <div className="flex flex-col gap-8">
       <section className="glass-surface flex flex-col gap-2 p-7">
-        <h1 className="glass-display text-[30px] font-semibold">Mes formations</h1>
+        <h1 className="glass-display text-[30px] font-semibold">{t("myTitle")}</h1>
         <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-          Vos inscriptions, vos formations sauvegardées et vos résultats d&apos;orientation.
+          {t("mySubtitle")}
         </p>
         {!isLoggedIn && (
           <p className="text-[12.5px] text-[color:var(--glass-ink-faint)]">
             <Link href="/login" className="font-semibold text-[color:var(--glass-accent-deep)] hover:underline">
-              Connectez-vous
+              {t("loginLink")}
             </Link>{" "}
-            pour retrouver vos inscriptions et vos résultats sur tous vos appareils.
+            {t("loginHintSuffix")}
           </p>
         )}
       </section>
@@ -87,13 +89,13 @@ export function MesFormationsClient({ isLoggedIn, enrollments, results, certific
       {!hasAnything && (
         <section className="glass-surface flex flex-col items-center gap-3 px-6 py-14 text-center">
           <GraduationCapIcon className="size-8 text-[color:var(--glass-ink-faint)]" />
-          <p className="text-[14px] font-semibold">Vous n&apos;avez pas encore de formation.</p>
+          <p className="text-[14px] font-semibold">{t("myEmptyTitle")}</p>
           <div className="flex flex-wrap justify-center gap-2.5">
             <Link href="/formations" className="glass-cta inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-bold">
-              Explorer les formations
+              {t("exploreTrainings")}
             </Link>
             <Link href="/formations/boussole" className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-2.5 text-[13px] font-bold text-[color:var(--glass-ink)]">
-              <CompassIcon className="size-4" /> Lancer la Boussole
+              <CompassIcon className="size-4" /> {t("ctaLaunchBoussole")}
             </Link>
           </div>
         </section>
@@ -102,7 +104,7 @@ export function MesFormationsClient({ isLoggedIn, enrollments, results, certific
       {enrollments.length > 0 && (
         <section className="flex flex-col gap-3">
           <h2 className="flex items-center gap-2 px-1 text-[16px] font-bold tracking-tight">
-            <CalendarRangeIcon className="size-4 text-[color:var(--glass-accent-deep)]" /> Mes inscriptions
+            <CalendarRangeIcon className="size-4 text-[color:var(--glass-accent-deep)]" /> {t("sectionMyEnrollments")}
           </h2>
           <div className="flex flex-col gap-2.5">
             {enrollments.map((e) => (
@@ -132,7 +134,7 @@ export function MesFormationsClient({ isLoggedIn, enrollments, results, certific
       {results.length > 0 && (
         <section className="flex flex-col gap-3">
           <h2 className="flex items-center gap-2 px-1 text-[16px] font-bold tracking-tight">
-            <SparklesIcon className="size-4 text-[color:var(--glass-accent-deep)]" /> Mes résultats Boussole
+            <SparklesIcon className="size-4 text-[color:var(--glass-accent-deep)]" /> {t("sectionMyResults")}
           </h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {results.map((r) => {
@@ -146,7 +148,7 @@ export function MesFormationsClient({ isLoggedIn, enrollments, results, certific
                     <Icon className="size-5" />
                   </span>
                   <div>
-                    <p className="text-[13px] font-bold">{branch?.name ?? "Résultat"}</p>
+                    <p className="text-[13px] font-bold">{branch?.name ?? t("resultFallback")}</p>
                     <p className="text-[11px] text-[color:var(--glass-ink-faint)]">{formatDate(r.createdAt)}</p>
                   </div>
                 </Link>
@@ -159,7 +161,7 @@ export function MesFormationsClient({ isLoggedIn, enrollments, results, certific
       {certificates.length > 0 && (
         <section className="flex flex-col gap-3">
           <h2 className="flex items-center gap-2 px-1 text-[16px] font-bold tracking-tight">
-            <AwardIcon className="size-4 text-[color:var(--glass-accent-deep)]" /> Mes attestations
+            <AwardIcon className="size-4 text-[color:var(--glass-accent-deep)]" /> {t("sectionMyCertificates")}
           </h2>
           <div className="flex flex-col gap-2.5">
             {certificates.map((c) => (
@@ -170,7 +172,8 @@ export function MesFormationsClient({ isLoggedIn, enrollments, results, certific
                 <div>
                   <p className="text-[14px] font-bold">{c.trainingTitle}</p>
                   <p className="text-[12px] text-[color:var(--glass-ink-soft)]">
-                    {c.orgName ? `${c.orgName} · ` : ""}N° {c.certificateNumber} · {formatDate(c.issuedAt)}
+                    {c.orgName ? `${c.orgName} · ` : ""}
+                    {t("certNumberShort", { number: c.certificateNumber })} · {formatDate(c.issuedAt)}
                   </p>
                 </div>
                 <a
@@ -180,7 +183,7 @@ export function MesFormationsClient({ isLoggedIn, enrollments, results, certific
                   className="glass-cta inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12.5px] font-bold"
                 >
                   <DownloadIcon className="size-4" />
-                  Télécharger
+                  {t("download")}
                 </a>
               </div>
             ))}
@@ -191,10 +194,10 @@ export function MesFormationsClient({ isLoggedIn, enrollments, results, certific
       {saved.length > 0 && (
         <section className="flex flex-col gap-3">
           <h2 className="flex items-center gap-2 px-1 text-[16px] font-bold tracking-tight">
-            <BookmarkIcon className="size-4 text-[color:var(--glass-accent-deep)]" /> Formations sauvegardées
+            <BookmarkIcon className="size-4 text-[color:var(--glass-accent-deep)]" /> {t("sectionMySaved")}
           </h2>
           {cards.length === 0 ? (
-            <p className="px-1 text-[13px] text-[color:var(--glass-ink-soft)]">Chargement…</p>
+            <p className="px-1 text-[13px] text-[color:var(--glass-ink-soft)]">{t("loading")}</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {cards.map((c) => <TrainingCard key={c.id} training={c} />)}

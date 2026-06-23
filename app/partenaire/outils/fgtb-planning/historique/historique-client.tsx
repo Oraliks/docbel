@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -130,6 +131,7 @@ function reconstructDayPaste(dayEntries: HistoryEntry[]): string {
 }
 
 export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
+  const t = useTranslations("public.pro");
   const [org, setOrg] = useState<string>(isAdmin ? "" : (defaultOrg ?? ""));
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -166,19 +168,19 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
           error?: string;
         } | null;
         if (!res.ok) {
-          toast.error(data?.error ?? "Chargement impossible.");
+          toast.error(data?.error ?? t("rdvLoadFailed"));
           setEntries([]);
           return;
         }
         setEntries(data?.entries ?? []);
         setLoaded(true);
       } catch {
-        if (!signal?.aborted) toast.error("Erreur réseau.");
+        if (!signal?.aborted) toast.error(t("rdvNetworkError"));
       } finally {
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [isAdmin, org, ready],
+    [isAdmin, org, ready, t],
   );
 
   useEffect(() => {
@@ -287,10 +289,14 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
   const handleDelete = useCallback(
     async (entry: HistoryEntry) => {
       const ok = await confirm({
-        title: "Supprimer cette entrée ?",
-        description: `${entry.name} — ${formatDateKey(entry.date)} à ${entry.startTime}`,
+        title: t("rdvDeleteTitle"),
+        description: t("rdvDeleteDesc", {
+          name: entry.name,
+          date: formatDateKey(entry.date),
+          time: entry.startTime,
+        }),
         destructive: true,
-        confirmText: "Supprimer",
+        confirmText: t("rdvDeleteConfirm"),
       });
       if (!ok) return;
       try {
@@ -307,26 +313,25 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
           const data = (await res.json().catch(() => null)) as {
             error?: string;
           } | null;
-          toast.error(data?.error ?? "Suppression impossible.");
+          toast.error(data?.error ?? t("rdvDeleteFailed"));
           return;
         }
         setEntries((prev) => prev.filter((e) => e.id !== entry.id));
-        toast.success("Entrée supprimée.");
+        toast.success(t("rdvDeleted"));
       } catch {
-        toast.error("Erreur réseau.");
+        toast.error(t("rdvNetworkError"));
       }
     },
-    [confirm, isAdmin, org],
+    [confirm, isAdmin, org, t],
   );
 
   const handleClear = useCallback(async () => {
     const ok = await confirm({
-      title: "Vider tout l'historique ?",
-      description:
-        "Tous les rendez-vous enregistrés pour cette organisation seront définitivement supprimés. Cette action est irréversible.",
+      title: t("rdvClearTitle"),
+      description: t("rdvClearDesc"),
       destructive: true,
-      confirmText: "Vider l'historique",
-      requireText: "VIDER",
+      confirmText: t("rdvClearConfirm"),
+      requireText: t("rdvClearKeyword"),
     });
     if (!ok) return;
     try {
@@ -340,15 +345,15 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
         error?: string;
       } | null;
       if (!res.ok) {
-        toast.error(data?.error ?? "Action impossible.");
+        toast.error(data?.error ?? t("rdvActionFailed"));
         return;
       }
       setEntries([]);
-      toast.success(`${data?.deleted ?? 0} entrée(s) supprimée(s).`);
+      toast.success(t("rdvEntriesDeleted", { count: data?.deleted ?? 0 }));
     } catch {
-      toast.error("Erreur réseau.");
+      toast.error(t("rdvNetworkError"));
     }
-  }, [confirm, isAdmin, org]);
+  }, [confirm, isAdmin, org, t]);
 
   // ── Onglet « Mise à jour » ──────────────────────────────────────────────
 
@@ -406,28 +411,28 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
       return {
         kind: "error",
         message:
-          err instanceof AppointmentParseError ? err.message : "Texte illisible.",
+          err instanceof AppointmentParseError ? err.message : t("rdvUnreadable"),
       };
     }
-  }, [updateContent]);
+  }, [updateContent, t]);
 
   const handleApply = useCallback(async () => {
     setUpdateError(null);
     setUpdateResult(null);
     if (!ready) {
       setUpdateError(
-        isAdmin
-          ? "Choisissez d'abord une organisation ci-dessus."
-          : "Aucune organisation rattachée à votre compte — contactez un admin.",
+        isAdmin ? t("rdvChooseOrgAbove") : t("rdvNoOrgAttached"),
       );
       return;
     }
     if (updatePreview.kind === "error") {
-      setUpdateError(`Format du texte non reconnu : ${updatePreview.message}`);
+      setUpdateError(
+        t("rdvFormatNotRecognized", { message: updatePreview.message }),
+      );
       return;
     }
     if (updatePreview.kind !== "ok") {
-      setUpdateError("Aucun rendez-vous détecté dans le texte collé.");
+      setUpdateError(t("rdvNoneDetected"));
       return;
     }
     setApplying(true);
@@ -449,7 +454,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
         error?: string;
       } | null;
       if (!res.ok) {
-        setUpdateError(data?.error ?? "Mise à jour impossible.");
+        setUpdateError(data?.error ?? t("rdvUpdateFailed"));
         return;
       }
       const removed = data?.removedEntries ?? [];
@@ -463,19 +468,22 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
       });
       if (removed.length > 0 || added.length > 0) {
         toast.success(
-          `Mise à jour appliquée — ${removed.length} retiré(s), ${added.length} ajouté(s).`,
+          t("rdvUpdateApplied", {
+            removed: removed.length,
+            added: added.length,
+          }),
         );
       } else {
-        toast.success("Historique déjà à jour pour ces journées.");
+        toast.success(t("rdvAlreadyUpToDate"));
       }
       // Recharge la liste de l'onglet « Consultation » pour refléter la sync.
       await load();
     } catch {
-      setUpdateError("Erreur réseau lors de la mise à jour.");
+      setUpdateError(t("rdvNetworkErrorUpdate"));
     } finally {
       setApplying(false);
     }
-  }, [ready, isAdmin, org, updateContent, updatePreview, load]);
+  }, [ready, isAdmin, org, updateContent, updatePreview, load, t]);
 
   // ── Rendu ─────────────────────────────────────────────────────────────────
 
@@ -484,11 +492,11 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Nom</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Créneau</TableHead>
-          <TableHead>Enregistré le</TableHead>
-          <TableHead className="text-right">Action</TableHead>
+          <TableHead>{t("rdvColName")}</TableHead>
+          <TableHead>{t("rdvColDate")}</TableHead>
+          <TableHead>{t("rdvColSlot")}</TableHead>
+          <TableHead>{t("rdvColSavedOn")}</TableHead>
+          <TableHead className="text-right">{t("rdvColAction")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -510,7 +518,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                   {isDup ? (
                     <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                       <History className="size-3" />
-                      {count} RDV
+                      {t("rdvCountRdv", { count })}
                     </span>
                   ) : null}
                 </span>
@@ -520,11 +528,11 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                   {formatDateKey(e.date)}
                   {isUpcoming ? (
                     <span className="inline-flex items-center rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                      à venir
+                      {t("rdvBadgeUpcoming")}
                     </span>
                   ) : variant === "plain" ? null : (
                     <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      passé
+                      {t("rdvBadgePast")}
                     </span>
                   )}
                 </span>
@@ -540,7 +548,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(e)}
-                  title="Supprimer cette entrée"
+                  title={t("rdvDeleteRowTitle")}
                   className="text-destructive hover:text-destructive"
                 >
                   <Trash2 className="size-4" />
@@ -575,19 +583,15 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
       <header className="flex flex-col gap-1.5">
         <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           <History className="size-5 text-primary" />
-          Historique des rendez-vous
+          {t("rdvHistTitle")}
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Consultez les rendez-vous enregistrés (pour repérer les personnes ayant
-          déjà pris un rendez-vous) ou mettez l&apos;historique à jour en
-          re-collant le calendrier corrigé d&apos;une journée.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("rdvHistIntro")}</p>
         <Link
           href="/partenaire/outils/fgtb-planning"
           className="inline-flex w-fit items-center gap-1 text-sm text-primary hover:underline"
         >
           <ArrowLeft className="size-4" />
-          Retour à l&apos;outil de conversion
+          {t("rdvBackToTool")}
         </Link>
       </header>
 
@@ -595,7 +599,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
         <Card>
           <CardContent className="flex flex-col gap-1.5 pt-6">
             <Label htmlFor="org-select" className="text-xs">
-              Organisation
+              {t("rdvOrgSimpleLabel")}
             </Label>
             <Select
               value={org}
@@ -607,12 +611,12 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
               }}
             >
               <SelectTrigger id="org-select" className="w-full sm:w-[280px]">
-                <SelectValue placeholder="Choisir une organisation…" />
+                <SelectValue placeholder={t("rdvOrgPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {orgOptions.length === 0 ? (
                   <SelectItem value="__none" disabled>
-                    Aucune organisation
+                    {t("rdvNoOrg")}
                   </SelectItem>
                 ) : (
                   orgOptions.map((name) => (
@@ -624,8 +628,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Choisissez le service dont vous gérez les rendez-vous : la
-              consultation et la mise à jour porteront sur son historique partagé.
+              {t("rdvOrgHelpHist")}
             </p>
           </CardContent>
         </Card>
@@ -635,11 +638,11 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
         <TabsList>
           <TabsTrigger value="consultation">
             <History className="size-4" />
-            Consultation
+            {t("rdvTabConsult")}
           </TabsTrigger>
           <TabsTrigger value="update">
             <RefreshCw className="size-4" />
-            Mise à jour
+            {t("rdvTabUpdate")}
           </TabsTrigger>
         </TabsList>
 
@@ -649,19 +652,32 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CalendarClock className="size-4 text-primary" />
-                Rendez-vous enregistrés
+                {t("rdvRegisteredTitle")}
               </CardTitle>
               <CardDescription>
                 {loaded
-                  ? `${entries.length} rendez-vous • ${distinctPeople} personne${distinctPeople > 1 ? "s" : ""} distincte${distinctPeople > 1 ? "s" : ""}${activeDuplicatePeople > 0 ? ` • ${activeDuplicatePeople} à vérifier` : ""}${pastDuplicatePeople > 0 ? ` • ${pastDuplicatePeople} doublon${pastDuplicatePeople > 1 ? "s" : ""} passé${pastDuplicatePeople > 1 ? "s" : ""}` : ""}`
-                  : "Sélectionnez une organisation pour afficher l'historique."}
+                  ? [
+                      t("rdvSummaryBase", {
+                        count: entries.length,
+                        people: distinctPeople,
+                      }),
+                      activeDuplicatePeople > 0
+                        ? t("rdvSummaryToCheck", { count: activeDuplicatePeople })
+                        : "",
+                      pastDuplicatePeople > 0
+                        ? t("rdvSummaryPastDup", { count: pastDuplicatePeople })
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" • ")
+                  : t("rdvSelectOrgToShow")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div className="flex flex-wrap items-end gap-3">
                 <div className="flex flex-1 flex-col gap-1.5">
                   <Label htmlFor="search" className="text-xs">
-                    Rechercher un nom
+                    {t("rdvSearchLabel")}
                   </Label>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -669,7 +685,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                       id="search"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Nom ou prénom…"
+                      placeholder={t("rdvSearchPlaceholder")}
                       className="pl-8"
                     />
                   </div>
@@ -682,24 +698,24 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                   className="text-destructive hover:text-destructive"
                 >
                   <Trash2 />
-                  Vider l&apos;historique
+                  {t("rdvClearHistBtn")}
                 </Button>
               </div>
 
               {loading ? (
                 <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" />
-                  Chargement…
+                  {t("rdvLoading")}
                 </div>
               ) : !ready ? (
                 <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  Choisissez une organisation ci-dessus.
+                  {t("rdvChooseOrgAboveShort")}
                 </p>
               ) : filtered.length === 0 ? (
                 <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
                   {entries.length === 0
-                    ? "Aucun rendez-vous enregistré pour le moment."
-                    : "Aucun résultat pour cette recherche."}
+                    ? t("rdvEmptyHist")
+                    : t("rdvNoSearchResult")}
                 </p>
               ) : (
                 <div className="flex flex-col gap-6">
@@ -708,12 +724,12 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                           <AlertTriangle className="size-3.5" />
-                          Doublons à vérifier
+                          {t("rdvDupToCheckLabel")}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {activeDuplicatePeople} personne
-                          {activeDuplicatePeople > 1 ? "s" : ""} avec un RDV à venir
-                          et au moins un autre enregistré
+                          {t("rdvDupToCheckCount", {
+                            count: activeDuplicatePeople,
+                          })}
                         </span>
                       </div>
                       {renderTable(dupActive, "active")}
@@ -724,12 +740,10 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
                           <History className="size-3.5" />
-                          Doublons passés
+                          {t("rdvDupPastLabel")}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {pastDuplicatePeople} personne
-                          {pastDuplicatePeople > 1 ? "s" : ""} ayant eu plusieurs
-                          RDV (information)
+                          {t("rdvDupPastCount", { count: pastDuplicatePeople })}
                         </span>
                       </div>
                       {renderTable(dupPast, "past")}
@@ -739,7 +753,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                     <div className="flex flex-col gap-2">
                       {dupActive.length > 0 || dupPast.length > 0 ? (
                         <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          Autres rendez-vous
+                          {t("rdvOtherAppointments")}
                         </span>
                       ) : null}
                       {renderTable(others, "plain")}
@@ -758,13 +772,10 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CalendarDays className="size-4 text-primary" />
-                  Journées déjà enregistrées
+                  {t("rdvDaysRegisteredTitle")}
                 </CardTitle>
                 <CardDescription>
-                  {daySummary.length} journée{daySummary.length > 1 ? "s" : ""}{" "}
-                  dans l&apos;historique. «&nbsp;Recharger&nbsp;» remet la liste
-                  de la journée dans la zone ci-dessous — vous l&apos;éditez puis
-                  cliquez sur «&nbsp;Appliquer&nbsp;».
+                  {t("rdvDaysRegisteredDesc", { count: daySummary.length })}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -772,10 +783,12 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Journée</TableHead>
-                        <TableHead>RDV</TableHead>
-                        <TableHead>Dernière mise à jour</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        <TableHead>{t("rdvColDay")}</TableHead>
+                        <TableHead>{t("rdvColRdv")}</TableHead>
+                        <TableHead>{t("rdvColLastUpdate")}</TableHead>
+                        <TableHead className="text-right">
+                          {t("rdvColAction")}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -798,10 +811,10 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                               variant="outline"
                               size="sm"
                               onClick={() => handleReloadDay(d.date)}
-                              title="Recharger cette journée dans la zone de texte"
+                              title={t("rdvReloadDayTitle")}
                             >
                               <RotateCcw className="size-4" />
-                              Recharger
+                              {t("rdvReloadDay")}
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -816,26 +829,22 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <RefreshCw className="size-4 text-primary" />
-                Mettre à jour une journée
+                {t("rdvUpdateDayTitle")}
               </CardTitle>
               <CardDescription>
-                Collez le calendrier <strong>corrigé</strong> d&apos;une ou
-                plusieurs journées, puis cliquez sur «&nbsp;Appliquer&nbsp;».
-                L&apos;historique de <strong>ces journées</strong> est
-                re-synchronisé : les personnes <strong>absentes</strong> du nouveau
-                collage sont retirées, les nouvelles ajoutées. Les autres journées
-                ne sont pas touchées — votre suivi des personnes ayant plusieurs RDV
-                est préservé.
+                {t.rich("rdvUpdateDayDesc", {
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               {!ready ? (
                 <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  Choisissez une organisation ci-dessus pour pouvoir mettre à jour.
+                  {t("rdvChooseOrgToUpdate")}
                 </p>
               ) : null}
               <Label htmlFor="update-input" className="sr-only">
-                Calendrier corrigé
+                {t("rdvCorrectedCalLabel")}
               </Label>
               <Textarea
                 ref={updateRef}
@@ -862,7 +871,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                   ) : (
                     <RefreshCw />
                   )}
-                  Appliquer la mise à jour
+                  {t("rdvApplyUpdateBtn")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -874,14 +883,15 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                   disabled={applying || updateContent === ""}
                 >
                   <Eraser />
-                  Effacer
+                  {t("rdvClear")}
                 </Button>
                 {updatePreview.kind === "ok" ? (
                   <span className="ml-auto inline-flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
                     <CalendarClock className="size-4 text-primary" />
-                    {updatePreview.count} RDV •{" "}
-                    {updatePreview.dates.length} journée
-                    {updatePreview.dates.length > 1 ? "s" : ""} :
+                    {t("rdvUpdatePreviewMeta", {
+                      count: updatePreview.count,
+                      days: updatePreview.dates.length,
+                    })}
                     {updatePreview.dates.map((d) => (
                       <span
                         key={d}
@@ -897,7 +907,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
               {updateError ? (
                 <Alert variant="destructive">
                   <AlertTriangle />
-                  <AlertTitle>Mise à jour impossible</AlertTitle>
+                  <AlertTitle>{t("rdvUpdateFailedTitle")}</AlertTitle>
                   <AlertDescription>{updateError}</AlertDescription>
                 </Alert>
               ) : null}
@@ -905,7 +915,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
               {!updateError && updatePreview.kind === "error" ? (
                 <Alert>
                   <AlertTriangle className="text-amber-600" />
-                  <AlertTitle>Vérifiez le texte collé</AlertTitle>
+                  <AlertTitle>{t("rdvCheckPaste")}</AlertTitle>
                   <AlertDescription>{updatePreview.message}</AlertDescription>
                 </Alert>
               ) : null}
@@ -917,32 +927,31 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CheckCircle2 className="size-4 text-emerald-600" />
-                  Mise à jour appliquée
+                  {t("rdvUpdateAppliedTitle")}
                 </CardTitle>
                 <CardDescription>
-                  {updateResult.removed.length} retiré
-                  {updateResult.removed.length > 1 ? "s" : ""} •{" "}
-                  {updateResult.added.length} ajouté
-                  {updateResult.added.length > 1 ? "s" : ""} •{" "}
-                  {updateResult.unchanged} inchangé
-                  {updateResult.unchanged > 1 ? "s" : ""} • {updateResult.days}{" "}
-                  journée{updateResult.days > 1 ? "s" : ""} synchronisée
-                  {updateResult.days > 1 ? "s" : ""}
+                  {[
+                    t("rdvRemovedShort", { count: updateResult.removed.length }),
+                    t("rdvAddedShort", { count: updateResult.added.length }),
+                    t("rdvUnchanged", { count: updateResult.unchanged }),
+                    t("rdvDaysSynced", { count: updateResult.days }),
+                  ].join(" • ")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 {updateResult.removed.length === 0 &&
                 updateResult.added.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    Rien à modifier : l&apos;historique de ces journées correspondait
-                    déjà au collage.
+                    {t("rdvNothingToChangeDays")}
                   </p>
                 ) : null}
                 {updateResult.removed.length > 0 ? (
                   <div className="flex flex-col gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3">
                     <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-destructive">
                       <UserMinus className="size-4" />
-                      Retirés de l&apos;historique ({updateResult.removed.length})
+                      {t("rdvRemovedFromHist", {
+                        count: updateResult.removed.length,
+                      })}
                     </span>
                     {renderSyncList(updateResult.removed)}
                   </div>
@@ -951,7 +960,7 @@ export function RdvHistoryClient({ isAdmin, defaultOrg, orgOptions }: Props) {
                   <div className="flex flex-col gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3">
                     <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
                       <UserPlus className="size-4" />
-                      Ajoutés à l&apos;historique ({updateResult.added.length})
+                      {t("rdvAddedToHist", { count: updateResult.added.length })}
                     </span>
                     {renderSyncList(updateResult.added)}
                   </div>

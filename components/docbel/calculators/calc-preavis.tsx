@@ -16,6 +16,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Calendar,
   Clock,
@@ -129,6 +130,7 @@ function SegmentedToggle<T extends string>({
 /* ------------------------------------------------------------------ */
 
 export function CalcPreavis({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
   const [statut, setStatut] = useState<Statut>("ouvrier");
   const [quiRompt, setQuiRompt] = useState<QuiRompt>("employeur");
   const [emploiType, setEmploiType] = useState<EmploiType>("fullTime");
@@ -196,15 +198,15 @@ export function CalcPreavis({ accent }: { accent: string }) {
     setResult(null);
 
     if (!dateEntree) {
-      setErrorMsg("Date d'entrée invalide");
+      setErrorMsg(t("pvErrDateEntree"));
       return;
     }
     if (!dateDimission) {
-      setErrorMsg("Date de licenciement invalide");
+      setErrorMsg(t("pvErrDateLicenciement"));
       return;
     }
     if (!selectedCommission) {
-      setErrorMsg("Sélectionnez une commission paritaire");
+      setErrorMsg(t("pvErrCommission"));
       return;
     }
 
@@ -212,7 +214,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
     const dtDimission = parseDate(dateDimission);
 
     if (!dtEntree || !dtDimission || dtDimission <= dtEntree) {
-      setErrorMsg("La date de licenciement doit être après la date d'entrée");
+      setErrorMsg(t("pvErrDateOrder"));
       return;
     }
 
@@ -240,15 +242,15 @@ export function CalcPreavis({ accent }: { accent: string }) {
             seniorityBefore2014,
             NOTICE_PERIODS_OUVRIER_PRE_2014_CCT75,
           ) || 112;
-        detailsBefore = `${joursBefore2014} jours (ouvrier avant 2014, CCT 75)`;
+        detailsBefore = t("pvDetailOuvrierBefore", { jours: joursBefore2014 });
       } else {
         if (!salaire) {
-          setErrorMsg("Salaire annuel requis pour les employés");
+          setErrorMsg(t("pvErrSalaireEmploye"));
           return;
         }
         const sal = parseFloat(salaire);
         if (isNaN(sal) || sal <= 0) {
-          setErrorMsg("Salaire invalide");
+          setErrorMsg(t("pvErrSalaireInvalide"));
           return;
         }
         const tableBefore =
@@ -270,7 +272,10 @@ export function CalcPreavis({ accent }: { accent: string }) {
             seniorityBefore2014 * tableBefore.salaireMax64508.moisPerAn;
         }
         joursBefore2014 = Math.ceil(moisBefore * 30.44);
-        detailsBefore = `${moisBefore.toFixed(2)} mois (avant 2014, salaire ${sal} €)`;
+        detailsBefore = t("pvDetailEmployeBefore", {
+          mois: moisBefore.toFixed(2),
+          sal,
+        });
       }
 
       const tableAfter =
@@ -280,9 +285,10 @@ export function CalcPreavis({ accent }: { accent: string }) {
       const semaines =
         getNoticeWeeksFromTable(seniorityAfter2014, tableAfter) || 13;
       joursAfter2014 = semaines * 7;
-      detailsAfter = `${semaines} semaines (après 2014, ${
-        quiRompt === "employeur" ? "licenciement" : "démission"
-      })`;
+      detailsAfter = t("pvDetailAfter", {
+        semaines,
+        rupture: quiRompt === "employeur" ? "licenciement" : "demission",
+      });
 
       const totalJours = joursBefore2014 + joursAfter2014;
 
@@ -290,7 +296,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
         const iclDayDiff = joursBefore2014 - joursAfter2014;
         iclInfo = {
           jours: iclDayDiff,
-          raison: `Indemnité en Compensation du Licenciement (ICL) : la différence de ${iclDayDiff} jours entre régime ancien et nouveau doit être compensée par une indemnité égale à cette différence × salaire net journalier.`,
+          raison: t("pvIclReason", { jours: iclDayDiff }),
         };
       }
 
@@ -315,16 +321,16 @@ export function CalcPreavis({ accent }: { accent: string }) {
           delaiJours: jours,
           delaiSemaines: Math.ceil(jours / 7),
           dateFinPreavis: formatDate(addDaysToDate(dtDimission, jours)),
-          details: `${jours} jours (régime ouvrier avant 2014, CCT 75)`,
+          details: t("pvDetailOuvrierPre2014", { jours }),
         };
       } else {
         if (!salaire) {
-          setErrorMsg("Salaire annuel requis pour les employés avant 2014");
+          setErrorMsg(t("pvErrSalaireEmployePre2014"));
           return;
         }
         const sal = parseFloat(salaire);
         if (isNaN(sal) || sal <= 0) {
-          setErrorMsg("Salaire invalide");
+          setErrorMsg(t("pvErrSalaireInvalide"));
           return;
         }
         const table =
@@ -351,7 +357,10 @@ export function CalcPreavis({ accent }: { accent: string }) {
           delaiJours: jours,
           delaiSemaines: Math.ceil(jours / 7),
           dateFinPreavis: formatDate(addDaysToDate(dtDimission, jours)),
-          details: `${moisPreavis.toFixed(2)} mois (régime employé, salaire ${sal} €)`,
+          details: t("pvDetailEmployePre2014", {
+            mois: moisPreavis.toFixed(2),
+            sal,
+          }),
         };
       }
     } else {
@@ -367,9 +376,10 @@ export function CalcPreavis({ accent }: { accent: string }) {
         delaiJours: jours,
         delaiSemaines: semaines,
         dateFinPreavis: formatDate(addDaysToDate(dtDimission, jours)),
-        details: `Régime unifié 2014+ · ${semaines} semaines (${
-          quiRompt === "employeur" ? "licenciement" : "démission"
-        })`,
+        details: t("pvDetailUnifie", {
+          semaines,
+          rupture: quiRompt === "employeur" ? "licenciement" : "demission",
+        }),
       };
     }
 
@@ -416,7 +426,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
         hour: "2-digit",
         minute: "2-digit",
       });
-      doc.text(`Généré le ${dateStr} à ${timeStr}`, pageWidth - margin, y, {
+      doc.text(t("pvPdfGeneratedAt", { date: dateStr, time: timeStr }), pageWidth - margin, y, {
         align: "right",
       });
       y += 10;
@@ -425,14 +435,14 @@ export function CalcPreavis({ accent }: { accent: string }) {
       doc.setFontSize(15);
       doc.setFont("", "bold");
       doc.setTextColor(0, 0, 0);
-      doc.text("Estimation du délai de préavis (Belgique, 2026)", margin, y);
+      doc.text(t("pvPdfTitle"), margin, y);
       y += 10;
 
       // Section Inputs
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Paramètres saisis", margin, y);
+      doc.text(t("pvPdfParams"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -440,24 +450,24 @@ export function CalcPreavis({ accent }: { accent: string }) {
       doc.setTextColor(0, 0, 0);
 
       const rows: [string, string][] = [
-        ["Statut", statut === "ouvrier" ? "Ouvrier" : "Employé"],
+        [t("pvLabelStatut"), statut === "ouvrier" ? t("pvOptOuvrier") : t("pvOptEmploye")],
         [
-          "Rupture par",
-          quiRompt === "employeur" ? "Employeur" : "Travailleur",
+          t("pvLabelRupture"),
+          quiRompt === "employeur" ? t("pvOptEmployeur") : t("pvOptTravailleur"),
         ],
         [
-          "Type d'emploi",
-          emploiType === "fullTime" ? "Temps plein" : "Temps partiel",
+          t("pvLabelEmploiType"),
+          emploiType === "fullTime" ? t("pvOptTempsPlein") : t("pvOptTempsPartiel"),
         ],
         [
-          "Commission paritaire",
+          t("pvLabelCommission"),
           selectedCommission ? selectedCommission.label : "—",
         ],
-        ["Date d'entrée", dateEntree],
-        ["Date de licenciement", dateDimission],
+        [t("pvLabelDateEntree"), dateEntree],
+        [t("pvLabelDateLicenciement"), dateDimission],
       ];
       if (statut === "employe" && salaire) {
-        rows.push(["Salaire annuel brut", `${salaire} €`]);
+        rows.push([t("pvPdfSalaireBrut"), t("pvPdfSalaireValue", { sal: salaire })]);
       }
 
       const colKey = margin + 2;
@@ -483,12 +493,12 @@ export function CalcPreavis({ accent }: { accent: string }) {
       doc.setFontSize(10);
       doc.setFont("", "bold");
       doc.setTextColor(90, 42, 140);
-      doc.text("DÉLAI DE PRÉAVIS ESTIMÉ", margin + 4, y + 7);
+      doc.text(t("pvPdfResultHeading"), margin + 4, y + 7);
 
       doc.setFontSize(22);
       doc.setTextColor(0, 0, 0);
       doc.text(
-        `${result.delaiSemaines} semaines`,
+        t("pvPdfWeeks", { n: result.delaiSemaines }),
         margin + 4,
         y + 17,
       );
@@ -497,7 +507,10 @@ export function CalcPreavis({ accent }: { accent: string }) {
       doc.setFont("", "normal");
       doc.setTextColor(100, 100, 100);
       doc.text(
-        `soit ${result.delaiJours} jours · régime ${result.regime === "avant2014" ? "avant 2014" : "après 2014"}`,
+        t("pvPdfDaysRegime", {
+          jours: result.delaiJours,
+          regime: result.regime === "avant2014" ? "avant" : "apres",
+        }),
         margin + 4,
         y + 24,
       );
@@ -507,7 +520,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Détail du calcul", margin, y);
+      doc.text(t("pvPdfDetailHeading"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -515,12 +528,12 @@ export function CalcPreavis({ accent }: { accent: string }) {
       doc.setTextColor(0, 0, 0);
 
       const detail: [string, string][] = [
-        ["Date de fin du préavis", result.dateFinPreavis],
-        ["Début du préavis", "Premier lundi après notification"],
-        ["Règle appliquée", result.details],
+        [t("pvResFinLabel"), result.dateFinPreavis],
+        [t("pvResStartLabel"), t("pvResStartValue")],
+        [t("pvResRuleLabel"), result.details],
       ];
       if (result.icl) {
-        detail.push(["ICL (différence)", `${result.icl.jours} jours`]);
+        detail.push([t("pvPdfIclLabel"), t("pvPdfIclValue", { jours: result.icl.jours })]);
       }
       detail.forEach(([k, v]) => {
         doc.setTextColor(80, 80, 80);
@@ -544,7 +557,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
       doc.setFont("", "italic");
       doc.setTextColor(120, 120, 120);
       const footerText = doc.splitTextToSize(
-        "Estimation indicative basée sur les barèmes officiels SPF Emploi (CCT 75 pré-2014, loi du 26 décembre 2013 post-2014). Le délai exact peut varier selon les conventions sectorielles, accords individuels ou circonstances particulières. Consultez votre syndicat ou un conseiller juridique avant toute action.",
+        t("pvPdfDisclaimer"),
         pageWidth - margin * 2,
       );
       doc.text(footerText, margin, y);
@@ -590,10 +603,10 @@ export function CalcPreavis({ accent }: { accent: string }) {
               </span>
               <div>
                 <h2 className="text-[16px] font-bold text-[color:var(--glass-ink)]">
-                  Calcul du préavis
+                  {t("pvTitle")}
                 </h2>
                 <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
-                  Calculez votre délai de préavis selon la loi belge
+                  {t("pvSubtitle")}
                 </p>
               </div>
             </div>
@@ -607,7 +620,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
                 }}
               >
                 <Check className="size-3.5" strokeWidth={3} />
-                Régime détecté automatiquement
+                {t("pvBadgeRegimeDetected")}
               </span>
             ) : null}
           </div>
@@ -615,7 +628,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
           {/* Row 1 : Statut / Rupture par / Type d'emploi */}
           <CalcGrid cols={3}>
             <SegmentedToggle<Statut>
-              label="Statut"
+              label={t("pvLabelStatut")}
               value={statut}
               onChange={(v) => {
                 setStatut(v);
@@ -624,48 +637,48 @@ export function CalcPreavis({ accent }: { accent: string }) {
               options={[
                 {
                   value: "ouvrier",
-                  label: "Ouvrier",
+                  label: t("pvOptOuvrier"),
                   icon: <User className="size-3.5" />,
                 },
                 {
                   value: "employe",
-                  label: "Employé",
+                  label: t("pvOptEmploye"),
                   icon: <User className="size-3.5" />,
                 },
               ]}
               accent={accent}
             />
             <SegmentedToggle<QuiRompt>
-              label="Rupture par"
+              label={t("pvLabelRupture")}
               value={quiRompt}
               onChange={setQuiRompt}
               options={[
                 {
                   value: "employeur",
-                  label: "Employeur",
+                  label: t("pvOptEmployeur"),
                   icon: <Building2 className="size-3.5" />,
                 },
                 {
                   value: "travailleur",
-                  label: "Travailleur",
+                  label: t("pvOptTravailleur"),
                   icon: <User className="size-3.5" />,
                 },
               ]}
               accent={accent}
             />
             <SegmentedToggle<EmploiType>
-              label="Type d'emploi"
+              label={t("pvLabelEmploiType")}
               value={emploiType}
               onChange={setEmploiType}
               options={[
                 {
                   value: "fullTime",
-                  label: "Temps plein",
+                  label: t("pvOptTempsPlein"),
                   icon: <Calendar className="size-3.5" />,
                 },
                 {
                   value: "partTime",
-                  label: "Temps partiel",
+                  label: t("pvOptTempsPartiel"),
                   icon: <Clock className="size-3.5" />,
                 },
               ]}
@@ -676,7 +689,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
           {/* Commission paritaire (autocomplete) */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[12px] font-semibold text-[color:var(--glass-ink)]">
-              Commission paritaire
+              {t("pvLabelCommission")}
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-[color:var(--glass-ink-faint)]">
@@ -694,7 +707,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
                 onBlur={() =>
                   setTimeout(() => setShowCommissionDropdown(false), 150)
                 }
-                placeholder="Rechercher une CP : numéro ou secteur…"
+                placeholder={t("pvCommissionPlaceholder")}
                 className="h-11 w-full rounded-xl border-[1.5px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] pr-3.5 pl-10 text-[14px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:border-[color:var(--glass-accent-deep)] focus:outline-none"
               />
               {showCommissionDropdown && filteredCommissions.length > 0 ? (
@@ -731,8 +744,8 @@ export function CalcPreavis({ accent }: { accent: string }) {
                 htmlFor="preavis-date-entree"
                 className="flex items-center gap-1.5 text-[12px] font-semibold text-[color:var(--glass-ink)]"
               >
-                Date d&apos;entrée
-                <span title="Date de début du contrat actuel (au format JJ/MM/AAAA).">
+                {t("pvLabelDateEntree")}
+                <span title={t("pvTooltipDateEntree")}>
                   <Info className="size-3.5 text-[color:var(--glass-ink-faint)]" />
                 </span>
               </label>
@@ -742,7 +755,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
                 inputMode="numeric"
                 value={dateEntree}
                 onChange={(e) => setDateEntree(e.target.value)}
-                placeholder="JJ/MM/AAAA"
+                placeholder={t("pvDatePlaceholder")}
                 className="h-11 rounded-xl border-[1.5px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 text-[14px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:border-[color:var(--glass-accent-deep)] focus:outline-none"
               />
             </div>
@@ -751,8 +764,8 @@ export function CalcPreavis({ accent }: { accent: string }) {
                 htmlFor="preavis-date-licenciement"
                 className="flex items-center gap-1.5 text-[12px] font-semibold text-[color:var(--glass-ink)]"
               >
-                Date de licenciement
-                <span title="Date de notification de la rupture (au format JJ/MM/AAAA).">
+                {t("pvLabelDateLicenciement")}
+                <span title={t("pvTooltipDateLicenciement")}>
                   <Info className="size-3.5 text-[color:var(--glass-ink-faint)]" />
                 </span>
               </label>
@@ -762,7 +775,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
                 inputMode="numeric"
                 value={dateDimission}
                 onChange={(e) => setDateDimission(e.target.value)}
-                placeholder="JJ/MM/AAAA"
+                placeholder={t("pvDatePlaceholder")}
                 className="h-11 rounded-xl border-[1.5px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 text-[14px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:border-[color:var(--glass-accent-deep)] focus:outline-none"
               />
             </div>
@@ -778,9 +791,9 @@ export function CalcPreavis({ accent }: { accent: string }) {
                 htmlFor="preavis-salaire"
                 className="text-[12px] font-semibold text-[color:var(--glass-ink)]"
               >
-                Salaire annuel brut (€){" "}
+                {t("pvLabelSalaire")}{" "}
                 <span className="text-[color:var(--glass-ink-faint)]">
-                  avant 2014
+                  {t("pvLabelSalaireSuffix")}
                 </span>
               </label>
               <input
@@ -788,12 +801,11 @@ export function CalcPreavis({ accent }: { accent: string }) {
                 type="number"
                 value={salaire}
                 onChange={(e) => setSalaire(e.target.value)}
-                placeholder="40000"
+                placeholder={t("pvSalairePlaceholder")}
                 className="h-11 rounded-xl border-[1.5px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 text-[14px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:border-[color:var(--glass-accent-deep)] focus:outline-none"
               />
               <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-                Pour les employés pré-2014, le délai dépend du brut annuel
-                (seuils 32 254 € / 64 508 €).
+                {t("pvSalaireHint")}
               </p>
             </div>
           ) : null}
@@ -803,7 +815,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
           {/* Boutons : Calculer + Réinitialiser */}
           <CalcGrid cols={2}>
             <CalcSubmitButton accent={accent} onClick={calc}>
-              Calculer le délai de préavis
+              {t("pvSubmit")}
             </CalcSubmitButton>
             <button
               type="button"
@@ -816,7 +828,7 @@ export function CalcPreavis({ accent }: { accent: string }) {
               }}
             >
               <RotateCcw className="size-4" />
-              Réinitialiser le formulaire
+              {t("pvReset")}
             </button>
           </CalcGrid>
 
@@ -831,11 +843,13 @@ export function CalcPreavis({ accent }: { accent: string }) {
           >
             <Info className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-ink-faint)]" />
             <div>
-              <strong className="text-[color:var(--glass-ink)]">
-                Simulation
-              </strong>{" "}
-              fournie à titre informatif. Le résultat dépend des informations
-              encodées et ne remplace pas un avis juridique.
+              {t.rich("pvDisclaimer", {
+                strong: (chunks) => (
+                  <strong className="text-[color:var(--glass-ink)]">
+                    {chunks}
+                  </strong>
+                ),
+              })}
             </div>
           </div>
         </CalcCard>
@@ -864,9 +878,10 @@ export function CalcPreavis({ accent }: { accent: string }) {
 
       {/* Mention "Mis à jour" */}
       <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-        Calculateur mis à jour le <strong>{lastUpdatedFr}</strong> · Barèmes
-        SPF Emploi (CCT 75 pré-2014, loi du 26 décembre 2013 post-2014) ·
-        Sources officielles : SPF Emploi, Travail et Concertation sociale.
+        {t.rich("pvFooter", {
+          date: lastUpdatedFr,
+          strong: (chunks) => <strong>{chunks}</strong>,
+        })}
       </p>
     </div>
   );
@@ -887,6 +902,7 @@ function PreavisResultPanel({
   onExportPDF: () => void;
   exporting: boolean;
 }) {
+  const t = useTranslations("public.outils");
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
@@ -894,12 +910,12 @@ function PreavisResultPanel({
           className="text-[11px] font-bold uppercase tracking-[0.06em]"
           style={{ color: accent }}
         >
-          Résultat estimatif
+          {t("pvResultEyebrow")}
         </span>
         <span
           className="inline-flex items-center"
-          title="Estimation indicative basée sur les barèmes SPF Emploi"
-          aria-label="Estimation indicative basée sur les barèmes SPF Emploi"
+          title={t("pvResultInfoTooltip")}
+          aria-label={t("pvResultInfoTooltip")}
         >
           <Info
             className="size-4"
@@ -914,17 +930,21 @@ function PreavisResultPanel({
           style={{ fontSize: 42, lineHeight: 1.05 }}
         >
           {result.delaiSemaines}{" "}
-          <span style={{ fontSize: 16, fontWeight: 600 }}>semaines</span>
+          <span style={{ fontSize: 16, fontWeight: 600 }}>
+            {t("pvResWeeksUnit")}
+          </span>
         </div>
         <div
           className="mt-1 text-[13px] font-semibold"
           style={{ color: "var(--glass-ink-soft)" }}
         >
-          soit {result.delaiJours} jours
+          {t("pvResDays", { jours: result.delaiJours })}
         </div>
         <div className="mt-2">
           <CalcBadge accent="#8B5CF6">
-            Régime {result.regime === "avant2014" ? "avant 2014" : "après 2014"}
+            {t("pvResRegimeBadge", {
+              regime: result.regime === "avant2014" ? "avant" : "apres",
+            })}
           </CalcBadge>
         </div>
       </div>
@@ -936,19 +956,19 @@ function PreavisResultPanel({
         <div className="flex flex-col gap-3">
           <ResultDetailRow
             icon={<Calendar className="size-4" />}
-            label="Date de fin du préavis"
+            label={t("pvResFinLabel")}
             value={result.dateFinPreavis}
             accent={accent}
           />
           <ResultDetailRow
             icon={<Clock className="size-4" />}
-            label="Début du préavis"
-            value="Premier lundi après notification"
+            label={t("pvResStartLabel")}
+            value={t("pvResStartValue")}
             accent={accent}
           />
           <ResultDetailRow
             icon={<Gift className="size-4" />}
-            label="Règle appliquée"
+            label={t("pvResRuleLabel")}
             value={result.details}
             accent={accent}
           />
@@ -964,7 +984,10 @@ function PreavisResultPanel({
             color: "var(--glass-ink)",
           }}
         >
-          <strong>Attention ICL — différence de {result.icl.jours} jours :</strong>{" "}
+          {t.rich("pvIclWarning", {
+            jours: result.icl.jours,
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}{" "}
           {result.icl.raison}
         </div>
       ) : null}
@@ -978,17 +1001,11 @@ function PreavisResultPanel({
         }}
       >
         <div className="mb-1 flex items-center gap-1.5 font-bold">
-          <Info className="size-3.5" /> À savoir
+          <Info className="size-3.5" /> {t("pvNoticeTitle")}
         </div>
         <ul className="list-inside list-disc space-y-1 text-[#1E3A8A]">
-          <li>
-            Suspension possible pendant certaines absences (congés payés,
-            maternité, maladie, accident du travail).
-          </li>
-          <li>
-            Ce calcul est indicatif et peut varier selon les CCT sectorielles
-            ou accords individuels.
-          </li>
+          <li>{t("pvNoticeBullet1")}</li>
+          <li>{t("pvNoticeBullet2")}</li>
         </ul>
       </div>
 
@@ -1004,7 +1021,7 @@ function PreavisResultPanel({
         }}
       >
         <Download className="size-4" />
-        {exporting ? "Génération du PDF…" : "Télécharger le PDF"}
+        {exporting ? t("pvPdfGenerating") : t("pvPdfDownload")}
       </button>
     </div>
   );
@@ -1050,20 +1067,22 @@ function ResultDetailRow({
 /* ------------------------------------------------------------------ */
 
 function PreavisResultPlaceholder({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
   return (
     <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 text-center">
       <span
         className="text-[11px] font-bold uppercase tracking-[0.06em]"
         style={{ color: accent }}
       >
-        Résultat estimatif
+        {t("pvResultEyebrow")}
       </span>
       <div
         className="text-[15px] font-semibold leading-snug text-[color:var(--glass-ink-soft)]"
         style={{ maxWidth: 260 }}
       >
-        Renseignez votre statut, votre commission paritaire et les deux dates,
-        puis cliquez sur <em>« Calculer le délai de préavis »</em>.
+        {t.rich("pvPlaceholderBody", {
+          em: (chunks) => <em>{chunks}</em>,
+        })}
       </div>
       <Info
         className="mt-1 size-5"

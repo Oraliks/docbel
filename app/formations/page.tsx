@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { listPublicTrainings, listActiveCategories } from "@/lib/formations/queries";
 import { getFormationsViewer } from "@/lib/formations/page-auth";
 import { getTrainingAccess } from "@/lib/formations/module";
@@ -8,11 +9,13 @@ import { CatalogueClient } from "./catalogue-client";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Formations — Docbel",
-  description:
-    "Des formations gratuites ou payantes proposées par des partenaires vérifiés, pour avancer dans votre emploi, vos démarches ou votre reconversion.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.formations");
+  return {
+    title: t("metaCatalogueTitle"),
+    description: t("metaCatalogueDescription"),
+  };
+}
 
 export default async function FormationsPage() {
   const viewer = await getFormationsViewer();

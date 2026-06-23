@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Wrench, ArrowLeft } from "lucide-react";
 
 interface Props {
@@ -10,7 +11,8 @@ interface Props {
  * (active=false). Préférable au 404 brut : l'utilisateur comprend que c'est
  * temporaire et qu'on a un plan.
  */
-export function DisabledToolView({ toolName }: Props) {
+export async function DisabledToolView({ toolName }: Props) {
+  const t = await getTranslations("public.outils");
   return (
     <section className="flex flex-col gap-6">
       <div className="glass-surface relative flex flex-col items-center gap-5 px-8 py-16 text-center">
@@ -20,24 +22,20 @@ export function DisabledToolView({ toolName }: Props) {
 
         <div className="max-w-xl space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-            Outil temporairement indisponible
+            {t("disabledEyebrow")}
           </p>
           <h1 className="glass-display text-[32px] font-semibold leading-[1.1] sm:text-[40px]">
             {toolName}{" "}
             <em className="text-[color:var(--glass-ink-soft)]">
-              n&apos;est pas accessible pour le moment.
+              {t("disabledTitle")}
             </em>
           </h1>
           <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-            Notre équipe l&apos;a mis en pause volontairement. Il sera{" "}
-            <strong className="text-[color:var(--glass-ink)]">
-              soit corrigé et remis en ligne
-            </strong>{" "}
-            après mise à jour,{" "}
-            <strong className="text-[color:var(--glass-ink)]">
-              soit retiré définitivement
-            </strong>{" "}
-            s&apos;il n&apos;est plus pertinent. Merci de votre patience.
+            {t.rich("disabledBody", {
+              strong: (c) => (
+                <strong className="text-[color:var(--glass-ink)]">{c}</strong>
+              ),
+            })}
           </p>
         </div>
 
@@ -47,23 +45,25 @@ export function DisabledToolView({ toolName }: Props) {
             className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[13px] font-semibold text-[color:var(--glass-ink)] transition hover:bg-white/55"
           >
             <ArrowLeft className="size-3.5" />
-            Retour au catalogue
+            {t("backToCatalog")}
           </Link>
           <Link
             href="/aidez-moi"
             className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-[color:var(--glass-bg-a)] transition"
             style={{ background: "var(--glass-ink)" }}
           >
-            Besoin d&apos;aide pour ma démarche&nbsp;?
+            {t("needHelp")}
           </Link>
         </div>
 
         <p className="pt-4 text-[11px] text-[color:var(--glass-ink-faint)]">
-          Un outil disparu sans préavis t&apos;a bloqué ?{" "}
-          <Link href="/aidez-moi" className="underline">
-            Signale-le
-          </Link>
-          , on s&apos;en occupe.
+          {t.rich("disabledReport", {
+            report: (c) => (
+              <Link href="/aidez-moi" className="underline">
+                {c}
+              </Link>
+            ),
+          })}
         </p>
       </div>
     </section>

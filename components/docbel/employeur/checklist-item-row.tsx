@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { HelpCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -48,6 +49,7 @@ export function ChecklistItemRow({
   sourceHref,
   sourceTitle,
 }: ChecklistItemRowProps) {
+  const t = useTranslations("public.pro");
   const [status, setStatus] = useState<ItemStatus>(initialStatus);
   const [saving, setSaving] = useState(false);
 
@@ -64,7 +66,7 @@ export function ChecklistItemRow({
       if (!res.ok) throw new Error(String(res.status));
     } catch {
       setStatus(previous); // rollback
-      toast.error("Impossible d'enregistrer le statut. Réessayez.");
+      toast.error(t("checklistSaveError"));
     } finally {
       setSaving(false);
     }
@@ -81,7 +83,7 @@ export function ChecklistItemRow({
           onValueChange={(v: string | null) => v && updateStatus(v as ItemStatus)}
           disabled={saving}
         >
-          <SelectTrigger size="sm" aria-label="Statut de la tâche">
+          <SelectTrigger size="sm" aria-label={t("checklistStatusAria")}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

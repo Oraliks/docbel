@@ -13,23 +13,27 @@ import {
   MailIcon,
   UserPlusIcon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 
-const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  invalid_credentials: "Email ou mot de passe incorrect.",
-  INVALID_EMAIL_OR_PASSWORD: "Email ou mot de passe incorrect.",
-  account_inactive: "Ce compte est inactif. Contactez un administrateur.",
-  account_locked: "Compte temporairement verrouillé après plusieurs tentatives.",
+type AuthT = ReturnType<typeof useTranslations<"public.auth">>;
+
+const AUTH_ERROR_KEYS: Record<string, "errInvalidCredentials" | "errAccountInactive" | "errAccountLocked"> = {
+  invalid_credentials: "errInvalidCredentials",
+  INVALID_EMAIL_OR_PASSWORD: "errInvalidCredentials",
+  account_inactive: "errAccountInactive",
+  account_locked: "errAccountLocked",
 };
 
 function getAuthErrorMessage(
+  t: AuthT,
   error: { code?: string | null; message?: string | null } | null | undefined,
 ) {
   const key = error?.code || "";
-  if (key && AUTH_ERROR_MESSAGES[key]) return AUTH_ERROR_MESSAGES[key];
+  if (key && AUTH_ERROR_KEYS[key]) return t(AUTH_ERROR_KEYS[key]);
   if (error?.message) return error.message;
-  return "Connexion impossible. Vérifiez vos identifiants.";
+  return t("errSignInFailed");
 }
 
 /** Destination post-connexion selon le rôle (utilisée s'il n'y a pas de ?next= explicite). */
@@ -48,6 +52,7 @@ function destForRole(role: string | null | undefined): string {
 }
 
 function LoginForm() {
+  const t = useTranslations("public.auth");
   const router = useRouter();
   const searchParams = useSearchParams();
   const explicitNext = searchParams.get("next");
@@ -71,17 +76,17 @@ function LoginForm() {
         password,
       });
       if (signInError || !data?.user) {
-        const msg = getAuthErrorMessage(signInError);
+        const msg = getAuthErrorMessage(t, signInError);
         setError(msg);
         toast.error(msg);
         return;
       }
-      toast.success("Connexion réussie");
+      toast.success(t("signInSuccess"));
       const role = (data.user as { role?: string | null }).role ?? null;
       router.push(explicitNext ?? destForRole(role));
       router.refresh();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erreur inconnue";
+      const msg = err instanceof Error ? err.message : t("errUnknown");
       setError(msg);
       toast.error(msg);
     } finally {
@@ -93,7 +98,7 @@ function LoginForm() {
     try {
       await authClient.signIn.social({ provider: "google", callbackURL: explicitNext ?? "/" });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erreur inconnue";
+      const msg = err instanceof Error ? err.message : t("errUnknown");
       setError(msg);
       toast.error(msg);
     }
@@ -111,7 +116,7 @@ function LoginForm() {
         >
           <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
           <div>
-            <p className="font-bold">Connexion impossible</p>
+            <p className="font-bold">{t("errBannerTitle")}</p>
             <p className="opacity-80">{error}</p>
           </div>
         </div>
@@ -119,7 +124,7 @@ function LoginForm() {
 
       <label className="flex flex-col gap-1.5">
         <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
-          Email
+          {t("emailLabel")}
         </span>
         <div className="relative">
           <MailIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[color:var(--glass-ink-faint)]" />
@@ -129,7 +134,7 @@ function LoginForm() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="vous@exemple.be"
+            placeholder={t("emailPlaceholder")}
             disabled={loading}
             className={fieldClass}
           />
@@ -138,7 +143,7 @@ function LoginForm() {
 
       <label className="flex flex-col gap-1.5">
         <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
-          Mot de passe
+          {t("passwordLabel")}
         </span>
         <div className="relative">
           <LockIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[color:var(--glass-ink-faint)]" />
@@ -156,7 +161,7 @@ function LoginForm() {
             type="button"
             onClick={() => setShowPassword((v) => !v)}
             className="absolute top-1/2 right-3 -translate-y-1/2 text-[color:var(--glass-ink-faint)] transition hover:text-[color:var(--glass-ink)]"
-            aria-label={showPassword ? "Masquer" : "Afficher"}
+            aria-label={showPassword ? t("hide") : t("show")}
           >
             {showPassword ? (
               <EyeOffIcon className="size-4" />
@@ -172,7 +177,7 @@ function LoginForm() {
           href="/mot-de-passe-oublie"
           className="text-[12.5px] font-semibold text-[color:var(--glass-accent-deep)] hover:underline"
         >
-          Mot de passe oublié ?
+          {t("forgotPassword")}
         </Link>
       </div>
 
@@ -188,7 +193,7 @@ function LoginForm() {
         {loading ? (
           <LoaderCircleIcon className="size-4 animate-spin" />
         ) : null}
-        {loading ? "Connexion…" : "Se connecter"}
+        {loading ? t("signingIn") : t("signIn")}
       </button>
 
       {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" ? (
@@ -198,7 +203,7 @@ function LoginForm() {
               className="h-px flex-1"
               style={{ background: "var(--glass-ink-line)" }}
             />
-            Ou continuer avec
+            {t("orContinueWith")}
             <span
               className="h-px flex-1"
               style={{ background: "var(--glass-ink-line)" }}
@@ -209,7 +214,7 @@ function LoginForm() {
               type="button"
               onClick={handleGoogle}
               className="flex size-12 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] transition hover:bg-white/55 dark:hover:bg-white/10"
-              aria-label="Continuer avec Google"
+              aria-label={t("continueWithGoogle")}
             >
               <svg className="size-5" viewBox="0 0 24 24" aria-hidden="true">
                 <path
@@ -235,13 +240,13 @@ function LoginForm() {
       ) : null}
 
       <p className="mt-2 text-center text-[12.5px] text-[color:var(--glass-ink-soft)]">
-        Pas encore inscrit ?{" "}
+        {t("noAccountYet")}{" "}
         <Link
           href="/inscription"
           className="inline-flex items-center gap-1 font-bold text-[color:var(--glass-accent-deep)] hover:underline"
         >
           <UserPlusIcon className="size-3.5" />
-          S&apos;inscrire
+          {t("signUp")}
         </Link>
       </p>
     </form>
@@ -249,6 +254,7 @@ function LoginForm() {
 }
 
 function LoginPageContent() {
+  const t = useTranslations("public.auth");
   return (
     <div className="grid min-h-screen w-full lg:grid-cols-[1fr_1.1fr]">
       <aside
@@ -307,12 +313,11 @@ function LoginPageContent() {
           </div>
           <div className="relative max-w-sm">
             <p className="glass-display text-[28px] font-semibold leading-tight">
-              Vos démarches belges,{" "}
-              <em className="not-italic text-white/90">en un endroit.</em>
+              {t("asideTitleLead")}{" "}
+              <em className="not-italic text-white/90">{t("asideTitleEm")}</em>
             </p>
             <p className="mt-3 text-[14px] text-white/80">
-              Connectez-vous pour retrouver vos documents, calculs et dossiers
-              en cours.
+              {t("asideSubtitle")}
             </p>
           </div>
         </div>
@@ -324,19 +329,19 @@ function LoginPageContent() {
           className="inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 dark:hover:bg-white/10"
         >
           <ArrowLeftIcon className="size-4" />
-          Retour à l&apos;accueil
+          {t("backToHome")}
         </Link>
 
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10">
           <header className="mb-8 flex flex-col gap-2 text-center sm:text-left">
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-              Bienvenue sur Docbel
+              {t("welcomeEyebrow")}
             </p>
             <h1 className="glass-display text-[40px] font-semibold leading-[1.05] sm:text-[48px]">
-              Connexion
+              {t("title")}
             </h1>
             <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-              Retrouvez votre espace en quelques secondes.
+              {t("subtitle")}
             </p>
           </header>
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, FileText } from "lucide-react";
@@ -15,9 +16,12 @@ import {
   type DocumentValues,
 } from "@/lib/employeur/documents/types";
 
-export const metadata: Metadata = {
-  title: "Préparer un document | Espace Employeur",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
+  return {
+    title: t("docsMetaTitle"),
+  };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +66,7 @@ export default async function DocumentsPage({
 }: {
   searchParams: Promise<{ scenarioId?: string }>;
 }) {
+  const t = await getTranslations("public.pro");
   const user = await getEmployerPageUser();
   if (!user) redirect("/p/employeur");
 
@@ -86,25 +91,22 @@ export default async function DocumentsPage({
   return (
     <div className="w-full space-y-5 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
       <Button variant="ghost" size="sm" render={<Link href="/employeur" />}>
-        <ArrowLeft /> Tableau de bord
+        <ArrowLeft /> {t("backToDashboard")}
       </Button>
 
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Préparer un document</h1>
-        <p className="text-muted-foreground">
-          Générez une fiche, une demande au secrétariat social ou une préparation de contrat. À
-          relire, copier, envoyer par e-mail ou exporter en PDF.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("docsTitle")}</h1>
+        <p className="text-muted-foreground">{t("docsIntro")}</p>
       </header>
 
       <DocumentBuilder initialType={initialType} initialValues={initialValues} />
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Mes documents enregistrés</h2>
+        <h2 className="text-lg font-medium">{t("docsSavedTitle")}</h2>
         {drafts.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
-              Aucun document enregistré pour le moment.
+              {t("docsSavedEmpty")}
             </CardContent>
           </Card>
         ) : (

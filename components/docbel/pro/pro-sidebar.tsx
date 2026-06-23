@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -68,6 +69,7 @@ export function ProSidebar({
   segment: ProSegment;
   user: { name: string; email: string; avatar: string };
 } & React.ComponentProps<typeof Sidebar>) {
+  const t = useTranslations("public.pro");
   const pathname = usePathname() ?? "";
   const space = getProSpace(segment);
   const { navVisible: formationsVisible } = useFormationsModule();
@@ -87,7 +89,7 @@ export function ProSidebar({
               <CommandIcon className="size-5!" />
               <span className="text-base font-semibold">Docbel</span>
               <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                {segment === "partenaire" ? "Partenaire" : "Employeur"}
+                {t(segment === "partenaire" ? "navSegPartner" : "navSegEmployer")}
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>

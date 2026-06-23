@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,6 +27,7 @@ function formatDate(d: Date | null): string {
 }
 
 export default async function BaremeHubPage() {
+  const t = await getTranslations('public.outils')
   const data = await getActiveBaremeData()
 
   // Métadonnées par feuille (date + nombre de montants) depuis les données publiées.
@@ -55,34 +57,33 @@ export default async function BaremeHubPage() {
           <BreadcrumbItem>
             <BreadcrumbLink render={<Link href="/outils" />} className="inline-flex items-center gap-1">
               <Home className="size-3.5" />
-              Outils
+              {t('baremeBreadcrumbTools')}
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>Barèmes chômage</BreadcrumbPage>
+            <BreadcrumbPage>{t('baremeBreadcrumbCurrent')}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
       <header className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Barèmes officiels ONEM</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">{t('baremeEyebrow')}</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">
-          Montants du <span className="italic text-primary">chômage</span>
+          {t.rich('baremeTitle', { accent: (c) => <span className="italic text-primary">{c}</span> })}
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Les barèmes en vigueur de l’ONEM, par code et tranche. Choisissez une feuille pour consulter
-          les montants détaillés, filtrer et exporter.
+          {t('baremeIntro')}
         </p>
         {data && (
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <Calendar className="size-3.5" />
-              Barème publié le {formatDate(data.publishedAt)}
+              {t('baremePublishedAt', { date: formatDate(data.publishedAt) })}
             </span>
             {data.multiplicateur != null && (
               <span>
-                Multiplicateur{' '}
+                {t('baremeMultiplier')}{' '}
                 <span className="font-semibold text-primary">
                   {data.multiplicateur.toLocaleString('fr-BE', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
                 </span>
@@ -95,9 +96,9 @@ export default async function BaremeHubPage() {
       {!data ? (
         <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-card p-10 text-center shadow-sm">
           <FileSpreadsheet className="mx-auto mb-4 size-10 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Aucun barème publié</h2>
+          <h2 className="text-lg font-semibold">{t('baremeEmptyTitle')}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Les montants apparaîtront ici dès qu’un barème officiel sera mis en ligne.
+            {t('baremeEmptyBody')}
           </p>
         </div>
       ) : (
@@ -131,7 +132,7 @@ export default async function BaremeHubPage() {
                             {formatDate(m.validFrom)}
                           </span>
                         )}
-                        {m && m.count > 0 && <span>{m.count.toLocaleString('fr-BE')} montants</span>}
+                        {m && m.count > 0 && <span>{t('baremeAmounts', { count: m.count.toLocaleString('fr-BE') })}</span>}
                       </div>
                     </Link>
                   )

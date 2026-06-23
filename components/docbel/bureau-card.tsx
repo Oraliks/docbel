@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Building2,
   Landmark,
@@ -37,21 +38,23 @@ const TYPE_ICONS: Record<BureauTypeCode, React.ComponentType<IconProps>> = {
   AUTRE: Building2 as unknown as React.ComponentType<IconProps>,
 };
 
-const SERVICE_LABEL_FR: Record<string, string> = {
-  RIS: "RIS",
-  aide_juridique: "Aide juridique",
-  aide_alimentaire: "Aide alimentaire",
-  domiciliation: "Domiciliation",
-  energie: "Énergie",
-  logement: "Logement",
-  etat_civil: "État civil",
-  population: "Population",
-  urbanisme: "Urbanisme",
-  chomage: "Chômage",
-  controle: "Contrôle ONEM",
-  permanence_sociale: "Permanence sociale",
-  rdv_obligatoire: "RDV obligatoire",
-};
+/** Clés de services connues → traduites via `service_<key>`. Une clé inconnue
+ * retombe sur sa valeur brute (donnée). */
+const KNOWN_SERVICE_KEYS = new Set([
+  "RIS",
+  "aide_juridique",
+  "aide_alimentaire",
+  "domiciliation",
+  "energie",
+  "logement",
+  "etat_civil",
+  "population",
+  "urbanisme",
+  "chomage",
+  "controle",
+  "permanence_sociale",
+  "rdv_obligatoire",
+]);
 
 type Props = {
   bureau: SerializedBureau | SerializedBureauWithDistance;
@@ -73,6 +76,7 @@ export function BureauCard({
   label,
   enableReport = true,
 }: Props) {
+  const t = useTranslations("public.shared");
   const [reportOpen, setReportOpen] = useState(false);
   const [hoursOpen, setHoursOpen] = useState(false);
   const accent = accentProp ?? bureau.organismeColor ?? "#C8102E";
@@ -80,7 +84,7 @@ export function BureauCard({
   const distance =
     "distanceKm" in bureau && typeof bureau.distanceKm === "number" ? bureau.distanceKm : null;
   const status = computeOpenStatus(bureau.hours);
-  const todayHours = getTodayHoursSummary(bureau.hours);
+  const todayHours = getTodayHoursSummary(bureau.hours, t);
 
   const isAttitre = variant === "attitre";
   const isCompact = variant === "compact";
@@ -148,9 +152,9 @@ export function BureauCard({
           {bureau.verified && (
             <span
               className="text-[9.5px] font-semibold uppercase tracking-wider text-green-700 dark:text-green-400"
-              title="Coordonnées vérifiées"
+              title={t("verifiedTitle")}
             >
-              ✓ vérifié
+              ✓ {t("verified")}
             </span>
           )}
         </div>
@@ -165,9 +169,9 @@ export function BureauCard({
           )}
         >
           <Clock size={12} className="shrink-0" />
-          <span className="font-semibold">Aujourd&apos;hui :</span>
+          <span className="font-semibold">{t("todayLabel")}</span>
           <span className="flex-1 truncate">{todayHours}</span>
-          <OpenChip status={status} />
+          <OpenChip status={status} t={t} />
         </div>
       )}
 
@@ -187,7 +191,9 @@ export function BureauCard({
               key={s}
               className="text-[10.5px] px-2 py-0.5 rounded-full bg-[var(--border)]/60 text-[var(--text-muted)]"
             >
-              {SERVICE_LABEL_FR[s] ?? s}
+              {KNOWN_SERVICE_KEYS.has(s)
+                ? t(`service_${s}` as Parameters<typeof t>[0])
+                : s}
             </span>
           ))}
         </div>
@@ -206,7 +212,7 @@ export function BureauCard({
           style={{ backgroundColor: accent }}
         >
           <CalendarCheck size={isAttitre ? 16 : 13} />
-          Prendre rendez-vous
+          {t("bookAppointment")}
         </a>
       )}
 
@@ -227,7 +233,7 @@ export function BureauCard({
             className="inline-flex items-center gap-1 no-underline hover:underline"
             style={{ color: accent }}
           >
-            <Mail size={11} /> Email
+            <Mail size={11} /> {t("email")}
           </a>
         )}
         {bureau.website && (
@@ -238,7 +244,7 @@ export function BureauCard({
             className="inline-flex items-center gap-1 no-underline hover:underline"
             style={{ color: accent }}
           >
-            <Globe size={11} /> Site web
+            <Globe size={11} /> {t("website")}
           </a>
         )}
       </div>
@@ -251,7 +257,7 @@ export function BureauCard({
             onClick={() => setHoursOpen(!hoursOpen)}
             className="text-[11px] text-[var(--text-muted)] hover:text-[var(--foreground)] inline-flex items-center gap-1 transition-colors"
           >
-            Voir tous les horaires{" "}
+            {t("seeAllHours")}{" "}
             {hoursOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
           </button>
           {hoursOpen && <WeekHoursTable hours={bureau.hours} />}
@@ -266,7 +272,7 @@ export function BureauCard({
             onClick={() => setReportOpen(true)}
             className="text-[10.5px] inline-flex items-center gap-1 text-[var(--text-faint)] hover:text-[var(--text-muted)] hover:underline"
           >
-            <Flag size={9} /> Signaler une erreur
+            <Flag size={9} /> {t("reportError")}
           </button>
         </div>
       )}
@@ -313,24 +319,32 @@ export function BureauCardSkeleton({ variant = "default" }: { variant?: "attitre
 
 // ───────── helpers ─────────
 
-function OpenChip({ status }: { status: ReturnType<typeof computeOpenStatus> }) {
+type TFn = ReturnType<typeof useTranslations<"public.shared">>;
+
+function OpenChip({
+  status,
+  t,
+}: {
+  status: ReturnType<typeof computeOpenStatus>;
+  t: TFn;
+}) {
   const base = "text-[10px] font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-1 shrink-0";
   if (status.state === "open") {
     return (
       <span className={`${base} bg-green-500/20 text-green-700 dark:text-green-400`}>
-        ● Ouvert
+        ● {t("open")}
       </span>
     );
   }
   if (status.state === "holiday") {
     return (
       <span className={`${base} bg-purple-500/20 text-purple-700 dark:text-purple-400`}>
-        Férié
+        {t("holiday")}
       </span>
     );
   }
   return (
-    <span className={`${base} bg-red-500/15 text-red-700 dark:text-red-400`}>Fermé</span>
+    <span className={`${base} bg-red-500/15 text-red-700 dark:text-red-400`}>{t("closed")}</span>
   );
 }
 
@@ -341,22 +355,25 @@ function getTodayBackground(status: ReturnType<typeof computeOpenStatus>): strin
 }
 
 /** "9h–12h · 13h–16h" pour aujourd'hui, ou "Fermé · ouvre lun. 09:00" */
-function getTodayHoursSummary(hours: BureauHours): string {
+function getTodayHoursSummary(hours: BureauHours, t: TFn): string {
   const now = new Date();
   const today = now.getDay();
   const todaySlots = hours.find((h) => h.day === today)?.slots ?? [];
   const status = computeOpenStatus(hours, now);
 
   if (status.state === "holiday") {
-    return `Férié — ${status.holidayName}`;
+    return t("holidayWithName", { name: status.holidayName });
   }
   if (todaySlots.length > 0) {
     return todaySlots.map((s) => `${s.open}–${s.close}`).join(" · ");
   }
   if (status.state === "closed" && status.nextOpen) {
-    return `Fermé · ouvre ${dayLabelFr(status.nextOpen.day)} ${status.nextOpen.time}`;
+    return t("closedOpensAt", {
+      day: dayLabelFr(status.nextOpen.day),
+      time: status.nextOpen.time,
+    });
   }
-  return "Fermé aujourd'hui";
+  return t("closedToday");
 }
 
 function WeekHoursTable({ hours }: { hours: BureauHours }) {

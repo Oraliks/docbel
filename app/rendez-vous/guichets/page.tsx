@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { ArrowLeft, ChevronRight, MapPin } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
@@ -7,13 +9,16 @@ import { GLASS_CARD } from "@/lib/glass-classes";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Tous les guichets — Beldoc",
-  description:
-    "Parcourez les organismes et services publics qui proposent la prise de rendez-vous en ligne.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.dossier");
+  return {
+    title: t("guichetsMetaTitle"),
+    description: t("guichetsMetaDescription"),
+  };
+}
 
 export default async function GuichetsDirectoryPage() {
+  const t = await getTranslations("public.dossier");
   // Annuaire public : guichets actifs, hors guichets privés (employeurs).
   const tenants = await prisma.bookingTenant.findMany({
     where: { active: true, category: { not: "private" } },
@@ -39,50 +44,49 @@ export default async function GuichetsDirectoryPage() {
           className="flex w-fit items-center gap-1 text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
         >
           <ArrowLeft size={14} />
-          Retour
+          {t("guichetsBack")}
         </Link>
         <h1 className="glass-display text-[32px] font-semibold leading-[1.05] sm:text-[40px]">
-          Tous les guichets
+          {t("guichetsTitle")}
         </h1>
         <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-          Les organismes et services qui proposent la prise de rendez-vous en
-          ligne. Choisissez le vôtre pour réserver un créneau.
+          {t("guichetsIntro")}
         </p>
       </div>
 
       {tenants.length === 0 ? (
         <div className={`${GLASS_CARD} glass-surface rounded-2xl p-6`}>
           <p className="text-[15px] text-[color:var(--glass-ink-soft)]">
-            Aucun guichet n&apos;est disponible pour le moment.
+            {t("guichetsEmpty")}
           </p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {tenants.map((t) => {
+          {tenants.map((tenant) => {
             const cities = [
               ...new Set(
-                t.locations.map((l) => l.city).filter((c): c is string => !!c),
+                tenant.locations.map((l) => l.city).filter((c): c is string => !!c),
               ),
             ];
             return (
               <Link
-                key={t.slug}
-                href={`/${t.slug}/rendez-vous`}
+                key={tenant.slug}
+                href={`/${tenant.slug}/rendez-vous`}
                 className={`${GLASS_CARD} glass-surface group flex flex-col gap-2 rounded-2xl p-5 transition-shadow hover:shadow-md`}
               >
                 <div className="flex items-center gap-2">
-                  {t.brandColor && (
+                  {tenant.brandColor && (
                     <span
                       className="h-3 w-3 flex-shrink-0 rounded-full"
-                      style={{ background: t.brandColor }}
+                      style={{ background: tenant.brandColor }}
                     />
                   )}
                   <span className="text-[15px] font-semibold text-[color:var(--glass-ink)]">
-                    {t.name}
+                    {tenant.name}
                   </span>
                 </div>
                 <p className="text-[12px] font-medium uppercase tracking-wide text-[color:var(--glass-ink-faint)]">
-                  {CATEGORY_LABELS[t.category] ?? t.category}
+                  {CATEGORY_LABELS[tenant.category] ?? tenant.category}
                 </p>
                 {cities.length > 0 && (
                   <p className="flex items-start gap-1 text-[13px] text-[color:var(--glass-ink-soft)]">
@@ -91,7 +95,7 @@ export default async function GuichetsDirectoryPage() {
                   </p>
                 )}
                 <span className="mt-1 flex items-center gap-1 text-[13px] font-semibold text-[color:var(--glass-accent-deep)]">
-                  Prendre rendez-vous
+                  {t("guichetsCardCta")}
                   <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
                 </span>
               </Link>

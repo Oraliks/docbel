@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { SearchIcon, BelgianFlag, ArrowIcon } from "./icons";
 import { Tool } from "@/lib/docbel-data";
 // BureauLocator retiré (composant legacy supprimé) — l'outil "bureaux"
@@ -32,6 +33,7 @@ const CP_DATA = [
 ];
 
 export function CalcCP({ accent }: ViewProps) {
+  const t = useTranslations("public.outils");
   const [search, setSearch] = useState("");
   const filtered = CP_DATA.filter(
     (c) => c.cp.toLowerCase().includes(search.toLowerCase()) || c.nom.toLowerCase().includes(search.toLowerCase())
@@ -39,8 +41,7 @@ export function CalcCP({ accent }: ViewProps) {
   return (
     <div>
       <p style={{ fontSize: 13, color: "var(--glass-ink-soft)", marginBottom: 16, lineHeight: 1.6 }}>
-        Salaires minimums garantis par commission paritaire — données indicatives 2026. Consultez toujours la CCT
-        sectorielle officielle.
+        {t("cpIntro")}
       </p>
       <div style={{ position: "relative", marginBottom: 16 }}>
         <span
@@ -57,7 +58,7 @@ export function CalcCP({ accent }: ViewProps) {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher un secteur ou numéro CP…"
+          placeholder={t("cpSearchPlaceholder")}
           style={{
             width: "100%",
             padding: "9px 12px 9px 36px",
@@ -98,7 +99,7 @@ export function CalcCP({ accent }: ViewProps) {
         ))}
         {filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: 24, color: "var(--glass-ink-soft)", fontSize: 13 }}>
-            Aucun secteur trouvé
+            {t("cpNoResult")}
           </div>
         )}
       </div>
@@ -110,6 +111,7 @@ export function CalcCP({ accent }: ViewProps) {
 // désormais routé directement vers app/outils/bureaux/page.tsx.
 
 export function Tutorial({ tool, accent }: ToolViewProps) {
+  const t = useTranslations("public.outils");
   const [activeStep, setActiveStep] = useState(0);
 
   const steps = tool.title.includes("carte")
@@ -193,7 +195,7 @@ export function Tutorial({ tool, accent }: ToolViewProps) {
           marginBottom: 6,
         }}
       >
-        Étape {activeStep + 1} / {steps.length}
+        {t("tutorialStep", { current: activeStep + 1, total: steps.length })}
       </div>
       <h4 style={{ fontSize: 16, fontWeight: 800, color: "var(--glass-ink)", marginBottom: 12, letterSpacing: "-0.2px" }}>
         {steps[activeStep].title}
@@ -216,7 +218,7 @@ export function Tutorial({ tool, accent }: ToolViewProps) {
             fontFamily: "'Manrope', sans-serif",
           }}
         >
-          ← Précédent
+          {t("tutorialPrev")}
         </button>
         <button
           onClick={() => setActiveStep((s) => Math.min(steps.length - 1, s + 1))}
@@ -235,7 +237,7 @@ export function Tutorial({ tool, accent }: ToolViewProps) {
             fontFamily: "'Manrope', sans-serif",
           }}
         >
-          Suivant →
+          {t("tutorialNext")}
         </button>
       </div>
     </div>
@@ -312,6 +314,7 @@ export function InfoPanel({ tool }: ToolViewProps) {
 }
 
 export function LinkPanel({ tool, accent }: ToolViewProps) {
+  const t = useTranslations("public.outils");
   const info: Record<string, { url: string; tel: string; desc: string }> = {
     Actiris: {
       url: "actiris.brussels",
@@ -350,10 +353,10 @@ export function LinkPanel({ tool, accent }: ToolViewProps) {
         <p style={{ fontSize: 13.5, color: "var(--glass-ink-soft)", lineHeight: 1.65, marginBottom: 16 }}>{d.desc}</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ fontSize: 13, color: "var(--glass-ink)" }}>
-            <strong>🌐 Site web :</strong> <span style={{ color: accent }}>{d.url}</span>
+            <strong>🌐 {t("linkWebsite")}</strong> <span style={{ color: accent }}>{d.url}</span>
           </div>
           <div style={{ fontSize: 13, color: "var(--glass-ink)" }}>
-            <strong>📞 Tél. :</strong> {d.tel}
+            <strong>📞 {t("linkPhone")}</strong> {d.tel}
           </div>
         </div>
       </div>
@@ -371,21 +374,17 @@ export function LinkPanel({ tool, accent }: ToolViewProps) {
           fontFamily: "'Manrope', sans-serif",
         }}
       >
-        Visiter le site officiel →
+        {t("linkVisit")}
       </button>
     </div>
   );
 }
 
 export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string }) {
+  const t = useTranslations("public.outils");
+  void lang; // locale gérée par next-intl désormais
   const [step, setStep] = useState(0);
-  const labels: Record<string, string[]> = {
-    FR: ["Formulaire", "Prévisualisation", "Téléchargement"],
-    NL: ["Formulier", "Voorbeeld", "Download"],
-    EN: ["Form", "Preview", "Download"],
-    DE: ["Formular", "Vorschau", "Download"],
-  };
-  const steps = labels[lang] || labels.FR;
+  const steps = [t("formStepForm"), t("formStepPreview"), t("formStepDownload")];
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
@@ -405,12 +404,12 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
   };
 
   const fields: [string, keyof typeof formData, string, string][] = [
-    ["Nom", "nom", "Dupont", "text"],
-    ["Prénom", "prenom", "Jean", "text"],
-    ["Date de naissance", "dob", "01/01/1990", "text"],
-    ["N° registre national", "nrn", "90.01.01-123.45", "text"],
-    ["Adresse", "adresse", "Rue de la Loi 1", "text"],
-    ["Commune", "commune", "Bruxelles 1000", "text"],
+    [t("formFieldNom"), "nom", "Dupont", "text"],
+    [t("formFieldPrenom"), "prenom", "Jean", "text"],
+    [t("formFieldDob"), "dob", "01/01/1990", "text"],
+    [t("formFieldNrn"), "nrn", "90.01.01-123.45", "text"],
+    [t("formFieldAdresse"), "adresse", "Rue de la Loi 1", "text"],
+    [t("formFieldCommune"), "commune", "Bruxelles 1000", "text"],
   ];
 
   return (
@@ -513,7 +512,7 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
               gap: 8,
             }}
           >
-            Prévisualiser <ArrowIcon size={14} />
+            {t("formPreviewBtn")} <ArrowIcon size={14} />
           </button>
         </div>
       )}
@@ -532,7 +531,7 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
             <div style={{ textAlign: "center", marginBottom: 20 }}>
               <BelgianFlag />
               <div style={{ fontSize: 14, fontWeight: 700, color: "var(--glass-ink)", marginTop: 10 }}>
-                ROYAUME DE BELGIQUE — ONEM
+                {t("previewDocHeader")}
               </div>
               <div style={{ height: 1, background: "var(--glass-border)", margin: "14px 0" }}></div>
               <div style={{ fontSize: 15, fontWeight: 700, color: "var(--glass-ink)", textTransform: "uppercase" }}>
@@ -541,27 +540,27 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
             </div>
             <div style={{ fontSize: 12.5, color: "var(--glass-ink)", lineHeight: 2 }}>
               <div>
-                <strong>Nom :</strong> {formData.nom || "DUPONT"}
+                <strong>{t("previewNom")}</strong> {formData.nom || "DUPONT"}
               </div>
               <div>
-                <strong>Prénom :</strong> {formData.prenom || "Jean"}
+                <strong>{t("previewPrenom")}</strong> {formData.prenom || "Jean"}
               </div>
               <div>
-                <strong>Date de naissance :</strong> {formData.dob || "01/01/1990"}
+                <strong>{t("previewDob")}</strong> {formData.dob || "01/01/1990"}
               </div>
               <div>
-                <strong>N° Reg. nat. :</strong> {formData.nrn || "90.01.01-123.45"}
+                <strong>{t("previewNrn")}</strong> {formData.nrn || "90.01.01-123.45"}
               </div>
               <div>
-                <strong>Adresse :</strong> {formData.adresse || "Rue de la Loi 1"}
+                <strong>{t("previewAdresse")}</strong> {formData.adresse || "Rue de la Loi 1"}
               </div>
               <div>
-                <strong>Commune :</strong> {formData.commune || "Bruxelles 1000"}
+                <strong>{t("previewCommune")}</strong> {formData.commune || "Bruxelles 1000"}
               </div>
             </div>
             <div style={{ height: 1, background: "var(--glass-border)", margin: "16px 0" }}></div>
             <div style={{ fontSize: 11, color: "var(--glass-ink-soft)", textAlign: "right" }}>
-              Généré le {new Date().toLocaleDateString("fr-BE")} via DocBel
+              {t("previewGeneratedAt", { date: new Date().toLocaleDateString("fr-BE") })}
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
@@ -579,7 +578,7 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
                 fontFamily: "'Manrope', sans-serif",
               }}
             >
-              ← Modifier
+              {t("formEdit")}
             </button>
             <button
               onClick={handleGenerate}
@@ -598,7 +597,7 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
                 opacity: loading ? 0.7 : 1,
               }}
             >
-              {loading ? "Génération…" : "Générer le document PDF"}
+              {loading ? t("formGenerating") : t("formGenerate")}
             </button>
           </div>
         </div>
@@ -608,9 +607,9 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
         <div>
           <div style={{ textAlign: "center", padding: "16px 0 20px" }}>
             <div style={{ fontSize: 42, marginBottom: 10 }}>✅</div>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--glass-ink)", marginBottom: 6 }}>Document prêt !</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--glass-ink)", marginBottom: 6 }}>{t("formReadyTitle")}</h3>
             <p style={{ fontSize: 13, color: "var(--glass-ink-soft)", marginBottom: 16 }}>
-              Votre {tool.title.toLowerCase()} a été généré avec succès.
+              {t("formReadyBody", { tool: tool.title.toLowerCase() })}
             </p>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
               <button
@@ -626,7 +625,7 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
                   fontFamily: "'Manrope', sans-serif",
                 }}
               >
-                Aperçu PDF
+                {t("formPdfPreview")}
               </button>
               <button
                 style={{
@@ -641,7 +640,7 @@ export function FormFlow({ tool, accent, lang }: ToolViewProps & { lang: string 
                   fontFamily: "'Manrope', sans-serif",
                 }}
               >
-                ↓ Télécharger
+                {t("formDownload")}
               </button>
             </div>
           </div>

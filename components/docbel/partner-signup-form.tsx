@@ -10,6 +10,7 @@ import {
   MailCheckIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -68,46 +69,50 @@ type LookupState =
     }
   | { status: "unknown" };
 
+type SignupT = ReturnType<typeof useTranslations<"public.auth">>;
+
+type SegmentCopy = {
+  recognizedLabel: string;
+  emailPlaceholder: string;
+  submitLabel: string;
+  submitPendingLabel: string;
+  unknownDomain: string;
+};
+
 /**
  * Copie et cibles dépendantes du segment attendu par la page hôte. Le segment
  * réel reste posé côté serveur depuis l'allowlist — ici on ne fait qu'adapter
  * les libellés et savoir vers quelle autre page renvoyer en cas de mismatch.
  */
-const SEGMENT_COPY: Record<
-  ExpectedSegment,
-  {
-    recognizedLabel: string;
-    emailPlaceholder: string;
-    submitLabel: string;
-    submitPendingLabel: string;
-    unknownDomain: string;
-  }
-> = {
-  partenaire: {
-    recognizedLabel: "Espace partenaire",
-    emailPlaceholder: "prenom.nom@cpas.brussels",
-    submitLabel: "Créer mon compte partenaire",
-    submitPendingLabel: "Envoi…",
-    unknownDomain:
-      "Ce domaine n'est pas autorisé pour l'espace partenaire. Contactez DocBel pour référencer votre organisation (CPAS, syndicat, mutuelle…).",
-  },
-  employeur: {
-    recognizedLabel: "Espace employeur",
-    emailPlaceholder: "prenom.nom@votre-entreprise.be",
-    submitLabel: "Créer mon compte employeur",
-    submitPendingLabel: "Envoi…",
-    unknownDomain:
-      "Ce domaine n'est pas encore autorisé pour l'espace employeur. Contactez DocBel pour activer votre entreprise.",
-  },
+function getSegmentCopy(t: SignupT): Record<ExpectedSegment, SegmentCopy> {
+  return {
+    partenaire: {
+      recognizedLabel: t("signupPartnerRecognizedLabel"),
+      emailPlaceholder: t("signupPartnerEmailPlaceholder"),
+      submitLabel: t("signupPartnerSubmit"),
+      submitPendingLabel: t("signupSubmitPending"),
+      unknownDomain: t("signupPartnerUnknownDomain"),
+    },
+    employeur: {
+      recognizedLabel: t("signupEmployerRecognizedLabel"),
+      emailPlaceholder: t("signupEmployerEmailPlaceholder"),
+      submitLabel: t("signupEmployerSubmit"),
+      submitPendingLabel: t("signupSubmitPending"),
+      unknownDomain: t("signupEmployerUnknownDomain"),
+    },
+  };
+}
+
+const OTHER_SEGMENT: Record<ExpectedSegment, { href: string }> = {
+  partenaire: { href: "/inscription/employeur" },
+  employeur: { href: "/inscription/partenaire" },
 };
 
-const OTHER_SEGMENT: Record<
-  ExpectedSegment,
-  { label: string; href: string }
-> = {
-  partenaire: { label: "espace employeur", href: "/inscription/employeur" },
-  employeur: { label: "espace partenaire", href: "/inscription/partenaire" },
-};
+function otherSegmentLabel(t: SignupT, segment: ExpectedSegment): string {
+  return segment === "partenaire"
+    ? t("signupOtherEmployer")
+    : t("signupOtherPartner");
+}
 
 function isLookupCandidate(email: string): boolean {
   if (!email.includes("@")) return false;
@@ -126,8 +131,10 @@ export function SignupForm({
   /** Si fourni, le bandeau "mismatch" bascule le segment ici au lieu de naviguer. */
   onSwitchSegment?: (segment: ExpectedSegment) => void;
 }) {
-  const copy = SEGMENT_COPY[expectedSegment];
+  const t = useTranslations("public.auth");
+  const copy = getSegmentCopy(t)[expectedSegment];
   const other = OTHER_SEGMENT[expectedSegment];
+  const otherLabel = otherSegmentLabel(t, expectedSegment);
   const otherSegment: ExpectedSegment =
     expectedSegment === "partenaire" ? "employeur" : "partenaire";
 
@@ -206,17 +213,15 @@ export function SignupForm({
     setError(null);
 
     if (form.password !== form.passwordConfirm) {
-      setError("Les mots de passe ne correspondent pas.");
+      setError(t("errPasswordMismatch"));
       return;
     }
     if (form.password.length < 8) {
-      setError("Le mot de passe doit faire au moins 8 caractères.");
+      setError(t("errPasswordTooShort"));
       return;
     }
     if (lookup.status === "mismatch") {
-      setError(
-        `Cette adresse correspond à un ${other.label}. Inscrivez-vous sur la page dédiée.`,
-      );
+      setError(t("errSegmentMismatch", { segment: otherLabel }));
       return;
     }
     if (lookup.status !== "recognized") {
@@ -224,9 +229,7 @@ export function SignupForm({
       return;
     }
     if (expectedSegment === "employeur" && !isValidBelgianTVA(form.vatNumber)) {
-      setError(
-        "Numéro de TVA belge invalide (format attendu : BE0123456789).",
-      );
+      setError(t("errInvalidTva"));
       return;
     }
 
@@ -244,13 +247,13 @@ export function SignupForm({
         });
         const data = await res.json();
         if (!res.ok) {
-          setError(data.error || "Une erreur est survenue.");
+          setError(data.error || t("errGeneric"));
           return;
         }
         setSuccess({ email: form.email });
       } catch (err) {
         console.error(err);
-        setError("Erreur réseau. Réessayez dans un instant.");
+        setError(t("errNetwork"));
       }
     });
   };
@@ -269,14 +272,16 @@ export function SignupForm({
             <MailCheckIcon className="size-6" />
           </span>
           <h2 className="glass-display text-[24px] font-semibold">
-            Vérifiez votre boîte mail
+            {t("checkInbox")}
           </h2>
           <p className="max-w-md text-[13.5px] text-[color:var(--glass-ink-soft)]">
-            Un email a été envoyé à <strong>{success.email}</strong> avec un
-            lien d&apos;activation valable 24 heures.
+            {t.rich("signupSentBody", {
+              email: success.email,
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
           <p className="text-[12px] text-[color:var(--glass-ink-faint)]">
-            Pas d&apos;email reçu ? Vérifiez vos spams ou contactez-nous.
+            {t("signupNoEmailReceived")}
           </p>
         </CardContent>
       </Card>
@@ -294,7 +299,7 @@ export function SignupForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="name" className={GLASS_LABEL}>
-              Votre nom
+              {t("signupNameLabel")}
             </Label>
             <Input
               id="name"
@@ -308,7 +313,7 @@ export function SignupForm({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email" className={GLASS_LABEL}>
-              Email professionnel
+              {t("signupEmailLabel")}
             </Label>
             <Input
               id="email"
@@ -324,7 +329,7 @@ export function SignupForm({
             {lookup.status === "checking" ? (
               <p className="flex items-center gap-1.5 text-[12px] text-[color:var(--glass-ink-soft)]">
                 <Loader2Icon className="size-3 animate-spin" />
-                Vérification du domaine…
+                {t("signupCheckingDomain")}
               </p>
             ) : null}
 
@@ -349,11 +354,11 @@ export function SignupForm({
                           color: "#8a4f0a",
                         }}
                       >
-                        Test
+                        {t("signupTestBadge")}
                       </span>
                     ) : null}
                   </div>
-                  <p className="opacity-80">{copy.recognizedLabel} — organisation reconnue.</p>
+                  <p className="opacity-80">{t("signupRecognized", { label: copy.recognizedLabel })}</p>
                 </div>
               </div>
             ) : null}
@@ -369,12 +374,13 @@ export function SignupForm({
                 <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
                 <div className="flex-1">
                   <p>
-                    Cette adresse correspond à un{" "}
-                    <strong>{other.label}</strong>
-                    {lookup.organizationName
-                      ? ` (${lookup.organizationName})`
-                      : ""}
-                    .
+                    {t.rich("signupMismatchText", {
+                      segment: otherLabel,
+                      org: lookup.organizationName
+                        ? ` (${lookup.organizationName})`
+                        : "",
+                      strong: (chunks) => <strong>{chunks}</strong>,
+                    })}
                   </p>
                   {onSwitchSegment ? (
                     <button
@@ -382,7 +388,7 @@ export function SignupForm({
                       onClick={() => onSwitchSegment(otherSegment)}
                       className="mt-1 inline-flex items-center gap-1 font-bold underline underline-offset-2"
                     >
-                      Passer à l&apos;{other.label}
+                      {t("signupSwitchTo", { segment: otherLabel })}
                       <ArrowRightIcon className="size-3.5" />
                     </button>
                   ) : (
@@ -390,7 +396,7 @@ export function SignupForm({
                       href={other.href}
                       className="mt-1 inline-flex items-center gap-1 font-bold underline underline-offset-2"
                     >
-                      Inscrivez-vous ici
+                      {t("signupSignUpHere")}
                       <ArrowRightIcon className="size-3.5" />
                     </Link>
                   )}
@@ -415,7 +421,7 @@ export function SignupForm({
           {expectedSegment === "employeur" ? (
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="vatNumber" className={GLASS_LABEL}>
-                Numéro de TVA
+                {t("signupVatLabel")}
               </Label>
               <Input
                 id="vatNumber"
@@ -427,8 +433,7 @@ export function SignupForm({
                 className={GLASS_INPUT}
               />
               <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-                TVA belge de votre entreprise — validée (checksum) et unique par
-                compte.
+                {t("signupVatHelp")}
               </p>
             </div>
           ) : null}
@@ -436,7 +441,7 @@ export function SignupForm({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="password" className={GLASS_LABEL}>
-                Mot de passe
+                {t("passwordLabel")}
               </Label>
               <Input
                 id="password"
@@ -451,7 +456,7 @@ export function SignupForm({
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="passwordConfirm" className={GLASS_LABEL}>
-                Confirmation
+                {t("confirmationLabel")}
               </Label>
               <Input
                 id="passwordConfirm"
@@ -481,8 +486,7 @@ export function SignupForm({
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-[12px] text-[color:var(--glass-ink-faint)]">
-              En vous inscrivant, vous acceptez les conditions d&apos;utilisation
-              de DocBel.
+              {t("signupTerms")}
             </p>
             <Button
               type="submit"

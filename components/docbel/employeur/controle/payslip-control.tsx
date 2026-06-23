@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Download, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { WORKER_TYPES, BENEFIT_TYPES, type Option } from "@/lib/employeur/constants";
+import { WORKER_TYPES, BENEFIT_TYPES } from "@/lib/employeur/constants";
 import {
   analysePayslip,
   type PayslipControlInput,
@@ -36,10 +37,10 @@ const LEVEL_TO_SEVERITY: Record<FindingLevel, AlertSeverity> = {
   critique: "critical",
 };
 
-const VERDICT_TEXT: Record<PayslipControlResult["verdict"], string> = {
-  ok: "Aucune incohérence évidente détectée.",
-  points_to_check: "Points à vérifier",
-  insufficient: "Document insuffisant pour un contrôle fiable.",
+const VERDICT_KEY: Record<PayslipControlResult["verdict"], string> = {
+  ok: "payslipVerdictOk",
+  points_to_check: "payslipVerdictPoints",
+  insufficient: "payslipVerdictInsufficient",
 };
 
 const VERDICT_CLASS: Record<PayslipControlResult["verdict"], string> = {
@@ -50,9 +51,9 @@ const VERDICT_CLASS: Record<PayslipControlResult["verdict"], string> = {
     "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300",
 };
 
-const REGIME_OPTIONS: Option[] = [
-  { value: "temps_plein", label: "Temps plein" },
-  { value: "temps_partiel", label: "Temps partiel" },
+const REGIME_OPTIONS: { value: string; labelKey: string }[] = [
+  { value: "temps_plein", labelKey: "payslipRegimeFull" },
+  { value: "temps_partiel", labelKey: "payslipRegimePartial" },
 ];
 
 interface FormState {
@@ -137,6 +138,7 @@ function buildInput(form: FormState): PayslipControlInput {
 }
 
 export function PayslipControl() {
+  const t = useTranslations("public.pro");
   const [form, setForm] = useState<FormState>(INITIAL);
   const [result, setResult] = useState<PayslipControlResult | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -166,7 +168,7 @@ export function PayslipControl() {
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? "Échec de la génération du PDF.");
+        throw new Error(data.error ?? t("payslipErrPdf"));
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -174,7 +176,7 @@ export function PayslipControl() {
       // Libère l'URL après un court délai (laisse le temps à l'onglet de l'ouvrir).
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Échec de la génération du PDF.");
+      toast.error(e instanceof Error ? e.message : t("payslipErrPdf"));
     } finally {
       setExporting(false);
     }
@@ -184,18 +186,18 @@ export function PayslipControl() {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Données encodées</CardTitle>
+          <CardTitle>{t("payslipDataTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <Field label="Période" htmlFor="period" help="Ex. « Mai 2026 ».">
+          <Field label={t("payslipPeriod")} htmlFor="period" help={t("payslipPeriodHelp")}>
             <Input
               id="period"
               value={form.period}
               onChange={(e) => set("period", e.target.value)}
-              placeholder="Mai 2026"
+              placeholder={t("payslipPeriodPlaceholder")}
             />
           </Field>
-          <Field label="Type de travailleur">
+          <Field label={t("payslipWorkerType")}>
             <Select
               value={form.workerType}
               onValueChange={(v: string | null) => v && set("workerType", v)}
@@ -204,7 +206,7 @@ export function PayslipControl() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={CHOOSE}>— Choisir —</SelectItem>
+                <SelectItem value={CHOOSE}>{t("payslipChoose")}</SelectItem>
                 {WORKER_TYPES.map((o) => (
                   <SelectItem key={o.value} value={o.value}>
                     {o.label}
@@ -213,7 +215,7 @@ export function PayslipControl() {
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Régime de travail">
+          <Field label={t("payslipRegime")}>
             <Select
               value={form.regime}
               onValueChange={(v: string | null) => v && set("regime", v)}
@@ -222,46 +224,46 @@ export function PayslipControl() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NONE}>À préciser</SelectItem>
+                <SelectItem value={NONE}>{t("payslipToPrecise")}</SelectItem>
                 {REGIME_OPTIONS.map((o) => (
                   <SelectItem key={o.value} value={o.value}>
-                    {o.label}
+                    {t(o.labelKey as Parameters<typeof t>[0])}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
           <Field
-            label="Commission paritaire"
+            label={t("payslipCp")}
             htmlFor="cp"
-            help="Sans CP, le barème minimum ne peut pas être vérifié."
+            help={t("payslipCpHelp")}
           >
             <Input
               id="cp"
               value={form.jointCommitteeNumber}
               onChange={(e) => set("jointCommitteeNumber", e.target.value)}
-              placeholder="Ex. 200"
+              placeholder={t("payslipCpPlaceholder")}
             />
           </Field>
-          <Field label="Salaire brut mensuel (€)" htmlFor="brut">
+          <Field label={t("payslipGross")} htmlFor="brut">
             <Input
               id="brut"
               inputMode="decimal"
               value={form.grossMonthlySalary}
               onChange={(e) => set("grossMonthlySalary", e.target.value)}
-              placeholder="Ex. 2500"
+              placeholder={t("payslipGrossPlaceholder")}
             />
           </Field>
-          <Field label="Net reçu (€)" htmlFor="net">
+          <Field label={t("payslipNet")} htmlFor="net">
             <Input
               id="net"
               inputMode="decimal"
               value={form.netReceived}
               onChange={(e) => set("netReceived", e.target.value)}
-              placeholder="Ex. 2100"
+              placeholder={t("payslipNetPlaceholder")}
             />
           </Field>
-          <Field label="Cotisations affichées (€)" htmlFor="cotis">
+          <Field label={t("payslipContributions")} htmlFor="cotis">
             <Input
               id="cotis"
               inputMode="decimal"
@@ -269,7 +271,7 @@ export function PayslipControl() {
               onChange={(e) => set("contributionsShown", e.target.value)}
             />
           </Field>
-          <Field label="Prime (€)" htmlFor="prime">
+          <Field label={t("payslipPrime")} htmlFor="prime">
             <Input
               id="prime"
               inputMode="decimal"
@@ -277,7 +279,7 @@ export function PayslipControl() {
               onChange={(e) => set("prime", e.target.value)}
             />
           </Field>
-          <Field label="Pécule de vacances (€)" htmlFor="pecule">
+          <Field label={t("payslipPecule")} htmlFor="pecule">
             <Input
               id="pecule"
               inputMode="decimal"
@@ -285,19 +287,19 @@ export function PayslipControl() {
               onChange={(e) => set("pecule", e.target.value)}
             />
           </Field>
-          <Field label="Heures / semaine" htmlFor="wh">
+          <Field label={t("payslipWeeklyHours")} htmlFor="wh">
             <Input
               id="wh"
               inputMode="decimal"
               value={form.weeklyHours}
               onChange={(e) => set("weeklyHours", e.target.value)}
-              placeholder="Ex. 38"
+              placeholder={t("payslipWeeklyHoursPlaceholder")}
             />
           </Field>
           <Field
-            label="Heures temps plein de référence"
+            label={t("payslipRefHours")}
             htmlFor="ref"
-            help="Généralement 38h."
+            help={t("payslipRefHoursHelp")}
           >
             <Input
               id="ref"
@@ -308,7 +310,7 @@ export function PayslipControl() {
           </Field>
 
           <div className="space-y-2 sm:col-span-2">
-            <Label>Avantages déclarés</Label>
+            <Label>{t("payslipBenefits")}</Label>
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               {BENEFIT_TYPES.map((b) => (
                 <label key={b.value} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -323,12 +325,12 @@ export function PayslipControl() {
           </div>
 
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="rem">Remarque</Label>
+            <Label htmlFor="rem">{t("payslipRemark")}</Label>
             <Textarea
               id="rem"
               value={form.remarque}
               onChange={(e) => set("remarque", e.target.value)}
-              placeholder="Ex. contrat-cadre flexi signé, situation particulière…"
+              placeholder={t("payslipRemarkPlaceholder")}
               rows={2}
             />
           </div>
@@ -337,12 +339,12 @@ export function PayslipControl() {
 
       <div className="flex flex-wrap gap-2">
         <Button onClick={analyse}>
-          <Search /> Analyser
+          <Search /> {t("payslipAnalyse")}
         </Button>
         {result ? (
           <Button variant="outline" onClick={exportPdf} disabled={exporting}>
             {exporting ? <Loader2 className="animate-spin" /> : <Download />}
-            Exporter PDF
+            {t("payslipExportPdf")}
           </Button>
         ) : null}
       </div>
@@ -352,7 +354,7 @@ export function PayslipControl() {
           <div
             className={`rounded-lg border px-4 py-3 text-base font-semibold ${VERDICT_CLASS[result.verdict]}`}
           >
-            {VERDICT_TEXT[result.verdict]}
+            {t(VERDICT_KEY[result.verdict] as Parameters<typeof t>[0])}
           </div>
           {result.findings.length > 0 ? (
             <div className="space-y-2">
@@ -364,7 +366,7 @@ export function PayslipControl() {
                     sourceCode={f.sourceCode}
                   />
                   <p className="pl-3 text-xs text-muted-foreground">
-                    Recommandation : {f.recommendation}
+                    {t("payslipRecommendation", { text: f.recommendation })}
                   </p>
                 </div>
               ))}

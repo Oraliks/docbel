@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getFormationsPageUser } from "@/lib/formations/page-auth";
 import { getMyEnrollments, getMySavedTrainings, getMyResults, getMyCertificates } from "@/lib/formations/me-queries";
 import { getTrainingAccess } from "@/lib/formations/module";
@@ -8,10 +9,13 @@ import { MesFormationsClient } from "@/components/formations/mes-formations-clie
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Mes formations — Docbel",
-  description: "Vos inscriptions, formations sauvegardées et résultats d'orientation.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.formations");
+  return {
+    title: t("metaMyTrainingsTitle"),
+    description: t("metaMyTrainingsDescription"),
+  };
+}
 
 export default async function MesFormationsPage() {
   const user = await getFormationsPageUser();

@@ -1,4 +1,5 @@
 import { ExternalLink } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { labelReliability, type ReliabilityLevel } from "@/lib/employeur/constants";
 
@@ -47,9 +48,10 @@ const RELIABILITY_VARIANT: Record<
 
 /** Badge de fiabilité (faible / moyenne / bonne / à valider). */
 export function ReliabilityBadge({ level }: { level: ReliabilityLevel }) {
+  const t = useTranslations("public.pro");
   return (
     <Badge variant={RELIABILITY_VARIANT[level] ?? "info"}>
-      Fiabilité&nbsp;: {labelReliability(level).toLowerCase()}
+      {t("badgeReliabilityLabel")}&nbsp;: {labelReliability(level).toLowerCase()}
     </Badge>
   );
 }

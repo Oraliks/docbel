@@ -14,6 +14,7 @@
  */
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { AlertCircle, Info } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -276,7 +277,7 @@ interface CalcResultRow {
 
 export function CalcResult({
   accent,
-  eyebrow = "Résultat estimatif",
+  eyebrow,
   headline,
   unit,
   subtext,
@@ -291,6 +292,8 @@ export function CalcResult({
   rows?: CalcResultRow[];
   footer?: React.ReactNode;
 }) {
+  const t = useTranslations("public.outils");
+  const eyebrowLabel = eyebrow ?? t("sharedResultEyebrow");
   return (
     <div
       className="mt-2 rounded-2xl p-5 sm:p-6"
@@ -303,7 +306,7 @@ export function CalcResult({
         className="text-[11px] font-bold uppercase tracking-[0.06em]"
         style={{ color: accent }}
       >
-        {eyebrow}
+        {eyebrowLabel}
       </div>
       <div
         className="mt-1.5 font-extrabold tracking-[-0.5px] text-[color:var(--glass-ink)]"
@@ -443,8 +446,8 @@ export function YesNoToggle({
   value,
   onChange,
   accent,
-  yesLabel = "Oui",
-  noLabel = "Non",
+  yesLabel,
+  noLabel,
 }: {
   label: string;
   hint?: string;
@@ -454,6 +457,9 @@ export function YesNoToggle({
   yesLabel?: string;
   noLabel?: string;
 }) {
+  const t = useTranslations("public.outils");
+  const yesText = yesLabel ?? t("sharedYes");
+  const noText = noLabel ?? t("sharedNo");
   return (
     <div className="flex flex-col gap-1.5">
       <span className="text-[12px] font-semibold text-[color:var(--glass-ink)]">
@@ -476,7 +482,7 @@ export function YesNoToggle({
                 color: active ? "white" : "var(--glass-ink-soft)",
               }}
             >
-              {v === "oui" ? yesLabel : noLabel}
+              {v === "oui" ? yesText : noText}
             </button>
           );
         })}

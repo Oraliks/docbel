@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ArrowRight, KeyRound, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { GLASS_INPUT, GLASS_LABEL } from "@/lib/glass-classes";
 
 export function ResumeForm() {
   const router = useRouter();
+  const t = useTranslations("public.dossier");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export function ResumeForm() {
     const finalCode = normalizeResumeCode(code);
 
     if (!isValidResumeCodeFormat(finalCode)) {
-      setError("Le code doit être au format BELDOC-XXXX-XXXX.");
+      setError(t("resumeFormatError"));
       return;
     }
 
@@ -43,25 +45,21 @@ export function ResumeForm() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         if (res.status === 410) {
-          setError(
-            "Ce code a expiré. Les données associées ont été supprimées. Recommencez un nouveau dossier."
-          );
+          setError(t("resumeExpiredError"));
         } else if (res.status === 404) {
-          setError("Aucun dossier trouvé pour ce code. Vérifiez la saisie.");
+          setError(t("resumeNotFoundError"));
         } else if (res.status === 429) {
-          setError(
-            "Trop de tentatives. Patientez quelques minutes avant de réessayer."
-          );
+          setError(t("resumeRateLimitedError"));
         } else {
-          setError(data.error || "Impossible de reprendre ce dossier.");
+          setError(data.error || t("resumeGenericError"));
         }
         return;
       }
       const data = (await res.json()) as { bundleSlug: string; bundleName: string };
-      toast.success(`Reprise du dossier « ${data.bundleName} »`);
+      toast.success(t("resumeSuccess", { name: data.bundleName }));
       router.push(`/d/${data.bundleSlug}`);
     } catch {
-      setError("Erreur réseau. Réessayez.");
+      setError(t("networkErrorRetry"));
     } finally {
       setLoading(false);
     }
@@ -75,16 +73,15 @@ export function ResumeForm() {
       >
         <div className="flex items-center gap-2 text-[color:var(--glass-ink)]">
           <KeyRound className="size-5" />
-          <h2 className="text-lg font-semibold">J&apos;ai un code de reprise</h2>
+          <h2 className="text-lg font-semibold">{t("resumeHasCodeTitle")}</h2>
         </div>
         <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
-          Le code a été affiché lors du démarrage du dossier et peut avoir été envoyé
-          par email à votre demande. Il ressemble à <code>BELDOC-A1B2-C3D4</code>.
+          {t.rich("resumeHasCodeBody", { code: (chunks) => <code>{chunks}</code> })}
         </p>
 
         <div className="space-y-1.5">
           <Label htmlFor="resume-code" className={GLASS_LABEL}>
-            Code de reprise
+            {t("resumeCodeLabel")}
           </Label>
           <Input
             id="resume-code"
@@ -93,7 +90,7 @@ export function ResumeForm() {
               setCode(event.target.value);
               setError(null);
             }}
-            placeholder="BELDOC-XXXX-XXXX"
+            placeholder={t("resumeCodePlaceholder")}
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
@@ -103,7 +100,7 @@ export function ResumeForm() {
           />
           {!formatLooksValid && !error && (
             <p className="text-xs text-amber-700">
-              Format attendu : BELDOC suivi de deux groupes de 4 caractères.
+              {t("resumeFormatHint")}
             </p>
           )}
           {error && (
@@ -122,11 +119,11 @@ export function ResumeForm() {
           {loading ? (
             <>
               <Loader2 className="size-4 animate-spin" />
-              Recherche…
+              {t("resumeSearching")}
             </>
           ) : (
             <>
-              Reprendre
+              {t("resume")}
               <ArrowRight className="size-4" />
             </>
           )}
@@ -139,19 +136,17 @@ export function ResumeForm() {
       >
         <div className="h-12 w-px bg-[color:var(--glass-border)]" />
         <span className="rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em]">
-          ou
+          {t("or")}
         </span>
         <div className="h-12 w-px bg-[color:var(--glass-border)]" />
       </div>
 
       <div className="glass-surface flex flex-col gap-4 rounded-3xl p-6">
         <h2 className="text-lg font-semibold text-[color:var(--glass-ink)]">
-          Je n&apos;ai pas (encore) de code
+          {t("resumeNoCodeTitle")}
         </h2>
         <p className="text-[13px] text-[color:var(--glass-ink-soft)]">
-          Pas de souci — démarrez un nouveau dossier depuis la page d&apos;accueil
-          de l&apos;onboarding. Un code de reprise vous sera proposé dès le premier
-          enregistrement.
+          {t("resumeNoCodeBody")}
         </p>
         <Button
           render={<Link href="/creer-ma-demande" />}
@@ -159,12 +154,11 @@ export function ResumeForm() {
           size="lg"
           className="h-12 w-full text-base"
         >
-          Démarrer un dossier
+          {t("resumeStartDossier")}
           <ArrowRight className="size-4" />
         </Button>
         <p className="text-[11px] text-[color:var(--glass-ink-faint)] italic">
-          Aucune donnée nominative n&apos;est conservée. Le code expire au bout
-          de 30 jours sans activité, et les données saisies sont supprimées.
+          {t("resumeNoCodeNote")}
         </p>
       </div>
     </div>

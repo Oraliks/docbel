@@ -9,6 +9,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
   CalendarClock,
@@ -137,6 +138,7 @@ export function RendezVousExportClient({
   orgOptions = [],
   canViewHistory = false,
 }: RendezVousExportClientProps = {}) {
+  const t = useTranslations("public.pro");
   // Organisation cible (admins uniquement) : détermine le périmètre partagé de
   // l'historique. Un partenaire utilise toujours la sienne, côté serveur.
   const [org, setOrg] = useState<string>(isAdmin ? "" : (partnerOrganization ?? ""));
@@ -175,9 +177,9 @@ export function RendezVousExportClient({
       if (err instanceof AppointmentParseError) {
         return { kind: "error", message: err.message };
       }
-      return { kind: "error", message: "Texte illisible." };
+      return { kind: "error", message: t("rdvUnreadable") };
     }
-  }, [content]);
+  }, [content, t]);
 
   const canGenerate = preview.kind === "ok" && !loading;
 
@@ -243,22 +245,20 @@ export function RendezVousExportClient({
     // Pré-validations claires AVANT l'appel réseau : on évite un bouton
     // silencieusement disabled qui laisse l'utilisateur perplexe.
     if (content.trim() === "") {
-      setSubmitError("Collez d'abord une liste de rendez-vous.");
+      setSubmitError(t("rdvPasteFirst"));
       return;
     }
     if (preview.kind === "error") {
-      setSubmitError(`Format du texte non reconnu : ${preview.message}`);
+      setSubmitError(t("rdvFormatNotRecognized", { message: preview.message }));
       return;
     }
     if (preview.kind !== "ok") {
-      setSubmitError("Aucun rendez-vous détecté dans le texte collé.");
+      setSubmitError(t("rdvNoneDetected"));
       return;
     }
     if (!scopeReady) {
       setSubmitError(
-        isAdmin
-          ? "Choisissez d'abord une organisation dans le menu ci-dessus."
-          : "Aucune organisation rattachée à votre compte — contactez un admin.",
+        isAdmin ? t("rdvChooseOrgMenu") : t("rdvNoOrgAttached"),
       );
       return;
     }
@@ -277,7 +277,7 @@ export function RendezVousExportClient({
         error?: string;
       } | null;
       if (!res.ok) {
-        setSubmitError(data?.error ?? "Enregistrement impossible.");
+        setSubmitError(data?.error ?? t("rdvSaveFailed"));
         return;
       }
       setSaveInfo({
@@ -288,11 +288,11 @@ export function RendezVousExportClient({
       });
       await runCheck();
     } catch {
-      setSubmitError("Erreur réseau lors de l'enregistrement.");
+      setSubmitError(t("rdvNetworkErrorSave"));
     } finally {
       setSaving(false);
     }
-  }, [content, org, preview, scopeReady, isAdmin, runCheck]);
+  }, [content, org, preview, scopeReady, isAdmin, runCheck, t]);
 
   // Index normalisé → doublon, pour annoter chaque nom de l'aperçu.
   const dupMap = useMemo(() => {
@@ -326,7 +326,7 @@ export function RendezVousExportClient({
         const data = (await res.json().catch(() => null)) as {
           error?: string;
         } | null;
-        setSubmitError(data?.error ?? "La génération a échoué. Réessayez.");
+        setSubmitError(data?.error ?? t("rdvGenerationFailed"));
         return;
       }
 
@@ -347,11 +347,11 @@ export function RendezVousExportClient({
 
       setSuccess({ filename, count });
     } catch {
-      setSubmitError("Erreur réseau. Vérifiez votre connexion et réessayez.");
+      setSubmitError(t("rdvNetworkErrorConnection"));
     } finally {
       setLoading(false);
     }
-  }, [content]);
+  }, [content, t]);
 
   const handlePlanning = useCallback(async () => {
     setSubmitError(null);
@@ -366,12 +366,12 @@ export function RendezVousExportClient({
       if (err instanceof AppointmentParseError) {
         setSubmitError(err.message);
       } else {
-        setSubmitError("La génération du planning a échoué. Réessayez.");
+        setSubmitError(t("rdvPlanningFailed"));
       }
     } finally {
       setPlanningLoading(false);
     }
-  }, [content]);
+  }, [content, t]);
 
   const handleClear = useCallback(() => {
     setContent("");
@@ -400,18 +400,17 @@ export function RendezVousExportClient({
       <header className="flex flex-col gap-1.5">
         <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           <CalendarClock className="size-5 text-primary" />
-          Rendez-vous → Outlook (.ics)
+          {t("rdvTitle")}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Collez la liste de rendez-vous telle qu&apos;exportée (format FGTB).
-          Chaque personne devient un événement dans un fichier{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-xs">.ics</code>{" "}
-          importable dans Outlook, Google Agenda ou Apple Calendrier (fuseau{" "}
-          <strong>Europe/Bruxelles</strong>). Vous pouvez aussi générer le{" "}
-          <strong>planning des shifts en PDF</strong> : le jour est déduit
-          automatiquement de la date et chaque jour a sa couleur. Les{" "}
-          <strong>doublons</strong> (personnes ayant déjà un rendez-vous) sont
-          détectés automatiquement et signalés.
+          {t.rich("rdvIntro", {
+            code: (chunks) => (
+              <code className="rounded bg-muted px-1 py-0.5 text-xs">
+                {chunks}
+              </code>
+            ),
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </p>
         {canViewHistory ? (
           <Link
@@ -419,34 +418,34 @@ export function RendezVousExportClient({
             className="inline-flex w-fit items-center gap-1.5 text-sm text-primary hover:underline"
           >
             <History className="size-4" />
-            Consulter l&apos;historique des rendez-vous
+            {t("rdvConsultHistory")}
           </Link>
         ) : null}
       </header>
 
       <Card>
         <CardHeader>
-          <CardTitle>Coller les rendez-vous</CardTitle>
+          <CardTitle>{t("rdvPasteTitle")}</CardTitle>
           <CardDescription>
-            Collez le texte tel quel — pas besoin de reformater quoi que ce soit.
-            Vous pouvez coller <strong>plusieurs journées d&apos;un coup</strong> :
-            chaque jour est enregistré séparément et obtient sa page de planning.
+            {t.rich("rdvPasteDesc", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {isAdmin ? (
             <div className="flex flex-col gap-1.5 rounded-md border bg-muted/30 p-3">
               <Label htmlFor="rdv-org" className="text-xs font-medium">
-                Organisation (historique partagé)
+                {t("rdvOrgLabel")}
               </Label>
               <Select value={org} onValueChange={(v) => setOrg(v ?? "")}>
                 <SelectTrigger id="rdv-org" className="w-full sm:w-[280px]">
-                  <SelectValue placeholder="Choisir une organisation…" />
+                  <SelectValue placeholder={t("rdvOrgPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {orgOptions.length === 0 ? (
                     <SelectItem value="__none" disabled>
-                      Aucune organisation
+                      {t("rdvNoOrg")}
                     </SelectItem>
                   ) : (
                     orgOptions.map((name) => (
@@ -458,14 +457,12 @@ export function RendezVousExportClient({
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                En tant qu&apos;admin, choisissez le service dont vous gérez les
-                rendez-vous : la détection des doublons et l&apos;enregistrement
-                porteront sur son historique partagé.
+                {t("rdvOrgHelpExport")}
               </p>
             </div>
           ) : null}
           <Label htmlFor="rdv-input" className="sr-only">
-            Liste des rendez-vous
+            {t("rdvInputLabel")}
           </Label>
           <Textarea
             id="rdv-input"
@@ -481,7 +478,7 @@ export function RendezVousExportClient({
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={handleGenerate} disabled={!canGenerate}>
               {loading ? <Loader2 className="animate-spin" /> : <Download />}
-              Générer le fichier Outlook
+              {t("rdvGenerateBtn")}
             </Button>
             <Button
               variant="outline"
@@ -493,16 +490,16 @@ export function RendezVousExportClient({
               ) : (
                 <FileSpreadsheet />
               )}
-              Générer le planning (PDF)
+              {t("rdvPlanningBtn")}
             </Button>
             <Button
               variant="outline"
               onClick={handleSave}
               disabled={saving}
-              title="Synchroniser l'historique sur les journées du collage (ajoute les nouveaux, retire ceux absents)"
+              title={t("rdvSaveBtnTitle")}
             >
               {saving ? <Loader2 className="animate-spin" /> : <Save />}
-              Enregistrer / mettre à jour
+              {t("rdvSaveBtn")}
             </Button>
             <Button
               variant="ghost"
@@ -510,33 +507,32 @@ export function RendezVousExportClient({
               disabled={loading || content === ""}
             >
               <Eraser />
-              Effacer
+              {t("rdvClear")}
             </Button>
             {preview.kind === "ok" ? (
               <span className="ml-auto inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                 <Sparkles className="size-4 text-primary" />
-                {preview.count} rendez-vous détecté
-                {preview.count > 1 ? "s" : ""}
+                {t("rdvDetected", { count: preview.count })}
               </span>
             ) : null}
           </div>
           <p className="text-xs text-muted-foreground">
-            Astuce : <kbd className="rounded border px-1">Ctrl</kbd>/
-            <kbd className="rounded border px-1">⌘</kbd> +{" "}
-            <kbd className="rounded border px-1">Entrée</kbd> pour générer.
+            {t.rich("rdvShortcutHint", {
+              kbd: (chunks) => (
+                <kbd className="rounded border px-1">{chunks}</kbd>
+              ),
+            })}
           </p>
           <p className="text-xs text-muted-foreground">
-            Vous pouvez coller votre <strong>liste d&apos;attente</strong> (RDV à
-            approuver, avec les boutons «&nbsp;approuverAnnuler…&nbsp;») juste pour
-            vérifier les doublons : rien n&apos;est enregistré tant que vous ne
-            cliquez pas sur «&nbsp;Enregistrer&nbsp;».
+            {t.rich("rdvWaitlistHint", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
           <p className="text-xs text-muted-foreground">
-            <strong>Re-coller une journée mise à jour</strong> (RDV refusés ou
-            ajoutés) puis cliquer «&nbsp;Enregistrer&nbsp;» <em>synchronise</em>{" "}
-            l&apos;historique pour cette journée : les anciens RDV absents du
-            nouveau collage sont retirés. Seules les journées présentes dans le
-            collage sont touchées.
+            {t.rich("rdvResyncHint", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+              em: (chunks) => <em>{chunks}</em>,
+            })}
           </p>
         </CardContent>
       </Card>
@@ -544,7 +540,7 @@ export function RendezVousExportClient({
       {submitError ? (
         <Alert variant="destructive">
           <AlertTriangle />
-          <AlertTitle>Impossible de générer le fichier</AlertTitle>
+          <AlertTitle>{t("rdvGenerateErrorTitle")}</AlertTitle>
           <AlertDescription>{submitError}</AlertDescription>
         </Alert>
       ) : null}
@@ -552,7 +548,7 @@ export function RendezVousExportClient({
       {!submitError && preview.kind === "error" ? (
         <Alert>
           <AlertTriangle className="text-amber-600" />
-          <AlertTitle>Vérifiez le texte collé</AlertTitle>
+          <AlertTitle>{t("rdvCheckPaste")}</AlertTitle>
           <AlertDescription>{preview.message}</AlertDescription>
         </Alert>
       ) : null}
@@ -560,11 +556,12 @@ export function RendezVousExportClient({
       {success ? (
         <Alert>
           <CheckCircle2 className="text-emerald-600" />
-          <AlertTitle>Fichier téléchargé</AlertTitle>
+          <AlertTitle>{t("rdvDownloadedTitle")}</AlertTitle>
           <AlertDescription>
-            {success.filename} — {success.count} événement
-            {success.count > 1 ? "s" : ""} prêt
-            {success.count > 1 ? "s" : ""} à importer dans votre agenda.
+            {t("rdvDownloadedDesc", {
+              filename: success.filename,
+              count: success.count,
+            })}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -572,32 +569,26 @@ export function RendezVousExportClient({
       {saveInfo ? (
         <Alert>
           <Save className="text-emerald-600" />
-          <AlertTitle>Historique mis à jour</AlertTitle>
+          <AlertTitle>{t("rdvHistUpdatedTitle")}</AlertTitle>
           <AlertDescription>
             {(() => {
               const parts: string[] = [];
               if (saveInfo.saved > 0)
-                parts.push(
-                  `${saveInfo.saved} ajouté${saveInfo.saved > 1 ? "s" : ""}`,
-                );
+                parts.push(t("rdvAdded", { count: saveInfo.saved }));
               if (saveInfo.removed > 0)
-                parts.push(
-                  `${saveInfo.removed} retiré${saveInfo.removed > 1 ? "s" : ""} (absent${saveInfo.removed > 1 ? "s" : ""} du nouveau collage)`,
-                );
+                parts.push(t("rdvRemovedAbsent", { count: saveInfo.removed }));
               const sameCount =
                 saveInfo.total - saveInfo.saved >= 0
                   ? saveInfo.total - saveInfo.saved
                   : 0;
               if (sameCount > 0)
-                parts.push(
-                  `${sameCount} inchangé${sameCount > 1 ? "s" : ""}`,
-                );
+                parts.push(t("rdvUnchanged", { count: sameCount }));
               const days = saveInfo.days || 1;
               const summary =
                 parts.length === 0
-                  ? "Rien à modifier — l'historique est déjà à jour."
+                  ? t("rdvNothingToChange")
                   : parts.join(" · ");
-              return `${summary}. Synchronisation sur ${days} journée${days > 1 ? "s" : ""}.`;
+              return t("rdvSyncSummary", { summary, days });
             })()}
           </AlertDescription>
         </Alert>
@@ -607,15 +598,9 @@ export function RendezVousExportClient({
         <Alert>
           <History className="text-amber-600" />
           <AlertTitle>
-            {duplicateCount} doublon{duplicateCount > 1 ? "s" : ""} potentiel
-            {duplicateCount > 1 ? "s" : ""}
+            {t("rdvPotentialDuplicates", { count: duplicateCount })}
           </AlertTitle>
-          <AlertDescription>
-            Certaines personnes ont un rendez-vous à venir, en ont déjà eu un,
-            ou apparaissent plusieurs fois dans cette liste. Les RDV à venir sont
-            en orange (à vérifier avant d&apos;approuver), les RDV passés en gris
-            (simple info).
-          </AlertDescription>
+          <AlertDescription>{t("rdvDuplicatesDesc")}</AlertDescription>
         </Alert>
       ) : null}
 
@@ -624,16 +609,17 @@ export function RendezVousExportClient({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarClock className="size-4 text-primary" />
-              Aperçu — {preview.filename}
+              {t("rdvPreviewTitle", { filename: preview.filename })}
             </CardTitle>
             <CardDescription className="flex flex-wrap items-center gap-x-1">
-              {preview.count} événement{preview.count > 1 ? "s" : ""} •{" "}
-              {preview.groups.length} créneau
-              {preview.groups.length > 1 ? "x" : ""} • fuseau Europe/Bruxelles
+              {t("rdvPreviewMeta", {
+                events: preview.count,
+                slots: preview.groups.length,
+              })}
               {checking ? (
                 <span className="ml-1 inline-flex items-center gap-1 text-xs">
                   <Loader2 className="size-3 animate-spin" />
-                  vérification des doublons…
+                  {t("rdvCheckingDuplicates")}
                 </span>
               ) : null}
             </CardDescription>
@@ -691,20 +677,24 @@ export function RendezVousExportClient({
                         {nextUp ? (
                           <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                             <History className="size-3" />
-                            RDV à venir le {formatDateKey(nextUp.date)} à{" "}
-                            {nextUp.startTime}
-                            {more}
+                            {t("rdvUpcomingBadge", {
+                              date: formatDateKey(nextUp.date),
+                              time: nextUp.startTime,
+                              more,
+                            })}
                           </span>
                         ) : inListDup ? (
                           <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                            <AlertTriangle className="size-3" />×{" "}
-                            {dup?.inListCount} dans cette liste
+                            <AlertTriangle className="size-3" />
+                            {t("rdvInListBadge", { count: dup?.inListCount ?? 0 })}
                           </span>
                         ) : lastPast ? (
                           <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                             <History className="size-3" />
-                            Déjà eu un RDV le {formatDateKey(lastPast.date)}
-                            {more}
+                            {t("rdvPastBadge", {
+                              date: formatDateKey(lastPast.date),
+                              more,
+                            })}
                           </span>
                         ) : null}
                       </li>

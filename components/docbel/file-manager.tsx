@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -69,6 +70,7 @@ interface FileItem {
 }
 
 export function FileManager() {
+  const t = useTranslations("public.shared");
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<
@@ -267,7 +269,7 @@ export function FileManager() {
     if (url) {
       const fullUrl = `${window.location.origin}${url}`;
       await navigator.clipboard.writeText(fullUrl);
-      toast.success("URL copiée dans le presse-papiers");
+      toast.success(t("fmUrlCopied"));
     }
   };
 
@@ -291,13 +293,13 @@ export function FileManager() {
         body: JSON.stringify({ name: trimmed }),
       });
       if (!res.ok) throw new Error("Failed to rename");
-      toast.success(`${oldName} renommé en ${trimmed}`);
+      toast.success(t("fmRenamed", { from: oldName, to: trimmed }));
     } catch (error) {
       console.error("Error renaming:", error);
       setFiles((prev) =>
         prev.map((f) => (f.id === file.id ? { ...f, name: oldName } : f))
       );
-      toast.error("Impossible de renommer le fichier");
+      toast.error(t("fmRenameFailed"));
     }
   };
 
@@ -328,12 +330,15 @@ export function FileManager() {
             fileType: fileMeta?.fileType,
             usage: data.usage,
           });
-          toast.error("Fichier en cours d'utilisation", {
-            description: `${deleteConfirmation.fileName} est utilisé sur ${data.usage?.length || 1} page(s)`,
+          toast.error(t("fmFileInUse"), {
+            description: t("fmFileInUseDesc", {
+              name: deleteConfirmation.fileName,
+              count: data.usage?.length || 1,
+            }),
           });
         } else {
-          toast.error("Dossier non vide", {
-            description: data.message || "Le dossier doit être vide avant suppression",
+          toast.error(t("fmFolderNotEmpty"), {
+            description: data.message || t("fmFolderNotEmptyDesc"),
           });
         }
         setDeleteConfirmation(null);
@@ -346,19 +351,22 @@ export function FileManager() {
       }
 
       const typeText =
-        deleteConfirmation.type === "folder" ? "le dossier" : "le fichier";
-      toast.success("Suppression réussie", {
-        description: `${typeText} "${deleteConfirmation.fileName}" a été supprimé avec succès`,
+        deleteConfirmation.type === "folder" ? t("fmTheFolder") : t("fmTheFile");
+      toast.success(t("fmDeleteSuccess"), {
+        description: t("fmDeleteSuccessDesc", {
+          type: typeText,
+          name: deleteConfirmation.fileName,
+        }),
       });
       setDeleteConfirmation(null);
       fetchFiles();
     } catch (error) {
       console.error("Error deleting:", error);
-      toast.error("Erreur de suppression", {
+      toast.error(t("fmDeleteError"), {
         description:
           error instanceof Error
             ? error.message
-            : "Impossible de supprimer cet élément",
+            : t("fmDeleteErrorDesc"),
       });
     } finally {
       setDeleting(null);
@@ -415,7 +423,7 @@ export function FileManager() {
 
       if (!res.ok) {
         const error = await res.json();
-        toast.error(error.message || "Impossible de changer la visibilité");
+        toast.error(error.message || t("fmVisibilityFailed"));
         if (removed) setFiles((prev) => [...prev, removed]);
         return false;
       }
@@ -427,8 +435,8 @@ export function FileManager() {
           body: JSON.stringify({ parentId: fileId, isPrivate: newIsPrivate }),
         });
         if (!updateChildrenRes.ok) {
-          toast.warning("Avertissement", {
-            description: "Le dossier a été mis à jour mais pas tous les fichiers enfants",
+          toast.warning(t("fmWarning"), {
+            description: t("fmChildrenNotUpdated"),
           });
         }
       } else if (!willLeaveView) {
@@ -440,11 +448,13 @@ export function FileManager() {
 
       if (!options?.silent) {
         toast.success(
-          `${fileName} est maintenant ${newIsPrivate ? "privé" : "public"}`,
+          newIsPrivate
+            ? t("fmNowPrivate", { name: fileName })
+            : t("fmNowPublic", { name: fileName }),
           willLeaveView
             ? {
                 action: {
-                  label: targetView === "private" ? "Voir privés" : "Voir publics",
+                  label: targetView === "private" ? t("fmSeePrivate") : t("fmSeePublic"),
                   onClick: () => setViewMode(targetView),
                 },
               }
@@ -491,13 +501,13 @@ export function FileManager() {
       const failureCount = results.length - successCount;
 
       if (successCount > 0) {
-        toast.success(`${successCount} fichier(s) uploadé(s) avec succès`);
+        toast.success(t("fmUploadSuccess", { count: successCount }));
       }
       if (failureCount > 0) {
         const firstError = results.find((r) => r.status === "rejected") as
           | PromiseRejectedResult
           | undefined;
-        toast.error(`${failureCount} fichier(s) en échec`, {
+        toast.error(t("fmUploadFailure", { count: failureCount }), {
           description: firstError?.reason instanceof Error ? firstError.reason.message : undefined,
         });
       }
@@ -574,7 +584,7 @@ export function FileManager() {
     e.stopPropagation();
     setDragOver(false);
     if (draggedFileIds.has(folderId)) {
-      toast.error("Impossible de déposer un dossier sur lui-même");
+      toast.error(t("fmCannotDropOnItself"));
       return;
     }
     await handleMoveFiles(Array.from(draggedFileIds), folderId);
@@ -592,7 +602,7 @@ export function FileManager() {
     if (selectedFiles.size === 0) return;
     setDeleteConfirmation({
       fileId: Array.from(selectedFiles)[0],
-      fileName: `${selectedFiles.size} fichier(s)`,
+      fileName: t("fmNFiles", { count: selectedFiles.size }),
       type: selectedFiles.size === 1 && files.find(f => f.id === Array.from(selectedFiles)[0])?.type === "folder" ? "folder" : "file",
     });
   };
@@ -614,12 +624,12 @@ export function FileManager() {
       const blocked: { name: string; reason: string }[] = data?.blocked ?? [];
 
       if (deleted > 0) {
-        toast.success("Suppression réussie", {
-          description: `${deleted} fichier(s) supprimé(s)`,
+        toast.success(t("fmDeleteSuccess"), {
+          description: t("fmDeletedCount", { count: deleted }),
         });
       }
       if (blocked.length > 0) {
-        toast.error(`${blocked.length} non supprimé(s)`, {
+        toast.error(t("fmNotDeletedCount", { count: blocked.length }), {
           description: blocked
             .slice(0, 3)
             .map((b) => `${b.name}: ${b.reason}`)
@@ -655,7 +665,7 @@ export function FileManager() {
         body: JSON.stringify({ ids: fileIds, isPrivate: newPrivacy }),
       });
       if (!res.ok) {
-        toast.error("Impossible de mettre à jour les visibilités");
+        toast.error(t("fmBulkVisibilityFailed"));
         return;
       }
 
@@ -674,9 +684,9 @@ export function FileManager() {
       );
 
       const targetView = newPrivacy ? "private" : "public";
-      toast.success(`${fileIds.length} fichier(s) mis à jour`, {
+      toast.success(t("fmFilesUpdated", { count: fileIds.length }), {
         action: {
-          label: targetView === "private" ? "Voir privés" : "Voir publics",
+          label: targetView === "private" ? t("fmSeePrivate") : t("fmSeePublic"),
           onClick: () => setViewMode(targetView),
         },
       });
@@ -691,7 +701,7 @@ export function FileManager() {
     if (fileIds.length === 0) return;
 
     if (currentFolderId === targetFolderId) {
-      toast.error("Les fichiers sont déjà dans ce dossier");
+      toast.error(t("fmAlreadyInFolder"));
       return;
     }
 
@@ -735,13 +745,17 @@ export function FileManager() {
         .map((r) => `${r.original?.name} → ${r.updatedFile.name}`);
 
       if (fulfilled.length > 0) {
-        const description = `${fulfilled.length} fichier(s) déplacé(s)${
-          renamed.length > 0 ? ` (renommage: ${renamed.join(", ")})` : ""
-        }`;
+        const description =
+          renamed.length > 0
+            ? t("fmMovedWithRename", {
+                count: fulfilled.length,
+                renamed: renamed.join(", "),
+              })
+            : t("fmMovedCount", { count: fulfilled.length });
         toast.success(description);
       }
       if (failureCount > 0) {
-        toast.error(`${failureCount} fichier(s) n'ont pas pu être déplacés`);
+        toast.error(t("fmMoveFailedCount", { count: failureCount }));
         // Restore items that failed to move
         const failedIds = new Set(
           results.flatMap((r, idx) =>
@@ -774,7 +788,7 @@ export function FileManager() {
 
       if (!res.ok) throw new Error("Failed to create folder");
 
-      toast.success(`Le dossier "${newFolderName}" a été créé`);
+      toast.success(t("fmFolderCreated", { name: newFolderName }));
 
       setNewFolderName("");
       setShowNewFolder(false);
@@ -782,7 +796,7 @@ export function FileManager() {
       fetchFiles();
     } catch (error) {
       console.error("Error creating folder:", error);
-      toast.error("Impossible de créer le dossier");
+      toast.error(t("fmFolderCreateFailed"));
     }
   };
 
@@ -907,7 +921,7 @@ export function FileManager() {
                 : "text-muted-foreground"
             }`}
           >
-            🌐 Fichiers publics
+            🌐 {t("fmPublicFiles")}
           </TabsTrigger>
           <TabsTrigger
             value="private"
@@ -918,13 +932,13 @@ export function FileManager() {
             }`}
           >
             <Lock className="w-3 h-3 mr-2" />
-            Fichiers privés
+            {t("fmPrivateFiles")}
           </TabsTrigger>
         </TabsList>
 
         <div className="px-5 py-4 flex gap-2 items-center">
           <Input
-            placeholder="Rechercher..."
+            placeholder={t("fmSearchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-48 h-8"
@@ -945,7 +959,7 @@ export function FileManager() {
             disabled={uploading}
           >
             <Upload className="w-3 h-3 mr-1" />
-            {uploading ? "Upload..." : "Upload"}
+            {uploading ? t("fmUploading") : t("fmUpload")}
           </Button>
 
           <Button
@@ -954,7 +968,7 @@ export function FileManager() {
             onClick={() => setShowNewFolder(true)}
           >
             <Plus className="w-3 h-3 mr-1" />
-            Dossier
+            {t("fmFolder")}
           </Button>
 
           <Button
@@ -997,7 +1011,7 @@ export function FileManager() {
       <div className="px-5 py-2 flex items-center gap-1 border-b border-border overflow-auto">
         {searchMode ? (
           <div className="flex items-center gap-2 text-[13px]">
-            <span className="text-muted-foreground">Résultats pour</span>
+            <span className="text-muted-foreground">{t("fmResultsFor")}</span>
             <strong>&quot;{debouncedSearch}&quot;</strong>
             <Button
               variant="ghost"
@@ -1008,7 +1022,7 @@ export function FileManager() {
               }}
               className="text-xs h-auto px-2 py-1"
             >
-              Effacer
+              {t("fmClear")}
             </Button>
           </div>
         ) : (
@@ -1020,7 +1034,7 @@ export function FileManager() {
                 onClick={() => handleBreadcrumb(crumb.id, idx)}
                 className="text-xs h-auto px-2 py-1"
               >
-                {crumb.name}
+                {crumb.id === null ? t("fmRoot") : crumb.name}
               </Button>
               {idx < breadcrumbs.length - 1 && (
                 <ChevronRight className="w-3 h-3 mx-1" />
@@ -1034,7 +1048,7 @@ export function FileManager() {
       {selectedFiles.size > 0 && (
         <div className="px-5 py-3 flex gap-2 items-center bg-card border-b border-border">
           <span className="text-[13px] font-medium">
-            {selectedFiles.size} sélectionné(s)
+            {t("fmSelectedCount", { count: selectedFiles.size })}
           </span>
           <Button
             size="sm"
@@ -1043,7 +1057,7 @@ export function FileManager() {
             className="text-xs"
           >
             <Lock className="w-3 h-3 mr-1" />
-            {viewMode === "private" ? "Rendre public" : "Rendre privé"}
+            {viewMode === "private" ? t("fmMakePublic") : t("fmMakePrivate")}
           </Button>
           <Button
             size="sm"
@@ -1053,7 +1067,7 @@ export function FileManager() {
             className="text-xs"
           >
             <ChevronRight className="w-3 h-3 mr-1" />
-            Déplacer vers...
+            {t("fmMoveTo")}
           </Button>
           <Button
             size="sm"
@@ -1063,7 +1077,7 @@ export function FileManager() {
             className="text-xs"
           >
             <Trash2 className="w-3 h-3 mr-1" />
-            Supprimer
+            {t("fmDelete")}
           </Button>
           <Button
             size="sm"
@@ -1071,7 +1085,7 @@ export function FileManager() {
             onClick={() => setSelectedFiles(new Set())}
             className="text-xs ml-auto"
           >
-            Désélectionner tout
+            {t("fmDeselectAll")}
           </Button>
         </div>
       )}
@@ -1086,9 +1100,9 @@ export function FileManager() {
         onDrop={handleDrop}
       >
         {loading ? (
-          <div className="text-center p-10">Chargement...</div>
+          <div className="text-center p-10">{t("fmLoading")}</div>
         ) : filteredFiles.length === 0 ? (
-          <div className="text-center p-10">Aucun fichier trouvé</div>
+          <div className="text-center p-10">{t("fmNoFiles")}</div>
         ) : layout === "grid" ? (
           <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(140px,1fr))]">
             {filteredFiles.map((file) => (
@@ -1163,7 +1177,7 @@ export function FileManager() {
                         variant={file.isPrivate ? "secondary" : "default"}
                         className="text-xs"
                       >
-                        {file.isPrivate ? "🔒 Privé" : "🌐 Public"}
+                        {file.isPrivate ? `🔒 ${t("fmPrivate")}` : `🌐 ${t("fmPublic")}`}
                       </Badge>
                     </div>
                     <div className="flex flex-col gap-2 text-[8px] leading-tight text-muted-foreground">
@@ -1185,15 +1199,15 @@ export function FileManager() {
                     <>
                       <ContextMenuItem onClick={() => handleDownload(file)}>
                         <Download className="w-3 h-3 mr-2" />
-                        Télécharger
+                        {t("fmDownload")}
                       </ContextMenuItem>
                       <ContextMenuItem onClick={() => setPreviewFileId(file.id)}>
                         👁️
-                        Aperçu
+                        {t("fmPreview")}
                       </ContextMenuItem>
                       <ContextMenuItem onClick={() => handleCopyUrl(file)}>
                         🔗
-                        Copier l&apos;URL
+                        {t("fmCopyUrl")}
                       </ContextMenuItem>
                     </>
                   )}
@@ -1204,18 +1218,18 @@ export function FileManager() {
                     }}
                   >
                     <Edit className="w-3 h-3 mr-2" />
-                    Renommer
+                    {t("fmRename")}
                   </ContextMenuItem>
                   <ContextMenuItem onClick={() => handleTogglePrivacy(file)}>
                     <Lock className="w-3 h-3 mr-2" />
-                    {file.isPrivate ? "Rendre public" : "Rendre privé"}
+                    {file.isPrivate ? t("fmMakePublic") : t("fmMakePrivate")}
                   </ContextMenuItem>
                   <ContextMenuItem
                     onClick={() => handleDelete(file)}
                     className="text-red-500"
                   >
                     <Trash2 className="w-3 h-3 mr-2" />
-                    Supprimer
+                    {t("fmDelete")}
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
@@ -1246,11 +1260,11 @@ export function FileManager() {
                       onClick={() => toggleSort("name")}
                       className="h-auto py-1 px-0 hover:bg-transparent"
                     >
-                      Nom
+                      {t("fmColName")}
                       {sortIcon("name")}
                     </Button>
                   </TableHead>
-                  <TableHead>Visibilité</TableHead>
+                  <TableHead>{t("fmColVisibility")}</TableHead>
                   <TableHead>
                     <Button
                       variant="ghost"
@@ -1258,7 +1272,7 @@ export function FileManager() {
                       onClick={() => toggleSort("type")}
                       className="h-auto py-1 px-0 hover:bg-transparent"
                     >
-                      Type
+                      {t("fmColType")}
                       {sortIcon("type")}
                     </Button>
                   </TableHead>
@@ -1269,7 +1283,7 @@ export function FileManager() {
                       onClick={() => toggleSort("size")}
                       className="h-auto py-1 px-0 hover:bg-transparent"
                     >
-                      Taille
+                      {t("fmColSize")}
                       {sortIcon("size")}
                     </Button>
                   </TableHead>
@@ -1280,7 +1294,7 @@ export function FileManager() {
                       onClick={() => toggleSort("createdAt")}
                       className="h-auto py-1 px-0 hover:bg-transparent"
                     >
-                      Créé
+                      {t("fmColCreated")}
                       {sortIcon("createdAt")}
                     </Button>
                   </TableHead>
@@ -1291,7 +1305,7 @@ export function FileManager() {
                       onClick={() => toggleSort("updatedAt")}
                       className="h-auto py-1 px-0 hover:bg-transparent"
                     >
-                      Modifié
+                      {t("fmColModified")}
                       {sortIcon("updatedAt")}
                     </Button>
                   </TableHead>
@@ -1370,15 +1384,15 @@ export function FileManager() {
                               <>
                                 <ContextMenuItem onClick={() => handleDownload(file)}>
                                   <Download className="w-3 h-3 mr-2" />
-                                  Télécharger
+                                  {t("fmDownload")}
                                 </ContextMenuItem>
                                 <ContextMenuItem onClick={() => setPreviewFileId(file.id)}>
                                   👁️
-                                  Aperçu
+                                  {t("fmPreview")}
                                 </ContextMenuItem>
                                 <ContextMenuItem onClick={() => handleCopyUrl(file)}>
                                   🔗
-                                  Copier l&apos;URL
+                                  {t("fmCopyUrl")}
                                 </ContextMenuItem>
                               </>
                             )}
@@ -1389,18 +1403,18 @@ export function FileManager() {
                               }}
                             >
                               <Edit className="w-3 h-3 mr-2" />
-                              Renommer
+                              {t("fmRename")}
                             </ContextMenuItem>
                             <ContextMenuItem onClick={() => handleTogglePrivacy(file)}>
                               <Lock className="w-3 h-3 mr-2" />
-                              {file.isPrivate ? "Rendre public" : "Rendre privé"}
+                              {file.isPrivate ? t("fmMakePublic") : t("fmMakePrivate")}
                             </ContextMenuItem>
                             <ContextMenuItem
                               onClick={() => handleDelete(file)}
                               className="text-red-500"
                             >
                               <Trash2 className="w-3 h-3 mr-2" />
-                              Supprimer
+                              {t("fmDelete")}
                             </ContextMenuItem>
                           </ContextMenuContent>
                         </ContextMenu>
@@ -1411,11 +1425,11 @@ export function FileManager() {
                         variant={file.isPrivate ? "secondary" : "default"}
                         className="text-xs"
                       >
-                        {file.isPrivate ? "🔒 Privé" : "🌐 Public"}
+                        {file.isPrivate ? `🔒 ${t("fmPrivate")}` : `🌐 ${t("fmPublic")}`}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm">
-                      {file.type === "folder" ? "Dossier" : file.fileType || "Fichier"}
+                      {file.type === "folder" ? t("fmTypeFolder") : file.fileType || t("fmTypeFile")}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatFileSize(file.size)}
@@ -1438,7 +1452,7 @@ export function FileManager() {
       <Dialog open={!!renaming} onOpenChange={() => setRenaming(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Renommer</DialogTitle>
+            <DialogTitle>{t("fmRename")}</DialogTitle>
           </DialogHeader>
           <Input
             value={renamingName}
@@ -1450,14 +1464,14 @@ export function FileManager() {
               variant="outline"
               onClick={() => setRenaming(null)}
             >
-              Annuler
+              {t("fmCancel")}
             </Button>
             <Button
               onClick={() =>
                 renaming && handleRename(files.find((f) => f.id === renaming)!)
               }
             >
-              Renommer
+              {t("fmRename")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1466,24 +1480,24 @@ export function FileManager() {
       <Dialog open={showNewFolder} onOpenChange={setShowNewFolder}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nouveau dossier</DialogTitle>
+            <DialogTitle>{t("fmNewFolder")}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             <Input
-              placeholder="Nom du dossier"
+              placeholder={t("fmFolderNamePlaceholder")}
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               autoFocus
             />
             <div className="flex gap-2 items-center">
-              <span className="text-[13px] font-medium">Visibilité:</span>
+              <span className="text-[13px] font-medium">{t("fmVisibilityLabel")}</span>
               <Button
                 size="sm"
                 variant={!newFolderIsPrivate ? "default" : "outline"}
                 onClick={() => setNewFolderIsPrivate(false)}
                 className="text-xs"
               >
-                🌐 Public
+                🌐 {t("fmPublic")}
               </Button>
               <Button
                 size="sm"
@@ -1492,15 +1506,15 @@ export function FileManager() {
                 className="text-xs"
               >
                 <Lock className="w-3 h-3 mr-1" />
-                Privé
+                {t("fmPrivate")}
               </Button>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewFolder(false)}>
-              Annuler
+              {t("fmCancel")}
             </Button>
-            <Button onClick={handleCreateFolder}>Créer</Button>
+            <Button onClick={handleCreateFolder}>{t("fmCreate")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1508,7 +1522,7 @@ export function FileManager() {
       <Dialog open={!!usageWarning} onOpenChange={() => setUsageWarning(null)}>
         <DialogContent className="sm:max-w-[640px]">
           <DialogHeader>
-            <DialogTitle>Fichier en cours d&apos;utilisation</DialogTitle>
+            <DialogTitle>{t("fmFileInUse")}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             {/* File preview header */}
@@ -1531,8 +1545,7 @@ export function FileManager() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{usageWarning.fileName}</p>
                   <p className="text-xs text-muted-foreground">
-                    Utilisé sur {usageWarning.usage.length} page
-                    {usageWarning.usage.length > 1 ? "s" : ""}
+                    {t("fmUsedOnPages", { count: usageWarning.usage.length })}
                   </p>
                 </div>
               </div>
@@ -1546,11 +1559,11 @@ export function FileManager() {
                 const status = page?.status ?? "unknown";
                 const deleted = page?.deleted ?? false;
                 const statusLabel = deleted
-                  ? "Supprimée"
+                  ? t("fmStatusDeleted")
                   : status === "published"
-                  ? "Publié"
+                  ? t("fmStatusPublished")
                   : status === "draft"
-                  ? "Brouillon"
+                  ? t("fmStatusDraft")
                   : status;
                 const statusClass = deleted
                   ? "bg-red-500/15 text-red-500"
@@ -1597,7 +1610,7 @@ export function FileManager() {
                           rel="noreferrer"
                           className="text-xs px-2 py-1 rounded border border-border hover:bg-muted text-center"
                         >
-                          Éditer
+                          {t("fmEdit")}
                         </a>
                       )}
                       {page?.status === "published" && !deleted && (
@@ -1607,7 +1620,7 @@ export function FileManager() {
                           rel="noreferrer"
                           className="text-xs px-2 py-1 rounded border border-border hover:bg-muted text-center"
                         >
-                          Voir
+                          {t("fmView")}
                         </a>
                       )}
                     </div>
@@ -1617,11 +1630,11 @@ export function FileManager() {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Retire le fichier de ces pages, sauvegarde-les, puis réessaie la suppression.
+              {t("fmUsageHint")}
             </p>
           </div>
           <DialogFooter>
-            <Button onClick={() => setUsageWarning(null)}>Fermer</Button>
+            <Button onClick={() => setUsageWarning(null)}>{t("fmClose")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1636,11 +1649,11 @@ export function FileManager() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Déplacer les fichiers sélectionnés</DialogTitle>
+            <DialogTitle>{t("fmMoveDialogTitle")}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-2 max-h-[400px] overflow-auto">
             <div className="text-[13px] font-medium pb-2 border-b border-border">
-              Destination:
+              {t("fmDestination")}
             </div>
             <Button
               variant={!movingToFolder ? "default" : "outline"}
@@ -1648,11 +1661,11 @@ export function FileManager() {
               className="justify-start text-xs h-auto py-2"
             >
               <Folder className="w-3 h-3 mr-2" />
-              Root
+              {t("fmRoot")}
             </Button>
             {loadingFolders ? (
               <div className="text-xs text-muted-foreground">
-                Chargement des dossiers...
+                {t("fmLoadingFolders")}
               </div>
             ) : (
               (() => {
@@ -1690,7 +1703,7 @@ export function FileManager() {
                 setMovingToFolder(null);
               }}
             >
-              Annuler
+              {t("fmCancel")}
             </Button>
             <Button
               onClick={async () => {
@@ -1700,7 +1713,7 @@ export function FileManager() {
               }}
               disabled={isMoving}
             >
-              Déplacer
+              {t("fmMove")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1710,7 +1723,7 @@ export function FileManager() {
         <DialogContent className="max-h-[80vh] sm:max-w-[900px]">
           <DialogHeader>
             <DialogTitle>
-              {files.find((f) => f.id === previewFileId)?.name || "Aperçu"}
+              {files.find((f) => f.id === previewFileId)?.name || t("fmPreview")}
             </DialogTitle>
           </DialogHeader>
           {previewFileId && (
@@ -1720,7 +1733,7 @@ export function FileManager() {
                 if (!file) return null;
 
                 const url = getFileUrl(file);
-                if (!url) return <p>Aperçu non disponible</p>;
+                if (!url) return <p>{t("fmPreviewUnavailable")}</p>;
 
                 switch (file.fileType) {
                   case "image":
@@ -1762,7 +1775,7 @@ export function FileManager() {
                       />
                     );
                   default:
-                    return <p>Aperçu non disponible pour ce type de fichier</p>;
+                    return <p>{t("fmPreviewUnsupported")}</p>;
                 }
               })()}
             </div>
@@ -1773,18 +1786,21 @@ export function FileManager() {
       <Dialog open={!!privacyWarning} onOpenChange={() => setPrivacyWarning(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>⚠️ Avertissement de visibilité</DialogTitle>
+            <DialogTitle>⚠️ {t("fmVisibilityWarningTitle")}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <p className="text-sm leading-normal">
-              <strong>{privacyWarning?.fileName}</strong> est actuellement dans un dossier{" "}
-              <strong>{privacyWarning?.parentPrivacy ? "privé" : "public"}</strong>, mais vous voulez le rendre{" "}
-              <strong>{privacyWarning?.newPrivacy ? "privé" : "public"}</strong>.
+              {t.rich("fmVisibilityWarningBody", {
+                name: privacyWarning?.fileName ?? "",
+                parent: privacyWarning?.parentPrivacy ? t("fmPrivateAdj") : t("fmPublicAdj"),
+                target: privacyWarning?.newPrivacy ? t("fmPrivateAdj") : t("fmPublicAdj"),
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </p>
             <p className="text-xs text-muted-foreground">
               {privacyWarning?.newPrivacy
-                ? "Le fichier sera invisible dans l'onglet public, mais accessible via URL directe."
-                : "Le fichier sera visible dans l'onglet public, même s'il est dans un dossier privé."}
+                ? t("fmVisibilityWarningPrivateHint")
+                : t("fmVisibilityWarningPublicHint")}
             </p>
 
             <div className="flex flex-col gap-2">
@@ -1804,7 +1820,7 @@ export function FileManager() {
                 }}
                 className="text-sm"
               >
-                ✅ Changer UNIQUEMENT ce fichier
+                ✅ {t("fmChangeOnlyThisFile")}
               </Button>
 
               <Button
@@ -1823,7 +1839,7 @@ export function FileManager() {
                   if (fileOk && warning.folderId) {
                     await applyPrivacyChange(
                       warning.folderId,
-                      "Dossier courant",
+                      t("fmCurrentFolder"),
                       "folder",
                       warning.newPrivacy
                     );
@@ -1833,7 +1849,7 @@ export function FileManager() {
                 }}
                 className="text-sm"
               >
-                📁 Changer ce fichier + dossier courant
+                📁 {t("fmChangeFileAndFolder")}
               </Button>
 
               <Button
@@ -1841,7 +1857,7 @@ export function FileManager() {
                 onClick={() => setPrivacyWarning(null)}
                 className="text-sm"
               >
-                ❌ Annuler
+                ❌ {t("fmCancel")}
               </Button>
             </div>
           </div>
@@ -1854,25 +1870,27 @@ export function FileManager() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>⚠️ Confirmer la suppression</DialogTitle>
+            <DialogTitle>⚠️ {t("fmConfirmDeleteTitle")}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <p className="m-0">
-              Êtes-vous sûr de vouloir supprimer{" "}
-              <strong>
-                {deleteConfirmation?.type === "folder" ? "le dossier" : "le fichier"}{" "}
-                &quot;{deleteConfirmation?.fileName}&quot;
-              </strong>
-              ?
+              {t.rich("fmConfirmDeleteBody", {
+                type:
+                  deleteConfirmation?.type === "folder"
+                    ? t("fmTheFolder")
+                    : t("fmTheFile"),
+                name: deleteConfirmation?.fileName ?? "",
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </p>
             {deleteConfirmation?.type === "folder" && (
               <p className="m-0 text-sm text-muted-foreground">
-                ⚠️ Le dossier doit être vide. Videz son contenu avant de le supprimer.
+                ⚠️ {t("fmFolderMustBeEmpty")}
               </p>
             )}
 
             <TypeToConfirmField
-              requireText={deleteConfirmation?.fileName || "supprimer"}
+              requireText={deleteConfirmation?.fileName || t("fmConfirmWord")}
               value={deleteTyped}
               onChange={setDeleteTyped}
               disabled={deleting !== null}
@@ -1884,11 +1902,11 @@ export function FileManager() {
                 onClick={confirmDelete}
                 disabled={
                   deleting !== null ||
-                  !typeToConfirmMatches(deleteTyped, deleteConfirmation?.fileName || "supprimer")
+                  !typeToConfirmMatches(deleteTyped, deleteConfirmation?.fileName || t("fmConfirmWord"))
                 }
                 className="text-sm"
               >
-                {deleting ? "Suppression..." : "🗑️ Supprimer définitivement"}
+                {deleting ? t("fmDeleting") : `🗑️ ${t("fmDeletePermanently")}`}
               </Button>
 
               <Button
@@ -1897,7 +1915,7 @@ export function FileManager() {
                 disabled={deleting !== null}
                 className="text-sm"
               >
-                ❌ Annuler
+                ❌ {t("fmCancel")}
               </Button>
             </div>
           </div>
@@ -1910,19 +1928,21 @@ export function FileManager() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>⚠️ Confirmer la suppression multiple</DialogTitle>
+            <DialogTitle>⚠️ {t("fmConfirmBatchDeleteTitle")}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <p className="m-0">
-              Êtes-vous sûr de vouloir supprimer{" "}
-              <strong>{selectedFiles.size} fichier(s)</strong> ?
+              {t.rich("fmConfirmBatchDeleteBody", {
+                count: selectedFiles.size,
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </p>
             <p className="m-0 text-sm text-muted-foreground">
-              ⚠️ Cette action est irréversible.
+              ⚠️ {t("fmIrreversible")}
             </p>
 
             <TypeToConfirmField
-              requireText="supprimer"
+              requireText={t("fmConfirmWord")}
               value={deleteTyped}
               onChange={setDeleteTyped}
               disabled={batchDeleting}
@@ -1932,10 +1952,10 @@ export function FileManager() {
               <Button
                 variant="destructive"
                 onClick={confirmBatchDelete}
-                disabled={batchDeleting || !typeToConfirmMatches(deleteTyped, "supprimer")}
+                disabled={batchDeleting || !typeToConfirmMatches(deleteTyped, t("fmConfirmWord"))}
                 className="text-sm"
               >
-                {batchDeleting ? "Suppression..." : "🗑️ Supprimer définitivement"}
+                {batchDeleting ? t("fmDeleting") : `🗑️ ${t("fmDeletePermanently")}`}
               </Button>
 
               <Button
@@ -1947,7 +1967,7 @@ export function FileManager() {
                 disabled={batchDeleting}
                 className="text-sm"
               >
-                ❌ Annuler
+                ❌ {t("fmCancel")}
               </Button>
             </div>
           </div>
@@ -1960,18 +1980,22 @@ export function FileManager() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>⚠️ Modifier la visibilité</DialogTitle>
+            <DialogTitle>⚠️ {t("fmChangeVisibilityTitle")}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <p className="m-0">
-              Êtes-vous sûr de vouloir rendre{" "}
-              <strong>{batchPrivacyWarning?.newPrivacy ? "privés" : "publics"}</strong>{" "}
-              <strong>{selectedFiles.size} fichier(s)</strong> ?
+              {t.rich("fmConfirmBatchPrivacyBody", {
+                count: selectedFiles.size,
+                target: batchPrivacyWarning?.newPrivacy
+                  ? t("fmPrivatePlural")
+                  : t("fmPublicPlural"),
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </p>
             <p className="m-0 text-sm text-muted-foreground">
               {batchPrivacyWarning?.newPrivacy
-                ? "Les fichiers disparaîtront de l'onglet public."
-                : "Les fichiers seront visibles dans l'onglet public."}
+                ? t("fmBatchPrivacyPrivateHint")
+                : t("fmBatchPrivacyPublicHint")}
             </p>
 
             <div className="flex flex-col gap-2">
@@ -1980,7 +2004,7 @@ export function FileManager() {
                 onClick={confirmBatchPrivacy}
                 className="text-sm"
               >
-                ✅ Confirmer
+                ✅ {t("fmConfirm")}
               </Button>
 
               <Button
@@ -1988,7 +2012,7 @@ export function FileManager() {
                 onClick={() => setBatchPrivacyWarning(null)}
                 className="text-sm"
               >
-                ❌ Annuler
+                ❌ {t("fmCancel")}
               </Button>
             </div>
           </div>

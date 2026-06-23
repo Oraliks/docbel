@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import {
   requirePartnerOrAdminAuth,
@@ -8,11 +9,13 @@ import {
 import { listOrganizations } from "@/lib/partner-domains";
 import { RendezVousExportClient } from "./rendez-vous-client";
 
-export const metadata: Metadata = {
-  title: "Rendez-vous → Outlook (.ics) | DocBel",
-  description:
-    "Convertissez une liste de rendez-vous collée (format FGTB) en fichier calendrier Outlook (.ics).",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
+  return {
+    title: t("rdvMetaTitle"),
+    description: t("rdvMetaDescription"),
+  };
+}
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

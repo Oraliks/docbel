@@ -7,6 +7,7 @@
  * (transition sur les arcs). Le détail complet reste sur /employeur/simulateur-cout.
  */
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { estimateEmployerCost } from "@/lib/employeur/cost/engine";
@@ -31,6 +32,7 @@ export function QuickCost({
   initialRegime: "temps_plein" | "temps_partiel";
   initialWorkerType: string;
 }) {
+  const t = useTranslations("public.pro");
   const [gross, setGross] = useState(initialGross);
   const [regime, setRegime] = useState<"temps_plein" | "temps_partiel">(initialRegime);
   const [workerType, setWorkerType] = useState(initialWorkerType);
@@ -59,14 +61,14 @@ export function QuickCost({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-5 pt-4">
-        <h2 className="text-sm font-semibold">Simulateur de coût</h2>
+        <h2 className="text-sm font-semibold">{t("dashCostTitle")}</h2>
         <span
           className={cn(
             "rounded-full px-2 py-0.5 text-[10px] font-medium",
             isExample ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary",
           )}
         >
-          {isExample ? "Simulation rapide" : "Dernière simulation"}
+          {t(isExample ? "dashCostQuickSim" : "dashCostLastSim")}
         </span>
       </div>
 
@@ -74,7 +76,7 @@ export function QuickCost({
         {/* Colonne 1 — champs */}
         <div className="space-y-2.5">
           <label className="block">
-            <span className="text-[10px] text-muted-foreground">Salaire brut / mois</span>
+            <span className="text-[10px] text-muted-foreground">{t("dashCostGrossLabel")}</span>
             <div className="mt-1 flex items-center rounded-lg border border-border bg-background px-2 focus-within:border-primary/40">
               <input
                 type="number"
@@ -89,7 +91,7 @@ export function QuickCost({
           </label>
 
           <div>
-            <span className="text-[10px] text-muted-foreground">Régime</span>
+            <span className="text-[10px] text-muted-foreground">{t("dashCostRegime")}</span>
             <div className="mt-1 flex rounded-lg bg-muted p-0.5 text-[11px]">
               {(["temps_plein", "temps_partiel"] as const).map((r) => (
                 <button
@@ -101,14 +103,14 @@ export function QuickCost({
                     regime === r ? "bg-card font-medium text-foreground shadow-sm" : "text-muted-foreground",
                   )}
                 >
-                  {r === "temps_plein" ? "Plein" : "Partiel"}
+                  {t(r === "temps_plein" ? "dashCostFullTime" : "dashCostPartTime")}
                 </button>
               ))}
             </div>
           </div>
 
           <label className="block">
-            <span className="text-[10px] text-muted-foreground">Type</span>
+            <span className="text-[10px] text-muted-foreground">{t("dashCostType")}</span>
             <select
               value={workerType}
               onChange={(e) => setWorkerType(e.target.value)}
@@ -142,28 +144,28 @@ export function QuickCost({
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="text-[8px] text-muted-foreground">Total</span>
+              <span className="text-[8px] text-muted-foreground">{t("dashCostTotal")}</span>
               <span className="text-[11px] font-bold leading-tight">{eur(total)}</span>
-              <span className="text-[8px] text-muted-foreground">/ mois</span>
+              <span className="text-[8px] text-muted-foreground">{t("dashCostPerMonth")}</span>
             </div>
           </div>
           <ul className="w-full space-y-0.5 text-[10px]">
-            <Legend color="#3b82f6" label="Brut" value={eur(brut)} />
-            <Legend color="var(--primary)" label="Cotisations" value={eur(cotis)} />
-            <Legend color="#ec4899" label="Autres" value={eur(autres)} />
+            <Legend color="#3b82f6" label={t("dashCostGross")} value={eur(brut)} />
+            <Legend color="var(--primary)" label={t("dashCostContributions")} value={eur(cotis)} />
+            <Legend color="#ec4899" label={t("dashCostOthers")} value={eur(autres)} />
           </ul>
         </div>
       </div>
 
       <div className="mt-auto px-5 pb-5">
         <p className="mb-2 rounded-lg bg-muted/40 px-3 py-2 text-[10px] leading-snug text-muted-foreground">
-          Coût employeur mensuel estimé (salaire brut + cotisations patronales + provisions). Indicatif — CP 200 par défaut.
+          {t("dashCostNote")}
         </p>
         <Link
           href="/employeur/simulateur-cout"
           className="flex w-full items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-xs font-medium text-primary no-underline"
         >
-          Détail &amp; sauvegarde <ArrowRight className="size-3.5" />
+          {t("dashCostDetailSave")} <ArrowRight className="size-3.5" />
         </Link>
         <p className="mt-1 truncate text-center text-[10px] text-muted-foreground">{title}</p>
       </div>

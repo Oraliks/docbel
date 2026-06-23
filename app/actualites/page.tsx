@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { ActualitesView } from "@/components/docbel/actualites-view";
 import type { NewsItem } from "@/lib/docbel-data";
@@ -6,10 +7,13 @@ import { resolveArticleImage } from "@/lib/featured-image";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Actualités",
-  description: "Suivez les informations utiles, les réformes et les changements administratifs.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.contenu");
+  return {
+    title: t("newsMetaTitle"),
+    description: t("newsMetaDescription"),
+  };
+}
 
 export default async function ActualitesRoute({ searchParams }: { searchParams: Promise<{ cat?: string }> }) {
   const { cat } = await searchParams;

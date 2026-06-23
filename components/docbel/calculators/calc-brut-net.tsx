@@ -12,6 +12,7 @@
  */
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Download, Info } from "lucide-react";
 import { CountryFlag } from "@/components/docbel/country-flag";
 import {
@@ -45,56 +46,72 @@ type Mode = "brut-net" | "net-brut";
  */
 const LAST_UPDATED = "2026-05-24";
 
-const STATUTS: { value: StatutFiscal; label: string }[] = [
-  { value: "isole", label: "Isolé(e)" },
-  { value: "cohabitant", label: "Cohabitant légal" },
-  { value: "marie_un_revenu", label: "Marié — un revenu" },
-  { value: "marie_deux_revenus", label: "Marié — deux revenus" },
+/**
+ * Les libellés d'UI (statut / région / motorisation / enfants) sont
+ * externalisés en clés i18n. On ne garde ici que l'ordre des valeurs et la
+ * clé de traduction associée ; les `label` affichés sont résolus DANS les
+ * composants via `t(...)` (cf. helpers `statutLabel` / `regionLabel` / etc.).
+ */
+const STATUT_KEYS: Record<StatutFiscal, string> = {
+  isole: "bnStatutIsole",
+  cohabitant: "bnStatutCohabitant",
+  marie_un_revenu: "bnStatutMarieUn",
+  marie_deux_revenus: "bnStatutMarieDeux",
+};
+const STATUT_ORDER: StatutFiscal[] = [
+  "isole",
+  "cohabitant",
+  "marie_un_revenu",
+  "marie_deux_revenus",
 ];
 
-const REGIONS: { value: Region; label: string }[] = [
-  { value: "wallonie", label: "Wallonie" },
-  { value: "bruxelles", label: "Bruxelles" },
-  { value: "flandre", label: "Flandre" },
+const REGION_KEYS: Record<Region, string> = {
+  wallonie: "bnRegionWallonie",
+  bruxelles: "bnRegionBruxelles",
+  flandre: "bnRegionFlandre",
+};
+const REGION_ORDER: Region[] = ["wallonie", "bruxelles", "flandre"];
+
+const MOTOR_KEYS: Record<MotorisationVehicule, string> = {
+  essence: "bnMotorEssence",
+  diesel: "bnMotorDiesel",
+  hybride: "bnMotorHybride",
+  electrique: "bnMotorElectrique",
+};
+const MOTOR_ORDER: MotorisationVehicule[] = [
+  "essence",
+  "diesel",
+  "hybride",
+  "electrique",
 ];
-
-const MOTORISATIONS: { value: MotorisationVehicule; label: string }[] = [
-  { value: "essence", label: "Essence" },
-  { value: "diesel", label: "Diesel" },
-  { value: "hybride", label: "Hybride" },
-  { value: "electrique", label: "Électrique" },
-];
-
-const ENFANTS_OPTIONS = Array.from({ length: 7 }, (_, i) => ({
-  value: String(i) as `${number}`,
-  label: i === 0 ? "Aucun" : i === 6 ? "6 ou plus" : String(i),
-}));
-
-const STATUT_LABEL: Record<StatutFiscal, string> = {
-  isole: "Isolé(e)",
-  cohabitant: "Cohabitant légal",
-  marie_un_revenu: "Marié — un revenu",
-  marie_deux_revenus: "Marié — deux revenus",
-};
-
-const REGION_LABEL: Record<Region, string> = {
-  wallonie: "Wallonie",
-  bruxelles: "Bruxelles",
-  flandre: "Flandre",
-};
-
-const MOTOR_LABEL: Record<MotorisationVehicule, string> = {
-  essence: "Essence",
-  diesel: "Diesel",
-  hybride: "Hybride",
-  electrique: "Électrique",
-};
 
 /* ------------------------------------------------------------------ */
 /*  Composant principal                                               */
 /* ------------------------------------------------------------------ */
 
 export function CalcBrutNet({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
+
+  // Clés dynamiques → cast vers le type de clé attendu par t() (typage strict).
+  const tk = (key: string) => t(key as Parameters<typeof t>[0]);
+  const statutOptions = STATUT_ORDER.map((value) => ({
+    value,
+    label: tk(STATUT_KEYS[value]),
+  }));
+  const regionOptions = REGION_ORDER.map((value) => ({
+    value,
+    label: tk(REGION_KEYS[value]),
+  }));
+  const motorOptions = MOTOR_ORDER.map((value) => ({
+    value,
+    label: tk(MOTOR_KEYS[value]),
+  }));
+  const enfantsOptions = Array.from({ length: 7 }, (_, i) => ({
+    value: String(i) as `${number}`,
+    label:
+      i === 0 ? t("bnEnfantsAucun") : i === 6 ? t("bnEnfants6Plus") : String(i),
+  }));
+
   const [mode, setMode] = useState<Mode>("brut-net");
   const [montant, setMontant] = useState("");
   const [statut, setStatut] = useState<StatutFiscal>("isole");
@@ -122,7 +139,7 @@ export function CalcBrutNet({ accent }: { accent: string }) {
 
     const valeur = parseNum(montant);
     if (!Number.isFinite(valeur)) {
-      setError("Indiquez un montant valide.");
+      setError(t("bnErrMontant"));
       return;
     }
 
@@ -197,7 +214,7 @@ export function CalcBrutNet({ accent }: { accent: string }) {
         hour: "2-digit",
         minute: "2-digit",
       });
-      doc.text(`Généré le ${dateStr} à ${timeStr}`, pageWidth - margin, y, {
+      doc.text(t("bnPdfGeneratedAt", { date: dateStr, time: timeStr }), pageWidth - margin, y, {
         align: "right",
       });
       y += 10;
@@ -208,8 +225,8 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       doc.setTextColor(0, 0, 0);
       doc.text(
         mode === "brut-net"
-          ? "Estimation Brut → Net (salarié belge, 2026)"
-          : "Estimation Net → Brut (salarié belge, 2026)",
+          ? t("bnPdfTitleBrutNet")
+          : t("bnPdfTitleNetBrut"),
         margin,
         y,
       );
@@ -219,7 +236,7 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Paramètres saisis", margin, y);
+      doc.text(t("bnPdfParams"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -227,32 +244,35 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       doc.setTextColor(0, 0, 0);
 
       const labelInput =
-        mode === "brut-net" ? "Salaire brut mensuel" : "Net souhaité (mensuel)";
+        mode === "brut-net" ? t("bnPdfInputBrut") : t("bnPdfInputNet");
       const rows: [string, string][] = [
         [labelInput, fmtEUR(parseNum(montant))],
-        ["Statut fiscal", STATUT_LABEL[statut]],
+        [t("bnStatutFiscal"), tk(STATUT_KEYS[statut])],
         [
-          "Enfants à charge",
-          parseInt(enfants, 10) >= 6 ? "6 ou plus" : enfants,
+          t("bnEnfantsCharge"),
+          parseInt(enfants, 10) >= 6 ? t("bnEnfants6Plus") : enfants,
         ],
-        ["Région", REGION_LABEL[region]],
-        ["Chèques-repas", chequesRepas === "oui" ? "Oui (8,91 €/j)" : "Non"],
+        [t("bnRegion"), tk(REGION_KEYS[region])],
+        [
+          t("bnChequesRepas"),
+          chequesRepas === "oui" ? t("bnPdfChequesOui") : t("bnPdfNon"),
+        ],
       ];
       if (hasVehicule === "oui") {
         rows.push(
           [
-            "Voiture société — valeur catalogue HT",
+            t("bnPdfVoitureValeur"),
             fmtEUR(parseNum(valeurCatalogue) || 0),
           ],
-          ["Voiture société — âge", `${ageVehicule} ans`],
-          ["Voiture société — motorisation", MOTOR_LABEL[motorisation]],
+          [t("bnPdfVoitureAge"), t("bnPdfAnsValue", { age: ageVehicule })],
+          [t("bnPdfVoitureMotor"), tk(MOTOR_KEYS[motorisation])],
         );
       } else {
-        rows.push(["Voiture société", "Non"]);
+        rows.push([t("bnVoitureSociete"), t("bnPdfNon")]);
       }
       const teleNum = parseNum(telework);
       if (Number.isFinite(teleNum) && teleNum > 0) {
-        rows.push(["Indemnité télétravail", fmtEUR(teleNum)]);
+        rows.push([t("bnIndemniteTelework"), fmtEUR(teleNum)]);
       }
 
       const colKey = margin + 2;
@@ -279,7 +299,7 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       doc.setFont("", "bold");
       doc.setTextColor(90, 42, 140);
       doc.text(
-        mode === "brut-net" ? "NET ESTIMÉ" : "BRUT REQUIS",
+        mode === "brut-net" ? t("bnPdfNetEstime") : t("bnPdfBrutRequis"),
         margin + 4,
         y + 7,
       );
@@ -287,7 +307,7 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       doc.setFontSize(20);
       doc.setTextColor(0, 0, 0);
       doc.text(
-        `${fmtEUR(mode === "brut-net" ? result.net : result.brut)} ${mode === "brut-net" ? "/ mois net" : "/ mois brut"}`,
+        `${fmtEUR(mode === "brut-net" ? result.net : result.brut)} ${mode === "brut-net" ? t("bnUnitNet") : t("bnUnitBrut")}`,
         margin + 4,
         y + 16,
       );
@@ -296,7 +316,9 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       doc.setFont("", "normal");
       doc.setTextColor(100, 100, 100);
       doc.text(
-        `Taux net / brut : ${(result.tauxNetBrut * 100).toFixed(1)} %`,
+        t("bnPdfTauxNetBrut", {
+          taux: (result.tauxNetBrut * 100).toFixed(1),
+        }),
         margin + 4,
         y + 22,
       );
@@ -306,7 +328,7 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Détail du calcul", margin, y);
+      doc.text(t("bnDetailCalcul"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -314,37 +336,37 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       doc.setTextColor(0, 0, 0);
 
       const detail: [string, string][] = [
-        ["Salaire brut", fmtEUR(result.brut)],
+        [t("bnSalaireBrut"), fmtEUR(result.brut)],
         [
           result.bonus > 0
-            ? `Cotisations ONSS retenue (workbonus −${fmtEUR(result.bonus)})`
-            : "Cotisations ONSS (13,07 %)",
+            ? t("bnPdfOnssWorkbonus", { bonus: fmtEUR(result.bonus) })
+            : t("bnOnss"),
           `− ${fmtEUR(result.onssRetenue)}`,
         ],
       ];
       if (result.atn > 0) {
-        detail.push(["ATN voiture société (imposable)", `+ ${fmtEUR(result.atn)}`]);
+        detail.push([t("bnAtnVoiture"), `+ ${fmtEUR(result.atn)}`]);
       }
       detail.push(
-        ["= Salaire imposable", fmtEUR(result.imposable)],
-        ["Précompte professionnel", `− ${fmtEUR(result.precompte)}`],
+        [t("bnSalaireImposable"), fmtEUR(result.imposable)],
+        [t("bnPrecompte"), `− ${fmtEUR(result.precompte)}`],
       );
       if (result.cotisationSpeciale > 0) {
         detail.push([
-          "Cotisation spéciale sécu",
+          t("bnCotisationSpeciale"),
           `− ${fmtEUR(result.cotisationSpeciale)}`,
         ]);
       }
       if (result.chequesRepas > 0) {
-        detail.push(["Chèques-repas (≈ 21 j)", `+ ${fmtEUR(result.chequesRepas)}`]);
+        detail.push([t("bnChequesRepasDetail"), `+ ${fmtEUR(result.chequesRepas)}`]);
       }
       if (result.indemniteTelework > 0) {
         detail.push([
-          "Indemnité télétravail",
+          t("bnIndemniteTelework"),
           `+ ${fmtEUR(result.indemniteTelework)}`,
         ]);
       }
-      detail.push(["NET EN POCHE", fmtEUR(result.net)]);
+      detail.push([t("bnPdfNetEnPoche"), fmtEUR(result.net)]);
 
       detail.forEach(([k, v], idx) => {
         const isLast = idx === detail.length - 1;
@@ -378,7 +400,7 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       doc.setFont("", "italic");
       doc.setTextColor(120, 120, 120);
       const footer = doc.splitTextToSize(
-        "Estimation indicative — chiffres 2026 conformes au barème SPF Finances (Annexe III AR/CIR 92) et aux taux ONSS officiels. Le précompte exact dépend de votre situation fiscale précise (double pécule, ATN multiples, cotisations spéciales). Régularisation finale via Tax-on-web.",
+        t("bnPdfDisclaimer"),
         pageWidth - margin * 2,
       );
       doc.text(footer, margin, y);
@@ -402,15 +424,12 @@ export function CalcBrutNet({ accent }: { accent: string }) {
   /* --------------------------------------------------------------- */
   /*  Labels dynamiques selon le mode                                */
   /* --------------------------------------------------------------- */
-  const modeLabel = mode === "brut-net" ? "brut → net" : "net → brut";
+  const modeLabel =
+    mode === "brut-net" ? t("bnModeBrutNet") : t("bnModeNetBrut");
   const inputLabel =
-    mode === "brut-net"
-      ? "Salaire mensuel brut"
-      : "Salaire mensuel net souhaité";
+    mode === "brut-net" ? t("bnInputLabelBrut") : t("bnInputLabelNet");
   const inputHint =
-    mode === "brut-net"
-      ? "Montant indiqué sur votre fiche de paie avant retenues."
-      : "Le calcul cherche le brut qui donne ce net (méthode dichotomique).";
+    mode === "brut-net" ? t("bnInputHintBrut") : t("bnInputHintNet");
 
   const lastUpdatedFr = new Date(LAST_UPDATED).toLocaleDateString("fr-BE", {
     day: "numeric",
@@ -431,10 +450,10 @@ export function CalcBrutNet({ accent }: { accent: string }) {
           <CalcBadge accent={accent}>Données 2026</CalcBadge>
         </div>
         <p className="text-[13px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-          Estimation rapide du <strong>passage brut → net mensuel</strong> pour
-          un salarié belge. Inversement possible avec le mode{" "}
-          <em>Net → Brut</em>. Inclut voiture de société (ATN) et indemnité
-          télétravail — chiffres 2026, voir disclaimer.
+          {t.rich("bnIntro", {
+            strong: (chunks) => <strong>{chunks}</strong>,
+            em: (chunks) => <em>{chunks}</em>,
+          })}
         </p>
       </div>
 
@@ -443,7 +462,7 @@ export function CalcBrutNet({ accent }: { accent: string }) {
         {/* ---------- Colonne gauche : formulaire ---------- */}
         <CalcCard className="flex flex-col gap-4">
           <CalcRadio<Mode>
-            label="Mode de calcul"
+            label={t("bnModeCalcul")}
             value={mode}
             onChange={(v) => {
               setMode(v);
@@ -451,8 +470,8 @@ export function CalcBrutNet({ accent }: { accent: string }) {
               setError(null);
             }}
             options={[
-              { value: "brut-net", label: "Brut → Net" },
-              { value: "net-brut", label: "Net → Brut" },
+              { value: "brut-net", label: t("bnModeOptBrutNet") },
+              { value: "net-brut", label: t("bnModeOptNetBrut") },
             ]}
             accent={accent}
           />
@@ -463,7 +482,11 @@ export function CalcBrutNet({ accent }: { accent: string }) {
             hint={inputHint}
             value={montant}
             onChange={setMontant}
-            placeholder={mode === "brut-net" ? "ex : 3000" : "ex : 2150"}
+            placeholder={
+              mode === "brut-net"
+                ? t("bnPlaceholderBrut")
+                : t("bnPlaceholderNet")
+            }
             suffix="€"
             min={100}
           />
@@ -471,32 +494,32 @@ export function CalcBrutNet({ accent }: { accent: string }) {
           <CalcGrid cols={2}>
             <CalcSelect<StatutFiscal>
               id="brut-net-statut"
-              label="Statut fiscal"
+              label={t("bnStatutFiscal")}
               value={statut}
               onChange={setStatut}
-              options={STATUTS}
+              options={statutOptions}
             />
             <CalcSelect
               id="brut-net-enfants"
-              label="Enfants à charge"
+              label={t("bnEnfantsCharge")}
               value={enfants}
               onChange={setEnfants}
-              options={ENFANTS_OPTIONS}
+              options={enfantsOptions}
             />
           </CalcGrid>
 
           <CalcGrid cols={2}>
             <CalcSelect<Region>
               id="brut-net-region"
-              label="Région"
+              label={t("bnRegion")}
               value={region}
               onChange={setRegion}
-              options={REGIONS}
-              hint="Impact marginal sur le précompte mensuel."
+              options={regionOptions}
+              hint={t("bnRegionHint")}
             />
             <YesNoToggle
-              label="Chèques-repas"
-              hint="≈ 21 jours / mois × 8,91 €"
+              label={t("bnChequesRepas")}
+              hint={t("bnChequesRepasHint")}
               value={chequesRepas}
               onChange={setChequesRepas}
               accent={accent}
@@ -505,19 +528,19 @@ export function CalcBrutNet({ accent }: { accent: string }) {
 
           <CalcGrid cols={2}>
             <YesNoToggle
-              label="Voiture société"
-              hint="Avantage en nature imposable (ATN)."
+              label={t("bnVoitureSociete")}
+              hint={t("bnVoitureSocieteHint")}
               value={hasVehicule}
               onChange={setHasVehicule}
               accent={accent}
             />
             <CalcField
               id="brut-net-telework"
-              label="Indemnité télétravail"
-              hint="Plafond 2026 : 154,74 €/mois."
+              label={t("bnIndemniteTelework")}
+              hint={t("bnIndemniteTeleworkHint")}
               value={telework}
               onChange={setTelework}
-              placeholder="ex : 154"
+              placeholder={t("bnPlaceholderTelework")}
               suffix="€"
               min={0}
               max={200}
@@ -528,31 +551,31 @@ export function CalcBrutNet({ accent }: { accent: string }) {
             <CalcGrid cols={3}>
               <CalcField
                 id="brut-net-valeur-catalogue"
-                label="Valeur catalogue HT"
-                hint="Prix neuf hors TVA."
+                label={t("bnValeurCatalogue")}
+                hint={t("bnValeurCatalogueHint")}
                 value={valeurCatalogue}
                 onChange={setValeurCatalogue}
-                placeholder="ex : 35000"
+                placeholder={t("bnPlaceholderValeur")}
                 suffix="€"
                 min={0}
               />
               <CalcField
                 id="brut-net-age-vehicule"
-                label="Âge du véhicule"
-                hint="En années (0 = neuf)."
+                label={t("bnAgeVehicule")}
+                hint={t("bnAgeVehiculeHint")}
                 value={ageVehicule}
                 onChange={setAgeVehicule}
                 placeholder="0"
-                suffix="ans"
+                suffix={t("bnSuffixAns")}
                 min={0}
                 max={30}
               />
               <CalcSelect<MotorisationVehicule>
                 id="brut-net-motorisation"
-                label="Motorisation"
+                label={t("bnMotorisation")}
                 value={motorisation}
                 onChange={setMotorisation}
-                options={MOTORISATIONS}
+                options={motorOptions}
               />
             </CalcGrid>
           ) : null}
@@ -560,7 +583,7 @@ export function CalcBrutNet({ accent }: { accent: string }) {
           {error ? <CalcError>{error}</CalcError> : null}
 
           <CalcSubmitButton accent={accent} onClick={handleCalc}>
-            Calculer {modeLabel}
+            {t("bnCalcButton", { mode: modeLabel })}
           </CalcSubmitButton>
         </CalcCard>
 
@@ -589,9 +612,10 @@ export function CalcBrutNet({ accent }: { accent: string }) {
 
       {/* Mention "Mis à jour" */}
       <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-        Calculateur mis à jour le <strong>{lastUpdatedFr}</strong> · Données
-        2026 · Conforme à l&apos;Annexe III AR/CIR 92 · Sources : SPF Finances
-        et ONSS.
+        {t.rich("bnFooterUpdated", {
+          date: lastUpdatedFr,
+          strong: (chunks) => <strong>{chunks}</strong>,
+        })}
       </p>
     </div>
   );
@@ -614,8 +638,10 @@ function ResultPanel({
   onExportPDF: () => void;
   exporting: boolean;
 }) {
+  const t = useTranslations("public.outils");
   const headlineValue = mode === "brut-net" ? result.net : result.brut;
-  const headlineUnit = mode === "brut-net" ? "/ mois net" : "/ mois brut";
+  const headlineUnit =
+    mode === "brut-net" ? t("bnUnitNet") : t("bnUnitBrut");
 
   return (
     <div className="flex flex-col gap-4">
@@ -624,12 +650,12 @@ function ResultPanel({
           className="text-[11px] font-bold uppercase tracking-[0.06em]"
           style={{ color: accent }}
         >
-          Résultat estimatif
+          {t("bnResultEyebrow")}
         </span>
         <span
           className="inline-flex items-center"
-          title="Estimation indicative basée sur les barèmes 2026"
-          aria-label="Estimation indicative basée sur les barèmes 2026"
+          title={t("bnResultInfoTitle")}
+          aria-label={t("bnResultInfoTitle")}
         >
           <Info
             className="size-4"
@@ -652,12 +678,12 @@ function ResultPanel({
           {headlineUnit}
         </div>
         <div className="mt-2 text-[12.5px] text-[color:var(--glass-ink-soft)]">
-          Taux net / brut :{" "}
+          {t("bnTauxLabel")}{" "}
           <strong style={{ color: "var(--glass-ink)" }}>
             {(result.tauxNetBrut * 100).toFixed(1)} %
           </strong>
           {mode === "net-brut" ? (
-            <> — pour un net de {fmtEUR(result.net)}</>
+            <> {t("bnTauxPourNet", { net: fmtEUR(result.net) })}</>
           ) : null}
         </div>
       </div>
@@ -670,58 +696,58 @@ function ResultPanel({
           className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em]"
           style={{ color: "var(--glass-ink-faint)" }}
         >
-          Détail du calcul
+          {t("bnDetailCalcul")}
         </div>
         <div className="flex flex-col gap-1.5">
-          <ResultRow label="Salaire brut" value={fmtEUR(result.brut)} />
+          <ResultRow label={t("bnSalaireBrut")} value={fmtEUR(result.brut)} />
           <ResultRow
             label={
               result.bonus > 0
-                ? `ONSS retenue (workbonus −${fmtEUR(result.bonus)})`
-                : "Cotisations ONSS (13,07 %)"
+                ? t("bnOnssWorkbonus", { bonus: fmtEUR(result.bonus) })
+                : t("bnOnss")
             }
             value={fmtEUR(result.onssRetenue)}
             direction="minus"
           />
           {result.atn > 0 ? (
             <ResultRow
-              label="ATN voiture société (imposable)"
+              label={t("bnAtnVoiture")}
               value={fmtEUR(result.atn)}
               direction="plus"
             />
           ) : null}
           <ResultRow
-            label="= Salaire imposable"
+            label={t("bnSalaireImposable")}
             value={fmtEUR(result.imposable)}
           />
           <ResultRow
-            label="Précompte professionnel"
+            label={t("bnPrecompte")}
             value={fmtEUR(result.precompte)}
             direction="minus"
           />
           {result.cotisationSpeciale > 0 ? (
             <ResultRow
-              label="Cotisation spéciale sécu"
+              label={t("bnCotisationSpeciale")}
               value={fmtEUR(result.cotisationSpeciale)}
               direction="minus"
             />
           ) : null}
           {result.chequesRepas > 0 ? (
             <ResultRow
-              label="Chèques-repas (≈ 21 j)"
+              label={t("bnChequesRepasDetail")}
               value={fmtEUR(result.chequesRepas)}
               direction="plus"
             />
           ) : null}
           {result.indemniteTelework > 0 ? (
             <ResultRow
-              label="Indemnité télétravail"
+              label={t("bnIndemniteTelework")}
               value={fmtEUR(result.indemniteTelework)}
               direction="plus"
             />
           ) : null}
           <ResultRow
-            label="Net en poche"
+            label={t("bnNetEnPoche")}
             value={fmtEUR(result.net)}
             emphasis
           />
@@ -736,10 +762,9 @@ function ResultPanel({
           color: "var(--glass-ink-soft)",
         }}
       >
-        <strong>Estimation indicative</strong> — chiffres 2026 simplifiés.
-        L'ATN voiture utilise les coefficients CO2 moyens et la décote d'âge
-        officielle (AR 14/01/2014). Le précompte exact dépend de votre
-        situation fiscale précise.
+        {t.rich("bnPanelDisclaimer", {
+          strong: (chunks) => <strong>{chunks}</strong>,
+        })}
       </div>
 
       <button
@@ -754,7 +779,7 @@ function ResultPanel({
         }}
       >
         <Download className="size-4" />
-        {exporting ? "Génération du PDF…" : "Télécharger le détail (PDF)"}
+        {exporting ? t("bnExporting") : t("bnExportButton")}
       </button>
     </div>
   );
@@ -771,21 +796,25 @@ function ResultPlaceholder({
   accent: string;
   mode: Mode;
 }) {
+  const t = useTranslations("public.outils");
+  const modeLabel =
+    mode === "brut-net" ? t("bnModeBrutNet") : t("bnModeNetBrut");
   return (
     <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 text-center">
       <span
         className="text-[11px] font-bold uppercase tracking-[0.06em]"
         style={{ color: accent }}
       >
-        Résultat estimatif
+        {t("bnResultEyebrow")}
       </span>
       <div
         className="text-[15px] font-semibold leading-snug text-[color:var(--glass-ink-soft)]"
         style={{ maxWidth: 240 }}
       >
-        Saisissez un montant et cliquez sur{" "}
-        <em>« Calculer {mode === "brut-net" ? "brut → net" : "net → brut"} »</em>{" "}
-        pour voir le détail.
+        {t.rich("bnPlaceholderText", {
+          mode: modeLabel,
+          em: (chunks) => <em>{chunks}</em>,
+        })}
       </div>
       <Info
         className="mt-1 size-5"

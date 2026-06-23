@@ -8,12 +8,14 @@ import {
   MailCheckIcon,
   MailIcon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth-client";
 
 const FIELD =
   "w-full rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] py-3 pr-4 pl-11 text-[14px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]";
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations("public.auth");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -92,12 +94,11 @@ export default function ForgotPasswordPage() {
             </div>
             <div className="relative max-w-sm">
               <p className="glass-display text-[28px] font-semibold leading-tight">
-                Récupérez votre accès,{" "}
-                <em className="not-italic text-white/90">en un email.</em>
+                {t("forgotAsideTitleLead")}{" "}
+                <em className="not-italic text-white/90">{t("forgotAsideTitleEm")}</em>
               </p>
               <p className="mt-3 text-[14px] text-white/80">
-                Un lien sécurisé de réinitialisation, valable 1 heure, vous sera
-                envoyé.
+                {t("forgotAsideSubtitle")}
               </p>
             </div>
           </div>
@@ -109,7 +110,7 @@ export default function ForgotPasswordPage() {
             className="inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 dark:hover:bg-white/10"
           >
             <ArrowLeftIcon className="size-4" />
-            Retour à la connexion
+            {t("backToSignIn")}
           </Link>
 
           <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10">
@@ -125,34 +126,35 @@ export default function ForgotPasswordPage() {
                   <MailCheckIcon className="size-6" />
                 </span>
                 <h1 className="glass-display text-[24px] font-semibold">
-                  Vérifiez votre boîte mail
+                  {t("checkInbox")}
                 </h1>
                 <p className="max-w-sm text-[13.5px] text-[color:var(--glass-ink-soft)]">
-                  Si un compte existe pour <strong>{email}</strong>, un lien de
-                  réinitialisation (valable 1 heure) vient d&apos;être envoyé.
+                  {t.rich("forgotSentBody", {
+                    email,
+                    strong: (chunks) => <strong>{chunks}</strong>,
+                  })}
                 </p>
                 <p className="text-[12px] text-[color:var(--glass-ink-faint)]">
-                  Pas d&apos;email ? Vérifiez vos spams.
+                  {t("noEmailCheckSpam")}
                 </p>
               </div>
             ) : (
               <>
                 <header className="mb-8 flex flex-col gap-2 text-center sm:text-left">
                   <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-                    Accès oublié
+                    {t("forgotEyebrow")}
                   </p>
                   <h1 className="glass-display text-[40px] font-semibold leading-[1.05] sm:text-[48px]">
-                    Mot de passe oublié
+                    {t("forgotTitle")}
                   </h1>
                   <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-                    Entrez votre email : nous vous enverrons un lien pour
-                    réinitialiser votre mot de passe.
+                    {t("forgotSubtitle")}
                   </p>
                 </header>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                   <label className="flex flex-col gap-1.5">
                     <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-[color:var(--glass-ink-soft)]">
-                      Email
+                      {t("emailLabel")}
                     </span>
                     <div className="relative">
                       <MailIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[color:var(--glass-ink-faint)]" />
@@ -162,7 +164,7 @@ export default function ForgotPasswordPage() {
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="vous@exemple.be"
+                        placeholder={t("emailPlaceholder")}
                         disabled={loading}
                         className={FIELD}
                       />
@@ -180,16 +182,16 @@ export default function ForgotPasswordPage() {
                     {loading ? (
                       <LoaderCircleIcon className="size-4 animate-spin" />
                     ) : null}
-                    {loading ? "Envoi…" : "Envoyer le lien"}
+                    {loading ? t("sending") : t("sendLink")}
                   </button>
                 </form>
                 <p className="mt-6 text-center text-[12.5px] text-[color:var(--glass-ink-soft)]">
-                  Vous vous souvenez ?{" "}
+                  {t("rememberPassword")}{" "}
                   <Link
                     href="/login"
                     className="font-bold text-[color:var(--glass-accent-deep)] hover:underline"
                   >
-                    Se connecter
+                    {t("signIn")}
                   </Link>
                 </p>
               </>

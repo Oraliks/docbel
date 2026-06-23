@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { ConfirmAccount } from "@/components/docbel/confirm-account";
 
-export const metadata: Metadata = {
-  title: "Confirmation de compte | DocBel",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.auth");
+  return {
+    title: t("confirmMetaTitle"),
+  };
+}
 
 interface PageProps {
   searchParams: Promise<{ token?: string }>;

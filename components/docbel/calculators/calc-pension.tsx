@@ -19,6 +19,7 @@
  */
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { AlertCircle, BadgeCheck, Download, Info, RotateCcw } from "lucide-react";
 import { CountryFlag } from "@/components/docbel/country-flag";
 import {
@@ -49,6 +50,7 @@ type MenageYesNo = "oui" | "non";
 const LAST_UPDATED = "2026-05-25";
 
 export function CalcPension({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
   const [dateNaissance, setDateNaissance] = useState("");
   const [anneesCarriere, setAnneesCarriere] = useState("42");
   const [periodesAssimilees, setPeriodesAssimilees] = useState("");
@@ -82,25 +84,23 @@ export function CalcPension({ accent }: { accent: string }) {
     const statut: Statut = statutMenage === "oui" ? "menage" : "isole";
 
     if (!dateNaissance) {
-      setError("Indiquez votre date de naissance.");
+      setError(t("penErrDateNaissance"));
       return;
     }
     if (!Number.isFinite(carriere)) {
-      setError("Indiquez un nombre d'années de carrière valide.");
+      setError(t("penErrCarriere"));
       return;
     }
     if (periodesAssimilees && !Number.isFinite(assimilees)) {
-      setError(
-        "Indiquez un nombre d'années assimilées valide (ou laissez vide).",
-      );
+      setError(t("penErrAssimilees"));
       return;
     }
     if (!Number.isFinite(salaire)) {
-      setError("Indiquez un salaire annuel moyen valide.");
+      setError(t("penErrSalaire"));
       return;
     }
     if (!Number.isFinite(age)) {
-      setError("Indiquez un âge de départ valide.");
+      setError(t("penErrAge"));
       return;
     }
 
@@ -160,7 +160,7 @@ export function CalcPension({ accent }: { accent: string }) {
         hour: "2-digit",
         minute: "2-digit",
       });
-      doc.text(`Généré le ${dateStr} à ${timeStr}`, pageWidth - margin, y, {
+      doc.text(t("penPdfGeneratedOn", { date: dateStr, time: timeStr }), pageWidth - margin, y, {
         align: "right",
       });
       y += 10;
@@ -169,14 +169,14 @@ export function CalcPension({ accent }: { accent: string }) {
       doc.setFontSize(15);
       doc.setFont("", "bold");
       doc.setTextColor(0, 0, 0);
-      doc.text(`Estimation Pension légale 2026 — ${result.statutLabel}`, margin, y);
+      doc.text(t("penPdfTitle", { statut: result.statutLabel }), margin, y);
       y += 10;
 
       // Section Inputs
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Paramètres saisis", margin, y);
+      doc.text(t("penPdfInputsSection"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -185,15 +185,15 @@ export function CalcPension({ accent }: { accent: string }) {
 
       const carriereTotale = result.carriereTotale;
       const inputs: [string, string][] = [
-        ["Date de naissance", new Date(dateNaissance).toLocaleDateString("fr-BE")],
-        ["Statut civil", result.statutLabel],
-        ["Carrière effective", `${result.anneesCarriere} ans`],
-        ["Périodes assimilées", `${fmtNumber(result.periodesAssimilees, result.periodesAssimilees % 1 === 0 ? 0 : 1)} ans`],
-        ["Carrière totale", `${fmtNumber(carriereTotale, carriereTotale % 1 === 0 ? 0 : 1)} ans`],
-        ["Salaire annuel moyen", fmtEUR(parseNum(salaireMoyen))],
-        ["Âge de départ envisagé", `${result.ageDepart} ans`],
-        ["Âge légal de pension", `${result.ageLegal} ans`],
-        ["Âge effectif retenu", `${result.ageEffectif} ans`],
+        [t("penPdfDateNaissance"), new Date(dateNaissance).toLocaleDateString("fr-BE")],
+        [t("penPdfStatutCivil"), result.statutLabel],
+        [t("penPdfCarriereEffective"), t("penPdfYears", { n: result.anneesCarriere })],
+        [t("penPdfPeriodesAssimilees"), t("penPdfYears", { n: fmtNumber(result.periodesAssimilees, result.periodesAssimilees % 1 === 0 ? 0 : 1) })],
+        [t("penPdfCarriereTotale"), t("penPdfYears", { n: fmtNumber(carriereTotale, carriereTotale % 1 === 0 ? 0 : 1) })],
+        [t("penPdfSalaireAnnuelMoyen"), fmtEUR(parseNum(salaireMoyen))],
+        [t("penPdfAgeDepart"), t("penPdfYears", { n: result.ageDepart })],
+        [t("penPdfAgeLegal"), t("penPdfYears", { n: result.ageLegal })],
+        [t("penPdfAgeEffectif"), t("penPdfYears", { n: result.ageEffectif })],
       ];
 
       const colKey = margin + 2;
@@ -219,7 +219,7 @@ export function CalcPension({ accent }: { accent: string }) {
       doc.setFontSize(10);
       doc.setFont("", "bold");
       doc.setTextColor(78, 48, 165);
-      doc.text("PENSION MENSUELLE BRUTE ESTIMÉE", margin + 4, y + 7);
+      doc.text(t("penPdfMonthlyBoxLabel"), margin + 4, y + 7);
 
       doc.setFontSize(22);
       doc.setTextColor(0, 0, 0);
@@ -229,7 +229,7 @@ export function CalcPension({ accent }: { accent: string }) {
       doc.setFont("", "normal");
       doc.setTextColor(100, 100, 100);
       doc.text(
-        `Soit environ ${fmtEUR(result.pensionAnnuelle)} / an (brut, avant impôt)`,
+        t("penPdfAnnualHint", { amount: fmtEUR(result.pensionAnnuelle) }),
         margin + 4,
         y + 25,
       );
@@ -248,7 +248,7 @@ export function CalcPension({ accent }: { accent: string }) {
         doc.setFontSize(10);
         doc.setFont("", "bold");
         doc.setTextColor(180, 83, 9);
-        doc.text("Départ anticipé non éligible", margin + 4, y + 7);
+        doc.text(t("penPdfAnticipeIneligible"), margin + 4, y + 7);
         doc.setFontSize(9);
         doc.setFont("", "normal");
         doc.setTextColor(60, 60, 60);
@@ -264,7 +264,7 @@ export function CalcPension({ accent }: { accent: string }) {
       doc.setFontSize(11);
       doc.setFont("", "bold");
       doc.setTextColor(200, 16, 46);
-      doc.text("Détail du calcul", margin, y);
+      doc.text(t("penDetailTitle"), margin, y);
       y += 6;
 
       doc.setFontSize(9.5);
@@ -273,16 +273,16 @@ export function CalcPension({ accent }: { accent: string }) {
 
       const details: [string, string][] = [
         [
-          "Carrière prise en compte",
-          `${fmtNumber(Math.min(carriereTotale, 45), carriereTotale % 1 === 0 ? 0 : 1)} / 45 ans${result.longueCarriere ? " (plafonnée)" : ""}`,
+          t("penPdfCarrierePriseEnCompte"),
+          `${t("penPdfCarriereSur45", { n: fmtNumber(Math.min(carriereTotale, 45), carriereTotale % 1 === 0 ? 0 : 1) })}${result.longueCarriere ? t("penPlafonneeSuffix") : ""}`,
         ],
         [
-          "Salaire pris en compte",
+          t("penPdfSalairePrisEnCompte"),
           result.plafondAtteint
-            ? `${fmtEUR(PLAFOND_SALARIAL_2026)} (plafonné)`
+            ? t("penPlafonneAmount", { amount: fmtEUR(PLAFOND_SALARIAL_2026) })
             : fmtEUR(parseNum(salaireMoyen)),
         ],
-        ["Taux applicable", result.statutLabel],
+        [t("penPdfTauxApplicable"), result.statutLabel],
       ];
       details.forEach(([k, v]) => {
         doc.setTextColor(80, 80, 80);
@@ -304,7 +304,7 @@ export function CalcPension({ accent }: { accent: string }) {
       doc.setFont("", "italic");
       doc.setTextColor(120, 120, 120);
       const footer = doc.splitTextToSize(
-        "Estimation indicative — formule officielle SFP (taux × carrière / 45). Plafond salarial 2026 et minimum garanti post-indexation mars 2026. Conditions d'anticipation conformes à la loi du 10 août 2015. Pour le calcul officiel et personnalisé : mypension.be. Sources : SFP, mypension.be, Moniteur belge.",
+        t("penPdfFooterDisclaimer"),
         pageWidth - margin * 2,
       );
       doc.text(footer, margin, y);
@@ -350,10 +350,10 @@ export function CalcPension({ accent }: { accent: string }) {
               </span>
               <div>
                 <h2 className="text-[16px] font-bold text-[color:var(--glass-ink)]">
-                  Pension légale estimée
+                  {t("penTitle")}
                 </h2>
                 <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
-                  Salarié belge — formule officielle SFP 2026
+                  {t("penSubtitle")}
                 </p>
               </div>
             </div>
@@ -366,10 +366,10 @@ export function CalcPension({ accent }: { accent: string }) {
                 background: "var(--glass-surface)",
                 color: "var(--glass-ink-soft)",
               }}
-              title="Réinitialiser le formulaire"
+              title={t("penResetFormTitle")}
             >
               <RotateCcw className="size-3.5" />
-              Réinitialiser
+              {t("penReset")}
             </button>
           </div>
 
@@ -386,36 +386,36 @@ export function CalcPension({ accent }: { accent: string }) {
           {/* Date de naissance */}
           <CalcField
             id="pension-naissance"
-            label="Date de naissance"
+            label={t("penFieldDateNaissance")}
             type="date"
             value={dateNaissance}
             onChange={setDateNaissance}
-            hint="Détermine automatiquement l'âge légal (65, 66 ou 67 ans selon la loi du 10/08/2015)."
+            hint={t("penHintDateNaissance")}
           />
 
           {/* Carrière + Assimilées */}
           <CalcGrid cols={2}>
             <CalcField
               id="pension-carriere"
-              label="Années de carrière effectives"
+              label={t("penFieldCarriere")}
               value={anneesCarriere}
               onChange={setAnneesCarriere}
               placeholder="ex : 42"
               min={0}
               max={50}
-              suffix="ans"
-              hint="Années réellement travaillées — hors périodes assimilées."
+              suffix={t("penSuffixAns")}
+              hint={t("penHintCarriere")}
             />
             <CalcField
               id="pension-assimilees"
-              label="Périodes assimilées"
+              label={t("penFieldAssimilees")}
               value={periodesAssimilees}
               onChange={setPeriodesAssimilees}
               placeholder="0"
               min={0}
               max={15}
-              suffix="ans"
-              hint="Chômage, maladie, congé parental, service militaire, crédit-temps reconnu."
+              suffix={t("penSuffixAns")}
+              hint={t("penHintAssimilees")}
             />
           </CalcGrid>
 
@@ -423,7 +423,7 @@ export function CalcPension({ accent }: { accent: string }) {
           <CalcGrid cols={2}>
             <CalcField
               id="pension-salaire"
-              label="Salaire annuel brut moyen"
+              label={t("penFieldSalaire")}
               value={salaireMoyen}
               onChange={setSalaireMoyen}
               placeholder="ex : 45000"
@@ -431,30 +431,30 @@ export function CalcPension({ accent }: { accent: string }) {
               max={200000}
               step={1000}
               suffix="€"
-              hint="Moyenne sur l'ensemble de la carrière (pas le dernier salaire). Plafonné à 69 521 €/an en 2026."
+              hint={t("penHintSalaire")}
             />
             <CalcField
               id="pension-age-depart"
-              label="Âge de départ envisagé"
+              label={t("penFieldAgeDepart")}
               value={ageDepart}
               onChange={setAgeDepart}
               placeholder="ex : 65"
               min={60}
               max={70}
-              suffix="ans"
-              hint="Entre 60 et 70 ans. Le départ anticipé exige une carrière minimum."
+              suffix={t("penSuffixAns")}
+              hint={t("penHintAgeDepart")}
             />
           </CalcGrid>
 
           {/* Statut */}
           <YesNoToggle
-            label="Taux ménage ?"
-            hint="Taux ménage (75 %) si conjoint sans revenu propre suffisant. Sinon taux isolé (60 %)."
+            label={t("penToggleLabel")}
+            hint={t("penToggleHint")}
             value={statutMenage}
             onChange={setStatutMenage}
             accent={accent}
-            yesLabel="Ménage (75 %)"
-            noLabel="Isolé (60 %)"
+            yesLabel={t("penToggleYes")}
+            noLabel={t("penToggleNo")}
           />
 
           {error ? <CalcError>{error}</CalcError> : null}
@@ -462,7 +462,7 @@ export function CalcPension({ accent }: { accent: string }) {
           {/* Boutons : Calculer + Réinitialiser */}
           <CalcGrid cols={2}>
             <CalcSubmitButton accent={accent} onClick={handleCalc}>
-              Estimer ma pension
+              {t("penSubmit")}
             </CalcSubmitButton>
             <button
               type="button"
@@ -475,7 +475,7 @@ export function CalcPension({ accent }: { accent: string }) {
               }}
             >
               <RotateCcw className="size-4" />
-              Réinitialiser le formulaire
+              {t("penResetForm")}
             </button>
           </CalcGrid>
 
@@ -490,11 +490,14 @@ export function CalcPension({ accent }: { accent: string }) {
           >
             <Info className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-ink-faint)]" />
             <div>
-              <strong className="text-[color:var(--glass-ink)]">
-                Estimation indicative.
-              </strong>{" "}
-              Pour le calcul officiel et personnalisé, basé sur votre compte de
-              carrière complet, rendez-vous sur <strong>mypension.be</strong>.
+              {t.rich("penFormDisclaimer", {
+                strong: (chunks) => (
+                  <strong className="text-[color:var(--glass-ink)]">
+                    {chunks}
+                  </strong>
+                ),
+                b: (chunks) => <strong>{chunks}</strong>,
+              })}
             </div>
           </div>
         </CalcCard>
@@ -524,9 +527,10 @@ export function CalcPension({ accent }: { accent: string }) {
 
       {/* Footer : Mise à jour + sources */}
       <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-        Calculateur mis à jour le <strong>{lastUpdatedFr}</strong> · Données
-        2026 · Sources officielles : SFP (Service Fédéral des Pensions),
-        mypension.be, Moniteur belge.
+        {t.rich("penFooter", {
+          date: lastUpdatedFr,
+          strong: (chunks) => <strong>{chunks}</strong>,
+        })}
       </p>
     </div>
   );
@@ -549,6 +553,7 @@ function PensionResultPanel({
   onExportPDF: () => void;
   exporting: boolean;
 }) {
+  const t = useTranslations("public.outils");
   const inelig =
     result.eligibiliteAnticipee.possible === false
       ? result.eligibiliteAnticipee
@@ -575,9 +580,9 @@ function PensionResultPanel({
     !plafondPensionAtteint &&
     Math.abs(result.pensionAnnuelle - pensionFormuleAnnuelle) > 1;
 
-  let typeCalculLabel = "Calcul standard";
-  if (plafondPensionAtteint) typeCalculLabel = "Plafond pension atteint";
-  else if (minimumAppliquerait) typeCalculLabel = "Minimum garanti appliqué";
+  let typeCalculLabel = t("penTypeStandard");
+  if (plafondPensionAtteint) typeCalculLabel = t("penTypePlafond");
+  else if (minimumAppliquerait) typeCalculLabel = t("penTypeMinimum");
 
   return (
     <div className="flex flex-col gap-4">
@@ -586,12 +591,12 @@ function PensionResultPanel({
           className="text-[11px] font-bold uppercase tracking-[0.06em]"
           style={{ color: accent }}
         >
-          Résultat estimatif
+          {t("penResultEyebrow")}
         </span>
         <span
           className="inline-flex items-center"
-          title="Estimation indicative — formule SFP officielle"
-          aria-label="Estimation indicative — formule SFP officielle"
+          title={t("penResultTooltip")}
+          aria-label={t("penResultTooltip")}
         >
           <Info
             className="size-4"
@@ -611,18 +616,21 @@ function PensionResultPanel({
           className="mt-1 text-[13px] font-semibold"
           style={{ color: "var(--glass-ink-soft)" }}
         >
-          / mois (brut, avant impôt)
+          {t("penPerMonth")}
         </div>
         <div className="mt-1 text-[12.5px] text-[color:var(--glass-ink-soft)]">
-          ≈ <strong>{fmtEUR(result.pensionAnnuelle)}</strong> / an
+          {t.rich("penPerYear", {
+            amount: fmtEUR(result.pensionAnnuelle),
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <CalcBadge accent={accent}>{typeCalculLabel}</CalcBadge>
           {result.plafondAtteint ? (
-            <CalcBadge accent={accent}>Salaire plafonné</CalcBadge>
+            <CalcBadge accent={accent}>{t("penBadgeSalairePlafonne")}</CalcBadge>
           ) : null}
           {result.longueCarriere ? (
-            <CalcBadge accent={accent}>Longue carrière</CalcBadge>
+            <CalcBadge accent={accent}>{t("penBadgeLongueCarriere")}</CalcBadge>
           ) : null}
         </div>
       </div>
@@ -639,15 +647,16 @@ function PensionResultPanel({
         >
           <div className="mb-1.5 flex items-center gap-1.5 font-bold text-[color:rgb(180,83,9)]">
             <AlertCircle className="size-3.5" />
-            Départ anticipé à {result.ageDepart} ans impossible
+            {t("penIneligTitle", { age: result.ageDepart })}
           </div>
           <p className="text-[11.5px] leading-[1.6]">
-            {inelig.raison ??
-              `La pension anticipée n'est pas accessible avant 60 ans.`}
+            {inelig.raison ?? t("penIneligFallback")}
           </p>
           <p className="mt-1.5 text-[11.5px] leading-[1.6]">
-            Le calcul ci-dessus est fait à l'<strong>âge légal</strong> (
-            {result.ageLegal} ans) à titre informatif.
+            {t.rich("penIneligInfo", {
+              age: result.ageLegal,
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
         </div>
       ) : null}
@@ -661,57 +670,59 @@ function PensionResultPanel({
           className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em]"
           style={{ color: "var(--glass-ink-faint)" }}
         >
-          Détail du calcul
+          {t("penDetailTitle")}
         </div>
         <div className="flex flex-col gap-1.5 rounded-xl bg-[color:var(--glass-surface)] p-3.5 text-[12.5px]">
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              Carrière effective
+              {t("penRowCarriereEffective")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
-              {result.anneesCarriere} ans
+              {t("penValueYears", { n: result.anneesCarriere })}
             </span>
           </div>
           {result.periodesAssimilees > 0 ? (
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-[color:var(--glass-ink-soft)]">
-                Périodes assimilées
+                {t("penRowAssimilees")}
               </span>
               <span className="font-semibold text-[color:var(--glass-ink)]">
-                {fmtNumber(
-                  result.periodesAssimilees,
-                  result.periodesAssimilees % 1 === 0 ? 0 : 1,
-                )}{" "}
-                ans
+                {t("penValueYears", {
+                  n: fmtNumber(
+                    result.periodesAssimilees,
+                    result.periodesAssimilees % 1 === 0 ? 0 : 1,
+                  ),
+                })}
               </span>
             </div>
           ) : null}
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              Carrière totale prise en compte
+              {t("penRowCarriereTotale")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
-              {fmtNumber(
-                Math.min(result.carriereTotale, 45),
-                result.carriereTotale % 1 === 0 ? 0 : 1,
-              )}{" "}
-              / 45 ans
-              {result.longueCarriere ? " (plafonnée)" : ""}
+              {t("penValueCarriereSur45", {
+                n: fmtNumber(
+                  Math.min(result.carriereTotale, 45),
+                  result.carriereTotale % 1 === 0 ? 0 : 1,
+                ),
+              })}
+              {result.longueCarriere ? t("penPlafonneeSuffix") : ""}
             </span>
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              Salaire pris en compte
+              {t("penRowSalairePris")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
               {result.plafondAtteint
-                ? `${fmtEUR(69521)} (plafonné)`
+                ? t("penPlafonneAmount", { amount: fmtEUR(69521) })
                 : fmtEUR(salaireSaisi)}
             </span>
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              Taux applicable
+              {t("penRowTauxApplicable")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
               {result.statutLabel}
@@ -719,19 +730,19 @@ function PensionResultPanel({
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              Âge légal de pension
+              {t("penRowAgeLegal")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
-              {result.ageLegal} ans
+              {t("penValueYears", { n: result.ageLegal })}
             </span>
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-[color:var(--glass-ink-soft)]">
-              Âge effectivement retenu
+              {t("penRowAgeEffectif")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
-              {result.ageEffectif} ans
-              {result.ageEffectif !== result.ageDepart ? " (âge légal)" : ""}
+              {t("penValueYears", { n: result.ageEffectif })}
+              {result.ageEffectif !== result.ageDepart ? t("penAgeLegalSuffix") : ""}
             </span>
           </div>
         </div>
@@ -747,21 +758,23 @@ function PensionResultPanel({
         }}
       >
         <div className="mb-1 flex items-center gap-1.5 font-bold text-[color:var(--glass-ink)]">
-          <Info className="size-3.5" /> À savoir
+          <Info className="size-3.5" /> {t("penKnowTitle")}
         </div>
         <ul className="list-inside list-disc space-y-1">
           <li>
-            Votre <strong>compte de carrière officiel</strong> est consultable
-            sur <strong>mypension.be</strong> (login itsme).
+            {t.rich("penKnow1", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
           <li>
-            Les <strong>périodes assimilées</strong> (chômage indemnisé,
-            maladie de longue durée, congé parental, service militaire,
-            crédit-temps reconnu) comptent dans la carrière.
+            {t.rich("penKnow2", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
           <li>
-            Le régime salarié <strong>ne prévoit pas de bonus</strong> pour les
-            carrières longues (&gt; 45 ans) : la formule plafonne à 45/45.
+            {t.rich("penKnow3", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
         </ul>
       </div>
@@ -778,7 +791,7 @@ function PensionResultPanel({
         }}
       >
         <Download className="size-4" />
-        {exporting ? "Génération du PDF…" : "Télécharger le détail (PDF)"}
+        {exporting ? t("penPdfGenerating") : t("penPdfDownload")}
       </button>
     </div>
   );
@@ -789,20 +802,22 @@ function PensionResultPanel({
 /* ------------------------------------------------------------------ */
 
 function PensionResultPlaceholder({ accent }: { accent: string }) {
+  const t = useTranslations("public.outils");
   return (
     <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 text-center">
       <span
         className="text-[11px] font-bold uppercase tracking-[0.06em]"
         style={{ color: accent }}
       >
-        Résultat estimatif
+        {t("penResultEyebrow")}
       </span>
       <div
         className="text-[15px] font-semibold leading-snug text-[color:var(--glass-ink-soft)]"
         style={{ maxWidth: 260 }}
       >
-        Renseignez votre date de naissance, votre carrière et votre salaire
-        moyen, puis cliquez sur <em>« Estimer ma pension »</em>.
+        {t.rich("penPlaceholderBody", {
+          em: (chunks) => <em>{chunks}</em>,
+        })}
       </div>
       <Info
         className="mt-1 size-5"

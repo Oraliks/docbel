@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { SignupForm } from "@/components/docbel/partner-signup-form";
 
-export const metadata: Metadata = {
-  title: "Inscription partenaire | DocBel",
-  description:
-    "Inscrivez votre organisation (CPAS, syndicat, mutuelle, ONEM, organisme de paiement) à l'espace partenaire DocBel.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.auth");
+  return {
+    title: t("partnerMetaTitle"),
+    description: t("partnerMetaDescription"),
+  };
+}
 
 export default async function PartnerSignupRoute() {
   const session = await auth.api
@@ -19,35 +22,37 @@ export default async function PartnerSignupRoute() {
     redirect("/partenaire");
   }
 
+  const t = await getTranslations("public.auth");
+
   return (
     <section className="mx-auto flex w-full max-w-xl flex-col gap-6">
       <header className="flex flex-col gap-2 px-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-          Espace Partenaire
+          {t("partnerEyebrow")}
         </p>
         <h1 className="glass-display text-[36px] font-semibold leading-[1.05] sm:text-[44px]">
-          Inscription <em>partenaire.</em>
+          {t.rich("partnerTitle", { em: (chunks) => <em>{chunks}</em> })}
         </h1>
         <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-          Réservé aux organisations qui accompagnent les citoyens dans leurs
-          démarches : CPAS, syndicats, mutuelles, ONEM et organismes de
-          paiement. L&apos;inscription se fait avec une adresse email
-          professionnelle autorisée (ex :{" "}
-          <code className="rounded-md bg-[color:var(--glass-surface)] px-1.5 py-0.5 font-mono text-[12.5px]">
-            @cpas.brussels
-          </code>
-          ). Si votre organisation n&apos;est pas encore référencée,
-          contactez-nous.
+          {t.rich("partnerIntro", {
+            code: (chunks) => (
+              <code className="rounded-md bg-[color:var(--glass-surface)] px-1.5 py-0.5 font-mono text-[12.5px]">
+                {chunks}
+              </code>
+            ),
+          })}
         </p>
         <p className="text-[12.5px] text-[color:var(--glass-ink-faint)]">
-          Vous êtes un employeur (gestion RH, attestations sociales) ?{" "}
-          <a
-            href="/inscription/employeur"
-            className="font-bold underline underline-offset-2"
-          >
-            Inscrivez-vous sur l&apos;espace employeur
-          </a>
-          .
+          {t.rich("partnerCrossLink", {
+            a: (chunks) => (
+              <a
+                href="/inscription/employeur"
+                className="font-bold underline underline-offset-2"
+              >
+                {chunks}
+              </a>
+            ),
+          })}
         </p>
       </header>
       <SignupForm expectedSegment="partenaire" />

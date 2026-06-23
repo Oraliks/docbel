@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Copy, Download, Loader2, Mail, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export interface DocumentBuilderProps {
 }
 
 export function DocumentBuilder({ initialType, initialValues }: DocumentBuilderProps) {
+  const t = useTranslations("public.pro");
   const router = useRouter();
   const [type, setType] = useState<DocumentType>(initialType ?? "fiche_travailleur");
   const [valuesByType, setValuesByType] = useState<Record<string, DocumentValues>>(() => ({
@@ -60,9 +62,9 @@ export function DocumentBuilder({ initialType, initialValues }: DocumentBuilderP
   async function copyToClipboard() {
     try {
       await navigator.clipboard.writeText(bodyText);
-      toast.success("Document copié dans le presse-papier.");
+      toast.success(t("docbuildCopied"));
     } catch {
-      toast.error("Impossible de copier (autorisez l'accès au presse-papier).");
+      toast.error(t("docbuildCopyError"));
     }
   }
 
@@ -81,11 +83,11 @@ export function DocumentBuilder({ initialType, initialValues }: DocumentBuilderP
         body: JSON.stringify({ type, title, content: values }),
       });
       const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
-      if (!res.ok || !data.id) throw new Error(data.error ?? "Échec");
-      toast.success("Document enregistré.");
+      if (!res.ok || !data.id) throw new Error(data.error ?? t("docbuildErrShort"));
+      toast.success(t("docbuildSaved"));
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Échec de l'enregistrement.");
+      toast.error(e instanceof Error ? e.message : t("docbuildErrSave"));
     } finally {
       setSaving(false);
     }
@@ -101,7 +103,7 @@ export function DocumentBuilder({ initialType, initialValues }: DocumentBuilderP
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? "Échec");
+        throw new Error(data.error ?? t("docbuildErrShort"));
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -109,7 +111,7 @@ export function DocumentBuilder({ initialType, initialValues }: DocumentBuilderP
       // Libère l'URL après un court délai (l'onglet a eu le temps de la charger).
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Échec de la génération du PDF.");
+      toast.error(e instanceof Error ? e.message : t("docbuildErrPdf"));
     } finally {
       setExporting(false);
     }
@@ -119,7 +121,7 @@ export function DocumentBuilder({ initialType, initialValues }: DocumentBuilderP
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Type de document</CardTitle>
+          <CardTitle>{t("docbuildDocType")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Select
@@ -144,7 +146,7 @@ export function DocumentBuilder({ initialType, initialValues }: DocumentBuilderP
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Informations</CardTitle>
+            <CardTitle>{t("docbuildInfos")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
             {config.fields.map((field) => (
@@ -161,7 +163,7 @@ export function DocumentBuilder({ initialType, initialValues }: DocumentBuilderP
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Aperçu</CardTitle>
+              <CardTitle>{t("docbuildPreview")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap rounded-lg border bg-muted/30 p-3 text-xs leading-relaxed">
@@ -169,18 +171,18 @@ export function DocumentBuilder({ initialType, initialValues }: DocumentBuilderP
               </pre>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={copyToClipboard}>
-                  <Copy /> Copier
+                  <Copy /> {t("actCopy")}
                 </Button>
                 {config.emailable ? (
                   <Button variant="outline" size="sm" onClick={openInEmail}>
-                    <Mail /> Ouvrir dans l'email
+                    <Mail /> {t("docbuildOpenEmail")}
                   </Button>
                 ) : null}
                 <Button size="sm" onClick={save} disabled={saving}>
-                  {saving ? <Loader2 className="animate-spin" /> : <Save />} Enregistrer
+                  {saving ? <Loader2 className="animate-spin" /> : <Save />} {t("actSave")}
                 </Button>
                 <Button variant="outline" size="sm" onClick={exportPdf} disabled={exporting}>
-                  {exporting ? <Loader2 className="animate-spin" /> : <Download />} Exporter PDF
+                  {exporting ? <Loader2 className="animate-spin" /> : <Download />} {t("docbuildExportPdf")}
                 </Button>
               </div>
             </CardContent>
@@ -202,6 +204,7 @@ function FieldInput({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const t = useTranslations("public.pro");
   const id = `doc-field-${field.key}`;
   return (
     <div className={cn("space-y-1.5")}>
@@ -220,7 +223,7 @@ function FieldInput({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={SELECT_NONE}>— À préciser —</SelectItem>
+            <SelectItem value={SELECT_NONE}>{t("docbuildToPrecise")}</SelectItem>
             {(field.options ?? []).map((o) => (
               <SelectItem key={o.value} value={o.value}>
                 {o.label}

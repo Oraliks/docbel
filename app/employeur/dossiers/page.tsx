@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Plus } from "lucide-react";
@@ -13,13 +14,17 @@ import {
   labelContractType,
 } from "@/lib/employeur/constants";
 
-export const metadata: Metadata = {
-  title: "Mes dossiers | Espace Employeur",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.pro");
+  return {
+    title: t("dossierListMetaTitle"),
+  };
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function DossiersPage() {
+  const t = await getTranslations("public.pro");
   const user = await getEmployerPageUser();
   if (!user) redirect("/p/employeur");
 
@@ -28,20 +33,20 @@ export default async function DossiersPage() {
   return (
     <div className="w-full space-y-5 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
       <Button variant="ghost" size="sm" render={<Link href="/employeur" />}>
-        <ArrowLeft /> Tableau de bord
+        <ArrowLeft /> {t("backToDashboard")}
       </Button>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Mes dossiers</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("dossierListTitle")}</h1>
         <Button render={<Link href="/employeur/nouveau-dossier" />}>
-          <Plus /> Nouveau dossier
+          <Plus /> {t("dossierNew")}
         </Button>
       </div>
 
       {scenarios.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-muted-foreground">
-            Aucun dossier pour le moment.
+            {t("dossierListEmpty")}
           </CardContent>
         </Card>
       ) : (
@@ -59,8 +64,10 @@ export default async function DossiersPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="text-xs text-muted-foreground">
-                  {s.jointCommitteeNumber ? `CP ${s.jointCommitteeNumber} · ` : ""}
-                  {s._count.checklists} checklist(s)
+                  {s.jointCommitteeNumber
+                    ? t("dossierCpPrefix", { n: s.jointCommitteeNumber })
+                    : ""}
+                  {t("dossierChecklistCount", { count: s._count.checklists })}
                 </CardContent>
               </Card>
             </Link>

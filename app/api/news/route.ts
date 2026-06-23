@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getUserLocale } from "@/i18n/locale";
+import { localizeRecords } from "@/lib/i18n/content";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { getCurrentUser, actorLabel } from "@/lib/news/session";
@@ -100,8 +102,17 @@ export async function GET(req: NextRequest) {
       statusCounts.all += group._count.status;
     }
 
+    // Overlay traductions DB (NL/EN…) sur les champs affichés ; no-op si FR.
+    const locale = await getUserLocale();
+    const localized = await localizeRecords(
+      "News",
+      articles,
+      ["title", "excerpt"],
+      locale,
+    );
+
     const colorMap = new Map(categories.map((c) => [c.name, c.color]));
-    const articlesWithCategoryColor = articles.map((article) => ({
+    const articlesWithCategoryColor = localized.map((article) => ({
       ...article,
       categoryColor: colorMap.get(article.category) ?? "#7C3AED",
     }));

@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { OrganismeType } from "@prisma/client";
 import { memoCache, memoCacheInvalidate } from "@/lib/memo-cache";
+import { getUserLocale } from "@/i18n/locale";
+import { localizeRecords } from "@/lib/i18n/content";
 
 const VALID_TYPES: OrganismeType[] = [
   "federal",
@@ -21,6 +23,7 @@ export async function GET() {
 
   // Cache 30s : les organismes changent rarement (création manuelle admin),
   // et ce endpoint est pingué par le dashboard de monitoring.
+  // On cache la version FR source ; la localisation est appliquée hors cache.
   const organismes = await memoCache(ORGANISMES_CACHE_KEY, 30_000, () =>
     prisma.organisme.findMany({
       orderBy: [{ active: "desc" }, { order: "asc" }, { name: "asc" }],
@@ -29,7 +32,15 @@ export async function GET() {
       },
     })
   );
-  return NextResponse.json(organismes);
+  // Traductions contenu DB (NL/EN…), fallback FR, no-op si locale=fr (admin).
+  const locale = await getUserLocale();
+  const localized = await localizeRecords(
+    "Organisme",
+    organismes,
+    ["name", "description"],
+    locale,
+  );
+  return NextResponse.json(localized);
 }
 
 export async function POST(req: NextRequest) {

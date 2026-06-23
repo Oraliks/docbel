@@ -58,6 +58,9 @@ export async function localizeRecords<T extends Record<string, unknown>>(
     if (!tr) return r;
     const copy: T = { ...r };
     for (const f of fields) {
+      // N'écrase qu'un champ DÉJÀ présent sur l'enregistrement (sûr avec les
+      // requêtes `select` : on n'ajoute jamais une clé non sélectionnée).
+      if (!(f in copy)) continue;
       const v = tr[f];
       if (typeof v === "string" && v.length > 0) {
         (copy as Record<string, unknown>)[f] = v;

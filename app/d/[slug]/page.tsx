@@ -12,6 +12,8 @@ import type { BundleCondition } from "@/lib/bundles/conditions";
 import { parseEligibilityAnswers } from "@/lib/bundles/eligibility";
 import { getDossier } from "@/lib/dossiers/registry";
 import { dossierQuestionsToEligibility, selectDocuments, type DossierAnswers } from "@/lib/dossiers/types";
+import { getLocale } from "next-intl/server";
+import { localizeRecord } from "@/lib/i18n/content";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +25,9 @@ export default async function BundleRoute({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const locale = await getLocale();
 
-  const bundle = await prisma.documentBundle.findUnique({
+  const bundleRaw = await prisma.documentBundle.findUnique({
     where: { slug },
     include: {
       items: {
@@ -41,7 +44,15 @@ export default async function BundleRoute({
     },
   });
 
-  if (!bundle) notFound();
+  if (!bundleRaw) notFound();
+  // Superpose les traductions du contenu DB (NL/EN…) avec fallback FR.
+  // No-op si locale=fr ; ne touche que name/description/organism (scalaires).
+  const bundle = await localizeRecord(
+    "DocumentBundle",
+    bundleRaw,
+    ["name", "description", "organism"],
+    locale,
+  );
   // Dossier existant mais inactif (stub « à créer ») → page « en construction »
   // plutôt qu'un 404 sec (l'utilisateur a été orienté ici par le wizard).
   if (!bundle.active) {

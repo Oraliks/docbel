@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
+import { localizeRecords } from "@/lib/i18n/content";
 import { ActualitesView } from "@/components/docbel/actualites-view";
 import type { NewsItem } from "@/lib/docbel-data";
 import { resolveArticleImage } from "@/lib/featured-image";
@@ -44,7 +45,11 @@ export default async function ActualitesRoute({ searchParams }: { searchParams: 
 
   const catMap = new Map(cats.map((c) => [c.name, c]));
 
-  const initialArticles: NewsItem[] = articles.map((article) => ({
+  // Overlay traductions DB (NL/EN…) sur les champs affichés ; no-op si FR.
+  const locale = await getLocale();
+  const localized = await localizeRecords("News", articles, ["title", "excerpt"], locale);
+
+  const initialArticles: NewsItem[] = localized.map((article) => ({
     id: article.id,
     slug: article.slug,
     tag: article.category,

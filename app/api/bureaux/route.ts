@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma, BureauType } from "@prisma/client";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { serializeBureau } from "@/lib/bureaus/types";
+import { localizeRecords } from "@/lib/i18n/content";
+import { getUserLocale } from "@/i18n/locale";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -39,8 +41,27 @@ export async function GET(req: NextRequest) {
         take: limit,
       })
     );
+
+    const locale = await getUserLocale();
+    let localized = await localizeRecords("Bureau", items, ["hoursNotes"], locale);
+    const organismes = localized
+      .map((b) => b.organisme)
+      .filter((o): o is NonNullable<typeof o> => Boolean(o));
+    if (organismes.length > 0) {
+      const localizedOrganismes = await localizeRecords(
+        "Organisme",
+        organismes,
+        ["name", "description"],
+        locale
+      );
+      const byId = new Map(localizedOrganismes.map((o) => [o.id, o]));
+      localized = localized.map((b) =>
+        b.organisme ? { ...b, organisme: byId.get(b.organisme.id) ?? b.organisme } : b
+      );
+    }
+
     return NextResponse.json(
-      { items: items.map(serializeBureau), total: items.length },
+      { items: localized.map(serializeBureau), total: localized.length },
       { headers: jsonHeaders }
     );
   } catch (error) {

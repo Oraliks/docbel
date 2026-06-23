@@ -8,8 +8,10 @@
  * au rendu /outils/{slug} en LegacyToolView.
  */
 
+import { getLocale } from 'next-intl/server'
 import { prisma } from '@/lib/prisma'
 import { fetchAllToolsActive } from '@/lib/tools-active'
+import { localizeRecords } from '@/lib/i18n/content'
 import { TOOLS_DATA, type Tool, toolSlug } from '@/lib/docbel-data'
 import {
   type AudienceId,
@@ -109,8 +111,20 @@ export async function getPublicCatalog(): Promise<Tool[]> {
     }),
     fetchAllToolsActive(),
   ])
+
+  // Traductions du contenu DB (ContentTranslation) : on superpose name/description
+  // en locale courante AVANT tout mapping (no-op si locale=fr, fallback FR sinon).
+  // Match par Tool.id (cuid) — sélectionné ci-dessus avec name/description.
+  const locale = await getLocale()
+  const localizedTools = await localizeRecords(
+    'Tool',
+    allTools,
+    ['name', 'description'],
+    locale,
+  )
+
   const activeSlugs = new Set(activeRows.filter((r) => r.active).map((r) => r.slug))
-  const dbTools = allTools.filter((t) => activeSlugs.has(t.slug))
+  const dbTools = localizedTools.filter((t) => activeSlugs.has(t.slug))
 
   // IMPORTANT : pour la déduplication entre DB et statique, on utilise
   // TOUS les slugs DB (actifs OU désactivés) — pas seulement les actifs.

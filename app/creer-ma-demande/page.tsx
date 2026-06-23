@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { KeyRound, ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { localizeRecords } from "@/lib/i18n/content";
 import { LifeEventCard } from "@/components/docbel/onboarding/life-event-card";
 import { IntentSearch } from "@/components/docbel/onboarding/intent-search";
 import { LIFE_EVENT_CATEGORIES } from "@/lib/bundles/types";
@@ -19,14 +20,22 @@ export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
   const t = await getTranslations("public.dossier");
+  const locale = await getLocale();
   // Bundles flagués pour l'onboarding (showOnOnboarding = true)
-  const featured = await prisma.documentBundle.findMany({
+  const featuredRaw = await prisma.documentBundle.findMany({
     where: { active: true, showOnOnboarding: true },
     orderBy: [{ order: "asc" }, { name: "asc" }],
     include: {
       items: { select: { id: true } },
     },
   });
+  // Traductions contenu DB (NL/EN…), fallback FR, no-op si locale=fr.
+  const featured = await localizeRecords(
+    "DocumentBundle",
+    featuredRaw,
+    ["name", "description", "organism"],
+    locale,
+  );
 
   // Regroupement par catégorie d'événement de vie
   type FeaturedBundle = (typeof featured)[number];

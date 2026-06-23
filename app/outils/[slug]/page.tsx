@@ -1,5 +1,7 @@
 import { headers } from "next/headers";
+import { getLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
+import { localizeRecord } from "@/lib/i18n/content";
 import { auth } from "@/lib/auth";
 import { getSetting, SETTING_KEYS } from "@/lib/app-settings";
 import { getToolBySlug, type Tool } from "@/lib/docbel-data";
@@ -83,7 +85,7 @@ export default async function ToolRoute({
 
   // 1) Cherche le Tool DB. Avec select explicite pour récupérer aussi
   // `active` (le client Prisma le supporte depuis la migration).
-  const dbTool = await prisma.tool.findUnique({
+  const dbToolRow = await prisma.tool.findUnique({
     where: { slug },
     select: {
       id: true,
@@ -100,6 +102,14 @@ export default async function ToolRoute({
       section: { select: { name: true } },
     },
   });
+
+  // Traduction du contenu DB (name/description) en locale courante. No-op en
+  // FR, fallback FR si une traduction manque. id + champs traduits sont
+  // sélectionnés ci-dessus, requis par le resolver.
+  const locale = await getLocale();
+  const dbTool = dbToolRow
+    ? await localizeRecord("Tool", dbToolRow, ["name", "description"], locale)
+    : null;
 
   // 2) Si l'outil existe en DB et est désactivé : afficher DisabledToolView
   // plutôt qu'un 404 ou la page d'outil normale. L'utilisateur voit alors

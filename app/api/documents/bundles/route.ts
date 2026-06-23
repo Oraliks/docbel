@@ -5,9 +5,12 @@ import { requireAdminAuth } from "@/lib/auth-check";
 import { parseEligibilityQuestions } from "@/lib/bundles/eligibility";
 import { parseVocabularyTags } from "@/lib/bundles/vocabulary";
 import { parseBundleWarnings } from "@/lib/bundles/types";
+import { getUserLocale } from "@/i18n/locale";
+import { localizeRecords } from "@/lib/i18n/content";
 
 export async function GET() {
   // Lecture publique des bundles actifs (utilisé pour la page publique aussi)
+  const locale = await getUserLocale();
   const bundles = await prisma.documentBundle.findMany({
     where: { active: true },
     orderBy: [{ order: "asc" }, { name: "asc" }],
@@ -22,7 +25,14 @@ export async function GET() {
       },
     },
   });
-  return NextResponse.json(bundles);
+  // Traductions contenu DB (NL/EN…), fallback FR, no-op si locale=fr.
+  const localized = await localizeRecords(
+    "DocumentBundle",
+    bundles,
+    ["name", "description", "organism"],
+    locale,
+  );
+  return NextResponse.json(localized);
 }
 
 export async function POST(req: NextRequest) {

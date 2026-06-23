@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/prisma'
+import { localizeRecord } from '@/lib/i18n/content'
 import { BureauxFinder } from './bureaux-finder'
 import { DisabledToolView } from '../[slug]/disabled-tool-view'
 
@@ -22,10 +23,16 @@ export const revalidate = 0
  * admin laisse la page accessible.
  */
 export default async function BureauxToolPage() {
-  const dbTool = await prisma.tool.findUnique({
+  const dbToolRow = await prisma.tool.findUnique({
     where: { slug: 'bureaux' },
-    select: { name: true, active: true },
+    select: { id: true, name: true, active: true },
   })
+  // Traduction du nom (DisabledToolView) en locale courante. id + name requis
+  // par le resolver ; no-op en FR, fallback FR sinon.
+  const locale = await getLocale()
+  const dbTool = dbToolRow
+    ? await localizeRecord('Tool', dbToolRow, ['name'], locale)
+    : null
 
   if (dbTool && dbTool.active === false) {
     return <DisabledToolView toolName={dbTool.name} />

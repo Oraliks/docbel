@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getUserLocale } from '@/i18n/locale'
+import { localizeRecord } from '@/lib/i18n/content'
 import { setToolActive } from '@/lib/tools-active'
 import { PARTNER_TYPES, parseAccessRules } from '@/lib/entitlements'
 import { z } from 'zod'
@@ -22,7 +24,12 @@ export async function GET(
       return NextResponse.json({ error: 'Tool not found' }, { status: 404 })
     }
 
-    return NextResponse.json(tool, {
+    // Traduction du contenu DB (name/description) en locale courante. `include`
+    // ramène déjà id/name/description ; no-op en FR, fallback FR sinon.
+    const locale = await getUserLocale()
+    const localized = await localizeRecord('Tool', tool, ['name', 'description'], locale)
+
+    return NextResponse.json(localized, {
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
     })
   } catch (error) {

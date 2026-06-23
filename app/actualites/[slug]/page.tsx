@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
+import { localizeRecord, localizeRecords } from "@/lib/i18n/content";
 import { getCurrentUser } from "@/lib/news/session";
 import { ArticleView } from "@/components/docbel/article-view";
 import type { NewsItem } from "@/lib/docbel-data";
@@ -84,11 +85,20 @@ async function loadRelated(slug: string, category: string) {
 
 export async function generateMetadata({ params }: RouteParams): Promise<Metadata> {
   const { slug } = await params;
-  const article = await loadArticle(slug);
-  if (!article) {
+  const loaded = await loadArticle(slug);
+  if (!loaded) {
     const t = await getTranslations("public.contenu");
     return { title: t("articleNotFoundTitle") };
   }
+
+  // Overlay traductions DB (NL/EN…) sur le titre/description des metadata.
+  const locale = await getLocale();
+  const article = await localizeRecord(
+    "News",
+    loaded,
+    ["title", "excerpt", "content", "keyTakeaway"],
+    locale,
+  );
 
   // Build the absolute base URL per-request from forwarded headers so the OG
   // tags resolve correctly on localhost, Netlify preview, and prod (same
@@ -148,10 +158,25 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
 
 export default async function ArticleRoute({ params }: RouteParams) {
   const { slug } = await params;
-  const [article, user] = await Promise.all([loadArticle(slug), getCurrentUser()]);
-  if (!article) notFound();
+  const [loaded, user] = await Promise.all([loadArticle(slug), getCurrentUser()]);
+  if (!loaded) notFound();
 
-  const related = await loadRelated(article.slug, article.category);
+  // Overlay traductions DB (NL/EN…) ; no-op si FR.
+  const locale = await getLocale();
+  const article = await localizeRecord(
+    "News",
+    loaded,
+    ["title", "excerpt", "content", "keyTakeaway"],
+    locale,
+  );
+
+  const relatedRows = await loadRelated(article.slug, article.category);
+  const related = await localizeRecords(
+    "News",
+    relatedRows,
+    ["title", "excerpt"],
+    locale,
+  );
 
   const newsItem: NewsItem = {
     id: article.id,

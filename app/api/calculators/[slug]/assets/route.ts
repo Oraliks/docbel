@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, withDbRetry } from "@/lib/prisma";
+import { getUserLocale } from "@/i18n/locale";
+import { localizeRecords } from "@/lib/i18n/content";
 
 /**
  * /api/calculators/[slug]/assets — endpoint PUBLIC
@@ -12,16 +14,26 @@ import { prisma, withDbRetry } from "@/lib/prisma";
  * pas d'uploadedBy).
  */
 
-const jsonHeaders = {
-  "Content-Type": "application/json; charset=utf-8",
-  "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
-};
+// Cache partagé réservé à la locale canonique FR ; variantes traduites en
+// `private` + `Vary: Cookie` (la locale vit dans le cookie BELDOC_LOCALE) pour
+// que le CDN ne serve pas l'entrée FR à un visiteur NL/EN.
+function jsonHeaders(locale: string) {
+  return {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control":
+      locale === "fr"
+        ? "public, max-age=60, stale-while-revalidate=300"
+        : "private, no-store",
+    Vary: "Cookie",
+  };
+}
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
+  const locale = await getUserLocale();
 
   const rows = await withDbRetry(() =>
     prisma.calculatorAsset.findMany({
@@ -41,5 +53,13 @@ export async function GET(
     }),
   );
 
-  return NextResponse.json({ assets: rows }, { headers: jsonHeaders });
+  // Traductions contenu DB (NL/EN…), fallback FR, no-op si locale=fr.
+  const assets = await localizeRecords(
+    "CalculatorAsset",
+    rows,
+    ["label", "description"],
+    locale,
+  );
+
+  return NextResponse.json({ assets }, { headers: jsonHeaders(locale) });
 }

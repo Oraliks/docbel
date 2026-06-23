@@ -5,21 +5,31 @@ import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { GlobeIcon } from "lucide-react";
 import { setLocale } from "@/i18n/actions";
-import { locales, localeNames } from "@/i18n/config";
+import { locales, localeNames, type Locale } from "@/i18n/config";
 
 /**
  * Sélecteur de langue (mode cookie, sans routing URL).
  * <select> natif volontairement : robuste, zéro dépendance à une lib de
- * dropdown, fonctionne dans la sidebar admin comme ailleurs.
+ * dropdown, fonctionne dans la sidebar admin comme dans le header glass public.
+ *
+ * `localeList` limite les langues proposées (ex. `publicLocales` = FR/NL/EN
+ * traduites côté front) ; par défaut toutes les locales (usage admin).
  */
-export function LocaleSwitcher() {
+export function LocaleSwitcher({
+  localeList = locales,
+  className = "",
+}: {
+  localeList?: readonly Locale[];
+  className?: string;
+} = {}) {
   const locale = useLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/70">
-      <GlobeIcon className="size-4 shrink-0" />
+    <label className={`flex items-center gap-1.5 text-sm ${className}`}>
+      <GlobeIcon className="size-4 shrink-0" aria-hidden />
+      <span className="sr-only">Langue</span>
       <select
         aria-label="Langue"
         value={locale}
@@ -31,14 +41,14 @@ export function LocaleSwitcher() {
             router.refresh();
           });
         }}
-        className="w-full cursor-pointer bg-transparent outline-none disabled:opacity-50"
+        className="cursor-pointer bg-transparent outline-none disabled:opacity-50"
       >
-        {locales.map((l) => (
+        {localeList.map((l) => (
           <option key={l} value={l} className="text-foreground">
             {localeNames[l]}
           </option>
         ))}
       </select>
-    </div>
+    </label>
   );
 }

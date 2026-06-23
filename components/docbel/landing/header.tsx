@@ -9,6 +9,8 @@ import { useAuthSession } from "@/components/auth-session-provider";
 import { useTheme } from "@/components/theme-provider";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { NotificationBell } from "@/components/docbel/notification-bell";
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { publicLocales } from "@/i18n/config";
 import { AUDIENCES, type AudienceId } from "@/lib/audience";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -313,6 +315,10 @@ export function LandingHeader({ persona, onSearchOpen }: LandingHeaderProps) {
       </Button>
 
       <div className="flex items-center gap-2">
+        <LocaleSwitcher
+          localeList={publicLocales}
+          className="h-10 rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-2.5 text-[color:var(--glass-ink)] hover:bg-white/55 dark:hover:bg-white/10"
+        />
         <Button
           variant="ghost"
           size="icon-sm"

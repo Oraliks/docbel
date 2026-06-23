@@ -2149,6 +2149,29 @@ model RendezVousHistory {
   @@index([scope, date])
 }
 
+/// Traductions du CONTENU dynamique poussé au front (actus/News, bundles,
+/// bureaux, organismes, outils…). Table générique : (model, recordId, field,
+/// locale) → valeur traduite. FR = langue source (jamais stockée ici : c'est la
+/// valeur du champ d'origine). Lecture via lib/i18n/content.ts (fallback FR).
+/// Aucune FK (références souples par model+recordId) → migration additive,
+/// sûre sur la base Neon partagée.
+model ContentTranslation {
+  id        String   @id @default(cuid())
+  model     String // "News" | "DocumentBundle" | "Bureau" | "Organisme" | "Tool" | …
+  recordId  String
+  field     String // "title" | "excerpt" | "content" | "name" | "description" | …
+  locale    String // "nl" | "en" | … (FR = source, hors table)
+  value     String   @db.Text
+  /// "ia" (1er jet auto) | "reviewed" (relu natif) | "published".
+  status    String   @default("ia")
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([model, recordId, field, locale])
+  @@index([model, recordId, locale])
+}
+
 // ===========================================================================
 // Plateforme de prise de rendez-vous (booking) — multi-tenant.
 // Un BookingTenant = une organisation qui vend/offre la prise de RDV en ligne

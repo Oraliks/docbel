@@ -178,7 +178,27 @@
       "signupOtherEmployer": "werkgeversruimte",
       "errSegmentMismatch": "Dit adres komt overeen met een {segment}. Registreer u op de daarvoor bestemde pagina.",
       "errInvalidTva": "Ongeldig Belgisch btw-nummer (verwacht formaat: BE0123456789).",
-      "errNetwork": "Netwerkfout. Probeer het zo dadelijk opnieuw."
+      "errNetwork": "Netwerkfout. Probeer het zo dadelijk opnieuw.",
+      "splitTitle": "Registratie",
+      "splitSubtitle": "Maak in enkele seconden uw professionele ruimte aan.",
+      "splitRegisterAs": "Ik registreer mij als",
+      "splitAccountType": "Type account",
+      "splitTabPartner": "Partner",
+      "splitTabEmployer": "Werkgever",
+      "splitBadgePartner": "Partnerruimte",
+      "splitBadgeEmployer": "Werkgeversruimte",
+      "splitTaglinePartner": "OCMW's, vakbonden, ziekenfondsen, RVA en uitbetalingsinstellingen — u begeleidt de burgers.",
+      "splitTaglineEmployer": "HR-beheer, sociale attesten (C4…) en automatisering van uw documenten.",
+      "splitHaveAccount": "Hebt u al een account?",
+      "confirmMissingToken": "Activatielink ontbreekt.",
+      "confirmInvalidLink": "Ongeldige of verlopen link.",
+      "confirmNetworkError": "Netwerkfout. Probeer het zo dadelijk opnieuw.",
+      "confirmVerifyingTitle": "Activatie bezig…",
+      "confirmVerifyingBody": "We controleren uw activatielink. Dit duurt maar enkele seconden.",
+      "confirmSuccessTitle": "Account geactiveerd!",
+      "confirmSuccessBody": "Uw e-mailadres is bevestigd. U kunt nu inloggen op uw partnerruimte.",
+      "confirmErrorTitle": "Activatie mislukt",
+      "confirmRestart": "Registratie opnieuw beginnen"
     },
     "chrome": {
       "navHome": "Start",
@@ -736,7 +756,108 @@
       "gateComingSoonText": "De module Opleidingen komt zeer binnenkort op Docbel. Kom binnenkort terug!",
       "gateForbiddenTitle": "Beperkte toegang",
       "gateForbiddenText": "De module Opleidingen is momenteel beperkt toegankelijk.",
-      "gateBackHome": "Terug naar de startpagina"
+      "gateBackHome": "Terug naar de startpagina",
+      "visibility": {
+        "public": "Openbaar",
+        "unlisted": "Niet vermeld",
+        "private": "Privé",
+        "internal": "Intern",
+        "draft": "Concept"
+      },
+      "status": {
+        "draft": "Concept",
+        "pending_review": "In validatie",
+        "changes_requested": "Correctie gevraagd",
+        "approved": "Gevalideerd",
+        "published": "Gepubliceerd",
+        "suspended": "Opgeschort",
+        "rejected": "Geweigerd",
+        "archived": "Gearchiveerd"
+      },
+      "sessionStatus": {
+        "draft": "Concept",
+        "scheduled": "Gepland",
+        "open": "Inschrijvingen open",
+        "full": "Volzet",
+        "cancelled": "Geannuleerd",
+        "ongoing": "Bezig",
+        "completed": "Afgerond",
+        "archived": "Gearchiveerd"
+      },
+      "enrollmentStatus": {
+        "requested": "Aanvraag verzonden",
+        "pending_review": "Wacht op validatie",
+        "accepted": "Aanvaard",
+        "refused": "Geweigerd",
+        "waitlisted": "Wachtlijst",
+        "cancelled_user": "Geannuleerd (door u)",
+        "cancelled_org": "Geannuleerd (door de organisator)",
+        "present": "Aanwezig",
+        "absent": "Afwezig",
+        "completed": "Afgerond",
+        "certificate_available": "Attest beschikbaar"
+      },
+      "format": {
+        "online": "Online",
+        "onsite": "Op locatie",
+        "hybrid": "Hybride",
+        "autoformation": "Zelfstudie",
+        "accompagnement": "Individuele begeleiding"
+      },
+      "sessionMode": {
+        "online": "Online",
+        "onsite": "Op locatie",
+        "hybrid": "Hybride"
+      },
+      "level": {
+        "debutant": "Beginner",
+        "intermediaire": "Gevorderd",
+        "avance": "Expert"
+      },
+      "priceType": {
+        "free": "Gratis",
+        "paid": "Betalend"
+      },
+      "certificate": {
+        "none": "Geen attest",
+        "participation": "Deelnameattest",
+        "partner": "Partnercertificaat",
+        "docbel": "Docbel-certificaat"
+      },
+      "orgType": {
+        "employeur": "Werkgever",
+        "partenaire": "Partner",
+        "asbl": "vzw",
+        "organisme_formation": "Opleidingsinstelling",
+        "administration": "Partneroverheid",
+        "prive": "Privéonderneming",
+        "formateur": "Geverifieerde lesgever",
+        "interne_docbel": "Interne organisatie Docbel"
+      },
+      "orgRole": {
+        "owner": "Eigenaar",
+        "manager": "Beheerder",
+        "trainer": "Lesgever",
+        "viewer": "Lezer",
+        "admin_contact": "Administratief contact"
+      },
+      "reportReason": {
+        "prix_trompeur": "Misleidende prijs",
+        "info_fausse": "Foute informatie",
+        "non_serieuse": "Onbetrouwbare opleiding",
+        "probleme_partenaire": "Probleem met de partner",
+        "contenu_inadapte": "Ongepaste inhoud",
+        "lien_casse": "Dode link",
+        "expiree": "Opleiding verlopen",
+        "probleme_inscription": "Probleem met de inschrijving",
+        "autre": "Andere"
+      },
+      "reportStatus": {
+        "new": "Nieuw",
+        "in_progress": "In behandeling",
+        "resolved": "Behandeld",
+        "rejected": "Afgewezen"
+      }
     },
     "glossaire": {
       "metaTitle": "Verklarende lijst van administratieve afkortingen",
@@ -2586,6 +2707,19 @@
       "fmMoveFailedCount": "{count} bestand(en) konden niet worden verplaatst",
       "fmFolderCreated": "De map « {name} » is aangemaakt",
       "fmFolderCreateFailed": "Kan de map niet aanmaken"
+    },
+    "changelog": {
+      "type": {
+        "feature": "Nieuw",
+        "fix": "Correctie",
+        "improvement": "Verbetering",
+        "breaking": "Ingrijpend"
+      },
+      "loading": "Laden…",
+      "endOfHistory": "— einde van de geschiedenis —",
+      "errNetwork": "Netwerkfout",
+      "errGeneric": "Fout",
+      "retryWithError": "{error} · opnieuw proberen"
     }
   }
 }

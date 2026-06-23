@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { ArrowLeftIcon, Building2Icon, HandshakeIcon } from "lucide-react";
 import {
@@ -8,29 +9,34 @@ import {
   type ExpectedSegment,
 } from "@/components/docbel/partner-signup-form";
 
+/**
+ * Couleurs/dégradés par segment (non traduisibles). Les libellés (badge,
+ * tagline) sont résolus via i18n (`public.auth.split*`) au rendu.
+ */
 const THEME: Record<
   ExpectedSegment,
-  { bg: string; accent: string; badge: string; tagline: string }
+  { bg: string; accent: string }
 > = {
   partenaire: {
     bg: "radial-gradient(ellipse at 30% 30%, var(--glass-accent-d) 0%, transparent 60%), linear-gradient(135deg, var(--glass-accent-c) 0%, var(--glass-accent-a) 60%, var(--glass-accent-deep) 100%)",
     accent: "#6D28D9",
-    badge: "Espace Partenaire",
-    tagline:
-      "CPAS, syndicats, mutuelles, ONEM et organismes de paiement — vous accompagnez les citoyens.",
   },
   employeur: {
     bg: "radial-gradient(ellipse at 30% 30%, rgba(94,234,212,0.45) 0%, transparent 60%), linear-gradient(135deg, #2DD4BF 0%, #0F766E 60%, #134E4A 100%)",
     accent: "#0F766E",
-    badge: "Espace Employeur",
-    tagline:
-      "Gestion RH, attestations sociales (C4…) et automatisation de vos documents.",
   },
 };
 
 export function InscriptionSplit() {
+  const t = useTranslations("public.auth");
   const [segment, setSegment] = useState<ExpectedSegment>("partenaire");
   const theme = THEME[segment];
+  const badge =
+    segment === "partenaire" ? t("splitBadgePartner") : t("splitBadgeEmployer");
+  const tagline =
+    segment === "partenaire"
+      ? t("splitTaglinePartner")
+      : t("splitTaglineEmployer");
 
   return (
     <div className="glass-root">
@@ -95,13 +101,15 @@ export function InscriptionSplit() {
                 ) : (
                   <Building2Icon className="size-3.5" />
                 )}
-                {theme.badge}
+                {badge}
               </span>
               <p className="glass-display text-[28px] font-semibold leading-tight">
-                Vos démarches belges,{" "}
-                <em className="not-italic text-white/90">en un endroit.</em>
+                {t("asideTitleLead")}{" "}
+                <em className="not-italic text-white/90">
+                  {t("asideTitleEm")}
+                </em>
               </p>
-              <p className="mt-3 text-[14px] text-white/80">{theme.tagline}</p>
+              <p className="mt-3 text-[14px] text-white/80">{tagline}</p>
             </div>
           </div>
         </aside>
@@ -113,41 +121,41 @@ export function InscriptionSplit() {
             className="inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-2 text-[12.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 dark:hover:bg-white/10"
           >
             <ArrowLeftIcon className="size-4" />
-            Retour à l&apos;accueil
+            {t("backToHome")}
           </Link>
 
           <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10">
             <header className="mb-6 flex flex-col gap-2 text-center sm:text-left">
               <h1 className="glass-display text-[40px] font-semibold leading-[1.05] sm:text-[48px]">
-                Inscription
+                {t("splitTitle")}
               </h1>
               <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-                Créez votre espace professionnel en quelques secondes.
+                {t("splitSubtitle")}
               </p>
             </header>
 
             {/* Switch Partenaire / Employeur — bien visible */}
             <div className="mb-6 flex flex-col gap-2">
               <span className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-[color:var(--glass-ink-soft)]">
-                Je m&apos;inscris en tant que
+                {t("splitRegisterAs")}
               </span>
               <div
                 role="tablist"
-                aria-label="Type de compte"
+                aria-label={t("splitAccountType")}
                 className="inline-flex w-full gap-1 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-1"
               >
                 <SegTab
                   active={segment === "partenaire"}
                   onClick={() => setSegment("partenaire")}
                   Icon={HandshakeIcon}
-                  label="Partenaire"
+                  label={t("splitTabPartner")}
                   accent={THEME.partenaire.accent}
                 />
                 <SegTab
                   active={segment === "employeur"}
                   onClick={() => setSegment("employeur")}
                   Icon={Building2Icon}
-                  label="Employeur"
+                  label={t("splitTabEmployer")}
                   accent={THEME.employeur.accent}
                 />
               </div>
@@ -160,12 +168,12 @@ export function InscriptionSplit() {
             />
 
             <p className="mt-6 text-center text-[12.5px] text-[color:var(--glass-ink-soft)]">
-              Vous avez déjà un compte ?{" "}
+              {t("splitHaveAccount")}{" "}
               <Link
                 href="/login"
                 className="font-bold text-[color:var(--glass-accent-deep)] hover:underline"
               >
-                Se connecter
+                {t("signIn")}
               </Link>
             </p>
           </div>

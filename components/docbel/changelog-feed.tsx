@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { ChangelogExpandable } from "./changelog-expandable";
@@ -29,14 +30,18 @@ type Props = {
   pageSize?: number;
 };
 
+/**
+ * Couleurs/pastilles par type (non traduisibles). Le libellé affiché est
+ * résolu via i18n (`public.changelog.type.*`) au moment du rendu.
+ */
 const TYPE_CONFIG: Record<
   string,
-  { label: string; dot: string; textColor: string }
+  { labelKey: string; dot: string; textColor: string }
 > = {
-  feature: { label: "Nouveauté", dot: "#10B981", textColor: "#10B981" },
-  fix: { label: "Correction", dot: "#EF4444", textColor: "#EF4444" },
-  improvement: { label: "Amélioration", dot: "#3B82F6", textColor: "#3B82F6" },
-  breaking: { label: "Breaking", dot: "#F59E0B", textColor: "#F59E0B" },
+  feature: { labelKey: "feature", dot: "#10B981", textColor: "#10B981" },
+  fix: { labelKey: "fix", dot: "#EF4444", textColor: "#EF4444" },
+  improvement: { labelKey: "improvement", dot: "#3B82F6", textColor: "#3B82F6" },
+  breaking: { labelKey: "breaking", dot: "#F59E0B", textColor: "#F59E0B" },
 };
 
 const formatDate = (iso: string) =>
@@ -58,6 +63,7 @@ export function ChangelogFeed({
   initialHasMore,
   pageSize = 10,
 }: Props) {
+  const t = useTranslations("public.changelog");
   const [entries, setEntries] = useState<ChangelogFeedEntry[]>(initialEntries);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loading, setLoading] = useState(false);
@@ -79,7 +85,7 @@ export function ChangelogFeed({
         oldest.publishedAt
       )}`;
       const r = await fetch(url, { cache: "no-store" });
-      if (!r.ok) throw new Error("Erreur réseau");
+      if (!r.ok) throw new Error(t("errNetwork"));
       const j = (await r.json()) as {
         entries: ChangelogFeedEntry[];
         hasMore: boolean;
@@ -87,12 +93,12 @@ export function ChangelogFeed({
       setEntries((prev) => [...prev, ...j.entries]);
       setHasMore(j.hasMore);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Erreur");
+      setErr(e instanceof Error ? e.message : t("errGeneric"));
     } finally {
       setLoading(false);
       loadingRef.current = false;
     }
-  }, [entries, hasMore, pageSize]);
+  }, [entries, hasMore, pageSize, t]);
 
   // IntersectionObserver : charge la page suivante quand le sentinel devient visible
   useEffect(() => {
@@ -148,7 +154,7 @@ export function ChangelogFeed({
                   ·
                 </span>
                 <span className="font-semibold" style={{ color: cfg.textColor }}>
-                  {cfg.label}
+                  {t(`type.${cfg.labelKey}` as Parameters<typeof t>[0])}
                 </span>
                 <Badge
                   variant="outline"
@@ -219,11 +225,11 @@ export function ChangelogFeed({
         {loading && (
           <span className="inline-flex items-center gap-2">
             <Loader2 className="size-4 animate-spin" />
-            Chargement…
+            {t("loading")}
           </span>
         )}
         {!loading && !hasMore && entries.length > 0 && (
-          <span className="opacity-60">— fin de l&apos;historique —</span>
+          <span className="opacity-60">{t("endOfHistory")}</span>
         )}
         {!loading && err && (
           <button
@@ -231,7 +237,7 @@ export function ChangelogFeed({
             onClick={() => void loadMore()}
             className="text-destructive underline-offset-2 hover:underline"
           >
-            {err} · réessayer
+            {t("retryWithError", { error: err })}
           </button>
         )}
       </div>

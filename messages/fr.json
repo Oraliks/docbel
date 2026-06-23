@@ -82,7 +82,8 @@
       "assistantEmployeur": "Assistant Employeur",
       "sourcesOfficielles": "Sources officielles",
       "reglesMetier": "Règles métier",
-      "medias": "Médias"
+      "medias": "Médias",
+      "traductions": "Traductions"
     },
     "users": {
       "title": "Utilisateurs",
@@ -3991,7 +3992,27 @@
       "signupOtherEmployer": "espace employeur",
       "errSegmentMismatch": "Cette adresse correspond à un {segment}. Inscrivez-vous sur la page dédiée.",
       "errInvalidTva": "Numéro de TVA belge invalide (format attendu : BE0123456789).",
-      "errNetwork": "Erreur réseau. Réessayez dans un instant."
+      "errNetwork": "Erreur réseau. Réessayez dans un instant.",
+      "splitTitle": "Inscription",
+      "splitSubtitle": "Créez votre espace professionnel en quelques secondes.",
+      "splitRegisterAs": "Je m'inscris en tant que",
+      "splitAccountType": "Type de compte",
+      "splitTabPartner": "Partenaire",
+      "splitTabEmployer": "Employeur",
+      "splitBadgePartner": "Espace Partenaire",
+      "splitBadgeEmployer": "Espace Employeur",
+      "splitTaglinePartner": "CPAS, syndicats, mutuelles, ONEM et organismes de paiement — vous accompagnez les citoyens.",
+      "splitTaglineEmployer": "Gestion RH, attestations sociales (C4…) et automatisation de vos documents.",
+      "splitHaveAccount": "Vous avez déjà un compte ?",
+      "confirmMissingToken": "Lien d'activation manquant.",
+      "confirmInvalidLink": "Lien invalide ou expiré.",
+      "confirmNetworkError": "Erreur réseau. Réessayez dans un instant.",
+      "confirmVerifyingTitle": "Activation en cours…",
+      "confirmVerifyingBody": "Nous vérifions votre lien d'activation. Cela ne prend que quelques secondes.",
+      "confirmSuccessTitle": "Compte activé !",
+      "confirmSuccessBody": "Votre adresse email est confirmée. Vous pouvez maintenant vous connecter à votre espace partenaire.",
+      "confirmErrorTitle": "Activation impossible",
+      "confirmRestart": "Recommencer l'inscription"
     },
     "contenu": {
       "newsMetaTitle": "Actualités",
@@ -4482,7 +4503,108 @@
       "gateComingSoonText": "Le module Formations arrive très prochainement sur Docbel. Revenez bientôt !",
       "gateForbiddenTitle": "Accès réservé",
       "gateForbiddenText": "Le module Formations est en accès restreint pour le moment.",
-      "gateBackHome": "Retour à l'accueil"
+      "gateBackHome": "Retour à l'accueil",
+      "visibility": {
+        "public": "Publique",
+        "unlisted": "Non listée",
+        "private": "Privée",
+        "internal": "Interne",
+        "draft": "Brouillon"
+      },
+      "status": {
+        "draft": "Brouillon",
+        "pending_review": "En validation",
+        "changes_requested": "Correction demandée",
+        "approved": "Validée",
+        "published": "Publiée",
+        "suspended": "Suspendue",
+        "rejected": "Refusée",
+        "archived": "Archivée"
+      },
+      "sessionStatus": {
+        "draft": "Brouillon",
+        "scheduled": "Programmée",
+        "open": "Inscriptions ouvertes",
+        "full": "Complète",
+        "cancelled": "Annulée",
+        "ongoing": "En cours",
+        "completed": "Terminée",
+        "archived": "Archivée"
+      },
+      "enrollmentStatus": {
+        "requested": "Demande envoyée",
+        "pending_review": "En attente de validation",
+        "accepted": "Acceptée",
+        "refused": "Refusée",
+        "waitlisted": "Liste d'attente",
+        "cancelled_user": "Annulée (par vous)",
+        "cancelled_org": "Annulée (par l'organisateur)",
+        "present": "Présent",
+        "absent": "Absent",
+        "completed": "Terminée",
+        "certificate_available": "Attestation disponible"
+      },
+      "format": {
+        "online": "En ligne",
+        "onsite": "Présentiel",
+        "hybrid": "Hybride",
+        "autoformation": "Autoformation",
+        "accompagnement": "Accompagnement individuel"
+      },
+      "sessionMode": {
+        "online": "En ligne",
+        "onsite": "Présentiel",
+        "hybrid": "Hybride"
+      },
+      "level": {
+        "debutant": "Débutant",
+        "intermediaire": "Intermédiaire",
+        "avance": "Avancé"
+      },
+      "priceType": {
+        "free": "Gratuite",
+        "paid": "Payante"
+      },
+      "certificate": {
+        "none": "Aucune attestation",
+        "participation": "Attestation de participation",
+        "partner": "Certificat partenaire",
+        "docbel": "Certificat Docbel"
+      },
+      "orgType": {
+        "employeur": "Employeur",
+        "partenaire": "Partenaire",
+        "asbl": "ASBL",
+        "organisme_formation": "Organisme de formation",
+        "administration": "Administration partenaire",
+        "prive": "Société privée",
+        "formateur": "Formateur vérifié",
+        "interne_docbel": "Organisation interne Docbel"
+      },
+      "orgRole": {
+        "owner": "Propriétaire",
+        "manager": "Gestionnaire",
+        "trainer": "Formateur",
+        "viewer": "Lecteur",
+        "admin_contact": "Contact administratif"
+      },
+      "reportReason": {
+        "prix_trompeur": "Prix trompeur",
+        "info_fausse": "Information fausse",
+        "non_serieuse": "Formation non sérieuse",
+        "probleme_partenaire": "Problème avec le partenaire",
+        "contenu_inadapte": "Contenu inadapté",
+        "lien_casse": "Lien cassé",
+        "expiree": "Formation expirée",
+        "probleme_inscription": "Problème d'inscription",
+        "autre": "Autre"
+      },
+      "reportStatus": {
+        "new": "Nouveau",
+        "in_progress": "En cours",
+        "resolved": "Traité",
+        "rejected": "Rejeté"
+      }
     },
     "outils": {
       "back": "Retour",
@@ -5569,6 +5691,19 @@
       "fmMoveFailedCount": "{count} fichier(s) n'ont pas pu être déplacés",
       "fmFolderCreated": "Le dossier « {name} » a été créé",
       "fmFolderCreateFailed": "Impossible de créer le dossier"
+    },
+    "changelog": {
+      "type": {
+        "feature": "Nouveauté",
+        "fix": "Correction",
+        "improvement": "Amélioration",
+        "breaking": "Breaking"
+      },
+      "loading": "Chargement…",
+      "endOfHistory": "— fin de l'historique —",
+      "errNetwork": "Erreur réseau",
+      "errGeneric": "Erreur",
+      "retryWithError": "{error} · réessayer"
     }
   }
 }

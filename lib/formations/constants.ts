@@ -2,6 +2,20 @@
  * Docbel Formations — ensembles bornés (String + union, pas d'enum Postgres) et
  * libellés FR. Isomorphe (importable client + serveur). Single source of truth
  * pour les statuts/visibilités/rôles utilisés partout dans le module.
+ *
+ * --- i18n -----------------------------------------------------------------
+ * Ce fichier est un module `lib/` PUR : pas de hook React, donc on n'y traduit
+ * pas. Les `*_LABELS` (FR) restent la source FR fonctionnelle (admin, PDF,
+ * exports CSV, fallback serveur). Pour le FRONT multilingue, chaque map de
+ * libellés a un jumeau `*_LABEL_KEYS` (valeur d'enum → chemin de clé i18n sous
+ * `public.formations.*`). Au point d'affichage (composant) :
+ *
+ *   const t = useTranslations("public.formations");
+ *   const label = t(SESSION_STATUS_LABEL_KEYS[status]);
+ *
+ * Les clés sont relatives au namespace `public.formations`, donc à utiliser
+ * directement avec `t(...)`. Garder les deux maps en phase si on ajoute une
+ * valeur d'enum.
  */
 
 // --- Visibilité ------------------------------------------------------------
@@ -20,6 +34,15 @@ export const VISIBILITY_LABELS: Record<TrainingVisibility, string> = {
   private: "Privée",
   internal: "Interne",
   draft: "Brouillon",
+};
+
+/** Clés i18n (sous `public.formations`) jumelles de VISIBILITY_LABELS. */
+export const VISIBILITY_LABEL_KEYS: Record<TrainingVisibility, string> = {
+  public: "visibility.public",
+  unlisted: "visibility.unlisted",
+  private: "visibility.private",
+  internal: "visibility.internal",
+  draft: "visibility.draft",
 };
 
 // --- Statut formation ------------------------------------------------------
@@ -44,6 +67,18 @@ export const TRAINING_STATUS_LABELS: Record<TrainingStatus, string> = {
   suspended: "Suspendue",
   rejected: "Refusée",
   archived: "Archivée",
+};
+
+/** Clés i18n (sous `public.formations`) jumelles de TRAINING_STATUS_LABELS. */
+export const TRAINING_STATUS_LABEL_KEYS: Record<TrainingStatus, string> = {
+  draft: "status.draft",
+  pending_review: "status.pending_review",
+  changes_requested: "status.changes_requested",
+  approved: "status.approved",
+  published: "status.published",
+  suspended: "status.suspended",
+  rejected: "status.rejected",
+  archived: "status.archived",
 };
 
 /** Statuts visibles publiquement (si la visibilité le permet). */
@@ -71,6 +106,18 @@ export const SESSION_STATUS_LABELS: Record<TrainingSessionStatus, string> = {
   ongoing: "En cours",
   completed: "Terminée",
   archived: "Archivée",
+};
+
+/** Clés i18n (sous `public.formations`) jumelles de SESSION_STATUS_LABELS. */
+export const SESSION_STATUS_LABEL_KEYS: Record<TrainingSessionStatus, string> = {
+  draft: "sessionStatus.draft",
+  scheduled: "sessionStatus.scheduled",
+  open: "sessionStatus.open",
+  full: "sessionStatus.full",
+  cancelled: "sessionStatus.cancelled",
+  ongoing: "sessionStatus.ongoing",
+  completed: "sessionStatus.completed",
+  archived: "sessionStatus.archived",
 };
 
 /** Sessions sur lesquelles une inscription publique est possible. */
@@ -110,6 +157,24 @@ export const ENROLLMENT_STATUS_LABELS: Record<TrainingEnrollmentStatus, string> 
     certificate_available: "Attestation disponible",
   };
 
+/** Clés i18n (sous `public.formations`) jumelles de ENROLLMENT_STATUS_LABELS. */
+export const ENROLLMENT_STATUS_LABEL_KEYS: Record<
+  TrainingEnrollmentStatus,
+  string
+> = {
+  requested: "enrollmentStatus.requested",
+  pending_review: "enrollmentStatus.pending_review",
+  accepted: "enrollmentStatus.accepted",
+  refused: "enrollmentStatus.refused",
+  waitlisted: "enrollmentStatus.waitlisted",
+  cancelled_user: "enrollmentStatus.cancelled_user",
+  cancelled_org: "enrollmentStatus.cancelled_org",
+  present: "enrollmentStatus.present",
+  absent: "enrollmentStatus.absent",
+  completed: "enrollmentStatus.completed",
+  certificate_available: "enrollmentStatus.certificate_available",
+};
+
 /** Statuts d'inscription qui occupent une place dans la capacité. */
 export const ACTIVE_ENROLLMENT_STATUSES: TrainingEnrollmentStatus[] = [
   "requested",
@@ -138,12 +203,28 @@ export const FORMAT_LABELS: Record<TrainingFormat, string> = {
   accompagnement: "Accompagnement individuel",
 };
 
+/** Clés i18n (sous `public.formations`) jumelles de FORMAT_LABELS. */
+export const FORMAT_LABEL_KEYS: Record<TrainingFormat, string> = {
+  online: "format.online",
+  onsite: "format.onsite",
+  hybrid: "format.hybrid",
+  autoformation: "format.autoformation",
+  accompagnement: "format.accompagnement",
+};
+
 export const SESSION_MODES = ["online", "onsite", "hybrid"] as const;
 export type SessionMode = (typeof SESSION_MODES)[number];
 export const SESSION_MODE_LABELS: Record<SessionMode, string> = {
   online: "En ligne",
   onsite: "Présentiel",
   hybrid: "Hybride",
+};
+
+/** Clés i18n (sous `public.formations`) jumelles de SESSION_MODE_LABELS. */
+export const SESSION_MODE_LABEL_KEYS: Record<SessionMode, string> = {
+  online: "sessionMode.online",
+  onsite: "sessionMode.onsite",
+  hybrid: "sessionMode.hybrid",
 };
 
 // --- Niveau ----------------------------------------------------------------
@@ -155,12 +236,25 @@ export const LEVEL_LABELS: Record<TrainingLevel, string> = {
   avance: "Avancé",
 };
 
+/** Clés i18n (sous `public.formations`) jumelles de LEVEL_LABELS. */
+export const LEVEL_LABEL_KEYS: Record<TrainingLevel, string> = {
+  debutant: "level.debutant",
+  intermediaire: "level.intermediaire",
+  avance: "level.avance",
+};
+
 // --- Prix ------------------------------------------------------------------
 export const PRICE_TYPES = ["free", "paid"] as const;
 export type PriceType = (typeof PRICE_TYPES)[number];
 export const PRICE_TYPE_LABELS: Record<PriceType, string> = {
   free: "Gratuite",
   paid: "Payante",
+};
+
+/** Clés i18n (sous `public.formations`) jumelles de PRICE_TYPE_LABELS. */
+export const PRICE_TYPE_LABEL_KEYS: Record<PriceType, string> = {
+  free: "priceType.free",
+  paid: "priceType.paid",
 };
 
 // --- Certification ---------------------------------------------------------
@@ -176,6 +270,14 @@ export const CERTIFICATE_LABELS: Record<CertificateType, string> = {
   participation: "Attestation de participation",
   partner: "Certificat partenaire",
   docbel: "Certificat Docbel",
+};
+
+/** Clés i18n (sous `public.formations`) jumelles de CERTIFICATE_LABELS. */
+export const CERTIFICATE_LABEL_KEYS: Record<CertificateType, string> = {
+  none: "certificate.none",
+  participation: "certificate.participation",
+  partner: "certificate.partner",
+  docbel: "certificate.docbel",
 };
 
 // --- Type d'organisation ---------------------------------------------------
@@ -201,6 +303,18 @@ export const ORG_TYPE_LABELS: Record<FormationOrgType, string> = {
   interne_docbel: "Organisation interne Docbel",
 };
 
+/** Clés i18n (sous `public.formations`) jumelles de ORG_TYPE_LABELS. */
+export const ORG_TYPE_LABEL_KEYS: Record<FormationOrgType, string> = {
+  employeur: "orgType.employeur",
+  partenaire: "orgType.partenaire",
+  asbl: "orgType.asbl",
+  organisme_formation: "orgType.organisme_formation",
+  administration: "orgType.administration",
+  prive: "orgType.prive",
+  formateur: "orgType.formateur",
+  interne_docbel: "orgType.interne_docbel",
+};
+
 // --- Rôle membre d'organisation -------------------------------------------
 export const ORG_MEMBER_ROLES = [
   "owner",
@@ -216,6 +330,15 @@ export const ORG_ROLE_LABELS: Record<FormationOrgRole, string> = {
   trainer: "Formateur",
   viewer: "Lecteur",
   admin_contact: "Contact administratif",
+};
+
+/** Clés i18n (sous `public.formations`) jumelles de ORG_ROLE_LABELS. */
+export const ORG_ROLE_LABEL_KEYS: Record<FormationOrgRole, string> = {
+  owner: "orgRole.owner",
+  manager: "orgRole.manager",
+  trainer: "orgRole.trainer",
+  viewer: "orgRole.viewer",
+  admin_contact: "orgRole.admin_contact",
 };
 
 // --- Règles d'accès (audience) --------------------------------------------
@@ -256,6 +379,19 @@ export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
   autre: "Autre",
 };
 
+/** Clés i18n (sous `public.formations`) jumelles de REPORT_REASON_LABELS. */
+export const REPORT_REASON_LABEL_KEYS: Record<ReportReason, string> = {
+  prix_trompeur: "reportReason.prix_trompeur",
+  info_fausse: "reportReason.info_fausse",
+  non_serieuse: "reportReason.non_serieuse",
+  probleme_partenaire: "reportReason.probleme_partenaire",
+  contenu_inadapte: "reportReason.contenu_inadapte",
+  lien_casse: "reportReason.lien_casse",
+  expiree: "reportReason.expiree",
+  probleme_inscription: "reportReason.probleme_inscription",
+  autre: "reportReason.autre",
+};
+
 export const REPORT_STATUSES = ["new", "in_progress", "resolved", "rejected"] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
@@ -263,6 +399,14 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   in_progress: "En cours",
   resolved: "Traité",
   rejected: "Rejeté",
+};
+
+/** Clés i18n (sous `public.formations`) jumelles de REPORT_STATUS_LABELS. */
+export const REPORT_STATUS_LABEL_KEYS: Record<ReportStatus, string> = {
+  new: "reportStatus.new",
+  in_progress: "reportStatus.in_progress",
+  resolved: "reportStatus.resolved",
+  rejected: "reportStatus.rejected",
 };
 
 // --- Type-guards génériques -----------------------------------------------

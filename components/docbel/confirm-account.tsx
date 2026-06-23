@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   AlertCircleIcon,
@@ -16,9 +17,10 @@ interface ConfirmAccountProps {
 }
 
 export function ConfirmAccount({ token }: ConfirmAccountProps) {
+  const t = useTranslations("public.auth");
   const [status, setStatus] = useState<Status>(token ? "verifying" : "error");
   const [errorMessage, setErrorMessage] = useState<string>(
-    token ? "" : "Lien d'activation manquant.",
+    token ? "" : t("confirmMissingToken"),
   );
 
   useEffect(() => {
@@ -33,20 +35,20 @@ export function ConfirmAccount({ token }: ConfirmAccountProps) {
         });
         const data = await res.json();
         if (!res.ok) {
-          setErrorMessage(data.error || "Lien invalide ou expiré.");
+          setErrorMessage(data.error || t("confirmInvalidLink"));
           setStatus("error");
           return;
         }
         setStatus("success");
       } catch (err) {
         console.error(err);
-        setErrorMessage("Erreur réseau. Réessayez dans un instant.");
+        setErrorMessage(t("confirmNetworkError"));
         setStatus("error");
       }
     };
 
     void run();
-  }, [token]);
+  }, [token, t]);
 
   if (status === "verifying") {
     return (
@@ -61,11 +63,10 @@ export function ConfirmAccount({ token }: ConfirmAccountProps) {
           <Loader2Icon className="size-6 animate-spin" />
         </span>
         <h1 className="glass-display text-[24px] font-semibold">
-          Activation en cours…
+          {t("confirmVerifyingTitle")}
         </h1>
         <p className="max-w-sm text-[13px] text-[color:var(--glass-ink-soft)]">
-          Nous vérifions votre lien d&apos;activation. Cela ne prend que
-          quelques secondes.
+          {t("confirmVerifyingBody")}
         </p>
       </div>
     );
@@ -83,11 +84,10 @@ export function ConfirmAccount({ token }: ConfirmAccountProps) {
           <CheckCircle2Icon className="size-6" />
         </span>
         <h1 className="glass-display text-[28px] font-semibold">
-          Compte activé !
+          {t("confirmSuccessTitle")}
         </h1>
         <p className="max-w-md text-[13.5px] text-[color:var(--glass-ink-soft)]">
-          Votre adresse email est confirmée. Vous pouvez maintenant vous
-          connecter à votre espace partenaire.
+          {t("confirmSuccessBody")}
         </p>
         <Link
           href="/login"
@@ -97,7 +97,7 @@ export function ConfirmAccount({ token }: ConfirmAccountProps) {
             color: "var(--glass-bg-a)",
           }}
         >
-          Se connecter
+          {t("signIn")}
           <ArrowRightIcon className="size-4" />
         </Link>
       </div>
@@ -115,7 +115,7 @@ export function ConfirmAccount({ token }: ConfirmAccountProps) {
         <AlertCircleIcon className="size-6" />
       </span>
       <h1 className="glass-display text-[24px] font-semibold">
-        Activation impossible
+        {t("confirmErrorTitle")}
       </h1>
       <p className="max-w-md text-[13.5px] text-[color:var(--glass-ink-soft)]">
         {errorMessage}
@@ -124,7 +124,7 @@ export function ConfirmAccount({ token }: ConfirmAccountProps) {
         href="/inscription/partenaire"
         className="mt-2 inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-5 py-2.5 text-[13px] font-semibold text-[color:var(--glass-ink)] transition hover:bg-white/55 dark:hover:bg-white/10"
       >
-        Recommencer l&apos;inscription
+        {t("confirmRestart")}
       </Link>
     </div>
   );

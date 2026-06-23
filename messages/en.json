@@ -95,7 +95,27 @@
       "signupOtherEmployer": "employer space",
       "errSegmentMismatch": "This address corresponds to a {segment}. Sign up on the dedicated page.",
       "errInvalidTva": "Invalid Belgian VAT number (expected format: BE0123456789).",
-      "errNetwork": "Network error. Try again in a moment."
+      "errNetwork": "Network error. Try again in a moment.",
+      "splitTitle": "Sign up",
+      "splitSubtitle": "Create your professional workspace in seconds.",
+      "splitRegisterAs": "I am signing up as",
+      "splitAccountType": "Account type",
+      "splitTabPartner": "Partner",
+      "splitTabEmployer": "Employer",
+      "splitBadgePartner": "Partner area",
+      "splitBadgeEmployer": "Employer area",
+      "splitTaglinePartner": "CPAS, trade unions, health insurance funds, ONEM and payment bodies — you support citizens.",
+      "splitTaglineEmployer": "HR management, social certificates (C4…) and document automation.",
+      "splitHaveAccount": "Already have an account?",
+      "confirmMissingToken": "Activation link is missing.",
+      "confirmInvalidLink": "Invalid or expired link.",
+      "confirmNetworkError": "Network error. Please try again in a moment.",
+      "confirmVerifyingTitle": "Activating…",
+      "confirmVerifyingBody": "We are checking your activation link. This only takes a few seconds.",
+      "confirmSuccessTitle": "Account activated!",
+      "confirmSuccessBody": "Your email address is confirmed. You can now sign in to your partner area.",
+      "confirmErrorTitle": "Activation failed",
+      "confirmRestart": "Start the sign-up again"
     },
     "chrome": {
       "navHome": "Home",
@@ -653,7 +673,108 @@
       "gateComingSoonText": "The Training module is coming to Docbel very soon. Come back soon!",
       "gateForbiddenTitle": "Restricted access",
       "gateForbiddenText": "The Training module is currently restricted.",
-      "gateBackHome": "Back to home"
+      "gateBackHome": "Back to home",
+      "visibility": {
+        "public": "Public",
+        "unlisted": "Unlisted",
+        "private": "Private",
+        "internal": "Internal",
+        "draft": "Draft"
+      },
+      "status": {
+        "draft": "Draft",
+        "pending_review": "Under review",
+        "changes_requested": "Changes requested",
+        "approved": "Approved",
+        "published": "Published",
+        "suspended": "Suspended",
+        "rejected": "Rejected",
+        "archived": "Archived"
+      },
+      "sessionStatus": {
+        "draft": "Draft",
+        "scheduled": "Scheduled",
+        "open": "Registration open",
+        "full": "Full",
+        "cancelled": "Cancelled",
+        "ongoing": "Ongoing",
+        "completed": "Completed",
+        "archived": "Archived"
+      },
+      "enrollmentStatus": {
+        "requested": "Request sent",
+        "pending_review": "Awaiting approval",
+        "accepted": "Accepted",
+        "refused": "Refused",
+        "waitlisted": "Waitlisted",
+        "cancelled_user": "Cancelled (by you)",
+        "cancelled_org": "Cancelled (by the organiser)",
+        "present": "Present",
+        "absent": "Absent",
+        "completed": "Completed",
+        "certificate_available": "Certificate available"
+      },
+      "format": {
+        "online": "Online",
+        "onsite": "On site",
+        "hybrid": "Hybrid",
+        "autoformation": "Self-paced",
+        "accompagnement": "One-to-one support"
+      },
+      "sessionMode": {
+        "online": "Online",
+        "onsite": "On site",
+        "hybrid": "Hybrid"
+      },
+      "level": {
+        "debutant": "Beginner",
+        "intermediaire": "Intermediate",
+        "avance": "Advanced"
+      },
+      "priceType": {
+        "free": "Free",
+        "paid": "Paid"
+      },
+      "certificate": {
+        "none": "No certificate",
+        "participation": "Certificate of attendance",
+        "partner": "Partner certificate",
+        "docbel": "Docbel certificate"
+      },
+      "orgType": {
+        "employeur": "Employer",
+        "partenaire": "Partner",
+        "asbl": "Non-profit",
+        "organisme_formation": "Training provider",
+        "administration": "Partner administration",
+        "prive": "Private company",
+        "formateur": "Verified trainer",
+        "interne_docbel": "Docbel internal organisation"
+      },
+      "orgRole": {
+        "owner": "Owner",
+        "manager": "Manager",
+        "trainer": "Trainer",
+        "viewer": "Viewer",
+        "admin_contact": "Administrative contact"
+      },
+      "reportReason": {
+        "prix_trompeur": "Misleading price",
+        "info_fausse": "False information",
+        "non_serieuse": "Untrustworthy training",
+        "probleme_partenaire": "Issue with the partner",
+        "contenu_inadapte": "Inappropriate content",
+        "lien_casse": "Broken link",
+        "expiree": "Training expired",
+        "probleme_inscription": "Registration problem",
+        "autre": "Other"
+      },
+      "reportStatus": {
+        "new": "New",
+        "in_progress": "In progress",
+        "resolved": "Resolved",
+        "rejected": "Rejected"
+      }
     },
     "glossaire": {
       "metaTitle": "Glossary of administrative acronyms",
@@ -2503,6 +2624,19 @@
       "fmMoveFailedCount": "{count} file(s) could not be moved",
       "fmFolderCreated": "The folder “{name}” was created",
       "fmFolderCreateFailed": "Could not create the folder"
+    },
+    "changelog": {
+      "type": {
+        "feature": "New",
+        "fix": "Fix",
+        "improvement": "Improvement",
+        "breaking": "Breaking"
+      },
+      "loading": "Loading…",
+      "endOfHistory": "— end of history —",
+      "errNetwork": "Network error",
+      "errGeneric": "Error",
+      "retryWithError": "{error} · retry"
     }
   }
 }

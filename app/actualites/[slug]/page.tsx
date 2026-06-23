@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { localizeRecord, localizeRecords } from "@/lib/i18n/content";
 import { getCurrentUser } from "@/lib/news/session";
 import { ArticleView } from "@/components/docbel/article-view";
+import { SuggestCorrection } from "@/components/i18n/suggest-correction";
 import type { NewsItem } from "@/lib/docbel-data";
 import { resolveArticleImage } from "@/lib/featured-image";
 
@@ -214,12 +215,27 @@ export default async function ArticleRoute({ params }: RouteParams) {
   }));
 
   return (
-    <ArticleView
-      article={newsItem}
-      related={relatedItems}
-      articleHeroIllustration={newsItem.heroIllustration}
-      isAdmin={user?.isAdmin === true}
-      accent="#7C3AED"
-    />
+    <>
+      <ArticleView
+        article={newsItem}
+        related={relatedItems}
+        articleHeroIllustration={newsItem.heroIllustration}
+        isAdmin={user?.isAdmin === true}
+        accent="#7C3AED"
+      />
+      {/* Correction communautaire de traduction : ne s'affiche que hors FR.
+          sourceText = contenu FR original (loaded), currentText = la
+          traduction actuellement servie (article, overlay DB). */}
+      <div className="mx-auto w-full max-w-3xl px-4 pb-10 sm:px-6">
+        <SuggestCorrection
+          locale={locale}
+          model="News"
+          recordId={loaded.id}
+          field="content"
+          sourceText={loaded.content ?? ""}
+          currentText={article.content ?? undefined}
+        />
+      </div>
+    </>
   );
 }

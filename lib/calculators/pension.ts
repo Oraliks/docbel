@@ -18,6 +18,15 @@
  *
  * Pour le calcul officiel et personnalisé : mypension.be
  *
+ * --- i18n ------------------------------------------------------------------
+ * Module PUR (client + serveur). Les messages FR (`error`, `raison`,
+ * `statutLabel`) restent disponibles comme fallback. Chacun a un jumeau
+ * de clé i18n (sous `public.calculatorsLib.pension.*`) :
+ *   - `errorKey` parallèle à `error`
+ *   - `statutLabelKey` parallèle à `statutLabel`
+ *   - `raisonKey` + `raisonValues` parallèles à `raison`
+ * À résoudre côté composant via `t(key as Parameters<typeof t>[0], values?)`.
+ *
  * FORMULE GÉNÉRALE (simplifiée)
  * -----------------------------
  *   pension_annuelle = salaire_pris × taux × (carriere_totale / 45)
@@ -63,8 +72,20 @@ export interface PensionInput {
 export interface PensionEligibiliteAnticipee {
   /** True si la personne peut effectivement partir à l'âge demandé. */
   possible: boolean;
-  /** Phrase explicative quand `possible === false`. */
+  /** Phrase explicative quand `possible === false` (FR fallback). */
   raison?: string;
+  /**
+   * Clé i18n (sous `public.calculatorsLib`) pour résoudre `raison`.
+   * À utiliser via `t(key, raisonValues)`.
+   */
+  raisonKey?: string;
+  /** Valeurs interpolables pour `raisonKey`. */
+  raisonValues?: {
+    ageDepart?: number;
+    conditionCarriere?: number;
+    carriereTotale?: number;
+    carriereTotalePlural?: number;
+  };
   /** Carrière minimum requise à cet âge pour partir anticipé. */
   conditionCarriere?: number;
   /** Âge anticipé évalué. */
@@ -102,8 +123,13 @@ export interface PensionResult {
   longueCarriere: boolean;
   /** True si le salaire moyen a été plafonné par le maximum 2026. */
   plafondAtteint: boolean;
-  /** Libellé lisible du statut ("Isolé" / "Ménage"). */
+  /** Libellé lisible du statut ("Isolé" / "Ménage") — FR fallback. */
   statutLabel: string;
+  /**
+   * Clé i18n (sous `public.calculatorsLib`) jumelle de `statutLabel`.
+   * À résoudre côté composant via `t(key as Parameters<typeof t>[0])`.
+   */
+  statutLabelKey: string;
   /** Éligibilité au départ anticipé à l'âge demandé. */
   eligibiliteAnticipee: PensionEligibiliteAnticipee;
 }
@@ -215,7 +241,10 @@ export function calcPension(
 
   // --- Validation ------------------------------------------------------
   if (!Number.isFinite(parseAnneeNaissance(dateNaissance))) {
-    return { error: "Indiquez une date de naissance valide (JJ/MM/AAAA)." };
+    return {
+      error: "Indiquez une date de naissance valide (JJ/MM/AAAA).",
+      errorKey: "pension.errors.dateNaissance",
+    } as { error: string; errorKey: string };
   }
   if (
     !Number.isFinite(anneesCarriere) ||
@@ -224,7 +253,8 @@ export function calcPension(
   ) {
     return {
       error: "Les années de carrière doivent être comprises entre 0 et 50.",
-    };
+      errorKey: "pension.errors.anneesCarriere",
+    } as { error: string; errorKey: string };
   }
   if (
     !Number.isFinite(periodesAssimilees) ||
@@ -234,17 +264,20 @@ export function calcPension(
     return {
       error:
         "Les périodes assimilées doivent être comprises entre 0 et 50 ans.",
-    };
+      errorKey: "pension.errors.periodesAssimilees",
+    } as { error: string; errorKey: string };
   }
   if (!Number.isFinite(salaireMoyen) || salaireMoyen <= 1000) {
     return {
       error: "Le salaire annuel moyen doit être supérieur à 1 000 €.",
-    };
+      errorKey: "pension.errors.salaireMoyen",
+    } as { error: string; errorKey: string };
   }
   if (!Number.isFinite(ageDepart) || ageDepart < 60 || ageDepart > 70) {
     return {
       error: "L'âge de départ doit être compris entre 60 et 70 ans.",
-    };
+      errorKey: "pension.errors.ageDepart",
+    } as { error: string; errorKey: string };
   }
 
   // --- 0. Carrière totale + éligibilité anticipée ---------------------
@@ -268,11 +301,21 @@ export function calcPension(
       ageEffectif = ageDepart;
     } else if (cond) {
       // Inéligible : on calcule à titre informatif à l'âge légal.
+      const carriereTotaleAffichee = Number(
+        carriereTotale.toFixed(carriereTotale % 1 === 0 ? 0 : 1),
+      );
       eligibiliteAnticipee = {
         possible: false,
         conditionAge: cond.conditionAge,
         conditionCarriere: cond.conditionCarriere,
         raison: `Pour partir à ${ageDepart} ans, il faut justifier d'au moins ${cond.conditionCarriere} ans de carrière (assimilations comprises). Vous totalisez ${carriereTotale.toFixed(carriereTotale % 1 === 0 ? 0 : 1)} an${carriereTotale > 1 ? "s" : ""}.`,
+        raisonKey: "pension.raisons.carriereInsuffisante",
+        raisonValues: {
+          ageDepart,
+          conditionCarriere: cond.conditionCarriere,
+          carriereTotale: carriereTotaleAffichee,
+          carriereTotalePlural: carriereTotale > 1 ? 2 : 1,
+        },
       };
       ageEffectif = ageLegal;
     } else {
@@ -280,6 +323,7 @@ export function calcPension(
       eligibiliteAnticipee = {
         possible: false,
         raison: `La pension anticipée n'est pas accessible avant 60 ans.`,
+        raisonKey: "pension.raisons.avantSoixante",
       };
       ageEffectif = ageLegal;
     }
@@ -293,6 +337,10 @@ export function calcPension(
   const taux = statut === "menage" ? TAUX_MENAGE : TAUX_ISOLE;
   const statutLabel =
     statut === "menage" ? "Ménage (75 %)" : "Isolé (60 %)";
+  const statutLabelKey =
+    statut === "menage"
+      ? "pension.statut.menage"
+      : "pension.statut.isole";
 
   // --- 3. Formule de base (utilise la carrière totale) ----------------
   const longueCarriere = carriereTotale > CARRIERE_COMPLETE;
@@ -338,6 +386,7 @@ export function calcPension(
     longueCarriere,
     plafondAtteint,
     statutLabel,
+    statutLabelKey,
     eligibiliteAnticipee,
   };
 }

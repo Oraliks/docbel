@@ -48,6 +48,12 @@
  *   - Région ignorée (additionnel communal payé à la décompte annuelle)
  *   - Pas de double pécule ni 13e mois
  *   - Statut "cohabitant légal" assimilé à "isolé" (conforme barème SPF Finances 2026)
+ *
+ * --- i18n ------------------------------------------------------------------
+ * Module PUR (client + serveur). Les messages d'erreur (`error`) restent en FR
+ * comme fallback. Chaque erreur expose un `errorKey` (sous
+ * `public.calculatorsLib.brutNet.errors.*`) que le composant consommateur
+ * peut résoudre via `t(errorKey as Parameters<typeof t>[0])`.
  */
 
 export type StatutFiscal =
@@ -106,6 +112,11 @@ export interface BrutNetResult {
 
 export interface BrutNetError {
   error: string;
+  /**
+   * Clé i18n (sous `public.calculatorsLib`) jumelle de `error`.
+   * À résoudre côté composant via `t(key as Parameters<typeof t>[0])`.
+   */
+  errorKey?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -376,10 +387,14 @@ export function calcBrutNet(
     return {
       error:
         "Le salaire brut doit être compris entre 100 € et 50 000 € par mois.",
+      errorKey: "brutNet.errors.brut",
     };
   }
   if (!Number.isFinite(enfants) || enfants < 0 || enfants > 12) {
-    return { error: "Le nombre d'enfants à charge doit être entre 0 et 12." };
+    return {
+      error: "Le nombre d'enfants à charge doit être entre 0 et 12.",
+      errorKey: "brutNet.errors.enfants",
+    };
   }
   if (voitureSociete?.hasVehicule) {
     const { valeurCatalogueHT, ageVehicule } = voitureSociete;
@@ -391,6 +406,7 @@ export function calcBrutNet(
       return {
         error:
           "La valeur catalogue HT du véhicule doit être entre 0 € et 250 000 €.",
+        errorKey: "brutNet.errors.valeurCatalogue",
       };
     }
     if (
@@ -398,7 +414,10 @@ export function calcBrutNet(
       ageVehicule < 0 ||
       ageVehicule > 30
     ) {
-      return { error: "L'âge du véhicule doit être entre 0 et 30 ans." };
+      return {
+        error: "L'âge du véhicule doit être entre 0 et 30 ans.",
+        errorKey: "brutNet.errors.ageVehicule",
+      };
     }
   }
 
@@ -501,6 +520,7 @@ export function calcNetToBrut(
   if (!Number.isFinite(netVoulu) || netVoulu < 100 || netVoulu > 30000) {
     return {
       error: "Le net visé doit être compris entre 100 € et 30 000 € par mois.",
+      errorKey: "brutNet.errors.netVise",
     };
   }
 
@@ -525,7 +545,10 @@ export function calcNetToBrut(
   }
 
   if (!best) {
-    return { error: "Impossible de calculer le brut correspondant." };
+    return {
+      error: "Impossible de calculer le brut correspondant.",
+      errorKey: "brutNet.errors.dichotomie",
+    };
   }
   return best;
 }

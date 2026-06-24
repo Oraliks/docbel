@@ -22,6 +22,7 @@ const THEORY: DossierTheorySection[] = [
   {
     id: "qu-est-ce-que-le-rcc",
     title: "Qu'est-ce que le RCC ?",
+    titleKey: "rcc.theory.quEstCeQueLeRcc.title",
     body: `
 Le **RCC** (Régime de chômage avec complément d'entreprise) est l'ancienne
 « prépension ». Le mot a changé en 2012 mais la logique reste la même :
@@ -37,12 +38,14 @@ Ce n'est donc pas une « préretraite » — la personne reste officiellement
 chômeuse jusqu'à la pension légale, avec les obligations qui vont avec
 (sauf dispense pour âge avancé).
     `.trim(),
+    bodyKey: "rcc.theory.quEstCeQueLeRcc.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-10",
   },
   {
     id: "conditions-de-base",
     title: "Conditions de base",
+    titleKey: "rcc.theory.conditionsDeBase.title",
     body: `
 Quatre facteurs déterminent l'accès au RCC. Les seuils chiffrés (62 ans,
 40 ans d'ancienneté, etc.) bougent au fil des accords interprofessionnels
@@ -67,6 +70,7 @@ Les questions d'orientation du dossier interrogent ces facteurs :
 Aucune réponse ne bloque l'utilisateur ; les réponses servent à pointer
 les éléments à vérifier en priorité avec l'organisme de paiement.
     `.trim(),
+    bodyKey: "rcc.theory.conditionsDeBase.body",
     audience: ["admin", "partner"],
     bindings: ["questions"],
     lastReviewedAt: "2026-06-10",
@@ -74,6 +78,7 @@ les éléments à vérifier en priorité avec l'organisme de paiement.
   {
     id: "regimes-speciaux",
     title: "Régimes spéciaux",
+    titleKey: "rcc.theory.regimesSpeciaux.title",
     body: `
 À côté du régime général, plusieurs régimes RCC spécifiques existent. Ils
 abaissent les seuils d'âge ou d'ancienneté, mais imposent leurs propres
@@ -97,6 +102,7 @@ situation personnelle (âge, carrière, métier exercé). Le délégué
 syndical et l'organisme de paiement sont les interlocuteurs naturels
 pour identifier le bon régime.
     `.trim(),
+    bodyKey: "rcc.theory.regimesSpeciaux.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-10",
   },
@@ -105,8 +111,10 @@ pour identifier le bon régime.
 export const prepension: DossierDefinition = {
   slug: "prepension",
   title: "Régime de chômage avec complément d'entreprise (RCC)",
+  titleKey: "rcc.title",
   description:
     "Ancienne prépension : pour les travailleurs en fin de carrière licenciés par leur employeur, qui touchent à la fois des allocations de chômage et un complément payé par l'ex-employeur.",
+  descriptionKey: "rcc.description",
   category: "emploi",
   icon: "🧓",
   color: "#7C3AED",
@@ -235,14 +243,18 @@ export const prepension: DossierDefinition = {
   warnings: [
     {
       title: "Licenciement obligatoire",
+      titleKey: "rcc.warning.licenciementObligatoire.title",
       message:
         "Le RCC nécessite IMPÉRATIVEMENT un licenciement par l'employeur. Si tu donnes ta démission, tu perds ce droit.",
+      messageKey: "rcc.warning.licenciementObligatoire.message",
       severity: "critical",
     },
     {
       title: "Seuils variables",
+      titleKey: "rcc.warning.seuilsVariables.title",
       message:
         "Les conditions d'âge et d'ancienneté changent régulièrement (loi-programme, accord interprofessionnel, CCT sectorielles). Vérifie auprès de ton organisme de paiement les seuils en vigueur pour ta situation.",
+      messageKey: "rcc.warning.seuilsVariables.message",
       severity: "warning",
     },
   ],
@@ -255,6 +267,7 @@ export const prepension: DossierDefinition = {
       // seed `force` supprime par slug.
       slug: "c1-prepension",
       title: "C1 — Demande d'allocations",
+      titleKey: "rcc.doc.c1.title",
       issuer: "ONEM",
       required: true,
       sourcePdfPath: "private/pdfs/C1_FR.pdf",

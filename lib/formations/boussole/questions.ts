@@ -6,6 +6,13 @@
  *
  * Barème volontairement souple (heuristique, ajustable en admin). "Je ne sais
  * pas" n'apporte aucun point. "Un peu" apporte un signal léger.
+ *
+ * --- i18n ---------------------------------------------------------------
+ * Module PUR (client + serveur). Les `label`, `text`, `description` restent
+ * la source FR (seed DB, fallback). Les `labelKey`, `textKey`,
+ * `descriptionKey` exposent les chemins i18n (sous
+ * `public.formationsLib.boussole.*`) à résoudre côté composant via
+ * `t(labelKey as Parameters<typeof t>[0])`.
  */
 import type { BranchKey } from "./branches";
 
@@ -14,6 +21,8 @@ export type AnswerValue = "oui" | "un_peu" | "non" | "je_ne_sais_pas";
 export interface AnswerOptionDef {
   value: AnswerValue;
   label: string;
+  /** Clé i18n du libellé (sous `public.formationsLib`). */
+  labelKey: string;
   /** Points apportés à chaque branche (clé → points). */
   scores: Partial<Record<BranchKey, number>>;
 }
@@ -22,7 +31,11 @@ export interface QuestionDef {
   /** Clé stable (q1..q15) — sert d'identifiant côté seed/moteur. */
   key: string;
   text: string;
+  /** Clé i18n du texte de la question (sous `public.formationsLib`). */
+  textKey: string;
   description?: string;
+  /** Clé i18n de la description (sous `public.formationsLib`). */
+  descriptionKey?: string;
   options: AnswerOptionDef[];
 }
 
@@ -31,21 +44,25 @@ const A = {
   oui: (scores: AnswerOptionDef["scores"]): AnswerOptionDef => ({
     value: "oui",
     label: "Oui",
+    labelKey: "boussole.options.oui",
     scores,
   }),
   unPeu: (scores: AnswerOptionDef["scores"]): AnswerOptionDef => ({
     value: "un_peu",
     label: "Un peu",
+    labelKey: "boussole.options.un_peu",
     scores,
   }),
   non: (scores: AnswerOptionDef["scores"]): AnswerOptionDef => ({
     value: "non",
     label: "Non",
+    labelKey: "boussole.options.non",
     scores,
   }),
   idk: (): AnswerOptionDef => ({
     value: "je_ne_sais_pas",
     label: "Je ne sais pas",
+    labelKey: "boussole.options.je_ne_sais_pas",
     scores: {},
   }),
 };
@@ -54,7 +71,9 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q1",
     text: "Tu veux changer de métier ou te réorienter ?",
+    textKey: "boussole.questions.q1.text",
     description: "Il n'y a pas de mauvaise réponse — c'est juste pour mieux te situer.",
+    descriptionKey: "boussole.questions.q1.description",
     options: [
       A.oui({}),
       A.unPeu({}),
@@ -65,6 +84,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q2",
     text: "Tu préfères travailler avec des personnes plutôt qu'avec des objets ou des machines ?",
+    textKey: "boussole.questions.q2.text",
     options: [
       A.oui({ SOCIAL_CARE: 3, HEALTH_WELLBEING: 2, SALES_CUSTOMER: 2, ADMINISTRATIVE_OFFICE: 1 }),
       A.unPeu({ SOCIAL_CARE: 1, SALES_CUSTOMER: 1, DIGITAL_IT: 1 }),
@@ -75,6 +95,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q3",
     text: "Tu aimerais un métier principalement manuel ?",
+    textKey: "boussole.questions.q3.text",
     options: [
       A.oui({ TECHNICAL_MANUAL: 3, LOGISTICS_TRANSPORT: 2, HEALTH_WELLBEING: 1 }),
       A.unPeu({ TECHNICAL_MANUAL: 1, LOGISTICS_TRANSPORT: 1 }),
@@ -85,6 +106,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q4",
     text: "Tu es à l'aise avec l'ordinateur ?",
+    textKey: "boussole.questions.q4.text",
     options: [
       A.oui({ DIGITAL_IT: 3, ADMINISTRATIVE_OFFICE: 2, SALES_CUSTOMER: 1 }),
       A.unPeu({ DIGITAL_IT: 1, ADMINISTRATIVE_OFFICE: 1 }),
@@ -95,6 +117,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q5",
     text: "Tu préfères un métier stable et structuré ?",
+    textKey: "boussole.questions.q5.text",
     options: [
       A.oui({ ADMINISTRATIVE_OFFICE: 3, LOGISTICS_TRANSPORT: 1, HEALTH_WELLBEING: 1 }),
       A.unPeu({ ADMINISTRATIVE_OFFICE: 1 }),
@@ -105,6 +128,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q6",
     text: "Tu veux une formation courte pour avancer rapidement ?",
+    textKey: "boussole.questions.q6.text",
     options: [
       A.oui({ LOGISTICS_TRANSPORT: 2, SALES_CUSTOMER: 2, ADMINISTRATIVE_OFFICE: 1, SOCIAL_CARE: 1 }),
       A.unPeu({ LOGISTICS_TRANSPORT: 1, SALES_CUSTOMER: 1 }),
@@ -115,6 +139,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q7",
     text: "Tu es prêt à suivre une formation longue si elle ouvre plus de portes ?",
+    textKey: "boussole.questions.q7.text",
     options: [
       A.oui({ DIGITAL_IT: 2, HEALTH_WELLBEING: 2, ADMINISTRATIVE_OFFICE: 1 }),
       A.unPeu({ DIGITAL_IT: 1 }),
@@ -125,6 +150,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q8",
     text: "Tu veux éviter un métier trop physique ?",
+    textKey: "boussole.questions.q8.text",
     options: [
       A.oui({ ADMINISTRATIVE_OFFICE: 2, DIGITAL_IT: 2, SALES_CUSTOMER: 1 }),
       A.unPeu({ ADMINISTRATIVE_OFFICE: 1, DIGITAL_IT: 1 }),
@@ -135,6 +161,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q9",
     text: "Tu aimerais aider ou accompagner des personnes ?",
+    textKey: "boussole.questions.q9.text",
     options: [
       A.oui({ SOCIAL_CARE: 3, HEALTH_WELLBEING: 3 }),
       A.unPeu({ SOCIAL_CARE: 1, HEALTH_WELLBEING: 1 }),
@@ -145,6 +172,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q10",
     text: "Tu es à l'aise avec la vente ou le contact client ?",
+    textKey: "boussole.questions.q10.text",
     options: [
       A.oui({ SALES_CUSTOMER: 3, ENTREPRENEURSHIP: 2, SOCIAL_CARE: 1 }),
       A.unPeu({ SALES_CUSTOMER: 1 }),
@@ -155,6 +183,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q11",
     text: "Tu aimes organiser, classer, gérer des documents ou suivre des dossiers ?",
+    textKey: "boussole.questions.q11.text",
     options: [
       A.oui({ ADMINISTRATIVE_OFFICE: 3, LOGISTICS_TRANSPORT: 1 }),
       A.unPeu({ ADMINISTRATIVE_OFFICE: 1 }),
@@ -165,6 +194,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q12",
     text: "Tu préfères bouger plutôt que rester assis toute la journée ?",
+    textKey: "boussole.questions.q12.text",
     options: [
       A.oui({ LOGISTICS_TRANSPORT: 3, TECHNICAL_MANUAL: 2, HEALTH_WELLBEING: 1, SALES_CUSTOMER: 1 }),
       A.unPeu({ LOGISTICS_TRANSPORT: 1 }),
@@ -175,7 +205,9 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q13",
     text: "Tu préfères travailler de façon autonome ?",
+    textKey: "boussole.questions.q13.text",
     description: "Plutôt seul ou en petite équipe, sans dépendre en permanence des autres.",
+    descriptionKey: "boussole.questions.q13.description",
     options: [
       A.oui({ DIGITAL_IT: 2, ENTREPRENEURSHIP: 2, TECHNICAL_MANUAL: 1 }),
       A.unPeu({ DIGITAL_IT: 1, ENTREPRENEURSHIP: 1 }),
@@ -186,6 +218,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q14",
     text: "Tu aimerais créer ton activité plus tard ?",
+    textKey: "boussole.questions.q14.text",
     options: [
       A.oui({ ENTREPRENEURSHIP: 3, SALES_CUSTOMER: 1 }),
       A.unPeu({ ENTREPRENEURSHIP: 1 }),
@@ -196,6 +229,7 @@ export const QUESTIONS: QuestionDef[] = [
   {
     key: "q15",
     text: "Tu as besoin d'une remise à niveau avant une formation métier ?",
+    textKey: "boussole.questions.q15.text",
     options: [
       A.oui({ ADMINISTRATIVE_OFFICE: 1, SOCIAL_CARE: 1, LOGISTICS_TRANSPORT: 1 }),
       A.unPeu({}),

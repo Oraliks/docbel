@@ -118,11 +118,19 @@ export interface SimulationResult {
   caveats: string[];
 }
 
-/** Libellés FR des catégories (ordre d'affichage du formulaire). */
+/** Libellés FR des catégories (ordre d'affichage du formulaire).
+ *  Fallback si la clé i18n CATEGORIE_LABEL_KEYS n'est pas résolue. */
 export const CATEGORIE_LABELS: Record<CategorieFamiliale, string> = {
   isole: "Isolé",
   cohabitant: "Cohabitant",
   chef_menage: "Chef de ménage",
+};
+
+/** Clés i18n des catégories familiales (namespace `public.dossierContent`). */
+export const CATEGORIE_LABEL_KEYS: Record<CategorieFamiliale, string> = {
+  isole: "sim.categorie.isole",
+  cohabitant: "sim.categorie.cohabitant",
+  chef_menage: "sim.categorie.chefMenage",
 };
 
 export type AncienneteValue = "0-3" | "4-12";
@@ -136,10 +144,11 @@ export type AncienneteValue = "0-3" | "4-12";
 export const ANCIENNETE_OPTIONS: {
   value: AncienneteValue;
   label: string;
+  labelKey: string;
   moisRepresentatif: number;
 }[] = [
-  { value: "0-3", label: "0 à 3 mois", moisRepresentatif: 1 },
-  { value: "4-12", label: "4 à 12 mois", moisRepresentatif: 4 },
+  { value: "0-3", label: "0 à 3 mois", labelKey: "sim.anciennete.0-3", moisRepresentatif: 1 },
+  { value: "4-12", label: "4 à 12 mois", labelKey: "sim.anciennete.4-12", moisRepresentatif: 4 },
 ];
 
 /** Sous-périodes couvertes (mapping vers les phases du moteur central). */
@@ -147,6 +156,13 @@ const PERIODE_LABELS: Record<Extract<ChomagePhase, "1A" | "1B" | "2A">, string> 
   "1A": "1ʳᵉ période · mois 1-3",
   "1B": "1ʳᵉ période · mois 4-6",
   "2A": "1ʳᵉ période · mois 7-12",
+};
+
+/** Clés i18n des libellés de période (préférées si fournies, alignées sur PERIODE_LABELS). */
+export const PERIODE_LABEL_KEYS: Record<Extract<ChomagePhase, "1A" | "1B" | "2A">, string> = {
+  "1A": "sim.periode.1A",
+  "1B": "sim.periode.1B",
+  "2A": "sim.periode.2A",
 };
 
 /** Format € lisible pour les caveats (ex. « 3 262,99 € »). */

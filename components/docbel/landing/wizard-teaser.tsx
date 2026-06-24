@@ -52,6 +52,16 @@ const TILE_HUES = [
 
 export function WizardTeaser() {
   const t = useTranslations("public.home");
+  const tc = useTranslations("public.dossierContent");
+  const resolve = (key: string | undefined, fallback: string): string => {
+    if (!key) return fallback;
+    try {
+      const v = tc(key as Parameters<typeof tc>[0]);
+      return v && v !== key ? v : fallback;
+    } catch {
+      return fallback;
+    }
+  };
   return (
     <section
       aria-labelledby="wizard-teaser-heading"
@@ -94,7 +104,7 @@ export function WizardTeaser() {
                 <Icon className="size-5" strokeWidth={1.9} aria-hidden />
               </span>
               <span className="flex-1 text-[13px] font-bold leading-snug tracking-tight text-[color:var(--glass-ink)]">
-                {situation.label}
+                {resolve(situation.labelKey, situation.label)}
               </span>
               <ChevronRight
                 className="size-4 shrink-0 text-[color:var(--glass-ink-faint)] transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none"

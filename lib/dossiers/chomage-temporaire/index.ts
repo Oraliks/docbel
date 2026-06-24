@@ -108,6 +108,7 @@ const THEORY: DossierTheorySection[] = [
   {
     id: "introduction",
     title: "Introduction",
+    titleKey: "ct.theory.introduction.title",
     body: `
 Le chômage temporaire (CT) est une suspension provisoire totale ou partielle
 du contrat de travail, pendant laquelle le travailleur peut percevoir des
@@ -119,12 +120,14 @@ l'occupation reprend dès que la cause de la suspension a disparu.
 Onze motifs officiels existent, chacun avec ses conditions propres,
 ses formalités employeur et ses documents.
     `.trim(),
+    bodyKey: "ct.theory.introduction.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-02",
   },
   {
     id: "motifs",
     title: "Les onze motifs",
+    titleKey: "ct.theory.motifs.title",
     body: `
 Les motifs reconnus de chômage temporaire sont :
 
@@ -133,6 +136,7 @@ Les motifs reconnus de chômage temporaire sont :
 Chaque motif obéit à des règles d'admissibilité distinctes et n'est ouvert
 qu'à certaines catégories de travailleurs (ouvrier, employé, intérimaire).
     `.trim(),
+    bodyKey: "ct.theory.motifs.body",
     audience: ["admin", "partner"],
     bindings: ["motifs"],
     lastReviewedAt: "2026-06-02",
@@ -140,6 +144,7 @@ qu'à certaines catégories de travailleurs (ouvrier, employé, intérimaire).
   {
     id: "qui-est-concerne",
     title: "Qui peut bénéficier de quel motif",
+    titleKey: "ct.theory.quiEstConcerne.title",
     body: `
 Les motifs ne sont pas tous ouverts à tous les statuts. La matrice ci-dessous
 récapitule les ouvertures.
@@ -159,6 +164,7 @@ Pour les intérimaires en chômage temporaire économique, la situation reste
 strictement encadrée (ancienneté requise, procédure CT en cours pour les
 travailleurs fixes du même département, etc.).
     `.trim(),
+    bodyKey: "ct.theory.quiEstConcerne.body",
     audience: ["admin", "partner"],
     bindings: ["qui-est-concerne"],
     lastReviewedAt: "2026-06-02",
@@ -166,6 +172,7 @@ travailleurs fixes du même département, etc.).
   {
     id: "conditions",
     title: "Conditions d'admissibilité et d'octroi",
+    titleKey: "ct.theory.conditions.title",
     body: `
 Deux niveaux de conditions s'appliquent :
 
@@ -179,12 +186,14 @@ Deux niveaux de conditions s'appliquent :
 Une sanction ou une exclusion active à un autre titre (chômage complet, par
 exemple) peut impacter directement l'indemnisation du chômage temporaire.
     `.trim(),
+    bodyKey: "ct.theory.conditions.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-02",
   },
   {
     id: "documents",
     title: "Documents à constituer",
+    titleKey: "ct.theory.documents.title",
     body: `
 Les documents que **le travailleur** dépose dans le cadre d'une demande de
 chômage temporaire :
@@ -200,6 +209,7 @@ Le C32 travailleur est le pivot du dossier dans la quasi-totalité des cas. Il
 peut être remplacé par d'autres formulaires (C6) dans certaines situations
 particulières comme la force majeure médicale.
     `.trim(),
+    bodyKey: "ct.theory.documents.body",
     audience: ["admin", "partner"],
     bindings: ["documents"],
     lastReviewedAt: "2026-06-02",
@@ -207,6 +217,7 @@ particulières comme la force majeure médicale.
   {
     id: "nature-da",
     title: "Nature de la demande d'allocation (DA)",
+    titleKey: "ct.theory.natureDa.title",
     body: `
 La « nature de DA » est un code ONEM qui résume le contexte de la demande
 (transfert en cours, première demande jamais perçue, 66 ans et plus, type
@@ -225,12 +236,14 @@ Les principales natures rencontrées en CT :
 - **TEM** — accident technique, force majeure, force majeure médicale, travailleur protégé
 - **VAC** — vacances annuelles ou complémentaires
     `.trim(),
+    bodyKey: "ct.theory.natureDa.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-02",
   },
   {
     id: "delais",
     title: "Délais d'introduction",
+    titleKey: "ct.theory.delais.title",
     body: `
 Le délai d'introduction d'une demande dépend du type de demande et du motif :
 
@@ -243,12 +256,14 @@ Les outils internes (AS400) n'appliquent pas toujours les exceptions
 automatiquement et retombent sur le délai standard le plus court — d'où
 l'importance, pour le partenaire, de connaître la règle exacte du motif.
     `.trim(),
+    bodyKey: "ct.theory.delais.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-02",
   },
   {
     id: "demarches-employeur",
     title: "Démarches employeur — vue d'ensemble",
+    titleKey: "ct.theory.demarchesEmployeur.title",
     body: `
 Côté employeur, les obligations dépendent du motif :
 
@@ -268,6 +283,7 @@ Côté employeur, les obligations dépendent du motif :
 Aucune des formalités employeur ne fait partie des PDFs que le travailleur
 remplit dans le dossier ; on les rappelle ici pour information.
     `.trim(),
+    bodyKey: "ct.theory.demarchesEmployeur.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-02",
   },
@@ -276,8 +292,10 @@ remplit dans le dossier ; on les rappelle ici pour information.
 export const chomageTemporaire: DossierDefinition = {
   slug: "chomage-temporaire",
   title: "Chômage temporaire",
+  titleKey: "ct.title",
   description:
     "Aide à constituer le dossier de chômage temporaire (économique, intempéries, force majeure, etc.) à remettre à l'ONEM.",
+  descriptionKey: "ct.description",
   category: "emploi",
   icon: "💼",
   color: "#FF8C42",
@@ -449,14 +467,18 @@ export const chomageTemporaire: DossierDefinition = {
   warnings: [
     {
       title: "Délai d'introduction",
+      titleKey: "ct.warning.delaiIntroduction.title",
       message:
         "Le délai d'introduction varie selon le type de demande : généralement mois en cours + 2 mois (obligatoire) ou + 36 mois (facultative). Certaines situations (changement Q/S, grève, 66+ ans) bénéficient d'exceptions.",
+      messageKey: "ct.warning.delaiIntroduction.message",
       severity: "warning",
     },
     {
       title: "Accident technique — particularité",
+      titleKey: "ct.warning.accidentTechnique.title",
       message:
         "Pour un chômage temporaire pour accident technique, l'allocation n'est versée qu'à partir du 8ᵉ jour calendrier. Les 7 premiers jours restent à charge de l'employeur.",
+      messageKey: "ct.warning.accidentTechnique.message",
       severity: "info",
       visibleWhen: (a) => a.motif === MOTIF_IDS.accidentTechnique,
     },
@@ -467,6 +489,7 @@ export const chomageTemporaire: DossierDefinition = {
       // C3.2 Travailleur — pivot du dossier (sauf force majeure médicale).
       slug: "c32-travailleur",
       title: "C3.2 — Travailleur",
+      titleKey: "ct.doc.c32Travailleur.title",
       issuer: "ONEM",
       required: true,
       sourcePdfPath: "private/pdfs/C32_Travailleur_FR.pdf",
@@ -511,6 +534,7 @@ export const chomageTemporaire: DossierDefinition = {
       // de CT à 66 ans+.
       slug: "c1-travailleur",
       title: "C1 — Demande d'allocations",
+      titleKey: "ct.doc.c1Travailleur.title",
       issuer: "ONEM",
       sourcePdfPath: "private/pdfs/C1_FR.pdf",
       internalRef: "Doc formation, section Documents de demande, item C1",
@@ -528,6 +552,7 @@ export const chomageTemporaire: DossierDefinition = {
       // C6 — pour Force majeure médicale (remplace le C32 travailleur).
       slug: "c6-fmm",
       title: "C6 — Force majeure médicale",
+      titleKey: "ct.doc.c6Fmm.title",
       issuer: "ONEM",
       sourcePdfPath: "private/pdfs/C6_FR.pdf",
       internalRef: "Doc formation, section Documents supplémentaires FMM",
@@ -540,6 +565,7 @@ export const chomageTemporaire: DossierDefinition = {
       // C27R — pour Force majeure médicale avec trajet de réintégration.
       slug: "c27r-fmm",
       title: "C27R — Trajet de réintégration",
+      titleKey: "ct.doc.c27rFmm.title",
       issuer: "ONEM",
       sourcePdfPath: "private/pdfs/C27_R_FR.pdf",
       internalRef: "Doc formation, section FMM avec trajet de réintégration",

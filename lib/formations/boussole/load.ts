@@ -31,26 +31,50 @@ export async function getBoussoleQuestions(): Promise<QuestionDef[]> {
         const key = branchKeyById.get(s.branchId);
         if (key && isBranchKey(key)) scores[key] = s.score;
       }
-      return { value: o.value as AnswerOptionDef["value"], label: o.label, scores };
+      const value = o.value as AnswerOptionDef["value"];
+      return {
+        value,
+        label: o.label,
+        labelKey: `boussole.options.${value}`,
+        scores,
+      };
     });
-    return { key: q.id, text: q.text, description: q.description ?? undefined, options };
+    return {
+      key: q.id,
+      text: q.text,
+      textKey: `boussole.questions.${q.id}.text`,
+      description: q.description ?? undefined,
+      descriptionKey: q.description
+        ? `boussole.questions.${q.id}.description`
+        : undefined,
+      options,
+    };
   });
 }
 
 /** Variante "client-safe" : questions sans le barème (pour ne pas exposer les
- * points en réseau). Le scoring reste serveur. */
+ * points en réseau). Le scoring reste serveur. Conserve les `*Key` i18n pour
+ * permettre la traduction côté client. */
 export interface PublicQuestion {
   key: string;
   text: string;
+  textKey: string;
   description?: string;
-  options: { value: string; label: string }[];
+  descriptionKey?: string;
+  options: { value: string; label: string; labelKey: string }[];
 }
 
 export function toPublicQuestions(questions: QuestionDef[]): PublicQuestion[] {
   return questions.map((q) => ({
     key: q.key,
     text: q.text,
+    textKey: q.textKey,
     description: q.description,
-    options: q.options.map((o) => ({ value: o.value, label: o.label })),
+    descriptionKey: q.descriptionKey,
+    options: q.options.map((o) => ({
+      value: o.value,
+      label: o.label,
+      labelKey: o.labelKey,
+    })),
   }));
 }

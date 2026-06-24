@@ -45,6 +45,15 @@
  *  Q1 2026 (CREG note Z3153, 01.01-31.03) : élec 23,767 c€/kWh, gaz 4,514 c€/kWh.
  *  Q2 2026 (01.04-30.06)                   : élec 23,767 c€/kWh, gaz 4,746 c€/kWh.
  *  Source : CREG — www.creg.be/fr/consommateurs/prix-et-tarifs/tarif-social
+ *
+ * --- i18n ------------------------------------------------------------------
+ * Module PUR (client + serveur). Les chaînes FR (`error`, `motifsEligibilite`,
+ * `notes`) restent en source de vérité fallback. Chacune a un jumeau de clé
+ * i18n (sous `public.calculatorsLib.tarifSocial.*`) :
+ *   - `errorKey` parallèle à `error`
+ *   - `motifsEligibiliteKeys[]` parallèle à `motifsEligibilite[]`
+ *   - `notesKeys[]` parallèle à `notes[]`
+ * À résoudre côté composant via `t(key as Parameters<typeof t>[0])`.
  */
 
 export interface TarifSocialInput {
@@ -75,10 +84,20 @@ export interface TarifSocialInput {
 export interface TarifSocialResult {
   /** Le ménage est-il éligible au tarif social automatique. */
   eligible: boolean;
-  /** Liste lisible des statuts qui ouvrent le droit. */
+  /** Liste lisible des statuts qui ouvrent le droit (FR — fallback). */
   motifsEligibilite: string[];
-  /** Notes pédagogiques additionnelles (ex: BIM seul ne suffit plus). */
+  /**
+   * Clés i18n (sous `public.calculatorsLib`) parallèles à `motifsEligibilite`.
+   * À résoudre côté composant via `t(key as Parameters<typeof t>[0])`.
+   */
+  motifsEligibiliteKeys: string[];
+  /** Notes pédagogiques additionnelles (ex: BIM seul ne suffit plus) — FR fallback. */
   notes: string[];
+  /**
+   * Clés i18n (sous `public.calculatorsLib`) parallèles à `notes`.
+   * À résoudre côté composant via `t(key as Parameters<typeof t>[0])`.
+   */
+  notesKeys: string[];
   /** Économie totale annuelle estimée (électricité + gaz). */
   gainAnnuel: number;
   /** Économie mensuelle moyenne. */
@@ -170,6 +189,18 @@ const MOTIFS_LABELS: Record<string, string> = {
 };
 
 /**
+ * Clés i18n (sous `public.calculatorsLib`) jumelles de `MOTIFS_LABELS`.
+ * À résoudre côté composant via `t(key as Parameters<typeof t>[0])`.
+ */
+const MOTIFS_LABEL_KEYS: Record<string, string> = {
+  ris: "tarifSocial.motifs.ris",
+  grapa: "tarifSocial.motifs.grapa",
+  handicap: "tarifSocial.motifs.handicap",
+  aideEquivalente: "tarifSocial.motifs.aideEquivalente",
+  logementSocial: "tarifSocial.motifs.logementSocial",
+};
+
+/**
  * Calcule le plafond électrique applicable au ménage.
  *   - Base : 1 800 kWh (sans chauffage élec) ou 4 600 kWh (avec chauffage élec).
  *   - +200 kWh par personne supplémentaire (au-delà de la première).
@@ -219,7 +250,8 @@ export function calcTarifSocial(
     return {
       error:
         "La consommation d'électricité doit être comprise entre 0 et 100 000 kWh.",
-    };
+      errorKey: "tarifSocial.errors.consoElec",
+    } as { error: string; errorKey: string };
   }
   if (
     !Number.isFinite(consoGazKwh) ||
@@ -229,7 +261,8 @@ export function calcTarifSocial(
     return {
       error:
         "La consommation de gaz doit être comprise entre 0 et 100 000 kWh (0 si pas de gaz).",
-    };
+      errorKey: "tarifSocial.errors.consoGaz",
+    } as { error: string; errorKey: string };
   }
   if (
     !Number.isFinite(tailleMenage) ||
@@ -238,7 +271,8 @@ export function calcTarifSocial(
   ) {
     return {
       error: "La taille du ménage doit être comprise entre 1 et 15 personnes.",
-    };
+      errorKey: "tarifSocial.errors.tailleMenage",
+    } as { error: string; errorKey: string };
   }
 
   // --- Éligibilité automatique : au moins UN statut éligible suffit -----
@@ -253,12 +287,17 @@ export function calcTarifSocial(
     logementSocial,
   };
   const motifsEligibilite: string[] = [];
+  const motifsEligibiliteKeys: string[] = [];
   for (const [key, actif] of Object.entries(statuts)) {
-    if (actif) motifsEligibilite.push(MOTIFS_LABELS[key]);
+    if (actif) {
+      motifsEligibilite.push(MOTIFS_LABELS[key]);
+      motifsEligibiliteKeys.push(MOTIFS_LABEL_KEYS[key]);
+    }
   }
   const eligible = motifsEligibilite.length > 0;
 
   const notes: string[] = [];
+  const notesKeys: string[] = [];
   if (bim && !eligible) {
     notes.push(
       "Le statut BIM seul n'ouvre plus le droit au tarif social automatique " +
@@ -266,11 +305,13 @@ export function calcTarifSocial(
         "Vous pouvez toutefois bénéficier d'aides régionales (prime énergie, " +
         "fonds gaz/élec) ou contacter votre CPAS.",
     );
+    notesKeys.push("tarifSocial.notes.bimNotEligible");
   } else if (bim && eligible) {
     notes.push(
       "Note : votre statut BIM ne suffit plus seul depuis le 1ᵉʳ juillet " +
         "2023, mais l'un de vos autres statuts ouvre bien le droit.",
     );
+    notesKeys.push("tarifSocial.notes.bimEligible");
   }
 
   // --- Plafonds applicables ---------------------------------------------
@@ -312,7 +353,9 @@ export function calcTarifSocial(
   return {
     eligible,
     motifsEligibilite,
+    motifsEligibiliteKeys,
     notes,
+    notesKeys,
     gainAnnuel,
     gainMensuel,
     gainElec,

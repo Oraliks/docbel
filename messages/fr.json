@@ -6976,6 +6976,891 @@
         "previous": "Précédent",
         "next": "Suivant"
       }
+    },
+    "dossierContent": {
+      "wizard": {
+        "s": {
+          "contratSuspendu": {
+            "label": "Mon travail est à l'arrêt temporairement",
+            "description": "Chômage temporaire, contrat suspendu",
+            "sub": {
+              "question": "Votre employeur vous a mis en chômage temporaire ?",
+              "help": "Chômage temporaire = votre contrat continue mais le travail est suspendu un moment (manque de travail, intempéries, force majeure, grève, fermeture collective…). Vous reprendrez chez le même employeur.",
+              "opt": {
+                "ouiCt": {
+                  "label": "Oui, je reprendrai chez le même employeur"
+                },
+                "nonFin": {
+                  "label": "Non, mon contrat est définitivement terminé"
+                }
+              }
+            }
+          },
+          "perteEmploi": {
+            "label": "J'ai perdu mon emploi",
+            "description": "Licenciement, fin de contrat ou de CDD",
+            "sub": {
+              "question": "Quel est votre parcours ?",
+              "help": "On veut savoir si vous avez déjà travaillé assez longtemps pour ouvrir un droit, ou si vous sortez juste des études.",
+              "opt": {
+                "passeTravailBe": {
+                  "label": "J'ai travaillé un bon moment en Belgique",
+                  "help": "Vous avez un passé professionnel salarié en Belgique (plusieurs mois à plusieurs années).",
+                  "refine": {
+                    "question": "Est-ce votre toute première demande de chômage ?",
+                    "help": "« Première fois » = vous n'avez jamais touché d'allocations de chômage avant. Si vous en avez déjà reçu un jour, même il y a longtemps, c'est une redemande.",
+                    "opt": {
+                      "premiere": {
+                        "label": "Oui, c'est la première fois"
+                      },
+                      "redemande": {
+                        "label": "Non, j'ai déjà été au chômage avant"
+                      }
+                    }
+                  }
+                },
+                "sorsEtudes": {
+                  "label": "Je sors des études, j'ai peu ou pas travaillé",
+                  "help": "Vous n'avez pas (assez) travaillé pour ouvrir un droit classique — c'est la voie de l'insertion."
+                },
+                "travailEtranger": {
+                  "label": "J'ai travaillé à l'étranger (UE/EEE)",
+                  "help": "Vous avez travaillé dans un pays de l'Union européenne / EEE et vous revenez en Belgique.",
+                  "refine": {
+                    "question": "Avez-vous retravaillé en Belgique depuis votre retour ?",
+                    "help": "Reprendre un travail en Belgique (en pratique au moins 3 mois selon la règle en vigueur) permet d'ouvrir un droit belge complet. Sinon, votre dossier passe par le régime frontalier avec le formulaire U1.",
+                    "opt": {
+                      "retravailleBe": {
+                        "label": "Oui, j'ai retravaillé en Belgique"
+                      },
+                      "pasRetravaille": {
+                        "label": "Non, je reviens juste de l'étranger"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "jeuneEtudes": {
+            "label": "Je sors des études / je suis jeune",
+            "description": "Allocations d'insertion, premier emploi",
+            "sub": {
+              "question": "Quel âge avez-vous ?",
+              "help": "L'âge est déterminant : les allocations d'insertion doivent en principe être demandées avant 25 ans.",
+              "opt": {
+                "moins25": {
+                  "label": "Moins de 25 ans"
+                },
+                "vingtCinqPlus": {
+                  "label": "25 ans ou plus",
+                  "help": "Au-delà de 25 ans, l'insertion n'est en principe plus ouverte — tout dépend de si vous avez déjà travaillé.",
+                  "refine": {
+                    "question": "Avez-vous déjà travaillé (salarié) ?",
+                    "opt": {
+                      "aTravaille": {
+                        "label": "Oui, j'ai un passé de travail"
+                      },
+                      "jamais": {
+                        "label": "Non, jamais (ou presque)"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "frontalier": {
+            "label": "Je suis frontalier ou j'ai travaillé à l'étranger",
+            "description": "Travail transfrontalier, retour UE/EEE",
+            "sub": {
+              "question": "Votre situation transfrontalière ?",
+              "help": "Frontalier = vous habitez un pays et travaillez dans un autre, en rentrant chez vous régulièrement.",
+              "opt": {
+                "frontalierClassique": {
+                  "label": "Je rentre chez moi chaque semaine",
+                  "help": "Vous habitez en Belgique (ou pays voisin) et vous travaillez de l'autre côté de la frontière, en rentrant au moins 1 fois par semaine."
+                },
+                "retourUe": {
+                  "label": "Je rentre d'une occupation à l'étranger (UE/EEE)",
+                  "refine": {
+                    "question": "Avez-vous retravaillé en Belgique depuis votre retour ?",
+                    "help": "Reprendre un travail en Belgique (≈ 3 mois minimum) permet d'ouvrir un droit belge complet. Sinon, c'est le régime frontalier avec le formulaire U1.",
+                    "opt": {
+                      "retravailleBe": {
+                        "label": "Oui, j'ai retravaillé en Belgique"
+                      },
+                      "pasRetravaille": {
+                        "label": "Non, pas encore"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "finCarriere": {
+            "label": "Je suis en fin de carrière (licencié·e)",
+            "description": "RCC, complément d'entreprise",
+            "sub": {
+              "question": "Avez-vous été licencié·e par votre employeur ?",
+              "help": "Le régime de chômage avec complément d'entreprise (RCC, ex-prépension) suppose un LICENCIEMENT — pas une démission.",
+              "opt": {
+                "licencie": {
+                  "label": "Oui, mon employeur m'a licencié·e"
+                },
+                "demission": {
+                  "label": "Non, j'ai démissionné / autre"
+                }
+              }
+            }
+          },
+          "handicap": {
+            "label": "Je suis en situation de handicap",
+            "description": "Incapacité de travail, allocations",
+            "sub": {
+              "question": "Vous travaillez actuellement ?",
+              "opt": {
+                "handicapTravaille": {
+                  "label": "Oui"
+                },
+                "handicapNeTravaillePas": {
+                  "label": "Non"
+                }
+              }
+            }
+          },
+          "autre": {
+            "label": "Autre situation",
+            "description": "Décrivez votre besoin, on vous oriente"
+          }
+        },
+        "result": {
+          "ct": {
+            "title": "Chômage temporaire",
+            "rationale": "Votre contrat est suspendu pour un temps : vous pouvez toucher des allocations pendant cette période, puis reprendre votre travail."
+          },
+          "completPremiere": {
+            "title": "Chômage complet — première demande",
+            "rationale": "Vous avez assez travaillé pour ouvrir un droit au chômage complet pour la première fois."
+          },
+          "completRedemande": {
+            "title": "Chômage complet — redemande",
+            "rationale": "Vous avez déjà été indemnisé par le passé : on rouvre votre droit au chômage complet."
+          },
+          "insertion": {
+            "title": "Allocations d'insertion (jeunes)",
+            "rationale": "Vous sortez des études sans avoir (assez) travaillé : c'est la voie des allocations d'insertion, après un stage d'insertion de 310 jours."
+          },
+          "frontalier": {
+            "title": "Chômage frontalier",
+            "rationale": "Vous résidez dans un pays et vous travailliez dans un autre (UE/EEE) : votre dossier passe par le régime frontalier (formulaire U1)."
+          },
+          "completAgregation": {
+            "title": "Chômage complet (après travail à l'étranger)",
+            "rationale": "Vous avez retravaillé en Belgique après votre occupation à l'étranger : vous pouvez ouvrir un droit belge complet, en rattachant vos périodes étrangères via le formulaire U1."
+          },
+          "rcc": {
+            "title": "Régime de chômage avec complément d'entreprise (RCC)",
+            "rationale": "Licencié en fin de carrière, vous pouvez cumuler allocations de chômage et complément payé par votre ex-employeur."
+          },
+          "insertionVerifierAge": {
+            "title": "Allocations d'insertion — vérifier l'âge",
+            "rationale": "Au-delà de 25 ans, le droit aux allocations d'insertion n'est généralement plus ouvert (sauf exceptions). On vous oriente vers ce dossier pour vérifier votre situation précise."
+          },
+          "completSansRcc": {
+            "title": "Chômage complet",
+            "rationale": "Sans licenciement, le RCC n'est pas ouvert — c'est la voie du chômage complet classique (attention au délai d'attente possible après une démission)."
+          },
+          "ctFmm": {
+            "title": "Chômage temporaire (force majeure médicale)",
+            "rationale": "Si votre incapacité de travail est temporaire, c'est la voie standard."
+          },
+          "handicapDg": {
+            "title": "Allocations (DG Personnes handicapées)",
+            "rationale": "Le parcours allocations de remplacement / d'intégration arrive bientôt sur beldoc."
+          },
+          "autre": {
+            "title": "Décrivez votre situation",
+            "rationale": "Décrivez votre situation via le formulaire de contact — on vous orientera vers la bonne démarche."
+          }
+        }
+      },
+      "sim": {
+        "categorie": {
+          "isole": "Isolé",
+          "cohabitant": "Cohabitant",
+          "chefMenage": "Chef de ménage"
+        },
+        "anciennete": {
+          "0-3": "0 à 3 mois",
+          "4-12": "4 à 12 mois"
+        },
+        "periode": {
+          "1A": "1ʳᵉ période · mois 1-3",
+          "1B": "1ʳᵉ période · mois 4-6",
+          "2A": "1ʳᵉ période · mois 7-12"
+        }
+      },
+      "ct": {
+        "title": "Chômage temporaire",
+        "description": "Aide à constituer le dossier de chômage temporaire (économique, intempéries, force majeure, etc.) à remettre à l'ONEM.",
+        "warning": {
+          "delaiIntroduction": {
+            "title": "Délai d'introduction",
+            "message": "Le délai d'introduction varie selon le type de demande : généralement mois en cours + 2 mois (obligatoire) ou + 36 mois (facultative). Certaines situations (changement Q/S, grève, 66+ ans) bénéficient d'exceptions."
+          },
+          "accidentTechnique": {
+            "title": "Accident technique — particularité",
+            "message": "Pour un chômage temporaire pour accident technique, l'allocation n'est versée qu'à partir du 8ᵉ jour calendrier. Les 7 premiers jours restent à charge de l'employeur."
+          }
+        },
+        "doc": {
+          "c32Travailleur": {
+            "title": "C3.2 — Travailleur"
+          },
+          "c1Travailleur": {
+            "title": "C1 — Demande d'allocations"
+          },
+          "c6Fmm": {
+            "title": "C6 — Force majeure médicale"
+          },
+          "c27rFmm": {
+            "title": "C27R — Trajet de réintégration"
+          }
+        },
+        "theory": {
+          "introduction": {
+            "title": "Introduction",
+            "body": "Le chômage temporaire (CT) est une suspension provisoire totale ou partielle du contrat de travail, pendant laquelle le travailleur peut percevoir des allocations versées par l'ONEM via son organisme de paiement.\n\nÀ la différence du chômage complet, le contrat de travail n'est pas rompu — l'occupation reprend dès que la cause de la suspension a disparu.\n\nOnze motifs officiels existent, chacun avec ses conditions propres, ses formalités employeur et ses documents."
+          },
+          "motifs": {
+            "title": "Les onze motifs",
+            "body": "Les motifs reconnus de chômage temporaire sont :\n\n{{ motifs }}\n\nChaque motif obéit à des règles d'admissibilité distinctes et n'est ouvert qu'à certaines catégories de travailleurs (ouvrier, employé, intérimaire)."
+          },
+          "quiEstConcerne": {
+            "title": "Qui peut bénéficier de quel motif",
+            "body": "Les motifs ne sont pas tous ouverts à tous les statuts. La matrice ci-dessous récapitule les ouvertures.\n\n{{ qui-est-concerne }}\n\nQuelques cas particuliers :\n\n- **Économique** : l'employé classique n'y a pas accès — il bascule vers la *Suspension employés*, qui suppose que l'entreprise prouve à l'ONEM qu'elle remplit les conditions (entreprise en difficulté).\n- **Force majeure médicale** : ne concerne pas les intérimaires.\n- **Travailleur protégé** : réservé aux délégués syndicaux (ouvrier ou employé).\n- **Suspension employés** : exclusivement employé.\n\nPour les intérimaires en chômage temporaire économique, la situation reste strictement encadrée (ancienneté requise, procédure CT en cours pour les travailleurs fixes du même département, etc.)."
+          },
+          "conditions": {
+            "title": "Conditions d'admissibilité et d'octroi",
+            "body": "Deux niveaux de conditions s'appliquent :\n\n1. **Admissibilité** — le travailleur doit avoir, sur une période de référence précédant la demande, suffisamment de journées de travail prouvées. Les exigences varient selon l'âge et la nature du contrat.\n2. **Octroi** — il faut, au moment où l'allocation est versée, satisfaire plusieurs conditions personnelles : disponibilité pour le marché du travail, absence d'autre revenu de remplacement, absence de sanction, etc.\n\nUne sanction ou une exclusion active à un autre titre (chômage complet, par exemple) peut impacter directement l'indemnisation du chômage temporaire."
+          },
+          "documents": {
+            "title": "Documents à constituer",
+            "body": "Les documents que **le travailleur** dépose dans le cadre d'une demande de chômage temporaire :\n\n{{ documents }}\n\nEn parallèle, l'**employeur** transmet à l'ONEM, par voie électronique, sa propre déclaration (DRS / WECH) ainsi que les notifications et communications selon le motif. Ces flux ne transitent pas par le présent dossier — ils sont filés directement par l'employeur via les portails ONSS/ONEM.\n\nLe C32 travailleur est le pivot du dossier dans la quasi-totalité des cas. Il peut être remplacé par d'autres formulaires (C6) dans certaines situations particulières comme la force majeure médicale."
+          },
+          "natureDa": {
+            "title": "Nature de la demande d'allocation (DA)",
+            "body": "La « nature de DA » est un code ONEM qui résume le contexte de la demande (transfert en cours, première demande jamais perçue, 66 ans et plus, type de chômage temporaire applicable, etc.).\n\nElle se déduit des réponses aux questions d'orientation et de la situation personnelle du demandeur — ce n'est pas une question que l'on pose à l'utilisateur, mais une **valeur calculée**.\n\nLes principales natures rencontrées en CT :\n\n- **TPL / TPV** — première demande (jamais eu de dossier chômage)\n- **TFT** — transfert en cours de CT\n- **CTP** — 1er jour de CT à 66 ans ou plus\n- **INT** — économique ouvrier, suspension employés, intempéries\n- **TEM** — accident technique, force majeure, force majeure médicale, travailleur protégé\n- **VAC** — vacances annuelles ou complémentaires"
+          },
+          "delais": {
+            "title": "Délais d'introduction",
+            "body": "Le délai d'introduction d'une demande dépend du type de demande et du motif :\n\n| Type de DA | Délai standard | Exceptions notables |\n| --- | --- | --- |\n| Obligatoire | mois en cours + 2 mois | Changement Q/S : + 36 mois · Grève : + 6 mois · 66+ : aucun délai |\n| Facultative | mois en cours + 36 mois | — |\n\nLes outils internes (AS400) n'appliquent pas toujours les exceptions automatiquement et retombent sur le délai standard le plus court — d'où l'importance, pour le partenaire, de connaître la règle exacte du motif."
+          },
+          "demarchesEmployeur": {
+            "title": "Démarches employeur — vue d'ensemble",
+            "body": "Côté employeur, les obligations dépendent du motif :\n\n- **Notification** (procédure préalable) : exigée pour économique, accident technique et suspension employés. Elle s'effectue par voie électronique avant le début de la période de chômage temporaire.\n- **Communication du 1er jour effectif** : à transmettre chaque mois pour économique, intempéries, accident technique et suspension employés.\n- **DRS / WECH** : déclaration sociale électronique transmise par l'employeur via le portail ONSS. Un seul concept, deux appellations : *DRS* est le nom public côté affilié (Déclaration de Risque Social), *WECH* est l'argot interne (ex. WECH 502 pour la déclaration d'occurrence, WECH 505 pour le flux qui sert au paiement). Pour l'affilié, ces flux ne sont pas perceptibles : il en voit le résultat (allocations versées).\n\nAucune des formalités employeur ne fait partie des PDFs que le travailleur remplit dans le dossier ; on les rappelle ici pour information."
+          }
+        },
+        "proc": {
+          "common": {
+            "step": {
+              "s1": {
+                "when": "Création de la demande",
+                "title": "Initialiser la demande",
+                "description": "Créer une nouvelle DA dans l'outil de paiement avec la nature appropriée, la date du 1er jour de chômage temporaire concerné, et le préfixe correspondant à la situation du travailleur (temps plein, temps partiel, maintien de droits, etc.)."
+              },
+              "s2": {
+                "when": "Paramètres",
+                "title": "Déterminer l'article d'admissibilité",
+                "description": "Lancer l'analyse CT pour identifier l'article d'admissibilité applicable. Le système propose le code (42K30, 42K33, 42L36, mesure transitoire, art. 42 suite DISPO ou non admissible)."
+              },
+              "s3": {
+                "when": "Documents externes",
+                "title": "Demander les flux ONSS / DRS",
+                "description": "Réclamer automatiquement le C3.2 EL (flux DRS), et selon l'article d'admissibilité retenu, le DMFA et tout autre flux pertinent."
+              },
+              "s4": {
+                "when": "Import occupation",
+                "title": "Importer l'occupation depuis la DRS employeur",
+                "description": "Lier l'occupation au flux WECH 502 (demande) ou WECH 505 (paiement). Vérifier la cohérence des paramètres importés et alimenter les compteurs."
+              },
+              "s5": {
+                "when": "Construction (CP 124)",
+                "title": "Contrôler la carte d'ayant-droit (CAD)",
+                "description": "Pour un ouvrier de la construction, vérifier l'existence d'une CAD. Si oui, la sélectionner. Sinon, l'indemnité de remplacement (2 €) s'applique."
+              },
+              "s6": {
+                "when": "Calcul",
+                "title": "Calculer le code chiffré",
+                "description": "Déclencher le calcul du code chiffré sur la base du nouveau formulaire C32. Pour les dossiers d'admissibilité sur base d'un travail (42K30 / 42K33), valider la TIMELINE pour confirmer que les conditions sont réunies."
+              },
+              "s7": {
+                "when": "Allocations",
+                "title": "Finaliser la demande d'allocations",
+                "description": "Définir l'état de la demande (complet / incomplet), positionner la zone C2, et laisser le programme calculer automatiquement le code CAD ou l'indemnité IC selon le secteur."
+              },
+              "s8": {
+                "when": "Codification",
+                "title": "Valider la codification C2",
+                "description": "Vérifier la méthode de calcul (08 — pas concerné par la dégressivité) et le barème — affichés automatiquement."
+              }
+            }
+          },
+          "tem": {
+            "title": "Introduction TEM — Force majeure & accident technique",
+            "summary": "Suspension du contrat pour force majeure (évènement soudain et imprévisible), force majeure médicale (incapacité temporaire avec conflit mutuelle / médecin du travail) ou accident technique. Couvre ouvriers, employés et apprentis industriels.",
+            "delais": {
+              "obligatoire": "Mois en cours + 2 mois (fin du 2ᵉ mois qui suit la DA)",
+              "facultative": "Mois en cours + 36 mois (fin du 36ᵉ mois qui suit la DA)",
+              "exceptions": "Si le 1er jour de la DA est en grève : délai obligatoire étendu à 6 mois"
+            },
+            "step": {
+              "fmm": {
+                "when": "Force majeure médicale",
+                "title": "Joindre les pièces médicales",
+                "description": "Pour la FM médicale : fournir la décision du conseiller en prévention-médecin du travail (CPMT), l'avis du médecin traitant ou la preuve du recours contre la mutuelle. Vérifier l'inscription comme demandeur d'emploi dans les 8 jours suivant les 3 premiers mois."
+              },
+              "accidentTechnique": {
+                "when": "Accident technique",
+                "title": "Vérifier la reconnaissance ONEM",
+                "description": "Pour un accident technique : la reconnaissance ONEM est obligatoire. L'indemnisation ne court qu'à partir du 8ᵉ jour de l'évènement. L'employeur doit communiquer le 1er jour effectif de chômage à l'ONEM (veille / jour / lendemain)."
+              }
+            },
+            "notes": "Pas d'inscription comme demandeur d'emploi requise, SAUF force majeure et force majeure médicale (obligatoire dans les 8 jours suivant les 3 premiers mois). Construction (CP 124) : vérifier la carte d'ayant-droit (CAD) — droit à l'indemnité de 2 € sinon."
+          },
+          "gre": {
+            "title": "Introduction GRE — Grève / lock-out",
+            "summary": "Suspension du contrat pendant une grève (initiée par les travailleurs) ou un lock-out (initié par l'employeur). Couvre ouvriers, employés et apprentis industriels. L'indemnisation est conditionnée à la décision du comité de gestion de l'ONEM.",
+            "delais": {
+              "obligatoire": "Mois en cours + 6 mois (délai étendu spécifique grève)",
+              "facultative": "Mois en cours + 36 mois"
+            },
+            "step": {
+              "decisionOnem": {
+                "when": "Décision ONEM",
+                "title": "Tracer la décision du comité de gestion",
+                "description": "L'indemnisation dépend de la décision du comité de gestion ONEM, reflétée dans le programme de paiement par un flag : G (accord — indemnisable), N (pas d'accord) ou ? (en attente de réponse)."
+              }
+            },
+            "code": {
+              "g": "Accord — grève indemnisable",
+              "n": "Pas d'accord — grève non indemnisable",
+              "attente": "En attente de la décision ONEM"
+            },
+            "notes": "Pas d'inscription comme demandeur d'emploi. Conditions d'admissibilité au CT économique (codes 51 / 511) vérifiées à chaque DA, peu importe le motif. Construction (CP 124) : contrôle CAD identique à TEM."
+          },
+          "int": {
+            "title": "Introduction INT — Intempéries, économique & suspension employés",
+            "summary": "Trois sous-cas : chômage économique (ouvriers + apprentis industriels), intempéries (ouvriers + apprentis industriels) et suspension employés pour manque de travail. Obligations de notification / communication employeur distinctes selon le sous-cas.",
+            "delais": {
+              "obligatoire": "Mois en cours + 2 mois",
+              "facultative": "Mois en cours + 36 mois",
+              "exceptions": "Si 1er jour = grève : obligatoire étendu à 6 mois"
+            },
+            "step": {
+              "economique": {
+                "when": "Obligations employeur — économique",
+                "title": "Notification + communication 1er jour",
+                "description": "Économique : l'employeur notifie la période prévue, doit respecter une semaine de reprise entre deux notifications (sauf petite suspension), puis communique le 1er jour effectif à l'ONEM (le jour même, le lendemain ouvrable, ou dans les 5 jours ouvrables qui précèdent)."
+              },
+              "intemperies": {
+                "when": "Obligations employeur — intempéries",
+                "title": "Pas de notification, communication 1er jour obligatoire",
+                "description": "Intempéries : aucune notification préalable, mais communication obligatoire à l'ONEM du 1er jour effectif dans le mois (le jour même, le lendemain ouvrable ou la veille ouvrable)."
+              },
+              "suspensionEmployes": {
+                "when": "Obligations employeur — suspension employés",
+                "title": "Notification période + nature, communication 1er jour",
+                "description": "Suspension employés : notification de la période prévue et de la nature de l'interruption (complète / partielle), puis communication du 1er jour effectif à l'ONEM. Une seule communication suffit si plusieurs formes de CT coexistent dans le mois."
+              }
+            },
+            "notes": "Pas d'inscription comme demandeur d'emploi requise. Construction (CP 124) : contrôle CAD identique aux autres natures."
+          },
+          "ctp": {
+            "title": "Introduction CTP — Travailleur ayant dépassé l'âge légal de la pension",
+            "summary": "Depuis le 01/01/2015, un travailleur qui continue au-delà de 65 ans peut bénéficier des allocations CT (sauf cumul avec la pension). À partir du mois suivant ses 65 ans et dès le premier mois en CT, une DA doit être introduite — principalement pour relancer l'intégration ONEM.",
+            "delais": {
+              "obligatoire": "Mois en cours + 2 mois (fin du 2ᵉ mois qui suit la DA)",
+              "facultative": "Mois en cours + 36 mois (scénario 2) ; pas de délai sauf prescription (scénario 3)"
+            },
+            "step": {
+              "s1": {
+                "when": "Création",
+                "title": "Initialiser la CTP",
+                "description": "Date de demande = 1er du mois suivant les 65 ans du travailleur. Nature = CTP. Préfixe limité à 02 ou 04 à partir de 65 ans (les préfixes 05, 06, 57, 58 ne sont plus possibles)."
+              },
+              "s2": {
+                "when": "Intégration",
+                "title": "Mettre à jour la signalétique membre & relancer l'intégration",
+                "description": "Vérifier les informations signalétiques, valider l'intégration. L'intégration habituelle se termine au plus tard le dernier jour du mois des 65 ans. La nouvelle intégration court alors jusqu'au dernier jour du mois où la personne atteint 99 ans (code 15)."
+              },
+              "s3": {
+                "when": "Scénario 1 (DA obligatoire)",
+                "title": "Suivre la procédure INT/TEM obligatoire complète",
+                "description": "Workflow identique à une DA obligatoire INT (paramètres + analyse CT + documents externes + import occupation + calcul code chiffré + allocations + codification), avec en plus l'impression de la C1 depuis la composition familiale."
+              },
+              "s4": {
+                "when": "Scénario 2 (révision)",
+                "title": "Suivre la procédure INT/TEM facultative",
+                "description": "Workflow identique à une DA facultative INT/TEM (recopie de l'article d'admissibilité, clôture période, import occupation, recalcul code chiffré, allocations), plus impression C1."
+              },
+              "s5": {
+                "when": "Scénario 3 (intégration seule)",
+                "title": "Re-vérifier l'admissibilité historique et finaliser",
+                "description": "Vérifier l'article d'admissibilité valable lors de la dernière DA CT. Recopier l'article 042 + l'admissibilité dans les paramètres. Réclamer le C3.2 EL et les flux complémentaires. Imprimer la C1. Importer l'occupation. État de demande = 1, C2 = Y. Rappel de la dernière codification valable."
+              },
+              "s6": {
+                "when": "Codification",
+                "title": "Valider la codification C2",
+                "description": "Méthode de calcul 08 (pas de dégressivité) et barème ligne unique affichés automatiquement."
+              }
+            },
+            "notes": "Exception : la force majeure médicale reste accessible au-delà de 65 ans. Les allocations CT ne sont pas cumulables avec la pension. Si le travailleur conteste une décision du médecin-conseil de la mutuelle, la DA reste introduite normalement avec les pièces justificatives."
+          }
+        }
+      },
+      "complet": {
+        "title": "Chômage complet",
+        "description": "Aide à constituer le dossier de chômage complet après une perte d'emploi (licenciement, démission, fin de CDD) ou pour une première inscription.",
+        "warning": {
+          "delaiInscription": {
+            "title": "Délai d'inscription : 8 jours",
+            "message": "Inscris-toi auprès du service régional de l'emploi (FOREM / ACTIRIS / VDAB / ADG) dans les 8 jours ouvrables qui suivent la fin de ton contrat. Un dépôt tardif peut entraîner la perte des allocations pour la période couverte par le retard."
+          },
+          "documentsEmployeur": {
+            "title": "Documents employeur à demander",
+            "message": "Le C4 (certificat de chômage) doit t'être remis par ton employeur dès la fin du contrat. S'il tarde, réclame-le par écrit : sans C4, ton organisme de paiement ne peut pas constituer ton dossier."
+          }
+        },
+        "doc": {
+          "c1": {
+            "title": "C1 — Demande d'allocations"
+          },
+          "c4": {
+            "title": "C4 — Certificat de chômage (à fournir par l'employeur)"
+          }
+        },
+        "theory": {
+          "quiPeutBeneficier": {
+            "title": "Qui peut bénéficier ?",
+            "body": "Le chômage complet est ouvert au travailleur dont le contrat de travail a pris fin (licenciement, démission, fin de CDD, rupture amiable…) et qui remplit plusieurs conditions de base :\n\n- avoir travaillé un nombre suffisant de jours pendant la période de référence précédant la demande (le seuil augmente avec l'âge) ;\n- être inscrit comme demandeur d'emploi auprès du service régional (FOREM en Wallonie, ACTIRIS à Bruxelles, VDAB en Flandre, ADG dans la Communauté germanophone) ;\n- être disponible pour le marché du travail (apte, prêt à accepter un emploi convenable, à suivre une formation, etc.) ;\n- ne pas être déjà couvert par un autre revenu de remplacement (mutuelle, pension, rémunération à temps plein…).\n\nLes indépendants qui ont cotisé volontairement au régime du chômage salarié et les jeunes en première inscription (stage d'insertion professionnelle) suivent des règles spécifiques.\n\nSource publique de référence : www.onem.be."
+          },
+          "delai8Jours": {
+            "title": "Le délai de 8 jours",
+            "body": "L'introduction de la demande doit intervenir rapidement après la fin du contrat de travail. En pratique, on retient un repère simple : **8 jours ouvrables** à partir du jour qui suit la fin du contrat pour s'inscrire comme demandeur d'emploi auprès du service régional et déposer le dossier auprès de l'organisme de paiement (FGTB, CSC, CGSLB ou CAPAC).\n\nUn dépôt tardif n'éteint pas le droit, mais peut entraîner une perte des allocations pour la période couverte par le retard. En cas de difficulté (maladie, démarches en cours), le partenaire doit pouvoir documenter la cause du retard pour la faire valoir auprès de l'ONEM.\n\nSource publique de référence : www.onem.be."
+          },
+          "documentsAPreparer": {
+            "title": "Les documents à préparer",
+            "body": "Les documents que le travailleur prépare dans le cadre d'une demande de chômage complet :\n\n{{ documents }}\n\nD'autres pièces officielles sont normalement requises mais ne sont pas encore intégrées à Beldoc — elles devront être ajoutées dans une étape ultérieure :\n\n- **C4** — Certificat de chômage remis par l'employeur en fin de contrat. Il atteste la durée des prestations et le motif de la rupture.\n- **C61** — Carte de contrôle, à compléter mensuellement par le chômeur pour déclarer ses activités et absences.\n- **C109** — Déclaration de la situation familiale, qui détermine la catégorie (isolé / chef de ménage / cohabitant) et donc le montant des allocations.\n\nPour les premières inscriptions au chômage (jeunes après leurs études), le service régional de l'emploi délivre une attestation d'inscription qui ouvre le stage d'insertion professionnelle.\n\nSource publique de référence : www.onem.be."
+          }
+        }
+      },
+      "frontalier": {
+        "title": "Chômage frontalier",
+        "description": "Pour les travailleurs qui résident en Belgique mais travaillaient dans un pays voisin de l'EEE, ou inversement. Aide à constituer le dossier de chômage en coordination avec l'organisme étranger.",
+        "warning": {
+          "demandeU1": {
+            "title": "Demande du U1 — anticipe les délais",
+            "message": "Le formulaire U1 doit être demandé à l'institution de chômage du pays où tu as travaillé en dernier. Compte plusieurs semaines de délai. Sans U1, l'ONEM ne peut pas reconstituer ta carrière à l'étranger."
+          },
+          "u2": {
+            "title": "U2 — à demander avant de partir",
+            "message": "Si tu veux chercher un emploi dans un autre pays EEE en gardant tes allocations, demande le U2 AVANT de partir. Une fois sur place, il est trop tard pour ouvrir ce droit."
+          }
+        },
+        "doc": {
+          "c1": {
+            "title": "C1 — Demande d'allocations"
+          },
+          "c32": {
+            "title": "C3.2 — Travailleur"
+          }
+        },
+        "theory": {
+          "quiEstConcerne": {
+            "title": "Qui est concerné ?",
+            "body": "Le « chômage frontalier » regroupe les travailleurs qui résident dans un pays de l'Espace économique européen (EEE) et travaillent dans un autre. Plusieurs profils coexistent :\n\n- **Frontalier classique** — tu habites dans un pays et tu travailles dans un autre, mais tu rentres chez toi au moins une fois par semaine.\n- **Transfrontalier occasionnel** — même configuration, mais tu ne rentres pas chaque semaine (mission longue, logement sur place…).\n- **Détaché** — ton employeur d'origine t'envoie temporairement travailler à l'étranger (chantier, mission). Tu restes affilié à la sécurité sociale de ton pays d'origine.\n\nPour la Belgique, les configurations les plus fréquentes sont BE/FR, BE/LU, BE/NL et BE/DE."
+          },
+          "paysCompetent": {
+            "title": "Quel pays est compétent ?",
+            "body": "La règle de base, posée par le règlement européen de coordination de la sécurité sociale :\n\n- **Chômage complet** (perte totale d'emploi) → la compétence revient au **pays de résidence**. Un travailleur belge frontalier en France qui perd son emploi s'adresse donc à l'ONEM en Belgique.\n- **Chômage partiel ou temporaire** (suspension provisoire du contrat) → la compétence revient au **pays du dernier employeur**.\n\nCette règle a des conséquences importantes : le travailleur doit savoir quel organisme contacter, et l'ONEM (ou son équivalent étranger) doit disposer de la preuve des périodes d'occupation réalisées dans l'autre pays. C'est là qu'intervient le formulaire U1."
+          },
+          "formulaireU1": {
+            "title": "Le formulaire U1 — pourquoi il est crucial ?",
+            "body": "Le **PD U1** (Portable Document U1) est délivré par l'institution de chômage du pays où le travailleur a été occupé. Il atteste les périodes d'assurance et d'occupation réalisées dans ce pays.\n\nSans U1, l'ONEM ne peut pas reconstituer la carrière à l'étranger pour vérifier les conditions d'admissibilité. Concrètement, cela peut bloquer ou retarder l'ouverture du droit aux allocations en Belgique.\n\nDeux autres documents européens complètent le dispositif :\n\n- Le **PD U2** autorise le transfert temporaire des allocations vers un autre pays de l'EEE pendant qu'on y cherche un emploi (durée limitée à 3 mois, prolongeable dans certains cas).\n- Le **PD ED** sert aux échanges d'informations directs entre les institutions de sécurité sociale. Le travailleur n'a généralement pas à le manipuler — c'est un canal administratif.\n\nLe U1 doit être demandé à l'organisme étranger compétent. Les délais de délivrance varient fortement (de quelques semaines à plusieurs mois). Il est donc préférable d'en faire la demande dès que l'on sait qu'on va revenir s'inscrire au chômage dans son pays de résidence."
+          }
+        }
+      },
+      "rcc": {
+        "title": "Régime de chômage avec complément d'entreprise (RCC)",
+        "description": "Ancienne prépension : pour les travailleurs en fin de carrière licenciés par leur employeur, qui touchent à la fois des allocations de chômage et un complément payé par l'ex-employeur.",
+        "warning": {
+          "licenciementObligatoire": {
+            "title": "Licenciement obligatoire",
+            "message": "Le RCC nécessite IMPÉRATIVEMENT un licenciement par l'employeur. Si tu donnes ta démission, tu perds ce droit."
+          },
+          "seuilsVariables": {
+            "title": "Seuils variables",
+            "message": "Les conditions d'âge et d'ancienneté changent régulièrement (loi-programme, accord interprofessionnel, CCT sectorielles). Vérifie auprès de ton organisme de paiement les seuils en vigueur pour ta situation."
+          }
+        },
+        "doc": {
+          "c1": {
+            "title": "C1 — Demande d'allocations"
+          }
+        },
+        "theory": {
+          "quEstCeQueLeRcc": {
+            "title": "Qu'est-ce que le RCC ?",
+            "body": "Le **RCC** (Régime de chômage avec complément d'entreprise) est l'ancienne « prépension ». Le mot a changé en 2012 mais la logique reste la même : un travailleur en fin de carrière qui est licencié touche **deux revenus combinés** :\n\n1. Les **allocations de chômage** versées par l'ONEM (comme un chômeur classique).\n2. Un **complément d'entreprise** payé par l'ex-employeur, en plus des allocations. Ce complément n'est pas une faveur : il découle d'une convention collective (sectorielle ou d'entreprise).\n\nCe n'est donc pas une « préretraite » — la personne reste officiellement chômeuse jusqu'à la pension légale, avec les obligations qui vont avec (sauf dispense pour âge avancé)."
+          },
+          "conditionsDeBase": {
+            "title": "Conditions de base",
+            "body": "Quatre facteurs déterminent l'accès au RCC. Les seuils chiffrés (62 ans, 40 ans d'ancienneté, etc.) bougent au fil des accords interprofessionnels et des CCT — ils sont indiqués à titre indicatif et doivent être vérifiés auprès de l'organisme de paiement pour chaque dossier.\n\n1. **Âge** — généralement 62 ans pour le régime général, 60 ans pour les métiers lourds. Des seuils plus bas existent dans certains régimes (longue carrière, entreprise en difficulté).\n2. **Ancienneté de carrière** — typiquement 40 ans dans le régime général, 33 ans pour les métiers lourds, parfois moins selon la CCT.\n3. **Motif de fin de contrat** — il faut un **licenciement par l'employeur**. Une démission, une rupture amiable ou un départ volontaire ferment l'accès au RCC.\n4. **CCT applicable** — il faut une convention collective (sectorielle ou d'entreprise) qui prévoit le RCC pour la situation du travailleur.\n\nLes questions d'orientation du dossier interrogent ces facteurs :\n\n{{ questions }}\n\nAucune réponse ne bloque l'utilisateur ; les réponses servent à pointer les éléments à vérifier en priorité avec l'organisme de paiement."
+          },
+          "regimesSpeciaux": {
+            "title": "Régimes spéciaux",
+            "body": "À côté du régime général, plusieurs régimes RCC spécifiques existent. Ils abaissent les seuils d'âge ou d'ancienneté, mais imposent leurs propres conditions.\n\n- **Métiers lourds** — travail de nuit, équipes successives (ex. 3×8), travail interrompu, conditions physiques pénibles. Permet généralement un accès dès 60 ans avec 33 ans de carrière (à vérifier selon la CCT).\n- **Longue carrière (40 ans)** — destiné aux travailleurs qui cumulent 40 ans de carrière, indépendamment du caractère « lourd » du métier.\n- **Entreprise en difficulté** — l'employeur doit être officiellement reconnu comme tel par le ministre de l'Emploi. Conditions assouplies pour les travailleurs licenciés dans ce cadre.\n- **Entreprise en restructuration** — situation similaire (plan de licenciement collectif reconnu), avec ses propres conditions d'âge et d'ancienneté.\n\nLe régime applicable n'est pas un choix libre du travailleur : il dépend de la CCT en vigueur dans l'entreprise ou le secteur, et de la situation personnelle (âge, carrière, métier exercé). Le délégué syndical et l'organisme de paiement sont les interlocuteurs naturels pour identifier le bon régime."
+          }
+        }
+      },
+      "insertion": {
+        "title": "Allocations d'insertion (jeunes)",
+        "description": "Pour les jeunes qui sortent des études et n'ont pas (assez) travaillé pour ouvrir un droit au chômage classique.",
+        "warning": {
+          "demandeAvant25": {
+            "title": "Demande avant 25 ans",
+            "message": "La demande doit en principe être introduite AVANT tes 25 ans. Passé cet âge, le droit aux allocations d'insertion n'est généralement plus ouvert (sauf exceptions)."
+          },
+          "stageInsertion310j": {
+            "title": "Stage d'insertion de 310 jours",
+            "message": "Tu dois d'abord accomplir un stage d'insertion professionnelle de 310 jours (environ 1 an) après la fin de tes études avant de pouvoir toucher les allocations."
+          }
+        },
+        "doc": {
+          "c1": {
+            "title": "C1 — Déclaration de situation personnelle"
+          }
+        },
+        "theory": {
+          "questCeQue": {
+            "title": "Qu'est-ce que l'allocation d'insertion ?",
+            "body": "L'allocation d'insertion est une allocation de chômage destinée au jeune qui sort des études et qui demande pour la **première fois** une indemnisation sur base de ces études — et non sur base d'un travail salarié déjà accompli.\n\nElle se distingue du chômage complet classique : il n'y a pas de nombre de jours de travail à prouver. Le droit repose sur le parcours scolaire et sur l'accomplissement d'un stage d'insertion professionnelle après la fin des études.\n\nSource publique de référence : www.onem.be."
+          },
+          "conditions": {
+            "title": "Les conditions (âge, études, stage de 310 jours)",
+            "body": "Les principales conditions paraphrasées :\n\n- **Nationalité / séjour** : être belge, ou ressortissant d'un pays qui permet l'accès (UE/EEE), ou en règle de séjour et de travail pour les autres situations.\n- **Obligation scolaire terminée** : ne plus y être soumis (en pratique, avoir au moins 18 ans, ou avoir dépassé le 30 juin de l'année des 18 ans).\n- **Études donnant droit au chômage en Belgique** : avoir terminé un parcours d'études reconnu. Pour les jeunes de **moins de 21 ans**, il faut un **diplôme ou titre** (avoir seulement suivi les cours ne suffit pas) et la liste des études admises est plus restrictive.\n- **Stage d'insertion professionnelle** : accomplir un stage de **310 jours** (environ un an) après la fin des activités scolaires.\n- **Limite d'âge** : la demande doit en principe être introduite **avant 25 ans** (des exceptions existent, par exemple pour un parcours scolaire long).\n\nSource publique de référence : www.onem.be."
+          },
+          "dureeEtMontant": {
+            "title": "Combien de temps / combien ? (forfait, limité à 3 ans)",
+            "body": "Le montant de l'allocation d'insertion est **forfaitaire** : il ne dépend pas d'un salaire antérieur mais de la situation familiale du jeune (isolé, cohabitant, chef de ménage) et, dans certains cas, de son âge. Il n'y a pas d'évolution par périodes d'indemnisation comme dans le chômage classique.\n\nLe droit est **limité dans le temps** : en principe 3 ans. Des règles particulières peuvent prolonger ou aménager cette durée selon la situation.\n\nSource publique de référence : www.onem.be."
+          }
+        }
+      }
+    },
+    "formationsLib": {
+      "visibility": {
+        "public": "Publique",
+        "unlisted": "Non listée",
+        "private": "Privée",
+        "internal": "Interne",
+        "draft": "Brouillon"
+      },
+      "status": {
+        "draft": "Brouillon",
+        "pending_review": "En validation",
+        "changes_requested": "Correction demandée",
+        "approved": "Validée",
+        "published": "Publiée",
+        "suspended": "Suspendue",
+        "rejected": "Refusée",
+        "archived": "Archivée"
+      },
+      "sessionStatus": {
+        "draft": "Brouillon",
+        "scheduled": "Programmée",
+        "open": "Inscriptions ouvertes",
+        "full": "Complète",
+        "cancelled": "Annulée",
+        "ongoing": "En cours",
+        "completed": "Terminée",
+        "archived": "Archivée"
+      },
+      "enrollmentStatus": {
+        "requested": "Demande envoyée",
+        "pending_review": "En attente de validation",
+        "accepted": "Acceptée",
+        "refused": "Refusée",
+        "waitlisted": "Liste d'attente",
+        "cancelled_user": "Annulée (par vous)",
+        "cancelled_org": "Annulée (par l'organisateur)",
+        "present": "Présent",
+        "absent": "Absent",
+        "completed": "Terminée",
+        "certificate_available": "Attestation disponible"
+      },
+      "format": {
+        "online": "En ligne",
+        "onsite": "Présentiel",
+        "hybrid": "Hybride",
+        "autoformation": "Autoformation",
+        "accompagnement": "Accompagnement individuel"
+      },
+      "sessionMode": {
+        "online": "En ligne",
+        "onsite": "Présentiel",
+        "hybrid": "Hybride"
+      },
+      "level": {
+        "debutant": "Débutant",
+        "intermediaire": "Intermédiaire",
+        "avance": "Avancé"
+      },
+      "priceType": {
+        "free": "Gratuite",
+        "paid": "Payante"
+      },
+      "certificate": {
+        "none": "Aucune attestation",
+        "participation": "Attestation de participation",
+        "partner": "Certificat partenaire",
+        "docbel": "Certificat Docbel"
+      },
+      "orgType": {
+        "employeur": "Employeur",
+        "partenaire": "Partenaire",
+        "asbl": "ASBL",
+        "organisme_formation": "Organisme de formation",
+        "administration": "Administration partenaire",
+        "prive": "Société privée",
+        "formateur": "Formateur vérifié",
+        "interne_docbel": "Organisation interne Docbel"
+      },
+      "orgRole": {
+        "owner": "Propriétaire",
+        "manager": "Gestionnaire",
+        "trainer": "Formateur",
+        "viewer": "Lecteur",
+        "admin_contact": "Contact administratif"
+      },
+      "reportReason": {
+        "prix_trompeur": "Prix trompeur",
+        "info_fausse": "Information fausse",
+        "non_serieuse": "Formation non sérieuse",
+        "probleme_partenaire": "Problème avec le partenaire",
+        "contenu_inadapte": "Contenu inadapté",
+        "lien_casse": "Lien cassé",
+        "expiree": "Formation expirée",
+        "probleme_inscription": "Problème d'inscription",
+        "autre": "Autre"
+      },
+      "reportStatus": {
+        "new": "Nouveau",
+        "in_progress": "En cours",
+        "resolved": "Traité",
+        "rejected": "Rejeté"
+      },
+      "boussole": {
+        "options": {
+          "oui": "Oui",
+          "un_peu": "Un peu",
+          "non": "Non",
+          "je_ne_sais_pas": "Je ne sais pas"
+        },
+        "branches": {
+          "ADMINISTRATIVE_OFFICE": {
+            "name": "Administratif & bureau",
+            "description": "Pour les personnes organisées, qui aiment les démarches, les documents, la gestion de dossiers et les environnements structurés.",
+            "jobs": {
+              "0": "Assistant administratif",
+              "1": "Secrétaire",
+              "2": "Assistant RH",
+              "3": "Employé de bureau",
+              "4": "Gestionnaire de dossiers",
+              "5": "Support administratif"
+            }
+          },
+          "SOCIAL_CARE": {
+            "name": "Social & aide aux personnes",
+            "description": "Pour les personnes qui veulent accompagner, écouter, aider ou orienter d'autres personnes.",
+            "jobs": {
+              "0": "Aide familial",
+              "1": "Accompagnateur social",
+              "2": "Agent d'accueil social",
+              "3": "Médiateur",
+              "4": "Aide aux personnes",
+              "5": "Éducateur"
+            }
+          },
+          "DIGITAL_IT": {
+            "name": "Numérique & informatique",
+            "description": "Pour les personnes attirées par l'ordinateur, les outils numériques, le web, le support technique ou la data.",
+            "jobs": {
+              "0": "Support IT",
+              "1": "Développeur débutant",
+              "2": "Assistant digital",
+              "3": "Web designer",
+              "4": "Data assistant",
+              "5": "Community manager"
+            }
+          },
+          "TECHNICAL_MANUAL": {
+            "name": "Technique & manuel",
+            "description": "Pour les personnes qui aiment réparer, construire, manipuler, produire ou travailler avec des outils.",
+            "jobs": {
+              "0": "Technicien",
+              "1": "Électricien",
+              "2": "Maintenance",
+              "3": "Bâtiment",
+              "4": "Mécanique",
+              "5": "Ouvrier qualifié"
+            }
+          },
+          "LOGISTICS_TRANSPORT": {
+            "name": "Logistique & transport",
+            "description": "Pour les personnes qui aiment bouger, organiser, préparer, livrer ou gérer des flux.",
+            "jobs": {
+              "0": "Magasinier",
+              "1": "Préparateur de commandes",
+              "2": "Chauffeur",
+              "3": "Dispatcher",
+              "4": "Gestionnaire logistique"
+            }
+          },
+          "SALES_CUSTOMER": {
+            "name": "Commerce & relation client",
+            "description": "Pour les personnes à l'aise avec les échanges, la vente, l'accueil ou le conseil.",
+            "jobs": {
+              "0": "Vendeur",
+              "1": "Conseiller client",
+              "2": "Commercial",
+              "3": "Chargé d'accueil",
+              "4": "Téléconseiller"
+            }
+          },
+          "HEALTH_WELLBEING": {
+            "name": "Santé & bien-être",
+            "description": "Pour les personnes qui veulent prendre soin des autres, travailler dans l'aide, la santé ou le bien-être.",
+            "jobs": {
+              "0": "Aide-soignant",
+              "1": "Aide à domicile",
+              "2": "Assistant médical",
+              "3": "Accueil médical",
+              "4": "Métiers du bien-être"
+            }
+          },
+          "ENTREPRENEURSHIP": {
+            "name": "Entrepreneuriat",
+            "description": "Pour les personnes qui veulent créer leur activité, devenir indépendant ou construire un projet personnel.",
+            "jobs": {
+              "0": "Indépendant",
+              "1": "Activité complémentaire",
+              "2": "E-commerce",
+              "3": "Prestation de service",
+              "4": "Création de SRL",
+              "5": "Projet entrepreneurial"
+            }
+          }
+        },
+        "questions": {
+          "q1": {
+            "text": "Tu veux changer de métier ou te réorienter ?",
+            "description": "Il n'y a pas de mauvaise réponse — c'est juste pour mieux te situer."
+          },
+          "q2": {
+            "text": "Tu préfères travailler avec des personnes plutôt qu'avec des objets ou des machines ?"
+          },
+          "q3": {
+            "text": "Tu aimerais un métier principalement manuel ?"
+          },
+          "q4": {
+            "text": "Tu es à l'aise avec l'ordinateur ?"
+          },
+          "q5": {
+            "text": "Tu préfères un métier stable et structuré ?"
+          },
+          "q6": {
+            "text": "Tu veux une formation courte pour avancer rapidement ?"
+          },
+          "q7": {
+            "text": "Tu es prêt à suivre une formation longue si elle ouvre plus de portes ?"
+          },
+          "q8": {
+            "text": "Tu veux éviter un métier trop physique ?"
+          },
+          "q9": {
+            "text": "Tu aimerais aider ou accompagner des personnes ?"
+          },
+          "q10": {
+            "text": "Tu es à l'aise avec la vente ou le contact client ?"
+          },
+          "q11": {
+            "text": "Tu aimes organiser, classer, gérer des documents ou suivre des dossiers ?"
+          },
+          "q12": {
+            "text": "Tu préfères bouger plutôt que rester assis toute la journée ?"
+          },
+          "q13": {
+            "text": "Tu préfères travailler de façon autonome ?",
+            "description": "Plutôt seul ou en petite équipe, sans dépendre en permanence des autres."
+          },
+          "q14": {
+            "text": "Tu aimerais créer ton activité plus tard ?"
+          },
+          "q15": {
+            "text": "Tu as besoin d'une remise à niveau avant une formation métier ?"
+          }
+        }
+      }
+    },
+    "calculatorsLib": {
+      "tarifSocial": {
+        "errors": {
+          "consoElec": "La consommation d'électricité doit être comprise entre 0 et 100 000 kWh.",
+          "consoGaz": "La consommation de gaz doit être comprise entre 0 et 100 000 kWh (0 si pas de gaz).",
+          "tailleMenage": "La taille du ménage doit être comprise entre 1 et 15 personnes."
+        },
+        "motifs": {
+          "ris": "Revenu d'Intégration Sociale (RIS)",
+          "grapa": "GRAPA (Garantie de Revenus Aux Personnes Âgées)",
+          "handicap": "Allocation aux personnes handicapées (DG HAN)",
+          "aideEquivalente": "Aide sociale équivalente du CPAS",
+          "logementSocial": "Locataire d'un logement social agréé"
+        },
+        "notes": {
+          "bimNotEligible": "Le statut BIM seul n'ouvre plus le droit au tarif social automatique depuis le 1ᵉʳ juillet 2023 (fin de l'extension crise énergétique). Vous pouvez toutefois bénéficier d'aides régionales (prime énergie, fonds gaz/élec) ou contacter votre CPAS.",
+          "bimEligible": "Note : votre statut BIM ne suffit plus seul depuis le 1ᵉʳ juillet 2023, mais l'un de vos autres statuts ouvre bien le droit."
+        }
+      },
+      "pension": {
+        "errors": {
+          "dateNaissance": "Indiquez une date de naissance valide (JJ/MM/AAAA).",
+          "anneesCarriere": "Les années de carrière doivent être comprises entre 0 et 50.",
+          "periodesAssimilees": "Les périodes assimilées doivent être comprises entre 0 et 50 ans.",
+          "salaireMoyen": "Le salaire annuel moyen doit être supérieur à 1 000 €.",
+          "ageDepart": "L'âge de départ doit être compris entre 60 et 70 ans."
+        },
+        "statut": {
+          "isole": "Isolé (60 %)",
+          "menage": "Ménage (75 %)"
+        },
+        "raisons": {
+          "carriereInsuffisante": "Pour partir à {ageDepart} ans, il faut justifier d'au moins {conditionCarriere} ans de carrière (assimilations comprises). Vous totalisez {carriereTotale} {carriereTotalePlural, plural, one {an} other {ans}}.",
+          "avantSoixante": "La pension anticipée n'est pas accessible avant 60 ans."
+        }
+      },
+      "brutNet": {
+        "errors": {
+          "brut": "Le salaire brut doit être compris entre 100 € et 50 000 € par mois.",
+          "enfants": "Le nombre d'enfants à charge doit être entre 0 et 12.",
+          "valeurCatalogue": "La valeur catalogue HT du véhicule doit être entre 0 € et 250 000 €.",
+          "ageVehicule": "L'âge du véhicule doit être entre 0 et 30 ans.",
+          "netVise": "Le net visé doit être compris entre 100 € et 30 000 € par mois.",
+          "dichotomie": "Impossible de calculer le brut correspondant."
+        }
+      }
     }
   }
 }

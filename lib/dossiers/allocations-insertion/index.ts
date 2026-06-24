@@ -36,6 +36,7 @@ const THEORY: DossierTheorySection[] = [
   {
     id: "quest-ce-que-allocation-insertion",
     title: "Qu'est-ce que l'allocation d'insertion ?",
+    titleKey: "insertion.theory.questCeQue.title",
     body: `
 L'allocation d'insertion est une allocation de chômage destinée au jeune
 qui sort des études et qui demande pour la **première fois** une
@@ -49,12 +50,14 @@ fin des études.
 
 Source publique de référence : www.onem.be.
     `.trim(),
+    bodyKey: "insertion.theory.questCeQue.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-10",
   },
   {
     id: "conditions",
     title: "Les conditions (âge, études, stage de 310 jours)",
+    titleKey: "insertion.theory.conditions.title",
     body: `
 Les principales conditions paraphrasées :
 
@@ -75,12 +78,14 @@ Les principales conditions paraphrasées :
 
 Source publique de référence : www.onem.be.
     `.trim(),
+    bodyKey: "insertion.theory.conditions.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-10",
   },
   {
     id: "duree-et-montant",
     title: "Combien de temps / combien ? (forfait, limité à 3 ans)",
+    titleKey: "insertion.theory.dureeEtMontant.title",
     body: `
 Le montant de l'allocation d'insertion est **forfaitaire** : il ne dépend
 pas d'un salaire antérieur mais de la situation familiale du jeune (isolé,
@@ -94,6 +99,7 @@ situation.
 
 Source publique de référence : www.onem.be.
     `.trim(),
+    bodyKey: "insertion.theory.dureeEtMontant.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-10",
   },
@@ -102,8 +108,10 @@ Source publique de référence : www.onem.be.
 export const allocationsInsertion: DossierDefinition = {
   slug: "allocations-insertion",
   title: "Allocations d'insertion (jeunes)",
+  titleKey: "insertion.title",
   description:
     "Pour les jeunes qui sortent des études et n'ont pas (assez) travaillé pour ouvrir un droit au chômage classique.",
+  descriptionKey: "insertion.description",
   category: "emploi",
   icon: "🎓",
   color: "#16A34A",
@@ -224,14 +232,18 @@ export const allocationsInsertion: DossierDefinition = {
   warnings: [
     {
       title: "Demande avant 25 ans",
+      titleKey: "insertion.warning.demandeAvant25.title",
       message:
         "La demande doit en principe être introduite AVANT tes 25 ans. Passé cet âge, le droit aux allocations d'insertion n'est généralement plus ouvert (sauf exceptions).",
+      messageKey: "insertion.warning.demandeAvant25.message",
       severity: "critical",
     },
     {
       title: "Stage d'insertion de 310 jours",
+      titleKey: "insertion.warning.stageInsertion310j.title",
       message:
         "Tu dois d'abord accomplir un stage d'insertion professionnelle de 310 jours (environ 1 an) après la fin de tes études avant de pouvoir toucher les allocations.",
+      messageKey: "insertion.warning.stageInsertion310j.message",
       severity: "info",
     },
   ],
@@ -245,6 +257,7 @@ export const allocationsInsertion: DossierDefinition = {
       // éviter un conflit dans la table PdfForm (slug unique global).
       slug: "c1-insertion",
       title: "C1 — Déclaration de situation personnelle",
+      titleKey: "insertion.doc.c1.title",
       issuer: "ONEM",
       required: true,
       sourcePdfPath: "private/pdfs/C1_FR.pdf",

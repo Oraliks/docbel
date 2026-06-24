@@ -19,6 +19,7 @@ const THEORY: DossierTheorySection[] = [
   {
     id: "qui-est-concerne",
     title: "Qui est concerné ?",
+    titleKey: "frontalier.theory.quiEstConcerne.title",
     body: `
 Le « chômage frontalier » regroupe les travailleurs qui résident dans un
 pays de l'Espace économique européen (EEE) et travaillent dans un autre.
@@ -35,12 +36,14 @@ Plusieurs profils coexistent :
 Pour la Belgique, les configurations les plus fréquentes sont
 BE/FR, BE/LU, BE/NL et BE/DE.
     `.trim(),
+    bodyKey: "frontalier.theory.quiEstConcerne.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-10",
   },
   {
     id: "pays-competent",
     title: "Quel pays est compétent ?",
+    titleKey: "frontalier.theory.paysCompetent.title",
     body: `
 La règle de base, posée par le règlement européen de coordination de la
 sécurité sociale :
@@ -56,12 +59,14 @@ quel organisme contacter, et l'ONEM (ou son équivalent étranger) doit
 disposer de la preuve des périodes d'occupation réalisées dans l'autre
 pays. C'est là qu'intervient le formulaire U1.
     `.trim(),
+    bodyKey: "frontalier.theory.paysCompetent.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-10",
   },
   {
     id: "formulaire-u1",
     title: "Le formulaire U1 — pourquoi il est crucial ?",
+    titleKey: "frontalier.theory.formulaireU1.title",
     body: `
 Le **PD U1** (Portable Document U1) est délivré par l'institution de
 chômage du pays où le travailleur a été occupé. Il atteste les périodes
@@ -85,6 +90,7 @@ délivrance varient fortement (de quelques semaines à plusieurs mois). Il
 est donc préférable d'en faire la demande dès que l'on sait qu'on va
 revenir s'inscrire au chômage dans son pays de résidence.
     `.trim(),
+    bodyKey: "frontalier.theory.formulaireU1.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-10",
   },
@@ -93,8 +99,10 @@ revenir s'inscrire au chômage dans son pays de résidence.
 export const chomageFrontalier: DossierDefinition = {
   slug: "chomage-frontalier",
   title: "Chômage frontalier",
+  titleKey: "frontalier.title",
   description:
     "Pour les travailleurs qui résident en Belgique mais travaillaient dans un pays voisin de l'EEE, ou inversement. Aide à constituer le dossier de chômage en coordination avec l'organisme étranger.",
+  descriptionKey: "frontalier.description",
   category: "emploi",
   icon: "🌍",
   color: "#0EA5E9",
@@ -226,14 +234,18 @@ export const chomageFrontalier: DossierDefinition = {
   warnings: [
     {
       title: "Demande du U1 — anticipe les délais",
+      titleKey: "frontalier.warning.demandeU1.title",
       message:
         "Le formulaire U1 doit être demandé à l'institution de chômage du pays où tu as travaillé en dernier. Compte plusieurs semaines de délai. Sans U1, l'ONEM ne peut pas reconstituer ta carrière à l'étranger.",
+      messageKey: "frontalier.warning.demandeU1.message",
       severity: "warning",
     },
     {
       title: "U2 — à demander avant de partir",
+      titleKey: "frontalier.warning.u2.title",
       message:
         "Si tu veux chercher un emploi dans un autre pays EEE en gardant tes allocations, demande le U2 AVANT de partir. Une fois sur place, il est trop tard pour ouvrir ce droit.",
+      messageKey: "frontalier.warning.u2.message",
       severity: "info",
     },
   ],
@@ -246,6 +258,7 @@ export const chomageFrontalier: DossierDefinition = {
       // seed `force` supprime par slug.
       slug: "c1-chomage-frontalier",
       title: "C1 — Demande d'allocations",
+      titleKey: "frontalier.doc.c1.title",
       issuer: "ONEM",
       required: true,
       sourcePdfPath: "private/pdfs/C1_FR.pdf",
@@ -260,6 +273,7 @@ export const chomageFrontalier: DossierDefinition = {
       // forcé du dossier frontalier touche les formulaires d'un autre dossier.
       slug: "c32-chomage-frontalier",
       title: "C3.2 — Travailleur",
+      titleKey: "frontalier.doc.c32.title",
       issuer: "ONEM",
       required: true,
       sourcePdfPath: "private/pdfs/C32_Travailleur_FR.pdf",

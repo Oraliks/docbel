@@ -9,6 +9,7 @@ import {
   ANCIENNETE_OPTIONS,
   BAREME_2026,
   CATEGORIE_LABELS,
+  CATEGORIE_LABEL_KEYS,
   estimerAllocation,
   type AncienneteValue,
   type CategorieFamiliale,
@@ -62,6 +63,16 @@ const PILL_CLS =
 
 export function SimulatorCard() {
   const t = useTranslations("public.home");
+  const tc = useTranslations("public.dossierContent");
+  const resolve = (key: string | undefined, fallback: string): string => {
+    if (!key) return fallback;
+    try {
+      const v = tc(key as Parameters<typeof tc>[0]);
+      return v && v !== key ? v : fallback;
+    } catch {
+      return fallback;
+    }
+  };
   const uid = useId();
   const catId = `${uid}-categorie`;
   const brutId = `${uid}-brut`;
@@ -194,7 +205,7 @@ export function SimulatorCard() {
             >
               {Object.entries(CATEGORIE_LABELS).map(([value, label]) => (
                 <option key={value} value={value} style={OPTION_STYLE}>
-                  {label}
+                  {resolve(CATEGORIE_LABEL_KEYS[value as CategorieFamiliale], label)}
                 </option>
               ))}
             </select>
@@ -235,7 +246,7 @@ export function SimulatorCard() {
             >
               {ANCIENNETE_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value} style={OPTION_STYLE}>
-                  {o.label}
+                  {resolve(o.labelKey, o.label)}
                 </option>
               ))}
             </select>
@@ -301,7 +312,7 @@ export function SimulatorCard() {
             </div>
             <div className="flex justify-between gap-3">
               <span className="text-white/60">{t("simMetaCategory")}</span>
-              <span className="font-bold">{CATEGORIE_LABELS[categorie]}</span>
+              <span className="font-bold">{resolve(CATEGORIE_LABEL_KEYS[categorie], CATEGORIE_LABELS[categorie])}</span>
             </div>
             <div className="flex justify-between gap-3">
               <span className="text-white/60">{t("simMetaPeriod")}</span>

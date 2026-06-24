@@ -24,6 +24,7 @@ import {
   ANCIENNETE_OPTIONS,
   BAREME_2026,
   CATEGORIE_LABELS,
+  CATEGORIE_LABEL_KEYS,
   estimerAllocation,
   type AncienneteValue,
   type CategorieFamiliale,
@@ -49,6 +50,16 @@ interface Props {
 
 export function AllocationEstimateBlock({ result }: Props) {
   const t = useTranslations("public.dossier");
+  const tc = useTranslations("public.dossierContent");
+  const resolve = (key: string | undefined, fallback: string): string => {
+    if (!key) return fallback;
+    try {
+      const v = tc(key as Parameters<typeof tc>[0]);
+      return v && v !== key ? v : fallback;
+    } catch {
+      return fallback;
+    }
+  };
   const uid = useId();
   const catId = `${uid}-categorie`;
   const brutId = `${uid}-brut`;
@@ -116,9 +127,9 @@ export function AllocationEstimateBlock({ result }: Props) {
             onChange={(e) => setCategorie(e.target.value as CategorieFamiliale)}
             className={FIELD_CLS}
           >
-            <option value="chef_menage">{CATEGORIE_LABELS.chef_menage}</option>
-            <option value="isole">{CATEGORIE_LABELS.isole}</option>
-            <option value="cohabitant">{CATEGORIE_LABELS.cohabitant}</option>
+            <option value="chef_menage">{resolve(CATEGORIE_LABEL_KEYS.chef_menage, CATEGORIE_LABELS.chef_menage)}</option>
+            <option value="isole">{resolve(CATEGORIE_LABEL_KEYS.isole, CATEGORIE_LABELS.isole)}</option>
+            <option value="cohabitant">{resolve(CATEGORIE_LABEL_KEYS.cohabitant, CATEGORIE_LABELS.cohabitant)}</option>
           </select>
         </div>
 
@@ -151,7 +162,7 @@ export function AllocationEstimateBlock({ result }: Props) {
           >
             {ANCIENNETE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
-                {o.label}
+                {resolve(o.labelKey, o.label)}
               </option>
             ))}
           </select>

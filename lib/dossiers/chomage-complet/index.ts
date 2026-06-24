@@ -38,6 +38,7 @@ const THEORY: DossierTheorySection[] = [
   {
     id: "qui-peut-beneficier",
     title: "Qui peut bénéficier ?",
+    titleKey: "complet.theory.quiPeutBeneficier.title",
     body: `
 Le chômage complet est ouvert au travailleur dont le contrat de travail a
 pris fin (licenciement, démission, fin de CDD, rupture amiable…) et qui
@@ -59,12 +60,14 @@ professionnelle) suivent des règles spécifiques.
 
 Source publique de référence : www.onem.be.
     `.trim(),
+    bodyKey: "complet.theory.quiPeutBeneficier.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-10",
   },
   {
     id: "delai-8-jours",
     title: "Le délai de 8 jours",
+    titleKey: "complet.theory.delai8Jours.title",
     body: `
 L'introduction de la demande doit intervenir rapidement après la fin du
 contrat de travail. En pratique, on retient un repère simple : **8 jours
@@ -79,12 +82,14 @@ documenter la cause du retard pour la faire valoir auprès de l'ONEM.
 
 Source publique de référence : www.onem.be.
     `.trim(),
+    bodyKey: "complet.theory.delai8Jours.body",
     audience: ["admin", "partner"],
     lastReviewedAt: "2026-06-10",
   },
   {
     id: "documents-a-preparer",
     title: "Les documents à préparer",
+    titleKey: "complet.theory.documentsAPreparer.title",
     body: `
 Les documents que le travailleur prépare dans le cadre d'une demande de
 chômage complet :
@@ -109,6 +114,7 @@ qui ouvre le stage d'insertion professionnelle.
 
 Source publique de référence : www.onem.be.
     `.trim(),
+    bodyKey: "complet.theory.documentsAPreparer.body",
     audience: ["admin", "partner"],
     bindings: ["documents"],
     lastReviewedAt: "2026-06-10",
@@ -118,8 +124,10 @@ Source publique de référence : www.onem.be.
 export const chomageComplet: DossierDefinition = {
   slug: "chomage-complet",
   title: "Chômage complet",
+  titleKey: "complet.title",
   description:
     "Aide à constituer le dossier de chômage complet après une perte d'emploi (licenciement, démission, fin de CDD) ou pour une première inscription.",
+  descriptionKey: "complet.description",
   category: "emploi",
   icon: "💼",
   color: "#DC2626",
@@ -276,14 +284,18 @@ export const chomageComplet: DossierDefinition = {
   warnings: [
     {
       title: "Délai d'inscription : 8 jours",
+      titleKey: "complet.warning.delaiInscription.title",
       message:
         "Inscris-toi auprès du service régional de l'emploi (FOREM / ACTIRIS / VDAB / ADG) dans les 8 jours ouvrables qui suivent la fin de ton contrat. Un dépôt tardif peut entraîner la perte des allocations pour la période couverte par le retard.",
+      messageKey: "complet.warning.delaiInscription.message",
       severity: "warning",
     },
     {
       title: "Documents employeur à demander",
+      titleKey: "complet.warning.documentsEmployeur.title",
       message:
         "Le C4 (certificat de chômage) doit t'être remis par ton employeur dès la fin du contrat. S'il tarde, réclame-le par écrit : sans C4, ton organisme de paiement ne peut pas constituer ton dossier.",
+      messageKey: "complet.warning.documentsEmployeur.message",
       severity: "info",
     },
   ],
@@ -297,6 +309,7 @@ export const chomageComplet: DossierDefinition = {
       // un conflit dans la table PdfForm (slug unique global).
       slug: "c1-chomage-complet",
       title: "C1 — Demande d'allocations",
+      titleKey: "complet.doc.c1.title",
       issuer: "ONEM",
       required: true,
       sourcePdfPath: "private/pdfs/C1_FR.pdf",
@@ -313,6 +326,7 @@ export const chomageComplet: DossierDefinition = {
       // Pas de sourcePdfPath / fields : non remplissable côté citoyen.
       slug: "c4-employeur",
       title: "C4 — Certificat de chômage (à fournir par l'employeur)",
+      titleKey: "complet.doc.c4.title",
       issuer: "Employeur",
       required: true,
       responsibility: "employer",

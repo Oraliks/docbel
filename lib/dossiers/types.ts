@@ -75,6 +75,8 @@ export type DocumentResponsibility = "user" | "employer" | "onem" | "external";
 export interface DossierDocument {
   slug: string;
   title: string;
+  /// Clé i18n du titre (préférée si fournie). Namespace : `public.dossierContent.*`.
+  titleKey?: string;
   issuer: string;
   /// Document obligatoire dans le dossier (si inclus).
   required?: boolean;
@@ -104,7 +106,11 @@ export interface DossierDocument {
 /// Avertissement affiché au début du dossier.
 export interface DossierWarning {
   title: string;
+  /// Clé i18n du titre (préférée si fournie). Namespace : `public.dossierContent.*`.
+  titleKey?: string;
   message: string;
+  /// Clé i18n du message (préférée si fournie).
+  messageKey?: string;
   severity: "info" | "warning" | "critical";
   /// Filtrage conditionnel optionnel (ex. délai différent selon type CT).
   visibleWhen?: (answers: DossierAnswers) => boolean;
@@ -134,11 +140,15 @@ export type TheoryBinding =
 export interface DossierTheorySection {
   id: string;
   title: string;
+  /// Clé i18n du titre (préférée si fournie). Namespace : `public.dossierContent.*`.
+  titleKey?: string;
   /// Corps en Markdown rédigé EN INTERNE (paraphrase, jamais de citation
   /// verbatim d'une source non publique). Peut contenir des bindings sous
   /// la forme `{{ motifs }}` etc., remplacés au rendu par les listes
   /// extraites du module.
   body: string;
+  /// Clé i18n du corps (préférée si fournie). Namespace : `public.dossierContent.*`.
+  bodyKey?: string;
   /// Audiences autorisées à lire cette section.
   audience: TheoryAudience[];
   /// Bindings interpolés au rendu (cf. TheoryBinding).
@@ -162,8 +172,12 @@ export interface LookupCodeRef {
   code?: string;
   /// Libellé à afficher (paraphrase métier — pas le label brut ONEM).
   label: string;
+  /// Clé i18n du libellé (préférée si fournie). Namespace : `public.dossierContent.*`.
+  labelKey?: string;
   /// Contexte d'usage optionnel (ex. "Temps plein", "Construction CP 124").
   context?: string;
+  /// Clé i18n du contexte (préférée si fournie).
+  contextKey?: string;
 }
 
 /// Une étape opérationnelle d'introduction d'une demande, paraphrasée.
@@ -171,12 +185,18 @@ export interface LookupCodeRef {
 export interface ProcedureStep {
   order: number;
   title: string;
+  /// Clé i18n du titre (préférée si fournie). Namespace : `public.dossierContent.*`.
+  titleKey?: string;
   /// Markdown court (1-3 phrases). Décrit l'action métier, pas la séquence
   /// clavier. Ex. "Importer l'occupation depuis le flux WECH 502 ; le
   /// programme calcule automatiquement le code chiffré."
   description: string;
+  /// Clé i18n de la description (préférée si fournie).
+  descriptionKey?: string;
   /// Moment dans le workflow ("création", "import flux", "validation finale"…).
   when?: string;
+  /// Clé i18n du moment (préférée si fournie).
+  whenKey?: string;
 }
 
 /// Formulaire évoqué dans la procédure (lien vers PdfForm interne si possible).
@@ -185,6 +205,8 @@ export interface ProcedureFormReference {
   code: string;
   /// Libellé métier ("Demande à déclaration de l'employeur").
   label: string;
+  /// Clé i18n du libellé (préférée si fournie).
+  labelKey?: string;
   /// Rôle dans le dossier ("demande", "paiement", "support", "contrôle").
   purpose: "demande" | "paiement" | "support" | "controle";
   /// Slug d'un `PdfForm` géré dans Beldoc, si on en a un. Sinon null.
@@ -202,8 +224,12 @@ export interface DossierProcedure {
   /// Code "nature de DA" ONEM (ex. "TEM"). Doit matcher `natureDA()` du dossier.
   natureDA: string;
   title: string;
+  /// Clé i18n du titre (préférée si fournie). Namespace : `public.dossierContent.*`.
+  titleKey?: string;
   /// Résumé court (1-2 phrases), affichage liste.
   summary: string;
+  /// Clé i18n du résumé (préférée si fournie).
+  summaryKey?: string;
   audience: TheoryAudience[];
   /// Référence interne à la source (jamais affichée).
   internalRef?: string;
@@ -213,13 +239,20 @@ export interface DossierProcedure {
   reglementation?: string[];
   /// Conditions qui rendent la DA obligatoire (liste paraphrasée).
   conditionsObligatoire?: string[];
+  /// Clés i18n des conditions obligatoires (préférées si fournies, parité d'indices avec conditionsObligatoire).
+  conditionsObligatoireKeys?: string[];
   /// Conditions qui la rendent facultative.
   conditionsFacultative?: string[];
+  /// Clés i18n des conditions facultatives (préférées si fournies, parité d'indices avec conditionsFacultative).
+  conditionsFacultativeKeys?: string[];
   /// Délais d'introduction. Texte court, en mois.
   delais?: {
     obligatoire?: string;
+    obligatoireKey?: string;
     facultative?: string;
+    facultativeKey?: string;
     exceptions?: string;
+    exceptionsKey?: string;
   };
   /// Formulaires à introduire (et formulaire de paiement le cas échéant).
   formulaires?: ProcedureFormReference[];
@@ -229,6 +262,8 @@ export interface DossierProcedure {
   codeReferences?: LookupCodeRef[];
   /// Notes / remarques additionnelles (Markdown court).
   notes?: string;
+  /// Clé i18n des notes (préférée si fournie).
+  notesKey?: string;
 }
 
 /// Matrice « qui peut bénéficier de tel motif ».
@@ -244,7 +279,11 @@ export type NatureDAResolver = (
 export interface DossierDefinition {
   slug: string;
   title: string;
+  /// Clé i18n du titre (préférée si fournie). Namespace : `public.dossierContent.*`.
+  titleKey?: string;
   description: string;
+  /// Clé i18n de la description (préférée si fournie).
+  descriptionKey?: string;
   /// Catégorie d'événement de vie (pour /creer-ma-demande).
   category: string;
   icon: string;

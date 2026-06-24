@@ -3992,6 +3992,891 @@
         "previous": "Vorige",
         "next": "Volgende"
       }
+    },
+    "dossierContent": {
+      "wizard": {
+        "s": {
+          "contratSuspendu": {
+            "label": "Mijn werk ligt tijdelijk stil",
+            "description": "Tijdelijke werkloosheid, geschorste overeenkomst",
+            "sub": {
+              "question": "Heeft uw werkgever u in tijdelijke werkloosheid geplaatst?",
+              "help": "Tijdelijke werkloosheid = uw arbeidsovereenkomst loopt door maar het werk wordt een tijdje opgeschort (gebrek aan werk, slecht weer, overmacht, staking, collectieve sluiting…). U hervat het werk bij dezelfde werkgever.",
+              "opt": {
+                "ouiCt": {
+                  "label": "Ja, ik hervat bij dezelfde werkgever"
+                },
+                "nonFin": {
+                  "label": "Nee, mijn overeenkomst is definitief beëindigd"
+                }
+              }
+            }
+          },
+          "perteEmploi": {
+            "label": "Ik heb mijn werk verloren",
+            "description": "Ontslag, einde overeenkomst of einde van een contract van bepaalde duur",
+            "sub": {
+              "question": "Wat is uw loopbaan?",
+              "help": "We willen weten of u al lang genoeg gewerkt heeft om een recht te openen, of u net van school komt.",
+              "opt": {
+                "passeTravailBe": {
+                  "label": "Ik heb een tijdje in België gewerkt",
+                  "help": "U heeft een loopbaan als werknemer in België (verschillende maanden tot meerdere jaren).",
+                  "refine": {
+                    "question": "Is dit uw allereerste werkloosheidsaanvraag?",
+                    "help": "« Eerste keer » = u heeft nog nooit eerder werkloosheidsuitkeringen ontvangen. Heeft u die ooit gekregen, ook al is dat lang geleden, dan gaat het om een hernieuwde aanvraag.",
+                    "opt": {
+                      "premiere": {
+                        "label": "Ja, het is de eerste keer"
+                      },
+                      "redemande": {
+                        "label": "Nee, ik ben al eerder werkloos geweest"
+                      }
+                    }
+                  }
+                },
+                "sorsEtudes": {
+                  "label": "Ik kom net van school en heb weinig of niet gewerkt",
+                  "help": "U heeft niet (genoeg) gewerkt om een gewoon recht te openen — dan komen de inschakelingsuitkeringen in beeld."
+                },
+                "travailEtranger": {
+                  "label": "Ik heb in het buitenland gewerkt (EU/EER)",
+                  "help": "U heeft in een land van de Europese Unie / EER gewerkt en u keert terug naar België.",
+                  "refine": {
+                    "question": "Heeft u sinds uw terugkeer opnieuw in België gewerkt?",
+                    "help": "Opnieuw aan de slag gaan in België (in de praktijk minstens 3 maanden volgens de geldende regel) opent een volledig Belgisch recht. Anders verloopt uw dossier via het stelsel voor grensarbeiders met het U1-formulier.",
+                    "opt": {
+                      "retravailleBe": {
+                        "label": "Ja, ik heb opnieuw in België gewerkt"
+                      },
+                      "pasRetravaille": {
+                        "label": "Nee, ik ben net terug uit het buitenland"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "jeuneEtudes": {
+            "label": "Ik kom van school / ik ben jong",
+            "description": "Inschakelingsuitkeringen, eerste baan",
+            "sub": {
+              "question": "Hoe oud bent u?",
+              "help": "Leeftijd is doorslaggevend: inschakelingsuitkeringen moeten in principe vóór 25 jaar aangevraagd worden.",
+              "opt": {
+                "moins25": {
+                  "label": "Jonger dan 25 jaar"
+                },
+                "vingtCinqPlus": {
+                  "label": "25 jaar of ouder",
+                  "help": "Vanaf 25 jaar zijn de inschakelingsuitkeringen in principe niet meer open — alles hangt af van of u al gewerkt heeft.",
+                  "refine": {
+                    "question": "Heeft u al gewerkt (als werknemer)?",
+                    "opt": {
+                      "aTravaille": {
+                        "label": "Ja, ik heb een loopbaan"
+                      },
+                      "jamais": {
+                        "label": "Nee, nooit (of bijna niet)"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "frontalier": {
+            "label": "Ik ben grensarbeider of heb in het buitenland gewerkt",
+            "description": "Grensoverschrijdend werk, terugkeer EU/EER",
+            "sub": {
+              "question": "Wat is uw grensoverschrijdende situatie?",
+              "help": "Grensarbeider = u woont in het ene land en werkt in het andere, en u keert regelmatig naar huis terug.",
+              "opt": {
+                "frontalierClassique": {
+                  "label": "Ik keer elke week naar huis terug",
+                  "help": "U woont in België (of een buurland) en u werkt aan de andere kant van de grens, en u keert minstens 1 keer per week naar huis terug."
+                },
+                "retourUe": {
+                  "label": "Ik keer terug van werk in het buitenland (EU/EER)",
+                  "refine": {
+                    "question": "Heeft u sinds uw terugkeer opnieuw in België gewerkt?",
+                    "help": "Opnieuw werken in België (≈ minstens 3 maanden) opent een volledig Belgisch recht. Anders is het het stelsel voor grensarbeiders met het U1-formulier.",
+                    "opt": {
+                      "retravailleBe": {
+                        "label": "Ja, ik heb opnieuw in België gewerkt"
+                      },
+                      "pasRetravaille": {
+                        "label": "Nee, nog niet"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "finCarriere": {
+            "label": "Ik ben aan het einde van mijn loopbaan (ontslagen)",
+            "description": "SWT (brugpensioen), bedrijfstoeslag",
+            "sub": {
+              "question": "Bent u door uw werkgever ontslagen?",
+              "help": "Het stelsel van werkloosheid met bedrijfstoeslag (SWT, voorheen brugpensioen) veronderstelt een ONTSLAG — geen vrijwillig vertrek.",
+              "opt": {
+                "licencie": {
+                  "label": "Ja, mijn werkgever heeft mij ontslagen"
+                },
+                "demission": {
+                  "label": "Nee, ik heb zelf ontslag genomen / andere reden"
+                }
+              }
+            }
+          },
+          "handicap": {
+            "label": "Ik heb een handicap",
+            "description": "Arbeidsongeschiktheid, uitkeringen",
+            "sub": {
+              "question": "Werkt u momenteel?",
+              "opt": {
+                "handicapTravaille": {
+                  "label": "Ja"
+                },
+                "handicapNeTravaillePas": {
+                  "label": "Nee"
+                }
+              }
+            }
+          },
+          "autre": {
+            "label": "Andere situatie",
+            "description": "Beschrijf uw behoefte, wij oriënteren u"
+          }
+        },
+        "result": {
+          "ct": {
+            "title": "Tijdelijke werkloosheid",
+            "rationale": "Uw arbeidsovereenkomst is een tijdje opgeschort: u kunt tijdens deze periode uitkeringen ontvangen, en daarna uw werk hervatten."
+          },
+          "completPremiere": {
+            "title": "Volledige werkloosheid — eerste aanvraag",
+            "rationale": "U heeft genoeg gewerkt om voor het eerst een recht op volledige werkloosheid te openen."
+          },
+          "completRedemande": {
+            "title": "Volledige werkloosheid — nieuwe aanvraag",
+            "rationale": "U heeft in het verleden al uitkeringen gekregen: uw recht op volledige werkloosheid wordt heropend."
+          },
+          "insertion": {
+            "title": "Inschakelingsuitkeringen (jongeren)",
+            "rationale": "U komt van school zonder (genoeg) gewerkt te hebben: dat is de weg van de inschakelingsuitkeringen, na een beroepsinschakelingstijd van 310 dagen."
+          },
+          "frontalier": {
+            "title": "Werkloosheid voor grensarbeiders",
+            "rationale": "U woont in het ene land en werkte in een ander (EU/EER): uw dossier verloopt via het stelsel voor grensarbeiders (U1-formulier)."
+          },
+          "completAgregation": {
+            "title": "Volledige werkloosheid (na werk in het buitenland)",
+            "rationale": "U heeft opnieuw in België gewerkt na uw tewerkstelling in het buitenland: u kunt een volledig Belgisch recht openen, met aanrekening van uw buitenlandse periodes via het U1-formulier."
+          },
+          "rcc": {
+            "title": "Stelsel van werkloosheid met bedrijfstoeslag (SWT)",
+            "rationale": "Ontslagen aan het einde van uw loopbaan kunt u werkloosheidsuitkeringen combineren met een toeslag betaald door uw ex-werkgever."
+          },
+          "insertionVerifierAge": {
+            "title": "Inschakelingsuitkeringen — leeftijd controleren",
+            "rationale": "Vanaf 25 jaar is het recht op inschakelingsuitkeringen meestal niet meer open (behalve uitzonderingen). We verwijzen u door naar dit dossier om uw specifieke situatie te controleren."
+          },
+          "completSansRcc": {
+            "title": "Volledige werkloosheid",
+            "rationale": "Zonder ontslag is het SWT niet open — dan is het de weg van de klassieke volledige werkloosheid (let op: er kan een wachttijd zijn na ontslag op eigen initiatief)."
+          },
+          "ctFmm": {
+            "title": "Tijdelijke werkloosheid (medische overmacht)",
+            "rationale": "Als uw arbeidsongeschiktheid tijdelijk is, dan is dit de standaardweg."
+          },
+          "handicapDg": {
+            "title": "Uitkeringen (DG Personen met een handicap)",
+            "rationale": "Het traject voor inkomensvervangende en integratietegemoetkomingen komt binnenkort op beldoc."
+          },
+          "autre": {
+            "title": "Beschrijf uw situatie",
+            "rationale": "Beschrijf uw situatie via het contactformulier — we begeleiden u naar de juiste stap."
+          }
+        }
+      },
+      "sim": {
+        "categorie": {
+          "isole": "Alleenstaande",
+          "cohabitant": "Samenwonende",
+          "chefMenage": "Gezinshoofd"
+        },
+        "anciennete": {
+          "0-3": "0 tot 3 maanden",
+          "4-12": "4 tot 12 maanden"
+        },
+        "periode": {
+          "1A": "1ste periode · maand 1-3",
+          "1B": "1ste periode · maand 4-6",
+          "2A": "1ste periode · maand 7-12"
+        }
+      },
+      "ct": {
+        "title": "Tijdelijke werkloosheid",
+        "description": "Hulp bij het samenstellen van het dossier tijdelijke werkloosheid (economisch, slecht weer, overmacht, enz.) dat bij de RVA wordt ingediend.",
+        "warning": {
+          "delaiIntroduction": {
+            "title": "Indieningstermijn",
+            "message": "De indieningstermijn varieert naargelang de aanvraag: meestal lopende maand + 2 maanden (verplicht) of + 36 maanden (facultatief). In sommige situaties (wijziging Q/S, staking, 66+ jaar) gelden uitzonderingen."
+          },
+          "accidentTechnique": {
+            "title": "Technische storing — bijzonderheid",
+            "message": "Bij tijdelijke werkloosheid wegens technische storing wordt de uitkering pas vanaf de 8e kalenderdag betaald. De eerste 7 dagen blijven ten laste van de werkgever."
+          }
+        },
+        "doc": {
+          "c32Travailleur": {
+            "title": "C3.2 — Werknemer"
+          },
+          "c1Travailleur": {
+            "title": "C1 — Aanvraag uitkeringen"
+          },
+          "c6Fmm": {
+            "title": "C6 — Medische overmacht"
+          },
+          "c27rFmm": {
+            "title": "C27R — Re-integratietraject"
+          }
+        },
+        "theory": {
+          "introduction": {
+            "title": "Inleiding",
+            "body": "Tijdelijke werkloosheid (TW) is een voorlopige volledige of gedeeltelijke schorsing van de arbeidsovereenkomst, waarbij de werknemer uitkeringen kan ontvangen die door de RVA worden betaald via zijn uitbetalingsinstelling.\n\nIn tegenstelling tot volledige werkloosheid wordt de arbeidsovereenkomst niet beëindigd — de tewerkstelling hervat zodra de oorzaak van de schorsing weg is.\n\nEr bestaan elf officiële redenen, elk met eigen voorwaarden, werkgeversverplichtingen en documenten."
+          },
+          "motifs": {
+            "title": "De elf redenen",
+            "body": "De erkende redenen voor tijdelijke werkloosheid zijn:\n\n{{ motifs }}\n\nElke reden volgt eigen toelaatbaarheidsregels en staat enkel open voor bepaalde categorieën werknemers (arbeider, bediende, uitzendkracht)."
+          },
+          "quiEstConcerne": {
+            "title": "Wie kan welke reden inroepen",
+            "body": "Niet alle redenen staan open voor alle statuten. De onderstaande matrix vat de openingen samen.\n\n{{ qui-est-concerne }}\n\nEnkele bijzondere gevallen:\n\n- **Economisch**: de klassieke bediende heeft hier geen toegang — die schakelt over naar de *Schorsing bedienden*, waarvoor de onderneming aan de RVA moet bewijzen dat ze de voorwaarden vervult (onderneming in moeilijkheden).\n- **Medische overmacht**: niet van toepassing op uitzendkrachten.\n- **Beschermde werknemer**: voorbehouden aan vakbondsafgevaardigden (arbeider of bediende).\n- **Schorsing bedienden**: enkel voor bedienden.\n\nVoor uitzendkrachten in economische tijdelijke werkloosheid blijft de situatie strikt afgebakend (vereiste anciënniteit, lopende TW-procedure voor de vaste werknemers van dezelfde afdeling, enz.)."
+          },
+          "conditions": {
+            "title": "Voorwaarden van toelaatbaarheid en toekenning",
+            "body": "Er gelden twee niveaus van voorwaarden:\n\n1. **Toelaatbaarheid** — de werknemer moet in een referentieperiode vóór de aanvraag voldoende bewezen arbeidsdagen hebben. De eisen variëren naargelang leeftijd en aard van de overeenkomst.\n2. **Toekenning** — op het moment dat de uitkering wordt uitbetaald, moeten meerdere persoonlijke voorwaarden vervuld zijn: beschikbaarheid voor de arbeidsmarkt, geen ander vervangingsinkomen, geen sanctie, enz.\n\nEen sanctie of een actieve uitsluiting op een andere basis (bv. volledige werkloosheid) kan de vergoeding van tijdelijke werkloosheid rechtstreeks beïnvloeden."
+          },
+          "documents": {
+            "title": "Samen te stellen documenten",
+            "body": "De documenten die **de werknemer** indient in het kader van een aanvraag tijdelijke werkloosheid:\n\n{{ documents }}\n\nDaarnaast bezorgt de **werkgever** zijn eigen aangifte (ASR / WECH) elektronisch aan de RVA, samen met de kennisgevingen en mededelingen naargelang de reden. Deze stromen lopen niet via dit dossier — ze worden rechtstreeks door de werkgever afgehandeld via de RSZ/RVA-portalen.\n\nDe C3.2-werknemer is in vrijwel alle gevallen de spil van het dossier. Hij kan in bepaalde bijzondere situaties zoals medische overmacht vervangen worden door andere formulieren (C6)."
+          },
+          "natureDa": {
+            "title": "Aard van de uitkeringsaanvraag (UA)",
+            "body": "De « aard van de UA » is een RVA-code die de context van de aanvraag samenvat (lopende overdracht, allereerste aanvraag, 66 jaar en ouder, toepasselijk type tijdelijke werkloosheid, enz.).\n\nHij wordt afgeleid uit de antwoorden op de oriëntatievragen en de persoonlijke situatie van de aanvrager — het is geen vraag die we aan de gebruiker stellen, maar een **berekende waarde**.\n\nDe belangrijkste aarden bij TW:\n\n- **TPL / TPV** — eerste aanvraag (nog nooit een werkloosheidsdossier gehad)\n- **TFT** — lopende overdracht TW\n- **CTP** — 1ste dag TW vanaf 66 jaar\n- **INT** — economisch arbeider, schorsing bedienden, slecht weer\n- **TEM** — technische storing, overmacht, medische overmacht, beschermde werknemer\n- **VAC** — jaarlijkse of aanvullende vakantie"
+          },
+          "delais": {
+            "title": "Indieningstermijnen",
+            "body": "De indieningstermijn hangt af van het type aanvraag en de reden:\n\n| Type UA | Standaardtermijn | Belangrijke uitzonderingen |\n| --- | --- | --- |\n| Verplicht | lopende maand + 2 maanden | Wijziging Q/S: + 36 maanden · Staking: + 6 maanden · 66+: geen termijn |\n| Facultatief | lopende maand + 36 maanden | — |\n\nDe interne tools (AS400) passen de uitzonderingen niet altijd automatisch toe en vallen terug op de kortste standaardtermijn — vandaar het belang voor de partner om de exacte regel van de reden te kennen."
+          },
+          "demarchesEmployeur": {
+            "title": "Werkgeversstappen — overzicht",
+            "body": "Voor de werkgever hangen de verplichtingen af van de reden:\n\n- **Kennisgeving** (voorafgaande procedure): vereist voor economisch, technische storing en schorsing bedienden. Ze gebeurt elektronisch vóór het begin van de periode van tijdelijke werkloosheid.\n- **Mededeling van de 1ste werkelijke dag**: maandelijks over te maken voor economisch, slecht weer, technische storing en schorsing bedienden.\n- **ASR / WECH**: elektronische sociale aangifte die de werkgever overmaakt via het RSZ-portaal. Eén concept, twee benamingen: *ASR* is de publieke naam aan de kant van de aangeslotene (Aangifte Sociaal Risico), *WECH* is het interne jargon (bv. WECH 502 voor de aangifte, WECH 505 voor de betalingsstroom). Voor de aangeslotene zijn deze stromen niet zichtbaar: hij ziet het resultaat (gestorte uitkeringen).\n\nGeen enkele werkgeversformaliteit maakt deel uit van de pdf's die de werknemer in het dossier invult; we vermelden ze hier ter informatie."
+          }
+        },
+        "proc": {
+          "common": {
+            "step": {
+              "s1": {
+                "when": "Aanmaak van de aanvraag",
+                "title": "De aanvraag opstarten",
+                "description": "Een nieuwe UA aanmaken in de uitbetalingstool met de juiste aard, de datum van de 1ste dag tijdelijke werkloosheid en het voorvoegsel dat overeenstemt met de situatie van de werknemer (voltijds, deeltijds, behoud van rechten, enz.)."
+              },
+              "s2": {
+                "when": "Parameters",
+                "title": "Het toelaatbaarheidsartikel bepalen",
+                "description": "Start de TW-analyse om het toepasselijke toelaatbaarheidsartikel te identificeren. Het systeem stelt de code voor (42K30, 42K33, 42L36, overgangsmaatregel, art. 42 na DISPO of niet toelaatbaar)."
+              },
+              "s3": {
+                "when": "Externe documenten",
+                "title": "De RSZ / ASR-stromen opvragen",
+                "description": "Vraag automatisch de C3.2 EL aan (ASR-stroom), en naargelang het gekozen toelaatbaarheidsartikel ook de DmfA en elke andere relevante stroom."
+              },
+              "s4": {
+                "when": "Tewerkstelling importeren",
+                "title": "De tewerkstelling importeren uit de ASR werkgever",
+                "description": "Koppel de tewerkstelling aan de stroom WECH 502 (aanvraag) of WECH 505 (betaling). Controleer de coherentie van de geïmporteerde parameters en voed de tellers."
+              },
+              "s5": {
+                "when": "Bouw (PC 124)",
+                "title": "De rechthebbendenkaart (RHK) controleren",
+                "description": "Controleer voor een bouwvakker of er een RHK bestaat. Zo ja, selecteer ze. Zo niet, geldt de vervangingsvergoeding (2 €)."
+              },
+              "s6": {
+                "when": "Berekening",
+                "title": "De numerieke code berekenen",
+                "description": "Start de berekening van de numerieke code op basis van het nieuwe formulier C32. Voor dossiers met toelaatbaarheid op basis van arbeid (42K30 / 42K33) valideer de TIMELINE om te bevestigen dat de voorwaarden vervuld zijn."
+              },
+              "s7": {
+                "when": "Uitkeringen",
+                "title": "De uitkeringsaanvraag afronden",
+                "description": "Bepaal de status van de aanvraag (volledig / onvolledig), positioneer de C2-zone en laat het programma automatisch de RHK-code of de IC-vergoeding berekenen volgens de sector."
+              },
+              "s8": {
+                "when": "Codificatie",
+                "title": "De C2-codificatie valideren",
+                "description": "Controleer de berekeningsmethode (08 — niet onderworpen aan degressiviteit) en de barema — automatisch weergegeven."
+              }
+            }
+          },
+          "tem": {
+            "title": "Inleiding TEM — Overmacht & technische storing",
+            "summary": "Schorsing van de overeenkomst wegens overmacht (plotselinge en onvoorziene gebeurtenis), medische overmacht (tijdelijke arbeidsongeschiktheid met geschil mutualiteit / arbeidsarts) of technische storing. Geldt voor arbeiders, bedienden en industriële leerlingen.",
+            "delais": {
+              "obligatoire": "Lopende maand + 2 maanden (einde van de 2e maand na de UA)",
+              "facultative": "Lopende maand + 36 maanden (einde van de 36e maand na de UA)",
+              "exceptions": "Als de 1ste dag van de UA in een staking valt: verplichte termijn verlengd tot 6 maanden"
+            },
+            "step": {
+              "fmm": {
+                "when": "Medische overmacht",
+                "title": "De medische stukken toevoegen",
+                "description": "Voor medische overmacht: bezorg de beslissing van de preventieadviseur-arbeidsarts (PAAA), het advies van de behandelende arts of het bewijs van beroep tegen de mutualiteit. Controleer de inschrijving als werkzoekende binnen de 8 dagen na de eerste 3 maanden."
+              },
+              "accidentTechnique": {
+                "when": "Technische storing",
+                "title": "De erkenning door de RVA controleren",
+                "description": "Bij een technische storing is de erkenning door de RVA verplicht. De vergoeding loopt pas vanaf de 8e dag van het voorval. De werkgever moet de 1ste werkelijke dag werkloosheid meedelen aan de RVA (vooravond / dag zelf / dag erna)."
+              }
+            },
+            "notes": "Geen inschrijving als werkzoekende vereist, BEHALVE bij overmacht en medische overmacht (verplicht binnen 8 dagen na de eerste 3 maanden). Bouw (PC 124): controleer de rechthebbendenkaart (RHK) — recht op de vergoeding van 2 € zo niet."
+          },
+          "gre": {
+            "title": "Inleiding GRE — Staking / lock-out",
+            "summary": "Schorsing van de overeenkomst tijdens een staking (door de werknemers gestart) of lock-out (door de werkgever gestart). Geldt voor arbeiders, bedienden en industriële leerlingen. De vergoeding hangt af van de beslissing van het beheerscomité van de RVA.",
+            "delais": {
+              "obligatoire": "Lopende maand + 6 maanden (specifiek verlengde termijn staking)",
+              "facultative": "Lopende maand + 36 maanden"
+            },
+            "step": {
+              "decisionOnem": {
+                "when": "Beslissing RVA",
+                "title": "De beslissing van het beheerscomité noteren",
+                "description": "De vergoeding hangt af van de beslissing van het RVA-beheerscomité, in de uitbetalingsapplicatie weergegeven met een vlag: G (akkoord — vergoedbaar), N (geen akkoord) of ? (in afwachting van antwoord)."
+              }
+            },
+            "code": {
+              "g": "Akkoord — staking vergoedbaar",
+              "n": "Geen akkoord — staking niet vergoedbaar",
+              "attente": "In afwachting van de beslissing van de RVA"
+            },
+            "notes": "Geen inschrijving als werkzoekende. Toelaatbaarheidsvoorwaarden voor economische TW (codes 51 / 511) worden bij elke UA gecontroleerd, ongeacht de reden. Bouw (PC 124): RHK-controle identiek aan TEM."
+          },
+          "int": {
+            "title": "Inleiding INT — Slecht weer, economisch & schorsing bedienden",
+            "summary": "Drie subgevallen: economische werkloosheid (arbeiders + industriële leerlingen), slecht weer (arbeiders + industriële leerlingen) en schorsing bedienden bij gebrek aan werk. Werkgeversverplichtingen voor kennisgeving / mededeling verschillen per subgeval.",
+            "delais": {
+              "obligatoire": "Lopende maand + 2 maanden",
+              "facultative": "Lopende maand + 36 maanden",
+              "exceptions": "Als 1ste dag = staking: verplicht verlengd tot 6 maanden"
+            },
+            "step": {
+              "economique": {
+                "when": "Werkgeversverplichtingen — economisch",
+                "title": "Kennisgeving + mededeling 1ste dag",
+                "description": "Economisch: de werkgever geeft kennis van de voorziene periode, moet één werkweek pauze tussen twee kennisgevingen respecteren (behalve voor een kleine schorsing), en deelt vervolgens de 1ste werkelijke dag mee aan de RVA (zelfde dag, eerstvolgende werkdag of binnen de 5 werkdagen ervoor)."
+              },
+              "intemperies": {
+                "when": "Werkgeversverplichtingen — slecht weer",
+                "title": "Geen kennisgeving, mededeling 1ste dag verplicht",
+                "description": "Slecht weer: geen voorafgaande kennisgeving, maar verplichte mededeling aan de RVA van de 1ste werkelijke dag binnen de maand (zelfde dag, eerstvolgende werkdag of vorige werkdag)."
+              },
+              "suspensionEmployes": {
+                "when": "Werkgeversverplichtingen — schorsing bedienden",
+                "title": "Kennisgeving periode + aard, mededeling 1ste dag",
+                "description": "Schorsing bedienden: kennisgeving van de voorziene periode en de aard van de onderbreking (volledig / gedeeltelijk), en daarna mededeling van de 1ste werkelijke dag aan de RVA. Eén enkele mededeling volstaat als meerdere vormen van TW in dezelfde maand samenlopen."
+              }
+            },
+            "notes": "Geen inschrijving als werkzoekende vereist. Bouw (PC 124): RHK-controle identiek aan de andere aarden."
+          },
+          "ctp": {
+            "title": "Inleiding CTP — Werknemer ouder dan de wettelijke pensioenleeftijd",
+            "summary": "Sinds 01/01/2015 kan een werknemer die na 65 jaar blijft werken TW-uitkeringen krijgen (niet cumuleerbaar met pensioen). Vanaf de maand na zijn 65ste verjaardag en zodra hij voor de eerste keer in TW gaat, moet een UA ingediend worden — vooral om de RVA-integratie opnieuw op te starten.",
+            "delais": {
+              "obligatoire": "Lopende maand + 2 maanden (einde van de 2e maand na de UA)",
+              "facultative": "Lopende maand + 36 maanden (scenario 2); geen termijn behoudens verjaring (scenario 3)"
+            },
+            "step": {
+              "s1": {
+                "when": "Aanmaak",
+                "title": "De CTP opstarten",
+                "description": "Aanvraagdatum = 1ste van de maand na de 65ste verjaardag van de werknemer. Aard = CTP. Voorvoegsel beperkt tot 02 of 04 vanaf 65 jaar (voorvoegsels 05, 06, 57, 58 zijn niet meer mogelijk)."
+              },
+              "s2": {
+                "when": "Integratie",
+                "title": "De ledensignaletiek bijwerken en de integratie opnieuw opstarten",
+                "description": "Controleer de signaletiekgegevens en valideer de integratie. De gebruikelijke integratie eindigt uiterlijk op de laatste dag van de maand waarin de werknemer 65 wordt. De nieuwe integratie loopt dan tot de laatste dag van de maand waarin de persoon 99 wordt (code 15)."
+              },
+              "s3": {
+                "when": "Scenario 1 (verplichte UA)",
+                "title": "De volledige verplichte procedure INT/TEM volgen",
+                "description": "Werkwijze identiek aan een verplichte UA INT (parameters + TW-analyse + externe documenten + import tewerkstelling + berekening numerieke code + uitkeringen + codificatie), met daarbovenop het afdrukken van de C1 vanuit de gezinssamenstelling."
+              },
+              "s4": {
+                "when": "Scenario 2 (herziening)",
+                "title": "De facultatieve procedure INT/TEM volgen",
+                "description": "Werkwijze identiek aan een facultatieve UA INT/TEM (overname van het toelaatbaarheidsartikel, periode afsluiten, import tewerkstelling, herberekening numerieke code, uitkeringen), plus afdruk C1."
+              },
+              "s5": {
+                "when": "Scenario 3 (alleen integratie)",
+                "title": "Historische toelaatbaarheid opnieuw controleren en afronden",
+                "description": "Controleer het toelaatbaarheidsartikel dat geldig was bij de laatste TW-UA. Neem artikel 042 + de toelaatbaarheid over in de parameters. Vraag de C3.2 EL en de bijkomende stromen aan. Druk de C1 af. Importeer de tewerkstelling. Aanvraagstatus = 1, C2 = Y. Herinnering aan de laatste geldige codificatie."
+              },
+              "s6": {
+                "when": "Codificatie",
+                "title": "De C2-codificatie valideren",
+                "description": "Berekeningsmethode 08 (geen degressiviteit) en barema in één lijn worden automatisch weergegeven."
+              }
+            },
+            "notes": "Uitzondering: medische overmacht blijft toegankelijk na 65 jaar. TW-uitkeringen zijn niet cumuleerbaar met pensioen. Als de werknemer een beslissing van de adviserend arts van de mutualiteit betwist, wordt de UA normaal ingediend met de bewijsstukken."
+          }
+        }
+      },
+      "complet": {
+        "title": "Volledige werkloosheid",
+        "description": "Hulp bij het samenstellen van het dossier volledige werkloosheid na verlies van werk (ontslag, ontslag op eigen initiatief, einde contract van bepaalde duur) of voor een eerste inschrijving.",
+        "warning": {
+          "delaiInscription": {
+            "title": "Inschrijvingstermijn: 8 dagen",
+            "message": "Schrijf je in bij de gewestelijke arbeidsbemiddelingsdienst (VDAB / FOREM / ACTIRIS / ADG) binnen de 8 werkdagen na het einde van je overeenkomst. Een laattijdige indiening kan leiden tot het verlies van uitkeringen voor de periode van de vertraging."
+          },
+          "documentsEmployeur": {
+            "title": "Bij de werkgever op te vragen documenten",
+            "message": "De C4 (werkloosheidsbewijs) moet je door je werkgever overhandigd worden zodra de overeenkomst eindigt. Komt hij niet, vraag hem schriftelijk op: zonder C4 kan je uitbetalingsinstelling je dossier niet samenstellen."
+          }
+        },
+        "doc": {
+          "c1": {
+            "title": "C1 — Aanvraag uitkeringen"
+          },
+          "c4": {
+            "title": "C4 — Werkloosheidsbewijs (door de werkgever te bezorgen)"
+          }
+        },
+        "theory": {
+          "quiPeutBeneficier": {
+            "title": "Wie komt in aanmerking?",
+            "body": "Volledige werkloosheid staat open voor de werknemer wiens arbeidsovereenkomst beëindigd is (ontslag, ontslag op eigen initiatief, einde contract van bepaalde duur, beëindiging in onderling overleg…) en die voldoet aan meerdere basisvoorwaarden:\n\n- voldoende dagen gewerkt hebben tijdens de referentieperiode vóór de aanvraag (de drempel stijgt met de leeftijd);\n- ingeschreven zijn als werkzoekende bij de gewestelijke dienst (VDAB in Vlaanderen, ACTIRIS in Brussel, FOREM in Wallonië, ADG in de Duitstalige Gemeenschap);\n- beschikbaar zijn voor de arbeidsmarkt (geschikt, bereid om een passende job aan te nemen, een opleiding te volgen, enz.);\n- niet al gedekt zijn door een ander vervangingsinkomen (mutualiteit, pensioen, voltijdse bezoldiging…).\n\nZelfstandigen die vrijwillig hebben bijgedragen aan het werknemersstelsel en jongeren in eerste inschrijving (beroepsinschakelingstijd) volgen specifieke regels.\n\nPublieke bron: www.rva.be."
+          },
+          "delai8Jours": {
+            "title": "De termijn van 8 dagen",
+            "body": "De aanvraag moet snel ingediend worden na het einde van de arbeidsovereenkomst. In de praktijk geldt een eenvoudig richtpunt: **8 werkdagen** vanaf de dag na het einde van de overeenkomst om zich in te schrijven als werkzoekende bij de gewestelijke dienst en het dossier in te dienen bij de uitbetalingsinstelling (ABVV, ACV, ACLVB of HVW).\n\nEen laattijdige indiening doet het recht niet vervallen, maar kan leiden tot verlies van uitkeringen voor de periode van de vertraging. Bij moeilijkheden (ziekte, lopende stappen) moet de partner de oorzaak van de vertraging kunnen documenteren om die bij de RVA in te roepen.\n\nPublieke bron: www.rva.be."
+          },
+          "documentsAPreparer": {
+            "title": "Voor te bereiden documenten",
+            "body": "De documenten die de werknemer voorbereidt in het kader van een aanvraag volledige werkloosheid:\n\n{{ documents }}\n\nAndere officiële stukken zijn normaal ook vereist, maar zijn nog niet geïntegreerd in Beldoc — die moeten in een latere fase toegevoegd worden:\n\n- **C4** — Werkloosheidsbewijs, door de werkgever overhandigd bij het einde van de overeenkomst. Het bewijst de duur van de prestaties en de reden van beëindiging.\n- **C61** — Controlekaart, maandelijks in te vullen door de werkloze om activiteiten en afwezigheden aan te geven.\n- **C109** — Aangifte gezinstoestand, bepaalt de categorie (alleenstaande / gezinshoofd / samenwonende) en dus het bedrag van de uitkeringen.\n\nVoor de eerste inschrijvingen in de werkloosheid (jongeren na hun studies) levert de gewestelijke arbeidsbemiddelingsdienst een inschrijvingsattest dat de beroepsinschakelingstijd opent.\n\nPublieke bron: www.rva.be."
+          }
+        }
+      },
+      "frontalier": {
+        "title": "Werkloosheid voor grensarbeiders",
+        "description": "Voor werknemers die in België wonen maar in een buurland van de EER werkten, of omgekeerd. Hulp bij het samenstellen van het werkloosheidsdossier in coördinatie met de buitenlandse instelling.",
+        "warning": {
+          "demandeU1": {
+            "title": "U1 aanvragen — anticipeer op de termijnen",
+            "message": "Het U1-formulier moet aangevraagd worden bij de werkloosheidsinstelling van het land waar je laatst gewerkt hebt. Reken op meerdere weken termijn. Zonder U1 kan de RVA je buitenlandse loopbaan niet samenstellen."
+          },
+          "u2": {
+            "title": "U2 — aan te vragen vóór vertrek",
+            "message": "Als je een job in een ander EER-land wilt zoeken met behoud van je uitkeringen, vraag dan het U2 aan VÓÓR je vertrek. Eenmaal ter plaatse is het te laat om dit recht te openen."
+          }
+        },
+        "doc": {
+          "c1": {
+            "title": "C1 — Aanvraag uitkeringen"
+          },
+          "c32": {
+            "title": "C3.2 — Werknemer"
+          }
+        },
+        "theory": {
+          "quiEstConcerne": {
+            "title": "Wie is betrokken?",
+            "body": "« Werkloosheid voor grensarbeiders » omvat de werknemers die in een land van de Europese Economische Ruimte (EER) wonen en in een ander land werken. Er bestaan verschillende profielen naast elkaar:\n\n- **Klassieke grensarbeider** — je woont in het ene land en werkt in een ander, maar je keert minstens één keer per week naar huis terug.\n- **Occasionele grensarbeider** — dezelfde configuratie, maar je keert niet elke week terug (lange opdracht, verblijf ter plaatse…).\n- **Gedetacheerde** — je oorspronkelijke werkgever stuurt je tijdelijk in het buitenland werken (werf, opdracht). Je blijft aangesloten bij de sociale zekerheid van je land van oorsprong.\n\nVoor België zijn de meest voorkomende configuraties BE/FR, BE/LU, BE/NL en BE/DE."
+          },
+          "paysCompetent": {
+            "title": "Welk land is bevoegd?",
+            "body": "De basisregel uit de Europese verordening voor sociale zekerheidscoördinatie:\n\n- **Volledige werkloosheid** (volledig verlies van werk) → de bevoegdheid ligt bij het **woonland**. Een Belgische grensarbeider in Frankrijk die zijn job verliest, wendt zich dus tot de RVA in België.\n- **Gedeeltelijke of tijdelijke werkloosheid** (voorlopige schorsing van de overeenkomst) → de bevoegdheid ligt bij het **land van de laatste werkgever**.\n\nDeze regel heeft belangrijke gevolgen: de werknemer moet weten welke instelling hij moet contacteren, en de RVA (of zijn buitenlandse tegenhanger) moet over het bewijs van de tewerkstellingsperiodes in het andere land beschikken. Daar komt het U1-formulier in beeld."
+          },
+          "formulaireU1": {
+            "title": "Het U1-formulier — waarom is het cruciaal?",
+            "body": "Het **PD U1** (Portable Document U1) wordt uitgereikt door de werkloosheidsinstelling van het land waar de werknemer tewerkgesteld was. Het bewijst de verzekerings- en tewerkstellingsperiodes in dat land.\n\nZonder U1 kan de RVA de loopbaan in het buitenland niet samenstellen om de toelaatbaarheidsvoorwaarden te controleren. Concreet kan dat de opening van het recht op uitkeringen in België blokkeren of vertragen.\n\nTwee andere Europese documenten vullen het stelsel aan:\n\n- Het **PD U2** laat een tijdelijke overdracht van uitkeringen naar een ander EER-land toe terwijl men daar werk zoekt (beperkt tot 3 maanden, in bepaalde gevallen verlengbaar).\n- Het **PD ED** dient voor de rechtstreekse informatie-uitwisseling tussen socialezekerheidsinstellingen. De werknemer moet er normaal niets mee doen — het is een administratief kanaal.\n\nHet U1 moet aangevraagd worden bij de bevoegde buitenlandse instelling. De afgiftetermijnen variëren sterk (van enkele weken tot meerdere maanden). Het is dus raadzaam om het aan te vragen zodra je weet dat je terugkomt om je in te schrijven in de werkloosheid in je woonland."
+          }
+        }
+      },
+      "rcc": {
+        "title": "Stelsel van werkloosheid met bedrijfstoeslag (SWT)",
+        "description": "Vroeger « brugpensioen »: voor werknemers aan het einde van hun loopbaan die door hun werkgever ontslagen zijn en zowel werkloosheidsuitkeringen als een bedrijfstoeslag van hun ex-werkgever ontvangen.",
+        "warning": {
+          "licenciementObligatoire": {
+            "title": "Ontslag verplicht",
+            "message": "Het SWT vereist IMPERATIEF een ontslag door de werkgever. Als je zelf ontslag neemt, verlies je dit recht."
+          },
+          "seuilsVariables": {
+            "title": "Variabele drempels",
+            "message": "De voorwaarden voor leeftijd en anciënniteit wijzigen regelmatig (programmawet, interprofessioneel akkoord, sectorale CAO's). Verifieer bij je uitbetalingsinstelling de geldende drempels voor jouw situatie."
+          }
+        },
+        "doc": {
+          "c1": {
+            "title": "C1 — Aanvraag uitkeringen"
+          }
+        },
+        "theory": {
+          "quEstCeQueLeRcc": {
+            "title": "Wat is het SWT?",
+            "body": "Het **SWT** (Stelsel van werkloosheid met bedrijfstoeslag) is het vroegere « brugpensioen ». De naam is in 2012 veranderd, maar de logica blijft dezelfde: een werknemer aan het einde van zijn loopbaan die ontslagen wordt, ontvangt **twee gecombineerde inkomens**:\n\n1. De **werkloosheidsuitkeringen** betaald door de RVA (zoals een klassieke werkloze).\n2. Een **bedrijfstoeslag** betaald door de ex-werkgever, bovenop de uitkeringen. Deze toeslag is geen gunst: hij vloeit voort uit een collectieve arbeidsovereenkomst (sectoraal of op bedrijfsniveau).\n\nHet is dus geen « vervroegd pensioen » — de persoon blijft officieel werkloos tot het wettelijk pensioen, met de bijbehorende verplichtingen (behoudens vrijstelling op hogere leeftijd)."
+          },
+          "conditionsDeBase": {
+            "title": "Basisvoorwaarden",
+            "body": "Vier factoren bepalen de toegang tot het SWT. De cijfermatige drempels (62 jaar, 40 jaar anciënniteit, enz.) bewegen mee met de interprofessionele akkoorden en CAO's — ze gelden als indicatief en moeten bij elk dossier bij de uitbetalingsinstelling geverifieerd worden.\n\n1. **Leeftijd** — meestal 62 jaar voor het algemeen stelsel, 60 jaar voor zware beroepen. Lagere drempels bestaan in bepaalde stelsels (lange loopbaan, onderneming in moeilijkheden).\n2. **Loopbaananciënniteit** — meestal 40 jaar in het algemeen stelsel, 33 jaar voor zware beroepen, soms minder volgens de CAO.\n3. **Reden van einde overeenkomst** — er moet een **ontslag door de werkgever** zijn. Ontslag op eigen initiatief, beëindiging in onderling overleg of vrijwillig vertrek sluit de toegang tot het SWT.\n4. **Toepasselijke CAO** — er moet een collectieve overeenkomst (sectoraal of op bedrijfsniveau) bestaan die het SWT voor de situatie van de werknemer voorziet.\n\nDe oriëntatievragen van het dossier bevragen deze factoren:\n\n{{ questions }}\n\nGeen enkel antwoord blokkeert de gebruiker; de antwoorden dienen om de elementen aan te wijzen die met prioriteit bij de uitbetalingsinstelling geverifieerd moeten worden."
+          },
+          "regimesSpeciaux": {
+            "title": "Bijzondere stelsels",
+            "body": "Naast het algemeen stelsel bestaan er meerdere specifieke SWT-stelsels. Ze verlagen de drempels voor leeftijd of anciënniteit, maar leggen eigen voorwaarden op.\n\n- **Zware beroepen** — nachtarbeid, opeenvolgende ploegen (bv. 3×8), onderbroken werk, fysiek zware omstandigheden. Geeft meestal toegang vanaf 60 jaar met 33 jaar loopbaan (te verifiëren volgens de CAO).\n- **Lange loopbaan (40 jaar)** — bestemd voor werknemers met 40 jaar loopbaan, ongeacht het « zware » karakter van het beroep.\n- **Onderneming in moeilijkheden** — de werkgever moet officieel als zodanig erkend zijn door de minister van Werk. Versoepelde voorwaarden voor werknemers die in dat kader ontslagen worden.\n- **Onderneming in herstructurering** — vergelijkbare situatie (erkend collectief ontslagplan), met eigen voorwaarden voor leeftijd en anciënniteit.\n\nHet toepasselijk stelsel is geen vrije keuze van de werknemer: het hangt af van de geldende CAO in de onderneming of sector, en van de persoonlijke situatie (leeftijd, loopbaan, uitgeoefend beroep). De vakbondsafgevaardigde en de uitbetalingsinstelling zijn de natuurlijke gesprekspartners om het juiste stelsel te identificeren."
+          }
+        }
+      },
+      "insertion": {
+        "title": "Inschakelingsuitkeringen (jongeren)",
+        "description": "Voor jongeren die van school komen en niet (genoeg) gewerkt hebben om een recht op klassieke werkloosheid te openen.",
+        "warning": {
+          "demandeAvant25": {
+            "title": "Aanvraag vóór 25 jaar",
+            "message": "De aanvraag moet in principe vóór je 25ste verjaardag ingediend worden. Daarna staat het recht op inschakelingsuitkeringen meestal niet meer open (behoudens uitzonderingen)."
+          },
+          "stageInsertion310j": {
+            "title": "Beroepsinschakelingstijd van 310 dagen",
+            "message": "Je moet eerst een beroepsinschakelingstijd van 310 dagen (ongeveer 1 jaar) na het einde van je studies doorlopen voor je uitkeringen kunt ontvangen."
+          }
+        },
+        "doc": {
+          "c1": {
+            "title": "C1 — Aangifte persoonlijke situatie"
+          }
+        },
+        "theory": {
+          "questCeQue": {
+            "title": "Wat is de inschakelingsuitkering?",
+            "body": "De inschakelingsuitkering is een werkloosheidsuitkering voor de jongere die van school komt en die voor de **eerste keer** een vergoeding aanvraagt op basis van die studies — en niet op basis van een reeds verricht werknemerswerk.\n\nZe onderscheidt zich van de klassieke volledige werkloosheid: er moeten geen werkdagen bewezen worden. Het recht steunt op het schooltraject en op het voltooien van een beroepsinschakelingstijd na het einde van de studies.\n\nPublieke bron: www.rva.be."
+          },
+          "conditions": {
+            "title": "De voorwaarden (leeftijd, studies, 310 dagen stage)",
+            "body": "De belangrijkste voorwaarden in eigen bewoordingen:\n\n- **Nationaliteit / verblijf**: Belg zijn, of onderdaan van een land dat toegang geeft (EU/EER), of in orde zijn met verblijf en werk voor andere situaties.\n- **Leerplicht beëindigd**: er niet meer aan onderworpen zijn (in de praktijk: minstens 18 jaar, of de 30ste juni van het jaar van je 18de overschreden).\n- **Studies die recht geven op werkloosheid in België**: een erkende studieloopbaan afgerond hebben. Voor jongeren **jonger dan 21 jaar** is een **diploma of getuigschrift** vereist (alleen de lessen volgen volstaat niet) en de lijst van toegelaten studies is restrictiever.\n- **Beroepsinschakelingstijd**: een stage van **310 dagen** (ongeveer een jaar) doorlopen na het einde van de schoolactiviteiten.\n- **Leeftijdsgrens**: de aanvraag moet in principe **vóór 25 jaar** ingediend worden (er bestaan uitzonderingen, bv. voor een lange studieloopbaan).\n\nPublieke bron: www.rva.be."
+          },
+          "dureeEtMontant": {
+            "title": "Hoe lang / hoeveel? (forfait, beperkt tot 3 jaar)",
+            "body": "Het bedrag van de inschakelingsuitkering is **forfaitair**: het hangt niet af van een vorig loon maar van de gezinstoestand van de jongere (alleenstaande, samenwonende, gezinshoofd) en, in bepaalde gevallen, van zijn leeftijd. Er is geen evolutie per vergoedingsperiode zoals in de klassieke werkloosheid.\n\nHet recht is **in de tijd beperkt**: in principe 3 jaar. Bijzondere regels kunnen deze duur verlengen of aanpassen naargelang de situatie.\n\nPublieke bron: www.rva.be."
+          }
+        }
+      }
+    },
+    "formationsLib": {
+      "visibility": {
+        "public": "Openbaar",
+        "unlisted": "Niet vermeld",
+        "private": "Privé",
+        "internal": "Intern",
+        "draft": "Concept"
+      },
+      "status": {
+        "draft": "Concept",
+        "pending_review": "In nazicht",
+        "changes_requested": "Wijziging gevraagd",
+        "approved": "Goedgekeurd",
+        "published": "Gepubliceerd",
+        "suspended": "Opgeschort",
+        "rejected": "Geweigerd",
+        "archived": "Gearchiveerd"
+      },
+      "sessionStatus": {
+        "draft": "Concept",
+        "scheduled": "Gepland",
+        "open": "Inschrijvingen open",
+        "full": "Volzet",
+        "cancelled": "Geannuleerd",
+        "ongoing": "Lopend",
+        "completed": "Beëindigd",
+        "archived": "Gearchiveerd"
+      },
+      "enrollmentStatus": {
+        "requested": "Aanvraag verzonden",
+        "pending_review": "In afwachting van goedkeuring",
+        "accepted": "Aanvaard",
+        "refused": "Geweigerd",
+        "waitlisted": "Wachtlijst",
+        "cancelled_user": "Geannuleerd (door u)",
+        "cancelled_org": "Geannuleerd (door de organisator)",
+        "present": "Aanwezig",
+        "absent": "Afwezig",
+        "completed": "Beëindigd",
+        "certificate_available": "Attest beschikbaar"
+      },
+      "format": {
+        "online": "Online",
+        "onsite": "Op locatie",
+        "hybrid": "Hybride",
+        "autoformation": "Zelfstudie",
+        "accompagnement": "Individuele begeleiding"
+      },
+      "sessionMode": {
+        "online": "Online",
+        "onsite": "Op locatie",
+        "hybrid": "Hybride"
+      },
+      "level": {
+        "debutant": "Beginner",
+        "intermediaire": "Gemiddeld",
+        "avance": "Gevorderd"
+      },
+      "priceType": {
+        "free": "Gratis",
+        "paid": "Betalend"
+      },
+      "certificate": {
+        "none": "Geen attest",
+        "participation": "Deelnameattest",
+        "partner": "Partnercertificering",
+        "docbel": "Docbel-certificering"
+      },
+      "orgType": {
+        "employeur": "Werkgever",
+        "partenaire": "Partner",
+        "asbl": "VZW",
+        "organisme_formation": "Opleidingsinstelling",
+        "administration": "Partneradministratie",
+        "prive": "Privébedrijf",
+        "formateur": "Geverifieerde lesgever",
+        "interne_docbel": "Interne organisatie Docbel"
+      },
+      "orgRole": {
+        "owner": "Eigenaar",
+        "manager": "Beheerder",
+        "trainer": "Lesgever",
+        "viewer": "Lezer",
+        "admin_contact": "Administratief contact"
+      },
+      "reportReason": {
+        "prix_trompeur": "Misleidende prijs",
+        "info_fausse": "Foutieve informatie",
+        "non_serieuse": "Onbetrouwbare opleiding",
+        "probleme_partenaire": "Probleem met de partner",
+        "contenu_inadapte": "Ongepaste inhoud",
+        "lien_casse": "Defecte link",
+        "expiree": "Vervallen opleiding",
+        "probleme_inscription": "Inschrijvingsprobleem",
+        "autre": "Andere"
+      },
+      "reportStatus": {
+        "new": "Nieuw",
+        "in_progress": "In behandeling",
+        "resolved": "Behandeld",
+        "rejected": "Afgewezen"
+      },
+      "boussole": {
+        "options": {
+          "oui": "Ja",
+          "un_peu": "Een beetje",
+          "non": "Nee",
+          "je_ne_sais_pas": "Ik weet het niet"
+        },
+        "branches": {
+          "ADMINISTRATIVE_OFFICE": {
+            "name": "Administratie & kantoor",
+            "description": "Voor wie graag georganiseerd werkt, administratieve stappen, documenten en dossierbeheer aankan en houdt van een gestructureerde omgeving.",
+            "jobs": {
+              "0": "Administratief assistent",
+              "1": "Secretaris",
+              "2": "HR-assistent",
+              "3": "Bediende",
+              "4": "Dossierbeheerder",
+              "5": "Administratieve ondersteuning"
+            }
+          },
+          "SOCIAL_CARE": {
+            "name": "Sociaal & hulp aan personen",
+            "description": "Voor wie anderen wil begeleiden, naar mensen luisteren, hen helpen of oriënteren.",
+            "jobs": {
+              "0": "Gezinshelper",
+              "1": "Sociaal begeleider",
+              "2": "Sociaal onthaalmedewerker",
+              "3": "Bemiddelaar",
+              "4": "Hulp aan personen",
+              "5": "Opvoeder"
+            }
+          },
+          "DIGITAL_IT": {
+            "name": "Digitaal & informatica",
+            "description": "Voor wie aangetrokken wordt door de computer, digitale tools, het web, technische ondersteuning of data.",
+            "jobs": {
+              "0": "IT-support",
+              "1": "Beginnend ontwikkelaar",
+              "2": "Digitaal assistent",
+              "3": "Webdesigner",
+              "4": "Data-assistent",
+              "5": "Community manager"
+            }
+          },
+          "TECHNICAL_MANUAL": {
+            "name": "Technisch & manueel",
+            "description": "Voor wie graag herstelt, bouwt, manipuleert, produceert of met gereedschap werkt.",
+            "jobs": {
+              "0": "Technicus",
+              "1": "Elektricien",
+              "2": "Onderhoud",
+              "3": "Bouw",
+              "4": "Mechanica",
+              "5": "Gekwalificeerd arbeider"
+            }
+          },
+          "LOGISTICS_TRANSPORT": {
+            "name": "Logistiek & transport",
+            "description": "Voor wie graag in beweging is, organiseert, klaarmaakt, levert of stromen beheert.",
+            "jobs": {
+              "0": "Magazijnier",
+              "1": "Orderpicker",
+              "2": "Chauffeur",
+              "3": "Dispatcher",
+              "4": "Logistiek beheerder"
+            }
+          },
+          "SALES_CUSTOMER": {
+            "name": "Handel & klantenrelaties",
+            "description": "Voor wie zich op zijn gemak voelt bij contacten, verkoop, onthaal of advies.",
+            "jobs": {
+              "0": "Verkoper",
+              "1": "Klantenadviseur",
+              "2": "Commercieel medewerker",
+              "3": "Onthaalmedewerker",
+              "4": "Teleconsulent"
+            }
+          },
+          "HEALTH_WELLBEING": {
+            "name": "Gezondheid & welzijn",
+            "description": "Voor wie voor anderen wil zorgen, in de hulpverlening, gezondheidszorg of welzijnssector wil werken.",
+            "jobs": {
+              "0": "Verzorgende",
+              "1": "Thuishulp",
+              "2": "Medisch assistent",
+              "3": "Medisch onthaal",
+              "4": "Welzijnsberoepen"
+            }
+          },
+          "ENTREPRENEURSHIP": {
+            "name": "Ondernemerschap",
+            "description": "Voor wie een eigen activiteit wil opstarten, zelfstandig wil worden of een persoonlijk project wil uitbouwen.",
+            "jobs": {
+              "0": "Zelfstandige",
+              "1": "Bijkomende activiteit",
+              "2": "E-commerce",
+              "3": "Dienstverlening",
+              "4": "BV oprichten",
+              "5": "Ondernemersproject"
+            }
+          }
+        },
+        "questions": {
+          "q1": {
+            "text": "Wil je van beroep veranderen of een nieuwe richting inslaan?",
+            "description": "Er is geen fout antwoord — het helpt ons enkel om je situatie beter in te schatten."
+          },
+          "q2": {
+            "text": "Werk je liever met mensen dan met voorwerpen of machines?"
+          },
+          "q3": {
+            "text": "Zou je graag een hoofdzakelijk manueel beroep uitoefenen?"
+          },
+          "q4": {
+            "text": "Voel je je op je gemak met de computer?"
+          },
+          "q5": {
+            "text": "Geef je de voorkeur aan een stabiel en gestructureerd beroep?"
+          },
+          "q6": {
+            "text": "Wil je een korte opleiding om snel vooruit te komen?"
+          },
+          "q7": {
+            "text": "Ben je bereid een lange opleiding te volgen als die meer deuren opent?"
+          },
+          "q8": {
+            "text": "Wil je een te fysiek beroep vermijden?"
+          },
+          "q9": {
+            "text": "Zou je mensen graag helpen of begeleiden?"
+          },
+          "q10": {
+            "text": "Voel je je op je gemak bij verkoop of klantencontact?"
+          },
+          "q11": {
+            "text": "Hou je ervan om documenten te ordenen, te klasseren of dossiers op te volgen?"
+          },
+          "q12": {
+            "text": "Beweeg je liever dan de hele dag stil te zitten?"
+          },
+          "q13": {
+            "text": "Werk je liever zelfstandig?",
+            "description": "Eerder alleen of in een klein team, zonder voortdurend afhankelijk te zijn van anderen."
+          },
+          "q14": {
+            "text": "Zou je later graag je eigen activiteit opstarten?"
+          },
+          "q15": {
+            "text": "Heb je een opfrissing nodig vóór een beroepsopleiding?"
+          }
+        }
+      }
+    },
+    "calculatorsLib": {
+      "tarifSocial": {
+        "errors": {
+          "consoElec": "Het elektriciteitsverbruik moet tussen 0 en 100 000 kWh liggen.",
+          "consoGaz": "Het gasverbruik moet tussen 0 en 100 000 kWh liggen (0 indien geen gas).",
+          "tailleMenage": "De gezinsgrootte moet tussen 1 en 15 personen liggen."
+        },
+        "motifs": {
+          "ris": "Leefloon (RIS)",
+          "grapa": "IGO (Inkomensgarantie voor Ouderen)",
+          "handicap": "Tegemoetkoming voor personen met een handicap (DG HAN)",
+          "aideEquivalente": "Gelijkwaardige maatschappelijke hulp van het OCMW",
+          "logementSocial": "Huurder van een erkende sociale woning"
+        },
+        "notes": {
+          "bimNotEligible": "Het statuut verhoogde tegemoetkoming (VT/BIM) volstaat sinds 1 juli 2023 niet meer alleen om automatisch het sociaal tarief te krijgen (einde van de uitbreiding tijdens de energiecrisis). U kunt wel nog gebruikmaken van regionale steun (energiepremie, gas-/elektriciteitsfonds) of contact opnemen met uw OCMW.",
+          "bimEligible": "Opgelet: uw BIM-statuut volstaat sinds 1 juli 2023 niet meer alleen, maar één van uw andere statuten geeft wel recht op het sociaal tarief."
+        }
+      },
+      "pension": {
+        "errors": {
+          "dateNaissance": "Geef een geldige geboortedatum op (DD/MM/JJJJ).",
+          "anneesCarriere": "De loopbaanjaren moeten tussen 0 en 50 liggen.",
+          "periodesAssimilees": "De gelijkgestelde periodes moeten tussen 0 en 50 jaar liggen.",
+          "salaireMoyen": "Het gemiddelde jaarloon moet meer dan 1 000 € bedragen.",
+          "ageDepart": "De pensioenleeftijd moet tussen 60 en 70 jaar liggen."
+        },
+        "statut": {
+          "isole": "Alleenstaand (60 %)",
+          "menage": "Gezin (75 %)"
+        },
+        "raisons": {
+          "carriereInsuffisante": "Om op {ageDepart} jaar met pensioen te gaan, moet u minstens {conditionCarriere} jaar loopbaan kunnen voorleggen (gelijkstellingen inbegrepen). U telt in totaal {carriereTotale} {carriereTotalePlural, plural, one {jaar} other {jaar}}.",
+          "avantSoixante": "Vervroegd pensioen is niet mogelijk vóór de leeftijd van 60 jaar."
+        }
+      },
+      "brutNet": {
+        "errors": {
+          "brut": "Het brutoloon moet tussen 100 € en 50 000 € per maand liggen.",
+          "enfants": "Het aantal kinderen ten laste moet tussen 0 en 12 liggen.",
+          "valeurCatalogue": "De cataloguswaarde excl. btw van het voertuig moet tussen 0 € en 250 000 € liggen.",
+          "ageVehicule": "De leeftijd van het voertuig moet tussen 0 en 30 jaar liggen.",
+          "netVise": "Het gewenste nettoloon moet tussen 100 € en 30 000 € per maand liggen.",
+          "dichotomie": "Het overeenkomstige brutoloon kan niet berekend worden."
+        }
+      }
     }
   }
 }

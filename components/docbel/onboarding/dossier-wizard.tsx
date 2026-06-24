@@ -83,6 +83,23 @@ function resolveIcon(name: string): LucideIcon {
   return ICONS[name] ?? HelpCircle;
 }
 
+/// Résout un texte localisé : préfère la clé i18n `*Key` quand elle est
+/// fournie (configs hand-written via WIZARD_SITUATIONS), retombe sur le
+/// texte FR brut (path adapter DB → WizardSituation, qui ne pose pas de clés).
+function resolveText(
+  t: ReturnType<typeof useTranslations>,
+  key: string | undefined,
+  fallback: string,
+): string {
+  if (!key) return fallback;
+  try {
+    const v = t(key as Parameters<typeof t>[0]);
+    return v && v !== key ? v : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 interface Props {
   situations: WizardSituation[];
   /// Catalogue des bundles (slug → méta) pour enrichir le résultat
@@ -113,6 +130,7 @@ const STEP_LABEL_KEYS: Record<StepNumber, string> = {
 
 export function DossierWizard({ situations, catalog = {}, dryRun = false }: Props) {
   const t = useTranslations("public.dossier");
+  const tc = useTranslations("public.dossierContent");
   const [currentStep, setCurrentStep] = useState<StepNumber>(1);
   // N'émet `wizard_started` qu'une fois par session de wizard.
   const startedRef = useRef(false);
@@ -305,7 +323,7 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
 
         {currentStep === 2 && situation?.subQuestion && (
           <StepSubQuestion
-            situationLabel={situation.label}
+            situationLabel={resolveText(tc, situation.labelKey, situation.label)}
             subQuestion={situation.subQuestion}
             selected={selectedSubOption}
             onSelect={handleSubOptionSelect}
@@ -315,7 +333,7 @@ export function DossierWizard({ situations, catalog = {}, dryRun = false }: Prop
 
         {currentStep === 3 && subOption?.refineQuestion && (
           <StepRefine
-            subOptionLabel={subOption.label}
+            subOptionLabel={resolveText(tc, subOption.labelKey, subOption.label)}
             refineQuestion={subOption.refineQuestion}
             selected={selectedRefine}
             onSelect={handleRefineSelect}
@@ -445,6 +463,7 @@ function StepSituation({
   onStart,
 }: StepSituationProps) {
   const t = useTranslations("public.dossier");
+  const tc = useTranslations("public.dossierContent");
   return (
     <div className="space-y-4 transition-opacity duration-200">
       <div className="space-y-1.5">
@@ -491,11 +510,11 @@ function StepSituation({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold text-[color:var(--glass-ink)]">
-                  {s.label}
+                  {resolveText(tc, s.labelKey, s.label)}
                 </span>
-                {s.description ? (
+                {(s.description || s.descriptionKey) ? (
                   <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                    {s.description}
+                    {resolveText(tc, s.descriptionKey, s.description ?? "")}
                   </span>
                 ) : null}
               </span>
@@ -544,16 +563,19 @@ function StepSubQuestion({
   onBack,
 }: StepSubQuestionProps) {
   const t = useTranslations("public.dossier");
+  const tc = useTranslations("public.dossierContent");
+  const subQuestionText = resolveText(tc, subQuestion.questionKey, subQuestion.question);
+  const subHelpText = resolveText(tc, subQuestion.helpTextKey, subQuestion.helpText ?? "");
   return (
     <div className="space-y-4 transition-opacity duration-200">
       <div className="space-y-1.5">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {situationLabel}
         </p>
-        <Label className="text-sm font-medium">{subQuestion.question}</Label>
-        {subQuestion.helpText && (
+        <Label className="text-sm font-medium">{subQuestionText}</Label>
+        {subHelpText && (
           <p className="rounded-md border-l-2 border-[color:var(--glass-accent-a)]/45 bg-[color:var(--glass-accent-a)]/8 px-2.5 py-1.5 text-xs text-[color:var(--glass-ink-soft)]">
-            {subQuestion.helpText}
+            {subHelpText}
           </p>
         )}
       </div>
@@ -561,6 +583,8 @@ function StepSubQuestion({
       <div className="grid grid-cols-1 gap-2">
         {subQuestion.options.map((opt) => {
           const isSelected = selected === opt.value;
+          const optLabel = resolveText(tc, opt.labelKey, opt.label);
+          const optHelp = resolveText(tc, opt.helpTextKey, opt.helpText ?? "");
           return (
             <button
               key={opt.value}
@@ -577,10 +601,10 @@ function StepSubQuestion({
               )}
             >
               <span className="flex-1">
-                <span className="block font-medium">{opt.label}</span>
-                {opt.helpText && (
+                <span className="block font-medium">{optLabel}</span>
+                {optHelp && (
                   <span className="mt-0.5 block text-xs text-muted-foreground">
-                    {opt.helpText}
+                    {optHelp}
                   </span>
                 )}
               </span>
@@ -628,16 +652,19 @@ function StepRefine({
   onBack,
 }: StepRefineProps) {
   const t = useTranslations("public.dossier");
+  const tc = useTranslations("public.dossierContent");
+  const refineQuestionText = resolveText(tc, refineQuestion.questionKey, refineQuestion.question);
+  const refineHelpText = resolveText(tc, refineQuestion.helpTextKey, refineQuestion.helpText ?? "");
   return (
     <div className="space-y-4 transition-opacity duration-200">
       <div className="space-y-1.5">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {subOptionLabel}
         </p>
-        <Label className="text-sm font-medium">{refineQuestion.question}</Label>
-        {refineQuestion.helpText && (
+        <Label className="text-sm font-medium">{refineQuestionText}</Label>
+        {refineHelpText && (
           <p className="rounded-md border-l-2 border-[color:var(--glass-accent-a)]/45 bg-[color:var(--glass-accent-a)]/8 px-2.5 py-1.5 text-xs text-[color:var(--glass-ink-soft)]">
-            {refineQuestion.helpText}
+            {refineHelpText}
           </p>
         )}
       </div>
@@ -645,6 +672,8 @@ function StepRefine({
       <div className="grid grid-cols-1 gap-2">
         {refineQuestion.options.map((opt) => {
           const isSelected = selected === opt.value;
+          const optLabel = resolveText(tc, opt.labelKey, opt.label);
+          const optHelp = resolveText(tc, opt.helpTextKey, opt.helpText ?? "");
           return (
             <button
               key={opt.value}
@@ -661,10 +690,10 @@ function StepRefine({
               )}
             >
               <span className="flex-1">
-                <span className="block font-medium">{opt.label}</span>
-                {opt.helpText && (
+                <span className="block font-medium">{optLabel}</span>
+                {optHelp && (
                   <span className="mt-0.5 block text-xs text-muted-foreground">
-                    {opt.helpText}
+                    {optHelp}
                   </span>
                 )}
               </span>
@@ -778,7 +807,13 @@ function PrimaryAvailable({
   onReset: () => void;
 }) {
   const t = useTranslations("public.dossier");
+  const tc = useTranslations("public.dossierContent");
   const dryRun = useDryRun();
+  const title = resolveText(tc, result.dossierTitleKey, primary.title);
+  const rationale = resolveText(tc, result.rationaleKey, primary.rationale);
+  const nextStepText = result.nextStepKey
+    ? resolveText(tc, result.nextStepKey, primary.nextStep ?? "")
+    : primary.nextStep;
   return (
     <div className="space-y-3 rounded-2xl border border-[color:var(--glass-accent-a)]/30 bg-[color:var(--glass-accent-a)]/5 p-4">
       <div className="flex items-start gap-2">
@@ -792,13 +827,13 @@ function PrimaryAvailable({
             </p>
             <MatchBadge level={primary.matchLevel} />
           </div>
-          <h3 className="text-base font-semibold">{primary.title}</h3>
-          <p className="text-sm text-muted-foreground">{primary.rationale}</p>
+          <h3 className="text-base font-semibold">{title}</h3>
+          <p className="text-sm text-muted-foreground">{rationale}</p>
           <MetaChips dossier={primary} />
         </div>
       </div>
 
-      <NextStep text={primary.nextStep} />
+      <NextStep text={nextStepText} />
 
       <BulletList
         icon={FileText}
@@ -852,13 +887,21 @@ function PrimaryAvailable({
 
 function PrimaryUnavailable({
   primary,
+  result,
   onReset,
 }: {
   primary: DerivedDossier;
+  result: WizardResult;
   onReset: () => void;
 }) {
   const t = useTranslations("public.dossier");
+  const tc = useTranslations("public.dossierContent");
   const dryRun = useDryRun();
+  const title = resolveText(tc, result.dossierTitleKey, primary.title);
+  const rationale = resolveText(tc, result.rationaleKey, primary.rationale);
+  const nextStepText = result.nextStepKey
+    ? resolveText(tc, result.nextStepKey, primary.nextStep ?? "")
+    : primary.nextStep;
   return (
     <div className="space-y-3 rounded-2xl border border-amber-500/30 bg-amber-50/60 p-4 dark:bg-amber-950/20">
       <div className="flex items-start gap-2">
@@ -869,9 +912,9 @@ function PrimaryUnavailable({
           <p className="text-xs font-medium uppercase tracking-wide text-amber-900 dark:text-amber-200">
             {t("wizardComingSoon")}
           </p>
-          <h3 className="text-base font-semibold">{primary.title}</h3>
+          <h3 className="text-base font-semibold">{title}</h3>
           <p className="text-sm text-amber-900/80 dark:text-amber-100/80">
-            {primary.rationale}{" "}
+            {rationale}{" "}
             {t.rich("wizardUnavailableInfo", {
               link: (chunks) => (
                 <Link href="/contact" className="underline">
@@ -883,7 +926,7 @@ function PrimaryUnavailable({
         </div>
       </div>
 
-      <NextStep text={primary.nextStep} />
+      <NextStep text={nextStepText} />
 
       <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
         <Button variant="outline" onClick={onReset}>
@@ -928,13 +971,21 @@ function NextStep({ text }: { text: string | null }) {
 /// pas un dossier Docbel → carte de contact dédiée, aucun lien /d/.
 function PrimaryExternal({
   primary,
+  result,
   onReset,
 }: {
   primary: DerivedDossier;
+  result: WizardResult;
   onReset: () => void;
 }) {
   const t = useTranslations("public.dossier");
+  const tc = useTranslations("public.dossierContent");
   const dryRun = useDryRun();
+  const title = resolveText(tc, result.dossierTitleKey, primary.title);
+  const rationale = resolveText(tc, result.rationaleKey, primary.rationale);
+  const nextStepText = result.nextStepKey
+    ? resolveText(tc, result.nextStepKey, primary.nextStep ?? "")
+    : primary.nextStep;
   return (
     <div className="space-y-3 rounded-2xl border border-sky-500/30 bg-sky-50/60 p-4 dark:bg-sky-950/20">
       <div className="flex items-start gap-2">
@@ -945,14 +996,14 @@ function PrimaryExternal({
           <p className="text-xs font-medium uppercase tracking-wide text-sky-900 dark:text-sky-200">
             {t("wizardOrientation")}
           </p>
-          <h3 className="text-base font-semibold">{primary.title}</h3>
+          <h3 className="text-base font-semibold">{title}</h3>
           <p className="text-sm text-sky-900/80 dark:text-sky-100/80">
-            {primary.rationale}
+            {rationale}
           </p>
         </div>
       </div>
 
-      <NextStep text={primary.nextStep} />
+      <NextStep text={nextStepText} />
 
       <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center sm:justify-end">
         <Button variant="outline" onClick={onReset}>
@@ -1036,11 +1087,11 @@ function StepResults({ result, catalog, onBack, onReset }: StepResultsProps) {
   return (
     <div className="space-y-4 transition-opacity duration-200">
       {primary.availability === "orientation_externe" ? (
-        <PrimaryExternal primary={primary} onReset={onReset} />
+        <PrimaryExternal primary={primary} result={result} onReset={onReset} />
       ) : primary.available ? (
         <PrimaryAvailable primary={primary} result={result} onReset={onReset} />
       ) : (
-        <PrimaryUnavailable primary={primary} onReset={onReset} />
+        <PrimaryUnavailable primary={primary} result={result} onReset={onReset} />
       )}
 
       {related.length > 0 && (

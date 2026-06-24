@@ -10,6 +10,7 @@
 // =====================================================================
 
 import { Lightbulb, TriangleAlert } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
   Accordion,
   AccordionContent,
@@ -17,9 +18,21 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import type { Ec32Content, Ec32MistakeItem } from '@/lib/ec32/schema'
+import { ec32ResolveKey, type Ec32Translator } from '@/lib/ec32/labels'
 import { Ec32Card, Ec32Section } from './ui'
 
-function MistakeCard({ item, index }: { item: Ec32MistakeItem; index: number }) {
+function MistakeCard({
+  item,
+  index,
+  tRoot,
+}: {
+  item: Ec32MistakeItem
+  index: number
+  tRoot: Ec32Translator
+}) {
+  const title = ec32ResolveKey(tRoot, item.titleKey, item.title)
+  const explanation = ec32ResolveKey(tRoot, item.explanationKey, item.explanation)
+  const advice = ec32ResolveKey(tRoot, item.adviceKey, item.advice)
   return (
     <Ec32Card as="li" interactive className="flex flex-col gap-3">
       <div className="flex items-start gap-3">
@@ -31,15 +44,15 @@ function MistakeCard({ item, index }: { item: Ec32MistakeItem; index: number }) 
         </span>
         <h3 className="mt-1 text-base font-semibold leading-snug text-foreground">
           <span className="sr-only">{`Erreur ${index + 1} : `}</span>
-          {item.title}
+          {title}
         </h3>
       </div>
 
-      {item.explanation && (
-        <p className="text-sm leading-relaxed text-muted-foreground">{item.explanation}</p>
+      {explanation && (
+        <p className="text-sm leading-relaxed text-muted-foreground">{explanation}</p>
       )}
 
-      {item.advice && (
+      {advice && (
         <div className="flex gap-2.5 rounded-2xl border border-emerald-300/50 bg-emerald-50/70 p-3 text-sm leading-relaxed text-emerald-950 dark:border-emerald-400/30 dark:bg-emerald-950/40 dark:text-emerald-100">
           <Lightbulb
             className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-300"
@@ -47,7 +60,7 @@ function MistakeCard({ item, index }: { item: Ec32MistakeItem; index: number }) 
           />
           <p className="min-w-0">
             <span className="font-semibold">Conseil : </span>
-            {item.advice}
+            {advice}
           </p>
         </div>
       )}
@@ -71,6 +84,7 @@ export function Ec32MistakesSection({
   limit?: number
   withHeader?: boolean
 }) {
+  const tRoot = useTranslations() as unknown as Ec32Translator
   const { mistakes } = content
   const all = mistakes.items.filter((item) => item.title.trim().length > 0)
 
@@ -105,7 +119,7 @@ export function Ec32MistakesSection({
     >
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" role="list">
         {primary.map((item, index) => (
-          <MistakeCard key={item.key || index} item={item} index={index} />
+          <MistakeCard key={item.key || index} item={item} index={index} tRoot={tRoot} />
         ))}
       </ul>
 
@@ -118,22 +132,34 @@ export function Ec32MistakesSection({
               </AccordionTrigger>
               <AccordionContent className="pb-4">
                 <ul className="space-y-4" role="list">
-                  {rest.map((item, index) => (
-                    <li key={item.key || index} className="border-l-2 border-primary/30 pl-4">
-                      <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                      {item.explanation && (
-                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                          {item.explanation}
-                        </p>
-                      )}
-                      {item.advice && (
-                        <p className="mt-1 text-sm leading-relaxed text-emerald-700 dark:text-emerald-300">
-                          <span className="font-semibold">Conseil : </span>
-                          {item.advice}
-                        </p>
-                      )}
-                    </li>
-                  ))}
+                  {rest.map((item, index) => {
+                    const title = ec32ResolveKey(tRoot, item.titleKey, item.title)
+                    const explanation = ec32ResolveKey(
+                      tRoot,
+                      item.explanationKey,
+                      item.explanation,
+                    )
+                    const advice = ec32ResolveKey(tRoot, item.adviceKey, item.advice)
+                    return (
+                      <li
+                        key={item.key || index}
+                        className="border-l-2 border-primary/30 pl-4"
+                      >
+                        <p className="text-sm font-semibold text-foreground">{title}</p>
+                        {explanation && (
+                          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                            {explanation}
+                          </p>
+                        )}
+                        {advice && (
+                          <p className="mt-1 text-sm leading-relaxed text-emerald-700 dark:text-emerald-300">
+                            <span className="font-semibold">Conseil : </span>
+                            {advice}
+                          </p>
+                        )}
+                      </li>
+                    )
+                  })}
                 </ul>
               </AccordionContent>
             </AccordionItem>

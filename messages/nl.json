@@ -3194,7 +3194,8 @@
       "smartImageEmployeur": "Werkgever",
       "smartImageAvatar": "Profiel",
       "smartImageGeneric": "Inhoud",
-      "smartImagePreviewUnavailable": "Voorbeeld niet beschikbaar"
+      "smartImagePreviewUnavailable": "Voorbeeld niet beschikbaar",
+      "_note": "Geen nieuwe sleutels nodig voor changelog-feed.tsx, inscription-split.tsx, confirm-account.tsx — deze 3 componenten gebruiken sleutels die reeds aanwezig zijn in public.changelog en public.auth (geverifieerd: type.*, loading, endOfHistory, errNetwork, errGeneric, retryWithError, asideTitleLead, asideTitleEm, splitBadgePartner, splitBadgeEmployer, splitTaglinePartner, splitTaglineEmployer, backToHome, splitTitle, splitSubtitle, splitRegisterAs, splitAccountType, splitTabPartner, splitTabEmployer, splitHaveAccount, signIn, confirmMissingToken, confirmInvalidLink, confirmNetworkError, confirmVerifyingTitle, confirmVerifyingBody, confirmSuccessTitle, confirmSuccessBody, confirmErrorTitle, confirmRestart)."
     },
     "changelog": {
       "type": {
@@ -4876,6 +4877,1164 @@
           "netVise": "Het gewenste nettoloon moet tussen 100 € en 30 000 € per maand liggen.",
           "dichotomie": "Het overeenkomstige brutoloon kan niet berekend worden."
         }
+      }
+    },
+    "employeurLib": {
+      "article-engager-premier-travailleur": {
+        "title": "Uw eerste werknemer aanwerven",
+        "summary": "Voor het eerst aanwerven maakt van uw onderneming een werkgever. Een paar sociale formaliteiten moeten in orde zijn vóór de eerste werkdag. Hier zijn de belangrijkste stappen, zonder jargon.",
+        "whatToKnow": [
+          "Vanaf de eerste aanwerving krijgt uw onderneming de « hoedanigheid van werkgever » bij de RSZ.",
+          "Een Dimona-aangifte moet gebeuren VÓÓR de werknemer begint te werken.",
+          "Vervolgens bent u driemaandelijks sociale bijdragen verschuldigd via de DmfA-aangifte.",
+          "De meeste werkgevers sluiten zich aan bij een erkend sociaal secretariaat dat deze formaliteiten voor hen regelt."
+        ],
+        "todo": [
+          "Uw onderneming laten identificeren als werkgever bij de RSZ (hoedanigheid van werkgever).",
+          "Een arbeidsongevallenverzekering afsluiten (verplicht vanaf de eerste werknemer).",
+          "De Dimona-aangifte uitvoeren vóór de eerste werkdag.",
+          "Het toepasselijke paritair comité nakijken om het minimumloon en de arbeidsvoorwaarden te kennen.",
+          "Het schriftelijke arbeidscontract voorbereiden wanneer dat vereist of aanbevolen is."
+        ],
+        "documents": [
+          "Identificatiegegevens van de onderneming (KBO-nummer).",
+          "Gegevens van de werknemer (INSZ / rijksregisternummer).",
+          "Polis arbeidsongevallenverzekering.",
+          "Ontwerp van arbeidsovereenkomst."
+        ],
+        "commonMistakes": [
+          "De werknemer laten beginnen vóór de Dimona is ingediend.",
+          "De arbeidsongevallenverzekering vergeten, die verplicht is vanaf de eerste aanwerving.",
+          "Het paritair comité negeren en een loon onder het barema toepassen."
+        ]
+      },
+      "article-faire-une-dimona": {
+        "title": "Een Dimona doen",
+        "summary": "De Dimona is de onmiddellijke aangifte van tewerkstelling: zij meldt de indiensttreding (en uitdiensttreding) van een werknemer aan de sociale zekerheid. Zij is verplicht en moet voorafgaan aan het begin van de prestaties.",
+        "whatToKnow": [
+          "Dimona = Onmiddellijke Aangifte / Déclaration Immédiate. Zij gebeurt online.",
+          "De aangifte van indiensttreding moet uiterlijk gebeuren op het ogenblik dat de werknemer begint.",
+          "Het type werknemer (arbeider, bediende, student, flexi…) bepaalt de code en de in te vullen gegevens.",
+          "Een aangifte van uitdiensttreding gebeurt aan het einde van het contract."
+        ],
+        "todo": [
+          "Aanmelden op het portaal van de sociale zekerheid (of het sociaal secretariaat laten doen).",
+          "De gegevens van de werknemer en de startdatum invoeren.",
+          "De Dimona valideren VÓÓR de eerste werkdag.",
+          "Het ontvangstbewijs bewaren (Dimona-referentienummer)."
+        ],
+        "documents": [
+          "INSZ van de werknemer (rijksregisternummer).",
+          "RSZ-werkgeversnummer.",
+          "Startdatum (en type werknemer)."
+        ],
+        "commonMistakes": [
+          "De Dimona te laat aangeven, na het begin van de prestaties.",
+          "Het verkeerde type werknemer kiezen (impact op de bijdragen).",
+          "De Dimona van uitdiensttreding vergeten aan het einde van het contract."
+        ]
+      },
+      "article-comprendre-dmfa": {
+        "title": "De DmfA begrijpen",
+        "summary": "De DmfA is de driemaandelijkse aangifte met daarin de lonen, de arbeidstijd en de sociale bijdragen van uw werknemers. Zij berekent wat u aan de RSZ verschuldigd bent.",
+        "whatToKnow": [
+          "DmfA = multifunctionele aangifte, elk kwartaal verstuurd naar de RSZ.",
+          "Zij bevat per werknemer het loon, de gepresteerde dagen/uren en de bijdragen.",
+          "Zij dient verschillende instellingen (pensioenen, werkloosheid, gezondheidszorg): vandaar « multifunctioneel ».",
+          "In de praktijk stelt het sociaal secretariaat haar op aan de hand van de loongegevens."
+        ],
+        "todo": [
+          "Elk kwartaal de elementen van loon en arbeidstijd verzamelen.",
+          "De gegevens overmaken aan uw sociaal secretariaat (of zelf invoeren).",
+          "De coherentie nakijken met de Dimona's en de loonfiches.",
+          "De driemaandelijkse termijn voor indiening en betaling van de bijdragen respecteren."
+        ],
+        "documents": [
+          "Loongegevens van het kwartaal (brutolonen, premies).",
+          "Overzicht van gepresteerde dagen/uren en afwezigheden.",
+          "RSZ-werkgeversnummer."
+        ],
+        "commonMistakes": [
+          "Looncomponenten waarop bijdragen verschuldigd zijn vergeten (premies, voordelen).",
+          "Inconsistenties tussen Dimona, DmfA en loonfiches.",
+          "Aangifte of betaling buiten de driemaandelijkse termijn."
+        ]
+      },
+      "article-choisir-contrat-de-travail": {
+        "title": "Het juiste arbeidscontract kiezen",
+        "summary": "Onbepaalde duur, bepaalde duur, voltijds of deeltijds, student, flexi-job… De keuze van het contract hangt af van de behoefte en heeft sociale gevolgen. Sommige contracten vereisen een verplicht schriftelijk stuk.",
+        "whatToKnow": [
+          "Het contract van onbepaalde duur is de regel; bepaalde duur en bijzondere contracten hebben eigen voorwaarden en formalisme.",
+          "Meerdere contracten vereisen een schriftelijke en ondertekende overeenkomst VÓÓR de start (deeltijds, student, flexi-job, uitzendarbeid).",
+          "Het contract preciseert onder meer de functie, het uurrooster, de plaats en het loon.",
+          "Het paritair comité legt minimumvoorwaarden op die in het contract gelden."
+        ],
+        "todo": [
+          "De behoefte definiëren (duur, uurvolume, type functie).",
+          "Het gepaste contracttype kiezen en nagaan of een geschrift vereist is.",
+          "Het contract opstellen met de verplichte vermeldingen.",
+          "Het contract laten ondertekenen vóór de eerste werkdag wanneer een geschrift vereist is."
+        ],
+        "documents": [
+          "Contractsjabloon aangepast aan het gekozen type.",
+          "Gegevens van werknemer en werkgever.",
+          "Referentie van het paritair comité en het toepasselijke barema."
+        ],
+        "commonMistakes": [
+          "Een deeltijds of studentencontract opstarten zonder voorafgaande ondertekening.",
+          "Verplichte vermeldingen weglaten (bijvoorbeeld het uurrooster).",
+          "Een keten van contracten van bepaalde duur gebruiken zonder geldige rechtvaardiging."
+        ]
+      },
+      "article-temps-partiel": {
+        "title": "Deeltijds aanwerven",
+        "summary": "Deeltijds werken brengt specifieke regels mee: schriftelijk contract, duidelijke vermelding van het uurrooster en bekendmaking van variabele uurroosters. Een duidelijk kader voorkomt geschillen en regularisaties.",
+        "whatToKnow": [
+          "Het deeltijds arbeidscontract moet schriftelijk zijn en het stelsel en uurrooster vermelden.",
+          "Voor variabele uurroosters moeten de tijdvakken en de mededeling van de roosters aan regels voldoen.",
+          "De uurroosters moeten kunnen aangeplakt/raadpleegbaar zijn en het arbeidsreglement houdt daar rekening mee.",
+          "De deeltijdse werknemer geniet beschermingen (voorrang bij bijkomende uren, bijvoorbeeld)."
+        ],
+        "todo": [
+          "Een schriftelijk contract opstellen met arbeidsduur en uurrooster.",
+          "Een vast uurrooster of een duidelijk kader voor variabele uurroosters bepalen.",
+          "Het arbeidsreglement afstemmen op de deeltijdse uurroosters.",
+          "De aanplakking / mededeling van de uurroosters volgens de regels organiseren."
+        ],
+        "documents": [
+          "Schriftelijk deeltijds arbeidscontract.",
+          "Uurrooster (vast of kader van variabele uurroosters).",
+          "Arbeidsreglement met vermelding van de uurroosters."
+        ],
+        "commonMistakes": [
+          "Geen geschrift of een onnauwkeurig uurrooster in het deeltijdcontract.",
+          "De regels voor mededeling van variabele uurroosters niet respecteren.",
+          "Uurroosters die niet of tegenstrijdig in het arbeidsreglement zijn opgenomen."
+        ]
+      },
+      "article-etudiant": {
+        "title": "Een student tewerkstellen",
+        "summary": "Studentenarbeid laat onder voorwaarden verminderde bijdragen toe gedurende een urencontingent. De studentenovereenkomst is schriftelijk en bevat verplichte vermeldingen.",
+        "whatToKnow": [
+          "De studentenovereenkomst moet schriftelijk en ondertekend zijn, met verplichte vermeldingen.",
+          "Een jaarlijks urencontingent geeft recht op een verminderde solidariteitsbijdrage.",
+          "De Dimona « student » laat toe de uren van het contingent te reserveren en op te volgen.",
+          "Boven het contingent of zonder vervulde voorwaarden gelden de gewone bijdragen."
+        ],
+        "todo": [
+          "Een schriftelijke studentenovereenkomst opstellen met alle verplichte vermeldingen.",
+          "De Dimona « student » indienen met opgave van de uren, vóór de start.",
+          "Het saldo van het urencontingent van de student nakijken.",
+          "Het arbeidsreglement bezorgen en de student inlichten over zijn voorwaarden."
+        ],
+        "documents": [
+          "Ondertekende studentenovereenkomst.",
+          "INSZ van de student en gegevens van de werkgever.",
+          "Opvolging van de uren van het contingent."
+        ],
+        "commonMistakes": [
+          "De student laten werken zonder voorafgaand ondertekend schriftelijk contract.",
+          "Het contingent overschrijden zonder te anticiperen op de gewone bijdragen.",
+          "De Dimona student vergeten of de uren verkeerd aangeven."
+        ]
+      },
+      "article-flexi-job": {
+        "title": "Tewerkstellen in flexi-job",
+        "summary": "De flexi-job laat toe, in bepaalde sectoren en onder voorwaarden, iemand tewerk te stellen die elders al voldoende werkt of gepensioneerd is, met een specifiek sociaal stelsel. Een schriftelijke raamovereenkomst is vereist.",
+        "whatToKnow": [
+          "De flexi-job veronderstelt strikte toegangsvoorwaarden (voldoende tewerkstelling elders of pensioen).",
+          "Een schriftelijke raamovereenkomst is nodig, aangevuld met een arbeidscontract per periode.",
+          "Een specifieke patronale bijdrage is van toepassing en het loon volgt eigen regels.",
+          "De flexi-job staat enkel open in de sectoren en situaties die de reglementering voorziet."
+        ],
+        "todo": [
+          "Nakijken of de werknemer de toegangsvoorwaarden voor flexi-job vervult.",
+          "Een schriftelijke raamovereenkomst sluiten, vervolgens een contract per tewerkstellingsperiode.",
+          "De specifieke Dimona voor flexi-job uitvoeren.",
+          "Het loon en de bijdragen eigen aan het flexi-stelsel toepassen."
+        ],
+        "documents": [
+          "Schriftelijke raamovereenkomst flexi-job.",
+          "Arbeidscontract per tewerkstellingsperiode.",
+          "Bewijs van de toegangsvoorwaarden van de werknemer."
+        ],
+        "commonMistakes": [
+          "In flexi-job een persoon tewerkstellen die de voorwaarden niet vervult.",
+          "Geen voorafgaande schriftelijke raamovereenkomst.",
+          "Het gewone bijdrageregime toepassen in plaats van het flexi-stelsel (of omgekeerd)."
+        ]
+      },
+      "article-salaire-minimum-et-commission-paritaire": {
+        "title": "Minimumloon en paritair comité",
+        "summary": "Het toepasselijke minimumloon hangt grotendeels af van het paritair comité (PC) van de sector en de cao's. Het PC identificeren is een sleutelstap om een conform loon vast te leggen.",
+        "whatToKnow": [
+          "Elke activiteit valt onder een paritair comité dat minimumvoorwaarden vastlegt via cao's.",
+          "Het sectorbarema heeft vaak voorrang op het nationale interprofessionele minimum.",
+          "Zonder kennis van het PC kan men het toepasselijke barema niet precies nakijken.",
+          "De barema's kunnen afhangen van functie, anciënniteit en leeftijd."
+        ],
+        "todo": [
+          "Het paritair comité dat overeenstemt met uw activiteit identificeren.",
+          "De cao's en barema's voor de betrokken functie raadplegen.",
+          "Het loon minstens op het niveau van het sectorbarema vaststellen.",
+          "Rekening houden met anciënniteit en eventuele indexeringen."
+        ],
+        "documents": [
+          "Referentie van het paritair comité van de onderneming.",
+          "Toepasselijke sectorbarema's en cao's.",
+          "Beschrijving van de functie en de anciënniteit."
+        ],
+        "commonMistakes": [
+          "Het nationale minimum toepassen terwijl een hoger sectorbarema geldt.",
+          "Het eigen paritair comité niet identificeren.",
+          "Vergeten te indexeren of het loon te herzien volgens de cao."
+        ]
+      },
+      "article-reglement-de-travail": {
+        "title": "Het arbeidsreglement",
+        "summary": "Het arbeidsreglement legt de interne regels vast (uurroosters, verlof, betaalmodaliteiten, enz.). De invoering volgt een procedure en het moet aan elke werknemer worden bezorgd.",
+        "whatToKnow": [
+          "Het arbeidsreglement is in principe verplicht zodra men personeel tewerkstelt.",
+          "De invoering en wijzigingen ervan volgen een procedure (informatie, overleg, neerlegging).",
+          "Het bevat verplichte vermeldingen (uurroosters, betaling van het loon, verlof…).",
+          "Een exemplaar moet aan elke werknemer worden bezorgd en ter beschikking worden gehouden."
+        ],
+        "todo": [
+          "Het reglement opstellen met de verplichte vermeldingen.",
+          "De invoeringsprocedure volgen (informatie van het personeel, observatietermijn).",
+          "Het reglement neerleggen bij de bevoegde overheid.",
+          "Een exemplaar aan elke werknemer bezorgen en een bewijs bewaren."
+        ],
+        "documents": [
+          "Ontwerp van arbeidsreglement.",
+          "Bewijs van informatie van het personeel en van neerlegging.",
+          "Ontvangstbewijs van afgifte aan de werknemers."
+        ],
+        "commonMistakes": [
+          "Geen arbeidsreglement opstellen terwijl men personeel tewerkstelt.",
+          "Het reglement wijzigen zonder de procedure te respecteren.",
+          "Vergeten het reglement aan nieuwe werknemers te bezorgen."
+        ]
+      },
+      "article-duree-du-travail-et-repos": {
+        "title": "Arbeidsduur en rust",
+        "summary": "De wet kadert de arbeidsduur, de pauzes en de rust in. Dagelijkse en wekelijkse grenzen gelden, met sectorale uitzonderingen en regels voor zondags- of nachtarbeid.",
+        "whatToKnow": [
+          "Dagelijkse en wekelijkse grenzen van arbeidsduur gelden.",
+          "De rust (minimum interval, zondagsrust) en de pauzes zijn gereglementeerd.",
+          "Nachtarbeid en zondagsarbeid volgen bijzondere regels.",
+          "Uitzonderingen en versoepelingen bestaan naargelang de sector en de cao's."
+        ],
+        "todo": [
+          "De uurroosters opbouwen met respect voor de dagelijkse/wekelijkse grenzen.",
+          "De minimumrust- en pauzetijden garanderen.",
+          "De eigen regels voor nacht-/zondagsarbeid nakijken indien van toepassing.",
+          "De uurroosters in het arbeidsreglement opnemen."
+        ],
+        "documents": [
+          "Uurroosters van de werknemers.",
+          "Arbeidsreglement met vermelding van de uurroosters.",
+          "Eventuele toepasselijke sectorcao's."
+        ],
+        "commonMistakes": [
+          "De arbeidsduurgrenzen overschrijden zonder wettelijke of cao-basis.",
+          "De minimumrusttijden niet respecteren.",
+          "Laten werken op zondag/'s nachts zonder de voorwaarden na te kijken."
+        ]
+      },
+      "article-chomage-temporaire": {
+        "title": "Tijdelijke werkloosheid inroepen",
+        "summary": "Tijdelijke werkloosheid laat toe de uitvoering van het contract op te schorten in bepaalde situaties (overmacht, economische redenen, slecht weer…). De procedure en documenten verschillen volgens de reden.",
+        "whatToKnow": [
+          "Tijdelijke werkloosheid schort het contract op zonder het te verbreken, om een erkende reden.",
+          "De redenen (overmacht, economische redenen, slecht weer…) hebben elk hun voorwaarden.",
+          "Mededelingen aan de RVA en documenten voor de werknemer zijn vereist volgens de reden.",
+          "De werknemer ontvangt uitkeringen van de RVA voor de betrokken dagen."
+        ],
+        "todo": [
+          "Nakijken of de situatie overeenstemt met een erkende reden van tijdelijke werkloosheid.",
+          "De vereiste mededelingen/aangiften bij de RVA uitvoeren.",
+          "De werknemers inlichten en hen de nodige documenten bezorgen.",
+          "De opvolging van de dagen tijdelijke werkloosheid bijhouden."
+        ],
+        "documents": [
+          "Rechtvaardiging van de reden (overmacht, economisch, slecht weer…).",
+          "Mededelingen/aangiften RVA.",
+          "Aan de werknemer te bezorgen documenten voor zijn uitkeringen."
+        ],
+        "commonMistakes": [
+          "Een reden inroepen die niet aan de wettelijke voorwaarden voldoet.",
+          "De verplichte mededelingen aan de RVA achterwege laten.",
+          "Aan de werknemer niet de nodige documenten voor zijn uitkeringen bezorgen."
+        ]
+      },
+      "article-preparer-demande-secretariat-social": {
+        "title": "Uw aanvraag aan het sociaal secretariaat voorbereiden",
+        "summary": "Het erkende sociaal secretariaat beheert de loonadministratie en de sociale aangiften. De informatie vooraf goed voorbereiden versnelt de aansluiting en maakt de eerste loonberekening betrouwbaarder.",
+        "whatToKnow": [
+          "Het sociaal secretariaat stelt de loonfiches, de DmfA en vaak de Dimona's voor u op.",
+          "Een duidelijke aansluiting en volledige gegevens vermijden fouten en regularisaties.",
+          "U blijft als werkgever verantwoordelijk: de gegevens die u overmaakt moeten correct zijn.",
+          "Hoe preciezer het paritair comité en het contract, hoe betrouwbaarder de loonberekening."
+        ],
+        "todo": [
+          "De gegevens van de onderneming verzamelen (KBO, RSZ, arbeidsongevallenverzekering).",
+          "Per werknemer voorbereiden: contract, functie, uurrooster, barema/PC.",
+          "De variabele elementen verduidelijken (premies, kosten, voordelen) die in de loonberekening moeten.",
+          "Een volledig dossier overmaken en een unieke contactpersoon aanduiden."
+        ],
+        "documents": [
+          "Identificatiegegevens van de onderneming (KBO, RSZ).",
+          "Arbeidscontracten en functiebeschrijvingen.",
+          "Paritair comité en toepasselijke barema's.",
+          "Lijst van variabele loonelementen."
+        ],
+        "commonMistakes": [
+          "Onvolledige gegevens overmaken (ontbrekend PC, onnauwkeurig uurrooster).",
+          "Variabele loonelementen vergeten.",
+          "Ervan uitgaan dat het sociaal secretariaat alles voor u nakijkt."
+        ]
+      }
+    },
+    "ec32Content": {
+      "content": {
+        "seo": {
+          "title": "eC3.2: interactieve simulatie om uw controlekaart tijdelijke werkloosheid te leren invullen | Docbel",
+          "description": "Begrijp hoe u de elektronische controlekaart tijdelijke werkloosheid eC3.2 invult dankzij een niet-officiële educatieve simulatie, praktijkgevallen en de te vermijden fouten."
+        },
+        "hero": {
+          "badge": "Niet-officiële educatieve simulatie",
+          "title": "eC3.2, eenvoudig uitgelegd",
+          "subtitle": "Test uw stappen voor de elektronische controle van werkloosheid in een duidelijke, risicovrije en 100% vertrouwelijke simulator.",
+          "primaryCta": "Simulatie starten",
+          "secondaryCta": "Bekijk de praktijkgevallen",
+          "disclaimer": "Er worden geen echte gegevens gevraagd. Er worden geen gegevens naar de RVA verzonden."
+        },
+        "disclaimer": {
+          "title": "Niet-officiële educatieve simulatie",
+          "points": {
+            "0": "Niet-officiële educatieve simulatie",
+            "1": "Er worden geen echte gegevens gevraagd",
+            "2": "Er worden geen gegevens naar de RVA verzonden",
+            "3": "Deze pagina vervangt de officiële eC3.2-applicatie niet",
+            "4": "Gebruik voor een echte aanvraag de officiële eC3.2-applicatie"
+          }
+        },
+        "alert": {
+          "title": "Voor u begint",
+          "content": "De eC3.2-kaart geldt alleen voor tijdelijke werkloosheid (vermindering of schorsing van activiteit bij uw werkgever), niet te verwarren met de eC3, die geldt voor volledige werkloosheid. Alles wat hier wordt getoond, is fictief en uitsluitend bedoeld om te leren: geen aanmelding, geen verzending en geen echte gegevens komen eraan te pas."
+        },
+        "learningModes": {
+          "title": "Hoe leren",
+          "subtitle": "Drie manieren om de eC3.2-kaart te benaderen, of u nu liever begeleid wordt, oefent op concrete gevallen of vrij wilt verkennen.",
+          "modes": {
+            "guided": {
+              "title": "Stapsgewijs begeleid",
+              "description": "Ga stap voor stap verder, van de gesimuleerde aanmelding tot de fictieve verzending. Bij elk scherm krijgt u uitleg en advies van de coach.",
+              "cta": "Beginnen"
+            },
+            "scenarios": {
+              "title": "Praktijkgevallen",
+              "description": "Laad een concreet geval (werk op een werkloosheidsdag, ziekte, vakantie, meerdere werkgevers...) rechtstreeks in de simulator om te oefenen.",
+              "cta": "Verken de gevallen"
+            },
+            "free": {
+              "title": "Vrij verkennen",
+              "description": "Bedien de kalender in uw eigen tempo: verander situaties, test correcties en zie wat er gebeurt, zonder enige beperking.",
+              "cta": "Simulator openen"
+            }
+          }
+        },
+        "simulator": {
+          "title": "eC3.2-simulator — fictieve kaart",
+          "subtitle": "Een educatieve reconstructie van de schermen van de applicatie: aanmelden, verklaring, keuze van werkgever en maand, invullen van de kalender, correcties, controle en gesimuleerde verzending.",
+          "fictitiousDataNotice": "De getoonde gegevens zijn fictief en uitsluitend bedoeld om te leren.",
+          "steps": {
+            "login": {
+              "title": "Gesimuleerde aanmelding",
+              "description": "Ontdek de identificatiemiddelen (eID, itsme, grensarbeiders) zonder echte aanmelding."
+            },
+            "declaration": {
+              "title": "Verklaring op eer",
+              "description": "Kies uw startmaand en bevestig de overstap naar elektronische weg — fictieve stap."
+            },
+            "employer": {
+              "title": "Keuze van de werkgever",
+              "description": "Selecteer de werkgever die u tijdelijk werkloos heeft gesteld voor de betrokken maand."
+            },
+            "month": {
+              "title": "Keuze van de maand",
+              "description": "Open de kaart van de maand die u wilt invullen; reeds verzonden kaarten zijn vergrendeld."
+            },
+            "calendar": {
+              "title": "De kalender invullen",
+              "description": "Geef uw situaties dag per dag aan: standaard wordt elk vakje als werkloosheid beschouwd."
+            },
+            "correction": {
+              "title": "Een fout corrigeren",
+              "description": "Wijzig een reeds ingevulde dag en leg de correctie uit, zolang de kaart niet verzonden is."
+            },
+            "verify": {
+              "title": "Controleren",
+              "description": "Herlees al uw invoer voor de gesimuleerde verzending, vooral de gewerkte dagen."
+            },
+            "send": {
+              "title": "Verzenden",
+              "description": "Bevestig de fictieve verzending van de kaart; er worden geen echte gegevens verzonden."
+            }
+          },
+          "employers": {
+            "emp-a": {
+              "name": "Bakkerij Dupont — voorbeeld",
+              "sector": "Detailhandel (voorbeeld)"
+            },
+            "emp-b": {
+              "name": "Atelier Lambert — voorbeeld",
+              "sector": "Industrie (voorbeeld)"
+            },
+            "emp-construction": {
+              "name": "Dakwerken Berger — voorbeeld",
+              "sector": "Bouw · PC 124 (voorbeeld)"
+            }
+          },
+          "months": {
+            "2025-05": {
+              "label": "Mei 2025",
+              "statusNote": "Lopend"
+            },
+            "2025-06": {
+              "label": "Juni 2025",
+              "statusNote": "Nog niet beschikbaar"
+            },
+            "2025-04": {
+              "label": "April 2025",
+              "statusNote": "Niet verzonden"
+            },
+            "2025-03": {
+              "label": "Maart 2025",
+              "statusNote": "Verzonden · vergrendeld"
+            }
+          },
+          "coach": {
+            "title": "Coach Docbel",
+            "intro": "Ik begeleid u bij elke stap met een eenvoudig advies. Neem uw tijd: hier loopt u geen risico, het is bedoeld om te leren.",
+            "tips": {
+              "login": "Kies een identificatiemiddel om te zien hoe de aanmelding verloopt. Hier wordt niets gevraagd: geen kaart, geen code, geen echte aanmelding.",
+              "declaration": "De gekozen maand bepaalt vanaf wanneer u de eC3.2 gebruikt. Was u al eerder tijdelijk werkloos, dan kunt u later een eerdere maand activeren.",
+              "employer": "Selecteer de werkgever die u tijdelijk werkloos heeft gesteld. Uw eventuele andere tewerkstellingen worden op dezelfde kaart vermeld.",
+              "month": "Open de kaart van de maand die u wilt invullen. Een reeds verzonden kaart is vergrendeld: u kunt ze niet meer wijzigen.",
+              "calendar": "Standaard wordt elke dag als werkloosheid beschouwd: u geeft alleen aan wat verandert (werk, ziekte, vakantie...). Elke arbeid moet vóór aanvang worden geregistreerd.",
+              "correction": "Om een dag te corrigeren, legt u de wijziging duidelijk uit: deze uitleg helpt de inspecteurs. Alleen niet-verzonden kaarten kunnen worden gecorrigeerd.",
+              "verify": "Herlees rustig elke dag, vooral de gewerkte dagen en de arbeidsongeschiktheidsdagen. Beter tweemaal controleren dan een onvolledige kaart verzenden.",
+              "send": "Controleer of de eerste mogelijke verzenddatum bereikt is en dat u aangesloten bent bij een uitbetalingsinstelling. Hier wordt de verzending gesimuleerd: er gaat niets naar de RVA."
+            }
+          },
+          "correctionModal": {
+            "title": "Situatie corrigeren — simulatie",
+            "dayLabel": "Betrokken dag",
+            "fromLabel": "Vorige situatie",
+            "toLabel": "Nieuwe situatie",
+            "reasonLabel": "Uitleg (verplicht)",
+            "reasonPlaceholder": "Leg de correctie uit…",
+            "saveLabel": "Correctie opslaan",
+            "lockedMessage": "Deze kaart is verzonden en vergrendeld in de simulatie.",
+            "requiredError": "De uitleg is verplicht om een correctie op te slaan."
+          },
+          "sendModal": {
+            "title": "Kaart verzenden — simulatie",
+            "body": "In de echte applicatie verzendt deze stap de kaart naar uw uitbetalingsinstelling. Hier worden geen echte gegevens verzonden.",
+            "cancelLabel": "Annuleren",
+            "confirmLabel": "Gesimuleerde verzending bevestigen",
+            "successTitle": "Kaart succesvol verzonden — simulatie",
+            "successBody": "Uw fictieve kaart is nu vergrendeld.",
+            "blockedTitle": "Verzenden niet mogelijk — simulatie",
+            "blockedBody": "In de echte applicatie kunt u de kaart invullen, maar u moet aangesloten zijn bij een uitbetalingsinstelling om ze te kunnen verzenden."
+          },
+          "pdf": {
+            "buttonLabel": "Voorbeeld downloaden — simulatie",
+            "docTitle": "Educatief voorbeeld eC3.2 — simulatie",
+            "fictionMention": "Fictief document — vervangt geen officiële kaart.",
+            "warning": "Dit document is geen officiële kaart."
+          }
+        },
+        "scenariosSection": {
+          "title": "Praktijkgevallen",
+          "subtitle": "Laad een geval in de simulator om te oefenen."
+        },
+        "mistakesSection": {
+          "title": "Veel voorkomende fouten",
+          "subtitle": "De meest voorkomende valkuilen bij het invullen van de eC3.2 — en hoe u ze eenvoudig vermijdt."
+        },
+        "faqSection": {
+          "title": "Veelgestelde vragen",
+          "subtitle": "Duidelijke antwoorden op de meest gestelde vragen over de elektronische controlekaart tijdelijke werkloosheid."
+        },
+        "resourcesSection": {
+          "title": "Officiële bronnen",
+          "subtitle": "De officiële sites en diensten voor uw echte aanvragen.",
+          "intro": "Deze pagina is een leerinstrument. Gebruik voor een echte aanvraag altijd de officiële kanalen hieronder.",
+          "officialButtonLabel": "Naar de officiële site van de RVA",
+          "note": "Docbel is niet verbonden aan de RVA. Deze links worden ter informatie verstrekt.",
+          "items": {
+            "secu": {
+              "label": "Portaal van de sociale zekerheid",
+              "description": "Officieel toegangspunt tot de onlinediensten van de Belgische sociale zekerheid, waaronder de eC3.2-applicatie."
+            },
+            "playstore": {
+              "label": "eC3.2 op Google Play (Android)",
+              "description": "De officiële applicatie om uw controlekaart tijdelijke werkloosheid op Android in te vullen en te verzenden."
+            },
+            "appstore": {
+              "label": "eC3.2 in de App Store (iPhone)",
+              "description": "De officiële applicatie om uw controlekaart tijdelijke werkloosheid op iPhone in te vullen en te verzenden."
+            },
+            "orgs": {
+              "label": "Uitbetalingsinstellingen (HVW, ACV, ABVV, ACLVB)",
+              "description": "Om uw uitkeringen te ontvangen, moet u aangesloten zijn bij een uitbetalingsinstelling: de HVW (openbaar) of een vakbond (ACV, ABVV, ACLVB)."
+            },
+            "onem": {
+              "label": "RVA — Rijksdienst voor Arbeidsvoorziening",
+              "description": "De administratie verantwoordelijk voor de werkloosheidsreglementering en de eC3.2-applicatie in België."
+            }
+          }
+        },
+        "derogationsSection": {
+          "title": "Afwijkingen",
+          "subtitle": "De uitzonderingen en uitstel die voorzien zijn tijdens de overgangsperiode naar de eC3.2.",
+          "badge": "Te controleren voor definitieve publicatie",
+          "transitionNote": "Een afwijkingsaanvraag kon indien nodig één keer worden verlengd tot uiterlijk 30 juni 2025. Vanaf 1 juli 2025 moeten alle tijdelijk werklozen de eC3.2 gebruiken, behalve PC 327. (Deze regels kunnen evolueren — te controleren voor definitieve publicatie.)",
+          "items": {
+            "cp327": {
+              "title": "Uitzondering PC 327",
+              "summary": "Het webinar vermeldt een permanente afwijking voor PC 327. Deze informatie moet worden gecontroleerd voor elke definitieve publicatie en kan worden gewijzigd in de builder."
+            },
+            "worker": {
+              "title": "Tijdelijke afwijking aangevraagd door de werknemer",
+              "summary": "De werknemer informeert de werkgever via een kennisgevingsformulier; de werkgever tekent voor ontvangst of de werknemer verzendt aangetekend; daarna aanvraag bij de RVA en bij zijn uitbetalingsinstelling.",
+              "conditions": {
+                "0": "Volledige aanvraag",
+                "1": "Aanvraag binnen de termijn",
+                "2": "Maximumperiode van drie opeenvolgende maanden tussen januari 2025 en juni 2025",
+                "3": "De werknemer mag de eC3.2 nog niet gebruikt hebben"
+              }
+            },
+            "employer": {
+              "title": "Tijdelijke afwijking aangevraagd door de werkgever",
+              "summary": "De werkgever dient de aanvraag in bij de RVA. Bij akkoord: werknemers die al de eC3.2 gebruiken gaan door; de anderen kunnen tijdelijk de papieren kaart blijven gebruiken, kunnen op elk moment met de eC3.2 starten, en moeten ze gebruiken na de afwijkingsperiode.",
+              "conditions": {
+                "0": "De werknemers informeren",
+                "1": "Zich engageren om ze te begeleiden",
+                "2": "Maximumperiode van drie opeenvolgende maanden tussen januari 2025 en juni 2025"
+              }
+            }
+          }
+        },
+        "officialInfo": {
+          "obligation": {
+            "title": "Verplichting vanaf 1 januari 2025",
+            "intro": "Sinds 1 januari 2025 wordt de elektronische controlekaart eC3.2 de regel voor tijdelijke werkloosheid. Hier ziet u wat er concreet verandert voor werknemers en werkgevers.",
+            "workersTitle": "Voor werknemers",
+            "workers": {
+              "0": "In orde zijn bij een controle berust op een correct ingevulde elektronische kaart",
+              "1": "Arbeid moet vóór aanvang worden aangegeven",
+              "2": "De kaart moet worden ingevuld vanaf de eerste effectieve werkloosheidsdag van de maand",
+              "3": "In de bouwsector moet ze altijd worden ingevuld",
+              "4": "De betaling is gebaseerd op de elektronische kaart"
+            },
+            "employersTitle": "Voor werkgevers",
+            "employers": {
+              "0": "Geen papieren kaarten meer afgeven, behalve bij afwijking",
+              "1": "Het validatieboek niet meer invullen, behalve voor werknemers die nog een papieren kaart krijgen",
+              "2": "Werknemers indien nodig begeleiden"
+            }
+          },
+          "why": {
+            "title": "Waarom de eC3.2?",
+            "subtitle": "De aangevoerde voordelen voor de overstap van papieren naar elektronische kaart.",
+            "items": {
+              "0": "Strijd tegen sociale fraude",
+              "1": "De RVA wordt geïnformeerd over het invullen van de kaart",
+              "2": "Betere traceerbaarheid van wat wordt ingevuld en wanneer",
+              "3": "Minder dubbelzinnigheid dan met papier",
+              "4": "Correctere betaling",
+              "5": "Snellere verwerking",
+              "6": "Digitale verzending naar de uitbetalingsinstelling",
+              "7": "Geautomatiseerde betalingsprocessen",
+              "8": "Verlies van kaart onmogelijk",
+              "9": "Einde van bepaalde langdurige papieren procedures",
+              "10": "Beschikbaar in NL, FR en DE"
+            },
+            "note": "De eC3.2 beoogt een snellere verwerking te vergemakkelijken. (Docbel garandeert geen snellere betaling.)"
+          },
+          "help": {
+            "title": "Hulp nodig?",
+            "body": {
+              "0": "Bij aanmeldingsproblemen in de echte applicatie verwijst het webinar naar het contactcentrum van de sociale zekerheid.",
+              "1": "Bij gebruiksproblemen met de applicatie contacteert u uw uitbetalingsinstelling.",
+              "2": "Kunt u de kaart niet tijdig invullen, informeer dan de RVA om bij controle in orde te zijn."
+            },
+            "disclaimer": "Docbel helpt u de procedure te begrijpen, maar vervangt noch de RVA noch uw uitbetalingsinstelling."
+          }
+        },
+        "legal": {
+          "simulationLabel": "Niet-officiële educatieve simulatie",
+          "noRealData": "Er worden geen echte gegevens gevraagd",
+          "noTransmission": "Er worden geen gegevens naar de RVA verzonden",
+          "notReplacement": "Deze pagina vervangt de officiële eC3.2-applicatie niet",
+          "useOfficial": "Gebruik voor een echte aanvraag de officiële eC3.2-applicatie"
+        },
+        "builderMetadata": {
+          "lastReviewedNote": "Educatieve inhoud gebaseerd op een RVA-webinar — te controleren voor definitieve publicatie (met name PC 327 en afwijkingen)."
+        }
+      },
+      "scenarios": {
+        "all-month": {
+          "title": "Ik ben de hele maand tijdelijk werkloos",
+          "level": "Beginner",
+          "duration": "2 min",
+          "context": "Uw werkgever heeft u voor de hele maand tijdelijk werkloos gesteld. Geen werkdagen, geen andere situatie te melden.",
+          "objective": "Begrijpen dat « Werkloosheid » de standaardsituatie is: voor een dag van werkelijk tijdelijke werkloosheid hoeft u niets te wijzigen.",
+          "expectedAction": "Niets wijzigen voor de dagen van werkelijke werkloosheid, tenzij een andere situatie van toepassing is.",
+          "feedbackCorrect": "Juist: als u die dag tijdelijk werkloos bent, volstaat de standaardsituatie.",
+          "feedbackError": "Niet helemaal: voor een dag van werkelijke werkloosheid is de standaardsituatie al voldoende. Geen andere situatie toevoegen.",
+          "ruleRef": "Standaardsituatie"
+        },
+        "work-own": {
+          "title": "Ik werk een dag bij mijn werkgever",
+          "level": "Beginner",
+          "duration": "3 min",
+          "context": "U bent meerdere dagen tijdelijk werkloos, maar op woensdag werkt u bij de werkgever die u werkloos heeft gesteld.",
+          "objective": "Een eenmalige werkhervatting bij de werkgever die de kaart invult, kunnen melden.",
+          "expectedAction": "Selecteer de betrokken dag en kies « Werk bij de werkgever ».",
+          "feedbackCorrect": "Juist: werk bij de gewone werkgever moet vóór aanvang worden aangegeven.",
+          "feedbackError": "Niet helemaal: een dag werk bij uw werkgever is geen werkloosheidsdag. Selecteer de dag en kies « Werk bij de werkgever ».",
+          "ruleRef": "Werk bij de werkgever"
+        },
+        "work-elsewhere-usual": {
+          "title": "Ik doe een flexi-job op een dag dat ik normaal werk",
+          "level": "Gevorderd",
+          "duration": "3 min",
+          "context": "Tijdens uw tijdelijke werkloosheid voert u elders werk uit (bijvoorbeeld een flexi-job) op een dag dat u normaal werkt bij uw gewone werkgever.",
+          "objective": "Een werk elders onderscheiden op een dag normaal gewerkt bij de gewone werkgever.",
+          "expectedAction": "Kies « Werk elders — dag normaal gewerkt bij de gewone werkgever ».",
+          "feedbackCorrect": "Juist: werk elders tijdens een normaal gewerkte dag moet worden aangegeven.",
+          "feedbackError": "Niet helemaal: omdat deze dag normaal bij uw gewone werkgever wordt gewerkt, kiest u « Werk elders — dag normaal gewerkt bij de gewone werkgever ».",
+          "ruleRef": "Werk elders"
+        },
+        "work-elsewhere-weekend": {
+          "title": "Ik werk op zaterdag bij een andere werkgever",
+          "level": "Gevorderd",
+          "duration": "3 min",
+          "context": "U werkt normaal niet op zaterdag bij uw gewone werkgever, maar voert die dag occasioneel werk elders uit.",
+          "objective": "Begrijpen dat werk elders ook gemeld moet worden op een normaal niet-gewerkte dag, zoals in het weekend.",
+          "expectedAction": "Kies « Werk elders — normaal niet-gewerkte dag ».",
+          "feedbackCorrect": "Juist: ook in het weekend moet werk elders worden aangegeven.",
+          "feedbackError": "Niet helemaal: werk uitgevoerd op een normaal niet-gewerkte zaterdag moet toch worden gemeld. Kies « Werk elders — normaal niet-gewerkte dag ».",
+          "ruleRef": "Werk elders"
+        },
+        "other-regular": {
+          "title": "Ik heb twee deeltijdse banen",
+          "level": "Expert",
+          "duration": "4 min",
+          "context": "U combineert twee gewone deeltijdse banen en één ervan stelt u tijdelijk werkloos, terwijl de andere normaal doorgaat.",
+          "objective": "Het voortzetten van een andere gewone betrekking tijdens tijdelijke werkloosheid kunnen melden.",
+          "expectedAction": "Kies « Werk bij een andere gewone werkgever ».",
+          "feedbackCorrect": "Juist: als u meerdere gewone banen combineert, moet de andere tewerkstelling aan de uitbetalingsinstelling worden meegedeeld.",
+          "feedbackError": "Niet helemaal: uw tweede gewone baan gaat door. Kies « Werk bij een andere gewone werkgever » en informeer de uitbetalingsinstelling.",
+          "ruleRef": "Andere gewone werkgever"
+        },
+        "sick": {
+          "title": "Ik word ziek tijdens de tijdelijke werkloosheid",
+          "level": "Beginner",
+          "duration": "3 min",
+          "context": "Tijdens een periode van tijdelijke werkloosheid wordt u enkele dagen ziek en bent u arbeidsongeschikt.",
+          "objective": "Ziektedagen kunnen aanduiden als arbeidsongeschiktheid en eraan denken het ziekenfonds te verwittigen.",
+          "expectedAction": "Selecteer de ziektedagen en kies « Arbeidsongeschiktheid ».",
+          "feedbackCorrect": "Juist: ziekte, arbeidsongeval of bevallingsrust moeten worden aangegeven als arbeidsongeschiktheid. Het ziekenfonds moet binnen 48 uur worden verwittigd.",
+          "feedbackError": "Niet helemaal: een ziektedag is geen werkloosheidsdag. Selecteer de betrokken dagen, kies « Arbeidsongeschiktheid » en verwittig uw ziekenfonds binnen 48 uur.",
+          "ruleRef": "Arbeidsongeschiktheid"
+        },
+        "vacation": {
+          "title": "Ik neem vakantie",
+          "level": "Beginner",
+          "duration": "2 min",
+          "context": "Tijdens uw periode van tijdelijke werkloosheid neemt u enkele dagen jaarlijkse vakantie.",
+          "objective": "Vakantiedagen kunnen onderscheiden van dagen tijdelijke werkloosheid.",
+          "expectedAction": "Kies « Vakantie » voor de betrokken dagen.",
+          "feedbackCorrect": "Juist: individuele of collectieve jaarlijkse vakantie moet worden aangegeven.",
+          "feedbackError": "Niet helemaal: een vakantiedag is geen werkloosheidsdag. Kies « Vakantie » voor de betrokken dagen.",
+          "ruleRef": "Vakantie"
+        },
+        "other-situation": {
+          "title": "Ik heb een feestdag of betaalde opleiding",
+          "level": "Beginner",
+          "duration": "3 min",
+          "context": "Tijdens uw tijdelijke werkloosheid is een dag gedekt door een andere situatie: bijvoorbeeld een feestdag of een betaalde opleiding.",
+          "objective": "Begrijpen wanneer u « Andere situatie » gebruikt voor een dag zonder prestatie maar anderszins gedekt.",
+          "expectedAction": "Kies « Andere situatie ».",
+          "feedbackCorrect": "Juist: bepaalde dagen zonder prestatie maar gedekt door een andere situatie moeten worden aangegeven als andere situatie.",
+          "feedbackError": "Niet helemaal: een feestdag of betaalde opleiding is geen werkloosheidsdag. Kies « Andere situatie ».",
+          "ruleRef": "Andere situatie"
+        },
+        "multiple-employers": {
+          "title": "Ik ben tijdelijk werkloos bij twee werkgevers",
+          "level": "Expert",
+          "duration": "4 min",
+          "context": "Twee van uw werkgevers stellen u tijdelijk werkloos in dezelfde maand. Eén kaart volstaat niet.",
+          "objective": "Begrijpen dat per betrokken werkgever een aparte kaart moet worden ingevuld.",
+          "expectedAction": "Vul twee fictieve kaarten in, één per betrokken werkgever.",
+          "feedbackCorrect": "Juist: bij tijdelijke werkloosheid bij meerdere werkgevers moet per betrokken werkgever een kaart worden ingevuld.",
+          "feedbackError": "Niet helemaal: één kaart dekt geen twee werkgevers. Vul een aparte kaart in voor elke werkgever die u werkloos heeft gesteld.",
+          "ruleRef": "Meerdere werkgevers"
+        },
+        "no-payment-org": {
+          "title": "Ik ben nog niet aangesloten bij een uitbetalingsinstelling",
+          "level": "Gevorderd",
+          "duration": "3 min",
+          "context": "U vult uw kaart in, maar u bent nog niet aangesloten bij een uitbetalingsinstelling (HVW, ACV, ABVV of ACLVB).",
+          "objective": "Begrijpen dat de kaart zonder aansluiting wel kan worden ingevuld, maar niet kan worden verzonden.",
+          "expectedAction": "Vul de kaart in maar stel vast dat verzenden geblokkeerd is.",
+          "feedbackCorrect": "Juist: zonder aansluiting bij een uitbetalingsinstelling kan de kaart worden ingevuld maar niet verzonden.",
+          "feedbackError": "Niet helemaal: zonder uitbetalingsinstelling blijft de verzending geblokkeerd. U kunt de kaart invullen, maar aansluiting is nodig om te verzenden.",
+          "ruleRef": "Uitbetalingsinstelling"
+        },
+        "correction": {
+          "title": "Ik ben vergeten werk aan te geven",
+          "level": "Gevorderd",
+          "duration": "4 min",
+          "context": "U merkt dat een werkdag als werkloosheid is geregistreerd. De kaart is nog niet verzonden: een correctie is mogelijk.",
+          "objective": "Een verkeerd ingevulde dag kunnen corrigeren en de gevraagde uitleg geven vóór het opslaan.",
+          "expectedAction": "Wijzig de betrokken dag, kies de juiste situatie, geef een uitleg.",
+          "feedbackCorrect": "Juist: een correctie moet worden uitgelegd vóór ze wordt opgeslagen.",
+          "feedbackError": "Niet helemaal: een correctie kan niet worden opgeslagen zonder uitleg. Selecteer de dag, kies de juiste situatie en motiveer de wijziging.",
+          "ruleRef": "Correctie"
+        },
+        "construction-cp124": {
+          "title": "Ik werk in de bouw",
+          "level": "Gevorderd",
+          "duration": "3 min",
+          "context": "U valt onder paritair comité 124 (bouw) en uw werkgever stelt u tijdelijk werkloos.",
+          "objective": "De eigen regel voor de bouwsector begrijpen: de kaart moet altijd worden ingevuld voor de betrokken werkgever.",
+          "expectedAction": "Begrijpen dat de kaart altijd moet worden ingevuld voor de werkgever uit de bouwsector.",
+          "feedbackCorrect": "Juist: bij PC 124 moet de kaart altijd worden ingevuld voor de betrokken werkgever.",
+          "feedbackError": "Niet helemaal: in de bouw (PC 124) moet de kaart altijd worden ingevuld voor de betrokken werkgever, zonder uitzondering.",
+          "ruleRef": "PC 124 bouw"
+        },
+        "first-effective-day": {
+          "title": "Ik begin de tijdelijke werkloosheid in de loop van de maand",
+          "level": "Gevorderd",
+          "duration": "3 min",
+          "context": "Uw tijdelijke werkloosheid begint niet op de 1e van de maand maar in de loop van de maand. De eerste effectieve dag wordt automatisch gemeld.",
+          "objective": "Weten vanaf welke dag de kaart moet worden ingevuld als de werkloosheid in de loop van de maand begint.",
+          "expectedAction": "De kaart invullen vanaf de eerste effectieve werkloosheidsdag tot het einde van de maand.",
+          "feedbackCorrect": "Juist: de kaart moet worden ingevuld vanaf de eerste effectieve werkloosheidsdag van de maand.",
+          "feedbackError": "Niet helemaal: de kaart wordt ingevuld vanaf de eerste effectieve werkloosheidsdag, niet vanaf de 1e van de maand. Ga door tot de laatste dag van de maand.",
+          "ruleRef": "Eerste effectieve dag"
+        },
+        "wrong-month": {
+          "title": "Ik heb de verkeerde eerste maand gekozen",
+          "level": "Expert",
+          "duration": "4 min",
+          "context": "U stelt vast dat een eerdere maand had moeten worden aangegeven en eerst geactiveerd. Een nieuwe gesimuleerde verklaring is nodig.",
+          "objective": "Begrijpen dat een eerdere maand indien nodig kan worden geactiveerd, via een nieuwe verklaring.",
+          "expectedAction": "Selecteer een eerdere maand en aanvaard een nieuwe gesimuleerde verklaring.",
+          "feedbackCorrect": "Juist: een eerdere maand kan indien nodig worden geactiveerd.",
+          "feedbackError": "Niet helemaal: als de verkeerde maand werd geactiveerd, selecteer dan de betrokken eerdere maand en aanvaard de nieuwe gesimuleerde verklaring.",
+          "ruleRef": "Keuze van de maand"
+        }
+      },
+      "situations": {
+        "temporary_unemployment": {
+          "label": "Tijdelijke werkloosheid",
+          "shortLabel": "Werkloosheid",
+          "description": "Standaardsituatie. U hoeft niets aan te geven als u die dag effectief tijdelijk werkloos bent.",
+          "warning": "Als u tijdens deze dagen elders werkt, moet u dat aangeven.",
+          "helpDetail": "Standaard staan alle kalendervakjes al op « Werkloosheid ». U hoeft voor deze dagen dus niets in te vullen: alleen de dagen wijzigen die met een andere situatie overeenkomen (werk, arbeidsongeschiktheid, vakantie, enz.).",
+          "examples": {
+            "0": "Dagen waarop u tijdelijk werkloos bent",
+            "1": "Dagen zonder werk wegens tijdskrediet of loopbaanonderbreking",
+            "2": "Dagen waarop u gewoonlijk niet bij deze werkgever werkt (bepaalde weekends, gewone inactiviteitsdagen)"
+          }
+        },
+        "work_own_employer": {
+          "label": "Werk bij de werkgever",
+          "shortLabel": "Werk (werkgever)",
+          "description": "Te kiezen wanneer u werkt bij de werkgever voor wie u de kaart invult. Ook aan te duiden als dit werk in het weekend wordt verricht of op een gewone inactiviteitsdag bij deze werkgever.",
+          "warning": "Werk moet worden geregistreerd VÓÓR u begint te werken.",
+          "helpDetail": "Voor nachtwerk geeft u de dag aan waarop de activiteit begint. Nachtwerk is een prestatie tussen 20 u en 6 u. Als de prestatie meer uren telt dan een gewone werkdag, moeten twee vakjes worden aangeduid.",
+          "examples": {
+            "0": "Gewerkte dag bij de werkgever die de kaart invult",
+            "1": "Werk in het weekend bij deze werkgever",
+            "2": "Werk op een gewone inactiviteitsdag bij deze werkgever"
+          }
+        },
+        "work_elsewhere_usual_day": {
+          "label": "Werk elders — normaal gewerkte dag",
+          "shortLabel": "Elders (gewerkte dag)",
+          "description": "Te kiezen wanneer u elders werkt op een dag dat u normaal werkt voor de gewone werkgever.",
+          "warning": "Te registreren vóór aanvang van het werk.",
+          "helpDetail": "Uitzonderingen: de bijkomstige activiteit in het kader van de maatregel Springplank-zelfstandigen hoeft niet vermeld te worden; voor kunstwerkers (hoofdstuk XII) hoeven bepaalde eigen, bijkomstige of occasionele onbetaalde activiteiten niet vermeld te worden.",
+          "examples": {
+            "0": "Andere niet-gewone werkgever",
+            "1": "Flexi-job",
+            "2": "Werk voor eigen rekening",
+            "3": "Werk voor derden",
+            "4": "Occasionele activiteit",
+            "5": "Bijkomstige activiteit aanvaard door de RVA tussen 7 u en 18 u"
+          }
+        },
+        "work_elsewhere_non_usual_day": {
+          "label": "Werk elders — normaal niet-gewerkte dag",
+          "shortLabel": "Elders (niet-gewerkte dag)",
+          "description": "Te kiezen wanneer u elders werkt op een dag dat u normaal niet werkt voor de gewone werkgever.",
+          "warning": "Te registreren vóór aanvang van het werk.",
+          "helpDetail": "Uitzonderingen: de bijkomstige activiteit in het kader van de maatregel Springplank-zelfstandigen hoeft niet vermeld te worden; voor kunstwerkers (hoofdstuk XII) hoeven bepaalde eigen, bijkomstige of occasionele onbetaalde activiteiten niet vermeld te worden.",
+          "examples": {
+            "0": "Weekend",
+            "1": "Gewone inactiviteitsdag",
+            "2": "Andere niet-gewone werkgever",
+            "3": "Flexi-job",
+            "4": "Werk voor eigen rekening",
+            "5": "Werk voor derden",
+            "6": "Occasionele activiteit",
+            "7": "Bijkomstige activiteit aanvaard door de RVA, ongeacht het tijdstip"
+          }
+        },
+        "work_other_regular_employer": {
+          "label": "Werk bij een andere gewone werkgever",
+          "shortLabel": "Andere gewone werkgever",
+          "description": "U combineert twee langdurige deeltijdse banen. Dit geval betreft noch de flexi-job noch zelfstandige activiteit.",
+          "warning": "Te registreren vóór aanvang van het werk.",
+          "helpDetail": "U moet uw uitbetalingsinstelling op de hoogte brengen van deze andere tewerkstelling.",
+          "examples": {
+            "0": "Tweede langdurige deeltijdse baan",
+            "1": "Combinatie van twee gewone deeltijdse tewerkstellingen"
+          }
+        },
+        "incapacity": {
+          "label": "Arbeidsongeschiktheid",
+          "shortLabel": "Ongeschiktheid",
+          "description": "Te kiezen bij ziekte, arbeidsongeval of bevallingsrust. Reken ook zaterdagen, zondagen en feestdagen mee als die binnen de ongeschiktheidsperiode vallen.",
+          "warning": "Verwittig uw ziekenfonds binnen 48 uur.",
+          "helpDetail": "Geef « Arbeidsongeschiktheid » op voor de hele betrokken periode, ook voor de niet-gewerkte dagen (weekends en feestdagen) die binnen deze periode vallen.",
+          "examples": {
+            "0": "Ziekte",
+            "1": "Arbeidsongeval",
+            "2": "Bevallingsrust"
+          }
+        },
+        "vacation": {
+          "label": "Vakantie",
+          "shortLabel": "Vakantie",
+          "description": "Te kiezen voor individuele jaarlijkse vakantiedagen of tijdens een collectieve sluiting voor jaarlijkse vakantie, of de dagen nu gedekt zijn door vakantiegeld of niet.",
+          "warning": "",
+          "helpDetail": "Medische overmacht: bij een progressieve deeltijdse werkhervatting toegestaan door de adviserend arts geeft u « Vakantie » op voor de genomen vakantiedagen. Buitenwettelijk verlof moet niet noodzakelijk worden opgenomen tijdens de collectieve sluiting; gebeurt dat wel, duid het aan als « Andere situatie ».",
+          "examples": {
+            "0": "Individuele jaarlijkse vakantie",
+            "1": "Collectieve sluiting voor jaarlijkse vakantie"
+          }
+        },
+        "other": {
+          "label": "Andere situatie",
+          "shortLabel": "Andere",
+          "description": "Te kiezen voor dagen zonder prestatie maar gedekt door een andere situatie.",
+          "warning": "",
+          "helpDetail": "",
+          "examples": {
+            "0": "Feestdag",
+            "1": "Inhaalrust",
+            "2": "Betaalde opleiding",
+            "3": "Dag gedekt door een vergoeding ter compensatie van ontslag",
+            "4": "Onbetaald verlof",
+            "5": "Ongerechtvaardigde afwezigheid",
+            "6": "Detentie",
+            "7": "Vaderschapsverlof",
+            "8": "Buitenwettelijk verlof tijdens een collectieve sluiting voor jaarlijkse vakantie"
+          }
+        },
+        "not_applicable": {
+          "label": "Niet van toepassing",
+          "shortLabel": "Grijs",
+          "description": "Grijze vakjes: dagen waarop u geen arbeidsovereenkomst hebt met de gekozen werkgever (begonnen of beëindigd contract in de loop van de maand), en dagen buiten de geselecteerde maand.",
+          "warning": "",
+          "helpDetail": "U kunt deze dagen niet invullen. Deze situatie wordt automatisch toegekend, u hoeft niets te doen.",
+          "examples": {
+            "0": "Dagen vóór de start van het contract in de maand",
+            "1": "Dagen na het einde van het contract in de maand",
+            "2": "Dagen buiten de geselecteerde maand"
+          }
+        },
+        "first_effective_unemployment_day": {
+          "label": "Eerste effectieve werkloosheidsdag",
+          "shortLabel": "1e effectieve dag",
+          "description": "Eerste werkloosheidsdag van de maand voor de gekozen werkgever, zoals door de werkgever aan de RVA meegedeeld. Verschijnt bij tijdelijke werkloosheid om economische redenen, slecht weer of technische storing. Voor de andere types wordt geen pictogram getoond.",
+          "warning": "Vul de kaart in vanaf de eerste effectieve werkloosheidsdag tot het einde van de maand. In de bouw moet de kaart altijd worden ingevuld.",
+          "helpDetail": "De afwezigheid van dit pictogram tijdens de eerste gebruiksmaand blokkeert de werking van de kaart niet. Deze situatie wordt automatisch gemeld, u hoeft niets in te vullen.",
+          "examples": {
+            "0": "Tijdelijke werkloosheid om economische redenen",
+            "1": "Tijdelijke werkloosheid wegens slecht weer",
+            "2": "Tijdelijke werkloosheid wegens technische storing"
+          }
+        }
+      },
+      "labels": {
+        "nav.next": "Volgende stap",
+        "nav.back": "Vorige stap",
+        "nav.restart": "Simulatie herstarten",
+        "nav.toCalendar": "Naar de kalender",
+        "login.title": "Gesimuleerde aanmelding",
+        "login.intro": "Kies een identificatiemiddel om te zien hoe de aanmelding verloopt. Hier wordt niets gevraagd en vindt geen echte aanmelding plaats.",
+        "login.eid": "Begrijp de eID-aanmelding",
+        "login.itsme": "Begrijp itsme",
+        "login.frontalier": "Ik ben grensarbeider",
+        "login.noMeans": "Ik heb geen identificatiemiddel",
+        "login.continue": "Simulatie starten",
+        "declaration.title": "Verklaring op eer — simulatie",
+        "declaration.intro": "Bij de eerste officiële aanmelding kiest u de startmaand, leest u de handleiding en de voorwaarden en bevestigt u de overstap naar elektronische weg.",
+        "declaration.monthField": "Maand vanaf wanneer ik de eC3.2 gebruik",
+        "declaration.checkbox": "Ik bevestig de handleiding en de voorwaarden te hebben gelezen en voortaan de elektronische weg te gebruiken (fictief vakje).",
+        "declaration.continue": "Simulatie voortzetten",
+        "employer.title": "Werkgever kiezen",
+        "employer.intro": "Kies de werkgever die u tijdelijk werkloos heeft gesteld. Uw andere tewerkstellingen worden op deze kaart vermeld.",
+        "employer.enterprise": "Ondernemingsnummer (fictief)",
+        "employer.continue": "Deze werkgever kiezen",
+        "month.title": "Maand kiezen",
+        "month.intro": "Selecteer de kaart van de maand die u wilt invullen. Reeds verzonden kaarten zijn vergrendeld.",
+        "month.locked": "Verzonden — vergrendeld",
+        "month.notYet": "Nog niet beschikbaar",
+        "month.activatePast": "Een eerdere maand activeren",
+        "card.title": "Controlekaart — simulatie",
+        "card.employer": "Werkgever",
+        "card.enterprise": "Ondernemingsnummer",
+        "card.lastUpdate": "Laatste update",
+        "card.corrections": "Correcties",
+        "card.download": "Voorbeeld downloaden — simulatie",
+        "card.listView": "Lijstweergave",
+        "card.calendarView": "Kalenderweergave",
+        "card.calendarTab": "Kalender",
+        "card.legendTab": "Legende",
+        "card.adapt": "Geselecteerde dagen aanpassen",
+        "card.send": "Kaart verzenden — simulatie",
+        "card.firstSend": "Eerste mogelijke verzenddatum",
+        "card.affiliation": "Ik ben aangesloten bij een uitbetalingsinstelling",
+        "selector.title": "Welke situatie voor deze dag(en)?",
+        "selector.workElsewhereGroup": "Werk elders dan bij de werkgever",
+        "selector.save": "Deze dag opslaan",
+        "selector.saveMulti": "Deze dagen opslaan",
+        "selector.cancel": "Annuleren",
+        "selector.selected": "geselecteerd",
+        "calendar.selectHint": "Klik op een dag om hem te selecteren. Klik nogmaals om hem te verwijderen.",
+        "calendar.clear": "Alles deselecteren",
+        "calendar.legend": "Legende van de situaties",
+        "verify.title": "De kaart controleren",
+        "verify.intro": "Herlees uw invoer vóór de gesimuleerde verzending. Controleer vooral de gewerkte dagen en de arbeidsongeschiktheidsdagen.",
+        "list.date": "Datum",
+        "list.situation": "Situatie",
+        "list.correction": "Correctie",
+        "list.edit": "Wijzigen",
+        "list.empty": "Geen dagen om weer te geven voor deze maand."
+      },
+      "notices": {
+        "login.eid": "De eID is uw elektronische identiteitskaart. In de echte applicatie gebruikt u ze met een kaartlezer en uw pincode om u veilig te identificeren.",
+        "login.itsme": "itsme is een mobiele app voor digitale identiteit. In de echte applicatie bevestigt u uw identiteit op uw smartphone, zonder kaartlezer.",
+        "login.frontalier": "Grensarbeiders met een rijksregisternummer of een BIS-nummer kunnen een elektronisch identificatiemiddel gebruiken dat op Europees niveau erkend is (eIDAS). Is dat niet mogelijk, dan kan na contact met de RVA een alternatieve digitale sleutel worden geactiveerd.",
+        "login.noMeans": "Zonder elektronisch identificatiemiddel kunt u contact opnemen met de RVA om een alternatieve digitale sleutel te activeren. Deze simulatie vraagt zelf geen enkele identificatie.",
+        "declaration.monthImportance": "In de echte applicatie is de keuze van de maand belangrijk: ze bepaalt vanaf wanneer u de eC3.2 gebruikt.",
+        "month.rule": "De eC3.2-kaart is enkel toegankelijk voor de vorige maand. In juni → enkel mei is beschikbaar. Vanaf 1 juli verdwijnt mei en wordt juni op zijn beurt toegankelijk.",
+        "month.activatePast": "Hebt u de eC3.2 vanaf een bepaalde maand geactiveerd maar was u daarvoor al tijdelijk werkloos, dan kunt u een eerdere maand activeren. U krijgt dan een nieuwe verklaring op eer voorgelegd.",
+        "month.cards": "Per werkgever ziet u de kaart van de lopende maand, die van de volgende maand, de niet-verzonden kaarten van vorige maanden, en de niet-gebruikte kaarten voor maanden zonder tijdelijke werkloosheid.",
+        "calendar.defaultChomage": "Standaard worden de kalendervakjes als « Werkloosheid » beschouwd. U hoeft niets aan te geven als u die dag effectief tijdelijk werkloos bent. Werkt u elders, dan moet u dat aangeven.",
+        "calendar.notApplicable": "De grijze vakjes (« Niet van toepassing ») betreffen dagen zonder contract met de gekozen werkgever (begonnen of beëindigd contract in de loop van de maand) en dagen buiten de geselecteerde maand.",
+        "calendar.firstEffectiveDay": "De eerste effectieve werkloosheidsdag van de maand wordt automatisch gemeld (economische werkloosheid, slecht weer of technische storing). Voor de andere types tijdelijke werkloosheid wordt geen pictogram getoond.",
+        "calendar.firstSendNoIcon": "De afwezigheid van dit pictogram tijdens de eerste gebruiksmaand blokkeert de werking van de kaart niet.",
+        "calendar.fillUntilEnd": "De kaart moet worden ingevuld vanaf de eerste effectieve werkloosheidsdag tot de laatste dag van de maand. In de bouw moet de kaart altijd worden ingevuld.",
+        "save.unsaved": "Uw wijzigingen zijn niet opgeslagen. Sla op voor u verdergaat.",
+        "send.firstSendBefore": "Verzenden is nog niet mogelijk: de eerste mogelijke verzenddatum is niet bereikt. Ook al valt deze datum vóór het einde van de maand, de kaart moet correct worden ingevuld tot de laatste dag van de maand. (Deze simulatie verzendt nooit iets.)",
+        "send.noPaymentOrg": "In de echte applicatie kunt u de kaart invullen, maar u moet aangesloten zijn bij een uitbetalingsinstelling (HVW, ACV, ABVV of ACLVB) om ze te kunnen verzenden.",
+        "send.notNeeded": "Vraagt u geen uitkeringen aan, dan is verzenden niet nodig. Wilt u uitkeringen aanvragen, dan is aansluiting bij een uitbetalingsinstelling vereist.",
+        "correction.help": "In de echte applicatie helpt een duidelijke uitleg de inspecteurs de wijziging te begrijpen. Alleen niet-verzonden kaarten kunnen worden gecorrigeerd; de RVA wordt op de hoogte gebracht van de wijzigingen.",
+        "correction.locked": "Deze kaart is verzonden en vergrendeld in de simulatie. Een verzonden kaart kan niet meer worden gewijzigd.",
+        "work.beforeStart": "Elke arbeid moet vóór aanvang worden geregistreerd."
+      },
+      "mistakes": {
+        "confondre-ec32-et-ec3": {
+          "title": "eC3.2 en eC3 verwarren",
+          "explanation": "De eC3.2 geldt voor tijdelijke werkloosheid, terwijl de eC3 geldt voor volledige werkloosheid. De twee kaarten worden niet in dezelfde situatie gebruikt.",
+          "advice": "Controleer uw situatie voor u begint: bent u tijdelijk werkloos, dan is het wel degelijk de eC3.2 die u moet invullen."
+        },
+        "croire-simulation-officielle": {
+          "title": "Denken dat de Docbel-simulatie een echte officiële aanvraag is",
+          "explanation": "De Docbel-simulator dient enkel om te begrijpen en te oefenen. Er worden geen gegevens verzonden en niets wordt aan de RVA doorgegeven.",
+          "advice": "Voor een echte aanvraag gebruikt u de officiële eC3.2-applicatie. De simulator blijft een leerinstrument."
+        },
+        "oublier-indiquer-travail-avant": {
+          "title": "Vergeten arbeid aan te geven vóór aanvang",
+          "explanation": "Arbeid verricht tijdens tijdelijke werkloosheid moet op de kaart worden aangegeven vóór u begint te werken, niet erna.",
+          "advice": "Maak er een gewoonte van de werkdag in te voeren zodra u weet dat u gaat werken, vóór de prestatie."
+        },
+        "attendre-fin-du-mois": {
+          "title": "Wachten tot het einde van de maand om alles in te vullen",
+          "explanation": "Door het invullen uit te stellen tot het einde van de maand, riskeert u dagen of bijzondere situaties te vergeten.",
+          "advice": "Vul de kaart in naarmate de dagen verstrijken, zodra een situatie zich voordoet, zo vergeet u niets."
+        },
+        "choisir-mauvais-employeur": {
+          "title": "De verkeerde werkgever kiezen",
+          "explanation": "De kaart moet worden ingevuld voor de werkgever die u werkelijk tijdelijk werkloos heeft gesteld.",
+          "advice": "Selecteer de betrokken werkgever zorgvuldig; controleer bij twijfel welke werkgever de tijdelijke werkloosheid heeft aangegeven."
+        },
+        "ne-pas-mentionner-autre-travail": {
+          "title": "Ander werk niet vermelden",
+          "explanation": "Werk elders verricht tijdens tijdelijke werkloosheid moet altijd op de kaart worden gemeld, ook bij een andere werkgever.",
+          "advice": "Geef elke dag werk elders aan met de situatie « Werk elders » die past bij de betrokken dag."
+        },
+        "oublier-de-sauvegarder": {
+          "title": "Vergeten op te slaan",
+          "explanation": "Een ingevoerde maar niet opgeslagen situatie wordt mogelijk niet op de kaart opgenomen.",
+          "advice": "Controleer na elke wijziging of uw aanpassingen goed zijn opgeslagen vooraleer u vertrekt."
+        },
+        "croire-carte-envoyee-modifiable": {
+          "title": "Denken dat een verzonden kaart vrij kan worden gewijzigd",
+          "explanation": "Eenmaal verzonden is de kaart vergrendeld: ze kan niet meer vrij worden gewijzigd.",
+          "advice": "Controleer elke dag zorgvuldig vóór verzending; correcties kunnen alleen zolang de kaart niet is verzonden."
+        },
+        "corriger-sans-explication": {
+          "title": "Corrigeren zonder uitleg",
+          "explanation": "Een correctie kan een uitleg vereisen. Zonder motivering kan de wijziging niet worden opgeslagen.",
+          "advice": "Geef bij het corrigeren van een dag een duidelijke uitleg van de wijziging."
+        },
+        "pas-inscrit-organisme-paiement": {
+          "title": "Niet aangesloten zijn bij een uitbetalingsinstelling",
+          "explanation": "Zonder aansluiting bij een uitbetalingsinstelling (HVW, ACV, ABVV of ACLVB) kan de kaart worden ingevuld maar niet worden verzonden.",
+          "advice": "Sluit u zo snel mogelijk aan bij een uitbetalingsinstelling om uw kaart te kunnen verzenden en uw uitkeringen te ontvangen."
+        },
+        "oublier-jours-maladie": {
+          "title": "Ziektedagen vergeten",
+          "explanation": "Ziektedagen zijn geen werkloosheidsdagen: ze moeten worden aangegeven als arbeidsongeschiktheid.",
+          "advice": "Selecteer de betrokken dagen, kies « Arbeidsongeschiktheid » en verwittig uw ziekenfonds binnen 48 uur."
+        },
+        "oublier-vacances": {
+          "title": "Vakantie vergeten",
+          "explanation": "Vakantiedagen zijn geen werkloosheidsdagen en moeten als dusdanig op de kaart worden aangegeven.",
+          "advice": "Kies voor elke verlofdag de situatie « Vakantie » in plaats van de standaardsituatie te laten staan."
+        },
+        "ignorer-autre-situation": {
+          "title": "Geen rekening houden met dagen « andere situatie »",
+          "explanation": "Bepaalde dagen zonder prestatie (feestdag, betaalde opleiding, enz.) zijn geen werkloosheid en vallen onder een andere situatie.",
+          "advice": "Wanneer een dag anders dan door werkloosheid is gedekt, kies « Andere situatie » voor die dag."
+        },
+        "pas-remplir-premier-jour-effectif": {
+          "title": "Niet invullen vanaf de eerste effectieve werkloosheidsdag",
+          "explanation": "Wanneer de tijdelijke werkloosheid in de loop van de maand begint, wordt de kaart ingevuld vanaf de eerste effectieve werkloosheidsdag, niet vanaf de 1e van de maand.",
+          "advice": "Zoek de eerste effectieve werkloosheidsdag op en vul de kaart in van die dag tot het einde van de maand."
+        },
+        "ignorer-regle-cp124": {
+          "title": "De regel PC 124 bouw negeren",
+          "explanation": "In de bouwsector (PC 124) moet de kaart altijd worden ingevuld voor de betrokken werkgever.",
+          "advice": "Valt u onder PC 124, vul dan systematisch uw controlekaart in, zonder uitzondering."
+        },
+        "pas-informer-organisme-autre-employeur": {
+          "title": "De uitbetalingsinstelling niet inlichten bij een andere gewone werkgever",
+          "explanation": "Combineert u meerdere gewone banen, dan moet de andere tewerkstelling aan uw uitbetalingsinstelling worden meegedeeld.",
+          "advice": "Meld al uw gewone tewerkstellingen aan uw uitbetalingsinstelling om misverstanden te vermijden."
+        }
+      },
+      "faq": {
+        "0": {
+          "q": "Wat is de eC3.2?",
+          "a": "De eC3.2 is de elektronische controlekaart voor tijdelijke werkloosheid. Ze laat toe uw controlekaart elektronisch in te vullen en te verzenden, zonder papieren versie."
+        },
+        "1": {
+          "q": "Is dit hetzelfde als de eC3?",
+          "a": "Nee. De eC3.2 geldt voor tijdelijke werkloosheid, terwijl de eC3 geldt voor volledige werkloosheid. Het gaat om twee verschillende controlekaarten."
+        },
+        "2": {
+          "q": "Kan ik via deze Docbel-pagina een echte kaart verzenden?",
+          "a": "Nee. Het gaat om een educatieve simulatie: er worden geen echte gegevens verzonden en niets wordt aan de RVA doorgegeven. De simulator dient enkel om te begrijpen en te oefenen."
+        },
+        "3": {
+          "q": "Waar vind ik de echte eC3.2-applicatie?",
+          "a": "De echte applicatie is toegankelijk via het portaal van de sociale zekerheid of via de mobiele app « eC3.2 Tijdelijke werkloosheid »."
+        },
+        "4": {
+          "q": "Hoe meld ik me aan bij de echte applicatie?",
+          "a": "Aanmelden gebeurt met een beveiligd identificatiemiddel: eID, itsme, beveiligingscode (per e-mail of via de mobiele app) of een erkend Europees identificatiemiddel."
+        },
+        "5": {
+          "q": "Wat als ik grensarbeider ben?",
+          "a": "Met een rijksregisternummer of een BIS-nummer kunt u een Europees elektronisch identificatiemiddel gebruiken. Bij gebrek hieraan kan een alternatieve digitale sleutel nodig zijn."
+        },
+        "6": {
+          "q": "Moet ik aangesloten zijn bij een uitbetalingsinstelling?",
+          "a": "Ja. Om uitkeringen te ontvangen en de kaart te verzenden, moet u aangesloten zijn bij een uitbetalingsinstelling: de HVW, het ACV, het ABVV of de ACLVB."
+        },
+        "7": {
+          "q": "Kan ik de kaart invullen zonder uitbetalingsinstelling?",
+          "a": "Ja, u kunt de kaart invullen, maar ze kan niet worden verzonden zolang uw aansluiting bij een uitbetalingsinstelling niet is gebeurd."
+        },
+        "8": {
+          "q": "Welke werkgever moet ik kiezen?",
+          "a": "Kies de werkgever die u tijdelijk werkloos heeft gesteld. Hebben meerdere werkgevers u tijdelijk werkloos gesteld, dan moet per betrokken werkgever een aparte kaart worden ingevuld."
+        },
+        "9": {
+          "q": "Wat doe ik bij meerdere werkgevers?",
+          "a": "U moet uw uitbetalingsinstelling op de hoogte brengen van al uw tewerkstellingen. Bij tijdelijke werkloosheid bij meerdere werkgevers moet per betrokken werkgever een kaart worden ingevuld."
+        },
+        "10": {
+          "q": "Wat moet ik doen als ik werk tijdens een periode van tijdelijke werkloosheid?",
+          "a": "U moet het werk op de kaart aangeven vóór u begint te werken, niet erna."
+        },
+        "11": {
+          "q": "Wat moet ik aangeven als ik ziek ben?",
+          "a": "Geef « Arbeidsongeschiktheid » op voor de betrokken dagen, inclusief weekends en feestdagen als ze gedekt zijn. Denk er ook aan uw ziekenfonds binnen 48 uur te verwittigen."
+        },
+        "12": {
+          "q": "Wat moet ik aangeven als ik vakantie neem?",
+          "a": "Geef « Vakantie » op voor de betrokken dagen."
+        },
+        "13": {
+          "q": "Wat betekent « Andere situatie »?",
+          "a": "Deze categorie dekt bijvoorbeeld feestdagen, inhaalrust, betaalde opleidingen, onbetaald verlof, ongerechtvaardigde afwezigheden, detentie, vaderschapsverlof of bepaald buitenwettelijk verlof."
+        },
+        "14": {
+          "q": "Kan ik een fout corrigeren?",
+          "a": "Ja, zolang de kaart niet verzonden is. Er kan een uitleg worden gevraagd om de correctie te motiveren."
+        },
+        "15": {
+          "q": "Wordt de RVA op de hoogte gebracht van correcties?",
+          "a": "In de echte applicatie wordt de RVA op de hoogte gebracht van de wijzigingen aan de kaart."
+        },
+        "16": {
+          "q": "Wanneer kan ik mijn kaart verzenden?",
+          "a": "U kunt ze verzenden vanaf de eerste mogelijke verzenddatum. Ook al valt deze datum vóór het einde van de maand, vul de kaart correct in tot de laatste dag van de maand."
+        },
+        "17": {
+          "q": "Wat gebeurt er na het verzenden?",
+          "a": "In de echte applicatie wordt de kaart naar uw uitbetalingsinstelling verzonden. In de Docbel-simulatie vindt geen echte verzending plaats."
+        },
+        "18": {
+          "q": "Is PC 327 betrokken?",
+          "a": "Het webinar vermeldt een permanente afwijking voor PC 327. Deze informatie moet nog worden gecontroleerd en bijgewerkt vóór de definitieve publicatie."
+        },
+        "19": {
+          "q": "Moeten werkgevers nog een papieren kaart afgeven?",
+          "a": "Sinds de verplichting van de eC3.2 is er in principe geen papieren kaart meer, behalve bij toepasselijke afwijking."
+        }
+      },
+      "scenarioPresets": {
+        "all-month": "Standaard wordt de hele maand al als « Werkloosheid » beschouwd. U hoeft niets te wijzigen: ga door naar de controle.",
+        "work-own": "Selecteer de gewerkte dagen en kies vervolgens « Werk bij de werkgever ».",
+        "work-elsewhere-usual": "Selecteer de dag en kies « Werk elders — een normaal gewerkte dag ». Elke arbeid moet vóór aanvang worden geregistreerd.",
+        "work-elsewhere-weekend": "Selecteer zaterdag en zondag en kies « Werk elders — een normaal niet-gewerkte dag ».",
+        "other-regular": "Selecteer de dag en kies « Werk bij een andere gewone werkgever ».",
+        "sick": "Selecteer de ziektedagen en kies « Arbeidsongeschiktheid ».",
+        "vacation": "Selecteer de vakantiedagen en kies « Vakantie ».",
+        "other-situation": "1 mei is een feestdag: selecteer hem en kies « Andere situatie ».",
+        "multiple-employers": "Bij meerdere werkgevers kiest u degene die u tijdelijk werkloos heeft gesteld; uw andere tewerkstellingen worden op deze kaart vermeld.",
+        "no-payment-org": "Probeer de kaart te verzenden: verzenden is geblokkeerd zolang u niet aangesloten bent bij een uitbetalingsinstelling.",
+        "correction": "Open op een niet-verzonden kaart een reeds ingevulde dag om te corrigeren: een uitleg is verplicht.",
+        "construction-cp124": "In de bouw (PC 124) moet de kaart altijd worden ingevuld, ook wanneer u werkt.",
+        "first-effective-day": "Zoek het automatische pictogram van de eerste effectieve werkloosheidsdag (5 mei): het wordt nooit handmatig ingevoerd.",
+        "wrong-month": "Controleer de maand vóór u invult: hier is het de kaart van april 2025 die moet worden ingevuld."
       }
     }
   }

@@ -9,12 +9,16 @@
 // =====================================================================
 
 import { Lightbulb, MessageCircleHeart, Sparkles } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { Ec32StepKey } from '@/lib/ec32/types'
+import { ec32ResolveKey, type Ec32Translator } from '@/lib/ec32/labels'
 import { Ec32InfoBox } from '@/components/docbel/ec32/ui'
 
 export interface Ec32CoachTip {
   stepKey: string
   message: string
+  /** Clé i18n parallèle (next-intl) — `message` (FR) reste le fallback. */
+  messageKey?: string
 }
 
 export function Ec32CoachPanel({
@@ -31,7 +35,11 @@ export function Ec32CoachPanel({
   /** Astuce contextuelle d'un cas pratique chargé (optionnelle). */
   scenarioHint?: string | null
 }) {
-  const tip = tips.find((t) => t.stepKey === activeStep)?.message?.trim()
+  const tRoot = useTranslations() as unknown as Ec32Translator
+  const currentTip = tips.find((t) => t.stepKey === activeStep)
+  const tip = currentTip
+    ? ec32ResolveKey(tRoot, currentTip.messageKey, currentTip.message?.trim() || '')
+    : ''
 
   return (
     <aside

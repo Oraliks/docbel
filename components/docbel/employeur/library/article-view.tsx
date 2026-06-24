@@ -12,7 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LegalDisclaimerBox } from "@/components/docbel/employeur/legal-disclaimer-box";
 import { SourceBadge } from "@/components/docbel/employeur/badges";
-import type { LibraryArticle } from "@/lib/employeur/library/articles";
+import type {
+  LibraryArticle,
+  LocalizedLibraryArticle,
+} from "@/lib/employeur/library/articles";
 import type { SourceInfo } from "@/lib/employeur/queries";
 
 function BulletSection({
@@ -51,7 +54,11 @@ export async function ArticleView({
   article,
   sources,
 }: {
-  article: LibraryArticle;
+  /**
+   * Article (déjà localisé côté serveur via `getLocalizedArticle`).
+   * Reste compatible avec un `LibraryArticle` brut (fallback FR sur place).
+   */
+  article: LocalizedLibraryArticle | LibraryArticle;
   sources: Map<string, SourceInfo>;
 }) {
   const t = await getTranslations("public.pro");

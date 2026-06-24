@@ -75,6 +75,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     suggestedSituation: 'temporary_unemployment',
     hint:
       'Par défaut, tout le mois est déjà considéré comme « Chômage ». Vous n’avez rien à modifier : passez à la vérification.',
+    hintKey: 'public.ec32Content.scenarioPresets.all-month',
   },
   // Travail chez l'employeur qui remplit la carte.
   'work-own': {
@@ -85,6 +86,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     targetDays: [6, 7],
     hint:
       'Sélectionnez les jours travaillés, puis choisissez « Travail chez l’employeur ».',
+    hintKey: 'public.ec32Content.scenarioPresets.work-own',
   },
   // Travail ailleurs, un jour normalement travaillé.
   'work-elsewhere-usual': {
@@ -95,6 +97,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     targetDays: [8],
     hint:
       'Sélectionnez le jour, puis choisissez « Travail ailleurs — un jour normalement travaillé ». Tout travail doit être enregistré avant de commencer.',
+    hintKey: 'public.ec32Content.scenarioPresets.work-elsewhere-usual',
   },
   // Travail ailleurs, un jour normalement NON travaillé (week-end).
   'work-elsewhere-weekend': {
@@ -105,6 +108,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     targetDays: [10, 11],
     hint:
       'Sélectionnez le samedi et le dimanche, puis choisissez « Travail ailleurs — un jour normalement non travaillé ».',
+    hintKey: 'public.ec32Content.scenarioPresets.work-elsewhere-weekend',
   },
   // Travail auprès d'un autre employeur habituel.
   'other-regular': {
@@ -115,6 +119,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     targetDays: [13],
     hint:
       'Sélectionnez le jour, puis choisissez « Travail auprès d’un autre employeur habituel ».',
+    hintKey: 'public.ec32Content.scenarioPresets.other-regular',
   },
   // Maladie / inaptitude au travail.
   sick: {
@@ -125,6 +130,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     targetDays: [12, 13, 14],
     hint:
       'Sélectionnez les jours de maladie puis choisissez « Inaptitude au travail ».',
+    hintKey: 'public.ec32Content.scenarioPresets.sick',
   },
   // Vacances.
   vacation: {
@@ -134,6 +140,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     suggestedSituation: 'vacation',
     targetDays: [19, 20, 21],
     hint: 'Sélectionnez les jours de vacances puis choisissez « Vacances ».',
+    hintKey: 'public.ec32Content.scenarioPresets.vacation',
   },
   // Autre situation (jour férié, formation rémunérée, etc.).
   'other-situation': {
@@ -144,6 +151,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     targetDays: [1],
     hint:
       'Le 1er mai est un jour férié : sélectionnez-le puis choisissez « Autre situation ».',
+    hintKey: 'public.ec32Content.scenarioPresets.other-situation',
   },
   // Plusieurs employeurs : choisir le bon.
   'multiple-employers': {
@@ -152,6 +160,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     monthKey: '2025-05',
     hint:
       'Avec plusieurs employeurs, choisissez celui qui vous a mis en chômage temporaire ; vos autres occupations s’indiquent sur cette carte.',
+    hintKey: 'public.ec32Content.scenarioPresets.multiple-employers',
   },
   // Pas d'organisme de paiement : l'envoi est bloqué.
   // Mois « Avril 2025 » : la première date d'envoi est déjà atteinte, donc le
@@ -162,6 +171,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     monthKey: '2025-04',
     paymentAffiliation: 'not_affiliated',
     hint: 'Essayez d’envoyer la carte : l’envoi est bloqué tant que vous n’êtes pas affilié à un organisme de paiement.',
+    hintKey: 'public.ec32Content.scenarioPresets.no-payment-org',
   },
   // Corriger une erreur sur une carte non envoyée.
   correction: {
@@ -170,6 +180,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     monthKey: '2025-04',
     hint:
       'Sur une carte non envoyée, ouvrez un jour déjà encodé pour le corriger : une explication est obligatoire.',
+    hintKey: 'public.ec32Content.scenarioPresets.correction',
   },
   // Secteur construction (CP 124) : la carte doit toujours être remplie.
   'construction-cp124': {
@@ -179,6 +190,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     suggestedSituation: 'temporary_unemployment',
     hint:
       'Dans la construction (CP 124), la carte doit toujours être complétée, même lorsque vous travaillez.',
+    hintKey: 'public.ec32Content.scenarioPresets.construction-cp124',
   },
   // Premier jour de chômage effectif (icône automatique).
   'first-effective-day': {
@@ -188,6 +200,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     targetDays: [5],
     hint:
       'Repérez l’icône automatique du premier jour de chômage effectif (le 5 mai) : elle n’est jamais saisie à la main.',
+    hintKey: 'public.ec32Content.scenarioPresets.first-effective-day',
   },
   // Mauvais mois : compléter la carte du bon mois.
   'wrong-month': {
@@ -196,6 +209,7 @@ export const EC32_SCENARIO_PRESETS: Record<string, Ec32ScenarioPreset> = {
     monthKey: '2025-04',
     hint:
       'Vérifiez le mois avant de compléter : ici, c’est la carte d’avril 2025 qui doit être remplie.',
+    hintKey: 'public.ec32Content.scenarioPresets.wrong-month',
   },
 }
 

@@ -58,7 +58,14 @@ import {
   initialSimulatedDay,
   isSendAllowed,
 } from '@/lib/ec32/rules'
-import { ec32Label, ec32Notice } from '@/lib/ec32/labels'
+import {
+  ec32Label,
+  ec32LabelKey,
+  ec32Notice,
+  ec32NoticeKey,
+  ec32ResolveKey,
+  type Ec32Translator,
+} from '@/lib/ec32/labels'
 import { exportEc32SimulationPdf } from '@/lib/ec32/export-pdf'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -169,31 +176,43 @@ export function Ec32InteractiveSimulator({
   startLoginSignal?: number
 }) {
   const t = useTranslations('public.ec32')
+  const tRoot = useTranslations() as unknown as Ec32Translator
   const sim = content.simulator
 
-  // ── Helpers de libellés / notices (contenu éditable → repli codé) ──
+  // ── Helpers de libellés / notices (i18n → contenu éditable → repli codé) ──
+  // Priorité : clé i18n parallèle (next-intl, `public.ec32Content.{labels,notices}.*`)
+  // si résolue, sinon valeur du builder, sinon repli FR codé en dur.
   const getLabel = useCallback(
     (key: string, fallback?: string): string => {
-      const fromContent = sim.labels.find((l) => l.key === key)?.text?.trim()
-      return fromContent || ec32Label(key) || fallback || key
+      const entry = sim.labels.find((l) => l.key === key)
+      const fromContent = entry?.text?.trim()
+      const builderOrFallback =
+        fromContent || ec32Label(key) || fallback || key
+      const i18nKey = entry?.textKey || ec32LabelKey(key)
+      return ec32ResolveKey(tRoot, i18nKey, builderOrFallback)
     },
-    [sim.labels],
+    [sim.labels, tRoot],
   )
 
   const getNotice = useCallback(
     (key: string): string => {
-      const fromContent = sim.notices.find((n) => n.key === key)?.text?.trim()
-      return fromContent || ec32Notice(key)
+      const entry = sim.notices.find((n) => n.key === key)
+      const fromContent = entry?.text?.trim()
+      const builderOrFallback = fromContent || ec32Notice(key)
+      const i18nKey = entry?.textKey || ec32NoticeKey(key)
+      return ec32ResolveKey(tRoot, i18nKey, builderOrFallback)
     },
-    [sim.notices],
+    [sim.notices, tRoot],
   )
 
   const situationLabel = useCallback(
     (situation: Ec32SituationType): string => {
       const found = sim.situations.find((s) => s.type === situation)
-      return found?.shortLabel?.trim() || found?.label?.trim() || situation
+      const fallback =
+        found?.shortLabel?.trim() || found?.label?.trim() || situation
+      return ec32ResolveKey(tRoot, found?.shortLabelKey, fallback)
     },
-    [sim.situations],
+    [sim.situations, tRoot],
   )
 
   // ── État de navigation ──
@@ -252,7 +271,14 @@ export function Ec32InteractiveSimulator({
     [sim.months, monthKey],
   )
 
-  const monthLabel = monthContent?.label?.trim() || monthKey
+  // i18n : la clé parallèle `labelKey` est résolue si disponible, sinon FR du contenu.
+  const monthLabel = monthContent
+    ? ec32ResolveKey(
+        tRoot,
+        monthContent.labelKey,
+        monthContent.label?.trim() || monthKey,
+      )
+    : monthKey
 
   // Grille calendrier : base générée + encodages/corrections appliqués.
   const cells: Ec32DayCell[] = useMemo(() => {
@@ -383,7 +409,9 @@ export function Ec32InteractiveSimulator({
     }
     setSuggestedSituation(preset.suggestedSituation ?? null)
     if (preset.suggestedSituation) setSelectorSituation(preset.suggestedSituation)
-    setScenarioHint(preset.hint ?? null)
+    // i18n : résoudre la clé parallèle `hintKey` si disponible, sinon FR `hint`.
+    const resolvedHint = ec32ResolveKey(tRoot, preset.hintKey, preset.hint ?? '')
+    setScenarioHint(resolvedHint || null)
 
     if (preset.targetDays && preset.targetDays.length > 0 && preset.monthKey) {
       const next = new Set<string>()
@@ -1138,6 +1166,7 @@ function StepEmployer({
   onContinue: () => void
 }) {
   const tx = useTranslations('public.outils')
+  const tRoot = useTranslations() as unknown as Ec32Translator
   const selected = employers.find((e) => e.id === employerId)
   const isConstruction = selected?.type === 'construction_cp124'
 
@@ -1149,6 +1178,8 @@ function StepEmployer({
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {employers.map((emp) => {
           const isActive = emp.id === employerId
+          const name = ec32ResolveKey(tRoot, emp.nameKey, emp.name)
+          const sector = ec32ResolveKey(tRoot, emp.sectorKey, emp.sector)
           return (
             <button
               key={emp.id}
@@ -1164,10 +1195,10 @@ function StepEmployer({
             >
               <span className="flex items-center gap-2">
                 <Building2 className="size-4 text-primary" aria-hidden />
-                <span className="font-semibold text-foreground">{emp.name}</span>
+                <span className="font-semibold text-foreground">{name}</span>
                 {isActive && <Check className="ml-auto size-4 text-primary" aria-hidden />}
               </span>
-              <span className="text-xs text-muted-foreground">{emp.sector}</span>
+              <span className="text-xs text-muted-foreground">{sector}</span>
               <span className="text-xs text-muted-foreground">
                 {getLabel('employer.enterprise')} : {emp.enterpriseNumber}
               </span>

@@ -29,6 +29,13 @@ const ec32SituationSchema = z.object({
   examples: z.array(z.string().max(400)).default([]),
   warning: z.string().max(800).default(''),
   helpDetail: z.string().max(2400).default(''),
+  // i18n parallel keys (next-intl) — FR fields remain the fallback.
+  labelKey: z.string().max(160).optional(),
+  shortLabelKey: z.string().max(160).optional(),
+  descriptionKey: z.string().max(160).optional(),
+  warningKey: z.string().max(160).optional(),
+  helpDetailKey: z.string().max(160).optional(),
+  examplesKey: z.string().max(160).optional(),
 })
 
 const ec32ScenarioSchema = z.object({
@@ -42,11 +49,24 @@ const ec32ScenarioSchema = z.object({
   feedbackCorrect: z.string().max(1600).default(''),
   feedbackError: z.string().max(1600).default(''),
   ruleRef: z.string().max(160).default(''),
+  // i18n parallel keys (next-intl) — FR fields remain the fallback.
+  titleKey: z.string().max(160).optional(),
+  levelKey: z.string().max(160).optional(),
+  durationKey: z.string().max(160).optional(),
+  contextKey: z.string().max(160).optional(),
+  objectiveKey: z.string().max(160).optional(),
+  expectedActionKey: z.string().max(160).optional(),
+  feedbackCorrectKey: z.string().max(160).optional(),
+  feedbackErrorKey: z.string().max(160).optional(),
+  ruleRefKey: z.string().max(160).optional(),
 })
 
 const ec32FaqSchema = z.object({
   q: z.string().max(400).default(''),
   a: z.string().max(3000).default(''),
+  // i18n parallel keys (next-intl) — FR fields remain the fallback.
+  questionKey: z.string().max(160).optional(),
+  answerKey: z.string().max(160).optional(),
 })
 
 const ec32MistakeSchema = z.object({
@@ -56,6 +76,10 @@ const ec32MistakeSchema = z.object({
   advice: z.string().max(1200).default(''),
   /** Ancre interne (ex. `#simulateur`, `#faq`) ou URL. */
   link: z.string().max(200).default(''),
+  // i18n parallel keys (next-intl) — FR fields remain the fallback.
+  titleKey: z.string().max(160).optional(),
+  explanationKey: z.string().max(160).optional(),
+  adviceKey: z.string().max(160).optional(),
 })
 
 const ec32LearningModeSchema = z.object({
@@ -67,6 +91,10 @@ const ec32LearningModeSchema = z.object({
    *  L'action est dérivée de `key` : `scenarios` → onglet « Cas pratiques »,
    *  sinon → défilement vers le simulateur. */
   cta: z.string().max(80).default(''),
+  // i18n parallel keys (next-intl) — FR fields remain the fallback.
+  titleKey: z.string().max(160).optional(),
+  descriptionKey: z.string().max(160).optional(),
+  ctaKey: z.string().max(160).optional(),
 })
 
 const ec32EmployerSchema = z.object({
@@ -75,6 +103,9 @@ const ec32EmployerSchema = z.object({
   enterpriseNumber: z.string().max(60).default(''),
   sector: z.string().max(160).default(''),
   type: z.enum(EC32_EMPLOYER_TYPES).default('single'),
+  // i18n parallel keys (next-intl) — FR fields remain the fallback.
+  nameKey: z.string().max(160).optional(),
+  sectorKey: z.string().max(160).optional(),
 })
 
 const ec32MonthSchema = z.object({
@@ -82,12 +113,18 @@ const ec32MonthSchema = z.object({
   key: z.string().max(20).default(''),
   label: z.string().max(80).default(''),
   statusNote: z.string().max(160).default(''),
+  // i18n parallel keys (next-intl) — FR fields remain the fallback.
+  labelKey: z.string().max(160).optional(),
+  statusNoteKey: z.string().max(160).optional(),
 })
 
 const ec32ResourceSchema = z.object({
   label: z.string().max(240).default(''),
   description: z.string().max(800).default(''),
   url: z.string().max(500).default(''),
+  // i18n parallel keys (next-intl) — FR fields remain the fallback.
+  labelKey: z.string().max(160).optional(),
+  descriptionKey: z.string().max(160).optional(),
 })
 
 const ec32DerogationSchema = z.object({
@@ -95,12 +132,18 @@ const ec32DerogationSchema = z.object({
   title: z.string().max(240).default(''),
   summary: z.string().max(2400).default(''),
   conditions: z.array(z.string().max(500)).default([]),
+  // i18n parallel keys (next-intl) — FR fields remain the fallback.
+  titleKey: z.string().max(160).optional(),
+  summaryKey: z.string().max(160).optional(),
+  conditionsKey: z.string().max(160).optional(),
 })
 
 /** Paire clé/texte : libellés courts & notices pédagogiques du simulateur. */
 const ec32KeyTextSchema = z.object({
   key: z.string().max(60).default(''),
   text: z.string().max(2400).default(''),
+  // i18n parallel key (next-intl) — FR `text` remains the fallback.
+  textKey: z.string().max(160).optional(),
 })
 
 // ─────────────────────────── Simulateur ───────────────────────────
@@ -116,6 +159,9 @@ const ec32SimulatorSchema = z
           key: z.string().max(40).default(''),
           title: z.string().max(160).default(''),
           description: z.string().max(800).default(''),
+          // i18n parallel keys (next-intl) — FR fields remain the fallback.
+          titleKey: z.string().max(160).optional(),
+          descriptionKey: z.string().max(160).optional(),
         }),
       )
       .default([]),
@@ -130,11 +176,16 @@ const ec32SimulatorSchema = z
       .object({
         title: z.string().max(160).default(''),
         intro: z.string().max(1000).default(''),
+        // i18n parallel keys (next-intl) — FR fields remain the fallback.
+        titleKey: z.string().max(160).optional(),
+        introKey: z.string().max(160).optional(),
         tips: z
           .array(
             z.object({
               stepKey: z.string().max(40).default(''),
               message: z.string().max(1400).default(''),
+              // i18n parallel key (next-intl) — FR `message` remains the fallback.
+              messageKey: z.string().max(160).optional(),
             }),
           )
           .default([]),

@@ -3111,7 +3111,8 @@
       "smartImageEmployeur": "Employer",
       "smartImageAvatar": "Profile",
       "smartImageGeneric": "Content",
-      "smartImagePreviewUnavailable": "Preview unavailable"
+      "smartImagePreviewUnavailable": "Preview unavailable",
+      "_note": "No new keys required for changelog-feed.tsx, inscription-split.tsx, confirm-account.tsx — these 3 components consume keys already present under public.changelog and public.auth (verified: type.*, loading, endOfHistory, errNetwork, errGeneric, retryWithError, asideTitleLead, asideTitleEm, splitBadgePartner, splitBadgeEmployer, splitTaglinePartner, splitTaglineEmployer, backToHome, splitTitle, splitSubtitle, splitRegisterAs, splitAccountType, splitTabPartner, splitTabEmployer, splitHaveAccount, signIn, confirmMissingToken, confirmInvalidLink, confirmNetworkError, confirmVerifyingTitle, confirmVerifyingBody, confirmSuccessTitle, confirmSuccessBody, confirmErrorTitle, confirmRestart)."
     },
     "changelog": {
       "type": {
@@ -4793,6 +4794,1164 @@
           "netVise": "Target net must be between €100 and €30,000 per month.",
           "dichotomie": "The corresponding gross salary cannot be calculated."
         }
+      }
+    },
+    "employeurLib": {
+      "article-engager-premier-travailleur": {
+        "title": "Hiring your first employee",
+        "summary": "Hiring for the first time turns your business into an employer. A few social formalities must be in order before day one. Here are the main steps, jargon-free.",
+        "whatToKnow": [
+          "From the first hire, your company gains \"employer status\" with the NSSO.",
+          "A Dimona declaration must be filed BEFORE the employee starts working.",
+          "You will then owe social contributions, declared quarterly through the DmfA.",
+          "Most employers register with an approved social secretariat that handles these formalities."
+        ],
+        "todo": [
+          "Have your company identified as an employer with the NSSO (employer status).",
+          "Take out an occupational accident insurance (mandatory from the first employee).",
+          "File the Dimona declaration before the first day of work.",
+          "Check the applicable joint committee to know the minimum wage and working conditions.",
+          "Prepare a written employment contract when required or recommended."
+        ],
+        "documents": [
+          "Company identification details (CBE/BCE number).",
+          "Employee details (NISS / national register number).",
+          "Occupational accident insurance policy.",
+          "Draft employment contract."
+        ],
+        "commonMistakes": [
+          "Letting the employee start before the Dimona has been submitted.",
+          "Forgetting the occupational accident insurance, mandatory from the very first hire.",
+          "Ignoring the joint committee and applying a wage below the scale."
+        ]
+      },
+      "article-faire-une-dimona": {
+        "title": "Filing a Dimona",
+        "summary": "Dimona is the immediate employment declaration: it notifies social security when an employee starts (and leaves). It is mandatory and must precede the start of work.",
+        "whatToKnow": [
+          "Dimona = Immediate Declaration / Onmiddellijke Aangifte. It is filed online.",
+          "The entry declaration must be filed at the latest when the employee starts.",
+          "The type of worker (manual, salaried, student, flexi…) drives the code and required data.",
+          "An exit declaration is filed at the end of the contract."
+        ],
+        "todo": [
+          "Sign in to the social security portal (or let your social secretariat do it).",
+          "Enter the employee's details and start date.",
+          "Validate the Dimona BEFORE the first day of work.",
+          "Keep the acknowledgement of receipt (Dimona reference number)."
+        ],
+        "documents": [
+          "Employee NISS (national register number).",
+          "NSSO employer number.",
+          "Start date (and type of worker)."
+        ],
+        "commonMistakes": [
+          "Filing the Dimona late, after the start of work.",
+          "Choosing the wrong type of worker (impact on contributions).",
+          "Forgetting the exit Dimona at the end of the contract."
+        ]
+      },
+      "article-comprendre-dmfa": {
+        "title": "Understanding the DmfA",
+        "summary": "The DmfA is the quarterly declaration that details remuneration, working time and social contributions for each employee. It is the basis for what you owe the NSSO.",
+        "whatToKnow": [
+          "DmfA = multifunctional declaration, sent each quarter to the NSSO.",
+          "It lists, per employee, the remuneration, days/hours worked and contributions.",
+          "It serves several institutions (pensions, unemployment, healthcare): hence \"multifunctional\".",
+          "In practice, the social secretariat builds it from payroll data."
+        ],
+        "todo": [
+          "Gather payroll and working-time data each quarter.",
+          "Send the data to your social secretariat (or enter it yourself).",
+          "Check consistency with the Dimonas and the pay slips.",
+          "Meet the quarterly deadline for filing and paying contributions."
+        ],
+        "documents": [
+          "Quarterly payroll data (gross wages, bonuses).",
+          "Record of days/hours worked and absences.",
+          "NSSO employer number."
+        ],
+        "commonMistakes": [
+          "Forgetting pay elements subject to contributions (bonuses, benefits).",
+          "Inconsistencies between Dimona, DmfA and pay slips.",
+          "Filing or paying after the quarterly deadline."
+        ]
+      },
+      "article-choisir-contrat-de-travail": {
+        "title": "Choosing the right employment contract",
+        "summary": "Open-ended, fixed-term, full- or part-time, student, flexi-job… The choice depends on the need and has social consequences. Some contracts require a mandatory written form.",
+        "whatToKnow": [
+          "The open-ended contract is the default; fixed-term and special contracts have their own conditions and formalism.",
+          "Several contracts require a written, signed document BEFORE the start (part-time, student, flexi-job, agency work).",
+          "The contract states the job, the schedule, the place of work and the pay.",
+          "The joint committee sets minimum conditions that apply to the contract."
+        ],
+        "todo": [
+          "Define the need (duration, hours, type of role).",
+          "Pick the appropriate contract type and check whether a written form is required.",
+          "Draft the contract with the mandatory clauses.",
+          "Have the contract signed before day one when a written form is required."
+        ],
+        "documents": [
+          "Contract template suited to the chosen type.",
+          "Employee and employer details.",
+          "Reference of the applicable joint committee and pay scale."
+        ],
+        "commonMistakes": [
+          "Starting a part-time or student contract without a prior signed written form.",
+          "Omitting mandatory clauses (the working schedule, for example).",
+          "Chaining fixed-term contracts without a valid justification."
+        ]
+      },
+      "article-temps-partiel": {
+        "title": "Hiring part-time",
+        "summary": "Part-time work comes with specific rules: a written contract, a clear schedule and publication of variable schedules. A precise framework prevents disputes and adjustments.",
+        "whatToKnow": [
+          "The part-time contract must be written and state the regime and working schedule.",
+          "For variable schedules, the slots and the way they are communicated must follow specific rules.",
+          "Schedules must be visible/consultable and the work rules must reflect them.",
+          "Part-time employees enjoy protections (e.g. priority for additional hours)."
+        ],
+        "todo": [
+          "Draft a written contract stating the working time and schedule.",
+          "Set a fixed schedule or a clear framework for variable schedules.",
+          "Align the work rules with the part-time schedules.",
+          "Organise the display / communication of schedules in line with the rules."
+        ],
+        "documents": [
+          "Written part-time employment contract.",
+          "Working schedule (fixed or variable-schedule framework).",
+          "Work rules listing the schedules."
+        ],
+        "commonMistakes": [
+          "Missing written form or an imprecise schedule in the part-time contract.",
+          "Failing to follow the rules on communicating variable schedules.",
+          "Schedules missing or inconsistent in the work rules."
+        ]
+      },
+      "article-etudiant": {
+        "title": "Hiring a student",
+        "summary": "Student work allows, under conditions, reduced contributions during an annual hours quota. The student employment contract is written and includes mandatory clauses.",
+        "whatToKnow": [
+          "The student employment contract must be written and signed, with mandatory clauses.",
+          "An annual hours quota grants a reduced solidarity contribution.",
+          "The \"student\" Dimona is used to book and track hours under the quota.",
+          "Beyond the quota or without the conditions met, ordinary contributions apply."
+        ],
+        "todo": [
+          "Draft a written student employment contract with all mandatory clauses.",
+          "File the \"student\" Dimona stating the hours, before the start.",
+          "Check the student's remaining quota balance.",
+          "Hand over the work rules and inform the student of their conditions."
+        ],
+        "documents": [
+          "Signed student employment contract.",
+          "Student's NISS and employer details.",
+          "Tracking of hours under the quota."
+        ],
+        "commonMistakes": [
+          "Letting the student work without a prior signed written contract.",
+          "Exceeding the quota without anticipating the switch to ordinary contributions.",
+          "Forgetting the student Dimona or misreporting the hours."
+        ]
+      },
+      "article-flexi-job": {
+        "title": "Hiring under flexi-job",
+        "summary": "The flexi-job allows, in certain sectors and under conditions, hiring someone already sufficiently employed elsewhere or retired, under a specific social regime. A written framework agreement is required.",
+        "whatToKnow": [
+          "Flexi-job assumes strict access conditions (sufficient employment elsewhere or retirement).",
+          "A written framework agreement is required, complemented by a per-period employment contract.",
+          "A specific employer contribution applies and the remuneration follows its own rules.",
+          "Flexi-job is open only in the sectors and situations set out by the regulation."
+        ],
+        "todo": [
+          "Check that the employee meets the flexi-job access conditions.",
+          "Sign a written framework agreement, then a per-period employment contract.",
+          "File the specific flexi-job Dimona.",
+          "Apply the remuneration and contributions specific to the flexi regime."
+        ],
+        "documents": [
+          "Written flexi-job framework agreement.",
+          "Per-period employment contract.",
+          "Evidence of the employee's access conditions."
+        ],
+        "commonMistakes": [
+          "Hiring under flexi-job a person who does not meet the conditions.",
+          "Missing prior written framework agreement.",
+          "Applying the ordinary contribution regime instead of the flexi regime (or the other way around)."
+        ]
+      },
+      "article-salaire-minimum-et-commission-paritaire": {
+        "title": "Minimum wage and joint committee",
+        "summary": "The applicable minimum wage largely depends on the joint committee (JC) of the sector and on CBAs. Identifying your JC is a key step to set a compliant pay.",
+        "whatToKnow": [
+          "Each activity falls under a joint committee that sets minimum conditions through CBAs.",
+          "The sectoral scale often prevails over the national interprofessional minimum.",
+          "Without knowing the JC, you cannot precisely verify the applicable scale.",
+          "Scales may depend on the role, seniority and age."
+        ],
+        "todo": [
+          "Identify the joint committee matching your activity.",
+          "Consult the CBAs and scales applicable to the role.",
+          "Set the remuneration at least at the level of the sectoral scale.",
+          "Take seniority and any indexations into account."
+        ],
+        "documents": [
+          "Reference of the company's joint committee.",
+          "Applicable sectoral scales and CBAs.",
+          "Job description and seniority."
+        ],
+        "commonMistakes": [
+          "Applying the national minimum when a higher sectoral scale applies.",
+          "Failing to identify your joint committee.",
+          "Forgetting to index or to update the wage following the CBA."
+        ]
+      },
+      "article-reglement-de-travail": {
+        "title": "The work rules",
+        "summary": "The work rules set the internal rules (schedules, leave, pay terms, etc.). Putting them in place follows a procedure and they must be handed to every employee.",
+        "whatToKnow": [
+          "Work rules are in principle mandatory as soon as you employ staff.",
+          "Their adoption and amendments follow a procedure (information, consultation, filing).",
+          "They contain mandatory clauses (schedules, payment of wages, leave…).",
+          "A copy must be handed to every employee and kept available."
+        ],
+        "todo": [
+          "Draft the rules with the mandatory clauses.",
+          "Follow the introduction procedure (staff information, observation period).",
+          "File the rules with the competent authority.",
+          "Hand over a copy to every employee and keep proof."
+        ],
+        "documents": [
+          "Draft work rules.",
+          "Proof of staff information and of filing.",
+          "Acknowledgement of receipt from employees."
+        ],
+        "commonMistakes": [
+          "Failing to issue work rules while employing staff.",
+          "Amending the rules without following the procedure.",
+          "Forgetting to hand the rules to new employees."
+        ]
+      },
+      "article-duree-du-travail-et-repos": {
+        "title": "Working time and rest",
+        "summary": "Law sets the framework for working time, breaks and rest. Daily and weekly limits apply, with sectoral exceptions and rules for Sunday or night work.",
+        "whatToKnow": [
+          "Daily and weekly working-time limits apply.",
+          "Rest (minimum interval, Sunday rest) and breaks are regulated.",
+          "Night work and Sunday work follow specific rules.",
+          "Exceptions and easings exist depending on the sector and the CBAs."
+        ],
+        "todo": [
+          "Build schedules within daily/weekly limits.",
+          "Guarantee minimum rest and break times.",
+          "Check the specific rules for night/Sunday work if relevant.",
+          "Include the schedules in the work rules."
+        ],
+        "documents": [
+          "Employees' working schedules.",
+          "Work rules listing the schedules.",
+          "Any applicable sectoral CBAs."
+        ],
+        "commonMistakes": [
+          "Exceeding working-time limits without legal or CBA basis.",
+          "Failing to respect minimum rest times.",
+          "Letting employees work on Sundays/at night without checking the conditions."
+        ]
+      },
+      "article-chomage-temporaire": {
+        "title": "Resorting to temporary unemployment",
+        "summary": "Temporary unemployment suspends the contract in certain situations (force majeure, economic reasons, bad weather…). The procedure and documents vary by reason.",
+        "whatToKnow": [
+          "Temporary unemployment suspends the contract without ending it, for a recognised reason.",
+          "Each reason (force majeure, economic, bad weather…) has its own conditions.",
+          "Notices to the NEO and documents for the employee are required depending on the reason.",
+          "The employee receives NEO benefits for the affected days."
+        ],
+        "todo": [
+          "Check that the situation matches a recognised reason for temporary unemployment.",
+          "File the required notices/declarations with the NEO.",
+          "Inform the employees and hand them the necessary documents.",
+          "Keep track of the temporary unemployment days."
+        ],
+        "documents": [
+          "Evidence of the reason (force majeure, economic, bad weather…).",
+          "NEO notices/declarations.",
+          "Documents to hand over to the employee for their benefits."
+        ],
+        "commonMistakes": [
+          "Invoking a reason that does not meet the legal conditions.",
+          "Skipping the mandatory notices to the NEO.",
+          "Failing to provide the employee with the documents needed for their benefits."
+        ]
+      },
+      "article-preparer-demande-secretariat-social": {
+        "title": "Preparing your request to the social secretariat",
+        "summary": "The approved social secretariat handles payroll and social declarations. Preparing the information well upstream speeds up onboarding and makes the first payroll reliable.",
+        "whatToKnow": [
+          "The social secretariat issues pay slips, the DmfA and often the Dimonas for you.",
+          "A clear onboarding and complete data prevent errors and adjustments.",
+          "You remain the responsible employer: the data you send must be accurate.",
+          "The more precise the joint committee and the contract, the more reliable the payroll."
+        ],
+        "todo": [
+          "Gather the company's data (CBE, NSSO, accident insurance).",
+          "For each employee, prepare: contract, role, schedule, scale/JC.",
+          "Clarify the variable items (bonuses, expenses, benefits) to include in payroll.",
+          "Send a complete file and appoint a single point of contact."
+        ],
+        "documents": [
+          "Company identification details (CBE, NSSO).",
+          "Employment contracts and job descriptions.",
+          "Joint committee and applicable pay scales.",
+          "List of variable pay items."
+        ],
+        "commonMistakes": [
+          "Sending incomplete data (missing JC, imprecise schedule).",
+          "Forgetting variable pay items.",
+          "Assuming that the social secretariat verifies everything on your behalf."
+        ]
+      }
+    },
+    "ec32Content": {
+      "content": {
+        "seo": {
+          "title": "eC3.2: interactive simulation to learn how to fill in your temporary unemployment control card | Docbel",
+          "description": "Understand how to complete the electronic temporary unemployment control card eC3.2 with an unofficial educational simulation, practical cases and common mistakes to avoid."
+        },
+        "hero": {
+          "badge": "Unofficial educational simulation",
+          "title": "eC3.2, simply explained",
+          "subtitle": "Test your electronic unemployment control steps in a clear, risk-free and 100% confidential simulator.",
+          "primaryCta": "Start the simulation",
+          "secondaryCta": "See the practical cases",
+          "disclaimer": "No real data is requested. No data is transmitted to the NEO."
+        },
+        "disclaimer": {
+          "title": "Unofficial educational simulation",
+          "points": {
+            "0": "Unofficial educational simulation",
+            "1": "No real data is requested",
+            "2": "No data is transmitted to the NEO",
+            "3": "This page does not replace the official eC3.2 application",
+            "4": "To submit a real request, use the official eC3.2 application"
+          }
+        },
+        "alert": {
+          "title": "Before you start",
+          "content": "The eC3.2 card applies only to temporary unemployment (reduction or suspension of activity at your employer), not to be confused with the eC3, which applies to full unemployment. Everything shown here is fictitious and intended for learning only: no login, no submission and no real data is involved."
+        },
+        "learningModes": {
+          "title": "How to learn",
+          "subtitle": "Three ways to approach the eC3.2 card, depending on whether you prefer to be guided, to practise on concrete cases, or to explore freely.",
+          "modes": {
+            "guided": {
+              "title": "Step-by-step guided mode",
+              "description": "Move forward step by step, from the simulated login to the fictitious submission. At each screen, an explanation and coach advice guide you.",
+              "cta": "Start"
+            },
+            "scenarios": {
+              "title": "Practical cases",
+              "description": "Load a concrete case (work on an unemployment day, sickness, holidays, multiple employers...) directly into the simulator to practise.",
+              "cta": "Explore the cases"
+            },
+            "free": {
+              "title": "Free exploration",
+              "description": "Operate the calendar at your own pace: change the situations, test the corrections and observe what happens, without any constraints.",
+              "cta": "Open the simulator"
+            }
+          }
+        },
+        "simulator": {
+          "title": "eC3.2 simulator — fictitious card",
+          "subtitle": "An educational reconstruction of the application screens: login, declaration, choice of employer and month, filling the calendar, corrections, verification and simulated submission.",
+          "fictitiousDataNotice": "The data shown is fictitious and intended for learning only.",
+          "steps": {
+            "login": {
+              "title": "Simulated login",
+              "description": "Discover the identification methods (eID, itsme, cross-border workers) without any real login."
+            },
+            "declaration": {
+              "title": "Sworn declaration",
+              "description": "Choose your start month and confirm the switch to the electronic channel — fictitious step."
+            },
+            "employer": {
+              "title": "Choice of employer",
+              "description": "Select the employer who placed you on temporary unemployment for the relevant month."
+            },
+            "month": {
+              "title": "Choice of month",
+              "description": "Open the card for the month to be filled; already-submitted cards are locked."
+            },
+            "calendar": {
+              "title": "Fill in the calendar",
+              "description": "Indicate your situations day by day: by default, each cell is considered as unemployment."
+            },
+            "correction": {
+              "title": "Correct a mistake",
+              "description": "Modify a day already entered and explain the correction, as long as the card is not yet submitted."
+            },
+            "verify": {
+              "title": "Verify",
+              "description": "Review all your entries before the simulated submission, especially the days worked."
+            },
+            "send": {
+              "title": "Send",
+              "description": "Confirm the fictitious submission of the card; no real data is transmitted."
+            }
+          },
+          "employers": {
+            "emp-a": {
+              "name": "Bakery Dupont — example",
+              "sector": "Retail trade (example)"
+            },
+            "emp-b": {
+              "name": "Lambert Workshop — example",
+              "sector": "Industry (example)"
+            },
+            "emp-construction": {
+              "name": "Berger Roofing — example",
+              "sector": "Construction · JC 124 (example)"
+            }
+          },
+          "months": {
+            "2025-05": {
+              "label": "May 2025",
+              "statusNote": "In progress"
+            },
+            "2025-06": {
+              "label": "June 2025",
+              "statusNote": "Not yet available"
+            },
+            "2025-04": {
+              "label": "April 2025",
+              "statusNote": "Not submitted"
+            },
+            "2025-03": {
+              "label": "March 2025",
+              "statusNote": "Submitted · locked"
+            }
+          },
+          "coach": {
+            "title": "Docbel Coach",
+            "intro": "I guide you through each step with simple advice. Take your time: here you risk nothing, it is designed for learning.",
+            "tips": {
+              "login": "Choose an identification method to see how the login works. Nothing is requested here: no card, no code, no real login.",
+              "declaration": "The chosen month determines from when you use the eC3.2. If you were already on temporary unemployment before, you can activate an earlier month later.",
+              "employer": "Select the employer who placed you on temporary unemployment. Any other occupations you have will be indicated on the same card.",
+              "month": "Open the card for the month to be filled. An already-submitted card is locked: you can no longer modify it.",
+              "calendar": "By default, each day is considered as unemployment: you only indicate what changes (work, sickness, holidays...). All work must be recorded before starting.",
+              "correction": "To correct a day, clearly explain the change: this explanation helps inspectors. Only unsubmitted cards can be corrected.",
+              "verify": "Calmly re-read each day, especially the days worked and the incapacity days. Better to check twice than to submit an incomplete card.",
+              "send": "Check that the first possible submission date has been reached and that you are affiliated with a payment institution. Here, the submission is simulated: nothing goes to the NEO."
+            }
+          },
+          "correctionModal": {
+            "title": "Correct the situation — simulation",
+            "dayLabel": "Day concerned",
+            "fromLabel": "Previous situation",
+            "toLabel": "New situation",
+            "reasonLabel": "Explanation (required)",
+            "reasonPlaceholder": "Explain the correction…",
+            "saveLabel": "Save the correction",
+            "lockedMessage": "This card has been submitted and is locked in the simulation.",
+            "requiredError": "An explanation is required to save a correction."
+          },
+          "sendModal": {
+            "title": "Send the card — simulation",
+            "body": "In the real application, this step transmits the card to your payment institution. Here, no real data is sent.",
+            "cancelLabel": "Cancel",
+            "confirmLabel": "Confirm simulated submission",
+            "successTitle": "Card successfully sent — simulation",
+            "successBody": "Your fictitious card is now locked.",
+            "blockedTitle": "Sending not possible — simulation",
+            "blockedBody": "In the real application, you can fill in the card, but you must be affiliated with a payment institution to be able to send it."
+          },
+          "pdf": {
+            "buttonLabel": "Download preview — simulation",
+            "docTitle": "eC3.2 educational preview — simulation",
+            "fictionMention": "Fictitious document — does not replace an official card.",
+            "warning": "This document is not an official card."
+          }
+        },
+        "scenariosSection": {
+          "title": "Practical cases",
+          "subtitle": "Load a case into the simulator to practise."
+        },
+        "mistakesSection": {
+          "title": "Common mistakes to avoid",
+          "subtitle": "The most common pitfalls when filling in the eC3.2 — and how to avoid them simply."
+        },
+        "faqSection": {
+          "title": "Frequently asked questions",
+          "subtitle": "Clear answers to the most common questions about the electronic temporary unemployment control card."
+        },
+        "resourcesSection": {
+          "title": "Official resources",
+          "subtitle": "The official sites and services to use for your real submissions.",
+          "intro": "This page is a learning tool. For a real request, always use the official channels below.",
+          "officialButtonLabel": "Go to the official NEO website",
+          "note": "Docbel is not affiliated with the NEO. These links are provided for information.",
+          "items": {
+            "secu": {
+              "label": "Social security portal",
+              "description": "Official access point to the online services of the Belgian social security, including the eC3.2 application."
+            },
+            "playstore": {
+              "label": "eC3.2 on Google Play (Android)",
+              "description": "The official application to complete and send your temporary unemployment control card on Android."
+            },
+            "appstore": {
+              "label": "eC3.2 on the App Store (iPhone)",
+              "description": "The official application to complete and send your temporary unemployment control card on iPhone."
+            },
+            "orgs": {
+              "label": "Payment institutions (HVW/CAPAC, ACV/CSC, ABVV/FGTB, ACLVB/CGSLB)",
+              "description": "To receive your benefits, you must be affiliated with a payment institution: HVW/CAPAC (public) or a trade union (ACV/CSC, ABVV/FGTB, ACLVB/CGSLB)."
+            },
+            "onem": {
+              "label": "NEO — National Employment Office",
+              "description": "The administration responsible for unemployment regulations and the eC3.2 application in Belgium."
+            }
+          }
+        },
+        "derogationsSection": {
+          "title": "Derogations",
+          "subtitle": "The exceptions and deferrals provided during the transition period to the eC3.2.",
+          "badge": "To check before final publication",
+          "transitionNote": "A derogation request could be extended once if necessary up to 30 June 2025 at the latest. From 1 July 2025, all temporarily unemployed workers must use the eC3.2, except JC 327. (These rules may change — to be checked before final publication.)",
+          "items": {
+            "cp327": {
+              "title": "JC 327 exception",
+              "summary": "The webinar mentions a permanent derogation for JC 327. This information must be checked before any final publication and can be edited in the builder."
+            },
+            "worker": {
+              "title": "Temporary derogation requested by the worker",
+              "summary": "The worker informs the employer via a notification form; the employer signs for receipt or the worker sends a registered letter; then a request to the NEO and to their payment institution.",
+              "conditions": {
+                "0": "Complete request",
+                "1": "Request within the deadlines",
+                "2": "Maximum period of three consecutive months between January 2025 and June 2025",
+                "3": "The worker must not yet have used the eC3.2"
+              }
+            },
+            "employer": {
+              "title": "Temporary derogation requested by the employer",
+              "summary": "The employer submits the request to the NEO. If approved: workers already on eC3.2 continue; the others can temporarily continue with the paper card, can start the eC3.2 at any time, and must use it after the end of the derogation period.",
+              "conditions": {
+                "0": "Inform the workers",
+                "1": "Commit to supporting them",
+                "2": "Maximum period of three consecutive months between January 2025 and June 2025"
+              }
+            }
+          }
+        },
+        "officialInfo": {
+          "obligation": {
+            "title": "Obligation from 1 January 2025",
+            "intro": "Since 1 January 2025, the electronic control card eC3.2 has become the rule for temporary unemployment. Here is what changes concretely for workers and employers.",
+            "workersTitle": "For workers",
+            "workers": {
+              "0": "Being in order during a check relies on a correctly filled electronic card",
+              "1": "Work must be indicated before it starts",
+              "2": "The card must be filled in from the first effective unemployment day of the month",
+              "3": "In the construction sector, it must always be filled in",
+              "4": "Payment is based on the electronic card"
+            },
+            "employersTitle": "For employers",
+            "employers": {
+              "0": "No longer issue paper cards except by derogation",
+              "1": "No longer fill in the validation book except for workers still receiving a paper card",
+              "2": "Support workers if necessary"
+            }
+          },
+          "why": {
+            "title": "Why the eC3.2?",
+            "subtitle": "The advanced benefits for the transition from paper to electronic card.",
+            "items": {
+              "0": "Fight against social fraud",
+              "1": "The NEO is informed when the card is filled in",
+              "2": "Better traceability of what is filled in and when",
+              "3": "Less ambiguity than with paper",
+              "4": "More accurate payment",
+              "5": "Faster processing",
+              "6": "Digital transmission to the payment institution",
+              "7": "Automated payment processes",
+              "8": "Loss of card impossible",
+              "9": "End of certain lengthy paper procedures",
+              "10": "Available in NL, FR and DE"
+            },
+            "note": "The eC3.2 aims to facilitate faster processing. (Docbel does not guarantee faster payment.)"
+          },
+          "help": {
+            "title": "Need help?",
+            "body": {
+              "0": "If you have a login problem in the real application, the webinar mentions the social security contact centre.",
+              "1": "If you have a problem using the application, contact your payment institution.",
+              "2": "If you cannot fill in the card on time, inform the NEO so that you are in order during a check."
+            },
+            "disclaimer": "Docbel helps you understand the procedure, but does not replace the NEO or your payment institution."
+          }
+        },
+        "legal": {
+          "simulationLabel": "Unofficial educational simulation",
+          "noRealData": "No real data is requested",
+          "noTransmission": "No data is transmitted to the NEO",
+          "notReplacement": "This page does not replace the official eC3.2 application",
+          "useOfficial": "To submit a real request, use the official eC3.2 application"
+        },
+        "builderMetadata": {
+          "lastReviewedNote": "Educational content based on a NEO webinar — to be checked before final publication (notably JC 327 and derogations)."
+        }
+      },
+      "scenarios": {
+        "all-month": {
+          "title": "I am on temporary unemployment for the whole month",
+          "level": "Beginner",
+          "duration": "2 min",
+          "context": "Your employer has placed you on temporary unemployment for the whole month. No working days, no other situation to report.",
+          "objective": "Understand that « Unemployment » is the default situation: for a day actually on temporary unemployment, nothing needs to be changed.",
+          "expectedAction": "Do not change anything for the days actually on unemployment, unless another situation applies.",
+          "feedbackCorrect": "Correct: if you are on temporary unemployment that day, the default situation is enough.",
+          "feedbackError": "Not quite: for a day actually on unemployment, the default situation already fits. No need to add another situation.",
+          "ruleRef": "Default situation"
+        },
+        "work-own": {
+          "title": "I work one day at my employer",
+          "level": "Beginner",
+          "duration": "3 min",
+          "context": "You are on temporary unemployment for several days, but on Wednesday you work at the employer who placed you on unemployment.",
+          "objective": "Be able to report an occasional return to work at the employer who fills the card.",
+          "expectedAction": "Select the day concerned and choose « Work at the employer ».",
+          "feedbackCorrect": "Correct: work at the regular employer must be indicated before starting.",
+          "feedbackError": "Not quite: a day worked at your employer is not an unemployment day. Select the day and choose « Work at the employer ».",
+          "ruleRef": "Work at the employer"
+        },
+        "work-elsewhere-usual": {
+          "title": "I do a flexi-job on a day I normally work",
+          "level": "Intermediate",
+          "duration": "3 min",
+          "context": "During your temporary unemployment, you perform work elsewhere (for example a flexi-job) on a day you normally work at your regular employer.",
+          "objective": "Distinguish work performed elsewhere on a day normally worked at the regular employer.",
+          "expectedAction": "Choose « Work elsewhere — day normally worked at the regular employer ».",
+          "feedbackCorrect": "Correct: work elsewhere on a normally worked day must be indicated.",
+          "feedbackError": "Not quite: since this day is normally worked at your regular employer, choose « Work elsewhere — day normally worked at the regular employer ».",
+          "ruleRef": "Work elsewhere"
+        },
+        "work-elsewhere-weekend": {
+          "title": "I work on Saturday at another employer",
+          "level": "Intermediate",
+          "duration": "3 min",
+          "context": "You do not normally work on Saturday at your regular employer, but that day you do occasional work elsewhere.",
+          "objective": "Understand that work elsewhere must also be reported on a normally non-worked day, such as in the weekend.",
+          "expectedAction": "Choose « Work elsewhere — normally non-worked day ».",
+          "feedbackCorrect": "Correct: even in the weekend, work elsewhere must be indicated.",
+          "feedbackError": "Not quite: work performed on a normally non-worked Saturday must still be reported. Choose « Work elsewhere — normally non-worked day ».",
+          "ruleRef": "Work elsewhere"
+        },
+        "other-regular": {
+          "title": "I have two part-time jobs",
+          "level": "Advanced",
+          "duration": "4 min",
+          "context": "You combine two regular part-time jobs and one of them places you on temporary unemployment, while the other continues normally.",
+          "objective": "Be able to report the continuation of another regular employment during temporary unemployment.",
+          "expectedAction": "Choose « Work at another regular employer ».",
+          "feedbackCorrect": "Correct: if you combine several regular jobs, the other occupation must be communicated to the payment institution.",
+          "feedbackError": "Not quite: your second regular job continues. Choose « Work at another regular employer » and inform the payment institution.",
+          "ruleRef": "Another regular employer"
+        },
+        "sick": {
+          "title": "I become sick during the temporary unemployment",
+          "level": "Beginner",
+          "duration": "3 min",
+          "context": "During a period of temporary unemployment, you become sick for a few days and are unfit for work.",
+          "objective": "Be able to indicate the sickness days as work incapacity and remember to inform the health insurance fund.",
+          "expectedAction": "Select the sickness days and choose « Work incapacity ».",
+          "feedbackCorrect": "Correct: sickness, work accident or maternity rest must be indicated as work incapacity. The health insurance fund must be informed within 48 hours.",
+          "feedbackError": "Not quite: a sickness day is not an unemployment day. Select the days concerned, choose « Work incapacity » and inform your health insurance fund within 48 hours.",
+          "ruleRef": "Work incapacity"
+        },
+        "vacation": {
+          "title": "I take holidays",
+          "level": "Beginner",
+          "duration": "2 min",
+          "context": "During your temporary unemployment period, you take a few days of annual holidays.",
+          "objective": "Be able to distinguish holiday days from temporary unemployment days.",
+          "expectedAction": "Choose « Holidays » for the days concerned.",
+          "feedbackCorrect": "Correct: individual or collective annual holidays must be indicated.",
+          "feedbackError": "Not quite: a holiday day is not an unemployment day. Choose « Holidays » for the days concerned.",
+          "ruleRef": "Holidays"
+        },
+        "other-situation": {
+          "title": "I have a public holiday or paid training",
+          "level": "Beginner",
+          "duration": "3 min",
+          "context": "During your temporary unemployment, a day is covered by another situation: for example a public holiday or paid training.",
+          "objective": "Understand when to use « Other situation » for a day without performance but otherwise covered.",
+          "expectedAction": "Choose « Other situation ».",
+          "feedbackCorrect": "Correct: certain days without performance but covered by another situation must be indicated as another situation.",
+          "feedbackError": "Not quite: a public holiday or paid training is not an unemployment day. Choose « Other situation ».",
+          "ruleRef": "Other situation"
+        },
+        "multiple-employers": {
+          "title": "I am on temporary unemployment at two employers",
+          "level": "Advanced",
+          "duration": "4 min",
+          "context": "Two of your employers place you on temporary unemployment during the same month. A single card is not enough.",
+          "objective": "Understand that a separate card must be filled in for each employer concerned.",
+          "expectedAction": "Fill in two fictitious cards, one per employer concerned.",
+          "feedbackCorrect": "Correct: when there is temporary unemployment at several employers, a card must be filled in for each employer concerned.",
+          "feedbackError": "Not quite: a single card does not cover two employers. Fill in a separate card for each employer who placed you on unemployment.",
+          "ruleRef": "Multiple employers"
+        },
+        "no-payment-org": {
+          "title": "I am not yet affiliated with a payment institution",
+          "level": "Intermediate",
+          "duration": "3 min",
+          "context": "You fill in your card, but you are not yet affiliated with a payment institution (HVW/CAPAC, ACV/CSC, ABVV/FGTB or ACLVB/CGSLB).",
+          "objective": "Understand that the card can be filled in without affiliation but cannot be submitted.",
+          "expectedAction": "Fill in the card but observe that submission is blocked.",
+          "feedbackCorrect": "Correct: without affiliation with a payment institution, the card can be filled in but cannot be submitted.",
+          "feedbackError": "Not quite: without a payment institution, submission remains blocked. You can fill in the card, but affiliation is needed to submit it.",
+          "ruleRef": "Payment institution"
+        },
+        "correction": {
+          "title": "I forgot to indicate work",
+          "level": "Intermediate",
+          "duration": "4 min",
+          "context": "You notice that a working day has been recorded as unemployment. The card has not yet been submitted: a correction is possible.",
+          "objective": "Be able to correct a wrongly entered day and provide the requested explanation before saving.",
+          "expectedAction": "Modify the day concerned, choose the right situation, provide an explanation.",
+          "feedbackCorrect": "Correct: a correction must be explained before being saved.",
+          "feedbackError": "Not quite: a correction cannot be saved without an explanation. Select the day, choose the right situation and justify the modification.",
+          "ruleRef": "Correction"
+        },
+        "construction-cp124": {
+          "title": "I work in construction",
+          "level": "Intermediate",
+          "duration": "3 min",
+          "context": "You fall under joint committee 124 (construction) and your employer places you on temporary unemployment.",
+          "objective": "Understand the rule specific to the construction sector: the card must always be filled in for the employer concerned.",
+          "expectedAction": "Understand that the card must always be filled in for the employer in the construction sector.",
+          "feedbackCorrect": "Correct: in JC 124, the card must always be filled in for the employer concerned.",
+          "feedbackError": "Not quite: in construction (JC 124), the card must always be filled in for the employer concerned, without exception.",
+          "ruleRef": "JC 124 construction"
+        },
+        "first-effective-day": {
+          "title": "I start temporary unemployment during the month",
+          "level": "Intermediate",
+          "duration": "3 min",
+          "context": "Your temporary unemployment does not start on the 1st of the month but during the month. The first effective day is reported automatically.",
+          "objective": "Know from which day the card must be filled in when the unemployment starts during the month.",
+          "expectedAction": "Fill in the card from the first effective unemployment day to the end of the month.",
+          "feedbackCorrect": "Correct: the card must be filled in from the first effective unemployment day of the month.",
+          "feedbackError": "Not quite: the card is filled in from the first effective unemployment day, not from the 1st of the month. Continue until the last day of the month.",
+          "ruleRef": "First effective day"
+        },
+        "wrong-month": {
+          "title": "I chose the wrong first month",
+          "level": "Advanced",
+          "duration": "4 min",
+          "context": "You realise that an earlier month should have been declared and activated first. A new simulated declaration is needed.",
+          "objective": "Understand that an earlier month can be activated if necessary, via a new declaration.",
+          "expectedAction": "Select an earlier month and accept a new simulated declaration.",
+          "feedbackCorrect": "Correct: an earlier month can be activated if necessary.",
+          "feedbackError": "Not quite: if the wrong month was activated, select the earlier month concerned and accept the new simulated declaration.",
+          "ruleRef": "Choice of month"
+        }
+      },
+      "situations": {
+        "temporary_unemployment": {
+          "label": "Temporary unemployment",
+          "shortLabel": "Unemployment",
+          "description": "Default situation. You do not need to indicate anything if you are actually on temporary unemployment that day.",
+          "warning": "If you work elsewhere during these days, you must indicate it.",
+          "helpDetail": "By default, all the calendar cells are already on « Unemployment ». You therefore do not need to enter anything for these days: simply modify only the days that correspond to another situation (work, incapacity, holidays, etc.).",
+          "examples": {
+            "0": "Days when you are temporarily unemployed",
+            "1": "Days without work due to time credit or career break",
+            "2": "Days when you do not usually work at this employer (certain weekends, usual inactivity days)"
+          }
+        },
+        "work_own_employer": {
+          "label": "Work at the employer",
+          "shortLabel": "Work (employer)",
+          "description": "To choose when you work at the employer for whom you fill in the card. Also to indicate if this work is performed in the weekend or on a usual inactivity day at this employer.",
+          "warning": "Work must be recorded BEFORE starting to work.",
+          "helpDetail": "For night work, indicate the day on which the activity begins. Night work is a performance between 8 PM and 6 AM. If the performance counts more hours than a normal working day, two cells must be indicated.",
+          "examples": {
+            "0": "Day worked at the employer who fills the card",
+            "1": "Work in the weekend at this employer",
+            "2": "Work on a usual inactivity day at this employer"
+          }
+        },
+        "work_elsewhere_usual_day": {
+          "label": "Work elsewhere — day normally worked",
+          "shortLabel": "Elsewhere (worked day)",
+          "description": "To choose when you work elsewhere on a day you normally work for the regular employer.",
+          "warning": "To be recorded before starting to work.",
+          "helpDetail": "Exceptions: the secondary activity within the Springboard for the self-employed measure does not need to be mentioned; for arts workers (chapter XII), certain own, secondary or occasional unpaid activities do not need to be mentioned.",
+          "examples": {
+            "0": "Other non-regular employer",
+            "1": "Flexi-job",
+            "2": "Work for own account",
+            "3": "Work for a third party",
+            "4": "Occasional activity",
+            "5": "Secondary activity accepted by the NEO between 7 AM and 6 PM"
+          }
+        },
+        "work_elsewhere_non_usual_day": {
+          "label": "Work elsewhere — day normally non-worked",
+          "shortLabel": "Elsewhere (non-worked day)",
+          "description": "To choose when you work elsewhere on a day you do not normally work for the regular employer.",
+          "warning": "To be recorded before starting to work.",
+          "helpDetail": "Exceptions: the secondary activity within the Springboard for the self-employed measure does not need to be mentioned; for arts workers (chapter XII), certain own, secondary or occasional unpaid activities do not need to be mentioned.",
+          "examples": {
+            "0": "Weekend",
+            "1": "Usual inactivity day",
+            "2": "Other non-regular employer",
+            "3": "Flexi-job",
+            "4": "Work for own account",
+            "5": "Work for a third party",
+            "6": "Occasional activity",
+            "7": "Secondary activity accepted by the NEO, regardless of the time"
+          }
+        },
+        "work_other_regular_employer": {
+          "label": "Work at another regular employer",
+          "shortLabel": "Another regular employer",
+          "description": "You combine two long-term part-time jobs. This case concerns neither a flexi-job nor a self-employed activity.",
+          "warning": "To be recorded before starting to work.",
+          "helpDetail": "You must inform your payment institution of this other occupation.",
+          "examples": {
+            "0": "Second long-term part-time job",
+            "1": "Combination of two regular part-time occupations"
+          }
+        },
+        "incapacity": {
+          "label": "Work incapacity",
+          "shortLabel": "Incapacity",
+          "description": "To choose in case of sickness, work accident or maternity rest. Also include Saturdays, Sundays and public holidays if these days are part of the incapacity period.",
+          "warning": "Inform your health insurance fund within 48 hours.",
+          "helpDetail": "Indicate « Work incapacity » for the entire period concerned, including the non-worked days (weekends and public holidays) that fall within this period.",
+          "examples": {
+            "0": "Sickness",
+            "1": "Work accident",
+            "2": "Maternity rest"
+          }
+        },
+        "vacation": {
+          "label": "Holidays",
+          "shortLabel": "Holidays",
+          "description": "To choose for days of individual annual holidays or during a collective closure for annual holidays, whether the days are covered by holiday pay or not.",
+          "warning": "",
+          "helpDetail": "Medical force majeure: in case of progressive part-time resumption authorised by the medical adviser, also indicate « Holidays » for the holiday days taken. Extra-legal leave does not necessarily have to be exhausted during the collective closure; if it is, indicate it as « Other situation ».",
+          "examples": {
+            "0": "Individual annual holidays",
+            "1": "Collective closure for annual holidays"
+          }
+        },
+        "other": {
+          "label": "Other situation",
+          "shortLabel": "Other",
+          "description": "To choose for days without performance but covered by another situation.",
+          "warning": "",
+          "helpDetail": "",
+          "examples": {
+            "0": "Public holiday",
+            "1": "Compensatory rest",
+            "2": "Paid training",
+            "3": "Day covered by compensation for dismissal",
+            "4": "Unpaid leave",
+            "5": "Unjustified absence",
+            "6": "Detention",
+            "7": "Paternity leave",
+            "8": "Extra-legal leave during a collective closure for annual holidays"
+          }
+        },
+        "not_applicable": {
+          "label": "Not applicable",
+          "shortLabel": "Greyed",
+          "description": "Greyed cells: days on which you are not bound by an employment contract with the chosen employer (contract started or ended during the month), and days outside the selected month.",
+          "warning": "",
+          "helpDetail": "You cannot enter these days. This situation is assigned automatically, you have nothing to do.",
+          "examples": {
+            "0": "Days before the start of the contract in the month",
+            "1": "Days after the end of the contract in the month",
+            "2": "Days outside the selected month"
+          }
+        },
+        "first_effective_unemployment_day": {
+          "label": "First effective unemployment day",
+          "shortLabel": "1st effective day",
+          "description": "First unemployment day of the month for the selected employer, as communicated by the employer to the NEO. Appears in case of temporary unemployment for economic reasons, bad weather or technical accident. For other types, no icon is shown.",
+          "warning": "Fill in the card from the first effective unemployment day to the end of the month. For construction, the card must always be filled in.",
+          "helpDetail": "The absence of this icon during the first month of use does not block the operation of the card. This situation is reported automatically, you have nothing to enter.",
+          "examples": {
+            "0": "Temporary unemployment for economic reasons",
+            "1": "Temporary unemployment for bad weather",
+            "2": "Temporary unemployment for technical accident"
+          }
+        }
+      },
+      "labels": {
+        "nav.next": "Next step",
+        "nav.back": "Previous step",
+        "nav.restart": "Restart the simulation",
+        "nav.toCalendar": "Go to the calendar",
+        "login.title": "Simulated login",
+        "login.intro": "Choose an identification method to understand how the login works. Here, nothing is requested and no real login takes place.",
+        "login.eid": "Understand the eID login",
+        "login.itsme": "Understand itsme",
+        "login.frontalier": "I am a cross-border worker",
+        "login.noMeans": "I have no identification method",
+        "login.continue": "Start the simulation",
+        "declaration.title": "Sworn declaration — simulation",
+        "declaration.intro": "At the first official login, you choose the start month, read the manual and the conditions, then confirm that you are switching to the electronic channel.",
+        "declaration.monthField": "Month from which I use the eC3.2",
+        "declaration.checkbox": "I confirm that I have read the manual and the conditions, and from now on use the electronic channel (fictitious checkbox).",
+        "declaration.continue": "Continue the simulation",
+        "employer.title": "Choose the employer",
+        "employer.intro": "Choose the employer who placed you on temporary unemployment. Your other occupations will be indicated on this card.",
+        "employer.enterprise": "Enterprise number (fictitious)",
+        "employer.continue": "Choose this employer",
+        "month.title": "Choose the month",
+        "month.intro": "Select the card of the month to be filled in. Already-submitted cards are locked.",
+        "month.locked": "Submitted — locked",
+        "month.notYet": "Not yet available",
+        "month.activatePast": "Activate an earlier month",
+        "card.title": "Control card — simulation",
+        "card.employer": "Employer",
+        "card.enterprise": "Enterprise number",
+        "card.lastUpdate": "Last update",
+        "card.corrections": "Corrections",
+        "card.download": "Download preview — simulation",
+        "card.listView": "List view",
+        "card.calendarView": "Calendar view",
+        "card.calendarTab": "Calendar",
+        "card.legendTab": "Legend",
+        "card.adapt": "Adapt the selected days",
+        "card.send": "Send the card — simulation",
+        "card.firstSend": "First possible submission date",
+        "card.affiliation": "I am affiliated with a payment institution",
+        "selector.title": "Which situation for this/these day(s)?",
+        "selector.workElsewhereGroup": "Work elsewhere than at the employer",
+        "selector.save": "Save this day",
+        "selector.saveMulti": "Save these days",
+        "selector.cancel": "Cancel",
+        "selector.selected": "selected",
+        "calendar.selectHint": "Click on a day to select it. Click again to remove it.",
+        "calendar.clear": "Deselect all",
+        "calendar.legend": "Legend of situations",
+        "verify.title": "Verify the card",
+        "verify.intro": "Review your entries before the simulated submission. Check especially the days worked and the incapacity days.",
+        "list.date": "Date",
+        "list.situation": "Situation",
+        "list.correction": "Correction",
+        "list.edit": "Modify",
+        "list.empty": "No days to display for this month."
+      },
+      "notices": {
+        "login.eid": "The eID is your electronic identity card. In the real application, you use it with a card reader and your PIN code to identify yourself securely.",
+        "login.itsme": "itsme is a mobile digital identity application. In the real application, you confirm your identity on your smartphone, without a card reader.",
+        "login.frontalier": "Cross-border workers with a national register number or a BIS number can use an electronic identification method recognised at European level (eIDAS). If this is not possible, an alternative digital key can be activated after contact with the NEO.",
+        "login.noMeans": "Without an electronic identification method, you can contact the NEO to activate an alternative digital key. This simulation itself does not request any identification.",
+        "declaration.monthImportance": "In the real application, the choice of month is important: it determines from when you use the eC3.2.",
+        "month.rule": "The eC3.2 card is accessible only for the previous month. In June → only May is available. From 1 July, May disappears and June becomes accessible in turn.",
+        "month.activatePast": "If you activated the eC3.2 from a given month but you were already on temporary unemployment before, you can activate an earlier month. A new sworn declaration is then requested.",
+        "month.cards": "For each employer, you see the card of the current month, that of the next month, the unsubmitted cards of previous months, and the unused cards for months without temporary unemployment.",
+        "calendar.defaultChomage": "By default, the calendar cells are considered as « Unemployment ». You do not need to indicate anything if you are actually on temporary unemployment that day. If you work elsewhere, you must indicate it.",
+        "calendar.notApplicable": "The greyed cells (« Not applicable ») concern days without a contract with the chosen employer (contract started or ended during the month) and days outside the selected month.",
+        "calendar.firstEffectiveDay": "The first effective unemployment day of the month is reported automatically (economic unemployment, bad weather or technical accident). For other types of temporary unemployment, no icon is shown.",
+        "calendar.firstSendNoIcon": "The absence of this icon during the first month of use does not block the operation of the card.",
+        "calendar.fillUntilEnd": "The card must be filled in from the first effective unemployment day to the last day of the month. In construction, the card must always be filled in.",
+        "save.unsaved": "Your changes are not saved. Save before continuing.",
+        "send.firstSendBefore": "Submission is not yet possible: the first possible submission date has not been reached. Even when this date falls before the end of the month, the card must be filled in correctly until the last day of the month. (This simulation never sends anything.)",
+        "send.noPaymentOrg": "In the real application, you can fill in the card, but you must be affiliated with a payment institution (HVW/CAPAC, ACV/CSC, ABVV/FGTB or ACLVB/CGSLB) to be able to send it.",
+        "send.notNeeded": "If you do not request benefits, submission is not necessary. If you wish to request benefits, affiliation with a payment institution is required.",
+        "correction.help": "In the real application, a clear explanation helps inspectors to understand the modification. Only unsubmitted cards can be corrected; the NEO is informed of the modifications.",
+        "correction.locked": "This card has been submitted and is locked in the simulation. A submitted card can no longer be modified.",
+        "work.beforeStart": "All work must be recorded before starting to work."
+      },
+      "mistakes": {
+        "confondre-ec32-et-ec3": {
+          "title": "Confusing eC3.2 and eC3",
+          "explanation": "The eC3.2 concerns temporary unemployment, while the eC3 concerns full unemployment. The two cards are not used in the same situation.",
+          "advice": "Check your situation before starting: if you are on temporary unemployment, the eC3.2 is indeed the one to fill in."
+        },
+        "croire-simulation-officielle": {
+          "title": "Believing that the Docbel simulation is a real official request",
+          "explanation": "The Docbel simulator is only intended for understanding and practising. No data is sent and nothing is transmitted to the NEO.",
+          "advice": "For a real request, use the official eC3.2 application. The simulator remains a learning tool."
+        },
+        "oublier-indiquer-travail-avant": {
+          "title": "Forgetting to indicate work before starting",
+          "explanation": "Work performed during temporary unemployment must be indicated on the card before starting to work, not after.",
+          "advice": "Get into the habit of entering the workday as soon as you know you are going to work, before the performance."
+        },
+        "attendre-fin-du-mois": {
+          "title": "Waiting until the end of the month to fill everything in",
+          "explanation": "Deferring the filling in to the end of the month risks forgetting days or particular situations.",
+          "advice": "Fill in the card as the days go by, as soon as a situation arises, so that you forget nothing."
+        },
+        "choisir-mauvais-employeur": {
+          "title": "Choosing the wrong employer",
+          "explanation": "The card must be filled in for the employer who actually placed you on temporary unemployment.",
+          "advice": "Carefully select the employer concerned; in case of doubt, check which employer reported the temporary unemployment."
+        },
+        "ne-pas-mentionner-autre-travail": {
+          "title": "Not mentioning other work",
+          "explanation": "Work performed elsewhere during temporary unemployment must always be reported on the card, even if it concerns another employer.",
+          "advice": "Indicate each day worked elsewhere with the « Work elsewhere » situation appropriate to the day concerned."
+        },
+        "oublier-de-sauvegarder": {
+          "title": "Forgetting to save",
+          "explanation": "A situation entered but not saved risks not being taken into account on the card.",
+          "advice": "After each modification, check that your changes have been properly saved before leaving."
+        },
+        "croire-carte-envoyee-modifiable": {
+          "title": "Believing that a submitted card can be freely modified",
+          "explanation": "Once the card has been submitted, it is locked: it can no longer be freely modified.",
+          "advice": "Carefully check each day before submitting; corrections are only possible as long as the card has not been submitted."
+        },
+        "corriger-sans-explication": {
+          "title": "Correcting without explanation",
+          "explanation": "A correction may require an explanation. Without justification, the modification cannot be saved.",
+          "advice": "When you correct a day, take the time to provide a clear explanation of the modification."
+        },
+        "pas-inscrit-organisme-paiement": {
+          "title": "Not being affiliated with a payment institution",
+          "explanation": "Without affiliation with a payment institution (HVW/CAPAC, ACV/CSC, ABVV/FGTB or ACLVB/CGSLB), the card can be filled in but cannot be submitted.",
+          "advice": "Affiliate yourself with a payment institution as soon as possible to be able to submit your card and receive your benefits."
+        },
+        "oublier-jours-maladie": {
+          "title": "Forgetting sickness days",
+          "explanation": "Sickness days are not unemployment days: they must be indicated as work incapacity.",
+          "advice": "Select the days concerned, choose « Work incapacity » and inform your health insurance fund within 48 hours."
+        },
+        "oublier-vacances": {
+          "title": "Forgetting holidays",
+          "explanation": "Holiday days are not unemployment days and must be indicated as such on the card.",
+          "advice": "For each leave day, choose the « Holidays » situation rather than leaving the default situation."
+        },
+        "ignorer-autre-situation": {
+          "title": "Not taking « other situation » days into account",
+          "explanation": "Some days without performance (public holiday, paid training, etc.) are not unemployment and fall under another situation.",
+          "advice": "When a day is covered other than by unemployment, choose « Other situation » for that day."
+        },
+        "pas-remplir-premier-jour-effectif": {
+          "title": "Not filling in from the first effective unemployment day",
+          "explanation": "When the temporary unemployment begins during the month, the card is filled in from the first effective unemployment day, not from the 1st of the month.",
+          "advice": "Identify the first effective unemployment day and fill in the card from that day to the end of the month."
+        },
+        "ignorer-regle-cp124": {
+          "title": "Not taking into account the JC 124 construction rule",
+          "explanation": "In the construction sector (JC 124), the card must always be filled in for the employer concerned.",
+          "advice": "If you fall under JC 124, systematically fill in your control card, without exception."
+        },
+        "pas-informer-organisme-autre-employeur": {
+          "title": "Not informing the payment institution in case of another regular employer",
+          "explanation": "If you combine several regular jobs, the other occupation must be communicated to your payment institution.",
+          "advice": "Report all your regular occupations to your payment institution to avoid any misunderstanding."
+        }
+      },
+      "faq": {
+        "0": {
+          "q": "What is the eC3.2?",
+          "a": "The eC3.2 is the electronic control card for temporary unemployment. It allows you to fill in and send your control card electronically, without a paper version."
+        },
+        "1": {
+          "q": "Is it the same as the eC3?",
+          "a": "No. The eC3.2 concerns temporary unemployment, while the eC3 concerns full unemployment. They are two distinct control cards."
+        },
+        "2": {
+          "q": "Can this Docbel page be used to send a real card?",
+          "a": "No. It is an educational simulation: no real data is sent and nothing is transmitted to the NEO. The simulator is only intended for understanding and practising."
+        },
+        "3": {
+          "q": "Where is the real eC3.2 application?",
+          "a": "The real application is accessible via the social security portal or via the « eC3.2 Temporary unemployment » mobile application."
+        },
+        "4": {
+          "q": "How do I log in to the real application?",
+          "a": "Login is done with a secure identification method: eID, itsme, security code (by email or via the mobile application) or a recognised European identification method."
+        },
+        "5": {
+          "q": "What do I do if I am a cross-border worker?",
+          "a": "With a national register number or a BIS number, you can use a European electronic identification method. Failing this, an alternative digital key may be necessary."
+        },
+        "6": {
+          "q": "Do I have to be affiliated with a payment institution?",
+          "a": "Yes. To receive benefits and to send the card, you must be affiliated with a payment institution: HVW/CAPAC, ACV/CSC, ABVV/FGTB or ACLVB/CGSLB."
+        },
+        "7": {
+          "q": "Can I fill in the card without a payment institution?",
+          "a": "Yes, you can fill in the card, but it cannot be submitted as long as your affiliation with a payment institution has not been completed."
+        },
+        "8": {
+          "q": "Which employer should I choose?",
+          "a": "Choose the employer who placed you on temporary unemployment. If several employers placed you on temporary unemployment, a separate card must be filled in for each employer concerned."
+        },
+        "9": {
+          "q": "What do I do if I have several employers?",
+          "a": "You must inform your payment institution of all your occupations. In case of temporary unemployment at several employers, a card must be filled in for each employer concerned."
+        },
+        "10": {
+          "q": "What do I have to do if I work during a temporary unemployment period?",
+          "a": "You must indicate the work on the card before starting to work, not after."
+        },
+        "11": {
+          "q": "What do I have to indicate if I am sick?",
+          "a": "Indicate « Work incapacity » for the days concerned, including weekends and public holidays if they are covered. Also remember to inform your health insurance fund within 48 hours."
+        },
+        "12": {
+          "q": "What do I have to indicate if I take holidays?",
+          "a": "Indicate « Holidays » for the days concerned."
+        },
+        "13": {
+          "q": "What does « Other situation » mean?",
+          "a": "This category covers, for example, public holidays, compensatory rest, paid training, unpaid leave, unjustified absences, detention, paternity leave or certain extra-legal leave."
+        },
+        "14": {
+          "q": "Can I correct a mistake?",
+          "a": "Yes, as long as the card has not been submitted. An explanation may be requested to justify the correction."
+        },
+        "15": {
+          "q": "Is the NEO informed of corrections?",
+          "a": "In the real application, the NEO is informed of modifications made to the card."
+        },
+        "16": {
+          "q": "When can I send my card?",
+          "a": "You can send it from the first possible submission date. Even if this date falls before the end of the month, fill in the card correctly until the last day of the month."
+        },
+        "17": {
+          "q": "What happens after sending?",
+          "a": "In the real application, the card is sent to your payment institution. In the Docbel simulation, no real sending takes place."
+        },
+        "18": {
+          "q": "Is JC 327 concerned?",
+          "a": "The webinar mentions a permanent derogation for JC 327. This information still has to be checked and updated before the final publication."
+        },
+        "19": {
+          "q": "Do employers still have to provide a paper card?",
+          "a": "Since the eC3.2 obligation, there is in principle no longer a paper card, except in case of an applicable derogation."
+        }
+      },
+      "scenarioPresets": {
+        "all-month": "By default, the whole month is already considered as « Unemployment ». You have nothing to change: proceed to verification.",
+        "work-own": "Select the days worked, then choose « Work at the employer ».",
+        "work-elsewhere-usual": "Select the day, then choose « Work elsewhere — a day normally worked ». All work must be recorded before starting.",
+        "work-elsewhere-weekend": "Select Saturday and Sunday, then choose « Work elsewhere — a normally non-worked day ».",
+        "other-regular": "Select the day, then choose « Work at another regular employer ».",
+        "sick": "Select the sickness days and choose « Work incapacity ».",
+        "vacation": "Select the holiday days and choose « Holidays ».",
+        "other-situation": "1 May is a public holiday: select it and choose « Other situation ».",
+        "multiple-employers": "With several employers, choose the one who placed you on temporary unemployment; your other occupations are indicated on this card.",
+        "no-payment-org": "Try to send the card: submission is blocked as long as you are not affiliated with a payment institution.",
+        "correction": "On an unsubmitted card, open a day already entered to correct it: an explanation is required.",
+        "construction-cp124": "In construction (JC 124), the card must always be filled in, even when you work.",
+        "first-effective-day": "Spot the automatic icon of the first effective unemployment day (5 May): it is never entered manually.",
+        "wrong-month": "Check the month before filling in: here, it is the April 2025 card that has to be filled in."
       }
     }
   }

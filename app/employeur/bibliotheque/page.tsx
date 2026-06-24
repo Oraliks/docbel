@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LegalDisclaimerBox } from "@/components/docbel/employeur/legal-disclaimer-box";
 import { TiltCard } from "@/components/docbel/employeur/ui/tilt-card";
 import { getEmployerPageUser } from "@/lib/employeur/page-auth";
-import { ARTICLES } from "@/lib/employeur/library/articles";
+import { getLocalizedArticles } from "@/lib/employeur/library/articles";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("public.pro");
@@ -24,6 +24,8 @@ export default async function BibliothequePage() {
   const t = await getTranslations("public.pro");
   const user = await getEmployerPageUser();
   if (!user) redirect("/p/employeur");
+
+  const articles = await getLocalizedArticles();
 
   return (
     <div className="w-full space-y-5 p-4 sm:p-6 lg:px-8 duration-500 animate-in fade-in">
@@ -42,7 +44,7 @@ export default async function BibliothequePage() {
       <LegalDisclaimerBox context="general" />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {ARTICLES.map((article, i) => (
+        {articles.map((article, i) => (
           <div
             key={article.slug}
             className="duration-500 animate-in fade-in slide-in-from-bottom-4"

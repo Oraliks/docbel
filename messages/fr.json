@@ -6178,7 +6178,8 @@
       "smartImageEmployeur": "Employeur",
       "smartImageAvatar": "Profil",
       "smartImageGeneric": "Contenu",
-      "smartImagePreviewUnavailable": "Aperçu indisponible"
+      "smartImagePreviewUnavailable": "Aperçu indisponible",
+      "_note": "Aucune nouvelle clé requise pour changelog-feed.tsx, inscription-split.tsx, confirm-account.tsx — ces 3 composants consomment des clés déjà présentes dans public.changelog et public.auth (vérifié : type.*, loading, endOfHistory, errNetwork, errGeneric, retryWithError, asideTitleLead, asideTitleEm, splitBadgePartner, splitBadgeEmployer, splitTaglinePartner, splitTaglineEmployer, backToHome, splitTitle, splitSubtitle, splitRegisterAs, splitAccountType, splitTabPartner, splitTabEmployer, splitHaveAccount, signIn, confirmMissingToken, confirmInvalidLink, confirmNetworkError, confirmVerifyingTitle, confirmVerifyingBody, confirmSuccessTitle, confirmSuccessBody, confirmErrorTitle, confirmRestart)."
     },
     "changelog": {
       "type": {
@@ -7860,6 +7861,1164 @@
           "netVise": "Le net visé doit être compris entre 100 € et 30 000 € par mois.",
           "dichotomie": "Impossible de calculer le brut correspondant."
         }
+      }
+    },
+    "employeurLib": {
+      "article-engager-premier-travailleur": {
+        "title": "Engager son premier travailleur",
+        "summary": "Embaucher pour la première fois transforme votre entreprise en employeur. Quelques formalités sociales doivent être réglées avant le premier jour de travail. Voici les grandes étapes, sans jargon.",
+        "whatToKnow": [
+          "Dès le premier engagement, votre entreprise acquiert la « qualité d'employeur » auprès de l'ONSS.",
+          "Une déclaration Dimona doit être faite AVANT que le travailleur ne commence à travailler.",
+          "Vous serez ensuite redevable de cotisations sociales déclarées trimestriellement (DmfA).",
+          "La plupart des employeurs s'affilient à un secrétariat social agréé qui gère ces démarches pour eux."
+        ],
+        "todo": [
+          "Faire identifier votre entreprise comme employeur auprès de l'ONSS (qualité d'employeur).",
+          "Souscrire une assurance accidents du travail (obligatoire dès le premier travailleur).",
+          "Effectuer la déclaration Dimona avant le premier jour de prestation.",
+          "Vérifier la commission paritaire applicable pour connaître le salaire minimum et les conditions de travail.",
+          "Préparer le contrat de travail écrit lorsque c'est requis ou recommandé."
+        ],
+        "documents": [
+          "Données d'identification de l'entreprise (numéro BCE).",
+          "Données du travailleur (NISS / numéro de registre national).",
+          "Police d'assurance accidents du travail.",
+          "Projet de contrat de travail."
+        ],
+        "commonMistakes": [
+          "Faire commencer le travailleur avant d'avoir introduit la Dimona.",
+          "Oublier l'assurance accidents du travail, obligatoire dès la première embauche.",
+          "Ignorer la commission paritaire et appliquer un salaire inférieur au barème."
+        ]
+      },
+      "article-faire-une-dimona": {
+        "title": "Faire une Dimona",
+        "summary": "La Dimona est la déclaration immédiate de l'emploi : elle signale l'entrée (et la sortie) d'un travailleur à la sécurité sociale. Elle est obligatoire et doit précéder le début des prestations.",
+        "whatToKnow": [
+          "Dimona = Déclaration Immédiate / Onmiddellijke Aangifte. Elle se fait en ligne.",
+          "La déclaration d'entrée doit être faite au plus tard au moment où le travailleur commence.",
+          "Le type de travailleur (ouvrier, employé, étudiant, flexi…) détermine le code et les données à indiquer.",
+          "Une déclaration de sortie est faite à la fin du contrat."
+        ],
+        "todo": [
+          "Se connecter au portail de la sécurité sociale (ou laisser faire son secrétariat social).",
+          "Encoder les données du travailleur et la date de début.",
+          "Valider la Dimona AVANT le premier jour de travail.",
+          "Conserver l'accusé de réception (numéro de référence Dimona)."
+        ],
+        "documents": [
+          "NISS du travailleur (numéro de registre national).",
+          "Numéro d'employeur ONSS.",
+          "Date de début (et type de travailleur)."
+        ],
+        "commonMistakes": [
+          "Déclarer la Dimona en retard, après le début des prestations.",
+          "Se tromper de type de travailleur (impact sur les cotisations).",
+          "Oublier la Dimona de sortie en fin de contrat."
+        ]
+      },
+      "article-comprendre-dmfa": {
+        "title": "Comprendre la DmfA",
+        "summary": "La DmfA est la déclaration trimestrielle qui détaille les rémunérations, le temps de travail et les cotisations sociales de vos travailleurs. C'est elle qui calcule ce que vous devez à l'ONSS.",
+        "whatToKnow": [
+          "DmfA = Déclaration multifonctionnelle, envoyée chaque trimestre à l'ONSS.",
+          "Elle reprend, par travailleur, la rémunération, les jours/heures prestés et les cotisations.",
+          "Elle sert à plusieurs institutions (pensions, chômage, soins de santé) : d'où « multifonctionnelle ».",
+          "En pratique, le secrétariat social l'établit à partir des données de paie."
+        ],
+        "todo": [
+          "Rassembler chaque trimestre les éléments de rémunération et de temps de travail.",
+          "Transmettre les données à votre secrétariat social (ou les encoder vous-même).",
+          "Vérifier la cohérence avec les Dimona et les fiches de paie.",
+          "Respecter l'échéance trimestrielle de dépôt et de paiement des cotisations."
+        ],
+        "documents": [
+          "Données de paie du trimestre (salaires bruts, primes).",
+          "Relevé des jours/heures prestés et des absences.",
+          "Numéro d'employeur ONSS."
+        ],
+        "commonMistakes": [
+          "Oublier des éléments de rémunération soumis à cotisations (primes, avantages).",
+          "Incohérences entre Dimona, DmfA et fiches de paie.",
+          "Déclaration ou paiement hors délai trimestriel."
+        ]
+      },
+      "article-choisir-contrat-de-travail": {
+        "title": "Choisir le bon contrat de travail",
+        "summary": "CDI, CDD, temps plein ou partiel, étudiant, flexi-job… Le choix du contrat dépend du besoin et a des conséquences sociales. Certains contrats imposent un écrit obligatoire.",
+        "whatToKnow": [
+          "Le CDI est la règle ; le CDD et les contrats particuliers ont des conditions et un formalisme propres.",
+          "Plusieurs contrats exigent un écrit signé AVANT le début (temps partiel, étudiant, flexi-job, intérim).",
+          "Le contrat précise notamment la fonction, l'horaire, le lieu et la rémunération.",
+          "La commission paritaire fixe des conditions minimales qui s'imposent au contrat."
+        ],
+        "todo": [
+          "Définir le besoin (durée, volume horaire, type de fonction).",
+          "Choisir le type de contrat adapté et vérifier s'il impose un écrit.",
+          "Rédiger le contrat avec les mentions obligatoires.",
+          "Faire signer le contrat avant le premier jour quand l'écrit est requis."
+        ],
+        "documents": [
+          "Modèle de contrat adapté au type choisi.",
+          "Données du travailleur et de l'employeur.",
+          "Référence de la commission paritaire et du barème applicable."
+        ],
+        "commonMistakes": [
+          "Démarrer un contrat à temps partiel ou étudiant sans écrit signé au préalable.",
+          "Omettre des mentions obligatoires (horaire de travail, par exemple).",
+          "Choisir un CDD enchaîné sans justification valable."
+        ]
+      },
+      "article-temps-partiel": {
+        "title": "Embaucher à temps partiel",
+        "summary": "Le temps partiel implique des règles spécifiques : contrat écrit, mention claire de l'horaire et publicité des horaires variables. Un cadre précis évite les litiges et les régularisations.",
+        "whatToKnow": [
+          "Le contrat à temps partiel doit être écrit et mentionner le régime et l'horaire de travail.",
+          "Pour les horaires variables, les plages et la communication des horaires doivent respecter des règles.",
+          "Les horaires doivent pouvoir être affichés/consultables et le règlement de travail en tient compte.",
+          "Le travailleur à temps partiel bénéficie de protections (priorité pour des heures complémentaires, p. ex.)."
+        ],
+        "todo": [
+          "Établir un contrat écrit précisant la durée de travail et l'horaire.",
+          "Définir un horaire fixe ou un cadre clair pour les horaires variables.",
+          "Mettre le règlement de travail en cohérence avec les horaires à temps partiel.",
+          "Organiser l'affichage / la communication des horaires conformément aux règles."
+        ],
+        "documents": [
+          "Contrat de travail à temps partiel écrit.",
+          "Horaire de travail (fixe ou cadre des horaires variables).",
+          "Règlement de travail mentionnant les horaires."
+        ],
+        "commonMistakes": [
+          "Absence d'écrit ou horaire imprécis dans le contrat à temps partiel.",
+          "Ne pas respecter les règles de communication des horaires variables.",
+          "Horaires non repris ou contradictoires dans le règlement de travail."
+        ]
+      },
+      "article-etudiant": {
+        "title": "Engager un étudiant",
+        "summary": "Le travail étudiant permet, sous conditions, des cotisations réduites pendant un contingent d'heures. Le contrat d'occupation d'étudiant est écrit et comporte des mentions obligatoires.",
+        "whatToKnow": [
+          "Le contrat d'occupation d'étudiant doit être écrit et signé, avec des mentions obligatoires.",
+          "Un contingent annuel d'heures donne droit à une cotisation de solidarité réduite.",
+          "La Dimona « étudiant » permet de réserver et suivre les heures du contingent.",
+          "Au-delà du contingent ou sans les conditions remplies, les cotisations ordinaires s'appliquent."
+        ],
+        "todo": [
+          "Établir un contrat d'occupation d'étudiant écrit avec toutes les mentions obligatoires.",
+          "Faire la Dimona « étudiant » en indiquant les heures, avant le début.",
+          "Vérifier le solde du contingent d'heures de l'étudiant.",
+          "Remettre le règlement de travail et informer l'étudiant de ses conditions."
+        ],
+        "documents": [
+          "Contrat d'occupation d'étudiant signé.",
+          "NISS de l'étudiant et données de l'employeur.",
+          "Suivi des heures du contingent."
+        ],
+        "commonMistakes": [
+          "Faire travailler l'étudiant sans contrat écrit signé au préalable.",
+          "Dépasser le contingent sans anticiper le passage aux cotisations ordinaires.",
+          "Oublier la Dimona étudiant ou mal déclarer les heures."
+        ]
+      },
+      "article-flexi-job": {
+        "title": "Engager en flexi-job",
+        "summary": "Le flexi-job permet, dans certains secteurs et sous conditions, d'occuper une personne déjà suffisamment occupée ailleurs ou pensionnée, avec un régime social spécifique. Un contrat-cadre écrit est requis.",
+        "whatToKnow": [
+          "Le flexi-job suppose des conditions d'accès strictes (occupation suffisante ailleurs ou pension).",
+          "Un contrat-cadre écrit est nécessaire, complété par un contrat de travail par période.",
+          "Une cotisation patronale spécifique s'applique et la rémunération suit des règles propres.",
+          "Le flexi-job n'est ouvert que dans les secteurs et situations prévus par la réglementation."
+        ],
+        "todo": [
+          "Vérifier que le travailleur remplit les conditions d'accès au flexi-job.",
+          "Conclure un contrat-cadre écrit, puis un contrat par période d'occupation.",
+          "Effectuer la Dimona spécifique au flexi-job.",
+          "Appliquer la rémunération et les cotisations propres au régime flexi."
+        ],
+        "documents": [
+          "Contrat-cadre flexi-job écrit.",
+          "Contrat de travail par période d'occupation.",
+          "Justificatif des conditions d'accès du travailleur."
+        ],
+        "commonMistakes": [
+          "Occuper en flexi-job une personne ne remplissant pas les conditions.",
+          "Absence de contrat-cadre écrit préalable.",
+          "Appliquer le régime ordinaire de cotisations au lieu du régime flexi (ou l'inverse)."
+        ]
+      },
+      "article-salaire-minimum-et-commission-paritaire": {
+        "title": "Salaire minimum et commission paritaire",
+        "summary": "Le salaire minimum applicable dépend largement de la commission paritaire (CP) du secteur et des CCT. Identifier sa CP est une étape clé pour fixer une rémunération conforme.",
+        "whatToKnow": [
+          "Chaque activité relève d'une commission paritaire qui fixe des conditions minimales par CCT.",
+          "Le barème sectoriel prime souvent sur le minimum interprofessionnel national.",
+          "Sans connaître la CP, on ne peut pas vérifier précisément le barème applicable.",
+          "Les barèmes peuvent dépendre de la fonction, de l'ancienneté et de l'âge."
+        ],
+        "todo": [
+          "Identifier la commission paritaire correspondant à votre activité.",
+          "Consulter les CCT et barèmes applicables à la fonction concernée.",
+          "Fixer la rémunération au moins au niveau du barème sectoriel.",
+          "Tenir compte de l'ancienneté et des indexations éventuelles."
+        ],
+        "documents": [
+          "Référence de la commission paritaire de l'entreprise.",
+          "Barèmes sectoriels et CCT applicables.",
+          "Description de la fonction et de l'ancienneté."
+        ],
+        "commonMistakes": [
+          "Appliquer le minimum national alors qu'un barème sectoriel plus élevé s'impose.",
+          "Ne pas identifier sa commission paritaire.",
+          "Oublier d'indexer ou de réviser le salaire selon la CCT."
+        ]
+      },
+      "article-reglement-de-travail": {
+        "title": "Le règlement de travail",
+        "summary": "Le règlement de travail fixe les règles internes (horaires, congés, modalités de paie, etc.). Sa mise en place suit une procédure et il doit être remis à chaque travailleur.",
+        "whatToKnow": [
+          "Le règlement de travail est en principe obligatoire dès qu'on occupe du personnel.",
+          "Sa mise en place et ses modifications suivent une procédure (information, concertation, dépôt).",
+          "Il contient des mentions obligatoires (horaires, paiement de la rémunération, congés…).",
+          "Un exemplaire doit être remis à chaque travailleur et tenu à disposition."
+        ],
+        "todo": [
+          "Rédiger le règlement avec les mentions obligatoires.",
+          "Suivre la procédure d'introduction (information du personnel, délai d'observation).",
+          "Déposer le règlement auprès de l'autorité compétente.",
+          "Remettre un exemplaire à chaque travailleur et conserver une preuve."
+        ],
+        "documents": [
+          "Projet de règlement de travail.",
+          "Preuve d'information du personnel et de dépôt.",
+          "Accusé de remise aux travailleurs."
+        ],
+        "commonMistakes": [
+          "Ne pas établir de règlement de travail alors qu'on occupe du personnel.",
+          "Modifier le règlement sans respecter la procédure.",
+          "Oublier de remettre le règlement aux nouveaux travailleurs."
+        ]
+      },
+      "article-duree-du-travail-et-repos": {
+        "title": "Durée du travail et repos",
+        "summary": "La loi encadre la durée du travail, les pauses et les repos. Des limites journalières et hebdomadaires s'appliquent, avec des exceptions sectorielles et des règles pour le travail du dimanche ou de nuit.",
+        "whatToKnow": [
+          "Des limites journalières et hebdomadaires de durée du travail s'appliquent.",
+          "Le repos (intervalle minimal, repos dominical) et les pauses sont réglementés.",
+          "Le travail de nuit et le dimanche obéissent à des règles particulières.",
+          "Des exceptions et assouplissements existent selon le secteur et les CCT."
+        ],
+        "todo": [
+          "Construire les horaires dans le respect des limites journalières/hebdomadaires.",
+          "Garantir les temps de repos et de pause minimaux.",
+          "Vérifier les règles propres au travail de nuit/dimanche si concerné.",
+          "Intégrer les horaires au règlement de travail."
+        ],
+        "documents": [
+          "Horaires de travail des travailleurs.",
+          "Règlement de travail mentionnant les horaires.",
+          "Éventuelles CCT sectorielles applicables."
+        ],
+        "commonMistakes": [
+          "Dépasser les limites de durée du travail sans base légale ou CCT.",
+          "Ne pas respecter les temps de repos minimaux.",
+          "Faire travailler le dimanche/la nuit sans vérifier les conditions."
+        ]
+      },
+      "article-chomage-temporaire": {
+        "title": "Recourir au chômage temporaire",
+        "summary": "Le chômage temporaire permet de suspendre l'exécution du contrat dans certaines situations (force majeure, raisons économiques, intempéries…). La procédure et les documents varient selon le motif.",
+        "whatToKnow": [
+          "Le chômage temporaire suspend le contrat sans le rompre, pour un motif reconnu.",
+          "Les motifs (force majeure, raisons économiques, intempéries…) ont chacun leurs conditions.",
+          "Des communications à l'ONEM et des documents au travailleur sont requis selon le motif.",
+          "Le travailleur perçoit des allocations de l'ONEM pour les jours concernés."
+        ],
+        "todo": [
+          "Vérifier que la situation correspond à un motif reconnu de chômage temporaire.",
+          "Effectuer les communications/déclarations requises auprès de l'ONEM.",
+          "Informer les travailleurs et leur remettre les documents nécessaires.",
+          "Tenir à jour le suivi des jours de chômage temporaire."
+        ],
+        "documents": [
+          "Justification du motif (force majeure, économique, intempéries…).",
+          "Communications/déclarations ONEM.",
+          "Documents à remettre au travailleur pour ses allocations."
+        ],
+        "commonMistakes": [
+          "Invoquer un motif qui ne correspond pas aux conditions légales.",
+          "Omettre les communications obligatoires à l'ONEM.",
+          "Ne pas fournir au travailleur les documents nécessaires à ses allocations."
+        ]
+      },
+      "article-preparer-demande-secretariat-social": {
+        "title": "Préparer sa demande au secrétariat social",
+        "summary": "Le secrétariat social agréé gère la paie et les déclarations sociales. Bien préparer les informations en amont accélère l'affiliation et fiabilise la première paie.",
+        "whatToKnow": [
+          "Le secrétariat social établit les fiches de paie, la DmfA et souvent les Dimona pour vous.",
+          "Une affiliation claire et des données complètes évitent erreurs et régularisations.",
+          "Vous restez l'employeur responsable : les données que vous transmettez doivent être exactes.",
+          "Plus la commission paritaire et le contrat sont précis, plus la paie sera fiable."
+        ],
+        "todo": [
+          "Rassembler les données de l'entreprise (BCE, ONSS, assurance accidents).",
+          "Préparer pour chaque travailleur : contrat, fonction, horaire, barème/CP.",
+          "Clarifier les éléments variables (primes, frais, avantages) à intégrer en paie.",
+          "Transmettre un dossier complet et désigner un interlocuteur unique."
+        ],
+        "documents": [
+          "Données d'identification de l'entreprise (BCE, ONSS).",
+          "Contrats de travail et descriptions de fonction.",
+          "Commission paritaire et barèmes applicables.",
+          "Liste des éléments variables de rémunération."
+        ],
+        "commonMistakes": [
+          "Transmettre des données incomplètes (CP manquante, horaire imprécis).",
+          "Oublier des éléments de rémunération variables.",
+          "Considérer que le secrétariat social vérifie tout à votre place."
+        ]
+      }
+    },
+    "ec32Content": {
+      "content": {
+        "seo": {
+          "title": "eC3.2 : simulation interactive pour apprendre à remplir sa carte de chômage temporaire | Docbel",
+          "description": "Comprenez comment compléter la carte de contrôle électronique chômage temporaire eC3.2 grâce à une simulation pédagogique non officielle, des cas pratiques et les erreurs à éviter."
+        },
+        "hero": {
+          "badge": "Simulation pédagogique non officielle",
+          "title": "eC3.2, expliqué simplement",
+          "subtitle": "Testez vos démarches de contrôle électronique de chômage dans un simulateur clair, sans risque et 100 % confidentiel.",
+          "primaryCta": "Lancer la simulation",
+          "secondaryCta": "Voir les cas pratiques",
+          "disclaimer": "Aucune donnée réelle n’est demandée. Aucune donnée n’est transmise à l’ONEM."
+        },
+        "disclaimer": {
+          "title": "Simulation pédagogique non officielle",
+          "points": {
+            "0": "Simulation pédagogique non officielle",
+            "1": "Aucune donnée réelle n’est demandée",
+            "2": "Aucune donnée n’est transmise à l’ONEM",
+            "3": "Cette page ne remplace pas l’application officielle eC3.2",
+            "4": "Pour effectuer une vraie démarche, utilisez l’application officielle eC3.2"
+          }
+        },
+        "alert": {
+          "title": "Avant de commencer",
+          "content": "La carte eC3.2 concerne uniquement le chômage temporaire (réduction ou suspension d’activité chez votre employeur), à ne pas confondre avec l’eC3, qui concerne le chômage complet. Tout ce qui est affiché ici est fictif et sert uniquement à l’apprentissage : aucune connexion, aucun envoi et aucune donnée réelle ne sont en jeu."
+        },
+        "learningModes": {
+          "title": "Comment apprendre",
+          "subtitle": "Trois façons d’aborder la carte eC3.2, selon que vous préférez être guidé, vous exercer sur des cas concrets ou explorer librement.",
+          "modes": {
+            "guided": {
+              "title": "Mode guidé pas à pas",
+              "description": "Avancez étape par étape, de la connexion simulée à l’envoi fictif. À chaque écran, une explication et un conseil du coach vous accompagnent.",
+              "cta": "Commencer"
+            },
+            "scenarios": {
+              "title": "Cas pratiques",
+              "description": "Chargez un cas concret (travail un jour de chômage, maladie, vacances, plusieurs employeurs…) directement dans le simulateur pour vous entraîner.",
+              "cta": "Explorer les cas"
+            },
+            "free": {
+              "title": "Exploration libre",
+              "description": "Manipulez le calendrier à votre rythme : changez les situations, testez les corrections et observez ce qui se passe, sans aucune contrainte.",
+              "cta": "Ouvrir le simulateur"
+            }
+          }
+        },
+        "simulator": {
+          "title": "Simulateur eC3.2 — carte fictive",
+          "subtitle": "Une reconstitution pédagogique des écrans de l’application : connexion, déclaration, choix de l’employeur et du mois, remplissage du calendrier, corrections, vérification et envoi simulé.",
+          "fictitiousDataNotice": "Les données affichées sont fictives et servent uniquement à l’apprentissage.",
+          "steps": {
+            "login": {
+              "title": "Connexion simulée",
+              "description": "Découvrez les moyens d’identification (eID, itsme, frontaliers) sans aucune connexion réelle."
+            },
+            "declaration": {
+              "title": "Déclaration sur l’honneur",
+              "description": "Choisissez votre mois de départ et confirmez le passage à la voie électronique — étape fictive."
+            },
+            "employer": {
+              "title": "Choix de l’employeur",
+              "description": "Sélectionnez l’employeur qui vous a mis en chômage temporaire pour le mois concerné."
+            },
+            "month": {
+              "title": "Choix du mois",
+              "description": "Ouvrez la carte du mois à compléter ; les cartes déjà envoyées sont verrouillées."
+            },
+            "calendar": {
+              "title": "Remplir le calendrier",
+              "description": "Indiquez vos situations jour par jour : par défaut, chaque case est considérée comme du chômage."
+            },
+            "correction": {
+              "title": "Corriger une erreur",
+              "description": "Modifiez un jour déjà encodé et expliquez la correction, tant que la carte n’est pas envoyée."
+            },
+            "verify": {
+              "title": "Vérifier",
+              "description": "Relisez l’ensemble de vos encodages avant l’envoi simulé, surtout les jours travaillés."
+            },
+            "send": {
+              "title": "Envoyer",
+              "description": "Confirmez l’envoi fictif de la carte ; aucune donnée réelle n’est transmise."
+            }
+          },
+          "employers": {
+            "emp-a": {
+              "name": "Boulangerie Dupont — exemple",
+              "sector": "Commerce de détail (exemple)"
+            },
+            "emp-b": {
+              "name": "Atelier Lambert — exemple",
+              "sector": "Industrie (exemple)"
+            },
+            "emp-construction": {
+              "name": "Toitures Berger — exemple",
+              "sector": "Construction · CP 124 (exemple)"
+            }
+          },
+          "months": {
+            "2025-05": {
+              "label": "Mai 2025",
+              "statusNote": "En cours"
+            },
+            "2025-06": {
+              "label": "Juin 2025",
+              "statusNote": "Pas encore disponible"
+            },
+            "2025-04": {
+              "label": "Avril 2025",
+              "statusNote": "Non envoyé"
+            },
+            "2025-03": {
+              "label": "Mars 2025",
+              "statusNote": "Envoyé · verrouillé"
+            }
+          },
+          "coach": {
+            "title": "Coach Docbel",
+            "intro": "Je vous accompagne à chaque étape avec un conseil simple. Prenez votre temps : ici, vous ne risquez rien, c’est fait pour apprendre.",
+            "tips": {
+              "login": "Choisissez un moyen d’identification pour voir comment se passe la connexion. Rien n’est demandé ici : aucune carte, aucun code, aucune connexion réelle.",
+              "declaration": "Le mois choisi détermine à partir de quand vous utilisez l’eC3.2. Si vous étiez déjà en chômage temporaire avant, vous pourrez activer un mois antérieur plus tard.",
+              "employer": "Sélectionnez l’employeur qui vous a mis en chômage temporaire. Vos éventuelles autres occupations seront indiquées sur cette même carte.",
+              "month": "Ouvrez la carte du mois à compléter. Une carte déjà envoyée est verrouillée : vous ne pourrez plus la modifier.",
+              "calendar": "Par défaut, chaque jour est considéré comme du chômage : vous n’indiquez que ce qui change (travail, maladie, vacances…). Tout travail doit être enregistré avant de commencer.",
+              "correction": "Pour corriger un jour, expliquez clairement le changement : cette explication aide les inspecteurs. Seules les cartes non envoyées peuvent être corrigées.",
+              "verify": "Relisez calmement chaque jour, surtout les jours travaillés et les jours d’inaptitude. Mieux vaut vérifier deux fois qu’envoyer une carte incomplète.",
+              "send": "Vérifiez que la première date d’envoi possible est atteinte et que vous êtes affilié à un organisme de paiement. Ici, l’envoi est simulé : rien ne part vers l’ONEM."
+            }
+          },
+          "correctionModal": {
+            "title": "Corriger la situation — simulation",
+            "dayLabel": "Jour concerné",
+            "fromLabel": "Ancienne situation",
+            "toLabel": "Nouvelle situation",
+            "reasonLabel": "Explication (obligatoire)",
+            "reasonPlaceholder": "Expliquez la correction…",
+            "saveLabel": "Sauvegarder la correction",
+            "lockedMessage": "Cette carte est envoyée et verrouillée dans la simulation.",
+            "requiredError": "L’explication est obligatoire pour enregistrer une correction."
+          },
+          "sendModal": {
+            "title": "Envoyer la carte — simulation",
+            "body": "Dans la vraie application, cette étape transmet la carte à votre organisme de paiement. Ici, aucune donnée réelle n’est envoyée.",
+            "cancelLabel": "Annuler",
+            "confirmLabel": "Confirmer l’envoi simulé",
+            "successTitle": "Carte envoyée avec succès — simulation",
+            "successBody": "Votre carte fictive est maintenant verrouillée.",
+            "blockedTitle": "Envoi impossible — simulation",
+            "blockedBody": "Dans la vraie application, vous pouvez compléter la carte, mais vous devez être affilié à un organisme de paiement pour pouvoir l’envoyer."
+          },
+          "pdf": {
+            "buttonLabel": "Télécharger l’aperçu — simulation",
+            "docTitle": "Aperçu pédagogique eC3.2 — simulation",
+            "fictionMention": "Document fictif — ne remplace pas une carte officielle.",
+            "warning": "Ce document n’est pas une carte officielle."
+          }
+        },
+        "scenariosSection": {
+          "title": "Cas pratiques",
+          "subtitle": "Chargez un cas dans le simulateur pour vous entraîner."
+        },
+        "mistakesSection": {
+          "title": "Les erreurs fréquentes à éviter",
+          "subtitle": "Les pièges les plus courants au moment de remplir l’eC3.2 — et comment les éviter simplement."
+        },
+        "faqSection": {
+          "title": "Foire aux questions",
+          "subtitle": "Les réponses claires aux questions les plus posées sur la carte de contrôle électronique du chômage temporaire."
+        },
+        "resourcesSection": {
+          "title": "Ressources officielles",
+          "subtitle": "Les sites et services officiels à utiliser pour vos démarches réelles.",
+          "intro": "Cette page est un outil d’apprentissage. Pour effectuer une véritable démarche, passez toujours par les canaux officiels ci-dessous.",
+          "officialButtonLabel": "Accéder au site officiel de l’ONEM",
+          "note": "Docbel n’est pas affilié à l’ONEM. Ces liens sont fournis à titre informatif.",
+          "items": {
+            "secu": {
+              "label": "Portail de la sécurité sociale",
+              "description": "Point d’accès officiel aux services en ligne de la sécurité sociale belge, dont l’application eC3.2."
+            },
+            "playstore": {
+              "label": "eC3.2 sur Google Play (Android)",
+              "description": "L’application officielle pour compléter et envoyer votre carte de contrôle de chômage temporaire sur Android."
+            },
+            "appstore": {
+              "label": "eC3.2 sur l’App Store (iPhone)",
+              "description": "L’application officielle pour compléter et envoyer votre carte de contrôle de chômage temporaire sur iPhone."
+            },
+            "orgs": {
+              "label": "Organismes de paiement (CAPAC, CSC, FGTB, CGSLB)",
+              "description": "Pour percevoir vos allocations, vous devez être affilié à un organisme de paiement : la CAPAC (publique) ou un syndicat (CSC, FGTB, CGSLB)."
+            },
+            "onem": {
+              "label": "ONEM — Office national de l’emploi",
+              "description": "L’administration responsable de la réglementation du chômage et de l’application eC3.2 en Belgique."
+            }
+          }
+        },
+        "derogationsSection": {
+          "title": "Dérogations",
+          "subtitle": "Les exceptions et reports prévus pendant la période de transition vers l’eC3.2.",
+          "badge": "À vérifier avant publication finale",
+          "transitionNote": "Une demande de dérogation pouvait être prolongée une fois si nécessaire jusqu’au 30 juin 2025 au plus tard. À partir du 1er juillet 2025, tous les chômeurs temporaires doivent utiliser l’eC3.2, sauf CP 327. (Ces règles peuvent évoluer — à vérifier avant publication finale.)",
+          "items": {
+            "cp327": {
+              "title": "Exception CP 327",
+              "summary": "Le webinaire mentionne une dérogation permanente pour la CP 327. Cette information doit être vérifiée avant toute publication finale et peut être modifiée dans le builder."
+            },
+            "worker": {
+              "title": "Dérogation temporaire demandée par le travailleur",
+              "summary": "Le travailleur informe l’employeur via un formulaire de notification ; l’employeur signe pour accusé de réception ou le travailleur envoie par recommandé ; puis demande auprès de l’ONEM et de son organisme de paiement.",
+              "conditions": {
+                "0": "Demande complète",
+                "1": "Demande dans les délais",
+                "2": "Période maximale de trois mois consécutifs entre janvier 2025 et juin 2025",
+                "3": "Le travailleur ne doit pas encore avoir utilisé l’eC3.2"
+              }
+            },
+            "employer": {
+              "title": "Dérogation temporaire demandée par l’employeur",
+              "summary": "L’employeur introduit la demande auprès de l’ONEM. En cas d’accord : les travailleurs déjà sur eC3.2 continuent ; les autres peuvent continuer temporairement avec la carte papier, peuvent commencer l’eC3.2 à tout moment, et doivent l’utiliser après la fin de la période de dérogation.",
+              "conditions": {
+                "0": "Informer les travailleurs",
+                "1": "S’engager à les accompagner",
+                "2": "Période maximale de trois mois consécutifs entre janvier 2025 et juin 2025"
+              }
+            }
+          }
+        },
+        "officialInfo": {
+          "obligation": {
+            "title": "Obligation à partir du 1er janvier 2025",
+            "intro": "Depuis le 1er janvier 2025, la carte de contrôle électronique eC3.2 devient la règle pour le chômage temporaire. Voici ce que cela change concrètement pour les travailleurs et pour les employeurs.",
+            "workersTitle": "Pour les travailleurs",
+            "workers": {
+              "0": "Être en règle lors d’un contrôle repose sur une carte électronique correctement remplie",
+              "1": "Le travail doit être indiqué avant de commencer",
+              "2": "La carte doit être remplie à partir du premier jour effectif de chômage du mois",
+              "3": "Dans le secteur de la construction, elle doit toujours être remplie",
+              "4": "Le paiement se base sur la carte électronique"
+            },
+            "employersTitle": "Pour les employeurs",
+            "employers": {
+              "0": "Ne plus délivrer de cartes papier sauf dérogation",
+              "1": "Ne plus remplir le livre de validation sauf pour les travailleurs recevant encore une carte papier",
+              "2": "Accompagner les travailleurs si nécessaire"
+            }
+          },
+          "why": {
+            "title": "Pourquoi l’eC3.2 ?",
+            "subtitle": "Les bénéfices avancés pour le passage de la carte papier à la carte électronique.",
+            "items": {
+              "0": "Lutte contre la fraude sociale",
+              "1": "L’ONEM est informé du remplissage de la carte",
+              "2": "Meilleure traçabilité de ce qui est rempli et quand",
+              "3": "Moins d’ambiguïté qu’avec le papier",
+              "4": "Paiement plus correct",
+              "5": "Traitement plus rapide",
+              "6": "Envoi numérique à l’organisme de paiement",
+              "7": "Processus de paiement automatisés",
+              "8": "Perte de carte impossible",
+              "9": "Fin de certaines procédures papier longues",
+              "10": "Disponible en NL, FR et DE"
+            },
+            "note": "L’eC3.2 vise à faciliter un traitement plus rapide. (Docbel ne garantit pas un paiement plus rapide.)"
+          },
+          "help": {
+            "title": "Besoin d’aide ?",
+            "body": {
+              "0": "En cas de problème de connexion dans la vraie application, le webinaire mentionne le centre de contact de la sécurité sociale.",
+              "1": "En cas de problème d’utilisation de l’application, contactez votre organisme de paiement.",
+              "2": "Si vous ne pouvez pas remplir la carte à temps, informez l’ONEM afin d’être en règle en cas de contrôle."
+            },
+            "disclaimer": "Docbel vous aide à comprendre la procédure, mais ne remplace pas l’ONEM ni votre organisme de paiement."
+          }
+        },
+        "legal": {
+          "simulationLabel": "Simulation pédagogique non officielle",
+          "noRealData": "Aucune donnée réelle n’est demandée",
+          "noTransmission": "Aucune donnée n’est transmise à l’ONEM",
+          "notReplacement": "Cette page ne remplace pas l’application officielle eC3.2",
+          "useOfficial": "Pour effectuer une vraie démarche, utilisez l’application officielle eC3.2"
+        },
+        "builderMetadata": {
+          "lastReviewedNote": "Contenu pédagogique basé sur un webinaire ONEM — à vérifier avant publication finale (notamment CP 327 et dérogations)."
+        }
+      },
+      "scenarios": {
+        "all-month": {
+          "title": "Je suis en chômage temporaire tout le mois",
+          "level": "Débutant",
+          "duration": "2 min",
+          "context": "Votre employeur vous a mis en chômage temporaire pour l’ensemble du mois. Aucun jour de travail, aucune autre situation à signaler.",
+          "objective": "Comprendre que « Chômage » est la situation par défaut : pour un jour réellement en chômage temporaire, il n’y a rien à modifier.",
+          "expectedAction": "Ne rien modifier pour les jours réellement en chômage, sauf si une autre situation s’applique.",
+          "feedbackCorrect": "Correct : si vous êtes en chômage temporaire ce jour-là, la situation par défaut suffit.",
+          "feedbackError": "Pas tout à fait : pour un jour réellement en chômage, la situation par défaut convient déjà. Inutile d’ajouter une autre situation.",
+          "ruleRef": "Situation par défaut"
+        },
+        "work-own": {
+          "title": "Je travaille un jour chez mon employeur",
+          "level": "Débutant",
+          "duration": "3 min",
+          "context": "Vous êtes en chômage temporaire plusieurs jours, mais le mercredi vous travaillez chez l’employeur qui vous a mis en chômage.",
+          "objective": "Savoir signaler une reprise ponctuelle de travail chez l’employeur qui complète la carte.",
+          "expectedAction": "Sélectionner le jour concerné et choisir « Travail chez l’employeur ».",
+          "feedbackCorrect": "Correct : le travail chez l’employeur habituel doit être indiqué avant de commencer.",
+          "feedbackError": "Pas tout à fait : un jour travaillé chez votre employeur n’est pas un jour de chômage. Sélectionnez le jour et choisissez « Travail chez l’employeur ».",
+          "ruleRef": "Travail chez l’employeur"
+        },
+        "work-elsewhere-usual": {
+          "title": "Je fais un flexi-job un jour où je travaille normalement",
+          "level": "Intermédiaire",
+          "duration": "3 min",
+          "context": "Pendant votre chômage temporaire, vous effectuez un travail ailleurs (par exemple un flexi-job) un jour où vous travaillez normalement chez votre employeur habituel.",
+          "objective": "Distinguer un travail effectué ailleurs un jour normalement travaillé chez l’employeur habituel.",
+          "expectedAction": "Choisir « Travail ailleurs — jour normalement travaillé chez l’employeur habituel ».",
+          "feedbackCorrect": "Correct : un travail ailleurs pendant un jour normalement travaillé doit être indiqué.",
+          "feedbackError": "Pas tout à fait : comme ce jour est normalement travaillé chez votre employeur habituel, choisissez « Travail ailleurs — jour normalement travaillé chez l’employeur habituel ».",
+          "ruleRef": "Travail ailleurs"
+        },
+        "work-elsewhere-weekend": {
+          "title": "Je travaille samedi chez un autre employeur",
+          "level": "Intermédiaire",
+          "duration": "3 min",
+          "context": "Vous ne travaillez normalement pas le samedi chez votre employeur habituel, mais vous effectuez ce jour-là un travail occasionnel ailleurs.",
+          "objective": "Comprendre qu’un travail ailleurs doit être signalé même un jour normalement non travaillé, comme le week-end.",
+          "expectedAction": "Choisir « Travail ailleurs — jour normalement non travaillé ».",
+          "feedbackCorrect": "Correct : même le week-end, un travail ailleurs doit être indiqué.",
+          "feedbackError": "Pas tout à fait : un travail effectué un samedi normalement non travaillé doit quand même être signalé. Choisissez « Travail ailleurs — jour normalement non travaillé ».",
+          "ruleRef": "Travail ailleurs"
+        },
+        "other-regular": {
+          "title": "J’ai deux emplois à temps partiel",
+          "level": "Avancé",
+          "duration": "4 min",
+          "context": "Vous combinez deux emplois habituels à temps partiel et l’un d’eux vous met en chômage temporaire, tandis que l’autre se poursuit normalement.",
+          "objective": "Savoir signaler la poursuite d’un autre emploi habituel pendant le chômage temporaire.",
+          "expectedAction": "Choisir « Travail auprès d’un autre employeur habituel ».",
+          "feedbackCorrect": "Correct : si vous combinez plusieurs emplois habituels, l’autre occupation doit être communiquée à l’organisme de paiement.",
+          "feedbackError": "Pas tout à fait : votre second emploi habituel continue. Choisissez « Travail auprès d’un autre employeur habituel » et informez l’organisme de paiement.",
+          "ruleRef": "Autre employeur habituel"
+        },
+        "sick": {
+          "title": "Je tombe malade pendant le chômage temporaire",
+          "level": "Débutant",
+          "duration": "3 min",
+          "context": "Pendant une période de chômage temporaire, vous tombez malade quelques jours et êtes en incapacité de travail.",
+          "objective": "Savoir indiquer les jours de maladie comme inaptitude au travail et penser à avertir la mutualité.",
+          "expectedAction": "Sélectionner les jours de maladie et choisir « Inaptitude au travail ».",
+          "feedbackCorrect": "Correct : la maladie, l’accident du travail ou le repos d’accouchement doivent être indiqués comme inaptitude au travail. La mutualité doit être avertie dans les 48 heures.",
+          "feedbackError": "Pas tout à fait : un jour de maladie n’est pas un jour de chômage. Sélectionnez les jours concernés, choisissez « Inaptitude au travail » et avertissez votre mutualité dans les 48 heures.",
+          "ruleRef": "Inaptitude au travail"
+        },
+        "vacation": {
+          "title": "Je prends des vacances",
+          "level": "Débutant",
+          "duration": "2 min",
+          "context": "Pendant votre période de chômage temporaire, vous prenez quelques jours de vacances annuelles.",
+          "objective": "Savoir distinguer les jours de vacances des jours de chômage temporaire.",
+          "expectedAction": "Choisir « Vacances » pour les jours concernés.",
+          "feedbackCorrect": "Correct : les vacances annuelles individuelles ou collectives doivent être indiquées.",
+          "feedbackError": "Pas tout à fait : un jour de vacances n’est pas un jour de chômage. Choisissez « Vacances » pour les jours concernés.",
+          "ruleRef": "Vacances"
+        },
+        "other-situation": {
+          "title": "J’ai un jour férié ou une formation rémunérée",
+          "level": "Débutant",
+          "duration": "3 min",
+          "context": "Pendant votre chômage temporaire, un jour est couvert par une autre situation : un jour férié ou une formation rémunérée, par exemple.",
+          "objective": "Comprendre quand utiliser « Autre situation » pour un jour sans prestation mais couvert autrement.",
+          "expectedAction": "Choisir « Autre situation ».",
+          "feedbackCorrect": "Correct : certains jours sans prestation mais couverts par une autre situation doivent être indiqués comme autre situation.",
+          "feedbackError": "Pas tout à fait : un jour férié ou une formation rémunérée n’est pas un jour de chômage. Choisissez « Autre situation ».",
+          "ruleRef": "Autre situation"
+        },
+        "multiple-employers": {
+          "title": "Je suis en chômage temporaire chez deux employeurs",
+          "level": "Avancé",
+          "duration": "4 min",
+          "context": "Deux de vos employeurs vous mettent en chômage temporaire au cours du même mois. Une seule carte ne suffit pas.",
+          "objective": "Comprendre qu’une carte distincte doit être complétée pour chaque employeur concerné.",
+          "expectedAction": "Remplir deux cartes fictives, une par employeur concerné.",
+          "feedbackCorrect": "Correct : lorsqu’il y a chômage temporaire chez plusieurs employeurs, une carte doit être complétée pour chaque employeur concerné.",
+          "feedbackError": "Pas tout à fait : une seule carte ne couvre pas deux employeurs. Complétez une carte distincte pour chaque employeur qui vous a mis en chômage.",
+          "ruleRef": "Plusieurs employeurs"
+        },
+        "no-payment-org": {
+          "title": "Je ne suis pas encore inscrit auprès d’un organisme de paiement",
+          "level": "Intermédiaire",
+          "duration": "3 min",
+          "context": "Vous complétez votre carte, mais vous n’êtes pas encore inscrit auprès d’un organisme de paiement (CAPAC, CSC, FGTB ou CGSLB).",
+          "objective": "Comprendre que la carte peut être complétée sans inscription, mais ne peut pas être envoyée.",
+          "expectedAction": "Compléter la carte mais constater que l’envoi est bloqué.",
+          "feedbackCorrect": "Correct : sans inscription auprès d’un organisme de paiement, la carte peut être complétée mais ne peut pas être envoyée.",
+          "feedbackError": "Pas tout à fait : sans organisme de paiement, l’envoi reste bloqué. Vous pouvez compléter la carte, mais l’inscription est nécessaire pour l’envoyer.",
+          "ruleRef": "Organisme de paiement"
+        },
+        "correction": {
+          "title": "J’ai oublié d’indiquer un travail",
+          "level": "Intermédiaire",
+          "duration": "4 min",
+          "context": "Vous vous rendez compte qu’un jour de travail a été enregistré comme chômage. La carte n’est pas encore envoyée : une correction est possible.",
+          "objective": "Savoir corriger un jour mal encodé et fournir l’explication demandée avant de sauvegarder.",
+          "expectedAction": "Modifier le jour concerné, choisir la bonne situation, fournir une explication.",
+          "feedbackCorrect": "Correct : une correction doit être expliquée avant d’être sauvegardée.",
+          "feedbackError": "Pas tout à fait : une correction ne peut pas être sauvegardée sans explication. Sélectionnez le jour, choisissez la bonne situation et justifiez la modification.",
+          "ruleRef": "Correction"
+        },
+        "construction-cp124": {
+          "title": "Je travaille dans la construction",
+          "level": "Intermédiaire",
+          "duration": "3 min",
+          "context": "Vous relevez de la commission paritaire 124 (construction) et votre employeur vous met en chômage temporaire.",
+          "objective": "Comprendre la règle propre au secteur de la construction : la carte doit toujours être remplie pour l’employeur concerné.",
+          "expectedAction": "Comprendre que la carte doit toujours être remplie pour l’employeur du secteur construction.",
+          "feedbackCorrect": "Correct : en CP 124, la carte doit toujours être complétée pour l’employeur concerné.",
+          "feedbackError": "Pas tout à fait : dans la construction (CP 124), la carte doit toujours être complétée pour l’employeur concerné, sans exception.",
+          "ruleRef": "CP 124 construction"
+        },
+        "first-effective-day": {
+          "title": "Je commence le chômage temporaire en cours de mois",
+          "level": "Intermédiaire",
+          "duration": "3 min",
+          "context": "Votre chômage temporaire ne débute pas le 1er du mois mais en cours de mois. Le premier jour effectif est signalé automatiquement.",
+          "objective": "Savoir à partir de quel jour la carte doit être complétée lorsque le chômage commence en cours de mois.",
+          "expectedAction": "Remplir la carte à partir du premier jour de chômage effectif jusqu’à la fin du mois.",
+          "feedbackCorrect": "Correct : la carte doit être complétée à partir du premier jour de chômage effectif du mois.",
+          "feedbackError": "Pas tout à fait : la carte se remplit à partir du premier jour de chômage effectif, pas depuis le 1er du mois. Continuez jusqu’au dernier jour du mois.",
+          "ruleRef": "Premier jour effectif"
+        },
+        "wrong-month": {
+          "title": "J’ai choisi le mauvais premier mois",
+          "level": "Avancé",
+          "duration": "4 min",
+          "context": "Vous constatez qu’un mois antérieur aurait dû être déclaré et activé en premier. Une nouvelle déclaration simulée est nécessaire.",
+          "objective": "Comprendre qu’un mois antérieur peut être activé si nécessaire, via une nouvelle déclaration.",
+          "expectedAction": "Sélectionner un mois antérieur et accepter une nouvelle déclaration simulée.",
+          "feedbackCorrect": "Correct : un mois antérieur peut être activé si nécessaire.",
+          "feedbackError": "Pas tout à fait : si le mauvais mois a été activé, sélectionnez le mois antérieur concerné et acceptez la nouvelle déclaration simulée.",
+          "ruleRef": "Choix du mois"
+        }
+      },
+      "situations": {
+        "temporary_unemployment": {
+          "label": "Chômage temporaire",
+          "shortLabel": "Chômage",
+          "description": "Situation par défaut. Vous ne devez rien indiquer si vous êtes effectivement en chômage temporaire ce jour-là.",
+          "warning": "Si vous travaillez ailleurs pendant ces jours, vous devez l’indiquer.",
+          "helpDetail": "Par défaut, toutes les cases du calendrier sont déjà sur « Chômage ». Vous n’avez donc rien à encoder pour ces jours : il suffit de modifier uniquement les jours qui correspondent à une autre situation (travail, inaptitude, vacances, etc.).",
+          "examples": {
+            "0": "Jours où vous êtes chômeur temporaire",
+            "1": "Jours sans travail dus à un crédit-temps ou une interruption de carrière",
+            "2": "Jours où vous ne travaillez habituellement pas chez cet employeur (certains week-ends, jours d’inactivité habituels)"
+          }
+        },
+        "work_own_employer": {
+          "label": "Travail chez l’employeur",
+          "shortLabel": "Travail (employeur)",
+          "description": "À choisir lorsque vous travaillez chez l’employeur pour lequel vous remplissez la carte. À indiquer aussi si ce travail est effectué le week-end ou un jour habituel d’inactivité chez cet employeur.",
+          "warning": "Le travail doit être enregistré AVANT de commencer à travailler.",
+          "helpDetail": "Pour un travail de nuit, indiquez le jour où l’activité commence. Le travail de nuit est une prestation entre 20 h et 6 h. Si la prestation compte plus d’heures qu’un jour normal de travail, deux cases doivent être indiquées.",
+          "examples": {
+            "0": "Jour travaillé chez l’employeur qui remplit la carte",
+            "1": "Travail le week-end chez cet employeur",
+            "2": "Travail un jour habituel d’inactivité chez cet employeur"
+          }
+        },
+        "work_elsewhere_usual_day": {
+          "label": "Travail ailleurs — jour normalement travaillé",
+          "shortLabel": "Ailleurs (jour travaillé)",
+          "description": "À choisir lorsque vous travaillez ailleurs un jour où vous travaillez normalement pour l’employeur habituel.",
+          "warning": "À enregistrer avant de commencer à travailler.",
+          "helpDetail": "Exceptions : l’activité accessoire dans le cadre de la mesure Tremplin-indépendants ne doit pas être mentionnée ; pour les travailleurs des arts (chapitre XII), certaines activités propres, accessoires ou occasionnelles non rémunérées ne doivent pas être mentionnées.",
+          "examples": {
+            "0": "Autre employeur non habituel",
+            "1": "Flexi-job",
+            "2": "Travail pour son propre compte",
+            "3": "Travail pour un tiers",
+            "4": "Activité occasionnelle",
+            "5": "Activité accessoire acceptée par l’ONEM entre 7 h et 18 h"
+          }
+        },
+        "work_elsewhere_non_usual_day": {
+          "label": "Travail ailleurs — jour normalement non travaillé",
+          "shortLabel": "Ailleurs (jour non travaillé)",
+          "description": "À choisir lorsque vous travaillez ailleurs un jour où vous ne travaillez normalement pas pour l’employeur habituel.",
+          "warning": "À enregistrer avant de commencer à travailler.",
+          "helpDetail": "Exceptions : l’activité accessoire dans le cadre de la mesure Tremplin-indépendants ne doit pas être mentionnée ; pour les travailleurs des arts (chapitre XII), certaines activités propres, accessoires ou occasionnelles non rémunérées ne doivent pas être mentionnées.",
+          "examples": {
+            "0": "Week-end",
+            "1": "Jour habituel d’inactivité",
+            "2": "Autre employeur non habituel",
+            "3": "Flexi-job",
+            "4": "Travail pour son propre compte",
+            "5": "Travail pour un tiers",
+            "6": "Activité occasionnelle",
+            "7": "Activité accessoire acceptée par l’ONEM, quel que soit le moment"
+          }
+        },
+        "work_other_regular_employer": {
+          "label": "Travail auprès d’un autre employeur habituel",
+          "shortLabel": "Autre employeur habituel",
+          "description": "Vous combinez deux emplois à temps partiel de longue durée. Ce cas ne concerne ni le flexi-job ni l’activité indépendante.",
+          "warning": "À enregistrer avant de commencer à travailler.",
+          "helpDetail": "Vous devez informer votre organisme de paiement de cette autre occupation.",
+          "examples": {
+            "0": "Second emploi à temps partiel de longue durée",
+            "1": "Combinaison de deux occupations habituelles à temps partiel"
+          }
+        },
+        "incapacity": {
+          "label": "Inaptitude au travail",
+          "shortLabel": "Inaptitude",
+          "description": "À choisir en cas de maladie, d’accident du travail ou de repos d’accouchement. Incluez aussi les samedis, dimanches et jours fériés si ces jours font partie de la période d’inaptitude.",
+          "warning": "Prévenez votre mutualité dans les 48 heures.",
+          "helpDetail": "Indiquez « Inaptitude au travail » pour toute la période concernée, y compris les jours non travaillés (week-ends et jours fériés) qui tombent à l’intérieur de cette période.",
+          "examples": {
+            "0": "Maladie",
+            "1": "Accident du travail",
+            "2": "Repos d’accouchement"
+          }
+        },
+        "vacation": {
+          "label": "Vacances",
+          "shortLabel": "Vacances",
+          "description": "À choisir pour les jours de vacances annuelles individuelles ou pendant une fermeture collective pour vacances annuelles, que les jours soient couverts ou non par un pécule de vacances.",
+          "warning": "",
+          "helpDetail": "Force majeure médicale : en cas de reprise progressive à temps partiel autorisée par le médecin-conseil, indiquez aussi « Vacances » pour les jours de vacances pris. Les congés extralégaux ne doivent pas nécessairement être épuisés pendant la fermeture collective ; s’ils le sont, indiquez-les comme « Autre situation ».",
+          "examples": {
+            "0": "Vacances annuelles individuelles",
+            "1": "Fermeture collective pour vacances annuelles"
+          }
+        },
+        "other": {
+          "label": "Autre situation",
+          "shortLabel": "Autre",
+          "description": "À choisir pour les jours sans prestation mais couverts par une autre situation.",
+          "warning": "",
+          "helpDetail": "",
+          "examples": {
+            "0": "Jour férié",
+            "1": "Repos compensatoire",
+            "2": "Formation rémunérée",
+            "3": "Journée couverte par une indemnité en compensation du licenciement",
+            "4": "Congé sans solde",
+            "5": "Absence injustifiée",
+            "6": "Détention",
+            "7": "Congé de paternité",
+            "8": "Congé extralégal pendant une fermeture collective pour vacances annuelles"
+          }
+        },
+        "not_applicable": {
+          "label": "Pas d’application",
+          "shortLabel": "Grisé",
+          "description": "Cases grisées : jours où vous n’êtes pas lié par un contrat de travail auprès de l’employeur choisi (contrat débuté ou terminé en cours de mois), et jours hors du mois sélectionné.",
+          "warning": "",
+          "helpDetail": "Vous ne pouvez pas encoder ces jours. Cette situation est attribuée automatiquement, vous n’avez rien à faire.",
+          "examples": {
+            "0": "Jours avant le début du contrat dans le mois",
+            "1": "Jours après la fin du contrat dans le mois",
+            "2": "Jours hors du mois sélectionné"
+          }
+        },
+        "first_effective_unemployment_day": {
+          "label": "Premier jour de chômage effectif",
+          "shortLabel": "1er jour effectif",
+          "description": "Premier jour de chômage du mois pour l’employeur sélectionné, tel que communiqué par l’employeur à l’ONEM. Apparaît en cas de chômage temporaire pour raisons économiques, intempéries ou accident technique. Pour les autres types, aucune icône n’est affichée.",
+          "warning": "Remplissez la carte à partir du premier jour de chômage effectif jusqu’à la fin du mois. Pour la construction, la carte doit toujours être remplie.",
+          "helpDetail": "L’absence de cette icône pendant le premier mois d’utilisation ne bloque pas le fonctionnement de la carte. Cette situation est signalée automatiquement, vous n’avez rien à encoder.",
+          "examples": {
+            "0": "Chômage temporaire pour raisons économiques",
+            "1": "Chômage temporaire pour intempéries",
+            "2": "Chômage temporaire pour accident technique"
+          }
+        }
+      },
+      "labels": {
+        "nav.next": "Étape suivante",
+        "nav.back": "Étape précédente",
+        "nav.restart": "Recommencer la simulation",
+        "nav.toCalendar": "Aller au calendrier",
+        "login.title": "Connexion simulée",
+        "login.intro": "Choisissez un moyen d’identification pour comprendre comment se passe la connexion. Ici, rien n’est demandé et aucune connexion réelle n’a lieu.",
+        "login.eid": "Comprendre la connexion eID",
+        "login.itsme": "Comprendre itsme",
+        "login.frontalier": "Je suis travailleur frontalier",
+        "login.noMeans": "Je n’ai pas de moyen d’identification",
+        "login.continue": "Démarrer la simulation",
+        "declaration.title": "Déclaration sur l’honneur — simulation",
+        "declaration.intro": "Lors de la première connexion officielle, vous choisissez le mois de départ, lisez le manuel et les conditions, puis confirmez que vous passez à la voie électronique.",
+        "declaration.monthField": "Mois à partir duquel j’utilise l’eC3.2",
+        "declaration.checkbox": "Je confirme avoir lu le manuel et les conditions, et utiliser désormais la voie électronique (case fictive).",
+        "declaration.continue": "Continuer la simulation",
+        "employer.title": "Choisir l’employeur",
+        "employer.intro": "Choisissez l’employeur qui vous a mis en chômage temporaire. Vos autres occupations seront indiquées sur cette carte.",
+        "employer.enterprise": "Numéro d’entreprise (fictif)",
+        "employer.continue": "Choisir cet employeur",
+        "month.title": "Choisir le mois",
+        "month.intro": "Sélectionnez la carte du mois à compléter. Les cartes déjà envoyées sont verrouillées.",
+        "month.locked": "Envoyée — verrouillée",
+        "month.notYet": "Pas encore disponible",
+        "month.activatePast": "Activer un mois antérieur",
+        "card.title": "Carte de contrôle — simulation",
+        "card.employer": "Employeur",
+        "card.enterprise": "Numéro d’entreprise",
+        "card.lastUpdate": "Dernière mise à jour",
+        "card.corrections": "Corrections",
+        "card.download": "Télécharger l’aperçu — simulation",
+        "card.listView": "Vue liste",
+        "card.calendarView": "Vue calendrier",
+        "card.calendarTab": "Calendrier",
+        "card.legendTab": "Légende",
+        "card.adapt": "Adapter les jours sélectionnés",
+        "card.send": "Envoyer la carte — simulation",
+        "card.firstSend": "Première date d’envoi possible",
+        "card.affiliation": "Je suis inscrit auprès d’un organisme de paiement",
+        "selector.title": "Quelle situation pour ce(s) jour(s) ?",
+        "selector.workElsewhereGroup": "Travail ailleurs que chez l’employeur",
+        "selector.save": "Enregistrer ce jour",
+        "selector.saveMulti": "Enregistrer ces jours",
+        "selector.cancel": "Annuler",
+        "selector.selected": "sélectionné·s",
+        "calendar.selectHint": "Cliquez sur un jour pour le sélectionner. Cliquez à nouveau pour le retirer.",
+        "calendar.clear": "Tout désélectionner",
+        "calendar.legend": "Légende des situations",
+        "verify.title": "Vérifier la carte",
+        "verify.intro": "Relisez vos encodages avant l’envoi simulé. Vérifiez surtout les jours travaillés et les jours d’inaptitude.",
+        "list.date": "Date",
+        "list.situation": "Situation",
+        "list.correction": "Correction",
+        "list.edit": "Modifier",
+        "list.empty": "Aucun jour à afficher pour ce mois."
+      },
+      "notices": {
+        "login.eid": "L’eID est votre carte d’identité électronique. Dans la vraie application, vous l’utilisez avec un lecteur de carte et votre code PIN pour vous identifier en toute sécurité.",
+        "login.itsme": "itsme est une application mobile d’identité numérique. Dans la vraie application, vous confirmez votre identité sur votre smartphone, sans lecteur de carte.",
+        "login.frontalier": "Les travailleurs frontaliers disposant d’un numéro de registre national ou d’un numéro BIS peuvent utiliser un moyen d’identification électronique reconnu au niveau européen (eIDAS). Si ce n’est pas possible, une clé numérique alternative peut être activée après contact avec l’ONEM.",
+        "login.noMeans": "Sans moyen d’identification électronique, vous pouvez prendre contact avec l’ONEM pour activer une clé numérique alternative. Cette simulation ne demande, elle, aucune identification.",
+        "declaration.monthImportance": "Dans la vraie application, le choix du mois est important : il détermine à partir de quand vous utilisez l’eC3.2.",
+        "month.rule": "La carte eC3.2 est accessible uniquement pour le mois précédent. En juin → seul mai est disponible. Dès le 1er juillet, mai disparaît et juin devient accessible à son tour.",
+        "month.activatePast": "Si vous avez activé l’eC3.2 à partir d’un mois donné mais que vous étiez déjà en chômage temporaire avant, vous pouvez activer un mois antérieur. Une nouvelle déclaration sur l’honneur vous est alors demandée.",
+        "month.cards": "Pour chaque employeur, vous voyez la carte du mois en cours, celle du mois suivant, les cartes des mois précédents non envoyées, et les cartes non utilisées pour les mois sans chômage temporaire.",
+        "calendar.defaultChomage": "Par défaut, les cases du calendrier sont considérées comme « Chômage ». Vous ne devez rien indiquer si vous êtes effectivement en chômage temporaire ce jour-là. Si vous travaillez ailleurs, vous devez l’indiquer.",
+        "calendar.notApplicable": "Les cases grisées (« Pas d’application ») concernent les jours sans contrat avec l’employeur choisi (contrat débuté ou terminé en cours de mois) et les jours hors du mois sélectionné.",
+        "calendar.firstEffectiveDay": "Le premier jour de chômage effectif du mois est signalé automatiquement (chômage économique, intempéries ou accident technique). Pour les autres types de chômage temporaire, aucune icône n’est affichée.",
+        "calendar.firstSendNoIcon": "L’absence de cette icône pendant le premier mois d’utilisation ne bloque pas le fonctionnement de la carte.",
+        "calendar.fillUntilEnd": "La carte doit être complétée à partir du premier jour de chômage effectif jusqu’au dernier jour du mois. Dans la construction, la carte doit toujours être remplie.",
+        "save.unsaved": "Vos modifications ne sont pas enregistrées. Sauvegardez avant de continuer.",
+        "send.firstSendBefore": "L’envoi n’est pas encore possible : la première date d’envoi possible n’est pas atteinte. Même lorsque cette date tombe avant la fin du mois, la carte doit être complétée correctement jusqu’au dernier jour du mois. (Cette simulation n’envoie jamais rien.)",
+        "send.noPaymentOrg": "Dans la vraie application, vous pouvez compléter la carte, mais vous devez être affilié à un organisme de paiement (CAPAC, CSC, FGTB ou CGSLB) pour pouvoir l’envoyer.",
+        "send.notNeeded": "Si vous ne demandez pas d’allocations, l’envoi n’est pas nécessaire. Si vous souhaitez demander des allocations, l’inscription auprès d’un organisme de paiement est nécessaire.",
+        "correction.help": "Dans la vraie application, une explication claire aide les inspecteurs à comprendre la modification. Seules les cartes non envoyées peuvent être corrigées ; l’ONEM est informé des modifications.",
+        "correction.locked": "Cette carte est envoyée et verrouillée dans la simulation. Une carte envoyée ne peut plus être modifiée.",
+        "work.beforeStart": "Tout travail doit être enregistré avant de commencer à travailler."
+      },
+      "mistakes": {
+        "confondre-ec32-et-ec3": {
+          "title": "Confondre eC3.2 et eC3",
+          "explanation": "L’eC3.2 concerne le chômage temporaire, alors que l’eC3 concerne le chômage complet. Les deux cartes ne s’utilisent pas dans la même situation.",
+          "advice": "Vérifiez votre situation avant de commencer : si vous êtes en chômage temporaire, c’est bien l’eC3.2 qu’il faut compléter."
+        },
+        "croire-simulation-officielle": {
+          "title": "Croire que la simulation Docbel est une vraie démarche officielle",
+          "explanation": "Le simulateur Docbel sert uniquement à comprendre et à s’entraîner. Aucune donnée n’est envoyée et rien n’est transmis à l’ONEM.",
+          "advice": "Pour une démarche réelle, utilisez l’application officielle eC3.2. Le simulateur reste un outil d’apprentissage."
+        },
+        "oublier-indiquer-travail-avant": {
+          "title": "Oublier d’indiquer le travail avant de commencer",
+          "explanation": "Un travail effectué pendant le chômage temporaire doit être indiqué sur la carte avant de commencer à travailler, pas après.",
+          "advice": "Prenez le réflexe d’encoder le jour de travail dès que vous savez que vous allez travailler, avant la prestation."
+        },
+        "attendre-fin-du-mois": {
+          "title": "Attendre la fin du mois pour tout remplir",
+          "explanation": "Reporter le remplissage à la fin du mois fait courir le risque d’oublier des journées ou des situations particulières.",
+          "advice": "Complétez la carte au fil des jours, dès qu’une situation se présente, pour ne rien oublier."
+        },
+        "choisir-mauvais-employeur": {
+          "title": "Choisir le mauvais employeur",
+          "explanation": "La carte doit être complétée pour l’employeur qui vous a réellement mis en chômage temporaire.",
+          "advice": "Sélectionnez l’employeur concerné avec attention ; en cas de doute, vérifiez quel employeur a déclaré le chômage temporaire."
+        },
+        "ne-pas-mentionner-autre-travail": {
+          "title": "Ne pas mentionner un autre travail",
+          "explanation": "Un travail effectué ailleurs pendant le chômage temporaire doit toujours être signalé sur la carte, même s’il s’agit d’un autre employeur.",
+          "advice": "Indiquez chaque journée travaillée ailleurs avec la situation « Travail ailleurs » adaptée au jour concerné."
+        },
+        "oublier-de-sauvegarder": {
+          "title": "Oublier de sauvegarder",
+          "explanation": "Une situation encodée mais non sauvegardée risque de ne pas être prise en compte sur la carte.",
+          "advice": "Après chaque modification, vérifiez que vos changements sont bien enregistrés avant de quitter."
+        },
+        "croire-carte-envoyee-modifiable": {
+          "title": "Croire qu’une carte envoyée peut être librement modifiée",
+          "explanation": "Une fois la carte envoyée, elle est verrouillée : il n’est plus possible de la modifier librement.",
+          "advice": "Vérifiez attentivement chaque journée avant d’envoyer ; les corrections ne sont possibles que tant que la carte n’est pas envoyée."
+        },
+        "corriger-sans-explication": {
+          "title": "Corriger sans explication",
+          "explanation": "Une correction peut nécessiter une explication. Sans justification, la modification ne peut pas être sauvegardée.",
+          "advice": "Quand vous corrigez un jour, prenez le temps d’indiquer une explication claire de la modification."
+        },
+        "pas-inscrit-organisme-paiement": {
+          "title": "Ne pas être inscrit auprès d’un organisme de paiement",
+          "explanation": "Sans inscription auprès d’un organisme de paiement (CAPAC, CSC, FGTB ou CGSLB), la carte peut être complétée mais ne peut pas être envoyée.",
+          "advice": "Inscrivez-vous auprès d’un organisme de paiement dès que possible pour pouvoir envoyer votre carte et percevoir vos allocations."
+        },
+        "oublier-jours-maladie": {
+          "title": "Oublier les jours de maladie",
+          "explanation": "Les jours de maladie ne sont pas des jours de chômage : ils doivent être indiqués comme inaptitude au travail.",
+          "advice": "Sélectionnez les jours concernés, choisissez « Inaptitude au travail » et prévenez votre mutualité dans les 48 heures."
+        },
+        "oublier-vacances": {
+          "title": "Oublier les vacances",
+          "explanation": "Les jours de vacances ne sont pas des jours de chômage et doivent être indiqués comme tels sur la carte.",
+          "advice": "Pour chaque jour de congé, choisissez la situation « Vacances » plutôt que de laisser la situation par défaut."
+        },
+        "ignorer-autre-situation": {
+          "title": "Ne pas tenir compte des jours « autre situation »",
+          "explanation": "Certains jours sans prestation (jour férié, formation rémunérée, etc.) ne sont pas du chômage et relèvent d’une autre situation.",
+          "advice": "Quand un jour est couvert autrement que par le chômage, choisissez « Autre situation » pour ce jour."
+        },
+        "pas-remplir-premier-jour-effectif": {
+          "title": "Ne pas remplir à partir du premier jour effectif de chômage",
+          "explanation": "Quand le chômage temporaire commence en cours de mois, la carte se remplit à partir du premier jour de chômage effectif, pas depuis le 1er du mois.",
+          "advice": "Repérez le premier jour de chômage effectif et complétez la carte de ce jour jusqu’à la fin du mois."
+        },
+        "ignorer-regle-cp124": {
+          "title": "Ne pas tenir compte de la règle CP 124 construction",
+          "explanation": "Dans le secteur de la construction (CP 124), la carte doit toujours être complétée pour l’employeur concerné.",
+          "advice": "Si vous relevez de la CP 124, complétez systématiquement votre carte de contrôle, sans exception."
+        },
+        "pas-informer-organisme-autre-employeur": {
+          "title": "Ne pas informer l’organisme de paiement en cas d’autre employeur habituel",
+          "explanation": "Si vous combinez plusieurs emplois habituels, l’autre occupation doit être communiquée à votre organisme de paiement.",
+          "advice": "Signalez toutes vos occupations habituelles à votre organisme de paiement pour éviter tout malentendu."
+        }
+      },
+      "faq": {
+        "0": {
+          "q": "Qu’est-ce que l’eC3.2 ?",
+          "a": "L’eC3.2 est la carte de contrôle électronique pour le chômage temporaire. Elle permet de compléter et d’envoyer sa carte de contrôle par voie électronique, sans version papier."
+        },
+        "1": {
+          "q": "Est-ce la même chose que l’eC3 ?",
+          "a": "Non. L’eC3.2 concerne le chômage temporaire, tandis que l’eC3 concerne le chômage complet. Il s’agit de deux cartes de contrôle distinctes."
+        },
+        "2": {
+          "q": "Cette page Docbel permet-elle d’envoyer une vraie carte ?",
+          "a": "Non. Il s’agit d’une simulation pédagogique : aucune donnée réelle n’est envoyée et rien n’est transmis à l’ONEM. Le simulateur sert uniquement à comprendre et à s’entraîner."
+        },
+        "3": {
+          "q": "Où se trouve la vraie application eC3.2 ?",
+          "a": "La véritable application est accessible via le portail de la sécurité sociale ou via l’application mobile « eC3.2 Chômage temporaire »."
+        },
+        "4": {
+          "q": "Comment se connecter à la vraie application ?",
+          "a": "La connexion se fait avec un moyen d’identification sécurisé : eID, itsme, code de sécurité (par e-mail ou via l’application mobile) ou un moyen d’identification européen reconnu."
+        },
+        "5": {
+          "q": "Que faire si je suis travailleur frontalier ?",
+          "a": "Avec un numéro de registre national ou un numéro BIS, vous pouvez utiliser un moyen d’identification électronique européen. À défaut, une clé numérique alternative peut être nécessaire."
+        },
+        "6": {
+          "q": "Dois-je être inscrit auprès d’un organisme de paiement ?",
+          "a": "Oui. Pour percevoir des allocations et pour envoyer la carte, vous devez être inscrit auprès d’un organisme de paiement : la CAPAC, la CSC, la FGTB ou la CGSLB."
+        },
+        "7": {
+          "q": "Puis-je compléter la carte sans organisme de paiement ?",
+          "a": "Oui, vous pouvez compléter la carte, mais elle ne pourra pas être envoyée tant que votre inscription auprès d’un organisme de paiement n’est pas effectuée."
+        },
+        "8": {
+          "q": "Quel employeur dois-je choisir ?",
+          "a": "Choisissez l’employeur qui vous a mis en chômage temporaire. Si plusieurs employeurs vous ont mis en chômage temporaire, une carte distincte doit être complétée pour chaque employeur concerné."
+        },
+        "9": {
+          "q": "Que faire si j’ai plusieurs employeurs ?",
+          "a": "Vous devez informer votre organisme de paiement de toutes vos occupations. En cas de chômage temporaire chez plusieurs employeurs, une carte doit être complétée pour chaque employeur concerné."
+        },
+        "10": {
+          "q": "Que dois-je faire si je travaille pendant une période de chômage temporaire ?",
+          "a": "Vous devez indiquer le travail sur la carte avant de commencer à travailler, et non après."
+        },
+        "11": {
+          "q": "Que dois-je indiquer si je suis malade ?",
+          "a": "Indiquez « Inaptitude au travail » pour les jours concernés, y compris les week-ends et jours fériés s’ils sont couverts. Pensez aussi à prévenir votre mutualité dans les 48 heures."
+        },
+        "12": {
+          "q": "Que dois-je indiquer si je prends des vacances ?",
+          "a": "Indiquez « Vacances » pour les jours concernés."
+        },
+        "13": {
+          "q": "Que signifie « Autre situation » ?",
+          "a": "Cette catégorie couvre par exemple les jours fériés, les repos compensatoires, les formations rémunérées, les congés sans solde, les absences injustifiées, la détention, le congé de paternité ou certains congés extralégaux."
+        },
+        "14": {
+          "q": "Puis-je corriger une erreur ?",
+          "a": "Oui, tant que la carte n’est pas envoyée. Une explication peut être demandée pour justifier la correction."
+        },
+        "15": {
+          "q": "L’ONEM est-il informé des corrections ?",
+          "a": "Dans la véritable application, l’ONEM est informé des modifications apportées à la carte."
+        },
+        "16": {
+          "q": "Quand puis-je envoyer ma carte ?",
+          "a": "Vous pouvez l’envoyer à partir de la première date d’envoi possible. Même si cette date tombe avant la fin du mois, complétez correctement la carte jusqu’au dernier jour du mois."
+        },
+        "17": {
+          "q": "Que se passe-t-il après l’envoi ?",
+          "a": "Dans la véritable application, la carte est envoyée à votre organisme de paiement. Dans la simulation Docbel, aucun envoi réel n’a lieu."
+        },
+        "18": {
+          "q": "La CP 327 est-elle concernée ?",
+          "a": "Le webinaire mentionne une dérogation permanente pour la CP 327. Cette information reste à vérifier et à mettre à jour avant la publication finale."
+        },
+        "19": {
+          "q": "Les employeurs doivent-ils encore donner une carte papier ?",
+          "a": "Depuis l’obligation de l’eC3.2, il n’y a en principe plus de carte papier, sauf en cas de dérogation applicable."
+        }
+      },
+      "scenarioPresets": {
+        "all-month": "Par défaut, tout le mois est déjà considéré comme « Chômage ». Vous n’avez rien à modifier : passez à la vérification.",
+        "work-own": "Sélectionnez les jours travaillés, puis choisissez « Travail chez l’employeur ».",
+        "work-elsewhere-usual": "Sélectionnez le jour, puis choisissez « Travail ailleurs — un jour normalement travaillé ». Tout travail doit être enregistré avant de commencer.",
+        "work-elsewhere-weekend": "Sélectionnez le samedi et le dimanche, puis choisissez « Travail ailleurs — un jour normalement non travaillé ».",
+        "other-regular": "Sélectionnez le jour, puis choisissez « Travail auprès d’un autre employeur habituel ».",
+        "sick": "Sélectionnez les jours de maladie puis choisissez « Inaptitude au travail ».",
+        "vacation": "Sélectionnez les jours de vacances puis choisissez « Vacances ».",
+        "other-situation": "Le 1er mai est un jour férié : sélectionnez-le puis choisissez « Autre situation ».",
+        "multiple-employers": "Avec plusieurs employeurs, choisissez celui qui vous a mis en chômage temporaire ; vos autres occupations s’indiquent sur cette carte.",
+        "no-payment-org": "Essayez d’envoyer la carte : l’envoi est bloqué tant que vous n’êtes pas affilié à un organisme de paiement.",
+        "correction": "Sur une carte non envoyée, ouvrez un jour déjà encodé pour le corriger : une explication est obligatoire.",
+        "construction-cp124": "Dans la construction (CP 124), la carte doit toujours être complétée, même lorsque vous travaillez.",
+        "first-effective-day": "Repérez l’icône automatique du premier jour de chômage effectif (le 5 mai) : elle n’est jamais saisie à la main.",
+        "wrong-month": "Vérifiez le mois avant de compléter : ici, c’est la carte d’avril 2025 qui doit être remplie."
       }
     }
   }

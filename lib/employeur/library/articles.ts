@@ -29,6 +29,18 @@ export interface LibraryArticle {
   sourceCodes: string[];
   /** Affiche un bouton « Créer ma checklist » (démarches actionnables). */
   checklistCta?: boolean;
+  /**
+   * Clés i18n parallèles (ADDITIVES). Le FR ci-dessus reste fallback ;
+   * les composants/serveurs résolvent ces clés via `getTranslations("public.employeurLib")`.
+   * Convention : `article-<slug>.{title|summary|whatToKnow|todo|documents|commonMistakes}`.
+   * Les variantes liste (`*Key`) pointent vers une CLÉ d'objet `t.raw()` retournant un tableau.
+   */
+  titleKey?: string;
+  summaryKey?: string;
+  whatToKnowKey?: string;
+  todoKey?: string;
+  documentsKey?: string;
+  commonMistakesKey?: string;
 }
 
 export const ARTICLES: LibraryArticle[] = [
@@ -63,6 +75,12 @@ export const ARTICLES: LibraryArticle[] = [
     ],
     sourceCodes: ["S1", "S2", "S6", "S8"],
     checklistCta: true,
+    titleKey: "article-engager-premier-travailleur.title",
+    summaryKey: "article-engager-premier-travailleur.summary",
+    whatToKnowKey: "article-engager-premier-travailleur.whatToKnow",
+    todoKey: "article-engager-premier-travailleur.todo",
+    documentsKey: "article-engager-premier-travailleur.documents",
+    commonMistakesKey: "article-engager-premier-travailleur.commonMistakes",
   },
   {
     slug: "faire-une-dimona",
@@ -92,6 +110,12 @@ export const ARTICLES: LibraryArticle[] = [
       "Oublier la Dimona de sortie en fin de contrat.",
     ],
     sourceCodes: ["S2"],
+    titleKey: "article-faire-une-dimona.title",
+    summaryKey: "article-faire-une-dimona.summary",
+    whatToKnowKey: "article-faire-une-dimona.whatToKnow",
+    todoKey: "article-faire-une-dimona.todo",
+    documentsKey: "article-faire-une-dimona.documents",
+    commonMistakesKey: "article-faire-une-dimona.commonMistakes",
   },
   {
     slug: "comprendre-dmfa",
@@ -121,6 +145,12 @@ export const ARTICLES: LibraryArticle[] = [
       "Déclaration ou paiement hors délai trimestriel.",
     ],
     sourceCodes: ["S3"],
+    titleKey: "article-comprendre-dmfa.title",
+    summaryKey: "article-comprendre-dmfa.summary",
+    whatToKnowKey: "article-comprendre-dmfa.whatToKnow",
+    todoKey: "article-comprendre-dmfa.todo",
+    documentsKey: "article-comprendre-dmfa.documents",
+    commonMistakesKey: "article-comprendre-dmfa.commonMistakes",
   },
   {
     slug: "choisir-contrat-de-travail",
@@ -151,6 +181,12 @@ export const ARTICLES: LibraryArticle[] = [
     ],
     sourceCodes: ["S6"],
     checklistCta: true,
+    titleKey: "article-choisir-contrat-de-travail.title",
+    summaryKey: "article-choisir-contrat-de-travail.summary",
+    whatToKnowKey: "article-choisir-contrat-de-travail.whatToKnow",
+    todoKey: "article-choisir-contrat-de-travail.todo",
+    documentsKey: "article-choisir-contrat-de-travail.documents",
+    commonMistakesKey: "article-choisir-contrat-de-travail.commonMistakes",
   },
   {
     slug: "temps-partiel",
@@ -181,6 +217,12 @@ export const ARTICLES: LibraryArticle[] = [
     ],
     sourceCodes: ["S6", "S11"],
     checklistCta: true,
+    titleKey: "article-temps-partiel.title",
+    summaryKey: "article-temps-partiel.summary",
+    whatToKnowKey: "article-temps-partiel.whatToKnow",
+    todoKey: "article-temps-partiel.todo",
+    documentsKey: "article-temps-partiel.documents",
+    commonMistakesKey: "article-temps-partiel.commonMistakes",
   },
   {
     slug: "etudiant",
@@ -211,6 +253,12 @@ export const ARTICLES: LibraryArticle[] = [
     ],
     sourceCodes: ["S9", "S2"],
     checklistCta: true,
+    titleKey: "article-etudiant.title",
+    summaryKey: "article-etudiant.summary",
+    whatToKnowKey: "article-etudiant.whatToKnow",
+    todoKey: "article-etudiant.todo",
+    documentsKey: "article-etudiant.documents",
+    commonMistakesKey: "article-etudiant.commonMistakes",
   },
   {
     slug: "flexi-job",
@@ -241,6 +289,12 @@ export const ARTICLES: LibraryArticle[] = [
     ],
     sourceCodes: ["S10", "S2"],
     checklistCta: true,
+    titleKey: "article-flexi-job.title",
+    summaryKey: "article-flexi-job.summary",
+    whatToKnowKey: "article-flexi-job.whatToKnow",
+    todoKey: "article-flexi-job.todo",
+    documentsKey: "article-flexi-job.documents",
+    commonMistakesKey: "article-flexi-job.commonMistakes",
   },
   {
     slug: "salaire-minimum-et-commission-paritaire",
@@ -270,6 +324,12 @@ export const ARTICLES: LibraryArticle[] = [
       "Oublier d'indexer ou de réviser le salaire selon la CCT.",
     ],
     sourceCodes: ["S8"],
+    titleKey: "article-salaire-minimum-et-commission-paritaire.title",
+    summaryKey: "article-salaire-minimum-et-commission-paritaire.summary",
+    whatToKnowKey: "article-salaire-minimum-et-commission-paritaire.whatToKnow",
+    todoKey: "article-salaire-minimum-et-commission-paritaire.todo",
+    documentsKey: "article-salaire-minimum-et-commission-paritaire.documents",
+    commonMistakesKey: "article-salaire-minimum-et-commission-paritaire.commonMistakes",
   },
   {
     slug: "reglement-de-travail",
@@ -299,6 +359,12 @@ export const ARTICLES: LibraryArticle[] = [
       "Oublier de remettre le règlement aux nouveaux travailleurs.",
     ],
     sourceCodes: ["S7"],
+    titleKey: "article-reglement-de-travail.title",
+    summaryKey: "article-reglement-de-travail.summary",
+    whatToKnowKey: "article-reglement-de-travail.whatToKnow",
+    todoKey: "article-reglement-de-travail.todo",
+    documentsKey: "article-reglement-de-travail.documents",
+    commonMistakesKey: "article-reglement-de-travail.commonMistakes",
   },
   {
     slug: "duree-du-travail-et-repos",
@@ -328,6 +394,12 @@ export const ARTICLES: LibraryArticle[] = [
       "Faire travailler le dimanche/la nuit sans vérifier les conditions.",
     ],
     sourceCodes: ["S11"],
+    titleKey: "article-duree-du-travail-et-repos.title",
+    summaryKey: "article-duree-du-travail-et-repos.summary",
+    whatToKnowKey: "article-duree-du-travail-et-repos.whatToKnow",
+    todoKey: "article-duree-du-travail-et-repos.todo",
+    documentsKey: "article-duree-du-travail-et-repos.documents",
+    commonMistakesKey: "article-duree-du-travail-et-repos.commonMistakes",
   },
   {
     slug: "chomage-temporaire",
@@ -357,6 +429,12 @@ export const ARTICLES: LibraryArticle[] = [
       "Ne pas fournir au travailleur les documents nécessaires à ses allocations.",
     ],
     sourceCodes: ["S12"],
+    titleKey: "article-chomage-temporaire.title",
+    summaryKey: "article-chomage-temporaire.summary",
+    whatToKnowKey: "article-chomage-temporaire.whatToKnow",
+    todoKey: "article-chomage-temporaire.todo",
+    documentsKey: "article-chomage-temporaire.documents",
+    commonMistakesKey: "article-chomage-temporaire.commonMistakes",
   },
   {
     slug: "preparer-demande-secretariat-social",
@@ -387,10 +465,84 @@ export const ARTICLES: LibraryArticle[] = [
       "Considérer que le secrétariat social vérifie tout à votre place.",
     ],
     sourceCodes: ["S5", "S6"],
+    titleKey: "article-preparer-demande-secretariat-social.title",
+    summaryKey: "article-preparer-demande-secretariat-social.summary",
+    whatToKnowKey: "article-preparer-demande-secretariat-social.whatToKnow",
+    todoKey: "article-preparer-demande-secretariat-social.todo",
+    documentsKey: "article-preparer-demande-secretariat-social.documents",
+    commonMistakesKey: "article-preparer-demande-secretariat-social.commonMistakes",
   },
 ];
 
 /** Retourne l'article correspondant au slug, ou undefined. */
 export function getArticle(slug: string): LibraryArticle | undefined {
   return ARTICLES.find((a) => a.slug === slug);
+}
+
+/**
+ * Variante localisée d'un article : tous les champs textuels remplacés par
+ * leur traduction dès qu'une clé i18n existe. Le contenu FR du fichier reste
+ * en fallback si une clé est absente. Toutes les autres propriétés sont
+ * inchangées (slug, sourceCodes, checklistCta).
+ */
+export type LocalizedLibraryArticle = LibraryArticle;
+
+/**
+ * Résout côté serveur les champs traduisibles d'un article via
+ * `getTranslations("public.employeurLib")`. Fallback total sur la valeur FR
+ * si la clé est absente ou si elle ne renvoie pas le bon type (string pour
+ * title/summary, string[] pour les listes).
+ *
+ * À utiliser dans les server components et routes d'API.
+ */
+export async function getLocalizedArticle(
+  article: LibraryArticle,
+): Promise<LocalizedLibraryArticle> {
+  // Import dynamique pour éviter d'importer next-intl côté client.
+  const { getTranslations } = await import("next-intl/server");
+  const t = await getTranslations("public.employeurLib");
+
+  const asString = (key: string | undefined, fallback: string): string => {
+    if (!key) return fallback;
+    try {
+      // t.has() évite le warning « missing message »
+      const has = (t as unknown as { has?: (k: string) => boolean }).has;
+      if (typeof has === "function" && !has.call(t, key)) return fallback;
+      const v = t(key as Parameters<typeof t>[0]);
+      return typeof v === "string" && v && v !== key ? v : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
+  const asList = (key: string | undefined, fallback: string[]): string[] => {
+    if (!key) return fallback;
+    try {
+      const has = (t as unknown as { has?: (k: string) => boolean }).has;
+      if (typeof has === "function" && !has.call(t, key)) return fallback;
+      const v = t.raw(key as Parameters<typeof t.raw>[0]);
+      return Array.isArray(v) && v.every((x) => typeof x === "string")
+        ? (v as string[])
+        : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
+  return {
+    ...article,
+    title: asString(article.titleKey, article.title),
+    summary: asString(article.summaryKey, article.summary),
+    whatToKnow: asList(article.whatToKnowKey, article.whatToKnow),
+    todo: asList(article.todoKey, article.todo),
+    documents: asList(article.documentsKey, article.documents),
+    commonMistakes: asList(article.commonMistakesKey, article.commonMistakes),
+  };
+}
+
+/** Variante en lot — utile pour la page liste `/employeur/bibliotheque`. */
+export async function getLocalizedArticles(
+  articles: readonly LibraryArticle[] = ARTICLES,
+): Promise<LocalizedLibraryArticle[]> {
+  return Promise.all(articles.map((a) => getLocalizedArticle(a)));
 }

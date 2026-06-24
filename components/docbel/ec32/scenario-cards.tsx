@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Ec32Section, SITUATION_VISUALS } from '@/components/docbel/ec32/ui'
 import type { Ec32Content } from '@/lib/ec32/schema'
+import { ec32ResolveKey, type Ec32Translator } from '@/lib/ec32/labels'
 import type { Ec32SituationType } from '@/lib/ec32/types'
 
 /** Mappe une clé de scénario vers un type de situation (pour la couleur/icône). */
@@ -88,6 +89,8 @@ export function Ec32ScenarioCards({
   anchorId?: string
 }) {
   const t = useTranslations('public.ec32')
+  // `tRoot` est utilisé pour résoudre les *Key i18n (ex. `public.ec32Content.scenarios.…`).
+  const tRoot = useTranslations() as unknown as Ec32Translator
   const { scenarios } = content
   const all = scenarios.items.filter((item) => (item.title || item.key).trim().length > 0)
 
@@ -99,7 +102,12 @@ export function Ec32ScenarioCards({
   const grid = (
     <ul className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {limited.map((item, index) => {
-        const excerpt = item.context || item.objective
+        const title = ec32ResolveKey(tRoot, item.titleKey, item.title)
+        const context = ec32ResolveKey(tRoot, item.contextKey, item.context)
+        const objective = ec32ResolveKey(tRoot, item.objectiveKey, item.objective)
+        const level = ec32ResolveKey(tRoot, item.levelKey, item.level)
+        const duration = ec32ResolveKey(tRoot, item.durationKey, item.duration)
+        const excerpt = context || objective
         const situation = SCENARIO_SITUATION[item.key] ?? 'temporary_unemployment'
         const visual = SITUATION_VISUALS[situation]
         const Icon = visual.icon
@@ -109,7 +117,7 @@ export function Ec32ScenarioCards({
               type="button"
               onClick={() => onSelect?.(item.key)}
               disabled={!onSelect}
-              aria-label={t('scenarios.cardAriaLabel', { label: item.title || item.key })}
+              aria-label={t('scenarios.cardAriaLabel', { label: title || item.key })}
               className="flex w-full flex-col gap-3 rounded-3xl border border-primary/10 bg-card p-5 text-left shadow-[0_1px_3px_rgba(26,26,36,0.05),0_16px_38px_-22px_rgba(91,70,229,0.24)] transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_2px_6px_rgba(26,26,36,0.06),0_22px_46px_-22px_rgba(91,70,229,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:border-primary/10 disabled:hover:shadow-[0_1px_3px_rgba(26,26,36,0.05),0_16px_38px_-22px_rgba(91,70,229,0.24)]"
             >
               <span
@@ -119,9 +127,9 @@ export function Ec32ScenarioCards({
                 <Icon className={`size-5 ${visual.accent}`} />
               </span>
 
-              {item.title && (
+              {title && (
                 <h3 className="text-base font-semibold leading-snug text-foreground">
-                  {item.title}
+                  {title}
                 </h3>
               )}
 
@@ -131,13 +139,13 @@ export function Ec32ScenarioCards({
                 </p>
               )}
 
-              {(item.level || item.duration) && (
+              {(level || duration) && (
                 <div className="mt-auto flex items-center gap-2 pt-1">
-                  {item.level && levelBadge(item.level)}
-                  {item.duration && (
+                  {level && levelBadge(level)}
+                  {duration && (
                     <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
                       <Clock className="size-3.5" aria-hidden />
-                      {item.duration}
+                      {duration}
                     </span>
                   )}
                 </div>

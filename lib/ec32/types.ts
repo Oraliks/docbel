@@ -193,6 +193,12 @@ export interface Ec32ScenarioPreset {
   targetDays?: number[]
   /** Astuce contextuelle affichée par le coach. */
   hint?: string
+  /**
+   * Clé i18n parallèle (next-intl, namespace `public.ec32Content`) pour
+   * l'astuce — le champ `hint` (FR) reste le fallback affiché si la clé
+   * n'est pas résolue.
+   */
+  hintKey?: string
 }
 
 /** Vue active du simulateur (calendrier vs liste). */

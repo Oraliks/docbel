@@ -10,8 +10,10 @@
 
 import type { ComponentType } from 'react'
 import { ArrowRight, Compass, LayoutList, type LucideProps, Sparkles } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Ec32Card, Ec32Section } from '@/components/docbel/ec32/ui'
 import type { Ec32Content } from '@/lib/ec32/schema'
+import { ec32ResolveKey, type Ec32Translator } from '@/lib/ec32/labels'
 
 /** Correspondance clé d'icône (contenu) → icône lucide, avec repli. */
 const MODE_ICONS: Record<string, ComponentType<LucideProps>> = {
@@ -29,6 +31,7 @@ export function Ec32LearningModes({
   content: Ec32Content
   onAction?: (modeKey: string) => void
 }) {
+  const tRoot = useTranslations() as unknown as Ec32Translator
   const { learningModes } = content
 
   if (learningModes.modes.length === 0) return null
@@ -42,17 +45,20 @@ export function Ec32LearningModes({
       <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {learningModes.modes.map((mode, index) => {
           const Icon = MODE_ICONS[mode.icon] ?? FALLBACK_ICON
-          const showCta = Boolean(mode.cta) && Boolean(onAction)
+          const title = ec32ResolveKey(tRoot, mode.titleKey, mode.title)
+          const description = ec32ResolveKey(tRoot, mode.descriptionKey, mode.description)
+          const cta = ec32ResolveKey(tRoot, mode.ctaKey, mode.cta)
+          const showCta = Boolean(cta) && Boolean(onAction)
           return (
             <Ec32Card key={mode.key || index} interactive className="flex h-full flex-col gap-3">
               <span className="inline-flex size-11 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
                 <Icon className="size-5" aria-hidden />
               </span>
-              {mode.title && (
-                <h3 className="text-lg font-semibold leading-tight text-foreground">{mode.title}</h3>
+              {title && (
+                <h3 className="text-lg font-semibold leading-tight text-foreground">{title}</h3>
               )}
-              {mode.description && (
-                <p className="text-sm leading-relaxed text-muted-foreground">{mode.description}</p>
+              {description && (
+                <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
               )}
               {showCta && (
                 <div className="mt-auto pt-2">
@@ -61,7 +67,7 @@ export function Ec32LearningModes({
                     onClick={() => onAction?.(mode.key)}
                     className="inline-flex items-center gap-1 rounded-md font-semibold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
-                    {mode.cta}
+                    {cta}
                     <ArrowRight className="size-4" aria-hidden />
                   </button>
                 </div>

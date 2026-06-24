@@ -157,3 +157,54 @@ export function ec32Label(key: string): string {
 export function ec32Notice(key: string): string {
   return EC32_NOTICES[key] ?? ''
 }
+
+// ─────────────────────────── i18n parallèle (next-intl) ───────────────────────────
+
+/**
+ * Clé i18n parallèle (next-intl, namespace `public.ec32Content.labels`) pour
+ * chaque libellé court — les valeurs FR d'`EC32_LABELS` restent le fallback.
+ * Les composants peuvent résoudre via :
+ *   t(ec32LabelKey(key) as Parameters<typeof t>[0]) ?? ec32Label(key)
+ */
+export function ec32LabelKey(key: string): string {
+  return `public.ec32Content.labels.${key}`
+}
+
+/**
+ * Clé i18n parallèle (next-intl, namespace `public.ec32Content.notices`) pour
+ * chaque notice pédagogique — les valeurs FR d'`EC32_NOTICES` restent le
+ * fallback.
+ */
+export function ec32NoticeKey(key: string): string {
+  return `public.ec32Content.notices.${key}`
+}
+
+/**
+ * Helper de résolution i18n « clé parallèle + fallback FR » :
+ * - si la clé est définie ET résolue (`t.has(key)`) → renvoie `t(key)` ;
+ * - sinon → renvoie le `fallback` (chaîne FR provenant de la data lib).
+ *
+ * Utilisé pour les champs `*Key` ajoutés en parallèle sur les items
+ * `lib/ec32/{scenarios,situations,mistakes,faq,…}.ts` afin d'éviter de
+ * casser l'existant : la donnée FR reste affichée tant que la clé n'est
+ * pas câblée côté next-intl.
+ *
+ * Le typage `Parameters<typeof t>[0]` n'est pas exposé proprement par
+ * next-intl ; on passe la clé en `string` à travers un narrowing local
+ * pour rester compatible avec le typage strict des namespaces.
+ */
+export type Ec32Translator = {
+  (key: string): string
+  has(key: string): boolean
+}
+
+export function ec32ResolveKey(
+  t: Ec32Translator,
+  key: string | undefined,
+  fallback: string,
+): string {
+  if (key && t.has(key)) {
+    return t(key)
+  }
+  return fallback
+}

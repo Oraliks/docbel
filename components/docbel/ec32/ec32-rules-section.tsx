@@ -19,7 +19,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import type { Ec32Content } from '@/lib/ec32/schema'
-import { ec32Notice } from '@/lib/ec32/labels'
+import { ec32Notice, ec32ResolveKey, type Ec32Translator } from '@/lib/ec32/labels'
 import { EC32_WORK_ELSEWHERE_SITUATIONS } from '@/lib/ec32/types'
 import { Ec32Card, Ec32Section } from './ui'
 
@@ -67,10 +67,14 @@ function CheckList({ title, items }: { title?: string; items: string[] }) {
 
 export function Ec32RulesSection({ content }: { content: Ec32Content }) {
   const t = useTranslations('public.ec32')
+  const tRoot = useTranslations() as unknown as Ec32Translator
   const { officialInfo, derogations, mistakes, simulator } = content
 
-  const notice = (key: string): string =>
-    simulator.notices.find((n) => n.key === key)?.text || ec32Notice(key)
+  const notice = (key: string): string => {
+    const entry = simulator.notices.find((n) => n.key === key)
+    const fallback = entry?.text || ec32Notice(key)
+    return ec32ResolveKey(tRoot, entry?.textKey, fallback)
+  }
   const mistake = (key: string) => mistakes.items.find((m) => m.key === key)
 
   const cp124 = mistake('ignorer-regle-cp124')
@@ -114,26 +118,37 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
         <div className="space-y-4">
           <ul className="space-y-4" role="list">
             {derogItems.map((d, i) => {
+              const dTitle = ec32ResolveKey(tRoot, d.titleKey, d.title)
+              const dSummary = ec32ResolveKey(tRoot, d.summaryKey, d.summary)
               const conds = d.conditions.filter((c) => c.trim().length > 0)
               return (
                 <li key={d.key || i} className="border-l-2 border-primary/30 pl-4">
-                  <p className="text-sm font-semibold text-foreground">{d.title}</p>
-                  {d.summary && (
+                  <p className="text-sm font-semibold text-foreground">{dTitle}</p>
+                  {dSummary && (
                     <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                      {d.summary}
+                      {dSummary}
                     </p>
                   )}
                   {conds.length > 0 && (
                     <ul className="mt-2 space-y-1.5" role="list">
-                      {conds.map((c, ci) => (
-                        <li
-                          key={ci}
-                          className="flex gap-2 text-sm leading-relaxed text-foreground"
-                        >
-                          <Check className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />
-                          <span className="min-w-0">{c}</span>
-                        </li>
-                      ))}
+                      {conds.map((c, ci) => {
+                        const conditionKey = d.conditionsKey
+                          ? `${d.conditionsKey}.${ci}`
+                          : undefined
+                        const resolvedC = ec32ResolveKey(tRoot, conditionKey, c)
+                        return (
+                          <li
+                            key={ci}
+                            className="flex gap-2 text-sm leading-relaxed text-foreground"
+                          >
+                            <Check
+                              className="mt-0.5 size-3.5 shrink-0 text-primary"
+                              aria-hidden
+                            />
+                            <span className="min-w-0">{resolvedC}</span>
+                          </li>
+                        )
+                      })}
                     </ul>
                   )}
                 </li>
@@ -152,10 +167,12 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
 
   // 3 — Construction (CP 124)
   if (cp124) {
+    const cp124Explanation = ec32ResolveKey(tRoot, cp124.explanationKey, cp124.explanation)
+    const cp124Advice = ec32ResolveKey(tRoot, cp124.adviceKey, cp124.advice)
     entries.push({
       id: 'cp124',
       title: t('rules.cp124.title'),
-      body: <Paragraphs texts={[cp124.explanation, cp124.advice]} />,
+      body: <Paragraphs texts={[cp124Explanation, cp124Advice]} />,
     })
   }
 
@@ -173,16 +190,20 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
       title: t('rules.workElsewhere.title'),
       body: (
         <ul className="space-y-3" role="list">
-          {workElsewhere.map((s) => (
-            <li key={s.type} className="border-l-2 border-primary/30 pl-4">
-              <p className="text-sm font-semibold text-foreground">{s.label}</p>
-              {s.description && (
-                <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                  {s.description}
-                </p>
-              )}
-            </li>
-          ))}
+          {workElsewhere.map((s) => {
+            const label = ec32ResolveKey(tRoot, s.labelKey, s.label)
+            const description = ec32ResolveKey(tRoot, s.descriptionKey, s.description)
+            return (
+              <li key={s.type} className="border-l-2 border-primary/30 pl-4">
+                <p className="text-sm font-semibold text-foreground">{label}</p>
+                {description && (
+                  <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                    {description}
+                  </p>
+                )}
+              </li>
+            )
+          })}
         </ul>
       ),
     })

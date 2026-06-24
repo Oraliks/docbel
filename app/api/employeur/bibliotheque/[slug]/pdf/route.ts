@@ -6,9 +6,10 @@
  * Renvoie un application/pdf. Auth : employeur ou admin.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { getTranslations } from "next-intl/server";
 import { requireEmployerOrAdminAuth } from "@/lib/auth-check";
 import { getSourceMap } from "@/lib/employeur/queries";
-import { getArticle } from "@/lib/employeur/library/articles";
+import { getArticle, getLocalizedArticle } from "@/lib/employeur/library/articles";
 import { PDF_DISCLAIMER } from "@/lib/employeur/export-checklist-pdf";
 
 const VIOLET: [number, number, number] = [124, 58, 237];

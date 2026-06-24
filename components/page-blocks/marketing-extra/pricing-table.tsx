@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import { Check } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -61,6 +62,7 @@ export const pricingTable = defineBlock({
     shortcuts: ['pricing', 'tarifs', 'plans'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { title, subtitle, plans, togglePeriod } = props
     const [yearly, setYearly] = useState(false)
     return (
@@ -83,7 +85,7 @@ export const pricingTable = defineBlock({
                     !yearly ? 'bg-background shadow-sm' : 'text-muted-foreground'
                   )}
                 >
-                  Mensuel
+                  {t('pricingTable.monthly')}
                 </button>
                 <button
                   type="button"
@@ -93,7 +95,7 @@ export const pricingTable = defineBlock({
                     yearly ? 'bg-background shadow-sm' : 'text-muted-foreground'
                   )}
                 >
-                  Annuel <span className="text-emerald-600">-20%</span>
+                  {t('pricingTable.yearly')} <span className="text-emerald-600">{t('pricingTable.yearlyDiscount')}</span>
                 </button>
               </div>
             </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { MapPin, AlertCircle } from 'lucide-react'
 
@@ -46,6 +47,7 @@ import {
  * "featured" via ?for= dans le futur.
  */
 export function BureauxFinder() {
+  const t = useTranslations('public.outils')
   const router = useRouter()
   const params = useSearchParams()
 
@@ -107,7 +109,7 @@ export function BureauxFinder() {
       const res = await fetch(`/api/bureaux/resolve?cp=${postalCode}`, {
         signal: ac.signal,
       })
-      if (!res.ok) throw new Error('Échec de la recherche')
+      if (!res.ok) throw new Error(t('bureauxSearchError'))
       const json = (await res.json()) as ResolveResponse
       cacheRef.current.set(postalCode, json)
       // Ne rafraîchit l'UI que si on est toujours sur ce CP
@@ -115,12 +117,12 @@ export function BureauxFinder() {
     } catch (e) {
       // Ignore les aborts (race normale), on log les vraies erreurs
       if ((e as Error)?.name === 'AbortError') return
-      setError(e instanceof Error ? e.message : 'Erreur')
+      setError(e instanceof Error ? e.message : t('bureauxGenericError'))
       setData(null)
     } finally {
       if (!ac.signal.aborted) setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     // Debounce 150 ms (vs 350 ms avant) : assez court pour que ça
@@ -186,7 +188,7 @@ export function BureauxFinder() {
             inputMode="numeric"
             pattern="[0-9]{4}"
             maxLength={4}
-            placeholder="Ex: 1000"
+            placeholder={t('bureauxCpPlaceholder')}
             value={cp}
             onChange={(e) => setCp(e.target.value.replace(/\D/g, ''))}
             className="border-0 px-0 h-auto text-sm font-medium tabular-nums shadow-none focus-visible:ring-0 bg-transparent w-[80px]"
@@ -241,21 +243,21 @@ export function BureauxFinder() {
             {/* Cards — 4 bureaux traités équitablement (pas de recommandé) */}
             <div className="space-y-2.5">
               <BureauCard
-                label="ONEM (chômage)"
+                label={t('bureauxLabelOnem')}
                 logo={<OnemLogo size={48} />}
                 bureau={data.attitre.onem}
                 distanceKm={distance(data.attitre.onem)}
                 fromUserLocation={!!userGeoloc}
               />
               <BureauCard
-                label="CPAS"
+                label={t('bureauxLabelCpas')}
                 logo={<CpasLogo size={48} />}
                 bureau={data.attitre.cpas}
                 distanceKm={distance(data.attitre.cpas)}
                 fromUserLocation={!!userGeoloc}
               />
               <BureauCard
-                label="Maison communale"
+                label={t('bureauxLabelCommune')}
                 logo={<CommuneLogo size={48} />}
                 bureau={data.attitre.commune}
                 distanceKm={distance(data.attitre.commune)}
@@ -269,7 +271,7 @@ export function BureauxFinder() {
                 />
               ) : (
                 <BureauCard
-                  label="Organisme de paiement"
+                  label={t('bureauxLabelOp')}
                   logo={<OpLogo size={48} />}
                   bureau={null}
                 />
@@ -284,7 +286,7 @@ export function BureauxFinder() {
       {!loading && !data && cp.length === 0 && (
         <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
           <MapPin className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
-          Tape ton code postal pour voir les bureaux compétents pour ta commune.
+          {t('bureauxEmptyPrompt')}
         </div>
       )}
     </div>

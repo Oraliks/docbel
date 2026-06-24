@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Download, X, Eye, Loader } from "lucide-react";
 
 const accent = "var(--color-accent)";
@@ -24,6 +25,7 @@ export function FileEmbed({
   file,
   onRemove,
 }: FileEmbedProps) {
+  const t = useTranslations("public.dossier");
   const [showPreview, setShowPreview] = useState(false);
   const [excelData, setExcelData] = useState<string[][]>([]);
   const [loading, setLoading] = useState(false);
@@ -80,6 +82,7 @@ export function FileEmbed({
         />
         <button
           onClick={() => onRemove?.(file.id)}
+          aria-label={t("fileEmbedRemove")}
           style={{
             position: "absolute",
             top: 4,
@@ -117,7 +120,7 @@ export function FileEmbed({
             📄 {file.name}
           </div>
           <div style={{ fontSize: 11, color: "var(--color-textMuted)", marginTop: 4 }}>
-            PDF Document
+            {t("fileEmbedPdf")}
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -136,11 +139,12 @@ export function FileEmbed({
               alignItems: "center",
             }}
           >
-            <Download size={12} /> Download
+            <Download size={12} /> {t("fileEmbedDownload")}
           </button>
           {onRemove && (
             <button
               onClick={() => onRemove(file.id)}
+              aria-label={t("fileEmbedRemove")}
               style={{
                 padding: "6px 8px",
                 border: "none",
@@ -181,7 +185,7 @@ export function FileEmbed({
               📊 {file.name}
             </div>
             <div style={{ fontSize: 11, color: "var(--color-textMuted)", marginTop: 4 }}>
-              Excel Spreadsheet
+              {t("fileEmbedExcel")}
             </div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -206,7 +210,7 @@ export function FileEmbed({
               ) : (
                 <Eye size={12} />
               )}{" "}
-              Preview
+              {t("fileEmbedPreview")}
             </button>
             <button
               onClick={handleDownload}
@@ -223,11 +227,12 @@ export function FileEmbed({
                 alignItems: "center",
               }}
             >
-              <Download size={12} /> Download
+              <Download size={12} /> {t("fileEmbedDownload")}
             </button>
             {onRemove && (
               <button
                 onClick={() => onRemove(file.id)}
+                aria-label={t("fileEmbedRemove")}
                 style={{
                   padding: "6px 8px",
                   border: "none",
@@ -287,7 +292,7 @@ export function FileEmbed({
                   fontStyle: "italic",
                 }}
               >
-                Showing 20 of {excelData.length} rows
+                {t("fileEmbedRowsShown", { total: excelData.length })}
               </div>
             )}
           </div>
@@ -315,7 +320,7 @@ export function FileEmbed({
           📎 {file.name}
         </div>
         <div style={{ fontSize: 11, color: "var(--color-textMuted)", marginTop: 4 }}>
-          Document
+          {t("fileEmbedDocument")}
         </div>
       </div>
       <div style={{ display: "flex", gap: 8 }}>
@@ -334,11 +339,12 @@ export function FileEmbed({
             alignItems: "center",
           }}
         >
-          <Download size={12} /> Download
+          <Download size={12} /> {t("fileEmbedDownload")}
         </button>
         {onRemove && (
           <button
             onClick={() => onRemove(file.id)}
+            aria-label={t("fileEmbedRemove")}
             style={{
               padding: "6px 8px",
               border: "none",

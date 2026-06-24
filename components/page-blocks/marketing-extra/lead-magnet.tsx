@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react'
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import { Check, Download, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
@@ -25,6 +26,7 @@ function LeadMagnetView({
   successMessage = 'Merci ! Votre téléchargement va démarrer.',
   endpoint = '/api/messages',
 }: Props) {
+  const t = useTranslations('public.blocks')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -59,7 +61,7 @@ function LeadMagnetView({
       toast.success(successMessage)
       triggerDownload()
     } catch {
-      toast.error('Erreur — réessayez')
+      toast.error(t('leadMagnet.error'))
     } finally {
       setSubmitting(false)
     }
@@ -83,7 +85,7 @@ function LeadMagnetView({
               className="ml-1 inline-flex items-center gap-1 underline"
             >
               <Download className="size-3.5" />
-              Télécharger à nouveau
+              {t('leadMagnet.downloadAgain')}
             </button>
           )}
         </div>
@@ -93,7 +95,7 @@ function LeadMagnetView({
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Votre nom"
+              placeholder={t('leadMagnet.namePlaceholder')}
               className={inputCls}
             />
           )}

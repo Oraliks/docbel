@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -42,6 +43,7 @@ export const carousel = defineBlock({
     shortcuts: ['carousel', 'slideshow'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { slides, autoplay, interval = 5000, showDots = true, showArrows = true } = props
     const [active, setActive] = useState(0)
 
@@ -56,7 +58,7 @@ export const carousel = defineBlock({
     if (slides.length === 0) {
       return (
         <div className="aspect-video rounded-lg border border-dashed bg-muted flex items-center justify-center text-muted-foreground">
-          Carousel vide
+          {t('carousel.empty')}
         </div>
       )
     }

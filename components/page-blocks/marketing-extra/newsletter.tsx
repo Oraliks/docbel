@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
+import { useTranslations } from 'next-intl'
 import { Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
@@ -28,6 +29,7 @@ export const newsletter = defineBlock({
     shortcuts: ['newsletter', 'subscribe'],
   },
   Render: ({ props }) => {
+    const tr = useTranslations('public.blocks')
     const {
       title,
       description,
@@ -55,7 +57,7 @@ export const newsletter = defineBlock({
         setSuccess(true)
         toast.success(successMessage)
       } catch {
-        toast.error('Erreur — réessayez')
+        toast.error(tr('newsletter.error'))
       } finally {
         setSubmitting(false)
       }

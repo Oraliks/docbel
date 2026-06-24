@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   DownloadIcon,
   SendIcon,
@@ -61,6 +62,7 @@ interface PdfFormRunnerProps {
 }
 
 export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange, onLocaleChange }: PdfFormRunnerProps) {
+  const t = useTranslations("public.dossier");
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
   const [values, setValues] = useState<FormPayload>(() => defaultValues(form, bundlePrefill));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -79,10 +81,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
   useEffect(() => {
     const status = new URLSearchParams(window.location.search).get("prefill");
     if (!status) return;
-    if (status === "ok") toast.success("Données itsme récupérées.");
-    else if (status === "unavailable") toast.info("Pré-remplissage itsme bientôt disponible.");
-    else toast.error("Échec du pré-remplissage itsme.");
+    if (status === "ok") toast.success(t("runnerItsmeOk"));
+    else if (status === "unavailable") toast.info(t("runnerItsmeUnavailable"));
+    else toast.error(t("runnerItsmeError"));
     window.history.replaceState(null, "", window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Charge un éventuel brouillon (best-effort, utilisateur connecté).
@@ -93,11 +96,12 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
       .then((d) => {
         if (act && d?.draft && typeof d.draft === "object") {
           setValues((prev) => ({ ...prev, ...(d.draft as FormPayload) }));
-          toast.info("Brouillon restauré");
+          toast.info(t("runnerDraftRestored"));
         }
       })
       .catch(() => {});
     return () => { act = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.slug]);
 
   // ----- Construction des étapes (tabs) -----
@@ -119,20 +123,21 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
 
     const out: Step[] = [];
     if (groups.length === 0) {
-      out.push({ kind: "fields", id: "informations", title: "Informations", subtitle: "Renseignez les informations", fields: [] });
+      out.push({ kind: "fields", id: "informations", title: t("runnerStepInfoTitle"), subtitle: t("runnerStepInfoSubtitle"), fields: [] });
     } else {
       groups.forEach((g, i) => {
         out.push({
           kind: "fields",
           id: g.key ?? `section-${i}`,
-          title: g.key ? sectionLabel(g.key, locale) : "Informations",
-          subtitle: "Renseignez les informations",
+          title: g.key ? sectionLabel(g.key, locale) : t("runnerStepInfoTitle"),
+          subtitle: t("runnerStepInfoSubtitle"),
           fields: g.fields,
         });
       });
     }
-    out.push({ kind: "summary", id: "summary", title: "Résumé", subtitle: "Prévisualiser et signer" });
+    out.push({ kind: "summary", id: "summary", title: t("runnerStepSummaryTitle"), subtitle: t("runnerStepSummarySubtitle") });
     return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.fields, values, locale]);
 
   // Nom du signataire résolu depuis les champs saisis (pour la signature
@@ -172,7 +177,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
 
   async function submit() {
     if (!consent) {
-      toast.error("Veuillez accepter le traitement de vos données.");
+      toast.error(t("runnerConsentRequired"));
       return;
     }
     // Signature numérique automatique : on auto-confirme tous les champs
@@ -187,7 +192,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
     } else {
       // Pas de nom exploitable : on annule pour ne pas générer un document
       // signé "anonyme".
-      toast.error("Renseignez votre nom (Prénom + Nom) pour pouvoir signer le document.");
+      toast.error(t("runnerNameRequiredToSign"));
       return;
     }
     // Validation avec la version signée (sinon les champs signature requis
@@ -207,12 +212,12 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
         if (stepIdx !== undefined) setActive(stepIdx);
         setTimeout(() => document.getElementById(firstId)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
       }
-      toast.error("Certains champs sont invalides.");
+      toast.error(t("runnerSomeFieldsInvalid"));
       return;
     }
     setErrors({});
     if (delivery === "doccle" && !doccleRef.trim()) {
-      toast.error("Indiquez le destinataire Doccle.");
+      toast.error(t("runnerDoccleRecipientRequired"));
       return;
     }
     setSubmitting(true);
@@ -254,12 +259,12 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
         const next: Record<string, string> = {};
         for (const i of data.issues) if (i.field) next[i.field] = i.message;
         setErrors(next);
-        toast.error("Validation échouée côté serveur.");
+        toast.error(t("runnerServerValidationFailed"));
         return;
       }
-      toast.error(data.error || "Échec de la génération.");
+      toast.error(data.error || t("runnerGenerationFailed"));
     } catch {
-      toast.error("Erreur réseau.");
+      toast.error(t("runnerNetworkError"));
     } finally {
       setSubmitting(false);
     }
@@ -272,11 +277,11 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
           <CheckCircle2Icon className="size-10 text-primary" />
           <p className="text-sm text-muted-foreground">
             {done.mode === "download"
-              ? "Votre document a été généré et téléchargé. Il n'est pas conservé sur nos serveurs."
-              : "Votre document a été envoyé vers votre espace Doccle de façon sécurisée."}
+              ? t("runnerDoneDownload")
+              : t("runnerDoneDoccle")}
           </p>
           <Button variant="outline" size="sm" onClick={() => { setDone(null); setActive(0); }}>
-            Générer un autre document
+            {t("runnerGenerateAnother")}
           </Button>
         </CardContent>
       </Card>

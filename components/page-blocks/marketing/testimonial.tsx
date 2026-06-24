@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import { Quote as QuoteIcon } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -62,11 +63,12 @@ export const testimonial = defineBlock({
     ],
   },
   Render: ({ props }) => {
+    const tr = useTranslations('public.blocks')
     const { title, items, variant = 'single' } = props
     if (!items || items.length === 0) {
       return (
         <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-          Aucun témoignage
+          {tr('testimonial.empty')}
         </div>
       )
     }

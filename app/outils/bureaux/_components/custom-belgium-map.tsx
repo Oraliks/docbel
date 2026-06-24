@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { feature } from 'topojson-client'
 import { geoMercator, geoPath, type GeoPermissibleObjects } from 'd3-geo'
 import type { Topology } from 'topojson-specification'
@@ -53,10 +54,10 @@ type MunicipalityFeature = Feature<Polygon | MultiPolygon, MunicipalityProps>
  */
 type ZoomLevel = 'commune' | 'arrondissement' | 'country'
 
-const ZOOM_LABELS: Record<ZoomLevel, string> = {
-  commune: 'Commune',
-  arrondissement: 'Arrondissement',
-  country: 'Belgique',
+const ZOOM_LABEL_KEYS: Record<ZoomLevel, string> = {
+  commune: 'mapZoomCommune',
+  arrondissement: 'mapZoomArrondissement',
+  country: 'mapZoomCountry',
 }
 
 const ZOOM_ORDER: ZoomLevel[] = ['commune', 'arrondissement', 'country']
@@ -67,6 +68,7 @@ export function CustomBelgiumMap({
   bureaus,
   height = 420,
 }: Props) {
+  const t = useTranslations('public.outils')
   const [topo, setTopo] = useState<Topology | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [size, setSize] = useState({ w: 380, h: height })
@@ -207,7 +209,7 @@ export function CustomBelgiumMap({
         }}
         className="flex items-center justify-center text-xs text-muted-foreground"
       >
-        Chargement de la carte…
+        {t('mapLoading')}
       </div>
     )
   }
@@ -338,7 +340,7 @@ export function CustomBelgiumMap({
       {/* Boutons zoom custom — 3 niveaux discrets : commune → arrondissement → région */}
       <div className="absolute bottom-3 right-3 flex flex-col items-end gap-1.5">
         <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-background/95 border border-border text-muted-foreground shadow-sm">
-          {ZOOM_LABELS[level]}
+          {t(ZOOM_LABEL_KEYS[level] as Parameters<typeof t>[0])}
         </span>
         <div className="flex flex-col rounded-md overflow-hidden shadow border border-border bg-background">
           <button
@@ -349,8 +351,8 @@ export function CustomBelgiumMap({
             }}
             disabled={level === 'commune'}
             className="p-1.5 hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Zoomer (réduire la zone affichée)"
-            title="Zoomer"
+            aria-label={t('mapZoomInAria')}
+            title={t('mapZoomIn')}
           >
             <Plus className="w-3.5 h-3.5" />
           </button>

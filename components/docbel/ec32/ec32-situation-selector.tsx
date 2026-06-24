@@ -13,6 +13,7 @@
 // =====================================================================
 
 import { Check } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import {
   EC32_PRIMARY_SITUATIONS,
@@ -28,16 +29,17 @@ const EXCLUSIVE_SET = new Set<Ec32SituationType>(EC32_WORK_ELSEWHERE_EXCLUSIVE)
 
 /** Libellés ONEM verbatim des 3 cases « Travail ailleurs ». `{employer}` = nom employeur. */
 function workElsewhereLabel(
+  t: ReturnType<typeof useTranslations<'public.ec32'>>,
   situation: Ec32SituationType,
   employerName: string,
 ): string {
   switch (situation) {
     case 'work_elsewhere_usual_day':
-      return `Un jour où vous travaillez normalement pour ${employerName}`
+      return t('situationSelector.workElsewhere.usualDay', { employer: employerName })
     case 'work_elsewhere_non_usual_day':
-      return `Un jour où vous ne travaillez normalement pas pour ${employerName}`
+      return t('situationSelector.workElsewhere.nonUsualDay', { employer: employerName })
     case 'work_other_regular_employer':
-      return "Auprès d'un autre employeur fixe (pas de flexijob, pas d'activité indépendante)"
+      return t('situationSelector.workElsewhere.otherRegularEmployer')
     default:
       return ''
   }
@@ -79,6 +81,7 @@ export function Ec32SituationSelector({
   onSave: () => void
   onCancel: () => void
 }) {
+  const t = useTranslations('public.ec32')
   const secondarySet = new Set(secondaryWork)
   // Règle d'exclusion : si ■ coché, ▲ doit être désactivée (et vice-versa).
   const isExclusiveDisabled = (s: Ec32SituationType): boolean => {
@@ -91,7 +94,7 @@ export function Ec32SituationSelector({
     <div className="space-y-4">
       {/* Bloc principal : radio des 5 situations. */}
       <fieldset className="space-y-1.5">
-        <legend className="sr-only">Situation principale du jour</legend>
+        <legend className="sr-only">{t('situationSelector.primaryLegend')}</legend>
         {EC32_PRIMARY_SITUATIONS.map((situation) => (
           <PrimaryOption
             key={situation}
@@ -100,7 +103,7 @@ export function Ec32SituationSelector({
             suggested={suggestedSituation === situation}
             label={
               situation === 'work_own_employer'
-                ? `Travail chez ${employerName}`
+                ? t('situationSelector.workOwnEmployer', { employer: employerName })
                 : situationLabel(situation)
             }
             onSelect={() => onChange(situation)}
@@ -111,7 +114,7 @@ export function Ec32SituationSelector({
       {/* Bloc secondaire : 3 cases « Travail ailleurs que chez {employeur} ». */}
       <fieldset className="space-y-2 border-t border-border/60 pt-3">
         <legend className="text-xs font-semibold text-foreground">
-          Travail ailleurs que chez {employerName}
+          {t('situationSelector.secondaryLegend', { employer: employerName })}
         </legend>
         {EC32_WORK_ELSEWHERE_SITUATIONS.map((s) => (
           <SecondaryOption
@@ -119,7 +122,7 @@ export function Ec32SituationSelector({
             situation={s}
             checked={secondarySet.has(s)}
             disabled={isExclusiveDisabled(s)}
-            label={workElsewhereLabel(s, employerName)}
+            label={workElsewhereLabel(t, s, employerName)}
             onToggle={(v) => onSecondaryToggle(s, v)}
           />
         ))}
@@ -183,6 +186,7 @@ function PrimaryOption({
   label: string
   onSelect: () => void
 }) {
+  const t = useTranslations('public.ec32')
   return (
     <button
       type="button"
@@ -202,7 +206,7 @@ function PrimaryOption({
       </span>
       {suggested && (
         <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[0.6rem] font-semibold text-primary">
-          Suggéré
+          {t('situationSelector.suggested')}
         </span>
       )}
       <span

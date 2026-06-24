@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Music } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
@@ -19,13 +20,14 @@ export const audio = defineBlock({
     shortcuts: ['audio', 'podcast', 'mp3'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { url, fileId, title, artist, caption } = props
     const src = fileId ? `/api/files/${fileId}/download` : url
     if (!src) {
       return (
         <div className="rounded-lg border border-dashed bg-muted px-4 py-6 text-sm text-muted-foreground flex items-center gap-3">
           <Music className="size-5" />
-          Audio non configuré
+          {t('audio.notConfigured')}
         </div>
       )
     }
@@ -44,7 +46,7 @@ export const audio = defineBlock({
         </div>
         <audio controls className="w-full">
           <source src={src} />
-          Votre navigateur ne supporte pas l’audio.
+          {t('audio.unsupported')}
         </audio>
         {caption && <p className="mt-2 text-xs text-muted-foreground text-center">{caption}</p>}
       </div>

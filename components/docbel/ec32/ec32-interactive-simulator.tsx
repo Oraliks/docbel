@@ -13,6 +13,7 @@
 // =====================================================================
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Building2,
   CalendarDays,
@@ -101,22 +102,30 @@ import {
 
 const STORAGE_KEY = 'docbel-ec32-sim'
 
-const FRENCH_MONTHS_SHORT = [
-  'janv.',
-  'févr.',
-  'mars',
-  'avr.',
-  'mai',
-  'juin',
-  'juil.',
-  'août',
-  'sept.',
-  'oct.',
-  'nov.',
-  'déc.',
+const FRENCH_MONTHS_SHORT_KEYS = [
+  'sim.date.month.jan',
+  'sim.date.month.feb',
+  'sim.date.month.mar',
+  'sim.date.month.apr',
+  'sim.date.month.may',
+  'sim.date.month.jun',
+  'sim.date.month.jul',
+  'sim.date.month.aug',
+  'sim.date.month.sep',
+  'sim.date.month.oct',
+  'sim.date.month.nov',
+  'sim.date.month.dec',
 ] as const
 
-const FRENCH_WEEKDAYS_SHORT = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'] as const
+const FRENCH_WEEKDAYS_SHORT_KEYS = [
+  'sim.date.weekday.sun',
+  'sim.date.weekday.mon',
+  'sim.date.weekday.tue',
+  'sim.date.weekday.wed',
+  'sim.date.weekday.thu',
+  'sim.date.weekday.fri',
+  'sim.date.weekday.sat',
+] as const
 
 const LOGIN_METHODS: Array<{
   key: 'eid' | 'itsme' | 'frontalier' | 'noMeans'
@@ -159,6 +168,7 @@ export function Ec32InteractiveSimulator({
   /** Incrémenté par « Mode guidé pas à pas » pour démarrer à l'étape connexion. */
   startLoginSignal?: number
 }) {
+  const t = useTranslations('public.ec32')
   const sim = content.simulator
 
   // ── Helpers de libellés / notices (contenu éditable → repli codé) ──
@@ -282,12 +292,17 @@ export function Ec32InteractiveSimulator({
   )
 
   // ── Format de date lisible (déterministe, à partir de l'ISO) ──
-  const formatDate = useCallback((iso: string): string => {
-    const [y, m, d] = iso.split('-').map((n) => Number.parseInt(n, 10))
-    if (!y || !m || !d) return iso
-    const weekday = new Date(y, m - 1, d).getDay()
-    return `${FRENCH_WEEKDAYS_SHORT[weekday]} ${d} ${FRENCH_MONTHS_SHORT[m - 1]} ${y}`
-  }, [])
+  const formatDate = useCallback(
+    (iso: string): string => {
+      const [y, m, d] = iso.split('-').map((n) => Number.parseInt(n, 10))
+      if (!y || !m || !d) return iso
+      const weekday = new Date(y, m - 1, d).getDay()
+      const weekdayLabel = t(FRENCH_WEEKDAYS_SHORT_KEYS[weekday] as Parameters<typeof t>[0])
+      const monthLabelShort = t(FRENCH_MONTHS_SHORT_KEYS[m - 1] as Parameters<typeof t>[0])
+      return `${weekdayLabel} ${d} ${monthLabelShort} ${y}`
+    },
+    [t],
+  )
 
   // ── Réinitialise le statut/jour simulé quand le mois change ──
   const resetMonthRuntime = useCallback((nextMonthKey: string) => {
@@ -554,8 +569,8 @@ export function Ec32InteractiveSimulator({
       enterpriseNumber: employer?.enterpriseNumber || '—',
       occupationPeriod: employer?.sector || undefined,
       // Données travailleur fictives (jamais de NISS/identité réelle).
-      workerName: 'Citoyen·ne (simulation)',
-      workerNiss: 'non communiqué (simulation)',
+      workerName: t('sim.pdf.workerName'),
+      workerNiss: t('sim.pdf.workerNiss'),
       generatedAtLabel: formatDate(
         new Date(behavior?.year ?? 2025, (behavior?.month ?? 1) - 1, simulatedDay)
           .toISOString()
@@ -563,11 +578,9 @@ export function Ec32InteractiveSimulator({
       ),
       sent: isLocked,
       cells,
-      fictionMention:
-        sim.pdf.fictionMention ||
-        'Simulation pédagogique — document fictif, aucune donnée réelle.',
+      fictionMention: sim.pdf.fictionMention || t('sim.pdf.fictionMention'),
     })
-  }, [cells, formatDate, sim.pdf, monthLabel, employer, isLocked, behavior, simulatedDay])
+  }, [cells, formatDate, sim.pdf, monthLabel, employer, isLocked, behavior, simulatedDay, t])
 
   // ─────────────── Réinitialisation complète ───────────────
 
@@ -622,26 +635,25 @@ export function Ec32InteractiveSimulator({
   const correctionLabels: Ec32CorrectionModalLabels = {
     title: sim.correctionModal.title || ec32Label('card.corrections'),
     helpText: sim.correctionModal.helpText || getNotice('correction.help'),
-    dayLabel: sim.correctionModal.dayLabel || 'Jour concerné',
-    fromLabel: sim.correctionModal.fromLabel || 'Ancienne situation',
-    toLabel: sim.correctionModal.toLabel || 'Nouvelle situation',
-    reasonLabel: sim.correctionModal.reasonLabel || 'Explication (obligatoire)',
-    reasonPlaceholder: sim.correctionModal.reasonPlaceholder || 'Expliquez la correction…',
-    saveLabel: sim.correctionModal.saveLabel || 'Sauvegarder la correction',
+    dayLabel: sim.correctionModal.dayLabel || t('sim.correctionModal.dayLabel'),
+    fromLabel: sim.correctionModal.fromLabel || t('sim.correctionModal.fromLabel'),
+    toLabel: sim.correctionModal.toLabel || t('sim.correctionModal.toLabel'),
+    reasonLabel: sim.correctionModal.reasonLabel || t('sim.correctionModal.reasonLabel'),
+    reasonPlaceholder:
+      sim.correctionModal.reasonPlaceholder || t('sim.correctionModal.reasonPlaceholder'),
+    saveLabel: sim.correctionModal.saveLabel || t('sim.correctionModal.saveLabel'),
     lockedMessage: sim.correctionModal.lockedMessage || getNotice('correction.locked'),
-    requiredError:
-      sim.correctionModal.requiredError ||
-      'L’explication est obligatoire pour enregistrer une correction.',
+    requiredError: sim.correctionModal.requiredError || t('sim.correctionModal.requiredError'),
   }
 
   const sendLabels: Ec32SendModalLabels = {
     title: sim.sendModal.title || ec32Label('card.send'),
     body: sim.sendModal.body || '',
-    cancelLabel: sim.sendModal.cancelLabel || 'Annuler',
-    confirmLabel: sim.sendModal.confirmLabel || 'Confirmer l’envoi simulé',
-    successTitle: sim.sendModal.successTitle || 'Carte envoyée — simulation',
+    cancelLabel: sim.sendModal.cancelLabel || t('sim.sendModal.cancelLabel'),
+    confirmLabel: sim.sendModal.confirmLabel || t('sim.sendModal.confirmLabel'),
+    successTitle: sim.sendModal.successTitle || t('sim.sendModal.successTitle'),
     successBody: sim.sendModal.successBody || '',
-    blockedTitle: sim.sendModal.blockedTitle || 'Envoi impossible — simulation',
+    blockedTitle: sim.sendModal.blockedTitle || t('sim.sendModal.blockedTitle'),
     blockedBody: sim.sendModal.blockedBody || getNotice('send.noPaymentOrg'),
   }
 
@@ -659,7 +671,7 @@ export function Ec32InteractiveSimulator({
   return (
     <Ec32Section
       id="simulateur"
-      eyebrow="Simulateur"
+      eyebrow={t('sim.eyebrow')}
       title={sim.title}
       subtitle={sim.subtitle}
       icon={CalendarDays}
@@ -684,7 +696,7 @@ export function Ec32InteractiveSimulator({
       )}
 
       {showUnsaved && (
-        <Ec32InfoBox tone="warning" className="mb-5" title="Modifications non enregistrées">
+        <Ec32InfoBox tone="warning" className="mb-5" title={t('sim.unsavedTitle')}>
           {getNotice('save.unsaved')}
         </Ec32InfoBox>
       )}
@@ -888,6 +900,7 @@ function Ec32StepNav({
   /** Icône optionnelle après le libellé (ex. flèche « Suivant »). */
   primaryIconEnd?: ReactNode
 }) {
+  const t = useTranslations('public.ec32')
   return (
     <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
       {onRestart ? (
@@ -900,7 +913,7 @@ function Ec32StepNav({
         >
           <RotateCcw className="size-3.5 shrink-0" aria-hidden />
           <span className="hidden sm:inline">{getLabel('nav.restart')}</span>
-          <span className="sm:hidden">Recommencer</span>
+          <span className="sm:hidden">{t('sim.nav.restartShort')}</span>
         </Button>
       ) : (
         <span aria-hidden />
@@ -911,7 +924,7 @@ function Ec32StepNav({
           <Button type="button" variant="outline" size="sm" onClick={onPrev}>
             <ChevronLeft className="size-3.5 shrink-0" aria-hidden />
             <span className="hidden sm:inline">{getLabel('nav.back')}</span>
-            <span className="sm:hidden">Précédent</span>
+            <span className="sm:hidden">{t('sim.nav.backShort')}</span>
           </Button>
         )}
         {onPrimary && (
@@ -941,6 +954,7 @@ function StepLogin({
   onRestart: () => void
   onContinue: () => void
 }) {
+  const t = useTranslations('public.ec32')
   const [consentOpen, setConsentOpen] = useState(false)
   // Le consentement OAuth (durée 23 mois) s'applique aux moyens fédéraux
   // eID/itsme dans la vraie app. On le propose en aperçu pédagogique.

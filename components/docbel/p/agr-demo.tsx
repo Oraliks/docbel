@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { ArrowRightIcon, CalculatorIcon } from "lucide-react";
 
@@ -67,15 +68,6 @@ function eurEntier(v: number): string {
 }
 
 const BAREME_LIBELLE = getBareme(CAS.bareme).libelle;
-
-/** Le reste du cas type, figé — affiché en toute transparence sous les curseurs. */
-const PARAMETRES_FIGES: string[] = [
-  "Employé du secteur privé (1E)",
-  "Chef de ménage (cat. A)",
-  `Allocation journalière : ${eur(CAS.allocationJournaliere)}`,
-  `Temps plein de référence : ${CAS.s} h/sem.`,
-  `Barème « ${BAREME_LIBELLE} »`,
-];
 
 /** Entrées du moteur : cas type figé + les 2 valeurs pilotées par les curseurs. */
 function construireEntree(salaire: number, q: number): AgrGlobalInput {
@@ -176,8 +168,18 @@ function useInView(): [RefObject<HTMLDivElement | null>, boolean] {
 /* ─────────────────────────── composant ─────────────────────────── */
 
 export function AgrDemo() {
+  const t = useTranslations("public.landing");
   const [salaire, setSalaire] = useState<number>(CAS.salaire);
   const [q, setQ] = useState<number>(CAS.q);
+
+  /** Le reste du cas type, figé — affiché en toute transparence sous les curseurs. */
+  const PARAMETRES_FIGES: string[] = [
+    t("agrDemoParamPrive"),
+    t("agrDemoParamChefMenage"),
+    t("agrDemoParamAllocation", { montant: eur(CAS.allocationJournaliere) }),
+    t("agrDemoParamTempsPlein", { s: CAS.s }),
+    t("agrDemoParamBareme", { libelle: BAREME_LIBELLE }),
+  ];
 
   const resultat = useMemo(() => calculerAgr(construireEntree(salaire, q)), [salaire, q]);
   const agr57 = resultat.bareme57 ?? 0;
@@ -196,14 +198,14 @@ export function AgrDemo() {
   const [revelTermine, setRevelTermine] = useState(false);
   useEffect(() => {
     if (!grapheVisible) return;
-    const t = setTimeout(() => setRevelTermine(true), 1100);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setRevelTermine(true), 1100);
+    return () => clearTimeout(timer);
   }, [grapheVisible]);
 
   const barres = [
-    { label: "Salaire brut", valeur: salaire, couleur: "var(--glass-accent-a)" },
-    { label: "Allocation complète (26 j)", valeur: allocationComplete, couleur: "var(--glass-accent-c)" },
-    { label: "AGR — barème 57", valeur: agr57, couleur: "var(--glass-accent-deep)" },
+    { labelKey: "agrDemoBarSalaireBrut", label: t("agrDemoBarSalaireBrut"), valeur: salaire, couleur: "var(--glass-accent-a)" },
+    { labelKey: "agrDemoBarAllocation", label: t("agrDemoBarAllocation"), valeur: allocationComplete, couleur: "var(--glass-accent-c)" },
+    { labelKey: "agrDemoBarAgr57", label: t("agrDemoBarAgr57"), valeur: agr57, couleur: "var(--glass-accent-deep)" },
   ];
   const maxBarre = Math.max(...barres.map((b) => b.valeur), 1);
 
@@ -219,18 +221,15 @@ export function AgrDemo() {
           }}
         >
           <CalculatorIcon className="size-3.5" strokeWidth={2.4} />
-          Démo — cas type simplifié (art. 57/05)
+          {t("agrDemoBadge")}
         </span>
 
         <h2 className="glass-display max-w-3xl text-[30px] leading-[1.1] font-semibold tracking-tight sm:text-[38px]">
-          Essayez le <em>calcul AGR</em>, en direct
+          {t.rich("agrDemoTitle", { em: (c) => <em>{c}</em> })}
         </h2>
 
         <p className="max-w-[640px] text-[14.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-          L’allocation de garantie de revenus complète le salaire d’un travailleur à temps
-          partiel avec maintien des droits. Ci-dessous, le même moteur de calcul que l’outil
-          réservé aux partenaires, appliqué à un cas type validé : faites varier le salaire
-          et l’horaire, tout se recalcule instantanément.
+          {t("agrDemoIntro")}
         </p>
       </div>
 
@@ -240,7 +239,7 @@ export function AgrDemo() {
           <div className="flex flex-col gap-1.5">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <label htmlFor="agr-demo-salaire" className={GLASS_LABEL}>
-                Salaire brut du mois (temps partiel)
+                {t("agrDemoSalaireLabel")}
               </label>
               <span className="text-[16px] font-bold tabular-nums">{eur(salaire)}</span>
             </div>
@@ -261,10 +260,10 @@ export function AgrDemo() {
           <div className="flex flex-col gap-1.5">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <label htmlFor="agr-demo-horaire" className={GLASS_LABEL}>
-                Volume horaire (facteur Q)
+                {t("agrDemoHoraireLabel")}
               </label>
               <span className="text-[16px] font-bold tabular-nums">
-                {q} h / semaine
+                {t("agrDemoHoraireValue", { q })}
               </span>
             </div>
             <Slider
@@ -276,13 +275,13 @@ export function AgrDemo() {
               step={1}
             />
             <div className="flex justify-between text-[11px] text-[color:var(--glass-ink-faint)]">
-              <span>{Q_MIN} h</span>
-              <span>{Q_MAX} h (temps plein : {CAS.s} h)</span>
+              <span>{t("agrDemoHoraireMin", { min: Q_MIN })}</span>
+              <span>{t("agrDemoHoraireMax", { max: Q_MAX, s: CAS.s })}</span>
             </div>
           </div>
 
           <div className="flex flex-col gap-2.5 border-t border-[color:var(--glass-ink-line)] pt-4">
-            <span className={GLASS_LABEL}>Le reste du cas type est figé</span>
+            <span className={GLASS_LABEL}>{t("agrDemoFigeLabel")}</span>
             <ul className="flex flex-wrap gap-2">
               {PARAMETRES_FIGES.map((libelle) => (
                 <li
@@ -307,13 +306,13 @@ export function AgrDemo() {
             }}
           >
             <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/80">
-              AGR brut — Barème 57/-
+              {t("agrDemoResultBareme57")}
             </div>
             <div className="flex flex-wrap items-baseline gap-x-2">
               <span className="text-[34px] font-bold tabular-nums sm:text-[40px]">
                 {eur(agr57Anime)}
               </span>
-              <span className="text-[12.5px] font-semibold text-white/80">par mois</span>
+              <span className="text-[12.5px] font-semibold text-white/80">{t("agrDemoParMois")}</span>
             </div>
             {resultat.motif57 && (
               <p className="mt-1 text-[11.5px] leading-snug text-white/90">{resultat.motif57}</p>
@@ -322,21 +321,21 @@ export function AgrDemo() {
 
           <div className="flex flex-col gap-2">
             <LigneResultat
-              label="Barème 05/-"
+              label={t("agrDemoBareme05")}
               valeur={eur(agr05Anime)}
               motif={resultat.motif05 || undefined}
               important
             />
             <LigneResultat
-              label="Salaire imposable"
+              label={t("agrDemoSalaireImposable")}
               valeur={eur(resultat.intermediaires.totalSalaireImposable)}
             />
             <LigneResultat
-              label="Retenues (PP)"
+              label={t("agrDemoRetenues")}
               valeur={eur(resultat.intermediaires.totalRetenues)}
             />
             <LigneResultat
-              label="Salaire de référence (plafond)"
+              label={t("agrDemoSalaireReference")}
               valeur={eur(resultat.salaireReference)}
             />
           </div>
@@ -345,7 +344,7 @@ export function AgrDemo() {
 
           {/* Mini-graphe en barres CSS pures, animé à l'apparition. */}
           <div ref={grapheRef} className="flex flex-col gap-3">
-            <span className={GLASS_LABEL}>Comparaison mensuelle (montants bruts)</span>
+            <span className={GLASS_LABEL}>{t("agrDemoComparaison")}</span>
             {/* Les cellules s'étirent sur toute la hauteur (stretch par défaut) ;
                 chaque colonne ancre sa barre en bas. */}
             <div className="grid h-32 grid-cols-3 gap-4" aria-hidden>
@@ -353,7 +352,7 @@ export function AgrDemo() {
                 const pct = (b.valeur / maxBarre) * 100;
                 const hauteur = b.valeur > 0 ? Math.max(3, pct) : 1.5;
                 return (
-                  <div key={b.label} className="flex h-full items-end justify-center">
+                  <div key={b.labelKey} className="flex h-full items-end justify-center">
                     <div
                       className="w-full max-w-[72px] rounded-t-xl transition-[height] duration-700 ease-out motion-reduce:transition-none"
                       style={{
@@ -368,7 +367,7 @@ export function AgrDemo() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               {barres.map((b) => (
-                <div key={b.label} className="flex flex-col items-center gap-0.5 text-center">
+                <div key={b.labelKey} className="flex flex-col items-center gap-0.5 text-center">
                   <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[color:var(--glass-ink-soft)]">
                     <span
                       className="size-2 shrink-0 rounded-full"
@@ -384,9 +383,7 @@ export function AgrDemo() {
           </div>
 
           <p className="text-[11.5px] leading-[1.55] text-[color:var(--glass-ink-faint)]">
-            Montants bruts, à titre indicatif. Démo limitée à une seule occupation, sans
-            vacances ni chômage temporaire — l’outil complet calcule jusqu’à 4 occupations
-            à partir des WECH 506 déposés.
+            {t("agrDemoFootnote")}
           </p>
         </div>
       </div>
@@ -396,14 +393,14 @@ export function AgrDemo() {
           href="/inscription/partenaire"
           className="glass-cta inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold"
         >
-          Créer mon espace partenaire
+          {t("agrDemoCtaPrimary")}
           <ArrowRightIcon className="size-4" strokeWidth={2.4} />
         </Link>
         <Link
           href="/partenaire/outils/calcul-agr"
           className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[color:var(--glass-ink-soft)] underline-offset-4 transition-colors hover:text-[color:var(--glass-ink)] hover:underline motion-reduce:transition-none"
         >
-          Voir l’outil complet
+          {t("agrDemoCtaSecondary")}
           <ArrowRightIcon className="size-3.5" strokeWidth={2.4} />
         </Link>
       </div>

@@ -114,58 +114,23 @@ export function Tutorial({ tool, accent }: ToolViewProps) {
   const t = useTranslations("public.outils");
   const [activeStep, setActiveStep] = useState(0);
 
-  const steps = tool.title.includes("carte")
-    ? [
-        {
-          title: "Télécharger l'application MyONEM",
-          body: "Disponible sur App Store et Google Play. Connectez-vous avec votre eID ou itsme. Vous pouvez aussi utiliser le site web myonem.onem.be depuis un ordinateur.",
-        },
-        {
-          title: "Accéder à « Ma carte de contrôle »",
-          body: "Dans le menu principal, sélectionnez « Ma carte de contrôle C ». Vous y verrez le mois en cours et les jours à déclarer.",
-        },
-        {
-          title: "Cocher les jours travaillés",
-          body: "Pour chaque jour où vous avez travaillé, reçu une indemnité ou étiez absent, cochez la case correspondante. Les jours non cochés = jours de chômage.",
-        },
-        {
-          title: "Envoyer la carte",
-          body: "Cliquez sur « Envoyer ma carte » avant le dernier jour ouvrable du mois. Vous recevrez une confirmation par e-Box. En cas d'erreur, contactez immédiatement votre organisme de paiement.",
-        },
-      ]
+  // Jeu d'étapes choisi par un identifiant stable (et non par le titre
+  // localisé). Chaque jeu a un nombre fixe d'étapes → on mappe vers des clés
+  // i18n typées via `t(x as Parameters<typeof t>[0])`.
+  const variant = tool.title.includes("carte")
+    ? "Carte"
     : tool.title.includes("e-Box")
-    ? [
-        {
-          title: "Activer votre e-Box",
-          body: "Rendez-vous sur myebox.be et connectez-vous avec votre eID, itsme ou token. Cliquez sur « Activer mon e-Box » pour recevoir vos documents gouvernementaux numériquement.",
-        },
-        {
-          title: "Gérer vos préférences",
-          body: "Dans les paramètres, choisissez de recevoir vos courriers uniquement par e-Box. Vous pouvez aussi configurer des notifications par email ou SMS.",
-        },
-        {
-          title: "Consulter vos documents",
-          body: "Tous vos documents officiels (ONEM, SPF Finances, CPAS…) apparaissent dans votre boîte. Vous pouvez les télécharger et les archiver.",
-        },
-      ]
-    : [
-        {
-          title: "Accéder à MyONEM",
-          body: "Rendez-vous sur myonem.onem.be et cliquez sur « S'inscrire ». Vous aurez besoin de votre carte eID ou de l'application itsme.",
-        },
-        {
-          title: "Vérifier votre identité",
-          body: "Choisissez votre méthode d'authentification : eID avec lecteur de carte, itsme sur smartphone, ou token/mot de passe.",
-        },
-        {
-          title: "Compléter votre profil",
-          body: "Renseignez vos coordonnées bancaires (IBAN) et choisissez votre organisme de paiement si ce n'est pas encore fait.",
-        },
-        {
-          title: "Accéder à vos services",
-          body: "Une fois connecté, vous pouvez envoyer votre carte C, consulter vos allocations, mettre à jour votre situation et échanger avec l'ONEM.",
-        },
-      ];
+    ? "Ebox"
+    : "Myonem";
+  const stepCount = variant === "Carte" ? 4 : variant === "Ebox" ? 3 : 4;
+  const steps = Array.from({ length: stepCount }, (_, i) => ({
+    title: t(
+      `tut${variant}Step${i + 1}Title` as Parameters<typeof t>[0]
+    ),
+    body: t(
+      `tut${variant}Step${i + 1}Body` as Parameters<typeof t>[0]
+    ),
+  }));
 
   return (
     <div>
@@ -245,50 +210,17 @@ export function Tutorial({ tool, accent }: ToolViewProps) {
 }
 
 export function InfoPanel({ tool }: ToolViewProps) {
-  const isALE = tool.title.includes("ALE");
+  const t = useTranslations("public.outils");
+  const variant = tool.title.includes("ALE") ? "Ale" : "Ris";
 
-  const content = isALE
-    ? {
-        intro:
-          "L'ALE (Agence Locale pour l'Emploi) permet aux chômeurs complets et aux bénéficiaires du RIS d'effectuer de petits travaux autorisés contre des chèques-ALE.",
-        items: [
-          [
-            "Qui peut travailler via l'ALE ?",
-            "Chômeurs complets indemnisés depuis ≥ 6 mois, bénéficiaires du RIS, chômeurs de 60+.",
-          ],
-          [
-            "Quelles activités ?",
-            "Aide à domicile, jardinage, petits travaux, cours particuliers, aide aux personnes âgées...",
-          ],
-          [
-            "Combien peut-on gagner ?",
-            "Maximum 630 heures/an (850h si 50+). Pas d'impact sur les allocations dans la limite autorisée.",
-          ],
-          [
-            "Comment s'inscrire ?",
-            "Contactez l'ALE de votre commune. Apportez votre carte SIS, carte d'identité et attestation de chômage.",
-          ],
-        ],
-      }
-    : {
-        intro:
-          "Lorsque vos allocations de chômage arrivent à leur terme (fin de droits), le CPAS de votre commune peut vous accorder le Revenu d'Intégration Sociale (RIS).",
-        items: [
-          [
-            "Conditions d'accès",
-            "Avoir la nationalité belge ou un titre de séjour valide, résider en Belgique, être dans le besoin, disponible au travail.",
-          ],
-          [
-            "Montants RIS 2026",
-            "Personne isolée : 1.409 €/mois. Cohabitant : 940 €/mois. Chef de famille : 1.880 €/mois.",
-          ],
-          [
-            "Documents à apporter",
-            "Preuve de fin de droits ONEM, carte d'identité, composition de ménage, preuves de revenus, IBAN.",
-          ],
-          ["Délai de traitement", "Le CPAS dispose de 30 jours (prolongeable à 45 jours) pour prendre une décision."],
-        ],
-      };
+  // 4 items (titre + corps) par variante, mappés vers des clés i18n typées.
+  const content = {
+    intro: t(`info${variant}Intro` as Parameters<typeof t>[0]),
+    items: Array.from({ length: 4 }, (_, i) => [
+      t(`info${variant}Item${i + 1}Title` as Parameters<typeof t>[0]),
+      t(`info${variant}Item${i + 1}Body` as Parameters<typeof t>[0]),
+    ]) as [string, string][],
+  };
 
   return (
     <div>
@@ -315,30 +247,15 @@ export function InfoPanel({ tool }: ToolViewProps) {
 
 export function LinkPanel({ tool, accent }: ToolViewProps) {
   const t = useTranslations("public.outils");
-  const info: Record<string, { url: string; tel: string; desc: string }> = {
-    Actiris: {
-      url: "actiris.brussels",
-      tel: "0800 35 123",
-      desc: "Service bruxellois de l'emploi. Inscription obligatoire pour les DE bruxellois. Permanences sans rendez-vous lun-ven 8h30-12h30.",
-    },
-    VDAB: {
-      url: "vdab.be",
-      tel: "0800 30 700",
-      desc: "Vlaamse Dienst voor Arbeidsbemiddeling. Service flamand de l'emploi et de la formation. Mycareer.be pour votre CV en ligne.",
-    },
-    FOREM: {
-      url: "leforem.be",
-      tel: "0800 93 947",
-      desc: "Office wallon de la formation et de l'emploi. Inscription en ligne ou dans un bureau local. Accompagnement personnalisé.",
-    },
-    ADG: {
-      url: "adg.be",
-      tel: "087 59 64 00",
-      desc: "Arbeitsamt der Deutschsprachigen Gemeinschaft. Service de l'emploi pour les 9 communes de la Communauté germanophone.",
-    },
+  const info: Record<string, { url: string; tel: string; descKey: string }> = {
+    Actiris: { url: "actiris.brussels", tel: "0800 35 123", descKey: "linkActirisDesc" },
+    VDAB: { url: "vdab.be", tel: "0800 30 700", descKey: "linkVdabDesc" },
+    FOREM: { url: "leforem.be", tel: "0800 93 947", descKey: "linkForemDesc" },
+    ADG: { url: "adg.be", tel: "087 59 64 00", descKey: "linkAdgDesc" },
   };
   const key = Object.keys(info).find((k) => tool.title.includes(k)) || "Actiris";
   const d = info[key];
+  const desc = t(d.descKey as Parameters<typeof t>[0]);
   return (
     <div>
       <div
@@ -350,7 +267,7 @@ export function LinkPanel({ tool, accent }: ToolViewProps) {
           marginBottom: 16,
         }}
       >
-        <p style={{ fontSize: 13.5, color: "var(--glass-ink-soft)", lineHeight: 1.65, marginBottom: 16 }}>{d.desc}</p>
+        <p style={{ fontSize: 13.5, color: "var(--glass-ink-soft)", lineHeight: 1.65, marginBottom: 16 }}>{desc}</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ fontSize: 13, color: "var(--glass-ink)" }}>
             <strong>🌐 {t("linkWebsite")}</strong> <span style={{ color: accent }}>{d.url}</span>

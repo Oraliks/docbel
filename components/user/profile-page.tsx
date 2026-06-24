@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
   BriefcaseIcon,
@@ -52,12 +53,13 @@ type HouseholdRelationship =
   | "cohabitant"
   | "autre";
 
-const HOUSEHOLD_RELATIONSHIP_LABELS: Record<HouseholdRelationship, string> = {
-  conjoint: "Conjoint(e)",
-  enfant: "Enfant",
-  parent: "Parent",
-  cohabitant: "Cohabitant(e)",
-  autre: "Autre",
+/// Clés i18n des liens de parenté (résolues via t() à l'affichage).
+const HOUSEHOLD_RELATIONSHIP_KEYS: Record<HouseholdRelationship, string> = {
+  conjoint: "profileRelSpouse",
+  enfant: "profileRelChild",
+  parent: "profileRelParent",
+  cohabitant: "profileRelCohabitant",
+  autre: "profileRelOther",
 };
 
 /// Un membre de la composition de ménage. Tout est optionnel sauf le lien.
@@ -116,7 +118,7 @@ function normalizeHouseholdMembers(raw: unknown): HouseholdMember[] {
     const rec = m as Record<string, unknown>;
     const rel = rec.relationship;
     const relationship: HouseholdRelationship =
-      typeof rel === "string" && rel in HOUSEHOLD_RELATIONSHIP_LABELS
+      typeof rel === "string" && rel in HOUSEHOLD_RELATIONSHIP_KEYS
         ? (rel as HouseholdRelationship)
         : "autre";
     out.push({
@@ -174,6 +176,7 @@ export function ProfilePage({
   userName,
   userEmail,
 }: ProfilePageProps) {
+  const t = useTranslations("public.dossier");
   const router = useRouter();
   const [form, setForm] = useState<ProfileForm>(
     initial
@@ -257,13 +260,13 @@ export function ProfilePage({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || "Échec");
+        throw new Error(j.error || t("profileSaveFailed"));
       }
-      toast.success("Profil enregistré");
+      toast.success(t("profileSaved"));
       setDirty(false);
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("profileError"));
     } finally {
       setSaving(false);
     }
@@ -273,12 +276,12 @@ export function ProfilePage({
     setSaving(true);
     try {
       const res = await fetch("/api/user/profile", { method: "DELETE" });
-      if (!res.ok) throw new Error("Échec");
+      if (!res.ok) throw new Error(t("profileSaveFailed"));
       setForm(EMPTY);
-      toast.success("Profil effacé");
+      toast.success(t("profileDeleted"));
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      toast.error(err instanceof Error ? err.message : t("profileError"));
     } finally {
       setSaving(false);
     }
@@ -300,7 +303,7 @@ export function ProfilePage({
           }}
         >
           <SaveIcon className="size-4" />
-          {saving ? "Enregistrement…" : "Enregistrer"}
+          {saving ? t("profileSaving") : t("save")}
         </Button>
       </div>
 
@@ -315,43 +318,39 @@ export function ProfilePage({
           className="mt-0.5 size-4 shrink-0"
           style={{ color: "var(--glass-accent-deep)" }}
         />
-        <p>
-          Vos informations sont stockées de manière sécurisée et utilisées
-          uniquement pour pré-remplir vos formulaires automatiquement. Vous
-          pouvez les supprimer à tout moment.
-        </p>
+        <p>{t("profileSecurityNote")}</p>
       </div>
 
       <Card className={GLASS_CARD}>
         <CardHeader className="px-6 pt-6 pb-3">
           <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
             <UserIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
-            Identité
+            {t("profileIdentityTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 px-6 pb-6 md:grid-cols-2">
-          <Field label="Prénom">
+          <Field label={t("profileFirstName")}>
             <Input
               className={GLASS_INPUT}
               value={form.firstName}
               onChange={(e) => update("firstName", e.target.value)}
             />
           </Field>
-          <Field label="Nom">
+          <Field label={t("profileLastName")}>
             <Input
               className={GLASS_INPUT}
               value={form.lastName}
               onChange={(e) => update("lastName", e.target.value)}
             />
           </Field>
-          <Field label="NISS">
+          <Field label={t("profileNiss")}>
             <NissInput
               className={GLASS_INPUT}
               value={form.niss}
               onChange={(v) => update("niss", v)}
             />
           </Field>
-          <Field label="Date de naissance">
+          <Field label={t("profileBirthDate")}>
             <Input
               type="date"
               className={GLASS_INPUT}
@@ -359,21 +358,21 @@ export function ProfilePage({
               onChange={(e) => update("birthDate", e.target.value)}
             />
           </Field>
-          <Field label="Lieu de naissance">
+          <Field label={t("profileBirthPlace")}>
             <Input
               className={GLASS_INPUT}
               value={form.birthPlace}
               onChange={(e) => update("birthPlace", e.target.value)}
             />
           </Field>
-          <Field label="Nationalité">
+          <Field label={t("profileNationality")}>
             <Input
               className={GLASS_INPUT}
               value={form.nationality}
               onChange={(e) => update("nationality", e.target.value)}
             />
           </Field>
-          <Field label="Sexe">
+          <Field label={t("profileGender")}>
             <Select
               value={form.gender || "__none__"}
               onValueChange={(v) =>
@@ -384,14 +383,14 @@ export function ProfilePage({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">— Non précisé —</SelectItem>
-                <SelectItem value="M">Masculin</SelectItem>
-                <SelectItem value="F">Féminin</SelectItem>
-                <SelectItem value="X">Autre</SelectItem>
+                <SelectItem value="__none__">{t("profileUnspecified")}</SelectItem>
+                <SelectItem value="M">{t("profileGenderMale")}</SelectItem>
+                <SelectItem value="F">{t("profileGenderFemale")}</SelectItem>
+                <SelectItem value="X">{t("profileGenderOther")}</SelectItem>
               </SelectContent>
             </Select>
           </Field>
-          <Field label="État civil">
+          <Field label={t("profileMaritalStatus")}>
             <Select
               value={form.maritalStatus || "__none__"}
               onValueChange={(v) =>
@@ -402,12 +401,12 @@ export function ProfilePage({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">— Non précisé —</SelectItem>
-                <SelectItem value="single">Célibataire</SelectItem>
-                <SelectItem value="married">Marié(e)</SelectItem>
-                <SelectItem value="cohabiting">Cohabitant(e) légal(e)</SelectItem>
-                <SelectItem value="divorced">Divorcé(e)</SelectItem>
-                <SelectItem value="widowed">Veuf/Veuve</SelectItem>
+                <SelectItem value="__none__">{t("profileUnspecified")}</SelectItem>
+                <SelectItem value="single">{t("profileMaritalSingle")}</SelectItem>
+                <SelectItem value="married">{t("profileMaritalMarried")}</SelectItem>
+                <SelectItem value="cohabiting">{t("profileMaritalCohabiting")}</SelectItem>
+                <SelectItem value="divorced">{t("profileMaritalDivorced")}</SelectItem>
+                <SelectItem value="widowed">{t("profileMaritalWidowed")}</SelectItem>
               </SelectContent>
             </Select>
           </Field>
@@ -418,19 +417,19 @@ export function ProfilePage({
         <CardHeader className="px-6 pt-6 pb-3">
           <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
             <MapPinIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
-            Adresse et contact
+            {t("profileAddressTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 px-6 pb-6 md:grid-cols-2">
           <div className="grid grid-cols-[1fr_120px] gap-4 md:col-span-2">
-            <Field label="Rue">
+            <Field label={t("profileStreet")}>
               <Input
                 className={GLASS_INPUT}
                 value={form.street}
                 onChange={(e) => update("street", e.target.value)}
               />
             </Field>
-            <Field label="Numéro">
+            <Field label={t("profileStreetNum")}>
               <Input
                 className={GLASS_INPUT}
                 value={form.streetNum}
@@ -439,7 +438,7 @@ export function ProfilePage({
             </Field>
           </div>
           <div className="grid grid-cols-[120px_1fr] gap-4 md:col-span-2">
-            <Field label="Code postal">
+            <Field label={t("profilePostalCode")}>
               <Input
                 className={GLASS_INPUT}
                 value={form.postalCode}
@@ -448,7 +447,7 @@ export function ProfilePage({
                 placeholder="1000"
               />
             </Field>
-            <Field label="Ville">
+            <Field label={t("profileCity")}>
               <Input
                 className={GLASS_INPUT}
                 value={form.city}
@@ -456,7 +455,7 @@ export function ProfilePage({
               />
             </Field>
           </div>
-          <Field label="Téléphone">
+          <Field label={t("profilePhone")}>
             <Input
               className={GLASS_INPUT}
               value={form.phone}
@@ -464,7 +463,7 @@ export function ProfilePage({
               placeholder="+32 2 123 45 67"
             />
           </Field>
-          <Field label="GSM">
+          <Field label={t("profileMobile")}>
             <Input
               className={GLASS_INPUT}
               value={form.mobilePhone}
@@ -479,19 +478,17 @@ export function ProfilePage({
         <CardHeader className="px-6 pt-6 pb-3">
           <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
             <UsersIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
-            Composition de ménage
+            {t("profileHouseholdTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 px-6 pb-6">
           <p className="text-[12.5px] text-[color:var(--glass-ink-soft)]">
-            Les personnes qui vivent sous votre toit (conjoint, enfants,
-            cohabitants…). Utile pour les formulaires qui demandent la
-            composition de ménage.
+            {t("profileHouseholdIntro")}
           </p>
 
           {form.householdMembers.length === 0 ? (
             <p className="text-[13px] text-[color:var(--glass-ink-faint)]">
-              Aucun membre ajouté.
+              {t("profileHouseholdEmpty")}
             </p>
           ) : (
             <div className="flex flex-col gap-4">
@@ -504,27 +501,27 @@ export function ProfilePage({
                   <button
                     type="button"
                     onClick={() => removeMember(i)}
-                    aria-label="Retirer ce membre"
+                    aria-label={t("profileRemoveMember")}
                     className="absolute right-3 top-3 flex size-7 items-center justify-center rounded-full transition-colors hover:bg-[color:var(--glass-pop-bg)]/40"
                     style={{ color: "var(--glass-ink-soft)" }}
                   >
                     <XIcon className="size-4" />
                   </button>
-                  <Field label="Prénom">
+                  <Field label={t("profileFirstName")}>
                     <Input
                       className={GLASS_INPUT}
                       value={member.firstName}
                       onChange={(e) => updateMember(i, "firstName", e.target.value)}
                     />
                   </Field>
-                  <Field label="Nom">
+                  <Field label={t("profileLastName")}>
                     <Input
                       className={GLASS_INPUT}
                       value={member.lastName}
                       onChange={(e) => updateMember(i, "lastName", e.target.value)}
                     />
                   </Field>
-                  <Field label="Lien de parenté">
+                  <Field label={t("profileRelationship")}>
                     <Select
                       value={member.relationship}
                       onValueChange={(v) =>
@@ -537,17 +534,21 @@ export function ProfilePage({
                       <SelectContent>
                         {(
                           Object.keys(
-                            HOUSEHOLD_RELATIONSHIP_LABELS
+                            HOUSEHOLD_RELATIONSHIP_KEYS
                           ) as HouseholdRelationship[]
                         ).map((rel) => (
                           <SelectItem key={rel} value={rel}>
-                            {HOUSEHOLD_RELATIONSHIP_LABELS[rel]}
+                            {t(
+                              HOUSEHOLD_RELATIONSHIP_KEYS[rel] as Parameters<
+                                typeof t
+                              >[0],
+                            )}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </Field>
-                  <Field label="Date de naissance">
+                  <Field label={t("profileBirthDate")}>
                     <Input
                       type="date"
                       className={GLASS_INPUT}
@@ -564,7 +565,7 @@ export function ProfilePage({
                       }
                       className="size-4 rounded border-[color:var(--glass-border)] accent-[color:var(--glass-accent-deep)]"
                     />
-                    A des revenus propres
+                    {t("profileHasIncome")}
                   </label>
                 </div>
               ))}
@@ -581,11 +582,11 @@ export function ProfilePage({
               style={{ color: "var(--glass-ink)" }}
             >
               <PlusIcon className="size-4" />
-              Ajouter un membre
+              {t("profileAddMember")}
             </Button>
             {form.householdMembers.length >= MAX_HOUSEHOLD_MEMBERS && (
               <p className="mt-2 text-[12px] text-[color:var(--glass-ink-faint)]">
-                Maximum {MAX_HOUSEHOLD_MEMBERS} membres.
+                {t("profileMaxMembers", { count: MAX_HOUSEHOLD_MEMBERS })}
               </p>
             )}
           </div>
@@ -596,11 +597,11 @@ export function ProfilePage({
         <CardHeader className="px-6 pt-6 pb-3">
           <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
             <CreditCardIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
-            Coordonnées bancaires
+            {t("profileBankTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 px-6 pb-6 md:grid-cols-[2fr_1fr]">
-          <Field label="IBAN">
+          <Field label={t("profileIban")}>
             <Input
               className={GLASS_INPUT}
               value={form.iban}
@@ -608,7 +609,7 @@ export function ProfilePage({
               placeholder="BE00 0000 0000 0000"
             />
           </Field>
-          <Field label="BIC (optionnel)">
+          <Field label={t("profileBic")}>
             <Input
               className={GLASS_INPUT}
               value={form.bic}
@@ -622,18 +623,18 @@ export function ProfilePage({
         <CardHeader className="px-6 pt-6 pb-3">
           <CardTitle className="glass-display flex items-center gap-2 text-[20px] font-semibold">
             <BriefcaseIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
-            Situation professionnelle
+            {t("profileProTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 px-6 pb-6 md:grid-cols-2">
-          <Field label="Employeur">
+          <Field label={t("profileEmployer")}>
             <Input
               className={GLASS_INPUT}
               value={form.employer}
               onChange={(e) => update("employer", e.target.value)}
             />
           </Field>
-          <Field label="N° BCE employeur">
+          <Field label={t("profileEmployerBce")}>
             <Input
               className={GLASS_INPUT}
               value={form.employerBce}
@@ -641,14 +642,14 @@ export function ProfilePage({
               placeholder="0123.456.789"
             />
           </Field>
-          <Field label="Fonction">
+          <Field label={t("profileJobTitle")}>
             <Input
               className={GLASS_INPUT}
               value={form.jobTitle}
               onChange={(e) => update("jobTitle", e.target.value)}
             />
           </Field>
-          <Field label="Type de contrat">
+          <Field label={t("profileContractType")}>
             <Select
               value={form.contractType || "__none__"}
               onValueChange={(v) =>
@@ -659,16 +660,16 @@ export function ProfilePage({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">— Non précisé —</SelectItem>
+                <SelectItem value="__none__">{t("profileUnspecified")}</SelectItem>
                 <SelectItem value="CDI">CDI</SelectItem>
                 <SelectItem value="CDD">CDD</SelectItem>
-                <SelectItem value="interim">Intérim</SelectItem>
-                <SelectItem value="independant">Indépendant</SelectItem>
-                <SelectItem value="student">Étudiant</SelectItem>
+                <SelectItem value="interim">{t("profileContractInterim")}</SelectItem>
+                <SelectItem value="independant">{t("profileContractIndependent")}</SelectItem>
+                <SelectItem value="student">{t("profileContractStudent")}</SelectItem>
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Date d'entrée en service">
+          <Field label={t("profileContractStart")}>
             <Input
               type="date"
               className={GLASS_INPUT}
@@ -685,13 +686,12 @@ export function ProfilePage({
             className="glass-display flex items-center gap-2 text-[18px] font-semibold"
             style={{ color: "#b8324a" }}
           >
-            Zone dangereuse
+            {t("profileDangerTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="px-6 pb-6">
           <p className="mb-3 text-[12.5px] text-[color:var(--glass-ink-soft)]">
-            Supprimer toutes les données de votre profil. Vos formulaires
-            précédemment générés ne sont pas affectés.
+            {t("profileDangerBody")}
           </p>
           <AlertDialog>
             <AlertDialogTrigger
@@ -705,27 +705,26 @@ export function ProfilePage({
                   }}
                 >
                   <Trash2Icon className="size-4" />
-                  Effacer mon profil
+                  {t("profileDeleteCta")}
                 </Button>
               }
             />
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>
-                  Effacer toutes les données ?
+                  {t("profileDeleteConfirmTitle")}
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  Cette action est irréversible. Vos préférences de
-                  pré-remplissage seront perdues.
+                  {t("profileDeleteConfirmBody")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogCancel>{t("profileCancel")}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={deleteProfile}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  Effacer
+                  {t("profileDeleteAction")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

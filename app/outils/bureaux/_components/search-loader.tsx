@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { MapPin, Navigation, Satellite, Compass } from 'lucide-react'
 
 interface Props {
@@ -8,14 +9,14 @@ interface Props {
   cp?: string
 }
 
-// Phrases tournantes communes à tous les loaders — donnent l'impression
-// de progression côté serveur et occupent l'œil pendant le fetch.
-const MESSAGES = [
-  'On localise ton CPAS…',
-  'On cherche l’ONEM compétent…',
-  'On trouve ta Maison communale…',
-  'On compare les 4 organismes de paiement…',
-]
+// Clés des phrases tournantes communes à tous les loaders — donnent
+// l'impression de progression côté serveur et occupent l'œil pendant le fetch.
+const MESSAGE_KEYS = [
+  'loaderMsgCpas',
+  'loaderMsgOnem',
+  'loaderMsgCommune',
+  'loaderMsgOp',
+] as const
 
 // Couleurs des 4 OP, réutilisées pour cohérence avec les dots de la map.
 const OP_COLORS = {
@@ -46,10 +47,14 @@ export function SearchLoader({ cp }: Props) {
 // dans chaque variant.
 // ─────────────────────────────────────────────────────────────────
 function LoaderShell({ cp, children }: { cp?: string; children: React.ReactNode }) {
+  const t = useTranslations('public.outils')
   const [idx, setIdx] = useState(0)
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % MESSAGES.length), 1400)
-    return () => clearInterval(t)
+    const timer = setInterval(
+      () => setIdx((i) => (i + 1) % MESSAGE_KEYS.length),
+      1400
+    )
+    return () => clearInterval(timer)
   }, [])
 
   return (
@@ -61,10 +66,10 @@ function LoaderShell({ cp, children }: { cp?: string; children: React.ReactNode 
       {children}
       <div className="text-center space-y-1 min-h-[2.5rem]">
         <p className="text-sm font-medium text-foreground tabular-nums">
-          Recherche{cp ? ` pour ${cp}` : ''}…
+          {cp ? t('loaderSearchingCp', { cp }) : t('loaderSearching')}
         </p>
         <p key={idx} className="text-xs text-muted-foreground animate-fade-in-up">
-          {MESSAGES[idx]}
+          {t(MESSAGE_KEYS[idx])}
         </p>
       </div>
     </div>

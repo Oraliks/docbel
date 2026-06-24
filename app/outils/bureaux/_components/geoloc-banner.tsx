@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { MapPin, X, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -31,6 +32,7 @@ interface Props {
  * visite.
  */
 export function GeolocBanner({ onLocated, located, onClear }: Props) {
+  const t = useTranslations('public.outils')
   const [dismissed, setDismissed] = useState<boolean>(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,12 +58,9 @@ export function GeolocBanner({ onLocated, located, onClear }: Props) {
         <Check className="w-3.5 h-3.5 shrink-0" />
         <span className="flex-1">
           {place ? (
-            <>
-              <strong>Position active</strong> pour des distances précises
-              depuis chez toi.
-            </>
+            t.rich('geolocActiveRich', { strong: (c) => <strong>{c}</strong> })
           ) : (
-            'Position activée — distances calculées depuis chez toi.'
+            t('geolocActivePlain')
           )}
         </span>
         {onClear && (
@@ -71,9 +70,9 @@ export function GeolocBanner({ onLocated, located, onClear }: Props) {
             size="sm"
             className="h-6 text-[11px] px-2 gap-1"
             onClick={onClear}
-            title="Désactiver la géolocalisation et changer manuellement le code postal"
+            title={t('geolocModifyTitle')}
           >
-            <MapPin className="w-3 h-3" /> Modifier
+            <MapPin className="w-3 h-3" /> {t('geolocModify')}
           </Button>
         )}
       </div>
@@ -84,7 +83,7 @@ export function GeolocBanner({ onLocated, located, onClear }: Props) {
 
   const requestLocation = () => {
     if (!navigator.geolocation) {
-      setError('Géolocalisation non supportée par ton navigateur.')
+      setError(t('geolocErrUnsupported'))
       return
     }
     // La geoloc nécessite HTTPS (sauf localhost). Si on est sur du HTTP non
@@ -96,9 +95,7 @@ export function GeolocBanner({ onLocated, located, onClear }: Props) {
         window.location.hostname === 'localhost' ||
         window.location.hostname === '127.0.0.1')
     if (!isSecure) {
-      setError(
-        'La géolocalisation nécessite une connexion sécurisée (HTTPS). Sur un domaine HTTP, le navigateur la bloque.'
-      )
+      setError(t('geolocErrInsecure'))
       return
     }
     setLoading(true)
@@ -111,17 +108,18 @@ export function GeolocBanner({ onLocated, located, onClear }: Props) {
       (err) => {
         setLoading(false)
         if (err.code === err.PERMISSION_DENIED) {
-          setError(
-            "Permission refusée. Pour réessayer : icône cadenas dans la barre d'adresse → Paramètres du site → Localisation = Autoriser."
-          )
+          setError(t('geolocErrDenied'))
         } else if (err.code === err.POSITION_UNAVAILABLE) {
-          setError(
-            'Position indisponible (GPS/WiFi désactivés ?). Réessaye dans un instant.'
-          )
+          setError(t('geolocErrUnavailable'))
         } else if (err.code === err.TIMEOUT) {
-          setError('Temps dépassé. Réessaye — ton GPS prend peut-être du temps à fixer.')
+          setError(t('geolocErrTimeout'))
         } else {
-          setError(`Échec de la géoloc (code ${err.code}): ${err.message ?? 'inconnu'}.`)
+          setError(
+            t('geolocErrGeneric', {
+              code: err.code,
+              message: err.message ?? t('geolocErrUnknown'),
+            })
+          )
         }
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 }
@@ -142,8 +140,7 @@ export function GeolocBanner({ onLocated, located, onClear }: Props) {
       <MapPin className="w-4 h-4 shrink-0 text-primary" />
       <div className="flex-1 min-w-0">
         <p className="text-foreground">
-          <strong>Active ta position</strong> pour des distances précises depuis
-          chez toi.
+          {t.rich('geolocPromptRich', { strong: (c) => <strong>{c}</strong> })}
         </p>
         {error && <p className="text-[10px] text-red-600 mt-0.5">{error}</p>}
       </div>
@@ -157,17 +154,17 @@ export function GeolocBanner({ onLocated, located, onClear }: Props) {
       >
         {loading ? (
           <>
-            <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Localisation…
+            <Loader2 className="w-3 h-3 mr-1 animate-spin" /> {t('geolocLocating')}
           </>
         ) : (
-          'Activer'
+          t('geolocActivate')
         )}
       </Button>
       <button
         type="button"
         onClick={dismiss}
-        title="Masquer"
-        aria-label="Masquer la proposition de géolocalisation"
+        title={t('geolocHideTitle')}
+        aria-label={t('geolocHideAria')}
         className="text-muted-foreground hover:text-foreground transition-colors"
       >
         <X className="w-3.5 h-3.5" />

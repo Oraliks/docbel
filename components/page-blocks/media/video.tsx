@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from 'react'
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
@@ -54,6 +55,7 @@ export const video = defineBlock({
     shortcuts: ['video', 'youtube'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { url, provider, caption, autoplay, controls = true, fileId, controlId } = props
     const videoRef = useRef<HTMLVideoElement>(null)
     useEffect(() => {
@@ -80,7 +82,7 @@ export const video = defineBlock({
     if (!sourceUrl) {
       return (
         <div className="aspect-video flex items-center justify-center bg-muted text-muted-foreground rounded-lg border border-dashed">
-          Vidéo non configurée
+          {t('video.notConfigured')}
         </div>
       )
     }
@@ -107,11 +109,11 @@ export const video = defineBlock({
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
               allowFullScreen
               className="w-full h-full border-0"
-              title={caption || 'Vidéo'}
+              title={caption || t('video.iframeTitle')}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white/70 text-sm">
-              URL invalide pour {provider}
+              {t('video.invalidUrl', { provider })}
             </div>
           )}
         </div>

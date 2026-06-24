@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -47,11 +48,12 @@ export const gallery = defineBlock({
     shortcuts: ['gallery', 'galerie'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { items, columns, variant = 'grid', gap = 'md' } = props
     if (!items || items.length === 0) {
       return (
         <div className="aspect-[3/1] flex items-center justify-center bg-muted text-muted-foreground rounded-lg border border-dashed">
-          Galerie vide — ajoutez des images
+          {t('gallery.empty')}
         </div>
       )
     }

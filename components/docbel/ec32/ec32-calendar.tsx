@@ -15,6 +15,7 @@
 // =====================================================================
 
 import { Phone } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import type { Ec32DayCell, Ec32SituationType } from '@/lib/ec32/types'
 import {
@@ -23,7 +24,15 @@ import {
 } from '@/lib/ec32/types'
 import { SITUATION_VISUALS } from '@/components/docbel/ec32/ui'
 
-const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const
+const WEEKDAY_LABEL_KEYS = [
+  'calendar.weekday.mon',
+  'calendar.weekday.tue',
+  'calendar.weekday.wed',
+  'calendar.weekday.thu',
+  'calendar.weekday.fri',
+  'calendar.weekday.sat',
+  'calendar.weekday.sun',
+] as const
 
 /** Lettre de la situation PRINCIPALE (chômage = vide, travail = case pleine). */
 const PRIMARY_LETTER: Partial<Record<Ec32SituationType, string>> = {
@@ -61,6 +70,7 @@ export function Ec32Calendar({
   disabled?: boolean
   onToggleDay: (date: string) => void
 }) {
+  const t = useTranslations('public.ec32')
   const weeks: Ec32DayCell[][] = []
   for (let i = 0; i < cells.length; i += 7) {
     weeks.push(cells.slice(i, i + 7))
@@ -71,13 +81,13 @@ export function Ec32Calendar({
       <p className="mb-3 text-xs text-muted-foreground">{selectHint}</p>
 
       <div className="grid grid-cols-7 gap-1.5">
-        {WEEKDAY_LABELS.map((label) => (
+        {WEEKDAY_LABEL_KEYS.map((labelKey) => (
           <div
-            key={label}
+            key={labelKey}
             className="pb-1 text-center text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground"
             aria-hidden
           >
-            {label}
+            {t(labelKey as Parameters<typeof t>[0])}
           </div>
         ))}
 
@@ -109,6 +119,7 @@ function Ec32Legend({
   legendTitle: string
   situationLabel: (situation: Ec32SituationType) => string
 }) {
+  const t = useTranslations('public.ec32')
   return (
     <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/60 pt-3">
       {legendTitle && (
@@ -167,7 +178,7 @@ function Ec32Legend({
       {/* Notification téléphonique (auto) */}
       <LegendItem
         swatch={<Phone className="size-3 shrink-0 text-red-500" />}
-        label="Notification téléphonique"
+        label={t('calendar.legend.phoneNotification')}
       />
       {/* 1er jour de chômage effectif (case verte, auto) */}
       <LegendItem
@@ -182,7 +193,7 @@ function Ec32Legend({
       {/* 1ʳᵉ date d'envoi possible (pastille pêche) */}
       <LegendItem
         swatch={<span className="size-3 shrink-0 rounded-full bg-orange-200" />}
-        label="1ʳᵉ date d'envoi possible"
+        label={t('calendar.legend.firstSendDate')}
       />
     </div>
   )
@@ -231,6 +242,7 @@ function Ec32CalendarCell({
   disabled: boolean
   onToggle: () => void
 }) {
+  const t = useTranslations('public.ec32')
   // Cases non encodables (hors mois / hors contrat) : inertes & grisées.
   if (!cell.selectable) {
     return (
@@ -246,7 +258,7 @@ function Ec32CalendarCell({
         </span>
         {cell.inMonth && (
           <span className="mt-auto w-full text-center text-[0.6rem] font-semibold uppercase text-muted-foreground/70">
-            NA
+            {t('calendar.cell.notApplicable')}
           </span>
         )}
       </div>
@@ -262,12 +274,17 @@ function Ec32CalendarCell({
   // Libellé accessible.
   const secondaryLabel =
     secondary.length > 0
-      ? ` + ${secondary.map((s) => situationLabel(s)).join(', ')}`
+      ? t('calendar.cell.secondarySuffix', {
+          list: secondary.map((s) => situationLabel(s)).join(', '),
+        })
       : ''
-  const label = `Jour ${cell.day}, situation : ${situationLabel(cell.situation)}${secondaryLabel}${
-    isFirstEffective ? ' (premier jour de chômage effectif)' : ''
-  }${cell.isFirstSendDay ? ' (première date d’envoi possible)' : ''}${
-    selected ? ' — sélectionné' : ''
+  const label = `${t('calendar.cell.ariaLabel', {
+    day: cell.day,
+    situation: situationLabel(cell.situation),
+  })}${secondaryLabel}${
+    isFirstEffective ? t('calendar.cell.firstEffectiveSuffix') : ''
+  }${cell.isFirstSendDay ? t('calendar.cell.firstSendSuffix') : ''}${
+    selected ? t('calendar.cell.selectedSuffix') : ''
   }`
 
   // Fond de la case.

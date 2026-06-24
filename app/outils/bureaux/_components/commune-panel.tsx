@@ -3,6 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { MapPin } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { useTranslations } from 'next-intl'
 import { Skeleton } from '@/components/ui/skeleton'
 import { displayBureauName, type BureauResult, type CommuneSummary } from './types'
 
@@ -19,20 +20,20 @@ const CustomBelgiumMap = dynamic(
 )
 
 /** Mapping resilient des valeurs region stockées en DB (minuscules anglais
- * via le seed REFNIS) vers leur label FR. Fallback : on retourne la valeur
- * brute si pas reconnue (mieux que de cacher silencieusement). */
-function regionLabel(raw: string): string {
+ * via le seed REFNIS) vers une clé i18n. Fallback : null → on affiche la
+ * valeur brute (mieux que de cacher silencieusement). */
+function regionLabelKey(raw: string): string | null {
   const map: Record<string, string> = {
-    brussels: 'Région de Bruxelles-Capitale',
-    wallonia: 'Région wallonne',
-    flanders: 'Région flamande',
-    germanophone: 'Communauté germanophone',
+    brussels: 'regionBrussels',
+    wallonia: 'regionWallonia',
+    flanders: 'regionFlanders',
+    germanophone: 'regionGermanophone',
     // Anciens codes au cas où il en reste en DB
-    bru: 'Région de Bruxelles-Capitale',
-    wal: 'Région wallonne',
-    fla: 'Région flamande',
+    bru: 'regionBrussels',
+    wal: 'regionWallonia',
+    fla: 'regionFlanders',
   }
-  return map[raw.toLowerCase()] ?? raw
+  return map[raw.toLowerCase()] ?? null
 }
 
 interface Props {
@@ -45,6 +46,7 @@ interface Props {
  * + petit bloc "Bon à savoir" en dessous. Pas de stats grid (était trop vague).
  */
 export function CommunePanel({ commune, bureaux }: Props) {
+  const t = useTranslations('public.outils')
   const validBureaux = bureaux.filter((b): b is BureauResult => !!b)
 
   // Couleurs des dots sur la map. Contrainte : aucune collision visuelle
@@ -110,14 +112,19 @@ export function CommunePanel({ commune, bureaux }: Props) {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
-                Votre zone sélectionnée
+                {t('communeZoneEyebrow')}
               </p>
               <h2 className="text-lg font-semibold mt-0.5 truncate">
                 {commune?.nameFr ?? '—'}
               </h2>
               {commune?.region && (
                 <p className="text-xs text-muted-foreground">
-                  {regionLabel(commune.region)}
+                  {(() => {
+                    const key = regionLabelKey(commune.region)
+                    return key
+                      ? t(key as Parameters<typeof t>[0])
+                      : commune.region
+                  })()}
                   {commune.province && commune.region !== 'brussels' && (
                     <> · {commune.province}</>
                   )}
@@ -129,7 +136,7 @@ export function CommunePanel({ commune, bureaux }: Props) {
             {geolocCount > 0 && (
               <p className="shrink-0 text-[10px] text-muted-foreground/80 flex items-center gap-1 mt-1">
                 <MapPin className="w-3 h-3" />
-                {geolocCount} bureau{geolocCount > 1 ? 'x' : ''} sur la carte
+                {t('communeBureauxOnMap', { count: geolocCount })}
               </p>
             )}
           </div>

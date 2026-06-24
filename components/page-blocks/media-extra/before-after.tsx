@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
+import { useTranslations } from 'next-intl'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
@@ -60,6 +61,7 @@ export const beforeAfter = defineBlock({
     shortcuts: ['beforeafter', 'compare'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { beforeUrl, afterUrl, beforeLabel = 'Avant', afterLabel = 'Après' } = props
     const [position, setPosition] = useState(50)
     const containerRef = useRef<HTMLDivElement>(null)
@@ -88,7 +90,7 @@ export const beforeAfter = defineBlock({
     if (!beforeUrl || !afterUrl) {
       return (
         <div className="aspect-video rounded-lg border border-dashed bg-muted flex items-center justify-center text-muted-foreground text-sm">
-          Configurez les images «&nbsp;avant&nbsp;» et «&nbsp;après&nbsp;»
+          {t('beforeAfter.empty')}
         </div>
       )
     }

@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, SliderControl } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
@@ -18,6 +19,7 @@ export const embed = defineBlock({
     shortcuts: ['embed', 'iframe'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { html, height = 400 } = props
     if (!html) {
       return (
@@ -25,7 +27,7 @@ export const embed = defineBlock({
           className="flex items-center justify-center bg-muted text-muted-foreground rounded-lg border border-dashed"
           style={{ height }}
         >
-          Embed vide
+          {t('embed.empty')}
         </div>
       )
     }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, type ElementType } from 'react'
+import { useTranslations } from 'next-intl'
 import { Sparkles } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -34,6 +35,7 @@ export const lottie = defineBlock({
     shortcuts: ['lottie', 'animation'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { src, loop = true, autoplay = true, speed } = props
 
     // Injecte le script du web component une seule fois (côté client).
@@ -54,7 +56,7 @@ export const lottie = defineBlock({
       return (
         <div className="rounded-lg border border-dashed bg-muted px-4 py-6 text-sm text-muted-foreground flex items-center gap-3">
           <Sparkles className="size-5" />
-          Lottie non configuré
+          {t('lottie.notConfigured')}
         </div>
       )
     }

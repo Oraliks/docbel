@@ -12,6 +12,7 @@
 // =====================================================================
 
 import { ArrowRight, Clock } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Ec32Section, SITUATION_VISUALS } from '@/components/docbel/ec32/ui'
@@ -86,6 +87,7 @@ export function Ec32ScenarioCards({
   /** id d'ancrage de la section (évite les doublons entre aperçu et onglet complet). */
   anchorId?: string
 }) {
+  const t = useTranslations('public.ec32')
   const { scenarios } = content
   const all = scenarios.items.filter((item) => (item.title || item.key).trim().length > 0)
 
@@ -107,7 +109,7 @@ export function Ec32ScenarioCards({
               type="button"
               onClick={() => onSelect?.(item.key)}
               disabled={!onSelect}
-              aria-label={`Charger le cas pratique « ${item.title || item.key} » dans le simulateur`}
+              aria-label={t('scenarios.cardAriaLabel', { label: item.title || item.key })}
               className="flex w-full flex-col gap-3 rounded-3xl border border-primary/10 bg-card p-5 text-left shadow-[0_1px_3px_rgba(26,26,36,0.05),0_16px_38px_-22px_rgba(91,70,229,0.24)] transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_2px_6px_rgba(26,26,36,0.06),0_22px_46px_-22px_rgba(91,70,229,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:border-primary/10 disabled:hover:shadow-[0_1px_3px_rgba(26,26,36,0.05),0_16px_38px_-22px_rgba(91,70,229,0.24)]"
             >
               <span
@@ -168,7 +170,7 @@ export function Ec32ScenarioCards({
             onClick={onViewAll}
             className="font-semibold text-primary"
           >
-            Voir tous les cas pratiques ({all.length})
+            {t('scenarios.viewAll', { count: all.length })}
             <ArrowRight className="size-4" aria-hidden />
           </Button>
         </div>

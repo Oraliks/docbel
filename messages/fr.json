@@ -3099,7 +3099,22 @@
       "groupSpaces": "Espaces",
       "groupTools": "Outils",
       "quickAllTools": "Tous les outils",
-      "quickNews": "Actualités"
+      "quickNews": "Actualités",
+      "notifTypeFeature": "Nouveauté",
+      "notifTypeFix": "Correction",
+      "notifTypeImprovement": "Amélioration",
+      "notifTypeBreaking": "Breaking",
+      "notifRelativeNow": "à l'instant",
+      "notifRelativeMin": "il y a {value} min",
+      "notifRelativeHour": "il y a {value} h",
+      "notifRelativeDay": "il y a {value} j",
+      "notifAriaLabel": "Notifications",
+      "notifAriaLabelUnread": "Notifications ({count, plural, one {# nouvelle} other {# nouvelles}})",
+      "notifWhatsNew": "Quoi de neuf",
+      "notifUnreadCount": "{count, plural, one {# nouvelle} other {# nouvelles}}",
+      "notifLoading": "Chargement…",
+      "notifEmpty": "Aucune mise à jour pour l'instant.",
+      "notifSeeAllHistory": "Voir tout l'historique"
     },
     "contact": {
       "eyebrow": "Nous contacter",
@@ -4467,7 +4482,28 @@
       "docPageSummaryDocType": "Type de document",
       "docPagePrivacyHeading": "Vos données restent privées.",
       "docPagePrivacyBody": "Aucune donnée n'est stockée. Le document est généré à la demande uniquement.",
-      "docPageAutoAtGeneration": "Auto à la génération"
+      "docPageAutoAtGeneration": "Auto à la génération",
+      "ferTriggerLabel": "Vous êtes sûr de votre saisie ? Signaler un problème",
+      "ferDialogTitle": "Signaler un problème de validation",
+      "ferDialogDescription": "Vous pensez que votre saisie est correcte mais le site la refuse ? Envoyez-nous le détail, on regarde de notre côté.",
+      "ferDoneMessage": "Merci ! Votre signalement a bien été envoyé. Si vous avez laissé votre email, on vous répond dès qu'on a investigué.",
+      "ferLabelField": "Champ",
+      "ferLabelYourInput": "Votre saisie",
+      "ferLabelShownError": "Erreur affichée",
+      "ferEmptyValue": "(vide)",
+      "ferDetailsLabel": "Détails (optionnel)",
+      "ferDetailsPlaceholder": "Ex. : c'est bien mon NISS, je l'ai vérifié au dos de ma carte d'identité…",
+      "ferEmailLabel": "Votre email (optionnel — pour qu'on vous réponde)",
+      "ferEmailPlaceholder": "vous@exemple.be",
+      "ferConsentText": "J'autorise la transmission de ma saisie ({fieldType}) pour permettre à l'équipe technique de reproduire et corriger le problème. Ces données ne sont conservées que pour le suivi du signalement.",
+      "ferConsentRequired": "Cochez la case pour autoriser l'envoi de votre saisie.",
+      "ferRateLimited": "Trop de signalements envoyés. Réessayez dans une heure.",
+      "ferSendFailed": "Échec de l'envoi du signalement.",
+      "ferSendSuccess": "Signalement envoyé. Merci !",
+      "ferNetworkError": "Réseau indisponible. Réessayez.",
+      "ferBtnClose": "Fermer",
+      "ferBtnCancel": "Annuler",
+      "ferBtnSend": "Envoyer le signalement"
     },
     "formations": {
       "metaCatalogueTitle": "Formations — Docbel",
@@ -5966,7 +6002,23 @@
         "controlsValidation": "Contrôles & validation",
         "advanceToFirstSend": "Avancer jusqu'à la première date d'envoi",
         "cardSentSimulation": "Carte envoyée — simulation"
-      }
+      },
+      "badgeBelgiqueCountry": "Belgique",
+      "badgeATN2026": "ATN 2026",
+      "badgeDonnees2026": "Données 2026",
+      "badgeExercice2026": "Exercice 2026",
+      "badgeRevenus2025": "Revenus 2025",
+      "badgeSalarie2026": "Salarié 2026",
+      "badgeRevenus2026": "Revenus 2026",
+      "badgeOnva2026": "ONVA 2026",
+      "badgeRegions2026": "Régions 2026",
+      "badgeEi2027": "EI 2027",
+      "ippResultInfoTooltip": "Estimation indicative — barème fédéral IPP exercice 2026 (revenus 2025), SPF Finances.",
+      "penStatutMenageLabel": "Ménage (75 %)",
+      "penStatutIsoleLabel": "Isolé (60 %)",
+      "baremeSheetMetaNotFound": "Barème introuvable | DocBel",
+      "baremeSheetMetaTitle": "{label} — Barèmes chômage ONEM | DocBel",
+      "baremeSheetMetaDescription": "Montants officiels ONEM — {label}. Barème en vigueur par code et tranche."
     },
     "shared": {
       "verified": "vérifié",
@@ -6118,7 +6170,15 @@
       "fmMovedCount": "{count} fichier(s) déplacé(s)",
       "fmMoveFailedCount": "{count} fichier(s) n'ont pas pu être déplacés",
       "fmFolderCreated": "Le dossier « {name} » a été créé",
-      "fmFolderCreateFailed": "Impossible de créer le dossier"
+      "fmFolderCreateFailed": "Impossible de créer le dossier",
+      "smartImageDocument": "Document",
+      "smartImageOutil": "Outil",
+      "smartImageFormation": "Formation",
+      "smartImagePartenaire": "Partenaire",
+      "smartImageEmployeur": "Employeur",
+      "smartImageAvatar": "Profil",
+      "smartImageGeneric": "Contenu",
+      "smartImagePreviewUnavailable": "Aperçu indisponible"
     },
     "changelog": {
       "type": {
@@ -6586,6 +6646,9 @@
             "example": "Par exemple : vous pouvez vous connecter au nom de votre père pour compléter sa carte de chômage temporaire.",
             "body": "Vous n'avez reçu aucun accès."
           }
+        },
+        "scopeLabels": {
+          "temporaryUnemploymentCard": "Carte de chômage temporaire"
         }
       },
       "mandateWizard": {
@@ -6714,7 +6777,68 @@
       "heroIllustrationNoRealDataTitle": "Aucune donnée réelle",
       "heroIllustrationNoRealDataDescription": "Aucune donnée n'est demandée ni transmise à l'ONEM.",
       "heroIllustrationGuidedCasesTitle": "Cas guidés",
-      "heroIllustrationGuidedCasesDescription": "Des scénarios concrets pour comprendre chaque étape."
+      "heroIllustrationGuidedCasesDescription": "Des scénarios concrets pour comprendre chaque étape.",
+      "scenarios": {
+        "cardAriaLabel": "Charger le cas pratique « {label} » dans le simulateur",
+        "viewAll": "Voir tous les cas pratiques ({count})"
+      },
+      "experience": {
+        "tabs": {
+          "demo": "Démo",
+          "cas": "Cas pratiques",
+          "erreurs": "Erreurs à éviter",
+          "regles": "Règles importantes",
+          "faq": "FAQ",
+          "ressources": "Ressources"
+        },
+        "tabPanelAriaLabel": "Onglet : {label}",
+        "mandateLink": {
+          "title": "Donner accès à un proche (mandat)",
+          "body": "Vous pouvez autoriser un proche à remplir votre carte de chômage temporaire à votre place. Découvrez en simulation la gestion des accès et la demande de mandat.",
+          "cta": "Ouvrir"
+        }
+      },
+      "hero": {
+        "trust": {
+          "secureEnv": "Environnement sécurisé",
+          "noRealData": "Aucune donnée réelle",
+          "basedOnOnem": "Basé sur les démarches ONEM"
+        }
+      },
+      "appHeader": {
+        "title": "eC3.2",
+        "subtitle": "Carte de contrôle chômage temporaire",
+        "navAriaLabel": "Navigation principale",
+        "homeAriaLabel": "Accueil",
+        "more": {
+          "label": "Plus",
+          "ariaLabel": "Plus d'options",
+          "items": {
+            "sentCards": "Mes cartes envoyées",
+            "help": "Aide",
+            "cookies": "Politique d'utilisation des cookies",
+            "accessibility": "Déclaration d'accessibilité"
+          }
+        },
+        "language": {
+          "label": "Langue",
+          "ariaLabel": "Choisir la langue"
+        },
+        "user": {
+          "ariaLabel": "Dossier personnel",
+          "dossier": "Dossier personnel",
+          "requestAccess": "Demander un accès",
+          "manageAccess": "Gestion des accès",
+          "logout": "Se déconnecter"
+        }
+      },
+      "accesPage": {
+        "back": "Retour à la simulation eC3.2",
+        "disclaimer": "Simulation pédagogique non officielle — aucune donnée n’est transmise, aucun mandat réel n’est créé. Source de référence : ONEM / SPF Sécurité sociale (2026).",
+        "draftNameFallback": "Demande sans nom",
+        "metaTitle": "Gestion des accès — eC3.2 (simulation pédagogique)",
+        "metaDescription": "Simulation pédagogique de la gestion des accès à la carte de contrôle eC3.2 : donner accès à un proche, suivre les accès accordés et reçus. Aucune donnée réelle."
+      }
     },
     "blocks": {
       "audio": {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { FlagIcon, Loader2Icon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -74,6 +75,7 @@ function ReportDialogTrigger({
   formSlug,
   locale,
 }: TriggerProps) {
+  const t = useTranslations("public.dossier");
   const [open, setOpen] = useState(false);
   const [userMessage, setUserMessage] = useState("");
   const [email, setEmail] = useState("");
@@ -85,7 +87,7 @@ function ReportDialogTrigger({
 
   async function submit() {
     if (!consent) {
-      toast.error("Cochez la case pour autoriser l'envoi de votre saisie.");
+      toast.error(t("ferConsentRequired"));
       return;
     }
     setSubmitting(true);
@@ -106,18 +108,18 @@ function ReportDialogTrigger({
         }),
       });
       if (res.status === 429) {
-        toast.error("Trop de signalements envoyés. Réessayez dans une heure.");
+        toast.error(t("ferRateLimited"));
         return;
       }
       if (!res.ok) {
         const j = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(j.error ?? "Échec de l'envoi du signalement.");
+        toast.error(j.error ?? t("ferSendFailed"));
         return;
       }
       setDone(true);
-      toast.success("Signalement envoyé. Merci !");
+      toast.success(t("ferSendSuccess"));
     } catch {
-      toast.error("Réseau indisponible. Réessayez.");
+      toast.error(t("ferNetworkError"));
     } finally {
       setSubmitting(false);
     }
@@ -145,46 +147,44 @@ function ReportDialogTrigger({
             className="self-start text-[11px] text-muted-foreground underline-offset-2 hover:underline inline-flex items-center gap-1"
           >
             <FlagIcon className="size-3" />
-            Vous êtes sûr de votre saisie ? Signaler un problème
+            {t("ferTriggerLabel")}
           </button>
         }
       />
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Signaler un problème de validation</DialogTitle>
+          <DialogTitle>{t("ferDialogTitle")}</DialogTitle>
           <DialogDescription>
-            Vous pensez que votre saisie est correcte mais le site la refuse ?
-            Envoyez-nous le détail, on regarde de notre côté.
+            {t("ferDialogDescription")}
           </DialogDescription>
         </DialogHeader>
 
         {done ? (
           <div className="rounded-md bg-green-50 dark:bg-green-950/30 p-3 text-sm text-green-800 dark:text-green-300">
-            Merci ! Votre signalement a bien été envoyé. Si vous avez laissé
-            votre email, on vous répond dès qu&apos;on a investigué.
+            {t("ferDoneMessage")}
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             <div className="rounded-md border bg-muted/30 p-3 text-xs">
               <div className="grid grid-cols-[100px_1fr] gap-1">
-                <span className="text-muted-foreground">Champ</span>
+                <span className="text-muted-foreground">{t("ferLabelField")}</span>
                 <code className="text-[11px]">{fieldId} ({fieldType})</code>
-                <span className="text-muted-foreground">Votre saisie</span>
-                <code className="text-[11px] break-all">{valueAsString || "(vide)"}</code>
-                <span className="text-muted-foreground">Erreur affichée</span>
+                <span className="text-muted-foreground">{t("ferLabelYourInput")}</span>
+                <code className="text-[11px] break-all">{valueAsString || t("ferEmptyValue")}</code>
+                <span className="text-muted-foreground">{t("ferLabelShownError")}</span>
                 <span>{errorMessage}</span>
               </div>
             </div>
 
             <div className="flex flex-col gap-1">
               <Label htmlFor="report-message" className="text-xs">
-                Détails (optionnel)
+                {t("ferDetailsLabel")}
               </Label>
               <Textarea
                 id="report-message"
                 rows={3}
                 maxLength={1000}
-                placeholder="Ex. : c'est bien mon NISS, je l'ai vérifié au dos de ma carte d'identité…"
+                placeholder={t("ferDetailsPlaceholder")}
                 value={userMessage}
                 onChange={(e) => setUserMessage(e.target.value)}
               />
@@ -192,12 +192,12 @@ function ReportDialogTrigger({
 
             <div className="flex flex-col gap-1">
               <Label htmlFor="report-email" className="text-xs">
-                Votre email (optionnel — pour qu&apos;on vous réponde)
+                {t("ferEmailLabel")}
               </Label>
               <Input
                 id="report-email"
                 type="email"
-                placeholder="vous@exemple.be"
+                placeholder={t("ferEmailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -211,10 +211,7 @@ function ReportDialogTrigger({
                 className="mt-0.5"
               />
               <span>
-                J&apos;autorise la transmission de ma saisie ({fieldType}) pour
-                permettre à l&apos;équipe technique de reproduire et corriger
-                le problème. Ces données ne sont conservées que pour le suivi
-                du signalement.
+                {t("ferConsentText", { fieldType })}
               </span>
             </label>
           </div>
@@ -223,16 +220,16 @@ function ReportDialogTrigger({
         <DialogFooter>
           {done ? (
             <Button type="button" onClick={() => setOpen(false)}>
-              Fermer
+              {t("ferBtnClose")}
             </Button>
           ) : (
             <>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                Annuler
+                {t("ferBtnCancel")}
               </Button>
               <Button type="button" onClick={submit} disabled={submitting || !consent}>
                 {submitting ? <Loader2Icon className="size-4 animate-spin" /> : <FlagIcon className="size-4" />}
-                Envoyer le signalement
+                {t("ferBtnSend")}
               </Button>
             </>
           )}

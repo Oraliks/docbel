@@ -1,14 +1,15 @@
 'use client'
 
 import { BookOpenCheck, CheckCircle2, Lock, Play, ShieldCheck } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Ec32HeroIllustration } from '@/components/docbel/ec32/ec32-hero-illustration'
 import type { Ec32Content } from '@/lib/ec32/schema'
 
 const TRUST_ITEMS = [
-  { icon: ShieldCheck, label: 'Environnement sécurisé' },
-  { icon: Lock, label: 'Aucune donnée réelle' },
-  { icon: CheckCircle2, label: 'Basé sur les démarches ONEM' },
+  { icon: ShieldCheck, labelKey: 'hero.trust.secureEnv' },
+  { icon: Lock, labelKey: 'hero.trust.noRealData' },
+  { icon: CheckCircle2, labelKey: 'hero.trust.basedOnOnem' },
 ] as const
 
 export function Ec32Hero({
@@ -18,6 +19,7 @@ export function Ec32Hero({
   content: Ec32Content
   onSecondary?: () => void
 }) {
+  const t = useTranslations('public.ec32')
   const { hero } = content
 
   return (
@@ -65,10 +67,10 @@ export function Ec32Hero({
           </div>
 
           <ul className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
-            {TRUST_ITEMS.map(({ icon: Icon, label }) => (
-              <li key={label} className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            {TRUST_ITEMS.map(({ icon: Icon, labelKey }) => (
+              <li key={labelKey} className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Icon className="size-3.5 shrink-0 text-primary" aria-hidden />
-                {label}
+                {t(labelKey as Parameters<typeof t>[0])}
               </li>
             ))}
           </ul>

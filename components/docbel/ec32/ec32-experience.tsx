@@ -21,6 +21,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Check, ShieldCheck, UserPlus } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useTranslations } from 'next-intl'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { Ec32Content } from '@/lib/ec32/schema'
 import { Ec32LearningModes } from '@/components/docbel/ec32/learning-modes'
@@ -42,16 +43,17 @@ const KEY_MISTAKES = [
   'confondre-ec32-et-ec3',
 ]
 
-const TABS: Array<{ value: string; label: string }> = [
-  { value: 'demo', label: 'Démo' },
-  { value: 'cas', label: 'Cas pratiques' },
-  { value: 'erreurs', label: 'Erreurs à éviter' },
-  { value: 'regles', label: 'Règles importantes' },
-  { value: 'faq', label: 'FAQ' },
-  { value: 'ressources', label: 'Ressources' },
+const TABS: Array<{ value: string; labelKey: string }> = [
+  { value: 'demo', labelKey: 'experience.tabs.demo' },
+  { value: 'cas', labelKey: 'experience.tabs.cas' },
+  { value: 'erreurs', labelKey: 'experience.tabs.erreurs' },
+  { value: 'regles', labelKey: 'experience.tabs.regles' },
+  { value: 'faq', labelKey: 'experience.tabs.faq' },
+  { value: 'ressources', labelKey: 'experience.tabs.ressources' },
 ]
 
 export function Ec32Experience({ content }: { content: Ec32Content }) {
+  const t = useTranslations('public.ec32')
   const [scenarioKey, setScenarioKey] = useState<string | null>(null)
   const [tab, setTab] = useState<string>('demo')
   // Incrémenté par « Mode guidé pas à pas » pour démarrer le simulateur à la connexion.
@@ -81,7 +83,10 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
     scrollTo('explorer')
   }
 
-  const activeTabLabel = TABS.find((t) => t.value === tab)?.label ?? ''
+  const activeTabEntry = TABS.find((entry) => entry.value === tab)
+  const activeTabLabel = activeTabEntry
+    ? t(activeTabEntry.labelKey as Parameters<typeof t>[0])
+    : ''
 
   const renderPanel = (): ReactNode => {
     switch (tab) {
@@ -145,19 +150,17 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold text-foreground">
-            Donner accès à un proche (mandat)
+            {t('experience.mandateLink.title')}
           </span>
           <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
-            Vous pouvez autoriser un proche à remplir votre carte de chômage
-            temporaire à votre place. Découvrez en simulation la gestion des
-            accès et la demande de mandat.
+            {t('experience.mandateLink.body')}
           </span>
         </span>
         <span
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition-transform group-hover:translate-x-0.5"
           aria-hidden
         >
-          Ouvrir
+          {t('experience.mandateLink.cta')}
           <ArrowRight className="size-4" />
         </span>
       </Link>
@@ -169,13 +172,13 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
         <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
           <div className="overflow-x-auto pb-1">
             <TabsList variant="line" className="w-max min-w-full justify-start gap-1">
-              {TABS.map((t) => (
+              {TABS.map((entry) => (
                 <TabsTrigger
-                  key={t.value}
-                  value={t.value}
+                  key={entry.value}
+                  value={entry.value}
                   className="flex-none whitespace-nowrap px-3 py-1.5"
                 >
-                  {t.label}
+                  {t(entry.labelKey as Parameters<typeof t>[0])}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -184,7 +187,7 @@ export function Ec32Experience({ content }: { content: Ec32Content }) {
 
         <div
           role="tabpanel"
-          aria-label={`Onglet : ${activeTabLabel}`}
+          aria-label={t('experience.tabPanelAriaLabel', { label: activeTabLabel })}
           className="mt-8 focus-visible:outline-none"
         >
           {renderPanel()}

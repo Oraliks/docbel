@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   UserCircle2,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -131,7 +132,7 @@ function MenuItem({
 // ─────────────────────────── Composant principal ───────────────────────────
 
 export function Ec32AppHeader({
-  userName = 'Citoyen·ne',
+  userName,
   onHome,
   onMoreSelect,
   onLanguage,
@@ -139,6 +140,8 @@ export function Ec32AppHeader({
   onManageAccess,
   onLogout,
 }: Ec32AppHeaderProps) {
+  const t = useTranslations('public.ec32')
+  const resolvedUserName = userName ?? t('oauthConsent.defaultUserName')
   const [openMenu, setOpenMenu] = useState<MenuKey>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const uid = useId()
@@ -199,20 +202,20 @@ export function Ec32AppHeader({
           eC
         </span>
         <p className="min-w-0 truncate text-sm font-semibold text-foreground">
-          eC3.2
+          {t('appHeader.title')}
           <span className="mx-2 text-foreground/30">·</span>
           <span className="font-medium text-foreground/75">
-            Carte de contrôle chômage temporaire
+            {t('appHeader.subtitle')}
           </span>
         </p>
       </div>
 
       {/* Bloc droit — navigation. */}
-      <nav className="flex items-center gap-1" aria-label="Navigation principale">
+      <nav className="flex items-center gap-1" aria-label={t('appHeader.navAriaLabel')}>
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="Accueil"
+          aria-label={t('appHeader.homeAriaLabel')}
           onClick={onHome}
           className="text-foreground/80 hover:text-foreground"
         >
@@ -224,22 +227,22 @@ export function Ec32AppHeader({
           <DropdownButton
             open={openMenu === 'more'}
             onToggle={() => toggleMenu('more')}
-            ariaLabel="Plus d'options"
+            ariaLabel={t('appHeader.more.ariaLabel')}
           >
             <MoreHorizontal className="size-4" aria-hidden />
-            <span className="hidden sm:inline">Plus</span>
+            <span className="hidden sm:inline">{t('appHeader.more.label')}</span>
             <ChevronDown className="size-3 opacity-70" aria-hidden />
           </DropdownButton>
           <DropdownPanel open={openMenu === 'more'} labelledBy={`${uid}-more`}>
-            <MenuItem onSelect={() => handleMore('Mes cartes envoyées')}>
-              Mes cartes envoyées
+            <MenuItem onSelect={() => handleMore('sentCards')}>
+              {t('appHeader.more.items.sentCards')}
             </MenuItem>
-            <MenuItem onSelect={() => handleMore('Aide')}>Aide</MenuItem>
-            <MenuItem onSelect={() => handleMore("Politique d'utilisation des cookies")}>
-              Politique d&apos;utilisation des cookies
+            <MenuItem onSelect={() => handleMore('help')}>{t('appHeader.more.items.help')}</MenuItem>
+            <MenuItem onSelect={() => handleMore('cookies')}>
+              {t('appHeader.more.items.cookies')}
             </MenuItem>
-            <MenuItem onSelect={() => handleMore("Déclaration d'accessibilité")}>
-              Déclaration d&apos;accessibilité
+            <MenuItem onSelect={() => handleMore('accessibility')}>
+              {t('appHeader.more.items.accessibility')}
             </MenuItem>
           </DropdownPanel>
         </div>
@@ -249,10 +252,10 @@ export function Ec32AppHeader({
           <DropdownButton
             open={openMenu === 'language'}
             onToggle={() => toggleMenu('language')}
-            ariaLabel="Choisir la langue"
+            ariaLabel={t('appHeader.language.ariaLabel')}
           >
             <Globe className="size-4" aria-hidden />
-            <span className="hidden sm:inline">Langue</span>
+            <span className="hidden sm:inline">{t('appHeader.language.label')}</span>
             <ChevronDown className="size-3 opacity-70" aria-hidden />
           </DropdownButton>
           <DropdownPanel open={openMenu === 'language'} labelledBy={`${uid}-language`}>
@@ -269,14 +272,14 @@ export function Ec32AppHeader({
           <DropdownButton
             open={openMenu === 'user'}
             onToggle={() => toggleMenu('user')}
-            ariaLabel="Dossier personnel"
+            ariaLabel={t('appHeader.user.ariaLabel')}
             className="max-w-[14rem]"
           >
             <UserCircle2 className="size-4" aria-hidden />
             <span className="hidden truncate sm:inline">
-              {userName}
+              {resolvedUserName}
               <span className="mx-1.5 text-foreground/30">·</span>
-              <span className="text-foreground/70">Dossier personnel</span>
+              <span className="text-foreground/70">{t('appHeader.user.dossier')}</span>
             </span>
             <ChevronDown className="size-3 opacity-70" aria-hidden />
           </DropdownButton>
@@ -285,17 +288,17 @@ export function Ec32AppHeader({
               icon={ShieldCheck}
               onSelect={() => handleUser(() => onRequestAccess?.())}
             >
-              Demander un accès
+              {t('appHeader.user.requestAccess')}
             </MenuItem>
             <MenuItem
               icon={Settings2}
               onSelect={() => handleUser(() => onManageAccess?.())}
             >
-              Gestion des accès
+              {t('appHeader.user.manageAccess')}
             </MenuItem>
             <div className="my-1 h-px bg-border/70" role="separator" />
             <MenuItem icon={LogOut} onSelect={() => handleUser(() => onLogout?.())}>
-              Se déconnecter
+              {t('appHeader.user.logout')}
             </MenuItem>
           </DropdownPanel>
         </div>

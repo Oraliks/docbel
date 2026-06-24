@@ -12,6 +12,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
   Ec32AccessDashboard,
   Ec32MandateWizard,
@@ -22,12 +23,12 @@ import { Ec32InfoBox } from '@/components/docbel/ec32/ui'
 
 type DashboardTab = 'requested' | 'granted' | 'received'
 
-const INITIAL_GRANTED: Ec32MandateAccess[] = [
+// Note : le scopeLabel est rempli au runtime via t() pour rester traduisible.
+const INITIAL_GRANTED_TEMPLATE: Array<Omit<Ec32MandateAccess, 'scopeLabel'>> = [
   {
     id: 'k1',
     personName: 'Karim Benali',
     scope: 'temporary_unemployment_card',
-    scopeLabel: 'Carte de chômage temporaire',
     status: 'active',
     validUntil: '2027-03-14',
   },
@@ -35,7 +36,6 @@ const INITIAL_GRANTED: Ec32MandateAccess[] = [
     id: 's1',
     personName: 'Sophie Martin',
     scope: 'temporary_unemployment_card',
-    scopeLabel: 'Carte de chômage temporaire',
     status: 'active',
     validUntil: '2027-03-14',
   },
@@ -54,9 +54,15 @@ function draftValidUntil(draft: Ec32MandateDraft): string {
 }
 
 export function AccesClient() {
+  const t = useTranslations('public.ec32')
+  const scopeLabel = t('accessDashboard.scopeLabels.temporaryUnemploymentCard')
+  const initialGranted: Ec32MandateAccess[] = INITIAL_GRANTED_TEMPLATE.map((entry) => ({
+    ...entry,
+    scopeLabel,
+  }))
   const [wizardOpen, setWizardOpen] = useState(false)
   const [tab, setTab] = useState<DashboardTab>('granted')
-  const [granted, setGranted] = useState<Ec32MandateAccess[]>(INITIAL_GRANTED)
+  const [granted, setGranted] = useState<Ec32MandateAccess[]>(initialGranted)
   const [requested, setRequested] = useState<Ec32MandateAccess[]>([])
   // Compteur pour générer des identifiants stables sans Math.random/Date.now.
   const [seq, setSeq] = useState(1)
@@ -67,9 +73,9 @@ export function AccesClient() {
     setRequested((prev) => [
       {
         id,
-        personName: draft.personName.trim() || 'Demande sans nom',
+        personName: draft.personName.trim() || t('accesPage.draftNameFallback'),
         scope: 'temporary_unemployment_card',
-        scopeLabel: 'Carte de chômage temporaire',
+        scopeLabel,
         status: 'pending',
         validUntil: draftValidUntil(draft),
       },
@@ -86,13 +92,11 @@ export function AccesClient() {
         className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
       >
         <ArrowLeft className="size-4" aria-hidden />
-        Retour à la simulation eC3.2
+        {t('accesPage.back')}
       </Link>
 
       <Ec32InfoBox tone="info">
-        Simulation pédagogique non officielle — aucune donnée n’est transmise,
-        aucun mandat réel n’est créé. Source de référence : ONEM / SPF Sécurité
-        sociale (2026).
+        {t('accesPage.disclaimer')}
       </Ec32InfoBox>
 
       <Ec32AccessDashboard

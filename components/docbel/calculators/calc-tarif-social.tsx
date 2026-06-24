@@ -478,11 +478,11 @@ export function CalcTarifSocial({ accent }: { accent: string }) {
           {/* Badges */}
           <div className="flex flex-wrap items-center gap-2">
             <CalcBadge>
-              <CountryFlag code="be" size={14} country="Belgique" />
-              Belgique
+              <CountryFlag code="be" size={14} country={t("badgeBelgiqueCountry")} />
+              {t("badgeBelgiqueCountry")}
             </CalcBadge>
             <CalcBadge accent={accent}>{Q_REFERENCE}</CalcBadge>
-            <CalcBadge accent={accent}>Données 2026</CalcBadge>
+            <CalcBadge accent={accent}>{t("badgeDonnees2026")}</CalcBadge>
           </div>
 
           {/* --- Section 1 : éligibilité ----------------------------- */}

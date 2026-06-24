@@ -149,7 +149,22 @@
       "groupSpaces": "Spaces",
       "groupTools": "Tools",
       "quickAllTools": "All tools",
-      "quickNews": "News"
+      "quickNews": "News",
+      "notifTypeFeature": "New",
+      "notifTypeFix": "Fix",
+      "notifTypeImprovement": "Improvement",
+      "notifTypeBreaking": "Breaking",
+      "notifRelativeNow": "just now",
+      "notifRelativeMin": "{value} min ago",
+      "notifRelativeHour": "{value} h ago",
+      "notifRelativeDay": "{value} d ago",
+      "notifAriaLabel": "Notifications",
+      "notifAriaLabelUnread": "Notifications ({count, plural, one {# new} other {# new}})",
+      "notifWhatsNew": "What's new",
+      "notifUnreadCount": "{count, plural, one {# new} other {# new}}",
+      "notifLoading": "Loading…",
+      "notifEmpty": "No updates for now.",
+      "notifSeeAllHistory": "View full history"
     },
     "contact": {
       "eyebrow": "Contact us",
@@ -637,7 +652,28 @@
       "docPageSummaryDocType": "Document type",
       "docPagePrivacyHeading": "Your data stays private.",
       "docPagePrivacyBody": "No data is stored. The document is generated on demand only.",
-      "docPageAutoAtGeneration": "Auto at generation"
+      "docPageAutoAtGeneration": "Auto at generation",
+      "ferTriggerLabel": "Sure about your input? Report a problem",
+      "ferDialogTitle": "Report a validation problem",
+      "ferDialogDescription": "You think your input is correct but the site rejects it? Send us the details and we'll look into it.",
+      "ferDoneMessage": "Thanks! Your report was sent. If you left your email, we'll reply once we've investigated.",
+      "ferLabelField": "Field",
+      "ferLabelYourInput": "Your input",
+      "ferLabelShownError": "Shown error",
+      "ferEmptyValue": "(empty)",
+      "ferDetailsLabel": "Details (optional)",
+      "ferDetailsPlaceholder": "E.g.: this is indeed my national number, I checked it on the back of my ID card…",
+      "ferEmailLabel": "Your email (optional — so we can reply)",
+      "ferEmailPlaceholder": "you@example.be",
+      "ferConsentText": "I authorise the transmission of my input ({fieldType}) to let the technical team reproduce and fix the problem. This data is kept only for the follow-up of the report.",
+      "ferConsentRequired": "Tick the box to authorise sending your input.",
+      "ferRateLimited": "Too many reports sent. Try again in an hour.",
+      "ferSendFailed": "Failed to send the report.",
+      "ferSendSuccess": "Report sent. Thank you!",
+      "ferNetworkError": "Network unavailable. Try again.",
+      "ferBtnClose": "Close",
+      "ferBtnCancel": "Cancel",
+      "ferBtnSend": "Send report"
     },
     "formations": {
       "metaCatalogueTitle": "Training — Docbel",
@@ -2239,7 +2275,23 @@
         "controlsValidation": "Controls & validation",
         "advanceToFirstSend": "Fast-forward to the first send date",
         "cardSentSimulation": "Card sent — simulation"
-      }
+      },
+      "badgeBelgiqueCountry": "Belgium",
+      "badgeATN2026": "BIK 2026",
+      "badgeDonnees2026": "2026 figures",
+      "badgeExercice2026": "Tax year 2026",
+      "badgeRevenus2025": "2025 income",
+      "badgeSalarie2026": "Employee 2026",
+      "badgeRevenus2026": "2026 income",
+      "badgeOnva2026": "ONVA 2026",
+      "badgeRegions2026": "Regions 2026",
+      "badgeEi2027": "TY 2027",
+      "ippResultInfoTooltip": "Indicative estimate — federal PIT scale tax year 2026 (2025 income), FPS Finance.",
+      "penStatutMenageLabel": "Household (75 %)",
+      "penStatutIsoleLabel": "Single (60 %)",
+      "baremeSheetMetaNotFound": "Scale not found | DocBel",
+      "baremeSheetMetaTitle": "{label} — ONEM unemployment scales | DocBel",
+      "baremeSheetMetaDescription": "Official ONEM amounts — {label}. Current scale by code and bracket."
     },
     "pro": {
       "navAccount": "Account",
@@ -3051,7 +3103,15 @@
       "fmMovedCount": "{count} file(s) moved",
       "fmMoveFailedCount": "{count} file(s) could not be moved",
       "fmFolderCreated": "The folder “{name}” was created",
-      "fmFolderCreateFailed": "Could not create the folder"
+      "fmFolderCreateFailed": "Could not create the folder",
+      "smartImageDocument": "Document",
+      "smartImageOutil": "Tool",
+      "smartImageFormation": "Training",
+      "smartImagePartenaire": "Partner",
+      "smartImageEmployeur": "Employer",
+      "smartImageAvatar": "Profile",
+      "smartImageGeneric": "Content",
+      "smartImagePreviewUnavailable": "Preview unavailable"
     },
     "changelog": {
       "type": {
@@ -3519,6 +3579,9 @@
             "example": "For example: you can sign in on behalf of your father to fill in his temporary unemployment card.",
             "body": "You have not received any access."
           }
+        },
+        "scopeLabels": {
+          "temporaryUnemploymentCard": "Temporary unemployment control card"
         }
       },
       "mandateWizard": {
@@ -3647,7 +3710,68 @@
       "heroIllustrationNoRealDataTitle": "No real data",
       "heroIllustrationNoRealDataDescription": "No data is requested or sent to the ONEM.",
       "heroIllustrationGuidedCasesTitle": "Guided cases",
-      "heroIllustrationGuidedCasesDescription": "Concrete scenarios to understand each step."
+      "heroIllustrationGuidedCasesDescription": "Concrete scenarios to understand each step.",
+      "scenarios": {
+        "cardAriaLabel": "Load the scenario “{label}” in the simulator",
+        "viewAll": "View all scenarios ({count})"
+      },
+      "experience": {
+        "tabs": {
+          "demo": "Demo",
+          "cas": "Scenarios",
+          "erreurs": "Mistakes to avoid",
+          "regles": "Key rules",
+          "faq": "FAQ",
+          "ressources": "Resources"
+        },
+        "tabPanelAriaLabel": "Tab: {label}",
+        "mandateLink": {
+          "title": "Give access to someone you trust (mandate)",
+          "body": "You can authorise a relative to fill in your temporary unemployment control card on your behalf. Explore in simulation how to manage accesses and request a mandate.",
+          "cta": "Open"
+        }
+      },
+      "hero": {
+        "trust": {
+          "secureEnv": "Secure environment",
+          "noRealData": "No real data",
+          "basedOnOnem": "Based on NEO procedures"
+        }
+      },
+      "appHeader": {
+        "title": "eC3.2",
+        "subtitle": "Temporary unemployment control card",
+        "navAriaLabel": "Main navigation",
+        "homeAriaLabel": "Home",
+        "more": {
+          "label": "More",
+          "ariaLabel": "More options",
+          "items": {
+            "sentCards": "My submitted cards",
+            "help": "Help",
+            "cookies": "Cookie policy",
+            "accessibility": "Accessibility statement"
+          }
+        },
+        "language": {
+          "label": "Language",
+          "ariaLabel": "Choose language"
+        },
+        "user": {
+          "ariaLabel": "Personal file",
+          "dossier": "Personal file",
+          "requestAccess": "Request access",
+          "manageAccess": "Manage accesses",
+          "logout": "Sign out"
+        }
+      },
+      "accesPage": {
+        "back": "Back to the eC3.2 simulation",
+        "disclaimer": "Unofficial educational simulation — no data is transmitted and no real mandate is created. Reference: NEO / FPS Social Security (2026).",
+        "draftNameFallback": "Unnamed request",
+        "metaTitle": "Access management — eC3.2 (educational simulation)",
+        "metaDescription": "Educational simulation of access management for the eC3.2 control card: give access to a relative, track granted and received accesses. No real data."
+      }
     },
     "blocks": {
       "audio": {

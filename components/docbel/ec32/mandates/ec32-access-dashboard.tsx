@@ -19,12 +19,12 @@ import type { Ec32MandateAccess } from './types'
 
 // ─────────────────────────── Données par défaut ───────────────────────────
 
-const DEFAULT_GRANTED: Ec32MandateAccess[] = [
+// Note : le scopeLabel est rempli au runtime via t() pour rester traduisible.
+const DEFAULT_GRANTED_TEMPLATE: Array<Omit<Ec32MandateAccess, 'scopeLabel'>> = [
   {
     id: 'k1',
     personName: 'Karim Benali',
     scope: 'temporary_unemployment_card',
-    scopeLabel: 'Carte de chômage temporaire',
     status: 'active',
     validUntil: '2027-03-14',
   },
@@ -32,7 +32,6 @@ const DEFAULT_GRANTED: Ec32MandateAccess[] = [
     id: 's1',
     personName: 'Sophie Martin',
     scope: 'temporary_unemployment_card',
-    scopeLabel: 'Carte de chômage temporaire',
     status: 'active',
     validUntil: '2027-03-14',
   },
@@ -185,7 +184,7 @@ export interface Ec32AccessDashboardProps {
 }
 
 export function Ec32AccessDashboard({
-  grantedAccesses = DEFAULT_GRANTED,
+  grantedAccesses,
   requestedAccesses = [],
   receivedAccesses = [],
   tab,
@@ -195,6 +194,11 @@ export function Ec32AccessDashboard({
   onCancelRequest,
 }: Ec32AccessDashboardProps) {
   const t = useTranslations('public.ec32')
+  const defaultGranted: Ec32MandateAccess[] = DEFAULT_GRANTED_TEMPLATE.map((entry) => ({
+    ...entry,
+    scopeLabel: t('accessDashboard.scopeLabels.temporaryUnemploymentCard'),
+  }))
+  const resolvedGranted = grantedAccesses ?? defaultGranted
   const [internalTab, setInternalTab] = useState<DashboardTab>('granted')
   const activeTab = tab ?? internalTab
   const setActiveTab = (next: DashboardTab) => {
@@ -204,7 +208,7 @@ export function Ec32AccessDashboard({
 
   const counts: Record<DashboardTab, number> = {
     requested: requestedAccesses.length,
-    granted: grantedAccesses.length,
+    granted: resolvedGranted.length,
     received: receivedAccesses.length,
   }
 
@@ -288,13 +292,13 @@ export function Ec32AccessDashboard({
       >
         {activeTab === 'granted' && (
           <div className="space-y-3">
-            {grantedAccesses.length === 0 ? (
+            {resolvedGranted.length === 0 ? (
               <EmptyHint title={t('accessDashboard.empty.granted.title')}>
                 {t('accessDashboard.empty.granted.body')}
               </EmptyHint>
             ) : (
               <ul className="space-y-3">
-                {grantedAccesses.map((access) => (
+                {resolvedGranted.map((access) => (
                   <AccessRow
                     key={access.id}
                     access={access}

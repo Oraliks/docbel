@@ -22,10 +22,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { sheet } = await params
   const entry = findSheet(sheet)
-  if (!entry) return { title: 'Barème introuvable | DocBel' }
+  const t = await getTranslations('public.outils')
+  if (!entry) return { title: t('baremeSheetMetaNotFound') }
   return {
-    title: `${entry.navLabel} — Barèmes chômage ONEM | DocBel`,
-    description: `Montants officiels ONEM — ${entry.navLabel}. Barème en vigueur par code et tranche.`,
+    title: t('baremeSheetMetaTitle', { label: entry.navLabel }),
+    description: t('baremeSheetMetaDescription', { label: entry.navLabel }),
   }
 }
 

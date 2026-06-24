@@ -506,11 +506,11 @@ export function CalcKm({ accent }: { accent: string }) {
           {/* Badges */}
           <div className="flex flex-wrap items-center gap-2">
             <CalcBadge>
-              <CountryFlag code="be" size={14} country="Belgique" />
-              Belgique
+              <CountryFlag code="be" size={14} country={t("badgeBelgiqueCountry")} />
+              {t("badgeBelgiqueCountry")}
             </CalcBadge>
-            <CalcBadge accent={accent}>Revenus 2026</CalcBadge>
-            <CalcBadge accent={accent}>EI 2027</CalcBadge>
+            <CalcBadge accent={accent}>{t("badgeRevenus2026")}</CalcBadge>
+            <CalcBadge accent={accent}>{t("badgeEi2027")}</CalcBadge>
           </div>
 
           {/* --- Section 1 : trajet ----------------------------- */}

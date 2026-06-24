@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { BellIcon, SparklesIcon } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,11 +17,11 @@ import {
   type ChangelogNotification,
 } from "@/hooks/useChangelogNotifications";
 
-const TYPE_LABEL: Record<ChangelogNotification["type"], string> = {
-  feature: "Nouveauté",
-  fix: "Correction",
-  improvement: "Amélioration",
-  breaking: "Breaking",
+const TYPE_LABEL_KEYS: Record<ChangelogNotification["type"], string> = {
+  feature: "notifTypeFeature",
+  fix: "notifTypeFix",
+  improvement: "notifTypeImprovement",
+  breaking: "notifTypeBreaking",
 };
 
 const TYPE_DOT: Record<ChangelogNotification["type"], string> = {
@@ -30,29 +31,32 @@ const TYPE_DOT: Record<ChangelogNotification["type"], string> = {
   breaking: "bg-amber-500",
 };
 
-const formatRelative = (iso: string) => {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.round(diffMs / 60_000);
-  if (minutes < 1) return "à l'instant";
-  if (minutes < 60) return `il y a ${minutes} min`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `il y a ${hours} h`;
-  const days = Math.round(hours / 24);
-  if (days < 30) return `il y a ${days} j`;
-  return new Date(iso).toLocaleDateString("fr-BE", {
-    day: "numeric",
-    month: "short",
-  });
-};
-
 export function NotificationBell() {
+  const t = useTranslations("public.chrome");
+  const locale = useLocale();
   const { entries, unreadCount, lastSeenAt, loading, markAllRead } =
     useChangelogNotifications();
 
+  const formatRelative = (iso: string) => {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const minutes = Math.round(diffMs / 60_000);
+    if (minutes < 1) return t("notifRelativeNow");
+    if (minutes < 60) return t("notifRelativeMin", { value: minutes });
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return t("notifRelativeHour", { value: hours });
+    const days = Math.round(hours / 24);
+    if (days < 30) return t("notifRelativeDay", { value: days });
+    const dateLocale = locale === "nl" ? "nl-BE" : locale === "en" ? "en-GB" : "fr-BE";
+    return new Date(iso).toLocaleDateString(dateLocale, {
+      day: "numeric",
+      month: "short",
+    });
+  };
+
   const ariaLabel =
     unreadCount > 0
-      ? `Notifications (${unreadCount} nouvelle${unreadCount > 1 ? "s" : ""})`
-      : "Notifications";
+      ? t("notifAriaLabelUnread", { count: unreadCount })
+      : t("notifAriaLabel");
 
   return (
     <DropdownMenu
@@ -84,11 +88,11 @@ export function NotificationBell() {
         <DropdownMenuGroup>
           <DropdownMenuLabel className="flex items-center justify-between px-3 pt-2 pb-1">
             <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-              Quoi de neuf
+              {t("notifWhatsNew")}
             </span>
             {unreadCount > 0 ? (
               <span className="text-[10px] font-bold text-[color:var(--glass-accent-deep)]">
-                {unreadCount} nouvelle{unreadCount > 1 ? "s" : ""}
+                {t("notifUnreadCount", { count: unreadCount })}
               </span>
             ) : null}
           </DropdownMenuLabel>
@@ -96,11 +100,11 @@ export function NotificationBell() {
 
         {loading && entries.length === 0 ? (
           <div className="px-3 py-6 text-center text-[12px] text-[color:var(--glass-ink-soft)]">
-            Chargement…
+            {t("notifLoading")}
           </div>
         ) : entries.length === 0 ? (
           <div className="px-3 py-6 text-center text-[12px] text-[color:var(--glass-ink-soft)]">
-            Aucune mise à jour pour l'instant.
+            {t("notifEmpty")}
           </div>
         ) : (
           <div className="flex flex-col">
@@ -120,7 +124,7 @@ export function NotificationBell() {
                   <div className="flex min-w-0 flex-1 flex-col leading-tight">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
-                        {TYPE_LABEL[entry.type]} · v{entry.version}
+                        {t(TYPE_LABEL_KEYS[entry.type] as Parameters<typeof t>[0])} · v{entry.version}
                       </span>
                       {isUnread ? (
                         <span className="ml-auto inline-flex size-1.5 rounded-full bg-[color:var(--glass-accent-deep)]" />
@@ -145,7 +149,7 @@ export function NotificationBell() {
           className="flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[12px] font-semibold text-[color:var(--glass-accent-deep)] data-[highlighted]:bg-white/40 dark:data-[highlighted]:bg-white/5"
         >
           <SparklesIcon className="size-3.5" />
-          Voir tout l'historique
+          {t("notifSeeAllHistory")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

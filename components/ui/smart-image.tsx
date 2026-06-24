@@ -12,6 +12,7 @@ import {
   WrenchIcon,
   type LucideIcon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 // ─── Variantes ────────────────────────────────────────────────────────────────
@@ -27,18 +28,18 @@ export type SmartImageType =
 
 interface TypeConfig {
   Icon: LucideIcon;
-  label: string;
+  labelKey: string;
   hue: string;
 }
 
 const TYPE_CONFIG: Record<SmartImageType, TypeConfig> = {
-  document:   { Icon: FileTextIcon,      label: "Document",   hue: "#818cf8" },
-  outil:      { Icon: WrenchIcon,        label: "Outil",      hue: "#a78bfa" },
-  formation:  { Icon: GraduationCapIcon, label: "Formation",  hue: "#c084fc" },
-  partenaire: { Icon: HandshakeIcon,     label: "Partenaire", hue: "#818cf8" },
-  employeur:  { Icon: Building2Icon,     label: "Employeur",  hue: "#93c5fd" },
-  avatar:     { Icon: UserIcon,          label: "Profil",     hue: "#e879f9" },
-  generic:    { Icon: ImageIcon,         label: "Contenu",    hue: "#94a3b8" },
+  document:   { Icon: FileTextIcon,      labelKey: "smartImageDocument",   hue: "#818cf8" },
+  outil:      { Icon: WrenchIcon,        labelKey: "smartImageOutil",      hue: "#a78bfa" },
+  formation:  { Icon: GraduationCapIcon, labelKey: "smartImageFormation",  hue: "#c084fc" },
+  partenaire: { Icon: HandshakeIcon,     labelKey: "smartImagePartenaire", hue: "#818cf8" },
+  employeur:  { Icon: Building2Icon,     labelKey: "smartImageEmployeur",  hue: "#93c5fd" },
+  avatar:     { Icon: UserIcon,          labelKey: "smartImageAvatar",     hue: "#e879f9" },
+  generic:    { Icon: ImageIcon,         labelKey: "smartImageGeneric",    hue: "#94a3b8" },
 };
 
 // ─── Fallback standalone ──────────────────────────────────────────────────────
@@ -66,8 +67,10 @@ export function MediaFallback({
   compact = false,
   className,
 }: MediaFallbackProps) {
-  const { Icon, label: defaultLabel, hue } = TYPE_CONFIG[type];
-  const badgeText = label ?? "Aperçu indisponible";
+  const t = useTranslations("public.shared");
+  const { Icon, labelKey, hue } = TYPE_CONFIG[type];
+  const defaultLabel = t(labelKey as Parameters<typeof t>[0]);
+  const badgeText = label ?? t("smartImagePreviewUnavailable");
   const titleText = title ?? defaultLabel;
 
   return (

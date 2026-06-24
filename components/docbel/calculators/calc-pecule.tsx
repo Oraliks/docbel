@@ -485,11 +485,11 @@ export function CalcPecule({ accent }: { accent: string }) {
           {/* Badges */}
           <div className="flex flex-wrap items-center gap-2">
             <CalcBadge>
-              <CountryFlag code="be" size={14} country="Belgique" />
-              Belgique
+              <CountryFlag code="be" size={14} country={t("badgeBelgiqueCountry")} />
+              {t("badgeBelgiqueCountry")}
             </CalcBadge>
-            <CalcBadge accent={accent}>ONVA 2026</CalcBadge>
-            <CalcBadge accent={accent}>Données 2026</CalcBadge>
+            <CalcBadge accent={accent}>{t("badgeOnva2026")}</CalcBadge>
+            <CalcBadge accent={accent}>{t("badgeDonnees2026")}</CalcBadge>
           </div>
 
           {/* Toggle Statut (employé / ouvrier) */}

@@ -126,6 +126,12 @@ export function CalcPension({ accent }: { accent: string }) {
   const handleExportPDF = async () => {
     if (!result) return;
     setExportingPDF(true);
+    // Libellé du statut traduit (remplace `result.statutLabel` qui est
+    // produit en français dans `lib/calculators/pension.ts`).
+    const statutLabel =
+      statutMenage === "oui"
+        ? t("penStatutMenageLabel")
+        : t("penStatutIsoleLabel");
     try {
       const { jsPDF } = await import("jspdf");
       const doc = new jsPDF({
@@ -169,7 +175,7 @@ export function CalcPension({ accent }: { accent: string }) {
       doc.setFontSize(15);
       doc.setFont("", "bold");
       doc.setTextColor(0, 0, 0);
-      doc.text(t("penPdfTitle", { statut: result.statutLabel }), margin, y);
+      doc.text(t("penPdfTitle", { statut: statutLabel }), margin, y);
       y += 10;
 
       // Section Inputs
@@ -186,7 +192,7 @@ export function CalcPension({ accent }: { accent: string }) {
       const carriereTotale = result.carriereTotale;
       const inputs: [string, string][] = [
         [t("penPdfDateNaissance"), new Date(dateNaissance).toLocaleDateString("fr-BE")],
-        [t("penPdfStatutCivil"), result.statutLabel],
+        [t("penPdfStatutCivil"), statutLabel],
         [t("penPdfCarriereEffective"), t("penPdfYears", { n: result.anneesCarriere })],
         [t("penPdfPeriodesAssimilees"), t("penPdfYears", { n: fmtNumber(result.periodesAssimilees, result.periodesAssimilees % 1 === 0 ? 0 : 1) })],
         [t("penPdfCarriereTotale"), t("penPdfYears", { n: fmtNumber(carriereTotale, carriereTotale % 1 === 0 ? 0 : 1) })],
@@ -282,7 +288,7 @@ export function CalcPension({ accent }: { accent: string }) {
             ? t("penPlafonneAmount", { amount: fmtEUR(PLAFOND_SALARIAL_2026) })
             : fmtEUR(parseNum(salaireMoyen)),
         ],
-        [t("penPdfTauxApplicable"), result.statutLabel],
+        [t("penPdfTauxApplicable"), statutLabel],
       ];
       details.forEach(([k, v]) => {
         doc.setTextColor(80, 80, 80);
@@ -376,11 +382,11 @@ export function CalcPension({ accent }: { accent: string }) {
           {/* Badges */}
           <div className="flex flex-wrap items-center gap-2">
             <CalcBadge>
-              <CountryFlag code="be" size={14} country="Belgique" />
-              Belgique
+              <CountryFlag code="be" size={14} country={t("badgeBelgiqueCountry")} />
+              {t("badgeBelgiqueCountry")}
             </CalcBadge>
-            <CalcBadge accent={accent}>Salarié 2026</CalcBadge>
-            <CalcBadge accent={accent}>Données 2026</CalcBadge>
+            <CalcBadge accent={accent}>{t("badgeSalarie2026")}</CalcBadge>
+            <CalcBadge accent={accent}>{t("badgeDonnees2026")}</CalcBadge>
           </div>
 
           {/* Date de naissance */}
@@ -514,6 +520,7 @@ export function CalcPension({ accent }: { accent: string }) {
               <PensionResultPanel
                 result={result}
                 salaireSaisi={parseNum(salaireMoyen)}
+                isMenage={statutMenage === "oui"}
                 accent={accent}
                 onExportPDF={handleExportPDF}
                 exporting={exportingPDF}
@@ -543,17 +550,24 @@ export function CalcPension({ accent }: { accent: string }) {
 function PensionResultPanel({
   result,
   salaireSaisi,
+  isMenage,
   accent,
   onExportPDF,
   exporting,
 }: {
   result: PensionResult;
   salaireSaisi: number;
+  isMenage: boolean;
   accent: string;
   onExportPDF: () => void;
   exporting: boolean;
 }) {
   const t = useTranslations("public.outils");
+  // Libellé du statut traduit (remplace `result.statutLabel` produit en
+  // français dans `lib/calculators/pension.ts`).
+  const statutLabel = isMenage
+    ? t("penStatutMenageLabel")
+    : t("penStatutIsoleLabel");
   const inelig =
     result.eligibiliteAnticipee.possible === false
       ? result.eligibiliteAnticipee
@@ -562,7 +576,6 @@ function PensionResultPanel({
   // Détection du type de calcul appliqué (sert juste à l'affichage du badge).
   // On considère plafond atteint si la mensuelle est très proche du plafond
   // applicable (3500 isolé / 4350 ménage).
-  const isMenage = result.statutLabel.startsWith("Ménage");
   const plafondMensuel = isMenage ? 4350 : 3500;
   const plafondPensionAtteint =
     Math.abs(result.pensionMensuelle - plafondMensuel) < 0.5;
@@ -725,7 +738,7 @@ function PensionResultPanel({
               {t("penRowTauxApplicable")}
             </span>
             <span className="font-semibold text-[color:var(--glass-ink)]">
-              {result.statutLabel}
+              {statutLabel}
             </span>
           </div>
           <div className="flex items-baseline justify-between gap-3">

@@ -489,11 +489,11 @@ export function CalcIPP({ accent }: { accent: string }) {
           {/* Badges */}
           <div className="flex flex-wrap items-center gap-2">
             <CalcBadge>
-              <CountryFlag code="be" size={14} country="Belgique" />
-              Belgique
+              <CountryFlag code="be" size={14} country={t("badgeBelgiqueCountry")} />
+              {t("badgeBelgiqueCountry")}
             </CalcBadge>
-            <CalcBadge accent={accent}>Exercice 2026</CalcBadge>
-            <CalcBadge accent={accent}>Revenus 2025</CalcBadge>
+            <CalcBadge accent={accent}>{t("badgeExercice2026")}</CalcBadge>
+            <CalcBadge accent={accent}>{t("badgeRevenus2025")}</CalcBadge>
           </div>
 
           {/* --- Section 1 : Revenus ------------------------------- */}
@@ -855,8 +855,8 @@ function IPPResultPanel({
         </span>
         <span
           className="inline-flex items-center"
-          title="Estimation indicative — barème fédéral IPP exercice 2026 (revenus 2025), SPF Finances."
-          aria-label="Estimation indicative — barème fédéral IPP exercice 2026 (revenus 2025), SPF Finances."
+          title={t("ippResultInfoTooltip")}
+          aria-label={t("ippResultInfoTooltip")}
         >
           <Info
             className="size-4"

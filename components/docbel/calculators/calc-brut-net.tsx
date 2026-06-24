@@ -443,11 +443,11 @@ export function CalcBrutNet({ accent }: { accent: string }) {
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <CalcBadge>
-            <CountryFlag code="be" size={14} country="Belgique" />
-            Belgique
+            <CountryFlag code="be" size={14} country={t("badgeBelgiqueCountry")} />
+            {t("badgeBelgiqueCountry")}
           </CalcBadge>
-          <CalcBadge accent={accent}>ATN 2026</CalcBadge>
-          <CalcBadge accent={accent}>Données 2026</CalcBadge>
+          <CalcBadge accent={accent}>{t("badgeATN2026")}</CalcBadge>
+          <CalcBadge accent={accent}>{t("badgeDonnees2026")}</CalcBadge>
         </div>
         <p className="text-[13px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
           {t.rich("bnIntro", {

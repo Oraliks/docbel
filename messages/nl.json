@@ -232,7 +232,22 @@
       "groupSpaces": "Ruimtes",
       "groupTools": "Tools",
       "quickAllTools": "Alle tools",
-      "quickNews": "Nieuws"
+      "quickNews": "Nieuws",
+      "notifTypeFeature": "Nieuw",
+      "notifTypeFix": "Correctie",
+      "notifTypeImprovement": "Verbetering",
+      "notifTypeBreaking": "Breaking",
+      "notifRelativeNow": "zojuist",
+      "notifRelativeMin": "{value} min geleden",
+      "notifRelativeHour": "{value} u geleden",
+      "notifRelativeDay": "{value} d geleden",
+      "notifAriaLabel": "Meldingen",
+      "notifAriaLabelUnread": "Meldingen ({count, plural, one {# nieuwe} other {# nieuwe}})",
+      "notifWhatsNew": "Wat is er nieuw",
+      "notifUnreadCount": "{count, plural, one {# nieuwe} other {# nieuwe}}",
+      "notifLoading": "Bezig met laden…",
+      "notifEmpty": "Voorlopig geen updates.",
+      "notifSeeAllHistory": "Volledige geschiedenis bekijken"
     },
     "contact": {
       "eyebrow": "Contacteer ons",
@@ -720,7 +735,28 @@
       "docPageSummaryDocType": "Documenttype",
       "docPagePrivacyHeading": "Uw gegevens blijven privé.",
       "docPagePrivacyBody": "Er worden geen gegevens opgeslagen. Het document wordt enkel op aanvraag aangemaakt.",
-      "docPageAutoAtGeneration": "Automatisch bij genereren"
+      "docPageAutoAtGeneration": "Automatisch bij genereren",
+      "ferTriggerLabel": "Zeker van uw invoer? Meld een probleem",
+      "ferDialogTitle": "Een validatieprobleem melden",
+      "ferDialogDescription": "Denkt u dat uw invoer correct is, maar weigert de site die? Stuur ons de details, dan kijken we ernaar.",
+      "ferDoneMessage": "Bedankt! Uw melding is goed verzonden. Als u een e-mailadres heeft achtergelaten, krijgt u van ons antwoord zodra we het hebben onderzocht.",
+      "ferLabelField": "Veld",
+      "ferLabelYourInput": "Uw invoer",
+      "ferLabelShownError": "Getoonde fout",
+      "ferEmptyValue": "(leeg)",
+      "ferDetailsLabel": "Details (optioneel)",
+      "ferDetailsPlaceholder": "Bijv.: het is wel degelijk mijn rijksregisternummer, ik heb het gecontroleerd op de achterkant van mijn identiteitskaart…",
+      "ferEmailLabel": "Uw e-mailadres (optioneel — zodat we kunnen antwoorden)",
+      "ferEmailPlaceholder": "u@voorbeeld.be",
+      "ferConsentText": "Ik geef toestemming om mijn invoer ({fieldType}) door te sturen zodat het technische team het probleem kan reproduceren en oplossen. Deze gegevens worden enkel bewaard voor de opvolging van de melding.",
+      "ferConsentRequired": "Vink het vakje aan om het verzenden van uw invoer toe te staan.",
+      "ferRateLimited": "Te veel meldingen verzonden. Probeer het over een uur opnieuw.",
+      "ferSendFailed": "Verzenden van de melding mislukt.",
+      "ferSendSuccess": "Melding verzonden. Bedankt!",
+      "ferNetworkError": "Netwerk niet beschikbaar. Probeer opnieuw.",
+      "ferBtnClose": "Sluiten",
+      "ferBtnCancel": "Annuleren",
+      "ferBtnSend": "Melding verzenden"
     },
     "formations": {
       "metaCatalogueTitle": "Opleidingen — Docbel",
@@ -2322,7 +2358,23 @@
         "controlsValidation": "Controles & validatie",
         "advanceToFirstSend": "Doorspoelen tot de eerste verzenddatum",
         "cardSentSimulation": "Kaart verzonden — simulatie"
-      }
+      },
+      "badgeBelgiqueCountry": "België",
+      "badgeATN2026": "VAA 2026",
+      "badgeDonnees2026": "Cijfers 2026",
+      "badgeExercice2026": "Aanslagjaar 2026",
+      "badgeRevenus2025": "Inkomsten 2025",
+      "badgeSalarie2026": "Werknemer 2026",
+      "badgeRevenus2026": "Inkomsten 2026",
+      "badgeOnva2026": "RJV 2026",
+      "badgeRegions2026": "Gewesten 2026",
+      "badgeEi2027": "AJ 2027",
+      "ippResultInfoTooltip": "Indicatieve schatting — federaal PB-tarief aanslagjaar 2026 (inkomsten 2025), FOD Financiën.",
+      "penStatutMenageLabel": "Gezin (75 %)",
+      "penStatutIsoleLabel": "Alleenstaande (60 %)",
+      "baremeSheetMetaNotFound": "Barema niet gevonden | DocBel",
+      "baremeSheetMetaTitle": "{label} — RVA-werkloosheidsbarema's | DocBel",
+      "baremeSheetMetaDescription": "Officiële RVA-bedragen — {label}. Geldend barema per code en schijf."
     },
     "pro": {
       "navAccount": "Account",
@@ -3134,7 +3186,15 @@
       "fmMovedCount": "{count} bestand(en) verplaatst",
       "fmMoveFailedCount": "{count} bestand(en) konden niet worden verplaatst",
       "fmFolderCreated": "De map « {name} » is aangemaakt",
-      "fmFolderCreateFailed": "Kan de map niet aanmaken"
+      "fmFolderCreateFailed": "Kan de map niet aanmaken",
+      "smartImageDocument": "Document",
+      "smartImageOutil": "Tool",
+      "smartImageFormation": "Opleiding",
+      "smartImagePartenaire": "Partner",
+      "smartImageEmployeur": "Werkgever",
+      "smartImageAvatar": "Profiel",
+      "smartImageGeneric": "Inhoud",
+      "smartImagePreviewUnavailable": "Voorbeeld niet beschikbaar"
     },
     "changelog": {
       "type": {
@@ -3602,6 +3662,9 @@
             "example": "Bijvoorbeeld: u kunt aanmelden in naam van uw vader om zijn controlekaart tijdelijke werkloosheid in te vullen.",
             "body": "U hebt geen toegang ontvangen."
           }
+        },
+        "scopeLabels": {
+          "temporaryUnemploymentCard": "Controlekaart tijdelijke werkloosheid"
         }
       },
       "mandateWizard": {
@@ -3730,7 +3793,68 @@
       "heroIllustrationNoRealDataTitle": "Geen echte gegevens",
       "heroIllustrationNoRealDataDescription": "Er worden geen gegevens gevraagd of aan de RVA doorgegeven.",
       "heroIllustrationGuidedCasesTitle": "Begeleide cases",
-      "heroIllustrationGuidedCasesDescription": "Concrete scenario's om elke stap te begrijpen."
+      "heroIllustrationGuidedCasesDescription": "Concrete scenario's om elke stap te begrijpen.",
+      "scenarios": {
+        "cardAriaLabel": "Scenario « {label} » in de simulator laden",
+        "viewAll": "Alle scenario’s bekijken ({count})"
+      },
+      "experience": {
+        "tabs": {
+          "demo": "Demo",
+          "cas": "Scenario’s",
+          "erreurs": "Te vermijden fouten",
+          "regles": "Belangrijke regels",
+          "faq": "FAQ",
+          "ressources": "Bronnen"
+        },
+        "tabPanelAriaLabel": "Tabblad: {label}",
+        "mandateLink": {
+          "title": "Een naaste toegang geven (volmacht)",
+          "body": "U kunt een naaste machtigen om uw controlekaart tijdelijke werkloosheid in uw plaats in te vullen. Ontdek in de simulatie het beheer van toegangen en het aanvragen van een volmacht.",
+          "cta": "Openen"
+        }
+      },
+      "hero": {
+        "trust": {
+          "secureEnv": "Veilige omgeving",
+          "noRealData": "Geen echte gegevens",
+          "basedOnOnem": "Gebaseerd op de RVA-procedures"
+        }
+      },
+      "appHeader": {
+        "title": "eC3.2",
+        "subtitle": "Controlekaart tijdelijke werkloosheid",
+        "navAriaLabel": "Hoofdnavigatie",
+        "homeAriaLabel": "Startpagina",
+        "more": {
+          "label": "Meer",
+          "ariaLabel": "Meer opties",
+          "items": {
+            "sentCards": "Mijn verzonden kaarten",
+            "help": "Help",
+            "cookies": "Cookiebeleid",
+            "accessibility": "Toegankelijkheidsverklaring"
+          }
+        },
+        "language": {
+          "label": "Taal",
+          "ariaLabel": "Taal kiezen"
+        },
+        "user": {
+          "ariaLabel": "Persoonlijk dossier",
+          "dossier": "Persoonlijk dossier",
+          "requestAccess": "Toegang aanvragen",
+          "manageAccess": "Toegangsbeheer",
+          "logout": "Afmelden"
+        }
+      },
+      "accesPage": {
+        "back": "Terug naar de eC3.2-simulatie",
+        "disclaimer": "Niet-officiële educatieve simulatie — er worden geen gegevens verzonden en er wordt geen echte volmacht aangemaakt. Referentiebron: RVA / FOD Sociale Zekerheid (2026).",
+        "draftNameFallback": "Aanvraag zonder naam",
+        "metaTitle": "Toegangsbeheer — eC3.2 (educatieve simulatie)",
+        "metaDescription": "Educatieve simulatie van het toegangsbeheer voor de controlekaart eC3.2: een naaste toegang geven, verleende en ontvangen toegangen opvolgen. Geen echte gegevens."
+      }
     },
     "blocks": {
       "audio": {

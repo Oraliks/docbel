@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogContent,
@@ -39,7 +40,7 @@ const SIZE_CLASS: Record<NonNullable<Props['size']>, string> = {
 }
 
 function ModalView({
-  triggerText = 'Ouvrir',
+  triggerText,
   triggerVariant = 'primary',
   triggerSize = 'md',
   hideTrigger,
@@ -49,7 +50,9 @@ function ModalView({
   content,
   size = 'md',
 }: Props) {
+  const t = useTranslations('public.blocks')
   const [open, setOpen] = useState(false)
+  const triggerTextResolved = triggerText ?? t('modal.triggerFallback')
 
   // Allow other blocks' "Ouvrir une modale" action to open this one by id.
   useEffect(() => {
@@ -74,7 +77,7 @@ function ModalView({
             triggerVariant === 'link' ? '' : TRIGGER_SIZE[triggerSize]
           )}
         >
-          {triggerText}
+          {triggerTextResolved}
         </button>
       )}
       <Dialog open={open} onOpenChange={setOpen}>

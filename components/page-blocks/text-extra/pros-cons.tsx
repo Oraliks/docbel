@@ -1,6 +1,7 @@
 'use client'
 
 import { Check, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
@@ -24,12 +25,15 @@ export const prosCons = defineBlock({
     shortcuts: ['proscons', 'pros'],
   },
   Render: ({ props }) => {
-    const { pros, cons, prosTitle = 'Avantages', consTitle = 'Inconvénients' } = props
+    const t = useTranslations('public.blocks')
+    const { pros, cons, prosTitle, consTitle } = props
+    const prosTitleResolved = prosTitle ?? t('prosCons.prosFallback')
+    const consTitleResolved = consTitle ?? t('prosCons.consFallback')
     return (
       <div className="my-4 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/5 p-5">
           <h3 className="mb-3 font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
-            <Check className="size-5" /> {prosTitle}
+            <Check className="size-5" /> {prosTitleResolved}
           </h3>
           <ul className="space-y-2 text-sm">
             {pros.map((p, i) => (
@@ -42,7 +46,7 @@ export const prosCons = defineBlock({
         </div>
         <div className="rounded-2xl border-2 border-red-500/30 bg-red-500/5 p-5">
           <h3 className="mb-3 font-semibold text-red-700 dark:text-red-300 flex items-center gap-2">
-            <X className="size-5" /> {consTitle}
+            <X className="size-5" /> {consTitleResolved}
           </h3>
           <ul className="space-y-2 text-sm">
             {cons.map((c, i) => (

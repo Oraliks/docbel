@@ -211,16 +211,17 @@ function GpsLoader({ cp }: Props) {
 // les 4 lettres cardinales qui s'allument à tour de rôle.
 // ─────────────────────────────────────────────────────────────────
 function CompassLoader({ cp }: Props) {
+  const t = useTranslations('public.outils')
   return (
     <LoaderShell cp={cp}>
       <div className="relative size-28 flex items-center justify-center">
         {/* Cercle externe (cadran) */}
         <div className="absolute inset-0 rounded-full border-2 border-primary/30" />
         {/* Marques cardinales */}
-        <span className="absolute top-1 left-1/2 -translate-x-1/2 text-[10px] font-bold text-primary animate-card-glow" style={{ animationDelay: '0ms' }}>N</span>
-        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] font-bold text-foreground/60 animate-card-glow" style={{ animationDelay: '500ms' }}>E</span>
-        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-bold text-foreground/60 animate-card-glow" style={{ animationDelay: '1000ms' }}>S</span>
-        <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[10px] font-bold text-foreground/60 animate-card-glow" style={{ animationDelay: '1500ms' }}>O</span>
+        <span className="absolute top-1 left-1/2 -translate-x-1/2 text-[10px] font-bold text-primary animate-card-glow" style={{ animationDelay: '0ms' }}>{t('compassN')}</span>
+        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] font-bold text-foreground/60 animate-card-glow" style={{ animationDelay: '500ms' }}>{t('compassE')}</span>
+        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-bold text-foreground/60 animate-card-glow" style={{ animationDelay: '1000ms' }}>{t('compassS')}</span>
+        <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[10px] font-bold text-foreground/60 animate-card-glow" style={{ animationDelay: '1500ms' }}>{t('compassW')}</span>
 
         {/* Cercle intérieur (fond du compass) */}
         <div className="absolute inset-3 rounded-full bg-primary/5" />

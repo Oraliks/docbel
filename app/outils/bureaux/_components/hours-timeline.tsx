@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Clock, ChevronDown, Info, Flag } from 'lucide-react'
 
 interface HourSlot {
@@ -24,7 +25,15 @@ interface Props {
   onReport?: () => void
 }
 
-const DAY_LABELS_SHORT = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.']
+const DAY_LABEL_KEYS = [
+  'htDaySun',
+  'htDayMon',
+  'htDayTue',
+  'htDayWed',
+  'htDayThu',
+  'htDayFri',
+  'htDaySat',
+] as const
 const DAYS_ORDER = [1, 2, 3, 4, 5, 6, 0] // Lun → Dim
 
 function timeToMinutes(time: string): number {
@@ -39,20 +48,20 @@ function nowMinutes(): number {
 }
 
 interface Status {
-  label: string
+  labelKey: 'htStatusOpen' | 'htStatusClosed' | 'htStatusSoon'
   tone: 'open' | 'closed' | 'soon'
 }
 
 function computeStatus(slots: HourSlot[]): Status {
-  if (slots.length === 0) return { label: 'Fermé', tone: 'closed' }
+  if (slots.length === 0) return { labelKey: 'htStatusClosed', tone: 'closed' }
   const now = nowMinutes()
   for (const s of slots) {
     const open = timeToMinutes(s.open)
     const close = timeToMinutes(s.close)
-    if (now >= open && now < close) return { label: 'Ouvert', tone: 'open' }
-    if (now < open) return { label: 'Fermé', tone: 'closed' }
+    if (now >= open && now < close) return { labelKey: 'htStatusOpen', tone: 'open' }
+    if (now < open) return { labelKey: 'htStatusClosed', tone: 'closed' }
   }
-  return { label: 'Fermé', tone: 'closed' }
+  return { labelKey: 'htStatusClosed', tone: 'closed' }
 }
 
 /**
@@ -65,6 +74,7 @@ function computeStatus(slots: HourSlot[]): Status {
  * "Aujourd'hui" en vert si Ouvert, gris si Fermé.
  */
 export function HoursTimeline({ hours, notes, type, onReport }: Props) {
+  const t = useTranslations('public.outils')
   const [open, setOpen] = useState(false)
 
   const hideWeekend = type !== 'COMMUNE' && type !== 'CPAS'
@@ -82,12 +92,11 @@ export function HoursTimeline({ hours, notes, type, onReport }: Props) {
         <div className="flex items-center gap-2">
           <Clock className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
           <span className="text-xs font-medium text-muted-foreground">
-            Horaires non disponibles
+            {t('htEmptyTitle')}
           </span>
         </div>
         <p className="text-[10px] text-muted-foreground/80 leading-snug">
-          Pas d&apos;information fiable sur les horaires de ce bureau.
-          Consulte le site officiel ou téléphone avant de te déplacer.
+          {t('htEmptyBody')}
         </p>
         {onReport && (
           <button
@@ -99,7 +108,7 @@ export function HoursTimeline({ hours, notes, type, onReport }: Props) {
             className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline font-medium"
           >
             <Flag className="w-2.5 h-2.5" />
-            Tu connais les horaires ? Aide-nous à les ajouter
+            {t('htEmptyReportCta')}
           </button>
         )}
       </div>
@@ -113,9 +122,9 @@ export function HoursTimeline({ hours, notes, type, onReport }: Props) {
   for (const d of hours ?? []) byDay.set(d.day, d.slots)
 
   const todayClosed = todaySlots.length === 0
-  const todayLabel = DAY_LABELS_SHORT[today]
+  const todayLabel = t(DAY_LABEL_KEYS[today])
   const todayHours = todayClosed
-    ? 'Fermé'
+    ? t('htClosed')
     : todaySlots.map((s) => `${s.open}–${s.close}`).join(' · ')
 
   return (
@@ -127,7 +136,7 @@ export function HoursTimeline({ hours, notes, type, onReport }: Props) {
       <div className="flex items-center gap-2">
         <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         <span className="text-xs font-medium text-foreground">
-          Horaires d&apos;ouverture
+          {t('htHeader')}
         </span>
         <StatusPill status={status} className="ml-auto" />
       </div>
@@ -154,7 +163,7 @@ export function HoursTimeline({ hours, notes, type, onReport }: Props) {
                         : 'text-muted-foreground'
                     }`}
                   >
-                    {DAY_LABELS_SHORT[day]}
+                    {t(DAY_LABEL_KEYS[day])}
                   </span>
                   <span
                     className={`truncate ${
@@ -162,7 +171,7 @@ export function HoursTimeline({ hours, notes, type, onReport }: Props) {
                     }`}
                   >
                     {closed
-                      ? 'Fermé'
+                      ? t('htClosed')
                       : slots.map((s) => `${s.open}–${s.close}`).join(' · ')}
                   </span>
                 </div>
@@ -177,7 +186,7 @@ export function HoursTimeline({ hours, notes, type, onReport }: Props) {
           <p className="flex items-start gap-1 text-[10px] text-muted-foreground/70 pt-1 mt-1 border-t border-border/40">
             <Info className="w-2.5 h-2.5 shrink-0 mt-0.5" />
             <span>
-              Fermetures exceptionnelles non listées. À confirmer par téléphone.
+              {t('htNoticeExceptional')}
             </span>
           </p>
         </div>
@@ -190,7 +199,7 @@ export function HoursTimeline({ hours, notes, type, onReport }: Props) {
                 : 'text-muted-foreground'
             }`}
           >
-            Aujourd&apos;hui
+            {t('htToday')}
           </span>
           <span className="text-muted-foreground/50">·</span>
           <span className="text-muted-foreground font-medium">{todayLabel}</span>
@@ -215,6 +224,7 @@ function StatusPill({
   status: Status
   className?: string
 }) {
+  const t = useTranslations('public.outils')
   const cls =
     status.tone === 'open'
       ? 'bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300'
@@ -236,7 +246,7 @@ function StatusPill({
               : 'bg-muted-foreground/40'
         }`}
       />
-      {status.label}
+      {t(status.labelKey)}
     </span>
   )
 }

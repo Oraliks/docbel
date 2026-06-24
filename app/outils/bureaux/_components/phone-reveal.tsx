@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { Phone } from 'lucide-react'
 
 interface Props {
@@ -34,6 +35,7 @@ interface Props {
  *  - 1 clic suffit pour révéler ; un 2e clic déclenche l'appel
  */
 export function PhoneReveal({ phone, className }: Props) {
+  const t = useTranslations('public.outils')
   const [revealed, setRevealed] = useState(false)
 
   // Encode en base64 dès le render. Marche côté server (Buffer) et
@@ -65,7 +67,7 @@ export function PhoneReveal({ phone, className }: Props) {
       onClick={() => setRevealed(true)}
       data-p={encoded}
       className={className}
-      aria-label="Afficher le numéro de téléphone"
+      aria-label={t('phoneRevealAria')}
     >
       <Phone className="w-3 h-3" />
       {/* Pointillés en filigrane pour suggérer un numéro caché,
@@ -78,7 +80,7 @@ export function PhoneReveal({ phone, className }: Props) {
           •• •• ••
         </span>
         <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold">
-          Afficher
+          {t('phoneRevealAction')}
         </span>
       </span>
     </button>

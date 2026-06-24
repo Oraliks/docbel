@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -51,6 +52,7 @@ export function BureauCard({
   rightSlot,
   hideReport,
 }: Props) {
+  const t = useTranslations('public.outils')
   const [showReport, setShowReport] = useState(false)
 
   if (!bureau) {
@@ -61,7 +63,7 @@ export function BureauCard({
             {label}
           </span>
           <p className="text-xs text-muted-foreground italic mt-2">
-            Aucun bureau attitré trouvé pour cette commune.
+            {t('bcNoBureau')}
           </p>
         </CardContent>
       </Card>
@@ -139,8 +141,8 @@ export function BureauCard({
                 className="flex md:flex-col md:items-end gap-3 md:gap-1.5 shrink-0 md:w-[80px]"
                 title={
                   fromUserLocation
-                    ? 'depuis ta position'
-                    : 'depuis le centre de la commune'
+                    ? t('bcDistanceFromYou')
+                    : t('bcDistanceFromCenter')
                 }
               >
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
@@ -152,7 +154,7 @@ export function BureauCard({
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
                   <Car className="w-3.5 h-3.5" />
                   {drivingMin !== null
-                    ? `${drivingMin} min`
+                    ? t('bcMinUnit', { min: drivingMin })
                     : <span className="text-muted-foreground/40">—</span>}
                 </span>
               </div>
@@ -191,11 +193,12 @@ export function BureauCard({
  * + scale au hover + slide de l'icône external. Subtil mais intriguant.
  */
 function ItineraireButton({ bureau }: { bureau: BureauResult }) {
+  const t = useTranslations('public.outils')
   const destination =
     bureau.lat !== null && bureau.lng !== null
       ? `${bureau.lat},${bureau.lng}`
       : encodeURIComponent(
-          `${bureau.street}${bureau.streetNum ? ' ' + bureau.streetNum : ''}, ${bureau.postalCode} ${bureau.city}, Belgique`
+          `${bureau.street}${bureau.streetNum ? ' ' + bureau.streetNum : ''}, ${bureau.postalCode} ${bureau.city}, ${t('bcCountry')}`
         )
   return (
     <Button
@@ -210,7 +213,7 @@ function ItineraireButton({ bureau }: { bureau: BureauResult }) {
       size="sm"
       className="group h-8 text-xs gap-1 px-3 relative overflow-hidden transition-all hover:scale-[1.03] hover:border-primary hover:text-primary hover:shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_15%,transparent)]"
     >
-      <span className="relative z-10">Itinéraire</span>
+      <span className="relative z-10">{t('bcItinerary')}</span>
       <ExternalLink className="relative z-10 w-3 h-3 opacity-70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
       {/* Glow shimmer subtil qui passe en continu */}
       <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/15 to-transparent animate-cta-shimmer pointer-events-none" />
@@ -228,10 +231,11 @@ export function BureauContent({
   distanceKm?: number | null
   fromUserLocation?: boolean
 }) {
+  const t = useTranslations('public.outils')
   if (!bureau) {
     return (
       <p className="text-xs text-muted-foreground italic">
-        Aucun bureau attitré trouvé pour cette commune.
+        {t('bcNoBureau')}
       </p>
     )
   }
@@ -274,8 +278,8 @@ export function BureauContent({
             className="flex md:flex-col md:items-end gap-3 md:gap-1.5 shrink-0 md:w-[80px]"
             title={
               fromUserLocation
-                ? 'depuis ta position'
-                : 'depuis le centre de la commune'
+                ? t('bcDistanceFromYou')
+                : t('bcDistanceFromCenter')
             }
           >
             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
@@ -285,7 +289,7 @@ export function BureauContent({
             {drivingMin !== null && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
                 <Car className="w-3.5 h-3.5" />
-                {drivingMin} min
+                {t('bcMinUnit', { min: drivingMin })}
               </span>
             )}
           </div>
@@ -330,12 +334,14 @@ export function FlagToggle({
   active: boolean
   onToggle: () => void
 }) {
+  const t = useTranslations('public.outils')
+  const label = active ? t('bcReportClose') : t('bcReportOpen')
   return (
     <button
       type="button"
       onClick={onToggle}
-      title={active ? 'Fermer le signalement' : 'Signaler une erreur'}
-      aria-label={active ? 'Fermer le signalement' : 'Signaler une erreur'}
+      title={label}
+      aria-label={label}
       className="text-muted-foreground hover:text-red-600 transition-colors shrink-0 p-1 -m-1 rounded"
     >
       {active ? <X className="w-4 h-4" /> : <Flag className="w-3.5 h-3.5" />}

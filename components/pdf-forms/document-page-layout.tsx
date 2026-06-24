@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ClockIcon,
   ShieldCheckIcon,
@@ -37,6 +38,7 @@ interface Props {
 /// et le layout du mockup : header riche avec illustration décorative, pills
 /// meta, puis 2 colonnes (formulaire à gauche, résumé live à droite).
 export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlug, dossierTypes }: Props) {
+  const t = useTranslations("public.dossier");
   const [values, setValues] = useState<FormPayload>({});
   const [locale, setLocale] = useState<Locale>(form.defaultLocale);
 
@@ -45,8 +47,8 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
 
   const timeEstimate = useMemo(() => {
     const seconds = Math.max(2 * 60, Math.min(30 * 60, form.fields.length * 30));
-    return `${Math.round(seconds / 60)} min`;
-  }, [form.fields.length]);
+    return t("docPageTimeEstimateMin", { value: Math.round(seconds / 60) });
+  }, [form.fields.length, t]);
 
   // Abréviation pour l'illustration : "C32_Travailleur" → "C32".
   const docAbbrev = useMemo(() => {
@@ -60,17 +62,17 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
     // occupe donc toute la largeur disponible — choix d'uniformité assumé.
     <div className="flex w-full flex-col gap-6">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1 text-xs text-[color:var(--glass-ink-soft)]" aria-label="Fil d'Ariane">
-        <Link href="/" className="hover:underline">Accueil</Link>
+      <nav className="flex items-center gap-1 text-xs text-[color:var(--glass-ink-soft)]" aria-label={t("breadcrumbLabel")}>
+        <Link href="/" className="hover:underline">{t("breadcrumbHome")}</Link>
         <ChevronRightIcon className="size-3" />
         {bundleSlug ? (
           <>
-            <Link href={`/d/${bundleSlug}`} className="hover:underline">Mon dossier</Link>
+            <Link href={`/d/${bundleSlug}`} className="hover:underline">{t("breadcrumbCurrent")}</Link>
             <ChevronRightIcon className="size-3" />
           </>
         ) : (
           <>
-            <Link href="/mon-dossier" className="hover:underline">Mon dossier</Link>
+            <Link href="/mon-dossier" className="hover:underline">{t("breadcrumbCurrent")}</Link>
             <ChevronRightIcon className="size-3" />
           </>
         )}
@@ -103,11 +105,11 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
 
           {/* Barre meta : une seule barre blanche avec 3 segments (cf. mockup) */}
           <div className="glass-surface mt-1 flex w-fit max-w-full flex-wrap items-center gap-1 rounded-2xl px-2 py-1.5">
-            <MetaSegment icon={<ClockIcon className="size-4" />} label="Temps estimé" value={timeEstimate} />
+            <MetaSegment icon={<ClockIcon className="size-4" />} label={t("docPageMetaTimeLabel")} value={timeEstimate} />
             <span className="mx-1 hidden h-8 w-px bg-[color:var(--glass-border)] sm:block" />
-            <MetaSegment icon={<ShieldCheckIcon className="size-4" />} label="Sécurité" value="Vos données sont protégées" />
+            <MetaSegment icon={<ShieldCheckIcon className="size-4" />} label={t("docPageMetaSecurityLabel")} value={t("docPageMetaSecurityValue")} />
             <span className="mx-1 hidden h-8 w-px bg-[color:var(--glass-border)] sm:block" />
-            <MetaSegment icon={<HelpCircleIcon className="size-4" />} label="Besoin d'aide ?" value="Voir le guide" href="#aide" accent />
+            <MetaSegment icon={<HelpCircleIcon className="size-4" />} label={t("helpTitle")} value={t("docPageMetaHelpValue")} href="#aide" accent />
           </div>
         </div>
 
@@ -143,16 +145,17 @@ export function DocumentPageLayout({ form, bundlePrefill, bundleRunId, bundleSlu
 
 // Libellés cyclés par défaut : les types de chômage temporaire du dossier
 // actif. Exposés en prop pour rester génériques (futurs dossiers) et seront
-// à terme pilotés par la config du dossier plutôt que codés en dur.
-const DEFAULT_CYCLING_LABELS = [
-  "Économique",
-  "Action sociale",
-  "Vacances annuelles",
-  "Repos compensatoire",
-  "Intempéries",
-  "Accident technique",
-  "Force majeure",
-];
+// à terme pilotés par la config du dossier plutôt que codés en dur. Les
+// chaînes ici sont des CLÉS i18n résolues côté composant via `t(key)`.
+const DEFAULT_CYCLING_LABEL_KEYS = [
+  "docPageCyclingEconomic",
+  "docPageCyclingSocialAction",
+  "docPageCyclingAnnualLeave",
+  "docPageCyclingCompensatoryRest",
+  "docPageCyclingBadWeather",
+  "docPageCyclingTechnicalAccident",
+  "docPageCyclingForceMajeure",
+] as const;
 
 // Cadence : on commence rapide (~3,5 s) pour attirer l'œil, puis on ralentit
 // à 5 s après quelques transitions "pour pas que ça charge trop le site".
@@ -162,17 +165,27 @@ const FAST_TRANSITIONS = 3;
 
 function DocIllustration({
   abbrev,
-  cyclingLabels = DEFAULT_CYCLING_LABELS,
+  cyclingLabels,
 }: {
   abbrev: string;
   cyclingLabels?: string[];
 }) {
+  const t = useTranslations("public.dossier");
+  // Libellés effectifs : ceux passés en prop (issus du dossier — DB, on ne
+  // les traduit pas) sinon ceux par défaut résolus via i18n.
+  const labels = useMemo<string[]>(
+    () =>
+      cyclingLabels && cyclingLabels.length > 0
+        ? cyclingLabels
+        : DEFAULT_CYCLING_LABEL_KEYS.map((k) => t(k as Parameters<typeof t>[0])),
+    [cyclingLabels, t],
+  );
   const [index, setIndex] = useState(0);
   // Nombre de swaps déjà effectués (sert à basculer rapide → lent).
   const swapsRef = useRef(0);
 
   useEffect(() => {
-    if (cyclingLabels.length <= 1) return;
+    if (labels.length <= 1) return;
 
     // Respect de prefers-reduced-motion : pas de cycle, libellé statique.
     const reduceMotion =
@@ -186,16 +199,16 @@ function DocIllustration({
       const delay = swapsRef.current < FAST_TRANSITIONS ? FAST_INTERVAL_MS : SLOW_INTERVAL_MS;
       timeoutId = setTimeout(() => {
         swapsRef.current += 1;
-        setIndex((i) => (i + 1) % cyclingLabels.length);
+        setIndex((i) => (i + 1) % labels.length);
         schedule();
       }, delay);
     };
 
     schedule();
     return () => clearTimeout(timeoutId);
-  }, [cyclingLabels.length]);
+  }, [labels.length]);
 
-  const label = cyclingLabels[index] ?? cyclingLabels[0] ?? "";
+  const label = labels[index] ?? labels[0] ?? "";
 
   return (
     <div className="pointer-events-none absolute -top-2 right-0 hidden h-36 w-44 lg:block" aria-hidden>
@@ -284,29 +297,30 @@ function MetaSegment({
 }
 
 function SummarySidebar({ form, values, locale }: { form: PublicForm; values: FormPayload; locale: Locale }) {
+  const t = useTranslations("public.dossier");
   return (
     <Card className={`${GLASS_CARD} sticky top-6`}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm">
           <FileTextIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
-          Résumé du document
+          {t("docPageSummaryTitle")}
         </CardTitle>
         <p className="text-[11px] text-[color:var(--glass-ink-soft)]">
-          Vérifiez les informations avant génération
+          {t("docPageSummarySubtitle")}
         </p>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 text-xs">
-        <KV label="Type de document" value={form.title} highlight />
-        {form.issuer && <KV label="Organisme" value={form.issuer} />}
+        <KV label={t("docPageSummaryDocType")} value={form.title} highlight />
+        {form.issuer && <KV label={t("organism")} value={form.issuer} />}
         {form.fields.map((f) => (
-          <KV key={f.id} label={loc(f.label, locale) || f.id} value={renderValue(f, values[f.id])} />
+          <KV key={f.id} label={loc(f.label, locale) || f.id} value={renderValue(f, values[f.id], t)} />
         ))}
 
         <div className="mt-2 flex items-start gap-2 rounded-xl bg-[color:var(--glass-pop-bg)] p-3">
           <ShieldCheckIcon className="mt-0.5 size-4 shrink-0 text-[color:var(--glass-accent-deep)]" />
           <p className="text-[11px] text-[color:var(--glass-ink-soft)]">
-            <span className="font-semibold text-[color:var(--glass-ink)]">Vos données restent privées.</span>{" "}
-            Aucune donnée n&apos;est stockée. Le document est généré à la demande uniquement.
+            <span className="font-semibold text-[color:var(--glass-ink)]">{t("docPagePrivacyHeading")}</span>{" "}
+            {t("docPagePrivacyBody")}
           </p>
         </div>
       </CardContent>
@@ -329,14 +343,16 @@ function KV({ label, value, highlight }: { label: string; value: string; highlig
   );
 }
 
-function renderValue(field: PublicField, raw: unknown): string {
+type Translator = ReturnType<typeof useTranslations<"public.dossier">>;
+
+function renderValue(field: PublicField, raw: unknown, t: Translator): string {
   // Champs auto-injectés à la génération : on les affiche comme tels dans la
   // sidebar même s'ils n'ont pas de valeur saisie (signature → "Auto à la
   // génération", date de création → date du jour).
-  if (isSignatureField(field)) return "Auto à la génération";
+  if (isSignatureField(field)) return t("docPageAutoAtGeneration");
   if (isCreationDateField(field)) return todayISO();
   if (raw === undefined || raw === null) return "";
-  if (field.type === "checkbox") return raw === true ? "Oui" : "Non";
+  if (field.type === "checkbox") return raw === true ? t("yes") : t("no");
   if (field.type === "fullname") {
     if (!isFullNameValue(raw)) return typeof raw === "string" ? raw : "";
     const first = (raw.first ?? "").trim();

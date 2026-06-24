@@ -20,10 +20,10 @@ function LeadMagnetView({
   title,
   description,
   collectName,
-  buttonText = 'Recevoir le document',
+  buttonText,
   fileUrl,
   fileName,
-  successMessage = 'Merci ! Votre téléchargement va démarrer.',
+  successMessage,
   endpoint = '/api/messages',
 }: Props) {
   const t = useTranslations('public.blocks')
@@ -31,6 +31,8 @@ function LeadMagnetView({
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const buttonTextResolved = buttonText ?? t('leadMagnet.buttonFallback')
+  const successMessageResolved = successMessage ?? t('leadMagnet.successFallback')
 
   const triggerDownload = () => {
     const href = safeHref(fileUrl)
@@ -58,7 +60,7 @@ function LeadMagnetView({
         }),
       })
       setSuccess(true)
-      toast.success(successMessage)
+      toast.success(successMessageResolved)
       triggerDownload()
     } catch {
       toast.error(t('leadMagnet.error'))
@@ -77,7 +79,7 @@ function LeadMagnetView({
       {success ? (
         <div className="mt-4 flex flex-wrap items-center gap-2 text-sm font-medium text-emerald-600">
           <Check className="size-4" />
-          {successMessage}
+          {successMessageResolved}
           {fileUrl && (
             <button
               type="button"
@@ -104,7 +106,7 @@ function LeadMagnetView({
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="votre@email.com"
+            placeholder={t('leadMagnet.emailPlaceholder')}
             className={inputCls}
           />
           <button
@@ -117,7 +119,7 @@ function LeadMagnetView({
             ) : (
               <Download className="size-4" />
             )}
-            {buttonText}
+            {buttonTextResolved}
           </button>
         </form>
       )}

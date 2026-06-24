@@ -954,7 +954,7 @@ function StepLogin({
   onRestart: () => void
   onContinue: () => void
 }) {
-  const t = useTranslations('public.ec32')
+  const tx = useTranslations('public.outils')
   const [consentOpen, setConsentOpen] = useState(false)
   // Le consentement OAuth (durée 23 mois) s'applique aux moyens fédéraux
   // eID/itsme dans la vraie app. On le propose en aperçu pédagogique.
@@ -997,12 +997,14 @@ function StepLogin({
       {canShowConsent && (
         <div className="mt-3 rounded-2xl border border-primary/20 bg-primary/5 p-3">
           <p className="text-xs font-semibold text-foreground">
-            Lors de la première connexion, un écran d’autorisation s’affiche
+            {tx('ec32Sim.consentFirstLoginTitle')}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            L’application demande l’accès à vos données pour une durée de{' '}
-            <strong className="text-foreground">23 mois</strong>, renouvelée à
-            l’expiration.
+            {tx.rich('ec32Sim.consentFirstLoginBody', {
+              strong: (chunks) => (
+                <strong className="text-foreground">{chunks}</strong>
+              ),
+            })}
           </p>
           <Button
             type="button"
@@ -1011,7 +1013,7 @@ function StepLogin({
             className="mt-2"
             onClick={() => setConsentOpen(true)}
           >
-            Voir l’écran de consentement
+            {tx('ec32Sim.consentShowScreen')}
           </Button>
         </div>
       )}
@@ -1021,7 +1023,7 @@ function StepLogin({
         onRestart={onRestart}
         onPrimary={onContinue}
         primaryLabel={getLabel('login.continue')}
-        primaryShortLabel="Démarrer"
+        primaryShortLabel={tx('ec32Sim.shortStart')}
       />
 
       <Dialog open={consentOpen} onOpenChange={setConsentOpen}>
@@ -1030,7 +1032,7 @@ function StepLogin({
           className="border-0 bg-transparent p-0 shadow-none ring-0 sm:max-w-2xl"
         >
           <DialogTitle className="sr-only">
-            Écran de consentement — simulation
+            {tx('ec32Sim.consentDialogTitle')}
           </DialogTitle>
           <Ec32OAuthConsent
             onConfirm={() => setConsentOpen(false)}
@@ -1065,6 +1067,7 @@ function StepDeclaration({
   onPrev: () => void
   onContinue: () => void
 }) {
+  const tx = useTranslations('public.outils')
   return (
     <Ec32Card>
       <h3 className="text-lg font-bold text-foreground">{getLabel('declaration.title')}</h3>
@@ -1108,7 +1111,7 @@ function StepDeclaration({
         onPrev={onPrev}
         onPrimary={onContinue}
         primaryLabel={getLabel('declaration.continue')}
-        primaryShortLabel="Continuer"
+        primaryShortLabel={tx('ec32Sim.shortContinue')}
         primaryDisabled={!checked}
       />
     </Ec32Card>
@@ -1134,6 +1137,7 @@ function StepEmployer({
   onPrev: () => void
   onContinue: () => void
 }) {
+  const tx = useTranslations('public.outils')
   const selected = employers.find((e) => e.id === employerId)
   const isConstruction = selected?.type === 'construction_cp124'
 
@@ -1172,19 +1176,16 @@ function StepEmployer({
         })}
       </div>
 
-      <Ec32InfoBox tone="neutral" className="mt-4" title="Combien d’employeurs ?">
+      <Ec32InfoBox tone="neutral" className="mt-4" title={tx('ec32Sim.employerCountTitle')}>
         <ul className="list-disc space-y-1 pl-4">
-          <li>1 employeur : une seule carte à compléter pour cet employeur.</li>
-          <li>
-            2 employeurs : choisissez celui qui vous a mis en chômage temporaire ; vos autres
-            occupations s’indiquent sur cette carte.
-          </li>
-          <li>3 employeurs ou plus : une carte par employeur ayant déclaré du chômage temporaire.</li>
+          <li>{tx('ec32Sim.employerCount1')}</li>
+          <li>{tx('ec32Sim.employerCount2')}</li>
+          <li>{tx('ec32Sim.employerCount3plus')}</li>
         </ul>
       </Ec32InfoBox>
 
       {isConstruction && (
-        <Ec32InfoBox tone="warning" className="mt-3" title="Secteur construction (CP 124)">
+        <Ec32InfoBox tone="warning" className="mt-3" title={tx('ec32Sim.constructionSectorTitle')}>
           {getNotice('calendar.fillUntilEnd')}
         </Ec32InfoBox>
       )}
@@ -1195,7 +1196,7 @@ function StepEmployer({
         onPrev={onPrev}
         onPrimary={onContinue}
         primaryLabel={getLabel('employer.continue')}
-        primaryShortLabel="Choisir"
+        primaryShortLabel={tx('ec32Sim.shortChoose')}
         primaryDisabled={!selected}
       />
     </Ec32Card>
@@ -1221,6 +1222,7 @@ function StepMonth({
   onPrev: () => void
   onContinue: () => void
 }) {
+  const tx = useTranslations('public.outils')
   const [pastActivated, setPastActivated] = useState(false)
 
   return (
@@ -1304,7 +1306,7 @@ function StepMonth({
         onPrev={onPrev}
         onPrimary={onContinue}
         primaryLabel={getLabel('nav.toCalendar')}
-        primaryShortLabel="Calendrier"
+        primaryShortLabel={tx('ec32Sim.shortCalendar')}
       />
     </Ec32Card>
   )
@@ -1361,6 +1363,7 @@ function CardWorkspace({
   /** Panel contextuel affiché à droite du calendrier dans la carte. */
   rightPanel?: ReactNode
 }) {
+  const tx = useTranslations('public.outils')
   // Aperçu live : les jours sélectionnés adoptent la couleur de la situation en
   // cours de choix dans le rail, avant même l'enregistrement.
   const calendarCells =
@@ -1400,12 +1403,16 @@ function CardWorkspace({
               <dd className="inline">{employer?.enterpriseNumber ?? '—'}</dd>
             </div>
             <div>
-              <dt className="inline font-medium text-foreground">Mois : </dt>
+              <dt className="inline font-medium text-foreground">{tx('ec32Sim.monthLabel')} : </dt>
               <dd className="inline">{monthLabel}</dd>
             </div>
             <div>
               <dt className="inline font-medium text-foreground">{getLabel('card.lastUpdate')} : </dt>
-              <dd className="inline">simulation — {formatDate(cells.find((c) => c.inMonth)?.date ?? '2025-05-01')}</dd>
+              <dd className="inline">
+                {tx('ec32Sim.simulationDate', {
+                  date: formatDate(cells.find((c) => c.inMonth)?.date ?? '2025-05-01'),
+                })}
+              </dd>
             </div>
           </dl>
         </div>
@@ -1478,7 +1485,7 @@ function CardWorkspace({
         onPrev={onPrev}
         onPrimary={onNext}
         primaryLabel={getLabel('nav.next')}
-        primaryShortLabel="Suivant"
+        primaryShortLabel={tx('ec32Sim.shortNext')}
         primaryDisabled={EC32_STEPS.indexOf(activeStep) >= EC32_STEPS.length - 1}
         primaryIconEnd={<ChevronRight className="size-3.5 shrink-0" aria-hidden />}
       />
@@ -1520,6 +1527,7 @@ function Ec32AdaptPanel({
   onApplySituation: () => void
   onClearSelection: () => void
 }) {
+  const tx = useTranslations('public.outils')
   const dates = Array.from(selectedDates).sort()
   const count = dates.length
   const firstDate = dates[0]
@@ -1545,12 +1553,13 @@ function Ec32AdaptPanel({
               <>
                 {' · '}
                 {situationLabel(firstCell.situation)}
-                {(firstCell.secondaryWork ?? []).length > 0 && ' + travail ailleurs'}
+                {(firstCell.secondaryWork ?? []).length > 0 &&
+                  tx('ec32Sim.plusElsewhereSuffix')}
               </>
             )}
           </>
         ) : (
-          <>Statut à appliquer à ces {count} jours :</>
+          tx('ec32Sim.applyStatusTo', { count })
         )}
       </p>
 
@@ -1558,7 +1567,7 @@ function Ec32AdaptPanel({
         selectedCount={count}
         value={selectorSituation}
         secondaryWork={selectorSecondaryWork}
-        employerName={employerName || "l’employeur"}
+        employerName={employerName || tx('ec32Sim.defaultEmployerName')}
         saveLabel={count > 1 ? getLabel('selector.saveMulti') : getLabel('selector.save')}
         cancelLabel={getLabel('selector.cancel')}
         suggestedSituation={suggestedSituation}
@@ -1596,11 +1605,12 @@ function Ec32ControlsPanel({
   onExportPdf: () => void
   onOpenSend: () => void
 }) {
+  const tx = useTranslations('public.outils')
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <ListChecks className="size-4 shrink-0 text-primary" aria-hidden />
-        <h3 className="text-sm font-bold text-foreground">Contrôles &amp; validation</h3>
+        <h3 className="text-sm font-bold text-foreground">{tx('ec32Sim.controlsValidation')}</h3>
       </div>
 
       {/* Affiliation organisme de paiement */}
@@ -1636,7 +1646,7 @@ function Ec32ControlsPanel({
               onClick={onAdvanceToSend}
             >
               <FastForward className="size-3.5" aria-hidden />
-              Avancer jusqu’à la première date d’envoi
+              {tx('ec32Sim.advanceToFirstSend')}
             </Button>
           </>
         )}
@@ -1663,7 +1673,7 @@ function Ec32ControlsPanel({
         {isLocked && (
           <span className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
             <Check className="size-3.5" aria-hidden />
-            Carte envoyée — simulation
+            {tx('ec32Sim.cardSentSimulation')}
           </span>
         )}
       </div>

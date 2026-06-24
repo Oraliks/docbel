@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,6 +40,7 @@ const ORDER = ['capac', 'fgtb', 'csc', 'cgslb']
  * visuellement.
  */
 export function OpTabsCard({ bureaux, commune, userGeoloc }: Props) {
+  const t = useTranslations('public.outils')
   const [activeIdx, setActiveIdx] = useState(0)
   const [showReport, setShowReport] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
@@ -75,7 +77,7 @@ export function OpTabsCard({ bureaux, commune, userGeoloc }: Props) {
           {/* Header label + flag */}
           <div className="flex items-center justify-between gap-2">
             <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
-              Organisme de paiement
+              {t('opTabsHeader')}
             </p>
             <FlagToggle
               active={showReport}
@@ -118,7 +120,7 @@ export function OpTabsCard({ bureaux, commune, userGeoloc }: Props) {
               className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline shrink-0"
             >
               <HelpCircle className="w-3 h-3" />
-              Quel organisme choisir&nbsp;?
+              {t('opTabsHelpLink')}
             </button>
           </div>
 
@@ -169,7 +171,7 @@ export function OpTabsCard({ bureaux, commune, userGeoloc }: Props) {
               {/* Distances : 80px fixe (= BureauCard) */}
               <div
                 className="flex md:flex-col md:items-end gap-3 md:gap-1.5 shrink-0 md:w-[80px]"
-                title={userGeoloc ? 'depuis ta position' : 'depuis le centre de la commune'}
+                title={userGeoloc ? t('bcDistanceFromYou') : t('bcDistanceFromCenter')}
               >
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
                   <Footprints className="w-3.5 h-3.5" />
@@ -180,7 +182,7 @@ export function OpTabsCard({ bureaux, commune, userGeoloc }: Props) {
                 <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
                   <Car className="w-3.5 h-3.5" />
                   {drivingMin !== null
-                    ? `${drivingMin} min`
+                    ? t('bcMinUnit', { min: drivingMin })
                     : <span className="text-muted-foreground/40">—</span>}
                 </span>
               </div>
@@ -211,11 +213,12 @@ export function OpTabsCard({ bureaux, commune, userGeoloc }: Props) {
 
 /** Reproduction locale du bouton Itinéraire (avec animation) — évite import circulaire. */
 function ItineraireButton({ bureau }: { bureau: BureauResult }) {
+  const t = useTranslations('public.outils')
   const destination =
     bureau.lat !== null && bureau.lng !== null
       ? `${bureau.lat},${bureau.lng}`
       : encodeURIComponent(
-          `${bureau.street}${bureau.streetNum ? ' ' + bureau.streetNum : ''}, ${bureau.postalCode} ${bureau.city}, Belgique`
+          `${bureau.street}${bureau.streetNum ? ' ' + bureau.streetNum : ''}, ${bureau.postalCode} ${bureau.city}, ${t('bcCountry')}`
         )
   return (
     <Button
@@ -230,7 +233,7 @@ function ItineraireButton({ bureau }: { bureau: BureauResult }) {
       size="sm"
       className="group h-8 text-xs gap-1 px-3 relative overflow-hidden transition-all hover:scale-[1.03] hover:border-primary hover:text-primary hover:shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_15%,transparent)]"
     >
-      <span className="relative z-10">Itinéraire</span>
+      <span className="relative z-10">{t('bcItinerary')}</span>
       <ExternalLink className="relative z-10 w-3 h-3 opacity-70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
       <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/15 to-transparent animate-cta-shimmer pointer-events-none" />
     </Button>

@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { ShieldCheck, Database, RefreshCw, Flag } from 'lucide-react'
 
 /**
@@ -8,27 +9,28 @@ import { ShieldCheck, Database, RefreshCw, Flag } from 'lucide-react'
  * (text-xs, icônes muted) pour pas voler l'attention des résultats.
  */
 export function InfoBands() {
+  const t = useTranslations('public.outils')
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
       <InfoBand
         icon={<ShieldCheck className="w-4 h-4" />}
-        title="Pourquoi ces résultats ?"
-        body="On affiche les organismes compétents pour ton code postal, classés par proximité et pertinence métier."
+        title={t('infoBandWhyTitle')}
+        body={t('infoBandWhyBody')}
       />
       <InfoBand
         icon={<Database className="w-4 h-4" />}
-        title="Sources officielles"
-        body="Données ONEM, CPAS, Communes, CAPAC et partenaires publics belges, agrégées et géocodées."
+        title={t('infoBandSourcesTitle')}
+        body={t('infoBandSourcesBody')}
       />
       <InfoBand
         icon={<RefreshCw className="w-4 h-4" />}
-        title="Mises à jour"
-        body="Les informations (horaires, coordonnées, services) sont vérifiées et mises à jour régulièrement."
+        title={t('infoBandUpdatesTitle')}
+        body={t('infoBandUpdatesBody')}
       />
       <InfoBand
         icon={<Flag className="w-3.5 h-3.5" />}
-        title="Une info incorrecte ?"
-        body="Utilise le bouton drapeau en haut à droite de la card concernée pour nous signaler une erreur précise."
+        title={t('infoBandReportTitle')}
+        body={t('infoBandReportBody')}
       />
     </div>
   )

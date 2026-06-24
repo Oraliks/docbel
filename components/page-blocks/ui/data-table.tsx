@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { z } from 'zod'
 import { ArrowUpDown, Search } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
@@ -53,6 +54,7 @@ function DataTableView({
   striped,
   compact,
 }: Props) {
+  const t = useTranslations('public.blocks')
   const cols = useMemo(() => parseCols(columns), [columns])
   const allRows = useMemo(() => parseRows(rows), [rows])
   const [query, setQuery] = useState('')
@@ -95,7 +97,7 @@ function DataTableView({
   if (cols.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-        Configurez les colonnes du tableau (onglet Contenu).
+        {t('dataTable.configurePrompt')}
       </div>
     )
   }
@@ -111,7 +113,7 @@ function DataTableView({
               setQuery(e.target.value)
               setPage(0)
             }}
-            placeholder="Rechercher…"
+            placeholder={t('dataTable.searchPlaceholder')}
             className="h-9 pl-8"
           />
         </div>
@@ -145,7 +147,7 @@ function DataTableView({
             {visible.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={cols.length} className="py-6 text-center text-muted-foreground">
-                  Aucun résultat
+                  {t('dataTable.noResults')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -165,7 +167,11 @@ function DataTableView({
       {pageSize > 0 && pages > 1 && (
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
-            {filtered.length} ligne(s) · page {clampedPage + 1}/{pages}
+            {t('dataTable.pagination', {
+              rows: filtered.length,
+              current: clampedPage + 1,
+              total: pages,
+            })}
           </span>
           <div className="flex gap-1">
             <button
@@ -174,7 +180,7 @@ function DataTableView({
               onClick={() => setPage(clampedPage - 1)}
               className="rounded-md border px-2 py-1 text-xs disabled:opacity-40"
             >
-              Précédent
+              {t('dataTable.previous')}
             </button>
             <button
               type="button"
@@ -182,7 +188,7 @@ function DataTableView({
               onClick={() => setPage(clampedPage + 1)}
               className="rounded-md border px-2 py-1 text-xs disabled:opacity-40"
             >
-              Suivant
+              {t('dataTable.next')}
             </button>
           </div>
         </div>

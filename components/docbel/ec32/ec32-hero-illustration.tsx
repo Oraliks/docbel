@@ -2,6 +2,7 @@
 
 import type { ComponentType } from 'react'
 import { ArrowRight, BookOpen, Lock, ShieldCheck } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 type Accent = 'violet' | 'orange' | 'emerald'
@@ -46,7 +47,7 @@ function FeatureCard({
   )
 }
 
-function BrowserMock({ className }: { className?: string }) {
+function BrowserMock({ className, title }: { className?: string; title: string }) {
   return (
     <div
       className={cn(
@@ -55,7 +56,7 @@ function BrowserMock({ className }: { className?: string }) {
       )}
     >
       <div className="mb-2.5 flex items-center justify-between">
-        <span className="text-[0.65rem] font-bold text-foreground">Simulateur eC3.2</span>
+        <span className="text-[0.65rem] font-bold text-foreground">{title}</span>
         <span className="flex items-center gap-1">
           <span className="size-1.5 rounded-full bg-rose-400" />
           <span className="size-1.5 rounded-full bg-amber-400" />
@@ -80,6 +81,7 @@ function BrowserMock({ className }: { className?: string }) {
 }
 
 export function Ec32HeroIllustration({ className }: { className?: string }) {
+  const t = useTranslations('public.ec32')
   return (
     <div
       aria-hidden
@@ -102,11 +104,11 @@ export function Ec32HeroIllustration({ className }: { className?: string }) {
           <circle cx="360" cy="342" r="3.5" className="fill-emerald-400/70" />
         </svg>
 
-        <FeatureCard className="left-[5%] top-[2%] w-[50%]"    icon={ShieldCheck} accent="violet"  title="Sans risque"          description="Un environnement de test fidèle à la réalité." />
-        <FeatureCard className="left-0 top-[42%] w-[50%]"     icon={Lock}        accent="orange"  title="Aucune donnée réelle"  description="Aucune donnée n'est demandée ni transmise à l'ONEM." />
-        <FeatureCard className="bottom-[3%] left-[4%] w-[50%]" icon={BookOpen}   accent="emerald" title="Cas guidés"            description="Des scénarios concrets pour comprendre chaque étape." />
+        <FeatureCard className="left-[5%] top-[2%] w-[50%]"    icon={ShieldCheck} accent="violet"  title={t('heroIllustrationRiskFreeTitle')}     description={t('heroIllustrationRiskFreeDescription')} />
+        <FeatureCard className="left-0 top-[42%] w-[50%]"     icon={Lock}        accent="orange"  title={t('heroIllustrationNoRealDataTitle')}    description={t('heroIllustrationNoRealDataDescription')} />
+        <FeatureCard className="bottom-[3%] left-[4%] w-[50%]" icon={BookOpen}   accent="emerald" title={t('heroIllustrationGuidedCasesTitle')}   description={t('heroIllustrationGuidedCasesDescription')} />
 
-        <BrowserMock className="right-0 top-1/2 w-[42%] -translate-y-1/2" />
+        <BrowserMock className="right-0 top-1/2 w-[42%] -translate-y-1/2" title={t('heroIllustrationSimulatorTitle')} />
       </div>
     </div>
   )

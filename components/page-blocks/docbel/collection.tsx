@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import {
   Field,
@@ -51,6 +52,7 @@ export const collection = defineBlock({
     shortcuts: ['collection', 'liste', 'news'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { source, limit, category, layout, columns = 3 } = props
     const [items, setItems] = useState<NewsItem[]>([])
     const [loading, setLoading] = useState(true)
@@ -85,7 +87,7 @@ export const collection = defineBlock({
     if (items.length === 0) {
       return (
         <div className="w-full py-12 text-center text-sm text-muted-foreground border border-dashed rounded-lg">
-          Aucun élément à afficher
+          {t('collection.empty')}
         </div>
       )
     }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
  * /api/bureaux/[id]/report.
  */
 export function ReportForm({ bureauId, onClose }: Props) {
+  const t = useTranslations('public.outils')
   const [category, setCategory] = useState<
     'hours' | 'address' | 'phone' | 'closed' | 'other'
   >('hours')
@@ -25,7 +27,7 @@ export function ReportForm({ bureauId, onClose }: Props) {
 
   const submit = async () => {
     if (message.trim().length < 5) {
-      setErr('Décris l’erreur en quelques mots (5 caractères minimum).')
+      setErr(t('rfErrTooShort'))
       return
     }
     setSubmitting(true)
@@ -41,11 +43,11 @@ export function ReportForm({ bureauId, onClose }: Props) {
         }),
       })
       const body = await res.json()
-      if (!res.ok) throw new Error(body.error ?? 'Échec')
+      if (!res.ok) throw new Error(body.error ?? t('rfErrSubmit'))
       setDone(true)
       setTimeout(onClose, 1500)
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Erreur')
+      setErr(e instanceof Error ? e.message : t('rfErrGeneric'))
     } finally {
       setSubmitting(false)
     }
@@ -54,7 +56,7 @@ export function ReportForm({ bureauId, onClose }: Props) {
   if (done) {
     return (
       <div className="text-[11px] text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1.5">
-        ✓ Merci, signalement transmis.
+        {t('rfSubmittedConfirm')}
       </div>
     )
   }
@@ -63,7 +65,7 @@ export function ReportForm({ bureauId, onClose }: Props) {
     <div className="border rounded p-2 space-y-1.5 bg-muted/30">
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Signaler une erreur
+          {t('rfTitle')}
         </span>
         <button
           type="button"
@@ -78,16 +80,16 @@ export function ReportForm({ bureauId, onClose }: Props) {
         onChange={(e) => setCategory(e.target.value as typeof category)}
         className="w-full text-[11px] border rounded px-1.5 py-1 bg-background"
       >
-        <option value="hours">Horaires incorrects</option>
-        <option value="address">Adresse incorrecte</option>
-        <option value="phone">Téléphone incorrect</option>
-        <option value="closed">Bureau fermé / déplacé</option>
-        <option value="other">Autre</option>
+        <option value="hours">{t('rfCatHours')}</option>
+        <option value="address">{t('rfCatAddress')}</option>
+        <option value="phone">{t('rfCatPhone')}</option>
+        <option value="closed">{t('rfCatClosed')}</option>
+        <option value="other">{t('rfCatOther')}</option>
       </select>
       <textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder="Décris l’erreur (ex: le bureau ferme à 16h, pas 17h)"
+        placeholder={t('rfMessagePlaceholder')}
         rows={2}
         maxLength={1000}
         className="w-full text-[11px] border rounded px-1.5 py-1 bg-background resize-none"
@@ -96,7 +98,7 @@ export function ReportForm({ bureauId, onClose }: Props) {
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder="Ton email (optionnel, pour suivi)"
+        placeholder={t('rfEmailPlaceholder')}
         className="w-full text-[11px] border rounded px-1.5 py-1 bg-background"
       />
       {err && <p className="text-[10px] text-red-600">{err}</p>}
@@ -106,7 +108,7 @@ export function ReportForm({ bureauId, onClose }: Props) {
         disabled={submitting}
         className="w-full text-[11px] bg-primary text-primary-foreground rounded py-1 hover:opacity-90 disabled:opacity-50"
       >
-        {submitting ? 'Envoi…' : 'Envoyer le signalement'}
+        {submitting ? t('rfSubmitting') : t('rfSubmit')}
       </button>
       {bureauId && null /* id silently used in submit; placeholder to satisfy lint */}
     </div>

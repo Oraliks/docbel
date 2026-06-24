@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Map } from 'lucide-react'
@@ -18,6 +19,7 @@ interface Props {
  * scrollante. Sur desktop ce composant est masqué (CSS).
  */
 export function MobileMapSheet({ commune, bureaux }: Props) {
+  const t = useTranslations('public.outils')
   const [open, setOpen] = useState(false)
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -25,7 +27,7 @@ export function MobileMapSheet({ commune, bureaux }: Props) {
         render={
           <Button variant="outline" size="sm" className="lg:hidden gap-1.5 w-full">
             <Map className="w-3.5 h-3.5" />
-            Voir sur la carte
+            {t('mobileSheetTrigger')}
           </Button>
         }
       />
@@ -34,7 +36,7 @@ export function MobileMapSheet({ commune, bureaux }: Props) {
         className="h-[85vh] flex flex-col p-0"
       >
         <SheetHeader className="p-4 pb-2 shrink-0">
-          <SheetTitle>Carte des bureaux</SheetTitle>
+          <SheetTitle>{t('mobileSheetTitle')}</SheetTitle>
         </SheetHeader>
         <div className="flex-1 overflow-auto p-4 pt-0">
           <CommunePanel commune={commune} bureaux={bureaux} />

@@ -315,7 +315,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
               className="ml-auto"
               onClick={() => { window.location.href = `/api/pdf/${form.slug}/prefill/start`; }}
             >
-              Pré-remplir avec itsme
+              {t("runnerItsmePrefillCta")}
             </Button>
           )}
         </div>
@@ -349,7 +349,7 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                 <span className="flex min-w-0 flex-col leading-tight">
                   <span className="flex items-center gap-1.5 text-sm font-semibold">
                     {s.title}
-                    {err && <span className="size-1.5 rounded-full bg-destructive" aria-label="erreurs" />}
+                    {err && <span className="size-1.5 rounded-full bg-destructive" aria-label={t("runnerStepErrorsAria")} />}
                   </span>
                   <span className="truncate text-[11px] font-normal text-muted-foreground">{s.subtitle}</span>
                 </span>
@@ -372,14 +372,14 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                 <h2 className="text-base font-semibold">{current.title}</h2>
                 <p className="text-xs text-muted-foreground">
                   {current.kind === "summary"
-                    ? "Vérifiez vos informations, puis cliquez pour signer et générer."
-                    : "Renseignez les informations nécessaires pour générer le document."}
+                    ? t("runnerSummaryStepHelp")
+                    : t("runnerFieldsStepHelp")}
                 </p>
               </div>
               {current.kind === "fields" && current.fields.length > 0 && (
                 <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground">
                   <InfoIcon className="size-3" />
-                  {current.fields.every((f) => f.required) ? "Tous les champs sont requis" : "Les champs * sont requis"}
+                  {current.fields.every((f) => f.required) ? t("runnerAllFieldsRequired") : t("runnerStarFieldsRequired")}
                 </span>
               )}
             </div>
@@ -412,21 +412,21 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
               <div className="flex flex-col gap-4">
                 {form.allowDownload && form.allowDoccle && (
                   <div className="flex flex-col gap-2">
-                    <span className="text-xs font-medium text-muted-foreground">Mode de réception</span>
+                    <span className="text-xs font-medium text-muted-foreground">{t("runnerDeliveryModeLabel")}</span>
                     <div className="flex gap-1.5">
                       <Button type="button" size="sm" variant={delivery === "download" ? "default" : "outline"} onClick={() => setDelivery("download")}>
-                        <DownloadIcon className="size-4" /> Télécharger
+                        <DownloadIcon className="size-4" /> {t("runnerDeliveryDownload")}
                       </Button>
                       <Button type="button" size="sm" variant={delivery === "doccle" ? "default" : "outline"} onClick={() => setDelivery("doccle")}>
-                        <SendIcon className="size-4" /> Envoyer via Doccle
+                        <SendIcon className="size-4" /> {t("runnerDeliveryDoccle")}
                       </Button>
                     </div>
                   </div>
                 )}
                 {delivery === "doccle" && (
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="doccle-ref">Destinataire Doccle</Label>
-                    <Input id="doccle-ref" value={doccleRef} placeholder="NISS ou e-mail Doccle" onChange={(e) => setDoccleRef(e.target.value)} />
+                    <Label htmlFor="doccle-ref">{t("runnerDoccleRecipientLabel")}</Label>
+                    <Input id="doccle-ref" value={doccleRef} placeholder={t("runnerDoccleRecipientPlaceholder")} onChange={(e) => setDoccleRef(e.target.value)} />
                   </div>
                 )}
                 <Separator />
@@ -434,42 +434,39 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
                 {form.fields.some(isSignatureField) && (
                   <div className="rounded-lg border border-dashed bg-muted/30 p-3 text-sm">
                     <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                      Signature numérique
+                      {t("runnerDigitalSignatureLabel")}
                     </div>
                     {signerName ? (
                       <>
                         <div className="mt-1 font-serif text-lg italic">{signerName}</div>
                         <div className="mt-0.5 text-[11px] text-muted-foreground">
-                          Sera apposée automatiquement à la génération du document.
+                          {t("runnerDigitalSignatureAutoNote")}
                         </div>
                       </>
                     ) : (
                       <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                        Renseignez votre Prénom et Nom pour signer.
+                        {t("runnerDigitalSignatureNameRequired")}
                       </div>
                     )}
                   </div>
                 )}
                 <label className="flex items-start gap-2.5 text-sm text-muted-foreground">
                   <Checkbox checked={consent} onCheckedChange={(c) => setConsent(c === true)} className="mt-0.5" />
-                  <span>
-                    J&apos;accepte que mes données soient utilisées uniquement pour générer ce document.
-                    Le document n&apos;est pas conservé sur nos serveurs (RGPD).
-                  </span>
+                  <span>{t("runnerConsentText")}</span>
                 </label>
                 <div className="flex items-center gap-2">
                   {activeIndex > 0 && (
                     <Button type="button" variant="outline" onClick={() => setActive(activeIndex - 1)}>
-                      <ChevronLeftIcon className="size-4" /> Précédent
+                      <ChevronLeftIcon className="size-4" /> {t("previous")}
                     </Button>
                   )}
                   <Button type="submit" disabled={submitting} className="flex-1">
                     {submitting ? <Loader2Icon className="size-4 animate-spin" /> : delivery === "doccle" ? <SendIcon className="size-4" /> : <DownloadIcon className="size-4" />}
                     {submitting
-                      ? "Génération…"
+                      ? t("runnerGenerating")
                       : delivery === "doccle"
-                      ? "Signer et envoyer le document"
-                      : "Signer et générer le document"}
+                      ? t("runnerSubmitSignAndSend")
+                      : t("runnerSubmitSignAndGenerate")}
                   </Button>
                 </div>
               </div>
@@ -477,13 +474,13 @@ export function PdfFormRunner({ form, bundlePrefill, bundleRunId, onValuesChange
               <div className="flex items-center justify-between">
                 {activeIndex > 0 ? (
                   <Button type="button" variant="outline" onClick={() => setActive(activeIndex - 1)}>
-                    <ChevronLeftIcon className="size-4" /> Précédent
+                    <ChevronLeftIcon className="size-4" /> {t("previous")}
                   </Button>
                 ) : (
                   <span />
                 )}
                 <Button type="button" onClick={() => setActive(activeIndex + 1)}>
-                  Continuer <ChevronRightIcon className="size-4" />
+                  {t("continue")} <ChevronRightIcon className="size-4" />
                 </Button>
               </div>
             )}
@@ -506,14 +503,17 @@ function SummaryStep({
   locale: Locale;
   signerName: string;
 }) {
+  const t = useTranslations("public.dossier");
   return (
     <div className="flex flex-col divide-y rounded-xl border">
       {form.fields.map((f) => {
         const raw = values[f.id];
         let display = "";
-        if (f.type === "checkbox") display = raw === true ? "Oui" : "Non";
+        if (f.type === "checkbox") display = raw === true ? t("yes") : t("no");
         else if (isSignatureField(f))
-          display = `Signé numériquement${signerName ? ` — ${signerName}` : ""}`;
+          display = signerName
+            ? t("runnerSummarySignedWithName", { name: signerName })
+            : t("runnerSummarySigned");
         else if (isCreationDateField(f))
           display = todayISO();
         else if (f.type === "fullname" && raw && typeof raw === "object") {
@@ -524,7 +524,7 @@ function SummaryStep({
           <div key={f.id} className="flex items-center justify-between gap-4 px-4 py-2.5 text-sm">
             <span className="text-muted-foreground">{loc(f.label, locale) || f.id}</span>
             <span className={`text-right font-medium ${display ? "" : "italic text-muted-foreground"}`}>
-              {display || "—"}
+              {display || t("runnerEmptyDash")}
             </span>
           </div>
         );

@@ -364,8 +364,8 @@ export function CustomBelgiumMap({
             }}
             disabled={level === 'country'}
             className="p-1.5 hover:bg-muted transition-colors border-t border-border disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Dézoomer (étendre la zone affichée)"
-            title="Dézoomer"
+            aria-label={t('mapZoomOutAria')}
+            title={t('mapZoomOut')}
           >
             <Minus className="w-3.5 h-3.5" />
           </button>
@@ -381,7 +381,7 @@ export function CustomBelgiumMap({
       {!sel && center && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <span className="text-xs text-muted-foreground">
-            Tape un code postal pour voir la zone
+            {t('mapEmptyHint')}
           </span>
         </div>
       )}

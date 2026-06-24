@@ -4169,11 +4169,11 @@
           },
           "motifs": {
             "title": "The eleven reasons",
-            "body": "The recognised reasons for temporary unemployment are:\n\n{{ motifs }}\n\nEach reason follows distinct admissibility rules and is only open to certain categories of workers (blue-collar, white-collar, temp worker)."
+            "body": "The recognised reasons for temporary unemployment are:\n\n'{{ motifs }}'\n\nEach reason follows distinct admissibility rules and is only open to certain categories of workers (blue-collar, white-collar, temp worker)."
           },
           "quiEstConcerne": {
             "title": "Who can claim which reason",
-            "body": "Not all reasons are open to all statuses. The matrix below summarises eligibility.\n\n{{ qui-est-concerne }}\n\nA few special cases:\n\n- **Economic**: a regular white-collar employee has no access — they switch to *White-collar suspension*, which requires the company to prove to ONEM/RVA that it meets the conditions (company in difficulty).\n- **Medical force majeure**: does not apply to temp workers.\n- **Protected worker**: reserved for union delegates (blue-collar or white-collar).\n- **White-collar suspension**: white-collar only.\n\nFor temp workers in economic temporary unemployment, the situation remains tightly framed (required seniority, ongoing TU procedure for permanent workers in the same department, etc.)."
+            "body": "Not all reasons are open to all statuses. The matrix below summarises eligibility.\n\n'{{ qui-est-concerne }}'\n\nA few special cases:\n\n- **Economic**: a regular white-collar employee has no access — they switch to *White-collar suspension*, which requires the company to prove to ONEM/RVA that it meets the conditions (company in difficulty).\n- **Medical force majeure**: does not apply to temp workers.\n- **Protected worker**: reserved for union delegates (blue-collar or white-collar).\n- **White-collar suspension**: white-collar only.\n\nFor temp workers in economic temporary unemployment, the situation remains tightly framed (required seniority, ongoing TU procedure for permanent workers in the same department, etc.)."
           },
           "conditions": {
             "title": "Admissibility and award conditions",
@@ -4181,7 +4181,7 @@
           },
           "documents": {
             "title": "Documents to prepare",
-            "body": "The documents that **the worker** submits in the context of a temporary unemployment claim:\n\n{{ documents }}\n\nIn parallel, the **employer** sends ONEM/RVA their own declaration (DRS / WECH) electronically, along with the notifications and communications based on the reason. These flows do not pass through this file — they are handled directly by the employer through the ONSS/RSZ portals.\n\nThe C3.2 worker form is the cornerstone of the file in almost all cases. It can be replaced by other forms (C6) in specific situations like medical force majeure."
+            "body": "The documents that **the worker** submits in the context of a temporary unemployment claim:\n\n'{{ documents }}'\n\nIn parallel, the **employer** sends ONEM/RVA their own declaration (DRS / WECH) electronically, along with the notifications and communications based on the reason. These flows do not pass through this file — they are handled directly by the employer through the ONSS/RSZ portals.\n\nThe C3.2 worker form is the cornerstone of the file in almost all cases. It can be replaced by other forms (C6) in specific situations like medical force majeure."
           },
           "natureDa": {
             "title": "Nature of the benefits claim (DA)",
@@ -4386,7 +4386,7 @@
           },
           "documentsAPreparer": {
             "title": "The documents to prepare",
-            "body": "The documents the worker prepares as part of a full unemployment claim:\n\n{{ documents }}\n\nOther official pieces are normally required but are not yet integrated into Beldoc — they must be added at a later stage:\n\n- **C4** — Unemployment certificate given by the employer at the end of the contract. It certifies the duration of the work and the reason for the termination.\n- **C61** — Control card, to be completed monthly by the unemployed person to declare activities and absences.\n- **C109** — Family situation declaration, which determines the category (single / head of household / cohabitant) and therefore the amount of benefits.\n\nFor first unemployment registrations (young people after their studies), the regional employment service issues a registration attestation that opens the vocational integration period.\n\nPublic reference: www.onem.be."
+            "body": "The documents the worker prepares as part of a full unemployment claim:\n\n'{{ documents }}'\n\nOther official pieces are normally required but are not yet integrated into Beldoc — they must be added at a later stage:\n\n- **C4** — Unemployment certificate given by the employer at the end of the contract. It certifies the duration of the work and the reason for the termination.\n- **C61** — Control card, to be completed monthly by the unemployed person to declare activities and absences.\n- **C109** — Family situation declaration, which determines the category (single / head of household / cohabitant) and therefore the amount of benefits.\n\nFor first unemployment registrations (young people after their studies), the regional employment service issues a registration attestation that opens the vocational integration period.\n\nPublic reference: www.onem.be."
           }
         }
       },
@@ -4451,7 +4451,7 @@
           },
           "conditionsDeBase": {
             "title": "Basic conditions",
-            "body": "Four factors determine access to RCC/SWT. The numerical thresholds (62 years, 40 years of seniority, etc.) move along with interprofessional agreements and CBAs — they are given for indication and must be verified with the payment organisation for each file.\n\n1. **Age** — usually 62 for the general scheme, 60 for heavy occupations. Lower thresholds exist in certain schemes (long career, company in difficulty).\n2. **Career seniority** — typically 40 years in the general scheme, 33 years for heavy occupations, sometimes less depending on the CBA.\n3. **Reason for contract end** — a **dismissal by the employer** is required. Resignation, mutual termination or voluntary departure close access to RCC/SWT.\n4. **Applicable CBA** — there must be a collective agreement (sector- or company-level) that provides RCC/SWT for the worker's situation.\n\nThe file's orientation questions probe these factors:\n\n{{ questions }}\n\nNo answer blocks the user; the answers serve to flag elements to check first with the payment organisation."
+            "body": "Four factors determine access to RCC/SWT. The numerical thresholds (62 years, 40 years of seniority, etc.) move along with interprofessional agreements and CBAs — they are given for indication and must be verified with the payment organisation for each file.\n\n1. **Age** — usually 62 for the general scheme, 60 for heavy occupations. Lower thresholds exist in certain schemes (long career, company in difficulty).\n2. **Career seniority** — typically 40 years in the general scheme, 33 years for heavy occupations, sometimes less depending on the CBA.\n3. **Reason for contract end** — a **dismissal by the employer** is required. Resignation, mutual termination or voluntary departure close access to RCC/SWT.\n4. **Applicable CBA** — there must be a collective agreement (sector- or company-level) that provides RCC/SWT for the worker's situation.\n\nThe file's orientation questions probe these factors:\n\n'{{ questions }}'\n\nNo answer blocks the user; the answers serve to flag elements to check first with the payment organisation."
           },
           "regimesSpeciaux": {
             "title": "Special schemes",

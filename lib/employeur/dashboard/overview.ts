@@ -19,7 +19,12 @@ import {
   estimateEmployerCost,
   type EmployerCostResult,
 } from "../cost/engine";
-import { labelScenarioStatus, labelWorkerType } from "../constants";
+import {
+  labelScenarioStatus,
+  labelWorkerType,
+  keyScenarioStatus,
+  keyWorkerType,
+} from "../constants";
 import { getUpcomingSocialDeadlines } from "../calendar/social-deadlines";
 
 export type BadgeTone =
@@ -58,10 +63,22 @@ export interface DashboardDeadline {
   id: string;
   scenarioId: string;
   day: string;
+  /** Code mois (jan/feb/.../dec) — utilisable avec la clé i18n `dashboard.monthShort.<code>`. */
+  monthCode?: string;
   month: string;
   title: string;
   sub: string;
+  /** Clé i18n optionnelle pour `sub` (avec param `role`). */
+  subKey?: string;
+  /** Paramètres pour résoudre `subKey`. */
+  subParams?: { role: string };
+  /** Clé i18n optionnelle pour le `role` lui-même. */
+  roleKey?: string;
   tag: string;
+  /** Clé i18n optionnelle pour le tag (overdue/today/inDays). */
+  tagKey?: string;
+  /** Paramètres pour résoudre `tagKey`. */
+  tagParams?: { days: number };
   tone: BadgeTone;
   /** Jours avant échéance (négatif = dépassé). */
   daysUntil: number;
@@ -71,7 +88,13 @@ export interface DashboardAlert {
   id: string;
   level: "info" | "warning" | "critical";
   title: string;
+  /** Clé i18n optionnelle pour `title` (utilisée pour les alertes générées). */
+  titleKey?: string;
   sub: string;
+  /** Clé i18n optionnelle pour `sub`. */
+  subKey?: string;
+  /** Paramètres ICU pour `subKey`/`titleKey`. */
+  subParams?: { title: string };
   href: string;
 }
 
@@ -79,12 +102,25 @@ export interface DashboardAlert {
 export interface DashboardSocialDeadline {
   id: string;
   day: string;
+  monthCode?: string;
   month: string;
   title: string;
+  /** Clé i18n optionnelle du titre. */
+  titleKey?: string;
+  /** Paramètres ICU pour `titleKey`. */
+  titleParams?: { quarter: number; year: number };
   /** Libellé court pour les blocs étroits, ex. « TVA · T2 2026 ». */
   shortTitle: string;
+  /** Clé i18n optionnelle pour le format court. */
+  shortTitleKey?: string;
+  /** Paramètres ICU pour `shortTitleKey`. */
+  shortTitleParams?: { category: string; quarter: number; year: number };
   category: string;
+  /** Clé i18n optionnelle pour la catégorie. */
+  categoryKey?: string;
   note?: string;
+  /** Clé i18n optionnelle de la note. */
+  noteKey?: string;
   sourceUrl?: string;
   daysUntil: number;
 }
@@ -93,7 +129,11 @@ export interface DashboardDossier {
   id: string;
   name: string;
   role: string;
+  /** Clé i18n optionnelle du rôle (workerType). */
+  roleKey?: string;
   status: string;
+  /** Clé i18n optionnelle du statut (scenarioStatus). */
+  statusKey?: string;
   tone: BadgeTone;
   date: string;
 }
@@ -102,18 +142,30 @@ export interface DashboardActivity {
   id: string;
   icon: ActivityIcon;
   text: string;
+  /** Clé i18n optionnelle du texte (action). */
+  textKey?: string;
   detail: string | null;
   when: string;
+  /** Clé i18n optionnelle pour la chaîne `when` (relativeWhen). */
+  whenKey?: string;
+  /** Paramètres ICU pour `whenKey`. */
+  whenParams?: { time: string; date?: string };
 }
 
 export interface DashboardCost {
   title: string;
+  /** Clé i18n optionnelle pour `title` (utilisée pour l'exemple par défaut). */
+  titleKey?: string;
   gross: number;
   contributions: number;
   other: number;
   total: number;
   regimeLabel: string;
+  /** Clé i18n optionnelle pour `regimeLabel`. */
+  regimeLabelKey?: string;
   workerTypeLabel: string;
+  /** Clé i18n optionnelle pour `workerTypeLabel`. */
+  workerTypeLabelKey?: string;
   /** Valeurs initiales (codes) pour pré-remplir le mini-simulateur interactif. */
   regimeInit: "temps_plein" | "temps_partiel";
   workerTypeInit: string;
@@ -146,6 +198,9 @@ export interface EmployerDashboardData {
 
 const MONTHS_FR = ["JAN", "FÉV", "MAR", "AVR", "MAI", "JUIN", "JUIL", "AOÛT", "SEP", "OCT", "NOV", "DÉC"];
 
+/** Code de mois (jan..dec) — utilisable pour résoudre `dashboard.monthShort.<code>`. */
+const MONTH_CODES = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"] as const;
+
 const STATUS_TONE: Record<string, BadgeTone> = {
   draft: "secondary",
   ready: "success",
@@ -162,6 +217,11 @@ const SEVERITY_LEVEL: Record<string, DashboardAlert["level"]> = {
 const REGIME_LABEL: Record<string, string> = {
   temps_plein: "Temps plein",
   temps_partiel: "Temps partiel",
+};
+
+const REGIME_LABEL_KEY: Record<string, string> = {
+  temps_plein: "public.employeurLib.dashboard.regimeLabel.temps_plein",
+  temps_partiel: "public.employeurLib.dashboard.regimeLabel.temps_partiel",
 };
 
 function initialsFrom(name: string, org: string | null): string {
@@ -181,12 +241,48 @@ function daysBetween(from: Date, to: Date): number {
   return Math.round(ms / 86_400_000);
 }
 
-function deadlineTag(days: number): { tag: string; tone: BadgeTone } {
-  if (days < 0) return { tag: "Dépassé", tone: "destructive" };
-  if (days === 0) return { tag: "Aujourd'hui", tone: "destructive" };
-  if (days <= 2) return { tag: `Dans ${days} j`, tone: "warning" };
-  if (days <= 7) return { tag: `Dans ${days} j`, tone: "info" };
-  return { tag: `Dans ${days} j`, tone: "secondary" };
+function deadlineTag(days: number): {
+  tag: string;
+  tagKey: string;
+  tagParams?: { days: number };
+  tone: BadgeTone;
+} {
+  if (days < 0) {
+    return {
+      tag: "Dépassé",
+      tagKey: "public.employeurLib.dashboard.deadline.overdue",
+      tone: "destructive",
+    };
+  }
+  if (days === 0) {
+    return {
+      tag: "Aujourd'hui",
+      tagKey: "public.employeurLib.dashboard.deadline.today",
+      tone: "destructive",
+    };
+  }
+  if (days <= 2) {
+    return {
+      tag: `Dans ${days} j`,
+      tagKey: "public.employeurLib.dashboard.deadline.inDays",
+      tagParams: { days },
+      tone: "warning",
+    };
+  }
+  if (days <= 7) {
+    return {
+      tag: `Dans ${days} j`,
+      tagKey: "public.employeurLib.dashboard.deadline.inDays",
+      tagParams: { days },
+      tone: "info",
+    };
+  }
+  return {
+    tag: `Dans ${days} j`,
+    tagKey: "public.employeurLib.dashboard.deadline.inDays",
+    tagParams: { days },
+    tone: "secondary",
+  };
 }
 
 const ACTION_LABEL: Record<string, string> = {
@@ -200,6 +296,17 @@ const ACTION_LABEL: Record<string, string> = {
   received: "Reçu",
 };
 
+const ACTION_LABEL_KEY: Record<string, string> = {
+  created: "public.employeurLib.dashboard.actionLabel.created",
+  created_bulk: "public.employeurLib.dashboard.actionLabel.created_bulk",
+  updated: "public.employeurLib.dashboard.actionLabel.updated",
+  deleted: "public.employeurLib.dashboard.actionLabel.deleted",
+  exported: "public.employeurLib.dashboard.actionLabel.exported",
+  published: "public.employeurLib.dashboard.actionLabel.published",
+  synced: "public.employeurLib.dashboard.actionLabel.synced",
+  received: "public.employeurLib.dashboard.actionLabel.received",
+};
+
 const ACTION_ICON: Record<string, ActivityIcon> = {
   created: "plus",
   created_bulk: "plus",
@@ -209,12 +316,33 @@ const ACTION_ICON: Record<string, ActivityIcon> = {
   published: "send",
 };
 
-function relativeWhen(now: Date, d: Date): string {
+function relativeWhen(now: Date, d: Date): {
+  text: string;
+  key: string;
+  params: { time: string; date?: string };
+} {
   const diff = daysBetween(d, now);
   const time = d.toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" });
-  if (diff === 0) return `Aujourd'hui à ${time}`;
-  if (diff === 1) return `Hier à ${time}`;
-  return `${d.toLocaleDateString("fr-BE")} à ${time}`;
+  if (diff === 0) {
+    return {
+      text: `Aujourd'hui à ${time}`,
+      key: "public.employeurLib.dashboard.relativeWhen.today",
+      params: { time },
+    };
+  }
+  if (diff === 1) {
+    return {
+      text: `Hier à ${time}`,
+      key: "public.employeurLib.dashboard.relativeWhen.yesterday",
+      params: { time },
+    };
+  }
+  const date = d.toLocaleDateString("fr-BE");
+  return {
+    text: `${date} à ${time}`,
+    key: "public.employeurLib.dashboard.relativeWhen.onDate",
+    params: { time, date },
+  };
 }
 
 /** Données complètes du tableau de bord pour un employeur (un seul aller-retour logique). */
@@ -269,15 +397,22 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
     .map((s) => {
       const due = s.plannedStartDate as Date;
       const days = daysBetween(now, due);
-      const { tag, tone } = deadlineTag(days);
+      const { tag, tagKey, tagParams, tone } = deadlineTag(days);
+      const role = labelWorkerType(s.workerType);
       return {
         id: s.id,
         scenarioId: s.id,
         day: String(due.getDate()).padStart(2, "0"),
+        monthCode: MONTH_CODES[due.getMonth()],
         month: MONTHS_FR[due.getMonth()],
         title: s.title,
-        sub: `${labelWorkerType(s.workerType)} — début de contrat prévu`,
+        sub: `${role} — début de contrat prévu`,
+        subKey: "public.employeurLib.dashboard.deadlineSubContract",
+        subParams: { role },
+        roleKey: keyWorkerType(s.workerType),
         tag,
+        tagKey,
+        tagParams,
         tone,
         daysUntil: days,
       };
@@ -293,11 +428,20 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
     return {
       id: s.id,
       day: String(due.getDate()).padStart(2, "0"),
+      monthCode: MONTH_CODES[due.getMonth()],
       month: MONTHS_FR[due.getMonth()],
       title: s.title,
+      titleKey: s.titleKey,
+      titleParams: s.titleParams,
       shortTitle: period ? `${s.category} · ${period}` : s.category,
+      shortTitleKey: s.titleParams ? "public.employeurLib.calendar.shortFormat" : undefined,
+      shortTitleParams: s.titleParams
+        ? { category: s.category, quarter: s.titleParams.quarter, year: s.titleParams.year }
+        : undefined,
       category: s.category,
+      categoryKey: s.categoryKey,
       note: s.note,
+      noteKey: s.noteKey,
       sourceUrl: s.sourceUrl,
       daysUntil: daysBetween(now, due),
     };
@@ -325,7 +469,10 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
         id: `${s.id}-reliability`,
         level: "warning",
         title: "Dossier à faire valider",
+        titleKey: "public.employeurLib.dashboard.alertNeedsValidationTitle",
         sub: `${s.title} — fiabilité à confirmer`,
+        subKey: "public.employeurLib.dashboard.alertNeedsValidationSub",
+        subParams: { title: s.title },
         href: `/employeur/dossiers/${s.id}`,
       });
     }
@@ -339,19 +486,27 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
     id: s.id,
     name: s.title,
     role: labelWorkerType(s.workerType),
+    roleKey: keyWorkerType(s.workerType),
     status: labelScenarioStatus(s.status),
+    statusKey: keyScenarioStatus(s.status),
     tone: STATUS_TONE[s.status] ?? "secondary",
     date: new Date(s.updatedAt).toLocaleDateString("fr-BE"),
   }));
 
   // --- Activité récente ------------------------------------------------------
-  const recentActivity: DashboardActivity[] = activities.map((a) => ({
-    id: a.id,
-    icon: ACTION_ICON[a.action] ?? "activity",
-    text: ACTION_LABEL[a.action] ?? "Activité",
-    detail: a.resourceName || a.details || null,
-    when: relativeWhen(now, new Date(a.createdAt)),
-  }));
+  const recentActivity: DashboardActivity[] = activities.map((a) => {
+    const when = relativeWhen(now, new Date(a.createdAt));
+    return {
+      id: a.id,
+      icon: ACTION_ICON[a.action] ?? "activity",
+      text: ACTION_LABEL[a.action] ?? "Activité",
+      textKey: ACTION_LABEL_KEY[a.action] ?? "public.employeurLib.dashboard.actionLabel.activity",
+      detail: a.resourceName || a.details || null,
+      when: when.text,
+      whenKey: when.key,
+      whenParams: when.params,
+    };
+  });
 
   // --- Snapshot simulateur de coût -------------------------------------------
   let cost: DashboardCost;
@@ -360,6 +515,7 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
     const contributions = lastSim.estimatedEmployerContributions;
     const total = lastSim.estimatedMonthlyEmployerCost;
     const inp = (lastSim.inputs ?? {}) as { regime?: string; workerType?: string };
+    const regimeCode = inp.regime === "temps_partiel" ? "temps_partiel" : "temps_plein";
     cost = {
       title: lastSim.title,
       gross,
@@ -367,8 +523,10 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
       other: Math.max(0, Math.round((total - gross - contributions) * 100) / 100),
       total,
       regimeLabel: REGIME_LABEL[inp.regime ?? ""] ?? "Temps plein",
+      regimeLabelKey: REGIME_LABEL_KEY[regimeCode],
       workerTypeLabel: labelWorkerType(inp.workerType) || "Employé",
-      regimeInit: inp.regime === "temps_partiel" ? "temps_partiel" : "temps_plein",
+      workerTypeLabelKey: keyWorkerType(inp.workerType ?? "employe"),
+      regimeInit: regimeCode,
       workerTypeInit: inp.workerType ?? "employe",
       isExample: false,
     };
@@ -385,12 +543,15 @@ export async function getEmployerDashboard(userId: string): Promise<EmployerDash
     const total = example.estimatedMonthlyEmployerCost;
     cost = {
       title: "Exemple — employé temps plein",
+      titleKey: "public.employeurLib.dashboard.exampleTitle",
       gross,
       contributions,
       other: Math.max(0, Math.round((total - gross - contributions) * 100) / 100),
       total,
       regimeLabel: "Temps plein",
+      regimeLabelKey: REGIME_LABEL_KEY["temps_plein"],
       workerTypeLabel: "Employé",
+      workerTypeLabelKey: keyWorkerType("employe"),
       regimeInit: "temps_plein",
       workerTypeInit: "employe",
       isExample: true,

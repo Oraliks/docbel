@@ -5194,6 +5194,780 @@
           "Variabele loonelementen vergeten.",
           "Ervan uitgaan dat het sociaal secretariaat alles voor u nakijkt."
         ]
+      },
+      "documentTypes": {
+        "fiche_travailleur": {
+          "label": "Werknemersfiche",
+          "description": "Vat de gegevens van de werknemer samen die u aan uw sociaal secretariaat moet bezorgen.",
+          "fields": {
+            "lastName": {
+              "label": "Naam"
+            },
+            "firstName": {
+              "label": "Voornaam"
+            },
+            "niss": {
+              "label": "INSZ (rijksregisternummer)",
+              "help": "Optioneel — 11 cijfers. Geef enkel door als u het hebt."
+            },
+            "address": {
+              "label": "Adres"
+            },
+            "email": {
+              "label": "E-mail"
+            },
+            "phone": {
+              "label": "Telefoon"
+            },
+            "startDate": {
+              "label": "Geplande indiensttreding"
+            },
+            "functionTitle": {
+              "label": "Functie"
+            },
+            "schedule": {
+              "label": "Arbeidsregeling"
+            },
+            "weeklyHours": {
+              "label": "Uurrooster (uren/week)",
+              "help": "Bv. 38 (voltijds) of 20 (deeltijds)."
+            },
+            "grossSalary": {
+              "label": "Bruto maandloon (€)"
+            },
+            "benefits": {
+              "label": "Voorziene voordelen",
+              "help": "Bv. maaltijdcheques, ecocheques, bedrijfswagen…"
+            },
+            "jointCommittee": {
+              "label": "Paritair comité (indien gekend)",
+              "help": "Bv. PC 200. Laat dit door het sociaal secretariaat bevestigen."
+            },
+            "workerType": {
+              "label": "Type werknemer"
+            },
+            "contractType": {
+              "label": "Type contract"
+            },
+            "workplace": {
+              "label": "Plaats van tewerkstelling"
+            },
+            "remark": {
+              "label": "Opmerking"
+            }
+          }
+        },
+        "demande_secretariat": {
+          "label": "Aanvraag aan het sociaal secretariaat",
+          "description": "Verzendklare boodschap voor uw sociaal secretariaat om een aanwerving voor te bereiden.",
+          "fields": {
+            "employerName": {
+              "label": "Uw organisatie"
+            },
+            "employerRef": {
+              "label": "Uw dossierreferentie / RSZ-nummer",
+              "help": "Optioneel — helpt het secretariaat uw dossier terug te vinden."
+            },
+            "contactName": {
+              "label": "Contactpersoon (u)"
+            },
+            "workerName": {
+              "label": "Identiteit van de werknemer"
+            },
+            "startDate": {
+              "label": "Geplande indiensttreding"
+            },
+            "contractType": {
+              "label": "Type contract"
+            },
+            "schedule": {
+              "label": "Arbeidsregeling"
+            },
+            "weeklyHours": {
+              "label": "Uurrooster (uren/week)"
+            },
+            "grossSalary": {
+              "label": "Bruto maandloon (€)"
+            },
+            "benefits": {
+              "label": "Voorziene voordelen",
+              "help": "Bv. maaltijdcheques, ecocheques, bedrijfswagen…"
+            },
+            "attachments": {
+              "label": "Aangekondigde bijlagen",
+              "help": "Bv. kopie identiteitskaart, ontwerp van contract…"
+            },
+            "questions": {
+              "label": "Te verifiëren punten / vragen",
+              "help": "Bv. toepasselijke loonschaal, PC, RSZ-verminderingen…"
+            }
+          }
+        },
+        "prepa_contrat_etudiant": {
+          "label": "Voorbereiding studentenovereenkomst",
+          "description": "VOORBEREIDINGSFICHE (dit is geen contract): de verplichte vermeldingen die u moet voorzien in een overeenkomst voor tewerkstelling van studenten.",
+          "fields": {
+            "employerName": {
+              "label": "Werkgever"
+            },
+            "studentName": {
+              "label": "Naam van de student"
+            },
+            "startDate": {
+              "label": "Begindatum"
+            },
+            "endDate": {
+              "label": "Einddatum"
+            },
+            "functionTitle": {
+              "label": "Functie / taken"
+            },
+            "workplace": {
+              "label": "Plaats van uitvoering"
+            },
+            "schedule": {
+              "label": "Werkrooster",
+              "help": "Geplande dagen en uren. Te preciseren in het geschreven contract."
+            },
+            "grossSalary": {
+              "label": "Voorziene vergoeding",
+              "help": "Te verifiëren volgens het toepasselijke PC."
+            },
+            "jointCommittee": {
+              "label": "Paritair comité (indien gekend)"
+            },
+            "quota": {
+              "label": "Urenquotum (475 u/jaar) — geschat saldo",
+              "help": "Verminderde bijdragen binnen het jaarlijkse contingent. Te bevestigen (student@work)."
+            },
+            "remark": {
+              "label": "Opmerking"
+            }
+          }
+        },
+        "prepa_flexi": {
+          "label": "Voorbereiding flexi-job",
+          "description": "Voorbereiding van een raamovereenkomst flexi-job en de te verzamelen informatie (dit is geen contract).",
+          "fields": {
+            "employerName": {
+              "label": "Werkgever"
+            },
+            "workerName": {
+              "label": "Naam van de flexi-werknemer"
+            },
+            "eligibility": {
+              "label": "Geverifieerde toegangsvoorwaarden",
+              "help": "Bv. tewerkstelling ≥ 4/5 bij een andere werkgever in kwartaal T-3; of gepensioneerd."
+            },
+            "startDate": {
+              "label": "Start van de tewerkstelling"
+            },
+            "functionTitle": {
+              "label": "Voorziene functie"
+            },
+            "workplace": {
+              "label": "Plaats van tewerkstelling"
+            },
+            "flexiSalary": {
+              "label": "Flexi-uurloon (€)",
+              "help": "Te verifiëren minimum flexi-loon (geïndexeerd). Flexi-vakantiegeld bovenop."
+            },
+            "jointCommittee": {
+              "label": "Paritair comité",
+              "help": "Flexi-jobs zijn enkel toegestaan in bepaalde sectoren. Te bevestigen."
+            },
+            "frameworkContract": {
+              "label": "Raamovereenkomst — te voorziene punten",
+              "help": "De geschreven raamovereenkomst moet de eerste tewerkstelling voorafgaan."
+            },
+            "remark": {
+              "label": "Opmerking"
+            }
+          }
+        },
+        "verif_bareme": {
+          "label": "Verificatie van loonschaal / PC",
+          "description": "Korte boodschap om een sociaal secretariaat of adviseur de toepasselijke loonschaal en paritair comité te laten verifiëren.",
+          "fields": {
+            "employerName": {
+              "label": "Uw organisatie"
+            },
+            "functionTitle": {
+              "label": "Betrokken functie"
+            },
+            "workerType": {
+              "label": "Type werknemer"
+            },
+            "jointCommittee": {
+              "label": "Veronderstelde paritair comité",
+              "help": "Geef het PC aan dat u toepasselijk acht (indien gekend)."
+            },
+            "experience": {
+              "label": "Anciënniteit / ervaring"
+            },
+            "currentSalary": {
+              "label": "Beoogd loon (€)"
+            },
+            "schedule": {
+              "label": "Arbeidsregeling"
+            },
+            "question": {
+              "label": "Precieze vraag",
+              "help": "Bv. « Wordt het minimumbarema van het PC voor deze functie gerespecteerd? »"
+            }
+          }
+        },
+        "scheduleOptions": {
+          "temps_plein": "Voltijds",
+          "temps_partiel": "Deeltijds",
+          "variable": "Variabel uurrooster"
+        }
+      },
+      "render": {
+        "disclaimer": "Voorbereidend document gegenereerd door Docbel. Te valideren vóór officieel gebruik. Sociale regels kunnen afhangen van de exacte situatie, van het paritair comité, van de collectieve arbeidsovereenkomsten, van de toepasselijke statuten en van wettelijke updates.",
+        "titles": {
+          "ficheTravailleur": "Werknemersfiche — {who}",
+          "demandeSecretariat": "Aanvraag sociaal secretariaat — {who}",
+          "prepaContratEtudiant": "Voorbereiding studentenovereenkomst — {who}",
+          "prepaFlexi": "Voorbereiding flexi-job — {who}",
+          "verifBareme": "Loonschaal-verificatie — {who}"
+        },
+        "fiche": {
+          "heading": "WERKNEMERSFICHE",
+          "subheading": "(gegevens te bezorgen aan het sociaal secretariaat)",
+          "empty": "(nog geen gegevens ingevuld)"
+        },
+        "demande": {
+          "greeting": "Goedendag,",
+          "employerPlaceholder": "[uw organisatie]",
+          "workerPlaceholder": "[identiteit van de werknemer]",
+          "contactPlaceholder": "[uw naam]",
+          "intro": "{employer} wenst de aanwerving van {worker} voor te bereiden en bezorgt u de volgende elementen om de zaak op te starten:",
+          "introWithRef": "{employer} (ref. {ref}) wenst de aanwerving van {worker} voor te bereiden en bezorgt u de volgende elementen om de zaak op te starten:",
+          "detailsEmpty": "- (in te vullen details)",
+          "labels": {
+            "startDate": "Geplande indiensttreding",
+            "contractType": "Type contract",
+            "schedule": "Arbeidsregeling",
+            "hours": "Uurrooster",
+            "hoursSuffix": "u/week",
+            "salary": "Bruto maandloon",
+            "salarySuffix": "€",
+            "benefits": "Voorziene voordelen"
+          },
+          "attachmentsLabel": "Bijlagen",
+          "attachmentsTbd": "(te preciseren)",
+          "questionsHeading": "Te verifiëren punten aan uw zijde:",
+          "questionsDefault": "- Toepasselijke loonschaal / paritair comité\n- Eventuele RSZ-verminderingen",
+          "closing": "Kunt u deze elementen bevestigen en ons aangeven welke stappen voor uw rekening blijven (Dimona, enz.)?",
+          "thanks": "Alvast bedankt,"
+        },
+        "etudiant": {
+          "heading": "VOORBEREIDING — OVEREENKOMST VOOR TEWERKSTELLING VAN STUDENTEN",
+          "intro": "Dit is GEEN contract. Het is een voorbereidingsfiche met de verplichte\nvermeldingen die in de geschreven overeenkomst moeten worden voorzien (uiterlijk\nte sluiten op het ogenblik van indiensttreding).",
+          "elementsHeading": "Verzamelde elementen:",
+          "elementsEmpty": "- (in te vullen)",
+          "mandatoryHeading": "Verplichte vermeldingen in de geschreven overeenkomst:",
+          "mandatoryItems": [
+            "Identiteit en woonplaats van beide partijen",
+            "Begin- en einddatum van de tewerkstelling",
+            "Plaats van uitvoering van het werk",
+            "Korte omschrijving van de functie",
+            "Arbeidsduur en uurrooster",
+            "Overeengekomen vergoeding en betaalmodaliteiten",
+            "Toepasselijk paritair comité",
+            "Plaats van huisvesting indien de werkgever zich engageert om de student te huisvesten",
+            "Verwijzing naar het arbeidsreglement"
+          ],
+          "reminder": "Niet vergeten: Dimona « STU » vóór de start, en het jaarlijkse\ncontingent verifiëren (475 uur aan verminderde bijdragen) via student@work."
+        },
+        "flexi": {
+          "heading": "VOORBEREIDING — FLEXI-JOB",
+          "intro": "Dit is GEEN contract. Het is een voorbereidingsfiche van de raamovereenkomst\nen de informatie die vóór de eerste tewerkstelling moet worden verzameld.",
+          "elementsHeading": "Verzamelde elementen:",
+          "elementsEmpty": "- (in te vullen)",
+          "checksHeading": "Te voorzien / verifiëren:",
+          "checksItems": [
+            "Toegangsvoorwaarden van de werknemer (tewerkstelling 4/5 bij een andere werkgever in het referentiekwartaal, of gepensioneerd)",
+            "Toegelaten sector voor flexi-jobs (volgens het paritair comité)",
+            "Geschreven raamovereenkomst gesloten VÓÓR de eerste tewerkstelling",
+            "Flexi-arbeidsovereenkomst (mondeling of schriftelijk volgens duur)",
+            "Flexi-loon ≥ wettelijk geïndexeerd minimum, + flexi-vakantiegeld",
+            "Specifieke flexi-Dimona vóór elke tewerkstelling"
+          ]
+        },
+        "verif": {
+          "greeting": "Goedendag,",
+          "employerPlaceholder": "[uw organisatie]",
+          "intro": "Voor {employer}, kunt u ons helpen om de toepasselijke loonschaal en het paritair comité te verifiëren voor het volgende profiel?",
+          "detailsEmpty": "- (in te vullen details)",
+          "labels": {
+            "functionTitle": "Functie",
+            "workerType": "Type werknemer",
+            "jointCommittee": "Veronderstelde paritair comité",
+            "experience": "Anciënniteit / ervaring",
+            "schedule": "Arbeidsregeling",
+            "salary": "Beoogd loon",
+            "salarySuffix": "€"
+          },
+          "questionPrefix": "Vraag:",
+          "questionDefault": "Vraag: wordt het minimumbarema voorzien door het paritair comité voor deze functie gerespecteerd?",
+          "thanks": "Alvast bedankt voor uw bevestiging."
+        }
+      },
+      "starterRules": {
+        "first_engagement_wide": {
+          "title": "Eerste aanwerving → identificatie als werkgever (WIDE)",
+          "description": "Geen personeel en geen RSZ-nummer (of onbekend): de onderneming moet zich als werkgever identificeren.",
+          "outputs": {
+            "item0": {
+              "title": "Identificatie als werkgever via WIDE (RSZ) aanvragen",
+              "description": "Vóór een werknemer aan te geven, moet de onderneming nagaan of zij zich als werkgever bij de RSZ moet identificeren. De aanvraag gebeurt via WIDE.",
+              "tooltip": "Zonder hoedanigheid van RSZ-werkgever is geen enkele aangifte mogelijk."
+            }
+          }
+        },
+        "dimona_required": {
+          "title": "Werknemer in loondienst → Dimona",
+          "description": "Een werknemer in loondienst vereist een Dimona-aangifte.",
+          "outputs": {
+            "item0": {
+              "title": "Dimona-aangifte voorbereiden (indiensttreding)",
+              "description": "Een Dimona-aangifte is in principe nodig om de indiensttreding (en uitdiensttreding) van de werknemer aan te geven, vóór de start van de tewerkstelling.",
+              "tooltip": "Uit te voeren VÓÓR de indiensttreding."
+            }
+          }
+        },
+        "part_time_written": {
+          "title": "Deeltijds → schriftelijk contract (regeling + uurrooster)",
+          "description": "Een deeltijdse regeling vereist een geschreven overeenkomst met arbeidsregeling en uurrooster.",
+          "outputs": {
+            "alert0": {
+              "message": "Het deeltijdse contract moet schriftelijk worden opgesteld en de arbeidsregeling en het overeengekomen uurrooster vermelden."
+            },
+            "item1": {
+              "title": "Het deeltijdse contract schriftelijk opstellen (regeling + uurrooster)",
+              "description": "Het deeltijdse contract moet geschreven zijn en de arbeidsregeling en het overeengekomen uurrooster bevatten."
+            }
+          }
+        },
+        "cp_unknown_reliability": {
+          "title": "PC onbekend → lage betrouwbaarheid",
+          "description": "Zonder paritair comité kan het sectoriële minimumloon niet precies worden geverifieerd.",
+          "outputs": {
+            "alert1": {
+              "message": "Paritair comité niet ingevuld: het sectoriële minimumloon kan niet precies worden geverifieerd."
+            }
+          }
+        },
+        "salary_vs_cp": {
+          "title": "Loon ingevuld maar PC afwezig → loonschaal niet verifieerbaar",
+          "description": "Er is een loon ingevuld terwijl het paritair comité onbekend is.",
+          "outputs": {
+            "alert0": {
+              "message": "Een brutoloon is ingevuld maar het paritair comité is onbekend: de toepasselijke minimum-loonschaal kan niet worden geverifieerd."
+            }
+          }
+        },
+        "student_checklist": {
+          "title": "Student → studentenovereenkomst + verplichte vermeldingen",
+          "description": "Een werknemer-student vereist een geschreven contract en verplichte vermeldingen.",
+          "outputs": {
+            "item0": {
+              "title": "Een geschreven overeenkomst voor tewerkstelling van studenten opstellen"
+            },
+            "item1": {
+              "title": "De verplichte vermeldingen verifiëren (PC, uurrooster, vergoeding, tewerkstellingsperiode)"
+            },
+            "item2": {
+              "title": "De studenten-Dimona voorbereiden (type STU)"
+            },
+            "item3": {
+              "title": "Het beschikbare studentenurenquotum verifiëren"
+            },
+            "alert4": {
+              "message": "Een overeenkomst voor tewerkstelling van studenten moet de verplichte vermeldingen bevatten: paritair comité, uurrooster, vergoeding en tewerkstellingsperiode."
+            }
+          }
+        },
+        "flexi_contract_frame": {
+          "title": "Flexi-job → geschreven raamovereenkomst",
+          "description": "Een flexi-job vereist een geschreven raamovereenkomst en specifieke voorwaarden.",
+          "outputs": {
+            "item0": {
+              "title": "Een geschreven flexi-job-raamovereenkomst opstellen vóór de eerste tewerkstelling"
+            },
+            "item1": {
+              "title": "De toegangsvoorwaarden van de werknemer tot de flexi-job verifiëren"
+            },
+            "item2": {
+              "title": "De flexi-job-Dimona voorbereiden (type FLX)"
+            },
+            "alert3": {
+              "message": "De flexi-job vereist een geschreven raamovereenkomst vóór de eerste tewerkstelling, alsook specifieke aangifte- en toegangsregels."
+            }
+          }
+        }
+      },
+      "legalSources": {
+        "S1": {
+          "contentSummary": "Identificatie van de onderneming als werkgever en verkrijgen van de hoedanigheid van werkgever via WIDE (eerste aanwerving)."
+        },
+        "S2": {
+          "contentSummary": "Onmiddellijke aangifte van tewerkstelling: indiensttreding en uitdiensttreding van de werknemer, volgens het type werknemer."
+        },
+        "S3": {
+          "contentSummary": "Multifunctionele driemaandelijkse aangifte: vergoedingen, arbeidstijd en bijdragen."
+        },
+        "S4": {
+          "contentSummary": "Werkgeversinschrijving, aangiften, sociale bijdragen en algemene verplichtingen."
+        },
+        "S5": {
+          "contentSummary": "Mandaten en dienstverleners sociale zekerheid (buiten MVP-perimeter — toekomstige stap)."
+        },
+        "S6": {
+          "contentSummary": "Types van contracten, verplichte of aanbevolen schriftelijke vorm (deeltijds, student, flexi-job)."
+        },
+        "S7": {
+          "contentSummary": "Interne verplichtingen, neerlegging, uurroosters en bijwerking van het arbeidsreglement."
+        },
+        "S8": {
+          "contentSummary": "Minimumloon, paritair comité, CAO en loonschalen. Zonder PC kan de loonschaal niet precies worden geverifieerd."
+        },
+        "S9": {
+          "contentSummary": "Overeenkomst voor tewerkstelling van studenten, verplichte vermeldingen, vergoeding en sancties bij onvolledigheid."
+        },
+        "S10": {
+          "contentSummary": "Toegangsvoorwaarden, geschreven raamovereenkomst, specifieke werkgeversbijdrage en aangifte."
+        },
+        "S11": {
+          "contentSummary": "Uurroosters, dagelijkse/wekelijkse arbeidsduur, rust en sectoriële uitzonderingen."
+        },
+        "S12": {
+          "contentSummary": "Definitie, motieven (overmacht, slecht weer, economische redenen), procedure en documenten."
+        },
+        "S13": {
+          "contentSummary": "Officiële communicaties en digitale werkgeversruimte."
+        }
+      },
+      "constants": {
+        "legalForm": {
+          "independant": "Zelfstandige (natuurlijke persoon)",
+          "srl": "BV",
+          "asbl": "VZW",
+          "societe_etrangere": "Buitenlandse vennootschap",
+          "autre": "Andere"
+        },
+        "region": {
+          "wallonia": "Wallonië",
+          "flanders": "Vlaanderen",
+          "brussels": "Brussel",
+          "multi": "Meerdere gewesten"
+        },
+        "workerType": {
+          "employe": "Bediende",
+          "ouvrier": "Arbeider",
+          "etudiant": "Student",
+          "flexi_job": "Flexi-job",
+          "interim": "Uitzendkracht",
+          "stagiaire": "Stagiair",
+          "autre": "Andere"
+        },
+        "contractType": {
+          "cdi": "Arbeidsovereenkomst onbepaalde duur",
+          "cdd": "Arbeidsovereenkomst bepaalde duur",
+          "temps_plein": "Voltijds",
+          "temps_partiel": "Deeltijds",
+          "remplacement": "Vervangingsovereenkomst",
+          "etudiant": "Studentenovereenkomst",
+          "flexi_job": "Flexi-jobovereenkomst",
+          "interim": "Uitzendarbeid",
+          "autre": "Andere"
+        },
+        "benefitType": {
+          "voiture": "Wagen",
+          "cheques_repas": "Maaltijdcheques",
+          "ecocheques": "Ecocheques",
+          "frais_forfaitaires": "Forfaitaire kostenvergoeding",
+          "bonus": "Bonus",
+          "prime": "Premie",
+          "telephone": "Telefoon",
+          "ordinateur": "Computer",
+          "assurance_groupe": "Groepsverzekering",
+          "autre": "Andere"
+        },
+        "checklistCategory": {
+          "premier_engagement": "Eerste aanwerving",
+          "engagement_classique": "Klassieke aanwerving",
+          "etudiant": "Student",
+          "flexi_job": "Flexi-job",
+          "temps_partiel": "Deeltijds",
+          "chomage_temporaire": "Tijdelijke werkloosheid",
+          "sortie_service": "Uitdiensttreding"
+        },
+        "itemPriority": {
+          "obligatoire": "Verplicht",
+          "recommande": "Aanbevolen",
+          "optionnel": "Optioneel"
+        },
+        "itemStatus": {
+          "todo": "Te doen",
+          "in_progress": "Bezig",
+          "done": "Gedaan",
+          "not_applicable": "Niet van toepassing",
+          "needs_review": "Te controleren"
+        },
+        "scenarioStatus": {
+          "draft": "Klad",
+          "ready": "Klaar",
+          "exported": "Geëxporteerd",
+          "archived": "Gearchiveerd"
+        },
+        "alertSeverity": {
+          "info": "Info",
+          "warning": "Opgelet",
+          "critical": "Kritiek"
+        },
+        "reliability": {
+          "low": "Laag",
+          "medium": "Gemiddeld",
+          "high": "Goed",
+          "needs_human_validation": "Te valideren"
+        }
+      },
+      "dashboard": {
+        "regimeLabel": {
+          "temps_plein": "Voltijds",
+          "temps_partiel": "Deeltijds"
+        },
+        "deadline": {
+          "overdue": "Verlopen",
+          "today": "Vandaag",
+          "inDays": "Over {days} d"
+        },
+        "actionLabel": {
+          "created": "Item aangemaakt",
+          "created_bulk": "Items aangemaakt",
+          "updated": "Item bijgewerkt",
+          "deleted": "Item verwijderd",
+          "exported": "Document geëxporteerd",
+          "published": "Document verzonden",
+          "synced": "Synchronisatie",
+          "received": "Ontvangen",
+          "activity": "Activiteit"
+        },
+        "monthShort": {
+          "jan": "JAN",
+          "feb": "FEB",
+          "mar": "MRT",
+          "apr": "APR",
+          "may": "MEI",
+          "jun": "JUN",
+          "jul": "JUL",
+          "aug": "AUG",
+          "sep": "SEP",
+          "oct": "OKT",
+          "nov": "NOV",
+          "dec": "DEC"
+        },
+        "relativeWhen": {
+          "today": "Vandaag om {time}",
+          "yesterday": "Gisteren om {time}",
+          "onDate": "{date} om {time}"
+        },
+        "deadlineSubContract": "{role} — geplande start van de arbeidsovereenkomst",
+        "alertNeedsValidationTitle": "Dossier te laten valideren",
+        "alertNeedsValidationSub": "{title} — betrouwbaarheid te bevestigen",
+        "exampleTitle": "Voorbeeld — voltijdse bediende",
+        "fallbackEmployer": "Werkgever"
+      },
+      "checklists": {
+        "templates": {
+          "premier_engagement": {
+            "verifier_bce": {
+              "title": "Het KBO-nummer van de onderneming controleren",
+              "description": "Bevestig de identificatie van de onderneming bij de Kruispuntbank van Ondernemingen."
+            },
+            "identifier_cp": {
+              "title": "Het waarschijnlijke paritair comité bepalen",
+              "description": "Het paritair comité bepaalt het minimumloon en talrijke verplichtingen."
+            },
+            "verifier_salaire_minimum": {
+              "title": "Het toepasselijke minimumloon controleren",
+              "description": "Het loon moet het minimum van het bevoegde paritair comité respecteren."
+            },
+            "choisir_type_contrat": {
+              "title": "Het type arbeidsovereenkomst kiezen en voorbereiden",
+              "description": "Onbepaalde duur, bepaalde duur, deeltijds, student, flexi-job… volgens de situatie."
+            },
+            "reglement_travail": {
+              "title": "Het arbeidsreglement controleren of opstellen",
+              "description": "Het arbeidsreglement is in principe verplicht vanaf de eerste werknemer."
+            },
+            "assurance_accidents": {
+              "title": "Een arbeidsongevallenverzekering afsluiten",
+              "description": "De arbeidsongevallenverzekering is verplicht voor elke werkgever."
+            },
+            "service_prevention": {
+              "title": "De aansluiting bij een externe dienst voor preventie en bescherming controleren"
+            },
+            "dossier_travailleur": {
+              "title": "Het personeelsdossier / de werknemersfiche voorbereiden",
+              "description": "De gegevens verzamelen die nodig zijn voor de loonberekening en het persoonlijk dossier."
+            },
+            "ebox_enterprise": {
+              "title": "Toegang tot e-Box Enterprise voorzien (officiële communicaties)"
+            }
+          },
+          "engagement_classique": {
+            "valider_type_contrat": {
+              "title": "Het type arbeidsovereenkomst valideren"
+            },
+            "verifier_cp": {
+              "title": "Het paritair comité controleren"
+            },
+            "verifier_bareme": {
+              "title": "Het toepasselijke loonbarema controleren"
+            },
+            "preparer_contrat": {
+              "title": "De arbeidsovereenkomst voorbereiden"
+            },
+            "encoder_payroll": {
+              "title": "De gegevens voor de payroll invoeren"
+            },
+            "documents_internes": {
+              "title": "De interne documenten en de onboarding voorbereiden"
+            }
+          }
+        }
+      },
+      "calendar": {
+        "warning": "Indicatieve data berekend volgens een standaard kwartaalregime. De vervaldagen kunnen variëren naargelang uw btw-regime, uw situatie als werkgever, verplaatsingen naar de volgende werkdag, feestdagen, administratieve toleranties of officiële communicaties. Raadpleeg steeds de officiële bronnen van FOD Financiën en sociale zekerheid.",
+        "category": {
+          "ONSS": "RSZ",
+          "Précompte": "BV",
+          "TVA": "Btw",
+          "Autre": "Andere"
+        },
+        "sourceLabel": {
+          "ONSS": "RSZ",
+          "SPF Finances": "FOD Financiën"
+        },
+        "obligation": {
+          "ONSS_DMFA": {
+            "label": "RSZ-aangifte – DmfA",
+            "note": "Kwartaalregime (standaard). Vervaldag = laatste dag van de maand die volgt op het kwartaal."
+          },
+          "PROFESSIONAL_WITHHOLDING_TAX": {
+            "label": "Storting bedrijfsvoorheffing",
+            "note": "Standaard kwartaalregime (het maandregime wordt in MVP niet gemodelleerd). Vervaldag = de 15e van de maand die volgt op het kwartaal."
+          },
+          "VAT_PERIODIC_RETURN": {
+            "label": "Btw-aangifte (per kwartaal)",
+            "note": "Kwartaalregime (standaard). Datum afkomstig uit de officiële FOD-kalender (verplaatsingen weekend/feestdag reeds verwerkt)."
+          }
+        },
+        "fallbackNote": "Berekende datum (de 25e van de maand na het kwartaal) want dit kwartaal staat niet in de officiële FOD-kalender: de eventuele verplaatsing naar de volgende werkdag is niet gegarandeerd, te bevestigen op de btw-kalender van FOD Financiën.",
+        "titleFormat": "{label} · K{quarter} {year}",
+        "shortFormat": "{category} · K{quarter} {year}",
+        "periodicity": {
+          "mensuelle": "maandelijks",
+          "trimestrielle": "per kwartaal",
+          "annuelle": "jaarlijks"
+        }
+      },
+      "cost": {
+        "regimeLabel": {
+          "temps_plein": "Voltijds",
+          "temps_partiel": "Deeltijds"
+        },
+        "assumption": {
+          "studentRate": "Student: solidariteitsbijdrage werkgever ≈ {pct} % van het brutoloon (en niet de volledige RSZ).",
+          "flexiRate": "Flexi-job: bijzondere werkgeversbijdrage ≈ {pct} % van het brutoloon.",
+          "workerRate": "Arbeider: werkgeversbijdragen ≈ {pct} % van het brutoloon (basis ≈ 25 % + RSZ-Vakantiefonds ≈ 11 %).",
+          "employeeRate": "Bediende: basis werkgeversbijdragen ≈ {pct} % van het brutoloon (arbeidsongevallenverzekering en sectorale bijdragen komen daar nog bij, niet inbegrepen).",
+          "defaultRate": "Type werknemer « {workerType} »: standaard werkgeversbasistarief ≈ {pct} % aangehouden.",
+          "defaultRateUnknown": "Type werknemer « niet gespecificeerd »: standaard werkgeversbasistarief ≈ {pct} % aangehouden.",
+          "firstHireReduction": "Mogelijke vermindering « eerste aanwerving »: aanzienlijke vermindering van de werkgeversbijdragen (hier niet becijferd).",
+          "targetGroupReduction": "Mogelijke vermindering « doelgroep » (regio): niet becijferd in deze raming.",
+          "holidayProvisioned": "Dubbel vakantiegeld geprovisioneerd ≈ {pct} % van het jaarlijks brutoloon.",
+          "holidayWorker": "Arbeider: vakantiegeld gefinancierd via de RSZ (Vakantiefonds), al inbegrepen in het werkgeverstarief — geen aparte provisie.",
+          "holidayFlexi": "Flexi-job: vakantiegeld inbegrepen in de flexi-vergoeding (specifieke regels).",
+          "thirteenthIncluded": "Eindejaarspremie geprovisioneerd ≈ {pct} % van het jaarlijks brutoloon.",
+          "thirteenthNotIncluded": "Eindejaarspremie niet inbegrepen (niet aangevinkt).",
+          "mealVoucher": "Maaltijdcheques: werkgeversaandeel ≈ {perDay} €/dag × {days} d ≈ {monthly} €/maand.",
+          "partTime": "Deeltijds: het opgegeven brutoloon wordt geacht reeds geproratiseerd te zijn voor de werkelijke arbeidstijd.",
+          "partTimeRatio": "Tewerkstellingsbreuk ≈ {pct} % ({weekly}u / {reference}u)."
+        },
+        "missingData": {
+          "grossInvalid": "Maandelijks brutoloon ontbreekt of is ongeldig.",
+          "reductionsToCheck": "Verminderingen van bijdragen (eerste aanwerving, doelgroep…) te controleren.",
+          "otherBenefits": "Voordelen niet becijferd in deze raming: {benefits}.",
+          "partTimeHoursMissing": "Weekuren / voltijdse referentie niet ingevuld.",
+          "cpMissing": "Paritair comité niet ingevuld."
+        },
+        "warning": {
+          "flexiVerify": "Het flexi-jobregime past een specifieke werkgeversbijdrage toe: laat de toelaatbaarheid en het exacte tarief verifiëren.",
+          "defaultTypeVerify": "Het gekozen type werknemer gebruikt een standaard werkgeverstarief: te bevestigen volgens het werkelijke statuut.",
+          "firstHireReductionImpact": "Een vermindering « eerste aanwerving » kan de bijdragen sterk verlagen: de werkelijke kost kan lager liggen.",
+          "netIndicative": "Het getoonde nettoloon is indicatief.",
+          "contributionsVary": "De werkgeversbijdragen variëren naargelang de verminderingen.",
+          "socialSecretariatValidates": "Een sociaal secretariaat moet de eindberekening valideren.",
+          "cpUnknownMinimum": "Paritair comité niet ingevuld: het minimumloon kan niet worden geverifieerd."
+        }
+      },
+      "controle": {
+        "verdict": {
+          "ok": "Geen voor de hand liggende afwijking vastgesteld.",
+          "points_to_check": "Punten om te controleren",
+          "insufficient": "Onvoldoende gegevens voor een volledige controle."
+        },
+        "finding": {
+          "brut_absent": {
+            "message": "Het maandelijks brutoloon is niet ingevuld: er kan geen becijferde coherentiecontrole worden uitgevoerd.",
+            "recommendation": "Vermeld het brutoloon dat op de loonfiche staat om een grootteordecontrole mogelijk te maken."
+          },
+          "cp_absente": {
+            "message": "Geen paritair comité ingevuld: het loon kan niet worden vergeleken met het sectorale minimumbarema.",
+            "recommendation": "Vermeld het toepasselijke paritair comité (PC) om het sectorale minimumbarema te verifiëren."
+          },
+          "cout_employeur_non_fiable": {
+            "message": "Zonder paritair comité kan de globale werkgeverskost (sociale lasten, sectorale premies) niet betrouwbaar worden bepaald.",
+            "recommendation": "Voor een betrouwbare kostenraming: vermeld het PC, het bepaalt de sectorale lasten en voordelen."
+          },
+          "regime_absent": {
+            "message": "Het arbeidsregime (voltijds / deeltijds) is niet gepreciseerd: bepaalde controles blijven gedeeltelijk.",
+            "recommendation": "Preciseer of de werknemer voltijds dan wel deeltijds werkt."
+          },
+          "incoherence_temps_plein": {
+            "message": "Regime « voltijds » aangegeven maar het ingevoerde uurrooster ({weekly} u/week) ligt duidelijk onder de voltijdse referentie ({reference} u/week).",
+            "recommendation": "Controleer het regime: een uurrooster onder de voltijdse referentie komt doorgaans overeen met deeltijds."
+          },
+          "temps_partiel_sans_horaire": {
+            "message": "Regime « deeltijds » maar geen weekuurrooster ingevoerd: het uurrooster is een verplichte vermelding van de deeltijdse arbeidsovereenkomst.",
+            "recommendation": "Vermeld het aantal uren per week: de deeltijdse arbeidsovereenkomst moet het precieze uurrooster vermelden."
+          },
+          "net_incoherent": {
+            "message": "Het ingevoerde ontvangen netto ({net} €) wijkt sterk af van de Docbel-raming (~{expected} € voor een brutoloon van {gross} €).",
+            "recommendation": "Controleer de inhoudingen (RSZ, bedrijfsvoorheffing) of de aanwezigheid van niet-ingevoerde elementen (premie, vakantiegeld, voordelen, deeltijds). De raming is indicatief."
+          },
+          "etudiant_sans_contrat": {
+            "message": "Werknemer-student zonder contractgegevens (geen PC noch uurrooster): het contingent en de solidariteitsbijdragen kunnen niet worden geverifieerd.",
+            "recommendation": "Preciseer het uurrooster en het PC van de student om het jaarlijks contingent en de solidariteitsbijdrage te verifiëren."
+          },
+          "flexi_sans_contrat_cadre": {
+            "message": "Werknemer flexi-job zonder vermelding van een raamovereenkomst: een voorafgaande schriftelijke raamovereenkomst is vereist voor het flexi-regime.",
+            "recommendation": "Bevestig het bestaan van een ondertekende flexi-raamovereenkomst vóór de aanvang van de prestaties (vermeld dit in de opmerking)."
+          },
+          "avantage_non_pris_en_compte": {
+            "message": "Er zijn voordelen aangegeven maar er werd geen bedrag (premie, vakantiegeld) ingevoerd: ze worden niet meegenomen in de nettoraming.",
+            "recommendation": "Voer de bedragen van de voordelen/premies in om de nettovergelijking te verfijnen."
+          },
+          "aucune_incoherence": {
+            "message": "Geen voor de hand liggende afwijking vastgesteld.",
+            "recommendation": "Deze controle blijft indicatief: enkel een erkend sociaal secretariaat certificeert de conformiteit van een loonfiche."
+          }
+        }
       }
     },
     "ec32Content": {

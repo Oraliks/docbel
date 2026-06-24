@@ -68,12 +68,26 @@ export interface SocialDeadline {
   date: string;
   /** Libellé lisible, ex. "Déclaration ONSS – DmfA · T2 2026". */
   title: string;
+  /** Clé i18n optionnelle du label de base (sans le suffixe trimestre). */
+  titleKey?: string;
+  /** Paramètres pour reconstruire `title` via `t(titleKey, params)` côté UI. */
+  titleParams?: { quarter: number; year: number };
   category: SocialDeadlineCategory;
+  /** Clé i18n optionnelle de la catégorie. */
+  categoryKey?: string;
   periodicity: "mensuelle" | "trimestrielle" | "annuelle";
+  /** Clé i18n optionnelle de la périodicité. */
+  periodicityKey?: string;
   /** Note de contexte (hypothèse de régime, fallback, tolérances, etc.). */
   note?: string;
+  /** Clé i18n optionnelle de la note (peut être combinée). */
+  noteKey?: string;
+  /** Clé i18n optionnelle d'une note additionnelle (fallback hors table). */
+  fallbackNoteKey?: string;
   /** Libellé de la source officielle, ex. "ONSS". */
   sourceLabel?: string;
+  /** Clé i18n optionnelle pour le label de la source. */
+  sourceLabelKey?: string;
   /** URL officielle. */
   sourceUrl?: string;
 }
@@ -84,6 +98,9 @@ export interface SocialDeadline {
  */
 export const SOCIAL_CALENDAR_WARNING =
   "Dates indicatives calculées selon un régime trimestriel par défaut. Les échéances peuvent varier selon votre régime TVA, votre situation employeur, les reports au jour ouvrable suivant, les jours fériés, les tolérances administratives ou les communications officielles. Vérifiez toujours les sources officielles SPF Finances et Sécurité sociale.";
+
+/** Clé i18n pour l'avertissement utilisateur (parallèle à `SOCIAL_CALENDAR_WARNING`). */
+export const SOCIAL_CALENDAR_WARNING_KEY = "public.employeurLib.calendar.warning";
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Structure interne extensible (recommandée par le métier).
@@ -114,10 +131,16 @@ type SocialCalendarObligation = {
   regime: "monthly" | "quarterly" | "yearly" | "custom";
   category: SocialDeadlineCategory;
   label: string;
+  /** Clé i18n optionnelle du label (namespace `public.employeurLib.calendar.obligation.*.label`). */
+  labelKey?: string;
   sourceLabel: string;
+  /** Clé i18n optionnelle de la source. */
+  sourceLabelKey?: string;
   sourceUrl: string;
   dueDateRule: DueDateRule;
   note?: string;
+  /** Clé i18n optionnelle de la note. */
+  noteKey?: string;
 };
 
 /** Préfixe d'`id` stable par type d'obligation (pour la dérivation + tri). */
@@ -146,34 +169,58 @@ const ACTIVE_OBLIGATIONS: readonly SocialCalendarObligation[] = [
     regime: "quarterly",
     category: "ONSS",
     label: "Déclaration ONSS – DmfA",
+    labelKey: "public.employeurLib.calendar.obligation.ONSS_DMFA.label",
     sourceLabel: "ONSS",
+    sourceLabelKey: "public.employeurLib.calendar.sourceLabel.ONSS",
     sourceUrl:
       "https://www.socialsecurity.be/site_fr/employer/applics/dmfa/web/intro/home.htm",
     dueDateRule: { type: "last_day_of_month_after_quarter" },
     note: "Régime trimestriel (par défaut). Échéance = dernier jour du mois qui suit le trimestre.",
+    noteKey: "public.employeurLib.calendar.obligation.ONSS_DMFA.note",
   },
   {
     obligationType: "PROFESSIONAL_WITHHOLDING_TAX",
     regime: "quarterly",
     category: "Précompte",
     label: "Versement précompte professionnel",
+    labelKey: "public.employeurLib.calendar.obligation.PROFESSIONAL_WITHHOLDING_TAX.label",
     sourceLabel: "SPF Finances",
+    sourceLabelKey: "public.employeurLib.calendar.sourceLabel.SPF Finances",
     sourceUrl:
       "https://finances.belgium.be/fr/entreprises/personnel_et_remuneration/precompte_professionnel/calendrier",
     dueDateRule: { type: "fixed_day_after_quarter", day: 15 },
     note: "Régime trimestriel par défaut (le régime mensuel n'est pas modélisé en MVP). Échéance = le 15 du mois qui suit le trimestre.",
+    noteKey: "public.employeurLib.calendar.obligation.PROFESSIONAL_WITHHOLDING_TAX.note",
   },
   {
     obligationType: "VAT_PERIODIC_RETURN",
     regime: "quarterly",
     category: "TVA",
     label: "Déclaration TVA (trimestrielle)",
+    labelKey: "public.employeurLib.calendar.obligation.VAT_PERIODIC_RETURN.label",
     sourceLabel: "SPF Finances",
+    sourceLabelKey: "public.employeurLib.calendar.sourceLabel.SPF Finances",
     sourceUrl: "https://finances.belgium.be/fr/entreprises/tva/calendrier-tva",
     dueDateRule: { type: "official_calendar_table" },
     note: "Régime trimestriel (par défaut). Date issue du calendrier officiel SPF (reports week-end/jour férié déjà intégrés).",
+    noteKey: "public.employeurLib.calendar.obligation.VAT_PERIODIC_RETURN.note",
   },
 ];
+
+/** Clés i18n des catégories (pour résolution UI). */
+const CATEGORY_KEYS: Readonly<Record<SocialDeadlineCategory, string>> = {
+  ONSS: "public.employeurLib.calendar.category.ONSS",
+  Précompte: "public.employeurLib.calendar.category.Précompte",
+  TVA: "public.employeurLib.calendar.category.TVA",
+  Autre: "public.employeurLib.calendar.category.Autre",
+};
+
+/** Clés i18n des périodicités. */
+const PERIODICITY_KEYS: Readonly<Record<"mensuelle" | "trimestrielle" | "annuelle", string>> = {
+  mensuelle: "public.employeurLib.calendar.periodicity.mensuelle",
+  trimestrielle: "public.employeurLib.calendar.periodicity.trimestrielle",
+  annuelle: "public.employeurLib.calendar.periodicity.annuelle",
+};
 
 /**
  * Table officielle SPF des échéances TVA trimestrielles, indexée par
@@ -246,7 +293,7 @@ const QUARTERS: readonly Quarter[] = [1, 2, 3, 4];
  * Dérivation des `SocialDeadline` à partir des obligations + règles de date.
  * ────────────────────────────────────────────────────────────────────────── */
 
-type ResolvedDue = { date: string; extraNote?: string };
+type ResolvedDue = { date: string; extraNote?: string; isFallback?: boolean };
 
 /**
  * Résout la date d'échéance (et une éventuelle note additionnelle) pour une
@@ -279,6 +326,7 @@ function resolveDueDate(
         date: toISODate(makeDay(dueYear, monthIndex, 25)),
         extraNote:
           "Date calculée (le 25 du mois suivant le trimestre) car ce trimestre est absent du calendrier officiel SPF : le report éventuel au jour ouvrable suivant n'est pas garanti, à confirmer sur le calendrier TVA du SPF Finances.",
+        isFallback: true,
       };
     }
     case "custom": {
@@ -301,7 +349,7 @@ function buildDeadlinesForYear(year: number): SocialDeadline[] {
     const prefix = OBLIGATION_ID_PREFIX[obligation.obligationType];
 
     for (const q of QUARTERS) {
-      const { date, extraNote } = resolveDueDate(obligation, year, q);
+      const { date, extraNote, isFallback } = resolveDueDate(obligation, year, q);
       const note =
         extraNote && obligation.note
           ? `${obligation.note} ${extraNote}`
@@ -311,10 +359,17 @@ function buildDeadlinesForYear(year: number): SocialDeadline[] {
         id: `${prefix}-${year}T${q}`,
         date,
         title: `${obligation.label} · T${q} ${year}`,
+        titleKey: obligation.labelKey,
+        titleParams: { quarter: q, year },
         category: obligation.category,
+        categoryKey: CATEGORY_KEYS[obligation.category],
         periodicity: "trimestrielle",
+        periodicityKey: PERIODICITY_KEYS["trimestrielle"],
         note,
+        noteKey: obligation.noteKey,
+        fallbackNoteKey: isFallback ? "public.employeurLib.calendar.fallbackNote" : undefined,
         sourceLabel: obligation.sourceLabel,
+        sourceLabelKey: obligation.sourceLabelKey,
         sourceUrl: obligation.sourceUrl,
       });
     }

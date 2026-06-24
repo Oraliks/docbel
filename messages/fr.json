@@ -8178,6 +8178,780 @@
           "Oublier des éléments de rémunération variables.",
           "Considérer que le secrétariat social vérifie tout à votre place."
         ]
+      },
+      "documentTypes": {
+        "fiche_travailleur": {
+          "label": "Fiche travailleur",
+          "description": "Récapitule les données du travailleur à transmettre à votre secrétariat social.",
+          "fields": {
+            "lastName": {
+              "label": "Nom"
+            },
+            "firstName": {
+              "label": "Prénom"
+            },
+            "niss": {
+              "label": "NISS (numéro de registre national)",
+              "help": "Facultatif — 11 chiffres. À transmettre uniquement si vous l'avez."
+            },
+            "address": {
+              "label": "Adresse"
+            },
+            "email": {
+              "label": "E-mail"
+            },
+            "phone": {
+              "label": "Téléphone"
+            },
+            "startDate": {
+              "label": "Date d'entrée prévue"
+            },
+            "functionTitle": {
+              "label": "Fonction"
+            },
+            "schedule": {
+              "label": "Régime horaire"
+            },
+            "weeklyHours": {
+              "label": "Horaire (heures/semaine)",
+              "help": "Ex. 38 (temps plein) ou 20 (temps partiel)."
+            },
+            "grossSalary": {
+              "label": "Salaire brut mensuel (€)"
+            },
+            "benefits": {
+              "label": "Avantages prévus",
+              "help": "Ex. chèques-repas, écochèques, voiture…"
+            },
+            "jointCommittee": {
+              "label": "Commission paritaire (si connue)",
+              "help": "Ex. CP 200. À faire confirmer par le secrétariat social."
+            },
+            "workerType": {
+              "label": "Type de travailleur"
+            },
+            "contractType": {
+              "label": "Type de contrat"
+            },
+            "workplace": {
+              "label": "Lieu de travail"
+            },
+            "remark": {
+              "label": "Remarque"
+            }
+          }
+        },
+        "demande_secretariat": {
+          "label": "Demande au secrétariat social",
+          "description": "Message prêt à envoyer à votre secrétariat social pour préparer un engagement.",
+          "fields": {
+            "employerName": {
+              "label": "Votre organisation"
+            },
+            "employerRef": {
+              "label": "Votre référence dossier / n° ONSS",
+              "help": "Facultatif — aide le secrétariat à retrouver votre dossier."
+            },
+            "contactName": {
+              "label": "Personne de contact (vous)"
+            },
+            "workerName": {
+              "label": "Identité du travailleur"
+            },
+            "startDate": {
+              "label": "Date d'entrée prévue"
+            },
+            "contractType": {
+              "label": "Type de contrat"
+            },
+            "schedule": {
+              "label": "Régime horaire"
+            },
+            "weeklyHours": {
+              "label": "Horaire (heures/semaine)"
+            },
+            "grossSalary": {
+              "label": "Salaire brut mensuel (€)"
+            },
+            "benefits": {
+              "label": "Avantages prévus",
+              "help": "Ex. chèques-repas, écochèques, voiture…"
+            },
+            "attachments": {
+              "label": "Pièces jointes annoncées",
+              "help": "Ex. copie carte d'identité, projet de contrat…"
+            },
+            "questions": {
+              "label": "Points à vérifier / questions",
+              "help": "Ex. barème applicable, CP, réductions de cotisations…"
+            }
+          }
+        },
+        "prepa_contrat_etudiant": {
+          "label": "Préparation contrat étudiant",
+          "description": "Fiche de PRÉPARATION (ce n'est pas un contrat) : les mentions obligatoires à prévoir pour un contrat d'occupation d'étudiant.",
+          "fields": {
+            "employerName": {
+              "label": "Employeur"
+            },
+            "studentName": {
+              "label": "Nom de l'étudiant"
+            },
+            "startDate": {
+              "label": "Date de début"
+            },
+            "endDate": {
+              "label": "Date de fin"
+            },
+            "functionTitle": {
+              "label": "Fonction / tâches"
+            },
+            "workplace": {
+              "label": "Lieu d'exécution"
+            },
+            "schedule": {
+              "label": "Horaire de travail",
+              "help": "Jours et heures prévus. À préciser dans le contrat écrit."
+            },
+            "grossSalary": {
+              "label": "Rémunération prévue",
+              "help": "À vérifier selon la CP applicable."
+            },
+            "jointCommittee": {
+              "label": "Commission paritaire (si connue)"
+            },
+            "quota": {
+              "label": "Quota d'heures (475 h/an) — solde estimé",
+              "help": "Cotisations réduites dans la limite du contingent annuel. À confirmer (student@work)."
+            },
+            "remark": {
+              "label": "Remarque"
+            }
+          }
+        },
+        "prepa_flexi": {
+          "label": "Préparation flexi-job",
+          "description": "Préparation d'un contrat-cadre flexi-job et des informations à réunir (ce n'est pas un contrat).",
+          "fields": {
+            "employerName": {
+              "label": "Employeur"
+            },
+            "workerName": {
+              "label": "Nom du flexi-travailleur"
+            },
+            "eligibility": {
+              "label": "Conditions d'éligibilité vérifiées",
+              "help": "Ex. occupation ≥ 4/5 chez un autre employeur au trimestre T-3 ; ou pensionné."
+            },
+            "startDate": {
+              "label": "Début de l'occupation"
+            },
+            "functionTitle": {
+              "label": "Fonction prévue"
+            },
+            "workplace": {
+              "label": "Lieu de travail"
+            },
+            "flexiSalary": {
+              "label": "Flexi-salaire horaire (€)",
+              "help": "Salaire minimum flexi à vérifier (indexé). Flexi-pécule de vacances en sus."
+            },
+            "jointCommittee": {
+              "label": "Commission paritaire",
+              "help": "Le flexi-job n'est ouvert qu'à certains secteurs. À confirmer."
+            },
+            "frameworkContract": {
+              "label": "Contrat-cadre — points à prévoir",
+              "help": "Le contrat-cadre écrit doit précéder la 1re occupation."
+            },
+            "remark": {
+              "label": "Remarque"
+            }
+          }
+        },
+        "verif_bareme": {
+          "label": "Vérification du barème / CP",
+          "description": "Court message demandant à un secrétariat social ou un conseiller de vérifier le barème et la commission paritaire applicables.",
+          "fields": {
+            "employerName": {
+              "label": "Votre organisation"
+            },
+            "functionTitle": {
+              "label": "Fonction concernée"
+            },
+            "workerType": {
+              "label": "Type de travailleur"
+            },
+            "jointCommittee": {
+              "label": "Commission paritaire supposée",
+              "help": "Indiquez la CP que vous pensez applicable (si vous en avez une)."
+            },
+            "experience": {
+              "label": "Ancienneté / expérience"
+            },
+            "currentSalary": {
+              "label": "Salaire envisagé (€)"
+            },
+            "schedule": {
+              "label": "Régime horaire"
+            },
+            "question": {
+              "label": "Question précise",
+              "help": "Ex. « Le barème minimum de la CP est-il respecté pour cette fonction ? »"
+            }
+          }
+        },
+        "scheduleOptions": {
+          "temps_plein": "Temps plein",
+          "temps_partiel": "Temps partiel",
+          "variable": "Horaire variable"
+        }
+      },
+      "render": {
+        "disclaimer": "Document préparatoire généré par Docbel. À valider avant usage officiel. Les règles sociales peuvent dépendre de la situation exacte, de la commission paritaire, des conventions collectives, des statuts applicables et des mises à jour légales.",
+        "titles": {
+          "ficheTravailleur": "Fiche travailleur — {who}",
+          "demandeSecretariat": "Demande secrétariat social — {who}",
+          "prepaContratEtudiant": "Préparation contrat étudiant — {who}",
+          "prepaFlexi": "Préparation flexi-job — {who}",
+          "verifBareme": "Vérification barème — {who}"
+        },
+        "fiche": {
+          "heading": "FICHE TRAVAILLEUR",
+          "subheading": "(données à transmettre au secrétariat social)",
+          "empty": "(aucune donnée renseignée pour le moment)"
+        },
+        "demande": {
+          "greeting": "Bonjour,",
+          "employerPlaceholder": "[votre organisation]",
+          "workerPlaceholder": "[identité du travailleur]",
+          "contactPlaceholder": "[votre nom]",
+          "intro": "{employer} souhaite préparer l'engagement de {worker} et vous transmet les éléments suivants pour la mise en route :",
+          "introWithRef": "{employer} (réf. {ref}) souhaite préparer l'engagement de {worker} et vous transmet les éléments suivants pour la mise en route :",
+          "detailsEmpty": "- (détails à compléter)",
+          "labels": {
+            "startDate": "Date d'entrée prévue",
+            "contractType": "Type de contrat",
+            "schedule": "Régime horaire",
+            "hours": "Horaire",
+            "hoursSuffix": "h/semaine",
+            "salary": "Salaire brut mensuel",
+            "salarySuffix": "€",
+            "benefits": "Avantages prévus"
+          },
+          "attachmentsLabel": "Pièces jointes",
+          "attachmentsTbd": "(à préciser)",
+          "questionsHeading": "Points à vérifier de votre côté :",
+          "questionsDefault": "- Barème / commission paritaire applicable\n- Réductions de cotisations éventuelles",
+          "closing": "Pourriez-vous nous confirmer ces éléments et nous indiquer les démarches restant à votre charge (Dimona, etc.) ?",
+          "thanks": "Merci d'avance,"
+        },
+        "etudiant": {
+          "heading": "PRÉPARATION — CONTRAT D'OCCUPATION D'ÉTUDIANT",
+          "intro": "Ceci n'est PAS un contrat. C'est une fiche de préparation listant les\nmentions obligatoires à prévoir dans le contrat écrit (à conclure au plus tard\nau moment de l'entrée en service).",
+          "elementsHeading": "Éléments réunis :",
+          "elementsEmpty": "- (à compléter)",
+          "mandatoryHeading": "Mentions obligatoires à prévoir dans le contrat écrit :",
+          "mandatoryItems": [
+            "Identité et domicile des deux parties",
+            "Date de début et de fin de l'occupation",
+            "Lieu d'exécution du travail",
+            "Description concise de la fonction",
+            "Durée du travail et horaire",
+            "Rémunération convenue et modalités de paiement",
+            "Commission paritaire applicable",
+            "Lieu de logement si l'employeur s'est engagé à loger l'étudiant",
+            "Renvoi au règlement de travail"
+          ],
+          "reminder": "À ne pas oublier : Dimona « STU » avant le début, et vérifier le contingent\nannuel (475 heures à cotisations réduites) via student@work."
+        },
+        "flexi": {
+          "heading": "PRÉPARATION — FLEXI-JOB",
+          "intro": "Ceci n'est PAS un contrat. C'est une fiche de préparation du contrat-cadre\net des informations à réunir avant la première occupation.",
+          "elementsHeading": "Éléments réunis :",
+          "elementsEmpty": "- (à compléter)",
+          "checksHeading": "À prévoir / vérifier :",
+          "checksItems": [
+            "Conditions d'éligibilité du travailleur (occupation 4/5 chez un autre employeur au trimestre de référence, ou pensionné)",
+            "Secteur autorisé pour les flexi-jobs (selon la commission paritaire)",
+            "Contrat-cadre écrit conclu AVANT la première occupation",
+            "Contrat de travail flexi (oral ou écrit selon la durée)",
+            "Flexi-salaire ≥ minimum légal indexé, + flexi-pécule de vacances",
+            "Dimona spécifique flexi avant chaque occupation"
+          ]
+        },
+        "verif": {
+          "greeting": "Bonjour,",
+          "employerPlaceholder": "[votre organisation]",
+          "intro": "Pour {employer}, pourriez-vous nous aider à vérifier le barème et la commission paritaire applicables au profil suivant ?",
+          "detailsEmpty": "- (détails à compléter)",
+          "labels": {
+            "functionTitle": "Fonction",
+            "workerType": "Type de travailleur",
+            "jointCommittee": "Commission paritaire supposée",
+            "experience": "Ancienneté / expérience",
+            "schedule": "Régime horaire",
+            "salary": "Salaire envisagé",
+            "salarySuffix": "€"
+          },
+          "questionPrefix": "Question :",
+          "questionDefault": "Question : le barème minimum prévu par la commission paritaire est-il respecté pour cette fonction ?",
+          "thanks": "Merci d'avance pour votre confirmation."
+        }
+      },
+      "starterRules": {
+        "first_engagement_wide": {
+          "title": "Premier engagement → identification employeur (WIDE)",
+          "description": "Pas de personnel et pas de numéro ONSS (ou inconnu) : l'entreprise doit s'identifier comme employeur.",
+          "outputs": {
+            "item0": {
+              "title": "Demander l'identification employeur via WIDE (ONSS)",
+              "description": "Avant de déclarer un travailleur, l'entreprise doit vérifier si elle doit s'identifier comme employeur auprès de l'ONSS. La demande se fait via WIDE.",
+              "tooltip": "Sans qualité d'employeur ONSS, aucune déclaration n'est possible."
+            }
+          }
+        },
+        "dimona_required": {
+          "title": "Travailleur salarié → Dimona",
+          "description": "Un travailleur salarié nécessite une déclaration Dimona.",
+          "outputs": {
+            "item0": {
+              "title": "Préparer la déclaration Dimona (entrée en service)",
+              "description": "Une déclaration Dimona est en principe nécessaire pour déclarer l'entrée (et la sortie) de service du travailleur, avant le début de l'occupation.",
+              "tooltip": "À effectuer AVANT l'entrée en service."
+            }
+          }
+        },
+        "part_time_written": {
+          "title": "Temps partiel → contrat écrit (régime + horaire)",
+          "description": "Un régime à temps partiel impose un écrit avec régime de travail et horaire.",
+          "outputs": {
+            "alert0": {
+              "message": "Le contrat à temps partiel doit être établi par écrit et mentionner le régime de travail et l'horaire convenu."
+            },
+            "item1": {
+              "title": "Établir le contrat à temps partiel par écrit (régime + horaire)",
+              "description": "Le contrat à temps partiel doit être écrit et contenir le régime de travail et l'horaire convenu."
+            }
+          }
+        },
+        "cp_unknown_reliability": {
+          "title": "CP inconnue → fiabilité faible",
+          "description": "Sans commission paritaire, le salaire minimum sectoriel ne peut pas être vérifié précisément.",
+          "outputs": {
+            "alert1": {
+              "message": "Commission paritaire non renseignée : le salaire minimum sectoriel ne peut pas être vérifié précisément."
+            }
+          }
+        },
+        "salary_vs_cp": {
+          "title": "Salaire encodé mais CP absente → barème non vérifiable",
+          "description": "Un salaire est encodé alors que la commission paritaire est inconnue.",
+          "outputs": {
+            "alert0": {
+              "message": "Un salaire brut est encodé mais la commission paritaire est inconnue : impossible de vérifier le barème minimum applicable."
+            }
+          }
+        },
+        "student_checklist": {
+          "title": "Étudiant → contrat étudiant + mentions obligatoires",
+          "description": "Un travailleur étudiant nécessite un contrat écrit et des mentions obligatoires.",
+          "outputs": {
+            "item0": {
+              "title": "Établir un contrat d'occupation d'étudiant écrit"
+            },
+            "item1": {
+              "title": "Vérifier les mentions obligatoires (CP, horaire, rémunération, période d'occupation)"
+            },
+            "item2": {
+              "title": "Préparer la Dimona étudiant (type STU)"
+            },
+            "item3": {
+              "title": "Vérifier le quota d'heures étudiant disponible"
+            },
+            "alert4": {
+              "message": "Un contrat d'occupation d'étudiant doit contenir les mentions obligatoires : commission paritaire, horaire, rémunération et période d'occupation."
+            }
+          }
+        },
+        "flexi_contract_frame": {
+          "title": "Flexi-job → contrat-cadre écrit",
+          "description": "Un flexi-job nécessite un contrat-cadre écrit et des conditions spécifiques.",
+          "outputs": {
+            "item0": {
+              "title": "Établir un contrat-cadre flexi-job écrit avant la première occupation"
+            },
+            "item1": {
+              "title": "Vérifier les conditions d'accès du travailleur au flexi-job"
+            },
+            "item2": {
+              "title": "Préparer la Dimona flexi-job (type FLX)"
+            },
+            "alert3": {
+              "message": "Le flexi-job nécessite un contrat-cadre écrit avant la première occupation, ainsi que des règles spécifiques de déclaration et de conditions d'accès."
+            }
+          }
+        }
+      },
+      "legalSources": {
+        "S1": {
+          "contentSummary": "Identification de l'entreprise comme employeur et obtention de la qualité d'employeur via WIDE (premier engagement)."
+        },
+        "S2": {
+          "contentSummary": "Déclaration immédiate de l'emploi : entrée et sortie de service du travailleur, selon le type de travailleur."
+        },
+        "S3": {
+          "contentSummary": "Déclaration multifonctionnelle trimestrielle : rémunérations, temps de travail et cotisations."
+        },
+        "S4": {
+          "contentSummary": "Inscription employeur, déclarations, cotisations sociales et obligations générales."
+        },
+        "S5": {
+          "contentSummary": "Mandats et prestataires de services sociaux (hors périmètre MVP — étape future)."
+        },
+        "S6": {
+          "contentSummary": "Types de contrats, écrit obligatoire ou recommandé (temps partiel, étudiant, flexi-job)."
+        },
+        "S7": {
+          "contentSummary": "Obligations internes, dépôt, horaires et mise à jour du règlement de travail."
+        },
+        "S8": {
+          "contentSummary": "Salaire minimum, commission paritaire, CCT et barèmes. Sans CP, le barème ne peut être vérifié précisément."
+        },
+        "S9": {
+          "contentSummary": "Contrat d'occupation d'étudiant, mentions obligatoires, rémunération et sanctions si incomplet."
+        },
+        "S10": {
+          "contentSummary": "Conditions d'accès, contrat-cadre écrit, cotisation patronale spécifique et déclaration."
+        },
+        "S11": {
+          "contentSummary": "Horaires, durée journalière/hebdomadaire, repos et exceptions sectorielles."
+        },
+        "S12": {
+          "contentSummary": "Définition, motifs (force majeure, intempéries, raisons économiques), procédure et documents."
+        },
+        "S13": {
+          "contentSummary": "Communications officielles et espace numérique de l'employeur."
+        }
+      },
+      "constants": {
+        "legalForm": {
+          "independant": "Indépendant (personne physique)",
+          "srl": "SRL",
+          "asbl": "ASBL",
+          "societe_etrangere": "Société étrangère",
+          "autre": "Autre"
+        },
+        "region": {
+          "wallonia": "Wallonie",
+          "flanders": "Flandre",
+          "brussels": "Bruxelles",
+          "multi": "Plusieurs régions"
+        },
+        "workerType": {
+          "employe": "Employé",
+          "ouvrier": "Ouvrier",
+          "etudiant": "Étudiant",
+          "flexi_job": "Flexi-job",
+          "interim": "Intérim",
+          "stagiaire": "Stagiaire",
+          "autre": "Autre"
+        },
+        "contractType": {
+          "cdi": "CDI (durée indéterminée)",
+          "cdd": "CDD (durée déterminée)",
+          "temps_plein": "Temps plein",
+          "temps_partiel": "Temps partiel",
+          "remplacement": "Remplacement",
+          "etudiant": "Contrat étudiant",
+          "flexi_job": "Contrat flexi-job",
+          "interim": "Intérim",
+          "autre": "Autre"
+        },
+        "benefitType": {
+          "voiture": "Voiture",
+          "cheques_repas": "Chèques-repas",
+          "ecocheques": "Écochèques",
+          "frais_forfaitaires": "Frais forfaitaires",
+          "bonus": "Bonus",
+          "prime": "Prime",
+          "telephone": "Téléphone",
+          "ordinateur": "Ordinateur",
+          "assurance_groupe": "Assurance groupe",
+          "autre": "Autre"
+        },
+        "checklistCategory": {
+          "premier_engagement": "Premier engagement",
+          "engagement_classique": "Engagement classique",
+          "etudiant": "Étudiant",
+          "flexi_job": "Flexi-job",
+          "temps_partiel": "Temps partiel",
+          "chomage_temporaire": "Chômage temporaire",
+          "sortie_service": "Sortie de service"
+        },
+        "itemPriority": {
+          "obligatoire": "Obligatoire",
+          "recommande": "Recommandé",
+          "optionnel": "Optionnel"
+        },
+        "itemStatus": {
+          "todo": "À faire",
+          "in_progress": "En cours",
+          "done": "Fait",
+          "not_applicable": "Non applicable",
+          "needs_review": "À vérifier"
+        },
+        "scenarioStatus": {
+          "draft": "Brouillon",
+          "ready": "Prêt",
+          "exported": "Exporté",
+          "archived": "Archivé"
+        },
+        "alertSeverity": {
+          "info": "Info",
+          "warning": "Attention",
+          "critical": "Critique"
+        },
+        "reliability": {
+          "low": "Faible",
+          "medium": "Moyenne",
+          "high": "Bonne",
+          "needs_human_validation": "À valider"
+        }
+      },
+      "dashboard": {
+        "regimeLabel": {
+          "temps_plein": "Temps plein",
+          "temps_partiel": "Temps partiel"
+        },
+        "deadline": {
+          "overdue": "Dépassé",
+          "today": "Aujourd''hui",
+          "inDays": "Dans {days} j"
+        },
+        "actionLabel": {
+          "created": "Élément créé",
+          "created_bulk": "Éléments créés",
+          "updated": "Élément mis à jour",
+          "deleted": "Élément supprimé",
+          "exported": "Document exporté",
+          "published": "Document envoyé",
+          "synced": "Synchronisation",
+          "received": "Reçu",
+          "activity": "Activité"
+        },
+        "monthShort": {
+          "jan": "JAN",
+          "feb": "FÉV",
+          "mar": "MAR",
+          "apr": "AVR",
+          "may": "MAI",
+          "jun": "JUIN",
+          "jul": "JUIL",
+          "aug": "AOÛT",
+          "sep": "SEP",
+          "oct": "OCT",
+          "nov": "NOV",
+          "dec": "DÉC"
+        },
+        "relativeWhen": {
+          "today": "Aujourd''hui à {time}",
+          "yesterday": "Hier à {time}",
+          "onDate": "{date} à {time}"
+        },
+        "deadlineSubContract": "{role} — début de contrat prévu",
+        "alertNeedsValidationTitle": "Dossier à faire valider",
+        "alertNeedsValidationSub": "{title} — fiabilité à confirmer",
+        "exampleTitle": "Exemple — employé temps plein",
+        "fallbackEmployer": "Employeur"
+      },
+      "checklists": {
+        "templates": {
+          "premier_engagement": {
+            "verifier_bce": {
+              "title": "Vérifier le numéro BCE de l''entreprise",
+              "description": "Confirmer l''identification de l''entreprise à la Banque-Carrefour des Entreprises."
+            },
+            "identifier_cp": {
+              "title": "Identifier la commission paritaire probable",
+              "description": "La commission paritaire détermine le salaire minimum et de nombreuses obligations."
+            },
+            "verifier_salaire_minimum": {
+              "title": "Vérifier le salaire minimum applicable",
+              "description": "Le salaire doit respecter le minimum de la commission paritaire compétente."
+            },
+            "choisir_type_contrat": {
+              "title": "Choisir et préparer le type de contrat",
+              "description": "CDI, CDD, temps partiel, étudiant, flexi-job… selon la situation."
+            },
+            "reglement_travail": {
+              "title": "Vérifier ou établir le règlement de travail",
+              "description": "Le règlement de travail est en principe obligatoire dès le premier travailleur."
+            },
+            "assurance_accidents": {
+              "title": "Souscrire une assurance accidents du travail",
+              "description": "L''assurance accidents du travail est obligatoire pour tout employeur."
+            },
+            "service_prevention": {
+              "title": "Vérifier l''affiliation à un service externe de prévention et de protection"
+            },
+            "dossier_travailleur": {
+              "title": "Préparer le dossier / la fiche du travailleur",
+              "description": "Rassembler les données nécessaires au payroll et au dossier personnel."
+            },
+            "ebox_enterprise": {
+              "title": "Prévoir l''accès e-Box Enterprise (communications officielles)"
+            }
+          },
+          "engagement_classique": {
+            "valider_type_contrat": {
+              "title": "Valider le type de contrat"
+            },
+            "verifier_cp": {
+              "title": "Vérifier la commission paritaire"
+            },
+            "verifier_bareme": {
+              "title": "Vérifier le barème salarial applicable"
+            },
+            "preparer_contrat": {
+              "title": "Préparer le contrat"
+            },
+            "encoder_payroll": {
+              "title": "Encoder les données pour le payroll"
+            },
+            "documents_internes": {
+              "title": "Préparer les documents internes et l''onboarding"
+            }
+          }
+        }
+      },
+      "calendar": {
+        "warning": "Dates indicatives calculées selon un régime trimestriel par défaut. Les échéances peuvent varier selon votre régime TVA, votre situation employeur, les reports au jour ouvrable suivant, les jours fériés, les tolérances administratives ou les communications officielles. Vérifiez toujours les sources officielles SPF Finances et Sécurité sociale.",
+        "category": {
+          "ONSS": "ONSS",
+          "Précompte": "Précompte",
+          "TVA": "TVA",
+          "Autre": "Autre"
+        },
+        "sourceLabel": {
+          "ONSS": "ONSS",
+          "SPF Finances": "SPF Finances"
+        },
+        "obligation": {
+          "ONSS_DMFA": {
+            "label": "Déclaration ONSS – DmfA",
+            "note": "Régime trimestriel (par défaut). Échéance = dernier jour du mois qui suit le trimestre."
+          },
+          "PROFESSIONAL_WITHHOLDING_TAX": {
+            "label": "Versement précompte professionnel",
+            "note": "Régime trimestriel par défaut (le régime mensuel n''est pas modélisé en MVP). Échéance = le 15 du mois qui suit le trimestre."
+          },
+          "VAT_PERIODIC_RETURN": {
+            "label": "Déclaration TVA (trimestrielle)",
+            "note": "Régime trimestriel (par défaut). Date issue du calendrier officiel SPF (reports week-end/jour férié déjà intégrés)."
+          }
+        },
+        "fallbackNote": "Date calculée (le 25 du mois suivant le trimestre) car ce trimestre est absent du calendrier officiel SPF : le report éventuel au jour ouvrable suivant n''est pas garanti, à confirmer sur le calendrier TVA du SPF Finances.",
+        "titleFormat": "{label} · T{quarter} {year}",
+        "shortFormat": "{category} · T{quarter} {year}",
+        "periodicity": {
+          "mensuelle": "mensuelle",
+          "trimestrielle": "trimestrielle",
+          "annuelle": "annuelle"
+        }
+      },
+      "cost": {
+        "regimeLabel": {
+          "temps_plein": "Temps plein",
+          "temps_partiel": "Temps partiel"
+        },
+        "assumption": {
+          "studentRate": "Étudiant : cotisation de solidarité employeur ≈ {pct} % du brut (et non l''ONSS plein).",
+          "flexiRate": "Flexi-job : cotisation patronale spéciale ≈ {pct} % du brut.",
+          "workerRate": "Ouvrier : cotisations patronales ≈ {pct} % du brut (base ≈ 25 % + Fonds de vacances ONSS ≈ 11 %).",
+          "employeeRate": "Employé : cotisations patronales de base ≈ {pct} % du brut (assurance accidents du travail et cotisations sectorielles en sus, non incluses).",
+          "defaultRate": "Type de travailleur « {workerType} » : taux patronal de base ≈ {pct} % retenu par défaut.",
+          "defaultRateUnknown": "Type de travailleur « non précisé » : taux patronal de base ≈ {pct} % retenu par défaut.",
+          "firstHireReduction": "Réduction « premier engagement » potentielle : forte réduction des cotisations patronales (non chiffrée ici).",
+          "targetGroupReduction": "Réduction « groupe cible » potentielle (région) : non chiffrée dans cette estimation.",
+          "holidayProvisioned": "Double pécule de vacances provisionné ≈ {pct} % du brut annuel.",
+          "holidayWorker": "Ouvrier : pécule de vacances financé via l''ONSS (Fonds de vacances), déjà compris dans le taux patronal — pas de provision séparée.",
+          "holidayFlexi": "Flexi-job : pécule de vacances inclus dans la rémunération flexi (règles spécifiques).",
+          "thirteenthIncluded": "13e mois provisionné ≈ {pct} % du brut annuel.",
+          "thirteenthNotIncluded": "13e mois non inclus (non coché).",
+          "mealVoucher": "Chèques-repas : part employeur ≈ {perDay} €/jour × {days} j ≈ {monthly} €/mois.",
+          "partTime": "Temps partiel : le brut renseigné est supposé déjà proratisé pour le temps de travail réel.",
+          "partTimeRatio": "Fraction d''occupation ≈ {pct} % ({weekly}h / {reference}h)."
+        },
+        "missingData": {
+          "grossInvalid": "Salaire brut mensuel manquant ou invalide.",
+          "reductionsToCheck": "Réductions de cotisations (premier engagement, groupe cible…) à vérifier.",
+          "otherBenefits": "Avantages non chiffrés dans cette estimation : {benefits}.",
+          "partTimeHoursMissing": "Heures hebdomadaires / référence temps plein non renseignées.",
+          "cpMissing": "Commission paritaire non renseignée."
+        },
+        "warning": {
+          "flexiVerify": "Le régime flexi-job applique une cotisation patronale spécifique : faites vérifier l''éligibilité et le taux exact.",
+          "defaultTypeVerify": "Le type de travailleur retenu utilise un taux patronal par défaut : à confirmer selon le statut réel.",
+          "firstHireReductionImpact": "Une réduction « premier engagement » peut réduire fortement les cotisations : le coût réel pourrait être inférieur.",
+          "netIndicative": "Le net affiché est indicatif.",
+          "contributionsVary": "Les cotisations patronales varient selon les réductions.",
+          "socialSecretariatValidates": "Un secrétariat social doit valider le calcul final.",
+          "cpUnknownMinimum": "Commission paritaire non renseignée : salaire minimum non vérifiable."
+        }
+      },
+      "controle": {
+        "verdict": {
+          "ok": "Aucune incohérence évidente détectée.",
+          "points_to_check": "Points à vérifier",
+          "insufficient": "Données insuffisantes pour un contrôle complet."
+        },
+        "finding": {
+          "brut_absent": {
+            "message": "Le salaire brut mensuel n''est pas renseigné : aucune vérification de cohérence chiffrée n''est possible.",
+            "recommendation": "Indiquez le salaire brut figurant sur la fiche de paie pour permettre un contrôle d''ordre de grandeur."
+          },
+          "cp_absente": {
+            "message": "Aucune commission paritaire renseignée : impossible de comparer le salaire au barème sectoriel minimum.",
+            "recommendation": "Renseignez la commission paritaire (CP) applicable pour vérifier le barème minimum du secteur."
+          },
+          "cout_employeur_non_fiable": {
+            "message": "Sans commission paritaire, le coût employeur global (charges patronales, primes sectorielles) ne peut pas être fiabilisé.",
+            "recommendation": "Pour une estimation de coût fiable, précisez la CP : elle conditionne les charges et avantages sectoriels."
+          },
+          "regime_absent": {
+            "message": "Le régime de travail (temps plein / temps partiel) n''est pas précisé : certaines vérifications restent partielles.",
+            "recommendation": "Précisez si le travailleur est à temps plein ou à temps partiel."
+          },
+          "incoherence_temps_plein": {
+            "message": "Régime « temps plein » déclaré mais l''horaire encodé ({weekly} h/sem) est nettement inférieur à la référence temps plein ({reference} h/sem).",
+            "recommendation": "Vérifiez le régime : un horaire sous la référence temps plein correspond généralement à un temps partiel."
+          },
+          "temps_partiel_sans_horaire": {
+            "message": "Régime « temps partiel » mais aucun horaire hebdomadaire encodé : l''horaire est une mention obligatoire du contrat à temps partiel.",
+            "recommendation": "Indiquez le nombre d''heures par semaine : le contrat à temps partiel doit mentionner l''horaire précis."
+          },
+          "net_incoherent": {
+            "message": "Le net reçu encodé ({net} €) s''écarte fortement de l''estimation Docbel (~{expected} € pour un brut de {gross} €).",
+            "recommendation": "Vérifiez les retenues (ONSS, précompte) ou la présence d''éléments non encodés (prime, pécule, avantages, temps partiel). L''estimation est indicative."
+          },
+          "etudiant_sans_contrat": {
+            "message": "Travailleur étudiant sans données de contrat (ni CP ni horaire) : le contingent et les cotisations de solidarité ne peuvent pas être vérifiés.",
+            "recommendation": "Précisez l''horaire et la CP de l''étudiant pour vérifier le contingent annuel et la cotisation de solidarité."
+          },
+          "flexi_sans_contrat_cadre": {
+            "message": "Travailleur flexi-job sans mention de contrat-cadre : un contrat-cadre écrit préalable est requis pour le régime flexi.",
+            "recommendation": "Confirmez l''existence d''un contrat-cadre flexi-job signé avant le début des prestations (mentionnez-le dans la remarque)."
+          },
+          "avantage_non_pris_en_compte": {
+            "message": "Des avantages sont déclarés mais aucun montant (prime, pécule) n''a été encodé : ils ne sont pas pris en compte dans l''estimation du net.",
+            "recommendation": "Encodez les montants des avantages/primes pour affiner la comparaison du net."
+          },
+          "aucune_incoherence": {
+            "message": "Aucune incohérence évidente détectée.",
+            "recommendation": "Ce contrôle reste indicatif : seul un secrétariat social agréé certifie la conformité d''une fiche de paie."
+          }
+        }
       }
     },
     "ec32Content": {

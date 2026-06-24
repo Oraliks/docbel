@@ -21,6 +21,90 @@ import {
 const PREPARATORY_DISCLAIMER_LINE =
   "Document préparatoire généré par Docbel. À valider avant usage officiel. Les règles sociales peuvent dépendre de la situation exacte, de la commission paritaire, des conventions collectives, des statuts applicables et des mises à jour légales.";
 
+/**
+ * Clés i18n associées au rendu des documents préparatoires.
+ *
+ * NOTE i18n : le rendu actuel reste FR par défaut (fallback). Les clés exposées
+ * ici permettent à une 2e étape (PDF/UI i18n) de résoudre les libellés via
+ * `next-intl` sans toucher au moteur de rendu pur. Voir
+ * `public.employeurLib.render.*` dans les patches messages.
+ */
+export const RENDER_I18N_KEYS = {
+  disclaimer: "public.employeurLib.render.disclaimer",
+  titles: {
+    fiche_travailleur: "public.employeurLib.render.titles.ficheTravailleur",
+    demande_secretariat: "public.employeurLib.render.titles.demandeSecretariat",
+    prepa_contrat_etudiant: "public.employeurLib.render.titles.prepaContratEtudiant",
+    prepa_flexi: "public.employeurLib.render.titles.prepaFlexi",
+    verif_bareme: "public.employeurLib.render.titles.verifBareme",
+  },
+  fiche: {
+    heading: "public.employeurLib.render.fiche.heading",
+    subheading: "public.employeurLib.render.fiche.subheading",
+    empty: "public.employeurLib.render.fiche.empty",
+  },
+  demande: {
+    greeting: "public.employeurLib.render.demande.greeting",
+    employerPlaceholder: "public.employeurLib.render.demande.employerPlaceholder",
+    workerPlaceholder: "public.employeurLib.render.demande.workerPlaceholder",
+    contactPlaceholder: "public.employeurLib.render.demande.contactPlaceholder",
+    intro: "public.employeurLib.render.demande.intro",
+    introWithRef: "public.employeurLib.render.demande.introWithRef",
+    detailsEmpty: "public.employeurLib.render.demande.detailsEmpty",
+    labels: {
+      startDate: "public.employeurLib.render.demande.labels.startDate",
+      contractType: "public.employeurLib.render.demande.labels.contractType",
+      schedule: "public.employeurLib.render.demande.labels.schedule",
+      hours: "public.employeurLib.render.demande.labels.hours",
+      hoursSuffix: "public.employeurLib.render.demande.labels.hoursSuffix",
+      salary: "public.employeurLib.render.demande.labels.salary",
+      salarySuffix: "public.employeurLib.render.demande.labels.salarySuffix",
+      benefits: "public.employeurLib.render.demande.labels.benefits",
+    },
+    attachmentsLabel: "public.employeurLib.render.demande.attachmentsLabel",
+    attachmentsTbd: "public.employeurLib.render.demande.attachmentsTbd",
+    questionsHeading: "public.employeurLib.render.demande.questionsHeading",
+    questionsDefault: "public.employeurLib.render.demande.questionsDefault",
+    closing: "public.employeurLib.render.demande.closing",
+    thanks: "public.employeurLib.render.demande.thanks",
+  },
+  etudiant: {
+    heading: "public.employeurLib.render.etudiant.heading",
+    intro: "public.employeurLib.render.etudiant.intro",
+    elementsHeading: "public.employeurLib.render.etudiant.elementsHeading",
+    elementsEmpty: "public.employeurLib.render.etudiant.elementsEmpty",
+    mandatoryHeading: "public.employeurLib.render.etudiant.mandatoryHeading",
+    mandatoryItems: "public.employeurLib.render.etudiant.mandatoryItems",
+    reminder: "public.employeurLib.render.etudiant.reminder",
+  },
+  flexi: {
+    heading: "public.employeurLib.render.flexi.heading",
+    intro: "public.employeurLib.render.flexi.intro",
+    elementsHeading: "public.employeurLib.render.flexi.elementsHeading",
+    elementsEmpty: "public.employeurLib.render.flexi.elementsEmpty",
+    checksHeading: "public.employeurLib.render.flexi.checksHeading",
+    checksItems: "public.employeurLib.render.flexi.checksItems",
+  },
+  verif: {
+    greeting: "public.employeurLib.render.verif.greeting",
+    employerPlaceholder: "public.employeurLib.render.verif.employerPlaceholder",
+    intro: "public.employeurLib.render.verif.intro",
+    detailsEmpty: "public.employeurLib.render.verif.detailsEmpty",
+    labels: {
+      functionTitle: "public.employeurLib.render.verif.labels.functionTitle",
+      workerType: "public.employeurLib.render.verif.labels.workerType",
+      jointCommittee: "public.employeurLib.render.verif.labels.jointCommittee",
+      experience: "public.employeurLib.render.verif.labels.experience",
+      schedule: "public.employeurLib.render.verif.labels.schedule",
+      salary: "public.employeurLib.render.verif.labels.salary",
+      salarySuffix: "public.employeurLib.render.verif.labels.salarySuffix",
+    },
+    questionPrefix: "public.employeurLib.render.verif.questionPrefix",
+    questionDefault: "public.employeurLib.render.verif.questionDefault",
+    thanks: "public.employeurLib.render.verif.thanks",
+  },
+} as const;
+
 function val(values: DocumentValues, key: string): string {
   return (values[key] ?? "").trim();
 }

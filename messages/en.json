@@ -5111,6 +5111,780 @@
           "Forgetting variable pay items.",
           "Assuming that the social secretariat verifies everything on your behalf."
         ]
+      },
+      "documentTypes": {
+        "fiche_travailleur": {
+          "label": "Worker sheet",
+          "description": "Summarises the worker's data to send to your social secretariat.",
+          "fields": {
+            "lastName": {
+              "label": "Last name"
+            },
+            "firstName": {
+              "label": "First name"
+            },
+            "niss": {
+              "label": "NISS (national register number)",
+              "help": "Optional — 11 digits. Only share if you have it."
+            },
+            "address": {
+              "label": "Address"
+            },
+            "email": {
+              "label": "Email"
+            },
+            "phone": {
+              "label": "Phone"
+            },
+            "startDate": {
+              "label": "Planned start date"
+            },
+            "functionTitle": {
+              "label": "Role"
+            },
+            "schedule": {
+              "label": "Working time regime"
+            },
+            "weeklyHours": {
+              "label": "Schedule (hours/week)",
+              "help": "E.g. 38 (full-time) or 20 (part-time)."
+            },
+            "grossSalary": {
+              "label": "Gross monthly salary (€)"
+            },
+            "benefits": {
+              "label": "Planned benefits",
+              "help": "E.g. meal vouchers, eco vouchers, company car…"
+            },
+            "jointCommittee": {
+              "label": "Joint committee (if known)",
+              "help": "E.g. JC 200. To be confirmed by the social secretariat."
+            },
+            "workerType": {
+              "label": "Worker type"
+            },
+            "contractType": {
+              "label": "Contract type"
+            },
+            "workplace": {
+              "label": "Workplace"
+            },
+            "remark": {
+              "label": "Remark"
+            }
+          }
+        },
+        "demande_secretariat": {
+          "label": "Request to the social secretariat",
+          "description": "Ready-to-send message for your social secretariat to prepare a hire.",
+          "fields": {
+            "employerName": {
+              "label": "Your organisation"
+            },
+            "employerRef": {
+              "label": "Your file reference / NSSO number",
+              "help": "Optional — helps the secretariat locate your file."
+            },
+            "contactName": {
+              "label": "Contact person (you)"
+            },
+            "workerName": {
+              "label": "Worker identity"
+            },
+            "startDate": {
+              "label": "Planned start date"
+            },
+            "contractType": {
+              "label": "Contract type"
+            },
+            "schedule": {
+              "label": "Working time regime"
+            },
+            "weeklyHours": {
+              "label": "Schedule (hours/week)"
+            },
+            "grossSalary": {
+              "label": "Gross monthly salary (€)"
+            },
+            "benefits": {
+              "label": "Planned benefits",
+              "help": "E.g. meal vouchers, eco vouchers, company car…"
+            },
+            "attachments": {
+              "label": "Announced attachments",
+              "help": "E.g. copy of ID card, draft contract…"
+            },
+            "questions": {
+              "label": "Points to check / questions",
+              "help": "E.g. applicable pay scale, JC, contribution reductions…"
+            }
+          }
+        },
+        "prepa_contrat_etudiant": {
+          "label": "Student contract preparation",
+          "description": "PREPARATION sheet (this is not a contract): the mandatory items to plan for a student employment contract.",
+          "fields": {
+            "employerName": {
+              "label": "Employer"
+            },
+            "studentName": {
+              "label": "Student name"
+            },
+            "startDate": {
+              "label": "Start date"
+            },
+            "endDate": {
+              "label": "End date"
+            },
+            "functionTitle": {
+              "label": "Role / tasks"
+            },
+            "workplace": {
+              "label": "Place of performance"
+            },
+            "schedule": {
+              "label": "Working schedule",
+              "help": "Planned days and hours. To be detailed in the written contract."
+            },
+            "grossSalary": {
+              "label": "Planned remuneration",
+              "help": "To be verified against the applicable JC."
+            },
+            "jointCommittee": {
+              "label": "Joint committee (if known)"
+            },
+            "quota": {
+              "label": "Hour quota (475 h/year) — estimated balance",
+              "help": "Reduced contributions within the annual quota. To be confirmed (student@work)."
+            },
+            "remark": {
+              "label": "Remark"
+            }
+          }
+        },
+        "prepa_flexi": {
+          "label": "Flexi-job preparation",
+          "description": "Preparation of a flexi-job framework contract and of the information to gather (this is not a contract).",
+          "fields": {
+            "employerName": {
+              "label": "Employer"
+            },
+            "workerName": {
+              "label": "Flexi-worker name"
+            },
+            "eligibility": {
+              "label": "Eligibility conditions verified",
+              "help": "E.g. employment ≥ 4/5 with another employer in quarter T-3; or retired."
+            },
+            "startDate": {
+              "label": "Start of employment"
+            },
+            "functionTitle": {
+              "label": "Planned role"
+            },
+            "workplace": {
+              "label": "Workplace"
+            },
+            "flexiSalary": {
+              "label": "Flexi hourly wage (€)",
+              "help": "Minimum flexi wage to verify (indexed). Flexi holiday pay on top."
+            },
+            "jointCommittee": {
+              "label": "Joint committee",
+              "help": "Flexi-jobs are only open in certain sectors. To be confirmed."
+            },
+            "frameworkContract": {
+              "label": "Framework contract — items to plan",
+              "help": "The written framework contract must precede the first employment."
+            },
+            "remark": {
+              "label": "Remark"
+            }
+          }
+        },
+        "verif_bareme": {
+          "label": "Pay scale / JC verification",
+          "description": "Short message asking a social secretariat or adviser to verify the applicable pay scale and joint committee.",
+          "fields": {
+            "employerName": {
+              "label": "Your organisation"
+            },
+            "functionTitle": {
+              "label": "Role concerned"
+            },
+            "workerType": {
+              "label": "Worker type"
+            },
+            "jointCommittee": {
+              "label": "Assumed joint committee",
+              "help": "Indicate the JC you believe applies (if any)."
+            },
+            "experience": {
+              "label": "Seniority / experience"
+            },
+            "currentSalary": {
+              "label": "Planned salary (€)"
+            },
+            "schedule": {
+              "label": "Working time regime"
+            },
+            "question": {
+              "label": "Precise question",
+              "help": "E.g. \"Is the JC minimum pay scale respected for this role?\""
+            }
+          }
+        },
+        "scheduleOptions": {
+          "temps_plein": "Full-time",
+          "temps_partiel": "Part-time",
+          "variable": "Variable schedule"
+        }
+      },
+      "render": {
+        "disclaimer": "Preparatory document generated by Docbel. To be validated before official use. Social rules can depend on the exact situation, the joint committee, the collective agreements, the applicable statutes and legal updates.",
+        "titles": {
+          "ficheTravailleur": "Worker sheet — {who}",
+          "demandeSecretariat": "Social secretariat request — {who}",
+          "prepaContratEtudiant": "Student contract preparation — {who}",
+          "prepaFlexi": "Flexi-job preparation — {who}",
+          "verifBareme": "Pay scale verification — {who}"
+        },
+        "fiche": {
+          "heading": "WORKER SHEET",
+          "subheading": "(data to send to the social secretariat)",
+          "empty": "(no data entered yet)"
+        },
+        "demande": {
+          "greeting": "Hello,",
+          "employerPlaceholder": "[your organisation]",
+          "workerPlaceholder": "[worker identity]",
+          "contactPlaceholder": "[your name]",
+          "intro": "{employer} would like to prepare the hire of {worker} and sends you the following items to get the process started:",
+          "introWithRef": "{employer} (ref. {ref}) would like to prepare the hire of {worker} and sends you the following items to get the process started:",
+          "detailsEmpty": "- (details to complete)",
+          "labels": {
+            "startDate": "Planned start date",
+            "contractType": "Contract type",
+            "schedule": "Working time regime",
+            "hours": "Schedule",
+            "hoursSuffix": "h/week",
+            "salary": "Gross monthly salary",
+            "salarySuffix": "€",
+            "benefits": "Planned benefits"
+          },
+          "attachmentsLabel": "Attachments",
+          "attachmentsTbd": "(to be specified)",
+          "questionsHeading": "Points to check on your side:",
+          "questionsDefault": "- Applicable pay scale / joint committee\n- Possible contribution reductions",
+          "closing": "Could you confirm these items and tell us which steps remain in your hands (Dimona, etc.)?",
+          "thanks": "Thanks in advance,"
+        },
+        "etudiant": {
+          "heading": "PREPARATION — STUDENT EMPLOYMENT CONTRACT",
+          "intro": "This is NOT a contract. It is a preparation sheet listing the\nmandatory items to plan in the written contract (to be concluded no later\nthan at the time of starting service).",
+          "elementsHeading": "Items gathered:",
+          "elementsEmpty": "- (to complete)",
+          "mandatoryHeading": "Mandatory items to include in the written contract:",
+          "mandatoryItems": [
+            "Identity and address of both parties",
+            "Start and end date of the employment",
+            "Place of performance of the work",
+            "Concise description of the role",
+            "Working time and schedule",
+            "Agreed remuneration and payment terms",
+            "Applicable joint committee",
+            "Place of accommodation if the employer has agreed to house the student",
+            "Reference to the work regulations"
+          ],
+          "reminder": "Don't forget: \"STU\" Dimona before the start, and check the annual\nquota (475 reduced-contribution hours) via student@work."
+        },
+        "flexi": {
+          "heading": "PREPARATION — FLEXI-JOB",
+          "intro": "This is NOT a contract. It is a preparation sheet for the framework contract\nand the information to gather before the first employment.",
+          "elementsHeading": "Items gathered:",
+          "elementsEmpty": "- (to complete)",
+          "checksHeading": "To plan / verify:",
+          "checksItems": [
+            "Worker eligibility conditions (employment 4/5 with another employer in the reference quarter, or retired)",
+            "Sector authorised for flexi-jobs (depending on the joint committee)",
+            "Written framework contract concluded BEFORE the first employment",
+            "Flexi employment contract (oral or written depending on duration)",
+            "Flexi wage ≥ indexed legal minimum, + flexi holiday pay",
+            "Specific flexi Dimona before each employment"
+          ]
+        },
+        "verif": {
+          "greeting": "Hello,",
+          "employerPlaceholder": "[your organisation]",
+          "intro": "For {employer}, could you help us verify the applicable pay scale and joint committee for the following profile?",
+          "detailsEmpty": "- (details to complete)",
+          "labels": {
+            "functionTitle": "Role",
+            "workerType": "Worker type",
+            "jointCommittee": "Assumed joint committee",
+            "experience": "Seniority / experience",
+            "schedule": "Working time regime",
+            "salary": "Planned salary",
+            "salarySuffix": "€"
+          },
+          "questionPrefix": "Question:",
+          "questionDefault": "Question: is the minimum pay scale set by the joint committee respected for this role?",
+          "thanks": "Thanks in advance for your confirmation."
+        }
+      },
+      "starterRules": {
+        "first_engagement_wide": {
+          "title": "First hire → employer identification (WIDE)",
+          "description": "No staff and no NSSO number (or unknown): the company must identify itself as an employer.",
+          "outputs": {
+            "item0": {
+              "title": "Request employer identification via WIDE (NSSO)",
+              "description": "Before declaring a worker, the company must check whether it needs to identify itself as an employer with the NSSO. The request is made via WIDE.",
+              "tooltip": "Without NSSO employer status, no declaration is possible."
+            }
+          }
+        },
+        "dimona_required": {
+          "title": "Salaried worker → Dimona",
+          "description": "A salaried worker requires a Dimona declaration.",
+          "outputs": {
+            "item0": {
+              "title": "Prepare the Dimona declaration (entry into service)",
+              "description": "A Dimona declaration is in principle required to declare the entry (and exit) of service of the worker, before the start of the employment.",
+              "tooltip": "To be done BEFORE entry into service."
+            }
+          }
+        },
+        "part_time_written": {
+          "title": "Part-time → written contract (regime + schedule)",
+          "description": "A part-time regime requires a written contract with working regime and schedule.",
+          "outputs": {
+            "alert0": {
+              "message": "The part-time contract must be in writing and mention the working regime and the agreed schedule."
+            },
+            "item1": {
+              "title": "Draw up the part-time contract in writing (regime + schedule)",
+              "description": "The part-time contract must be written and contain the working regime and the agreed schedule."
+            }
+          }
+        },
+        "cp_unknown_reliability": {
+          "title": "JC unknown → low reliability",
+          "description": "Without a joint committee, the sectoral minimum wage cannot be verified precisely.",
+          "outputs": {
+            "alert1": {
+              "message": "Joint committee not provided: the sectoral minimum wage cannot be verified precisely."
+            }
+          }
+        },
+        "salary_vs_cp": {
+          "title": "Salary entered but JC missing → pay scale not verifiable",
+          "description": "A salary is entered while the joint committee is unknown.",
+          "outputs": {
+            "alert0": {
+              "message": "A gross salary is entered but the joint committee is unknown: the applicable minimum pay scale cannot be verified."
+            }
+          }
+        },
+        "student_checklist": {
+          "title": "Student → student contract + mandatory items",
+          "description": "A student worker requires a written contract and mandatory items.",
+          "outputs": {
+            "item0": {
+              "title": "Draw up a written student employment contract"
+            },
+            "item1": {
+              "title": "Check the mandatory items (JC, schedule, remuneration, employment period)"
+            },
+            "item2": {
+              "title": "Prepare the student Dimona (type STU)"
+            },
+            "item3": {
+              "title": "Check the available student hour quota"
+            },
+            "alert4": {
+              "message": "A student employment contract must contain the mandatory items: joint committee, schedule, remuneration and employment period."
+            }
+          }
+        },
+        "flexi_contract_frame": {
+          "title": "Flexi-job → written framework contract",
+          "description": "A flexi-job requires a written framework contract and specific conditions.",
+          "outputs": {
+            "item0": {
+              "title": "Draw up a written flexi-job framework contract before the first employment"
+            },
+            "item1": {
+              "title": "Check the worker's flexi-job access conditions"
+            },
+            "item2": {
+              "title": "Prepare the flexi-job Dimona (type FLX)"
+            },
+            "alert3": {
+              "message": "The flexi-job requires a written framework contract before the first employment, along with specific declaration rules and access conditions."
+            }
+          }
+        }
+      },
+      "legalSources": {
+        "S1": {
+          "contentSummary": "Identification of the company as an employer and obtaining employer status via WIDE (first hire)."
+        },
+        "S2": {
+          "contentSummary": "Immediate declaration of employment: entry and exit of service of the worker, depending on the worker type."
+        },
+        "S3": {
+          "contentSummary": "Multifunctional quarterly declaration: remuneration, working time and contributions."
+        },
+        "S4": {
+          "contentSummary": "Employer registration, declarations, social contributions and general obligations."
+        },
+        "S5": {
+          "contentSummary": "Social service mandates and providers (out of MVP scope — future step)."
+        },
+        "S6": {
+          "contentSummary": "Contract types, mandatory or recommended written form (part-time, student, flexi-job)."
+        },
+        "S7": {
+          "contentSummary": "Internal obligations, filing, schedules and updates of the work regulations."
+        },
+        "S8": {
+          "contentSummary": "Minimum wage, joint committee, CBAs and pay scales. Without a JC, the pay scale cannot be verified precisely."
+        },
+        "S9": {
+          "contentSummary": "Student employment contract, mandatory items, remuneration and sanctions if incomplete."
+        },
+        "S10": {
+          "contentSummary": "Access conditions, written framework contract, specific employer contribution and declaration."
+        },
+        "S11": {
+          "contentSummary": "Schedules, daily/weekly working time, rest and sectoral exceptions."
+        },
+        "S12": {
+          "contentSummary": "Definition, grounds (force majeure, bad weather, economic reasons), procedure and documents."
+        },
+        "S13": {
+          "contentSummary": "Official communications and digital employer space."
+        }
+      },
+      "constants": {
+        "legalForm": {
+          "independant": "Self-employed (natural person)",
+          "srl": "SRL (limited company)",
+          "asbl": "Non-profit (ASBL/VZW)",
+          "societe_etrangere": "Foreign company",
+          "autre": "Other"
+        },
+        "region": {
+          "wallonia": "Wallonia",
+          "flanders": "Flanders",
+          "brussels": "Brussels",
+          "multi": "Multiple regions"
+        },
+        "workerType": {
+          "employe": "White-collar employee",
+          "ouvrier": "Blue-collar worker",
+          "etudiant": "Student",
+          "flexi_job": "Flexi-job",
+          "interim": "Temp worker",
+          "stagiaire": "Trainee",
+          "autre": "Other"
+        },
+        "contractType": {
+          "cdi": "Permanent contract",
+          "cdd": "Fixed-term contract",
+          "temps_plein": "Full-time",
+          "temps_partiel": "Part-time",
+          "remplacement": "Replacement contract",
+          "etudiant": "Student contract",
+          "flexi_job": "Flexi-job contract",
+          "interim": "Temp contract",
+          "autre": "Other"
+        },
+        "benefitType": {
+          "voiture": "Company car",
+          "cheques_repas": "Meal vouchers",
+          "ecocheques": "Eco-vouchers",
+          "frais_forfaitaires": "Flat-rate expenses",
+          "bonus": "Bonus",
+          "prime": "Premium",
+          "telephone": "Phone",
+          "ordinateur": "Computer",
+          "assurance_groupe": "Group insurance",
+          "autre": "Other"
+        },
+        "checklistCategory": {
+          "premier_engagement": "First hire",
+          "engagement_classique": "Standard hire",
+          "etudiant": "Student",
+          "flexi_job": "Flexi-job",
+          "temps_partiel": "Part-time",
+          "chomage_temporaire": "Temporary unemployment",
+          "sortie_service": "Termination"
+        },
+        "itemPriority": {
+          "obligatoire": "Required",
+          "recommande": "Recommended",
+          "optionnel": "Optional"
+        },
+        "itemStatus": {
+          "todo": "To do",
+          "in_progress": "In progress",
+          "done": "Done",
+          "not_applicable": "Not applicable",
+          "needs_review": "To review"
+        },
+        "scenarioStatus": {
+          "draft": "Draft",
+          "ready": "Ready",
+          "exported": "Exported",
+          "archived": "Archived"
+        },
+        "alertSeverity": {
+          "info": "Info",
+          "warning": "Warning",
+          "critical": "Critical"
+        },
+        "reliability": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "Good",
+          "needs_human_validation": "To validate"
+        }
+      },
+      "dashboard": {
+        "regimeLabel": {
+          "temps_plein": "Full-time",
+          "temps_partiel": "Part-time"
+        },
+        "deadline": {
+          "overdue": "Overdue",
+          "today": "Today",
+          "inDays": "In {days} d"
+        },
+        "actionLabel": {
+          "created": "Item created",
+          "created_bulk": "Items created",
+          "updated": "Item updated",
+          "deleted": "Item deleted",
+          "exported": "Document exported",
+          "published": "Document sent",
+          "synced": "Synchronization",
+          "received": "Received",
+          "activity": "Activity"
+        },
+        "monthShort": {
+          "jan": "JAN",
+          "feb": "FEB",
+          "mar": "MAR",
+          "apr": "APR",
+          "may": "MAY",
+          "jun": "JUN",
+          "jul": "JUL",
+          "aug": "AUG",
+          "sep": "SEP",
+          "oct": "OCT",
+          "nov": "NOV",
+          "dec": "DEC"
+        },
+        "relativeWhen": {
+          "today": "Today at {time}",
+          "yesterday": "Yesterday at {time}",
+          "onDate": "{date} at {time}"
+        },
+        "deadlineSubContract": "{role} — planned contract start",
+        "alertNeedsValidationTitle": "Case to validate",
+        "alertNeedsValidationSub": "{title} — reliability to confirm",
+        "exampleTitle": "Example — full-time employee",
+        "fallbackEmployer": "Employer"
+      },
+      "checklists": {
+        "templates": {
+          "premier_engagement": {
+            "verifier_bce": {
+              "title": "Check the company's BCE number",
+              "description": "Confirm the company's identification with the Crossroads Bank for Enterprises."
+            },
+            "identifier_cp": {
+              "title": "Identify the likely joint committee",
+              "description": "The joint committee sets the minimum wage and many obligations."
+            },
+            "verifier_salaire_minimum": {
+              "title": "Check the applicable minimum wage",
+              "description": "The salary must meet the minimum set by the relevant joint committee."
+            },
+            "choisir_type_contrat": {
+              "title": "Choose and prepare the contract type",
+              "description": "Permanent, fixed-term, part-time, student, flexi-job… depending on the situation."
+            },
+            "reglement_travail": {
+              "title": "Check or draft the work rules",
+              "description": "Work rules are in principle mandatory from the first worker hired."
+            },
+            "assurance_accidents": {
+              "title": "Take out occupational accident insurance",
+              "description": "Occupational accident insurance is mandatory for any employer."
+            },
+            "service_prevention": {
+              "title": "Check the affiliation with an external prevention and protection service"
+            },
+            "dossier_travailleur": {
+              "title": "Prepare the worker's file",
+              "description": "Gather the data required for payroll and the personnel file."
+            },
+            "ebox_enterprise": {
+              "title": "Set up e-Box Enterprise access (official communications)"
+            }
+          },
+          "engagement_classique": {
+            "valider_type_contrat": {
+              "title": "Validate the contract type"
+            },
+            "verifier_cp": {
+              "title": "Check the joint committee"
+            },
+            "verifier_bareme": {
+              "title": "Check the applicable salary scale"
+            },
+            "preparer_contrat": {
+              "title": "Prepare the contract"
+            },
+            "encoder_payroll": {
+              "title": "Enter the data for payroll"
+            },
+            "documents_internes": {
+              "title": "Prepare internal documents and onboarding"
+            }
+          }
+        }
+      },
+      "calendar": {
+        "warning": "Indicative dates calculated for a default quarterly regime. Deadlines may vary depending on your VAT regime, your employer situation, postponements to the next working day, public holidays, administrative tolerances or official communications. Always check the official sources from FPS Finance and Social Security.",
+        "category": {
+          "ONSS": "NSSO",
+          "Précompte": "Withholding",
+          "TVA": "VAT",
+          "Autre": "Other"
+        },
+        "sourceLabel": {
+          "ONSS": "NSSO",
+          "SPF Finances": "FPS Finance"
+        },
+        "obligation": {
+          "ONSS_DMFA": {
+            "label": "NSSO declaration – DmfA",
+            "note": "Quarterly regime (default). Deadline = last day of the month following the quarter."
+          },
+          "PROFESSIONAL_WITHHOLDING_TAX": {
+            "label": "Professional withholding tax payment",
+            "note": "Default quarterly regime (the monthly regime is not modelled in MVP). Deadline = the 15th of the month following the quarter."
+          },
+          "VAT_PERIODIC_RETURN": {
+            "label": "VAT return (quarterly)",
+            "note": "Quarterly regime (default). Date taken from the official FPS calendar (weekend/holiday postponements already included)."
+          }
+        },
+        "fallbackNote": "Calculated date (the 25th of the month following the quarter) because this quarter is missing from the official FPS calendar: the possible postponement to the next working day is not guaranteed, to be confirmed on the VAT calendar of FPS Finance.",
+        "titleFormat": "{label} · Q{quarter} {year}",
+        "shortFormat": "{category} · Q{quarter} {year}",
+        "periodicity": {
+          "mensuelle": "monthly",
+          "trimestrielle": "quarterly",
+          "annuelle": "yearly"
+        }
+      },
+      "cost": {
+        "regimeLabel": {
+          "temps_plein": "Full-time",
+          "temps_partiel": "Part-time"
+        },
+        "assumption": {
+          "studentRate": "Student: employer solidarity contribution ≈ {pct} % of gross (and not full NSSO).",
+          "flexiRate": "Flexi-job: special employer contribution ≈ {pct} % of gross.",
+          "workerRate": "Blue-collar: employer contributions ≈ {pct} % of gross (base ≈ 25 % + NSSO Holiday Fund ≈ 11 %).",
+          "employeeRate": "White-collar: base employer contributions ≈ {pct} % of gross (occupational accident insurance and sector contributions on top, not included).",
+          "defaultRate": "Worker type « {workerType} »: default base employer rate ≈ {pct} % applied.",
+          "defaultRateUnknown": "Worker type « unspecified »: default base employer rate ≈ {pct} % applied.",
+          "firstHireReduction": "Potential « first hire » reduction: substantial reduction of employer contributions (not quantified here).",
+          "targetGroupReduction": "Potential « target group » reduction (regional): not quantified in this estimate.",
+          "holidayProvisioned": "Double holiday pay provisioned ≈ {pct} % of annual gross.",
+          "holidayWorker": "Blue-collar: holiday pay financed via NSSO (Holiday Fund), already included in the employer rate — no separate provision.",
+          "holidayFlexi": "Flexi-job: holiday pay included in the flexi remuneration (specific rules).",
+          "thirteenthIncluded": "13th-month provisioned ≈ {pct} % of annual gross.",
+          "thirteenthNotIncluded": "13th-month not included (not ticked).",
+          "mealVoucher": "Meal vouchers: employer share ≈ {perDay} €/day × {days} d ≈ {monthly} €/month.",
+          "partTime": "Part-time: the gross provided is assumed to be already pro-rated for the actual working time.",
+          "partTimeRatio": "Working fraction ≈ {pct} % ({weekly}h / {reference}h)."
+        },
+        "missingData": {
+          "grossInvalid": "Monthly gross salary missing or invalid.",
+          "reductionsToCheck": "Contribution reductions (first hire, target group…) to verify.",
+          "otherBenefits": "Benefits not quantified in this estimate: {benefits}.",
+          "partTimeHoursMissing": "Weekly hours / full-time reference not provided.",
+          "cpMissing": "Joint committee not provided."
+        },
+        "warning": {
+          "flexiVerify": "The flexi-job regime applies a specific employer contribution: have the eligibility and exact rate verified.",
+          "defaultTypeVerify": "The worker type used applies a default employer rate: to be confirmed against the actual status.",
+          "firstHireReductionImpact": "A « first hire » reduction can substantially lower contributions: the real cost could be lower.",
+          "netIndicative": "The net amount shown is indicative.",
+          "contributionsVary": "Employer contributions vary depending on reductions.",
+          "socialSecretariatValidates": "An accredited social secretariat must validate the final calculation.",
+          "cpUnknownMinimum": "Joint committee not provided: minimum wage cannot be verified."
+        }
+      },
+      "controle": {
+        "verdict": {
+          "ok": "No obvious inconsistency detected.",
+          "points_to_check": "Points to verify",
+          "insufficient": "Insufficient data for a complete check."
+        },
+        "finding": {
+          "brut_absent": {
+            "message": "The monthly gross salary is not provided: no quantitative consistency check can be performed.",
+            "recommendation": "Enter the gross salary shown on the payslip to enable a sanity check."
+          },
+          "cp_absente": {
+            "message": "No joint committee provided: the salary cannot be compared with the sector minimum scale.",
+            "recommendation": "Provide the applicable joint committee (JC) to verify the sector minimum scale."
+          },
+          "cout_employeur_non_fiable": {
+            "message": "Without a joint committee, the overall employer cost (employer contributions, sector premiums) cannot be reliably established.",
+            "recommendation": "For a reliable cost estimate, specify the JC: it governs sector charges and benefits."
+          },
+          "regime_absent": {
+            "message": "The working regime (full-time / part-time) is not specified: some checks remain partial.",
+            "recommendation": "Specify whether the worker is full-time or part-time."
+          },
+          "incoherence_temps_plein": {
+            "message": "« Full-time » regime declared but the schedule entered ({weekly} h/week) is markedly below the full-time reference ({reference} h/week).",
+            "recommendation": "Check the regime: a schedule below the full-time reference typically matches part-time."
+          },
+          "temps_partiel_sans_horaire": {
+            "message": "« Part-time » regime but no weekly schedule entered: the schedule is a mandatory mention in a part-time contract.",
+            "recommendation": "Enter the weekly hours: a part-time contract must state the precise schedule."
+          },
+          "net_incoherent": {
+            "message": "The net received entered ({net} €) differs sharply from the Docbel estimate (~{expected} € for a gross of {gross} €).",
+            "recommendation": "Check the deductions (NSSO, withholding) or whether unentered elements are at play (bonus, holiday pay, benefits, part-time). The estimate is indicative."
+          },
+          "etudiant_sans_contrat": {
+            "message": "Student worker without contract data (neither JC nor schedule): the quota and solidarity contributions cannot be verified.",
+            "recommendation": "Specify the student's schedule and JC to verify the annual quota and the solidarity contribution."
+          },
+          "flexi_sans_contrat_cadre": {
+            "message": "Flexi-job worker without mention of a framework contract: a prior written framework contract is required for the flexi regime.",
+            "recommendation": "Confirm the existence of a signed flexi-job framework contract before work starts (mention it in the comment)."
+          },
+          "avantage_non_pris_en_compte": {
+            "message": "Benefits are declared but no amount (bonus, holiday pay) has been entered: they are not factored into the net estimate.",
+            "recommendation": "Enter the amounts of the benefits/bonuses to refine the net comparison."
+          },
+          "aucune_incoherence": {
+            "message": "No obvious inconsistency detected.",
+            "recommendation": "This check remains indicative: only an accredited social secretariat certifies the conformity of a payslip."
+          }
+        }
       }
     },
     "ec32Content": {

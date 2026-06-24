@@ -23,12 +23,25 @@ export interface Finding {
   /** Code stable (sert de clé React + identifie le constat dans les tests). */
   code: string;
   message: string;
+  /** Clé i18n optionnelle du message (namespace `public.employeurLib.controle.finding.<code>.message`). */
+  messageKey?: string;
+  /** Paramètres ICU pour `t(messageKey, params)`. */
+  messageParams?: Record<string, string | number>;
   /** Source officielle Docbel (S1..S13) si pertinente. */
   sourceCode?: string;
   recommendation: string;
+  /** Clé i18n optionnelle de la recommandation. */
+  recommendationKey?: string;
 }
 
 export type Verdict = "ok" | "points_to_check" | "insufficient";
+
+/** Clés i18n des verdicts (parallèle à `Verdict`). */
+export const VERDICT_KEYS: Readonly<Record<Verdict, string>> = {
+  ok: "public.employeurLib.controle.verdict.ok",
+  points_to_check: "public.employeurLib.controle.verdict.points_to_check",
+  insufficient: "public.employeurLib.controle.verdict.insufficient",
+};
 
 export interface PayslipControlInput {
   /** Salaire brut mensuel encodé (€). */
@@ -124,8 +137,10 @@ export function analysePayslip(input: PayslipControlInput): PayslipControlResult
       code: "brut_absent",
       message:
         "Le salaire brut mensuel n'est pas renseigné : aucune vérification de cohérence chiffrée n'est possible.",
+      messageKey: "public.employeurLib.controle.finding.brut_absent.message",
       recommendation:
         "Indiquez le salaire brut figurant sur la fiche de paie pour permettre un contrôle d'ordre de grandeur.",
+      recommendationKey: "public.employeurLib.controle.finding.brut_absent.recommendation",
     });
   }
 
@@ -136,9 +151,11 @@ export function analysePayslip(input: PayslipControlInput): PayslipControlResult
       code: "cp_absente",
       message:
         "Aucune commission paritaire renseignée : impossible de comparer le salaire au barème sectoriel minimum.",
+      messageKey: "public.employeurLib.controle.finding.cp_absente.message",
       sourceCode: "S8",
       recommendation:
         "Renseignez la commission paritaire (CP) applicable pour vérifier le barème minimum du secteur.",
+      recommendationKey: "public.employeurLib.controle.finding.cp_absente.recommendation",
     });
     // S8 — coût employeur non fiabilisable sans CP (INFO).
     findings.push({
@@ -146,9 +163,11 @@ export function analysePayslip(input: PayslipControlInput): PayslipControlResult
       code: "cout_employeur_non_fiable",
       message:
         "Sans commission paritaire, le coût employeur global (charges patronales, primes sectorielles) ne peut pas être fiabilisé.",
+      messageKey: "public.employeurLib.controle.finding.cout_employeur_non_fiable.message",
       sourceCode: "S8",
       recommendation:
         "Pour une estimation de coût fiable, précisez la CP : elle conditionne les charges et avantages sectoriels.",
+      recommendationKey: "public.employeurLib.controle.finding.cout_employeur_non_fiable.recommendation",
     });
   }
 
@@ -159,8 +178,10 @@ export function analysePayslip(input: PayslipControlInput): PayslipControlResult
       code: "regime_absent",
       message:
         "Le régime de travail (temps plein / temps partiel) n'est pas précisé : certaines vérifications restent partielles.",
+      messageKey: "public.employeurLib.controle.finding.regime_absent.message",
       recommendation:
         "Précisez si le travailleur est à temps plein ou à temps partiel.",
+      recommendationKey: "public.employeurLib.controle.finding.regime_absent.recommendation",
     });
   }
 
@@ -170,8 +191,11 @@ export function analysePayslip(input: PayslipControlInput): PayslipControlResult
       level: "attention",
       code: "incoherence_temps_plein",
       message: `Régime « temps plein » déclaré mais l'horaire encodé (${weekly} h/sem) est nettement inférieur à la référence temps plein (${reference} h/sem).`,
+      messageKey: "public.employeurLib.controle.finding.incoherence_temps_plein.message",
+      messageParams: { weekly, reference },
       recommendation:
         "Vérifiez le régime : un horaire sous la référence temps plein correspond généralement à un temps partiel.",
+      recommendationKey: "public.employeurLib.controle.finding.incoherence_temps_plein.recommendation",
     });
   }
 
@@ -182,9 +206,11 @@ export function analysePayslip(input: PayslipControlInput): PayslipControlResult
       code: "temps_partiel_sans_horaire",
       message:
         "Régime « temps partiel » mais aucun horaire hebdomadaire encodé : l'horaire est une mention obligatoire du contrat à temps partiel.",
+      messageKey: "public.employeurLib.controle.finding.temps_partiel_sans_horaire.message",
       sourceCode: "S6",
       recommendation:
         "Indiquez le nombre d'heures par semaine : le contrat à temps partiel doit mentionner l'horaire précis.",
+      recommendationKey: "public.employeurLib.controle.finding.temps_partiel_sans_horaire.recommendation",
     });
   }
 
@@ -198,8 +224,15 @@ export function analysePayslip(input: PayslipControlInput): PayslipControlResult
           level: "attention",
           code: "net_incoherent",
           message: `Le net reçu encodé (${net.toFixed(2)} €) s'écarte fortement de l'estimation Docbel (~${expected.toFixed(0)} € pour un brut de ${gross.toFixed(0)} €).`,
+          messageKey: "public.employeurLib.controle.finding.net_incoherent.message",
+          messageParams: {
+            net: net.toFixed(2),
+            expected: expected.toFixed(0),
+            gross: gross.toFixed(0),
+          },
           recommendation:
             "Vérifiez les retenues (ONSS, précompte) ou la présence d'éléments non encodés (prime, pécule, avantages, temps partiel). L'estimation est indicative.",
+          recommendationKey: "public.employeurLib.controle.finding.net_incoherent.recommendation",
         });
       }
     }
@@ -212,9 +245,11 @@ export function analysePayslip(input: PayslipControlInput): PayslipControlResult
       code: "etudiant_sans_contrat",
       message:
         "Travailleur étudiant sans données de contrat (ni CP ni horaire) : le contingent et les cotisations de solidarité ne peuvent pas être vérifiés.",
+      messageKey: "public.employeurLib.controle.finding.etudiant_sans_contrat.message",
       sourceCode: "S9",
       recommendation:
         "Précisez l'horaire et la CP de l'étudiant pour vérifier le contingent annuel et la cotisation de solidarité.",
+      recommendationKey: "public.employeurLib.controle.finding.etudiant_sans_contrat.recommendation",
     });
   }
 
@@ -228,9 +263,11 @@ export function analysePayslip(input: PayslipControlInput): PayslipControlResult
         code: "flexi_sans_contrat_cadre",
         message:
           "Travailleur flexi-job sans mention de contrat-cadre : un contrat-cadre écrit préalable est requis pour le régime flexi.",
+        messageKey: "public.employeurLib.controle.finding.flexi_sans_contrat_cadre.message",
         sourceCode: "S10",
         recommendation:
           "Confirmez l'existence d'un contrat-cadre flexi-job signé avant le début des prestations (mentionnez-le dans la remarque).",
+        recommendationKey: "public.employeurLib.controle.finding.flexi_sans_contrat_cadre.recommendation",
       });
     }
   }
@@ -243,8 +280,10 @@ export function analysePayslip(input: PayslipControlInput): PayslipControlResult
       code: "avantage_non_pris_en_compte",
       message:
         "Des avantages sont déclarés mais aucun montant (prime, pécule) n'a été encodé : ils ne sont pas pris en compte dans l'estimation du net.",
+      messageKey: "public.employeurLib.controle.finding.avantage_non_pris_en_compte.message",
       recommendation:
         "Encodez les montants des avantages/primes pour affiner la comparaison du net.",
+      recommendationKey: "public.employeurLib.controle.finding.avantage_non_pris_en_compte.recommendation",
     });
   }
 
@@ -260,8 +299,10 @@ export function analysePayslip(input: PayslipControlInput): PayslipControlResult
       level: "info",
       code: "aucune_incoherence",
       message: "Aucune incohérence évidente détectée.",
+      messageKey: "public.employeurLib.controle.finding.aucune_incoherence.message",
       recommendation:
         "Ce contrôle reste indicatif : seul un secrétariat social agréé certifie la conformité d'une fiche de paie.",
+      recommendationKey: "public.employeurLib.controle.finding.aucune_incoherence.recommendation",
     });
   }
 

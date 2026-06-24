@@ -14,9 +14,23 @@ import type { RuleOutput } from "../rules/output";
 export interface StarterRule {
   code: string;
   title: string;
+  /** Clé i18n optionnelle pour `title` (FR `title` reste source/fallback). Namespace `public.employeurLib.starterRules.<code>.title`. */
+  titleKey?: string;
   description: string;
+  /** Clé i18n optionnelle pour `description`. Namespace `public.employeurLib.starterRules.<code>.description`. */
+  descriptionKey?: string;
   conditionJson: ConditionGroup;
   outputJson: RuleOutput[];
+  /**
+   * Clés i18n optionnelles pour les sorties (`outputJson`), indexées par leur
+   * position (ex. `item0`, `alert1`). Namespace
+   * `public.employeurLib.starterRules.<code>.outputs.<itemN|alertN>.{title|description|tooltip|message}`.
+   * FR reste source/fallback dans `outputJson`.
+   */
+  outputKeys?: Record<
+    string,
+    { titleKey?: string; descriptionKey?: string; tooltipKey?: string; messageKey?: string }
+  >;
   severity: "info" | "warning" | "critical";
   sourceCode: string | null;
   internalNote?: string | null;
@@ -24,12 +38,17 @@ export interface StarterRule {
 
 const T = SCENARIO_TEMPLATE_ID;
 
+/** Préfixe namespace pour les clés starterRules. */
+const SR = (code: string) => `public.employeurLib.starterRules.${code}` as const;
+
 export const STARTER_RULES: StarterRule[] = [
   {
     code: "first_engagement_wide",
     title: "Premier engagement → identification employeur (WIDE)",
+    titleKey: SR("first_engagement_wide") + ".title",
     description:
       "Pas de personnel et pas de numéro ONSS (ou inconnu) : l'entreprise doit s'identifier comme employeur.",
+    descriptionKey: SR("first_engagement_wide") + ".description",
     conditionJson: {
       type: "and",
       rules: [
@@ -48,13 +67,22 @@ export const STARTER_RULES: StarterRule[] = [
         tooltip: "Sans qualité d'employeur ONSS, aucune déclaration n'est possible.",
       },
     ],
+    outputKeys: {
+      item0: {
+        titleKey: SR("first_engagement_wide") + ".outputs.item0.title",
+        descriptionKey: SR("first_engagement_wide") + ".outputs.item0.description",
+        tooltipKey: SR("first_engagement_wide") + ".outputs.item0.tooltip",
+      },
+    },
     severity: "info",
     sourceCode: "S1",
   },
   {
     code: "dimona_required",
     title: "Travailleur salarié → Dimona",
+    titleKey: SR("dimona_required") + ".title",
     description: "Un travailleur salarié nécessite une déclaration Dimona.",
+    descriptionKey: SR("dimona_required") + ".description",
     conditionJson: {
       type: "and",
       rules: [
@@ -78,13 +106,22 @@ export const STARTER_RULES: StarterRule[] = [
         tooltip: "À effectuer AVANT l'entrée en service.",
       },
     ],
+    outputKeys: {
+      item0: {
+        titleKey: SR("dimona_required") + ".outputs.item0.title",
+        descriptionKey: SR("dimona_required") + ".outputs.item0.description",
+        tooltipKey: SR("dimona_required") + ".outputs.item0.tooltip",
+      },
+    },
     severity: "info",
     sourceCode: "S2",
   },
   {
     code: "part_time_written",
     title: "Temps partiel → contrat écrit (régime + horaire)",
+    titleKey: SR("part_time_written") + ".title",
     description: "Un régime à temps partiel impose un écrit avec régime de travail et horaire.",
+    descriptionKey: SR("part_time_written") + ".description",
     conditionJson: {
       type: "and",
       rules: [{ type: "leaf", sourceTemplateId: T, fieldId: "isPartTime", op: "truthy" }],
@@ -106,14 +143,23 @@ export const STARTER_RULES: StarterRule[] = [
         sourceCode: "S6",
       },
     ],
+    outputKeys: {
+      alert0: { messageKey: SR("part_time_written") + ".outputs.alert0.message" },
+      item1: {
+        titleKey: SR("part_time_written") + ".outputs.item1.title",
+        descriptionKey: SR("part_time_written") + ".outputs.item1.description",
+      },
+    },
     severity: "warning",
     sourceCode: "S6",
   },
   {
     code: "cp_unknown_reliability",
     title: "CP inconnue → fiabilité faible",
+    titleKey: SR("cp_unknown_reliability") + ".title",
     description:
       "Sans commission paritaire, le salaire minimum sectoriel ne peut pas être vérifié précisément.",
+    descriptionKey: SR("cp_unknown_reliability") + ".description",
     conditionJson: {
       type: "and",
       rules: [
@@ -130,13 +176,18 @@ export const STARTER_RULES: StarterRule[] = [
         sourceCode: "S8",
       },
     ],
+    outputKeys: {
+      alert1: { messageKey: SR("cp_unknown_reliability") + ".outputs.alert1.message" },
+    },
     severity: "warning",
     sourceCode: "S8",
   },
   {
     code: "salary_vs_cp",
     title: "Salaire encodé mais CP absente → barème non vérifiable",
+    titleKey: SR("salary_vs_cp") + ".title",
     description: "Un salaire est encodé alors que la commission paritaire est inconnue.",
+    descriptionKey: SR("salary_vs_cp") + ".description",
     conditionJson: {
       type: "and",
       rules: [
@@ -153,13 +204,18 @@ export const STARTER_RULES: StarterRule[] = [
         sourceCode: "S8",
       },
     ],
+    outputKeys: {
+      alert0: { messageKey: SR("salary_vs_cp") + ".outputs.alert0.message" },
+    },
     severity: "info",
     sourceCode: "S8",
   },
   {
     code: "student_checklist",
     title: "Étudiant → contrat étudiant + mentions obligatoires",
+    titleKey: SR("student_checklist") + ".title",
     description: "Un travailleur étudiant nécessite un contrat écrit et des mentions obligatoires.",
+    descriptionKey: SR("student_checklist") + ".description",
     conditionJson: {
       type: "and",
       rules: [{ type: "leaf", sourceTemplateId: T, fieldId: "workerType", op: "equals", value: "etudiant" }],
@@ -197,13 +253,22 @@ export const STARTER_RULES: StarterRule[] = [
         sourceCode: "S9",
       },
     ],
+    outputKeys: {
+      item0: { titleKey: SR("student_checklist") + ".outputs.item0.title" },
+      item1: { titleKey: SR("student_checklist") + ".outputs.item1.title" },
+      item2: { titleKey: SR("student_checklist") + ".outputs.item2.title" },
+      item3: { titleKey: SR("student_checklist") + ".outputs.item3.title" },
+      alert4: { messageKey: SR("student_checklist") + ".outputs.alert4.message" },
+    },
     severity: "info",
     sourceCode: "S9",
   },
   {
     code: "flexi_contract_frame",
     title: "Flexi-job → contrat-cadre écrit",
+    titleKey: SR("flexi_contract_frame") + ".title",
     description: "Un flexi-job nécessite un contrat-cadre écrit et des conditions spécifiques.",
+    descriptionKey: SR("flexi_contract_frame") + ".description",
     conditionJson: {
       type: "or",
       rules: [
@@ -238,6 +303,12 @@ export const STARTER_RULES: StarterRule[] = [
         sourceCode: "S10",
       },
     ],
+    outputKeys: {
+      item0: { titleKey: SR("flexi_contract_frame") + ".outputs.item0.title" },
+      item1: { titleKey: SR("flexi_contract_frame") + ".outputs.item1.title" },
+      item2: { titleKey: SR("flexi_contract_frame") + ".outputs.item2.title" },
+      alert3: { messageKey: SR("flexi_contract_frame") + ".outputs.alert3.message" },
+    },
     severity: "warning",
     sourceCode: "S10",
   },

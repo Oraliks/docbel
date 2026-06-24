@@ -89,6 +89,14 @@ export interface EmployerCostInput {
   reductions?: CostReduction;
 }
 
+/** Entrée i18n d'un message : clé + paramètres ICU optionnels. */
+export interface CostI18nEntry {
+  /** Clé i18n complète (préfixée `public.employeurLib.cost.*`). */
+  key: string;
+  /** Paramètres ICU pour `t(key, params)`. */
+  params?: Record<string, string | number>;
+}
+
 export interface EmployerCostResult {
   /** Cotisations patronales mensuelles estimées (€). */
   estimatedEmployerContributions: number;
@@ -101,9 +109,15 @@ export interface EmployerCostResult {
   /** Taux patronal effectivement appliqué (fraction du brut). */
   employerRate: number;
   assumptions: string[];
+  /** Clés i18n parallèles à `assumptions` (même index, mêmes longueurs). */
+  assumptionKeys?: CostI18nEntry[];
   missingData: string[];
+  /** Clés i18n parallèles à `missingData`. */
+  missingDataKeys?: CostI18nEntry[];
   reliability: ReliabilityLevel;
   warnings: string[];
+  /** Clés i18n parallèles à `warnings`. */
+  warningKeys?: CostI18nEntry[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -122,40 +136,74 @@ function isFiniteNumber(n: unknown): n is number {
 function pickEmployerRate(
   workerType: string,
   assumptions: string[],
-  warnings: string[]
+  warnings: string[],
+  assumptionKeys: CostI18nEntry[],
+  warningKeys: CostI18nEntry[]
 ): number {
   switch (workerType) {
     case "etudiant":
       assumptions.push(
         `Étudiant : cotisation de solidarité employeur ≈ ${(EMPLOYER_ONSS_STUDENT * 100).toFixed(2)} % du brut (et non l'ONSS plein).`
       );
+      assumptionKeys.push({
+        key: "public.employeurLib.cost.assumption.studentRate",
+        params: { pct: (EMPLOYER_ONSS_STUDENT * 100).toFixed(2) },
+      });
       return EMPLOYER_ONSS_STUDENT;
     case "flexi_job":
       assumptions.push(
         `Flexi-job : cotisation patronale spéciale ≈ ${(EMPLOYER_ONSS_FLEXI * 100).toFixed(0)} % du brut.`
       );
+      assumptionKeys.push({
+        key: "public.employeurLib.cost.assumption.flexiRate",
+        params: { pct: (EMPLOYER_ONSS_FLEXI * 100).toFixed(0) },
+      });
       warnings.push(
         "Le régime flexi-job applique une cotisation patronale spécifique : faites vérifier l'éligibilité et le taux exact."
       );
+      warningKeys.push({ key: "public.employeurLib.cost.warning.flexiVerify" });
       return EMPLOYER_ONSS_FLEXI;
     case "ouvrier":
       assumptions.push(
         `Ouvrier : cotisations patronales ≈ ${(EMPLOYER_ONSS_WORKER * 100).toFixed(0)} % du brut (base ≈ 25 % + Fonds de vacances ONSS ≈ 11 %).`
       );
+      assumptionKeys.push({
+        key: "public.employeurLib.cost.assumption.workerRate",
+        params: { pct: (EMPLOYER_ONSS_WORKER * 100).toFixed(0) },
+      });
       return EMPLOYER_ONSS_WORKER;
     case "employe":
       assumptions.push(
         `Employé : cotisations patronales de base ≈ ${(EMPLOYER_ONSS_BASE * 100).toFixed(0)} % du brut (assurance accidents du travail et cotisations sectorielles en sus, non incluses).`
       );
+      assumptionKeys.push({
+        key: "public.employeurLib.cost.assumption.employeeRate",
+        params: { pct: (EMPLOYER_ONSS_BASE * 100).toFixed(0) },
+      });
       return EMPLOYER_ONSS_BASE;
     default:
       // interim, stagiaire, autre, ou type inconnu → on retient la base mais on prévient.
       assumptions.push(
         `Type de travailleur « ${workerType || "non précisé"} » : taux patronal de base ≈ ${(EMPLOYER_ONSS_BASE * 100).toFixed(0)} % retenu par défaut.`
       );
+      assumptionKeys.push(
+        workerType
+          ? {
+              key: "public.employeurLib.cost.assumption.defaultRate",
+              params: {
+                workerType,
+                pct: (EMPLOYER_ONSS_BASE * 100).toFixed(0),
+              },
+            }
+          : {
+              key: "public.employeurLib.cost.assumption.defaultRateUnknown",
+              params: { pct: (EMPLOYER_ONSS_BASE * 100).toFixed(0) },
+            }
+      );
       warnings.push(
         "Le type de travailleur retenu utilise un taux patronal par défaut : à confirmer selon le statut réel."
       );
+      warningKeys.push({ key: "public.employeurLib.cost.warning.defaultTypeVerify" });
       return EMPLOYER_ONSS_BASE;
   }
 }
@@ -179,8 +227,11 @@ function estimateNet(grossMonthlySalary: number, benefits: string[]): number | u
 
 export function estimateEmployerCost(input: EmployerCostInput): EmployerCostResult {
   const assumptions: string[] = [];
+  const assumptionKeys: CostI18nEntry[] = [];
   const missingData: string[] = [];
+  const missingDataKeys: CostI18nEntry[] = [];
   const warnings: string[] = [];
+  const warningKeys: CostI18nEntry[] = [];
 
   const gross = isFiniteNumber(input.grossMonthlySalary)
     ? Math.max(0, input.grossMonthlySalary)
@@ -193,10 +244,11 @@ export function estimateEmployerCost(input: EmployerCostInput): EmployerCostResu
 
   if (gross <= 0) {
     missingData.push("Salaire brut mensuel manquant ou invalide.");
+    missingDataKeys.push({ key: "public.employeurLib.cost.missingData.grossInvalid" });
   }
 
   // 1. Taux patronal + cotisations mensuelles.
-  const employerRate = pickEmployerRate(workerType, assumptions, warnings);
+  const employerRate = pickEmployerRate(workerType, assumptions, warnings, assumptionKeys, warningKeys);
   const estimatedEmployerContributions = round2(gross * employerRate);
 
   // 2. Réductions de cotisations — non chiffrées (structurel) mais signalées.
@@ -204,15 +256,19 @@ export function estimateEmployerCost(input: EmployerCostInput): EmployerCostResu
     assumptions.push(
       "Réduction « premier engagement » potentielle : forte réduction des cotisations patronales (non chiffrée ici)."
     );
+    assumptionKeys.push({ key: "public.employeurLib.cost.assumption.firstHireReduction" });
     warnings.push(
       "Une réduction « premier engagement » peut réduire fortement les cotisations : le coût réel pourrait être inférieur."
     );
+    warningKeys.push({ key: "public.employeurLib.cost.warning.firstHireReductionImpact" });
   } else if (reductions === "groupe_cible") {
     assumptions.push(
       "Réduction « groupe cible » potentielle (région) : non chiffrée dans cette estimation."
     );
+    assumptionKeys.push({ key: "public.employeurLib.cost.assumption.targetGroupReduction" });
   } else if (reductions === "a_verifier") {
     missingData.push("Réductions de cotisations (premier engagement, groupe cible…) à vérifier.");
+    missingDataKeys.push({ key: "public.employeurLib.cost.missingData.reductionsToCheck" });
   }
 
   // 3. Provisions annuelles (pécule + 13e mois éventuel).
@@ -225,14 +281,20 @@ export function estimateEmployerCost(input: EmployerCostInput): EmployerCostResu
     assumptions.push(
       `Double pécule de vacances provisionné ≈ ${(HOLIDAY_PAY_RATE * 100).toFixed(2)} % du brut annuel.`
     );
+    assumptionKeys.push({
+      key: "public.employeurLib.cost.assumption.holidayProvisioned",
+      params: { pct: (HOLIDAY_PAY_RATE * 100).toFixed(2) },
+    });
   } else if (workerType === "ouvrier") {
     assumptions.push(
       "Ouvrier : pécule de vacances financé via l'ONSS (Fonds de vacances), déjà compris dans le taux patronal — pas de provision séparée."
     );
+    assumptionKeys.push({ key: "public.employeurLib.cost.assumption.holidayWorker" });
   } else {
     assumptions.push(
       "Flexi-job : pécule de vacances inclus dans la rémunération flexi (règles spécifiques)."
     );
+    assumptionKeys.push({ key: "public.employeurLib.cost.assumption.holidayFlexi" });
   }
   let thirteenthProvision = 0;
   if (input.thirteenthMonth) {
@@ -240,8 +302,13 @@ export function estimateEmployerCost(input: EmployerCostInput): EmployerCostResu
     assumptions.push(
       `13e mois provisionné ≈ ${(THIRTEENTH_MONTH_RATE * 100).toFixed(2)} % du brut annuel.`
     );
+    assumptionKeys.push({
+      key: "public.employeurLib.cost.assumption.thirteenthIncluded",
+      params: { pct: (THIRTEENTH_MONTH_RATE * 100).toFixed(2) },
+    });
   } else {
     assumptions.push("13e mois non inclus (non coché).");
+    assumptionKeys.push({ key: "public.employeurLib.cost.assumption.thirteenthNotIncluded" });
   }
   const annualProvisions = round2(holidayProvision + thirteenthProvision);
   const monthlyProvisionShare = round2(annualProvisions / 12);
@@ -254,12 +321,24 @@ export function estimateEmployerCost(input: EmployerCostInput): EmployerCostResu
     assumptions.push(
       `Chèques-repas : part employeur ≈ ${MEAL_VOUCHER_EMPLOYER_PER_DAY.toFixed(2)} €/jour × ${WORKING_DAYS_PER_MONTH} j ≈ ${crMonthly.toFixed(2)} €/mois.`
     );
+    assumptionKeys.push({
+      key: "public.employeurLib.cost.assumption.mealVoucher",
+      params: {
+        perDay: MEAL_VOUCHER_EMPLOYER_PER_DAY.toFixed(2),
+        days: WORKING_DAYS_PER_MONTH,
+        monthly: crMonthly.toFixed(2),
+      },
+    });
   }
   const otherBenefits = benefits.filter((b) => b !== "cheques_repas");
   if (otherBenefits.length > 0) {
     missingData.push(
       `Avantages non chiffrés dans cette estimation : ${otherBenefits.join(", ")}.`
     );
+    missingDataKeys.push({
+      key: "public.employeurLib.cost.missingData.otherBenefits",
+      params: { benefits: otherBenefits.join(", ") },
+    });
   }
 
   // 5. Régime / temps de travail.
@@ -267,6 +346,7 @@ export function estimateEmployerCost(input: EmployerCostInput): EmployerCostResu
     assumptions.push(
       "Temps partiel : le brut renseigné est supposé déjà proratisé pour le temps de travail réel."
     );
+    assumptionKeys.push({ key: "public.employeurLib.cost.assumption.partTime" });
     if (
       isFiniteNumber(input.weeklyHours) &&
       isFiniteNumber(input.fullTimeReferenceHours) &&
@@ -276,8 +356,17 @@ export function estimateEmployerCost(input: EmployerCostInput): EmployerCostResu
       assumptions.push(
         `Fraction d'occupation ≈ ${(ratio * 100).toFixed(0)} % (${input.weeklyHours}h / ${input.fullTimeReferenceHours}h).`
       );
+      assumptionKeys.push({
+        key: "public.employeurLib.cost.assumption.partTimeRatio",
+        params: {
+          pct: (ratio * 100).toFixed(0),
+          weekly: input.weeklyHours as number,
+          reference: input.fullTimeReferenceHours as number,
+        },
+      });
     } else {
       missingData.push("Heures hebdomadaires / référence temps plein non renseignées.");
+      missingDataKeys.push({ key: "public.employeurLib.cost.missingData.partTimeHoursMissing" });
     }
   }
 
@@ -294,6 +383,7 @@ export function estimateEmployerCost(input: EmployerCostInput): EmployerCostResu
   // 8. CP inconnue → impossible de vérifier le salaire minimum.
   if (!cpKnown) {
     missingData.push("Commission paritaire non renseignée.");
+    missingDataKeys.push({ key: "public.employeurLib.cost.missingData.cpMissing" });
   }
 
   // 9. Fiabilité — échelle de priorité (du plus exigeant au plus prudent).
@@ -324,10 +414,14 @@ export function estimateEmployerCost(input: EmployerCostInput): EmployerCostResu
 
   // 10. Avertissements systématiques (spec).
   warnings.push("Le net affiché est indicatif.");
+  warningKeys.push({ key: "public.employeurLib.cost.warning.netIndicative" });
   warnings.push("Les cotisations patronales varient selon les réductions.");
+  warningKeys.push({ key: "public.employeurLib.cost.warning.contributionsVary" });
   warnings.push("Un secrétariat social doit valider le calcul final.");
+  warningKeys.push({ key: "public.employeurLib.cost.warning.socialSecretariatValidates" });
   if (!cpKnown) {
     warnings.push("Commission paritaire non renseignée : salaire minimum non vérifiable.");
+    warningKeys.push({ key: "public.employeurLib.cost.warning.cpUnknownMinimum" });
   }
 
   return {
@@ -337,8 +431,11 @@ export function estimateEmployerCost(input: EmployerCostInput): EmployerCostResu
     estimatedNetSalary,
     employerRate,
     assumptions,
+    assumptionKeys,
     missingData,
+    missingDataKeys,
     reliability,
     warnings,
+    warningKeys,
   };
 }

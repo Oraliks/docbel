@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
@@ -30,6 +31,7 @@ export const articleHeader = defineBlock({
     shortcuts: ['articleheader'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.article')
     const { category, title, excerpt, authorName, authorAvatar, date, readingTime, image } = props
     return (
       <header className="my-4">
@@ -64,7 +66,7 @@ export const articleHeader = defineBlock({
           {readingTime !== undefined && (
             <>
               <span>·</span>
-              <span>{readingTime} min de lecture</span>
+              <span>{t('readingTimeMin', { min: readingTime })}</span>
             </>
           )}
         </div>
@@ -80,64 +82,67 @@ export const articleHeader = defineBlock({
       </header>
     )
   },
-  Fields: ({ props, onChange }) => (
-    <Group title="Contenu" defaultOpen>
-      <Field label="Catégorie">
-        <Input
-          value={props.category ?? ''}
-          onChange={(e) => onChange({ category: e.target.value })}
-        />
-      </Field>
-      <Field label="Titre">
-        <Textarea
-          value={props.title}
-          onChange={(e) => onChange({ title: e.target.value })}
-          rows={2}
-          className="resize-y"
-        />
-      </Field>
-      <Field label="Résumé / Sous-titre">
-        <Textarea
-          value={props.excerpt ?? ''}
-          onChange={(e) => onChange({ excerpt: e.target.value })}
-          rows={2}
-          className="resize-y"
-        />
-      </Field>
-      <Field label="Auteur">
-        <Input
-          value={props.authorName ?? ''}
-          onChange={(e) => onChange({ authorName: e.target.value })}
-        />
-      </Field>
-      <Field label="Avatar auteur">
-        <ImageUpload
-          value={props.authorAvatar ?? ''}
-          onChange={(url) => onChange({ authorAvatar: url })}
-          compact
-        />
-      </Field>
-      <Field label="Date">
-        <Input
-          type="date"
-          value={props.date ? props.date.slice(0, 10) : ''}
-          onChange={(e) => onChange({ date: e.target.value })}
-        />
-      </Field>
-      <Field label="Temps de lecture (min)">
-        <Input
-          type="number"
-          min={1}
-          value={props.readingTime ?? 5}
-          onChange={(e) => onChange({ readingTime: Number(e.target.value) })}
-        />
-      </Field>
-      <Field label="Image en-tête">
-        <ImageUpload
-          value={props.image ?? ''}
-          onChange={(url) => onChange({ image: url })}
-        />
-      </Field>
-    </Group>
-  ),
+  Fields: ({ props, onChange }) => {
+    const t = useTranslations('public.article')
+    return (
+      <Group title={t('fieldGroupContent')} defaultOpen>
+        <Field label={t('fieldCategory')}>
+          <Input
+            value={props.category ?? ''}
+            onChange={(e) => onChange({ category: e.target.value })}
+          />
+        </Field>
+        <Field label={t('fieldTitle')}>
+          <Textarea
+            value={props.title}
+            onChange={(e) => onChange({ title: e.target.value })}
+            rows={2}
+            className="resize-y"
+          />
+        </Field>
+        <Field label={t('fieldExcerpt')}>
+          <Textarea
+            value={props.excerpt ?? ''}
+            onChange={(e) => onChange({ excerpt: e.target.value })}
+            rows={2}
+            className="resize-y"
+          />
+        </Field>
+        <Field label={t('fieldAuthor')}>
+          <Input
+            value={props.authorName ?? ''}
+            onChange={(e) => onChange({ authorName: e.target.value })}
+          />
+        </Field>
+        <Field label={t('fieldAuthorAvatar')}>
+          <ImageUpload
+            value={props.authorAvatar ?? ''}
+            onChange={(url) => onChange({ authorAvatar: url })}
+            compact
+          />
+        </Field>
+        <Field label={t('fieldDate')}>
+          <Input
+            type="date"
+            value={props.date ? props.date.slice(0, 10) : ''}
+            onChange={(e) => onChange({ date: e.target.value })}
+          />
+        </Field>
+        <Field label={t('fieldReadingTime')}>
+          <Input
+            type="number"
+            min={1}
+            value={props.readingTime ?? 5}
+            onChange={(e) => onChange({ readingTime: Number(e.target.value) })}
+          />
+        </Field>
+        <Field label={t('fieldHeaderImage')}>
+          <ImageUpload
+            value={props.image ?? ''}
+            onChange={(url) => onChange({ image: url })}
+          />
+        </Field>
+      </Group>
+    )
+  },
 })

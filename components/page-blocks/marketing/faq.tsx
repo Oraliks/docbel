@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { z } from 'zod'
 import { ChevronDown, Sparkles, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -64,13 +65,14 @@ function FaqFields({
   props: Props
   onChange: (partial: Partial<Props>) => void
 }) {
+  const tr = useTranslations('public.article')
   const [topic, setTopic] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
 
   async function generate() {
-    const t = topic.trim()
-    if (!t) {
-      toast.error('Indique un sujet')
+    const trimmedTopic = topic.trim()
+    if (!trimmedTopic) {
+      toast.error(tr('faqAiTopicRequired'))
       return
     }
     setAiLoading(true)
@@ -78,22 +80,22 @@ function FaqFields({
       const res = await fetch('/api/page-builder/ai-assist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'faq', topic: t }),
+        body: JSON.stringify({ action: 'faq', topic: trimmedTopic }),
       })
       const data = await res.json().catch(() => ({}))
       if (data.aiDisabled) {
-        toast.error(data.error || 'Assistant IA non configuré')
+        toast.error(data.error || tr('faqAiDisabled'))
         return
       }
       if (!res.ok || !Array.isArray(data.items) || data.items.length === 0) {
-        toast.error(data.error || 'Aucune question générée')
+        toast.error(data.error || tr('faqAiNoQuestions'))
         return
       }
       onChange({ items: [...props.items, ...(data.items as FaqItemData[])] })
-      toast.success(`${data.items.length} question(s) ajoutée(s)`)
+      toast.success(tr('faqAiAdded', { count: data.items.length }))
       setTopic('')
     } catch {
-      toast.error("Échec de l'appel IA")
+      toast.error(tr('faqAiError'))
     } finally {
       setAiLoading(false)
     }
@@ -101,21 +103,21 @@ function FaqFields({
 
   return (
     <>
-      <Group title="En-tête" defaultOpen>
-        <Field label="Titre de section">
+      <Group title={tr('faqFieldGroupHeader')} defaultOpen>
+        <Field label={tr('faqFieldSectionTitle')}>
           <Input
             value={props.title ?? ''}
             onChange={(e) => onChange({ title: e.target.value })}
           />
         </Field>
       </Group>
-      <Group title="Générer avec l'IA" defaultOpen>
-        <Field label="Sujet (ancré dans la base de connaissances chômage)">
+      <Group title={tr('faqFieldGroupAi')} defaultOpen>
+        <Field label={tr('faqFieldAiTopic')}>
           <div className="flex gap-1.5">
             <Input
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="Ex : allocations après une démission"
+              placeholder={tr('faqFieldAiTopicPlaceholder')}
               className="h-8 text-xs"
               disabled={aiLoading}
             />
@@ -130,12 +132,12 @@ function FaqFields({
               ) : (
                 <Sparkles className="size-3.5" />
               )}
-              Générer
+              {tr('faqGenerateButton')}
             </Button>
           </div>
         </Field>
       </Group>
-      <Group title={`Questions (${props.items.length})`} defaultOpen>
+      <Group title={tr('faqFieldGroupQuestions', { count: props.items.length })} defaultOpen>
         <RepeaterList<FaqItemData>
           items={props.items}
           onChange={(items) => onChange({ items })}
@@ -144,19 +146,19 @@ function FaqFields({
               <Input
                 value={item.question}
                 onChange={(e) => set({ question: e.target.value })}
-                placeholder="Question"
+                placeholder={tr('faqQuestionPlaceholder')}
                 className="h-8 text-xs"
               />
               <Textarea
                 value={item.answer}
                 onChange={(e) => set({ answer: e.target.value })}
-                placeholder="Réponse"
+                placeholder={tr('faqAnswerPlaceholder')}
                 rows={2}
                 className="resize-y text-xs"
               />
             </>
           )}
-          addItem={() => ({ question: 'Nouvelle question ?', answer: 'Réponse…' })}
+          addItem={() => ({ question: tr('faqNewQuestionDefault'), answer: tr('faqNewAnswerDefault') })}
         />
       </Group>
     </>

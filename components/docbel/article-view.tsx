@@ -66,7 +66,7 @@ export function ArticleView({
   articleHeroIllustration,
   isAdmin = false,
 }: ArticleViewProps) {
-  const t = useTranslations("public.contenu");
+  const t = useTranslations("public.article");
   // Enrichit l'HTML rich-text avec les <abbr> du glossaire. Mémoïsé
   // pour ne pas re-tokeniser à chaque re-render (le contenu d'un
   // article ne change pas pendant la vie de la page).

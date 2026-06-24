@@ -9,6 +9,7 @@ import {
   ZapIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 interface ShareMenuProps {
   /** Titre partagé (utilisé pour navigator.share, X, mail, WhatsApp). */
@@ -76,6 +77,7 @@ function LinkedInGlyph({ className }: { className?: string }) {
  * et possède sa propre micro-animation d'entrée.
  */
 export function ShareMenu({ title, text, url, className, compact }: ShareMenuProps) {
+  const t = useTranslations("public.article");
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -133,16 +135,16 @@ export function ShareMenu({ title, text, url, className, compact }: ShareMenuPro
     const shareUrl = resolveUrl(url);
     try {
       await navigator.clipboard.writeText(shareUrl);
-      toast.success("Lien copié dans le presse-papiers");
+      toast.success(t("shareLinkCopiedToast"));
       setCopied(true);
       if (copiedTimer.current) clearTimeout(copiedTimer.current);
       copiedTimer.current = setTimeout(() => setCopied(false), 1600);
     } catch {
-      toast.error("Impossible de copier le lien");
+      toast.error(t("shareLinkCopyError"));
     } finally {
       setOpen(false);
     }
-  }, [url]);
+  }, [url, t]);
 
   // Cibles externes (réseaux + mail). On encode systématiquement.
   const shareExternal = useCallback(
@@ -189,7 +191,7 @@ export function ShareMenu({ title, text, url, className, compact }: ShareMenuPro
         onClick={() => setOpen((prev) => !prev)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Partager cet article"
+        aria-label={t("shareArticleAria")}
         className={
           compact
             ? "inline-flex size-10 items-center justify-center rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] text-[color:var(--glass-ink-soft)] outline-none transition-colors hover:bg-white/65 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
@@ -197,20 +199,20 @@ export function ShareMenu({ title, text, url, className, compact }: ShareMenuPro
         }
       >
         <Share2Icon className="size-4" />
-        {compact ? null : "Partager"}
+        {compact ? null : t("shareButton")}
       </button>
 
       {open ? (
         <div
           role="menu"
-          aria-label="Options de partage"
+          aria-label={t("shareOptionsAria")}
           className={`glass-surface share-menu-pop absolute right-0 z-50 flex w-60 flex-col gap-0.5 !rounded-2xl p-1.5 ${compact ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}
           style={compact ? { transformOrigin: "bottom right" } : undefined}
         >
           {canNativeShare ? (
             <ShareRow
               icon={<ZapIcon className="size-[15px]" />}
-              label="Partage rapide…"
+              label={t("shareQuick")}
               tint="var(--glass-accent-deep)"
               onClick={nativeShare}
             />
@@ -220,38 +222,38 @@ export function ShareMenu({ title, text, url, className, compact }: ShareMenuPro
             icon={
               copied ? <CheckIcon className="size-[15px]" /> : <Link2Icon className="size-[15px]" />
             }
-            label={copied ? "Lien copié !" : "Copier le lien"}
+            label={copied ? t("shareLinkCopied") : t("shareCopyLink")}
             tint="#7c5cff"
             onClick={copyLink}
           />
 
           <ShareRow
             icon={<WhatsAppGlyph className="size-[15px]" />}
-            label="WhatsApp"
+            label={t("shareWhatsapp")}
             tint="#25D366"
             onClick={() => shareExternal("whatsapp")}
           />
           <ShareRow
             icon={<XGlyph className="size-[14px]" />}
-            label="X (Twitter)"
+            label={t("shareX")}
             tint="#0f0f0f"
             onClick={() => shareExternal("x")}
           />
           <ShareRow
             icon={<FacebookGlyph className="size-[15px]" />}
-            label="Facebook"
+            label={t("shareFacebook")}
             tint="#1877F2"
             onClick={() => shareExternal("facebook")}
           />
           <ShareRow
             icon={<LinkedInGlyph className="size-[15px]" />}
-            label="LinkedIn"
+            label={t("shareLinkedin")}
             tint="#0A66C2"
             onClick={() => shareExternal("linkedin")}
           />
           <ShareRow
             icon={<MailIcon className="size-[15px]" />}
-            label="E-mail"
+            label={t("shareEmail")}
             tint="#6b54e8"
             onClick={() => shareExternal("email")}
           />

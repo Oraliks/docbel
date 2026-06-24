@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
@@ -29,6 +30,7 @@ export const authorBio = defineBlock({
     shortcuts: ['author', 'bio'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.article')
     const { name, bio, avatar, twitter, linkedin, website, email } = props
     return (
       <div className="rounded-2xl border bg-card p-5 my-2 flex gap-4">
@@ -56,7 +58,7 @@ export const authorBio = defineBlock({
                 rel="noreferrer"
                 className="text-primary hover:underline"
               >
-                Twitter
+                {t('authorTwitter')}
               </a>
             )}
             {linkedin && (
@@ -66,7 +68,7 @@ export const authorBio = defineBlock({
                 rel="noreferrer"
                 className="text-primary hover:underline"
               >
-                LinkedIn
+                {t('authorLinkedin')}
               </a>
             )}
             {website && (
@@ -76,7 +78,7 @@ export const authorBio = defineBlock({
                 rel="noreferrer"
                 className="text-primary hover:underline"
               >
-                Site web
+                {t('authorWebsite')}
               </a>
             )}
             {email && (
@@ -89,50 +91,53 @@ export const authorBio = defineBlock({
       </div>
     )
   },
-  Fields: ({ props, onChange }) => (
-    <Group title="Contenu" defaultOpen>
-      <Field label="Nom">
-        <Input value={props.name} onChange={(e) => onChange({ name: e.target.value })} />
-      </Field>
-      <Field label="Bio">
-        <Textarea
-          value={props.bio ?? ''}
-          onChange={(e) => onChange({ bio: e.target.value })}
-          rows={3}
-          className="resize-y"
-        />
-      </Field>
-      <Field label="Avatar">
-        <ImageUpload
-          value={props.avatar ?? ''}
-          onChange={(url) => onChange({ avatar: url })}
-          compact
-        />
-      </Field>
-      <Field label="Twitter">
-        <Input
-          value={props.twitter ?? ''}
-          onChange={(e) => onChange({ twitter: e.target.value })}
-        />
-      </Field>
-      <Field label="LinkedIn">
-        <Input
-          value={props.linkedin ?? ''}
-          onChange={(e) => onChange({ linkedin: e.target.value })}
-        />
-      </Field>
-      <Field label="Site web">
-        <Input
-          value={props.website ?? ''}
-          onChange={(e) => onChange({ website: e.target.value })}
-        />
-      </Field>
-      <Field label="Email">
-        <Input
-          value={props.email ?? ''}
-          onChange={(e) => onChange({ email: e.target.value })}
-        />
-      </Field>
-    </Group>
-  ),
+  Fields: ({ props, onChange }) => {
+    const t = useTranslations('public.article')
+    return (
+      <Group title={t('fieldGroupContent')} defaultOpen>
+        <Field label={t('authorFieldName')}>
+          <Input value={props.name} onChange={(e) => onChange({ name: e.target.value })} />
+        </Field>
+        <Field label={t('authorFieldBio')}>
+          <Textarea
+            value={props.bio ?? ''}
+            onChange={(e) => onChange({ bio: e.target.value })}
+            rows={3}
+            className="resize-y"
+          />
+        </Field>
+        <Field label={t('authorFieldAvatar')}>
+          <ImageUpload
+            value={props.avatar ?? ''}
+            onChange={(url) => onChange({ avatar: url })}
+            compact
+          />
+        </Field>
+        <Field label={t('authorTwitter')}>
+          <Input
+            value={props.twitter ?? ''}
+            onChange={(e) => onChange({ twitter: e.target.value })}
+          />
+        </Field>
+        <Field label={t('authorLinkedin')}>
+          <Input
+            value={props.linkedin ?? ''}
+            onChange={(e) => onChange({ linkedin: e.target.value })}
+          />
+        </Field>
+        <Field label={t('authorWebsite')}>
+          <Input
+            value={props.website ?? ''}
+            onChange={(e) => onChange({ website: e.target.value })}
+          />
+        </Field>
+        <Field label={t('authorFieldEmail')}>
+          <Input
+            value={props.email ?? ''}
+            onChange={(e) => onChange({ email: e.target.value })}
+          />
+        </Field>
+      </Group>
+    )
+  },
 })

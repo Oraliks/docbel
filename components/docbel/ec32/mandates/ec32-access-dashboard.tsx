@@ -11,6 +11,7 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { CalendarDays, Plus } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Ec32Card, Ec32Eyebrow } from '@/components/docbel/ec32/ui'
@@ -61,32 +62,33 @@ function formatIsoDate(iso: string): string {
 
 type DashboardTab = 'requested' | 'granted' | 'received'
 
-const TABS: Array<{ id: DashboardTab; label: string }> = [
-  { id: 'requested', label: 'Accès demandés' },
-  { id: 'granted', label: 'Accès accordés' },
-  { id: 'received', label: 'Accès reçus' },
+const TABS: Array<{ id: DashboardTab; labelKey: string }> = [
+  { id: 'requested', labelKey: 'accessDashboard.tabs.requested' },
+  { id: 'granted', labelKey: 'accessDashboard.tabs.granted' },
+  { id: 'received', labelKey: 'accessDashboard.tabs.received' },
 ]
 
 // ─────────────────────────── Composants internes ───────────────────────────
 
 function StatusBadge({ status }: { status: Ec32MandateAccess['status'] }) {
+  const t = useTranslations('public.ec32')
   if (status === 'active') {
     return (
       <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-        Actif
+        {t('accessDashboard.status.active')}
       </span>
     )
   }
   if (status === 'pending') {
     return (
       <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
-        En attente
+        {t('accessDashboard.status.pending')}
       </span>
     )
   }
   return (
     <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-      Expiré
+      {t('accessDashboard.status.expired')}
     </span>
   )
 }
@@ -101,6 +103,7 @@ function AccessRow({
   actionLabel?: string
   onAction?: (id: string) => void
 }) {
+  const t = useTranslations('public.ec32')
   return (
     <li
       className={cn(
@@ -124,8 +127,9 @@ function AccessRow({
         <StatusBadge status={access.status} />
         <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
           <CalendarDays className="size-3.5" aria-hidden />
-          {access.status === 'pending' ? 'Demandé' : 'Valable'} jusqu&apos;au{' '}
-          {formatIsoDate(access.validUntil)}
+          {access.status === 'pending'
+            ? t('accessDashboard.dateLabel.requested', { date: formatIsoDate(access.validUntil) })
+            : t('accessDashboard.dateLabel.validUntil', { date: formatIsoDate(access.validUntil) })}
         </span>
         {actionLabel && (
           <Button
@@ -190,6 +194,7 @@ export function Ec32AccessDashboard({
   onRevoke,
   onCancelRequest,
 }: Ec32AccessDashboardProps) {
+  const t = useTranslations('public.ec32')
   const [internalTab, setInternalTab] = useState<DashboardTab>('granted')
   const activeTab = tab ?? internalTab
   const setActiveTab = (next: DashboardTab) => {
@@ -208,12 +213,12 @@ export function Ec32AccessDashboard({
       {/* En-tête */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Ec32Eyebrow className="mb-2">Mandats</Ec32Eyebrow>
+          <Ec32Eyebrow className="mb-2">{t('accessDashboard.eyebrow')}</Ec32Eyebrow>
           <h2 className="text-2xl font-bold leading-tight tracking-tight text-foreground md:text-3xl">
-            Gestion des accès
+            {t('accessDashboard.title')}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Donnez accès à votre Carte de chômage temporaire à une personne de confiance.
+            {t('accessDashboard.subtitle')}
           </p>
         </div>
         <Button
@@ -223,14 +228,14 @@ export function Ec32AccessDashboard({
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="size-4" aria-hidden />
-          Nouvelle demande
+          {t('accessDashboard.newRequest')}
         </Button>
       </div>
 
       {/* Onglets pilule */}
       <div
         role="tablist"
-        aria-label="Catégories d'accès"
+        aria-label={t('accessDashboard.tablistAriaLabel')}
         className="mb-6 flex flex-wrap gap-1 rounded-full border border-primary/10 bg-card p-1 shadow-[0_1px_3px_rgba(26,26,36,0.04)]"
       >
         {TABS.map((tab) => {
@@ -249,7 +254,7 @@ export function Ec32AccessDashboard({
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              {tab.label}
+              {t(tab.labelKey as Parameters<typeof t>[0])}
               {counts[tab.id] > 0 && (
                 <span
                   className={cn(
@@ -274,12 +279,18 @@ export function Ec32AccessDashboard({
       </div>
 
       {/* Contenu onglets */}
-      <div role="tabpanel" aria-label={TABS.find((t) => t.id === activeTab)?.label}>
+      <div
+        role="tabpanel"
+        aria-label={(() => {
+          const found = TABS.find((tab) => tab.id === activeTab)
+          return found ? t(found.labelKey as Parameters<typeof t>[0]) : ''
+        })()}
+      >
         {activeTab === 'granted' && (
           <div className="space-y-3">
             {grantedAccesses.length === 0 ? (
-              <EmptyHint title="Vous n'avez accordé aucun accès pour le moment.">
-                Aucun accès accordé.
+              <EmptyHint title={t('accessDashboard.empty.granted.title')}>
+                {t('accessDashboard.empty.granted.body')}
               </EmptyHint>
             ) : (
               <ul className="space-y-3">
@@ -287,7 +298,7 @@ export function Ec32AccessDashboard({
                   <AccessRow
                     key={access.id}
                     access={access}
-                    actionLabel="Révoquer"
+                    actionLabel={t('accessDashboard.actions.revoke')}
                     onAction={onRevoke}
                   />
                 ))}
@@ -299,8 +310,8 @@ export function Ec32AccessDashboard({
         {activeTab === 'requested' && (
           <div className="space-y-3">
             {requestedAccesses.length === 0 ? (
-              <EmptyHint title="Vous retrouverez ici toutes vos demandes d'accès en attente de validation.">
-                Aucune demande en attente de validation.
+              <EmptyHint title={t('accessDashboard.empty.requested.title')}>
+                {t('accessDashboard.empty.requested.body')}
               </EmptyHint>
             ) : (
               <ul className="space-y-3">
@@ -308,7 +319,7 @@ export function Ec32AccessDashboard({
                   <AccessRow
                     key={access.id}
                     access={access}
-                    actionLabel="Annuler la demande"
+                    actionLabel={t('accessDashboard.actions.cancelRequest')}
                     onAction={onCancelRequest}
                   />
                 ))}
@@ -321,10 +332,10 @@ export function Ec32AccessDashboard({
           <div className="space-y-3">
             {receivedAccesses.length === 0 ? (
               <EmptyHint
-                title="Accès accordés par d'autres citoyens."
-                example="Par exemple : vous pouvez vous connecter au nom de votre père pour compléter sa carte de chômage temporaire."
+                title={t('accessDashboard.empty.received.title')}
+                example={t('accessDashboard.empty.received.example')}
               >
-                Vous n&apos;avez reçu aucun accès.
+                {t('accessDashboard.empty.received.body')}
               </EmptyHint>
             ) : (
               <ul className="space-y-3">

@@ -10,6 +10,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ArrowRightIcon,
   BellRingIcon,
@@ -43,44 +44,25 @@ const TILES: { bg: string; shadow: string }[] = [
   },
 ];
 
-interface StepItem {
-  Icon: LucideIcon;
-  title: string;
-  desc: string;
-}
-
 // Étapes fidèles au parcours public réel (/rendez-vous puis /{slug}/rendez-vous).
+// Les textes sont externalisés sous `public.landing` (bookingStep{1,2,3}{Title,Desc}).
 // La formulation NRN est factuelle : haché (HMAC) pour l'anti-doublon
 // (lib/booking/dedupe.ts) et chiffré au repos (lib/booking/crypto-nrn.ts) —
 // jamais conservé en clair.
-const STEPS: StepItem[] = [
-  {
-    Icon: MapPinIcon,
-    title: "Choix du guichet et du motif",
-    desc: "Votre affilié sélectionne sa démarche, son organisme et son code postal : il est orienté directement vers le guichet compétent, près de chez lui.",
-  },
-  {
-    Icon: CalendarDaysIcon,
-    title: "Créneau en ligne",
-    desc: "Les disponibilités s'affichent semaine par semaine et la réservation se fait en quelques clics — plus d'attente téléphonique.",
-  },
-  {
-    Icon: ShieldCheckIcon,
-    title: "Confirmation sécurisée",
-    desc: "Confirmation immédiate par e-mail, avec un lien pour gérer ou annuler le rendez-vous. Le numéro de registre national n'est jamais conservé en clair : il est haché (HMAC) pour le contrôle anti-doublon et chiffré au repos.",
-  },
-];
+const STEP_ICONS: LucideIcon[] = [MapPinIcon, CalendarDaysIcon, ShieldCheckIcon];
 
 // Atouts factuels de la plateforme (auto-approbation, rappel la veille,
 // export .ics, multi-guichets — cf. lib/booking/* et lib/rendez-vous/ics.ts).
-const FEATURE_CHIPS: { Icon: LucideIcon; label: string }[] = [
-  { Icon: ZapIcon, label: "Approbation automatique" },
-  { Icon: BellRingIcon, label: "Rappel la veille" },
-  { Icon: CalendarPlusIcon, label: "Export .ics" },
-  { Icon: Building2Icon, label: "Multi-guichets" },
+// Labels externalisés via les clés `bookingShowcaseChip*`.
+const FEATURE_CHIPS: { Icon: LucideIcon; key: "AutoApproval" | "Reminder" | "Ics" | "MultiOffice" }[] = [
+  { Icon: ZapIcon, key: "AutoApproval" },
+  { Icon: BellRingIcon, key: "Reminder" },
+  { Icon: CalendarPlusIcon, key: "Ics" },
+  { Icon: Building2Icon, key: "MultiOffice" },
 ];
 
 export function BookingShowcase() {
+  const t = useTranslations("public.landing");
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -121,76 +103,83 @@ export function BookingShowcase() {
       {/* En-tête de section */}
       <div className="flex flex-col gap-3">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-          Rendez-vous en ligne
+          {t("bookingShowcaseEyebrow")}
         </p>
         <h2 className="glass-display max-w-3xl text-[30px] leading-[1.1] font-semibold tracking-tight sm:text-[38px]">
-          La prise de rendez-vous, <em>simplifiée</em> pour vos affiliés
+          {t.rich("bookingShowcaseTitle", {
+            em: (chunks) => <em>{chunks}</em>,
+          })}
         </h2>
         <p className="max-w-[640px] text-[14.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-          Ouvrez des guichets en ligne pour votre organisation&nbsp;: vos
-          affiliés réservent un créneau en quelques minutes et votre équipe
-          garde la main sur l&apos;agenda.
+          {t("bookingShowcaseIntro")}
         </p>
       </div>
 
       {/* 3 étapes — apparition en séquence (fadeInUp décalé via .outils-rise) */}
       <div ref={gridRef} className="grid gap-4 lg:grid-cols-3">
-        {STEPS.map(({ Icon, title, desc }, index) => (
-          <article
-            key={title}
-            className={`glass-surface flex flex-col gap-3.5 p-6 ${
-              visible
-                ? "outils-rise motion-reduce:animate-none"
-                : "opacity-0 motion-reduce:opacity-100"
-            }`}
-            style={visible ? { animationDelay: `${index * 140}ms` } : undefined}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span
-                className="flex size-12 items-center justify-center rounded-2xl text-white"
-                style={{
-                  backgroundImage: TILES[index].bg,
-                  boxShadow: TILES[index].shadow,
-                }}
-              >
-                <Icon className="size-5" strokeWidth={2.2} />
-              </span>
-              <span
-                className="inline-flex items-center rounded-full border px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[0.1em]"
-                style={{
-                  borderColor:
-                    "color-mix(in oklab, var(--glass-accent-deep) 30%, transparent)",
-                  background:
-                    "color-mix(in oklab, var(--glass-accent-a) 12%, var(--glass-surface))",
-                  color: "var(--glass-accent-deep)",
-                }}
-              >
-                Étape {index + 1}
-              </span>
-            </div>
-            <h3 className="text-[15.5px] font-bold tracking-tight">{title}</h3>
-            <p className="text-[12.5px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
-              {desc}
-            </p>
-          </article>
-        ))}
+        {STEP_ICONS.map((Icon, index) => {
+          const titleKey = `bookingStep${index + 1}Title` as Parameters<typeof t>[0];
+          const descKey = `bookingStep${index + 1}Desc` as Parameters<typeof t>[0];
+          return (
+            <article
+              key={`step-${index}`}
+              className={`glass-surface flex flex-col gap-3.5 p-6 ${
+                visible
+                  ? "outils-rise motion-reduce:animate-none"
+                  : "opacity-0 motion-reduce:opacity-100"
+              }`}
+              style={visible ? { animationDelay: `${index * 140}ms` } : undefined}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span
+                  className="flex size-12 items-center justify-center rounded-2xl text-white"
+                  style={{
+                    backgroundImage: TILES[index].bg,
+                    boxShadow: TILES[index].shadow,
+                  }}
+                >
+                  <Icon className="size-5" strokeWidth={2.2} />
+                </span>
+                <span
+                  className="inline-flex items-center rounded-full border px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[0.1em]"
+                  style={{
+                    borderColor:
+                      "color-mix(in oklab, var(--glass-accent-deep) 30%, transparent)",
+                    background:
+                      "color-mix(in oklab, var(--glass-accent-a) 12%, var(--glass-surface))",
+                    color: "var(--glass-accent-deep)",
+                  }}
+                >
+                  {t("bookingShowcaseStepBadge", { n: index + 1 })}
+                </span>
+              </div>
+              <h3 className="text-[15.5px] font-bold tracking-tight">{t(titleKey)}</h3>
+              <p className="text-[12.5px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
+                {t(descKey)}
+              </p>
+            </article>
+          );
+        })}
       </div>
 
       {/* Atouts de la plateforme */}
       <ul className="flex flex-wrap gap-2">
-        {FEATURE_CHIPS.map(({ Icon, label }) => (
-          <li
-            key={label}
-            className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 py-2 text-[12px] font-semibold text-[color:var(--glass-ink-soft)]"
-          >
-            <Icon
-              className="size-3.5"
-              style={{ color: "var(--glass-accent-deep)" }}
-              strokeWidth={2.4}
-            />
-            {label}
-          </li>
-        ))}
+        {FEATURE_CHIPS.map(({ Icon, key }) => {
+          const labelKey = `bookingShowcaseChip${key}` as Parameters<typeof t>[0];
+          return (
+            <li
+              key={key}
+              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 py-2 text-[12px] font-semibold text-[color:var(--glass-ink-soft)]"
+            >
+              <Icon
+                className="size-3.5"
+                style={{ color: "var(--glass-accent-deep)" }}
+                strokeWidth={2.4}
+              />
+              {t(labelKey)}
+            </li>
+          );
+        })}
       </ul>
 
       {/* CTA vers le parcours public réel */}
@@ -199,11 +188,11 @@ export function BookingShowcase() {
           href="/rendez-vous"
           className="glass-cta inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold"
         >
-          Voir le parcours public
+          {t("bookingShowcaseCta")}
           <ArrowRightIcon className="size-4" strokeWidth={2.4} />
         </Link>
         <p className="text-[12.5px] text-[color:var(--glass-ink-faint)]">
-          Exactement le parcours que vos affiliés utiliseront.
+          {t("bookingShowcaseCtaCaption")}
         </p>
       </div>
     </section>

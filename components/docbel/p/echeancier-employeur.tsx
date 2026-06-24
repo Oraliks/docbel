@@ -17,6 +17,7 @@
 // ============================================================================
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   ArchiveIcon,
   CalendarPlusIcon,
@@ -52,10 +53,10 @@ const ICON_SHADOW: Record<IconHue, string> = {
 interface Obligation {
   Icon: LucideIcon;
   hue: IconHue;
-  /** Repère temporel affiché en pastille ("Avant la suspension", "Mensuel"…). */
-  moment: string;
-  title: string;
-  desc: string;
+  /** Clé i18n du repère temporel affiché en pastille. */
+  momentKey: string;
+  titleKey: string;
+  descKey: string;
 }
 
 // Obligations récurrentes autour du chômage temporaire et de la fin de
@@ -65,44 +66,44 @@ const OBLIGATIONS: Obligation[] = [
   {
     Icon: SendIcon,
     hue: "violet",
-    moment: "Avant la suspension",
-    title: "Notifier le chômage temporaire à l'ONEM",
-    desc: "Pour le chômage économique et la suspension employés, la période prévue se notifie à l'ONEM avant le début de la suspension. Les intempéries, elles, ne demandent pas de notification préalable.",
+    momentKey: "echeancierObligation1Moment",
+    titleKey: "echeancierObligation1Title",
+    descKey: "echeancierObligation1Desc",
   },
   {
     Icon: FileTextIcon,
     hue: "blue",
-    moment: "Dès le 1ᵉʳ jour",
-    title: "Remettre la carte de contrôle au travailleur",
-    desc: "Chaque travailleur concerné reçoit sa carte de contrôle (C3.2A) dès le premier jour de chômage effectif du mois — elle conditionne le paiement de ses allocations.",
+    momentKey: "echeancierObligation2Moment",
+    titleKey: "echeancierObligation2Title",
+    descKey: "echeancierObligation2Desc",
   },
   {
     Icon: MegaphoneIcon,
     hue: "orange",
-    moment: "Chaque mois concerné",
-    title: "Communiquer le 1ᵉʳ jour effectif de chômage",
-    desc: "Économique, intempéries, accident technique ou suspension employés : le premier jour effectif de chômage du mois se communique à l'ONEM, en règle générale le jour même ou un jour ouvrable autour (variantes selon le motif).",
+    momentKey: "echeancierObligation3Moment",
+    titleKey: "echeancierObligation3Title",
+    descKey: "echeancierObligation3Desc",
   },
   {
     Icon: CalendarPlusIcon,
     hue: "green",
-    moment: "Chaque fin de mois",
-    title: "Déclarer les heures de chômage temporaire (DRS)",
-    desc: "La déclaration électronique DRS (flux WECH) part via le portail de la sécurité sociale en fin de mois : c'est elle qui permet le calcul et le paiement des allocations de vos travailleurs.",
+    momentKey: "echeancierObligation4Moment",
+    titleKey: "echeancierObligation4Title",
+    descKey: "echeancierObligation4Desc",
   },
   {
     Icon: FileCheckIcon,
     hue: "rose",
-    moment: "À chaque fin de contrat",
-    title: "Remettre le C4 au travailleur",
-    desc: "Le certificat de chômage C4 atteste les périodes de travail et le motif de la fin de contrat. Le travailleur en a besoin rapidement pour faire valoir ses droits auprès de son organisme de paiement.",
+    momentKey: "echeancierObligation5Moment",
+    titleKey: "echeancierObligation5Title",
+    descKey: "echeancierObligation5Desc",
   },
   {
     Icon: ArchiveIcon,
     hue: "mauve",
-    moment: "En continu",
-    title: "Conserver déclarations et justificatifs",
-    desc: "Notifications, communications, déclarations et documents remis : conservez-en la trace. En cas de contrôle ou de litige, ces justificatifs font foi.",
+    momentKey: "echeancierObligation6Moment",
+    titleKey: "echeancierObligation6Title",
+    descKey: "echeancierObligation6Desc",
   },
 ];
 
@@ -176,36 +177,38 @@ interface MonthlyReminder {
   description: string;
 }
 
+interface ReminderTemplate {
+  uid: string;
+  byMonthDay: number;
+  hour: number;
+  summaryKey: string;
+  descriptionKey: string;
+}
+
 // ⚠️ CONTENU À VALIDER PAR L'EXPERT : rappels génériques « bonnes pratiques »,
 // à adapter par chaque employeur à sa situation (motif, secteur, secrétariat
 // social). Les jours choisis (1, 25, 28) sont indicatifs, pas réglementaires.
-const REMINDERS: MonthlyReminder[] = [
+const REMINDER_TEMPLATES: ReminderTemplate[] = [
   {
     uid: "rappel-employeur-ct-jour1@docbel.be",
     byMonthDay: 1,
     hour: 9,
-    summary:
-      "Chômage temporaire : communiquer le 1er jour effectif à l'ONEM",
-    description:
-      "Si du chômage temporaire est prévu ce mois-ci : communiquez le premier jour effectif à l'ONEM et vérifiez que chaque travailleur a reçu sa carte de contrôle (C3.2A). Rappel indicatif créé par Docbel — à adapter à votre situation.",
+    summaryKey: "echeancierReminder1Summary",
+    descriptionKey: "echeancierReminder1Description",
   },
   {
     uid: "rappel-employeur-ct-drs@docbel.be",
     byMonthDay: 25,
     hour: 9,
-    summary:
-      "Préparer la déclaration des heures de chômage temporaire (DRS)",
-    description:
-      "Préparez la déclaration électronique de fin de mois (DRS / WECH) via le portail de la sécurité sociale : elle sert au paiement des allocations de vos travailleurs. Rappel indicatif créé par Docbel.",
+    summaryKey: "echeancierReminder2Summary",
+    descriptionKey: "echeancierReminder2Description",
   },
   {
     uid: "rappel-employeur-ct-cloture@docbel.be",
     byMonthDay: 28,
     hour: 14,
-    summary:
-      "Clôture sociale du mois : déclarations transmises, justificatifs archivés",
-    description:
-      "Vérifiez que les déclarations du mois sont bien parties et archivez notifications, communications et justificatifs. Rappel indicatif créé par Docbel.",
+    summaryKey: "echeancierReminder3Summary",
+    descriptionKey: "echeancierReminder3Description",
   },
 ];
 
@@ -229,7 +232,7 @@ function formatUtcStamp(date: Date): string {
  * heure murale bruxelloise (TZID + VTIMEZONE — le client calendrier gère le
  * passage heure d'été/hiver), CRLF + pliage 75 octets conformes RFC 5545.
  */
-function buildEmployerIcs(now: Date): string {
+function buildEmployerIcs(now: Date, reminders: MonthlyReminder[]): string {
   // Premier mois couvert = le mois CIVIL suivant (rappels « à partir du mois
   // prochain », pour ne pas créer d'événements déjà passés ce mois-ci).
   const nextMonthIndex = now.getMonth() + 1; // peut déborder : géré par l'arithmétique ci-dessous
@@ -246,7 +249,7 @@ function buildEmployerIcs(now: Date): string {
     ...VTIMEZONE,
   ];
 
-  for (const reminder of REMINDERS) {
+  for (const reminder of reminders) {
     const day = pad(reminder.byMonthDay);
     const start = `${year}${pad(month)}${day}T${pad(reminder.hour)}0000`;
     const end = `${year}${pad(month)}${day}T${pad(reminder.hour)}3000`;
@@ -289,6 +292,7 @@ function IconTile({ Icon, hue }: { Icon: LucideIcon; hue: IconHue }) {
  * prefers-reduced-motion (utilitaires motion-reduce:*).
  */
 export function EcheancierEmployeur() {
+  const t = useTranslations("public.landing");
   const sectionRef = useRef<HTMLElement | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [exported, setExported] = useState(false);
@@ -325,7 +329,14 @@ export function EcheancierEmployeur() {
   }, []);
 
   const handleExport = () => {
-    const ics = buildEmployerIcs(new Date());
+    const reminders: MonthlyReminder[] = REMINDER_TEMPLATES.map((tpl) => ({
+      uid: tpl.uid,
+      byMonthDay: tpl.byMonthDay,
+      hour: tpl.hour,
+      summary: t(tpl.summaryKey as Parameters<typeof t>[0]),
+      description: t(tpl.descriptionKey as Parameters<typeof t>[0]),
+    }));
+    const ics = buildEmployerIcs(new Date(), reminders);
     const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -364,15 +375,15 @@ export function EcheancierEmployeur() {
               className="size-1.5 rounded-full"
               style={{ background: "var(--glass-accent-deep)" }}
             />
-            Échéancier employeur
+            {t("echeancierBadge")}
           </span>
           <h2 className="glass-display max-w-3xl text-[30px] leading-[1.1] font-semibold tracking-tight sm:text-[38px]">
-            Vos obligations, <em>au bon moment</em>
+            {t.rich("echeancierTitle", {
+              em: (chunks) => <em>{chunks}</em>,
+            })}
           </h2>
           <p className="max-w-[560px] text-[14.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-            Le chômage temporaire et la fin de contrat suivent un rythme
-            précis. Voici les rendez-vous récurrents à ne pas manquer — et des
-            rappels prêts à glisser dans votre agenda.
+            {t("echeancierIntro")}
           </p>
         </div>
 
@@ -388,20 +399,19 @@ export function EcheancierEmployeur() {
               <CalendarPlusIcon className="size-4" strokeWidth={2.4} />
             )}
             {exported
-              ? "Rappels téléchargés !"
-              : "Ajouter les rappels à mon agenda (.ics)"}
+              ? t("echeancierCtaDone")
+              : t("echeancierCtaExport")}
           </button>
           <p className="max-w-[340px] text-[11.5px] leading-[1.5] text-[color:var(--glass-ink-faint)] lg:text-right">
-            3 rappels mensuels récurrents, compatibles Outlook, Google Agenda
-            et Apple Calendar.
+            {t("echeancierCtaNote")}
           </p>
         </div>
       </div>
 
       <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {OBLIGATIONS.map(({ Icon, hue, moment, title, desc }, index) => (
+        {OBLIGATIONS.map(({ Icon, hue, momentKey, titleKey, descKey }, index) => (
           <li
-            key={title}
+            key={titleKey}
             className={`glass-surface flex flex-col gap-3.5 p-5 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-y-0 ${
               revealed ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
@@ -413,22 +423,21 @@ export function EcheancierEmployeur() {
                 className="rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[0.08em]"
                 style={GLASS_POP_STYLE}
               >
-                {moment}
+                {t(momentKey as Parameters<typeof t>[0])}
               </span>
             </div>
-            <h3 className="text-[15px] font-bold tracking-tight">{title}</h3>
+            <h3 className="text-[15px] font-bold tracking-tight">
+              {t(titleKey as Parameters<typeof t>[0])}
+            </h3>
             <p className="text-[12.5px] leading-[1.55] text-[color:var(--glass-ink-soft)]">
-              {desc}
+              {t(descKey as Parameters<typeof t>[0])}
             </p>
           </li>
         ))}
       </ol>
 
       <p className="text-[12px] leading-[1.55] text-[color:var(--glass-ink-faint)]">
-        Aperçu indicatif : les modalités exactes (délais, canaux, formulaires)
-        dépendent du motif de chômage temporaire et de votre situation. En cas
-        de doute, référez-vous aux instructions officielles de l&apos;ONEM ou à
-        votre secrétariat social.
+        {t("echeancierFootnote")}
       </p>
     </section>
   );

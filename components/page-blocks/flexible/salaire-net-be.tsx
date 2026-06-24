@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
 import { defineBlock } from '@/lib/page-builder/block-definition'
@@ -20,6 +21,7 @@ export const salaireNetBE = defineBlock({
     shortcuts: ['salaire', 'net'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { title = 'Salaire net estimé', defaultBrut = 3000, status = 'isolé' } = props
     const [brut, setBrut] = useState(defaultBrut)
     const [stat, setStat] = useState<Status>(status)
@@ -48,17 +50,18 @@ export const salaireNetBE = defineBlock({
       <div className="rounded-2xl border bg-card p-6 my-2">
         <h3 className="text-lg font-semibold">{title}</h3>
         <p className="text-xs text-muted-foreground mb-4">
-          Estimation simplifiée — chiffres indicatifs
+          {t('salaireNetBE.disclaimer')}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium">Salaire brut mensuel</label>
+            <label className="text-sm font-medium">{t('salaireNetBE.monthlyBrutLabel')}</label>
             <div className="relative mt-1">
               <input
                 type="number"
                 value={brut}
                 onChange={(e) => setBrut(Number(e.target.value))}
                 className="w-full rounded-md border bg-background pl-3 pr-10 py-2 text-sm"
+                aria-label={t('salaireNetBE.monthlyBrutLabel')}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
                 €
@@ -66,31 +69,32 @@ export const salaireNetBE = defineBlock({
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium">Situation</label>
+            <label className="text-sm font-medium">{t('salaireNetBE.situationLabel')}</label>
             <select
               value={stat}
               onChange={(e) => setStat(e.target.value as Status)}
               className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+              aria-label={t('salaireNetBE.situationLabel')}
             >
-              <option value="isolé">Isolé sans enfants</option>
-              <option value="cohabitant">Cohabitant</option>
-              <option value="famille">Famille à charge</option>
+              <option value="isolé">{t('salaireNetBE.statusIsolated')}</option>
+              <option value="cohabitant">{t('salaireNetBE.statusCohabitant')}</option>
+              <option value="famille">{t('salaireNetBE.statusFamily')}</option>
             </select>
           </div>
         </div>
         <div className="mt-5 grid grid-cols-3 gap-3 text-center">
           <div className="rounded-lg bg-muted/50 p-3">
-            <div className="text-xs text-muted-foreground uppercase">ONSS</div>
+            <div className="text-xs text-muted-foreground uppercase">{t('salaireNetBE.onss')}</div>
             <div className="mt-1 font-semibold tabular-nums">-{Math.round(onss)} €</div>
           </div>
           <div className="rounded-lg bg-muted/50 p-3">
-            <div className="text-xs text-muted-foreground uppercase">Impôt</div>
+            <div className="text-xs text-muted-foreground uppercase">{t('salaireNetBE.tax')}</div>
             <div className="mt-1 font-semibold tabular-nums">
               -{Math.round(monthlyTax - reduction)} €
             </div>
           </div>
           <div className="rounded-lg bg-primary/10 p-3 border-2 border-primary">
-            <div className="text-xs text-primary uppercase font-semibold">Net</div>
+            <div className="text-xs text-primary uppercase font-semibold">{t('salaireNetBE.net')}</div>
             <div className="mt-1 text-xl font-bold text-primary tabular-nums">{net} €</div>
           </div>
         </div>

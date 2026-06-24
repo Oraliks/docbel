@@ -1929,7 +1929,168 @@
       "loaderMsgCpas": "Finding your CPAS…",
       "loaderMsgOnem": "Finding the right ONEM office…",
       "loaderMsgOp": "Comparing the 4 payment institutions…",
-      "loaderMsgCommune": "Finding your town hall…"
+      "loaderMsgCommune": "Finding your town hall…",
+      "cpItem200": "Commercial employees",
+      "cpItem201": "Food industry employees",
+      "cpItem100": "Workers in supplementary sectors",
+      "cpItem111": "Mines and quarries",
+      "cpItem118": "Food industries",
+      "cpItem124": "Construction",
+      "cpItem130": "Pharmacy",
+      "cpItem140": "Road transport",
+      "cpItem302": "Hospitality industry",
+      "cpItem318": "Healthcare services",
+      "cpItem319": "Social welfare and healthcare (Brussels)",
+      "cpItem330": "Health facilities and services",
+      "tutCarteStep1Title": "Prepare your documents",
+      "tutCarteStep1Body": "Gather your ID card, a recent proof of address, and your national registry number before you begin.",
+      "tutCarteStep2Title": "Sign in with itsme or eID",
+      "tutCarteStep2Body": "Identify yourself securely via the itsme app or your eID card reader.",
+      "tutCarteStep3Title": "Fill in the online form",
+      "tutCarteStep3Body": "Provide the required information: reason for the request, delivery address, payment method.",
+      "tutCarteStep4Title": "Track your request",
+      "tutCarteStep4Body": "You will receive a receipt and a link to track progress. The card is usually available within 2 to 3 weeks.",
+      "tutEboxStep1Title": "Activate your eBox",
+      "tutEboxStep1Body": "Sign in once on my.belgium.be with itsme to activate your secure inbox.",
+      "tutEboxStep2Title": "Choose the connected services",
+      "tutEboxStep2Body": "Select the administrations that may send you their official documents digitally (NEO/ONEM, health insurance, FPS Finance, etc.).",
+      "tutEboxStep3Title": "Read your messages",
+      "tutEboxStep3Body": "Each new document lands directly in your eBox. An email notification is sent every time.",
+      "tutMyonemStep1Title": "Create your MyONEM account",
+      "tutMyonemStep1Body": "Visit the ONEM portal and start the account creation process via itsme or eID.",
+      "tutMyonemStep2Title": "Provide your situation",
+      "tutMyonemStep2Body": "Complete your profile: address, household composition, payment institution (CAPAC or union).",
+      "tutMyonemStep3Title": "Download your forms",
+      "tutMyonemStep3Body": "From your dashboard, access your forms (C4, C1, C3.2, etc.), already partially pre-filled.",
+      "tutMyonemStep4Title": "Track your payments",
+      "tutMyonemStep4Body": "Check the details of each payment, any deductions, and the history of your benefits.",
+      "infoAleIntro": "A <strong>Local Employment Agency (ALE/PWA)</strong> allows long-term jobseekers and social welfare recipients to take on activities of public interest, on top of their benefits.",
+      "infoAleItem1Title": "Who can register?",
+      "infoAleItem1Body": "Fully unemployed people who have been entitled to benefits for at least 2 years (1 year if you are over 45) and people receiving the minimum integration income for at least 6 months.",
+      "infoAleItem2Title": "Which activities?",
+      "infoAleItem2Body": "Home help, gardening, small maintenance jobs, support of persons, tutoring — always in addition to the normal economic circuit.",
+      "infoAleItem3Title": "How much does it pay?",
+      "infoAleItem3Body": "You keep your benefits and receive about EUR 4.10 net per ALE/PWA voucher (1 hour of work). Maximum 45 hours/month, partial tax exemption.",
+      "infoAleItem4Title": "How to register?",
+      "infoAleItem4Body": "Contact the ALE/PWA of your municipality. You will sign an ALE/PWA contract and receive your voucher booklet. Registration is free.",
+      "infoRisIntro": "The <strong>Social Integration Income (RIS/leefloon)</strong> is financial support from the OCMW/CPAS for people with insufficient income who cannot claim it through another channel.",
+      "infoRisItem1Title": "Who is eligible?",
+      "infoRisItem1Body": "Any adult legally residing in Belgium, without sufficient resources, willing to work (except for health or fairness reasons).",
+      "infoRisItem2Title": "What are the amounts?",
+      "infoRisItem2Body": "Cohabitant: approx. EUR 911/month. Single: approx. EUR 1,366/month. Person with dependent family: approx. EUR 1,847/month. Regularly indexed.",
+      "infoRisItem3Title": "How to apply?",
+      "infoRisItem3Body": "At the OCMW/CPAS of your municipality of residence. A social worker will assess your situation and carry out a social investigation within 30 days.",
+      "infoRisItem4Title": "What obligations?",
+      "infoRisItem4Body": "Willingness to work, individualised social integration project (PIIS), declaration of any income. The RIS can be combined with other aid (energy, housing, medical).",
+      "linkActirisDesc": "Actiris is the Brussels public employment service. It supports jobseekers in the Brussels-Capital Region in their search, training, and (re)integration into the labour market.",
+      "linkVdabDesc": "VDAB is the Flemish public employment service. It offers training, individual support, and a job platform for residents of the Flemish Region.",
+      "linkForemDesc": "Le Forem is the Walloon public employment and training service. It supports Walloon jobseekers and offers a broad catalogue of qualifying training.",
+      "linkAdgDesc": "ADG (Arbeitsamt der DG) is the public employment service of the German-speaking Community. It supports jobseekers from the Eastern Cantons.",
+      "brTitle": "Report an error",
+      "brDescriptionPrefix": "your report helps keep contact details accurate for everyone.",
+      "brCategoryLabel": "Type of error",
+      "brCatHours": "Wrong or outdated opening hours",
+      "brCatAddress": "Incorrect address",
+      "brCatPhone": "Wrong phone number",
+      "brCatClosed": "Office closed / relocated",
+      "brCatOther": "Other",
+      "brMessageLabel": "Description *",
+      "brMessagePlaceholder": "E.g. the displayed hours are 9–12 but the office opens at 8.",
+      "brMessageCounter": "{count}/{max}",
+      "brEmailLabel": "Your email (optional)",
+      "brEmailPlaceholder": "So we can get back to you if needed",
+      "brSubmittedConfirm": "Report sent. Our team will check it.",
+      "brBtnCancel": "Cancel",
+      "brBtnSend": "Send",
+      "brBtnClose": "Close",
+      "brErrTooShort": "Please describe the error in at least 5 characters",
+      "brErrSubmit": "Submission failed",
+      "brErrNetwork": "Network error",
+      "brSuccessToast": "Thanks, your report has been recorded",
+      "lkpEntriesCount": "{count} entries · category {category}",
+      "lkpUpdatedOn": "Updated on {date}",
+      "lkpFiltersTitle": "Search filters",
+      "lkpFieldCode": "Code",
+      "lkpFieldCodeHint": "press « / » to focus this field",
+      "lkpFieldCodePlaceholder": "E.g. 27, 2A, 27SP…",
+      "lkpFieldDescription": "Description",
+      "lkpFieldDescriptionPlaceholder": "Keyword or phrase",
+      "lkpFieldValidOn": "Valid on date",
+      "lkpFieldModifiedSince": "Modified since",
+      "lkpFieldModifiedSinceHint": "edit date in Beldoc (≠ ONEM date)",
+      "lkpFieldEndDate": "End date",
+      "lkpEndDateNone": "Empty",
+      "lkpEndDateFilled": "Filled",
+      "lkpEndDateAll": "Both",
+      "lkpSearchBtn": "Search",
+      "lkpResetBtn": "Reset",
+      "lkpIncludeHistory": "Include history (expired entries)",
+      "lkpPredefinedTitle": "Predefined searches",
+      "lkpPredefValidToday": "Value valid today",
+      "lkpPredefNoEnd": "Value without end date",
+      "lkpPredefAll": "All values",
+      "lkpPredefMod30": "Modifications · last 30 days",
+      "lkpPredefMod60": "Modifications · last 60 days",
+      "lkpPredefMod90": "Modifications · last 90 days",
+      "lkpResultsTitle": "Results",
+      "lkpResultsCount": "({count})",
+      "lkpNoMatch": "No entry matches these criteria.",
+      "lkpResetFilters": "Reset filters",
+      "lkpColDetails": "Details",
+      "lkpColFavorite": "Favourite",
+      "lkpColCode": "Code",
+      "lkpColStartDate": "Start date",
+      "lkpColEndDate": "End date",
+      "lkpColDescription": "Description",
+      "lkpAriaCollapse": "Collapse",
+      "lkpAriaExpandDetail": "Show details",
+      "lkpAriaAddFav": "Add to favourites",
+      "lkpAriaRemoveFav": "Remove from favourites",
+      "lkpAriaCopyCode": "Copy code",
+      "lkpPaginationShow": "Show",
+      "lkpPaginationPerPage": "per page",
+      "lkpPaginationPrev": "Previous",
+      "lkpPaginationNext": "Next",
+      "lkpPaginationPosition": "Page {page} / {total}",
+      "lkpSourceLabel": "Source: ONEM",
+      "lkpBackToCategories": "Back to categories",
+      "lkpStatusCurrent": "in force",
+      "lkpStatusExpired": "historical",
+      "lkpStatusUpcoming": "upcoming",
+      "lkpDetailTranslations": "Translations",
+      "lkpDetailMetadata": "Additional information",
+      "lkpHistoryTitle": "History",
+      "lkpHistoryLoading": "Loading…",
+      "lkpHistorySingle": "Single version",
+      "lkpLangFrench": "French",
+      "lkpLangDutch": "Dutch",
+      "lkpLangGerman": "German",
+      "lkpLangEnglish": "English",
+      "lkpResOnlyThisModule": "Show this module only",
+      "lkpResResultsLabel": "{count, plural, one {# result} other {# results}}",
+      "lkpResColDetailsAria": "Details",
+      "lkpResColCode": "Code",
+      "lkpResColDescription": "Description",
+      "lkpResColValidity": "Validity",
+      "lkpResColNote": "Note",
+      "lkpResColSourceOnem": "ONEM source",
+      "lkpResAriaCollapse": "Collapse",
+      "lkpResAriaMoreInfo": "{count} more info",
+      "lkpResHistorical": "historical",
+      "lkpResUntilDate": "until {date}",
+      "lkpResInForce": "in force",
+      "lsLoadingSearch": "Searching…",
+      "lsErrSearchFailed": "Search failed",
+      "lsEmptyNoMatchQ": "No relevant result for <code>{q}</code>.",
+      "lsEmptyNoMatchHint": "Try another term or check the spelling of the code.",
+      "lsEmptyLargeTable": "<strong>{label}</strong> contains too many entries to display all.",
+      "lsEmptyLargeTableHint": "Type a postcode (e.g. <code>1000</code>) or a street name (e.g. <code>avenue Louise</code>) — the 5 most relevant results will appear.",
+      "lsEmptyMinChars": "Type at least 2 characters to search the 11,000+ ONEM codes.",
+      "lsEmptyExamples": "Examples: <code>44</code> · <code>cohabitant</code> · <code>brux</code> · <code>01/43AA1</code> · <code>S04</code>",
+      "lsResultsSummary": "{total, plural, one {# relevant result} other {# relevant results}} across {sections, plural, one {# table} other {# tables}}",
+      "lsExpandAll": "Expand all",
+      "lsCollapseAll": "Collapse all",
+      "lsFooterLinkOfficial": "Official ONEM reference"
     },
     "pro": {
       "navAccount": "Account",
@@ -2892,10 +3053,10 @@
       "bookingToastSlotAvailableAgain": "Good news: this slot is available again!",
       "bookingToastWaitlistError": "Couldn't add you to the waiting list.",
       "blockedTitle": "Appointment access",
-      "blockedDesc": "To manage your appointment, confirm your e-mail address.",
+      "blockedDesc": "A recent appointment already exists in your name (on {date}). To book another one, you must first reschedule or cancel this one.",
       "blockedEmailPrompt": "Your e-mail address",
       "blockedManage": "Manage my appointment",
-      "blockedOffice": "Branch",
+      "blockedOffice": "You can also come directly to the office: {address}.",
       "blockedSend": "Send the link",
       "blockedSending": "Sending…",
       "blockedSent": "Link sent! Check your inbox.",
@@ -2928,7 +3089,153 @@
       "reformeSource1": "ONEM — Reform of the unemployment regulations",
       "reformeSource2": "ONEM — New unemployment rules in force since 1 March 2026",
       "reformeSource3": "ONEM — Are you entitled to benefits after employment?",
-      "reformeSource4": "ONEM — Integration benefits after studies"
+      "reformeSource4": "ONEM — Integration benefits after studies",
+      "bookingSelectChoose": "Choose…",
+      "bookingEmailPlaceholder": "your@email.be",
+      "bookingResendNeedEmail": "Enter your e-mail address.",
+      "bookingShowcaseStepBadge": "Step {n}",
+      "bookingShowcaseChipAutoApproval": "Automatic approval",
+      "bookingShowcaseChipReminder": "Day-before reminder",
+      "bookingShowcaseChipIcs": ".ics export",
+      "bookingShowcaseChipMultiOffice": "Multi-office",
+      "bookingShowcaseCta": "See the public journey",
+      "bookingShowcaseCtaCaption": "Exactly the journey your members will use.",
+      "ctParcoursEyebrow": "Employer obligations",
+      "ctParcoursTitle": "Temporary unemployment: <em>stay compliant</em> in 4 steps",
+      "ctParcoursIntro": "From the notification to the NEO to the payment of benefits: who does what, in which order — and the deadline pitfall to avoid.",
+      "ctParcoursStep1Title": "Reason & NEO notification",
+      "ctParcoursStep1Desc": "Identify the suspension reason (economic, bad weather, force majeure…). Depending on the reason, a prior electronic notification to the NEO is required before the start of the period.",
+      "ctParcoursStep2Title": "Informing the employee",
+      "ctParcoursStep2Desc": "Inform the employees concerned and report the first effective day of unemployment to the NEO — every month when the reason requires it.",
+      "ctParcoursStep3Title": "The employee completes their C3.2",
+      "ctParcoursStep3Desc": "On their side, your employee files their request with their payment institution: the C3.2 is the cornerstone of their file.",
+      "ctParcoursStep3WarningTitle": "Critical deadline — eC3.2 card",
+      "ctParcoursStep3WarningMessage": "Install the eC3.2 application as soon as the file starts — otherwise retroactive compensation is limited to 1 month.",
+      "ctParcoursStep4Title": "Payment via the institution",
+      "ctParcoursStep4Desc": "The payment institution (trade union or CAPAC) pays the benefits to the employee, based on your electronic declaration (DRS / WECH).",
+      "ctParcoursCtaPrimary": "Prepare the documents",
+      "ctParcoursCtaSecondary": "View the full file",
+      "echeancierBadge": "Employer calendar",
+      "echeancierTitle": "Your obligations, <em>at the right moment</em>",
+      "echeancierIntro": "Temporary unemployment and end of contract follow a precise rhythm. Here are the recurring appointments not to miss — and ready-made reminders to drop into your calendar.",
+      "echeancierCtaExport": "Add reminders to my calendar (.ics)",
+      "echeancierCtaDone": "Reminders downloaded!",
+      "echeancierCtaNote": "3 recurring monthly reminders, compatible with Outlook, Google Calendar and Apple Calendar.",
+      "echeancierObligation1Moment": "Before the suspension",
+      "echeancierObligation1Title": "Notify temporary unemployment to the NEO",
+      "echeancierObligation1Desc": "For economic unemployment and the suspension of white-collar workers, the planned period must be notified to the NEO before the start of the suspension. Bad weather, however, requires no prior notification.",
+      "echeancierObligation2Moment": "From the 1st day",
+      "echeancierObligation2Title": "Hand the control card to the employee",
+      "echeancierObligation2Desc": "Every employee concerned receives their control card (C3.2A) from the first effective day of unemployment of the month — it conditions the payment of their benefits.",
+      "echeancierObligation3Moment": "Each month concerned",
+      "echeancierObligation3Title": "Report the 1st effective day of unemployment",
+      "echeancierObligation3Desc": "Economic, bad weather, technical breakdown or suspension of white-collar workers: the first effective day of unemployment of the month is reported to the NEO, generally on the same day or one working day around it (variants depending on the reason).",
+      "echeancierObligation4Moment": "Each month-end",
+      "echeancierObligation4Title": "Declare temporary unemployment hours (DRS)",
+      "echeancierObligation4Desc": "The electronic DRS declaration (WECH stream) is sent at the end of the month via the social security portal: it is what allows the calculation and payment of your employees' benefits.",
+      "echeancierObligation5Moment": "At every end of contract",
+      "echeancierObligation5Title": "Hand the C4 to the employee",
+      "echeancierObligation5Desc": "The C4 unemployment certificate attests to the periods of work and the reason for the end of contract. The employee needs it quickly to assert their rights with their payment institution.",
+      "echeancierObligation6Moment": "Ongoing",
+      "echeancierObligation6Title": "Keep declarations and supporting documents",
+      "echeancierObligation6Desc": "Notifications, communications, declarations and handed-over documents: keep a record of them. In case of an audit or dispute, these supporting documents are evidence.",
+      "echeancierReminder1Summary": "Temporary unemployment: report the 1st effective day to the NEO",
+      "echeancierReminder1Description": "If temporary unemployment is planned this month: report the first effective day to the NEO and check that every employee has received their control card (C3.2A). Indicative reminder created by Docbel — to be adapted to your situation.",
+      "echeancierReminder2Summary": "Prepare the declaration of temporary unemployment hours (DRS)",
+      "echeancierReminder2Description": "Prepare the electronic month-end declaration (DRS / WECH) via the social security portal: it is used for the payment of your employees' benefits. Indicative reminder created by Docbel.",
+      "echeancierReminder3Summary": "Monthly social closing: declarations sent, supporting documents archived",
+      "echeancierReminder3Description": "Check that the month's declarations have been sent and archive notifications, communications and supporting documents. Indicative reminder created by Docbel.",
+      "echeancierFootnote": "Indicative overview: the exact terms (deadlines, channels, forms) depend on the temporary unemployment reason and your situation. When in doubt, refer to the official instructions of the NEO or your payroll office.",
+      "pricingBadge": "Pricing",
+      "pricingTitle": "A <em>simple</em> price, VAT included",
+      "pricingIntro": "No surprises: two plans, prices shown excluding or including VAT, and a compliant invoice for your accounting.",
+      "pricingToggleAriaLabel": "Show prices excluding or including VAT",
+      "pricingModeHtva": "EXCL. VAT",
+      "pricingModeTvac": "INCL. VAT",
+      "pricingTvaNote": "Belgian VAT of 21 %.",
+      "pricingRecommended": "Recommended",
+      "pricingPlanFreeName": "Free",
+      "pricingPlanFreeTagline": "To stay informed and keep an eye on your obligations.",
+      "pricingPlanFreeFeature1": "Information tools and social news",
+      "pricingPlanFreeFeature2": "Read access to files and procedures (temporary unemployment, end of contract…)",
+      "pricingPlanFreeFeature3": "Joint committee (JC) search",
+      "pricingPlanFreeFeature4": "Immediate access, no commitment",
+      "pricingPlanProName": "Pro",
+      "pricingPlanProTagline": "To manage your HR daily, as a team.",
+      "pricingPlanProFeature1": "Everything in the Free plan",
+      "pricingPlanProFeature2": "Management tools: calculations, simulations and calendars",
+      "pricingPlanProFeature3": "Multi-user: invite your team",
+      "pricingPlanProFeature4": "Priority support",
+      "pricingPriceSuffix": "€ /month",
+      "pricingSrFree": "0 euros per month",
+      "pricingSrTvac": "{value} euros per month VAT included",
+      "pricingSrHtva": "{value} euros per month excluding VAT",
+      "pricingLaunchNotice": "Launch period: the Pro space is currently offered for free — no payment will be requested today.",
+      "pricingTvaBadge": "Recoverable VAT — compliant invoice",
+      "pricingCtaPro": "Create my employer account",
+      "pricingNoCommitment": "No commitment.",
+      "pricingCtaFree": "Start for free",
+      "pricingNoCardRequired": "No payment card required.",
+      "pricingFootnote": "Prices in euros per month. Amounts including VAT include Belgian VAT of 21 % — recoverable for VAT-liable taxpayers.",
+      "espacePreviewEyebrow": "Guided tour",
+      "espacePreviewTitle": "Visit the <em>partner space</em>",
+      "espacePreviewIntro": "A preview without creating an account: this is what the tools your team will use daily look like.",
+      "espacePreviewIncluded": "Included in the space",
+      "espacePreviewIncludedTitle": "Everything you need, in one place",
+      "espacePreviewCtaPrimary": "Create my space",
+      "espacePreviewCtaSecondary": "Request a guided demo",
+      "espacePreviewTablistLabel": "Partner space previews",
+      "espacePreviewMockBadge": "Preview — fictitious data",
+      "espacePreviewMockFootnote": "Illustrative mock-up: the appointments, amounts and codes shown are fictitious.",
+      "espacePreviewTabAgendaLabel": "Appointments calendar",
+      "espacePreviewTabAgendaPanelTitle": "Team calendar — typical week",
+      "espacePreviewTabAgrLabel": "IGR calculation",
+      "espacePreviewTabAgrPanelTitle": "IGR calculation — result",
+      "espacePreviewTabLookupLabel": "NEO lookup",
+      "espacePreviewTabLookupPanelTitle": "NEO lookup — code sheet",
+      "espacePreviewStatusHonore": "Honored",
+      "espacePreviewStatusConfirme": "Confirmed",
+      "espacePreviewStatusAttente": "Awaiting validation",
+      "espacePreviewDayMon": "Mon",
+      "espacePreviewDayTue": "Tue",
+      "espacePreviewDayWed": "Wed",
+      "espacePreviewDayThu": "Thu",
+      "espacePreviewDayFri": "Fri",
+      "espacePreviewMotifInscription": "Registration",
+      "espacePreviewMotifControle": "File check",
+      "espacePreviewMotifCalculAgr": "IGR calculation",
+      "espacePreviewMotifChomageTemporaire": "Temporary unemployment",
+      "espacePreviewMotifDispense": "Training exemption",
+      "espacePreviewAgendaCurrentWeek": "Current week",
+      "espacePreviewAgendaFilterAll": "All counters",
+      "espacePreviewAgendaFilterStatuses": "All statuses",
+      "espacePreviewAgendaFree": "Free",
+      "espacePreviewAgrRowBrut": "Gross IGR — Scale 57/-",
+      "espacePreviewAgrRowCt": "Temporary unemployment",
+      "espacePreviewAgrRowTotal": "Total 57 (IGR + TU + CC)",
+      "espacePreviewAgrWechImported": "WECH 506 imported",
+      "espacePreviewAgrSalaireRef": "Reference salary: {value}",
+      "espacePreviewAgrFootnote": "Import the WECH 506 of your member: the calculation is done automatically, for up to 4 simultaneous occupations.",
+      "espacePreviewLookupSearchQuery": "payment method",
+      "espacePreviewLookupCodeTitle": "Bank account transfer",
+      "espacePreviewLookupCodeMeta": "S01 — Payment method · Reference data",
+      "espacePreviewLookupDutchLabel": "Dutch",
+      "espacePreviewLookupDutchValue": "Overschrijving op bankrekening",
+      "espacePreviewLookupValidityLabel": "Validity",
+      "espacePreviewLookupValidityValue": "since 01.01.2020 · current",
+      "espacePreviewLookupSourceLabel": "Source",
+      "espacePreviewLookupSourceValue": "Table S01 (NEO reference data)",
+      "espacePreviewLookupFootnote": "Cross-cutting search across the official NEO reference data: signaletics, eligibility, exemptions, offices…",
+      "espacePreviewFeature1Title": "Overview",
+      "espacePreviewFeature1Desc": "Your organization's dashboard, at a glance.",
+      "espacePreviewFeature2Title": "Calendar & requests",
+      "espacePreviewFeature2Desc": "The appointments of your counters, week by week.",
+      "espacePreviewFeature3Title": "NEO lookup",
+      "espacePreviewFeature3Desc": "Official reference data and signaletics, available in seconds.",
+      "espacePreviewFeature4Title": "IGR calculation",
+      "espacePreviewFeature4Desc": "The income guarantee allowance computed from the WECH 506.",
+      "espacePreviewFeature5Title": "Members & allowed domains",
+      "espacePreviewFeature5Desc": "Invite your colleagues and manage your organization's access."
     },
     "ec32": {
       "calendar": {
@@ -2983,6 +3290,207 @@
           "usualDay": "Work on a usual day"
         },
         "workOwnEmployer": "Work for your usual employer"
+      },
+      "oauthConsent": {
+        "defaultUserName": "Citizen",
+        "eyebrow": "Access consent",
+        "greeting": "Hello {userName},",
+        "intro": "The <app>eC3.2 — Temporary unemployment control card</app> application requires the following accesses:",
+        "scopeBadgeAriaLabel": "Access requested",
+        "scopes": {
+          "login": {
+            "title": "Access to login data",
+            "description": "Identification data used to sign in (openid)"
+          },
+          "profile": {
+            "title": "Access to profile data",
+            "description": "Access to profile data"
+          },
+          "public": {
+            "title": "Public",
+            "description": "Consultation of the employer's public data."
+          },
+          "citizenMandates": {
+            "title": "Citizen mandates",
+            "description": "Citizen mandates"
+          },
+          "consultCard": {
+            "title": "View their temporary unemployment cards",
+            "description": "Consultation of the citizen's data related to temporary unemployment"
+          },
+          "modifyCard": {
+            "title": "Modify a temporary unemployment card",
+            "description": "Modification of the data of a temporary unemployment control card"
+          },
+          "submitCard": {
+            "title": "Submit a temporary unemployment card",
+            "description": "Submission of a temporary unemployment control card"
+          }
+        },
+        "validity": "This access is valid for a period of <duration>23 months</duration>. Upon expiry, authorisation will be requested again (renewal).",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "footer": "Educational simulation — no data is actually transmitted."
+      },
+      "accessDashboard": {
+        "eyebrow": "Mandates",
+        "title": "Access management",
+        "subtitle": "Give a trusted person access to your temporary unemployment card.",
+        "newRequest": "New request",
+        "tablistAriaLabel": "Access categories",
+        "tabs": {
+          "requested": "Requested accesses",
+          "granted": "Granted accesses",
+          "received": "Received accesses"
+        },
+        "status": {
+          "active": "Active",
+          "pending": "Pending",
+          "expired": "Expired"
+        },
+        "dateLabel": {
+          "requested": "Requested until {date}",
+          "validUntil": "Valid until {date}"
+        },
+        "actions": {
+          "revoke": "Revoke",
+          "cancelRequest": "Cancel the request"
+        },
+        "empty": {
+          "granted": {
+            "title": "You have not granted any access at the moment.",
+            "body": "No access granted."
+          },
+          "requested": {
+            "title": "You will find here all your access requests awaiting approval.",
+            "body": "No request awaiting approval."
+          },
+          "received": {
+            "title": "Accesses granted by other citizens.",
+            "example": "For example: you can sign in on behalf of your father to fill in his temporary unemployment card.",
+            "body": "You have not received any access."
+          }
+        }
+      },
+      "mandateWizard": {
+        "title": "New access request",
+        "steps": {
+          "scope": "Which data do you want to give access to?",
+          "duration": "Desired duration of the access",
+          "send": "Send the access request"
+        },
+        "scope": {
+          "intro": "Choose the data you want to give access to.",
+          "option": {
+            "label": "Temporary unemployment card",
+            "description": "The person will be able to view and fill in your monthly card."
+          }
+        },
+        "duration": {
+          "intro": "Indicate how long the access must remain valid.",
+          "max1y": {
+            "label": "Maximum duration: 1 year",
+            "description": "The access ends automatically after one year."
+          },
+          "until": {
+            "label": "Until"
+          },
+          "info": {
+            "title": "Limited duration",
+            "body": "Consultation of the data of the temporary unemployment card is limited to a maximum of 1 year."
+          }
+        },
+        "send": {
+          "personName": {
+            "label": "First name and last name",
+            "placeholder": "E.g. Karim Benali"
+          },
+          "language": {
+            "label": "Language of the request",
+            "ariaLabel": "Language"
+          },
+          "channel": {
+            "label": "Transmission method",
+            "email": {
+              "label": "By e-mail",
+              "placeholder": "firstname.lastname@example.be",
+              "invalid": "Please enter a valid e-mail address.",
+              "description": "The citizen will receive the request by e-mail."
+            },
+            "qr": {
+              "label": "Via QR code",
+              "description": "A QR code to scan will be displayed on screen.",
+              "preview": "Ask the person to scan this QR code with their smartphone.",
+              "previewNote": "Illustrative code (simulation)."
+            },
+            "link": {
+              "label": "Via link",
+              "description": "A personal link to share through the channel of your choice."
+            }
+          },
+          "linkPreview": {
+            "copy": "Copy the link",
+            "copied": "Copied ✓"
+          },
+          "disclaimer": "No data is actually transmitted — this screen illustrates the eC3.2 mandate flow. The request created will appear in « Requested accesses »."
+        },
+        "actions": {
+          "cancelRequest": "Cancel the request",
+          "previous": "Previous",
+          "next": "Next",
+          "send": "Send the request"
+        }
+      },
+      "rules": {
+        "section": {
+          "eyebrow": "Good to keep in mind",
+          "title": "Important rules",
+          "subtitle": "The simulator's complements, grouped by topic. Expand a section."
+        },
+        "obligation": {
+          "fallbackTitle": "Obligation as from 1 January 2025"
+        },
+        "derogations": {
+          "fallbackTitle": "Derogations & CP 327 exception"
+        },
+        "cp124": {
+          "title": "Construction (CP 124)"
+        },
+        "paymentOrg": {
+          "title": "Payment institution"
+        },
+        "workElsewhere": {
+          "title": "Working elsewhere"
+        },
+        "correction": {
+          "title": "Correcting an error",
+          "fallbackBody": "If the card has already been sent and contains an error, you can correct it using a form available from your payment institution (CAPAC/HVW, CSC/ACV, FGTB/ABVV or CGSLB/ACLVB)."
+        },
+        "firstSendDate": {
+          "title": "Earliest possible sending date"
+        },
+        "why": {
+          "fallbackTitle": "Why the eC3.2?"
+        }
+      },
+      "guidedSteps": {
+        "navAriaLabel": "Steps of the simulation",
+        "stepAriaLabel": "Step {index}: {title}",
+        "stepTooltip": "Step {index} — {title}",
+        "previousAriaLabel": "Previous step",
+        "nextAriaLabel": "Next step",
+        "mobileCounter": "Step {index} of {total}",
+        "progressAriaLabel": "Simulation progress",
+        "defaultTitles": {
+          "login": "Simulated login",
+          "declaration": "Declaration on honour",
+          "employer": "Employer choice",
+          "month": "Month choice",
+          "calendar": "Fill in the calendar",
+          "correction": "Correcting an error",
+          "verify": "Verify",
+          "send": "Send"
+        }
       }
     },
     "blocks": {
@@ -3035,6 +3543,70 @@
       },
       "testimonial": {
         "empty": "No testimonials to show."
+      },
+      "salaireNetBE": {
+        "disclaimer": "Simplified estimate — indicative figures",
+        "monthlyBrutLabel": "Monthly gross salary",
+        "situationLabel": "Situation",
+        "statusIsolated": "Single without children",
+        "statusCohabitant": "Cohabiting",
+        "statusFamily": "Family dependents",
+        "onss": "Social security",
+        "tax": "Tax",
+        "net": "Net"
+      },
+      "ttsButton": {
+        "stop": "Stop",
+        "unsupported": "Speech synthesis not available in this browser",
+        "noContent": "No content to read."
+      },
+      "multiStepForm": {
+        "stepCounter": "Step {current} / {total}",
+        "previous": "Previous",
+        "next": "Next",
+        "submitError": "Submission failed",
+        "networkError": "Network error",
+        "selectPlaceholder": "Choose…"
+      },
+      "form": {
+        "error": "Error",
+        "networkError": "Network error",
+        "selectPlaceholder": "Choose…"
+      },
+      "eligibilityTest": {
+        "eligible": "You are eligible",
+        "notEligible": "Not eligible",
+        "retake": "Retake the test",
+        "seeResult": "See result",
+        "yes": "Yes",
+        "no": "No",
+        "selectPlaceholder": "Choose…"
+      },
+      "calculator": {
+        "regionAria": "Calculator",
+        "resultAria": "Calculation result",
+        "empty": "Waiting for result"
+      },
+      "cta": {
+        "regionAria": "Call to action",
+        "primaryFallbackAria": "Learn more"
+      },
+      "features": {
+        "regionAria": "Features",
+        "listAria": "Features list"
+      },
+      "checklist": {
+        "listAria": "Checklist",
+        "progressAria": "{completed} of {total} checked",
+        "checkAria": "Check: {item}",
+        "uncheckAria": "Uncheck: {item}"
+      },
+      "accordion": {
+        "regionAria": "Expandable sections",
+        "triggerAria": "Show or hide section: {title}"
+      },
+      "repeater": {
+        "regionAria": "Items list"
       }
     }
   }

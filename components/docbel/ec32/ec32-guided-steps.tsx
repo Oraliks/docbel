@@ -9,6 +9,7 @@
 // =====================================================================
 
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { EC32_STEPS, type Ec32StepKey } from '@/lib/ec32/types'
 import {
@@ -36,11 +37,12 @@ export function Ec32GuidedSteps({
   maxReachedIndex: number
   onSelectStep: (key: Ec32StepKey) => void
 }) {
+  const t = useTranslations('public.ec32')
   const orderedSteps = EC32_STEPS.map((key, idx) => {
     const found = steps.find((s) => s.key === key)
     return {
       key,
-      title: found?.title?.trim() || defaultStepTitle(key),
+      title: found?.title?.trim() || defaultStepTitle(key, t),
       index: idx,
     }
   })
@@ -56,7 +58,7 @@ export function Ec32GuidedSteps({
   }
 
   return (
-    <nav aria-label="Étapes de la simulation" className="w-full">
+    <nav aria-label={t('guidedSteps.navAriaLabel')} className="w-full">
       {/* ── Desktop : stepper numéroté connecté (chiffres seuls, libellé en
           tooltip pour rester compact sur une seule ligne), centré ── */}
       <TooltipProvider delay={120}>
@@ -89,7 +91,10 @@ export function Ec32GuidedSteps({
                         onClick={() => reachable && onSelectStep(step.key)}
                         aria-disabled={!reachable}
                         aria-current={isActive ? 'step' : undefined}
-                        aria-label={`Étape ${step.index + 1} : ${step.title}`}
+                        aria-label={t('guidedSteps.stepAriaLabel', {
+                          index: step.index + 1,
+                          title: step.title,
+                        })}
                         className={cn(
                           'flex size-8 flex-none items-center justify-center rounded-full text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
                           isActive
@@ -106,7 +111,10 @@ export function Ec32GuidedSteps({
                     }
                   />
                   <TooltipContent side="bottom">
-                    Étape {step.index + 1} — {step.title}
+                    {t('guidedSteps.stepTooltip', {
+                      index: step.index + 1,
+                      title: step.title,
+                    })}
                   </TooltipContent>
                 </Tooltip>
               </li>
@@ -121,7 +129,7 @@ export function Ec32GuidedSteps({
           type="button"
           onClick={() => goRelative(-1)}
           disabled={activeIndex <= 0}
-          aria-label="Étape précédente"
+          aria-label={t('guidedSteps.previousAriaLabel')}
           className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronLeft className="size-4" aria-hidden />
@@ -129,7 +137,7 @@ export function Ec32GuidedSteps({
 
         <div className="min-w-0 flex-1 text-center">
           <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
-            Étape {current.index + 1} sur {total}
+            {t('guidedSteps.mobileCounter', { index: current.index + 1, total })}
           </p>
           <p className="truncate text-sm font-semibold text-foreground">{current.title}</p>
           <div
@@ -138,7 +146,7 @@ export function Ec32GuidedSteps({
             aria-valuemin={1}
             aria-valuemax={total}
             aria-valuenow={current.index + 1}
-            aria-label="Progression de la simulation"
+            aria-label={t('guidedSteps.progressAriaLabel')}
           >
             <span
               className="block h-full rounded-full bg-primary transition-all duration-300"
@@ -154,7 +162,7 @@ export function Ec32GuidedSteps({
             activeIndex >= total - 1 ||
             (orderedSteps[activeIndex + 1]?.index ?? Infinity) > maxReachedIndex
           }
-          aria-label="Étape suivante"
+          aria-label={t('guidedSteps.nextAriaLabel')}
           className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronRight className="size-4" aria-hidden />
@@ -164,16 +172,19 @@ export function Ec32GuidedSteps({
   )
 }
 
-function defaultStepTitle(key: Ec32StepKey): string {
+function defaultStepTitle(
+  key: Ec32StepKey,
+  t: ReturnType<typeof useTranslations>,
+): string {
   const map: Record<Ec32StepKey, string> = {
-    login: 'Connexion simulée',
-    declaration: 'Déclaration sur l’honneur',
-    employer: 'Choix de l’employeur',
-    month: 'Choix du mois',
-    calendar: 'Remplir le calendrier',
-    correction: 'Corriger une erreur',
-    verify: 'Vérifier',
-    send: 'Envoyer',
+    login: t('guidedSteps.defaultTitles.login'),
+    declaration: t('guidedSteps.defaultTitles.declaration'),
+    employer: t('guidedSteps.defaultTitles.employer'),
+    month: t('guidedSteps.defaultTitles.month'),
+    calendar: t('guidedSteps.defaultTitles.calendar'),
+    correction: t('guidedSteps.defaultTitles.correction'),
+    verify: t('guidedSteps.defaultTitles.verify'),
+    send: t('guidedSteps.defaultTitles.send'),
   }
   return map[key]
 }

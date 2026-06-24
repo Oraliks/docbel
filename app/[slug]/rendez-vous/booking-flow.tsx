@@ -14,17 +14,16 @@ import {
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { BookingField, DayAvailability } from "@/lib/booking/types";
 import {
   addDaysYmd,
   brusselsNowParts,
 } from "@/lib/booking/dates";
 import {
-  bookingUI,
   localeDate,
   BOOKING_LOCALES,
   BOOKING_LOCALE_LABELS,
-  fillTemplate,
   type BookingLocale,
 } from "@/lib/booking/i18n";
 import { validateFormFields } from "@/lib/booking/form-fields";
@@ -187,7 +186,7 @@ export function BookingFlow({
   initialAvailability,
   locale,
 }: Props) {
-  const t = bookingUI(locale);
+  const t = useTranslations("public.landing");
   const todayYmd = brusselsNowParts().ymd;
   const [screen, setScreen] = useState<Screen>({ type: "calendar" });
 
@@ -224,7 +223,7 @@ export function BookingFlow({
         if (locId) params.set("locationId", locId);
 
         const res = await fetch(`/api/booking/${slug}/availability?${params.toString()}`);
-        if (!res.ok) throw new Error("Erreur lors du chargement des disponibilités");
+        if (!res.ok) throw new Error("availability-fetch-failed");
         const data: AvailabilityResponse = await res.json();
         setAvailability(data);
         // If no locationId was set yet, use the resolved one
@@ -232,7 +231,7 @@ export function BookingFlow({
           setLocationId(data.location.id);
         }
       } catch {
-        toast.error("Impossible de charger les disponibilités. Réessayez.");
+        toast.error(t("bookingToastAvailabilityError"));
       } finally {
         setLoadingAvail(false);
       }
@@ -326,7 +325,7 @@ export function BookingFlow({
     const validation = validateFormFields(fields, formData);
     if (!validation.ok) {
       setFieldErrors(validation.errors);
-      toast.error("Veuillez corriger les champs indiqués en rouge.");
+      toast.error(t("bookingToastFixFields"));
       focusFirstError(validation.errors);
       return;
     }
@@ -403,13 +402,13 @@ export function BookingFlow({
           setFieldErrors(data.fieldErrors);
           focusFirstError(data.fieldErrors);
         }
-        toast.error(data.error ?? "Formulaire invalide. Vérifiez les champs.");
+        toast.error(data.error ?? t("bookingToastInvalidForm"));
         return;
       }
 
-      toast.error("Une erreur est survenue. Veuillez réessayer.");
+      toast.error(t("bookingToastGenericError"));
     } catch {
-      toast.error("Erreur réseau. Veuillez réessayer.");
+      toast.error(t("bookingToastNetworkError"));
     } finally {
       setSubmitting(false);
     }
@@ -437,14 +436,14 @@ export function BookingFlow({
       if (res.ok && data.ok) {
         setScreen({ type: "waitlistDone", date: screen.date, startTime: screen.startTime });
       } else if (data.available) {
-        toast.info("Une place est de nouveau disponible — choisissez votre créneau.");
+        toast.info(t("bookingToastSlotAvailableAgain"));
         setScreen({ type: "calendar" });
         fetchAvailability(from, locationId);
       } else {
-        toast.error(data.error ?? "Impossible de rejoindre la liste d'attente.");
+        toast.error(data.error ?? t("bookingToastWaitlistError"));
       }
     } catch {
-      toast.error("Erreur réseau. Veuillez réessayer.");
+      toast.error(t("bookingToastNetworkError"));
     } finally {
       setJoiningWaitlist(false);
     }
@@ -515,7 +514,7 @@ export function BookingFlow({
             onChange={(e) => updateField(f.key, e.target.value)}
             className={`${commonInputClass}${errBorder}`}
           >
-            <option value="">Choisir…</option>
+            <option value="">{t("bookingSelectChoose")}</option>
             {(f.options ?? []).map((opt) => (
               <option key={opt} value={opt}>
                 {opt}
@@ -619,17 +618,17 @@ export function BookingFlow({
           <div>
             <h2 className="text-[20px] font-semibold text-[color:var(--glass-ink)]">
               {pv
-                ? t("verifyTitle")
+                ? t("bookingVerifyTitle")
                 : screen.confirmed
-                  ? t("successConfirmedTitle")
-                  : t("successPendingTitle")}
+                  ? t("bookingSuccessConfirmedTitle")
+                  : t("bookingSuccessPendingTitle")}
             </h2>
             <p className="mt-1 text-[14px] text-[color:var(--glass-ink-soft)]">
               {pv
-                ? t("verifyDesc")
+                ? t("bookingVerifyDesc")
                 : screen.confirmed
-                  ? t("successConfirmedDesc")
-                  : t("successPendingDesc")}
+                  ? t("bookingSuccessConfirmedDesc")
+                  : t("bookingSuccessPendingDesc")}
             </p>
           </div>
           {!pv && (
@@ -638,7 +637,7 @@ export function BookingFlow({
               className="inline-flex w-fit items-center gap-2 rounded-full px-5 py-2 text-[14px] font-semibold transition-opacity hover:opacity-80"
               style={GLASS_PRIMARY_STYLE}
             >
-              {t("successManage")}
+              {t("bookingSuccessManage")}
               <ChevronRight size={14} />
             </Link>
           )}
@@ -656,10 +655,10 @@ export function BookingFlow({
           </div>
           <div>
             <h2 className="text-[20px] font-semibold text-[color:var(--glass-ink)]">
-              {t("waitlistDoneTitle")}
+              {t("bookingWaitlistDoneTitle")}
             </h2>
             <p className="mt-1 text-[14px] text-[color:var(--glass-ink-soft)]">
-              {fillTemplate(t("waitlistDoneDesc"), { date: localeDate(screen.date, locale), time: screen.startTime })}
+              {t("bookingWaitlistDoneDesc", { date: localeDate(screen.date, locale), time: screen.startTime })}
             </p>
           </div>
           <button
@@ -683,14 +682,14 @@ export function BookingFlow({
       <div className={`${GLASS_CARD} glass-surface mx-auto w-full max-w-xl rounded-2xl p-6`}>
         <div className="flex flex-col gap-4">
           <h2 className="text-[18px] font-semibold text-[color:var(--glass-ink)]">
-            {t("waitlistFullTitle")}
+            {t("bookingWaitlistFullTitle")}
           </h2>
           <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-            {fillTemplate(t("waitlistFullDesc"), { date: localeDate(screen.date, locale), time: screen.startTime })}
+            {t("bookingWaitlistFullDesc", { date: localeDate(screen.date, locale), time: screen.startTime })}
           </p>
           {!canJoin && (
             <p className="text-[13px] text-amber-700">
-              {t("waitlistNeedEmail")}
+              {t("bookingWaitlistNeedEmail")}
             </p>
           )}
           <div className="flex flex-wrap items-center gap-3">
@@ -700,7 +699,7 @@ export function BookingFlow({
               style={GLASS_PRIMARY_STYLE}
               className="flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-60"
             >
-              {joiningWaitlist ? t("waitlistJoining") : t("waitlistJoin")}
+              {joiningWaitlist ? t("bookingWaitlistJoining") : t("bookingWaitlistJoin")}
             </button>
             <button
               onClick={() => {
@@ -710,7 +709,7 @@ export function BookingFlow({
               className="flex items-center gap-1 text-[13px] text-[color:var(--glass-ink-soft)] hover:text-[color:var(--glass-ink)]"
             >
               <ChevronLeft size={14} />
-              {t("chooseOther")}
+              {t("bookingChooseOther")}
             </button>
           </div>
         </div>
@@ -752,18 +751,18 @@ export function BookingFlow({
     const steps = [
       {
         Icon: CalendarDays,
-        title: t("step1Title"),
-        desc: t("step1Desc"),
+        title: t("bookingStep1Title"),
+        desc: t("bookingStep1Desc"),
       },
       {
         Icon: UserRound,
-        title: t("step2Title"),
-        desc: t("step2Desc"),
+        title: t("bookingStep2Title"),
+        desc: t("bookingStep2Desc"),
       },
       {
         Icon: CheckCircle2,
-        title: t("step3Title"),
-        desc: t("step3Desc"),
+        title: t("bookingStep3Title"),
+        desc: t("bookingStep3Desc"),
       },
     ];
 
@@ -775,7 +774,7 @@ export function BookingFlow({
         <aside className={`${GLASS_CARD} glass-surface flex flex-col gap-5 rounded-2xl p-5`}>
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-              {t("sidebarKicker")}
+              {t("bookingSidebarKicker")}
             </p>
             <h1 className="glass-display mt-1 text-[30px] font-semibold leading-none">
               {tenantName}
@@ -783,7 +782,7 @@ export function BookingFlow({
           </div>
 
           <select
-            aria-label={t("langLabel")}
+            aria-label={t("bookingLangLabel")}
             value={locale}
             onChange={(e) => {
               const url = new URL(window.location.href);
@@ -817,7 +816,7 @@ export function BookingFlow({
 
           {availability && availability.allLocations.length > 1 && (
             <select
-              aria-label="Antenne"
+              aria-label={t("bookingLocationLabel")}
               value={locationId || loc?.id || ""}
               onChange={(e) => handleLocationChange(e.target.value)}
               className={`${GLASS_INPUT} h-9 rounded-xl border px-2 text-[13px] outline-none focus:ring-2 focus:ring-[color:var(--glass-accent-deep)]`}
@@ -834,7 +833,7 @@ export function BookingFlow({
 
           <div className="flex flex-col gap-3">
             <p className="text-[13px] font-semibold text-[color:var(--glass-ink)]">
-              {t("how")}
+              {t("bookingHow")}
             </p>
             {steps.map((s) => (
               <div key={s.title} className="flex items-start gap-3">
@@ -857,7 +856,7 @@ export function BookingFlow({
 
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--glass-ink-faint)]">
-              {t("weekSelected")}
+              {t("bookingWeekSelected")}
             </p>
             <p className="mt-1.5 flex items-center gap-2 text-[14px] font-medium text-[color:var(--glass-ink)]">
               <CalendarDays size={15} className="text-[color:var(--glass-accent-deep)]" />
@@ -871,9 +870,9 @@ export function BookingFlow({
           >
             <HelpCircle size={16} className="flex-shrink-0 text-[color:var(--glass-accent-deep)]" />
             <span>
-              {t("needHelp")}{" "}
+              {t("bookingNeedHelp")}{" "}
               <span className="text-[color:var(--glass-accent-deep)]">
-                {t("consultGuide")}
+                {t("bookingConsultGuide")}
               </span>
             </span>
           </Link>
@@ -889,7 +888,7 @@ export function BookingFlow({
               className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)] transition-colors hover:text-[color:var(--glass-ink)] disabled:pointer-events-none disabled:opacity-40"
             >
               <ChevronLeft size={15} />
-              <span className="hidden sm:inline">{t("weekPrev")}</span>
+              <span className="hidden sm:inline">{t("bookingWeekPrev")}</span>
             </button>
             <span className="text-[15px] font-semibold text-[color:var(--glass-ink)]">
               {weekRange}
@@ -899,7 +898,7 @@ export function BookingFlow({
               disabled={loadingAvail}
               className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)] transition-colors hover:text-[color:var(--glass-ink)] disabled:pointer-events-none disabled:opacity-40"
             >
-              <span className="hidden sm:inline">{t("weekNext")}</span>
+              <span className="hidden sm:inline">{t("bookingWeekNext")}</span>
               <ChevronRight size={15} />
             </button>
           </div>
@@ -909,7 +908,7 @@ export function BookingFlow({
               <div className="flex items-center justify-between border-b border-[color:var(--glass-border)] pb-2">
                 <span className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)]">
                   <Clock size={14} />
-                  {t("slotsAvailable")}
+                  {t("bookingSlotsAvailable")}
                 </span>
                 <span className="text-[12px] text-[color:var(--glass-ink-faint)]">
                   GMT+2
@@ -945,13 +944,14 @@ export function BookingFlow({
               </p>
             </div>
           )}
+          {/* (noSlots / tryNext already use externalised keys) */}
 
           {!loadingAvail && daysWithSlots.length > 0 && (
             <>
               <div className="flex items-center justify-between border-b border-[color:var(--glass-border)] pb-2">
                 <span className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--glass-ink-soft)]">
                   <Clock size={14} />
-                  {t("slotsAvailable")}
+                  {t("bookingSlotsAvailable")}
                 </span>
                 <span className="text-[12px] text-[color:var(--glass-ink-faint)]">
                   GMT+2
@@ -1009,6 +1009,7 @@ export function BookingFlow({
                           <span className="text-[11px] text-[color:var(--glass-ink-faint)]">
                             {slot.remaining} {slot.remaining > 1 ? t("places") : t("place")}
                           </span>
+                          {/* place/places already externalised */}
                         </button>
                       );
                     }),
@@ -1080,6 +1081,7 @@ export function BookingFlow({
               </button>
             </div>
           </div>
+          {/* yourInfo / editSlot / submit / submitting are externalised */}
         </form>
       </div>
     );
@@ -1110,14 +1112,14 @@ function BlockedExisting({
   defaultEmail: string;
   onBack: () => void;
 }) {
-  const t = bookingUI(locale);
+  const t = useTranslations("public.landing");
   const [email, setEmail] = useState(defaultEmail);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
   async function sendLink() {
     if (!email.trim()) {
-      toast.error("Indiquez votre adresse email.");
+      toast.error(t("bookingResendNeedEmail"));
       return;
     }
     setSending(true);
@@ -1143,7 +1145,7 @@ function BlockedExisting({
             {t("blockedTitle")}
           </h2>
           <p className="text-[14px] text-[color:var(--glass-ink-soft)]">
-            {fillTemplate(t("blockedDesc"), { date: localeDate(lastBookingDate, locale) })}
+            {t("blockedDesc", { date: localeDate(lastBookingDate, locale) })}
           </p>
         </div>
 
@@ -1170,7 +1172,7 @@ function BlockedExisting({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="votre@email.be"
+                placeholder={t("bookingEmailPlaceholder")}
                 className={`${GLASS_INPUT} h-10 flex-1 rounded-2xl border px-3 text-[14px] outline-none focus:ring-2 focus:ring-[color:var(--glass-accent-deep)]`}
               />
               <button
@@ -1186,7 +1188,7 @@ function BlockedExisting({
         )}
 
         <p className="text-[13px] text-[color:var(--glass-ink-faint)]">
-          {fillTemplate(t("blockedOffice"), { address })}
+          {t("blockedOffice", { address })}
         </p>
 
         <button

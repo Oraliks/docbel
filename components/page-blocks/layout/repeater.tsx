@@ -4,6 +4,7 @@ import React from 'react'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Sparkles } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -170,7 +171,14 @@ export const repeater = defineBlock({
   },
   // On the public page `slot` is the expanded grid (built by public-renderer);
   // in the editor it's the single editable template (built by block-wrapper).
-  Render: ({ slot }) => <div className="w-full">{slot}</div>,
+  Render: function RepeaterRender({ slot }) {
+    const t = useTranslations('public.blocks')
+    return (
+      <div className="w-full" aria-label={t('repeater.regionAria')}>
+        {slot}
+      </div>
+    )
+  },
   Fields: ({ props, onChange }) => (
     <>
       <ItemsEditor props={props} onChange={onChange} />

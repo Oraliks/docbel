@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -23,12 +24,14 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
-const CATEGORIES = [
-  { value: "hours", label: "Horaires faux ou obsolètes" },
-  { value: "address", label: "Adresse incorrecte" },
-  { value: "phone", label: "Numéro de téléphone faux" },
-  { value: "closed", label: "Bureau fermé / déménagé" },
-  { value: "other", label: "Autre" },
+// Catégories d'erreurs : la value est stable côté API, seul le label est
+// traduit via une clé `brCat*` du namespace `public.outils`.
+const CATEGORIES: { value: string; labelKey: string }[] = [
+  { value: "hours", labelKey: "brCatHours" },
+  { value: "address", labelKey: "brCatAddress" },
+  { value: "phone", labelKey: "brCatPhone" },
+  { value: "closed", labelKey: "brCatClosed" },
+  { value: "other", labelKey: "brCatOther" },
 ];
 
 export function BureauReportDialog({
@@ -42,6 +45,7 @@ export function BureauReportDialog({
   bureauId: string;
   bureauName: string;
 }) {
+  const t = useTranslations("public.outils");
   const [category, setCategory] = useState("hours");
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
@@ -57,7 +61,7 @@ export function BureauReportDialog({
 
   async function submit() {
     if (message.trim().length < 5) {
-      toast.error("Décrivez l'erreur en au moins 5 caractères");
+      toast.error(t("brErrTooShort"));
       return;
     }
     setBusy(true);
@@ -73,14 +77,14 @@ export function BureauReportDialog({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data?.error ?? "Échec de l'envoi");
+        toast.error(data?.error ?? t("brErrSubmit"));
         return;
       }
       setSubmitted(true);
-      toast.success("Merci, signalement enregistré");
+      toast.success(t("brSuccessToast"));
     } catch (err) {
       console.error(err);
-      toast.error("Erreur réseau");
+      toast.error(t("brErrNetwork"));
     } finally {
       setBusy(false);
     }
@@ -96,21 +100,20 @@ export function BureauReportDialog({
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Signaler une erreur</DialogTitle>
+          <DialogTitle>{t("brTitle")}</DialogTitle>
           <DialogDescription>
-            <strong>{bureauName}</strong> — votre signalement aide à maintenir des coordonnées
-            exactes pour tous.
+            <strong>{bureauName}</strong> — {t("brDescriptionPrefix")}
           </DialogDescription>
         </DialogHeader>
 
         {submitted ? (
           <div className="py-4 text-sm text-center">
-            ✅ Signalement envoyé. Notre équipe va vérifier.
+            ✅ {t("brSubmittedConfirm")}
           </div>
         ) : (
           <div className="space-y-3">
             <div>
-              <Label className="text-xs">Type d&apos;erreur</Label>
+              <Label className="text-xs">{t("brCategoryLabel")}</Label>
               <Select value={category} onValueChange={(v) => setCategory(v ?? "other")}>
                 <SelectTrigger>
                   <SelectValue />
@@ -118,32 +121,32 @@ export function BureauReportDialog({
                 <SelectContent>
                   {CATEGORIES.map((c) => (
                     <SelectItem key={c.value} value={c.value}>
-                      {c.label}
+                      {t(c.labelKey as Parameters<typeof t>[0])}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Description *</Label>
+              <Label className="text-xs">{t("brMessageLabel")}</Label>
               <Textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Ex: les horaires affichés sont 9h-12h mais le bureau ouvre à 8h."
+                placeholder={t("brMessagePlaceholder")}
                 rows={4}
                 maxLength={1000}
               />
               <div className="text-[10px] text-right text-muted-foreground mt-0.5">
-                {message.length}/1000
+                {t("brMessageCounter", { count: message.length, max: 1000 })}
               </div>
             </div>
             <div>
-              <Label className="text-xs">Votre email (optionnel)</Label>
+              <Label className="text-xs">{t("brEmailLabel")}</Label>
               <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Pour qu'on puisse revenir vers vous si besoin"
+                placeholder={t("brEmailPlaceholder")}
               />
             </div>
           </div>
@@ -151,15 +154,15 @@ export function BureauReportDialog({
 
         <DialogFooter>
           {submitted ? (
-            <Button onClick={() => onOpenChange(false)}>Fermer</Button>
+            <Button onClick={() => onOpenChange(false)}>{t("brBtnClose")}</Button>
           ) : (
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
-                Annuler
+                {t("brBtnCancel")}
               </Button>
               <Button onClick={submit} disabled={busy}>
                 {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Envoyer
+                {t("brBtnSend")}
               </Button>
             </>
           )}

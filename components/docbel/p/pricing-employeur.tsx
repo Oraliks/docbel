@@ -15,6 +15,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ArrowRightIcon,
   BadgeCheckIcon,
@@ -33,38 +34,38 @@ type PriceMode = "htva" | "tvac";
 
 interface PricingPlan {
   id: "gratuit" | "pro";
-  name: string;
-  tagline: string;
+  nameKey: string;
+  taglineKey: string;
   /** Prix mensuel HTVA (0 = gratuit). */
   priceHtva: number;
-  features: string[];
+  featureKeys: string[];
   highlighted: boolean;
 }
 
 const PLANS: PricingPlan[] = [
   {
     id: "gratuit",
-    name: "Gratuit",
-    tagline: "Pour s'informer et garder un œil sur ses obligations.",
+    nameKey: "pricingPlanFreeName",
+    taglineKey: "pricingPlanFreeTagline",
     priceHtva: 0,
-    features: [
-      "Outils d'information et actualités sociales",
-      "Lecture des dossiers et démarches (chômage temporaire, fin de contrat…)",
-      "Recherche de commission paritaire (CP)",
-      "Accès immédiat, sans engagement",
+    featureKeys: [
+      "pricingPlanFreeFeature1",
+      "pricingPlanFreeFeature2",
+      "pricingPlanFreeFeature3",
+      "pricingPlanFreeFeature4",
     ],
     highlighted: false,
   },
   {
     id: "pro",
-    name: "Pro",
-    tagline: "Pour gérer vos RH au quotidien, en équipe.",
+    nameKey: "pricingPlanProName",
+    taglineKey: "pricingPlanProTagline",
     priceHtva: PRO_PRICE_HTVA,
-    features: [
-      "Tout le plan Gratuit",
-      "Outils de gestion : calculs, simulations et échéanciers",
-      "Multi-utilisateurs : invitez votre équipe",
-      "Support prioritaire",
+    featureKeys: [
+      "pricingPlanProFeature1",
+      "pricingPlanProFeature2",
+      "pricingPlanProFeature3",
+      "pricingPlanProFeature4",
     ],
     highlighted: true,
   },
@@ -117,12 +118,22 @@ function useAnimatedNumber(target: number, duration = 360): number {
   return display;
 }
 
-function PlanPrice({ plan, mode }: { plan: PricingPlan; mode: PriceMode }) {
+type PricingT = ReturnType<typeof useTranslations<"public.landing">>;
+
+function PlanPrice({
+  plan,
+  mode,
+  t,
+}: {
+  plan: PricingPlan;
+  mode: PriceMode;
+  t: PricingT;
+}) {
   const target =
     mode === "tvac" ? plan.priceHtva * (1 + TVA_RATE) : plan.priceHtva;
   const animated = useAnimatedNumber(target);
   const isFree = plan.priceHtva === 0;
-  const modeLabel = mode === "tvac" ? "TVAC" : "HTVA";
+  const modeLabel = mode === "tvac" ? t("pricingModeTvac") : t("pricingModeHtva");
 
   return (
     <p className="flex items-baseline gap-1.5">
@@ -134,7 +145,7 @@ function PlanPrice({ plan, mode }: { plan: PricingPlan; mode: PriceMode }) {
         {isFree ? "0" : formatEuro(animated)}
       </span>
       <span aria-hidden className="text-[15px] font-semibold text-[color:var(--glass-ink-soft)]">
-        €&nbsp;/mois
+        {t("pricingPriceSuffix")}
       </span>
       {!isFree && (
         <span
@@ -151,10 +162,10 @@ function PlanPrice({ plan, mode }: { plan: PricingPlan; mode: PriceMode }) {
       )}
       <span className="sr-only">
         {isFree
-          ? "0 euro par mois"
-          : `${formatEuro(target)} euros par mois ${
-              mode === "tvac" ? "TVA comprise" : "hors TVA"
-            }`}
+          ? t("pricingSrFree")
+          : mode === "tvac"
+            ? t("pricingSrTvac", { value: formatEuro(target) })
+            : t("pricingSrHtva", { value: formatEuro(target) })}
       </span>
     </p>
   );
@@ -165,6 +176,7 @@ function PlanPrice({ plan, mode }: { plan: PricingPlan; mode: PriceMode }) {
  * et un commutateur HTVA ⇄ TVAC (21 %) qui anime les prix en douceur.
  */
 export function PricingEmployeur() {
+  const t = useTranslations("public.landing");
   const [mode, setMode] = useState<PriceMode>("htva");
 
   const toggleClass = (active: boolean) =>
@@ -196,21 +208,22 @@ export function PricingEmployeur() {
               className="size-1.5 rounded-full"
               style={{ background: "var(--glass-accent-deep)" }}
             />
-            Tarifs
+            {t("pricingBadge")}
           </span>
           <h2 className="glass-display max-w-3xl text-[30px] leading-[1.1] font-semibold tracking-tight sm:text-[38px]">
-            Un tarif <em>simple</em>, TVA comprise
+            {t.rich("pricingTitle", {
+              em: (chunks) => <em>{chunks}</em>,
+            })}
           </h2>
           <p className="max-w-[560px] text-[14.5px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-            Pas de surprise : deux formules, des prix affichés hors TVA ou TVA
-            comprise, et une facture conforme pour votre comptabilité.
+            {t("pricingIntro")}
           </p>
         </div>
 
         <div className="flex flex-col gap-2 lg:items-end">
           <div
             role="group"
-            aria-label="Afficher les prix hors TVA ou TVA comprise"
+            aria-label={t("pricingToggleAriaLabel")}
             className="inline-flex w-fit items-center gap-0.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] p-1"
           >
             <button
@@ -220,7 +233,7 @@ export function PricingEmployeur() {
               className={toggleClass(mode === "htva")}
               style={toggleStyle(mode === "htva")}
             >
-              HTVA
+              {t("pricingModeHtva")}
             </button>
             <button
               type="button"
@@ -229,11 +242,11 @@ export function PricingEmployeur() {
               className={toggleClass(mode === "tvac")}
               style={toggleStyle(mode === "tvac")}
             >
-              TVAC
+              {t("pricingModeTvac")}
             </button>
           </div>
           <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-            TVA belge de 21&nbsp;%.
+            {t("pricingTvaNote")}
           </p>
         </div>
       </div>
@@ -262,25 +275,25 @@ export function PricingEmployeur() {
                 }}
               >
                 <SparklesIcon className="size-3" strokeWidth={2.4} />
-                Recommandé
+                {t("pricingRecommended")}
               </span>
             )}
 
             <div className="flex flex-col gap-1.5">
               <h3 className="text-[18px] font-bold tracking-tight">
-                {plan.name}
+                {t(plan.nameKey as Parameters<typeof t>[0])}
               </h3>
               <p className="text-[13px] leading-[1.5] text-[color:var(--glass-ink-soft)]">
-                {plan.tagline}
+                {t(plan.taglineKey as Parameters<typeof t>[0])}
               </p>
             </div>
 
-            <PlanPrice plan={plan} mode={mode} />
+            <PlanPrice plan={plan} mode={mode} t={t} />
 
             <ul className="flex flex-col gap-2.5">
-              {plan.features.map((feature) => (
+              {plan.featureKeys.map((featureKey) => (
                 <li
-                  key={feature}
+                  key={featureKey}
                   className="flex items-start gap-2.5 text-[13px] leading-[1.5] text-[color:var(--glass-ink-soft)]"
                 >
                   <span
@@ -294,7 +307,7 @@ export function PricingEmployeur() {
                   >
                     <CheckIcon className="size-3" strokeWidth={3} />
                   </span>
-                  {feature}
+                  {t(featureKey as Parameters<typeof t>[0])}
                 </li>
               ))}
             </ul>
@@ -305,8 +318,7 @@ export function PricingEmployeur() {
                     (billing_enabled=false, cf. lib/entitlements.ts) — personne
                     ne paie aujourd'hui. À RETIRER à l'activation du billing. */}
                 <p className="text-[12px] font-semibold leading-snug text-[color:var(--glass-accent-deep)]">
-                  Période de lancement : l&apos;espace Pro est actuellement
-                  offert — aucun paiement ne vous sera demandé aujourd&apos;hui.
+                  {t("pricingLaunchNotice")}
                 </p>
                 <span
                   className="inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11.5px] font-semibold"
@@ -319,17 +331,17 @@ export function PricingEmployeur() {
                   }}
                 >
                   <BadgeCheckIcon className="size-3.5" strokeWidth={2.4} />
-                  TVA récupérable — facture conforme
+                  {t("pricingTvaBadge")}
                 </span>
                 <Link
                   href="/inscription/employeur"
                   className="glass-cta inline-flex w-fit items-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold"
                 >
-                  Créer mon compte employeur
+                  {t("pricingCtaPro")}
                   <ArrowRightIcon className="size-4" strokeWidth={2.4} />
                 </Link>
                 <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-                  Sans engagement.
+                  {t("pricingNoCommitment")}
                 </p>
               </div>
             ) : (
@@ -338,10 +350,10 @@ export function PricingEmployeur() {
                   href="/inscription/employeur"
                   className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-6 py-3.5 text-[13.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] motion-reduce:transition-none dark:hover:bg-white/10"
                 >
-                  Commencer gratuitement
+                  {t("pricingCtaFree")}
                 </Link>
                 <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
-                  Aucune carte de paiement demandée.
+                  {t("pricingNoCardRequired")}
                 </p>
               </div>
             )}
@@ -350,8 +362,7 @@ export function PricingEmployeur() {
       </div>
 
       <p className="text-[12px] leading-[1.55] text-[color:var(--glass-ink-faint)]">
-        Prix en euros par mois. Les montants TVAC incluent la TVA belge de
-        21&nbsp;% — récupérable pour les assujettis.
+        {t("pricingFootnote")}
       </p>
     </section>
   );

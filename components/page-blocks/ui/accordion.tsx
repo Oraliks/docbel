@@ -1,6 +1,7 @@
 'use client'
 
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import {
   Accordion as AccordionPrimitive,
   AccordionContent,
@@ -47,9 +48,14 @@ export const accordion = defineBlock({
     ],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { items, type = 'single', variant = 'default' } = props
     return (
-      <div className={cn('w-full', WRAPPER_CLASS[variant])}>
+      <div
+        className={cn('w-full', WRAPPER_CLASS[variant])}
+        role="region"
+        aria-label={t('accordion.regionAria')}
+      >
         <AccordionPrimitive type={type} collapsible>
           {items.map((item, idx) => (
             <AccordionItem
@@ -57,7 +63,12 @@ export const accordion = defineBlock({
               value={`item-${idx}`}
               className={cn(variant === 'separated' && 'rounded-xl border bg-card px-4')}
             >
-              <AccordionTrigger className="px-4">{item.title}</AccordionTrigger>
+              <AccordionTrigger
+                className="px-4"
+                aria-label={t('accordion.triggerAria', { title: item.title })}
+              >
+                {item.title}
+              </AccordionTrigger>
               <AccordionContent className="px-4">{item.content}</AccordionContent>
             </AccordionItem>
           ))}

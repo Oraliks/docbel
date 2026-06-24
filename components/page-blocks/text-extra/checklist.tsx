@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { Check } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Field, Group } from '@/components/page-builder/inspector/controls'
@@ -33,6 +34,7 @@ export const checklist = defineBlock({
     shortcuts: ['checklist', 'todo'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { title, items, interactive = true } = props
     const [checked, setChecked] = useState<boolean[]>(() => items.map((it) => !!it.checked))
     const toggle = (i: number) =>
@@ -49,18 +51,27 @@ export const checklist = defineBlock({
         {title && (
           <div className="mb-3 flex items-center justify-between">
             <h3 className="font-semibold">{title}</h3>
-            <span className="text-xs text-muted-foreground">
+            <span
+              className="text-xs text-muted-foreground"
+              aria-label={t('checklist.progressAria', { completed, total: items.length })}
+            >
               {completed} / {items.length}
             </span>
           </div>
         )}
-        <ul className="space-y-2">
+        <ul className="space-y-2" aria-label={t('checklist.listAria')}>
           {items.map((it, i) => (
             <li key={i} className="flex items-start gap-3">
               <button
                 type="button"
                 onClick={() => interactive && toggle(i)}
                 disabled={!interactive}
+                aria-pressed={checked[i]}
+                aria-label={
+                  checked[i]
+                    ? t('checklist.uncheckAria', { item: it.text })
+                    : t('checklist.checkAria', { item: it.text })
+                }
                 className={cn(
                   'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border-2 transition',
                   checked[i]
@@ -69,7 +80,7 @@ export const checklist = defineBlock({
                   !interactive && 'cursor-default'
                 )}
               >
-                {checked[i] && <Check className="size-3" />}
+                {checked[i] && <Check className="size-3" aria-hidden="true" />}
               </button>
               <span
                 className={cn(

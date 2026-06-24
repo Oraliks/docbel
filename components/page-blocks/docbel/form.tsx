@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react'
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import { Check, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -45,6 +46,7 @@ export const form = defineBlock({
     shortcuts: ['form', 'formulaire', 'contact'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const {
       title,
       description,
@@ -75,13 +77,13 @@ export const form = defineBlock({
         })
         if (!res.ok) {
           const j = await res.json().catch(() => ({}))
-          setError(j.error || 'Erreur')
+          setError(j.error || t('form.error'))
         } else {
           setSuccess(true)
           ;(e.currentTarget as HTMLFormElement).reset()
         }
       } catch {
-        setError('Erreur réseau')
+        setError(t('form.networkError'))
       } finally {
         setSubmitting(false)
       }
@@ -129,7 +131,7 @@ export const form = defineBlock({
                     required={field.required}
                     className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
                   >
-                    <option value="">{field.placeholder || 'Choisir…'}</option>
+                    <option value="">{field.placeholder || t('form.selectPlaceholder')}</option>
                     {field.options?.map((opt) => (
                       <option key={opt} value={opt}>
                         {opt}

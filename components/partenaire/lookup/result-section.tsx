@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, type ReactNode } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -42,6 +43,7 @@ export function ResultSection({
   activeTableSlug,
   onPickOnly,
 }: Props) {
+  const t = useTranslations('public.outils')
   const isVisible = (k: ColumnKey) => visibleCols.has(k)
   const colSpan =
     (isVisible('code') ? 1 : 0) +
@@ -78,7 +80,7 @@ export function ResultSection({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs text-muted-foreground tabular-nums">
-            {group.rows.length} résultat{group.rows.length > 1 ? 's' : ''}
+            {t('lkpResResultsLabel', { count: group.rows.length })}
           </span>
           {activeTableSlug !== group.tableSlug && (
             <span
@@ -97,7 +99,7 @@ export function ResultSection({
               }}
               className="text-[11px] text-primary hover:underline cursor-pointer"
             >
-              Ne voir que ce module
+              {t('lkpResOnlyThisModule')}
             </span>
           )}
         </div>
@@ -108,12 +110,12 @@ export function ResultSection({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-9" aria-label="Détails" />
-                  {isVisible('code') && <TableHead className="w-32">Code</TableHead>}
-                  {isVisible('fr') && <TableHead>Description</TableHead>}
-                  {isVisible('validity') && <TableHead className="w-44 text-xs">Validité</TableHead>}
-                  {isVisible('notes') && <TableHead className="w-12">Note</TableHead>}
-                  {isVisible('source') && <TableHead className="w-64">Source ONEM</TableHead>}
+                  <TableHead className="w-9" aria-label={t('lkpResColDetailsAria')} />
+                  {isVisible('code') && <TableHead className="w-32">{t('lkpResColCode')}</TableHead>}
+                  {isVisible('fr') && <TableHead>{t('lkpResColDescription')}</TableHead>}
+                  {isVisible('validity') && <TableHead className="w-44 text-xs">{t('lkpResColValidity')}</TableHead>}
+                  {isVisible('notes') && <TableHead className="w-12">{t('lkpResColNote')}</TableHead>}
+                  {isVisible('source') && <TableHead className="w-64">{t('lkpResColSourceOnem')}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -147,6 +149,7 @@ interface RowProps {
 }
 
 function ResultRow({ row, open, onToggle, visibleCols, highlight, colSpan }: RowProps) {
+  const t = useTranslations('public.outils')
   const isVisible = (k: ColumnKey) => visibleCols.has(k)
   const detailCount =
     (row.metadata ? Object.keys(row.metadata).length : 0) +
@@ -173,8 +176,8 @@ function ResultRow({ row, open, onToggle, visibleCols, highlight, colSpan }: Row
                 onToggle()
               }}
               className="inline-flex items-center justify-center w-6 h-6 rounded border border-input bg-background hover:bg-muted transition-colors"
-              aria-label={open ? 'Réduire' : `${detailCount} info(s) supplémentaire(s)`}
-              title={open ? 'Réduire' : `${detailCount} info(s) supplémentaire(s)`}
+              aria-label={open ? t('lkpResAriaCollapse') : t('lkpResAriaMoreInfo', { count: detailCount })}
+              title={open ? t('lkpResAriaCollapse') : t('lkpResAriaMoreInfo', { count: detailCount })}
             >
               {open ? <Minus className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
             </button>
@@ -191,7 +194,7 @@ function ResultRow({ row, open, onToggle, visibleCols, highlight, colSpan }: Row
             {highlight(row.labelFr)}
             {isExpired && (
               <Badge variant="outline" className="ml-2 text-[10px] border-orange-300 text-orange-800">
-                historique
+                {t('lkpResHistorical')}
               </Badge>
             )}
           </TableCell>
@@ -202,10 +205,10 @@ function ResultRow({ row, open, onToggle, visibleCols, highlight, colSpan }: Row
             <div>
               {row.validUntil ? (
                 <span className="text-orange-700">
-                  jusqu&apos;au {new Date(row.validUntil).toLocaleDateString('fr-BE')}
+                  {t('lkpResUntilDate', { date: new Date(row.validUntil).toLocaleDateString('fr-BE') })}
                 </span>
               ) : (
-                <span className="text-green-700">en vigueur</span>
+                <span className="text-green-700">{t('lkpResInForce')}</span>
               )}
             </div>
           </TableCell>

@@ -13,6 +13,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   AlertTriangleIcon,
   ArrowRightIcon,
@@ -46,41 +47,40 @@ const ICON_SHADOW: Record<StepHue, string> = {
 interface ParcoursStep {
   Icon: LucideIcon;
   hue: StepHue;
-  title: string;
-  desc: string;
+  titleKey: string;
+  descKey: string;
   /// Avertissement mis en avant (badge rose doux).
-  warning?: { title: string; message: string };
+  warning?: { titleKey: string; messageKey: string };
 }
 
 const STEPS: ParcoursStep[] = [
   {
     Icon: SendIcon,
     hue: "violet",
-    title: "Motif & notification ONEM",
-    desc: "Identifiez le motif de suspension (économique, intempéries, force majeure…). Selon le motif, une notification électronique préalable à l'ONEM est exigée avant le début de la période.",
+    titleKey: "ctParcoursStep1Title",
+    descKey: "ctParcoursStep1Desc",
   },
   {
     Icon: UsersIcon,
     hue: "blue",
-    title: "Information du travailleur",
-    desc: "Prévenez les travailleurs concernés et communiquez à l'ONEM le premier jour effectif de chômage — chaque mois lorsque le motif l'impose.",
+    titleKey: "ctParcoursStep2Title",
+    descKey: "ctParcoursStep2Desc",
   },
   {
     Icon: FileTextIcon,
     hue: "rose",
-    title: "Le travailleur complète son C3.2",
-    desc: "De son côté, votre travailleur introduit sa demande auprès de son organisme de paiement : le C3.2 est le pivot de son dossier.",
+    titleKey: "ctParcoursStep3Title",
+    descKey: "ctParcoursStep3Desc",
     warning: {
-      title: "Délai critique — carte EC32",
-      message:
-        "Installez l'application EC32 dès le démarrage du dossier — sinon l'indemnisation rétroactive est limitée à 1 mois.",
+      titleKey: "ctParcoursStep3WarningTitle",
+      messageKey: "ctParcoursStep3WarningMessage",
     },
   },
   {
     Icon: EuroIcon,
     hue: "green",
-    title: "Paiement via l'organisme",
-    desc: "L'organisme de paiement (syndicat ou CAPAC) verse les allocations au travailleur, sur la base de votre déclaration électronique (DRS / WECH).",
+    titleKey: "ctParcoursStep4Title",
+    descKey: "ctParcoursStep4Desc",
   },
 ];
 
@@ -115,6 +115,7 @@ function useRevealOnView<T extends HTMLElement>() {
 }
 
 export function CtParcours() {
+  const t = useTranslations("public.landing");
   const { ref, visible } = useRevealOnView<HTMLElement>();
 
   // Avant révélation : masqué — SAUF en reduced-motion, où le contenu reste
@@ -131,17 +132,18 @@ export function CtParcours() {
     >
       <div className="flex flex-col gap-3">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-          Obligations employeur
+          {t("ctParcoursEyebrow")}
         </p>
         <h2
           id="ct-parcours-title"
           className="glass-display max-w-3xl text-[30px] leading-[1.1] font-semibold tracking-tight sm:text-[38px]"
         >
-          Chômage temporaire : <em>soyez en règle</em> en 4 étapes
+          {t.rich("ctParcoursTitle", {
+            em: (chunks) => <em>{chunks}</em>,
+          })}
         </h2>
         <p className="max-w-[640px] text-[14px] leading-[1.6] text-[color:var(--glass-ink-soft)]">
-          De la notification à l&apos;ONEM au paiement des allocations : qui
-          fait quoi, dans quel ordre — et le piège de délai à éviter.
+          {t("ctParcoursIntro")}
         </p>
       </div>
 
@@ -154,9 +156,12 @@ export function CtParcours() {
             className="absolute top-6 left-6 hidden h-px md:block md:right-[calc(25%-1.5rem)]"
             style={{ background: "var(--glass-ink-line)" }}
           />
-          {STEPS.map(({ Icon, hue, title, desc, warning }, idx) => (
+          {STEPS.map(({ Icon, hue, titleKey, descKey, warning }, idx) => {
+            const title = t(titleKey as Parameters<typeof t>[0]);
+            const desc = t(descKey as Parameters<typeof t>[0]);
+            return (
             <li
-              key={title}
+              key={titleKey}
               className={`relative flex gap-4 md:flex-col ${stepClass}`}
               // Décalage croissant → les étapes apparaissent en séquence.
               style={visible ? { animationDelay: `${idx * 140}ms` } : undefined}
@@ -215,16 +220,17 @@ export function CtParcours() {
                         className="size-3.5 shrink-0"
                         strokeWidth={2.4}
                       />
-                      {warning.title}
+                      {t(warning.titleKey as Parameters<typeof t>[0])}
                     </p>
                     <p className="text-[12px] leading-[1.5] font-medium text-[color:var(--glass-ink)]">
-                      {warning.message}
+                      {t(warning.messageKey as Parameters<typeof t>[0])}
                     </p>
                   </div>
                 ) : null}
               </div>
             </li>
-          ))}
+            );
+          })}
         </ol>
 
         <div
@@ -235,7 +241,7 @@ export function CtParcours() {
             href={DOSSIER_HREF}
             className="glass-cta inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-bold"
           >
-            Préparer les documents
+            {t("ctParcoursCtaPrimary")}
             <ArrowRightIcon className="size-4" strokeWidth={2.4} />
           </Link>
           <Link
@@ -243,7 +249,7 @@ export function CtParcours() {
             className="inline-flex items-center gap-2 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-6 py-3.5 text-[13.5px] font-semibold text-[color:var(--glass-ink-soft)] transition hover:bg-white/55 hover:text-[color:var(--glass-ink)] motion-reduce:transition-none dark:hover:bg-white/10"
           >
             <FolderOpenIcon className="size-4" strokeWidth={2.2} />
-            Voir le dossier complet
+            {t("ctParcoursCtaSecondary")}
           </Link>
         </div>
       </div>

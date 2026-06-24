@@ -1,6 +1,7 @@
 'use client'
 
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
@@ -46,9 +47,13 @@ export const features = defineBlock({
     ],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { title, subtitle, items, columns, variant = 'cards' } = props
     return (
-      <div className="w-full py-12 md:py-16">
+      <section
+        className="w-full py-12 md:py-16"
+        aria-label={title || t('features.regionAria')}
+      >
         <div className="mx-auto max-w-7xl px-6">
           {(title || subtitle) && (
             <header className="mb-10 text-center max-w-2xl mx-auto">
@@ -58,13 +63,16 @@ export const features = defineBlock({
               {subtitle && <p className="mt-3 text-muted-foreground">{subtitle}</p>}
             </header>
           )}
-          <div className={cn('grid grid-cols-1 gap-6', COLS[columns])}>
+          <ul
+            className={cn('grid grid-cols-1 gap-6 list-none p-0', COLS[columns])}
+            aria-label={t('features.listAria')}
+          >
             {items.map((item, idx) => {
               if (variant === 'icons') {
                 return (
-                  <div key={idx} className="flex gap-4">
+                  <li key={idx} className="flex gap-4">
                     {item.icon && (
-                      <div className="shrink-0 leading-none text-primary">
+                      <div className="shrink-0 leading-none text-primary" aria-hidden="true">
                         {renderIcon(item.icon, 'size-7')}
                       </div>
                     )}
@@ -72,40 +80,43 @@ export const features = defineBlock({
                       <h3 className="text-lg font-semibold">{item.title}</h3>
                       <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
                     </div>
-                  </div>
+                  </li>
                 )
               }
               if (variant === 'centered') {
                 return (
-                  <div key={idx} className="text-center">
+                  <li key={idx} className="text-center">
                     {item.icon && (
-                      <div className="mb-3 inline-flex items-center justify-center text-primary">
+                      <div
+                        className="mb-3 inline-flex items-center justify-center text-primary"
+                        aria-hidden="true"
+                      >
                         {renderIcon(item.icon, 'size-8')}
                       </div>
                     )}
                     <h3 className="text-lg font-semibold">{item.title}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
-                  </div>
+                  </li>
                 )
               }
               return (
-                <div
+                <li
                   key={idx}
                   className="rounded-2xl border bg-card p-6 transition hover:shadow-md hover:-translate-y-0.5"
                 >
                   {item.icon && (
-                    <div className="mb-3 leading-none text-primary">
+                    <div className="mb-3 leading-none text-primary" aria-hidden="true">
                       {renderIcon(item.icon, 'size-7')}
                     </div>
                   )}
                   <h3 className="text-lg font-semibold">{item.title}</h3>
                   <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>
-                </div>
+                </li>
               )
             })}
-          </div>
+          </ul>
         </div>
-      </div>
+      </section>
     )
   },
   Fields: ({ props, onChange }) => (

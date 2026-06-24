@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useState, type FormEvent } from 'react'
+import { useTranslations } from 'next-intl'
 import { Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
@@ -44,6 +45,7 @@ export const multiStepForm = defineBlock({
     shortcuts: ['multistep', 'wizard'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const {
       title,
       steps,
@@ -78,9 +80,9 @@ export const multiStepForm = defineBlock({
             body: JSON.stringify(merged),
           })
           if (res.ok) setDone(true)
-          else toast.error('Erreur lors de l\'envoi')
+          else toast.error(t('multiStepForm.submitError'))
         } catch {
-          toast.error('Erreur réseau')
+          toast.error(t('multiStepForm.networkError'))
         } finally {
           setSubmitting(false)
         }
@@ -121,7 +123,7 @@ export const multiStepForm = defineBlock({
           ))}
         </div>
         <p className="text-xs uppercase tracking-wider text-muted-foreground">
-          Étape {step + 1} / {steps.length}
+          {t('multiStepForm.stepCounter', { current: step + 1, total: steps.length })}
         </p>
         <h4 className="mt-1 text-base font-semibold">{current.title}</h4>
         <form onSubmit={next} className="mt-4 space-y-3">
@@ -145,7 +147,7 @@ export const multiStepForm = defineBlock({
                   required={field.required}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 >
-                  <option value="">{field.placeholder || 'Choisir…'}</option>
+                  <option value="">{field.placeholder || t('multiStepForm.selectPlaceholder')}</option>
                   {field.options?.map((opt) => (
                     <option key={opt} value={opt}>
                       {opt}
@@ -170,7 +172,7 @@ export const multiStepForm = defineBlock({
                 onClick={() => setStep((s) => s - 1)}
                 className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
               >
-                Précédent
+                {t('multiStepForm.previous')}
               </button>
             )}
             <button
@@ -179,7 +181,7 @@ export const multiStepForm = defineBlock({
               className="ml-auto rounded-md bg-primary text-primary-foreground px-5 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-2"
             >
               {submitting && <Loader2 className="size-3.5 animate-spin" />}
-              {isLast ? submitText : 'Suivant'}
+              {isLast ? submitText : t('multiStepForm.next')}
             </button>
           </div>
         </form>

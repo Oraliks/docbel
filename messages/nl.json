@@ -2012,7 +2012,168 @@
       "loaderMsgCpas": "We zoeken je OCMW…",
       "loaderMsgOnem": "We zoeken de bevoegde RVA…",
       "loaderMsgOp": "We vergelijken de 4 uitbetalingsinstellingen…",
-      "loaderMsgCommune": "We zoeken je gemeentehuis…"
+      "loaderMsgCommune": "We zoeken je gemeentehuis…",
+      "cpItem200": "Bedienden van de handel",
+      "cpItem201": "Bedienden van de voedingsindustrie",
+      "cpItem100": "Arbeiders van de aanvullende sectoren",
+      "cpItem111": "Mijnen en groeven",
+      "cpItem118": "Voedingsindustrie",
+      "cpItem124": "Bouwbedrijf",
+      "cpItem130": "Apotheek",
+      "cpItem140": "Wegvervoer",
+      "cpItem302": "Horeca",
+      "cpItem318": "Gezondheidszorgdiensten",
+      "cpItem319": "Maatschappelijk welzijn en gezondheidszorg (Brussel)",
+      "cpItem330": "Inrichtingen en gezondheidsdiensten",
+      "tutCarteStep1Title": "Documenten klaarleggen",
+      "tutCarteStep1Body": "Verzamel uw identiteitskaart, een recent bewijs van woonst en uw rijksregisternummer voordat u begint.",
+      "tutCarteStep2Title": "Aanmelden met itsme of eID",
+      "tutCarteStep2Body": "Identificeer u veilig via de itsme-app of uw eID-kaartlezer.",
+      "tutCarteStep3Title": "Vul het online formulier in",
+      "tutCarteStep3Body": "Geef de gevraagde gegevens op: reden van de aanvraag, leveringsadres, betaalwijze.",
+      "tutCarteStep4Title": "Volg uw aanvraag op",
+      "tutCarteStep4Body": "U ontvangt een ontvangstbevestiging en een link om de voortgang te volgen. De kaart is doorgaans beschikbaar binnen 2 tot 3 weken.",
+      "tutEboxStep1Title": "Activeer uw eBox",
+      "tutEboxStep1Body": "Meld u één keer aan op mijn.belgie.be via itsme om uw beveiligde mailbox te activeren.",
+      "tutEboxStep2Title": "Kies de aangesloten diensten",
+      "tutEboxStep2Body": "Vink de overheden aan die u hun officiële documenten digitaal willen bezorgen (RVA, ziekenfonds, FOD Financiën…).",
+      "tutEboxStep3Title": "Bekijk uw berichten",
+      "tutEboxStep3Body": "Elk nieuw document komt rechtstreeks in uw eBox terecht. U krijgt telkens een melding per e-mail.",
+      "tutMyonemStep1Title": "Maak uw MyRVA-account aan",
+      "tutMyonemStep1Body": "Ga naar het RVA-portaal en start de aanmaak van uw account via itsme of eID.",
+      "tutMyonemStep2Title": "Vul uw situatie in",
+      "tutMyonemStep2Body": "Vervolledig uw profiel: adres, gezinssamenstelling, uitbetalingsinstelling (HVW of vakbond).",
+      "tutMyonemStep3Title": "Download uw formulieren",
+      "tutMyonemStep3Body": "Open vanuit uw dashboard uw formulieren (C4, C1, C3.2…) die al gedeeltelijk vooraf zijn ingevuld.",
+      "tutMyonemStep4Title": "Volg uw betalingen op",
+      "tutMyonemStep4Body": "Raadpleeg het detail van elke betaling, eventuele inhoudingen en de historiek van uw uitkeringen.",
+      "infoAleIntro": "Een <strong>Plaatselijk Werkgelegenheidsagentschap (PWA)</strong> laat langdurig werklozen en leefloners toe maatschappelijk nuttige activiteiten uit te oefenen, bovenop hun uitkering.",
+      "infoAleItem1Title": "Wie kan zich inschrijven?",
+      "infoAleItem1Body": "Volledig werklozen die minstens 2 jaar uitkeringsgerechtigd zijn (1 jaar vanaf 45 jaar) en leefloners die al minstens 6 maanden een leefloon ontvangen.",
+      "infoAleItem2Title": "Welke activiteiten?",
+      "infoAleItem2Body": "Hulp aan huis, tuinieren, klein onderhoud, begeleiding van personen, bijles — steeds buiten het normale economische circuit.",
+      "infoAleItem3Title": "Hoeveel levert het op?",
+      "infoAleItem3Body": "U behoudt uw uitkering en krijgt daarbovenop ongeveer 4,10 € netto per PWA-cheque (1 uur werk). Maximaal 45 uur/maand, gedeeltelijke fiscale vrijstelling.",
+      "infoAleItem4Title": "Hoe inschrijven?",
+      "infoAleItem4Body": "Neem contact op met het PWA van uw gemeente. U ondertekent er een PWA-contract en krijgt uw chequeboekje. Inschrijven is gratis.",
+      "infoRisIntro": "Het <strong>leefloon</strong> is een financiële steun van het OCMW voor personen die niet over voldoende inkomsten beschikken en hier op geen andere manier aanspraak op kunnen maken.",
+      "infoRisItem1Title": "Wie komt in aanmerking?",
+      "infoRisItem1Body": "Elke meerderjarige die wettelijk in België verblijft, niet over voldoende middelen beschikt en bereid is te werken (tenzij om gezondheids- of billijkheidsredenen).",
+      "infoRisItem2Title": "Hoeveel bedraagt het?",
+      "infoRisItem2Body": "Samenwonende: ± 911 €/maand. Alleenstaande: ± 1 366 €/maand. Persoon met gezinslast: ± 1 847 €/maand. Regelmatig geïndexeerd.",
+      "infoRisItem3Title": "Hoe een aanvraag indienen?",
+      "infoRisItem3Body": "Bij het OCMW van uw woongemeente. Een maatschappelijk werker onderzoekt uw situatie en voert een sociaal onderzoek binnen 30 dagen.",
+      "infoRisItem4Title": "Welke verplichtingen?",
+      "infoRisItem4Body": "Werkbereidheid, een geïndividualiseerd project voor maatschappelijke integratie (GPMI), aangifte van alle middelen. Het leefloon kan worden aangevuld met andere steun (energie, huisvesting, medisch).",
+      "linkActirisDesc": "Actiris is de Brusselse openbare dienst voor arbeidsbemiddeling. De dienst begeleidt werkzoekenden in het Brussels Hoofdstedelijk Gewest bij hun zoektocht, opleiding en (her)inschakeling op de arbeidsmarkt.",
+      "linkVdabDesc": "De VDAB is de Vlaamse openbare dienst voor arbeidsbemiddeling. Hij biedt opleidingen, individuele begeleiding en een vacatureplatform voor de inwoners van het Vlaamse Gewest.",
+      "linkForemDesc": "Le Forem is de Waalse openbare dienst voor arbeidsbemiddeling en opleiding. Hij begeleidt Waalse werkzoekenden en biedt een uitgebreid aanbod kwalificerende opleidingen.",
+      "linkAdgDesc": "Het ADG (Arbeitsamt der DG) is de openbare dienst voor arbeidsbemiddeling van de Duitstalige Gemeenschap. Hij begeleidt werkzoekenden uit de Oostkantons.",
+      "brTitle": "Een fout melden",
+      "brDescriptionPrefix": "uw melding helpt ons om correcte contactgegevens voor iedereen te bewaren.",
+      "brCategoryLabel": "Soort fout",
+      "brCatHours": "Foutieve of verouderde openingsuren",
+      "brCatAddress": "Verkeerd adres",
+      "brCatPhone": "Verkeerd telefoonnummer",
+      "brCatClosed": "Kantoor gesloten / verhuisd",
+      "brCatOther": "Andere",
+      "brMessageLabel": "Beschrijving *",
+      "brMessagePlaceholder": "Bv.: de getoonde uren zijn 9u-12u maar het kantoor opent om 8u.",
+      "brMessageCounter": "{count}/{max}",
+      "brEmailLabel": "Uw e-mailadres (optioneel)",
+      "brEmailPlaceholder": "Zodat we u kunnen contacteren indien nodig",
+      "brSubmittedConfirm": "Melding verstuurd. Ons team controleert dit.",
+      "brBtnCancel": "Annuleren",
+      "brBtnSend": "Versturen",
+      "brBtnClose": "Sluiten",
+      "brErrTooShort": "Beschrijf de fout in minstens 5 tekens",
+      "brErrSubmit": "Verzenden mislukt",
+      "brErrNetwork": "Netwerkfout",
+      "brSuccessToast": "Bedankt, melding geregistreerd",
+      "lkpEntriesCount": "{count} vermeldingen · categorie {category}",
+      "lkpUpdatedOn": "Bijgewerkt op {date}",
+      "lkpFiltersTitle": "Zoekfilters",
+      "lkpFieldCode": "Code",
+      "lkpFieldCodeHint": "typ « / » om dit veld te selecteren",
+      "lkpFieldCodePlaceholder": "Bv. 27, 2A, 27SP…",
+      "lkpFieldDescription": "Omschrijving",
+      "lkpFieldDescriptionPlaceholder": "Trefwoord of uitdrukking",
+      "lkpFieldValidOn": "Geldig op datum",
+      "lkpFieldModifiedSince": "Gewijzigd sinds",
+      "lkpFieldModifiedSinceHint": "bewerkingsdatum in Beldoc (≠ RVA-datum)",
+      "lkpFieldEndDate": "Einddatum",
+      "lkpEndDateNone": "Niet ingevuld",
+      "lkpEndDateFilled": "Ingevuld",
+      "lkpEndDateAll": "Beide",
+      "lkpSearchBtn": "Zoeken",
+      "lkpResetBtn": "Herinitialiseren",
+      "lkpIncludeHistory": "Historiek tonen (vervallen vermeldingen)",
+      "lkpPredefinedTitle": "Voorgedefinieerde zoekopdrachten",
+      "lkpPredefValidToday": "Waarde geldig vandaag",
+      "lkpPredefNoEnd": "Waarde zonder einddatum",
+      "lkpPredefAll": "Alle waarden",
+      "lkpPredefMod30": "Wijzigingen · laatste 30 dagen",
+      "lkpPredefMod60": "Wijzigingen · laatste 60 dagen",
+      "lkpPredefMod90": "Wijzigingen · laatste 90 dagen",
+      "lkpResultsTitle": "Resultaten",
+      "lkpResultsCount": "({count})",
+      "lkpNoMatch": "Geen vermelding komt overeen met deze criteria.",
+      "lkpResetFilters": "Filters herinitialiseren",
+      "lkpColDetails": "Details",
+      "lkpColFavorite": "Favoriet",
+      "lkpColCode": "Code",
+      "lkpColStartDate": "Begindatum",
+      "lkpColEndDate": "Einddatum",
+      "lkpColDescription": "Omschrijving",
+      "lkpAriaCollapse": "Inklappen",
+      "lkpAriaExpandDetail": "Details tonen",
+      "lkpAriaAddFav": "Toevoegen aan favorieten",
+      "lkpAriaRemoveFav": "Verwijderen uit favorieten",
+      "lkpAriaCopyCode": "Code kopiëren",
+      "lkpPaginationShow": "Tonen",
+      "lkpPaginationPerPage": "per pagina",
+      "lkpPaginationPrev": "Vorige",
+      "lkpPaginationNext": "Volgende",
+      "lkpPaginationPosition": "Pagina {page} / {total}",
+      "lkpSourceLabel": "Bron: RVA",
+      "lkpBackToCategories": "Terug naar de categorieën",
+      "lkpStatusCurrent": "van kracht",
+      "lkpStatusExpired": "historiek",
+      "lkpStatusUpcoming": "aankomend",
+      "lkpDetailTranslations": "Vertalingen",
+      "lkpDetailMetadata": "Extra informatie",
+      "lkpHistoryTitle": "Historiek",
+      "lkpHistoryLoading": "Laden…",
+      "lkpHistorySingle": "Enige versie",
+      "lkpLangFrench": "Frans",
+      "lkpLangDutch": "Nederlands",
+      "lkpLangGerman": "Duits",
+      "lkpLangEnglish": "Engels",
+      "lkpResOnlyThisModule": "Enkel deze module tonen",
+      "lkpResResultsLabel": "{count, plural, one {# resultaat} other {# resultaten}}",
+      "lkpResColDetailsAria": "Details",
+      "lkpResColCode": "Code",
+      "lkpResColDescription": "Omschrijving",
+      "lkpResColValidity": "Geldigheid",
+      "lkpResColNote": "Notitie",
+      "lkpResColSourceOnem": "Bron RVA",
+      "lkpResAriaCollapse": "Inklappen",
+      "lkpResAriaMoreInfo": "{count} extra info",
+      "lkpResHistorical": "historiek",
+      "lkpResUntilDate": "tot {date}",
+      "lkpResInForce": "van kracht",
+      "lsLoadingSearch": "Zoeken…",
+      "lsErrSearchFailed": "Zoekopdracht mislukt",
+      "lsEmptyNoMatchQ": "Geen relevant resultaat voor <code>{q}</code>.",
+      "lsEmptyNoMatchHint": "Probeer een andere term of controleer de spelling van de code.",
+      "lsEmptyLargeTable": "<strong>{label}</strong> bevat te veel vermeldingen om alles te tonen.",
+      "lsEmptyLargeTableHint": "Typ een postcode (bv. <code>1000</code>) of een straatnaam (bv. <code>Louizalaan</code>) — de 5 meest relevante resultaten verschijnen.",
+      "lsEmptyMinChars": "Typ minstens 2 tekens om te zoeken in de 11 000+ RVA-codes.",
+      "lsEmptyExamples": "Voorbeelden: <code>44</code> · <code>samenwonend</code> · <code>brus</code> · <code>01/43AA1</code> · <code>S04</code>",
+      "lsResultsSummary": "{total, plural, one {# relevant resultaat} other {# relevante resultaten}} in {sections, plural, one {# tabel} other {# tabellen}}",
+      "lsExpandAll": "Alles openklappen",
+      "lsCollapseAll": "Alles inklappen",
+      "lsFooterLinkOfficial": "Officiële RVA-referentie"
     },
     "pro": {
       "navAccount": "Account",
@@ -2975,10 +3136,10 @@
       "bookingToastSlotAvailableAgain": "Goed nieuws: dit tijdslot is weer beschikbaar!",
       "bookingToastWaitlistError": "Inschrijven op de wachtlijst is mislukt.",
       "blockedTitle": "Toegang tot de afspraak",
-      "blockedDesc": "Bevestig uw e-mailadres om uw afspraak te beheren.",
+      "blockedDesc": "Er bestaat al een recente afspraak op uw naam (op {date}). Om een nieuwe te maken, moet u die eerst verplaatsen of annuleren.",
       "blockedEmailPrompt": "Uw e-mailadres",
       "blockedManage": "Mijn afspraak beheren",
-      "blockedOffice": "Kantoor",
+      "blockedOffice": "U kunt ook rechtstreeks langskomen op kantoor: {address}.",
       "blockedSend": "Link versturen",
       "blockedSending": "Versturen…",
       "blockedSent": "Link verzonden! Controleer uw mailbox.",
@@ -3011,7 +3172,153 @@
       "reformeSource1": "RVA — Hervorming van de werkloosheidsreglementering",
       "reformeSource2": "RVA — Nieuwe werkloosheidsreglementering van kracht sinds 1 maart 2026",
       "reformeSource3": "RVA — Hebt u recht op uitkeringen na een tewerkstelling?",
-      "reformeSource4": "RVA — Inschakelingsuitkeringen na studies"
+      "reformeSource4": "RVA — Inschakelingsuitkeringen na studies",
+      "bookingSelectChoose": "Kies…",
+      "bookingEmailPlaceholder": "uw@email.be",
+      "bookingResendNeedEmail": "Geef uw e-mailadres op.",
+      "bookingShowcaseStepBadge": "Stap {n}",
+      "bookingShowcaseChipAutoApproval": "Automatische goedkeuring",
+      "bookingShowcaseChipReminder": "Herinnering de dag voordien",
+      "bookingShowcaseChipIcs": "Export .ics",
+      "bookingShowcaseChipMultiOffice": "Meerdere kantoren",
+      "bookingShowcaseCta": "Het publieke traject bekijken",
+      "bookingShowcaseCtaCaption": "Net het traject dat uw leden zullen gebruiken.",
+      "ctParcoursEyebrow": "Verplichtingen werkgever",
+      "ctParcoursTitle": "Tijdelijke werkloosheid: <em>in regel zijn</em> in 4 stappen",
+      "ctParcoursIntro": "Van de kennisgeving aan de RVA tot de uitbetaling van de uitkeringen: wie doet wat, in welke volgorde — en welke termijnvalkuil te vermijden.",
+      "ctParcoursStep1Title": "Reden & kennisgeving RVA",
+      "ctParcoursStep1Desc": "Bepaal de reden van de schorsing (economisch, slecht weer, overmacht…). Naargelang de reden is een elektronische voorafgaande kennisgeving aan de RVA verplicht vóór het begin van de periode.",
+      "ctParcoursStep2Title": "Informatie aan de werknemer",
+      "ctParcoursStep2Desc": "Verwittig de betrokken werknemers en deel aan de RVA de eerste effectieve werkloosheidsdag mee — elke maand wanneer de reden dit vereist.",
+      "ctParcoursStep3Title": "De werknemer vult zijn C3.2 in",
+      "ctParcoursStep3Desc": "Uw werknemer dient van zijn kant zijn aanvraag in bij zijn uitbetalingsinstelling: de C3.2 is de spil van zijn dossier.",
+      "ctParcoursStep3WarningTitle": "Kritieke termijn — eC3.2-kaart",
+      "ctParcoursStep3WarningMessage": "Activeer de eC3.2-toepassing meteen bij de start van het dossier — anders is de retroactieve uitkering beperkt tot 1 maand.",
+      "ctParcoursStep4Title": "Uitbetaling via de instelling",
+      "ctParcoursStep4Desc": "De uitbetalingsinstelling (vakbond of HVW) stort de uitkeringen aan de werknemer, op basis van uw elektronische aangifte (ASR / WECH).",
+      "ctParcoursCtaPrimary": "Documenten voorbereiden",
+      "ctParcoursCtaSecondary": "Volledig dossier bekijken",
+      "echeancierBadge": "Vervaldagboek werkgever",
+      "echeancierTitle": "Uw verplichtingen, <em>op het juiste moment</em>",
+      "echeancierIntro": "Tijdelijke werkloosheid en einde van de arbeidsovereenkomst volgen een vast ritme. Hier zijn de terugkerende afspraken die u niet mag missen — met klaargemaakte herinneringen voor uw agenda.",
+      "echeancierCtaExport": "Herinneringen toevoegen aan mijn agenda (.ics)",
+      "echeancierCtaDone": "Herinneringen gedownload!",
+      "echeancierCtaNote": "3 maandelijkse terugkerende herinneringen, compatibel met Outlook, Google Agenda en Apple Calendar.",
+      "echeancierObligation1Moment": "Vóór de schorsing",
+      "echeancierObligation1Title": "Tijdelijke werkloosheid melden aan de RVA",
+      "echeancierObligation1Desc": "Voor economische werkloosheid en de schorsing bedienden moet de voorziene periode aan de RVA worden gemeld vóór het begin van de schorsing. Slecht weer vereist geen voorafgaande kennisgeving.",
+      "echeancierObligation2Moment": "Vanaf de 1ᵉ dag",
+      "echeancierObligation2Title": "Controlekaart aan de werknemer overhandigen",
+      "echeancierObligation2Desc": "Elke betrokken werknemer ontvangt zijn controlekaart (C3.2A) vanaf de eerste effectieve werkloosheidsdag van de maand — die kaart is een voorwaarde voor de uitbetaling van zijn uitkeringen.",
+      "echeancierObligation3Moment": "Elke betrokken maand",
+      "echeancierObligation3Title": "De 1ᵉ effectieve werkloosheidsdag meedelen",
+      "echeancierObligation3Desc": "Economisch, slecht weer, technische storing of schorsing bedienden: de eerste effectieve werkloosheidsdag van de maand wordt aan de RVA meegedeeld, in de regel dezelfde dag of een werkdag eromheen (varianten naargelang de reden).",
+      "echeancierObligation4Moment": "Elke maandeinde",
+      "echeancierObligation4Title": "Uren tijdelijke werkloosheid aangeven (ASR)",
+      "echeancierObligation4Desc": "De elektronische aangifte ASR (WECH-stroom) wordt op het einde van de maand via het portaal van de sociale zekerheid verzonden: ze maakt de berekening en uitbetaling van de uitkeringen van uw werknemers mogelijk.",
+      "echeancierObligation5Moment": "Bij elk einde van de overeenkomst",
+      "echeancierObligation5Title": "C4 aan de werknemer overhandigen",
+      "echeancierObligation5Desc": "Het werkloosheidsbewijs C4 bevestigt de tewerkstellingsperiodes en de reden van het einde van de arbeidsovereenkomst. De werknemer heeft het snel nodig om zijn rechten te laten gelden bij zijn uitbetalingsinstelling.",
+      "echeancierObligation6Moment": "Doorlopend",
+      "echeancierObligation6Title": "Aangiften en bewijsstukken bewaren",
+      "echeancierObligation6Desc": "Kennisgevingen, mededelingen, aangiften en overhandigde documenten: bewaar er het spoor van. Bij een controle of betwisting gelden deze stukken als bewijs.",
+      "echeancierReminder1Summary": "Tijdelijke werkloosheid: 1ste effectieve dag meedelen aan de RVA",
+      "echeancierReminder1Description": "Als er deze maand tijdelijke werkloosheid is voorzien: deel de eerste effectieve dag mee aan de RVA en controleer of elke werknemer zijn controlekaart (C3.2A) heeft gekregen. Indicatieve herinnering aangemaakt door Docbel — aan te passen aan uw situatie.",
+      "echeancierReminder2Summary": "Aangifte uren tijdelijke werkloosheid voorbereiden (ASR)",
+      "echeancierReminder2Description": "Bereid de elektronische maandeindeaangifte (ASR / WECH) voor via het portaal van de sociale zekerheid: ze dient voor de uitbetaling van de uitkeringen van uw werknemers. Indicatieve herinnering aangemaakt door Docbel.",
+      "echeancierReminder3Summary": "Sociale maandafsluiting: aangiften verzonden, bewijsstukken gearchiveerd",
+      "echeancierReminder3Description": "Controleer of de aangiften van de maand vertrokken zijn en archiveer kennisgevingen, mededelingen en bewijsstukken. Indicatieve herinnering aangemaakt door Docbel.",
+      "echeancierFootnote": "Indicatief overzicht: de exacte modaliteiten (termijnen, kanalen, formulieren) hangen af van de reden van tijdelijke werkloosheid en uw situatie. Bij twijfel raadpleegt u de officiële instructies van de RVA of uw sociaal secretariaat.",
+      "pricingBadge": "Tarieven",
+      "pricingTitle": "Een <em>eenvoudig</em> tarief, btw inbegrepen",
+      "pricingIntro": "Geen verrassingen: twee formules, prijzen weergegeven exclusief of inclusief btw, en een conforme factuur voor uw boekhouding.",
+      "pricingToggleAriaLabel": "Prijzen weergeven exclusief of inclusief btw",
+      "pricingModeHtva": "EXCL. BTW",
+      "pricingModeTvac": "INCL. BTW",
+      "pricingTvaNote": "Belgische btw van 21 %.",
+      "pricingRecommended": "Aanbevolen",
+      "pricingPlanFreeName": "Gratis",
+      "pricingPlanFreeTagline": "Om u te informeren en uw verplichtingen op te volgen.",
+      "pricingPlanFreeFeature1": "Informatietools en sociale actualiteit",
+      "pricingPlanFreeFeature2": "Inzicht in dossiers en stappen (tijdelijke werkloosheid, einde arbeidsovereenkomst…)",
+      "pricingPlanFreeFeature3": "Opzoeking paritair comité (PC)",
+      "pricingPlanFreeFeature4": "Onmiddellijke toegang, zonder verbintenis",
+      "pricingPlanProName": "Pro",
+      "pricingPlanProTagline": "Om uw HR dagelijks te beheren, in team.",
+      "pricingPlanProFeature1": "Alles uit het Gratis plan",
+      "pricingPlanProFeature2": "Beheerstools: berekeningen, simulaties en vervaldagboek",
+      "pricingPlanProFeature3": "Meerdere gebruikers: nodig uw team uit",
+      "pricingPlanProFeature4": "Voorrangsondersteuning",
+      "pricingPriceSuffix": "€ /maand",
+      "pricingSrFree": "0 euro per maand",
+      "pricingSrTvac": "{value} euro per maand inclusief btw",
+      "pricingSrHtva": "{value} euro per maand exclusief btw",
+      "pricingLaunchNotice": "Lanceringsperiode: de Pro-ruimte wordt momenteel gratis aangeboden — vandaag wordt geen betaling gevraagd.",
+      "pricingTvaBadge": "Btw recupereerbaar — conforme factuur",
+      "pricingCtaPro": "Mijn werkgeversaccount aanmaken",
+      "pricingNoCommitment": "Zonder verbintenis.",
+      "pricingCtaFree": "Gratis beginnen",
+      "pricingNoCardRequired": "Geen betaalkaart vereist.",
+      "pricingFootnote": "Prijzen in euro per maand. De bedragen incl. btw omvatten de Belgische btw van 21 % — recupereerbaar voor btw-plichtigen.",
+      "espacePreviewEyebrow": "Rondleiding",
+      "espacePreviewTitle": "Bezoek de <em>partnerruimte</em>",
+      "espacePreviewIntro": "Een voorproef zonder account aan te maken: zo zien de tools eruit die uw team dagelijks zal gebruiken.",
+      "espacePreviewIncluded": "Inbegrepen in de ruimte",
+      "espacePreviewIncludedTitle": "Alles wat nodig is, op één plek",
+      "espacePreviewCtaPrimary": "Mijn ruimte aanmaken",
+      "espacePreviewCtaSecondary": "Een gegidste demo aanvragen",
+      "espacePreviewTablistLabel": "Voorbeelden van de partnerruimte",
+      "espacePreviewMockBadge": "Voorbeeld — fictieve gegevens",
+      "espacePreviewMockFootnote": "Illustratieve mock-up: de afspraken, bedragen en codes zijn fictief.",
+      "espacePreviewTabAgendaLabel": "Afsprakenagenda",
+      "espacePreviewTabAgendaPanelTitle": "Teamagenda — typische week",
+      "espacePreviewTabAgrLabel": "IGU-berekening",
+      "espacePreviewTabAgrPanelTitle": "IGU-berekening — resultaat",
+      "espacePreviewTabLookupLabel": "RVA-opzoeking",
+      "espacePreviewTabLookupPanelTitle": "RVA-opzoeking — codefiche",
+      "espacePreviewStatusHonore": "Nagekomen",
+      "espacePreviewStatusConfirme": "Bevestigd",
+      "espacePreviewStatusAttente": "In afwachting van validatie",
+      "espacePreviewDayMon": "Ma",
+      "espacePreviewDayTue": "Di",
+      "espacePreviewDayWed": "Wo",
+      "espacePreviewDayThu": "Do",
+      "espacePreviewDayFri": "Vr",
+      "espacePreviewMotifInscription": "Inschrijving",
+      "espacePreviewMotifControle": "Dossiercontrole",
+      "espacePreviewMotifCalculAgr": "IGU-berekening",
+      "espacePreviewMotifChomageTemporaire": "Tijdelijke werkloosheid",
+      "espacePreviewMotifDispense": "Vrijstelling vorming",
+      "espacePreviewAgendaCurrentWeek": "Huidige week",
+      "espacePreviewAgendaFilterAll": "Alle loketten",
+      "espacePreviewAgendaFilterStatuses": "Alle statussen",
+      "espacePreviewAgendaFree": "Vrij",
+      "espacePreviewAgrRowBrut": "IGU bruto — Barema 57/-",
+      "espacePreviewAgrRowCt": "Tijdelijke werkloosheid",
+      "espacePreviewAgrRowTotal": "Totaal 57 (IGU + TW + VW)",
+      "espacePreviewAgrWechImported": "WECH 506 geïmporteerd",
+      "espacePreviewAgrSalaireRef": "Referentieloon: {value}",
+      "espacePreviewAgrFootnote": "Importeer de WECH 506 van uw lid: de berekening gebeurt automatisch, tot 4 gelijktijdige tewerkstellingen.",
+      "espacePreviewLookupSearchQuery": "betaalwijze",
+      "espacePreviewLookupCodeTitle": "Overschrijving op bankrekening",
+      "espacePreviewLookupCodeMeta": "S01 — Betaalwijze · Signaletiek",
+      "espacePreviewLookupDutchLabel": "Nederlands",
+      "espacePreviewLookupDutchValue": "Overschrijving op bankrekening",
+      "espacePreviewLookupValidityLabel": "Geldigheid",
+      "espacePreviewLookupValidityValue": "sinds 01.01.2020 · lopend",
+      "espacePreviewLookupSourceLabel": "Bron",
+      "espacePreviewLookupSourceValue": "Tabel S01 (signaletiek RVA)",
+      "espacePreviewLookupFootnote": "Transversale opzoeking in de officiële referentielijsten van de RVA: signaletiek, toelaatbaarheid, vrijstellingen, kantoren…",
+      "espacePreviewFeature1Title": "Overzicht",
+      "espacePreviewFeature1Desc": "Het dashboard van uw organisatie, in één oogopslag.",
+      "espacePreviewFeature2Title": "Agenda & aanvragen",
+      "espacePreviewFeature2Desc": "De afspraken van uw loketten, week per week.",
+      "espacePreviewFeature3Title": "RVA-opzoeking",
+      "espacePreviewFeature3Desc": "Officiële referentielijsten en signaletiek, in enkele seconden raadpleegbaar.",
+      "espacePreviewFeature4Title": "IGU-berekening",
+      "espacePreviewFeature4Desc": "De inkomensgarantie-uitkering berekend op basis van de WECH 506.",
+      "espacePreviewFeature5Title": "Leden & toegelaten domeinen",
+      "espacePreviewFeature5Desc": "Nodig uw collega's uit en beheer de toegangen van uw organisatie."
     },
     "ec32": {
       "calendar": {
@@ -3066,6 +3373,207 @@
           "usualDay": "Werk op een gebruikelijke dag"
         },
         "workOwnEmployer": "Werk bij uw gewone werkgever"
+      },
+      "oauthConsent": {
+        "defaultUserName": "Burger",
+        "eyebrow": "Toestemming voor toegang",
+        "greeting": "Dag {userName},",
+        "intro": "De toepassing <app>eC3.2 — Controlekaart tijdelijke werkloosheid</app> vraagt de volgende toegangen:",
+        "scopeBadgeAriaLabel": "Toegang gevraagd",
+        "scopes": {
+          "login": {
+            "title": "Toegang tot logingegevens",
+            "description": "De identificatiegegevens om aan te melden (openid)"
+          },
+          "profile": {
+            "title": "Toegang tot profielgegevens",
+            "description": "Toegang tot profielgegevens"
+          },
+          "public": {
+            "title": "Publiek",
+            "description": "Raadpleging van de openbare gegevens van de werkgever."
+          },
+          "citizenMandates": {
+            "title": "Burgervolmachten",
+            "description": "Burgervolmachten"
+          },
+          "consultCard": {
+            "title": "Zijn kaarten tijdelijke werkloosheid raadplegen",
+            "description": "Raadpleging van de gegevens van de burger over tijdelijke werkloosheid"
+          },
+          "modifyCard": {
+            "title": "Een controlekaart tijdelijke werkloosheid wijzigen",
+            "description": "Wijziging van de gegevens van een controlekaart tijdelijke werkloosheid"
+          },
+          "submitCard": {
+            "title": "Een controlekaart tijdelijke werkloosheid indienen",
+            "description": "Indiening van een controlekaart tijdelijke werkloosheid"
+          }
+        },
+        "validity": "Deze toegang is geldig voor een duur van <duration>23 maanden</duration>. Na het verstrijken wordt de toestemming opnieuw aan u gevraagd (verlenging).",
+        "cancel": "Annuleren",
+        "confirm": "Bevestigen",
+        "footer": "Educatieve simulatie — er worden geen gegevens werkelijk doorgegeven."
+      },
+      "accessDashboard": {
+        "eyebrow": "Volmachten",
+        "title": "Beheer van toegangen",
+        "subtitle": "Geef toegang tot uw controlekaart tijdelijke werkloosheid aan een vertrouwenspersoon.",
+        "newRequest": "Nieuwe aanvraag",
+        "tablistAriaLabel": "Categorieën van toegangen",
+        "tabs": {
+          "requested": "Gevraagde toegangen",
+          "granted": "Verleende toegangen",
+          "received": "Ontvangen toegangen"
+        },
+        "status": {
+          "active": "Actief",
+          "pending": "In afwachting",
+          "expired": "Verlopen"
+        },
+        "dateLabel": {
+          "requested": "Gevraagd tot {date}",
+          "validUntil": "Geldig tot {date}"
+        },
+        "actions": {
+          "revoke": "Intrekken",
+          "cancelRequest": "Aanvraag annuleren"
+        },
+        "empty": {
+          "granted": {
+            "title": "U hebt momenteel geen toegang verleend.",
+            "body": "Geen verleende toegang."
+          },
+          "requested": {
+            "title": "Hier vindt u al uw toegangsaanvragen in afwachting van goedkeuring terug.",
+            "body": "Geen aanvragen in afwachting van goedkeuring."
+          },
+          "received": {
+            "title": "Toegangen verleend door andere burgers.",
+            "example": "Bijvoorbeeld: u kunt aanmelden in naam van uw vader om zijn controlekaart tijdelijke werkloosheid in te vullen.",
+            "body": "U hebt geen toegang ontvangen."
+          }
+        }
+      },
+      "mandateWizard": {
+        "title": "Nieuwe toegangsaanvraag",
+        "steps": {
+          "scope": "Tot welke gegevens wilt u toegang?",
+          "duration": "Gewenste duur van de toegang",
+          "send": "De toegangsaanvraag versturen"
+        },
+        "scope": {
+          "intro": "Kies de gegevens waartoe u toegang wilt geven.",
+          "option": {
+            "label": "Controlekaart tijdelijke werkloosheid",
+            "description": "De persoon kan uw maandelijkse kaart raadplegen en invullen."
+          }
+        },
+        "duration": {
+          "intro": "Geef aan hoe lang de toegang geldig moet blijven.",
+          "max1y": {
+            "label": "Maximale duur: 1 jaar",
+            "description": "De toegang wordt automatisch beëindigd na één jaar."
+          },
+          "until": {
+            "label": "Tot"
+          },
+          "info": {
+            "title": "Beperkte duur",
+            "body": "De raadpleging van de gegevens van de controlekaart tijdelijke werkloosheid is beperkt tot maximaal 1 jaar."
+          }
+        },
+        "send": {
+          "personName": {
+            "label": "Voornaam en naam",
+            "placeholder": "Bv. Karim Benali"
+          },
+          "language": {
+            "label": "Taal van de aanvraag",
+            "ariaLabel": "Taal"
+          },
+          "channel": {
+            "label": "Verzendwijze",
+            "email": {
+              "label": "Per e-mail",
+              "placeholder": "voornaam.naam@voorbeeld.be",
+              "invalid": "Geef een geldig e-mailadres op.",
+              "description": "De burger ontvangt de aanvraag per e-mail."
+            },
+            "qr": {
+              "label": "Via QR-code",
+              "description": "Een QR-code om te scannen wordt op het scherm weergegeven.",
+              "preview": "Vraag de persoon om deze QR-code met zijn smartphone te scannen.",
+              "previewNote": "Illustratieve code (simulatie)."
+            },
+            "link": {
+              "label": "Via link",
+              "description": "Een persoonlijke link om via het kanaal van uw keuze te delen."
+            }
+          },
+          "linkPreview": {
+            "copy": "Link kopiëren",
+            "copied": "Gekopieerd ✓"
+          },
+          "disclaimer": "Er worden geen gegevens werkelijk doorgegeven — dit scherm illustreert het traject van de eC3.2-volmacht. De aangemaakte aanvraag verschijnt in « Gevraagde toegangen »."
+        },
+        "actions": {
+          "cancelRequest": "Aanvraag annuleren",
+          "previous": "Vorige",
+          "next": "Volgende",
+          "send": "Aanvraag versturen"
+        }
+      },
+      "rules": {
+        "section": {
+          "eyebrow": "Goed om te weten",
+          "title": "Belangrijke regels",
+          "subtitle": "De aanvullingen van de simulator, gegroepeerd per thema. Klap een rubriek open."
+        },
+        "obligation": {
+          "fallbackTitle": "Verplichting vanaf 1 januari 2025"
+        },
+        "derogations": {
+          "fallbackTitle": "Afwijkingen & uitzondering PC 327"
+        },
+        "cp124": {
+          "title": "Bouw (PC 124)"
+        },
+        "paymentOrg": {
+          "title": "Uitbetalingsinstelling"
+        },
+        "workElsewhere": {
+          "title": "Werken elders"
+        },
+        "correction": {
+          "title": "Een fout corrigeren",
+          "fallbackBody": "Als de kaart al verstuurd is en een fout bevat, kunt u die corrigeren met een formulier dat beschikbaar is bij uw uitbetalingsinstelling (HVW, ACV, ABVV of ACLVB)."
+        },
+        "firstSendDate": {
+          "title": "Eerste mogelijke verzenddatum"
+        },
+        "why": {
+          "fallbackTitle": "Waarom de eC3.2?"
+        }
+      },
+      "guidedSteps": {
+        "navAriaLabel": "Stappen van de simulatie",
+        "stepAriaLabel": "Stap {index}: {title}",
+        "stepTooltip": "Stap {index} — {title}",
+        "previousAriaLabel": "Vorige stap",
+        "nextAriaLabel": "Volgende stap",
+        "mobileCounter": "Stap {index} van {total}",
+        "progressAriaLabel": "Voortgang van de simulatie",
+        "defaultTitles": {
+          "login": "Gesimuleerde aanmelding",
+          "declaration": "Verklaring op eer",
+          "employer": "Keuze van de werkgever",
+          "month": "Keuze van de maand",
+          "calendar": "Kalender invullen",
+          "correction": "Een fout corrigeren",
+          "verify": "Controleren",
+          "send": "Versturen"
+        }
       }
     },
     "blocks": {
@@ -3118,6 +3626,70 @@
       },
       "testimonial": {
         "empty": "Geen getuigenissen om te tonen."
+      },
+      "salaireNetBE": {
+        "disclaimer": "Vereenvoudigde schatting — indicatieve cijfers",
+        "monthlyBrutLabel": "Maandelijks brutoloon",
+        "situationLabel": "Situatie",
+        "statusIsolated": "Alleenstaand zonder kinderen",
+        "statusCohabitant": "Samenwonend",
+        "statusFamily": "Gezin ten laste",
+        "onss": "RSZ",
+        "tax": "Belasting",
+        "net": "Netto"
+      },
+      "ttsButton": {
+        "stop": "Stoppen",
+        "unsupported": "Spraaksynthese niet beschikbaar in deze browser",
+        "noContent": "Geen inhoud om voor te lezen."
+      },
+      "multiStepForm": {
+        "stepCounter": "Stap {current} / {total}",
+        "previous": "Vorige",
+        "next": "Volgende",
+        "submitError": "Fout bij het verzenden",
+        "networkError": "Netwerkfout",
+        "selectPlaceholder": "Kiezen…"
+      },
+      "form": {
+        "error": "Fout",
+        "networkError": "Netwerkfout",
+        "selectPlaceholder": "Kiezen…"
+      },
+      "eligibilityTest": {
+        "eligible": "U komt in aanmerking",
+        "notEligible": "Niet toegelaten",
+        "retake": "Test opnieuw doen",
+        "seeResult": "Resultaat bekijken",
+        "yes": "Ja",
+        "no": "Nee",
+        "selectPlaceholder": "Kiezen…"
+      },
+      "calculator": {
+        "regionAria": "Rekenmodule",
+        "resultAria": "Resultaat van de berekening",
+        "empty": "Wacht op het resultaat"
+      },
+      "cta": {
+        "regionAria": "Oproep tot actie",
+        "primaryFallbackAria": "Meer bekijken"
+      },
+      "features": {
+        "regionAria": "Functies",
+        "listAria": "Lijst met functies"
+      },
+      "checklist": {
+        "listAria": "Aankruislijst",
+        "progressAria": "{completed} van {total} aangevinkt",
+        "checkAria": "Aanvinken: {item}",
+        "uncheckAria": "Uitvinken: {item}"
+      },
+      "accordion": {
+        "regionAria": "Uitklapbare secties",
+        "triggerAria": "Sectie tonen of verbergen: {title}"
+      },
+      "repeater": {
+        "regionAria": "Lijst met items"
       }
     }
   }

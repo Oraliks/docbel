@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { ArrowRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
@@ -54,6 +55,7 @@ export const cta = defineBlock({
     ],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const {
       title,
       description,
@@ -74,8 +76,13 @@ export const cta = defineBlock({
     )
 
     const primary = (
-      <ActionButton action={action} href={link} className={buttonClass}>
-        {text} <ArrowRight className="size-4" />
+      <ActionButton
+        action={action}
+        href={link}
+        className={buttonClass}
+        aria-label={text || t('cta.primaryFallbackAria')}
+      >
+        {text} <ArrowRight className="size-4" aria-hidden="true" />
       </ActionButton>
     )
     const secondary = secondaryText ? (
@@ -99,7 +106,10 @@ export const cta = defineBlock({
 
     if (variant === 'card') {
       return (
-        <div className="rounded-2xl border bg-card p-8 text-center shadow-sm">
+        <section
+          className="rounded-2xl border bg-card p-8 text-center shadow-sm"
+          aria-label={title || t('cta.regionAria')}
+        >
           {title && <h3 className="text-2xl font-bold tracking-tight">{title}</h3>}
           {description && (
             <p className="mt-2 text-muted-foreground max-w-md mx-auto">{description}</p>
@@ -108,12 +118,15 @@ export const cta = defineBlock({
             {primary}
             {secondary}
           </div>
-        </div>
+        </section>
       )
     }
 
     return (
-      <div className="rounded-2xl bg-primary text-primary-foreground p-8 md:p-12">
+      <section
+        className="rounded-2xl bg-primary text-primary-foreground p-8 md:p-12"
+        aria-label={title || t('cta.regionAria')}
+      >
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="max-w-2xl">
             {title && <h3 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h3>}
@@ -123,12 +136,13 @@ export const cta = defineBlock({
             <ActionButton
               action={action}
               href={link}
+              aria-label={text || t('cta.primaryFallbackAria')}
               className={cn(
                 'inline-flex items-center gap-2 rounded-lg font-medium transition bg-primary-foreground text-primary hover:opacity-90 cursor-pointer',
                 BTN_SIZE[buttonSize]
               )}
             >
-              {text} <ArrowRight className="size-4" />
+              {text} <ArrowRight className="size-4" aria-hidden="true" />
             </ActionButton>
             {secondaryText && (
               <ActionButton
@@ -141,7 +155,7 @@ export const cta = defineBlock({
             )}
           </div>
         </div>
-      </div>
+      </section>
     )
   },
   Fields: ({ props, onChange }) => (

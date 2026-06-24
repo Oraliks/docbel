@@ -21,6 +21,7 @@ import {
   QrCode,
   Send,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogContent,
@@ -49,13 +50,13 @@ const INITIAL_DRAFT: Ec32MandateDraft = {
   channel: null,
 }
 
-const STEPS = [
-  { id: 1, label: 'À quelles données voulez-vous accéder ?' },
-  { id: 2, label: 'Durée souhaitée de l’accès' },
-  { id: 3, label: 'Envoyer la demande d’accès' },
+const STEP_DEFS = [
+  { id: 1, labelKey: 'mandateWizard.steps.scope' },
+  { id: 2, labelKey: 'mandateWizard.steps.duration' },
+  { id: 3, labelKey: 'mandateWizard.steps.send' },
 ] as const
 
-type StepNumber = (typeof STEPS)[number]['id']
+type StepNumber = (typeof STEP_DEFS)[number]['id']
 
 // ─────────────────────────── Helpers ───────────────────────────
 
@@ -67,9 +68,10 @@ function isValidEmail(value: string): boolean {
 // ─────────────────────────── Sous-composants visuels ───────────────────────────
 
 function Stepper({ current }: { current: StepNumber }) {
+  const t = useTranslations('public.ec32')
   return (
     <ol className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-      {STEPS.map((step, idx) => {
+      {STEP_DEFS.map((step, idx) => {
         const isActive = step.id === current
         const isDone = step.id < current
         return (
@@ -98,10 +100,10 @@ function Stepper({ current }: { current: StepNumber }) {
                       : 'text-muted-foreground',
                 )}
               >
-                {step.label}
+                {t(step.labelKey as Parameters<typeof t>[0])}
               </span>
             </div>
-            {idx < STEPS.length - 1 && (
+            {idx < STEP_DEFS.length - 1 && (
               <span
                 aria-hidden
                 className="hidden h-px w-6 bg-border sm:inline-block"
@@ -170,11 +172,12 @@ function StepScope({
   draft: Ec32MandateDraft
   onChange: (next: Ec32MandateDraft) => void
 }) {
+  const t = useTranslations('public.ec32')
   const isChecked = draft.scope === 'temporary_unemployment_card'
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Choisissez les données auxquelles vous souhaitez donner accès.
+        {t('mandateWizard.scope.intro')}
       </p>
       <label
         className={cn(
@@ -198,11 +201,11 @@ function StepScope({
           <div className="flex items-center gap-2">
             <Layers className="size-4 text-primary" aria-hidden />
             <span className="text-sm font-medium text-foreground">
-              Carte de chômage temporaire
+              {t('mandateWizard.scope.option.label')}
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            La personne pourra consulter et compléter votre carte mensuelle.
+            {t('mandateWizard.scope.option.description')}
           </p>
         </div>
       </label>
@@ -219,10 +222,11 @@ function StepDuration({
   draft: Ec32MandateDraft
   onChange: (next: Ec32MandateDraft) => void
 }) {
+  const t = useTranslations('public.ec32')
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Indiquez pendant combien de temps l&apos;accès doit rester valide.
+        {t('mandateWizard.duration.intro')}
       </p>
       <div className="space-y-3">
         <RadioOption
@@ -230,15 +234,15 @@ function StepDuration({
           value="max_1y"
           checked={draft.durationMode === 'max_1y'}
           onChange={() => onChange({ ...draft, durationMode: 'max_1y', durationUntil: null })}
-          label="Durée maximale : 1 an"
-          description="L'accès se termine automatiquement au bout d'un an."
+          label={t('mandateWizard.duration.max1y.label')}
+          description={t('mandateWizard.duration.max1y.description')}
         />
         <RadioOption
           name="duration"
           value="until"
           checked={draft.durationMode === 'until'}
           onChange={() => onChange({ ...draft, durationMode: 'until' })}
-          label="Jusqu'au"
+          label={t('mandateWizard.duration.until.label')}
           description={
             <div className="mt-2">
               <input
@@ -258,9 +262,8 @@ function StepDuration({
           }
         />
       </div>
-      <Ec32InfoBox tone="info" title="Durée limitée">
-        La consultation des données de la Carte de chômage temporaire est limitée à 1 an
-        maximum.
+      <Ec32InfoBox tone="info" title={t('mandateWizard.duration.info.title')}>
+        {t('mandateWizard.duration.info.body')}
       </Ec32InfoBox>
     </div>
   )
@@ -285,6 +288,7 @@ const QR_PATTERN: boolean[] = [
 
 /** Lien fictif + bouton « Copier » (simulation, aucun lien réel). */
 function LinkPreview() {
+  const t = useTranslations('public.ec32')
   const [copied, setCopied] = useState(false)
   const fakeLink = 'https://acces.simulation.docbel/mandat/ec32?demo=1'
   const handleCopy = () => {
@@ -301,7 +305,9 @@ function LinkPreview() {
         {fakeLink}
       </code>
       <Button type="button" variant="outline" size="sm" onClick={handleCopy}>
-        {copied ? 'Copié ✓' : 'Copier le lien'}
+        {copied
+          ? t('mandateWizard.send.linkPreview.copied')
+          : t('mandateWizard.send.linkPreview.copy')}
       </Button>
     </div>
   )
@@ -314,6 +320,7 @@ function StepSend({
   draft: Ec32MandateDraft
   onChange: (next: Ec32MandateDraft) => void
 }) {
+  const t = useTranslations('public.ec32')
   return (
     <div className="space-y-5">
       {/* Identité du destinataire */}
@@ -322,7 +329,7 @@ function StepSend({
           htmlFor="mandate-person-name"
           className="text-sm font-medium text-foreground"
         >
-          Prénom et nom
+          {t('mandateWizard.send.personName.label')}
         </label>
         <input
           id="mandate-person-name"
@@ -330,7 +337,7 @@ function StepSend({
           autoComplete="off"
           value={draft.personName}
           onChange={(e) => onChange({ ...draft, personName: e.target.value })}
-          placeholder="Ex. Karim Benali"
+          placeholder={t('mandateWizard.send.personName.placeholder')}
           className={cn(
             'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition-colors',
             'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
@@ -340,8 +347,8 @@ function StepSend({
 
       {/* Langue */}
       <div className="space-y-2">
-        <p className="text-sm font-medium text-foreground">Langue de la demande</p>
-        <div role="radiogroup" aria-label="Langue" className="flex flex-wrap gap-2">
+        <p className="text-sm font-medium text-foreground">{t('mandateWizard.send.language.label')}</p>
+        <div role="radiogroup" aria-label={t('mandateWizard.send.language.ariaLabel')} className="flex flex-wrap gap-2">
           {LANGUAGE_OPTIONS.map((opt) => {
             const isActive = draft.language === opt.id
             return (
@@ -367,7 +374,7 @@ function StepSend({
 
       {/* Mode de transmission */}
       <div className="space-y-2">
-        <p className="text-sm font-medium text-foreground">Mode de transmission</p>
+        <p className="text-sm font-medium text-foreground">{t('mandateWizard.send.channel.label')}</p>
         <div className="space-y-3">
           <RadioOption
             name="channel"
@@ -375,7 +382,7 @@ function StepSend({
             checked={draft.channel === 'email'}
             onChange={() => onChange({ ...draft, channel: 'email' })}
             icon={<Mail className="size-4 text-primary" aria-hidden />}
-            label="Par e-mail"
+            label={t('mandateWizard.send.channel.email.label')}
             description={
               draft.channel === 'email' ? (
                 <div className="mt-2 space-y-1">
@@ -384,7 +391,7 @@ function StepSend({
                     autoComplete="off"
                     value={draft.personEmail}
                     onChange={(e) => onChange({ ...draft, personEmail: e.target.value })}
-                    placeholder="prenom.nom@exemple.be"
+                    placeholder={t('mandateWizard.send.channel.email.placeholder')}
                     className={cn(
                       'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition-colors',
                       'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
@@ -392,12 +399,12 @@ function StepSend({
                   />
                   {draft.personEmail.length > 0 && !isValidEmail(draft.personEmail) && (
                     <p className="text-xs text-red-600">
-                      Indiquez une adresse e-mail valide.
+                      {t('mandateWizard.send.channel.email.invalid')}
                     </p>
                   )}
                 </div>
               ) : (
-                'Le citoyen recevra la demande par e-mail.'
+                t('mandateWizard.send.channel.email.description')
               )
             }
           />
@@ -407,8 +414,8 @@ function StepSend({
             checked={draft.channel === 'qr'}
             onChange={() => onChange({ ...draft, channel: 'qr' })}
             icon={<QrCode className="size-4 text-primary" aria-hidden />}
-            label="Via code QR"
-            description="Un code QR à scanner sera affiché à l'écran."
+            label={t('mandateWizard.send.channel.qr.label')}
+            description={t('mandateWizard.send.channel.qr.description')}
           />
           <RadioOption
             name="channel"
@@ -416,8 +423,8 @@ function StepSend({
             checked={draft.channel === 'link'}
             onChange={() => onChange({ ...draft, channel: 'link' })}
             icon={<LinkIcon className="size-4 text-primary" aria-hidden />}
-            label="Via lien"
-            description="Un lien personnel à partager par le canal de votre choix."
+            label={t('mandateWizard.send.channel.link.label')}
+            description={t('mandateWizard.send.channel.link.description')}
           />
         </div>
 
@@ -436,8 +443,8 @@ function StepSend({
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              Demandez à la personne de scanner ce code QR avec son smartphone.
-              <span className="mt-1 block italic">Code illustratif (simulation).</span>
+              {t('mandateWizard.send.channel.qr.preview')}
+              <span className="mt-1 block italic">{t('mandateWizard.send.channel.qr.previewNote')}</span>
             </p>
           </div>
         )}
@@ -445,8 +452,7 @@ function StepSend({
       </div>
 
       <Ec32InfoBox tone="info">
-        Aucune donnée n&apos;est réellement transmise — cet écran illustre le parcours de
-        mandat eC3.2. La demande créée apparaîtra dans « Accès demandés ».
+        {t('mandateWizard.send.disclaimer')}
       </Ec32InfoBox>
     </div>
   )
@@ -465,6 +471,7 @@ export function Ec32MandateWizard({
   onOpenChange,
   onSubmitted,
 }: Ec32MandateWizardProps) {
+  const t = useTranslations('public.ec32')
   const [step, setStep] = useState<StepNumber>(1)
   const [draft, setDraft] = useState<Ec32MandateDraft>(INITIAL_DRAFT)
 
@@ -517,7 +524,7 @@ export function Ec32MandateWizard({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Nouvelle demande d&apos;accès</DialogTitle>
+          <DialogTitle>{t('mandateWizard.title')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 pt-2">
@@ -525,7 +532,7 @@ export function Ec32MandateWizard({
 
           <div className="rounded-2xl border border-primary/10 bg-card/60 p-4 sm:p-5">
             <h3 className="mb-4 text-base font-semibold text-foreground">
-              {STEPS[step - 1].label}
+              {t(STEP_DEFS[step - 1].labelKey as Parameters<typeof t>[0])}
             </h3>
             {step === 1 && <StepScope draft={draft} onChange={setDraft} />}
             {step === 2 && <StepDuration draft={draft} onChange={setDraft} />}
@@ -540,13 +547,13 @@ export function Ec32MandateWizard({
               onClick={handleCancel}
               className="text-muted-foreground hover:text-foreground"
             >
-              Annuler la demande
+              {t('mandateWizard.actions.cancelRequest')}
             </Button>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
               {step > 1 && (
                 <Button variant="outline" size="lg" onClick={handlePrev}>
                   <ArrowLeft className="size-4" aria-hidden />
-                  Précédent
+                  {t('mandateWizard.actions.previous')}
                 </Button>
               )}
               {step < 3 && (
@@ -557,7 +564,7 @@ export function Ec32MandateWizard({
                   disabled={!canGoNext}
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
-                  Suivant
+                  {t('mandateWizard.actions.next')}
                   <ArrowRight className="size-4" aria-hidden />
                 </Button>
               )}
@@ -570,7 +577,7 @@ export function Ec32MandateWizard({
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   <Send className="size-4" aria-hidden />
-                  Envoyer la demande
+                  {t('mandateWizard.actions.send')}
                 </Button>
               )}
             </div>

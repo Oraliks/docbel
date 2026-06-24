@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, Group, Pills } from '@/components/page-builder/inspector/controls'
@@ -68,6 +69,7 @@ export const calculator = defineBlock({
     shortcuts: ['calculator', 'calcul'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const {
       title,
       description,
@@ -88,7 +90,11 @@ export const calculator = defineBlock({
     const result = safeEval(formula, values)
 
     return (
-      <div className="rounded-2xl border bg-card p-6 my-2">
+      <div
+        className="rounded-2xl border bg-card p-6 my-2"
+        role="group"
+        aria-label={title || t('calculator.regionAria')}
+      >
         {title && <h3 className="text-lg font-semibold">{title}</h3>}
         {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
         <div className="mt-4 space-y-3">
@@ -103,6 +109,7 @@ export const calculator = defineBlock({
                     onChange={(e) =>
                       setValues((v) => ({ ...v, [field.name]: Number(e.target.value) }))
                     }
+                    aria-label={field.label}
                     className="w-full rounded-md border bg-background px-3 py-2 text-sm pr-12 focus:outline-none focus:ring-2 focus:ring-ring/50"
                   />
                 ) : (
@@ -111,6 +118,7 @@ export const calculator = defineBlock({
                     onChange={(e) =>
                       setValues((v) => ({ ...v, [field.name]: e.target.value }))
                     }
+                    aria-label={field.label}
                     className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
                   >
                     {field.options?.map((opt) => (
@@ -121,7 +129,10 @@ export const calculator = defineBlock({
                   </select>
                 )}
                 {field.unit && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  <span
+                    aria-hidden="true"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground"
+                  >
                     {field.unit}
                   </span>
                 )}
@@ -129,12 +140,21 @@ export const calculator = defineBlock({
             </div>
           ))}
         </div>
-        <div className="mt-5 rounded-xl bg-primary/10 p-4 text-center">
+        <div
+          className="mt-5 rounded-xl bg-primary/10 p-4 text-center"
+          role="status"
+          aria-live="polite"
+          aria-label={resultLabel || t('calculator.resultAria')}
+        >
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
             {resultLabel}
           </div>
           <div className="mt-1 text-3xl font-bold text-primary tabular-nums">
-            {result === null ? '—' : result.toFixed(resultPrecision)}
+            {result === null ? (
+              <span aria-label={t('calculator.empty')}>—</span>
+            ) : (
+              result.toFixed(resultPrecision)
+            )}
             {resultUnit && <span className="ml-1 text-base">{resultUnit}</span>}
           </div>
         </div>

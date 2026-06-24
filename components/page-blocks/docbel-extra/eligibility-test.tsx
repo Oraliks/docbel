@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import { Check, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -40,6 +41,7 @@ export const eligibilityTest = defineBlock({
     shortcuts: ['eligibility', 'eligible'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { title, introText, questions, rules } = props
     const [answers, setAnswers] = useState<(string | null)[]>(() =>
       questions.map(() => null)
@@ -69,7 +71,7 @@ export const eligibilityTest = defineBlock({
             )}
             <div>
               <h3 className="font-bold text-lg">
-                {passes ? 'Vous êtes éligible' : 'Non éligible'}
+                {passes ? t('eligibilityTest.eligible') : t('eligibilityTest.notEligible')}
               </h3>
               <p className="mt-1 text-sm">
                 {passes ? rules.resultIfPass : rules.resultIfFail}
@@ -84,7 +86,7 @@ export const eligibilityTest = defineBlock({
             }}
             className="mt-4 text-sm font-medium underline-offset-2 hover:underline"
           >
-            Refaire le test
+            {t('eligibilityTest.retake')}
           </button>
         </div>
       )
@@ -103,25 +105,27 @@ export const eligibilityTest = defineBlock({
               </p>
               {q.type === 'yesno' ? (
                 <div className="grid grid-cols-2 gap-2">
-                  {['Oui', 'Non'].map((opt) => {
-                    const value = opt === 'Oui' ? 'yes' : 'no'
+                  {[
+                    { label: t('eligibilityTest.yes'), value: 'yes' },
+                    { label: t('eligibilityTest.no'), value: 'no' },
+                  ].map((opt) => {
                     return (
                       <button
-                        key={opt}
+                        key={opt.value}
                         type="button"
                         onClick={() =>
-                          setAnswers((a) => a.map((v, idx) => (idx === i ? value : v)))
+                          setAnswers((a) => a.map((v, idx) => (idx === i ? opt.value : v)))
                         }
                         className={cn(
                           'rounded-md border px-3 py-2 text-sm font-medium transition',
-                          answers[i] === value
-                            ? value === 'yes'
+                          answers[i] === opt.value
+                            ? opt.value === 'yes'
                               ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
                               : 'border-red-500 bg-red-500/10 text-red-700 dark:text-red-300'
                             : 'border-input hover:border-muted-foreground'
                         )}
                       >
-                        {opt}
+                        {opt.label}
                       </button>
                     )
                   })}
@@ -134,7 +138,7 @@ export const eligibilityTest = defineBlock({
                   }
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 >
-                  <option value="">Choisir…</option>
+                  <option value="">{t('eligibilityTest.selectPlaceholder')}</option>
                   {q.options?.map((opt) => (
                     <option key={opt} value={opt}>
                       {opt}
@@ -151,7 +155,7 @@ export const eligibilityTest = defineBlock({
           onClick={() => setDone(true)}
           className="mt-5 w-full rounded-md bg-primary text-primary-foreground py-2.5 font-medium disabled:opacity-50"
         >
-          Voir le résultat
+          {t('eligibilityTest.seeResult')}
         </button>
       </div>
     )

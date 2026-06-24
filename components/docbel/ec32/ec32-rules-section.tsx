@@ -11,6 +11,7 @@
 
 import type { ReactNode } from 'react'
 import { BookMarked, Check } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
   Accordion,
   AccordionContent,
@@ -65,6 +66,7 @@ function CheckList({ title, items }: { title?: string; items: string[] }) {
 }
 
 export function Ec32RulesSection({ content }: { content: Ec32Content }) {
+  const t = useTranslations('public.ec32')
   const { officialInfo, derogations, mistakes, simulator } = content
 
   const notice = (key: string): string =>
@@ -85,7 +87,7 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
   if (obligation.title || obligation.workers.length || obligation.employers.length) {
     entries.push({
       id: 'obligation',
-      title: obligation.title || 'Obligation à partir du 1er janvier 2025',
+      title: obligation.title || t('rules.obligation.fallbackTitle'),
       body: (
         <div className="space-y-4">
           {obligation.intro && (
@@ -107,7 +109,7 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
   if (derogItems.length > 0 || derogations.transitionNote) {
     entries.push({
       id: 'derogations',
-      title: derogations.title || 'Dérogations & exception CP 327',
+      title: derogations.title || t('rules.derogations.fallbackTitle'),
       body: (
         <div className="space-y-4">
           <ul className="space-y-4" role="list">
@@ -152,7 +154,7 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
   if (cp124) {
     entries.push({
       id: 'cp124',
-      title: 'Construction (CP 124)',
+      title: t('rules.cp124.title'),
       body: <Paragraphs texts={[cp124.explanation, cp124.advice]} />,
     })
   }
@@ -160,7 +162,7 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
   // 4 — Organisme de paiement
   entries.push({
     id: 'organisme',
-    title: 'Organisme de paiement',
+    title: t('rules.paymentOrg.title'),
     body: <Paragraphs texts={[notice('send.noPaymentOrg'), notice('send.notNeeded')]} />,
   })
 
@@ -168,7 +170,7 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
   if (workElsewhere.length > 0) {
     entries.push({
       id: 'travail-ailleurs',
-      title: 'Travail ailleurs',
+      title: t('rules.workElsewhere.title'),
       body: (
         <ul className="space-y-3" role="list">
           {workElsewhere.map((s) => (
@@ -189,12 +191,12 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
   // 6 — Corriger une erreur
   entries.push({
     id: 'correction',
-    title: 'Corriger une erreur',
+    title: t('rules.correction.title'),
     body: (
       <Paragraphs
         texts={[
           notice('correction.help'),
-          'Si la carte a déjà été envoyée et qu’elle contient une erreur, vous pouvez la corriger au moyen d’un formulaire disponible auprès de votre organisme de paiement (CAPAC, CSC, FGTB ou CGSLB).',
+          t('rules.correction.fallbackBody'),
         ]}
       />
     ),
@@ -203,7 +205,7 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
   // 7 — Première date d'envoi possible
   entries.push({
     id: 'premiere-date-envoi',
-    title: 'Première date d’envoi possible',
+    title: t('rules.firstSendDate.title'),
     body: <Paragraphs texts={[notice('send.firstSendBefore')]} />,
   })
 
@@ -211,7 +213,7 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
   if (why.title || whyItems.length > 0) {
     entries.push({
       id: 'pourquoi',
-      title: why.title || 'Pourquoi l’eC3.2 ?',
+      title: why.title || t('rules.why.fallbackTitle'),
       body: (
         <div className="space-y-3">
           {whyItems.length > 0 && (
@@ -240,10 +242,10 @@ export function Ec32RulesSection({ content }: { content: Ec32Content }) {
   return (
     <Ec32Section
       id="regles"
-      eyebrow="À garder en tête"
+      eyebrow={t('rules.section.eyebrow')}
       icon={BookMarked}
-      title="Règles importantes"
-      subtitle="Les compléments du simulateur, regroupés par thème. Dépliez une rubrique."
+      title={t('rules.section.title')}
+      subtitle={t('rules.section.subtitle')}
     >
       <Ec32Card className="px-5 py-1 sm:px-6">
         <Accordion type="single" collapsible className="divide-y divide-border">

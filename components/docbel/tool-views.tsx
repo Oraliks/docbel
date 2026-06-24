@@ -17,25 +17,32 @@ interface ToolViewProps extends ViewProps {
   tool: Tool;
 }
 
-const CP_DATA = [
-  { cp: "CP 200", nom: "Employés de commerce", smg: "1.954,99 €" },
-  { cp: "CP 201", nom: "Employés des industries alimentaires", smg: "2.018,45 €" },
-  { cp: "CP 100", nom: "Ouvriers des secteurs complémentaires", smg: "1.806,16 €" },
-  { cp: "CP 111", nom: "Mines et carrières", smg: "1.950,00 €" },
-  { cp: "CP 118", nom: "Industries alimentaires", smg: "1.901,22 €" },
-  { cp: "CP 124", nom: "Construction", smg: "1.933,14 €" },
-  { cp: "CP 130", nom: "Pharmacie", smg: "2.110,00 €" },
-  { cp: "CP 140", nom: "Transport routier", smg: "1.877,00 €" },
-  { cp: "CP 302", nom: "Hôtellerie", smg: "1.852,00 €" },
-  { cp: "CP 318", nom: "Services de soins de santé", smg: "2.050,00 €" },
-  { cp: "CP 319", nom: "Aide sociale et soins de santé (Brussels)", smg: "2.100,00 €" },
-  { cp: "CP 330", nom: "Établissements et services de santé", smg: "1.980,00 €" },
+// CP_DATA garde le code CP et le SMG (numérique/format BE neutre).
+// Le label "nom" est résolu via i18n (clé `cpItem{code}`).
+const CP_DATA: { cp: string; code: string; labelKey: string; smg: string }[] = [
+  { cp: "CP 200", code: "200", labelKey: "cpItem200", smg: "1.954,99 €" },
+  { cp: "CP 201", code: "201", labelKey: "cpItem201", smg: "2.018,45 €" },
+  { cp: "CP 100", code: "100", labelKey: "cpItem100", smg: "1.806,16 €" },
+  { cp: "CP 111", code: "111", labelKey: "cpItem111", smg: "1.950,00 €" },
+  { cp: "CP 118", code: "118", labelKey: "cpItem118", smg: "1.901,22 €" },
+  { cp: "CP 124", code: "124", labelKey: "cpItem124", smg: "1.933,14 €" },
+  { cp: "CP 130", code: "130", labelKey: "cpItem130", smg: "2.110,00 €" },
+  { cp: "CP 140", code: "140", labelKey: "cpItem140", smg: "1.877,00 €" },
+  { cp: "CP 302", code: "302", labelKey: "cpItem302", smg: "1.852,00 €" },
+  { cp: "CP 318", code: "318", labelKey: "cpItem318", smg: "2.050,00 €" },
+  { cp: "CP 319", code: "319", labelKey: "cpItem319", smg: "2.100,00 €" },
+  { cp: "CP 330", code: "330", labelKey: "cpItem330", smg: "1.980,00 €" },
 ];
 
 export function CalcCP({ accent }: ViewProps) {
   const t = useTranslations("public.outils");
   const [search, setSearch] = useState("");
-  const filtered = CP_DATA.filter(
+  // Liste résolue (labels i18n) puis filtrée sur cp + nom traduit.
+  const resolved = CP_DATA.map((c) => ({
+    ...c,
+    nom: t(c.labelKey as Parameters<typeof t>[0]),
+  }));
+  const filtered = resolved.filter(
     (c) => c.cp.toLowerCase().includes(search.toLowerCase()) || c.nom.toLowerCase().includes(search.toLowerCase())
   );
   return (

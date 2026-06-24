@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -125,6 +126,7 @@ interface Props {
  * historique des versions, badges de statut, raccourci clavier « / ».
  */
 export function LookupTableView({ table, locale = resolveLookupLocale(), initialCode }: Props) {
+  const t = useTranslations('public.outils')
   const moduleInfo = getModuleInfo(table.prefix)
   const displayLabel = cleanTableLabel(table.labelFr, table.prefix)
 
@@ -227,11 +229,16 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
     apply(EMPTY_FILTERS)
   }
 
-  // Recherches prédéfinies (colonne de droite).
-  const predefined = [
+  // Recherches prédéfinies (colonne de droite). Label via i18n (`labelKey`).
+  const predefined: {
+    key: string
+    labelKey: string
+    icon: typeof CalendarClock
+    run: () => void
+  }[] = [
     {
       key: 'valid-today',
-      label: 'Valeur valide aujourd’hui',
+      labelKey: 'lkpPredefValidToday',
       icon: CalendarClock,
       run: () => {
         const f = { ...EMPTY_FILTERS, validOn: today() }
@@ -241,7 +248,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
     },
     {
       key: 'no-end',
-      label: 'Valeur sans date de fin',
+      labelKey: 'lkpPredefNoEnd',
       icon: ListChecks,
       run: () => {
         const f = { ...EMPTY_FILTERS, endDate: 'none' as const, includeAll: true }
@@ -251,7 +258,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
     },
     {
       key: 'all',
-      label: 'Toutes les valeurs',
+      labelKey: 'lkpPredefAll',
       icon: Database,
       run: () => {
         const f = { ...EMPTY_FILTERS, includeAll: true }
@@ -261,7 +268,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
     },
     {
       key: 'mod-30',
-      label: 'Modifications · 30 derniers jours',
+      labelKey: 'lkpPredefMod30',
       icon: CalendarClock,
       run: () => {
         const f = { ...EMPTY_FILTERS, modifiedSince: daysAgo(30), includeAll: true }
@@ -271,7 +278,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
     },
     {
       key: 'mod-60',
-      label: 'Modifications · 60 derniers jours',
+      labelKey: 'lkpPredefMod60',
       icon: CalendarClock,
       run: () => {
         const f = { ...EMPTY_FILTERS, modifiedSince: daysAgo(60), includeAll: true }
@@ -281,7 +288,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
     },
     {
       key: 'mod-90',
-      label: 'Modifications · 90 derniers jours',
+      labelKey: 'lkpPredefMod90',
       icon: CalendarClock,
       run: () => {
         const f = { ...EMPTY_FILTERS, modifiedSince: daysAgo(90), includeAll: true }
@@ -320,12 +327,15 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
             </div>
             <h1 className="mt-1 text-2xl font-bold leading-tight truncate">{displayLabel}</h1>
             <p className="text-sm text-muted-foreground">
-              {table.entriesCount.toLocaleString('fr-BE')} entrées · catégorie {table.category.labelFr}
+              {t('lkpEntriesCount', {
+                count: table.entriesCount.toLocaleString('fr-BE'),
+                category: table.category.labelFr,
+              })}
             </p>
             {table.updatedLabel && (
               <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                 <CalendarClock className="size-3.5" />
-                Mise à jour le {table.updatedLabel}
+                {t('lkpUpdatedOn', { date: table.updatedLabel })}
               </p>
             )}
           </div>
@@ -339,7 +349,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
           <CardContent className="p-5">
             <div className="mb-4 flex items-center gap-2 text-sm font-semibold">
               <Filter className="size-4 text-primary" />
-              Filtres de recherche
+              {t('lkpFiltersTitle')}
             </div>
             <form
               onSubmit={(e) => {
@@ -349,22 +359,22 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
               className="space-y-4"
             >
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Code" hint="tapez « / » pour cibler ce champ">
+                <Field label={t('lkpFieldCode')} hint={t('lkpFieldCodeHint')}>
                   <Input
                     ref={codeInputRef}
                     value={draft.code}
                     onChange={(e) => setDraft({ ...draft, code: e.target.value })}
-                    placeholder="Ex. 27, 2A, 27SP…"
+                    placeholder={t('lkpFieldCodePlaceholder')}
                   />
                 </Field>
-                <Field label="Description">
+                <Field label={t('lkpFieldDescription')}>
                   <Input
                     value={draft.desc}
                     onChange={(e) => setDraft({ ...draft, desc: e.target.value })}
-                    placeholder="Mot-clé ou expression"
+                    placeholder={t('lkpFieldDescriptionPlaceholder')}
                   />
                 </Field>
-                <Field label="Valide à la date">
+                <Field label={t('lkpFieldValidOn')}>
                   <Input
                     type="date"
                     value={draft.validOn}
@@ -374,8 +384,8 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
                   />
                 </Field>
                 <Field
-                  label="Modifié depuis"
-                  hint="date d’édition dans Beldoc (≠ date ONEM)"
+                  label={t('lkpFieldModifiedSince')}
+                  hint={t('lkpFieldModifiedSinceHint')}
                 >
                   <Input
                     type="date"
@@ -393,25 +403,25 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
 
               {/* Date de fin — radio segmenté (Non remplie / Remplie / Les deux) */}
               <fieldset>
-                <legend className="mb-1.5 text-sm font-medium">Date de fin</legend>
+                <legend className="mb-1.5 text-sm font-medium">{t('lkpFieldEndDate')}</legend>
                 <div className="flex flex-wrap gap-1.5">
                   <RadioPill
                     active={draft.endDate === 'none'}
                     onClick={() => setDraft({ ...draft, endDate: 'none' })}
                   >
-                    Non remplie
+                    {t('lkpEndDateNone')}
                   </RadioPill>
                   <RadioPill
                     active={draft.endDate === 'filled'}
                     onClick={() => setDraft({ ...draft, endDate: 'filled' })}
                   >
-                    Remplie
+                    {t('lkpEndDateFilled')}
                   </RadioPill>
                   <RadioPill
                     active={draft.endDate === 'all'}
                     onClick={() => setDraft({ ...draft, endDate: 'all' })}
                   >
-                    Les deux
+                    {t('lkpEndDateAll')}
                   </RadioPill>
                 </div>
               </fieldset>
@@ -419,18 +429,18 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <Button type="submit">
                   <Search className="size-4" />
-                  Rechercher
+                  {t('lkpSearchBtn')}
                 </Button>
                 <Button type="button" variant="ghost" onClick={reset}>
                   <RotateCcw className="size-4" />
-                  Réinitialiser
+                  {t('lkpResetBtn')}
                 </Button>
                 <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
                   <Checkbox
                     checked={draft.includeAll}
                     onCheckedChange={(c) => setDraft({ ...draft, includeAll: c === true })}
                   />
-                  <span>Inclure l’historique (entrées expirées)</span>
+                  <span>{t('lkpIncludeHistory')}</span>
                 </label>
               </div>
             </form>
@@ -442,7 +452,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
           <CardContent className="p-5">
             <div className="mb-4 flex items-center gap-2 text-sm font-semibold">
               <ListChecks className="size-4 text-primary" />
-              Recherches prédéfinies
+              {t('lkpPredefinedTitle')}
             </div>
             <ul className="space-y-1.5">
               {predefined.map((p) => (
@@ -453,7 +463,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
                     className="group flex w-full items-center gap-2 rounded-lg border border-transparent px-3 py-2 text-left text-sm transition-colors hover:border-border hover:bg-muted"
                   >
                     <p.icon className="size-4 text-muted-foreground group-hover:text-primary" />
-                    <span className="flex-1">{p.label}</span>
+                    <span className="flex-1">{t(p.labelKey as Parameters<typeof t>[0])}</span>
                     <ChevronRight className="size-3.5 text-muted-foreground/50" />
                   </button>
                 </li>
@@ -468,9 +478,9 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
         <CardContent className="p-0">
           <div className="flex items-center justify-between gap-3 border-b px-5 py-3">
             <span className="text-sm font-semibold">
-              Résultats{' '}
+              {t('lkpResultsTitle')}{' '}
               <span className="text-muted-foreground tabular-nums">
-                ({total.toLocaleString('fr-BE')})
+                {t('lkpResultsCount', { count: total.toLocaleString('fr-BE') })}
               </span>
             </span>
             {loading && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
@@ -480,11 +490,11 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
             <div className="flex flex-col items-center gap-2 py-16 text-center">
               <Search className="size-9 text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">
-                Aucune entrée ne correspond à ces critères.
+                {t('lkpNoMatch')}
               </p>
               <Button variant="ghost" size="sm" onClick={reset}>
                 <RotateCcw className="size-3.5" />
-                Réinitialiser les filtres
+                {t('lkpResetFilters')}
               </Button>
             </div>
           ) : (
@@ -492,12 +502,12 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
               <Table className="table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-9" aria-label="Détails" />
-                    <TableHead className="w-9" aria-label="Favori" />
-                    <TableHead className="w-28">Code</TableHead>
-                    <TableHead className="w-24">Date de début</TableHead>
-                    <TableHead className="w-24">Date de fin</TableHead>
-                    <TableHead className="w-[48%]">Description</TableHead>
+                    <TableHead className="w-9" aria-label={t('lkpColDetails')} />
+                    <TableHead className="w-9" aria-label={t('lkpColFavorite')} />
+                    <TableHead className="w-28">{t('lkpColCode')}</TableHead>
+                    <TableHead className="w-24">{t('lkpColStartDate')}</TableHead>
+                    <TableHead className="w-24">{t('lkpColEndDate')}</TableHead>
+                    <TableHead className="w-[48%]">{t('lkpColDescription')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -522,7 +532,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
           {total > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
-                <span>Afficher</span>
+                <span>{t('lkpPaginationShow')}</span>
                 <Select
                   value={String(pageSize)}
                   onValueChange={(v) => {
@@ -542,7 +552,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
                     ))}
                   </SelectContent>
                 </Select>
-                <span>par page</span>
+                <span>{t('lkpPaginationPerPage')}</span>
               </div>
 
               <div className="flex items-center gap-1">
@@ -553,10 +563,10 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                 >
                   <ChevronLeft className="size-4" />
-                  Précédent
+                  {t('lkpPaginationPrev')}
                 </Button>
                 <span className="px-2 text-xs text-muted-foreground tabular-nums">
-                  Page {page} / {totalPages}
+                  {t('lkpPaginationPosition', { page, total: totalPages })}
                 </span>
                 <Button
                   variant="ghost"
@@ -564,7 +574,7 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 >
-                  Suivant
+                  {t('lkpPaginationNext')}
                   <ChevronRight className="size-4" />
                 </Button>
               </div>
@@ -575,10 +585,10 @@ export function LookupTableView({ table, locale = resolveLookupLocale(), initial
 
       {/* ── Actions bas de page ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="text-xs text-muted-foreground">Source : ONEM</span>
+        <span className="text-xs text-muted-foreground">{t('lkpSourceLabel')}</span>
         <Button variant="ghost" nativeButton={false} render={<Link href="/outils/lookup-onem" />}>
           <ArrowLeft className="size-4" />
-          Retour aux catégories
+          {t('lkpBackToCategories')}
         </Button>
       </div>
     </div>
@@ -658,22 +668,26 @@ function StatusBadge({
   validUntil: string | null
   className?: string
 }) {
+  const t = useTranslations('public.outils')
   const status = entryStatus(validFrom, validUntil)
+  // Le label est traduit via i18n (`labelKey`) ; les classes Tailwind restent
+  // statiques côté style.
   const map = {
-    current: { label: 'en vigueur', cls: 'border-green-300 text-green-800' },
-    expired: { label: 'historique', cls: 'border-orange-300 text-orange-800' },
-    upcoming: { label: 'à venir', cls: 'border-input text-muted-foreground' },
+    current: { labelKey: 'lkpStatusCurrent', cls: 'border-green-300 text-green-800' },
+    expired: { labelKey: 'lkpStatusExpired', cls: 'border-orange-300 text-orange-800' },
+    upcoming: { labelKey: 'lkpStatusUpcoming', cls: 'border-input text-muted-foreground' },
   } as const
-  const { label, cls } = map[status]
+  const { labelKey, cls } = map[status]
   return (
     <Badge variant="outline" className={`text-[10px] ${cls}${className ? ` ${className}` : ''}`}>
-      {label}
+      {t(labelKey as Parameters<typeof t>[0])}
     </Badge>
   )
 }
 
 /** Petit bouton icône pour copier le code dans le presse-papiers (Copy → Check 1.2 s). */
 function CopyCodeButton({ code }: { code: string }) {
+  const t = useTranslations('public.outils')
   const [copied, setCopied] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -703,8 +717,8 @@ function CopyCodeButton({ code }: { code: string }) {
       variant="ghost"
       size="icon-sm"
       onClick={copy}
-      aria-label="Copier le code"
-      title="Copier le code"
+      aria-label={t('lkpAriaCopyCode')}
+      title={t('lkpAriaCopyCode')}
       className="shrink-0 text-muted-foreground/60"
     >
       {copied ? (
@@ -733,11 +747,14 @@ function EntryTableRow({
   locale: LookupLocale
   fav: ReturnType<typeof useLookupFavorites>
 }) {
+  const t = useTranslations('public.outils')
   const metaEntries = row.metadata ? Object.entries(row.metadata) : []
   // Libellé principal (locale) + libellé secondaire (l'autre langue de FR/NL).
   const primaryLabel = pickLabel(locale, row)
   const secondaryLabel = locale === 'nl' ? row.labelFr : row.labelNl
-  const secondaryLangName = locale === 'nl' ? 'Français' : 'Néerlandais'
+  // Nom de la langue secondaire (i18n) : si la locale active est NL alors la
+  // langue secondaire est le français, et inversement.
+  const secondaryLangName = locale === 'nl' ? t('lkpLangFrench') : t('lkpLangDutch')
   const hasSecondary = Boolean(secondaryLabel && secondaryLabel !== primaryLabel)
 
   // Toujours dépliable : on a au minimum la section Historique + les traductions.
@@ -796,8 +813,8 @@ function EntryTableRow({
               e.stopPropagation()
               onToggle()
             }}
-            aria-label={open ? 'Réduire' : 'Afficher le détail'}
-            title={open ? 'Réduire' : 'Afficher le détail'}
+            aria-label={open ? t('lkpAriaCollapse') : t('lkpAriaExpandDetail')}
+            title={open ? t('lkpAriaCollapse') : t('lkpAriaExpandDetail')}
           >
             {open ? <Minus className="size-3" /> : <Plus className="size-3" />}
           </Button>
@@ -808,9 +825,9 @@ function EntryTableRow({
             variant="ghost"
             size="icon-sm"
             onClick={toggleFav}
-            aria-label={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            aria-label={isFav ? t('lkpAriaRemoveFav') : t('lkpAriaAddFav')}
             aria-pressed={isFav}
-            title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            title={isFav ? t('lkpAriaRemoveFav') : t('lkpAriaAddFav')}
           >
             <Star
               className={
@@ -857,19 +874,19 @@ function EntryTableRow({
             <div className="space-y-3 text-xs">
               {(hasSecondary || row.labelDe || row.labelEn) && (
                 <DetailGrid
-                  title="Traductions"
+                  title={t('lkpDetailTranslations')}
                   entries={[
                     ...(hasSecondary && secondaryLabel
                       ? [{ label: secondaryLangName, value: secondaryLabel }]
                       : []),
-                    ...(row.labelDe ? [{ label: 'Allemand', value: row.labelDe }] : []),
-                    ...(row.labelEn ? [{ label: 'Anglais', value: row.labelEn }] : []),
+                    ...(row.labelDe ? [{ label: t('lkpLangGerman'), value: row.labelDe }] : []),
+                    ...(row.labelEn ? [{ label: t('lkpLangEnglish'), value: row.labelEn }] : []),
                   ]}
                 />
               )}
               {metaEntries.length > 0 && (
                 <DetailGrid
-                  title="Informations supplémentaires"
+                  title={t('lkpDetailMetadata')}
                   entries={metaEntries.map(([label, value]) => ({ label, value }))}
                 />
               )}
@@ -896,18 +913,19 @@ function HistorySection({
   versions: HistoryVersion[] | null
   locale: LookupLocale
 }) {
+  const t = useTranslations('public.outils')
   return (
     <div>
       <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Historique
+        {t('lkpHistoryTitle')}
       </div>
       {loading || versions === null ? (
         <span className="inline-flex items-center gap-1.5 text-muted-foreground">
           <Loader2 className="size-3 animate-spin" />
-          Chargement…
+          {t('lkpHistoryLoading')}
         </span>
       ) : versions.length <= 1 ? (
-        <span className="text-muted-foreground">Version unique</span>
+        <span className="text-muted-foreground">{t('lkpHistorySingle')}</span>
       ) : (
         <ol className="space-y-1.5">
           {versions.map((v, i) => (

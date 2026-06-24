@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function LookupOnemSearch({ initialQ, initialCategory }: Props) {
+  const t = useTranslations('public.outils')
   const router = useRouter()
   const [q, setQ] = useState(initialQ)
   // Le filtre "Catégorie" côté UI correspond techniquement à une table (slug).
@@ -62,7 +64,7 @@ export function LookupOnemSearch({ initialQ, initialCategory }: Props) {
         if (isLargeTable) usp.set('limit', '5')
         else if (!hasQuery && table) usp.set('limit', '200')
         const res = await fetch(`/api/lookup/search?${usp.toString()}`)
-        if (!res.ok) throw new Error('Échec recherche')
+        if (!res.ok) throw new Error(t('lsErrSearchFailed'))
         const data = await res.json()
         setResults(data.results ?? [])
         setTotal(data.total ?? 0)
@@ -70,7 +72,7 @@ export function LookupOnemSearch({ initialQ, initialCategory }: Props) {
         setLoading(false)
       }
     },
-    []
+    [t]
   )
 
   // Sync URL (un seul paramètre "cat" = slug table sélectionnée).
@@ -169,24 +171,29 @@ function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
 }
 
 function LoadingState() {
+  const t = useTranslations('public.outils')
   return (
     <div className="flex items-center justify-center py-12 text-muted-foreground">
       <Loader2 className="w-5 h-5 animate-spin mr-2" />
-      Recherche…
+      {t('lsLoadingSearch')}
     </div>
   )
 }
 
 function EmptyState({ q, largeTableLabel }: { q: string; largeTableLabel?: string }) {
+  const t = useTranslations('public.outils')
   if (q && q.length >= 2) {
     return (
       <Card>
         <CardContent className="py-12 text-center text-sm text-muted-foreground">
           <p>
-            Aucun résultat pertinent pour <code className="font-mono">{q}</code>.
+            {t.rich('lsEmptyNoMatchQ', {
+              q,
+              code: (chunks) => <code className="font-mono">{chunks}</code>,
+            })}
           </p>
           <p className="text-xs mt-2">
-            Essaie un autre terme ou vérifie l&apos;orthographe du code.
+            {t('lsEmptyNoMatchHint')}
           </p>
         </CardContent>
       </Card>
@@ -200,14 +207,15 @@ function EmptyState({ q, largeTableLabel }: { q: string; largeTableLabel?: strin
         <CardContent className="py-12 text-center space-y-2">
           <Search className="w-10 h-10 mx-auto text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">
-            <strong>{largeTableLabel}</strong> contient trop d&apos;entrées pour tout
-            afficher.
+            {t.rich('lsEmptyLargeTable', {
+              label: largeTableLabel,
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
           <p className="text-xs text-muted-foreground">
-            Tape un code postal (ex:{' '}
-            <code className="bg-muted px-1 rounded">1000</code>) ou un nom de rue (ex:{' '}
-            <code className="bg-muted px-1 rounded">avenue Louise</code>) — les 5 résultats
-            les plus pertinents s&apos;afficheront.
+            {t.rich('lsEmptyLargeTableHint', {
+              code: (chunks) => <code className="bg-muted px-1 rounded">{chunks}</code>,
+            })}
           </p>
         </CardContent>
       </Card>
@@ -218,14 +226,12 @@ function EmptyState({ q, largeTableLabel }: { q: string; largeTableLabel?: strin
       <CardContent className="py-12 text-center space-y-2">
         <Search className="w-10 h-10 mx-auto text-muted-foreground/40" />
         <p className="text-sm text-muted-foreground">
-          Tape au moins 2 caractères pour rechercher dans les 11 000+ codes ONEM.
+          {t('lsEmptyMinChars')}
         </p>
         <p className="text-xs text-muted-foreground">
-          Exemples : <code className="bg-muted px-1 rounded">44</code> ·{' '}
-          <code className="bg-muted px-1 rounded">cohabitant</code> ·{' '}
-          <code className="bg-muted px-1 rounded">brux</code> ·{' '}
-          <code className="bg-muted px-1 rounded">01/43AA1</code> ·{' '}
-          <code className="bg-muted px-1 rounded">S04</code>
+          {t.rich('lsEmptyExamples', {
+            code: (chunks) => <code className="bg-muted px-1 rounded">{chunks}</code>,
+          })}
         </p>
       </CardContent>
     </Card>
@@ -247,12 +253,12 @@ function ResultsHeader({
   onExpandAll,
   onCollapseAll,
 }: ResultsHeaderProps) {
+  const t = useTranslations('public.outils')
   return (
     <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-muted-foreground px-1">
       <span className="inline-flex items-center gap-2">
         <ListFilter className="w-3.5 h-3.5" />
-        {total} résultat{total > 1 ? 's' : ''} pertinent{total > 1 ? 's' : ''} dans {sectionCount}{' '}
-        table{sectionCount > 1 ? 's' : ''}
+        {t('lsResultsSummary', { total, sections: sectionCount })}
       </span>
       {canBulkToggle && (
         <div className="flex items-center gap-2">
@@ -263,7 +269,7 @@ function ResultsHeader({
             onClick={onExpandAll}
             className="h-7 px-2 text-xs"
           >
-            Tout déplier
+            {t('lsExpandAll')}
           </Button>
           <Button
             variant="ghost"
@@ -272,7 +278,7 @@ function ResultsHeader({
             onClick={onCollapseAll}
             className="h-7 px-2 text-xs"
           >
-            Tout replier
+            {t('lsCollapseAll')}
           </Button>
         </div>
       )}
@@ -281,6 +287,7 @@ function ResultsHeader({
 }
 
 function FooterLink() {
+  const t = useTranslations('public.outils')
   return (
     <div className="px-1 py-2 text-xs text-muted-foreground flex items-center justify-end">
       <a
@@ -289,7 +296,7 @@ function FooterLink() {
         rel="noreferrer"
         className="text-xs underline inline-flex items-center gap-1"
       >
-        Référentiel ONEM officiel <ExternalLink className="w-3 h-3" />
+        {t('lsFooterLinkOfficial')} <ExternalLink className="w-3 h-3" />
       </a>
     </div>
   )

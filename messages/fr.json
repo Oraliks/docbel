@@ -5656,7 +5656,168 @@
       "loaderMsgCpas": "On localise ton CPAS…",
       "loaderMsgOnem": "On cherche l'ONEM compétent…",
       "loaderMsgOp": "On compare les 4 organismes de paiement…",
-      "loaderMsgCommune": "On trouve ta maison communale…"
+      "loaderMsgCommune": "On trouve ta maison communale…",
+      "cpItem200": "Employés de commerce",
+      "cpItem201": "Employés des industries alimentaires",
+      "cpItem100": "Ouvriers des secteurs complémentaires",
+      "cpItem111": "Mines et carrières",
+      "cpItem118": "Industries alimentaires",
+      "cpItem124": "Construction",
+      "cpItem130": "Pharmacie",
+      "cpItem140": "Transport routier",
+      "cpItem302": "Hôtellerie",
+      "cpItem318": "Services de soins de santé",
+      "cpItem319": "Aide sociale et soins de santé (Bruxelles)",
+      "cpItem330": "Établissements et services de santé",
+      "tutCarteStep1Title": "Préparez vos documents",
+      "tutCarteStep1Body": "Rassemblez votre carte d'identité, une preuve de domicile récente et votre numéro de registre national avant de commencer.",
+      "tutCarteStep2Title": "Connectez-vous avec itsme ou eID",
+      "tutCarteStep2Body": "Identifiez-vous en toute sécurité via l'application itsme ou votre lecteur de carte eID.",
+      "tutCarteStep3Title": "Remplissez le formulaire en ligne",
+      "tutCarteStep3Body": "Indiquez les informations demandées : motif de la demande, adresse de livraison, choix du paiement.",
+      "tutCarteStep4Title": "Suivez votre demande",
+      "tutCarteStep4Body": "Vous recevez un accusé de réception et un lien pour suivre l'avancement. La carte est généralement disponible sous 2 à 3 semaines.",
+      "tutEboxStep1Title": "Activez votre eBox",
+      "tutEboxStep1Body": "Connectez-vous une première fois sur mon.belgique.be avec itsme pour activer votre boîte sécurisée.",
+      "tutEboxStep2Title": "Choisissez les services connectés",
+      "tutEboxStep2Body": "Cochez les administrations qui vous enverront leurs documents officiels par voie numérique (ONEM, mutuelle, SPF Finances…).",
+      "tutEboxStep3Title": "Consultez vos messages",
+      "tutEboxStep3Body": "Chaque nouveau document arrive directement dans votre eBox. Une notification est envoyée par e-mail à chaque réception.",
+      "tutMyonemStep1Title": "Créez votre compte MyONEM",
+      "tutMyonemStep1Body": "Rendez-vous sur le portail de l'ONEM et lancez la création de compte via itsme ou eID.",
+      "tutMyonemStep2Title": "Renseignez votre situation",
+      "tutMyonemStep2Body": "Complétez votre profil : adresse, composition de ménage, organisme de paiement (CAPAC ou syndicat).",
+      "tutMyonemStep3Title": "Téléchargez vos formulaires",
+      "tutMyonemStep3Body": "Depuis votre tableau de bord, accédez à vos formulaires (C4, C1, C3.2…) déjà partiellement pré-remplis.",
+      "tutMyonemStep4Title": "Suivez vos paiements",
+      "tutMyonemStep4Body": "Consultez le détail de chaque paiement, les retenues éventuelles et l'historique de vos allocations.",
+      "infoAleIntro": "Une <strong>Agence Locale pour l'Emploi (ALE)</strong> permet aux chômeurs de longue durée et aux bénéficiaires du RIS d'exercer des activités utiles à la collectivité, en complément de leurs allocations.",
+      "infoAleItem1Title": "Qui peut s'inscrire ?",
+      "infoAleItem1Body": "Les chômeurs complets indemnisés depuis au moins 2 ans (1 an si vous avez plus de 45 ans) et les bénéficiaires du RIS depuis 6 mois minimum.",
+      "infoAleItem2Title": "Quelles activités ?",
+      "infoAleItem2Body": "Aide à domicile, jardinage, petits travaux d'entretien, accompagnement de personnes, soutien scolaire — toujours en complément du circuit économique normal.",
+      "infoAleItem3Title": "Combien ça paie ?",
+      "infoAleItem3Body": "Vous conservez vos allocations et touchez en plus environ 4,10 € net par chèque ALE (1 heure de travail). Maximum 45 heures/mois, exonération fiscale partielle.",
+      "infoAleItem4Title": "Comment s'inscrire ?",
+      "infoAleItem4Body": "Contactez l'ALE de votre commune. Vous y signez un contrat ALE et obtenez votre carnet de chèques. L'inscription est gratuite.",
+      "infoRisIntro": "Le <strong>Revenu d'Intégration Sociale (RIS)</strong> est une aide financière du CPAS pour les personnes qui n'ont pas de revenus suffisants et qui ne peuvent y prétendre par un autre canal.",
+      "infoRisItem1Title": "Qui peut en bénéficier ?",
+      "infoRisItem1Body": "Toute personne majeure, résidant légalement en Belgique, sans ressources suffisantes, disposée à travailler (sauf raison de santé ou d'équité).",
+      "infoRisItem2Title": "Quels sont les montants ?",
+      "infoRisItem2Body": "Cohabitant : ≈ 911 €/mois. Isolé : ≈ 1 366 €/mois. Personne avec charge de famille : ≈ 1 847 €/mois. Indexés régulièrement.",
+      "infoRisItem3Title": "Comment introduire la demande ?",
+      "infoRisItem3Body": "Auprès du CPAS de votre commune de résidence. Un assistant social analysera votre situation et procédera à une enquête sociale dans les 30 jours.",
+      "infoRisItem4Title": "Quelles obligations ?",
+      "infoRisItem4Body": "Disposition au travail, projet individualisé d'intégration sociale (PIIS), déclaration de toute ressource. Le RIS peut être complété par d'autres aides (énergie, logement, médicale).",
+      "linkActirisDesc": "Actiris est le service public bruxellois de l'emploi. Il accompagne les demandeurs d'emploi en Région de Bruxelles-Capitale dans leur recherche, leur formation et leur (ré)insertion professionnelle.",
+      "linkVdabDesc": "Le VDAB est le service public flamand de l'emploi. Il propose des formations, un accompagnement individuel et une plateforme d'offres d'emploi pour les habitants de la Région flamande.",
+      "linkForemDesc": "Le Forem est le service public wallon de l'emploi et de la formation. Il accompagne les demandeurs d'emploi wallons et propose un large catalogue de formations qualifiantes.",
+      "linkAdgDesc": "L'ADG (Arbeitsamt der DG) est le service public de l'emploi de la Communauté germanophone. Il accompagne les demandeurs d'emploi des cantons de l'Est.",
+      "brTitle": "Signaler une erreur",
+      "brDescriptionPrefix": "votre signalement aide à maintenir des coordonnées exactes pour tous.",
+      "brCategoryLabel": "Type d'erreur",
+      "brCatHours": "Horaires faux ou obsolètes",
+      "brCatAddress": "Adresse incorrecte",
+      "brCatPhone": "Numéro de téléphone faux",
+      "brCatClosed": "Bureau fermé / déménagé",
+      "brCatOther": "Autre",
+      "brMessageLabel": "Description *",
+      "brMessagePlaceholder": "Ex : les horaires affichés sont 9h-12h mais le bureau ouvre à 8h.",
+      "brMessageCounter": "{count}/{max}",
+      "brEmailLabel": "Votre email (optionnel)",
+      "brEmailPlaceholder": "Pour qu'on puisse revenir vers vous si besoin",
+      "brSubmittedConfirm": "Signalement envoyé. Notre équipe va vérifier.",
+      "brBtnCancel": "Annuler",
+      "brBtnSend": "Envoyer",
+      "brBtnClose": "Fermer",
+      "brErrTooShort": "Décrivez l'erreur en au moins 5 caractères",
+      "brErrSubmit": "Échec de l'envoi",
+      "brErrNetwork": "Erreur réseau",
+      "brSuccessToast": "Merci, signalement enregistré",
+      "lkpEntriesCount": "{count} entrées · catégorie {category}",
+      "lkpUpdatedOn": "Mise à jour le {date}",
+      "lkpFiltersTitle": "Filtres de recherche",
+      "lkpFieldCode": "Code",
+      "lkpFieldCodeHint": "tapez « / » pour cibler ce champ",
+      "lkpFieldCodePlaceholder": "Ex. 27, 2A, 27SP…",
+      "lkpFieldDescription": "Description",
+      "lkpFieldDescriptionPlaceholder": "Mot-clé ou expression",
+      "lkpFieldValidOn": "Valide à la date",
+      "lkpFieldModifiedSince": "Modifié depuis",
+      "lkpFieldModifiedSinceHint": "date d'édition dans Beldoc (≠ date ONEM)",
+      "lkpFieldEndDate": "Date de fin",
+      "lkpEndDateNone": "Non remplie",
+      "lkpEndDateFilled": "Remplie",
+      "lkpEndDateAll": "Les deux",
+      "lkpSearchBtn": "Rechercher",
+      "lkpResetBtn": "Réinitialiser",
+      "lkpIncludeHistory": "Inclure l'historique (entrées expirées)",
+      "lkpPredefinedTitle": "Recherches prédéfinies",
+      "lkpPredefValidToday": "Valeur valide aujourd'hui",
+      "lkpPredefNoEnd": "Valeur sans date de fin",
+      "lkpPredefAll": "Toutes les valeurs",
+      "lkpPredefMod30": "Modifications · 30 derniers jours",
+      "lkpPredefMod60": "Modifications · 60 derniers jours",
+      "lkpPredefMod90": "Modifications · 90 derniers jours",
+      "lkpResultsTitle": "Résultats",
+      "lkpResultsCount": "({count})",
+      "lkpNoMatch": "Aucune entrée ne correspond à ces critères.",
+      "lkpResetFilters": "Réinitialiser les filtres",
+      "lkpColDetails": "Détails",
+      "lkpColFavorite": "Favori",
+      "lkpColCode": "Code",
+      "lkpColStartDate": "Date de début",
+      "lkpColEndDate": "Date de fin",
+      "lkpColDescription": "Description",
+      "lkpAriaCollapse": "Réduire",
+      "lkpAriaExpandDetail": "Afficher le détail",
+      "lkpAriaAddFav": "Ajouter aux favoris",
+      "lkpAriaRemoveFav": "Retirer des favoris",
+      "lkpAriaCopyCode": "Copier le code",
+      "lkpPaginationShow": "Afficher",
+      "lkpPaginationPerPage": "par page",
+      "lkpPaginationPrev": "Précédent",
+      "lkpPaginationNext": "Suivant",
+      "lkpPaginationPosition": "Page {page} / {total}",
+      "lkpSourceLabel": "Source : ONEM",
+      "lkpBackToCategories": "Retour aux catégories",
+      "lkpStatusCurrent": "en vigueur",
+      "lkpStatusExpired": "historique",
+      "lkpStatusUpcoming": "à venir",
+      "lkpDetailTranslations": "Traductions",
+      "lkpDetailMetadata": "Informations supplémentaires",
+      "lkpHistoryTitle": "Historique",
+      "lkpHistoryLoading": "Chargement…",
+      "lkpHistorySingle": "Version unique",
+      "lkpLangFrench": "Français",
+      "lkpLangDutch": "Néerlandais",
+      "lkpLangGerman": "Allemand",
+      "lkpLangEnglish": "Anglais",
+      "lkpResOnlyThisModule": "Ne voir que ce module",
+      "lkpResResultsLabel": "{count, plural, one {# résultat} other {# résultats}}",
+      "lkpResColDetailsAria": "Détails",
+      "lkpResColCode": "Code",
+      "lkpResColDescription": "Description",
+      "lkpResColValidity": "Validité",
+      "lkpResColNote": "Note",
+      "lkpResColSourceOnem": "Source ONEM",
+      "lkpResAriaCollapse": "Réduire",
+      "lkpResAriaMoreInfo": "{count} info(s) supplémentaire(s)",
+      "lkpResHistorical": "historique",
+      "lkpResUntilDate": "jusqu'au {date}",
+      "lkpResInForce": "en vigueur",
+      "lsLoadingSearch": "Recherche…",
+      "lsErrSearchFailed": "Échec recherche",
+      "lsEmptyNoMatchQ": "Aucun résultat pertinent pour <code>{q}</code>.",
+      "lsEmptyNoMatchHint": "Essaie un autre terme ou vérifie l'orthographe du code.",
+      "lsEmptyLargeTable": "<strong>{label}</strong> contient trop d'entrées pour tout afficher.",
+      "lsEmptyLargeTableHint": "Tape un code postal (ex : <code>1000</code>) ou un nom de rue (ex : <code>avenue Louise</code>) — les 5 résultats les plus pertinents s'afficheront.",
+      "lsEmptyMinChars": "Tape au moins 2 caractères pour rechercher dans les 11 000+ codes ONEM.",
+      "lsEmptyExamples": "Exemples : <code>44</code> · <code>cohabitant</code> · <code>brux</code> · <code>01/43AA1</code> · <code>S04</code>",
+      "lsResultsSummary": "{total, plural, one {# résultat pertinent} other {# résultats pertinents}} dans {sections, plural, one {# table} other {# tables}}",
+      "lsExpandAll": "Tout déplier",
+      "lsCollapseAll": "Tout replier",
+      "lsFooterLinkOfficial": "Référentiel ONEM officiel"
     },
     "shared": {
       "verified": "vérifié",
@@ -5959,10 +6120,10 @@
       "bookingToastSlotAvailableAgain": "Bonne nouvelle : ce créneau est de nouveau disponible !",
       "bookingToastWaitlistError": "Impossible de vous inscrire sur la liste d'attente.",
       "blockedTitle": "Accès au rendez-vous",
-      "blockedDesc": "Pour gérer votre rendez-vous, confirmez votre adresse e-mail.",
+      "blockedDesc": "Un rendez-vous récent existe à votre nom (le {date}). Pour en reprendre un autre, vous devez d'abord déplacer ou annuler celui-ci.",
       "blockedEmailPrompt": "Votre adresse e-mail",
       "blockedManage": "Gérer mon rendez-vous",
-      "blockedOffice": "Antenne",
+      "blockedOffice": "Vous pouvez aussi vous présenter directement au bureau : {address}.",
       "blockedSend": "Envoyer le lien",
       "blockedSending": "Envoi…",
       "blockedSent": "Lien envoyé ! Vérifiez votre boîte mail.",
@@ -5995,7 +6156,153 @@
       "reformeSource1": "ONEM — Réforme de la réglementation du chômage",
       "reformeSource2": "ONEM — Nouvelle réglementation chômage en vigueur depuis le 1er mars 2026",
       "reformeSource3": "ONEM — Avez-vous droit aux allocations après une occupation ?",
-      "reformeSource4": "ONEM — Allocations d'insertion après des études"
+      "reformeSource4": "ONEM — Allocations d'insertion après des études",
+      "bookingSelectChoose": "Choisir…",
+      "bookingEmailPlaceholder": "votre@email.be",
+      "bookingResendNeedEmail": "Indiquez votre adresse e-mail.",
+      "bookingShowcaseStepBadge": "Étape {n}",
+      "bookingShowcaseChipAutoApproval": "Approbation automatique",
+      "bookingShowcaseChipReminder": "Rappel la veille",
+      "bookingShowcaseChipIcs": "Export .ics",
+      "bookingShowcaseChipMultiOffice": "Multi-guichets",
+      "bookingShowcaseCta": "Voir le parcours public",
+      "bookingShowcaseCtaCaption": "Exactement le parcours que vos affiliés utiliseront.",
+      "ctParcoursEyebrow": "Obligations employeur",
+      "ctParcoursTitle": "Chômage temporaire : <em>soyez en règle</em> en 4 étapes",
+      "ctParcoursIntro": "De la notification à l'ONEM au paiement des allocations : qui fait quoi, dans quel ordre — et le piège de délai à éviter.",
+      "ctParcoursStep1Title": "Motif & notification ONEM",
+      "ctParcoursStep1Desc": "Identifiez le motif de suspension (économique, intempéries, force majeure…). Selon le motif, une notification électronique préalable à l'ONEM est exigée avant le début de la période.",
+      "ctParcoursStep2Title": "Information du travailleur",
+      "ctParcoursStep2Desc": "Prévenez les travailleurs concernés et communiquez à l'ONEM le premier jour effectif de chômage — chaque mois lorsque le motif l'impose.",
+      "ctParcoursStep3Title": "Le travailleur complète son C3.2",
+      "ctParcoursStep3Desc": "De son côté, votre travailleur introduit sa demande auprès de son organisme de paiement : le C3.2 est le pivot de son dossier.",
+      "ctParcoursStep3WarningTitle": "Délai critique — carte EC32",
+      "ctParcoursStep3WarningMessage": "Installez l'application EC32 dès le démarrage du dossier — sinon l'indemnisation rétroactive est limitée à 1 mois.",
+      "ctParcoursStep4Title": "Paiement via l'organisme",
+      "ctParcoursStep4Desc": "L'organisme de paiement (syndicat ou CAPAC) verse les allocations au travailleur, sur la base de votre déclaration électronique (DRS / WECH).",
+      "ctParcoursCtaPrimary": "Préparer les documents",
+      "ctParcoursCtaSecondary": "Voir le dossier complet",
+      "echeancierBadge": "Échéancier employeur",
+      "echeancierTitle": "Vos obligations, <em>au bon moment</em>",
+      "echeancierIntro": "Le chômage temporaire et la fin de contrat suivent un rythme précis. Voici les rendez-vous récurrents à ne pas manquer — et des rappels prêts à glisser dans votre agenda.",
+      "echeancierCtaExport": "Ajouter les rappels à mon agenda (.ics)",
+      "echeancierCtaDone": "Rappels téléchargés !",
+      "echeancierCtaNote": "3 rappels mensuels récurrents, compatibles Outlook, Google Agenda et Apple Calendar.",
+      "echeancierObligation1Moment": "Avant la suspension",
+      "echeancierObligation1Title": "Notifier le chômage temporaire à l'ONEM",
+      "echeancierObligation1Desc": "Pour le chômage économique et la suspension employés, la période prévue se notifie à l'ONEM avant le début de la suspension. Les intempéries, elles, ne demandent pas de notification préalable.",
+      "echeancierObligation2Moment": "Dès le 1ᵉʳ jour",
+      "echeancierObligation2Title": "Remettre la carte de contrôle au travailleur",
+      "echeancierObligation2Desc": "Chaque travailleur concerné reçoit sa carte de contrôle (C3.2A) dès le premier jour de chômage effectif du mois — elle conditionne le paiement de ses allocations.",
+      "echeancierObligation3Moment": "Chaque mois concerné",
+      "echeancierObligation3Title": "Communiquer le 1ᵉʳ jour effectif de chômage",
+      "echeancierObligation3Desc": "Économique, intempéries, accident technique ou suspension employés : le premier jour effectif de chômage du mois se communique à l'ONEM, en règle générale le jour même ou un jour ouvrable autour (variantes selon le motif).",
+      "echeancierObligation4Moment": "Chaque fin de mois",
+      "echeancierObligation4Title": "Déclarer les heures de chômage temporaire (DRS)",
+      "echeancierObligation4Desc": "La déclaration électronique DRS (flux WECH) part via le portail de la sécurité sociale en fin de mois : c'est elle qui permet le calcul et le paiement des allocations de vos travailleurs.",
+      "echeancierObligation5Moment": "À chaque fin de contrat",
+      "echeancierObligation5Title": "Remettre le C4 au travailleur",
+      "echeancierObligation5Desc": "Le certificat de chômage C4 atteste les périodes de travail et le motif de la fin de contrat. Le travailleur en a besoin rapidement pour faire valoir ses droits auprès de son organisme de paiement.",
+      "echeancierObligation6Moment": "En continu",
+      "echeancierObligation6Title": "Conserver déclarations et justificatifs",
+      "echeancierObligation6Desc": "Notifications, communications, déclarations et documents remis : conservez-en la trace. En cas de contrôle ou de litige, ces justificatifs font foi.",
+      "echeancierReminder1Summary": "Chômage temporaire : communiquer le 1er jour effectif à l'ONEM",
+      "echeancierReminder1Description": "Si du chômage temporaire est prévu ce mois-ci : communiquez le premier jour effectif à l'ONEM et vérifiez que chaque travailleur a reçu sa carte de contrôle (C3.2A). Rappel indicatif créé par Docbel — à adapter à votre situation.",
+      "echeancierReminder2Summary": "Préparer la déclaration des heures de chômage temporaire (DRS)",
+      "echeancierReminder2Description": "Préparez la déclaration électronique de fin de mois (DRS / WECH) via le portail de la sécurité sociale : elle sert au paiement des allocations de vos travailleurs. Rappel indicatif créé par Docbel.",
+      "echeancierReminder3Summary": "Clôture sociale du mois : déclarations transmises, justificatifs archivés",
+      "echeancierReminder3Description": "Vérifiez que les déclarations du mois sont bien parties et archivez notifications, communications et justificatifs. Rappel indicatif créé par Docbel.",
+      "echeancierFootnote": "Aperçu indicatif : les modalités exactes (délais, canaux, formulaires) dépendent du motif de chômage temporaire et de votre situation. En cas de doute, référez-vous aux instructions officielles de l'ONEM ou à votre secrétariat social.",
+      "pricingBadge": "Tarifs",
+      "pricingTitle": "Un tarif <em>simple</em>, TVA comprise",
+      "pricingIntro": "Pas de surprise : deux formules, des prix affichés hors TVA ou TVA comprise, et une facture conforme pour votre comptabilité.",
+      "pricingToggleAriaLabel": "Afficher les prix hors TVA ou TVA comprise",
+      "pricingModeHtva": "HTVA",
+      "pricingModeTvac": "TVAC",
+      "pricingTvaNote": "TVA belge de 21 %.",
+      "pricingRecommended": "Recommandé",
+      "pricingPlanFreeName": "Gratuit",
+      "pricingPlanFreeTagline": "Pour s'informer et garder un œil sur ses obligations.",
+      "pricingPlanFreeFeature1": "Outils d'information et actualités sociales",
+      "pricingPlanFreeFeature2": "Lecture des dossiers et démarches (chômage temporaire, fin de contrat…)",
+      "pricingPlanFreeFeature3": "Recherche de commission paritaire (CP)",
+      "pricingPlanFreeFeature4": "Accès immédiat, sans engagement",
+      "pricingPlanProName": "Pro",
+      "pricingPlanProTagline": "Pour gérer vos RH au quotidien, en équipe.",
+      "pricingPlanProFeature1": "Tout le plan Gratuit",
+      "pricingPlanProFeature2": "Outils de gestion : calculs, simulations et échéanciers",
+      "pricingPlanProFeature3": "Multi-utilisateurs : invitez votre équipe",
+      "pricingPlanProFeature4": "Support prioritaire",
+      "pricingPriceSuffix": "€ /mois",
+      "pricingSrFree": "0 euro par mois",
+      "pricingSrTvac": "{value} euros par mois TVA comprise",
+      "pricingSrHtva": "{value} euros par mois hors TVA",
+      "pricingLaunchNotice": "Période de lancement : l'espace Pro est actuellement offert — aucun paiement ne vous sera demandé aujourd'hui.",
+      "pricingTvaBadge": "TVA récupérable — facture conforme",
+      "pricingCtaPro": "Créer mon compte employeur",
+      "pricingNoCommitment": "Sans engagement.",
+      "pricingCtaFree": "Commencer gratuitement",
+      "pricingNoCardRequired": "Aucune carte de paiement demandée.",
+      "pricingFootnote": "Prix en euros par mois. Les montants TVAC incluent la TVA belge de 21 % — récupérable pour les assujettis.",
+      "espacePreviewEyebrow": "Visite guidée",
+      "espacePreviewTitle": "Visitez l'<em>espace partenaire</em>",
+      "espacePreviewIntro": "Un aperçu sans créer de compte : voici à quoi ressemblent les outils que votre équipe utilisera au quotidien.",
+      "espacePreviewIncluded": "Inclus dans l'espace",
+      "espacePreviewIncludedTitle": "Tout ce qu'il faut, au même endroit",
+      "espacePreviewCtaPrimary": "Créer mon espace",
+      "espacePreviewCtaSecondary": "Demander une démo guidée",
+      "espacePreviewTablistLabel": "Aperçus de l'espace partenaire",
+      "espacePreviewMockBadge": "Aperçu — données fictives",
+      "espacePreviewMockFootnote": "Maquette d'illustration : les rendez-vous, montants et codes affichés sont fictifs.",
+      "espacePreviewTabAgendaLabel": "Agenda rendez-vous",
+      "espacePreviewTabAgendaPanelTitle": "Agenda d'équipe — semaine type",
+      "espacePreviewTabAgrLabel": "Calcul AGR",
+      "espacePreviewTabAgrPanelTitle": "Calcul AGR — résultat",
+      "espacePreviewTabLookupLabel": "Lookup ONEM",
+      "espacePreviewTabLookupPanelTitle": "Lookup ONEM — fiche code",
+      "espacePreviewStatusHonore": "Honoré",
+      "espacePreviewStatusConfirme": "Confirmé",
+      "espacePreviewStatusAttente": "En attente de validation",
+      "espacePreviewDayMon": "Lun",
+      "espacePreviewDayTue": "Mar",
+      "espacePreviewDayWed": "Mer",
+      "espacePreviewDayThu": "Jeu",
+      "espacePreviewDayFri": "Ven",
+      "espacePreviewMotifInscription": "Inscription",
+      "espacePreviewMotifControle": "Contrôle dossier",
+      "espacePreviewMotifCalculAgr": "Calcul AGR",
+      "espacePreviewMotifChomageTemporaire": "Chômage temporaire",
+      "espacePreviewMotifDispense": "Dispense formation",
+      "espacePreviewAgendaCurrentWeek": "Semaine en cours",
+      "espacePreviewAgendaFilterAll": "Tous les guichets",
+      "espacePreviewAgendaFilterStatuses": "Tous les statuts",
+      "espacePreviewAgendaFree": "Libre",
+      "espacePreviewAgrRowBrut": "AGR brut — Barème 57/-",
+      "espacePreviewAgrRowCt": "Chômage temporaire",
+      "espacePreviewAgrRowTotal": "Total 57 (AGR + CT + CC)",
+      "espacePreviewAgrWechImported": "WECH 506 importé",
+      "espacePreviewAgrSalaireRef": "Salaire de référence : {value}",
+      "espacePreviewAgrFootnote": "Importez le WECH 506 de votre affilié : le calcul se fait automatiquement, jusqu'à 4 occupations simultanées.",
+      "espacePreviewLookupSearchQuery": "mode de paiement",
+      "espacePreviewLookupCodeTitle": "Virement sur compte bancaire",
+      "espacePreviewLookupCodeMeta": "S01 — Mode de paiement · Signalétique",
+      "espacePreviewLookupDutchLabel": "Néerlandais",
+      "espacePreviewLookupDutchValue": "Overschrijving op bankrekening",
+      "espacePreviewLookupValidityLabel": "Validité",
+      "espacePreviewLookupValidityValue": "depuis le 01.01.2020 · en cours",
+      "espacePreviewLookupSourceLabel": "Source",
+      "espacePreviewLookupSourceValue": "Table S01 (signalétique ONEM)",
+      "espacePreviewLookupFootnote": "Recherche transverse dans les référentiels officiels de l'ONEM : signalétique, admissibilité, dispenses, bureaux…",
+      "espacePreviewFeature1Title": "Vue d'ensemble",
+      "espacePreviewFeature1Desc": "Le tableau de bord de votre organisation, en un coup d'œil.",
+      "espacePreviewFeature2Title": "Agenda & demandes",
+      "espacePreviewFeature2Desc": "Les rendez-vous de vos guichets, semaine par semaine.",
+      "espacePreviewFeature3Title": "Lookup ONEM",
+      "espacePreviewFeature3Desc": "Référentiels et signalétiques officiels, consultables en quelques secondes.",
+      "espacePreviewFeature4Title": "Calcul AGR",
+      "espacePreviewFeature4Desc": "L'allocation de garantie de revenus calculée à partir du WECH 506.",
+      "espacePreviewFeature5Title": "Membres & domaines autorisés",
+      "espacePreviewFeature5Desc": "Invitez vos collègues et gérez les accès de votre organisation."
     },
     "ec32": {
       "calendar": {
@@ -6050,6 +6357,207 @@
           "usualDay": "Travail un jour habituel"
         },
         "workOwnEmployer": "Travail chez votre employeur habituel"
+      },
+      "oauthConsent": {
+        "defaultUserName": "Citoyen·ne",
+        "eyebrow": "Consentement d'accès",
+        "greeting": "Bonjour {userName},",
+        "intro": "L'application <app>eC3.2 — Carte de contrôle chômage temporaire</app> requiert les accès suivants :",
+        "scopeBadgeAriaLabel": "Accès demandé",
+        "scopes": {
+          "login": {
+            "title": "Accès aux données de login",
+            "description": "Les données d'identification pour se connecter (openid)"
+          },
+          "profile": {
+            "title": "Accès aux données de profil",
+            "description": "Accès aux données de profil"
+          },
+          "public": {
+            "title": "Public",
+            "description": "Consultation des données publiques de l'employeur."
+          },
+          "citizenMandates": {
+            "title": "Mandats Citoyen",
+            "description": "Mandats citoyen"
+          },
+          "consultCard": {
+            "title": "Consulter ses cartes de chômage temporaire",
+            "description": "Consultation des données du citoyen relatives au chômage temporaire"
+          },
+          "modifyCard": {
+            "title": "Modifier une carte de chômage temporaire",
+            "description": "Modification des données d'une carte de contrôle chômage temporaire"
+          },
+          "submitCard": {
+            "title": "Soumettre une carte de chômage temporaire",
+            "description": "Soumission d'une carte de contrôle chômage temporaire"
+          }
+        },
+        "validity": "Cet accès est valable pour une durée de <duration>23 mois</duration>. À l'expiration, l'autorisation vous sera redemandée (renouvellement).",
+        "cancel": "Annuler",
+        "confirm": "Confirmer",
+        "footer": "Simulation pédagogique — aucune donnée n'est réellement transmise."
+      },
+      "accessDashboard": {
+        "eyebrow": "Mandats",
+        "title": "Gestion des accès",
+        "subtitle": "Donnez accès à votre Carte de chômage temporaire à une personne de confiance.",
+        "newRequest": "Nouvelle demande",
+        "tablistAriaLabel": "Catégories d'accès",
+        "tabs": {
+          "requested": "Accès demandés",
+          "granted": "Accès accordés",
+          "received": "Accès reçus"
+        },
+        "status": {
+          "active": "Actif",
+          "pending": "En attente",
+          "expired": "Expiré"
+        },
+        "dateLabel": {
+          "requested": "Demandé jusqu'au {date}",
+          "validUntil": "Valable jusqu'au {date}"
+        },
+        "actions": {
+          "revoke": "Révoquer",
+          "cancelRequest": "Annuler la demande"
+        },
+        "empty": {
+          "granted": {
+            "title": "Vous n'avez accordé aucun accès pour le moment.",
+            "body": "Aucun accès accordé."
+          },
+          "requested": {
+            "title": "Vous retrouverez ici toutes vos demandes d'accès en attente de validation.",
+            "body": "Aucune demande en attente de validation."
+          },
+          "received": {
+            "title": "Accès accordés par d'autres citoyens.",
+            "example": "Par exemple : vous pouvez vous connecter au nom de votre père pour compléter sa carte de chômage temporaire.",
+            "body": "Vous n'avez reçu aucun accès."
+          }
+        }
+      },
+      "mandateWizard": {
+        "title": "Nouvelle demande d'accès",
+        "steps": {
+          "scope": "À quelles données voulez-vous accéder ?",
+          "duration": "Durée souhaitée de l'accès",
+          "send": "Envoyer la demande d'accès"
+        },
+        "scope": {
+          "intro": "Choisissez les données auxquelles vous souhaitez donner accès.",
+          "option": {
+            "label": "Carte de chômage temporaire",
+            "description": "La personne pourra consulter et compléter votre carte mensuelle."
+          }
+        },
+        "duration": {
+          "intro": "Indiquez pendant combien de temps l'accès doit rester valide.",
+          "max1y": {
+            "label": "Durée maximale : 1 an",
+            "description": "L'accès se termine automatiquement au bout d'un an."
+          },
+          "until": {
+            "label": "Jusqu'au"
+          },
+          "info": {
+            "title": "Durée limitée",
+            "body": "La consultation des données de la Carte de chômage temporaire est limitée à 1 an maximum."
+          }
+        },
+        "send": {
+          "personName": {
+            "label": "Prénom et nom",
+            "placeholder": "Ex. Karim Benali"
+          },
+          "language": {
+            "label": "Langue de la demande",
+            "ariaLabel": "Langue"
+          },
+          "channel": {
+            "label": "Mode de transmission",
+            "email": {
+              "label": "Par e-mail",
+              "placeholder": "prenom.nom@exemple.be",
+              "invalid": "Indiquez une adresse e-mail valide.",
+              "description": "Le citoyen recevra la demande par e-mail."
+            },
+            "qr": {
+              "label": "Via code QR",
+              "description": "Un code QR à scanner sera affiché à l'écran.",
+              "preview": "Demandez à la personne de scanner ce code QR avec son smartphone.",
+              "previewNote": "Code illustratif (simulation)."
+            },
+            "link": {
+              "label": "Via lien",
+              "description": "Un lien personnel à partager par le canal de votre choix."
+            }
+          },
+          "linkPreview": {
+            "copy": "Copier le lien",
+            "copied": "Copié ✓"
+          },
+          "disclaimer": "Aucune donnée n'est réellement transmise — cet écran illustre le parcours de mandat eC3.2. La demande créée apparaîtra dans « Accès demandés »."
+        },
+        "actions": {
+          "cancelRequest": "Annuler la demande",
+          "previous": "Précédent",
+          "next": "Suivant",
+          "send": "Envoyer la demande"
+        }
+      },
+      "rules": {
+        "section": {
+          "eyebrow": "À garder en tête",
+          "title": "Règles importantes",
+          "subtitle": "Les compléments du simulateur, regroupés par thème. Dépliez une rubrique."
+        },
+        "obligation": {
+          "fallbackTitle": "Obligation à partir du 1er janvier 2025"
+        },
+        "derogations": {
+          "fallbackTitle": "Dérogations & exception CP 327"
+        },
+        "cp124": {
+          "title": "Construction (CP 124)"
+        },
+        "paymentOrg": {
+          "title": "Organisme de paiement"
+        },
+        "workElsewhere": {
+          "title": "Travail ailleurs"
+        },
+        "correction": {
+          "title": "Corriger une erreur",
+          "fallbackBody": "Si la carte a déjà été envoyée et qu'elle contient une erreur, vous pouvez la corriger au moyen d'un formulaire disponible auprès de votre organisme de paiement (CAPAC, CSC, FGTB ou CGSLB)."
+        },
+        "firstSendDate": {
+          "title": "Première date d'envoi possible"
+        },
+        "why": {
+          "fallbackTitle": "Pourquoi l'eC3.2 ?"
+        }
+      },
+      "guidedSteps": {
+        "navAriaLabel": "Étapes de la simulation",
+        "stepAriaLabel": "Étape {index} : {title}",
+        "stepTooltip": "Étape {index} — {title}",
+        "previousAriaLabel": "Étape précédente",
+        "nextAriaLabel": "Étape suivante",
+        "mobileCounter": "Étape {index} sur {total}",
+        "progressAriaLabel": "Progression de la simulation",
+        "defaultTitles": {
+          "login": "Connexion simulée",
+          "declaration": "Déclaration sur l'honneur",
+          "employer": "Choix de l'employeur",
+          "month": "Choix du mois",
+          "calendar": "Remplir le calendrier",
+          "correction": "Corriger une erreur",
+          "verify": "Vérifier",
+          "send": "Envoyer"
+        }
       }
     },
     "blocks": {
@@ -6102,6 +6610,70 @@
       },
       "testimonial": {
         "empty": "Aucun témoignage à afficher."
+      },
+      "salaireNetBE": {
+        "disclaimer": "Estimation simplifiée — chiffres indicatifs",
+        "monthlyBrutLabel": "Salaire brut mensuel",
+        "situationLabel": "Situation",
+        "statusIsolated": "Isolé sans enfants",
+        "statusCohabitant": "Cohabitant",
+        "statusFamily": "Famille à charge",
+        "onss": "ONSS",
+        "tax": "Impôt",
+        "net": "Net"
+      },
+      "ttsButton": {
+        "stop": "Arrêter",
+        "unsupported": "Synthèse vocale non disponible sur ce navigateur",
+        "noContent": "Aucun contenu à lire."
+      },
+      "multiStepForm": {
+        "stepCounter": "Étape {current} / {total}",
+        "previous": "Précédent",
+        "next": "Suivant",
+        "submitError": "Erreur lors de l'envoi",
+        "networkError": "Erreur réseau",
+        "selectPlaceholder": "Choisir…"
+      },
+      "form": {
+        "error": "Erreur",
+        "networkError": "Erreur réseau",
+        "selectPlaceholder": "Choisir…"
+      },
+      "eligibilityTest": {
+        "eligible": "Vous êtes éligible",
+        "notEligible": "Non éligible",
+        "retake": "Refaire le test",
+        "seeResult": "Voir le résultat",
+        "yes": "Oui",
+        "no": "Non",
+        "selectPlaceholder": "Choisir…"
+      },
+      "calculator": {
+        "regionAria": "Calculateur",
+        "resultAria": "Résultat du calcul",
+        "empty": "En attente du résultat"
+      },
+      "cta": {
+        "regionAria": "Appel à l'action",
+        "primaryFallbackAria": "En savoir plus"
+      },
+      "features": {
+        "regionAria": "Fonctionnalités",
+        "listAria": "Liste des fonctionnalités"
+      },
+      "checklist": {
+        "listAria": "Liste à cocher",
+        "progressAria": "{completed} sur {total} cochés",
+        "checkAria": "Cocher : {item}",
+        "uncheckAria": "Décocher : {item}"
+      },
+      "accordion": {
+        "regionAria": "Sections dépliables",
+        "triggerAria": "Afficher ou masquer la section : {title}"
+      },
+      "repeater": {
+        "regionAria": "Liste d'éléments"
       }
     }
   }

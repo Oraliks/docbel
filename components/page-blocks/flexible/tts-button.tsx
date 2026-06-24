@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Volume2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
@@ -22,12 +23,13 @@ export const ttsButton = defineBlock({
     shortcuts: ['tts', 'voix'],
   },
   Render: ({ props }) => {
+    const t = useTranslations('public.blocks')
     const { text, label = 'Lire à voix haute', voice = 'fr-FR' } = props
     const [speaking, setSpeaking] = useState(false)
 
     const speak = () => {
       if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-        toast.error('Synthèse vocale non disponible sur ce navigateur')
+        toast.error(t('ttsButton.unsupported'))
         return
       }
       if (speaking) {
@@ -38,7 +40,7 @@ export const ttsButton = defineBlock({
       const content =
         text ||
         document.querySelector('.page-content')?.textContent?.trim() ||
-        'Aucun contenu à lire.'
+        t('ttsButton.noContent')
       const utter = new SpeechSynthesisUtterance(content)
       utter.lang = voice
       utter.onend = () => setSpeaking(false)
@@ -51,13 +53,14 @@ export const ttsButton = defineBlock({
       <button
         type="button"
         onClick={speak}
+        aria-label={speaking ? t('ttsButton.stop') : label}
         className={cn(
           'inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition my-1',
           speaking ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'
         )}
       >
         <Volume2 className={cn('size-4', speaking && 'animate-pulse')} />
-        {speaking ? 'Arrêter' : label}
+        {speaking ? t('ttsButton.stop') : label}
       </button>
     )
   },

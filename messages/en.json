@@ -951,7 +951,155 @@
       "emptyTitle": "No exact acronym for « {query} ».",
       "emptyHint": "A typo? A variant?",
       "suggestionsLabel": "You may have been looking for",
-      "missingHint": "If an administrative acronym is missing, report it via the contact page — we will add it."
+      "missingHint": "If an administrative acronym is missing, report it via the contact page — we will add it.",
+      "domains": {
+        "chomage": {
+          "label": "Unemployment & end of contract",
+          "tagline": "If you've just lost your job or are receiving unemployment benefits"
+        },
+        "cpas": {
+          "label": "Public welfare centres & social aid",
+          "tagline": "Integration income, medical aid, guidance"
+        },
+        "emploiRegional": {
+          "label": "Regional employment",
+          "tagline": "Where to register and train depending on where you live"
+        },
+        "entreprise": {
+          "label": "Companies & self-employed",
+          "tagline": "Set up, declare, contribute, pay VAT"
+        },
+        "santeSecu": {
+          "label": "Health & social security",
+          "tagline": "Health insurance funds, identifiers, declarations"
+        },
+        "juridique": {
+          "label": "Legal framework",
+          "tagline": "Laws, collective agreements, federal administration"
+        }
+      },
+      "acronyms": {
+        "ONEM": {
+          "meaning": "Belgian Federal Employment Office (ONEM/RVA)",
+          "definition": "Federal body that pays and supervises unemployment benefits and issues the official documents (C4, C3…)"
+        },
+        "ONSS": {
+          "meaning": "Belgian National Social Security Office (ONSS/RSZ)",
+          "definition": "Collects social contributions from employers and workers and redistributes them to the social security bodies"
+        },
+        "CAPAC": {
+          "meaning": "Auxiliary Fund for Payment of Unemployment Benefits (CAPAC/HVW)",
+          "definition": "Public fund that pays unemployment benefits to people not affiliated with a trade union"
+        },
+        "CPAS": {
+          "meaning": "Public Centre for Social Welfare (CPAS/OCMW)",
+          "definition": "Municipal body that guarantees everyone a life in line with human dignity (integration income, social and medical aid…)"
+        },
+        "RIS": {
+          "meaning": "Social Integration Income (RIS, the Belgian minimum income)",
+          "definition": "Monthly financial aid paid by the CPAS to people without sufficient resources"
+        },
+        "AGR": {
+          "meaning": "Income Guarantee Benefit (AGR/IGU)",
+          "definition": "Top-up paid by ONEM to involuntary part-time workers to reach a minimum income"
+        },
+        "C4": {
+          "meaning": "C4 unemployment certificate",
+          "definition": "Document issued by the employer at the end of the contract — essential to open a right to unemployment benefits"
+        },
+        "C1": {
+          "meaning": "Personal and family situation declaration (C1)",
+          "definition": "Form to submit to the payment body to set the benefit rate (single, cohabiting, head of household)"
+        },
+        "C3": {
+          "meaning": "C3 control card",
+          "definition": "Monthly document on which the benefit recipient notes days worked, illness or holidays before sending it to the payment body"
+        },
+        "BCE": {
+          "meaning": "Crossroads Bank for Enterprises (BCE/KBO)",
+          "definition": "Federal register that assigns a unique company number to every company and self-employed person active in Belgium"
+        },
+        "BCSS": {
+          "meaning": "Crossroads Bank for Social Security (BCSS/KSZ)",
+          "definition": "Data exchange platform between Belgian social security institutions"
+        },
+        "FOREM": {
+          "meaning": "Walloon Office for Vocational Training and Employment",
+          "definition": "Public employment and training service in Wallonia — where Walloon jobseekers register"
+        },
+        "VDAB": {
+          "meaning": "Flemish Service for Employment and Vocational Training",
+          "definition": "Flemish public employment and training service — the Flemish equivalent of the FOREM"
+        },
+        "ACTIRIS": {
+          "meaning": "Brussels regional employment office",
+          "definition": "Public employment service in the Brussels-Capital Region — where Brussels jobseekers register"
+        },
+        "ADG": {
+          "meaning": "Employment Office of the German-speaking Community",
+          "definition": "Public employment service for the German-speaking Community (Eastern Cantons)"
+        },
+        "INASTI": {
+          "meaning": "National Institute for the Social Security of the Self-Employed (INASTI/RSVZ)",
+          "definition": "Manages the social security of the self-employed (pension, health insurance, family benefits…)"
+        },
+        "INAMI": {
+          "meaning": "National Institute for Health and Disability Insurance (INAMI/RIZIV)",
+          "definition": "Organises healthcare and benefits insurance through the health insurance funds"
+        },
+        "SPF": {
+          "meaning": "Federal Public Service (SPF/FOD)",
+          "definition": "Belgian federal administration (e.g. SPF Employment, SPF Finance, SPF Justice)"
+        },
+        "SPP": {
+          "meaning": "Federal Public Planning Service (SPP/POD)",
+          "definition": "Specialised federal administration — the best known is the SPP Social Integration, which coordinates the CPAS"
+        },
+        "PIIS": {
+          "meaning": "Individualised Social Integration Project (PIIS)",
+          "definition": "Contract concluded between the CPAS and the RIS beneficiary, setting personalised goals (training, employment, housing…)"
+        },
+        "DIMONA": {
+          "meaning": "Immediate Employment Declaration (Dimona)",
+          "definition": "Electronic declaration that the employer must send to the ONSS no later than the start of each assignment"
+        },
+        "DRS": {
+          "meaning": "Social Risk Declaration (DRS/ASR)",
+          "definition": "Set of electronic declarations (unemployment, illness, accident…) sent by the employer to the social security bodies"
+        },
+        "NISS": {
+          "meaning": "Social Security Identification Number (NISS/INSZ)",
+          "definition": "Unique 11-digit number identifying each person in the Belgian social security system — printed on the back of the ID card"
+        },
+        "CCT": {
+          "meaning": "Collective Labour Agreement (CCT/CAO)",
+          "definition": "Agreement signed between employers and trade unions setting working conditions (wages, leave…) for a sector or company"
+        },
+        "CP": {
+          "meaning": "Joint Committee (CP/PC)",
+          "definition": "Sectoral body where employers and trade unions negotiate working conditions. Each sector has its own (numbered) joint committee"
+        },
+        "ASBL": {
+          "meaning": "Non-profit Association (ASBL/VZW)",
+          "definition": "Legal form of association whose profits are not distributed to members but reinvested in its social purpose"
+        },
+        "AR": {
+          "meaning": "Royal Decree (AR/KB)",
+          "definition": "Act signed by the King on the proposal of a minister — the main source of regulatory law in Belgium"
+        },
+        "ALE": {
+          "meaning": "Local Employment Agency (ALE/PWA)",
+          "definition": "Lets a long-term unemployed person carry out occasional work (gardening, childcare…) while keeping their benefits"
+        },
+        "PFI": {
+          "meaning": "Training-Integration Plan (PFI, Wallonia)",
+          "definition": "In-company training (Wallonia) for a jobseeker: they keep their benefits and receive a bonus from the employer"
+        },
+        "TVA": {
+          "meaning": "Value Added Tax (VAT)",
+          "definition": "Indirect tax paid on most goods and services. Belgian standard rate: 21%"
+        }
+      }
     },
     "home": {
       "monthJan": "JAN",
@@ -6727,6 +6875,307 @@
         "first-effective-day": "Spot the automatic icon of the first effective unemployment day (5 May): it is never entered manually.",
         "wrong-month": "Check the month before filling in: here, it is the April 2025 card that has to be filled in."
       }
+    },
+    "lookupLib": {
+      "modules": {
+        "S01": {
+          "label": "Identification",
+          "description": "Unemployed person's identification (NISS, name, first name, date of birth…)"
+        },
+        "S02": {
+          "label": "Exemptions",
+          "description": "Exemptions (training, job search…)"
+        },
+        "S04": {
+          "label": "Admissibility",
+          "description": "Admissibility to benefits"
+        },
+        "S04_S36": {
+          "label": "Admissibility / Top-up",
+          "description": "Admission and compensation articles (S04 + S36)"
+        },
+        "S05": {
+          "label": "Deduction",
+          "description": "Deductions on benefits"
+        },
+        "S07": {
+          "label": "Employment data",
+          "description": "Employment data (ONSS, contracts)"
+        },
+        "S10": {
+          "label": "Sanction",
+          "description": "Sanctions (suspensions, exclusions)"
+        },
+        "S11": {
+          "label": "Outside unemployment",
+          "description": "Periods outside unemployment (illness, holidays…)"
+        },
+        "S15": {
+          "label": "Recovery",
+          "description": "Recovery of undue payments"
+        },
+        "S16": {
+          "label": "Special article",
+          "description": "Special compensation article"
+        },
+        "S17": {
+          "label": "Exchange rate",
+          "description": "Exchange rate supplement"
+        },
+        "S24": {
+          "label": "C9 processing",
+          "description": "Processing of the C9 form (DISPO decision)"
+        },
+        "S25": {
+          "label": "RCC",
+          "description": "Unemployment with company top-up (former early retirement)"
+        },
+        "S26": {
+          "label": "ALE / PWA",
+          "description": "Local employment agency"
+        },
+        "S27": {
+          "label": "ONSS data",
+          "description": "R.S.Z. / ONSS data"
+        },
+        "S29": {
+          "label": "Activation",
+          "description": "Activation of unemployment benefits"
+        },
+        "S31": {
+          "label": "Certificates",
+          "description": "Certificates (S31)"
+        },
+        "S38": {
+          "label": "DISPO",
+          "description": "Availability follow-up (DISPO)"
+        },
+        "S42": {
+          "label": "Investigation follow-up",
+          "description": "Follow-up of the investigation file"
+        },
+        "S43": {
+          "label": "Regional info",
+          "description": "Regional info follow-up (VDAB / Forem / Actiris)"
+        },
+        "S47": {
+          "label": "Home screen",
+          "description": "Home screen"
+        },
+        "S52": {
+          "label": "Negative decisions",
+          "description": "Negative decisions"
+        },
+        "A27": {
+          "label": "Equivalent periods",
+          "description": "Equivalent periods (A27)"
+        },
+        "H33": {
+          "label": "Scanned documents",
+          "description": "Categories of scanned documents (H33)"
+        },
+        "TW": {
+          "label": "Temporary unemployment",
+          "description": "Temporary unemployment (force majeure, economic reasons…)"
+        },
+        "V": {
+          "label": "Verification",
+          "description": "Verification of declarations"
+        },
+        "DMFA": {
+          "label": "DmfA",
+          "description": "ONSS multifunctional declaration (DmfA)"
+        },
+        "DRS": {
+          "label": "DRS",
+          "description": "Social Risk Declaration"
+        },
+        "G": {
+          "label": "General reference data",
+          "description": "Cross-cutting reference data (offices, municipalities, postal codes…)"
+        },
+        "S": {
+          "label": "Misc. (S-flows)",
+          "description": "S-flow tables not tied to a specific module"
+        }
+      }
+    },
+    "docbelData": {
+      "categories": {
+        "Tous": "All",
+        "Documents": "Documents",
+        "Calculs": "Calculators",
+        "Organismes": "Bodies",
+        "CPAS": "CPAS",
+        "Tutoriels": "Tutorials",
+        "Referentiels": "Reference data"
+      },
+      "tools": {
+        "tool6": {
+          "title": "Notice period calculator",
+          "desc": "Compute your statutory notice period based on your seniority, status and start date.",
+          "cat": "Calculators",
+          "time": "2 min"
+        },
+        "tool12": {
+          "title": "Find an office",
+          "desc": "CPAS, municipality, ONEM, payment bodies, trade unions: find at a glance the office competent for your situation anywhere in Belgium.",
+          "cat": "Bodies",
+          "time": "1 min"
+        },
+        "tool30": {
+          "title": "ONEM lookup",
+          "desc": "Decoding of all official ONEM codes (S01, S04, S38, DISPO, BCSS…). Multilingual fuzzy search FR/NL/DE/EN across 11,000+ entries.",
+          "cat": "Reference data",
+          "time": "instant"
+        },
+        "tool101": {
+          "title": "Gross ↔ Net",
+          "desc": "Convert your gross salary into net (or the other way around) based on your family status, region and benefits.",
+          "cat": "Calculators",
+          "time": "2 min"
+        },
+        "tool102": {
+          "title": "Holiday pay",
+          "desc": "Estimate your single and double holiday pay (white-collar or blue-collar) based on your salary and seniority.",
+          "cat": "Calculators",
+          "time": "2 min"
+        },
+        "tool103": {
+          "title": "Unemployment benefits",
+          "desc": "Calculate your monthly unemployment benefit based on your family situation, salary and duration of unemployment.",
+          "cat": "Calculators",
+          "time": "3 min"
+        },
+        "tool104": {
+          "title": "Severance pay",
+          "desc": "Convert your non-served notice period into a compensatory severance amount (€). Complement to the notice period calculator.",
+          "cat": "Calculators",
+          "time": "2 min"
+        },
+        "tool105": {
+          "title": "Estimated statutory pension",
+          "desc": "Simplified estimate of your statutory employee pension based on your career, average salary and retirement age.",
+          "cat": "Calculators",
+          "time": "3 min"
+        },
+        "tool106": {
+          "title": "Family allowances",
+          "desc": "Calculate your family allowances based on your region (FAMIWAL, FAMIRIS, Groeipakket, Kindergeld DG) and the child's rank.",
+          "cat": "Calculators",
+          "time": "2 min"
+        },
+        "tool107": {
+          "title": "Personal income tax",
+          "desc": "Simplified personal income tax simulator: tax brackets, tax-free allowance, dependent children and municipal surcharges.",
+          "cat": "Calculators",
+          "time": "3 min"
+        },
+        "tool108": {
+          "title": "Social energy tariff",
+          "desc": "Check your eligibility for the social electricity/gas tariff and estimate your savings compared with the standard tariff.",
+          "cat": "Calculators",
+          "time": "2 min"
+        },
+        "tool109": {
+          "title": "Mileage expenses",
+          "desc": "Compute the tax deduction for your home-to-work expenses based on your mode of transport (car, bike, public transport).",
+          "cat": "Calculators",
+          "time": "2 min"
+        }
+      }
+    },
+    "agrExport": {
+      "brand": {
+        "name": "DOCBEL",
+        "tagline": "Pilot · Enhance · Trust",
+        "website": "https://www.docbel.be"
+      },
+      "header": {
+        "generatedAt": "Generated on {date} at {time}",
+        "title": "AGR calculation — Income Guarantee Benefit",
+        "subtitle": "{bareme}  ·  Reference salary: {salary}"
+      },
+      "sections": {
+        "params": "File parameters",
+        "results": "Results",
+        "intermediaires": "Intermediate results"
+      },
+      "occupation": {
+        "label": "Occupation {n}",
+        "labelWithSub": "Occupation {n} — {sub}"
+      },
+      "params": {
+        "allocationJournaliere": "Daily benefit",
+        "demiAllocation": "Half benefit",
+        "categorieFamiliale": "Family category",
+        "soldeJ": "J balance (days)",
+        "joursCC": "CC days",
+        "moisDecembre": "Month of December",
+        "cumulTempsPartiel": "Part-time accumulation",
+        "incapaciteOuSanctionTotalite": "Incapacity/sanction whole month",
+        "yes": "yes",
+        "no": "no"
+      },
+      "occupationFields": {
+        "facteurQS": "Factor Q / S",
+        "categorieTravailleur": "Worker category",
+        "qinfo": "Qinfo",
+        "ybrut": "Y-Gross",
+        "salaireTheoMois": "Theor. salary / month",
+        "salaireTheoHeure": "Theor. salary / hour",
+        "heuresHT": "Hours (HT)",
+        "vacancesAbsence": "Holidays (V) / Absence (A)",
+        "fermeture": "Closure",
+        "pwCtPr": "PW (CT) / PR",
+        "soldeS32Q4": "Balance S×3.2 / Q×4",
+        "joursNI": "NI days",
+        "requalifier": "Reclassify A → V"
+      },
+      "resultBoxes": {
+        "bareme57": "GROSS AGR — SCALE 57/-",
+        "bareme05": "SCALE 05/-"
+      },
+      "results": {
+        "bareme57": "AGR scale 57/-",
+        "bareme05": "AGR scale 05/-",
+        "chomageTemporaire": "Temporary unemployment",
+        "salaireReference": "Reference salary",
+        "total57": "Total 57 (AGR+CT+CC)",
+        "total05": "Total 05 (AGR+CT+CC)"
+      },
+      "intermediaires": {
+        "nombreOccupations": "Number of occupations",
+        "f1": "F1 (benefits)",
+        "f2": "F2 (daily benefit)",
+        "f3f4": "F3 / F4",
+        "vtlTot": "Total VTL",
+        "bonusTot": "Total bonus",
+        "totalSalaireImposable": "Taxable salary",
+        "totalRetenues": "Withholdings (advance tax)",
+        "formule1A": "Formula 1A (AGR 57)",
+        "formule1B": "Formula 1B (limit 57)",
+        "formule2A": "Formula 2A (AGR 05)",
+        "formule2B": "Formula 2B (limit 05)"
+      },
+      "categorieFamiliale": {
+        "A": "A — head of household",
+        "N": "N — single",
+        "B1": "B1 — cohabiting 1st period",
+        "B2": "B2 — cohabiting 2nd period",
+        "P": "P — cohabiting flat-rate"
+      },
+      "categorieTravailleur": {
+        "_1O": "1O — private blue-collar",
+        "_1E": "1E — private white-collar",
+        "_2E": "2E — public white-collar",
+        "_2P": "2P — public blue-collar",
+        "_3": "3 — statutory civil servant"
+      },
+      "warning": "Gross amounts. The AGR must be at least equal to the half benefit. Document intended for internal use, automatically generated from the entered data — always check the values extracted from the WECH 506 before validating any payment.",
+      "footer": "Docbel © {year}  |  https://www.docbel.be",
+      "pagination": "{p} / {total}",
+      "filename": "docbel-agr-calculation-{date}.pdf"
     }
   }
 }

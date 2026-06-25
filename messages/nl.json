@@ -1034,7 +1034,155 @@
       "emptyTitle": "Geen exacte afkorting voor « {query} ».",
       "emptyHint": "Een tikfout? Een variant?",
       "suggestionsLabel": "Je zocht misschien",
-      "missingHint": "Als een administratieve afkorting ontbreekt, meld het via de contactpagina — we voegen ze toe."
+      "missingHint": "Als een administratieve afkorting ontbreekt, meld het via de contactpagina — we voegen ze toe.",
+      "domains": {
+        "chomage": {
+          "label": "Werkloosheid & einde contract",
+          "tagline": "Als je net je werk hebt verloren of werkloosheidsuitkering ontvangt"
+        },
+        "cpas": {
+          "label": "OCMW & sociale hulp",
+          "tagline": "Leefloon, medische hulp, begeleiding"
+        },
+        "emploiRegional": {
+          "label": "Tewerkstelling per gewest",
+          "tagline": "Waar inschrijven en opleiden naargelang je woonplaats"
+        },
+        "entreprise": {
+          "label": "Ondernemingen & zelfstandigen",
+          "tagline": "Oprichten, aangeven, bijdragen betalen, btw afdragen"
+        },
+        "santeSecu": {
+          "label": "Gezondheid & sociale zekerheid",
+          "tagline": "Ziekenfondsen, identificatienummers, aangiften"
+        },
+        "juridique": {
+          "label": "Juridisch kader",
+          "tagline": "Wetten, cao's, federale administratie"
+        }
+      },
+      "acronyms": {
+        "ONEM": {
+          "meaning": "Rijksdienst voor Arbeidsvoorziening (RVA)",
+          "definition": "Federale instelling die werkloosheidsuitkeringen betaalt en controleert en de officiële documenten aflevert (C4, C3…)"
+        },
+        "ONSS": {
+          "meaning": "Rijksdienst voor Sociale Zekerheid (RSZ)",
+          "definition": "Int de sociale bijdragen van werkgevers en werknemers en herverdeelt ze onder de instellingen van de sociale zekerheid"
+        },
+        "CAPAC": {
+          "meaning": "Hulpkas voor Werkloosheidsuitkeringen (HVW)",
+          "definition": "Openbare uitbetalingsinstelling die werkloosheidsuitkeringen betaalt aan personen die niet bij een vakbond aangesloten zijn"
+        },
+        "CPAS": {
+          "meaning": "Openbaar Centrum voor Maatschappelijk Welzijn (OCMW)",
+          "definition": "Gemeentelijke instelling die iedereen een leven verzekert overeenkomstig de menselijke waardigheid (leefloon, sociale en medische hulp…)"
+        },
+        "RIS": {
+          "meaning": "Leefloon (Recht op Maatschappelijke Integratie)",
+          "definition": "Maandelijkse financiële hulp die door het OCMW wordt uitbetaald aan personen zonder voldoende bestaansmiddelen"
+        },
+        "AGR": {
+          "meaning": "Inkomensgarantie-uitkering (IGU)",
+          "definition": "Aanvulling betaald door de RVA aan onvrijwillig deeltijdse werknemers om een minimuminkomen te bereiken"
+        },
+        "C4": {
+          "meaning": "Werkloosheidsbewijs C4",
+          "definition": "Document dat de werkgever aflevert bij het einde van het contract — onmisbaar om recht op werkloosheidsuitkering te openen"
+        },
+        "C1": {
+          "meaning": "Aangifte persoonlijke en gezinstoestand (C1)",
+          "definition": "Formulier dat moet worden bezorgd aan de uitbetalingsinstelling om het uitkeringspercentage vast te leggen (alleenstaande, samenwonende, gezinshoofd)"
+        },
+        "C3": {
+          "meaning": "Controlekaart C3",
+          "definition": "Maandelijks document waarop de vergoede werkloze zijn dagen van werk, ziekte en vakantie noteert vooraleer het naar zijn uitbetalingsinstelling te sturen"
+        },
+        "BCE": {
+          "meaning": "Kruispuntbank van Ondernemingen (KBO)",
+          "definition": "Federaal register dat een uniek ondernemingsnummer toekent aan elke onderneming en zelfstandige actief in België"
+        },
+        "BCSS": {
+          "meaning": "Kruispuntbank van de Sociale Zekerheid (KSZ)",
+          "definition": "Uitwisselingsplatform voor gegevens tussen de Belgische instellingen van sociale zekerheid"
+        },
+        "FOREM": {
+          "meaning": "Waalse Dienst voor Beroepsopleiding en Arbeidsbemiddeling",
+          "definition": "Openbare dienst voor tewerkstelling en opleiding in Wallonië — waar Waalse werkzoekenden zich inschrijven"
+        },
+        "VDAB": {
+          "meaning": "Vlaamse Dienst voor Arbeidsbemiddeling en Beroepsopleiding",
+          "definition": "Vlaamse openbare dienst voor tewerkstelling en opleiding — Vlaamse tegenhanger van de FOREM"
+        },
+        "ACTIRIS": {
+          "meaning": "Brusselse gewestelijke dienst voor arbeidsbemiddeling",
+          "definition": "Openbare dienst voor tewerkstelling in het Brussels Hoofdstedelijk Gewest — waar Brusselse werkzoekenden zich inschrijven"
+        },
+        "ADG": {
+          "meaning": "Arbeitsamt der Deutschsprachigen Gemeinschaft",
+          "definition": "Openbare dienst voor tewerkstelling van de Duitstalige Gemeenschap (Oostkantons)"
+        },
+        "INASTI": {
+          "meaning": "Rijksinstituut voor de Sociale Verzekeringen der Zelfstandigen (RSVZ)",
+          "definition": "Beheert de sociale zekerheid van zelfstandigen (pensioen, ziekenfonds, kinderbijslag…)"
+        },
+        "INAMI": {
+          "meaning": "Rijksinstituut voor Ziekte- en Invaliditeitsverzekering (RIZIV)",
+          "definition": "Organiseert de verzekering voor geneeskundige verzorging en uitkeringen via de ziekenfondsen"
+        },
+        "SPF": {
+          "meaning": "Federale Overheidsdienst (FOD)",
+          "definition": "Belgische federale administratie (bv. FOD Werkgelegenheid, FOD Financiën, FOD Justitie)"
+        },
+        "SPP": {
+          "meaning": "Programmatorische Federale Overheidsdienst (POD)",
+          "definition": "Gespecialiseerde federale administratie — de bekendste is de POD Maatschappelijke Integratie, die de OCMW's coördineert"
+        },
+        "PIIS": {
+          "meaning": "Geïndividualiseerd Project voor Maatschappelijke Integratie (GPMI)",
+          "definition": "Overeenkomst tussen het OCMW en de leefloongerechtigde die persoonlijke doelstellingen vastlegt (opleiding, werk, huisvesting…)"
+        },
+        "DIMONA": {
+          "meaning": "Onmiddellijke aangifte van tewerkstelling (Dimona)",
+          "definition": "Elektronische aangifte die de werkgever uiterlijk bij het begin van elke prestatie moet bezorgen aan de RSZ"
+        },
+        "DRS": {
+          "meaning": "Aangifte van Sociaal Risico (ASR)",
+          "definition": "Geheel van elektronische aangiften (werkloosheid, ziekte, ongeval…) die de werkgever naar de instellingen van sociale zekerheid stuurt"
+        },
+        "NISS": {
+          "meaning": "Identificatienummer van de Sociale Zekerheid (INSZ)",
+          "definition": "Uniek nummer van 11 cijfers dat elke persoon in de Belgische sociale zekerheid identificeert — staat op de achterkant van de identiteitskaart"
+        },
+        "CCT": {
+          "meaning": "Collectieve Arbeidsovereenkomst (CAO)",
+          "definition": "Akkoord tussen werkgevers en vakbonden dat de arbeidsvoorwaarden (lonen, verlof…) van een sector of onderneming vastlegt"
+        },
+        "CP": {
+          "meaning": "Paritair Comité (PC)",
+          "definition": "Sectoraal orgaan waar werkgevers en vakbonden de arbeidsvoorwaarden onderhandelen. Elke sector heeft zijn PC (genummerd)"
+        },
+        "ASBL": {
+          "meaning": "Vereniging Zonder Winstoogmerk (VZW)",
+          "definition": "Rechtsvorm van vereniging waarvan de winst niet onder de leden wordt verdeeld maar wordt geherinvesteerd in het maatschappelijk doel"
+        },
+        "AR": {
+          "meaning": "Koninklijk Besluit (KB)",
+          "definition": "Akte ondertekend door de Koning op voorstel van een minister — de belangrijkste bron van regelgeving in België"
+        },
+        "ALE": {
+          "meaning": "Plaatselijk Werkgelegenheidsagentschap (PWA)",
+          "definition": "Laat een langdurig werkloze toe occasionele prestaties uit te voeren (tuinieren, kinderopvang…) met behoud van uitkering"
+        },
+        "PFI": {
+          "meaning": "Beroepsinlevingsplan (BIO)",
+          "definition": "Opleiding in onderneming (Wallonië) voor een werkzoekende: hij behoudt zijn uitkering en ontvangt een premie van de werkgever"
+        },
+        "TVA": {
+          "meaning": "Belasting over de Toegevoegde Waarde (btw)",
+          "definition": "Onrechtstreekse belasting betaald op de meeste goederen en diensten. Standaardtarief in België: 21%"
+        }
+      }
     },
     "home": {
       "monthJan": "JAN",
@@ -6810,6 +6958,307 @@
         "first-effective-day": "Zoek het automatische pictogram van de eerste effectieve werkloosheidsdag (5 mei): het wordt nooit handmatig ingevoerd.",
         "wrong-month": "Controleer de maand vóór u invult: hier is het de kaart van april 2025 die moet worden ingevuld."
       }
+    },
+    "lookupLib": {
+      "modules": {
+        "S01": {
+          "label": "Signaletiek",
+          "description": "Signaletiek van de werkloze (INSZ, naam, voornaam, geboortedatum…)"
+        },
+        "S02": {
+          "label": "Vrijstellingen",
+          "description": "Vrijstellingen (opleiding, zoeken naar werk…)"
+        },
+        "S04": {
+          "label": "Toelaatbaarheid",
+          "description": "Toelaatbaarheid tot de uitkeringen"
+        },
+        "S04_S36": {
+          "label": "Toelaatbaarheid / Aanvulling",
+          "description": "Artikelen van toelating en vergoeding (S04 + S36)"
+        },
+        "S05": {
+          "label": "Inhouding",
+          "description": "Inhoudingen op uitkeringen"
+        },
+        "S07": {
+          "label": "Tewerkstellingsgegevens",
+          "description": "Tewerkstellingsgegevens (RSZ, contracten)"
+        },
+        "S10": {
+          "label": "Sanctie",
+          "description": "Sancties (schorsingen, uitsluitingen)"
+        },
+        "S11": {
+          "label": "Buiten werkloosheid",
+          "description": "Periodes buiten werkloosheid (ziekte, vakantie…)"
+        },
+        "S15": {
+          "label": "Terugvordering",
+          "description": "Terugvordering van onverschuldigde bedragen"
+        },
+        "S16": {
+          "label": "Bijzonder artikel",
+          "description": "Bijzonder vergoedingsartikel"
+        },
+        "S17": {
+          "label": "Wisselkoers",
+          "description": "Wisselkoerstoeslag"
+        },
+        "S24": {
+          "label": "Behandeling C9",
+          "description": "Behandeling van het formulier C9 (DISPO-beslissing)"
+        },
+        "S25": {
+          "label": "SWT",
+          "description": "Werkloosheid met bedrijfstoeslag (vroeger brugpensioen)"
+        },
+        "S26": {
+          "label": "PWA",
+          "description": "Plaatselijk werkgelegenheidsagentschap"
+        },
+        "S27": {
+          "label": "RSZ-gegevens",
+          "description": "Gegevens R.S.Z. / RSZ"
+        },
+        "S29": {
+          "label": "Activering",
+          "description": "Activering van werkloosheidsuitkeringen"
+        },
+        "S31": {
+          "label": "Attesten",
+          "description": "Attesten (S31)"
+        },
+        "S38": {
+          "label": "DISPO",
+          "description": "Opvolging van de beschikbaarheid (DISPO)"
+        },
+        "S42": {
+          "label": "Onderzoeksopvolging",
+          "description": "Opvolging van het onderzoeksdossier"
+        },
+        "S43": {
+          "label": "Info gewesten",
+          "description": "Opvolging info gewesten (VDAB / Forem / Actiris)"
+        },
+        "S47": {
+          "label": "Onthaal",
+          "description": "Onthaalscherm"
+        },
+        "S52": {
+          "label": "Negatieve beslissingen",
+          "description": "Negatieve beslissingen"
+        },
+        "A27": {
+          "label": "Gelijkgestelde periodes",
+          "description": "Gelijkgestelde periodes (A27)"
+        },
+        "H33": {
+          "label": "Gescande documenten",
+          "description": "Categorieën van gescande documenten (H33)"
+        },
+        "TW": {
+          "label": "Tijdelijke werkloosheid",
+          "description": "Tijdelijke werkloosheid (overmacht, economische redenen…)"
+        },
+        "V": {
+          "label": "Verificatie",
+          "description": "Verificatie van de aangiften"
+        },
+        "DMFA": {
+          "label": "DmfA",
+          "description": "Multifunctionele aangifte RSZ (DmfA)"
+        },
+        "DRS": {
+          "label": "ASR",
+          "description": "Aangifte van Sociaal Risico"
+        },
+        "G": {
+          "label": "Algemene referentiebestanden",
+          "description": "Transversale referentiebestanden (kantoren, gemeenten, postcodes…)"
+        },
+        "S": {
+          "label": "Diversen (S-flows)",
+          "description": "S-flows-tabellen die niet aan een specifieke module gekoppeld zijn"
+        }
+      }
+    },
+    "docbelData": {
+      "categories": {
+        "Tous": "Alle",
+        "Documents": "Documenten",
+        "Calculs": "Berekeningen",
+        "Organismes": "Instellingen",
+        "CPAS": "OCMW",
+        "Tutoriels": "Tutorials",
+        "Referentiels": "Referentiebestanden"
+      },
+      "tools": {
+        "tool6": {
+          "title": "Opzegtermijnberekening",
+          "desc": "Bereken je wettelijke opzegtermijn op basis van je anciënniteit, statuut en datum van indiensttreding.",
+          "cat": "Berekeningen",
+          "time": "2 min"
+        },
+        "tool12": {
+          "title": "Vind een kantoor",
+          "desc": "OCMW, gemeente, RVA, uitbetalingsinstellingen, vakbonden: vind in één oogopslag het bevoegde kantoor voor jouw situatie, overal in België.",
+          "cat": "Instellingen",
+          "time": "1 min"
+        },
+        "tool30": {
+          "title": "RVA-opzoeking",
+          "desc": "Decodering van alle officiële RVA-codes (S01, S04, S38, DISPO, KSZ…). Meertalig fuzzy zoeken FR/NL/DE/EN in 11.000+ records.",
+          "cat": "Referentiebestanden",
+          "time": "onmiddellijk"
+        },
+        "tool101": {
+          "title": "Bruto ↔ Netto",
+          "desc": "Reken je brutoloon om naar nettoloon (of omgekeerd) volgens je gezinstoestand, gewest en voordelen.",
+          "cat": "Berekeningen",
+          "time": "2 min"
+        },
+        "tool102": {
+          "title": "Vakantiegeld",
+          "desc": "Schat je enkel en dubbel vakantiegeld (bediende of arbeider) op basis van je loon en anciënniteit.",
+          "cat": "Berekeningen",
+          "time": "2 min"
+        },
+        "tool103": {
+          "title": "Werkloosheidsuitkeringen",
+          "desc": "Bereken je maandelijkse werkloosheidsuitkering volgens je gezinstoestand, loon en werkloosheidsduur.",
+          "cat": "Berekeningen",
+          "time": "3 min"
+        },
+        "tool104": {
+          "title": "Verbrekingsvergoeding",
+          "desc": "Reken je niet-gepresteerde opzegtermijn om naar een compenserende vergoeding (€). Aanvulling op de opzegtermijnberekening.",
+          "cat": "Berekeningen",
+          "time": "2 min"
+        },
+        "tool105": {
+          "title": "Geraamd wettelijk pensioen",
+          "desc": "Vereenvoudigde raming van je wettelijk werknemerspensioen volgens je loopbaan, gemiddeld loon en pensioenleeftijd.",
+          "cat": "Berekeningen",
+          "time": "3 min"
+        },
+        "tool106": {
+          "title": "Kinderbijslag",
+          "desc": "Bereken je kinderbijslag volgens je gewest (FAMIWAL, FAMIRIS, Groeipakket, Kindergeld DG) en de rang van het kind.",
+          "cat": "Berekeningen",
+          "time": "2 min"
+        },
+        "tool107": {
+          "title": "Personenbelasting",
+          "desc": "Vereenvoudigde PB-simulator: belastingschijven, belastingvrije som, kinderen ten laste en gemeentelijke opcentiemen.",
+          "cat": "Berekeningen",
+          "time": "3 min"
+        },
+        "tool108": {
+          "title": "Sociaal energietarief",
+          "desc": "Controleer je rechten op het sociaal tarief voor elektriciteit/gas en raam je winst ten opzichte van het standaardtarief.",
+          "cat": "Berekeningen",
+          "time": "2 min"
+        },
+        "tool109": {
+          "title": "Kilometerkosten",
+          "desc": "Bereken de fiscale aftrek van je woon-werkkosten volgens je vervoermiddel (auto, fiets, openbaar vervoer).",
+          "cat": "Berekeningen",
+          "time": "2 min"
+        }
+      }
+    },
+    "agrExport": {
+      "brand": {
+        "name": "DOCBEL",
+        "tagline": "Beheren · Waarderen · Vertrouwen",
+        "website": "https://www.docbel.be"
+      },
+      "header": {
+        "generatedAt": "Gegenereerd op {date} om {time}",
+        "title": "IGU-berekening — Inkomensgarantie-uitkering",
+        "subtitle": "{bareme}  ·  Referentieloon: {salary}"
+      },
+      "sections": {
+        "params": "Dossierparameters",
+        "results": "Resultaten",
+        "intermediaires": "Tussenresultaten"
+      },
+      "occupation": {
+        "label": "Tewerkstelling {n}",
+        "labelWithSub": "Tewerkstelling {n} — {sub}"
+      },
+      "params": {
+        "allocationJournaliere": "Daguitkering",
+        "demiAllocation": "Halve uitkering",
+        "categorieFamiliale": "Gezinscategorie",
+        "soldeJ": "Saldo J (dagen)",
+        "joursCC": "CC-dagen",
+        "moisDecembre": "Maand december",
+        "cumulTempsPartiel": "Cumul deeltijds",
+        "incapaciteOuSanctionTotalite": "Arbeidsongeschikt/sanctie hele maand",
+        "yes": "ja",
+        "no": "nee"
+      },
+      "occupationFields": {
+        "facteurQS": "Factor Q / S",
+        "categorieTravailleur": "Categorie werknemer",
+        "qinfo": "Qinfo",
+        "ybrut": "Y-Bruto",
+        "salaireTheoMois": "Theor. loon / maand",
+        "salaireTheoHeure": "Theor. loon / uur",
+        "heuresHT": "Uren (HT)",
+        "vacancesAbsence": "Vakantie (V) / Afwezigheid (A)",
+        "fermeture": "Sluiting",
+        "pwCtPr": "PW (TW) / PR",
+        "soldeS32Q4": "Saldo S×3,2 / Q×4",
+        "joursNI": "NI-dagen",
+        "requalifier": "Herkwalificeren A → V"
+      },
+      "resultBoxes": {
+        "bareme57": "BRUTO IGU — BAREMA 57/-",
+        "bareme05": "BAREMA 05/-"
+      },
+      "results": {
+        "bareme57": "IGU barema 57/-",
+        "bareme05": "IGU barema 05/-",
+        "chomageTemporaire": "Tijdelijke werkloosheid",
+        "salaireReference": "Referentieloon",
+        "total57": "Totaal 57 (IGU+TW+CC)",
+        "total05": "Totaal 05 (IGU+TW+CC)"
+      },
+      "intermediaires": {
+        "nombreOccupations": "Aantal tewerkstellingen",
+        "f1": "F1 (uitkeringen)",
+        "f2": "F2 (daguitkering)",
+        "f3f4": "F3 / F4",
+        "vtlTot": "Totaal VTL",
+        "bonusTot": "Totaal bonus",
+        "totalSalaireImposable": "Belastbaar loon",
+        "totalRetenues": "Inhoudingen (BV)",
+        "formule1A": "Formule 1A (IGU 57)",
+        "formule1B": "Formule 1B (limiet 57)",
+        "formule2A": "Formule 2A (IGU 05)",
+        "formule2B": "Formule 2B (limiet 05)"
+      },
+      "categorieFamiliale": {
+        "A": "A — gezinshoofd",
+        "N": "N — alleenstaande",
+        "B1": "B1 — samenwonende 1ste per.",
+        "B2": "B2 — samenwonende 2de per.",
+        "P": "P — samenwonende forfait"
+      },
+      "categorieTravailleur": {
+        "_1O": "1O — arbeider privé",
+        "_1E": "1E — bediende privé",
+        "_2E": "2E — bediende openbaar",
+        "_2P": "2P — arbeider openbaar",
+        "_3": "3 — statutair"
+      },
+      "warning": "Brutobedragen. De IGU moet minstens gelijk zijn aan de halve uitkering. Document bestemd voor intern gebruik, automatisch gegenereerd op basis van de ingevoerde gegevens — controleer altijd de waarden uit de WECH 506 voor elke betalingsvalidatie.",
+      "footer": "Docbel © {year}  |  https://www.docbel.be",
+      "pagination": "{p} / {total}",
+      "filename": "docbel-igu-berekening-{date}.pdf"
     }
   }
 }

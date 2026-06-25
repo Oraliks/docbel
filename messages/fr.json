@@ -3166,7 +3166,155 @@
       "emptyTitle": "Aucun sigle exact pour « {query} ».",
       "emptyHint": "Une faute de frappe ? Une variante ?",
       "suggestionsLabel": "Tu cherchais peut-être",
-      "missingHint": "Si un sigle administratif manque, signale-le via la page contact — on l'ajoutera."
+      "missingHint": "Si un sigle administratif manque, signale-le via la page contact — on l'ajoutera.",
+      "domains": {
+        "chomage": {
+          "label": "Chômage & fin de contrat",
+          "tagline": "Si tu viens de perdre ton emploi ou que tu y émarges"
+        },
+        "cpas": {
+          "label": "CPAS & aide sociale",
+          "tagline": "Revenu d'intégration, aide médicale, accompagnement"
+        },
+        "emploiRegional": {
+          "label": "Emploi en région",
+          "tagline": "Où s'inscrire et se former selon où on habite"
+        },
+        "entreprise": {
+          "label": "Entreprises & indépendants",
+          "tagline": "Créer, déclarer, cotiser, payer la TVA"
+        },
+        "santeSecu": {
+          "label": "Santé & sécurité sociale",
+          "tagline": "Mutualités, identifiants, déclarations"
+        },
+        "juridique": {
+          "label": "Cadre juridique",
+          "tagline": "Lois, conventions, administration fédérale"
+        }
+      },
+      "acronyms": {
+        "ONEM": {
+          "meaning": "Office National de l'Emploi",
+          "definition": "Organisme fédéral qui paie et contrôle les allocations de chômage et délivre les documents officiels (C4, C3…)"
+        },
+        "ONSS": {
+          "meaning": "Office National de Sécurité Sociale",
+          "definition": "Perçoit les cotisations sociales des employeurs et travailleurs et les redistribue aux organismes de sécurité sociale"
+        },
+        "CAPAC": {
+          "meaning": "Caisse Auxiliaire de Paiement des Allocations de Chômage",
+          "definition": "Caisse publique qui paie les allocations de chômage aux personnes non affiliées à un syndicat"
+        },
+        "CPAS": {
+          "meaning": "Centre Public d'Action Sociale",
+          "definition": "Organisme communal qui garantit à chacun une vie conforme à la dignité humaine (revenu d'intégration, aide sociale, médicale…)"
+        },
+        "RIS": {
+          "meaning": "Revenu d'Intégration Sociale",
+          "definition": "Aide financière mensuelle versée par le CPAS aux personnes sans ressources suffisantes"
+        },
+        "AGR": {
+          "meaning": "Allocation de Garantie de Revenus",
+          "definition": "Complément payé par l'ONEM aux travailleurs à temps partiel involontaire pour atteindre un revenu minimum"
+        },
+        "C4": {
+          "meaning": "Certificat de chômage C4",
+          "definition": "Document remis par l'employeur en fin de contrat — indispensable pour ouvrir un droit aux allocations de chômage"
+        },
+        "C1": {
+          "meaning": "Déclaration de situation personnelle et familiale (C1)",
+          "definition": "Formulaire à remettre à l'organisme de paiement pour fixer le taux d'allocation (isolé, cohabitant, chef de ménage)"
+        },
+        "C3": {
+          "meaning": "Carte de contrôle C3",
+          "definition": "Document mensuel où le chômeur indemnisé note ses jours de travail, maladie, vacances avant de l'envoyer à son organisme de paiement"
+        },
+        "BCE": {
+          "meaning": "Banque-Carrefour des Entreprises",
+          "definition": "Registre fédéral qui attribue un numéro d'entreprise unique à chaque entreprise et indépendant actif en Belgique"
+        },
+        "BCSS": {
+          "meaning": "Banque-Carrefour de la Sécurité Sociale",
+          "definition": "Plate-forme d'échange de données entre les institutions de sécurité sociale belges"
+        },
+        "FOREM": {
+          "meaning": "Office wallon de la Formation professionnelle et de l'Emploi",
+          "definition": "Service public de l'emploi et de la formation en Wallonie — où s'inscrivent les demandeurs d'emploi wallons"
+        },
+        "VDAB": {
+          "meaning": "Vlaamse Dienst voor Arbeidsbemiddeling en Beroepsopleiding",
+          "definition": "Service public flamand de l'emploi et de la formation — équivalent du FOREM en Flandre"
+        },
+        "ACTIRIS": {
+          "meaning": "Office régional bruxellois de l'emploi",
+          "definition": "Service public de l'emploi en Région de Bruxelles-Capitale — où s'inscrivent les demandeurs d'emploi bruxellois"
+        },
+        "ADG": {
+          "meaning": "Arbeitsamt der Deutschsprachigen Gemeinschaft",
+          "definition": "Service public de l'emploi de la Communauté germanophone (cantons de l'Est)"
+        },
+        "INASTI": {
+          "meaning": "Institut National d'Assurance Sociale pour Travailleurs Indépendants",
+          "definition": "Gère la sécurité sociale des travailleurs indépendants (pension, mutuelle, allocations familiales…)"
+        },
+        "INAMI": {
+          "meaning": "Institut National d'Assurance Maladie-Invalidité",
+          "definition": "Organise l'assurance soins de santé et indemnités via les mutualités"
+        },
+        "SPF": {
+          "meaning": "Service Public Fédéral",
+          "definition": "Administration fédérale belge (ex. SPF Emploi, SPF Finances, SPF Justice)"
+        },
+        "SPP": {
+          "meaning": "Service Public de Programmation",
+          "definition": "Administration fédérale spécialisée — la plus connue est le SPP Intégration sociale, qui coordonne les CPAS"
+        },
+        "PIIS": {
+          "meaning": "Projet Individualisé d'Intégration Sociale",
+          "definition": "Contrat conclu entre le CPAS et le bénéficiaire du RIS, qui fixe des objectifs personnalisés (formation, emploi, logement…)"
+        },
+        "DIMONA": {
+          "meaning": "Déclaration Immédiate à l'Emploi",
+          "definition": "Déclaration électronique que l'employeur doit transmettre à l'ONSS au plus tard au début de chaque mission"
+        },
+        "DRS": {
+          "meaning": "Déclaration des Risques Sociaux",
+          "definition": "Ensemble des déclarations électroniques (chômage, maladie, accident…) que l'employeur envoie aux organismes de sécurité sociale"
+        },
+        "NISS": {
+          "meaning": "Numéro d'Identification de la Sécurité Sociale",
+          "definition": "Numéro unique à 11 chiffres qui identifie chaque personne dans la sécurité sociale belge — figure au dos de la carte d'identité"
+        },
+        "CCT": {
+          "meaning": "Convention Collective de Travail",
+          "definition": "Accord signé entre employeurs et syndicats qui fixe les conditions de travail (salaires, congés…) d'un secteur ou d'une entreprise"
+        },
+        "CP": {
+          "meaning": "Commission Paritaire",
+          "definition": "Organe sectoriel où patrons et syndicats négocient les conditions de travail. Chaque secteur a sa CP (numérotée)"
+        },
+        "ASBL": {
+          "meaning": "Association Sans But Lucratif",
+          "definition": "Forme juridique d'association dont les bénéfices ne sont pas distribués aux membres mais réinvestis dans son objet social"
+        },
+        "AR": {
+          "meaning": "Arrêté Royal",
+          "definition": "Acte signé par le Roi sur proposition d'un ministre — la principale source de droit réglementaire en Belgique"
+        },
+        "ALE": {
+          "meaning": "Agence Locale pour l'Emploi",
+          "definition": "Permet à un chômeur de longue durée d'effectuer des prestations occasionnelles (jardinage, garde d'enfants…) tout en gardant ses allocations"
+        },
+        "PFI": {
+          "meaning": "Plan Formation-Insertion",
+          "definition": "Formation en entreprise (Wallonie) pour un demandeur d'emploi : il garde ses allocations et reçoit une prime de l'employeur"
+        },
+        "TVA": {
+          "meaning": "Taxe sur la Valeur Ajoutée",
+          "definition": "Taxe indirecte payée sur la plupart des biens et services. Taux standard belge : 21%"
+        }
+      }
     },
     "home": {
       "monthJan": "JAN",
@@ -9794,6 +9942,307 @@
         "first-effective-day": "Repérez l’icône automatique du premier jour de chômage effectif (le 5 mai) : elle n’est jamais saisie à la main.",
         "wrong-month": "Vérifiez le mois avant de compléter : ici, c’est la carte d’avril 2025 qui doit être remplie."
       }
+    },
+    "lookupLib": {
+      "modules": {
+        "S01": {
+          "label": "Signalétique",
+          "description": "Signalétique du chômeur (NISS, nom, prénom, date de naissance…)"
+        },
+        "S02": {
+          "label": "Dispenses",
+          "description": "Dispenses (formation, recherche d'emploi…)"
+        },
+        "S04": {
+          "label": "Admissibilité",
+          "description": "Admissibilité aux allocations"
+        },
+        "S04_S36": {
+          "label": "Admissibilité / Complément",
+          "description": "Articles d'admission et d'indemnisation (S04 + S36)"
+        },
+        "S05": {
+          "label": "Retenue",
+          "description": "Retenues sur allocations"
+        },
+        "S07": {
+          "label": "Données d'occupation",
+          "description": "Données d'occupation (ONSS, contrats)"
+        },
+        "S10": {
+          "label": "Sanction",
+          "description": "Sanctions (suspensions, exclusions)"
+        },
+        "S11": {
+          "label": "Hors chômage",
+          "description": "Périodes hors chômage (maladie, vacances…)"
+        },
+        "S15": {
+          "label": "Récupération",
+          "description": "Récupération des indus"
+        },
+        "S16": {
+          "label": "Article spécial",
+          "description": "Article d'indemnisation spécial"
+        },
+        "S17": {
+          "label": "Taux de change",
+          "description": "Supplément taux de change"
+        },
+        "S24": {
+          "label": "Traitement C9",
+          "description": "Traitement du formulaire C9 (décision DISPO)"
+        },
+        "S25": {
+          "label": "RCC",
+          "description": "Chômage avec complément d'entreprise (ex-prépension)"
+        },
+        "S26": {
+          "label": "ALE / PWA",
+          "description": "Agence locale pour l'emploi"
+        },
+        "S27": {
+          "label": "Données ONSS",
+          "description": "Données R.S.Z. / ONSS"
+        },
+        "S29": {
+          "label": "Activation",
+          "description": "Activation des allocations de chômage"
+        },
+        "S31": {
+          "label": "Attestations",
+          "description": "Attestations (S31)"
+        },
+        "S38": {
+          "label": "DISPO",
+          "description": "Suivi de la disponibilité (DISPO)"
+        },
+        "S42": {
+          "label": "Suivi d'enquête",
+          "description": "Suivi du dossier d'enquête"
+        },
+        "S43": {
+          "label": "Info régions",
+          "description": "Suivi info régions (VDAB / Forem / Actiris)"
+        },
+        "S47": {
+          "label": "Accueil",
+          "description": "Écran d'accueil"
+        },
+        "S52": {
+          "label": "Décisions négatives",
+          "description": "Décisions négatives"
+        },
+        "A27": {
+          "label": "Périodes assimilées",
+          "description": "Périodes assimilées (A27)"
+        },
+        "H33": {
+          "label": "Documents scannés",
+          "description": "Catégories de documents scannés (H33)"
+        },
+        "TW": {
+          "label": "Chômage temporaire",
+          "description": "Chômage temporaire (force majeure, économique…)"
+        },
+        "V": {
+          "label": "Vérification",
+          "description": "Vérification des déclarations"
+        },
+        "DMFA": {
+          "label": "DmfA",
+          "description": "Déclaration multifonctionnelle ONSS (DmfA)"
+        },
+        "DRS": {
+          "label": "DRS",
+          "description": "Déclaration des Risques Sociaux"
+        },
+        "G": {
+          "label": "Référentiels généraux",
+          "description": "Référentiels transversaux (bureaux, communes, codes postaux…)"
+        },
+        "S": {
+          "label": "Divers (S-flows)",
+          "description": "Tables S-flows non rattachées à un module précis"
+        }
+      }
+    },
+    "docbelData": {
+      "categories": {
+        "Tous": "Tous",
+        "Documents": "Documents",
+        "Calculs": "Calculs",
+        "Organismes": "Organismes",
+        "CPAS": "CPAS",
+        "Tutoriels": "Tutoriels",
+        "Referentiels": "Référentiels"
+      },
+      "tools": {
+        "tool6": {
+          "title": "Calculateur de préavis",
+          "desc": "Calculez votre délai de préavis légal en fonction de votre ancienneté, statut et date d'entrée en service.",
+          "cat": "Calculs",
+          "time": "2 min"
+        },
+        "tool12": {
+          "title": "Trouver un bureau",
+          "desc": "CPAS, Commune, ONEM, organismes de paiement, syndicats : trouvez d'un coup le bureau compétent pour votre situation, partout en Belgique.",
+          "cat": "Organismes",
+          "time": "1 min"
+        },
+        "tool30": {
+          "title": "Lookup ONEM",
+          "desc": "Décodage de tous les codes officiels ONEM (S01, S04, S38, Dispo, BCSS…). Recherche fuzzy multilingue FR/NL/DE/EN dans 11 000+ entrées.",
+          "cat": "Référentiels",
+          "time": "instant"
+        },
+        "tool101": {
+          "title": "Brut ↔ Net",
+          "desc": "Convertissez votre salaire brut en net (ou inversement) selon votre statut familial, votre région et vos avantages.",
+          "cat": "Calculs",
+          "time": "2 min"
+        },
+        "tool102": {
+          "title": "Pécule de vacances",
+          "desc": "Estimez votre pécule simple et double (employé ou ouvrier) en fonction de votre salaire et de votre ancienneté.",
+          "cat": "Calculs",
+          "time": "2 min"
+        },
+        "tool103": {
+          "title": "Allocations de chômage",
+          "desc": "Calculez votre allocation mensuelle de chômage selon votre situation familiale, votre salaire et votre durée de chômage.",
+          "cat": "Calculs",
+          "time": "3 min"
+        },
+        "tool104": {
+          "title": "Indemnité de rupture",
+          "desc": "Convertissez votre préavis non presté en indemnité compensatoire (€). Complément du calculateur de préavis.",
+          "cat": "Calculs",
+          "time": "2 min"
+        },
+        "tool105": {
+          "title": "Pension légale estimée",
+          "desc": "Estimation simplifiée de votre pension légale salarié selon votre carrière, votre salaire moyen et votre âge de départ.",
+          "cat": "Calculs",
+          "time": "3 min"
+        },
+        "tool106": {
+          "title": "Allocations familiales",
+          "desc": "Calculez vos allocations familiales selon votre région (FAMIWAL, FAMIRIS, Groeipakket, Kindergeld DG) et le rang de l'enfant.",
+          "cat": "Calculs",
+          "time": "2 min"
+        },
+        "tool107": {
+          "title": "Impôt des personnes physiques",
+          "desc": "Simulateur IPP simplifié : tranches d'imposition, quotité exemptée, enfants à charge et additionnels communaux.",
+          "cat": "Calculs",
+          "time": "3 min"
+        },
+        "tool108": {
+          "title": "Tarif social énergie",
+          "desc": "Vérifiez votre éligibilité au tarif social électricité/gaz et estimez votre gain par rapport au tarif standard.",
+          "cat": "Calculs",
+          "time": "2 min"
+        },
+        "tool109": {
+          "title": "Frais kilométriques",
+          "desc": "Calculez la déduction fiscale de vos frais domicile-travail selon votre mode de transport (voiture, vélo, transports en commun).",
+          "cat": "Calculs",
+          "time": "2 min"
+        }
+      }
+    },
+    "agrExport": {
+      "brand": {
+        "name": "DOCBEL",
+        "tagline": "Piloter · Valoriser · Confiance",
+        "website": "https://www.docbel.be"
+      },
+      "header": {
+        "generatedAt": "Généré le {date} à {time}",
+        "title": "Calcul AGR — Allocation de Garantie de Revenus",
+        "subtitle": "{bareme}  ·  Salaire de référence : {salary}"
+      },
+      "sections": {
+        "params": "Paramètres du dossier",
+        "results": "Résultats",
+        "intermediaires": "Résultats intermédiaires"
+      },
+      "occupation": {
+        "label": "Occupation {n}",
+        "labelWithSub": "Occupation {n} — {sub}"
+      },
+      "params": {
+        "allocationJournaliere": "Allocation journalière",
+        "demiAllocation": "Demi-allocation",
+        "categorieFamiliale": "Catégorie familiale",
+        "soldeJ": "Solde J (jours)",
+        "joursCC": "Jours CC",
+        "moisDecembre": "Mois de décembre",
+        "cumulTempsPartiel": "Cumul temps partiel",
+        "incapaciteOuSanctionTotalite": "Incapacité/sanction tout le mois",
+        "yes": "oui",
+        "no": "non"
+      },
+      "occupationFields": {
+        "facteurQS": "Facteur Q / S",
+        "categorieTravailleur": "Catégorie travailleur",
+        "qinfo": "Qinfo",
+        "ybrut": "Y-Brut",
+        "salaireTheoMois": "Salaire théo. / mois",
+        "salaireTheoHeure": "Salaire théo. / heure",
+        "heuresHT": "Heures (HT)",
+        "vacancesAbsence": "Vacances (V) / Absence (A)",
+        "fermeture": "Fermeture",
+        "pwCtPr": "PW (CT) / PR",
+        "soldeS32Q4": "Solde S×3,2 / Q×4",
+        "joursNI": "Jours NI",
+        "requalifier": "Requalifier A → V"
+      },
+      "resultBoxes": {
+        "bareme57": "AGR BRUT — BARÈME 57/-",
+        "bareme05": "BARÈME 05/-"
+      },
+      "results": {
+        "bareme57": "AGR barème 57/-",
+        "bareme05": "AGR barème 05/-",
+        "chomageTemporaire": "Chômage temporaire",
+        "salaireReference": "Salaire de référence",
+        "total57": "Total 57 (AGR+CT+CC)",
+        "total05": "Total 05 (AGR+CT+CC)"
+      },
+      "intermediaires": {
+        "nombreOccupations": "Nombre d'occupations",
+        "f1": "F1 (allocations)",
+        "f2": "F2 (allocation jour)",
+        "f3f4": "F3 / F4",
+        "vtlTot": "VTL total",
+        "bonusTot": "Bonus total",
+        "totalSalaireImposable": "Salaire imposable",
+        "totalRetenues": "Retenues (précompte)",
+        "formule1A": "Formule 1A (AGR 57)",
+        "formule1B": "Formule 1B (limite 57)",
+        "formule2A": "Formule 2A (AGR 05)",
+        "formule2B": "Formule 2B (limite 05)"
+      },
+      "categorieFamiliale": {
+        "A": "A — chef de ménage",
+        "N": "N — isolé",
+        "B1": "B1 — cohabitant 1ʳᵉ pér.",
+        "B2": "B2 — cohabitant 2ᵉ pér.",
+        "P": "P — cohabitant forfait"
+      },
+      "categorieTravailleur": {
+        "_1O": "1O — ouvrier privé",
+        "_1E": "1E — employé privé",
+        "_2E": "2E — employé public",
+        "_2P": "2P — ouvrier public",
+        "_3": "3 — statutaire"
+      },
+      "warning": "Montants bruts. L'AGR doit être au moins égale à la demi-allocation. Document destiné à l'usage interne, généré automatiquement à partir des données saisies — vérifiez toujours les valeurs extraites du WECH 506 avant toute validation de paiement.",
+      "footer": "Docbel © {year}  |  https://www.docbel.be",
+      "pagination": "{p} / {total}",
+      "filename": "docbel-calcul-agr-{date}.pdf"
     }
   }
 }

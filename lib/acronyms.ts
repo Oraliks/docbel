@@ -37,7 +37,11 @@ export const ACRONYM_DOMAINS: Record<
   AcronymDomain,
   {
     label: string;
+    /** Clé i18n optionnelle (namespace `public.glossaire.domains.*.label`). */
+    labelKey?: string;
     tagline: string;
+    /** Clé i18n optionnelle (namespace `public.glossaire.domains.*.tagline`). */
+    taglineKey?: string;
     /**
      * Sigles à montrer en aperçu dans la tuile de l'univers — sert de
      * boussole visuelle : le visiteur reconnaît BCE/ONSS dans la tuile
@@ -49,32 +53,44 @@ export const ACRONYM_DOMAINS: Record<
 > = {
   chomage: {
     label: "Chômage & fin de contrat",
+    labelKey: "public.glossaire.domains.chomage.label",
     tagline: "Si tu viens de perdre ton emploi ou que tu y émarges",
+    taglineKey: "public.glossaire.domains.chomage.tagline",
     featured: ["ONEM", "C4", "CAPAC"],
   },
   cpas: {
     label: "CPAS & aide sociale",
+    labelKey: "public.glossaire.domains.cpas.label",
     tagline: "Revenu d'intégration, aide médicale, accompagnement",
+    taglineKey: "public.glossaire.domains.cpas.tagline",
     featured: ["CPAS", "RIS", "PIIS"],
   },
   "emploi-regional": {
     label: "Emploi en région",
+    labelKey: "public.glossaire.domains.emploiRegional.label",
     tagline: "Où s'inscrire et se former selon où on habite",
+    taglineKey: "public.glossaire.domains.emploiRegional.tagline",
     featured: ["FOREM", "VDAB", "Actiris"],
   },
   entreprise: {
     label: "Entreprises & indépendants",
+    labelKey: "public.glossaire.domains.entreprise.label",
     tagline: "Créer, déclarer, cotiser, payer la TVA",
+    taglineKey: "public.glossaire.domains.entreprise.tagline",
     featured: ["BCE", "ONSS", "TVA"],
   },
   "sante-secu": {
     label: "Santé & sécurité sociale",
+    labelKey: "public.glossaire.domains.santeSecu.label",
     tagline: "Mutualités, identifiants, déclarations",
+    taglineKey: "public.glossaire.domains.santeSecu.tagline",
     featured: ["INAMI", "NISS", "BCSS"],
   },
   juridique: {
     label: "Cadre juridique",
+    labelKey: "public.glossaire.domains.juridique.label",
     tagline: "Lois, conventions, administration fédérale",
+    taglineKey: "public.glossaire.domains.juridique.tagline",
     featured: ["SPF", "AR", "CCT"],
   },
 };
@@ -84,8 +100,12 @@ export type AcronymEntry = {
   code: string;
   /** Expansion littérale, ex. "Office National de l'Emploi". */
   label: string;
+  /** Clé i18n optionnelle pour `label` (namespace `public.glossaire.acronyms.{CODE}.meaning`). */
+  meaningKey?: string;
   /** Définition courte pour le tooltip. */
   definition: string;
+  /** Clé i18n optionnelle pour `definition` (namespace `public.glossaire.acronyms.{CODE}.definition`). */
+  definitionKey?: string;
   /** Univers de rattachement — utilisé par la page /glossaire. */
   domain: AcronymDomain;
   /** Variantes (utile pour le matcher : "C.A.P.A.C", "Onem"…). */
@@ -96,215 +116,275 @@ export const ACRONYMS: Readonly<Record<string, AcronymEntry>> = {
   ONEM: {
     code: "ONEM",
     label: "Office National de l'Emploi",
+    meaningKey: "public.glossaire.acronyms.ONEM.meaning",
     definition:
       "Organisme fédéral qui paie et contrôle les allocations de chômage et délivre les documents officiels (C4, C3…)",
+    definitionKey: "public.glossaire.acronyms.ONEM.definition",
     domain: "chomage",
   },
   ONSS: {
     code: "ONSS",
     label: "Office National de Sécurité Sociale",
+    meaningKey: "public.glossaire.acronyms.ONSS.meaning",
     definition:
       "Perçoit les cotisations sociales des employeurs et travailleurs et les redistribue aux organismes de sécurité sociale",
+    definitionKey: "public.glossaire.acronyms.ONSS.definition",
     domain: "entreprise",
   },
   CAPAC: {
     code: "CAPAC",
     label: "Caisse Auxiliaire de Paiement des Allocations de Chômage",
+    meaningKey: "public.glossaire.acronyms.CAPAC.meaning",
     definition:
       "Caisse publique qui paie les allocations de chômage aux personnes non affiliées à un syndicat",
+    definitionKey: "public.glossaire.acronyms.CAPAC.definition",
     domain: "chomage",
   },
   CPAS: {
     code: "CPAS",
     label: "Centre Public d'Action Sociale",
+    meaningKey: "public.glossaire.acronyms.CPAS.meaning",
     definition:
       "Organisme communal qui garantit à chacun une vie conforme à la dignité humaine (revenu d'intégration, aide sociale, médicale…)",
+    definitionKey: "public.glossaire.acronyms.CPAS.definition",
     domain: "cpas",
   },
   RIS: {
     code: "RIS",
     label: "Revenu d'Intégration Sociale",
+    meaningKey: "public.glossaire.acronyms.RIS.meaning",
     definition:
       "Aide financière mensuelle versée par le CPAS aux personnes sans ressources suffisantes",
+    definitionKey: "public.glossaire.acronyms.RIS.definition",
     domain: "cpas",
   },
   AGR: {
     code: "AGR",
     label: "Allocation de Garantie de Revenus",
+    meaningKey: "public.glossaire.acronyms.AGR.meaning",
     definition:
       "Complément payé par l'ONEM aux travailleurs à temps partiel involontaire pour atteindre un revenu minimum",
+    definitionKey: "public.glossaire.acronyms.AGR.definition",
     domain: "chomage",
   },
   C4: {
     code: "C4",
     label: "Certificat de chômage C4",
+    meaningKey: "public.glossaire.acronyms.C4.meaning",
     definition:
       "Document remis par l'employeur en fin de contrat — indispensable pour ouvrir un droit aux allocations de chômage",
+    definitionKey: "public.glossaire.acronyms.C4.definition",
     domain: "chomage",
   },
   C1: {
     code: "C1",
     label: "Déclaration de situation personnelle et familiale (C1)",
+    meaningKey: "public.glossaire.acronyms.C1.meaning",
     definition:
       "Formulaire à remettre à l'organisme de paiement pour fixer le taux d'allocation (isolé, cohabitant, chef de ménage)",
+    definitionKey: "public.glossaire.acronyms.C1.definition",
     domain: "chomage",
   },
   C3: {
     code: "C3",
     label: "Carte de contrôle C3",
+    meaningKey: "public.glossaire.acronyms.C3.meaning",
     definition:
       "Document mensuel où le chômeur indemnisé note ses jours de travail, maladie, vacances avant de l'envoyer à son organisme de paiement",
+    definitionKey: "public.glossaire.acronyms.C3.definition",
     domain: "chomage",
   },
   BCE: {
     code: "BCE",
     label: "Banque-Carrefour des Entreprises",
+    meaningKey: "public.glossaire.acronyms.BCE.meaning",
     definition:
       "Registre fédéral qui attribue un numéro d'entreprise unique à chaque entreprise et indépendant actif en Belgique",
+    definitionKey: "public.glossaire.acronyms.BCE.definition",
     domain: "entreprise",
     aliases: ["B.C.E."],
   },
   BCSS: {
     code: "BCSS",
     label: "Banque-Carrefour de la Sécurité Sociale",
+    meaningKey: "public.glossaire.acronyms.BCSS.meaning",
     definition:
       "Plate-forme d'échange de données entre les institutions de sécurité sociale belges",
+    definitionKey: "public.glossaire.acronyms.BCSS.definition",
     domain: "sante-secu",
   },
   FOREM: {
     code: "FOREM",
     label: "Office wallon de la Formation professionnelle et de l'Emploi",
+    meaningKey: "public.glossaire.acronyms.FOREM.meaning",
     definition:
       "Service public de l'emploi et de la formation en Wallonie — où s'inscrivent les demandeurs d'emploi wallons",
+    definitionKey: "public.glossaire.acronyms.FOREM.definition",
     domain: "emploi-regional",
     aliases: ["Forem"],
   },
   VDAB: {
     code: "VDAB",
     label: "Vlaamse Dienst voor Arbeidsbemiddeling en Beroepsopleiding",
+    meaningKey: "public.glossaire.acronyms.VDAB.meaning",
     definition:
       "Service public flamand de l'emploi et de la formation — équivalent du FOREM en Flandre",
+    definitionKey: "public.glossaire.acronyms.VDAB.definition",
     domain: "emploi-regional",
   },
   ACTIRIS: {
     code: "Actiris",
     label: "Office régional bruxellois de l'emploi",
+    meaningKey: "public.glossaire.acronyms.ACTIRIS.meaning",
     definition:
       "Service public de l'emploi en Région de Bruxelles-Capitale — où s'inscrivent les demandeurs d'emploi bruxellois",
+    definitionKey: "public.glossaire.acronyms.ACTIRIS.definition",
     domain: "emploi-regional",
     aliases: ["Actiris", "ACTIRIS"],
   },
   ADG: {
     code: "ADG",
     label: "Arbeitsamt der Deutschsprachigen Gemeinschaft",
+    meaningKey: "public.glossaire.acronyms.ADG.meaning",
     definition:
       "Service public de l'emploi de la Communauté germanophone (cantons de l'Est)",
+    definitionKey: "public.glossaire.acronyms.ADG.definition",
     domain: "emploi-regional",
   },
   INASTI: {
     code: "INASTI",
     label: "Institut National d'Assurance Sociale pour Travailleurs Indépendants",
+    meaningKey: "public.glossaire.acronyms.INASTI.meaning",
     definition:
       "Gère la sécurité sociale des travailleurs indépendants (pension, mutuelle, allocations familiales…)",
+    definitionKey: "public.glossaire.acronyms.INASTI.definition",
     domain: "entreprise",
   },
   INAMI: {
     code: "INAMI",
     label: "Institut National d'Assurance Maladie-Invalidité",
+    meaningKey: "public.glossaire.acronyms.INAMI.meaning",
     definition:
       "Organise l'assurance soins de santé et indemnités via les mutualités",
+    definitionKey: "public.glossaire.acronyms.INAMI.definition",
     domain: "sante-secu",
   },
   SPF: {
     code: "SPF",
     label: "Service Public Fédéral",
+    meaningKey: "public.glossaire.acronyms.SPF.meaning",
     definition:
       "Administration fédérale belge (ex. SPF Emploi, SPF Finances, SPF Justice)",
+    definitionKey: "public.glossaire.acronyms.SPF.definition",
     domain: "juridique",
   },
   SPP: {
     code: "SPP",
     label: "Service Public de Programmation",
+    meaningKey: "public.glossaire.acronyms.SPP.meaning",
     definition:
       "Administration fédérale spécialisée — la plus connue est le SPP Intégration sociale, qui coordonne les CPAS",
+    definitionKey: "public.glossaire.acronyms.SPP.definition",
     domain: "juridique",
   },
   PIIS: {
     code: "PIIS",
     label: "Projet Individualisé d'Intégration Sociale",
+    meaningKey: "public.glossaire.acronyms.PIIS.meaning",
     definition:
       "Contrat conclu entre le CPAS et le bénéficiaire du RIS, qui fixe des objectifs personnalisés (formation, emploi, logement…)",
+    definitionKey: "public.glossaire.acronyms.PIIS.definition",
     domain: "cpas",
   },
   DIMONA: {
     code: "DIMONA",
     label: "Déclaration Immédiate à l'Emploi",
+    meaningKey: "public.glossaire.acronyms.DIMONA.meaning",
     definition:
       "Déclaration électronique que l'employeur doit transmettre à l'ONSS au plus tard au début de chaque mission",
+    definitionKey: "public.glossaire.acronyms.DIMONA.definition",
     domain: "entreprise",
     aliases: ["Dimona"],
   },
   DRS: {
     code: "DRS",
     label: "Déclaration des Risques Sociaux",
+    meaningKey: "public.glossaire.acronyms.DRS.meaning",
     definition:
       "Ensemble des déclarations électroniques (chômage, maladie, accident…) que l'employeur envoie aux organismes de sécurité sociale",
+    definitionKey: "public.glossaire.acronyms.DRS.definition",
     domain: "entreprise",
   },
   NISS: {
     code: "NISS",
     label: "Numéro d'Identification de la Sécurité Sociale",
+    meaningKey: "public.glossaire.acronyms.NISS.meaning",
     definition:
       "Numéro unique à 11 chiffres qui identifie chaque personne dans la sécurité sociale belge — figure au dos de la carte d'identité",
+    definitionKey: "public.glossaire.acronyms.NISS.definition",
     domain: "sante-secu",
   },
   CCT: {
     code: "CCT",
     label: "Convention Collective de Travail",
+    meaningKey: "public.glossaire.acronyms.CCT.meaning",
     definition:
       "Accord signé entre employeurs et syndicats qui fixe les conditions de travail (salaires, congés…) d'un secteur ou d'une entreprise",
+    definitionKey: "public.glossaire.acronyms.CCT.definition",
     domain: "juridique",
   },
   CP: {
     code: "CP",
     label: "Commission Paritaire",
+    meaningKey: "public.glossaire.acronyms.CP.meaning",
     definition:
       "Organe sectoriel où patrons et syndicats négocient les conditions de travail. Chaque secteur a sa CP (numérotée)",
+    definitionKey: "public.glossaire.acronyms.CP.definition",
     domain: "juridique",
   },
   ASBL: {
     code: "ASBL",
     label: "Association Sans But Lucratif",
+    meaningKey: "public.glossaire.acronyms.ASBL.meaning",
     definition:
       "Forme juridique d'association dont les bénéfices ne sont pas distribués aux membres mais réinvestis dans son objet social",
+    definitionKey: "public.glossaire.acronyms.ASBL.definition",
     domain: "entreprise",
   },
   AR: {
     code: "AR",
     label: "Arrêté Royal",
+    meaningKey: "public.glossaire.acronyms.AR.meaning",
     definition:
       "Acte signé par le Roi sur proposition d'un ministre — la principale source de droit réglementaire en Belgique",
+    definitionKey: "public.glossaire.acronyms.AR.definition",
     domain: "juridique",
   },
   ALE: {
     code: "ALE",
     label: "Agence Locale pour l'Emploi",
+    meaningKey: "public.glossaire.acronyms.ALE.meaning",
     definition:
       "Permet à un chômeur de longue durée d'effectuer des prestations occasionnelles (jardinage, garde d'enfants…) tout en gardant ses allocations",
+    definitionKey: "public.glossaire.acronyms.ALE.definition",
     domain: "chomage",
   },
   PFI: {
     code: "PFI",
     label: "Plan Formation-Insertion",
+    meaningKey: "public.glossaire.acronyms.PFI.meaning",
     definition:
       "Formation en entreprise (Wallonie) pour un demandeur d'emploi : il garde ses allocations et reçoit une prime de l'employeur",
+    definitionKey: "public.glossaire.acronyms.PFI.definition",
     domain: "emploi-regional",
   },
   TVA: {
     code: "TVA",
     label: "Taxe sur la Valeur Ajoutée",
+    meaningKey: "public.glossaire.acronyms.TVA.meaning",
     definition:
       "Taxe indirecte payée sur la plupart des biens et services. Taux standard belge : 21%",
+    definitionKey: "public.glossaire.acronyms.TVA.definition",
     domain: "entreprise",
   },
 };

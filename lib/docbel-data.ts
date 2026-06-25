@@ -22,11 +22,19 @@ import type { AudienceId } from "@/lib/audience";
 export interface Tool {
   id: number;
   cat: string;
+  /** Clé i18n optionnelle pour `cat` (namespace `public.docbelData.tools.{KEY}.cat` ou `public.docbelData.categories.{CAT}`). */
+  catKey?: string;
   icon: string;
   title: string;
+  /** Clé i18n optionnelle pour `title` (namespace `public.docbelData.tools.{KEY}.title`). */
+  titleKey?: string;
   desc: string;
+  /** Clé i18n optionnelle pour `desc` (namespace `public.docbelData.tools.{KEY}.desc`). */
+  descKey?: string;
   popular: boolean;
   time: string;
+  /** Clé i18n optionnelle pour `time` (namespace `public.docbelData.tools.{KEY}.time`). */
+  timeKey?: string;
   type: string;
   audiences: AudienceId[];
   /**
@@ -67,12 +75,16 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 6,
     cat: "Calculs",
+    catKey: "public.docbelData.tools.tool6.cat",
     icon: "Calendar",
     title: "Calculateur de préavis",
+    titleKey: "public.docbelData.tools.tool6.title",
     desc:
       "Calculez votre délai de préavis légal en fonction de votre ancienneté, statut et date d'entrée en service.",
+    descKey: "public.docbelData.tools.tool6.desc",
     popular: true,
     time: "2 min",
+    timeKey: "public.docbelData.tools.tool6.time",
     type: "calc_preavis",
     slug: "preavis",
     audiences: ["citoyen", "employeur"],
@@ -80,12 +92,16 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 12,
     cat: "Organismes",
+    catKey: "public.docbelData.tools.tool12.cat",
     icon: "MapPin",
     title: "Trouver un bureau",
+    titleKey: "public.docbelData.tools.tool12.title",
     desc:
       "CPAS, Commune, ONEM, organismes de paiement, syndicats : trouvez d'un coup le bureau compétent pour votre situation, partout en Belgique.",
+    descKey: "public.docbelData.tools.tool12.desc",
     popular: true,
     time: "1 min",
+    timeKey: "public.docbelData.tools.tool12.time",
     type: "locator",
     slug: "bureaux",
     audiences: ["citoyen", "employeur", "partenaire"],
@@ -93,12 +109,16 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 30,
     cat: "Référentiels",
+    catKey: "public.docbelData.tools.tool30.cat",
     icon: "Search",
     title: "Lookup ONEM",
+    titleKey: "public.docbelData.tools.tool30.title",
     desc:
       "Décodage de tous les codes officiels ONEM (S01, S04, S38, Dispo, BCSS…). Recherche fuzzy multilingue FR/NL/DE/EN dans 11 000+ entrées.",
+    descKey: "public.docbelData.tools.tool30.desc",
     popular: true,
     time: "instant",
+    timeKey: "public.docbelData.tools.tool30.time",
     type: "lookup",
     slug: "lookup-onem",
     // Pas de `href` : on suit le pattern standard `/outils/{slug}` —
@@ -115,12 +135,16 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 101,
     cat: "Calculs",
+    catKey: "public.docbelData.tools.tool101.cat",
     icon: "Wallet",
     title: "Brut ↔ Net",
+    titleKey: "public.docbelData.tools.tool101.title",
     desc:
       "Convertissez votre salaire brut en net (ou inversement) selon votre statut familial, votre région et vos avantages.",
+    descKey: "public.docbelData.tools.tool101.desc",
     popular: true,
     time: "2 min",
+    timeKey: "public.docbelData.tools.tool101.time",
     type: "calc_brut_net",
     slug: "brut-net",
     audiences: ["citoyen", "employeur"],
@@ -128,12 +152,16 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 102,
     cat: "Calculs",
+    catKey: "public.docbelData.tools.tool102.cat",
     icon: "Plane",
     title: "Pécule de vacances",
+    titleKey: "public.docbelData.tools.tool102.title",
     desc:
       "Estimez votre pécule simple et double (employé ou ouvrier) en fonction de votre salaire et de votre ancienneté.",
+    descKey: "public.docbelData.tools.tool102.desc",
     popular: true,
     time: "2 min",
+    timeKey: "public.docbelData.tools.tool102.time",
     type: "calc_pecule",
     slug: "pecule-vacances",
     audiences: ["citoyen"],
@@ -141,12 +169,16 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 103,
     cat: "Calculs",
+    catKey: "public.docbelData.tools.tool103.cat",
     icon: "Coins",
     title: "Allocations de chômage",
+    titleKey: "public.docbelData.tools.tool103.title",
     desc:
       "Calculez votre allocation mensuelle de chômage selon votre situation familiale, votre salaire et votre durée de chômage.",
+    descKey: "public.docbelData.tools.tool103.desc",
     popular: true,
     time: "3 min",
+    timeKey: "public.docbelData.tools.tool103.time",
     type: "calc_chomage",
     slug: "allocations-chomage",
     audiences: ["citoyen"],
@@ -154,12 +186,16 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 104,
     cat: "Calculs",
+    catKey: "public.docbelData.tools.tool104.cat",
     icon: "FileSignature",
     title: "Indemnité de rupture",
+    titleKey: "public.docbelData.tools.tool104.title",
     desc:
       "Convertissez votre préavis non presté en indemnité compensatoire (€). Complément du calculateur de préavis.",
+    descKey: "public.docbelData.tools.tool104.desc",
     popular: false,
     time: "2 min",
+    timeKey: "public.docbelData.tools.tool104.time",
     type: "calc_indemnite",
     slug: "indemnite-rupture",
     audiences: ["citoyen", "employeur"],
@@ -167,12 +203,16 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 105,
     cat: "Calculs",
+    catKey: "public.docbelData.tools.tool105.cat",
     icon: "Hourglass",
     title: "Pension légale estimée",
+    titleKey: "public.docbelData.tools.tool105.title",
     desc:
       "Estimation simplifiée de votre pension légale salarié selon votre carrière, votre salaire moyen et votre âge de départ.",
+    descKey: "public.docbelData.tools.tool105.desc",
     popular: false,
     time: "3 min",
+    timeKey: "public.docbelData.tools.tool105.time",
     type: "calc_pension",
     slug: "pension-estimation",
     audiences: ["citoyen"],
@@ -180,12 +220,16 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 106,
     cat: "Calculs",
+    catKey: "public.docbelData.tools.tool106.cat",
     icon: "Baby",
     title: "Allocations familiales",
+    titleKey: "public.docbelData.tools.tool106.title",
     desc:
       "Calculez vos allocations familiales selon votre région (FAMIWAL, FAMIRIS, Groeipakket, Kindergeld DG) et le rang de l'enfant.",
+    descKey: "public.docbelData.tools.tool106.desc",
     popular: true,
     time: "2 min",
+    timeKey: "public.docbelData.tools.tool106.time",
     type: "calc_allocs_fam",
     slug: "allocations-familiales",
     audiences: ["citoyen"],
@@ -193,12 +237,16 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 107,
     cat: "Calculs",
+    catKey: "public.docbelData.tools.tool107.cat",
     icon: "Calculator",
     title: "Impôt des personnes physiques",
+    titleKey: "public.docbelData.tools.tool107.title",
     desc:
       "Simulateur IPP simplifié : tranches d'imposition, quotité exemptée, enfants à charge et additionnels communaux.",
+    descKey: "public.docbelData.tools.tool107.desc",
     popular: true,
     time: "3 min",
+    timeKey: "public.docbelData.tools.tool107.time",
     type: "calc_ipp",
     slug: "ipp-simulateur",
     audiences: ["citoyen"],
@@ -206,12 +254,16 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 108,
     cat: "Calculs",
+    catKey: "public.docbelData.tools.tool108.cat",
     icon: "Zap",
     title: "Tarif social énergie",
+    titleKey: "public.docbelData.tools.tool108.title",
     desc:
       "Vérifiez votre éligibilité au tarif social électricité/gaz et estimez votre gain par rapport au tarif standard.",
+    descKey: "public.docbelData.tools.tool108.desc",
     popular: true,
     time: "2 min",
+    timeKey: "public.docbelData.tools.tool108.time",
     type: "calc_tarif_social",
     slug: "tarif-social-energie",
     audiences: ["citoyen"],
@@ -219,12 +271,16 @@ export const TOOLS_DATA: Tool[] = [
   {
     id: 109,
     cat: "Calculs",
+    catKey: "public.docbelData.tools.tool109.cat",
     icon: "Car",
     title: "Frais kilométriques",
+    titleKey: "public.docbelData.tools.tool109.title",
     desc:
       "Calculez la déduction fiscale de vos frais domicile-travail selon votre mode de transport (voiture, vélo, transports en commun).",
+    descKey: "public.docbelData.tools.tool109.desc",
     popular: false,
     time: "2 min",
+    timeKey: "public.docbelData.tools.tool109.time",
     type: "calc_km",
     slug: "frais-kilometriques",
     audiences: ["citoyen"],
@@ -236,6 +292,22 @@ export function getToolsByAudience(audience: AudienceId): Tool[] {
 }
 
 export const CATEGORIES = ["Tous", "Documents", "Calculs", "Organismes", "CPAS", "Tutoriels", "Référentiels"];
+
+/**
+ * Mapping des libellés `CATEGORIES` (FR) vers leurs clés i18n
+ * (`public.docbelData.categories.*`). Les consommateurs qui veulent
+ * afficher les catégories localisées résolvent `CATEGORY_KEYS[label]`
+ * via `useTranslations` ; FR reste le fallback par défaut.
+ */
+export const CATEGORY_KEYS: Readonly<Record<string, string>> = {
+  Tous: "public.docbelData.categories.Tous",
+  Documents: "public.docbelData.categories.Documents",
+  Calculs: "public.docbelData.categories.Calculs",
+  Organismes: "public.docbelData.categories.Organismes",
+  CPAS: "public.docbelData.categories.CPAS",
+  Tutoriels: "public.docbelData.categories.Tutoriels",
+  "Référentiels": "public.docbelData.categories.Referentiels",
+};
 
 // Helper to generate URL-friendly slugs
 export function toolSlug(title: string): string {

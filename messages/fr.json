@@ -9944,6 +9944,7 @@
       }
     },
     "lookupLib": {
+      "flagAriaLabel": "Drapeau {iso2}",
       "modules": {
         "S01": {
           "label": "Signalétique",

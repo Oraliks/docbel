@@ -6877,6 +6877,7 @@
       }
     },
     "lookupLib": {
+      "flagAriaLabel": "Flag {iso2}",
       "modules": {
         "S01": {
           "label": "Identification",

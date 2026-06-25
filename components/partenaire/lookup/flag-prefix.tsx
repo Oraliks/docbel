@@ -1,11 +1,10 @@
+'use client'
+
+import { useTranslations } from 'next-intl'
 import { getCountryIso2 } from '@/lib/lookup/countryFlag'
 
-/**
- * Drapeau SVG (lib `flag-icons`) affiché en préfixe d'une nationalité ONEM.
- * No-op si la table n'est pas `nationalite` ou si le libellé ne matche pas un
- * pays connu — évite tout faux positif.
- */
 export function FlagPrefix({ tableSlug, label }: { tableSlug: string; label: string }) {
+  const t = useTranslations('public.lookupLib')
   if (tableSlug !== 'nationalite') return null
   const iso2 = getCountryIso2(label)
   if (!iso2) return null
@@ -19,7 +18,7 @@ export function FlagPrefix({ tableSlug, label }: { tableSlug: string; label: str
         verticalAlign: '-2px',
       }}
       title={`${iso2} — ${label}`}
-      aria-label={`Drapeau ${iso2}`}
+      aria-label={t('flagAriaLabel', { iso2 })}
     />
   )
 }

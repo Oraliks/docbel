@@ -1,0 +1,3372 @@
+[
+  {
+    "id": "cmoxptge4000icvero2ebsraf",
+    "field": "nom",
+    "value": "CARRIERES DE KAOLIN ET DE SABLE EXPLOITEES A CIEL OUVERT DANS LES PROVINCES DU BRABANT WALLON, DE HAINAUT, DE LIEGE, DE LUXEMBOURG ET DE NAMUR"
+  },
+  {
+    "id": "cmoxptge4000icvero2ebsraf",
+    "field": "label",
+    "value": "102.05 - CARRIERES DE KAOLIN ET DE SABLE EXPLOITEES A CIEL OUVERT DANS LES PROVINCES DU BRABANT WALLON, DE HAINAUT, DE LIEGE, DE LUXEMBOURG ET DE NAMUR"
+  },
+  {
+    "id": "cmoxptgfk000jcver07p5eyvd",
+    "field": "nom",
+    "value": "CARRIERES DE GRAVIER ET DE SABLE EXPLOITEES A CIEL OUVERT DANS LES PROVINCES D'ANVERS, DE FLANDRE OCC., DE FLANDRE OR., DE LIMBOURG ET DU BRABANT FLAMAND"
+  },
+  {
+    "id": "cmoxptgfk000jcver07p5eyvd",
+    "field": "label",
+    "value": "102.06 - CARRIERES DE GRAVIER ET DE SABLE EXPLOITEES A CIEL OUVERT DANS LES PROVINCES D'ANVERS, DE FLANDRE OCC., DE FLANDRE OR., DE LIMBOURG ET DU BRABANT FLAMAND"
+  },
+  {
+    "id": "cmoxptggy000kcver8gseceu8",
+    "field": "nom",
+    "value": "EXPLOITATIONS DE SABLE BLANC"
+  },
+  {
+    "id": "cmoxptggy000kcver8gseceu8",
+    "field": "label",
+    "value": "102.06.01 - EXPLOITATIONS DE SABLE BLANC"
+  },
+  {
+    "id": "cmoxptgio000lcvernidyi2cl",
+    "field": "nom",
+    "value": "AUTRES QUE LES EXPLOITATIONS DE SABLE BLANC"
+  },
+  {
+    "id": "cmoxptgio000lcvernidyi2cl",
+    "field": "label",
+    "value": "102.06.02 - AUTRES QUE LES EXPLOITATIONS DE SABLE BLANC"
+  },
+  {
+    "id": "cmoxptgkb000mcverqxi6qj3v",
+    "field": "nom",
+    "value": "CARRIERES, CIMENTERIES ET FOURS A CHAUX DE L'ARRONDISSEMENT ADMINISTRATIF DE TOURNAI"
+  },
+  {
+    "id": "cmoxptgkb000mcverqxi6qj3v",
+    "field": "label",
+    "value": "102.07 - CARRIERES, CIMENTERIES ET FOURS A CHAUX DE L'ARRONDISSEMENT ADMINISTRATIF DE TOURNAI"
+  },
+  {
+    "id": "cmoxptglx000ncverp10whvdb",
+    "field": "nom",
+    "value": "CARRIERES ET SCIERIES DE MARBRES DE TOUT LE TERRITOIRE DU ROYAUME"
+  },
+  {
+    "id": "cmoxptglx000ncverp10whvdb",
+    "field": "label",
+    "value": "102.08 - CARRIERES ET SCIERIES DE MARBRES DE TOUT LE TERRITOIRE DU ROYAUME"
+  },
+  {
+    "id": "cmoxptgnb000ocverau5oob4s",
+    "field": "nom",
+    "value": "CARRIERES DE CALCAIRE NON TAILLE ET FOURS A CHAUX, CARRIERES DE DOLOMIES ET FOURS A DOLOMIES DE TOUT LE TERRITOIRE DU ROYAUME"
+  },
+  {
+    "id": "cmoxptgnb000ocverau5oob4s",
+    "field": "label",
+    "value": "102.09 - CARRIERES DE CALCAIRE NON TAILLE ET FOURS A CHAUX, CARRIERES DE DOLOMIES ET FOURS A DOLOMIES DE TOUT LE TERRITOIRE DU ROYAUME"
+  },
+  {
+    "id": "cmoxptgos000pcverry6s1t22",
+    "field": "nom",
+    "value": "RECUPERATION DE TERRILS"
+  },
+  {
+    "id": "cmoxptgos000pcverry6s1t22",
+    "field": "label",
+    "value": "102.10 - RECUPERATION DE TERRILS"
+  },
+  {
+    "id": "cmoxptgq5000qcver6ofqi6zr",
+    "field": "nom",
+    "value": "ARDOISERIES, CARRIERES DE COTICULES ET PIERRES A RASOIR DES PROVINCES DU BRABANT WALLON, DE HAINAUT, DE LIEGE, DE LUXEMBOURG ET DE NAMUR"
+  },
+  {
+    "id": "cmoxptgq5000qcver6ofqi6zr",
+    "field": "label",
+    "value": "102.11 - ARDOISERIES, CARRIERES DE COTICULES ET PIERRES A RASOIR DES PROVINCES DU BRABANT WALLON, DE HAINAUT, DE LIEGE, DE LUXEMBOURG ET DE NAMUR"
+  },
+  {
+    "id": "cmoxptgro000rcverx49c5e2a",
+    "field": "nom",
+    "value": "INDUSTRIE SIDERURGIQUE"
+  },
+  {
+    "id": "cmoxptgro000rcverx49c5e2a",
+    "field": "label",
+    "value": "104 - INDUSTRIE SIDERURGIQUE"
+  },
+  {
+    "id": "cmoxptgt5000scverobn6crc4",
+    "field": "nom",
+    "value": "METAUX NON-FERREUX"
+  },
+  {
+    "id": "cmoxptgt5000scverobn6crc4",
+    "field": "label",
+    "value": "105 - METAUX NON-FERREUX"
+  },
+  {
+    "id": "cmoxptguo000tcverb2bqgsrf",
+    "field": "nom",
+    "value": "INDUSTRIES DU CIMENT"
+  },
+  {
+    "id": "cmoxptguo000tcverb2bqgsrf",
+    "field": "label",
+    "value": "106 - INDUSTRIES DU CIMENT"
+  },
+  {
+    "id": "cmoxptgw3000ucverbnc9jgnr",
+    "field": "nom",
+    "value": "FABRIQUES DE CIMENT"
+  },
+  {
+    "id": "cmoxptgw3000ucverbnc9jgnr",
+    "field": "label",
+    "value": "106.01 - FABRIQUES DE CIMENT"
+  },
+  {
+    "id": "cmoxptg4a000bcver1yn2rpov",
+    "field": "nom",
+    "value": "CARRIERES"
+  },
+  {
+    "id": "cmoxptg4a000bcver1yn2rpov",
+    "field": "label",
+    "value": "102 - CARRIERES"
+  },
+  {
+    "id": "cmoxptg5o000ccverbbv64n9u",
+    "field": "nom",
+    "value": "CARRIERES DE PETIT GRANIT ET DE CALCAIRE A TAILLER DE LA PROVINCE DE HAINAUT"
+  },
+  {
+    "id": "cmoxptg5o000ccverbbv64n9u",
+    "field": "label",
+    "value": "102.01 - CARRIERES DE PETIT GRANIT ET DE CALCAIRE A TAILLER DE LA PROVINCE DE HAINAUT"
+  },
+  {
+    "id": "cmoxptg73000dcver23wx6vkg",
+    "field": "nom",
+    "value": "CARRIERES DE PETIT GRANIT ET DE CALCAIRE A TAILLER DES PROVINCES DE LIEGE ET DE NAMUR"
+  },
+  {
+    "id": "cmoxptg73000dcver23wx6vkg",
+    "field": "label",
+    "value": "102.02 - CARRIERES DE PETIT GRANIT ET DE CALCAIRE A TAILLER DES PROVINCES DE LIEGE ET DE NAMUR"
+  },
+  {
+    "id": "cmoxptg9s000fcver6a049oge",
+    "field": "nom",
+    "value": "CARRIERES DE GRES ET DE QUARTZITE DE TOUT LE TERRITOIRE DU ROYAUME, A L'EXCEPTION DES CARRIERES DE QUARTZITE DE LA PROVINCE DU BRABANT WALLON"
+  },
+  {
+    "id": "cmoxptg9s000fcver6a049oge",
+    "field": "label",
+    "value": "102.04 - CARRIERES DE GRES ET DE QUARTZITE DE TOUT LE TERRITOIRE DU ROYAUME, A L'EXCEPTION DES CARRIERES DE QUARTZITE DE LA PROVINCE DU BRABANT WALLON"
+  },
+  {
+    "id": "cmoxptgb7000gcverunyz4lsm",
+    "field": "nom",
+    "value": "ENTERPRISES DE LA PROVINCE DE LIEGE"
+  },
+  {
+    "id": "cmoxptgb7000gcverunyz4lsm",
+    "field": "label",
+    "value": "102.04.01 - ENTERPRISES DE LA PROVINCE DE LIEGE"
+  },
+  {
+    "id": "cmoxptgcq000hcverbcl4adg2",
+    "field": "nom",
+    "value": "AUTRES ENTERPRISES QUE CELLES DE LA PROVINCE DE LIEGE"
+  },
+  {
+    "id": "cmoxptgcq000hcverbcl4adg2",
+    "field": "label",
+    "value": "102.04.02 - AUTRES ENTERPRISES QUE CELLES DE LA PROVINCE DE LIEGE"
+  },
+  {
+    "id": "cmoxpth9y0013cver837oor9g",
+    "field": "nom",
+    "value": "ENTREPRISES DE LA TRANSFORMATION DES METAUX - FLANDRE OCCIDENTALE"
+  },
+  {
+    "id": "cmoxpth9y0013cver837oor9g",
+    "field": "label",
+    "value": "111.03 - ENTREPRISES DE LA TRANSFORMATION DES METAUX - FLANDRE OCCIDENTALE"
+  },
+  {
+    "id": "cmoxpthbl0014cverllntxsdl",
+    "field": "nom",
+    "value": "ENTREPRISES DE LA TRANSFORMATION DES METAUX - FLANDRE ORIENTALE"
+  },
+  {
+    "id": "cmoxpthbl0014cverllntxsdl",
+    "field": "label",
+    "value": "111.04 - ENTREPRISES DE LA TRANSFORMATION DES METAUX - FLANDRE ORIENTALE"
+  },
+  {
+    "id": "cmoxpthcw0015cveri8s79c6f",
+    "field": "nom",
+    "value": "ENTREPRISES DE LA TRANSFORMATION DES METAUX - ANVERS"
+  },
+  {
+    "id": "cmoxpthcw0015cveri8s79c6f",
+    "field": "label",
+    "value": "111.05 - ENTREPRISES DE LA TRANSFORMATION DES METAUX - ANVERS"
+  },
+  {
+    "id": "cmoxpthee0016cvers49h65a1",
+    "field": "nom",
+    "value": "ENTREPRISES DE LA TRANSFORMATION DES METAUX - LIMBOURG"
+  },
+  {
+    "id": "cmoxpthee0016cvers49h65a1",
+    "field": "label",
+    "value": "111.06 - ENTREPRISES DE LA TRANSFORMATION DES METAUX - LIMBOURG"
+  },
+  {
+    "id": "cmoxpthfr0017cveripsvti6a",
+    "field": "nom",
+    "value": "ENTREPRISES DE LA TRANSFORMATION DES METAUX - LIEGE-LUXEMBOURG"
+  },
+  {
+    "id": "cmoxpthfr0017cveripsvti6a",
+    "field": "label",
+    "value": "111.07 - ENTREPRISES DE LA TRANSFORMATION DES METAUX - LIEGE-LUXEMBOURG"
+  },
+  {
+    "id": "cmoxpthhc0018cverm289xgfg",
+    "field": "nom",
+    "value": "ENTREPRISES DE LA TRANSFORMATION DES METAUX - NAMUR"
+  },
+  {
+    "id": "cmoxpthhc0018cverm289xgfg",
+    "field": "label",
+    "value": "111.08 - ENTREPRISES DE LA TRANSFORMATION DES METAUX - NAMUR"
+  },
+  {
+    "id": "cmoxpthix0019cverzo3doulk",
+    "field": "nom",
+    "value": "ENTREPRISES DE LA TRANSFORMATION DES METAUX - HAINAUT"
+  },
+  {
+    "id": "cmoxpthix0019cverzo3doulk",
+    "field": "label",
+    "value": "111.09 - ENTREPRISES DE LA TRANSFORMATION DES METAUX - HAINAUT"
+  },
+  {
+    "id": "cmoxpthkl001acvery9x5vxss",
+    "field": "nom",
+    "value": "ENTREPRISES DE MONTAGE DE PONTS ET CHARPENTES METALLIQUES"
+  },
+  {
+    "id": "cmoxpthkl001acvery9x5vxss",
+    "field": "label",
+    "value": "111.30 - ENTREPRISES DE MONTAGE DE PONTS ET CHARPENTES METALLIQUES"
+  },
+  {
+    "id": "cmoxpthm8001bcvertpvy3q4t",
+    "field": "nom",
+    "value": "ENTREPRISES DE GARAGE"
+  },
+  {
+    "id": "cmoxpthm8001bcvertpvy3q4t",
+    "field": "label",
+    "value": "112 - ENTREPRISES DE GARAGE"
+  },
+  {
+    "id": "cmoxpthnq001ccverr827a5x9",
+    "field": "nom",
+    "value": "INDUSTRIE CERAMIQUE"
+  },
+  {
+    "id": "cmoxpthnq001ccverr827a5x9",
+    "field": "label",
+    "value": "113 - INDUSTRIE CERAMIQUE"
+  },
+  {
+    "id": "cmoxpthp5001dcverxpaeiubc",
+    "field": "nom",
+    "value": "TUILERIES"
+  },
+  {
+    "id": "cmoxpthp5001dcverxpaeiubc",
+    "field": "label",
+    "value": "113.04 - TUILERIES"
+  },
+  {
+    "id": "cmoxpthrg001ecverfj8f0f5i",
+    "field": "nom",
+    "value": "INDUSTRIE DES BRIQUES"
+  },
+  {
+    "id": "cmoxpthrg001ecverfj8f0f5i",
+    "field": "label",
+    "value": "114 - INDUSTRIE DES BRIQUES"
+  },
+  {
+    "id": "cmoxptht5001fcverpdkh14c8",
+    "field": "nom",
+    "value": "INDUSTRIE VERRIERE"
+  },
+  {
+    "id": "cmoxptht5001fcverpdkh14c8",
+    "field": "label",
+    "value": "115 - INDUSTRIE VERRIERE"
+  },
+  {
+    "id": "cmoxpthum001gcvernys5e1j3",
+    "field": "nom",
+    "value": "MIROITERIE ET FABRICATION DE VITRAUX D'ART"
+  },
+  {
+    "id": "cmoxpthum001gcvernys5e1j3",
+    "field": "label",
+    "value": "115.03 - MIROITERIE ET FABRICATION DE VITRAUX D'ART"
+  },
+  {
+    "id": "cmoxpthw6001hcver95u7xsph",
+    "field": "nom",
+    "value": "SOUS-SECTEUR AUXILIAIRE DU VERRE"
+  },
+  {
+    "id": "cmoxpthw6001hcver95u7xsph",
+    "field": "label",
+    "value": "115.09 - SOUS-SECTEUR AUXILIAIRE DU VERRE"
+  },
+  {
+    "id": "cmoxpthxj001icversher728n",
+    "field": "nom",
+    "value": "INDUSTRIE CHIMIQUE"
+  },
+  {
+    "id": "cmoxpthxj001icversher728n",
+    "field": "label",
+    "value": "116 - INDUSTRIE CHIMIQUE"
+  },
+  {
+    "id": "cmoxpthyv001jcver6hmnpo9s",
+    "field": "nom",
+    "value": "NATIONAL"
+  },
+  {
+    "id": "cmoxpthyv001jcver6hmnpo9s",
+    "field": "label",
+    "value": "116.01 - NATIONAL"
+  },
+  {
+    "id": "cmoxpti0l001kcverrk75gyad",
+    "field": "nom",
+    "value": "INDUSTRIE TRANSFORMATRICE DE MATIERES PLASTIQUES DE LA FLANDRE OCCIDENTALE"
+  },
+  {
+    "id": "cmoxpti0l001kcverrk75gyad",
+    "field": "label",
+    "value": "116.02 - INDUSTRIE TRANSFORMATRICE DE MATIERES PLASTIQUES DE LA FLANDRE OCCIDENTALE"
+  },
+  {
+    "id": "cmoxpti20001lcverfreqjnvi",
+    "field": "nom",
+    "value": "INDUSTRIE TRANSFORMATRICE DE MATIERES PLASTIQUES DU LIMBOURG"
+  },
+  {
+    "id": "cmoxpti20001lcverfreqjnvi",
+    "field": "label",
+    "value": "116.03 - INDUSTRIE TRANSFORMATRICE DE MATIERES PLASTIQUES DU LIMBOURG"
+  },
+  {
+    "id": "cmoxpti3f001mcverlxn62rq3",
+    "field": "nom",
+    "value": "INDUSTRIE ET COMMERCE DU PETROLE"
+  },
+  {
+    "id": "cmoxpti3f001mcverlxn62rq3",
+    "field": "label",
+    "value": "117 - INDUSTRIE ET COMMERCE DU PETROLE"
+  },
+  {
+    "id": "cmoxpti5j001ncversuzhkueb",
+    "field": "nom",
+    "value": "INDUSTRIE ALIMENTAIRE"
+  },
+  {
+    "id": "cmoxpti5j001ncversuzhkueb",
+    "field": "label",
+    "value": "118 - INDUSTRIE ALIMENTAIRE"
+  },
+  {
+    "id": "cmoxptgz2000wcveryu7iug14",
+    "field": "nom",
+    "value": "FIBROCIMENT"
+  },
+  {
+    "id": "cmoxptgz2000wcveryu7iug14",
+    "field": "label",
+    "value": "106.03 - FIBROCIMENT"
+  },
+  {
+    "id": "cmoxpth0e000xcvero33stta6",
+    "field": "nom",
+    "value": "MAITRES-TAILLEURS, TAILLEUSES ET COUTURIERES"
+  },
+  {
+    "id": "cmoxpth0e000xcvero33stta6",
+    "field": "label",
+    "value": "107 - MAITRES-TAILLEURS, TAILLEUSES ET COUTURIERES"
+  },
+  {
+    "id": "cmoxpth30000ycvercite40c2",
+    "field": "nom",
+    "value": "INDUSTRIE DE L'HABILLEMENT ET DE LA CONFECTION"
+  },
+  {
+    "id": "cmoxpth30000ycvercite40c2",
+    "field": "label",
+    "value": "109 - INDUSTRIE DE L'HABILLEMENT ET DE LA CONFECTION"
+  },
+  {
+    "id": "cmoxpth4g000zcverhfqe4h54",
+    "field": "nom",
+    "value": "ENTRETIEN DU TEXTILE"
+  },
+  {
+    "id": "cmoxpth4g000zcverhfqe4h54",
+    "field": "label",
+    "value": "110 - ENTRETIEN DU TEXTILE"
+  },
+  {
+    "id": "cmoxpth5t0010cverpuq74pgp",
+    "field": "nom",
+    "value": "CONSTRUCTIONS METALLIQUE, MECANIQUE ET ELECTRIQUE"
+  },
+  {
+    "id": "cmoxpth5t0010cverpuq74pgp",
+    "field": "label",
+    "value": "111 - CONSTRUCTIONS METALLIQUE, MECANIQUE ET ELECTRIQUE"
+  },
+  {
+    "id": "cmoxpth770011cverj1z0048m",
+    "field": "nom",
+    "value": "ENTREPRISES DE LA TRANSFORMATION DES METAUX"
+  },
+  {
+    "id": "cmoxpth770011cverj1z0048m",
+    "field": "label",
+    "value": "111.01 - ENTREPRISES DE LA TRANSFORMATION DES METAUX"
+  },
+  {
+    "id": "cmoxptils001wcver8fuedpdc",
+    "field": "nom",
+    "value": "CONSERVES DE LEGUMES, LEGUMES DESHYDRATES, CHOUCROUTES, LEGUMES EN SAUMURE, PREPARATION DE LEGUMES SECS, SURGELES ET CONGELES, NETTOYAGE OU PREPARATION DE LEGUMES FRAIS"
+  },
+  {
+    "id": "cmoxptils001wcver8fuedpdc",
+    "field": "label",
+    "value": "118.09 - CONSERVES DE LEGUMES, LEGUMES DESHYDRATES, CHOUCROUTES, LEGUMES EN SAUMURE, PREPARATION DE LEGUMES SECS, SURGELES ET CONGELES, NETTOYAGE OU PREPARATION DE LEGUMES FRAIS"
+  },
+  {
+    "id": "cmoxptin9001xcverlobrlugb",
+    "field": "nom",
+    "value": "CONSERVES DE FRUITS, FRUITS CONFITS, PATES DE POMMES, FRUITS CONGELES ET SURGELES, CONFITURERIES, SIROPERIES ET PECTINERIES"
+  },
+  {
+    "id": "cmoxptin9001xcverlobrlugb",
+    "field": "label",
+    "value": "118.10 - CONSERVES DE FRUITS, FRUITS CONFITS, PATES DE POMMES, FRUITS CONGELES ET SURGELES, CONFITURERIES, SIROPERIES ET PECTINERIES"
+  },
+  {
+    "id": "cmoxptiol001ycverqiy4zdtb",
+    "field": "nom",
+    "value": "CONSERVES DE VIANDE, SAUCISSONS, SALAISONS, VIANDES FUMÉES ET PRODUITS DÉRIVÉS DE VIANDE, BOYAUDERIES, FONDOIRS DE GRAISSE, TUERIES DE VOLAILLES, ABATTOIRS ET ATELIERS DE DÉCOUPAGE DE VIANDE"
+  },
+  {
+    "id": "cmoxptiol001ycverqiy4zdtb",
+    "field": "label",
+    "value": "118.11 - CONSERVES DE VIANDE, SAUCISSONS, SALAISONS, VIANDES FUMÉES ET PRODUITS DÉRIVÉS DE VIANDE, BOYAUDERIES, FONDOIRS DE GRAISSE, TUERIES DE VOLAILLES, ABATTOIRS ET ATELIERS DE DÉCOUPAGE DE VIANDE"
+  },
+  {
+    "id": "cmoxptipz001zcveru8nn9kc8",
+    "field": "nom",
+    "value": "INDUSTRIE DU LAIT (LAITERIES, BEURRERIES, FROMAGERIES, ENTREPRISES DE PRODUITS LACTES, CREME GLACEE, FROMAGE FONDU)"
+  },
+  {
+    "id": "cmoxptipz001zcveru8nn9kc8",
+    "field": "label",
+    "value": "118.12 - INDUSTRIE DU LAIT (LAITERIES, BEURRERIES, FROMAGERIES, ENTREPRISES DE PRODUITS LACTES, CREME GLACEE, FROMAGE FONDU)"
+  },
+  {
+    "id": "cmoxptirb0020cverjbacdcct",
+    "field": "nom",
+    "value": "HUILERIES ET MARGARINERIES"
+  },
+  {
+    "id": "cmoxptirb0020cverjbacdcct",
+    "field": "label",
+    "value": "118.13 - HUILERIES ET MARGARINERIES"
+  },
+  {
+    "id": "cmoxptisv0021cver1l5orqr2",
+    "field": "nom",
+    "value": "CHOCOLATERIES, ENTREPRISES DE PATES A TARTINER, CONFISERIES INDUSTRIELLES"
+  },
+  {
+    "id": "cmoxptisv0021cver1l5orqr2",
+    "field": "label",
+    "value": "118.14 - CHOCOLATERIES, ENTREPRISES DE PATES A TARTINER, CONFISERIES INDUSTRIELLES"
+  },
+  {
+    "id": "cmoxptiuq0022cvery93a3ers",
+    "field": "nom",
+    "value": "INDUSTRIE DU FROID, NOTAMMENT LES ENTREPRISES DE GLACE ARTIFICIELLE ET LES ENTREPOTS FRIGORIFIQUES"
+  },
+  {
+    "id": "cmoxptiuq0022cvery93a3ers",
+    "field": "label",
+    "value": "118.15 - INDUSTRIE DU FROID, NOTAMMENT LES ENTREPRISES DE GLACE ARTIFICIELLE ET LES ENTREPOTS FRIGORIFIQUES"
+  },
+  {
+    "id": "cmoxptj3b0023cverlv3tnzs4",
+    "field": "nom",
+    "value": "CONSERVERIES, SAURISSERIES, PRESERVERIES ET ENTREPRISES DE SURGELATION DU POISSON"
+  },
+  {
+    "id": "cmoxptj3b0023cverlv3tnzs4",
+    "field": "label",
+    "value": "118.16 - CONSERVERIES, SAURISSERIES, PRESERVERIES ET ENTREPRISES DE SURGELATION DU POISSON"
+  },
+  {
+    "id": "cmoxptj520024cvereh0dmbkz",
+    "field": "nom",
+    "value": "TORRÉFACTION DE CAFÉ, TORREFACTION DE CHICOREE"
+  },
+  {
+    "id": "cmoxptj520024cvereh0dmbkz",
+    "field": "label",
+    "value": "118.17 - TORRÉFACTION DE CAFÉ, TORREFACTION DE CHICOREE"
+  },
+  {
+    "id": "cmoxptkbn002wcverjmnwzzyv",
+    "field": "nom",
+    "value": "PRODUCTION DES PATES, PAPIERS ET CARTONS"
+  },
+  {
+    "id": "cmoxptkbn002wcverjmnwzzyv",
+    "field": "label",
+    "value": "129 - PRODUCTION DES PATES, PAPIERS ET CARTONS"
+  },
+  {
+    "id": "cmoxpti8g001pcverj8isy1z8",
+    "field": "nom",
+    "value": "PATES ALIMENTAIRES, DERIVES DE CEREALES, RIZERIES"
+  },
+  {
+    "id": "cmoxpti8g001pcverj8isy1z8",
+    "field": "label",
+    "value": "118.02 - PATES ALIMENTAIRES, DERIVES DE CEREALES, RIZERIES"
+  },
+  {
+    "id": "cmoxptid1001rcvery4n9g5av",
+    "field": "nom",
+    "value": "AMIDONNERIES DE RIZ ET DE MAÏS, MAÏSERIES, GLUCOSERIES ET FECULERIES"
+  },
+  {
+    "id": "cmoxptid1001rcvery4n9g5av",
+    "field": "label",
+    "value": "118.04 - AMIDONNERIES DE RIZ ET DE MAÏS, MAÏSERIES, GLUCOSERIES ET FECULERIES"
+  },
+  {
+    "id": "cmoxptif4001scvervz8vye8n",
+    "field": "nom",
+    "value": "BISCUITERIES ET ENTREPRISES DE SPECULOOS, PAIN AZYME ET PAIN D'EPICE, BISCOTTERIES, PÂTISSERIES INDUSTRIELLES"
+  },
+  {
+    "id": "cmoxptif4001scvervz8vye8n",
+    "field": "label",
+    "value": "118.05 - BISCUITERIES ET ENTREPRISES DE SPECULOOS, PAIN AZYME ET PAIN D'EPICE, BISCOTTERIES, PÂTISSERIES INDUSTRIELLES"
+  },
+  {
+    "id": "cmoxptigl001tcverwp8rs56b",
+    "field": "nom",
+    "value": "SUCRERIES, RAFFINERIES, FABRIQUES DE SUCRE INVERTI ET D'ACIDE CITRIQUE, CANDISERIES, LEVURERIES ET DISTILLERIES"
+  },
+  {
+    "id": "cmoxptigl001tcverwp8rs56b",
+    "field": "label",
+    "value": "118.06 - SUCRERIES, RAFFINERIES, FABRIQUES DE SUCRE INVERTI ET D'ACIDE CITRIQUE, CANDISERIES, LEVURERIES ET DISTILLERIES"
+  },
+  {
+    "id": "cmoxptiif001ucveri9hdy3uj",
+    "field": "nom",
+    "value": "BRASSERIES ET MALTERIES"
+  },
+  {
+    "id": "cmoxptiif001ucveri9hdy3uj",
+    "field": "label",
+    "value": "118.07 - BRASSERIES ET MALTERIES"
+  },
+  {
+    "id": "cmoxptik7001vcverzw35kt1o",
+    "field": "nom",
+    "value": "INDUSTRIE DES BOISSONS (EAUX DE BOISSONS, LIMONADES, CIDRES, VINS, JUS ET VINS DE FRUITS, LIQUORISTES, APERITIFS ET DISTILLERIES DE FRUITS)"
+  },
+  {
+    "id": "cmoxptik7001vcverzw35kt1o",
+    "field": "label",
+    "value": "118.08 - INDUSTRIE DES BOISSONS (EAUX DE BOISSONS, LIMONADES, CIDRES, VINS, JUS ET VINS DE FRUITS, LIQUORISTES, APERITIFS ET DISTILLERIES DE FRUITS)"
+  },
+  {
+    "id": "cmoxptjpb002hcver3yncsaf4",
+    "field": "nom",
+    "value": "NETTOYAGE"
+  },
+  {
+    "id": "cmoxptjpb002hcver3yncsaf4",
+    "field": "label",
+    "value": "121 - NETTOYAGE"
+  },
+  {
+    "id": "cmoxptjsh002jcverrwmc2xsi",
+    "field": "nom",
+    "value": "INDUSTRIE DU BOIS"
+  },
+  {
+    "id": "cmoxptjsh002jcverrwmc2xsi",
+    "field": "label",
+    "value": "125 - INDUSTRIE DU BOIS"
+  },
+  {
+    "id": "cmoxptjvn002lcveroxtjowy2",
+    "field": "nom",
+    "value": "SCIERIES ET INDUSTRIES CONNEXES"
+  },
+  {
+    "id": "cmoxptjvn002lcveroxtjowy2",
+    "field": "label",
+    "value": "125.02 - SCIERIES ET INDUSTRIES CONNEXES"
+  },
+  {
+    "id": "cmoxptjwy002mcvertm47os4d",
+    "field": "nom",
+    "value": "COMMERCE DU BOIS"
+  },
+  {
+    "id": "cmoxptjwy002mcvertm47os4d",
+    "field": "label",
+    "value": "125.03 - COMMERCE DU BOIS"
+  },
+  {
+    "id": "cmoxptjyh002ncver659kvoho",
+    "field": "nom",
+    "value": "AMEUBLEMENT ET INDUSTRIE TRANSFORMATRICE DU BOIS"
+  },
+  {
+    "id": "cmoxptjyh002ncver659kvoho",
+    "field": "label",
+    "value": "126 - AMEUBLEMENT ET INDUSTRIE TRANSFORMATRICE DU BOIS"
+  },
+  {
+    "id": "cmoxptjzt002ocvershe28vrg",
+    "field": "nom",
+    "value": "COMMERCE DE COMBUSTIBLES"
+  },
+  {
+    "id": "cmoxptjzt002ocvershe28vrg",
+    "field": "label",
+    "value": "127 - COMMERCE DE COMBUSTIBLES"
+  },
+  {
+    "id": "cmoxptk1m002pcvercwtmyvc8",
+    "field": "nom",
+    "value": "COMMERCE DE COMBUSTIBLES DE LA FLANDRE ORIENTALE"
+  },
+  {
+    "id": "cmoxptk1m002pcvercwtmyvc8",
+    "field": "label",
+    "value": "127.02 - COMMERCE DE COMBUSTIBLES DE LA FLANDRE ORIENTALE"
+  },
+  {
+    "id": "cmoxptk2z002qcverebb38h6p",
+    "field": "nom",
+    "value": "INDUSTRIE DES CUIRS ET PEAUX ET PRODUITS DE REMPLACEMENT"
+  },
+  {
+    "id": "cmoxptk2z002qcverebb38h6p",
+    "field": "label",
+    "value": "128 - INDUSTRIE DES CUIRS ET PEAUX ET PRODUITS DE REMPLACEMENT"
+  },
+  {
+    "id": "cmoxptk4g002rcveri5ptermd",
+    "field": "nom",
+    "value": "TANNERIE ET COMMERCE DE CUIRS ET PEAUX BRUTS"
+  },
+  {
+    "id": "cmoxptk4g002rcveri5ptermd",
+    "field": "label",
+    "value": "128.01 - TANNERIE ET COMMERCE DE CUIRS ET PEAUX BRUTS"
+  },
+  {
+    "id": "cmoxptk5x002scvers8n9ziv9",
+    "field": "nom",
+    "value": "INDUSTRIE DE LA CHAUSSURE, BOTTIERS ET CHAUSSEURS"
+  },
+  {
+    "id": "cmoxptk5x002scvers8n9ziv9",
+    "field": "label",
+    "value": "128.02 - INDUSTRIE DE LA CHAUSSURE, BOTTIERS ET CHAUSSEURS"
+  },
+  {
+    "id": "cmoxptk7e002tcvertu1afufw",
+    "field": "nom",
+    "value": "MAROQUINERIE ET GANTERIE"
+  },
+  {
+    "id": "cmoxptk7e002tcvertu1afufw",
+    "field": "label",
+    "value": "128.03 - MAROQUINERIE ET GANTERIE"
+  },
+  {
+    "id": "cmoxptk8q002ucverntnigxp1",
+    "field": "nom",
+    "value": "SELLERIE, FABRICATION DE COURROIES ET D'ARTICLES INDUSTRIELS EN CUIR"
+  },
+  {
+    "id": "cmoxptk8q002ucverntnigxp1",
+    "field": "label",
+    "value": "128.05 - SELLERIE, FABRICATION DE COURROIES ET D'ARTICLES INDUSTRIELS EN CUIR"
+  },
+  {
+    "id": "cmoxptka5002vcverwqs624le",
+    "field": "nom",
+    "value": "CHAUSSURES ORTHOPEDIQUES"
+  },
+  {
+    "id": "cmoxptka5002vcverwqs624le",
+    "field": "label",
+    "value": "128.06 - CHAUSSURES ORTHOPEDIQUES"
+  },
+  {
+    "id": "cmoxptj9r0027cverkxanulhz",
+    "field": "nom",
+    "value": "INDUSTRIE DES ALIMENTS POUR BETAIL (SIMPLES, COMPOSES, CONCENTRES, MELASSES, FARINES FOURRAGERES, CLOS D'EQUARISSAGE)"
+  },
+  {
+    "id": "cmoxptj9r0027cverkxanulhz",
+    "field": "label",
+    "value": "118.20 - INDUSTRIE DES ALIMENTS POUR BETAIL (SIMPLES, COMPOSES, CONCENTRES, MELASSES, FARINES FOURRAGERES, CLOS D'EQUARISSAGE)"
+  },
+  {
+    "id": "cmoxptjba0028cverzi6htxix",
+    "field": "nom",
+    "value": "INDUSTRIE TRANSFORMATRICE DES POMMES DE TERRE"
+  },
+  {
+    "id": "cmoxptjba0028cverzi6htxix",
+    "field": "label",
+    "value": "118.21 - INDUSTRIE TRANSFORMATRICE DES POMMES DE TERRE"
+  },
+  {
+    "id": "cmoxptjcy0029cver7iun2svk",
+    "field": "nom",
+    "value": "EPLUCHAGE DE POMMES DE TERRE"
+  },
+  {
+    "id": "cmoxptjcy0029cver7iun2svk",
+    "field": "label",
+    "value": "118.22 - EPLUCHAGE DE POMMES DE TERRE"
+  },
+  {
+    "id": "cmoxptjeo002acverz8u3g4yh",
+    "field": "nom",
+    "value": "COMMERCE ALIMENTAIRE"
+  },
+  {
+    "id": "cmoxptjeo002acverz8u3g4yh",
+    "field": "label",
+    "value": "119 - COMMERCE ALIMENTAIRE"
+  },
+  {
+    "id": "cmoxptjg5002bcverk3p3u6un",
+    "field": "nom",
+    "value": "BOUCHERIES/CHARCUTERIES"
+  },
+  {
+    "id": "cmoxptjg5002bcverk3p3u6un",
+    "field": "label",
+    "value": "119.03 - BOUCHERIES/CHARCUTERIES"
+  },
+  {
+    "id": "cmoxptjhk002ccvert2ctgkgi",
+    "field": "nom",
+    "value": "COMMERCE DES BIERES ET EAUX DE BOISSON"
+  },
+  {
+    "id": "cmoxptjhk002ccvert2ctgkgi",
+    "field": "label",
+    "value": "119.04 - COMMERCE DES BIERES ET EAUX DE BOISSON"
+  },
+  {
+    "id": "cmoxptjjd002dcver3ladl6v3",
+    "field": "nom",
+    "value": "INDUSTRIE TEXTILE"
+  },
+  {
+    "id": "cmoxptjjd002dcver3ladl6v3",
+    "field": "label",
+    "value": "120 - INDUSTRIE TEXTILE"
+  },
+  {
+    "id": "cmoxptjkp002ecveri58dj2dr",
+    "field": "nom",
+    "value": "INDUSTRIE TEXTILE DE L'ARRONDISSEMENT ADMINISTRATIF DE VERVIERS"
+  },
+  {
+    "id": "cmoxptjkp002ecveri58dj2dr",
+    "field": "label",
+    "value": "120.01 - INDUSTRIE TEXTILE DE L'ARRONDISSEMENT ADMINISTRATIF DE VERVIERS"
+  },
+  {
+    "id": "cmoxptjmd002fcversjo2jthf",
+    "field": "nom",
+    "value": "PREPARATION DU LIN"
+  },
+  {
+    "id": "cmoxptjmd002fcversjo2jthf",
+    "field": "label",
+    "value": "120.02 - PREPARATION DU LIN"
+  },
+  {
+    "id": "cmoxptjnr002gcver3w8iew66",
+    "field": "nom",
+    "value": "FABRICATION ET COMMERCE DE SACS EN JUTE OU EN MATERIAUX DE REMPLACEMENT"
+  },
+  {
+    "id": "cmoxptjnr002gcver3w8iew66",
+    "field": "label",
+    "value": "120.03 - FABRICATION ET COMMERCE DE SACS EN JUTE OU EN MATERIAUX DE REMPLACEMENT"
+  },
+  {
+    "id": "cmoxptjqx002icverwbqkia9d",
+    "field": "nom",
+    "value": "CONSTRUCTION"
+  },
+  {
+    "id": "cmoxptjqx002icverwbqkia9d",
+    "field": "label",
+    "value": "124 - CONSTRUCTION"
+  },
+  {
+    "id": "cmoxptju1002kcverp8dd83v2",
+    "field": "nom",
+    "value": "EXPLOITATIONS FORESTIERES"
+  },
+  {
+    "id": "cmoxptju1002kcverp8dd83v2",
+    "field": "label",
+    "value": "125.01 - EXPLOITATIONS FORESTIERES"
+  },
+  {
+    "id": "cmoxptkp60035cver056p8thd",
+    "field": "nom",
+    "value": "TRANSFORMATION DU PAPIER ET DU CARTON"
+  },
+  {
+    "id": "cmoxptkp60035cver056p8thd",
+    "field": "label",
+    "value": "136 - TRANSFORMATION DU PAPIER ET DU CARTON"
+  },
+  {
+    "id": "cmoxptkqi0036cverj5rvu4qi",
+    "field": "nom",
+    "value": "TRANSFORMATION DU PAPIER ET DU CARTON"
+  },
+  {
+    "id": "cmoxptkqi0036cverj5rvu4qi",
+    "field": "label",
+    "value": "136.01 - TRANSFORMATION DU PAPIER ET DU CARTON"
+  },
+  {
+    "id": "cmoxptks00037cvero0h8bvkp",
+    "field": "nom",
+    "value": "FABRICATION DE TUBES EN PAPIER"
+  },
+  {
+    "id": "cmoxptks00037cvero0h8bvkp",
+    "field": "label",
+    "value": "136.02 - FABRICATION DE TUBES EN PAPIER"
+  },
+  {
+    "id": "cmoxptkut0038cver5o9ht29m",
+    "field": "nom",
+    "value": "PAPIERS PEINTS"
+  },
+  {
+    "id": "cmoxptkut0038cver5o9ht29m",
+    "field": "label",
+    "value": "136.03 - PAPIERS PEINTS"
+  },
+  {
+    "id": "cmoxptkw70039cvert0zf10d9",
+    "field": "nom",
+    "value": "BATELLERIE"
+  },
+  {
+    "id": "cmoxptkw70039cvert0zf10d9",
+    "field": "label",
+    "value": "139 - BATELLERIE"
+  },
+  {
+    "id": "cmoxptkxq003acverl6r0ncva",
+    "field": "nom",
+    "value": "BATELLERIE"
+  },
+  {
+    "id": "cmoxptkxq003acverl6r0ncva",
+    "field": "label",
+    "value": "139.01 - BATELLERIE"
+  },
+  {
+    "id": "cmoxptkz5003bcveruoaofj9y",
+    "field": "nom",
+    "value": "NAVIGATION PAR POUSSAGE ET EN CONTINU"
+  },
+  {
+    "id": "cmoxptkz5003bcveruoaofj9y",
+    "field": "label",
+    "value": "139.02 - NAVIGATION PAR POUSSAGE ET EN CONTINU"
+  },
+  {
+    "id": "cmoxptl0l003ccver74ydo3ab",
+    "field": "nom",
+    "value": "REMORQUAGE"
+  },
+  {
+    "id": "cmoxptl0l003ccver74ydo3ab",
+    "field": "label",
+    "value": "139.03 - REMORQUAGE"
+  },
+  {
+    "id": "cmoxptl1y003dcver5gu358tk",
+    "field": "nom",
+    "value": "NAVIGATION EN SYSTÈME"
+  },
+  {
+    "id": "cmoxptl1y003dcver5gu358tk",
+    "field": "label",
+    "value": "139.04 - NAVIGATION EN SYSTÈME"
+  },
+  {
+    "id": "cmoxptl3e003ecverlq32kcuy",
+    "field": "nom",
+    "value": "TRANSPORT ET LOGISTIQUE"
+  },
+  {
+    "id": "cmoxptl3e003ecverlq32kcuy",
+    "field": "label",
+    "value": "140 - TRANSPORT ET LOGISTIQUE"
+  },
+  {
+    "id": "cmoxptl4q003fcverb7nbnrb1",
+    "field": "nom",
+    "value": "SERVICES PUBLICS D'AUTOBUS"
+  },
+  {
+    "id": "cmoxptl4q003fcverb7nbnrb1",
+    "field": "label",
+    "value": "140.01 - SERVICES PUBLICS D'AUTOBUS"
+  },
+  {
+    "id": "cmoxptl6a003gcver5ox4a95i",
+    "field": "nom",
+    "value": "SERVICES SPECIAUX D'AUTOBUS"
+  },
+  {
+    "id": "cmoxptl6a003gcver5ox4a95i",
+    "field": "label",
+    "value": "140.02 - SERVICES SPECIAUX D'AUTOBUS"
+  },
+  {
+    "id": "cmoxptl7m003hcver260z4nvh",
+    "field": "nom",
+    "value": "ENTREPRISES D'AUTOCARS"
+  },
+  {
+    "id": "cmoxptl7m003hcver260z4nvh",
+    "field": "label",
+    "value": "140.03 - ENTREPRISES D'AUTOCARS"
+  },
+  {
+    "id": "cmoxptl93003icverk45orqn6",
+    "field": "nom",
+    "value": "TRANSPORT DE CHOSES PAR LA ROUTE POUR COMPTE DE TIERS"
+  },
+  {
+    "id": "cmoxptl93003icverk45orqn6",
+    "field": "label",
+    "value": "140.04 - TRANSPORT DE CHOSES PAR LA ROUTE POUR COMPTE DE TIERS"
+  },
+  {
+    "id": "cmoxptlag003jcverup6r0t60",
+    "field": "nom",
+    "value": "DEMENAGEMENTS, GARDE-MEUBLES ET LEURS ACTIVITES ANNEXES"
+  },
+  {
+    "id": "cmoxptlag003jcverup6r0t60",
+    "field": "label",
+    "value": "140.05 - DEMENAGEMENTS, GARDE-MEUBLES ET LEURS ACTIVITES ANNEXES"
+  },
+  {
+    "id": "cmoxptlbx003kcverzcdmfo5g",
+    "field": "nom",
+    "value": "ENTREPRISES DE TAXIS"
+  },
+  {
+    "id": "cmoxptlbx003kcverzcdmfo5g",
+    "field": "label",
+    "value": "140.06 - ENTREPRISES DE TAXIS"
+  },
+  {
+    "id": "cmoxptlda003lcveri483emtv",
+    "field": "nom",
+    "value": "LOCATION DE VOITURES AVEC CHAUFFEUR (TRANSPORT DES PERSONNES)"
+  },
+  {
+    "id": "cmoxptlda003lcveri483emtv",
+    "field": "label",
+    "value": "140.07 - LOCATION DE VOITURES AVEC CHAUFFEUR (TRANSPORT DES PERSONNES)"
+  },
+  {
+    "id": "cmoxptles003mcverrc1eqiwm",
+    "field": "nom",
+    "value": "ASSISTANCE DANS LES AEROPORTS"
+  },
+  {
+    "id": "cmoxptles003mcverrc1eqiwm",
+    "field": "label",
+    "value": "140.08 - ASSISTANCE DANS LES AEROPORTS"
+  },
+  {
+    "id": "cmoxptlg7003ncvermi5dxczw",
+    "field": "nom",
+    "value": "MANUTENTION DE CHOSES POUR COMPTE DE TIERS"
+  },
+  {
+    "id": "cmoxptlg7003ncvermi5dxczw",
+    "field": "label",
+    "value": "140.09 - MANUTENTION DE CHOSES POUR COMPTE DE TIERS"
+  },
+  {
+    "id": "cmoxptlhn003ocver1cbfxbpf",
+    "field": "nom",
+    "value": "TRANSPORT DE PERSONNES QUI NE RELÈVE PAS DE LA SCP 14001 (AUTOBUS ET AUTOCARS) OU DE LA SCP 14002 (TAXIS), ET AUTRE QUE LA LOCATION DE VOITURES AVEC CHAUFFEUR"
+  },
+  {
+    "id": "cmoxptlhn003ocver1cbfxbpf",
+    "field": "label",
+    "value": "140.99 - TRANSPORT DE PERSONNES QUI NE RELÈVE PAS DE LA SCP 14001 (AUTOBUS ET AUTOCARS) OU DE LA SCP 14002 (TAXIS), ET AUTRE QUE LA LOCATION DE VOITURES AVEC CHAUFFEUR"
+  },
+  {
+    "id": "cmoxptliz003pcverygihy3jf",
+    "field": "nom",
+    "value": "AUTOBUS ET AUTOCARS"
+  },
+  {
+    "id": "cmoxptliz003pcverygihy3jf",
+    "field": "label",
+    "value": "140.01 - AUTOBUS ET AUTOCARS"
+  },
+  {
+    "id": "cmoxptkft002zcvercqu4fhwt",
+    "field": "nom",
+    "value": "ENTREPRISES DE PRESSE QUOTIDIENNE"
+  },
+  {
+    "id": "cmoxptkft002zcvercqu4fhwt",
+    "field": "label",
+    "value": "130.02 - ENTREPRISES DE PRESSE QUOTIDIENNE"
+  },
+  {
+    "id": "cmoxptkh70030cverv7c9cmt4",
+    "field": "nom",
+    "value": "TRAVAUX TECHNIQUES AGRICOLES ET HORTICOLES"
+  },
+  {
+    "id": "cmoxptkh70030cverv7c9cmt4",
+    "field": "label",
+    "value": "132 - TRAVAUX TECHNIQUES AGRICOLES ET HORTICOLES"
+  },
+  {
+    "id": "cmoxptkim0031cveryamiavpf",
+    "field": "nom",
+    "value": "INDUSTRIE DES TABACS"
+  },
+  {
+    "id": "cmoxptkim0031cveryamiavpf",
+    "field": "label",
+    "value": "133 - INDUSTRIE DES TABACS"
+  },
+  {
+    "id": "cmoxptkkc0032cverm6t3nkmg",
+    "field": "nom",
+    "value": "USINES DE CIGARETTES ET ENTREPRISES MIXTES"
+  },
+  {
+    "id": "cmoxptkkc0032cverm6t3nkmg",
+    "field": "label",
+    "value": "133.01 - USINES DE CIGARETTES ET ENTREPRISES MIXTES"
+  },
+  {
+    "id": "cmoxptkly0033cveraizm1vmm",
+    "field": "nom",
+    "value": "TABAC A FUMER, A MACHER ET A PRISER"
+  },
+  {
+    "id": "cmoxptkly0033cveraizm1vmm",
+    "field": "label",
+    "value": "133.02 - TABAC A FUMER, A MACHER ET A PRISER"
+  },
+  {
+    "id": "cmoxptkna0034cveresn090jm",
+    "field": "nom",
+    "value": "CIGARES ET CIGARILLOS"
+  },
+  {
+    "id": "cmoxptkna0034cveresn090jm",
+    "field": "label",
+    "value": "133.03 - CIGARES ET CIGARILLOS"
+  },
+  {
+    "id": "cmoxptlv5003xcverqvr1dfg6",
+    "field": "nom",
+    "value": "ENTREPRISES DE VALORISATION DE MATIERES PREMIERES DE RECUPERATION"
+  },
+  {
+    "id": "cmoxptlv5003xcverqvr1dfg6",
+    "field": "label",
+    "value": "142 - ENTREPRISES DE VALORISATION DE MATIERES PREMIERES DE RECUPERATION"
+  },
+  {
+    "id": "cmoxptlwy003ycverqu3m1c1q",
+    "field": "nom",
+    "value": "RECUPERATION DE METAUX"
+  },
+  {
+    "id": "cmoxptlwy003ycverqu3m1c1q",
+    "field": "label",
+    "value": "142.01 - RECUPERATION DE METAUX"
+  },
+  {
+    "id": "cmoxptlya003zcverenj3sz0s",
+    "field": "nom",
+    "value": "RECUPERATION DE CHIFFONS"
+  },
+  {
+    "id": "cmoxptlya003zcverenj3sz0s",
+    "field": "label",
+    "value": "142.02 - RECUPERATION DE CHIFFONS"
+  },
+  {
+    "id": "cmoxptlzn0040cverdes11y59",
+    "field": "nom",
+    "value": "RECUPERATION DU PAPIER"
+  },
+  {
+    "id": "cmoxptlzn0040cverdes11y59",
+    "field": "label",
+    "value": "142.03 - RECUPERATION DU PAPIER"
+  },
+  {
+    "id": "cmoxptm170041cverx28xx3sr",
+    "field": "nom",
+    "value": "RECUPERATION DE PRODUITS DIVERS"
+  },
+  {
+    "id": "cmoxptm170041cverx28xx3sr",
+    "field": "label",
+    "value": "142.04 - RECUPERATION DE PRODUITS DIVERS"
+  },
+  {
+    "id": "cmoxptm2q0042cverz0udpft1",
+    "field": "nom",
+    "value": "PECHE MARITIME"
+  },
+  {
+    "id": "cmoxptm2q0042cverz0udpft1",
+    "field": "label",
+    "value": "143 - PECHE MARITIME"
+  },
+  {
+    "id": "cmoxptm430043cverjsjlwxhs",
+    "field": "nom",
+    "value": "AGRICULTURE"
+  },
+  {
+    "id": "cmoxptm430043cverjsjlwxhs",
+    "field": "label",
+    "value": "144 - AGRICULTURE"
+  },
+  {
+    "id": "cmoxptm5k0044cverfgd65z4j",
+    "field": "nom",
+    "value": "ENTREPRISES HORTICOLES"
+  },
+  {
+    "id": "cmoxptm5k0044cverfgd65z4j",
+    "field": "label",
+    "value": "145 - ENTREPRISES HORTICOLES"
+  },
+  {
+    "id": "cmoxptm6x0045cveruom5h8v3",
+    "field": "nom",
+    "value": "FLORICULTURE"
+  },
+  {
+    "id": "cmoxptm6x0045cveruom5h8v3",
+    "field": "label",
+    "value": "145.01 - FLORICULTURE"
+  },
+  {
+    "id": "cmoxptm8f0046cvery1a6upqf",
+    "field": "nom",
+    "value": "VITICULTURE"
+  },
+  {
+    "id": "cmoxptm8f0046cvery1a6upqf",
+    "field": "label",
+    "value": "145.02 - VITICULTURE"
+  },
+  {
+    "id": "cmoxptm9r0047cveryi3r1mix",
+    "field": "nom",
+    "value": "PEPINIERES"
+  },
+  {
+    "id": "cmoxptm9r0047cveryi3r1mix",
+    "field": "label",
+    "value": "145.03 - PEPINIERES"
+  },
+  {
+    "id": "cmoxptmb90048cver092rldhu",
+    "field": "nom",
+    "value": "IMPLANTATION ET ENTRETIEN DE PARCS ET JARDINS"
+  },
+  {
+    "id": "cmoxptmb90048cver092rldhu",
+    "field": "label",
+    "value": "145.04 - IMPLANTATION ET ENTRETIEN DE PARCS ET JARDINS"
+  },
+  {
+    "id": "cmoxptmcm0049cverfsqzhkbm",
+    "field": "nom",
+    "value": "FRUCTICULTURE"
+  },
+  {
+    "id": "cmoxptmcm0049cverfsqzhkbm",
+    "field": "label",
+    "value": "145.05 - FRUCTICULTURE"
+  },
+  {
+    "id": "cmoxptme6004acverdpdocnz7",
+    "field": "nom",
+    "value": "CULTURES MARAICHERES"
+  },
+  {
+    "id": "cmoxptme6004acverdpdocnz7",
+    "field": "label",
+    "value": "145.06 - CULTURES MARAICHERES"
+  },
+  {
+    "id": "cmoxptmfu004bcverqrtzccu3",
+    "field": "nom",
+    "value": "CULTURES CHAMPIGNONS"
+  },
+  {
+    "id": "cmoxptmfu004bcverqrtzccu3",
+    "field": "label",
+    "value": "145.07 - CULTURES CHAMPIGNONS"
+  },
+  {
+    "id": "cmoxptmhc004ccver16s9s0j0",
+    "field": "nom",
+    "value": "ENTREPRISES FORESTIERES"
+  },
+  {
+    "id": "cmoxptmhc004ccver16s9s0j0",
+    "field": "label",
+    "value": "146 - ENTREPRISES FORESTIERES"
+  },
+  {
+    "id": "cmoxptmio004dcveru2xj5t1u",
+    "field": "nom",
+    "value": "ARMURERIE A LA MAIN"
+  },
+  {
+    "id": "cmoxptmio004dcveru2xj5t1u",
+    "field": "label",
+    "value": "147 - ARMURERIE A LA MAIN"
+  },
+  {
+    "id": "cmoxptmk0004ecverczt9f5fx",
+    "field": "nom",
+    "value": "FOURRURE ET PEAU EN POIL"
+  },
+  {
+    "id": "cmoxptmk0004ecverczt9f5fx",
+    "field": "label",
+    "value": "148 - FOURRURE ET PEAU EN POIL"
+  },
+  {
+    "id": "cmoxptmlk004fcvery2v2f5yv",
+    "field": "nom",
+    "value": "COUPERIE DE POILS"
+  },
+  {
+    "id": "cmoxptmlk004fcvery2v2f5yv",
+    "field": "label",
+    "value": "148.01 - COUPERIE DE POILS"
+  },
+  {
+    "id": "cmoxptmmv004gcverdu03qmn7",
+    "field": "nom",
+    "value": "FABRICATION INDUSTRIELLE ET FABRICATION ARTISANALE DE FOURRURE"
+  },
+  {
+    "id": "cmoxptmmv004gcverdu03qmn7",
+    "field": "label",
+    "value": "148.03 - FABRICATION INDUSTRIELLE ET FABRICATION ARTISANALE DE FOURRURE"
+  },
+  {
+    "id": "cmoxptmoe004hcverx0lrv9oq",
+    "field": "nom",
+    "value": "TANNERIES DE PEAUX"
+  },
+  {
+    "id": "cmoxptmoe004hcverx0lrv9oq",
+    "field": "label",
+    "value": "148.05 - TANNERIES DE PEAUX"
+  },
+  {
+    "id": "cmoxptmq4004icver3czc78n5",
+    "field": "nom",
+    "value": "SECTEURS CONNEXES AUX CONSTRUCTIONS METALLIQUE, MECANIQUE ET ELECTRIQUE"
+  },
+  {
+    "id": "cmoxptmq4004icver3czc78n5",
+    "field": "label",
+    "value": "149 - SECTEURS CONNEXES AUX CONSTRUCTIONS METALLIQUE, MECANIQUE ET ELECTRIQUE"
+  },
+  {
+    "id": "cmoxptmrn004jcvervtsgvfx6",
+    "field": "nom",
+    "value": "ELECTRICIENS: INSTALLATION ET DISTRIBUTION"
+  },
+  {
+    "id": "cmoxptmrn004jcvervtsgvfx6",
+    "field": "label",
+    "value": "149.01 - ELECTRICIENS: INSTALLATION ET DISTRIBUTION"
+  },
+  {
+    "id": "cmoxptmto004kcverrtvd2wxi",
+    "field": "nom",
+    "value": "CARROSSERIE"
+  },
+  {
+    "id": "cmoxptmto004kcverrtvd2wxi",
+    "field": "label",
+    "value": "149.02 - CARROSSERIE"
+  },
+  {
+    "id": "cmoxptllv003rcverzrk85v5r",
+    "field": "nom",
+    "value": "SERVICES SPECIAUX D'AUTOBUS (SERVICES REGULIERS SPECIALISES)"
+  },
+  {
+    "id": "cmoxptllv003rcverzrk85v5r",
+    "field": "label",
+    "value": "140.01.02 - SERVICES SPECIAUX D'AUTOBUS (SERVICES REGULIERS SPECIALISES)"
+  },
+  {
+    "id": "cmoxptlnd003scver0dicn45b",
+    "field": "nom",
+    "value": "ENTREPRISES D'AUTOCARS (SERVICES OCCASIONNELS)"
+  },
+  {
+    "id": "cmoxptlnd003scver0dicn45b",
+    "field": "label",
+    "value": "140.01.03 - ENTREPRISES D'AUTOCARS (SERVICES OCCASIONNELS)"
+  },
+  {
+    "id": "cmoxptlos003tcverii2nkgd9",
+    "field": "nom",
+    "value": "TAXIS"
+  },
+  {
+    "id": "cmoxptlos003tcverii2nkgd9",
+    "field": "label",
+    "value": "140.02 - TAXIS"
+  },
+  {
+    "id": "cmoxptlqg003ucverk2q3oyyr",
+    "field": "nom",
+    "value": "TRANSPORT ROUTIER ET LOGISTIQUE POUR COMPTE DE TIERS"
+  },
+  {
+    "id": "cmoxptlqg003ucverk2q3oyyr",
+    "field": "label",
+    "value": "140.03 - TRANSPORT ROUTIER ET LOGISTIQUE POUR COMPTE DE TIERS"
+  },
+  {
+    "id": "cmoxptlsa003vcver71cpstm4",
+    "field": "nom",
+    "value": "ASSISTANCE EN ESCALE DANS LES AEROPORTS"
+  },
+  {
+    "id": "cmoxptlsa003vcver71cpstm4",
+    "field": "label",
+    "value": "140.04 - ASSISTANCE EN ESCALE DANS LES AEROPORTS"
+  },
+  {
+    "id": "cmoxptltq003wcvervwhv7nqs",
+    "field": "nom",
+    "value": "DEMENAGEMENT"
+  },
+  {
+    "id": "cmoxptltq003wcvervwhv7nqs",
+    "field": "label",
+    "value": "140.05 - DEMENAGEMENT"
+  },
+  {
+    "id": "cmoxptn96004ucverloa7wm9v",
+    "field": "nom",
+    "value": "INSTITUTIONS SUBSIDIEES DE L'ENSEIGNEMENT LIBRE DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptn96004ucverloa7wm9v",
+    "field": "label",
+    "value": "152.02.20 - INSTITUTIONS SUBSIDIEES DE L'ENSEIGNEMENT LIBRE DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptnap004vcverzv3wi7bp",
+    "field": "nom",
+    "value": "CP AUXILIAIRE POUR EMPLOYES"
+  },
+  {
+    "id": "cmoxptnap004vcverzv3wi7bp",
+    "field": "label",
+    "value": "200 - CP AUXILIAIRE POUR EMPLOYES"
+  },
+  {
+    "id": "cmoxptncb004wcveri16gh2k0",
+    "field": "nom",
+    "value": "COMMERCE DE DETAIL INDEPENDANT"
+  },
+  {
+    "id": "cmoxptncb004wcveri16gh2k0",
+    "field": "label",
+    "value": "201 - COMMERCE DE DETAIL INDEPENDANT"
+  },
+  {
+    "id": "cmoxptndz004xcvern1kjxc33",
+    "field": "nom",
+    "value": "COMMERCE DE DETAIL ALIMENTAIRE"
+  },
+  {
+    "id": "cmoxptndz004xcvern1kjxc33",
+    "field": "label",
+    "value": "202 - COMMERCE DE DETAIL ALIMENTAIRE"
+  },
+  {
+    "id": "cmoxptnft004ycverrt37f0pm",
+    "field": "nom",
+    "value": "MOYENNES ENTREPRISES D'ALIMENTATION"
+  },
+  {
+    "id": "cmoxptnft004ycverrt37f0pm",
+    "field": "label",
+    "value": "202.01 - MOYENNES ENTREPRISES D'ALIMENTATION"
+  },
+  {
+    "id": "cmoxptnhb004zcverjitgbajm",
+    "field": "nom",
+    "value": "CARRIERES DE PETIT GRANIT"
+  },
+  {
+    "id": "cmoxptnhb004zcverjitgbajm",
+    "field": "label",
+    "value": "203 - CARRIERES DE PETIT GRANIT"
+  },
+  {
+    "id": "cmoxptnis0050cvers5ta9yb7",
+    "field": "nom",
+    "value": "CHARBONNAGES"
+  },
+  {
+    "id": "cmoxptnis0050cvers5ta9yb7",
+    "field": "label",
+    "value": "205 - CHARBONNAGES"
+  },
+  {
+    "id": "cmoxptnk70051cverep03c7ls",
+    "field": "nom",
+    "value": "INDUSTRIE CHIMIQUE"
+  },
+  {
+    "id": "cmoxptnk70051cverep03c7ls",
+    "field": "label",
+    "value": "207 - INDUSTRIE CHIMIQUE"
+  },
+  {
+    "id": "cmoxptnlq0052cver4rgoiecj",
+    "field": "nom",
+    "value": "NATIONAL"
+  },
+  {
+    "id": "cmoxptnlq0052cver4rgoiecj",
+    "field": "label",
+    "value": "207.01 - NATIONAL"
+  },
+  {
+    "id": "cmoxptnn30053cver3zt5lnx2",
+    "field": "nom",
+    "value": "INDUSTRIE TRANSFORMATRICE DE MATIÈRES PLASTIQUES DE LA FLANDRE OCCIDENTALE"
+  },
+  {
+    "id": "cmoxptnn30053cver3zt5lnx2",
+    "field": "label",
+    "value": "207.02 - INDUSTRIE TRANSFORMATRICE DE MATIÈRES PLASTIQUES DE LA FLANDRE OCCIDENTALE"
+  },
+  {
+    "id": "cmoxptnoj0054cver4ko32k6n",
+    "field": "nom",
+    "value": "FABRICATIONS METALLIQUES"
+  },
+  {
+    "id": "cmoxptnoj0054cver4ko32k6n",
+    "field": "label",
+    "value": "209 - FABRICATIONS METALLIQUES"
+  },
+  {
+    "id": "cmoxptnpu0055cver203vktq2",
+    "field": "nom",
+    "value": "SIDERURGIE"
+  },
+  {
+    "id": "cmoxptnpu0055cver203vktq2",
+    "field": "label",
+    "value": "210 - SIDERURGIE"
+  },
+  {
+    "id": "cmoxptnr70056cver701ksq13",
+    "field": "nom",
+    "value": "INDUSTRIE ET COMMERCE DU PETROLE"
+  },
+  {
+    "id": "cmoxptnr70056cver701ksq13",
+    "field": "label",
+    "value": "211 - INDUSTRIE ET COMMERCE DU PETROLE"
+  },
+  {
+    "id": "cmoxptnsr0057cverzgaon917",
+    "field": "nom",
+    "value": "INDUSTRIE TEXTILE"
+  },
+  {
+    "id": "cmoxptnsr0057cverzgaon917",
+    "field": "label",
+    "value": "214 - INDUSTRIE TEXTILE"
+  },
+  {
+    "id": "cmoxptnu40058cvere1qchyr8",
+    "field": "nom",
+    "value": "INDUSTRIE DE L'HABILLEMENT ET DE LA CONFECTION"
+  },
+  {
+    "id": "cmoxptnu40058cvere1qchyr8",
+    "field": "label",
+    "value": "215 - INDUSTRIE DE L'HABILLEMENT ET DE LA CONFECTION"
+  },
+  {
+    "id": "cmoxptnvl0059cver6lojo243",
+    "field": "nom",
+    "value": "EMPLOYES OCCUPES CHEZ LES NOTAIRES"
+  },
+  {
+    "id": "cmoxptnvl0059cver6lojo243",
+    "field": "label",
+    "value": "216 - EMPLOYES OCCUPES CHEZ LES NOTAIRES"
+  },
+  {
+    "id": "cmoxptnx3005acvervfswtoqt",
+    "field": "nom",
+    "value": "EMPLOYES DE CASINO"
+  },
+  {
+    "id": "cmoxptnx3005acvervfswtoqt",
+    "field": "label",
+    "value": "217 - EMPLOYES DE CASINO"
+  },
+  {
+    "id": "cmoxptnyf005bcvertnslt3lk",
+    "field": "nom",
+    "value": "CP NATIONALE AUXILIAIRE POUR EMPLOYES"
+  },
+  {
+    "id": "cmoxptnyf005bcvertnslt3lk",
+    "field": "label",
+    "value": "218 - CP NATIONALE AUXILIAIRE POUR EMPLOYES"
+  },
+  {
+    "id": "cmoxptnzr005ccvergzeyvri1",
+    "field": "nom",
+    "value": "SERVICES ET ORGANISMES DE CONTROLE TECHNIQUE ET D'EVALUATION DE LA CONFORMITE"
+  },
+  {
+    "id": "cmoxptnzr005ccvergzeyvri1",
+    "field": "label",
+    "value": "219 - SERVICES ET ORGANISMES DE CONTROLE TECHNIQUE ET D'EVALUATION DE LA CONFORMITE"
+  },
+  {
+    "id": "cmoxptmwx004mcvercbh1rmf2",
+    "field": "nom",
+    "value": "COMMERCE DU METAL"
+  },
+  {
+    "id": "cmoxptmwx004mcvercbh1rmf2",
+    "field": "label",
+    "value": "149.04 - COMMERCE DU METAL"
+  },
+  {
+    "id": "cmoxptmzq004ocver6qd7gyng",
+    "field": "nom",
+    "value": "ETABLISSEMENTS D'ENSEIGNEMENT ET INTERNATS SUBSIDIES PAR LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptmzq004ocver6qd7gyng",
+    "field": "label",
+    "value": "152.01 - ETABLISSEMENTS D'ENSEIGNEMENT ET INTERNATS SUBSIDIES PAR LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptn15004pcver0urajcrd",
+    "field": "nom",
+    "value": "ETABLISSEMENTS D'ENSEIGNEMENT ET INTERNATS SUBSIDIES PAR LA COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptn15004pcver0urajcrd",
+    "field": "label",
+    "value": "152.02 - ETABLISSEMENTS D'ENSEIGNEMENT ET INTERNATS SUBSIDIES PAR LA COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptn2p004qcver3ouwx2o2",
+    "field": "nom",
+    "value": "ETABLISSEMENTS D'ENSEIGNEMENT ET INTERNATS SUBSIDIES PAR LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptn2p004qcver3ouwx2o2",
+    "field": "label",
+    "value": "152.03 - ETABLISSEMENTS D'ENSEIGNEMENT ET INTERNATS SUBSIDIES PAR LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptn4d004rcvereqj2uk6o",
+    "field": "nom",
+    "value": "INSTITUTIONS SUBSIDIEES DE L'ENSEIGNEMENT LIBRE DE LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptn4d004rcvereqj2uk6o",
+    "field": "label",
+    "value": "152.01 - INSTITUTIONS SUBSIDIEES DE L'ENSEIGNEMENT LIBRE DE LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptn7m004tcvero7cmg7s1",
+    "field": "nom",
+    "value": "INSTITUTIONS SUBSIDIEES DE L'ENSEIGNEMENT LIBRE DE LA COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptn7m004tcvero7cmg7s1",
+    "field": "label",
+    "value": "152.02.10 - INSTITUTIONS SUBSIDIEES DE L'ENSEIGNEMENT LIBRE DE LA COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptobb005kcvervkibfsqr",
+    "field": "nom",
+    "value": "INSTITUTIONS DE L'ENSEIGNEMENT LIBRE SUBVENTIONNE"
+  },
+  {
+    "id": "cmoxptobb005kcvervkibfsqr",
+    "field": "label",
+    "value": "225 - INSTITUTIONS DE L'ENSEIGNEMENT LIBRE SUBVENTIONNE"
+  },
+  {
+    "id": "cmoxptoef005mcveredgsp9mh",
+    "field": "nom",
+    "value": "ETABLISSEMENTS D'ENSEIGNEMENT ET INTERNATS SUBVENTIONNE PAR LA COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptoef005mcveredgsp9mh",
+    "field": "label",
+    "value": "225.02 - ETABLISSEMENTS D'ENSEIGNEMENT ET INTERNATS SUBVENTIONNE PAR LA COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptog2005ncverqew1tc4u",
+    "field": "nom",
+    "value": "ETABLISSEMENTS D'ENSEIGNEMENT ET INTERNATS SUBVENTIONNE PAR LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptog2005ncverqew1tc4u",
+    "field": "label",
+    "value": "225.03 - ETABLISSEMENTS D'ENSEIGNEMENT ET INTERNATS SUBVENTIONNE PAR LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptohp005ocvery4k8d0rh",
+    "field": "nom",
+    "value": "UNIVERSITÉS LIBRES"
+  },
+  {
+    "id": "cmoxptohp005ocvery4k8d0rh",
+    "field": "label",
+    "value": "225.04 - UNIVERSITÉS LIBRES"
+  },
+  {
+    "id": "cmoxptojc005pcverxlp73ell",
+    "field": "nom",
+    "value": "INSTITUTIONS DE L'ENSEIGNEMENT LIBRE SUBVENTIONNE DE LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptojc005pcverxlp73ell",
+    "field": "label",
+    "value": "225.01 - INSTITUTIONS DE L'ENSEIGNEMENT LIBRE SUBVENTIONNE DE LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptokq005qcverqybw9vsd",
+    "field": "nom",
+    "value": "INSTITUTIONS DE L'ENSEIGNEMENT LIBRE SUBVENTIONNE DE LA COMMUNAUTE FRANÇAISE ET DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptokq005qcverqybw9vsd",
+    "field": "label",
+    "value": "225.02 - INSTITUTIONS DE L'ENSEIGNEMENT LIBRE SUBVENTIONNE DE LA COMMUNAUTE FRANÇAISE ET DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptomh005rcveru0fn2b92",
+    "field": "nom",
+    "value": "INSTITUTIONS DE L'ENSEIGNEMENT LIBRE SUBVENTIONNE DE LA COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptomh005rcveru0fn2b92",
+    "field": "label",
+    "value": "225.02.10 - INSTITUTIONS DE L'ENSEIGNEMENT LIBRE SUBVENTIONNE DE LA COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptoo5005scverzqvrcdj0",
+    "field": "nom",
+    "value": "INSTITUTIONS DE L'ENSEIGNEMENT LIBRE SUBVENTIONNE DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptoo5005scverzqvrcdj0",
+    "field": "label",
+    "value": "225.02.20 - INSTITUTIONS DE L'ENSEIGNEMENT LIBRE SUBVENTIONNE DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptopo005tcveroxwoqb1l",
+    "field": "nom",
+    "value": "EMPLOYES DES UNIVERSITES LIBRES SUBVENTIONNEES PAR LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptopo005tcveroxwoqb1l",
+    "field": "label",
+    "value": "225.03 - EMPLOYES DES UNIVERSITES LIBRES SUBVENTIONNEES PAR LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptor0005ucver11hspvf9",
+    "field": "nom",
+    "value": "EMPLOYES DES UNIVERSITES LIBRES SUBVENTIONNEES PAR LA COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptor0005ucver11hspvf9",
+    "field": "label",
+    "value": "225.04 - EMPLOYES DES UNIVERSITES LIBRES SUBVENTIONNEES PAR LA COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptosd005vcverbfw3grmq",
+    "field": "nom",
+    "value": "COMMERCE INTERNATIONAL, TRANSPORT ET LOGISTIQUE"
+  },
+  {
+    "id": "cmoxptosd005vcverbfw3grmq",
+    "field": "label",
+    "value": "226 - COMMERCE INTERNATIONAL, TRANSPORT ET LOGISTIQUE"
+  },
+  {
+    "id": "cmoxptotq005wcverhf301yg4",
+    "field": "nom",
+    "value": "SECTEUR AUDIO-VISUEL"
+  },
+  {
+    "id": "cmoxptotq005wcverhf301yg4",
+    "field": "label",
+    "value": "227 - SECTEUR AUDIO-VISUEL"
+  },
+  {
+    "id": "cmoxptov4005xcverneokm7ab",
+    "field": "nom",
+    "value": "CONSEIL NATIONAL DU TRAVAIL"
+  },
+  {
+    "id": "cmoxptov4005xcverneokm7ab",
+    "field": "label",
+    "value": "300 - CONSEIL NATIONAL DU TRAVAIL"
+  },
+  {
+    "id": "cmoxptoxa005ycverx4ser9zb",
+    "field": "nom",
+    "value": "PORTS"
+  },
+  {
+    "id": "cmoxptoxa005ycverx4ser9zb",
+    "field": "label",
+    "value": "301 - PORTS"
+  },
+  {
+    "id": "cmoxptoyp005zcverobhn2ltu",
+    "field": "nom",
+    "value": "PORT D'ANVERS, DENOMMEE 'NATIONAAL PC DER HAVEN VAN ANTWERPEN'"
+  },
+  {
+    "id": "cmoxptoyp005zcverobhn2ltu",
+    "field": "label",
+    "value": "301.01 - PORT D'ANVERS, DENOMMEE 'NATIONAAL PC DER HAVEN VAN ANTWERPEN'"
+  },
+  {
+    "id": "cmoxptp020060cvere8qphhd6",
+    "field": "nom",
+    "value": "PORT DE GAND"
+  },
+  {
+    "id": "cmoxptp020060cvere8qphhd6",
+    "field": "label",
+    "value": "301.02 - PORT DE GAND"
+  },
+  {
+    "id": "cmoxptp1k0061cverksbnd3dt",
+    "field": "nom",
+    "value": "PORT DE BRUXELLES ET DE VILVORDE"
+  },
+  {
+    "id": "cmoxptp1k0061cverksbnd3dt",
+    "field": "label",
+    "value": "301.03 - PORT DE BRUXELLES ET DE VILVORDE"
+  },
+  {
+    "id": "cmoxptp2y0062cverbul8zl8s",
+    "field": "nom",
+    "value": "PORTS D'OSTENDE ET DE NIEUPORT"
+  },
+  {
+    "id": "cmoxptp2y0062cverbul8zl8s",
+    "field": "label",
+    "value": "301.04 - PORTS D'OSTENDE ET DE NIEUPORT"
+  },
+  {
+    "id": "cmoxpto2j005ecverhyl38kqs",
+    "field": "nom",
+    "value": "INDUSTRIE DES CONSERVES DE LEGUMES"
+  },
+  {
+    "id": "cmoxpto2j005ecverhyl38kqs",
+    "field": "label",
+    "value": "220.01 - INDUSTRIE DES CONSERVES DE LEGUMES"
+  },
+  {
+    "id": "cmoxpto47005fcverac05r4jh",
+    "field": "nom",
+    "value": "INDUSTRIE AUTRE QUE LES CONSERVES DE LEGUMES"
+  },
+  {
+    "id": "cmoxpto47005fcverac05r4jh",
+    "field": "label",
+    "value": "220.02 - INDUSTRIE AUTRE QUE LES CONSERVES DE LEGUMES"
+  },
+  {
+    "id": "cmoxpto5i005gcverb4m26pji",
+    "field": "nom",
+    "value": "INDUSTRIE PAPETIERE"
+  },
+  {
+    "id": "cmoxpto5i005gcverb4m26pji",
+    "field": "label",
+    "value": "221 - INDUSTRIE PAPETIERE"
+  },
+  {
+    "id": "cmoxpto72005hcverwpwqgxet",
+    "field": "nom",
+    "value": "TRANSFORMATION DU PAPIER ET DU CARTON"
+  },
+  {
+    "id": "cmoxpto72005hcverwpwqgxet",
+    "field": "label",
+    "value": "222 - TRANSFORMATION DU PAPIER ET DU CARTON"
+  },
+  {
+    "id": "cmoxpto8h005icverj49a7gxn",
+    "field": "nom",
+    "value": "CP NATIONALE DES SPORTS"
+  },
+  {
+    "id": "cmoxpto8h005icverj49a7gxn",
+    "field": "label",
+    "value": "223 - CP NATIONALE DES SPORTS"
+  },
+  {
+    "id": "cmoxpto9y005jcverhrnt32uh",
+    "field": "nom",
+    "value": "METAUX NON-FERREUX"
+  },
+  {
+    "id": "cmoxpto9y005jcverhrnt32uh",
+    "field": "label",
+    "value": "224 - METAUX NON-FERREUX"
+  },
+  {
+    "id": "cmoxptph2006bcver19bssx0b",
+    "field": "nom",
+    "value": "MUSICIENS"
+  },
+  {
+    "id": "cmoxptph2006bcver19bssx0b",
+    "field": "label",
+    "value": "304.03 - MUSICIENS"
+  },
+  {
+    "id": "cmoxptpj1006ccver3okdagu4",
+    "field": "nom",
+    "value": "ENTREPRISES D'ASSURANCES"
+  },
+  {
+    "id": "cmoxptpj1006ccver3okdagu4",
+    "field": "label",
+    "value": "306 - ENTREPRISES D'ASSURANCES"
+  },
+  {
+    "id": "cmoxptpkj006dcvero3jz0q6e",
+    "field": "nom",
+    "value": "ENTREPRISES DE COURTAGE ET AGENCES D'ASSURANCES"
+  },
+  {
+    "id": "cmoxptpkj006dcvero3jz0q6e",
+    "field": "label",
+    "value": "307 - ENTREPRISES DE COURTAGE ET AGENCES D'ASSURANCES"
+  },
+  {
+    "id": "cmoxptpm0006ecverw0dbzfj7",
+    "field": "nom",
+    "value": "SOCIETES DE PRETS HYPOTHECAIRES ET DE CAPITALISATION"
+  },
+  {
+    "id": "cmoxptpm0006ecverw0dbzfj7",
+    "field": "label",
+    "value": "308 - SOCIETES DE PRETS HYPOTHECAIRES ET DE CAPITALISATION"
+  },
+  {
+    "id": "cmoxptpnd006fcverm13o0sgq",
+    "field": "nom",
+    "value": "SOCIETES DE BOURSE"
+  },
+  {
+    "id": "cmoxptpnd006fcverm13o0sgq",
+    "field": "label",
+    "value": "309 - SOCIETES DE BOURSE"
+  },
+  {
+    "id": "cmoxptppg006gcverxv4ver9a",
+    "field": "nom",
+    "value": "BANQUES"
+  },
+  {
+    "id": "cmoxptppg006gcverxv4ver9a",
+    "field": "label",
+    "value": "310 - BANQUES"
+  },
+  {
+    "id": "cmoxptpr4006hcverlbuodn80",
+    "field": "nom",
+    "value": "GRANDES ENTREPRISES DE VENTE AU DETAIL"
+  },
+  {
+    "id": "cmoxptpr4006hcverlbuodn80",
+    "field": "label",
+    "value": "311 - GRANDES ENTREPRISES DE VENTE AU DETAIL"
+  },
+  {
+    "id": "cmoxptpsy006icverm1bjb37n",
+    "field": "nom",
+    "value": "GRANDS MAGASINS"
+  },
+  {
+    "id": "cmoxptpsy006icverm1bjb37n",
+    "field": "label",
+    "value": "312 - GRANDS MAGASINS"
+  },
+  {
+    "id": "cmoxptpuf006jcverzoa3fcye",
+    "field": "nom",
+    "value": "PHARMACIES ET OFFICES DE TARIFICATION"
+  },
+  {
+    "id": "cmoxptpuf006jcverzoa3fcye",
+    "field": "label",
+    "value": "313 - PHARMACIES ET OFFICES DE TARIFICATION"
+  },
+  {
+    "id": "cmoxptpw2006kcver065ek3zr",
+    "field": "nom",
+    "value": "COIFFURE ET SOINS DE BEAUTE"
+  },
+  {
+    "id": "cmoxptpw2006kcver065ek3zr",
+    "field": "label",
+    "value": "314 - COIFFURE ET SOINS DE BEAUTE"
+  },
+  {
+    "id": "cmoxptpxh006lcverhjydv0ov",
+    "field": "nom",
+    "value": "AVIATION COMMERCIALE"
+  },
+  {
+    "id": "cmoxptpxh006lcverhjydv0ov",
+    "field": "label",
+    "value": "315 - AVIATION COMMERCIALE"
+  },
+  {
+    "id": "cmoxptpyu006mcveri4gu3rzg",
+    "field": "nom",
+    "value": "MAINTENANCE TECHNIQUE, ASSISTANCE ET FORMATION DANS LE SECTEUR DE L'AVIATION"
+  },
+  {
+    "id": "cmoxptpyu006mcveri4gu3rzg",
+    "field": "label",
+    "value": "315.01 - MAINTENANCE TECHNIQUE, ASSISTANCE ET FORMATION DANS LE SECTEUR DE L'AVIATION"
+  },
+  {
+    "id": "cmoxptq0j006ncverxtbwi4wi",
+    "field": "nom",
+    "value": "COMPAGNIES AERIENNES"
+  },
+  {
+    "id": "cmoxptq0j006ncverxtbwi4wi",
+    "field": "label",
+    "value": "315.02 - COMPAGNIES AERIENNES"
+  },
+  {
+    "id": "cmoxptq1y006ocver1370w9kp",
+    "field": "nom",
+    "value": "GESTION DES AEROPORTS"
+  },
+  {
+    "id": "cmoxptq1y006ocver1370w9kp",
+    "field": "label",
+    "value": "315.03 - GESTION DES AEROPORTS"
+  },
+  {
+    "id": "cmoxptq3d006pcver8rnvnxdu",
+    "field": "nom",
+    "value": "MARINE MARCHANDE"
+  },
+  {
+    "id": "cmoxptq3d006pcver8rnvnxdu",
+    "field": "label",
+    "value": "316 - MARINE MARCHANDE"
+  },
+  {
+    "id": "cmoxptq4q006qcverd40td2jr",
+    "field": "nom",
+    "value": "SERVICES DE GARDIENNAGE ET/OU DE SURVEILLANCE"
+  },
+  {
+    "id": "cmoxptq4q006qcverd40td2jr",
+    "field": "label",
+    "value": "317 - SERVICES DE GARDIENNAGE ET/OU DE SURVEILLANCE"
+  },
+  {
+    "id": "cmoxptq62006rcver982ox2mp",
+    "field": "nom",
+    "value": "SERVICES DES AIDES FAMILIALES ET DES AIDES SENIORS"
+  },
+  {
+    "id": "cmoxptq62006rcver982ox2mp",
+    "field": "label",
+    "value": "318 - SERVICES DES AIDES FAMILIALES ET DES AIDES SENIORS"
+  },
+  {
+    "id": "cmoxptq7d006scver7v4umtvy",
+    "field": "nom",
+    "value": "LES SERVICES DES AIDES FAMILIALES ET DES AIDES SENIORS QUI NE SONT PAS SUBSIDIES PAR LES REGIONS OU LES COMMUNAUTES"
+  },
+  {
+    "id": "cmoxptq7d006scver7v4umtvy",
+    "field": "label",
+    "value": "318.06 - LES SERVICES DES AIDES FAMILIALES ET DES AIDES SENIORS QUI NE SONT PAS SUBSIDIES PAR LES REGIONS OU LES COMMUNAUTES"
+  },
+  {
+    "id": "cmoxptq97006tcverjxp8ygsq",
+    "field": "nom",
+    "value": "SERVICES DES AIDES FAMILIALES ET DES AIDES SENIORS DE LA COMMUNAUTE FRANCAISE, DE LA REGION WALLONNE ET DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptq97006tcverjxp8ygsq",
+    "field": "label",
+    "value": "318.01 - SERVICES DES AIDES FAMILIALES ET DES AIDES SENIORS DE LA COMMUNAUTE FRANCAISE, DE LA REGION WALLONNE ET DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptqb3006ucverio41fwnp",
+    "field": "nom",
+    "value": "REGION WALLONNE"
+  },
+  {
+    "id": "cmoxptqb3006ucverio41fwnp",
+    "field": "label",
+    "value": "318.01.10 - REGION WALLONNE"
+  },
+  {
+    "id": "cmoxptp6e0064cvers52fniju",
+    "field": "nom",
+    "value": "INDUSTRIE HOTELIERE"
+  },
+  {
+    "id": "cmoxptp6e0064cvers52fniju",
+    "field": "label",
+    "value": "302 - INDUSTRIE HOTELIERE"
+  },
+  {
+    "id": "cmoxptp7t0065cverfj3zsc8c",
+    "field": "nom",
+    "value": "INDUSTRIE CINEMATOGRAPHIQUE"
+  },
+  {
+    "id": "cmoxptp7t0065cverfj3zsc8c",
+    "field": "label",
+    "value": "303 - INDUSTRIE CINEMATOGRAPHIQUE"
+  },
+  {
+    "id": "cmoxptp940066cverkheigctv",
+    "field": "nom",
+    "value": "PRODUCTION DE FILMS"
+  },
+  {
+    "id": "cmoxptp940066cverkheigctv",
+    "field": "label",
+    "value": "303.01 - PRODUCTION DE FILMS"
+  },
+  {
+    "id": "cmoxptpau0067cver2336plmx",
+    "field": "nom",
+    "value": "EXPLOITATION DE SALLES DE CINEMA"
+  },
+  {
+    "id": "cmoxptpau0067cver2336plmx",
+    "field": "label",
+    "value": "303.03 - EXPLOITATION DE SALLES DE CINEMA"
+  },
+  {
+    "id": "cmoxptpc90068cverbcrxkkxp",
+    "field": "nom",
+    "value": "SPECTACLE"
+  },
+  {
+    "id": "cmoxptpc90068cverbcrxkkxp",
+    "field": "label",
+    "value": "304 - SPECTACLE"
+  },
+  {
+    "id": "cmoxptpfg006acvernphqb39v",
+    "field": "nom",
+    "value": "ARTS DE LA SCENE (REGION FLAMANDE ET REGION BRUXELLES-CAPITALE - ROLE LINGUISTIQUE NEERLANDOPHONE)"
+  },
+  {
+    "id": "cmoxptpfg006acvernphqb39v",
+    "field": "label",
+    "value": "304.02 - ARTS DE LA SCENE (REGION FLAMANDE ET REGION BRUXELLES-CAPITALE - ROLE LINGUISTIQUE NEERLANDOPHONE)"
+  },
+  {
+    "id": "cmoxptqql0074cveru6kqm2is",
+    "field": "nom",
+    "value": "CROIX-ROUGE DE BELGIQUE (AILE CROIX-ROUGE FLANDRE - SERVICES HUMANITAIRES)"
+  },
+  {
+    "id": "cmoxptqql0074cveru6kqm2is",
+    "field": "label",
+    "value": "319.02 - CROIX-ROUGE DE BELGIQUE (AILE CROIX-ROUGE FLANDRE - SERVICES HUMANITAIRES)"
+  },
+  {
+    "id": "cmoxptqse0075cverkoocdafy",
+    "field": "nom",
+    "value": "OFFICES DE LOCATION SOCIALE SUBVENTIONNÉS PAR LA RÉGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptqse0075cverkoocdafy",
+    "field": "label",
+    "value": "319.99 - OFFICES DE LOCATION SOCIALE SUBVENTIONNÉS PAR LA RÉGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptqu70076cver6sylc745",
+    "field": "nom",
+    "value": "ETABLISSEMENTS ET SERVICES D'EDUCATION ET D'HEBERGEMENT DE LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptqu70076cver6sylc745",
+    "field": "label",
+    "value": "319.01 - ETABLISSEMENTS ET SERVICES D'EDUCATION ET D'HEBERGEMENT DE LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptqvn0077cverai6ai2aq",
+    "field": "nom",
+    "value": "CENTRES D'AIDE AUX ENFANTS, CENTRES D'AIDE INTEGRALE AUX FAMILLES"
+  },
+  {
+    "id": "cmoxptqvn0077cverai6ai2aq",
+    "field": "label",
+    "value": "319.01.01 - CENTRES D'AIDE AUX ENFANTS, CENTRES D'AIDE INTEGRALE AUX FAMILLES"
+  },
+  {
+    "id": "cmoxptqx10078cverf5n4iq2v",
+    "field": "nom",
+    "value": "AIDE AUX HANDICAPÉS"
+  },
+  {
+    "id": "cmoxptqx10078cverf5n4iq2v",
+    "field": "label",
+    "value": "319.01.02 - AIDE AUX HANDICAPÉS"
+  },
+  {
+    "id": "cmoxptr0t007acverkyemo730",
+    "field": "nom",
+    "value": "AIDE SOCIALE GENERALE, AIDE AUX SANS DOMICILES FIXES"
+  },
+  {
+    "id": "cmoxptr0t007acverkyemo730",
+    "field": "label",
+    "value": "319.01.04 - AIDE SOCIALE GENERALE, AIDE AUX SANS DOMICILES FIXES"
+  },
+  {
+    "id": "cmoxptr3m007ccverubuskc0n",
+    "field": "nom",
+    "value": "ASSOCIATION DE LOCATAIRES"
+  },
+  {
+    "id": "cmoxptr3m007ccverubuskc0n",
+    "field": "label",
+    "value": "319.01.06 - ASSOCIATION DE LOCATAIRES"
+  },
+  {
+    "id": "cmoxptr7p007fcveroezxvy56",
+    "field": "nom",
+    "value": "SOINS AUX HANDICAPÉS DE LA RÉGION WALLONNE"
+  },
+  {
+    "id": "cmoxptr7p007fcveroezxvy56",
+    "field": "label",
+    "value": "319.02.21 - SOINS AUX HANDICAPÉS DE LA RÉGION WALLONNE"
+  },
+  {
+    "id": "cmoxptr9c007gcverve3l3qmm",
+    "field": "nom",
+    "value": "SOINS AUX HANDICAPÉS DE LA COMMISSION COMMUNAUTAIRE FRANÇAISE DE LA RÉGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptr9c007gcverve3l3qmm",
+    "field": "label",
+    "value": "319.02.31 - SOINS AUX HANDICAPÉS DE LA COMMISSION COMMUNAUTAIRE FRANÇAISE DE LA RÉGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptqdz006wcveru6tlq74b",
+    "field": "nom",
+    "value": "COMMUNAUTÉ GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptqdz006wcveru6tlq74b",
+    "field": "label",
+    "value": "318.01.30 - COMMUNAUTÉ GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptqfd006xcvercfptw4tm",
+    "field": "nom",
+    "value": "SERVICES DES AIDES FAMILIALES ET DES AIDES SENIORS DE LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptqfd006xcvercfptw4tm",
+    "field": "label",
+    "value": "318.02 - SERVICES DES AIDES FAMILIALES ET DES AIDES SENIORS DE LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptqgp006ycvervmy26fyz",
+    "field": "nom",
+    "value": "AIDE AUX FAMILLES ET SOINS À DOMICILE COMPLÉMENTAIRES"
+  },
+  {
+    "id": "cmoxptqgp006ycvervmy26fyz",
+    "field": "label",
+    "value": "318.02.01 - AIDE AUX FAMILLES ET SOINS À DOMICILE COMPLÉMENTAIRES"
+  },
+  {
+    "id": "cmoxptqi3006zcver8iy2k458",
+    "field": "nom",
+    "value": "TITRES-SERVICES (EXCL. TRAVAILLEURS DES TITRES-SERVICES QUI TOMBENT SOUS LA SCP 322.01)"
+  },
+  {
+    "id": "cmoxptqi3006zcver8iy2k458",
+    "field": "label",
+    "value": "318.02.02 - TITRES-SERVICES (EXCL. TRAVAILLEURS DES TITRES-SERVICES QUI TOMBENT SOUS LA SCP 322.01)"
+  },
+  {
+    "id": "cmoxptqjn0070cver0ig06wnf",
+    "field": "nom",
+    "value": "ECONOMIE DE SERVICES LOCAUX ET PROGRAMMES POUR L'EMPLOI RÉGLEMENTÉS"
+  },
+  {
+    "id": "cmoxptqjn0070cver0ig06wnf",
+    "field": "label",
+    "value": "318.02.03 - ECONOMIE DE SERVICES LOCAUX ET PROGRAMMES POUR L'EMPLOI RÉGLEMENTÉS"
+  },
+  {
+    "id": "cmoxptql30071cvermgmuchis",
+    "field": "nom",
+    "value": "ENTREE STRUCTURELLE"
+  },
+  {
+    "id": "cmoxptql30071cvermgmuchis",
+    "field": "label",
+    "value": "318.02.04 - ENTREE STRUCTURELLE"
+  },
+  {
+    "id": "cmoxptqmz0072cver97tlmsby",
+    "field": "nom",
+    "value": "ETABLISSEMENTS ET SERVICES D'EDUCATION ET D'HEBERGEMENT"
+  },
+  {
+    "id": "cmoxptqmz0072cver97tlmsby",
+    "field": "label",
+    "value": "319 - ETABLISSEMENTS ET SERVICES D'EDUCATION ET D'HEBERGEMENT"
+  },
+  {
+    "id": "cmoxptqoe0073cver0kt1ps6l",
+    "field": "nom",
+    "value": "COMMISSION COMMUNAUTAIRE COMMUNE DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptqoe0073cver0kt1ps6l",
+    "field": "label",
+    "value": "319.01 - COMMISSION COMMUNAUTAIRE COMMUNE DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptqz40079cverunvjdc31",
+    "field": "nom",
+    "value": "ASSISTANCE PARTICULIERE A LA JEUNESSE"
+  },
+  {
+    "id": "cmoxptqz40079cverunvjdc31",
+    "field": "label",
+    "value": "319.01.03 - ASSISTANCE PARTICULIERE A LA JEUNESSE"
+  },
+  {
+    "id": "cmoxptr23007bcvervee4348s",
+    "field": "nom",
+    "value": "OFFICE DE LOCATION SOCIALE"
+  },
+  {
+    "id": "cmoxptr23007bcvervee4348s",
+    "field": "label",
+    "value": "319.01.05 - OFFICE DE LOCATION SOCIALE"
+  },
+  {
+    "id": "cmoxptr6e007ecverviyq6xxr",
+    "field": "nom",
+    "value": "AIDE À LA JEUNESSE (EXCL. COMMUNAUTÉ GERMANOPHONE)"
+  },
+  {
+    "id": "cmoxptr6e007ecverviyq6xxr",
+    "field": "label",
+    "value": "319.02.11 - AIDE À LA JEUNESSE (EXCL. COMMUNAUTÉ GERMANOPHONE)"
+  },
+  {
+    "id": "cmoxptrmr007pcverxk8xwcvf",
+    "field": "nom",
+    "value": "INDUSTRIE DU GAZ ET DE L'ELECTRICITE"
+  },
+  {
+    "id": "cmoxptrmr007pcverxk8xwcvf",
+    "field": "label",
+    "value": "326 - INDUSTRIE DU GAZ ET DE L'ELECTRICITE"
+  },
+  {
+    "id": "cmoxptrof007qcverz6iqcdy8",
+    "field": "nom",
+    "value": "TRAVAILLEURS EN SERVICE AU 31/12/2001"
+  },
+  {
+    "id": "cmoxptrof007qcverz6iqcdy8",
+    "field": "label",
+    "value": "326.10 - TRAVAILLEURS EN SERVICE AU 31/12/2001"
+  },
+  {
+    "id": "cmoxptrq0007rcverl1k0gpf1",
+    "field": "nom",
+    "value": "TRAVAILLEURS EN SERVICE A PARTIR DU 01/01/2002"
+  },
+  {
+    "id": "cmoxptrq0007rcverl1k0gpf1",
+    "field": "label",
+    "value": "326.20 - TRAVAILLEURS EN SERVICE A PARTIR DU 01/01/2002"
+  },
+  {
+    "id": "cmoxptrrg007scverp7k6z9ng",
+    "field": "nom",
+    "value": "ENTREPRISES DE TRAVAIL ADAPTE, LES ATELIERS SOCIAUX ET LES \"MAATWERKBEDRIJVEN\""
+  },
+  {
+    "id": "cmoxptrrg007scverp7k6z9ng",
+    "field": "label",
+    "value": "327 - ENTREPRISES DE TRAVAIL ADAPTE, LES ATELIERS SOCIAUX ET LES \"MAATWERKBEDRIJVEN\""
+  },
+  {
+    "id": "cmoxptrsr007tcveryp6yaw8x",
+    "field": "nom",
+    "value": "IDESS SFS (= INITIATIVE DE DÉVELOPPEMENT DE L'EMPLOI DANS LE SECTEUR DES SERVICES DE PROXIMITÉ À FINALITÉ SOCIALE, AGRÉÉE ET/OU SUBSIDIÉE PAR LA RÉGION WALLONNE )"
+  },
+  {
+    "id": "cmoxptrsr007tcveryp6yaw8x",
+    "field": "label",
+    "value": "327.05 - IDESS SFS (= INITIATIVE DE DÉVELOPPEMENT DE L'EMPLOI DANS LE SECTEUR DES SERVICES DE PROXIMITÉ À FINALITÉ SOCIALE, AGRÉÉE ET/OU SUBSIDIÉE PAR LA RÉGION WALLONNE )"
+  },
+  {
+    "id": "cmoxptru4007ucver2fz41ade",
+    "field": "nom",
+    "value": "LE SECTEUR FLAMAND DES ENTREPRISES DE TRAVAIL ADAPTÉ, DES ATELIERS SOCIAUX ET DES \"MAATWERKBEDRIJVEN\""
+  },
+  {
+    "id": "cmoxptru4007ucver2fz41ade",
+    "field": "label",
+    "value": "327.01 - LE SECTEUR FLAMAND DES ENTREPRISES DE TRAVAIL ADAPTÉ, DES ATELIERS SOCIAUX ET DES \"MAATWERKBEDRIJVEN\""
+  },
+  {
+    "id": "cmoxptrvq007vcverp91e0znz",
+    "field": "nom",
+    "value": "ENTREPRISES DE TRAVAIL ADAPTE SUBSIDIEES PAR LA COMMISSION COMMUNAUTAIRE FRANCAISE"
+  },
+  {
+    "id": "cmoxptrvq007vcverp91e0znz",
+    "field": "label",
+    "value": "327.02 - ENTREPRISES DE TRAVAIL ADAPTE SUBSIDIEES PAR LA COMMISSION COMMUNAUTAIRE FRANCAISE"
+  },
+  {
+    "id": "cmoxptrx8007wcverk97d45rg",
+    "field": "nom",
+    "value": "ENTREPRISES DE TRAVAIL ADAPTE DE LA REGION WALLONNE ET DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptrx8007wcverk97d45rg",
+    "field": "label",
+    "value": "327.03 - ENTREPRISES DE TRAVAIL ADAPTE DE LA REGION WALLONNE ET DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptryz007xcverm2es8ljp",
+    "field": "nom",
+    "value": "REGION WALLONNE"
+  },
+  {
+    "id": "cmoxptryz007xcverm2es8ljp",
+    "field": "label",
+    "value": "327.03.10 - REGION WALLONNE"
+  },
+  {
+    "id": "cmoxpts0b007ycverezel3p6r",
+    "field": "nom",
+    "value": "COMMUNAUTÉ GERMANOPHONE"
+  },
+  {
+    "id": "cmoxpts0b007ycverezel3p6r",
+    "field": "label",
+    "value": "327.03.20 - COMMUNAUTÉ GERMANOPHONE"
+  },
+  {
+    "id": "cmoxpts1n007zcver3wkgjkdw",
+    "field": "nom",
+    "value": "TRANSPORT URBAIN ET REGIONAL"
+  },
+  {
+    "id": "cmoxpts1n007zcver3wkgjkdw",
+    "field": "label",
+    "value": "328 - TRANSPORT URBAIN ET REGIONAL"
+  },
+  {
+    "id": "cmoxpts2z0080cvero0fu7x4w",
+    "field": "nom",
+    "value": "TRANSPORT URBAIN ET REGIONAL DE LA REGION FLAMANDE"
+  },
+  {
+    "id": "cmoxpts2z0080cvero0fu7x4w",
+    "field": "label",
+    "value": "328.01 - TRANSPORT URBAIN ET REGIONAL DE LA REGION FLAMANDE"
+  },
+  {
+    "id": "cmoxpts4i0081cverzozfyci8",
+    "field": "nom",
+    "value": "TRANSPORT URBAIN ET REGIONAL DE LA REGION WALLONNE"
+  },
+  {
+    "id": "cmoxpts4i0081cverzozfyci8",
+    "field": "label",
+    "value": "328.02 - TRANSPORT URBAIN ET REGIONAL DE LA REGION WALLONNE"
+  },
+  {
+    "id": "cmoxpts5t0082cver6ej4udzc",
+    "field": "nom",
+    "value": "TRANSPORT URBAIN ET REGIONAL DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxpts5t0082cver6ej4udzc",
+    "field": "label",
+    "value": "328.03 - TRANSPORT URBAIN ET REGIONAL DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxpts730083cverb7ujcz2n",
+    "field": "nom",
+    "value": "SECTEUR SOCIO-CULTUREL"
+  },
+  {
+    "id": "cmoxpts730083cverb7ujcz2n",
+    "field": "label",
+    "value": "329 - SECTEUR SOCIO-CULTUREL"
+  },
+  {
+    "id": "cmoxpts8q0084cverzm5qfyuf",
+    "field": "nom",
+    "value": "SECTEUR SOCIO-CULTUREL DE LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxpts8q0084cverzm5qfyuf",
+    "field": "label",
+    "value": "329.01 - SECTEUR SOCIO-CULTUREL DE LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptsa60085cver6vj6p6x4",
+    "field": "nom",
+    "value": "TRAVAIL SOCIOCULTUREL"
+  },
+  {
+    "id": "cmoxptsa60085cver6vj6p6x4",
+    "field": "label",
+    "value": "329.01.01 - TRAVAIL SOCIOCULTUREL"
+  },
+  {
+    "id": "cmoxptrbz007icver6kuqfutc",
+    "field": "nom",
+    "value": "POMPES FUNEBRES"
+  },
+  {
+    "id": "cmoxptrbz007icver6kuqfutc",
+    "field": "label",
+    "value": "320 - POMPES FUNEBRES"
+  },
+  {
+    "id": "cmoxptrdc007jcver3rrgw2y5",
+    "field": "nom",
+    "value": "GROSSISTES-REPARTITEURS DE MEDICAMENTS"
+  },
+  {
+    "id": "cmoxptrdc007jcver3rrgw2y5",
+    "field": "label",
+    "value": "321 - GROSSISTES-REPARTITEURS DE MEDICAMENTS"
+  },
+  {
+    "id": "cmoxptrgk007lcverw9tlf715",
+    "field": "nom",
+    "value": "ENTREPRISES AGREEES FOURNISSANT DES TRAVAUX OU SERVICES DE PROXIMITE"
+  },
+  {
+    "id": "cmoxptrgk007lcverw9tlf715",
+    "field": "label",
+    "value": "322.01 - ENTREPRISES AGREEES FOURNISSANT DES TRAVAUX OU SERVICES DE PROXIMITE"
+  },
+  {
+    "id": "cmoxptri4007mcverzjl2rgco",
+    "field": "nom",
+    "value": "GESTION D'IMMEUBLES, AGENTS IMMOBILIERS ET TRAVAILLEURS DOMESTIQUES"
+  },
+  {
+    "id": "cmoxptri4007mcverzjl2rgco",
+    "field": "label",
+    "value": "323 - GESTION D'IMMEUBLES, AGENTS IMMOBILIERS ET TRAVAILLEURS DOMESTIQUES"
+  },
+  {
+    "id": "cmoxptrjn007ncver3ph2xsyp",
+    "field": "nom",
+    "value": "INDUSTRIE ET COMMERCE DU DIAMANT"
+  },
+  {
+    "id": "cmoxptrjn007ncver3ph2xsyp",
+    "field": "label",
+    "value": "324 - INDUSTRIE ET COMMERCE DU DIAMANT"
+  },
+  {
+    "id": "cmoxptrl7007ocverj55bn9ce",
+    "field": "nom",
+    "value": "INSTITUTIONS PUBLIQUES DE CREDIT"
+  },
+  {
+    "id": "cmoxptrl7007ocverj55bn9ce",
+    "field": "label",
+    "value": "325 - INSTITUTIONS PUBLIQUES DE CREDIT"
+  },
+  {
+    "id": "cmoxptslo008dcverqeo64mzo",
+    "field": "nom",
+    "value": "ENVIRONNEMENT"
+  },
+  {
+    "id": "cmoxptslo008dcverqeo64mzo",
+    "field": "label",
+    "value": "329.01.09 - ENVIRONNEMENT"
+  },
+  {
+    "id": "cmoxptsn1008ecveren75rgqy",
+    "field": "nom",
+    "value": "EDUCATION DE BASE ET \"VLAAMS ONDERSTEUNINGSCENTRUMVOOR DE BASISEDUCATIE\""
+  },
+  {
+    "id": "cmoxptsn1008ecveren75rgqy",
+    "field": "label",
+    "value": "329.01.10 - EDUCATION DE BASE ET \"VLAAMS ONDERSTEUNINGSCENTRUMVOOR DE BASISEDUCATIE\""
+  },
+  {
+    "id": "cmoxptspp008gcvertwy5xaau",
+    "field": "nom",
+    "value": "COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptspp008gcvertwy5xaau",
+    "field": "label",
+    "value": "329.02.10 - COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptsra008hcverei1ldfkj",
+    "field": "nom",
+    "value": "REGION WALLONNE"
+  },
+  {
+    "id": "cmoxptsra008hcverei1ldfkj",
+    "field": "label",
+    "value": "329.02.20 - REGION WALLONNE"
+  },
+  {
+    "id": "cmoxptsso008icvery4gr6r5x",
+    "field": "nom",
+    "value": "COMMISSION COMMUNAUTAIRE FRANÇAISE DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptsso008icvery4gr6r5x",
+    "field": "label",
+    "value": "329.02.30 - COMMISSION COMMUNAUTAIRE FRANÇAISE DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptsub008jcverdy5yph2u",
+    "field": "nom",
+    "value": "COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptsub008jcverdy5yph2u",
+    "field": "label",
+    "value": "329.02.40 - COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptsvp008kcverftqd7cyb",
+    "field": "nom",
+    "value": "ORGANISATIONS SOCIO-CULTURELLES FEDERALES ET BICOMMUNAUTAIRES"
+  },
+  {
+    "id": "cmoxptsvp008kcverftqd7cyb",
+    "field": "label",
+    "value": "329.03 - ORGANISATIONS SOCIO-CULTURELLES FEDERALES ET BICOMMUNAUTAIRES"
+  },
+  {
+    "id": "cmoxptsx3008lcverbe9u7168",
+    "field": "nom",
+    "value": "ETABLISSEMENTS ET SERVICES DE SANTE"
+  },
+  {
+    "id": "cmoxptsx3008lcverbe9u7168",
+    "field": "label",
+    "value": "330 - ETABLISSEMENTS ET SERVICES DE SANTE"
+  },
+  {
+    "id": "cmoxptsye008mcver73rahis5",
+    "field": "nom",
+    "value": "HOPITAUX PRIVES, MAISONS DE SOINS PSYCHIATRIQUES"
+  },
+  {
+    "id": "cmoxptsye008mcver73rahis5",
+    "field": "label",
+    "value": "330.01 - HOPITAUX PRIVES, MAISONS DE SOINS PSYCHIATRIQUES"
+  },
+  {
+    "id": "cmoxptszs008ncverg17vjz1c",
+    "field": "nom",
+    "value": "MAISONS DE RETRAITE POUR PERSONNES AGEES, MAISONS DE REPOS ET DE SOINS, CENTRES DE JOURS POUR PERSONNES AGEES, CENTRES D'ACCUEIL DE JOUR POUR PERSONNES AGEES, RÉSIDENCES-SERVICES"
+  },
+  {
+    "id": "cmoxptszs008ncverg17vjz1c",
+    "field": "label",
+    "value": "330.02 - MAISONS DE RETRAITE POUR PERSONNES AGEES, MAISONS DE REPOS ET DE SOINS, CENTRES DE JOURS POUR PERSONNES AGEES, CENTRES D'ACCUEIL DE JOUR POUR PERSONNES AGEES, RÉSIDENCES-SERVICES"
+  },
+  {
+    "id": "cmoxptt17008ocverjb4z042v",
+    "field": "nom",
+    "value": "CENTRES DE REVALIDATION"
+  },
+  {
+    "id": "cmoxptt17008ocverjb4z042v",
+    "field": "label",
+    "value": "330.03 - CENTRES DE REVALIDATION"
+  },
+  {
+    "id": "cmoxptt2m008pcverhmabfro1",
+    "field": "nom",
+    "value": "SOINS INFIRMIERS À DOMICILE"
+  },
+  {
+    "id": "cmoxptt2m008pcverhmabfro1",
+    "field": "label",
+    "value": "330.04 - SOINS INFIRMIERS À DOMICILE"
+  },
+  {
+    "id": "cmoxptt3z008qcver3filqb01",
+    "field": "nom",
+    "value": "HABITATION PROTÉGÉE"
+  },
+  {
+    "id": "cmoxptt3z008qcver3filqb01",
+    "field": "label",
+    "value": "330.05 - HABITATION PROTÉGÉE"
+  },
+  {
+    "id": "cmoxptt5d008rcvergsngehf4",
+    "field": "nom",
+    "value": "MAISONS MEDICALES (CENTRES DE SANTE INTEGRES)"
+  },
+  {
+    "id": "cmoxptt5d008rcvergsngehf4",
+    "field": "label",
+    "value": "330.06 - MAISONS MEDICALES (CENTRES DE SANTE INTEGRES)"
+  },
+  {
+    "id": "cmoxptt6r008scvera6mtx8eu",
+    "field": "nom",
+    "value": "PROTHESE DENTAIRE"
+  },
+  {
+    "id": "cmoxptt6r008scvera6mtx8eu",
+    "field": "label",
+    "value": "330.07 - PROTHESE DENTAIRE"
+  },
+  {
+    "id": "cmoxptt8j008tcverc1ycimwc",
+    "field": "nom",
+    "value": "SERVICES EXTERNES POUR LA PREVENTION ET LA PROTECTION AU TRAVAIL"
+  },
+  {
+    "id": "cmoxptt8j008tcverc1ycimwc",
+    "field": "label",
+    "value": "330.08 - SERVICES EXTERNES POUR LA PREVENTION ET LA PROTECTION AU TRAVAIL"
+  },
+  {
+    "id": "cmoxptta9008ucverpu1plbj6",
+    "field": "nom",
+    "value": "SERVICES DU SANG DE LA CROIX-ROUGE DE BELGIQUE"
+  },
+  {
+    "id": "cmoxptta9008ucverpu1plbj6",
+    "field": "label",
+    "value": "330.09 - SERVICES DU SANG DE LA CROIX-ROUGE DE BELGIQUE"
+  },
+  {
+    "id": "cmoxptsd00087cverqhz9mkm8",
+    "field": "nom",
+    "value": "ANIMATION SOCIALE"
+  },
+  {
+    "id": "cmoxptsd00087cverqhz9mkm8",
+    "field": "label",
+    "value": "329.01.03 - ANIMATION SOCIALE"
+  },
+  {
+    "id": "cmoxptsed0088cvera4e5jgd2",
+    "field": "nom",
+    "value": "CENTRES D'INTEGRATION"
+  },
+  {
+    "id": "cmoxptsed0088cvera4e5jgd2",
+    "field": "label",
+    "value": "329.01.04 - CENTRES D'INTEGRATION"
+  },
+  {
+    "id": "cmoxptsfw0089cverqymwt09h",
+    "field": "nom",
+    "value": "ORGANISATIONS NEERLANDOPHONES POUR L'INSERTION SOCIOPROFESSIONNELLE A BRUXELLES"
+  },
+  {
+    "id": "cmoxptsfw0089cverqymwt09h",
+    "field": "label",
+    "value": "329.01.05 - ORGANISATIONS NEERLANDOPHONES POUR L'INSERTION SOCIOPROFESSIONNELLE A BRUXELLES"
+  },
+  {
+    "id": "cmoxptsh8008acverldcpmxdd",
+    "field": "nom",
+    "value": "ORGANISATIONS QUI RECOIVENT DES MOYENS MARIBEL SOCIAL POUR LE SOUTIEN DE DIRECTION"
+  },
+  {
+    "id": "cmoxptsh8008acverldcpmxdd",
+    "field": "label",
+    "value": "329.01.06 - ORGANISATIONS QUI RECOIVENT DES MOYENS MARIBEL SOCIAL POUR LE SOUTIEN DE DIRECTION"
+  },
+  {
+    "id": "cmoxptsiy008bcver6cjb0zpt",
+    "field": "nom",
+    "value": "FORMATION PROFESSIONNELLE"
+  },
+  {
+    "id": "cmoxptsiy008bcver6cjb0zpt",
+    "field": "label",
+    "value": "329.01.07 - FORMATION PROFESSIONNELLE"
+  },
+  {
+    "id": "cmoxptskb008ccverlodqicki",
+    "field": "nom",
+    "value": "FEDERATIONS SPORTIVES ET ORGANISMES DE COORDINATION"
+  },
+  {
+    "id": "cmoxptskb008ccverlodqicki",
+    "field": "label",
+    "value": "329.01.08 - FEDERATIONS SPORTIVES ET ORGANISMES DE COORDINATION"
+  },
+  {
+    "id": "cmoxpttmg0092cverb0sticp3",
+    "field": "nom",
+    "value": "AUTRES INSTITUTIONS RECONNUES ET/OU SUBVENTIONNEES PAR LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxpttmg0092cverb0sticp3",
+    "field": "label",
+    "value": "331.03 - AUTRES INSTITUTIONS RECONNUES ET/OU SUBVENTIONNEES PAR LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptto10093cverlymdqbji",
+    "field": "nom",
+    "value": "IFIC"
+  },
+  {
+    "id": "cmoxptto10093cverlymdqbji",
+    "field": "label",
+    "value": "331.04 - IFIC"
+  },
+  {
+    "id": "cmoxpttpb0094cveraffm08iw",
+    "field": "nom",
+    "value": "ETABLISSEMENTS ET SERVICES DE L'AIDE SOCIALE ET DES SOINS DE SANTE POUR LESQUELS AUCUNE CCT SPECIFIQUE N'A ETE CONCLUE"
+  },
+  {
+    "id": "cmoxpttpb0094cveraffm08iw",
+    "field": "label",
+    "value": "331.99 - ETABLISSEMENTS ET SERVICES DE L'AIDE SOCIALE ET DES SOINS DE SANTE POUR LESQUELS AUCUNE CCT SPECIFIQUE N'A ETE CONCLUE"
+  },
+  {
+    "id": "cmoxpttqp0095cver4trp61mb",
+    "field": "nom",
+    "value": "SECTEUR FRANCOPHONE ET GERMANOPHONE DE L'AIDE SOCIALE ET DES SOINS DE SANTE"
+  },
+  {
+    "id": "cmoxpttqp0095cver4trp61mb",
+    "field": "label",
+    "value": "332 - SECTEUR FRANCOPHONE ET GERMANOPHONE DE L'AIDE SOCIALE ET DES SOINS DE SANTE"
+  },
+  {
+    "id": "cmoxptts90096cverta0bxtx3",
+    "field": "nom",
+    "value": "ETABLISSEMENTS SUBVENTIONNES PAR LA COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptts90096cverta0bxtx3",
+    "field": "label",
+    "value": "332.10 - ETABLISSEMENTS SUBVENTIONNES PAR LA COMMUNAUTE FRANÇAISE"
+  },
+  {
+    "id": "cmoxptttk0097cver0d0tgryl",
+    "field": "nom",
+    "value": "ETABLISSEMENTS SUBVENTIONNES PAR LA REGION WALLONNE"
+  },
+  {
+    "id": "cmoxptttk0097cver0d0tgryl",
+    "field": "label",
+    "value": "332.20 - ETABLISSEMENTS SUBVENTIONNES PAR LA REGION WALLONNE"
+  },
+  {
+    "id": "cmoxpttv20098cvervgcq9u4s",
+    "field": "nom",
+    "value": "ETABLISSEMENTS SUBVENTIONNES PAR LA COMMISSION COMMUNAUTAIRE FRANÇAISE DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxpttv20098cvervgcq9u4s",
+    "field": "label",
+    "value": "332.30 - ETABLISSEMENTS SUBVENTIONNES PAR LA COMMISSION COMMUNAUTAIRE FRANÇAISE DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxpttwd0099cver50qfgrau",
+    "field": "nom",
+    "value": "ETABLISSEMENTS SUBVENTIONNES PAR LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxpttwd0099cver50qfgrau",
+    "field": "label",
+    "value": "332.40 - ETABLISSEMENTS SUBVENTIONNES PAR LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptty2009acvertic0ozsu",
+    "field": "nom",
+    "value": "ETABLISSEMENTS ET SERVICES DE L'AIDE SOCIALE ET DES SOINS DE SANTE POUR LESQUELS AUCUNE CCT SPECIFIQUE N'A ETE CONCLUE"
+  },
+  {
+    "id": "cmoxptty2009acvertic0ozsu",
+    "field": "label",
+    "value": "332.99 - ETABLISSEMENTS ET SERVICES DE L'AIDE SOCIALE ET DES SOINS DE SANTE POUR LESQUELS AUCUNE CCT SPECIFIQUE N'A ETE CONCLUE"
+  },
+  {
+    "id": "cmoxpttzd009bcverjahpzc58",
+    "field": "nom",
+    "value": "ATTRACTIONS TOURISTIQUES"
+  },
+  {
+    "id": "cmoxpttzd009bcverjahpzc58",
+    "field": "label",
+    "value": "333 - ATTRACTIONS TOURISTIQUES"
+  },
+  {
+    "id": "cmoxptu0p009ccvermmgzzgvf",
+    "field": "nom",
+    "value": "LOTERIES PUBLIQUES"
+  },
+  {
+    "id": "cmoxptu0p009ccvermmgzzgvf",
+    "field": "label",
+    "value": "334 - LOTERIES PUBLIQUES"
+  },
+  {
+    "id": "cmoxptu20009dcver78wxx5x8",
+    "field": "nom",
+    "value": "ORGANISMES SOCIAUX"
+  },
+  {
+    "id": "cmoxptu20009dcver78wxx5x8",
+    "field": "label",
+    "value": "335 - ORGANISMES SOCIAUX"
+  },
+  {
+    "id": "cmoxptu3f009ecver88dn1o1e",
+    "field": "nom",
+    "value": "PROFESSIONS LIBERALES"
+  },
+  {
+    "id": "cmoxptu3f009ecver88dn1o1e",
+    "field": "label",
+    "value": "336 - PROFESSIONS LIBERALES"
+  },
+  {
+    "id": "cmoxptu4p009fcverl20ecsjv",
+    "field": "nom",
+    "value": "SECTEUR NON-MARCHAND"
+  },
+  {
+    "id": "cmoxptu4p009fcverl20ecsjv",
+    "field": "label",
+    "value": "337 - SECTEUR NON-MARCHAND"
+  },
+  {
+    "id": "cmoxptu62009gcverfjlx0cdz",
+    "field": "nom",
+    "value": "SOCIETES DE LOGEMENT SOCIAL AGREEES"
+  },
+  {
+    "id": "cmoxptu62009gcverfjlx0cdz",
+    "field": "label",
+    "value": "339 - SOCIETES DE LOGEMENT SOCIAL AGREEES"
+  },
+  {
+    "id": "cmoxptu7f009hcver0gugpyu6",
+    "field": "nom",
+    "value": "SOCIETES DE LOGEMENT SOCIAL AGREEES DE LA REGION FLAMANDE"
+  },
+  {
+    "id": "cmoxptu7f009hcver0gugpyu6",
+    "field": "label",
+    "value": "339.01 - SOCIETES DE LOGEMENT SOCIAL AGREEES DE LA REGION FLAMANDE"
+  },
+  {
+    "id": "cmoxptu8o009icver5akc9un5",
+    "field": "nom",
+    "value": "SOCIETES DE LOGEMENT SOCIAL AGREEES DE LA REGION WALLONNE"
+  },
+  {
+    "id": "cmoxptu8o009icver5akc9un5",
+    "field": "label",
+    "value": "339.02 - SOCIETES DE LOGEMENT SOCIAL AGREEES DE LA REGION WALLONNE"
+  },
+  {
+    "id": "cmoxptteb008wcveroq6fx4sd",
+    "field": "nom",
+    "value": "CLASSIFICATION IFIC - FEDERAL"
+  },
+  {
+    "id": "cmoxptteb008wcveroq6fx4sd",
+    "field": "label",
+    "value": "330.12 - CLASSIFICATION IFIC - FEDERAL"
+  },
+  {
+    "id": "cmoxpttft008xcverflim216f",
+    "field": "nom",
+    "value": "CLASSIFICATION IFIC - REGION FLAMANDE"
+  },
+  {
+    "id": "cmoxpttft008xcverflim216f",
+    "field": "label",
+    "value": "330.13 - CLASSIFICATION IFIC - REGION FLAMANDE"
+  },
+  {
+    "id": "cmoxptth5008ycver8oxn11kp",
+    "field": "nom",
+    "value": "ETABLISSEMENTS ET SERVICES DE SANTE POUR LESQUELS AUCUNE CCT SPECIFIQUE N'A ETE CONCLUE"
+  },
+  {
+    "id": "cmoxptth5008ycver8oxn11kp",
+    "field": "label",
+    "value": "330.99 - ETABLISSEMENTS ET SERVICES DE SANTE POUR LESQUELS AUCUNE CCT SPECIFIQUE N'A ETE CONCLUE"
+  },
+  {
+    "id": "cmoxpttih008zcveronhqdkeb",
+    "field": "nom",
+    "value": "SECTEUR FLAMAND DE L'AIDE SOCIALE ET DES SOINS DE SANTE"
+  },
+  {
+    "id": "cmoxpttih008zcveronhqdkeb",
+    "field": "label",
+    "value": "331 - SECTEUR FLAMAND DE L'AIDE SOCIALE ET DES SOINS DE SANTE"
+  },
+  {
+    "id": "cmoxpttjt0090cver5hf5j5m5",
+    "field": "nom",
+    "value": "ACCUEIL D'ENFANTS"
+  },
+  {
+    "id": "cmoxpttjt0090cver5hf5j5m5",
+    "field": "label",
+    "value": "331.01 - ACCUEIL D'ENFANTS"
+  },
+  {
+    "id": "cmoxpttl60091cvervgilkq5g",
+    "field": "nom",
+    "value": "CENTRES DE SANTE MENTALE, AGREES PAR LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxpttl60091cvervgilkq5g",
+    "field": "label",
+    "value": "331.02 - CENTRES DE SANTE MENTALE, AGREES PAR LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptj7v0026cverh0ry90si",
+    "field": "nom",
+    "value": "SPECIALITES ALIMENTAIRES, ALIMENTS DE REGIME, PRODUITS POUR ENTREMETS ET DESSERTS, ESSENCES ET EXTRAITS, CAFES SOLUBLES, BOUILLONS CONCENTRES, POTAGES ET PREPARATIONS DIVERSES"
+  },
+  {
+    "id": "cmoxptj7v0026cverh0ry90si",
+    "field": "label",
+    "value": "118.19 - SPECIALITES ALIMENTAIRES, ALIMENTS DE REGIME, PRODUITS POUR ENTREMETS ET DESSERTS, ESSENCES ET EXTRAITS, CAFES SOLUBLES, BOUILLONS CONCENTRES, POTAGES ET PREPARATIONS DIVERSES"
+  },
+  {
+    "id": "cmoxptkcy002xcverfqtc68fl",
+    "field": "nom",
+    "value": "IMPRIMERIE, ARTS GRAPHIQUES ET JOURNAUX"
+  },
+  {
+    "id": "cmoxptkcy002xcverfqtc68fl",
+    "field": "label",
+    "value": "130 - IMPRIMERIE, ARTS GRAPHIQUES ET JOURNAUX"
+  },
+  {
+    "id": "cmoxptlkh003qcveri0i2mp63",
+    "field": "nom",
+    "value": "SERVICES PUBLICS D'AUTOBUS (SERVICES REGULIERS) VLAAMSE VERVOERMAATSCHAPPIJ (VVM) / OPERATEUR DU TRANSPORT DE WALLONIE (OTW)"
+  },
+  {
+    "id": "cmoxptlkh003qcveri0i2mp63",
+    "field": "label",
+    "value": "140.01.01 - SERVICES PUBLICS D'AUTOBUS (SERVICES REGULIERS) VLAAMSE VERVOERMAATSCHAPPIJ (VVM) / OPERATEUR DU TRANSPORT DE WALLONIE (OTW)"
+  },
+  {
+    "id": "cmoxptmv6004lcverwwpsknoj",
+    "field": "nom",
+    "value": "METAUX PRECIEUX"
+  },
+  {
+    "id": "cmoxptmv6004lcverwwpsknoj",
+    "field": "label",
+    "value": "149.03 - METAUX PRECIEUX"
+  },
+  {
+    "id": "cmoxptmye004ncver2sodfq53",
+    "field": "nom",
+    "value": "INSTITUTIONS SUBSIDIEES DE L'ENSEIGNEMENT LIBRE"
+  },
+  {
+    "id": "cmoxptmye004ncver2sodfq53",
+    "field": "label",
+    "value": "152 - INSTITUTIONS SUBSIDIEES DE L'ENSEIGNEMENT LIBRE"
+  },
+  {
+    "id": "cmoxpto19005dcvern6zlqxl7",
+    "field": "nom",
+    "value": "INDUSTRIE ALIMENTAIRE"
+  },
+  {
+    "id": "cmoxpto19005dcvern6zlqxl7",
+    "field": "label",
+    "value": "220 - INDUSTRIE ALIMENTAIRE"
+  },
+  {
+    "id": "cmoxptocx005lcversmqdixw2",
+    "field": "nom",
+    "value": "ETABLISSEMENTS D'ENSEIGNEMENT ET INTERNATS SUBVENTIONNE PAR LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptocx005lcversmqdixw2",
+    "field": "label",
+    "value": "225.01 - ETABLISSEMENTS D'ENSEIGNEMENT ET INTERNATS SUBVENTIONNE PAR LA COMMUNAUTE FLAMANDE"
+  },
+  {
+    "id": "cmoxptp4o0063cver5gvdcgbl",
+    "field": "nom",
+    "value": "PORTS DE ZEEBRUGGE - BRUGES, D'OSTENDE ET DE NIEUPORT"
+  },
+  {
+    "id": "cmoxptp4o0063cver5gvdcgbl",
+    "field": "label",
+    "value": "301.05 - PORTS DE ZEEBRUGGE - BRUGES, D'OSTENDE ET DE NIEUPORT"
+  },
+  {
+    "id": "cmoxptpdm0069cver0x7s08pf",
+    "field": "nom",
+    "value": "SPECTACLES D'ART DRAMATIQUE D'EXPRESSION SCENIQUE (REGION WALLONNE ET REGION BRUXELLES-CAPITALE - ROLE LINGUISTIQUE FRANCOPHONE ET GERMANOPHONE)"
+  },
+  {
+    "id": "cmoxptpdm0069cver0x7s08pf",
+    "field": "label",
+    "value": "304.01 - SPECTACLES D'ART DRAMATIQUE D'EXPRESSION SCENIQUE (REGION WALLONNE ET REGION BRUXELLES-CAPITALE - ROLE LINGUISTIQUE FRANCOPHONE ET GERMANOPHONE)"
+  },
+  {
+    "id": "cmoxptubb009kcverkk6b8tcn",
+    "field": "nom",
+    "value": "TECHNOLOGIES ORTHOPEDIQUES"
+  },
+  {
+    "id": "cmoxptubb009kcverkk6b8tcn",
+    "field": "label",
+    "value": "340 - TECHNOLOGIES ORTHOPEDIQUES"
+  },
+  {
+    "id": "cmoxptuct009lcverhncx7613",
+    "field": "nom",
+    "value": "INTERMEDIATION EN SERVICES BANCAIRES ET D'INVESTISSEMENT"
+  },
+  {
+    "id": "cmoxptuct009lcverhncx7613",
+    "field": "label",
+    "value": "341 - INTERMEDIATION EN SERVICES BANCAIRES ET D'INVESTISSEMENT"
+  },
+  {
+    "id": "cmoxptg0h0009cversohel1sp",
+    "field": "nom",
+    "value": "CP AUXILIAIRE POUR OUVRIERS"
+  },
+  {
+    "id": "cmoxptg0h0009cversohel1sp",
+    "field": "label",
+    "value": "100 - CP AUXILIAIRE POUR OUVRIERS"
+  },
+  {
+    "id": "cmoxptg2t000acver98tkazr2",
+    "field": "nom",
+    "value": "COMMISSION NATIONALE MIXTE DES MINES"
+  },
+  {
+    "id": "cmoxptg2t000acver98tkazr2",
+    "field": "label",
+    "value": "101 - COMMISSION NATIONALE MIXTE DES MINES"
+  },
+  {
+    "id": "cmoxptg8g000ecverhr0oe7zj",
+    "field": "nom",
+    "value": "CARRIERES DE PORPHYRE DES PROVINCES DU BRABANT WALLON ET DE HAINAUT ET CARRIERES DE QUARTZITE DE LA PROVINCE DU BRABANT WALLON"
+  },
+  {
+    "id": "cmoxptg8g000ecverhr0oe7zj",
+    "field": "label",
+    "value": "102.03 - CARRIERES DE PORPHYRE DES PROVINCES DU BRABANT WALLON ET DE HAINAUT ET CARRIERES DE QUARTZITE DE LA PROVINCE DU BRABANT WALLON"
+  },
+  {
+    "id": "cmoxptgxg000vcver2ggeqaec",
+    "field": "nom",
+    "value": "INDUSTRIE DU BETON"
+  },
+  {
+    "id": "cmoxptgxg000vcver2ggeqaec",
+    "field": "label",
+    "value": "106.02 - INDUSTRIE DU BETON"
+  },
+  {
+    "id": "cmoxpth8m0012cver1dyvekh9",
+    "field": "nom",
+    "value": "ENTREPRISES DE LA TRANSFORMATION DES METAUX - BRABANT"
+  },
+  {
+    "id": "cmoxpth8m0012cver1dyvekh9",
+    "field": "label",
+    "value": "111.02 - ENTREPRISES DE LA TRANSFORMATION DES METAUX - BRABANT"
+  },
+  {
+    "id": "cmoxpti6z001ocver43w01eoa",
+    "field": "nom",
+    "value": "MEUNERIES ET FLEURS DE SEIGLE"
+  },
+  {
+    "id": "cmoxpti6z001ocver43w01eoa",
+    "field": "label",
+    "value": "118.01 - MEUNERIES ET FLEURS DE SEIGLE"
+  },
+  {
+    "id": "cmoxptj6h0025cveros7tkb6e",
+    "field": "nom",
+    "value": "SAUNERIE, MOUTARDERIE, CONDIMENTS PREPARES Y COMPRIS LES CONSERVES AU VINAIGRE, VINAIGRERIES"
+  },
+  {
+    "id": "cmoxptj6h0025cveros7tkb6e",
+    "field": "label",
+    "value": "118.18 - SAUNERIE, MOUTARDERIE, CONDIMENTS PREPARES Y COMPRIS LES CONSERVES AU VINAIGRE, VINAIGRERIES"
+  },
+  {
+    "id": "cmoxptkef002ycverld8ml13d",
+    "field": "nom",
+    "value": "IMPRIMERIES, DES ARTS GRAPHIQUES ET DES JOURNAUX, A L'EXCLUSION DU SECTEUR DES QUOTIDIENS BELGES"
+  },
+  {
+    "id": "cmoxptkef002ycverld8ml13d",
+    "field": "label",
+    "value": "130.01 - IMPRIMERIES, DES ARTS GRAPHIQUES ET DES JOURNAUX, A L'EXCLUSION DU SECTEUR DES QUOTIDIENS BELGES"
+  },
+  {
+    "id": "cmoxptiaj001qcvercvcaplsn",
+    "field": "nom",
+    "value": "BOULANGERIES (GRANDES ET PETITES) / PETITES PÂTISSERIES, ÉVENTUELLEMENT AVEC SALON DE CONSOMMATION / PETITS GLACIERS (ARTISANAUX) / PETITS CONFISEURS (ARTISANAUX)"
+  },
+  {
+    "id": "cmoxptiaj001qcvercvcaplsn",
+    "field": "label",
+    "value": "118.03 - BOULANGERIES (GRANDES ET PETITES) / PETITES PÂTISSERIES, ÉVENTUELLEMENT AVEC SALON DE CONSOMMATION / PETITS GLACIERS (ARTISANAUX) / PETITS CONFISEURS (ARTISANAUX)"
+  },
+  {
+    "id": "cmoxptn60004scverl8h8nske",
+    "field": "nom",
+    "value": "INSTITUTIONS SUBSIDIEES DE L'ENSEIGNEMENT LIBRE DE LA COMMUNAUTE FRANÇAISE ET DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptn60004scverl8h8nske",
+    "field": "label",
+    "value": "152.02 - INSTITUTIONS SUBSIDIEES DE L'ENSEIGNEMENT LIBRE DE LA COMMUNAUTE FRANÇAISE ET DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptqcf006vcver69kavceu",
+    "field": "nom",
+    "value": "COMMISSIONS COMMUNAUTAIRES COMMUNE ET FRANÇAISE DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptqcf006vcver69kavceu",
+    "field": "label",
+    "value": "318.01.20 - COMMISSIONS COMMUNAUTAIRES COMMUNE ET FRANÇAISE DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptsbn0086cverr7chy83h",
+    "field": "nom",
+    "value": "DIFFUSION DE LA CULTURE"
+  },
+  {
+    "id": "cmoxptsbn0086cverr7chy83h",
+    "field": "label",
+    "value": "329.01.02 - DIFFUSION DE LA CULTURE"
+  },
+  {
+    "id": "cmoxptsod008fcveri0ficg98",
+    "field": "nom",
+    "value": "SECTEUR SOCIO-CULTUREL DE LA COMMUNAUTE FRANCAISE ET GERMANOPHONE ET DE LA REGION WALLONNE"
+  },
+  {
+    "id": "cmoxptsod008fcveri0ficg98",
+    "field": "label",
+    "value": "329.02 - SECTEUR SOCIO-CULTUREL DE LA COMMUNAUTE FRANCAISE ET GERMANOPHONE ET DE LA REGION WALLONNE"
+  },
+  {
+    "id": "cmoxpttc7008vcver603mra9b",
+    "field": "nom",
+    "value": "ETABLISSEMENTS ET SERVICES DE SANTE BICOMMUNAUTAIRES DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxpttc7008vcver603mra9b",
+    "field": "label",
+    "value": "330.10 - ETABLISSEMENTS ET SERVICES DE SANTE BICOMMUNAUTAIRES DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptu9y009jcverg3qvnoj0",
+    "field": "nom",
+    "value": "SOCIETES DE LOGEMENT SOCIAL AGREEES DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptu9y009jcverg3qvnoj0",
+    "field": "label",
+    "value": "339.03 - SOCIETES DE LOGEMENT SOCIAL AGREEES DE LA REGION DE BRUXELLES-CAPITALE"
+  },
+  {
+    "id": "cmoxptr4z007dcvermt50epr7",
+    "field": "nom",
+    "value": "ETABLISSEMENTS ET SERVICES D'EDUCATION ET D'HEBERGEMENT DE LA COMMUNAUTE FRANCAISE, DE LA REGION WALLONNE ET DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptr4z007dcvermt50epr7",
+    "field": "label",
+    "value": "319.02 - ETABLISSEMENTS ET SERVICES D'EDUCATION ET D'HEBERGEMENT DE LA COMMUNAUTE FRANCAISE, DE LA REGION WALLONNE ET DE LA COMMUNAUTE GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptrao007hcverenqaly4i",
+    "field": "nom",
+    "value": "COMMUNAUTÉ GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptrao007hcverenqaly4i",
+    "field": "label",
+    "value": "319.02.40 - COMMUNAUTÉ GERMANOPHONE"
+  },
+  {
+    "id": "cmoxptrev007kcver1lz32a85",
+    "field": "nom",
+    "value": "TRAVAIL INTERIMAIRE ET ENTREPRISES AGREEES FOURNISSANT DES TRAVAUX OU SERVICES DE PROXIMITE"
+  },
+  {
+    "id": "cmoxptrev007kcver1lz32a85",
+    "field": "label",
+    "value": "322 - TRAVAIL INTERIMAIRE ET ENTREPRISES AGREEES FOURNISSANT DES TRAVAUX OU SERVICES DE PROXIMITE"
+  }
+]

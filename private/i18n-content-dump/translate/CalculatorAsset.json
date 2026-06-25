@@ -1,0 +1,497 @@
+[
+  {
+    "fr": "Barème précompte professionnel mensuel 2026 (Annexe III AR/CIR 92)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Le barème officiel SPF Finances. Publié chaque année (mi-décembre), applicable au 1ᵉʳ janvier. Indispensable pour le calibrage du précompte mensuel.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Workbonus — Volet A + Volet B (1ᵉʳ avril 2026)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Barème Securex consolidé du bonus à l'emploi. Indexé 2 fois par an (1ᵉʳ janvier et 1ᵉʳ avril). Source utilisée pour `calcWorkbonus()`.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Cotisation spéciale sécurité sociale (CSSS) 2026",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Barème mensuel par tranches de revenu annuel. Loi du 28 décembre 1992, indexé annuellement. Source utilisée pour `calcCSSS()`.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "ONSS travailleur — taux 13,07 %",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Taux inchangé depuis 1981 (loi du 27 juin 1969). Page officielle ONSS pour vérifier qu'il n'a pas évolué.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Avantage de toute nature voiture (ATN) — AR 14/01/2014 indexé 2026",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Formule de calcul : valeur catalogue × 6/7 × coef CO2 × décote vétusté. Minimum légal 1 660 €/an en 2026.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Indemnité télétravail forfaitaire — Circulaire 2021/C/20",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Plafond mensuel 154,74 € (2026), non imposable et non soumis à l'ONSS.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Finances — Tax-on-web (validation et déclaration officielle)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Outil officiel SPF Finances pour la déclaration fiscale et la régularisation annuelle. À utiliser comme référence de validation finale (cf. scripts/debug-brut-net.ts).",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Finances — Précompte spécial double pécule (Annexe III AR/CIR 92)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Barème officiel SPF Finances 2026 « pécule de vacances » (simple) et « allocations exceptionnelles » (double). 11 tranches dégressives, de 0 à 53,50 %. Publié chaque année à mi-décembre, applicable au 1ᵉʳ janvier.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "ONVA — Calcul du pécule de vacances (ouvriers)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page officielle ONVA : taux global 15,38 % (8 % simple + 7,38 % double), majoration 1,08, retenue ONSS 13,07 % + solidarité 1 % + précompte 17,16 / 23,22 %.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Sécurité Sociale — Pécule de vacances",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page de référence sur le régime légal du pécule (employé + ouvrier). Cadre juridique, droits, jours assimilés.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "ONEM — Vacances-jeunes (formulaire C103)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Conditions et procédure pour le pécule des jeunes travailleurs (< 25 ans, 1re année après études). Allocation 65 % du salaire plafonné par jour de vacances-jeunes, à demander avant fin février N+1.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "ONSS — Instructions administratives (notion de rémunération)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Documentation officielle ONSS sur l'inclusion du pécule dans la base de cotisation. Référence pour la cotisation ONSS spéciale 13,07 % sur double pécule.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Emploi — Vacances annuelles",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Cadre légal général des vacances annuelles : durée, jours assimilés, droit au pécule en cas de fin de contrat.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "FAMIWAL — Résumé des montants (Wallonie)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page officielle FAMIWAL avec les montants 2026 indexés au 1ᵉʳ mars : base nouveau régime (≥2020), ancien régime, suppléments sociaux et monoparentaux, prime de naissance. Indispensable pour la maintenance annuelle du barème wallon.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "AVIQ — Allocations familiales (autorité de tutelle Wallonie)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Agence pour une Vie de Qualité — autorité publique wallonne qui supervise FAMIWAL et les caisses agréées. Référence pour les règles de fond, les conditions et la procédure de reconnaissance handicap.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "FAMIRIS — Montants des allocations familiales (Bruxelles)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page officielle FAMIRIS avec les montants 2026 indexés au 1ᵉʳ mars : base par tranche d'âge et année de naissance, supplément social par revenu et nombre d'enfants, supplément orphelin, prime de naissance.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Iriscare — Allocations familiales (autorité de tutelle Bruxelles)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Organisme bruxellois en charge de la sécurité sociale régionale. Supervise FAMIRIS et les caisses agréées à Bruxelles. Référence pour le supplément handicap (échelle Iriscare).",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Groeipakket — Montants 2026 (Flandre)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page officielle Groeipakket / Opgroeien (« paquet de croissance ») avec les montants 2026 indexés au 1ᵉʳ septembre : basisbedrag, sociale toeslagen par tranche de revenu et nombre d'enfants, zorgtoeslag, startbedrag, schoolbonus.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Ostbelgien Familie — Kindergeld DG (Communauté germanophone)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Portail officiel du Ministerium der Deutschsprachigen Gemeinschaft pour le Kindergeld : Basiskindergeld, Sozialzuschlag, Familienzuschlag (large famille), Geburtszulage, Schulbonus.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SFP — Calcul de la pension salarié",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page officielle du Service Fédéral des Pensions détaillant la formule de calcul (taux × carrière / 45), les taux isolé (60 %) et ménage (75 %), et la notion de salaire forfaitaire ou réel pris en compte. Référence pour comprendre la base de la formule.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SFP — Plafonds salariaux annuels",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Plafond salarial annuel pris en compte pour le calcul de la pension salarié. Au-delà de ce plafond, le salaire n'augmente plus la pension. Indexé annuellement — page à consulter chaque année après l'indexation.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SFP — Pension minimum garantie",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page officielle SFP sur le plancher minimum garanti (isolé / ménage), les conditions de carrière minimum (30 ans), les jours équivalents temps plein requis depuis 2025 et la règle de proratisation sur 45 ans.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "mypension.be — Compte de carrière personnel",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Portail officiel commun SFP / INASTI / SdPSP. Permet à chaque citoyen belge de consulter son compte de carrière complet (login itsme) et d'obtenir une estimation personnalisée et juridiquement opposable de sa pension future.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Moniteur belge — Loi du 10 août 2015 (âge légal + anticipation)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Loi relevant l'âge légal de la pension à 66 ans (2025) puis 67 ans (2030) et durcissant les conditions de pension anticipée (carrière minimum par âge : 44 ans à 60 ans, 43 ans à 61 ans, 42 ans entre 62 et 64 ans). Cadre juridique central du calc.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Moniteur belge — AR 21 décembre 1967 (régime général salariés)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Arrêté royal portant règlement général du régime de pension de retraite et de survie des travailleurs salariés. Texte de référence pour les taux (60 % / 75 %), la carrière complète conventionnelle de 45 ans et le mécanisme de plafonnement.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "CREG — Tarif social pour l'énergie (page officielle)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page hub de la Commission de Régulation de l'Électricité et du Gaz : tarifs sociaux maximaux trimestriels pour l'électricité (monohoraire, bihoraire jour/nuit, exclusif nuit) et le gaz naturel. Référence officielle pour vérifier la note CREG de chaque trimestre (Q1/Q2/Q3/Q4).",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "CREG — Note Z3153 (prix maximaux sociaux Q1 2026)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Note CREG officielle fixant les prix maximaux sociaux pour l'électricité, le gaz naturel et la chaleur applicables au 1ᵉʳ trimestre 2026. Source légale principale pour le calcul du tarif social (article 4 AR 28.06.2009). Réactualisée chaque trimestre — surveiller les notes Z31xx suivantes.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Économie — Tarif social pour l'énergie",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Service Public Fédéral Économie : page officielle reprenant les bénéficiaires automatiques du tarif social en 2026 (RIS, GRAPA, allocation handicap DG HAN, aide CPAS équivalente, logement social agréé). Précise que le statut BIM n'ouvre plus le droit seul depuis le 1ᵉʳ juillet 2023.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Moniteur belge — AR du 29 mars 2012",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Arrêté royal du 29 mars 2012 fixant les règles de détermination du coût d'application des tarifs sociaux par les entreprises d'électricité et de gaz, et les règles d'intervention pour leur prise en charge. Modifié par l'AR du 5 mars 2021. Référence pour les plafonds de consommation au-delà desquels le tarif standard s'applique.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "CREG — Tarif social (page index)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page index de la CREG sur le tarif social : explication du mécanisme automatique, lien vers les notes trimestrielles archivées et les rapports annuels. Utile pour comprendre l'évolution historique des prix maximaux sociaux et préparer la maintenance annuelle.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Finances — Taux d'imposition (barème IPP)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page officielle du SPF Finances présentant les 4 tranches du barème fédéral de l'impôt des personnes physiques pour l'exercice d'imposition 2026 (revenus 2025) : 25 % jusqu'à 16 320 €, 40 % jusqu'à 28 800 €, 45 % jusqu'à 49 840 €, 50 % au-delà. Référence pour la mise à jour annuelle des tranches indexées.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Finances — Tax-on-web (déclaration en ligne)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Portail officiel de déclaration en ligne du SPF Finances. C'est l'outil de référence pour le calcul officiel et personnalisé de l'IPP — chaque estimation produite par notre simulateur doit pouvoir être recalibrée ici par le contribuable.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Finances — Quotité exemptée et enfants à charge",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page officielle détaillant la quotité du revenu exemptée d'impôt (10 910 € EI 2026, art. 131 CIR 92) et les suppléments cumulatifs pour personnes à charge : 1 980 € pour 1 enfant, 5 110 € pour 2, 11 440 € pour 3, 18 510 € pour 4, +7 070 € par enfant au-delà. Référence pour la mise à jour annuelle des suppléments.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Finances — Personnes à charge autres que des enfants",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page officielle pour les suppléments à la quotité au titre des ascendants (parents, grands-parents) et autres personnes à charge : 5 950 € si 66 ans+ et en état de dépendance, 1 980 € pour les autres cas. Source pour la calibration du paramètre 'autres personnes à charge'.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Finances — Épargne pension (panier de base)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Réduction d'impôt épargne pension — art. 145 CIR 92. EI 2026 : 30 % sur versement annuel jusqu'à 1 050 € (panier de base), 25 % sur la tranche 1 050 → 1 350 € (panier majoré, sur option). Page officielle SPF Finances pour la calibration des plafonds.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Moniteur belge — CIR 92 (Code des impôts sur les revenus)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Texte législatif intégral du CIR 92 sur le portail Justel du Moniteur belge. Articles 131 (quotité exemptée), 132 (suppléments à charge), 134 (quotient conjugal), 145 et suivants (réductions d'impôt). Référence juridique ultime pour toute modification du calcul.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Moniteur belge — Loi du 30 mars 1994 (cotisation spéciale sécu)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Loi-cadre instaurant la cotisation spéciale pour la sécurité sociale. Seuils 2026 : exonération sous 18 592 €/an, 9 % entre 18 592 et 21 070 €, 1,3 % entre 21 070 et 60 161 €, plafond annuel 731,28 €. Référence juridique pour la calibration des seuils CSS.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "ONSS — Instructions DmfA : cotisation spéciale sécu",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Instructions administratives ONSS 2026/1 sur la cotisation spéciale de sécurité sociale (code DmfA 856). Distingue imposition individuelle et conjointe, et donne les barèmes trimestriels précis. Source pour ajuster le calcul si la loi est révisée.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Finances — Indemnités frais déplacement domicile-travail",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page hub du Service Public Fédéral Finances détaillant les régimes fiscaux applicables aux indemnités de déplacement domicile-lieu de travail pour les revenus 2026 / exercice d'imposition 2027 : vélo (0,37 €/km, plafond 3 700 €/an), voiture personnelle (exonération forfaitaire 500 €), transports publics (100 %), codes Tax-on-web 1254/2254 (revenus) et 1255/2255 (exonération). Référence officielle annuelle.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Finances — Forfait et frais réels (page officielle)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page SPF Finances expliquant l'option entre le forfait légal des frais professionnels (CIR 92 art. 51, plafonné à 6 070 €/an en 2026) et les frais réels. Indique les conditions de déduction kilométrique et les justificatifs requis. À consulter chaque janvier pour le plafond indexé.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Mobilité — Avantages fiscaux et primes vélo",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page hub du SPF Mobilité (mobilit.belgium.be) sur les avantages fiscaux liés au vélo en Belgique : indemnité kilométrique vélo, plafond annuel d'exonération (3 700 €/an en revenus 2026), condition de plafond 20 km par trajet simple. Politique publique de mobilité durable. Indexation annuelle.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "BOSA — Indemnité kilométrique fonctionnaires (page officielle)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page hub du Service Public Fédéral Stratégie et Appui (BOSA) listant les circulaires trimestrielles fixant le tarif de l'indemnité kilométrique applicable aux fonctionnaires fédéraux et utilisable comme tarif de référence pour la déduction des frais réels domicile-travail voiture. Q2 2026 (01/04 – 30/06) = 0,4327 €/km (circulaire n° 764). À surveiller chaque trimestre.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Texte de référence : Code des impôts sur les revenus 1992. Articles centraux pour ce calcul : art. 49 (frais professionnels déductibles), art. 51 (forfait légal des frais professionnels — plafond 6 070 € revenus 2026), art. 66 (déduction forfaitaire kilométrique = 0,15 €/km, non cumulable avec l'indemnité employeur). Consultable via le portail de législation justel.fgov.be.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Finances — Tax-on-web (MyMinfin, déclaration en ligne)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Portail officiel de déclaration fiscale belge. Les indemnités domicile-travail reçues se déclarent en cases 1254/2254 (montants reçus) et 1255/2255 (exonération demandée). Les frais réels se détaillent dans la partie 2 de la déclaration. Lien public d'aide vers la déclaration en ligne.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Finances — Précompte professionnel 2026 (calcul)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Page officielle SPF Finances détaillant le calcul du précompte professionnel 2026, y compris le barème spécial applicable aux indemnités de dédit (arriérés et indemnités de fin de contrat). Page de référence pour la mise à jour annuelle du barème par tranches (17,16 / 26,75 / 32,30 / 41,80 / 53,50 %).",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "ONSS — Cotisation spéciale sur indemnités de rupture (DmfA 2026/1)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Instructions administratives ONSS 2026/1 pour la cotisation spéciale de compensation employeur sur les indemnités de rupture, destinée au Fonds de fermeture des entreprises. Précise les 3 tranches actuelles (≥ 50 166 € → 1 %, ≥ 61 437 € → 2 %, ≥ 72 707 € → 3 %), inchangées depuis le 01/01/2023.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "ONSS — Notion de rémunération (fin de contrat)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Instructions ONSS 2026/1 sur la notion de rémunération en fin de contrat : précise quelles indemnités sont soumises aux cotisations (indemnité de rupture standard) et lesquelles sont exclues (indemnité de protection femme enceinte, délégué syndical, conseiller en prévention). Référence pour la base de calcul de la cotisation spéciale.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Moniteur belge — Loi du 3 juillet 1978 sur les contrats de travail",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Texte de référence pour le calcul de l'indemnité de rupture : article 39 (rupture sans préavis = indemnité égale à la rémunération courante de la période de préavis non prestée) et articles suivants. Régime unifié (CCT 109) depuis le 1ᵉʳ janvier 2014.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Moniteur belge — Loi du 26 décembre 2013 (cotisation spéciale)",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Loi instaurant la cotisation spéciale de compensation employeur sur les indemnités de rupture, à compter des prestations effectuées dès le 1ᵉʳ janvier 2014. Cadre juridique de la cotisation 1 / 2 / 3 % gérée par l'ONSS via le Fonds de fermeture.",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "SPF Emploi — Fin du contrat de travail",
+    "nl": "",
+    "en": ""
+  },
+  {
+    "fr": "Portail officiel SPF Emploi sur la fin du contrat de travail : préavis, indemnité compensatoire, protection contre le licenciement (femme enceinte, délégué syndical, conseiller en prévention). Page de référence pour les statuts protégés et leurs montants forfaitaires.",
+    "nl": "",
+    "en": ""
+  }
+]

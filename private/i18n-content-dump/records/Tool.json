@@ -1,0 +1,162 @@
+[
+  {
+    "id": "cmooza99y000c6cw2bqnap0c4",
+    "field": "name",
+    "value": "Trouver un bureau"
+  },
+  {
+    "id": "cmooza99y000c6cw2bqnap0c4",
+    "field": "description",
+    "value": "CPAS, Commune, ONEM, organismes de paiement, syndicats : un seul outil pour tout trouver, partout en Belgique."
+  },
+  {
+    "id": "cmpjp9fz70004ha2qr1hyxh8m",
+    "field": "name",
+    "value": "Pécule de vacances"
+  },
+  {
+    "id": "cmpjp9fz70004ha2qr1hyxh8m",
+    "field": "description",
+    "value": "Estimez votre pécule simple et double (employé ou ouvrier) en fonction de votre salaire et de votre ancienneté."
+  },
+  {
+    "id": "cmooza99i00066cw2lzwabcmx",
+    "field": "name",
+    "value": "Calcul du préavis"
+  },
+  {
+    "id": "cmooza99i00066cw2lzwabcmx",
+    "field": "description",
+    "value": "Calculez votre délai de préavis selon la loi belge"
+  },
+  {
+    "id": "cmpk45u8100025dmqolbcft9z",
+    "field": "name",
+    "value": "Commissions paritaires"
+  },
+  {
+    "id": "cmpk45u8100025dmqolbcft9z",
+    "field": "description",
+    "value": "Liste officielle des commissions paritaires (CP) et sous-commissions belges, avec recherche par code, numéro ou secteur."
+  },
+  {
+    "id": "cmq4bwb3r0002qzuhdipwcjuz",
+    "field": "name",
+    "value": "Calcul AGR"
+  },
+  {
+    "id": "cmq4bwb3r0002qzuhdipwcjuz",
+    "field": "description",
+    "value": "Calcul de l'Allocation de Garantie de Revenus à partir d'un WECH 506 : upload de la DRS, extraction et calcul automatiques, cumul jusqu'à 4 occupations."
+  },
+  {
+    "id": "cmpjp9g1q000cha2ql9hxjlt8",
+    "field": "name",
+    "value": "Allocations familiales"
+  },
+  {
+    "id": "cmpjp9g1q000cha2ql9hxjlt8",
+    "field": "description",
+    "value": "Calculez vos allocations familiales selon votre région (FAMIWAL, FAMIRIS, Groeipakket, Kindergeld DG) et le rang de l'enfant."
+  },
+  {
+    "id": "cmpjp9fzt0006ha2qlovcqfhg",
+    "field": "name",
+    "value": "Allocations de chômage"
+  },
+  {
+    "id": "cmpjp9fzt0006ha2qlovcqfhg",
+    "field": "description",
+    "value": "Calculez votre allocation mensuelle de chômage selon votre situation familiale, votre salaire et votre durée de chômage."
+  },
+  {
+    "id": "cmpk45u9q00045dmqs0vqr3dv",
+    "field": "name",
+    "value": "Institutions U1 (EEE)"
+  },
+  {
+    "id": "cmpk45u9q00045dmqs0vqr3dv",
+    "field": "description",
+    "value": "Trouvez l'institution compétente dans chaque pays de l'EEE et en Suisse pour demander votre attestation U1 (ex-E301), l'équivalent européen du C4."
+  },
+  {
+    "id": "cmpjp9fx50002ha2q61mkgh91",
+    "field": "name",
+    "value": "Brut ↔ Net"
+  },
+  {
+    "id": "cmpjp9fx50002ha2q61mkgh91",
+    "field": "description",
+    "value": "Convertissez votre salaire brut en net (ou inversement) selon votre statut familial, votre région et vos avantages."
+  },
+  {
+    "id": "cmpk4wnwk0002nuvdx1nbhqin",
+    "field": "name",
+    "value": "Lookup ONEM"
+  },
+  {
+    "id": "cmpk4wnwk0002nuvdx1nbhqin",
+    "field": "description",
+    "value": "Décodage de tous les codes officiels ONEM (S01, S04, S38, Dispo, BCSS…). Recherche fuzzy multilingue FR/NL/DE/EN dans 11 000+ entrées."
+  },
+  {
+    "id": "cmpjp9g31000gha2qq04ggti4",
+    "field": "name",
+    "value": "Tarif social énergie"
+  },
+  {
+    "id": "cmpjp9g31000gha2qq04ggti4",
+    "field": "description",
+    "value": "Vérifiez votre éligibilité au tarif social électricité/gaz et estimez votre gain par rapport au tarif standard."
+  },
+  {
+    "id": "cmqgzdv2u000198ws33ppwy0a",
+    "field": "name",
+    "value": "Barèmes chômage"
+  },
+  {
+    "id": "cmqgzdv2u000198ws33ppwy0a",
+    "field": "description",
+    "value": "Consultez les barèmes officiels de l'ONEM : allocations de chômage complet, mi-temps, temporaire, catégories spéciales et salaires horaires. Montants en vigueur par code et tranche."
+  },
+  {
+    "id": "cmpjp9g15000aha2q326o4wza",
+    "field": "name",
+    "value": "Pension légale estimée"
+  },
+  {
+    "id": "cmpjp9g15000aha2q326o4wza",
+    "field": "description",
+    "value": "Estimation simplifiée de votre pension légale salarié selon votre carrière, votre salaire moyen et votre âge de départ."
+  },
+  {
+    "id": "cmpjp9g3n000iha2qb3d581ee",
+    "field": "name",
+    "value": "Frais kilométriques"
+  },
+  {
+    "id": "cmpjp9g3n000iha2qb3d581ee",
+    "field": "description",
+    "value": "Calculez la déduction fiscale de vos frais domicile-travail selon votre mode de transport (voiture, vélo, transports en commun)."
+  },
+  {
+    "id": "cmpjp9g0i0008ha2qqlhsal4z",
+    "field": "name",
+    "value": "Indemnité de rupture"
+  },
+  {
+    "id": "cmpjp9g0i0008ha2qqlhsal4z",
+    "field": "description",
+    "value": "Convertissez votre préavis non presté en indemnité compensatoire (€). Complément du calculateur de préavis."
+  },
+  {
+    "id": "cmpjp9g2c000eha2qo3ubeapv",
+    "field": "name",
+    "value": "Impôt des personnes physiques"
+  },
+  {
+    "id": "cmpjp9g2c000eha2qo3ubeapv",
+    "field": "description",
+    "value": "Simulateur IPP simplifié : tranches d'imposition, quotité exemptée, enfants à charge et additionnels communaux."
+  }
+]

@@ -1,0 +1,272 @@
+[
+  {
+    "fr": "Office National de l'Emploi",
+    "nl": "Rijksdienst voor Arbeidsvoorziening",
+    "en": "National Employment Office (ONEM/RVA)"
+  },
+  {
+    "fr": "Sécurité sociale fédérale — chômage, interruptions de carrière, crédit-temps.",
+    "nl": "Federale sociale zekerheid — werkloosheid, loopbaanonderbreking, tijdskrediet.",
+    "en": "Federal social security — unemployment, career breaks, time credit."
+  },
+  {
+    "fr": "Service Fédéral des Pensions",
+    "nl": "Federale Pensioendienst",
+    "en": "Federal Pensions Service"
+  },
+  {
+    "fr": "Pensions des salariés et fonctionnaires.",
+    "nl": "Pensioenen van werknemers en ambtenaren.",
+    "en": "Pensions for employees and civil servants."
+  },
+  {
+    "fr": "Famifed (Allocations Familiales Fédérales)",
+    "nl": "Famifed (Federale Kinderbijslag)",
+    "en": "Famifed (Federal Child Benefit)"
+  },
+  {
+    "fr": "Allocations familiales (compétence transférée aux régions depuis 2019).",
+    "nl": "Kinderbijslag (bevoegdheid sinds 2019 overgedragen aan de gewesten).",
+    "en": "Child benefit (responsibility transferred to the regions since 2019)."
+  },
+  {
+    "fr": "SPF Finances",
+    "nl": "FOD Financiën",
+    "en": "FPS Finance (Federal Public Service Finance)"
+  },
+  {
+    "fr": "Impôts, TVA, douanes.",
+    "nl": "Belastingen, btw, douane.",
+    "en": "Taxes, VAT, customs."
+  },
+  {
+    "fr": "SPF Emploi, Travail et Concertation Sociale",
+    "nl": "FOD Werkgelegenheid, Arbeid en Sociaal Overleg",
+    "en": "FPS Employment, Labour and Social Dialogue"
+  },
+  {
+    "fr": "Législation du travail, contrats, conventions collectives.",
+    "nl": "Arbeidswetgeving, contracten, collectieve arbeidsovereenkomsten.",
+    "en": "Labour legislation, contracts, collective labour agreements."
+  },
+  {
+    "fr": "Arbeitsamt der Deutschsprachigen Gemeinschaft",
+    "nl": "Arbeitsamt der Deutschsprachigen Gemeinschaft (ADG)",
+    "en": "Arbeitsamt der Deutschsprachigen Gemeinschaft (ADG)"
+  },
+  {
+    "fr": "Service public de l'emploi de la Communauté germanophone.",
+    "nl": "Openbare dienst voor arbeidsbemiddeling van de Duitstalige Gemeenschap.",
+    "en": "Public employment service of the German-speaking Community."
+  },
+  {
+    "fr": "Iriscare",
+    "nl": "Iriscare",
+    "en": "Iriscare"
+  },
+  {
+    "fr": "Bicommunautaire bruxelloise — santé, aide aux personnes, allocations familiales.",
+    "nl": "Brusselse bicommunautaire instelling — gezondheid, bijstand aan personen, kinderbijslag.",
+    "en": "Brussels bi-community body — health, support for people, child benefit."
+  },
+  {
+    "fr": "Agence pour une Vie de Qualité",
+    "nl": "Agence pour une Vie de Qualité (AViQ)",
+    "en": "Agency for a Quality Life (AViQ)"
+  },
+  {
+    "fr": "Wallonie — bien-être, santé, handicap, familles.",
+    "nl": "Wallonië — welzijn, gezondheid, handicap, gezinnen.",
+    "en": "Wallonia — well-being, health, disability, families."
+  },
+  {
+    "fr": "Centre Public d'Action Sociale",
+    "nl": "Openbaar Centrum voor Maatschappelijk Welzijn",
+    "en": "Public Centre for Social Welfare (CPAS/OCMW)"
+  },
+  {
+    "fr": "CPAS communaux — aide sociale, RIS, médiation de dettes.",
+    "nl": "Gemeentelijke OCMW's — maatschappelijke dienstverlening, leefloon, schuldbemiddeling.",
+    "en": "Municipal CPAS/OCMW — social assistance, minimum income (RIS/leefloon), debt mediation."
+  },
+  {
+    "fr": "Administration Communale",
+    "nl": "Gemeentebestuur",
+    "en": "Municipal administration"
+  },
+  {
+    "fr": "Communes — état civil, urbanisme, population.",
+    "nl": "Gemeenten — burgerlijke stand, ruimtelijke ordening, bevolking.",
+    "en": "Municipalities — civil status, town planning, population register."
+  },
+  {
+    "fr": "FGTB (Fédération Générale du Travail de Belgique)",
+    "nl": "ABVV (Algemeen Belgisch Vakverbond)",
+    "en": "FGTB/ABVV (General Federation of Belgian Labour)"
+  },
+  {
+    "fr": "Syndicat — organisme de paiement chômage.",
+    "nl": "Vakbond — uitbetalingsinstelling voor werkloosheidsuitkeringen.",
+    "en": "Trade union — unemployment benefit payment institution."
+  },
+  {
+    "fr": "CGSLB (Centrale Générale des Syndicats Libéraux de Belgique)",
+    "nl": "ACLVB (Algemene Centrale der Liberale Vakbonden van België)",
+    "en": "CGSLB/ACLVB (General Confederation of Liberal Trade Unions of Belgium)"
+  },
+  {
+    "fr": "Mutualité",
+    "nl": "Ziekenfonds",
+    "en": "Health insurance fund"
+  },
+  {
+    "fr": "Mutualités (groupe générique).",
+    "nl": "Ziekenfondsen (algemene groep).",
+    "en": "Health insurance funds (generic group)."
+  },
+  {
+    "fr": "Solidaris (Mutualité socialiste)",
+    "nl": "Solidaris (Socialistisch ziekenfonds)",
+    "en": "Solidaris (Socialist health insurance fund)"
+  },
+  {
+    "fr": "Mutualité socialiste.",
+    "nl": "Socialistisch ziekenfonds.",
+    "en": "Socialist health insurance fund."
+  },
+  {
+    "fr": "MLOZ — Mutualités Libres",
+    "nl": "MLOZ — Onafhankelijke Ziekenfondsen",
+    "en": "MLOZ — Independent Health Insurance Funds"
+  },
+  {
+    "fr": "Union nationale des mutualités libres.",
+    "nl": "Landsbond van de Onafhankelijke Ziekenfondsen.",
+    "en": "National Union of Independent Health Insurance Funds."
+  },
+  {
+    "fr": "Mutualité Libérale",
+    "nl": "Liberaal Ziekenfonds",
+    "en": "Liberal Health Insurance Fund"
+  },
+  {
+    "fr": "Mutualité libérale.",
+    "nl": "Liberaal ziekenfonds.",
+    "en": "Liberal health insurance fund."
+  },
+  {
+    "fr": "Mutualités Neutres",
+    "nl": "Neutrale Ziekenfondsen",
+    "en": "Neutral Health Insurance Funds"
+  },
+  {
+    "fr": "Union des mutualités neutres.",
+    "nl": "Landsbond van de Neutrale Ziekenfondsen.",
+    "en": "Union of Neutral Health Insurance Funds."
+  },
+  {
+    "fr": "Secrétariat Social",
+    "nl": "Sociaal Secretariaat",
+    "en": "Payroll services bureau (social secretariat)"
+  },
+  {
+    "fr": "Secrétariats sociaux agréés (Securex, Acerta, Group S, SD Worx, Partena, etc.).",
+    "nl": "Erkende sociale secretariaten (Securex, Acerta, Group S, SD Worx, Partena, enz.).",
+    "en": "Accredited payroll bureaus (Securex, Acerta, Group S, SD Worx, Partena, etc.)."
+  },
+  {
+    "fr": "Institut National d'Assurances Sociales pour Travailleurs Indépendants",
+    "nl": "Rijksinstituut voor de Sociale Verzekeringen der Zelfstandigen",
+    "en": "National Institute for the Social Security of the Self-Employed (INASTI/RSVZ)"
+  },
+  {
+    "fr": "Sécurité sociale des indépendants.",
+    "nl": "Sociale zekerheid voor zelfstandigen.",
+    "en": "Social security for the self-employed."
+  },
+  {
+    "fr": "INAMI / RIZIV",
+    "nl": "RIZIV / INAMI",
+    "en": "INAMI/RIZIV (National Institute for Health and Disability Insurance)"
+  },
+  {
+    "fr": "Assurance maladie-invalidité.",
+    "nl": "Ziekte- en invaliditeitsverzekering.",
+    "en": "Health and disability insurance."
+  },
+  {
+    "fr": "Forem",
+    "nl": "Forem",
+    "en": "Forem"
+  },
+  {
+    "fr": "Service public de l'emploi en Wallonie.",
+    "nl": "Openbare dienst voor arbeidsbemiddeling in Wallonië.",
+    "en": "Public employment service in Wallonia."
+  },
+  {
+    "fr": "Actiris",
+    "nl": "Actiris",
+    "en": "Actiris"
+  },
+  {
+    "fr": "Service public de l'emploi à Bruxelles.",
+    "nl": "Openbare dienst voor arbeidsbemiddeling in Brussel.",
+    "en": "Public employment service in Brussels."
+  },
+  {
+    "fr": "Mutualité Chrétienne (MC)",
+    "nl": "Christelijke Mutualiteit (CM)",
+    "en": "Christian Health Insurance Fund (MC/CM)"
+  },
+  {
+    "fr": "Mutualité chrétienne / Christelijke Mutualiteit.",
+    "nl": "Christelijke Mutualiteit / Mutualité chrétienne.",
+    "en": "Christian health insurance fund (MC/CM)."
+  },
+  {
+    "fr": "Fiduciaire / Comptable",
+    "nl": "Boekhoudkantoor / Accountant",
+    "en": "Accounting firm / Accountant"
+  },
+  {
+    "fr": "Cabinets comptables et fiscaux.",
+    "nl": "Boekhoud- en belastingkantoren.",
+    "en": "Accounting and tax firms."
+  },
+  {
+    "fr": "Banque Carrefour de la Sécurité Sociale",
+    "nl": "Kruispuntbank van de Sociale Zekerheid",
+    "en": "Crossroads Bank for Social Security (BCSS/KSZ)"
+  },
+  {
+    "fr": "Échanges électroniques entre institutions de sécurité sociale.",
+    "nl": "Elektronische gegevensuitwisseling tussen socialezekerheidsinstellingen.",
+    "en": "Electronic data exchange between social security institutions."
+  },
+  {
+    "fr": "VDAB",
+    "nl": "VDAB",
+    "en": "VDAB"
+  },
+  {
+    "fr": "Service public de l'emploi en Flandre.",
+    "nl": "Openbare dienst voor arbeidsbemiddeling in Vlaanderen.",
+    "en": "Public employment service in Flanders."
+  },
+  {
+    "fr": "Caisse Auxiliaire de Paiement des Allocations de Chômage",
+    "nl": "Hulpkas voor Werkloosheidsuitkeringen",
+    "en": "Auxiliary Unemployment Benefits Fund (CAPAC/HVW)"
+  },
+  {
+    "fr": "Organisme public de paiement des allocations de chômage.",
+    "nl": "Openbare uitbetalingsinstelling voor werkloosheidsuitkeringen.",
+    "en": "Public payment institution for unemployment benefits."
+  },
+  {
+    "fr": "CSC (Confédération des Syndicats Chrétiens)",
+    "nl": "ACV (Algemeen Christelijk Vakverbond)",
+    "en": "CSC/ACV (Confederation of Christian Trade Unions)"
+  }
+]

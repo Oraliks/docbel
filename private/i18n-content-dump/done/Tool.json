@@ -1,0 +1,162 @@
+[
+  {
+    "fr": "Trouver un bureau",
+    "nl": "Een kantoor vinden",
+    "en": "Find an office"
+  },
+  {
+    "fr": "CPAS, Commune, ONEM, organismes de paiement, syndicats : un seul outil pour tout trouver, partout en Belgique.",
+    "nl": "OCMW, gemeente, RVA, uitbetalingsinstellingen, vakbonden: één tool om alles te vinden, overal in België.",
+    "en": "OCMW (public social welfare centre), municipality, RVA (National Employment Office), payment institutions, trade unions: one tool to find everything, anywhere in Belgium."
+  },
+  {
+    "fr": "Pécule de vacances",
+    "nl": "Vakantiegeld",
+    "en": "Holiday pay"
+  },
+  {
+    "fr": "Estimez votre pécule simple et double (employé ou ouvrier) en fonction de votre salaire et de votre ancienneté.",
+    "nl": "Bereken uw enkel en dubbel vakantiegeld (bediende of arbeider) op basis van uw loon en anciënniteit.",
+    "en": "Estimate your single and double holiday pay (white-collar or blue-collar worker) based on your salary and seniority."
+  },
+  {
+    "fr": "Calcul du préavis",
+    "nl": "Berekening van de opzegtermijn",
+    "en": "Notice period calculation"
+  },
+  {
+    "fr": "Calculez votre délai de préavis selon la loi belge",
+    "nl": "Bereken uw opzegtermijn volgens de Belgische wetgeving",
+    "en": "Calculate your notice period under Belgian law"
+  },
+  {
+    "fr": "Commissions paritaires",
+    "nl": "Paritaire comités",
+    "en": "Joint committees"
+  },
+  {
+    "fr": "Liste officielle des commissions paritaires (CP) et sous-commissions belges, avec recherche par code, numéro ou secteur.",
+    "nl": "Officiële lijst van de Belgische paritaire comités (PC) en subcomités, met zoekfunctie op code, nummer of sector.",
+    "en": "Official list of Belgian joint committees (PC) and sub-committees, with search by code, number or sector."
+  },
+  {
+    "fr": "Calcul AGR",
+    "nl": "Berekening IGU",
+    "en": "IGU calculation"
+  },
+  {
+    "fr": "Calcul de l'Allocation de Garantie de Revenus à partir d'un WECH 506 : upload de la DRS, extraction et calcul automatiques, cumul jusqu'à 4 occupations.",
+    "nl": "Berekening van de Inkomensgarantie-uitkering op basis van een WECH 506: upload van de ASR, automatische extractie en berekening, cumulatie tot 4 tewerkstellingen.",
+    "en": "Calculation of the Income Guarantee Benefit (IGU) from a WECH 506 form: upload the social risk declaration (DRS), automatic extraction and calculation, combining up to 4 jobs."
+  },
+  {
+    "fr": "Allocations familiales",
+    "nl": "Kinderbijslag",
+    "en": "Child benefit"
+  },
+  {
+    "fr": "Calculez vos allocations familiales selon votre région (FAMIWAL, FAMIRIS, Groeipakket, Kindergeld DG) et le rang de l'enfant.",
+    "nl": "Bereken uw kinderbijslag op basis van uw regio (FAMIWAL, FAMIRIS, Groeipakket, Kindergeld DG) en de rang van het kind.",
+    "en": "Calculate your child benefit based on your region (FAMIWAL, FAMIRIS, Groeipakket, Kindergeld DG) and the child's rank."
+  },
+  {
+    "fr": "Allocations de chômage",
+    "nl": "Werkloosheidsuitkeringen",
+    "en": "Unemployment benefits"
+  },
+  {
+    "fr": "Calculez votre allocation mensuelle de chômage selon votre situation familiale, votre salaire et votre durée de chômage.",
+    "nl": "Bereken uw maandelijkse werkloosheidsuitkering op basis van uw gezinssituatie, uw loon en uw werkloosheidsduur.",
+    "en": "Calculate your monthly unemployment benefit based on your family situation, your salary and your length of unemployment."
+  },
+  {
+    "fr": "Institutions U1 (EEE)",
+    "nl": "U1-instellingen (EER)",
+    "en": "U1 institutions (EEA)"
+  },
+  {
+    "fr": "Trouvez l'institution compétente dans chaque pays de l'EEE et en Suisse pour demander votre attestation U1 (ex-E301), l'équivalent européen du C4.",
+    "nl": "Vind de bevoegde instelling in elk EER-land en in Zwitserland om uw U1-attest (voorheen E301) aan te vragen, het Europese equivalent van het C4.",
+    "en": "Find the competent institution in each EEA country and in Switzerland to request your U1 document (formerly E301), the European equivalent of the C4 (employment certificate)."
+  },
+  {
+    "fr": "Brut ↔ Net",
+    "nl": "Bruto ↔ Netto",
+    "en": "Gross ↔ Net"
+  },
+  {
+    "fr": "Convertissez votre salaire brut en net (ou inversement) selon votre statut familial, votre région et vos avantages.",
+    "nl": "Reken uw brutoloon om naar netto (of omgekeerd) op basis van uw gezinssituatie, uw regio en uw voordelen.",
+    "en": "Convert your gross salary to net (or vice versa) based on your family status, your region and your benefits."
+  },
+  {
+    "fr": "Lookup ONEM",
+    "nl": "RVA-opzoeking",
+    "en": "RVA code lookup"
+  },
+  {
+    "fr": "Décodage de tous les codes officiels ONEM (S01, S04, S38, Dispo, BCSS…). Recherche fuzzy multilingue FR/NL/DE/EN dans 11 000+ entrées.",
+    "nl": "Ontcijfering van alle officiële RVA-codes (S01, S04, S38, Dispo, KSZ…). Meertalige fuzzy zoekfunctie NL/FR/DE/EN in 11.000+ items.",
+    "en": "Decoding of all official RVA (National Employment Office) codes (S01, S04, S38, Dispo, BCSS…). Multilingual fuzzy search FR/NL/DE/EN across 11,000+ entries."
+  },
+  {
+    "fr": "Tarif social énergie",
+    "nl": "Sociaal energietarief",
+    "en": "Social energy tariff"
+  },
+  {
+    "fr": "Vérifiez votre éligibilité au tarif social électricité/gaz et estimez votre gain par rapport au tarif standard.",
+    "nl": "Controleer of u recht hebt op het sociaal tarief voor elektriciteit/gas en bereken uw besparing ten opzichte van het standaardtarief.",
+    "en": "Check your eligibility for the social electricity/gas tariff and estimate your savings compared to the standard tariff."
+  },
+  {
+    "fr": "Barèmes chômage",
+    "nl": "Werkloosheidsbarema's",
+    "en": "Unemployment benefit scales"
+  },
+  {
+    "fr": "Consultez les barèmes officiels de l'ONEM : allocations de chômage complet, mi-temps, temporaire, catégories spéciales et salaires horaires. Montants en vigueur par code et tranche.",
+    "nl": "Raadpleeg de officiële barema's van de RVA: uitkeringen voor volledige werkloosheid, halftijds, tijdelijke werkloosheid, bijzondere categorieën en uurlonen. Geldende bedragen per code en schijf.",
+    "en": "Consult the official RVA (National Employment Office) scales: benefits for full unemployment, part-time, temporary unemployment, special categories and hourly wages. Current amounts by code and bracket."
+  },
+  {
+    "fr": "Pension légale estimée",
+    "nl": "Geschat wettelijk pensioen",
+    "en": "Estimated statutory pension"
+  },
+  {
+    "fr": "Estimation simplifiée de votre pension légale salarié selon votre carrière, votre salaire moyen et votre âge de départ.",
+    "nl": "Vereenvoudigde raming van uw wettelijk werknemerspensioen op basis van uw loopbaan, uw gemiddelde loon en uw pensioenleeftijd.",
+    "en": "Simplified estimate of your statutory employee pension based on your career, your average salary and your retirement age."
+  },
+  {
+    "fr": "Frais kilométriques",
+    "nl": "Kilometervergoeding",
+    "en": "Mileage costs"
+  },
+  {
+    "fr": "Calculez la déduction fiscale de vos frais domicile-travail selon votre mode de transport (voiture, vélo, transports en commun).",
+    "nl": "Bereken de fiscale aftrek van uw woon-werkverkeerkosten op basis van uw vervoermiddel (auto, fiets, openbaar vervoer).",
+    "en": "Calculate the tax deduction for your home-to-work commuting costs based on your mode of transport (car, bicycle, public transport)."
+  },
+  {
+    "fr": "Indemnité de rupture",
+    "nl": "Verbrekingsvergoeding",
+    "en": "Severance pay"
+  },
+  {
+    "fr": "Convertissez votre préavis non presté en indemnité compensatoire (€). Complément du calculateur de préavis.",
+    "nl": "Reken uw niet-gepresteerde opzegtermijn om naar een compenserende vergoeding (€). Aanvulling op de opzegtermijnberekenaar.",
+    "en": "Convert your unworked notice period into compensatory pay (€). Complements the notice period calculator."
+  },
+  {
+    "fr": "Impôt des personnes physiques",
+    "nl": "Personenbelasting",
+    "en": "Personal income tax"
+  },
+  {
+    "fr": "Simulateur IPP simplifié : tranches d'imposition, quotité exemptée, enfants à charge et additionnels communaux.",
+    "nl": "Vereenvoudigde PB-simulator: belastingschijven, belastingvrije som, kinderen ten laste en gemeentelijke opcentiemen.",
+    "en": "Simplified personal income tax (IPP) simulator: tax brackets, tax-free allowance, dependent children and municipal surcharges."
+  }
+]

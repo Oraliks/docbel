@@ -1,0 +1,498 @@
+[
+  {
+    "fr": "Barème précompte professionnel mensuel 2026 (Annexe III AR/CIR 92)",
+    "nl": "Barema bedrijfsvoorheffing maandelijks 2026 (Bijlage III KB/WIB 92)",
+    "en": "Monthly withholding tax scale 2026 (Annex III RD/ITC 92)"
+  },
+  {
+    "fr": "Le barème officiel SPF Finances. Publié chaque année (mi-décembre), applicable au 1ᵉʳ janvier. Indispensable pour le calibrage du précompte mensuel.",
+    "nl": "Het officiële barema van de FOD Financiën. Elk jaar gepubliceerd (medio december), van toepassing op 1 januari. Onmisbaar voor de kalibratie van de maandelijkse bedrijfsvoorheffing.",
+    "en": "The official FPS Finance scale. Published every year (mid-December), applicable from 1 January. Essential for calibrating the monthly withholding tax."
+  },
+  {
+    "fr": "Workbonus — Volet A + Volet B (1ᵉʳ avril 2026)",
+    "nl": "Werkbonus — Luik A + Luik B (1 april 2026)",
+    "en": "Workbonus — Component A + Component B (1 April 2026)"
+  },
+  {
+    "fr": "Barème Securex consolidé du bonus à l'emploi. Indexé 2 fois par an (1ᵉʳ janvier et 1ᵉʳ avril). Source utilisée pour `calcWorkbonus()`.",
+    "nl": "Geconsolideerd Securex-barema van de werkbonus. Tweemaal per jaar geïndexeerd (1 januari en 1 april). Bron gebruikt voor `calcWorkbonus()`.",
+    "en": "Consolidated Securex scale for the employment bonus. Indexed twice a year (1 January and 1 April). Source used for `calcWorkbonus()`."
+  },
+  {
+    "fr": "Cotisation spéciale sécurité sociale (CSSS) 2026",
+    "nl": "Bijzondere bijdrage sociale zekerheid (BBSZ) 2026",
+    "en": "Special social security contribution (SSSC) 2026"
+  },
+  {
+    "fr": "Barème mensuel par tranches de revenu annuel. Loi du 28 décembre 1992, indexé annuellement. Source utilisée pour `calcCSSS()`.",
+    "nl": "Maandelijks barema per jaarinkomensschijf. Wet van 28 december 1992, jaarlijks geïndexeerd. Bron gebruikt voor `calcCSSS()`.",
+    "en": "Monthly scale by annual income bracket. Act of 28 December 1992, indexed annually. Source used for `calcCSSS()`."
+  },
+  {
+    "fr": "ONSS travailleur — taux 13,07 %",
+    "nl": "RSZ werknemer — tarief 13,07 %",
+    "en": "NSSO employee — rate 13.07%"
+  },
+  {
+    "fr": "Taux inchangé depuis 1981 (loi du 27 juin 1969). Page officielle ONSS pour vérifier qu'il n'a pas évolué.",
+    "nl": "Tarief ongewijzigd sinds 1981 (wet van 27 juni 1969). Officiële RSZ-pagina om te controleren of het niet gewijzigd is.",
+    "en": "Rate unchanged since 1981 (Act of 27 June 1969). Official NSSO page to verify it has not changed."
+  },
+  {
+    "fr": "Avantage de toute nature voiture (ATN) — AR 14/01/2014 indexé 2026",
+    "nl": "Voordeel van alle aard wagen (VAA) — KB 14/01/2014 geïndexeerd 2026",
+    "en": "Benefit in kind for company cars (BIK) — RD 14/01/2014 indexed 2026"
+  },
+  {
+    "fr": "Formule de calcul : valeur catalogue × 6/7 × coef CO2 × décote vétusté. Minimum légal 1 660 €/an en 2026.",
+    "nl": "Berekeningsformule: cataloguswaarde × 6/7 × CO2-coëfficiënt × ouderdomsafslag. Wettelijk minimum 1.660 €/jaar in 2026.",
+    "en": "Calculation formula: catalogue value × 6/7 × CO2 coefficient × age depreciation. Legal minimum €1,660/year in 2026."
+  },
+  {
+    "fr": "Indemnité télétravail forfaitaire — Circulaire 2021/C/20",
+    "nl": "Forfaitaire telewerkvergoeding — Circulaire 2021/C/20",
+    "en": "Flat-rate teleworking allowance — Circular 2021/C/20"
+  },
+  {
+    "fr": "Plafond mensuel 154,74 € (2026), non imposable et non soumis à l'ONSS.",
+    "nl": "Maandelijks plafond 154,74 € (2026), niet belastbaar en niet onderworpen aan de RSZ.",
+    "en": "Monthly cap €154.74 (2026), tax-free and not subject to NSSO contributions."
+  },
+  {
+    "fr": "SPF Finances — Tax-on-web (validation et déclaration officielle)",
+    "nl": "FOD Financiën — Tax-on-web (validatie en officiële aangifte)",
+    "en": "FPS Finance — Tax-on-web (validation and official tax return)"
+  },
+  {
+    "fr": "Outil officiel SPF Finances pour la déclaration fiscale et la régularisation annuelle. À utiliser comme référence de validation finale (cf. scripts/debug-brut-net.ts).",
+    "nl": "Officiële tool van de FOD Financiën voor de belastingaangifte en de jaarlijkse regularisatie. Te gebruiken als referentie voor de eindvalidatie (zie scripts/debug-brut-net.ts).",
+    "en": "Official FPS Finance tool for the tax return and the annual settlement. To be used as the final validation reference (see scripts/debug-brut-net.ts)."
+  },
+  {
+    "fr": "SPF Finances — Précompte spécial double pécule (Annexe III AR/CIR 92)",
+    "nl": "FOD Financiën — Bijzondere voorheffing dubbel vakantiegeld (Bijlage III KB/WIB 92)",
+    "en": "FPS Finance — Special withholding tax on double holiday pay (Annex III RD/ITC 92)"
+  },
+  {
+    "fr": "Barème officiel SPF Finances 2026 « pécule de vacances » (simple) et « allocations exceptionnelles » (double). 11 tranches dégressives, de 0 à 53,50 %. Publié chaque année à mi-décembre, applicable au 1ᵉʳ janvier.",
+    "nl": "Officieel barema FOD Financiën 2026 « vakantiegeld » (enkel) en « uitzonderlijke vergoedingen » (dubbel). 11 degressieve schijven, van 0 tot 53,50 %. Elk jaar gepubliceerd medio december, van toepassing op 1 januari.",
+    "en": "Official FPS Finance scale 2026 for \"holiday pay\" (single) and \"exceptional allowances\" (double). 11 decreasing brackets, from 0 to 53.50%. Published every year in mid-December, applicable from 1 January."
+  },
+  {
+    "fr": "ONVA — Calcul du pécule de vacances (ouvriers)",
+    "nl": "RJV — Berekening van het vakantiegeld (arbeiders)",
+    "en": "NOAH — Calculation of holiday pay (blue-collar workers)"
+  },
+  {
+    "fr": "Page officielle ONVA : taux global 15,38 % (8 % simple + 7,38 % double), majoration 1,08, retenue ONSS 13,07 % + solidarité 1 % + précompte 17,16 / 23,22 %.",
+    "nl": "Officiële RJV-pagina: globaal tarief 15,38 % (8 % enkel + 7,38 % dubbel), verhoging 1,08, RSZ-inhouding 13,07 % + solidariteit 1 % + voorheffing 17,16 / 23,22 %.",
+    "en": "Official NOAH page: overall rate 15.38% (8% single + 7.38% double), 1.08 uplift, NSSO deduction 13.07% + 1% solidarity + withholding tax 17.16 / 23.22%."
+  },
+  {
+    "fr": "SPF Sécurité Sociale — Pécule de vacances",
+    "nl": "FOD Sociale Zekerheid — Vakantiegeld",
+    "en": "FPS Social Security — Holiday pay"
+  },
+  {
+    "fr": "Page de référence sur le régime légal du pécule (employé + ouvrier). Cadre juridique, droits, jours assimilés.",
+    "nl": "Referentiepagina over het wettelijk stelsel van het vakantiegeld (bediende + arbeider). Juridisch kader, rechten, gelijkgestelde dagen.",
+    "en": "Reference page on the statutory holiday pay scheme (white-collar + blue-collar workers). Legal framework, rights, assimilated days."
+  },
+  {
+    "fr": "ONEM — Vacances-jeunes (formulaire C103)",
+    "nl": "RVA — Jeugdvakantie (formulier C103)",
+    "en": "NEO — Youth holiday (form C103)"
+  },
+  {
+    "fr": "Conditions et procédure pour le pécule des jeunes travailleurs (< 25 ans, 1re année après études). Allocation 65 % du salaire plafonné par jour de vacances-jeunes, à demander avant fin février N+1.",
+    "nl": "Voorwaarden en procedure voor het vakantiegeld van jonge werknemers (< 25 jaar, 1e jaar na de studies). Uitkering van 65 % van het begrensde loon per jeugdvakantiedag, aan te vragen vóór eind februari N+1.",
+    "en": "Conditions and procedure for the holiday pay of young workers (< 25 years, 1st year after studies). Allowance of 65% of the capped wage per youth holiday day, to be claimed before the end of February N+1."
+  },
+  {
+    "fr": "ONSS — Instructions administratives (notion de rémunération)",
+    "nl": "RSZ — Administratieve instructies (begrip loon)",
+    "en": "NSSO — Administrative instructions (concept of remuneration)"
+  },
+  {
+    "fr": "Documentation officielle ONSS sur l'inclusion du pécule dans la base de cotisation. Référence pour la cotisation ONSS spéciale 13,07 % sur double pécule.",
+    "nl": "Officiële RSZ-documentatie over de opname van het vakantiegeld in de bijdragebasis. Referentie voor de bijzondere RSZ-bijdrage van 13,07 % op het dubbel vakantiegeld.",
+    "en": "Official NSSO documentation on the inclusion of holiday pay in the contribution base. Reference for the special 13.07% NSSO contribution on double holiday pay."
+  },
+  {
+    "fr": "SPF Emploi — Vacances annuelles",
+    "nl": "FOD Werkgelegenheid — Jaarlijkse vakantie",
+    "en": "FPS Employment — Annual leave"
+  },
+  {
+    "fr": "Cadre légal général des vacances annuelles : durée, jours assimilés, droit au pécule en cas de fin de contrat.",
+    "nl": "Algemeen wettelijk kader van de jaarlijkse vakantie: duur, gelijkgestelde dagen, recht op vakantiegeld bij einde van de overeenkomst.",
+    "en": "General legal framework for annual leave: duration, assimilated days, entitlement to holiday pay upon termination of the contract."
+  },
+  {
+    "fr": "FAMIWAL — Résumé des montants (Wallonie)",
+    "nl": "FAMIWAL — Overzicht van de bedragen (Wallonië)",
+    "en": "FAMIWAL — Summary of amounts (Wallonia)"
+  },
+  {
+    "fr": "Page officielle FAMIWAL avec les montants 2026 indexés au 1ᵉʳ mars : base nouveau régime (≥2020), ancien régime, suppléments sociaux et monoparentaux, prime de naissance. Indispensable pour la maintenance annuelle du barème wallon.",
+    "nl": "Officiële FAMIWAL-pagina met de bedragen 2026 geïndexeerd op 1 maart: basisbedrag nieuw stelsel (≥2020), oud stelsel, sociale en eenoudertoeslagen, geboortepremie. Onmisbaar voor het jaarlijkse onderhoud van het Waalse barema.",
+    "en": "Official FAMIWAL page with the 2026 amounts indexed on 1 March: base of the new scheme (≥2020), old scheme, social and single-parent supplements, birth grant. Essential for the annual maintenance of the Walloon scale."
+  },
+  {
+    "fr": "AVIQ — Allocations familiales (autorité de tutelle Wallonie)",
+    "nl": "AVIQ — Kinderbijslag (toezichthoudende overheid Wallonië)",
+    "en": "AVIQ — Family allowances (supervisory authority for Wallonia)"
+  },
+  {
+    "fr": "Agence pour une Vie de Qualité — autorité publique wallonne qui supervise FAMIWAL et les caisses agréées. Référence pour les règles de fond, les conditions et la procédure de reconnaissance handicap.",
+    "nl": "Agence pour une Vie de Qualité — Waalse overheidsinstantie die toezicht houdt op FAMIWAL en de erkende kassen. Referentie voor de inhoudelijke regels, de voorwaarden en de procedure voor de erkenning van een handicap.",
+    "en": "Agence pour une Vie de Qualité — Walloon public authority that supervises FAMIWAL and the accredited funds. Reference for the substantive rules, conditions and the disability recognition procedure."
+  },
+  {
+    "fr": "FAMIRIS — Montants des allocations familiales (Bruxelles)",
+    "nl": "FAMIRIS — Bedragen van de kinderbijslag (Brussel)",
+    "en": "FAMIRIS — Family allowance amounts (Brussels)"
+  },
+  {
+    "fr": "Page officielle FAMIRIS avec les montants 2026 indexés au 1ᵉʳ mars : base par tranche d'âge et année de naissance, supplément social par revenu et nombre d'enfants, supplément orphelin, prime de naissance.",
+    "nl": "Officiële FAMIRIS-pagina met de bedragen 2026 geïndexeerd op 1 maart: basisbedrag per leeftijdsschijf en geboortejaar, sociale toeslag per inkomen en aantal kinderen, wezentoeslag, geboortepremie.",
+    "en": "Official FAMIRIS page with the 2026 amounts indexed on 1 March: base by age bracket and year of birth, social supplement by income and number of children, orphan supplement, birth grant."
+  },
+  {
+    "fr": "Iriscare — Allocations familiales (autorité de tutelle Bruxelles)",
+    "nl": "Iriscare — Kinderbijslag (toezichthoudende overheid Brussel)",
+    "en": "Iriscare — Family allowances (supervisory authority for Brussels)"
+  },
+  {
+    "fr": "Organisme bruxellois en charge de la sécurité sociale régionale. Supervise FAMIRIS et les caisses agréées à Bruxelles. Référence pour le supplément handicap (échelle Iriscare).",
+    "nl": "Brusselse instelling belast met de gewestelijke sociale zekerheid. Houdt toezicht op FAMIRIS en de erkende kassen in Brussel. Referentie voor de toeslag voor een handicap (schaal Iriscare).",
+    "en": "Brussels body responsible for regional social security. Supervises FAMIRIS and the accredited funds in Brussels. Reference for the disability supplement (Iriscare scale)."
+  },
+  {
+    "fr": "Groeipakket — Montants 2026 (Flandre)",
+    "nl": "Groeipakket — Bedragen 2026 (Vlaanderen)",
+    "en": "Groeipakket — 2026 amounts (Flanders)"
+  },
+  {
+    "fr": "Page officielle Groeipakket / Opgroeien (« paquet de croissance ») avec les montants 2026 indexés au 1ᵉʳ septembre : basisbedrag, sociale toeslagen par tranche de revenu et nombre d'enfants, zorgtoeslag, startbedrag, schoolbonus.",
+    "nl": "Officiële pagina Groeipakket / Opgroeien met de bedragen 2026 geïndexeerd op 1 september: basisbedrag, sociale toeslagen per inkomensschijf en aantal kinderen, zorgtoeslag, startbedrag, schoolbonus.",
+    "en": "Official Groeipakket / Opgroeien page (\"growth package\") with the 2026 amounts indexed on 1 September: base amount (basisbedrag), social supplements (sociale toeslagen) by income bracket and number of children, care supplement (zorgtoeslag), start amount (startbedrag), school bonus (schoolbonus)."
+  },
+  {
+    "fr": "Ostbelgien Familie — Kindergeld DG (Communauté germanophone)",
+    "nl": "Ostbelgien Familie — Kindergeld DG (Duitstalige Gemeenschap)",
+    "en": "Ostbelgien Familie — Kindergeld DG (German-speaking Community)"
+  },
+  {
+    "fr": "Portail officiel du Ministerium der Deutschsprachigen Gemeinschaft pour le Kindergeld : Basiskindergeld, Sozialzuschlag, Familienzuschlag (large famille), Geburtszulage, Schulbonus.",
+    "nl": "Officieel portaal van het Ministerium der Deutschsprachigen Gemeinschaft voor het Kindergeld: Basiskindergeld, Sozialzuschlag, Familienzuschlag (groot gezin), Geburtszulage, Schulbonus.",
+    "en": "Official portal of the Ministerium der Deutschsprachigen Gemeinschaft for the Kindergeld: Basiskindergeld, Sozialzuschlag, Familienzuschlag (large family), Geburtszulage, Schulbonus."
+  },
+  {
+    "fr": "SFP — Calcul de la pension salarié",
+    "nl": "FPD — Berekening van het werknemerspensioen",
+    "en": "FPS (Pensions) — Calculation of the employee pension"
+  },
+  {
+    "fr": "Page officielle du Service Fédéral des Pensions détaillant la formule de calcul (taux × carrière / 45), les taux isolé (60 %) et ménage (75 %), et la notion de salaire forfaitaire ou réel pris en compte. Référence pour comprendre la base de la formule.",
+    "nl": "Officiële pagina van de Federale Pensioendienst met details over de berekeningsformule (tarief × loopbaan / 45), de tarieven alleenstaande (60 %) en gezin (75 %), en het begrip forfaitair of werkelijk loon dat in aanmerking wordt genomen. Referentie om de basis van de formule te begrijpen.",
+    "en": "Official page of the Federal Pensions Service detailing the calculation formula (rate × career / 45), the single (60%) and household (75%) rates, and the concept of the flat-rate or actual wage taken into account. Reference for understanding the basis of the formula."
+  },
+  {
+    "fr": "SFP — Plafonds salariaux annuels",
+    "nl": "FPD — Jaarlijkse loonplafonds",
+    "en": "FPS (Pensions) — Annual wage ceilings"
+  },
+  {
+    "fr": "Plafond salarial annuel pris en compte pour le calcul de la pension salarié. Au-delà de ce plafond, le salaire n'augmente plus la pension. Indexé annuellement — page à consulter chaque année après l'indexation.",
+    "nl": "Jaarlijks loonplafond dat in aanmerking wordt genomen voor de berekening van het werknemerspensioen. Boven dit plafond verhoogt het loon het pensioen niet meer. Jaarlijks geïndexeerd — pagina elk jaar te raadplegen na de indexering.",
+    "en": "Annual wage ceiling taken into account for the calculation of the employee pension. Above this ceiling, the wage no longer increases the pension. Indexed annually — page to consult every year after indexation."
+  },
+  {
+    "fr": "SFP — Pension minimum garantie",
+    "nl": "FPD — Gewaarborgd minimumpensioen",
+    "en": "FPS (Pensions) — Guaranteed minimum pension"
+  },
+  {
+    "fr": "Page officielle SFP sur le plancher minimum garanti (isolé / ménage), les conditions de carrière minimum (30 ans), les jours équivalents temps plein requis depuis 2025 et la règle de proratisation sur 45 ans.",
+    "nl": "Officiële FPD-pagina over de gewaarborgde minimumdrempel (alleenstaande / gezin), de voorwaarden inzake minimumloopbaan (30 jaar), de voltijds gelijkgestelde dagen die sinds 2025 vereist zijn en de regel van pro-rataberekening over 45 jaar.",
+    "en": "Official FPS (Pensions) page on the guaranteed minimum floor (single / household), the minimum career conditions (30 years), the full-time equivalent days required since 2025 and the pro-rata rule over 45 years."
+  },
+  {
+    "fr": "mypension.be — Compte de carrière personnel",
+    "nl": "mypension.be — Persoonlijke loopbaanrekening",
+    "en": "mypension.be — Personal career account"
+  },
+  {
+    "fr": "Portail officiel commun SFP / INASTI / SdPSP. Permet à chaque citoyen belge de consulter son compte de carrière complet (login itsme) et d'obtenir une estimation personnalisée et juridiquement opposable de sa pension future.",
+    "nl": "Gemeenschappelijk officieel portaal FPD / RSVZ / PDOS. Stelt elke Belgische burger in staat zijn volledige loopbaanrekening te raadplegen (login itsme) en een gepersonaliseerde en juridisch tegenstelbare raming van zijn toekomstig pensioen te verkrijgen.",
+    "en": "Joint official portal FPS (Pensions) / NISSE / PSSO. Allows every Belgian citizen to consult their full career account (itsme login) and obtain a personalised and legally binding estimate of their future pension."
+  },
+  {
+    "fr": "Moniteur belge — Loi du 10 août 2015 (âge légal + anticipation)",
+    "nl": "Belgisch Staatsblad — Wet van 10 augustus 2015 (wettelijke leeftijd + vervroeging)",
+    "en": "Belgian Official Gazette — Act of 10 August 2015 (statutory age + early retirement)"
+  },
+  {
+    "fr": "Loi relevant l'âge légal de la pension à 66 ans (2025) puis 67 ans (2030) et durcissant les conditions de pension anticipée (carrière minimum par âge : 44 ans à 60 ans, 43 ans à 61 ans, 42 ans entre 62 et 64 ans). Cadre juridique central du calc.",
+    "nl": "Wet die de wettelijke pensioenleeftijd optrekt tot 66 jaar (2025) en vervolgens 67 jaar (2030) en de voorwaarden voor vervroegd pensioen verstrengt (minimumloopbaan per leeftijd: 44 jaar op 60 jaar, 43 jaar op 61 jaar, 42 jaar tussen 62 en 64 jaar). Centraal juridisch kader van de berekening.",
+    "en": "Act raising the statutory pension age to 66 (2025) and then 67 (2030) and tightening the conditions for early retirement (minimum career by age: 44 years at 60, 43 years at 61, 42 years between 62 and 64). Central legal framework of the calculation."
+  },
+  {
+    "fr": "Moniteur belge — AR 21 décembre 1967 (régime général salariés)",
+    "nl": "Belgisch Staatsblad — KB 21 december 1967 (algemeen stelsel werknemers)",
+    "en": "Belgian Official Gazette — RD 21 December 1967 (general scheme for employees)"
+  },
+  {
+    "fr": "Arrêté royal portant règlement général du régime de pension de retraite et de survie des travailleurs salariés. Texte de référence pour les taux (60 % / 75 %), la carrière complète conventionnelle de 45 ans et le mécanisme de plafonnement.",
+    "nl": "Koninklijk besluit houdende algemeen reglement betreffende het rust- en overlevingspensioen voor werknemers. Referentietekst voor de tarieven (60 % / 75 %), de conventionele volledige loopbaan van 45 jaar en het plafonneringsmechanisme.",
+    "en": "Royal Decree laying down the general regulation of the retirement and survivor's pension scheme for employees. Reference text for the rates (60% / 75%), the conventional full career of 45 years and the capping mechanism."
+  },
+  {
+    "fr": "CREG — Tarif social pour l'énergie (page officielle)",
+    "nl": "CREG — Sociaal tarief voor energie (officiële pagina)",
+    "en": "CREG — Social energy tariff (official page)"
+  },
+  {
+    "fr": "Page hub de la Commission de Régulation de l'Électricité et du Gaz : tarifs sociaux maximaux trimestriels pour l'électricité (monohoraire, bihoraire jour/nuit, exclusif nuit) et le gaz naturel. Référence officielle pour vérifier la note CREG de chaque trimestre (Q1/Q2/Q3/Q4).",
+    "nl": "Hubpagina van de Commissie voor de Regulering van de Elektriciteit en het Gas: maximale sociale tarieven per kwartaal voor elektriciteit (enkelvoudig, tweevoudig dag/nacht, uitsluitend nacht) en aardgas. Officiële referentie om de CREG-nota van elk kwartaal te controleren (Q1/Q2/Q3/Q4).",
+    "en": "Hub page of the Commission for Electricity and Gas Regulation: maximum quarterly social tariffs for electricity (single-rate, dual-rate day/night, exclusive night) and natural gas. Official reference for checking the CREG note for each quarter (Q1/Q2/Q3/Q4)."
+  },
+  {
+    "fr": "CREG — Note Z3153 (prix maximaux sociaux Q1 2026)",
+    "nl": "CREG — Nota Z3153 (sociale maximumprijzen Q1 2026)",
+    "en": "CREG — Note Z3153 (social maximum prices Q1 2026)"
+  },
+  {
+    "fr": "Note CREG officielle fixant les prix maximaux sociaux pour l'électricité, le gaz naturel et la chaleur applicables au 1ᵉʳ trimestre 2026. Source légale principale pour le calcul du tarif social (article 4 AR 28.06.2009). Réactualisée chaque trimestre — surveiller les notes Z31xx suivantes.",
+    "nl": "Officiële CREG-nota die de sociale maximumprijzen vastlegt voor elektriciteit, aardgas en warmte van toepassing op het 1e kwartaal 2026. Belangrijkste wettelijke bron voor de berekening van het sociaal tarief (artikel 4 KB 28.06.2009). Elk kwartaal bijgewerkt — de volgende Z31xx-nota's in het oog houden.",
+    "en": "Official CREG note setting the social maximum prices for electricity, natural gas and heat applicable to the 1st quarter of 2026. Main legal source for calculating the social tariff (article 4 RD 28.06.2009). Updated each quarter — keep an eye on the following Z31xx notes."
+  },
+  {
+    "fr": "SPF Économie — Tarif social pour l'énergie",
+    "nl": "FOD Economie — Sociaal tarief voor energie",
+    "en": "FPS Economy — Social energy tariff"
+  },
+  {
+    "fr": "Service Public Fédéral Économie : page officielle reprenant les bénéficiaires automatiques du tarif social en 2026 (RIS, GRAPA, allocation handicap DG HAN, aide CPAS équivalente, logement social agréé). Précise que le statut BIM n'ouvre plus le droit seul depuis le 1ᵉʳ juillet 2023.",
+    "nl": "Federale Overheidsdienst Economie: officiële pagina met de automatische rechthebbenden op het sociaal tarief in 2026 (leefloon, IGO, tegemoetkoming aan personen met een handicap DG HAN, gelijkwaardige OCMW-steun, erkende sociale woning). Vermeldt dat het statuut RVV sinds 1 juli 2023 op zichzelf geen recht meer opent.",
+    "en": "Federal Public Service Economy: official page listing the automatic beneficiaries of the social tariff in 2026 (social integration income, IGO/income guarantee for the elderly, disability allowance DG HAN, equivalent OCMW/PCSW support, accredited social housing). Specifies that the increased reimbursement (BIM) status no longer grants the entitlement on its own since 1 July 2023.",
+    "note": "RIS=revenu d'intégration sociale (NL: leefloon); GRAPA=garantie de revenus aux personnes âgées (NL: IGO, inkomensgarantie voor ouderen); BIM=bénéficiaire de l'intervention majorée (NL: RVV, verhoogde tegemoetkoming). DG HAN gardé tel quel (sigle administratif Direction générale Personnes handicapées)."
+  },
+  {
+    "fr": "Moniteur belge — AR du 29 mars 2012",
+    "nl": "Belgisch Staatsblad — KB van 29 maart 2012",
+    "en": "Belgian Official Gazette — RD of 29 March 2012"
+  },
+  {
+    "fr": "Arrêté royal du 29 mars 2012 fixant les règles de détermination du coût d'application des tarifs sociaux par les entreprises d'électricité et de gaz, et les règles d'intervention pour leur prise en charge. Modifié par l'AR du 5 mars 2021. Référence pour les plafonds de consommation au-delà desquels le tarif standard s'applique.",
+    "nl": "Koninklijk besluit van 29 maart 2012 tot vaststelling van de regels voor de bepaling van de kosten van de toepassing van de sociale tarieven door de elektriciteits- en gasbedrijven, en de regels voor de tegemoetkoming in de tenlasteneming ervan. Gewijzigd bij het KB van 5 maart 2021. Referentie voor de verbruiksplafonds waarboven het standaardtarief van toepassing is.",
+    "en": "Royal Decree of 29 March 2012 setting the rules for determining the cost of applying the social tariffs by electricity and gas companies, and the rules for the intervention to cover them. Amended by the RD of 5 March 2021. Reference for the consumption ceilings above which the standard tariff applies."
+  },
+  {
+    "fr": "CREG — Tarif social (page index)",
+    "nl": "CREG — Sociaal tarief (indexpagina)",
+    "en": "CREG — Social tariff (index page)"
+  },
+  {
+    "fr": "Page index de la CREG sur le tarif social : explication du mécanisme automatique, lien vers les notes trimestrielles archivées et les rapports annuels. Utile pour comprendre l'évolution historique des prix maximaux sociaux et préparer la maintenance annuelle.",
+    "nl": "Indexpagina van de CREG over het sociaal tarief: uitleg van het automatische mechanisme, link naar de gearchiveerde kwartaalnota's en de jaarverslagen. Nuttig om de historische evolutie van de sociale maximumprijzen te begrijpen en het jaarlijkse onderhoud voor te bereiden.",
+    "en": "CREG index page on the social tariff: explanation of the automatic mechanism, link to the archived quarterly notes and annual reports. Useful for understanding the historical evolution of the social maximum prices and preparing the annual maintenance."
+  },
+  {
+    "fr": "SPF Finances — Taux d'imposition (barème IPP)",
+    "nl": "FOD Financiën — Belastingtarieven (barema PB)",
+    "en": "FPS Finance — Tax rates (personal income tax scale)"
+  },
+  {
+    "fr": "Page officielle du SPF Finances présentant les 4 tranches du barème fédéral de l'impôt des personnes physiques pour l'exercice d'imposition 2026 (revenus 2025) : 25 % jusqu'à 16 320 €, 40 % jusqu'à 28 800 €, 45 % jusqu'à 49 840 €, 50 % au-delà. Référence pour la mise à jour annuelle des tranches indexées.",
+    "nl": "Officiële pagina van de FOD Financiën met de 4 schijven van het federale barema van de personenbelasting voor het aanslagjaar 2026 (inkomsten 2025): 25 % tot 16.320 €, 40 % tot 28.800 €, 45 % tot 49.840 €, 50 % daarboven. Referentie voor de jaarlijkse update van de geïndexeerde schijven.",
+    "en": "Official FPS Finance page presenting the 4 brackets of the federal personal income tax scale for assessment year 2026 (2025 income): 25% up to €16,320, 40% up to €28,800, 45% up to €49,840, 50% above. Reference for the annual update of the indexed brackets."
+  },
+  {
+    "fr": "SPF Finances — Tax-on-web (déclaration en ligne)",
+    "nl": "FOD Financiën — Tax-on-web (online aangifte)",
+    "en": "FPS Finance — Tax-on-web (online tax return)"
+  },
+  {
+    "fr": "Portail officiel de déclaration en ligne du SPF Finances. C'est l'outil de référence pour le calcul officiel et personnalisé de l'IPP — chaque estimation produite par notre simulateur doit pouvoir être recalibrée ici par le contribuable.",
+    "nl": "Officieel portaal voor de online aangifte van de FOD Financiën. Dit is de referentietool voor de officiële en gepersonaliseerde berekening van de personenbelasting — elke raming van onze simulator moet hier door de belastingplichtige kunnen worden gekalibreerd.",
+    "en": "Official online tax return portal of FPS Finance. It is the reference tool for the official and personalised personal income tax calculation — every estimate produced by our simulator must be able to be recalibrated here by the taxpayer."
+  },
+  {
+    "fr": "SPF Finances — Quotité exemptée et enfants à charge",
+    "nl": "FOD Financiën — Belastingvrije som en kinderen ten laste",
+    "en": "FPS Finance — Tax-exempt allowance and dependent children"
+  },
+  {
+    "fr": "Page officielle détaillant la quotité du revenu exemptée d'impôt (10 910 € EI 2026, art. 131 CIR 92) et les suppléments cumulatifs pour personnes à charge : 1 980 € pour 1 enfant, 5 110 € pour 2, 11 440 € pour 3, 18 510 € pour 4, +7 070 € par enfant au-delà. Référence pour la mise à jour annuelle des suppléments.",
+    "nl": "Officiële pagina met details over de belastingvrije som van het inkomen (10.910 € AJ 2026, art. 131 WIB 92) en de cumulatieve toeslagen voor personen ten laste: 1.980 € voor 1 kind, 5.110 € voor 2, 11.440 € voor 3, 18.510 € voor 4, +7.070 € per kind daarboven. Referentie voor de jaarlijkse update van de toeslagen.",
+    "en": "Official page detailing the tax-exempt portion of income (€10,910 AY 2026, art. 131 ITC 92) and the cumulative supplements for dependants: €1,980 for 1 child, €5,110 for 2, €11,440 for 3, €18,510 for 4, +€7,070 per child beyond. Reference for the annual update of the supplements."
+  },
+  {
+    "fr": "SPF Finances — Personnes à charge autres que des enfants",
+    "nl": "FOD Financiën — Andere personen ten laste dan kinderen",
+    "en": "FPS Finance — Dependants other than children"
+  },
+  {
+    "fr": "Page officielle pour les suppléments à la quotité au titre des ascendants (parents, grands-parents) et autres personnes à charge : 5 950 € si 66 ans+ et en état de dépendance, 1 980 € pour les autres cas. Source pour la calibration du paramètre 'autres personnes à charge'.",
+    "nl": "Officiële pagina voor de toeslagen op de belastingvrije som voor bloedverwanten in opgaande lijn (ouders, grootouders) en andere personen ten laste: 5.950 € indien 66 jaar of ouder en in een toestand van zorgafhankelijkheid, 1.980 € voor de andere gevallen. Bron voor de kalibratie van de parameter 'andere personen ten laste'.",
+    "en": "Official page for the supplements to the allowance for ascendants (parents, grandparents) and other dependants: €5,950 if aged 66+ and in a state of dependency, €1,980 for other cases. Source for calibrating the 'other dependants' parameter."
+  },
+  {
+    "fr": "SPF Finances — Épargne pension (panier de base)",
+    "nl": "FOD Financiën — Pensioensparen (basiskorf)",
+    "en": "FPS Finance — Pension savings (base basket)"
+  },
+  {
+    "fr": "Réduction d'impôt épargne pension — art. 145 CIR 92. EI 2026 : 30 % sur versement annuel jusqu'à 1 050 € (panier de base), 25 % sur la tranche 1 050 → 1 350 € (panier majoré, sur option). Page officielle SPF Finances pour la calibration des plafonds.",
+    "nl": "Belastingvermindering pensioensparen — art. 145 WIB 92. AJ 2026: 30 % op de jaarlijkse storting tot 1.050 € (basiskorf), 25 % op de schijf 1.050 → 1.350 € (verhoogde korf, op keuze). Officiële pagina FOD Financiën voor de kalibratie van de plafonds.",
+    "en": "Pension savings tax reduction — art. 145 ITC 92. AY 2026: 30% on the annual deposit up to €1,050 (base basket), 25% on the bracket €1,050 → €1,350 (increased basket, optional). Official FPS Finance page for calibrating the ceilings."
+  },
+  {
+    "fr": "Moniteur belge — CIR 92 (Code des impôts sur les revenus)",
+    "nl": "Belgisch Staatsblad — WIB 92 (Wetboek van de inkomstenbelastingen)",
+    "en": "Belgian Official Gazette — ITC 92 (Income Tax Code)"
+  },
+  {
+    "fr": "Texte législatif intégral du CIR 92 sur le portail Justel du Moniteur belge. Articles 131 (quotité exemptée), 132 (suppléments à charge), 134 (quotient conjugal), 145 et suivants (réductions d'impôt). Référence juridique ultime pour toute modification du calcul.",
+    "nl": "Volledige wetgevende tekst van het WIB 92 op het Justel-portaal van het Belgisch Staatsblad. Artikelen 131 (belastingvrije som), 132 (toeslagen ten laste), 134 (huwelijksquotiënt), 145 en volgende (belastingverminderingen). Ultieme juridische referentie voor elke wijziging van de berekening.",
+    "en": "Full legislative text of ITC 92 on the Justel portal of the Belgian Official Gazette. Articles 131 (tax-exempt allowance), 132 (dependant supplements), 134 (marital quotient), 145 et seq. (tax reductions). Ultimate legal reference for any change to the calculation."
+  },
+  {
+    "fr": "Moniteur belge — Loi du 30 mars 1994 (cotisation spéciale sécu)",
+    "nl": "Belgisch Staatsblad — Wet van 30 maart 1994 (bijzondere socialezekerheidsbijdrage)",
+    "en": "Belgian Official Gazette — Act of 30 March 1994 (special social security contribution)"
+  },
+  {
+    "fr": "Loi-cadre instaurant la cotisation spéciale pour la sécurité sociale. Seuils 2026 : exonération sous 18 592 €/an, 9 % entre 18 592 et 21 070 €, 1,3 % entre 21 070 et 60 161 €, plafond annuel 731,28 €. Référence juridique pour la calibration des seuils CSS.",
+    "nl": "Kaderwet die de bijzondere bijdrage voor de sociale zekerheid invoert. Drempels 2026: vrijstelling onder 18.592 €/jaar, 9 % tussen 18.592 en 21.070 €, 1,3 % tussen 21.070 en 60.161 €, jaarlijks plafond 731,28 €. Juridische referentie voor de kalibratie van de BBSZ-drempels.",
+    "en": "Framework act introducing the special social security contribution. 2026 thresholds: exemption below €18,592/year, 9% between €18,592 and €21,070, 1.3% between €21,070 and €60,161, annual cap €731.28. Legal reference for calibrating the SSSC thresholds."
+  },
+  {
+    "fr": "ONSS — Instructions DmfA : cotisation spéciale sécu",
+    "nl": "RSZ — DmfA-instructies: bijzondere socialezekerheidsbijdrage",
+    "en": "NSSO — DmfA instructions: special social security contribution"
+  },
+  {
+    "fr": "Instructions administratives ONSS 2026/1 sur la cotisation spéciale de sécurité sociale (code DmfA 856). Distingue imposition individuelle et conjointe, et donne les barèmes trimestriels précis. Source pour ajuster le calcul si la loi est révisée.",
+    "nl": "Administratieve instructies RSZ 2026/1 over de bijzondere socialezekerheidsbijdrage (DmfA-code 856). Maakt onderscheid tussen individuele en gezamenlijke belasting, en geeft de precieze kwartaalbarema's. Bron om de berekening aan te passen als de wet wordt herzien.",
+    "en": "Administrative instructions NSSO 2026/1 on the special social security contribution (DmfA code 856). Distinguishes between individual and joint taxation, and gives the precise quarterly scales. Source for adjusting the calculation if the law is revised."
+  },
+  {
+    "fr": "SPF Finances — Indemnités frais déplacement domicile-travail",
+    "nl": "FOD Financiën — Vergoedingen woon-werkverplaatsingskosten",
+    "en": "FPS Finance — Home-to-work commuting cost allowances"
+  },
+  {
+    "fr": "Page hub du Service Public Fédéral Finances détaillant les régimes fiscaux applicables aux indemnités de déplacement domicile-lieu de travail pour les revenus 2026 / exercice d'imposition 2027 : vélo (0,37 €/km, plafond 3 700 €/an), voiture personnelle (exonération forfaitaire 500 €), transports publics (100 %), codes Tax-on-web 1254/2254 (revenus) et 1255/2255 (exonération). Référence officielle annuelle.",
+    "nl": "Hubpagina van de Federale Overheidsdienst Financiën met details over de fiscale regelingen voor woon-werkverplaatsingsvergoedingen voor de inkomsten 2026 / aanslagjaar 2027: fiets (0,37 €/km, plafond 3.700 €/jaar), eigen wagen (forfaitaire vrijstelling 500 €), openbaar vervoer (100 %), Tax-on-web-codes 1254/2254 (inkomsten) en 1255/2255 (vrijstelling). Jaarlijkse officiële referentie.",
+    "en": "Hub page of the Federal Public Service Finance detailing the tax regimes applicable to home-to-workplace commuting allowances for 2026 income / assessment year 2027: bicycle (€0.37/km, cap €3,700/year), private car (flat-rate exemption €500), public transport (100%), Tax-on-web codes 1254/2254 (income) and 1255/2255 (exemption). Annual official reference."
+  },
+  {
+    "fr": "SPF Finances — Forfait et frais réels (page officielle)",
+    "nl": "FOD Financiën — Forfait en werkelijke kosten (officiële pagina)",
+    "en": "FPS Finance — Flat-rate and actual expenses (official page)"
+  },
+  {
+    "fr": "Page SPF Finances expliquant l'option entre le forfait légal des frais professionnels (CIR 92 art. 51, plafonné à 6 070 €/an en 2026) et les frais réels. Indique les conditions de déduction kilométrique et les justificatifs requis. À consulter chaque janvier pour le plafond indexé.",
+    "nl": "Pagina van de FOD Financiën die de keuze uitlegt tussen het wettelijk forfait voor beroepskosten (WIB 92 art. 51, begrensd op 6.070 €/jaar in 2026) en de werkelijke kosten. Vermeldt de voorwaarden voor de kilometeraftrek en de vereiste bewijsstukken. Elke januari te raadplegen voor het geïndexeerde plafond.",
+    "en": "FPS Finance page explaining the choice between the statutory flat-rate professional expenses (ITC 92 art. 51, capped at €6,070/year in 2026) and actual expenses. Indicates the conditions for the mileage deduction and the required supporting documents. To be consulted every January for the indexed ceiling."
+  },
+  {
+    "fr": "SPF Mobilité — Avantages fiscaux et primes vélo",
+    "nl": "FOD Mobiliteit — Fiscale voordelen en fietspremies",
+    "en": "FPS Mobility — Tax benefits and bicycle allowances"
+  },
+  {
+    "fr": "Page hub du SPF Mobilité (mobilit.belgium.be) sur les avantages fiscaux liés au vélo en Belgique : indemnité kilométrique vélo, plafond annuel d'exonération (3 700 €/an en revenus 2026), condition de plafond 20 km par trajet simple. Politique publique de mobilité durable. Indexation annuelle.",
+    "nl": "Hubpagina van de FOD Mobiliteit (mobilit.belgium.be) over de fiscale voordelen verbonden aan de fiets in België: fietskilometervergoeding, jaarlijks vrijstellingsplafond (3.700 €/jaar voor de inkomsten 2026), plafondvoorwaarde van 20 km per enkele rit. Overheidsbeleid voor duurzame mobiliteit. Jaarlijkse indexering.",
+    "en": "Hub page of FPS Mobility (mobilit.belgium.be) on the tax benefits linked to cycling in Belgium: bicycle mileage allowance, annual exemption cap (€3,700/year for 2026 income), cap condition of 20 km per one-way trip. Public policy for sustainable mobility. Annual indexation."
+  },
+  {
+    "fr": "BOSA — Indemnité kilométrique fonctionnaires (page officielle)",
+    "nl": "BOSA — Kilometervergoeding ambtenaren (officiële pagina)",
+    "en": "BOSA — Civil servants' mileage allowance (official page)"
+  },
+  {
+    "fr": "Page hub du Service Public Fédéral Stratégie et Appui (BOSA) listant les circulaires trimestrielles fixant le tarif de l'indemnité kilométrique applicable aux fonctionnaires fédéraux et utilisable comme tarif de référence pour la déduction des frais réels domicile-travail voiture. Q2 2026 (01/04 – 30/06) = 0,4327 €/km (circulaire n° 764). À surveiller chaque trimestre.",
+    "nl": "Hubpagina van de Federale Overheidsdienst Beleid en Ondersteuning (BOSA) met de kwartaalcirculaires die het tarief vastleggen van de kilometervergoeding voor federale ambtenaren, bruikbaar als referentietarief voor de aftrek van de werkelijke woon-werkkosten met de wagen. Q2 2026 (01/04 – 30/06) = 0,4327 €/km (circulaire nr. 764). Elk kwartaal in het oog te houden.",
+    "en": "Hub page of the Federal Public Service Policy and Support (BOSA) listing the quarterly circulars setting the rate of the mileage allowance applicable to federal civil servants and usable as a reference rate for the deduction of actual home-to-work car expenses. Q2 2026 (01/04 – 30/06) = €0.4327/km (circular no. 764). To be monitored each quarter."
+  },
+  {
+    "fr": "Texte de référence : Code des impôts sur les revenus 1992. Articles centraux pour ce calcul : art. 49 (frais professionnels déductibles), art. 51 (forfait légal des frais professionnels — plafond 6 070 € revenus 2026), art. 66 (déduction forfaitaire kilométrique = 0,15 €/km, non cumulable avec l'indemnité employeur). Consultable via le portail de législation justel.fgov.be.",
+    "nl": "Referentietekst: Wetboek van de inkomstenbelastingen 1992. Centrale artikelen voor deze berekening: art. 49 (aftrekbare beroepskosten), art. 51 (wettelijk forfait voor beroepskosten — plafond 6.070 € inkomsten 2026), art. 66 (forfaitaire kilometeraftrek = 0,15 €/km, niet cumuleerbaar met de werkgeversvergoeding). Raadpleegbaar via het wetgevingsportaal justel.fgov.be.",
+    "en": "Reference text: Income Tax Code 1992. Key articles for this calculation: art. 49 (deductible professional expenses), art. 51 (statutory flat-rate professional expenses — cap €6,070 for 2026 income), art. 66 (flat-rate mileage deduction = €0.15/km, not combinable with the employer's allowance). Available via the legislation portal justel.fgov.be."
+  },
+  {
+    "fr": "SPF Finances — Tax-on-web (MyMinfin, déclaration en ligne)",
+    "nl": "FOD Financiën — Tax-on-web (MyMinfin, online aangifte)",
+    "en": "FPS Finance — Tax-on-web (MyMinfin, online tax return)"
+  },
+  {
+    "fr": "Portail officiel de déclaration fiscale belge. Les indemnités domicile-travail reçues se déclarent en cases 1254/2254 (montants reçus) et 1255/2255 (exonération demandée). Les frais réels se détaillent dans la partie 2 de la déclaration. Lien public d'aide vers la déclaration en ligne.",
+    "nl": "Officieel portaal voor de Belgische belastingaangifte. De ontvangen woon-werkvergoedingen worden aangegeven in de codes 1254/2254 (ontvangen bedragen) en 1255/2255 (gevraagde vrijstelling). De werkelijke kosten worden gedetailleerd in deel 2 van de aangifte. Openbare hulplink naar de online aangifte.",
+    "en": "Official Belgian tax return portal. The home-to-work allowances received are declared in boxes 1254/2254 (amounts received) and 1255/2255 (exemption claimed). Actual expenses are detailed in part 2 of the return. Public help link to the online tax return."
+  },
+  {
+    "fr": "SPF Finances — Précompte professionnel 2026 (calcul)",
+    "nl": "FOD Financiën — Bedrijfsvoorheffing 2026 (berekening)",
+    "en": "FPS Finance — Withholding tax 2026 (calculation)"
+  },
+  {
+    "fr": "Page officielle SPF Finances détaillant le calcul du précompte professionnel 2026, y compris le barème spécial applicable aux indemnités de dédit (arriérés et indemnités de fin de contrat). Page de référence pour la mise à jour annuelle du barème par tranches (17,16 / 26,75 / 32,30 / 41,80 / 53,50 %).",
+    "nl": "Officiële pagina van de FOD Financiën met details over de berekening van de bedrijfsvoorheffing 2026, met inbegrip van het bijzondere barema dat van toepassing is op de opzeggingsvergoedingen (achterstallen en vergoedingen bij einde van de overeenkomst). Referentiepagina voor de jaarlijkse update van het barema per schijf (17,16 / 26,75 / 32,30 / 41,80 / 53,50 %).",
+    "en": "Official FPS Finance page detailing the calculation of the 2026 withholding tax, including the special scale applicable to severance allowances (back pay and end-of-contract indemnities). Reference page for the annual update of the bracketed scale (17.16 / 26.75 / 32.30 / 41.80 / 53.50%)."
+  },
+  {
+    "fr": "ONSS — Cotisation spéciale sur indemnités de rupture (DmfA 2026/1)",
+    "nl": "RSZ — Bijzondere bijdrage op verbrekingsvergoedingen (DmfA 2026/1)",
+    "en": "NSSO — Special contribution on severance pay (DmfA 2026/1)"
+  },
+  {
+    "fr": "Instructions administratives ONSS 2026/1 pour la cotisation spéciale de compensation employeur sur les indemnités de rupture, destinée au Fonds de fermeture des entreprises. Précise les 3 tranches actuelles (≥ 50 166 € → 1 %, ≥ 61 437 € → 2 %, ≥ 72 707 € → 3 %), inchangées depuis le 01/01/2023.",
+    "nl": "Administratieve instructies RSZ 2026/1 voor de bijzondere compenserende werkgeversbijdrage op de verbrekingsvergoedingen, bestemd voor het Fonds voor sluiting van ondernemingen. Verduidelijkt de 3 huidige schijven (≥ 50.166 € → 1 %, ≥ 61.437 € → 2 %, ≥ 72.707 € → 3 %), ongewijzigd sinds 01/01/2023.",
+    "en": "Administrative instructions NSSO 2026/1 for the special employer compensation contribution on severance pay, intended for the Business Closure Fund. Specifies the 3 current brackets (≥ €50,166 → 1%, ≥ €61,437 → 2%, ≥ €72,707 → 3%), unchanged since 01/01/2023."
+  },
+  {
+    "fr": "ONSS — Notion de rémunération (fin de contrat)",
+    "nl": "RSZ — Begrip loon (einde van de overeenkomst)",
+    "en": "NSSO — Concept of remuneration (end of contract)"
+  },
+  {
+    "fr": "Instructions ONSS 2026/1 sur la notion de rémunération en fin de contrat : précise quelles indemnités sont soumises aux cotisations (indemnité de rupture standard) et lesquelles sont exclues (indemnité de protection femme enceinte, délégué syndical, conseiller en prévention). Référence pour la base de calcul de la cotisation spéciale.",
+    "nl": "RSZ-instructies 2026/1 over het begrip loon bij einde van de overeenkomst: verduidelijkt welke vergoedingen onderworpen zijn aan de bijdragen (standaard verbrekingsvergoeding) en welke zijn uitgesloten (beschermingsvergoeding zwangere vrouw, vakbondsafgevaardigde, preventieadviseur). Referentie voor de berekeningsbasis van de bijzondere bijdrage.",
+    "en": "NSSO instructions 2026/1 on the concept of remuneration at the end of the contract: specifies which indemnities are subject to contributions (standard severance pay) and which are excluded (protection indemnity for pregnant women, union representatives, prevention advisers). Reference for the calculation base of the special contribution."
+  },
+  {
+    "fr": "Moniteur belge — Loi du 3 juillet 1978 sur les contrats de travail",
+    "nl": "Belgisch Staatsblad — Wet van 3 juli 1978 betreffende de arbeidsovereenkomsten",
+    "en": "Belgian Official Gazette — Act of 3 July 1978 on employment contracts"
+  },
+  {
+    "fr": "Texte de référence pour le calcul de l'indemnité de rupture : article 39 (rupture sans préavis = indemnité égale à la rémunération courante de la période de préavis non prestée) et articles suivants. Régime unifié (CCT 109) depuis le 1ᵉʳ janvier 2014.",
+    "nl": "Referentietekst voor de berekening van de verbrekingsvergoeding: artikel 39 (verbreking zonder opzegging = vergoeding gelijk aan het lopende loon van de niet-gepresteerde opzeggingstermijn) en volgende artikelen. Eengemaakt statuut (CAO 109) sinds 1 januari 2014.",
+    "en": "Reference text for calculating the severance pay: article 39 (termination without notice = indemnity equal to the current remuneration for the notice period not worked) and following articles. Unified status (CLA 109) since 1 January 2014."
+  },
+  {
+    "fr": "Moniteur belge — Loi du 26 décembre 2013 (cotisation spéciale)",
+    "nl": "Belgisch Staatsblad — Wet van 26 december 2013 (bijzondere bijdrage)",
+    "en": "Belgian Official Gazette — Act of 26 December 2013 (special contribution)"
+  },
+  {
+    "fr": "Loi instaurant la cotisation spéciale de compensation employeur sur les indemnités de rupture, à compter des prestations effectuées dès le 1ᵉʳ janvier 2014. Cadre juridique de la cotisation 1 / 2 / 3 % gérée par l'ONSS via le Fonds de fermeture.",
+    "nl": "Wet die de bijzondere compenserende werkgeversbijdrage op de verbrekingsvergoedingen invoert, voor de prestaties verricht vanaf 1 januari 2014. Juridisch kader van de bijdrage van 1 / 2 / 3 % beheerd door de RSZ via het Sluitingsfonds.",
+    "en": "Act introducing the special employer compensation contribution on severance pay, for services performed from 1 January 2014. Legal framework of the 1 / 2 / 3% contribution managed by the NSSO via the Closure Fund."
+  },
+  {
+    "fr": "SPF Emploi — Fin du contrat de travail",
+    "nl": "FOD Werkgelegenheid — Einde van de arbeidsovereenkomst",
+    "en": "FPS Employment — End of the employment contract"
+  },
+  {
+    "fr": "Portail officiel SPF Emploi sur la fin du contrat de travail : préavis, indemnité compensatoire, protection contre le licenciement (femme enceinte, délégué syndical, conseiller en prévention). Page de référence pour les statuts protégés et leurs montants forfaitaires.",
+    "nl": "Officieel portaal van de FOD Werkgelegenheid over het einde van de arbeidsovereenkomst: opzeggingstermijn, compenserende vergoeding, bescherming tegen ontslag (zwangere vrouw, vakbondsafgevaardigde, preventieadviseur). Referentiepagina voor de beschermde statuten en hun forfaitaire bedragen.",
+    "en": "Official FPS Employment portal on the end of the employment contract: notice period, compensatory indemnity, protection against dismissal (pregnant women, union representatives, prevention advisers). Reference page for protected statuses and their flat-rate amounts."
+  }
+]

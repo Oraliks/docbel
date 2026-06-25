@@ -1,0 +1,252 @@
+[
+  {
+    "id": "cmq85uca9000077el7haollv2",
+    "field": "name",
+    "value": "Chômage complet"
+  },
+  {
+    "id": "cmq85uca9000077el7haollv2",
+    "field": "description",
+    "value": "Vous avez travaillé pendant une certaine période et votre contrat de travail se termine ? Vous venez de quitter l’école et n’avez pas encore trouvé de travail ? Vous trouverez dans cette rubrique toutes les infos concernant le chômage complet, les conditions pour recevoir une allocation, les procédures de demande…"
+  },
+  {
+    "id": "cmp3cet7s0000453ijmrdlp94",
+    "field": "name",
+    "value": "Demande Activa (Brussels)"
+  },
+  {
+    "id": "cmpx8evw3000013pl48vhe115",
+    "field": "name",
+    "value": "Demande de chômage temporaire"
+  },
+  {
+    "id": "cmpx8evw3000013pl48vhe115",
+    "field": "description",
+    "value": "Le chômage temporaire est une forme de chômage où, contrairement au chômage complet, le travailleur reste lié par un contrat de travail tandis que l'exécution de son contrat de travail est temporairement suspendue."
+  },
+  {
+    "id": "cmqo9vf8w0000pvmbcrrjhyos",
+    "field": "name",
+    "value": "Allocations d’insertion (après études)"
+  },
+  {
+    "id": "cmqo9vf8w0000pvmbcrrjhyos",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vf8w0000pvmbcrrjhyos",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vfbe0001pvmb8r7b8z4j",
+    "field": "name",
+    "value": "Réforme 2026 — fin de droit / mesures transitoires"
+  },
+  {
+    "id": "cmqo9vfbe0001pvmb8r7b8z4j",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vfbe0001pvmb8r7b8z4j",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vfd40002pvmby5n81jxv",
+    "field": "name",
+    "value": "Travail à temps partiel avec maintien des droits"
+  },
+  {
+    "id": "cmqo9vfd40002pvmby5n81jxv",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vfd40002pvmby5n81jxv",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vfez0003pvmb9vehxgue",
+    "field": "name",
+    "value": "Allocation de garantie de revenus (AGR)"
+  },
+  {
+    "id": "cmqo9vfez0003pvmb9vehxgue",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vfez0003pvmb9vehxgue",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vfh10004pvmbqveno3bj",
+    "field": "name",
+    "value": "Chômage après travail à l’étranger / frontalier"
+  },
+  {
+    "id": "cmqo9vfh10004pvmbqveno3bj",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vfh10004pvmbqveno3bj",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vfin0005pvmb5jb7iqke",
+    "field": "name",
+    "value": "Document U1 — périodes de travail belges"
+  },
+  {
+    "id": "cmqo9vfin0005pvmb5jb7iqke",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vfin0005pvmb5jb7iqke",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vfk70006pvmbcutivcsh",
+    "field": "name",
+    "value": "Régime de chômage avec complément d’entreprise (RCC)"
+  },
+  {
+    "id": "cmqo9vfk70006pvmbcutivcsh",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vfk70006pvmbcutivcsh",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vflq0007pvmbn6z5bn4h",
+    "field": "name",
+    "value": "Interruption de carrière / crédit-temps"
+  },
+  {
+    "id": "cmqo9vflq0007pvmbn6z5bn4h",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vflq0007pvmbn6z5bn4h",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vfn90008pvmby8rd4k7h",
+    "field": "name",
+    "value": "Congés thématiques / soins d’accueil"
+  },
+  {
+    "id": "cmqo9vfn90008pvmby8rd4k7h",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vfn90008pvmby8rd4k7h",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vfor0009pvmb78j2q88a",
+    "field": "name",
+    "value": "Vacances jeunes"
+  },
+  {
+    "id": "cmqo9vfor0009pvmb78j2q88a",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vfor0009pvmb78j2q88a",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vfq9000apvmb5edb3rm8",
+    "field": "name",
+    "value": "Vacances seniors"
+  },
+  {
+    "id": "cmqo9vfq9000apvmb5edb3rm8",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vfq9000apvmb5edb3rm8",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vfrs000bpvmb21or6id6",
+    "field": "name",
+    "value": "Allocations du travail des arts"
+  },
+  {
+    "id": "cmqo9vfrs000bpvmb21or6id6",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vfrs000bpvmb21or6id6",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vft7000cpvmb3o1cyh9e",
+    "field": "name",
+    "value": "Fonds de fermeture des entreprises (FFE)"
+  },
+  {
+    "id": "cmqo9vft7000cpvmb3o1cyh9e",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vft7000cpvmb3o1cyh9e",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vful000dpvmb1b1wl4t1",
+    "field": "name",
+    "value": "Activité pendant le chômage"
+  },
+  {
+    "id": "cmqo9vful000dpvmb1b1wl4t1",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vful000dpvmb1b1wl4t1",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
+    "id": "cmqo9vfw7000epvmbq5w5o0fc",
+    "field": "name",
+    "value": "Dispense pour formation / études / stage"
+  },
+  {
+    "id": "cmqo9vfw7000epvmbq5w5o0fc",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vfw7000epvmbq5w5o0fc",
+    "field": "organism",
+    "value": "ONEM"
+  }
+]

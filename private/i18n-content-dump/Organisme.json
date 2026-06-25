@@ -1,0 +1,282 @@
+[
+  {
+    "id": "cmoysben80006pwn25w7coj8y",
+    "field": "name",
+    "value": "Office National de l'Emploi"
+  },
+  {
+    "id": "cmoysben80006pwn25w7coj8y",
+    "field": "description",
+    "value": "Sécurité sociale fédérale — chômage, interruptions de carrière, crédit-temps."
+  },
+  {
+    "id": "cmoytbm3700afyous7iykefdw",
+    "field": "name",
+    "value": "Service Fédéral des Pensions"
+  },
+  {
+    "id": "cmoytbm3700afyous7iykefdw",
+    "field": "description",
+    "value": "Pensions des salariés et fonctionnaires."
+  },
+  {
+    "id": "cmoytbm7j00aiyoushf5zoy1i",
+    "field": "name",
+    "value": "Famifed (Allocations Familiales Fédérales)"
+  },
+  {
+    "id": "cmoytbm7j00aiyoushf5zoy1i",
+    "field": "description",
+    "value": "Allocations familiales (compétence transférée aux régions depuis 2019)."
+  },
+  {
+    "id": "cmoytbm8t00ajyousa526khno",
+    "field": "name",
+    "value": "SPF Finances"
+  },
+  {
+    "id": "cmoytbm8t00ajyousa526khno",
+    "field": "description",
+    "value": "Impôts, TVA, douanes."
+  },
+  {
+    "id": "cmoytbma300akyous2s14fcf4",
+    "field": "name",
+    "value": "SPF Emploi, Travail et Concertation Sociale"
+  },
+  {
+    "id": "cmoytbma300akyous2s14fcf4",
+    "field": "description",
+    "value": "Législation du travail, contrats, conventions collectives."
+  },
+  {
+    "id": "cmoytbmgn00apyousbcot2oli",
+    "field": "name",
+    "value": "Arbeitsamt der Deutschsprachigen Gemeinschaft"
+  },
+  {
+    "id": "cmoytbmgn00apyousbcot2oli",
+    "field": "description",
+    "value": "Service public de l'emploi de la Communauté germanophone."
+  },
+  {
+    "id": "cmoytbmi000aqyousyk3k17dl",
+    "field": "name",
+    "value": "Iriscare"
+  },
+  {
+    "id": "cmoytbmi000aqyousyk3k17dl",
+    "field": "description",
+    "value": "Bicommunautaire bruxelloise — santé, aide aux personnes, allocations familiales."
+  },
+  {
+    "id": "cmoytbmj800aryousviwntg4n",
+    "field": "name",
+    "value": "Agence pour une Vie de Qualité"
+  },
+  {
+    "id": "cmoytbmj800aryousviwntg4n",
+    "field": "description",
+    "value": "Wallonie — bien-être, santé, handicap, familles."
+  },
+  {
+    "id": "cmoytbmki00asyoushaqywkpz",
+    "field": "name",
+    "value": "Centre Public d'Action Sociale"
+  },
+  {
+    "id": "cmoytbmki00asyoushaqywkpz",
+    "field": "description",
+    "value": "CPAS communaux — aide sociale, RIS, médiation de dettes."
+  },
+  {
+    "id": "cmoytbmmf00atyous402w8gqz",
+    "field": "name",
+    "value": "Administration Communale"
+  },
+  {
+    "id": "cmoytbmmf00atyous402w8gqz",
+    "field": "description",
+    "value": "Communes — état civil, urbanisme, population."
+  },
+  {
+    "id": "cmoytbmqc00awyousr7p69woz",
+    "field": "name",
+    "value": "FGTB (Fédération Générale du Travail de Belgique)"
+  },
+  {
+    "id": "cmoytbmqc00awyousr7p69woz",
+    "field": "description",
+    "value": "Syndicat — organisme de paiement chômage."
+  },
+  {
+    "id": "cmoytbmrm00axyous8eyig4up",
+    "field": "name",
+    "value": "CGSLB (Centrale Générale des Syndicats Libéraux de Belgique)"
+  },
+  {
+    "id": "cmoytbmrm00axyous8eyig4up",
+    "field": "description",
+    "value": "Syndicat — organisme de paiement chômage."
+  },
+  {
+    "id": "cmoytbmsw00ayyouso0welw78",
+    "field": "name",
+    "value": "Mutualité"
+  },
+  {
+    "id": "cmoytbmsw00ayyouso0welw78",
+    "field": "description",
+    "value": "Mutualités (groupe générique)."
+  },
+  {
+    "id": "cmp18qjbg00af6dzc3sq58x3h",
+    "field": "name",
+    "value": "Solidaris (Mutualité socialiste)"
+  },
+  {
+    "id": "cmp18qjbg00af6dzc3sq58x3h",
+    "field": "description",
+    "value": "Mutualité socialiste."
+  },
+  {
+    "id": "cmp18qjeo00ah6dzcaeyi4xyx",
+    "field": "name",
+    "value": "MLOZ — Mutualités Libres"
+  },
+  {
+    "id": "cmp18qjeo00ah6dzcaeyi4xyx",
+    "field": "description",
+    "value": "Union nationale des mutualités libres."
+  },
+  {
+    "id": "cmp18qjfx00ai6dzcp0a8k70e",
+    "field": "name",
+    "value": "Mutualité Libérale"
+  },
+  {
+    "id": "cmp18qjfx00ai6dzcp0a8k70e",
+    "field": "description",
+    "value": "Mutualité libérale."
+  },
+  {
+    "id": "cmp18qjh600aj6dzcl23j0hb0",
+    "field": "name",
+    "value": "Mutualités Neutres"
+  },
+  {
+    "id": "cmp18qjh600aj6dzcl23j0hb0",
+    "field": "description",
+    "value": "Union des mutualités neutres."
+  },
+  {
+    "id": "cmoytbmua00azyous6z8ts45d",
+    "field": "name",
+    "value": "Secrétariat Social"
+  },
+  {
+    "id": "cmoytbmua00azyous6z8ts45d",
+    "field": "description",
+    "value": "Secrétariats sociaux agréés (Securex, Acerta, Group S, SD Worx, Partena, etc.)."
+  },
+  {
+    "id": "cmoytbm5000agyous99nmnotv",
+    "field": "name",
+    "value": "Institut National d'Assurances Sociales pour Travailleurs Indépendants"
+  },
+  {
+    "id": "cmoytbm5000agyous99nmnotv",
+    "field": "description",
+    "value": "Sécurité sociale des indépendants."
+  },
+  {
+    "id": "cmoytbmbe00alyous4njgjwzh",
+    "field": "name",
+    "value": "INAMI / RIZIV"
+  },
+  {
+    "id": "cmoytbmbe00alyous4njgjwzh",
+    "field": "description",
+    "value": "Assurance maladie-invalidité."
+  },
+  {
+    "id": "cmoytbmcp00amyousan7sdv64",
+    "field": "name",
+    "value": "Forem"
+  },
+  {
+    "id": "cmoytbmcp00amyousan7sdv64",
+    "field": "description",
+    "value": "Service public de l'emploi en Wallonie."
+  },
+  {
+    "id": "cmoytbme200anyousya47bw4n",
+    "field": "name",
+    "value": "Actiris"
+  },
+  {
+    "id": "cmoytbme200anyousya47bw4n",
+    "field": "description",
+    "value": "Service public de l'emploi à Bruxelles."
+  },
+  {
+    "id": "cmp18qjdd00ag6dzc8asafah7",
+    "field": "name",
+    "value": "Mutualité Chrétienne (MC)"
+  },
+  {
+    "id": "cmp18qjdd00ag6dzc8asafah7",
+    "field": "description",
+    "value": "Mutualité chrétienne / Christelijke Mutualiteit."
+  },
+  {
+    "id": "cmoytbmvj00b0yousg7gnmys1",
+    "field": "name",
+    "value": "Fiduciaire / Comptable"
+  },
+  {
+    "id": "cmoytbmvj00b0yousg7gnmys1",
+    "field": "description",
+    "value": "Cabinets comptables et fiscaux."
+  },
+  {
+    "id": "cmoytbm6800ahyous4168wnui",
+    "field": "name",
+    "value": "Banque Carrefour de la Sécurité Sociale"
+  },
+  {
+    "id": "cmoytbm6800ahyous4168wnui",
+    "field": "description",
+    "value": "Échanges électroniques entre institutions de sécurité sociale."
+  },
+  {
+    "id": "cmoytbmfb00aoyouse7fjjsf0",
+    "field": "name",
+    "value": "VDAB"
+  },
+  {
+    "id": "cmoytbmfb00aoyouse7fjjsf0",
+    "field": "description",
+    "value": "Service public de l'emploi en Flandre."
+  },
+  {
+    "id": "cmoytbmns00auyousakot7csi",
+    "field": "name",
+    "value": "Caisse Auxiliaire de Paiement des Allocations de Chômage"
+  },
+  {
+    "id": "cmoytbmns00auyousakot7csi",
+    "field": "description",
+    "value": "Organisme public de paiement des allocations de chômage."
+  },
+  {
+    "id": "cmoytbmp000avyousq8j6z5f9",
+    "field": "name",
+    "value": "CSC (Confédération des Syndicats Chrétiens)"
+  },
+  {
+    "id": "cmoytbmp000avyousq8j6z5f9",
+    "field": "description",
+    "value": "Syndicat — organisme de paiement chômage."
+  }
+]

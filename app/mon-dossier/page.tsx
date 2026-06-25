@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
+import { localizeRecords } from "@/lib/i18n/content";
 import {
   parseBundleWarnings,
   parseOfficialSources,
@@ -32,6 +33,7 @@ export default async function MonDossierPage() {
       orderBy: [{ showOnOnboarding: "desc" }, { order: "asc" }, { name: "asc" }],
       take: 100,
       select: {
+        id: true,
         slug: true,
         name: true,
         description: true,
@@ -56,7 +58,15 @@ export default async function MonDossierPage() {
     })
     .catch(() => []);
 
-  const serializable: MonDossierBundle[] = bundles.map((bundle) => ({
+  const locale = await getLocale();
+  const localizedBundles = await localizeRecords(
+    "DocumentBundle",
+    bundles,
+    ["name", "description"],
+    locale,
+  );
+
+  const serializable: MonDossierBundle[] = localizedBundles.map((bundle) => ({
     slug: bundle.slug,
     name: bundle.name,
     description: bundle.description,
@@ -74,7 +84,7 @@ export default async function MonDossierPage() {
 
   // Catalogue passé au wizard pour résoudre documents/points/proches.
   const catalog: WizardCatalog = {};
-  for (const bundle of bundles) {
+  for (const bundle of localizedBundles) {
     catalog[bundle.slug] = {
       slug: bundle.slug,
       name: bundle.name,

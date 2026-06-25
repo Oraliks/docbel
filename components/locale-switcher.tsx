@@ -3,18 +3,31 @@
 import { useTransition } from "react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
-import { GlobeIcon } from "lucide-react";
+import { CheckIcon, LoaderCircleIcon } from "lucide-react";
 import { setLocale } from "@/i18n/actions";
-import { locales, localeNames, type Locale } from "@/i18n/config";
+import {
+  locales,
+  localeNames,
+  type Locale,
+} from "@/i18n/config";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-/**
- * Sélecteur de langue (mode cookie, sans routing URL).
- * <select> natif volontairement : robuste, zéro dépendance à une lib de
- * dropdown, fonctionne dans la sidebar admin comme dans le header glass public.
- *
- * `localeList` limite les langues proposées (ex. `publicLocales` = FR/NL/EN
- * traduites côté front) ; par défaut toutes les locales (usage admin).
- */
+const localeFlags: Record<Locale, string> = {
+  fr: "\u{1F1EB}\u{1F1F7}",
+  nl: "\u{1F1F3}\u{1F1F1}",
+  de: "\u{1F1E9}\u{1F1EA}",
+  en: "\u{1F1EC}\u{1F1E7}",
+  ar: "\u{1F1F8}\u{1F1E6}",
+  tr: "\u{1F1F9}\u{1F1F7}",
+  ro: "\u{1F1F7}\u{1F1F4}",
+  bg: "\u{1F1E7}\u{1F1EC}",
+};
+
 export function LocaleSwitcher({
   localeList = locales,
   className = "",
@@ -22,33 +35,64 @@ export function LocaleSwitcher({
   localeList?: readonly Locale[];
   className?: string;
 } = {}) {
-  const locale = useLocale();
+  const current = useLocale() as Locale;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
+  function switchTo(next: Locale) {
+    if (next === current) return;
+    startTransition(async () => {
+      await setLocale(next);
+      router.refresh();
+    });
+  }
+
   return (
-    <label className={`flex items-center gap-1.5 text-sm ${className}`}>
-      <GlobeIcon className="size-4 shrink-0" aria-hidden />
-      <span className="sr-only">Langue</span>
-      <select
-        aria-label="Langue"
-        value={locale}
-        disabled={pending}
-        onChange={(e) => {
-          const next = e.target.value;
-          startTransition(async () => {
-            await setLocale(next);
-            router.refresh();
-          });
-        }}
-        className="cursor-pointer bg-transparent outline-none disabled:opacity-50"
-      >
-        {localeList.map((l) => (
-          <option key={l} value={l} className="text-foreground">
-            {localeNames[l]}
-          </option>
-        ))}
-      </select>
-    </label>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${className}`}
+          disabled={pending}
+        >
+          <span className="text-base leading-none" aria-hidden>
+            {localeFlags[current]}
+          </span>
+          <span>{localeNames[current]}</span>
+          {pending && (
+            <LoaderCircleIcon className="size-3.5 animate-spin opacity-60" />
+          )}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" sideOffset={6} className="min-w-[160px]">
+          {localeList.map((l) => (
+            <DropdownMenuItem
+              key={l}
+              className="gap-2.5 px-2.5 py-2"
+              onSelect={() => switchTo(l)}
+            >
+              <span className="text-base leading-none">{localeFlags[l]}</span>
+              <span className="flex-1">{localeNames[l]}</span>
+              {l === current && (
+                <CheckIcon className="size-4 text-primary" />
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {pending && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/60 backdrop-blur-sm transition-opacity">
+          <div className="flex items-center gap-3 rounded-xl bg-card px-5 py-3 shadow-lg ring-1 ring-border">
+            <LoaderCircleIcon className="size-5 animate-spin text-primary" />
+            <span className="text-sm font-medium">
+              {current === "fr"
+                ? "Changement de langue…"
+                : current === "nl"
+                  ? "Taal wijzigen…"
+                  : "Switching language…"}
+            </span>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

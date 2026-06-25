@@ -1,5 +1,6 @@
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
+import { localizeRecords } from "@/lib/i18n/content";
 import { LandingBottom, type PopularBundle } from "@/components/docbel/landing/bottom";
 import { LandingHero } from "@/components/docbel/landing/hero";
 import { LandingToolsRow } from "@/components/docbel/landing/tools-row";
@@ -54,8 +55,10 @@ function formatShortDate(
  * Le persona switcher / la recherche restent des îlots client (header).
  */
 export default async function HomePage() {
-  const t = await getTranslations("public.home");
-  // Libellés de mois résolus une fois (clés dynamiques → cast requis).
+  const [t, locale] = await Promise.all([
+    getTranslations("public.home"),
+    getLocale(),
+  ]);
   const monthLabels = MONTH_KEYS.map((key) =>
     t(key as Parameters<typeof t>[0]),
   );
@@ -94,6 +97,7 @@ export default async function HomePage() {
         orderBy: [{ showOnOnboarding: "desc" }, { order: "asc" }, { name: "asc" }],
         take: 4,
         select: {
+          id: true,
           slug: true,
           name: true,
           color: true,
@@ -104,6 +108,11 @@ export default async function HomePage() {
       .catch(() => []),
     // Dossier en cours du visiteur (fail-soft intégré : erreur → null).
     loadActiveBundleRun(),
+  ]);
+
+  const [localizedArticles, localizedBundles] = await Promise.all([
+    localizeRecords("News", articles, ["title", "excerpt"], locale),
+    localizeRecords("DocumentBundle", bundleRows, ["name"], locale),
   ]);
 
   // Persona figé pour "/" (citoyen) — le header gère le changement d'espace.
@@ -118,7 +127,7 @@ export default async function HomePage() {
   const importantTools = citizenTools.filter((t) => t.popular);
   const toolsForRow = importantTools.length ? importantTools : citizenTools;
 
-  const news: NewsItem[] = articles.map((article) => ({
+  const news: NewsItem[] = localizedArticles.map((article) => ({
     id: article.id,
     slug: article.slug,
     tag: article.category,
@@ -141,7 +150,7 @@ export default async function HomePage() {
   const featuredArticles = news.slice(0, 5);
 
   // Sérialisation minimale pour le panneau « Dossiers populaires ».
-  const popularBundles: PopularBundle[] = bundleRows.map((bundle) => ({
+  const popularBundles: PopularBundle[] = localizedBundles.map((bundle) => ({
     slug: bundle.slug,
     name: bundle.name,
     color: bundle.color,

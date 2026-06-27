@@ -19,6 +19,8 @@ const localeCountryCodes: Record<Locale, string> = {
   nl: "nl",
   de: "de",
   en: "gb",
+  it: "it",
+  es: "es",
   ar: "sa",
   tr: "tr",
   ro: "ro",

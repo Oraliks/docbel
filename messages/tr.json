@@ -1,1 +1,386 @@
-{}
+{
+  "public": {
+    "chrome": {
+      "navHome": "Ana Sayfa",
+      "navNews": "Haberler",
+      "navMyDossier": "Dosyam",
+      "navTools": "Araçlar",
+      "navEmployers": "İşverenler",
+      "discover": "Keşfet",
+      "menu": "Menü",
+      "backToHome": "Ana sayfaya dön",
+      "search": "Ara",
+      "searchPlaceholder": "Bir araç, kılavuz, yasa ara…",
+      "toggleTheme": "Temayı değiştir",
+      "myAccount": "Hesabım",
+      "administration": "Yönetim",
+      "signOut": "Çıkış yap",
+      "signIn": "Giriş yap",
+      "guest": "Misafir",
+      "copyright": "© {year} Docbel — Yasal bilgiler ve araçlar platformu",
+      "glossary": "Sözlük",
+      "contact": "İletişim",
+      "legalNotice": "Yasal uyarılar",
+      "privacy": "Gizlilik",
+      "accessibility": "Erişilebilirlik",
+      "langSwitch": "FR · NL",
+      "paletteTitle": "Genel arama",
+      "paletteDescription": "Araçlar, alanlar ve kısayollar",
+      "palettePlaceholder": "Bir araç, kılavuz, alan ara…",
+      "noResults": "Sonuç bulunamadı.",
+      "groupShortcuts": "Kısayollar",
+      "groupSpaces": "Alanlar",
+      "groupTools": "Araçlar",
+      "quickAllTools": "Tüm araçlar",
+      "quickNews": "Haberler",
+      "notifTypeFeature": "Yenilik",
+      "notifTypeFix": "Düzeltme",
+      "notifTypeImprovement": "İyileştirme",
+      "notifTypeBreaking": "Breaking",
+      "notifRelativeNow": "az önce",
+      "notifRelativeMin": "{value} dk önce",
+      "notifRelativeHour": "{value} sa önce",
+      "notifRelativeDay": "{value} gün önce",
+      "notifAriaLabel": "Bildirimler",
+      "notifAriaLabelUnread": "Bildirimler ({count, plural, one {# yeni} other {# yeni}})",
+      "notifWhatsNew": "Yenilikler",
+      "notifUnreadCount": "{count, plural, one {# yeni} other {# yeni}}",
+      "notifLoading": "Yükleniyor…",
+      "notifEmpty": "Henüz güncelleme yok.",
+      "notifSeeAllHistory": "Tüm geçmişi görüntüle"
+    },
+    "contact": {
+      "eyebrow": "Bize ulaşın",
+      "title": "Sorunuz mu var? <em>Bize yazın.</em>",
+      "intro": "Genellikle 48 iş saati içinde yanıt veririz. ONEM (Belçika federal işsizlik kurumu) dosyanızla ilgili acil talepler için lütfen yerel büronuzla doğrudan iletişime geçin.",
+      "successTitle": "Mesaj gönderildi.",
+      "successBody": "Bizimle iletişime geçtiğiniz için teşekkür ederiz. Ekibimiz 48 iş saati içinde size yanıt verecektir.",
+      "errorGeneric": "Bir hata oluştu. Lütfen tekrar deneyin.",
+      "nameLabel": "Ad Soyad",
+      "namePlaceholder": "Marie Dupont",
+      "emailLabel": "E-posta",
+      "emailPlaceholder": "siz@ornek.be",
+      "subjectLabel": "Konu",
+      "subjectPlaceholder": "Bir konu seçin…",
+      "subject_general": "Genel soru",
+      "subject_formHelp": "Form yardımı",
+      "subject_toolSuggestion": "Araç önerisi",
+      "subject_bugReport": "Hata bildirimi",
+      "subject_partnership": "Ortaklık",
+      "subject_press": "Basın",
+      "subject_other": "Diğer",
+      "messageLabel": "Mesaj",
+      "messagePlaceholder": "Talebinizi birkaç satırla açıklayın…",
+      "consent": "Verilerimin bu talebi yanıtlamak amacıyla kullanılmasını kabul ediyorum. Hiçbir bilgi üçüncü taraflarla paylaşılmaz.",
+      "submit": "Mesajı gönder",
+      "submitLoading": "Gönderiliyor…",
+      "cardEmailTitle": "Doğrudan e-posta",
+      "cardResponseTitle": "Yanıt süresi",
+      "cardResponseBody": "Genel sorular için 48 iş saati içinde.",
+      "cardPrivacyTitle": "Gizlilik",
+      "cardPrivacyBody": "Verileriniz yalnızca mesajınızı yanıtlamak için kullanılır.",
+      "cardUrgentTitle": "Acil bir dosyanız mı var?",
+      "cardUrgentBody": "Yerel ONEM (federal işsizlik kurumu) büronuzla veya ödeme kurumunuzla (CAPAC ya da bağlı olduğunuz sendika) doğrudan iletişime geçin."
+    },
+    "glossaire": {
+      "metaTitle": "İdari kısaltmalar sözlüğü",
+      "metaDescription": "Belçika idaresi tarafından kullanılan kısaltmaların tanımları: ONEM, CAPAC, RIS, AGR, C4, BCE ve daha fazlası.",
+      "badge": "Yardım",
+      "title": "Bu <em>kısaltma</em> ne anlama geliyor?",
+      "searchPlaceholder": "Kısaltmanı, bir kelimeyi, bir durumu yaz…",
+      "clearSearch": "Aramayı temizle",
+      "popularLabel": "Özellikle şunları arıyoruz",
+      "noResultExact": "« {query} » için tam sonuç bulunamadı",
+      "resultCount": "« {query} » için {count} {count, plural, one {sonuç} other {sonuç}}",
+      "overview": "Genel bakış",
+      "emptyTitle": "« {query} » için tam kısaltma bulunamadı.",
+      "emptyHint": "Yazım hatası mı? Farklı bir varyant mı?",
+      "suggestionsLabel": "Belki şunu arıyordunuz",
+      "missingHint": "Eksik bir idari kısaltma varsa, iletişim sayfası aracılığıyla bildirin — ekleyelim.",
+      "domains": {
+        "chomage": {
+          "label": "İşsizlik ve iş sözleşmesinin sona ermesi",
+          "tagline": "İşini yeni kaybettiysen veya işsizlik yardımından yararlanıyorsan"
+        },
+        "cpas": {
+          "label": "CPAS (sosyal yardım merkezi) ve sosyal yardım",
+          "tagline": "Entegrasyon geliri (RIS), tıbbi yardım, refakat hizmetleri"
+        },
+        "emploiRegional": {
+          "label": "Bölgede istihdam",
+          "tagline": "Nerede yaşadığınıza göre nereye kayıt olunur ve eğitim alınır"
+        },
+        "entreprise": {
+          "label": "İşletmeler ve bağımsız çalışanlar",
+          "tagline": "Kurmak, beyan etmek, prim ödemek, TVA (katma değer vergisi) ödemek"
+        },
+        "santeSecu": {
+          "label": "Sağlık ve sosyal güvenlik",
+          "tagline": "Mutualités (hastalık sandıkları), kimlik numaraları, beyanlar"
+        },
+        "juridique": {
+          "label": "Hukuki çerçeve",
+          "tagline": "Kanunlar, sözleşmeler, federal idare"
+        }
+      },
+      "acronyms": {
+        "ONEM": {
+          "meaning": "ONEM (Office National de l'Emploi) — Ulusal İstihdam Ofisi",
+          "definition": "İşsizlik ödeneğini ödeyen ve denetleyen, resmi belgeleri (C4, C3…) düzenleyen federal kurum"
+        },
+        "ONSS": {
+          "meaning": "ONSS (Office National de Sécurité Sociale) — Ulusal Sosyal Güvenlik Ofisi",
+          "definition": "İşveren ve çalışanlardan sosyal sigorta primlerini tahsil ederek sosyal güvenlik kurumlarına dağıtır"
+        },
+        "CAPAC": {
+          "meaning": "CAPAC (Caisse Auxiliaire de Paiement des Allocations de Chômage) — Yardımcı İşsizlik Ödeneği Ödeme Sandığı",
+          "definition": "Bir sendikaya üye olmayan kişilere işsizlik ödeneği ödeyen kamu sandığı"
+        },
+        "CPAS": {
+          "meaning": "CPAS (Centre Public d'Action Sociale) — Kamu Sosyal Yardım Merkezi",
+          "definition": "Her bireye insan onuruna yakışır bir yaşam güvencesi sağlayan belediye kurumu (RIS gelir desteği, sosyal yardım, tıbbi yardım…)"
+        },
+        "RIS": {
+          "meaning": "RIS (Revenu d'Intégration Sociale) — Sosyal Entegrasyon Geliri",
+          "definition": "CPAS tarafından yeterli geliri olmayan kişilere ödenen aylık mali yardım"
+        },
+        "AGR": {
+          "meaning": "AGR (Allocation de Garantie de Revenus) — Gelir Güvencesi Ödeneği",
+          "definition": "ONEM tarafından, isteği dışında yarı zamanlı çalışmak zorunda kalan işçilere asgari gelire ulaşmaları için ödenen ek destek"
+        },
+        "C4": {
+          "meaning": "C4 işsizlik belgesi (chômage belgesi)",
+          "definition": "İşveren tarafından sözleşmenin sona ermesinde verilen belge — işsizlik ödeneği hakkı açmak için zorunludur (C4 belgesi)"
+        },
+        "C1": {
+          "meaning": "Kişisel ve aile durumu beyanı (C1)",
+          "definition": "Ödenek oranını belirlemek için ödeme kuruluşuna (organisme de paiement) teslim edilmesi gereken form (yalnız yaşayan/isolé, birlikte yaşayan/cohabitant, aile reisi/chef de ménage)"
+        },
+        "C3": {
+          "meaning": "C3 kontrol kartı (carte de contrôle C3)",
+          "definition": "Tazminatlı işsizin her ay çalışma, hastalık ve tatil günlerini kaydettiği ve ödeme kuruluşuna (organisme de paiement) gönderdiği aylık belge"
+        },
+        "BCE": {
+          "meaning": "Banque-Carrefour des Entreprises (BCE) — Belçika İşletmeler Merkez Bankası",
+          "definition": "Belçika'da faaliyet gösteren her şirkete ve serbest meslek sahibine (indépendant) benzersiz bir işletme numarası atayan federal kayıt sistemi (BCE/KBO)"
+        },
+        "BCSS": {
+          "meaning": "Banque-Carrefour de la Sécurité Sociale (BCSS) — Belçika Sosyal Güvenlik Merkez Bankası",
+          "definition": "Belçika sosyal güvenlik kurumları arasında veri paylaşımını sağlayan platform (BCSS/KSZ)"
+        },
+        "FOREM": {
+          "meaning": "Office wallon de la Formation professionnelle et de l'Emploi — FOREM (Valonya Mesleki Eğitim ve İstihdam Ofisi)",
+          "definition": "Valonya bölgesinde istihdam ve eğitim hizmetleri sunan kamu kurumu (FOREM) — Valonlu iş arayanların (demandeur d'emploi) kayıt yaptırdığı kurum"
+        },
+        "VDAB": {
+          "meaning": "Vlaamse Dienst voor Arbeidsbemiddeling en Beroepsopleiding — VDAB (Flaman İstihdam ve Mesleki Eğitim Servisi)",
+          "definition": "Flandre bölgesinde istihdam ve eğitim hizmetleri sunan kamu kurumu (VDAB) — Flandre'daki FOREM eşdeğeri"
+        },
+        "ACTIRIS": {
+          "meaning": "Office régional bruxellois de l'emploi — Actiris (Brüksel Bölgesi İstihdam Ofisi)",
+          "definition": "Brüksel-Başkent Bölgesi'nde istihdam hizmetleri sunan kamu kurumu (Actiris) — Brükselli iş arayanların (demandeur d'emploi) kayıt yaptırdığı kurum"
+        },
+        "ADG": {
+          "meaning": "Arbeitsamt der Deutschsprachigen Gemeinschaft — ADG (Almanca Konuşan Topluluk İş Bulma Kurumu)",
+          "definition": "Almanca Konuşan Topluluk'a (Communauté germanophone — Doğu Kantonu) ait kamu istihdam servisi (ADG)"
+        },
+        "INASTI": {
+          "meaning": "Institut National d'Assurance Sociale pour Travailleurs Indépendants — INASTI (Bağımsız Çalışanlar İçin Ulusal Sosyal Sigorta Enstitüsü)",
+          "definition": "Serbest meslek sahiplerinin (travailleurs indépendants) sosyal güvenliğini yönetir: emeklilik, sağlık sigortası (mutualité), aile yardımları (allocations familiales) ve daha fazlası (INASTI/RSVZ)"
+        },
+        "INAMI": {
+          "meaning": "Institut National d'Assurance Maladie-Invalidité — INAMI (Ulusal Hastalık ve Maluliyet Sigortası Enstitüsü)",
+          "definition": "Sağlık sigortasını ve tazminatları mutualités (hastalık sandıkları) aracılığıyla düzenler"
+        },
+        "SPF": {
+          "meaning": "Federal Kamu Hizmeti",
+          "definition": "Belçika federal yönetimi (örn. SPF Emploi [İstihdam], SPF Finances [Maliye], SPF Justice [Adalet])"
+        },
+        "SPP": {
+          "meaning": "Programlama Kamu Hizmeti",
+          "definition": "Özel bir federal yönetim — en bilineni, CPAS'ları (sosyal yardım merkezleri) koordine eden SPP Intégration sociale'dir (Sosyal Entegrasyon)"
+        },
+        "PIIS": {
+          "meaning": "Bireysel Sosyal Entegrasyon Projesi",
+          "definition": "CPAS (sosyal yardım merkezi) ile RIS (asgari gelir) alıcısı arasında imzalanan ve kişiselleştirilmiş hedefler (eğitim, istihdam, konut…) belirleyen sözleşme — PIIS"
+        },
+        "DIMONA": {
+          "meaning": "İstihdam Anında Bildirimi",
+          "definition": "İşverenin her görevin başlamasından önce ONSS'ye (sosyal güvenlik kurumu) iletmesi gereken elektronik bildirim — DIMONA"
+        },
+        "DRS": {
+          "meaning": "Sosyal Risk Bildirimleri",
+          "definition": "İşverenin sosyal güvenlik kurumlarına gönderdiği tüm elektronik bildirimlerin (işsizlik, hastalık, kaza…) bütünü — DRS"
+        },
+        "NISS": {
+          "meaning": "Sosyal Güvenlik Kimlik Numarası",
+          "definition": "Her kişiyi Belçika sosyal güvenlik sisteminde tanımlayan 11 haneli benzersiz numara — kimlik kartının arka yüzünde yer alır — NISS"
+        },
+        "CCT": {
+          "meaning": "Toplu İş Sözleşmesi",
+          "definition": "İşverenler ve sendikalar arasında imzalanan; bir sektörün veya işletmenin çalışma koşullarını (ücretler, izinler…) belirleyen anlaşma — CCT"
+        },
+        "CP": {
+          "meaning": "Pariteler Komisyonu",
+          "definition": "İşverenler ve sendikaların çalışma koşullarını müzakere ettiği sektörel organ. Her sektörün (numaralandırılmış) bir CP'si vardır"
+        },
+        "ASBL": {
+          "meaning": "Kâr Amacı Gütmeyen Dernek",
+          "definition": "Kârların üyelere dağıtılmadığı, bunun yerine kuruluşun sosyal amacına yeniden yatırıldığı yasal dernek türü"
+        },
+        "AR": {
+          "meaning": "Kral Kararnamesi — AR",
+          "definition": "Kral tarafından bir bakanın önerisiyle imzalanan metin (AR) — Belçika'da düzenleyici hukukun temel kaynağı"
+        },
+        "ALE": {
+          "meaning": "Yerel İstihdam Ajansı (ALE)",
+          "definition": "Uzun süreli bir işsizin, işsizlik yardımlarını korurken ara sıra iş yapabilmesine (bahçıvanlık, çocuk bakımı vb.) olanak tanır"
+        },
+        "PFI": {
+          "meaning": "Eğitim-İstihdam Planı (PFI)",
+          "definition": "Bir iş arayanın işletmede eğitim alması (Valoni): yardımlarını korurken işverenden prim alır"
+        },
+        "TVA": {
+          "meaning": "Katma Değer Vergisi (TVA/KDV)",
+          "definition": "Çoğu mal ve hizmet üzerinden alınan dolaylı vergi. Belçika standart oranı: %21"
+        }
+      }
+    },
+    "home": {
+      "monthJan": "OCA",
+      "monthFeb": "ŞUB",
+      "monthMar": "MAR",
+      "monthApr": "NİS",
+      "monthMay": "MAY",
+      "monthJun": "HAZ",
+      "monthJul": "TEM",
+      "monthAug": "AĞU",
+      "monthSep": "EYL",
+      "monthOct": "EKİ",
+      "monthNov": "KAS",
+      "monthDec": "ARA",
+      "fallbackTag": "ONEM duyurusu · 15.04",
+      "fallbackTitle": "C1 formu artık çevrimiçi olarak 12 aya uzatıldı.",
+      "fallbackDesc": "ONEM (Belçika federal işsizlik kurumu) prosedürü basitleştiriyor: çevrimiçi alanı üzerinden artık tüm bir yılınız var yardım başvurunuzu yapabilmek için. Her şeyi 6 dakikada açıklıyoruz.",
+      "fallbackDate": "09 MAYIS 26",
+      "carouselRoleDescription": "döngüsel slayt",
+      "carouselLabel": "Öne çıkan haberler",
+      "carouselPickLabel": "Bir haber seçin",
+      "carouselSlideLabel": "{total} haberden {index}. haber: {title}",
+      "ctaCreateDossier": "Dosyamı oluştur",
+      "ctaReadArticle": "Makaleyi oku",
+      "searchRegionLabel": "Tüm sitede ara",
+      "searchPrefix": "Ara",
+      "searchExample1": "geçici işsizlik (chômage temporaire)",
+      "searchExample2": "C4 (iş sözleşmesi sona erme belgesi)",
+      "searchExample3": "AGR hesaplama (gönüllü olmayan kısmi çalışma ek ödenek hesabı)",
+      "searchExample4": "paritaire komisyon (commission paritaire — sektörel çalışma kurallarını belirleyen organ)",
+      "toolsTitleLine1": "Araçlarınız,",
+      "toolsTitleEm": "tek hamlede.",
+      "seeAllTools": "Tüm araçları<br></br>görüntüle",
+      "wizardEyebrow": "Dosyam",
+      "wizardTitle": "Doğru dosyayı <em>birkaç soruyla</em> bulun",
+      "wizardDescription": "Size uyan durumu seçin: rehber size bir ila üç soru sorar, ardından sizi uygun dosyaya yönlendirir — teknik jargon yok ve istediğiniz zaman geri dönebilirsiniz.",
+      "wizardStartGuide": "Rehberi başlat",
+      "recentNewsTitle": "Son haberler",
+      "seeAll": "Tümünü gör",
+      "noNews": "Şu an için haber bulunmuyor.",
+      "readingTime": "{minutes} dk okuma",
+      "popularDossiersTitle": "Popüler dosyalar",
+      "resourcesTitle": "Kaynaklar",
+      "dossierDocCount": "Dosya · {count, plural, one {# belge} other {# belge}}",
+      "resourceMeta": "Dosya · {minutes} dk",
+      "resource1Title": "İşsizlik başvurusu yapmanın 5 adımı",
+      "resource2Title": "Activa dosyasını hazırlamak",
+      "resource3Title": "CPAS (belediye sosyal yardım servisi) için RIS (asgari geçim geliri) dosyasını hazırlamak",
+      "resource4Title": "Geçici işsizlik (chômage temporaire): izlenecek yol",
+      "simEstimateLabel": "Tahminim",
+      "simFormLabel": "İşsizlik ödeneğimi tahmin et",
+      "simFormTitle": "30 saniyede ödeneğinizi tahmin edin",
+      "simFieldSituation": "Durumunuz",
+      "simFieldBrut": "Aylık brüt maaş (€)",
+      "simBrutPlaceholder": "2 850",
+      "simFieldSince": "İşsiz kalınan tarih",
+      "simSubmit": "Yardımımı tahmin et",
+      "simErrInvalidBrut": "Gerçekçi bir aylık brüt maaş girin ({min} €'dan fazla).",
+      "simErrGeneric": "Bu değerlerle tahmin yapılamıyor.",
+      "simResultTitle": "İşsizlik yardımı (allocation de chômage)",
+      "simPerDay": "/gün",
+      "simResultMonthly": "yani ~{amount} €/ay ({rate} % maaşın{capped, select, yes { tavanla sınırlı} other {}})",
+      "simMetaUpdated": "Güncelleme",
+      "simMetaUpdatedNow": "şu an",
+      "simMetaCategory": "Kategori",
+      "simMetaPeriod": "Dönem",
+      "simDisclaimer": "Bu tahmini nitelikte olup yalnızca ONEM (Belçika federal işsizlik kurumu) kararı geçerlidir.",
+      "simRefineLink": "Hesap makinelerimizle daha ayrıntılı hesapla",
+      "simRecalculate": "Tahminimi yeniden hesapla",
+      "trustHeading": "Verileriniz size aittir",
+      "trustPoint1": "<strong>Hiçbir kişisel veri saklanmaz</strong>: dosyanız anonim kalır.",
+      "trustPoint2": "Dosyanızı başka bir cihazda bulmak için <strong>anonim bir geri dönüş kodu</strong> yeterlidir — hesap açmanıza gerek yoktur.",
+      "trustPoint3": "<strong>Otomatik süre sonu</strong>: kod 30 gün geçerlidir; bu sürenin ardından girilen bilgiler silinir.",
+      "resumeAriaLabel": "Devam eden dosya: {name}",
+      "resumeTitle": "« {name} » dosyanıza devam edin",
+      "resumeProgress": "{total} üzerinden {completed, plural, one {# belge} other {# belge}} tamamlandı",
+      "resumeProgressAria": "İlerleme: {total} üzerinden {completed, plural, one {# belge} other {# belge}}",
+      "resumeCta": "Devam et",
+      "resumeDismiss": "Bu oturum için şeridi gizle",
+      "loggedInNotice": "Bağlısınız.",
+      "loggedInAccess": "{label} bölümüne git",
+      "bannerClose": "Başlığı kapat",
+      "toolPopularBadge": "Popüler"
+    },
+    "pro": {
+      "navAccount": "Hesap",
+      "navSpacePartner": "Ortak Alanı",
+      "navSpaceEmployer": "İşveren Alanı",
+      "navToggleTheme": "Temayı değiştir",
+      "navGoHome": "Ana sayfaya git",
+      "navSignOut": "Çıkış yap",
+      "navSegPartner": "Ortak",
+      "navSegEmployer": "İşveren",
+      "lpPartnerMetaTitle": "Ortak Alanı | Docbel",
+      "lpPartnerMetaDesc": "Çalışmanızı ve hukuki bilgilere erişimi kolaylaştıran ortak alanı: hedef kitlenize daha iyi eşlik edebilmek için merkezi araçlar, kaynaklar ve iletişim bilgileri.",
+      "lpPartnerBannerLabel": "ortak alanınız",
+      "lpPartnerHeroEyebrow": "Eşlik & Bilgi Platformu",
+      "lpPartnerHeroTitlePre": "İşinizi kolaylaştıran",
+      "lpPartnerHeroTitleEm1": "ortak alanı",
+      "lpPartnerHeroTitleMid": "ve erişim",
+      "lpPartnerHeroTitleEm2": "bilgiye",
+      "lpPartnerHeroLead": "Başvurucularınızı günlük olarak daha iyi yönlendirmek, bilgilendirmek ve desteklemek için araçlarınızı, kaynaklarınızı ve doğrulanmış hukuki bilgilerinizi tek bir yerde toplayın.",
+      "lpPartnerHeroCta": "Ortak alanını keşfedin",
+      "lpPartnerCtaDemo": "Demo talep edin",
+      "lpPartnerHeroCardLabel": "Ortak alanı",
+      "lpPartnerBadgeReliable": "Güvenilir & güncel bilgiler",
+      "lpPartnerBadgeCentral": "Merkezi kaynaklar",
+      "lpPartnerBadgePartners": "Ortaklar için tasarlandı",
+      "lpPartnerBenefitSearchTitle": "Daha az arama",
+      "lpPartnerBenefitSearchDesc": "Zaman kaybetmeden doğru araçlara ve bilgilere hızlıca ulaşın.",
+      "lpPartnerBenefitCentralTitle": "Merkezi bilgi",
+      "lpPartnerBenefitCentralDesc": "Tüm resmi kaynaklara tek bir yerden, güvenilir ve güncel olarak erişin.",
+      "lpPartnerBenefitGuideTitle": "Daha kolay yönlendirme",
+      "lpPartnerBenefitGuideDesc": "Başvurucularınızı doğru adımlara ve doğru muhataplara yönlendirin.",
+      "lpPartnerBenefitSupportTitle": "Daha iyi destek",
+      "lpPartnerBenefitSupportDesc": "Her duruma uygun açık, net ve isabetli yanıtlar sunun.",
+      "lpPartnerToolsHeadingPre": "Çeşitli",
+      "lpPartnerToolsHeadingEm": "yararlı araçlar",
+      "lpPartnerToolsHeadingPost": "daha iyi rehberlik etmek için",
+      "lpPartnerToolOfficeTitle": "Bir büro bulun",
+      "lpPartnerToolOfficeDesc": "CPAS (sosyal yardım merkezi), Commune (belediye), ONEM (işsizlik kurumu), sendikalar: size en yakın yetkili büroyu bulun.",
+      "lpPartnerToolU1Title": "U1 Kurumları (AEA)",
+      "lpPartnerToolU1Desc": "AEA ülkelerinde ve İsviçre'de yetkili kurumu bulun.",
+      "lpPartnerToolCpasTitle": "CPAS ve kuruluşlar",
+      "lpPartnerToolCpasDesc": "Hedef kitleniz için CPAS (sosyal yardım merkezleri) ve faydalı kuruluşların tam rehberi.",
+      "lpPartnerToolGuidesTitle": "Pratik rehberler",
+      "lpPartnerToolGuidesDesc": "İşlemleri ve hakları anlamak için adım adım rehberler.",
+      "lpPartnerToolRefTitle": "Referans kaynakları",
+      "lpPartnerToolRefDesc": "Konuya göre sınıflandırılmış yasal metinler, şablonlar ve referans belgeler.",
+      "lpPartnerToolDocsTitle": "Faydalı belgeler",
+      "lpPartnerToolDocsDesc": "İndirilebilir formlar, attestations (belgeler) ve resmi evraklar.",
+      "lpPartnerSecCentralTitle": "Her şey tek bir yerde",
+      "lpPartnerSecCentralDesc": "Araçlar, rehberler ve iletişim bilgileri aynı yerde, her an erişilebilir.",
+      "lpPartnerSecUptodateTitle": "Her zaman güncel",
+      "lpPartnerSecUptodateDesc": "Uzmanlarımız tarafından sürekli güncellenen resmi bilgiler.",
+      "lpPartnerSecExplainTitle": "Açıklaması daha kolay"
+    }
+  }
+}

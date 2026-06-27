@@ -7,6 +7,7 @@ import {
   getSourceTexts,
   sourceKey,
   normalizeModel,
+  hashSource,
   SOURCE_FIELDS,
   type SourceItem,
 } from "./content-source";
@@ -82,6 +83,10 @@ export async function autoTranslateRecord(
       const ex = existingMap.get(`${field}:${locale}`);
       if (ex && value === ex.value) continue; // inchangé → on n'écrit pas
 
+      // Snapshot de la source FR → permet de détecter une péremption ultérieure.
+      const srcHash = hashSource(fr[i]);
+      const now = new Date();
+
       try {
         const saved = await withDbRetry(() =>
           prisma.contentTranslation.upsert({
@@ -97,8 +102,17 @@ export async function autoTranslateRecord(
               status: "ia",
               origin: "ia",
               updatedBy: "ai:auto",
+              sourceHash: srcHash,
+              sourceUpdatedAt: now,
             },
-            update: { value, status: "ia", origin: "ia", updatedBy: "ai:auto" },
+            update: {
+              value,
+              status: "ia",
+              origin: "ia",
+              updatedBy: "ai:auto",
+              sourceHash: srcHash,
+              sourceUpdatedAt: now,
+            },
           })
         );
         await withDbRetry(() =>

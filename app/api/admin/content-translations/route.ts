@@ -6,6 +6,7 @@ import {
   getSourceTexts,
   sourceKey,
   normalizeModel,
+  hashSource,
   SOURCE_MODELS,
   type SourceItem,
 } from "@/lib/i18n/content-source";
@@ -67,10 +68,12 @@ export async function GET(req: NextRequest) {
   }));
   const sources = await getSourceTexts(items);
 
-  let enriched = rows.map((r) => ({
-    ...r,
-    sourceText: sources.get(sourceKey(r.model, r.recordId, r.field)) ?? "",
-  }));
+  let enriched = rows.map((r) => {
+    const sourceText = sources.get(sourceKey(r.model, r.recordId, r.field)) ?? "";
+    // « périmé » = on a un snapshot du hash source ET la source FR a divergé depuis.
+    const stale = !!r.sourceHash && r.sourceHash !== hashSource(sourceText);
+    return { ...r, sourceText, stale };
+  });
 
   if (hideEmpty) {
     enriched = enriched.filter((r) => r.sourceText.trim() !== "");

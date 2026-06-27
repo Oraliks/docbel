@@ -1,5 +1,17 @@
+import { createHash } from "crypto";
 import { Prisma } from "@prisma/client";
 import { prisma, withDbRetry } from "@/lib/prisma";
+
+/**
+ * Empreinte stable de la source FR d'un champ, pour détecter qu'elle a changé
+ * depuis la dernière traduction (badge « source modifiée »). Normalise les
+ * fins de ligne + trim pour ne pas péremper sur du bruit invisible.
+ */
+export function hashSource(text: string): string {
+  return createHash("sha256")
+    .update((text ?? "").replace(/\r\n?/g, "\n").trim())
+    .digest("hex");
+}
 
 /**
  * Modèles dont le contenu est traduisible via `ContentTranslation`.

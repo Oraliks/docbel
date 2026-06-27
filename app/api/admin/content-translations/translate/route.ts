@@ -6,6 +6,7 @@ import { translateTexts, isTranslatableLocale } from "@/lib/i18n/translate";
 import {
   getSourceTexts,
   sourceKey,
+  hashSource,
   type SourceItem,
 } from "@/lib/i18n/content-source";
 
@@ -116,7 +117,14 @@ export async function POST(req: NextRequest) {
           prisma.$transaction([
             prisma.contentTranslation.update({
               where: { id: r.id },
-              data: { value: newValue, status: "ia", origin: "ia", updatedBy: editor },
+              data: {
+                value: newValue,
+                status: "ia",
+                origin: "ia",
+                updatedBy: editor,
+                sourceHash: hashSource(fr[i]),
+                sourceUpdatedAt: new Date(),
+              },
             }),
             prisma.contentTranslationHistory.create({
               data: {

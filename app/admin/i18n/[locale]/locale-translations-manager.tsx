@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -44,6 +45,7 @@ type Row = {
   updatedBy: string | null;
   updatedAt: string;
   sourceText: string;
+  stale?: boolean;
 };
 
 type HistoryEntry = {
@@ -414,6 +416,12 @@ export function LocaleTranslationsManager({ locale }: { locale: string }) {
                     {r.recordId}
                   </span>
                   <div className="ml-auto flex items-center gap-1.5">
+                    {r.stale && (
+                      <Badge variant="warning" className="gap-1 text-[10px] py-0" title="La source FR a changé depuis cette traduction — à revoir">
+                        <AlertTriangle className="size-3" />
+                        Source modifiée
+                      </Badge>
+                    )}
                     <Badge variant={originVariant(r.origin as Origin)} className="text-[10px] py-0">
                       {ORIGIN_LABELS[r.origin as Origin] ?? r.origin}
                     </Badge>

@@ -2166,6 +2166,12 @@ model ContentTranslation {
   status    String   @default("ia")
   /// "ia" | "human" | "imported" — qui a produit la valeur courante.
   origin    String   @default("ia")
+  /// Hash SHA-256 de la source FR au moment de la (re)traduction. Si le hash
+  /// courant de la source FR diverge, la traduction est « périmée » (badge
+  /// "source modifiée") — calculé à la volée, pas de colonne `stale` stockée.
+  sourceHash      String?
+  /// Quand le snapshot de la source FR a été pris (= dernière (re)traduction).
+  sourceUpdatedAt DateTime?
   updatedBy String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
+import { getSourceTexts, sourceKey, hashSource } from "@/lib/i18n/content-source";
 
 const json = { "Content-Type": "application/json; charset=utf-8" };
 const STATUSES = ["ia", "reviewed", "published"];
@@ -52,6 +53,15 @@ export async function PATCH(
     );
     if (!current)
       return NextResponse.json({ error: "Introuvable" }, { status: 404, headers: json });
+
+    // Une sauvegarde manuelle = la traduction est désormais alignée sur la
+    // source FR COURANTE → on resnapshote le hash (efface le badge « périmé »).
+    const sources = await getSourceTexts([
+      { model: current.model, recordId: current.recordId, field: current.field },
+    ]);
+    const frNow = sources.get(sourceKey(current.model, current.recordId, current.field)) ?? "";
+    data.sourceHash = hashSource(frNow);
+    data.sourceUpdatedAt = new Date();
 
     const newValue = typeof body.value === "string" ? body.value : current.value;
     const newStatus = typeof body.status === "string" ? body.status : current.status;

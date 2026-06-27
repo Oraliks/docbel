@@ -27,9 +27,20 @@ export const SOURCE_MODELS = Object.keys(SOURCE_FIELDS);
 
 export type SourceItem = { model: string; recordId: string; field: string };
 
+/**
+ * La table `ContentTranslation` stocke le `model` en PascalCase ("Bureau",
+ * "DocumentBundle" — aligné sur le chemin de lecture public `localizeRecords`),
+ * tandis que ce module l'indexe en camelCase (= accesseur Prisma `prisma.bureau`).
+ * On normalise vers le camelCase pour réconcilier les deux. Idempotent.
+ */
+export function normalizeModel(model: string): string {
+  return model.length ? model[0].toLowerCase() + model.slice(1) : model;
+}
+
 /// Clé canonique d'une ligne de traduction (model:recordId:field).
+/// Normalise le model → la clé est stable quelle que soit la casse en entrée.
 export function sourceKey(model: string, recordId: string, field: string): string {
-  return `${model}:${recordId}:${field}`;
+  return `${normalizeModel(model)}:${recordId}:${field}`;
 }
 
 /**
@@ -43,12 +54,14 @@ export async function getSourceTexts(
   const result = new Map<string, string>();
   if (items.length === 0) return result;
 
-  // Groupe par modèle → set d'ids à fetcher.
+  // Groupe par modèle → set d'ids à fetcher. On normalise la casse (DB =
+  // PascalCase, index interne = camelCase) avant tout lookup.
   const idsByModel = new Map<string, Set<string>>();
   for (const it of items) {
-    if (!(it.model in SOURCE_FIELDS)) continue;
-    if (!idsByModel.has(it.model)) idsByModel.set(it.model, new Set());
-    idsByModel.get(it.model)!.add(it.recordId);
+    const model = normalizeModel(it.model);
+    if (!(model in SOURCE_FIELDS)) continue;
+    if (!idsByModel.has(model)) idsByModel.set(model, new Set());
+    idsByModel.get(model)!.add(it.recordId);
   }
 
   for (const [model, idSet] of idsByModel) {

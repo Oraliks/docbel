@@ -67,6 +67,11 @@ const MODEL_LABELS: Record<string, string> = {
 };
 const MODELS = Object.keys(MODEL_LABELS);
 
+// La DB renvoie le model en PascalCase ("Bureau"), MODEL_LABELS est indexé en
+// camelCase → on normalise avant lookup pour afficher le bon libellé FR.
+const modelLabel = (m: string) =>
+  MODEL_LABELS[m ? m[0].toLowerCase() + m.slice(1) : m] ?? m;
+
 const STATUS_LABELS: Record<Status, string> = {
   ia: "IA",
   reviewed: "Relu",
@@ -334,7 +339,7 @@ export function LocaleTranslationsManager({ locale }: { locale: string }) {
                 {/* En-tête de ligne */}
                 <div className="flex items-center gap-2 border-b px-4 py-2.5">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    {MODEL_LABELS[r.model] ?? r.model}
+                    {modelLabel(r.model)}
                   </span>
                   <span className="text-muted-foreground/40">·</span>
                   <code className="text-xs font-mono text-muted-foreground">{r.field}</code>

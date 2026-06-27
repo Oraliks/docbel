@@ -4,6 +4,7 @@ import { requireAdminAuth } from "@/lib/auth-check";
 import {
   getSourceTexts,
   sourceKey,
+  normalizeModel,
   SOURCE_MODELS,
   type SourceItem,
 } from "@/lib/i18n/content-source";
@@ -27,7 +28,9 @@ export async function GET(req: NextRequest) {
   const locale = localeParam === "en" ? "en" : localeParam;
 
   const where: Record<string, unknown> = { locale };
-  if (modelParam && SOURCE_MODELS.includes(modelParam)) where.model = modelParam;
+  const normModel = normalizeModel(modelParam);
+  if (modelParam && SOURCE_MODELS.includes(normModel))
+    where.model = { equals: normModel, mode: "insensitive" };
   if (statusParam && ["ia", "reviewed", "published"].includes(statusParam))
     where.status = statusParam;
   if (q) where.value = { contains: q, mode: "insensitive" };

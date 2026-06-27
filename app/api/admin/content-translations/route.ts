@@ -5,6 +5,7 @@ import { requireAdminAuth } from "@/lib/auth-check";
 import {
   getSourceTexts,
   sourceKey,
+  normalizeModel,
   SOURCE_MODELS,
   type SourceItem,
 } from "@/lib/i18n/content-source";
@@ -36,10 +37,14 @@ export async function GET(req: NextRequest) {
   const pageParam = Number.parseInt(url.searchParams.get("page") || "1", 10);
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
 
-  const locale = SOURCE_MODELS.length ? localeParam : "nl";
+  const locale = localeParam;
 
   const where: Prisma.ContentTranslationWhereInput = { locale };
-  if (modelParam && SOURCE_MODELS.includes(modelParam)) where.model = modelParam;
+  // Le filtre arrive en camelCase (UI) mais la DB stocke en PascalCase →
+  // match insensible à la casse.
+  const normModel = normalizeModel(modelParam);
+  if (modelParam && SOURCE_MODELS.includes(normModel))
+    where.model = { equals: normModel, mode: "insensitive" };
   if (statusParam && STATUSES.includes(statusParam)) where.status = statusParam;
   if (q) where.value = { contains: q, mode: "insensitive" };
 

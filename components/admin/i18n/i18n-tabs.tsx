@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Languages, BookMarked, MessagesSquare } from "lucide-react";
+import { Languages, ListChecks, BookMarked, MessagesSquare } from "lucide-react";
 
 const TABS = [
   {
@@ -10,7 +10,14 @@ const TABS = [
     label: "Traductions",
     icon: Languages,
     match: (p: string) =>
-      p === "/admin/i18n" || /^\/admin\/i18n\/(nl|en|de|ar|tr|ro|bg)$/.test(p),
+      p === "/admin/i18n" ||
+      /^\/admin\/i18n\/(nl|en|de|it|es|pt|ru|sq|mk|ar|tr|ro|bg)$/.test(p),
+  },
+  {
+    href: "/admin/i18n/file",
+    label: "File",
+    icon: ListChecks,
+    match: (p: string) => p.startsWith("/admin/i18n/file"),
   },
   {
     href: "/admin/i18n/glossaire",

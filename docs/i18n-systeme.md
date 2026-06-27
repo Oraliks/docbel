@@ -202,6 +202,8 @@ déclenche le traitement — mais **les jobs survivent en base**, donc reprenabl
   `GET` → compteurs `pending/processing/done/failed` + jobs ;
   `POST {action:"process"}` → traite les `pending` ;
   `POST {action:"retry"}` → relance les `failed`/`processing` bloqués puis traite.
+- **Dashboard** : onglet **File** (`/admin/i18n/file`) au-dessus de cet endpoint —
+  compteurs cliquables (filtre), liste des jobs, boutons traiter / relancer.
 - Hors contexte requête (seed, script), `after()` = no-op → **jamais d'appel IA en
   masse sur un seed**.
 
@@ -223,12 +225,13 @@ déclenche le traitement — mais **les jobs survivent en base**, donc reprenabl
 
 ## 8. Administration `/admin/i18n`
 
-Section à **3 onglets** (`app/admin/i18n/layout.tsx` + `components/admin/i18n/i18n-tabs.tsx`).
+Section à **4 onglets** (`app/admin/i18n/layout.tsx` + `components/admin/i18n/i18n-tabs.tsx`).
 L'auth admin est appliquée par `app/admin/layout.tsx`.
 
 | Onglet | Route | Contenu |
 |---|---|---|
 | **Traductions** | `/admin/i18n/[locale]` | éditeur **par langue** (tabs drapeaux NL/EN/DE/…). Layout 2 colonnes **Source FR \| Traduction**. Par ligne : badge **statut** (`ia` → `reviewed` → `published`), badge **origine** (ia/humain/import), bouton **✨ Traduire**, **Historique** (diff rouge/vert), **Enregistrer**. Filtres modèle/statut/recherche + toggle « sources vides masquées ». **Export CSV** (relecture IA externe puis ré-import). |
+| **File** | `/admin/i18n/file` | dashboard de la **file `TranslationJob`** : 4 compteurs **cliquables** (en attente / en cours / échoué / fait → filtrent la liste), liste des jobs récents (contenu, langue, statut, essais, `lastError`), boutons **Traiter en attente** / **Relancer les échoués**. |
 | **Glossaire** | `/admin/i18n/glossaire` | CRUD des termes (recherche, regroupé par catégorie, ajout/édition inline/suppression) |
 | **Corrections** | `/admin/i18n/suggestions` | modération des corrections soumises par la communauté |
 

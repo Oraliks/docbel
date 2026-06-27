@@ -2164,12 +2164,34 @@ model ContentTranslation {
   value     String   @db.Text
   /// "ia" (1er jet auto) | "reviewed" (relu natif) | "published".
   status    String   @default("ia")
+  /// "ia" | "human" | "imported" — qui a produit la valeur courante.
+  origin    String   @default("ia")
   updatedBy String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  history   ContentTranslationHistory[]
+
   @@unique([model, recordId, field, locale])
   @@index([model, recordId, locale])
+}
+
+/// Chaque sauvegarde manuelle ou import CSV crée une entrée d'historique.
+model ContentTranslationHistory {
+  id            String             @id @default(cuid())
+  translationId String
+  translation   ContentTranslation @relation(fields: [translationId], references: [id], onDelete: Cascade)
+  oldValue      String             @db.Text @default("")
+  newValue      String             @db.Text
+  oldStatus     String
+  newStatus     String
+  /// "ia" | "human" | "imported"
+  origin        String             @default("human")
+  editedBy      String
+  editedAt      DateTime           @default(now())
+
+  @@index([translationId])
+  @@index([editedAt])
 }
 
 /// Proposition de correction de traduction soumise par un visiteur (ou relue

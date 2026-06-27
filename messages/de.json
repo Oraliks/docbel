@@ -87,11 +87,15 @@
       "metaDescription": "Definitionen der von der belgischen Verwaltung verwendeten Abkürzungen: ONEM, CAPAC, RIS, AGR, C4, BCE und mehr.",
       "badge": "Hilfe",
       "title": "Was bedeutet dieses <em>Kürzel</em>?",
+      "countSigles": "{count} {count, plural, one {Kürzel} other {Kürzel}}",
+      "countUnivers": "{count} {count, plural, one {Bereich} other {Bereiche}}",
       "searchPlaceholder": "Geben Sie ein Kürzel, ein Wort oder eine Situation ein…",
       "clearSearch": "Suche löschen",
       "popularLabel": "Häufig gesucht",
       "noResultExact": "Kein genaues Ergebnis für „{query}",
+      "resultCount": "{count} {count, plural, one {Ergebnis} other {Ergebnisse}} für „{query}",
       "overview": "Überblick",
+      "moreCount": "+{count} {count, plural, one {weiteres} other {weitere}}",
       "emptyTitle": "Kein genaues Kürzel für „{query}.",
       "emptyHint": "Ein Tippfehler? Eine Variante?",
       "suggestionsLabel": "Meinten Sie vielleicht",
@@ -269,6 +273,7 @@
       "ctaCreateDossier": "Meine Akte erstellen",
       "ctaReadArticle": "Artikel lesen",
       "searchRegionLabel": "Suche auf der gesamten Website",
+      "searchOpenLabel": "Suche öffnen – Tastenkürzel {modifier, select, cmd {Befehl} ctrl {Strg} other {Strg}} K",
       "searchPrefix": "Suchen",
       "searchExample1": "zeitweise Arbeitslosigkeit",
       "searchExample2": "C4",
@@ -319,6 +324,7 @@
       "trustPoint3": "<strong>Automatischer Ablauf</strong>: Der Code ist 30 Tage gültig; danach gehen die eingegebenen Informationen verloren.",
       "resumeAriaLabel": "Laufendes Dossier: {name}",
       "resumeTitle": "Dossier „{name}",
+      "resumeProgress": "{completed, plural, one {# Dokument} other {# Dokumente}} von {total} {completed, plural, one {abgeschlossen} other {abgeschlossen}}",
       "resumeProgressAria": "Fortschritt: {completed, plural, one {# Dokument} other {# Dokumente}} von {total}",
       "resumeCta": "Fortsetzen",
       "resumeDismiss": "Diesen Bereich für diese Sitzung ausblenden",
@@ -456,6 +462,10 @@
       "dashNextStep": "Nächster Schritt",
       "dashContinue": "Fortfahren",
       "dashStartDesc": "Der Assistent „Kann ich einstellen?",
+      "dashStart": "Starten",
+      "dashActivityTitle": "Letzte Aktivitäten",
+      "dashActivityEmpty": "Keine aktuellen Aktivitäten. Ihre Aktionen (Dossiers, Dokumente, Simulationen) werden hier angezeigt.",
+      "dashWatchTitle": "Monitoring & Compliance",
       "dashLibrary": "Bibliothek",
       "dashOfficialSources": "Offizielle Quellen",
       "dashWatchHeading": "Erklärte, aktuelle und belegte Verfahren",
@@ -723,6 +733,14 @@
       "contractPreviewTitle": "Vertragsvorschau",
       "contractMissingTitle": "Auszufüllende Pflichtfelder",
       "contractMissingNote": "Der Vertrag wird mit „……",
+      "contractDownloadTxt": "Herunterladen (.txt)",
+      "contratsMetaTitle": "Vertrag erstellen | Arbeitgeberbereich",
+      "contratsTitle": "Vertrag erstellen",
+      "contratsIntro": "Erstellen Sie eine Vorlage für einen belgischen Arbeitsvertrag: Wählen Sie Vertragstyp und Arbeitsregime, passen Sie die Klauseln an, ergänzen Sie die Angaben und erhalten Sie eine Vorschau zum Lesen, Kopieren, Herunterladen oder Drucken.",
+      "contratsSourcesTitle": "Offizielle Quellen",
+      "disclaimerGeneral": "Docbel ist ein Hilfsmittel für administrative Unterstützung, Simulation und Vorbereitung. Es ersetzt weder eine individuelle Rechtsberatung noch ein anerkanntes Sozialsekretariat (Secrétariat social agréé) noch die obligatorischen offiziellen Meldungen des Arbeitgebers.",
+      "disclaimerSimulation": "Diese Simulation ist unverbindlich und stellt keine offizielle Lohnabrechnung (Payroll-Berechnung) dar.",
+      "disclaimerChecklist": "Diese Checkliste ist eine administrative Hilfe. Sie muss an Ihre genaue Situation angepasst werden.",
       "disclaimerDocument": "Dieses Dokument ist vorbereitend. Lassen Sie es vor offizieller Verwendung validieren.",
       "disclaimerControle": "Docbel erkennt potenzielle Unstimmigkeiten, bescheinigt aber nicht die Konformität einer Gehaltsabrechnung.",
       "badgeReliabilityLabel": "Zuverlässigkeit",
@@ -843,6 +861,10 @@
       "agrToastPdfError": "PDF-Erstellung fehlgeschlagen.",
       "agrToastDrsLoaded": "DRS [elektronische Sozialerklärungen] geladen: {name}",
       "agrToastCodesToSort": "{filename}: {count} Code(s) zu sortieren",
+      "agrUploadErrPdfOnly": "Bitte laden Sie PDF-Dateien hoch (WECH 506 / 505).",
+      "agrUploadErrStatus": "Fehler {status}",
+      "agrUploadErrFailed": "Fehlgeschlagen",
+      "agrUploadErrFile": "{filename} : {reason}",
       "agrUploadWarnNoSlot": "{filename} : keine freie Spalte (max. {max} Belegungen).",
       "agrPlanFileMessage": "{filename} : {message}",
       "agrUploadErrGeneric": "Upload fehlgeschlagen.",
@@ -868,6 +890,7 @@
       "rdvDetected": "{count, plural, one {# Termin erkannt} other {# Termine erkannt}}",
       "rdvShortcutHint": "Tipp: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Eingabe</kbd> zum Erstellen.",
       "rdvWaitlistHint": "Sie können Ihre <strong>Warteliste</strong> (zu genehmigende Termine, mit den Schaltflächen „GenehmigenAbbrechen…\") einfügen, nur um Duplikate zu prüfen: Es wird nichts gespeichert, solange Sie nicht auf „Speichern",
+      "rdvResyncHint": "<strong>Einen aktualisierten Tag erneut einfügen</strong> (abgelehnte oder hinzugefügte Termine) und dann auf „Speichern",
       "rdvPasteFirst": "Fügen Sie zuerst eine Terminliste ein.",
       "rdvFormatNotRecognized": "Textformat nicht erkannt: {message}",
       "rdvNoneDetected": "Keine Termine im eingefügten Text erkannt.",
@@ -1163,6 +1186,7 @@
       "learnMore": "Mehr erfahren",
       "networkError": "Netzwerkfehler.",
       "networkErrorRetry": "Netzwerkfehler. Versuchen Sie es erneut.",
+      "documentsCount": "{count} {count, plural, one {Dokument} other {Dokumente}}",
       "docsToPrepare": "{count} {count, plural, one {vorzubereitendes Dokument} other {vorzubereitende Dokumente}}",
       "monDossierMetaTitle": "Meine Akte — beldoc",
       "monDossierMetaDescription": "Erstellen Sie die richtige belgische Verwaltungsakte oder finden Sie sie wieder: Lassen Sie sich durch einige Fragen leiten oder greifen Sie direkt auf die benötigte Akte zu.",
@@ -1197,6 +1221,7 @@
       "helpTitle": "Brauchen Sie Hilfe?",
       "helpSubtitle": "Finden Sie schnell eine Antwort.",
       "ongoingDossier": "Laufende Akte",
+      "runProgress": "{completed} von {total} {total, plural, one {Dokument} other {Dokumene}}",
       "helpFindRightDossier": "Wie finde ich die richtige Akte?",
       "helpCannotFind": "Ich finde meine Akte nicht",
       "helpWhereIsRequest": "Wo steht mein Antrag?",
@@ -1270,6 +1295,7 @@
       "prequalMoreInfo": "Mehr Infos",
       "prequalChooseAnswer": "Wählen Sie eine Antwort…",
       "prequalVerdictDisclaimer": "Dieser Hinweis ist nicht verbindlich für die zuständige Verwaltung – prüfen Sie immer bei der offiziellen Stelle nach. Sie können die Zusammenstellung des Antrags in jedem Fall fortsetzen.",
+      "prequalAnsweredCount": "{answered} von {total} {total, plural, one {Frage} other {Fragen}} {answered, plural, one {beantwortet} other {beantwortet}}.",
       "prequalContinueAnyway": "Trotzdem fortfahren",
       "allocTitle": "Indikative Schätzung Ihrer Leistung",
       "allocIntro": "Drei Angaben für eine Größenordnung. Dies ist keine Entscheidung: Nur das ONEM (belgische Arbeitslosenverwaltung) legt Ihren tatsächlichen Betrag fest.",
@@ -1361,6 +1387,7 @@
       "rdvStepOrganisme": "Behörde",
       "rdvStepPostalCode": "Postleitzahl",
       "rdvWhichDemarche": "Welche Angelegenheit?",
+      "rdvOrganismCount": "{count} {count, plural, one {Organismus} other {Organismen}}",
       "rdvWhichOrganism": "Welche Einrichtung?",
       "rdvSelectedOrganism": "Ausgewählte Einrichtung",
       "rdvPostalCodeLabel": "Ihre Postleitzahl (optional)",
@@ -1986,6 +2013,9 @@
       "bnPdfParams": "Eingegebene Parameter",
       "bnPdfInputBrut": "Monatliches Bruttogehalt",
       "bnPdfInputNet": "Gewünschter Nettobetrag (monatlich)",
+      "bnPdfChequesOui": "Ja (8,91 €/Tag)",
+      "bnPdfNon": "Nein",
+      "bnPdfVoitureValeur": "Firmenwagen — Katalogwert ohne MwSt.",
       "bnPdfVoitureAge": "Firmenwagen — Alter",
       "bnPdfAnsValue": "{age} Jahre",
       "bnPdfVoitureMotor": "Firmenwagen — Motorisierung",
@@ -2004,9 +2034,11 @@
       "pvErrSalaireEmployePre2014": "Jahresgehalt erforderlich für Angestellte vor 2014",
       "pvDetailOuvrierBefore": "{jours} Tage (Arbeiter vor 2014, KAA 75)",
       "pvDetailEmployeBefore": "{mois} Monate (vor 2014, Gehalt {sal} €)",
+      "pvDetailAfter": "{semaines} Wochen (nach 2014, {rupture, select, licenciement {Kündigung durch Arbeitgeber} demission {Kündigung durch Arbeitnehmer} other {Kündigung durch Arbeitgeber}})",
       "pvIclReason": "Entschädigung bei Entlassung (ICL): Die Differenz von {jours} Tagen zwischen altem und neuem System muss durch eine Entschädigung ausgeglichen werden, die dieser Differenz × täglichem Nettogehalt entspricht.",
       "pvDetailOuvrierPre2014": "{jours} Tage (Arbeiterregelung vor 2014, KAA 75)",
       "pvDetailEmployePre2014": "{mois} Monate (Angestelltenregelung, Gehalt {sal} €)",
+      "pvDetailUnifie": "Einheitliches System 2014+ · {semaines} Wochen ({rupture, select, licenciement {Kündigung durch Arbeitgeber} demission {Kündigung durch Arbeitnehmer} other {Kündigung durch Arbeitgeber}})",
       "pvTitle": "Berechnung der Kündigungsfrist",
       "pvSubtitle": "Berechnen Sie Ihre Kündigungsfrist nach belgischem Recht",
       "pvBadgeRegimeDetected": "Automatisch erkanntes System",
@@ -2125,6 +2157,17 @@
       "pecJeunesLink": "Mehr erfahren auf onem.be",
       "pecKnowTitle": "Wissenswertes",
       "pecKnowEmployeSimple": "Das <strong>einfache Urlaubsgeld</strong> ist in Ihrem Junigehalt enthalten (Angestellte) — kein gesonderter Zuschlag.",
+      "pecKnowEmployeAssimiles": "<strong>Gleichgestellte Tage</strong> (Krankheit, vorübergehende Arbeitslosigkeit (chômage temporaire), Mutterschaftsurlaub) zählen als geleistete Arbeitstage.",
+      "pecKnowOuvrierRetenue": "Gesamtabzug: <strong>{total}</strong> = ONSS (belgische Sozialversicherungsbeiträge) {onss} + Solidaritätsbeitrag {solidarite} + Berufssteuervorabzug (précompte professionnel) {precompteBas} wenn Urlaubsgeld ≤ {seuil}, sonst {precompteHaut}.",
+      "pecKnowOuvrierAssimiles": "<strong>Gleichgestellte Tage</strong> (Krankheit, Mutterschaftsurlaub) zählen als geleistete Arbeitstage.",
+      "pecPdfGenerating": "PDF wird generiert…",
+      "pecPdfDownload": "Detail herunterladen (PDF)",
+      "pecPdfGenerated": "Erstellt am {date} um {time}",
+      "pecPdfTitle": "Schätzung Urlaubsgeld (Pécule de vacances) 2026 — Regelung {regime}",
+      "pecPdfRegimeEmploye": "Angestellter",
+      "pecPdfRegimeOuvrier": "Arbeiter ONVA",
+      "pecPdfParams": "Eingegebene Parameter",
+      "pecPdfRowStatut": "Status",
       "pecPdfStatutEmploye": "Privatangestellte(r)",
       "pecPdfStatutOuvrier": "Arbeiter(in) (ONVA)",
       "pecPdfRowBrut": "Monatliches Bruttogehalt",
@@ -2233,6 +2276,19 @@
       "indPdfDetailPrecompte": "Angewandter Berufssteuervorabzug",
       "indPdfPourcent": "{taux} %",
       "indPdfFooterDisclaimer": "Unverbindliche Schätzung — Gesetz vom 3. Juli 1978 (Art. 39 ff.), Sondervorabzug-Tabelle FÖD Finanzen 2026 nach Stufen (5 Stufen, 17,16 → 53,50 %), Sonder-Ausgleichsbeitrag Arbeitgeber ONSS (RSZ) 2026/1 (1 / 2 / 3 % ab Jahresbrutto ≥ 50 166 / 61 437 / 72 707 €), kumulierbare Schutzentschädigung (Gesetz 16/03/1971, CCT 5, Gesetz 19/03/1991). Für eine offizielle und personalisierte Berechnung: FÖD Beschäftigung / Ihr Sozialsekretariat. Quellen: FÖD Finanzen, ONSS (RSZ), Belgisches Staatsblatt (Moniteur belge).",
+      "penErrDateNaissance": "Geben Sie Ihr Geburtsdatum ein.",
+      "penErrCarriere": "Geben Sie eine gültige Anzahl von Berufsjahren ein.",
+      "penErrAssimilees": "Geben Sie eine gültige Anzahl gleichgestellter Jahre ein (oder lassen Sie das Feld leer).",
+      "penErrSalaire": "Geben Sie ein gültiges durchschnittliches Jahresgehalt ein.",
+      "penErrAge": "Geben Sie ein gültiges Rentenalter ein.",
+      "penTitle": "Geschätzte gesetzliche Rente",
+      "penSubtitle": "Belgischer Arbeitnehmer — offizielle SFP-Formel 2026",
+      "penReset": "Zurücksetzen",
+      "penResetFormTitle": "Formular zurücksetzen",
+      "penFieldDateNaissance": "Geburtsdatum",
+      "penHintDateNaissance": "Bestimmt automatisch das gesetzliche Rentenalter (65, 66 oder 67 Jahre gemäß Gesetz vom 10.08.2015).",
+      "penFieldCarriere": "Tatsächliche Berufsjahre",
+      "penHintCarriere": "Tatsächlich gearbeitete Jahre — ohne gleichgestellte Zeiten.",
       "penSuffixAns": "Jahre",
       "penFieldAssimilees": "Gleichgestellte Zeiten",
       "penHintAssimilees": "Arbeitslosigkeit, Krankheit, Elternurlaub, Militärdienst, anerkannte Zeitkredite.",
@@ -2359,6 +2415,7 @@
       "afKnowContact": "Für den genauen Betrag wenden Sie sich an Ihre Kasse: <strong>FAMIWAL</strong> (Wallonien), <strong>FAMIRIS</strong> (Brüssel), <strong>Groeipakket</strong> (Flandern), <strong>Ministerium DG</strong> (Ostbelgien).",
       "afExporting": "PDF wird erstellt…",
       "afDownloadPdf": "Details herunterladen (PDF)",
+      "afPlaceholder": "Wählen Sie Ihre Region aus, fügen Sie Ihre Kinder hinzu und geben Sie das Haushaltseinkommen an, dann klicken Sie auf <em>« Calculer les allocations »</em>.",
       "afPdfTitle": "Schätzung Kindergeld 2026 — {region}",
       "afPdfGeneratedAt": "Erstellt am {date} um {time}",
       "afPdfParams": "Eingegebene Parameter",
@@ -2415,6 +2472,7 @@
       "tsGainEligibleLabel": "/ Jahr geschätzte Ersparnis",
       "tsGainTheoriqueLabel": "/ Jahr theoretischer Gewinn",
       "tsGainMonthly": "≈ <strong>{x}</strong> / Monat",
+      "tsMotifsTitle": "{count, plural, one {Anspruchsvoraussetzung} other {Anspruchsvoraussetzungen}}",
       "tsNotesTitle": "Zu beachten",
       "tsDetailTitle": "Berechnungsdetail",
       "tsDetailElec": "Elektrizität",
@@ -2435,6 +2493,7 @@
       "tsNotEligibleBlockItem3": "Heizungszulage (Heizöl, Propangas, Pellets) gemäß Bedingungen.",
       "tsPdfExporting": "PDF wird erstellt…",
       "tsPdfDownload": "Details herunterladen (PDF)",
+      "tsPlaceholderInstruction": "Aktivieren Sie Ihre infrage kommenden Status, geben Sie Ihren Verbrauch an und klicken Sie dann auf <em>« Vérifier mon éligibilité »</em>.",
       "tsPlaceholderElec": "Strom",
       "tsPlaceholderGaz": "Erdgas",
       "tsPlaceholderTarifs": "CREG-Tarife {q} · {x}/kWh Strom · {y}/kWh Gas",
@@ -2468,6 +2527,7 @@
       "tsPdfEconomieElec": "Ersparnis beim Strom",
       "tsPdfEconomieGaz": "Ersparnis beim Gas",
       "tsPdfPlafondElec": "Anwendbare Stromobergrenze",
+      "tsPdfPlafondGaz": "Geltende Gasplafonds",
       "tsPdfExcedentElec": "Strom-Überschuss (Standardtarif)",
       "tsPdfExcedentGaz": "Gas-Überschuss (Standardtarif)",
       "tsPdfCoutStandard": "Jährliche Kosten zum Standardtarif",
@@ -2492,6 +2552,21 @@
       "ippRevenuHint": "Einkommen nach ONSS-Beiträgen (belgische Sozialversicherung) und Pauschalabzug für Berufskosten. Für Arbeitnehmer: ungefähr Jahresbruttogehalt × 0,73.",
       "ippStatutLabel": "Familienstand",
       "ippStatutHint": "Der Ehegattensplitting-Quotient wird automatisch angewendet, wenn „verheiratet — ein Einkommen",
+      "ippEnfantsLabel": "Unterhaltsberechtigte Kinder",
+      "ippEnfantsHint": "Kumulierte Zuschläge Art. 132 EStG 92: 1.980 € / 5.110 € / 11.440 € / 18.510 €.",
+      "ippAutresLabel": "Andere unterhaltsberechtigte Personen",
+      "ippAutresHint": "Älteres Elternteil, Großelternteil, Geschwister 66+ in Pflegebedürftigkeit. 1.980 €/Person (allgemeiner Fall).",
+      "ippParentIsoleLabel": "Alleinerziehender Elternteil (alleiniger Leistungsempfänger) mit unterhaltsberechtigtem/n Kind(ern)",
+      "ippParentIsoleDesc": "Zusätzlicher Grundfreibetrag von 1.980 € (FÖD Finanzen EI 2026).",
+      "ippAdditionnelLabel": "Kommunalsteuer-Zuschlag (%)",
+      "ippAdditionnelHint": "Belgischer Durchschnitt ≈ 7,5 %. Brüssel-Stadt 7 %, Antwerpen 7 %, Lüttich 8 %, Charleroi 8,5 %. Je nach Gemeinde variabel.",
+      "ippReductionsIntro": "Geben Sie die tatsächlich gezahlten oder ausgegebenen <strong>Jahresbeträge</strong> an. Der Simulator wendet den Standardsatz für jeden Posten an (Pensionssparen 30 %, Dienstleistungsschecks ≈ 15 %, Spenden 45 %, Hypothekardarlehen ≈ 30 %, Kinderbetreuung 45 %).",
+      "ippEpargnePensionLabel": "Pensionssparen (€/Jahr)",
+      "ippEpargnePensionHint": "Höchstgrenze Basiskorb {plafond} zu 30 % (maximale Ermäßigung = {max}).",
+      "ippTitresServicesLabel": "Gekaufte Dienstleistungsschecks (€/Jahr)",
+      "ippTitresServicesHint": "Höchstgrenze {plafond}. Tatsächlicher Satz: Wallonien 10 %, Brüssel 15 %, Flandern 20 % (Durchschnitt 15 %).",
+      "ippDonsLabel": "Spenden an anerkannte Vereinigungen (€/Jahr)",
+      "ippDonsHint": "Steuerermäßigung 45 % ab 40 €/Jahr pro Begünstigtem (Art. 145³³ EStG 92).",
       "ippPretHypoLabel": "Hypothekendarlehen — Kapital + Zinsen (€/Jahr)",
       "ippPretHypoHint": "Regionaler Wohnungsscheck durchschnittlich ≈ 30 %. Variiert je nach Region und Darlehensdatum.",
       "ippGardeEnfantsLabel": "Kinderbetreuungskosten (€/Jahr)",
@@ -2526,6 +2601,7 @@
       "ippMarginal50Body": "Über {seuil} hinaus wird jeder zusätzliche Euro mit 50 % besteuert. Kapitaleinkünfte, Pensionssparen und Spenden eröffnen interessante Ermäßigungen — erkunden Sie die legalen Steueroptimierungen auf Tax-on-web.",
       "ippPdfGenerating": "PDF wird erstellt…",
       "ippExportPdf": "PDF exportieren",
+      "ippPlaceholderPrompt": "Geben Sie Ihr zu versteuerndes Jahreseinkommen und Ihre Familiensituation an und klicken Sie dann auf <em>« Calculer mon impôt »</em>.",
       "ippPlaceholderQuotite": "Steuerfreier Grundbetrag {value} · 4 föderale Steuerstufen · VJ 2026",
       "ippPdfGenere": "Erstellt am {date} um {time} Uhr",
       "ippPdfTitre": "Einkommensteuer natürlicher Personen — VJ 2026",
@@ -2638,6 +2714,19 @@
       "kmToKnowTaxOnWeb": "<strong>Erklärung Tax-on-web</strong>: erhaltene Entschädigung in Feld <strong>1254/2254</strong> einzutragen, Steuerbefreiung in <strong>1255/2255</strong>. Tatsächliche Kosten im Teil 2 der Erklärung aufzuführen.",
       "kmGeneratingPdf": "PDF wird erstellt…",
       "kmDownloadPdf": "Details herunterladen (PDF)",
+      "kmPlaceholderText": "Geben Sie Ihre Strecke und Ihr Verkehrsmittel an und klicken Sie dann auf <em>« Calculer ma déduction »</em>.",
+      "kmPlaceholderVoiture": "Auto",
+      "kmPlaceholderVelo": "Fahrrad",
+      "kmPlaceholderTP": "Öffentliche Verkehrsmittel",
+      "kmPlaceholderRates": "Auto {voiture} €/km · Fahrrad {velo} €/km · ÖV 100 % Abonnement",
+      "kmPdfInputsTitle": "Eingegebene Parameter",
+      "kmPdfTitle": "Kilometerkosten Wohnung–Arbeit — {modeLabel}",
+      "kmPdfRowMode": "Transportmittel",
+      "kmPdfRowDistance": "Einfache Strecke",
+      "kmPdfDistanceValue": "{n} km",
+      "kmPdfRowJours": "Tage vor Ort / Woche",
+      "kmPdfJoursValue": "{n} T",
+      "kmPdfRowSemaines": "Wochen / Jahr",
       "kmPdfSemainesValue": "{n} Wo",
       "kmPdfRowAbonnement": "Jährliche Abonnementkosten",
       "kmPdfRowTelework": "Homeoffice-Tage / Woche",
@@ -2989,7 +3078,14 @@
       "penStatutIsoleLabel": "Alleinstehend (60 %)",
       "baremeSheetMetaNotFound": "Tarif nicht gefunden | DocBel",
       "baremeSheetMetaTitle": "{label} — Arbeitslosigkeitstarife ONEM [LfA] | DocBel",
-      "baremeSheetMetaDescription": "Offizielle ONEM [LfA]-Beträge — {label}. Gültiger Tarif nach Code und Stufe."
+      "baremeSheetMetaDescription": "Offizielle ONEM [LfA]-Beträge — {label}. Gültiger Tarif nach Code und Stufe.",
+      "bnPlaceholderText": "Geben Sie einen Betrag ein und klicken Sie auf <em>„{mode} berechnen“</em>, um die Details zu sehen.",
+      "pvPlaceholderBody": "Geben Sie Ihren Status, Ihre paritätische Kommission und die beiden Daten an und klicken Sie dann auf <em>„Kündigungsfrist berechnen“</em>.",
+      "pecKnowEmployeDouble": "Das <strong>doppelte Urlaubsgeld</strong> ({tauxDouble} des Bruttolohns) gliedert sich in 85 % „gesetzlich“ (LSS-pflichtig 13,07 %) + 7 % „Zusatz“ (ohne LSS) und folgt anschließend der FÖD-Tabelle „Urlaubsgeld“ mit 11 Stufen — hier <strong>{taux}</strong>.",
+      "pecKnowOuvrierOnva": "Das <strong>ONVA</strong> (Landesamt für Jahresurlaub) zahlt im Mai/Juni <strong>{taux}</strong> des erhöhten Jahresbruttolohns ({coef} ×).",
+      "pecPlaceholder": "Geben Sie Ihren Status, Ihren monatlichen Bruttolohn und die 2025 geleisteten Monate an und klicken Sie dann auf <em>„Urlaubsgeld berechnen“</em>.",
+      "indPlaceholder": "Geben Sie Ihren monatlichen Bruttolohn und die Dauer der nicht geleisteten Kündigungsfrist an und klicken Sie dann auf <em>„Entschädigung berechnen“</em>.",
+      "penPlaceholderBody": "Geben Sie Ihr Geburtsdatum, Ihren Werdegang und Ihren Durchschnittslohn an und klicken Sie dann auf <em>„Meine Rente schätzen“</em>."
     },
     "shared": {
       "verified": "verifiziert",
@@ -3070,6 +3166,7 @@
       "fmFolderNamePlaceholder": "Ordnername",
       "fmVisibilityLabel": "Sichtbarkeit:",
       "fmFileInUse": "Datei wird verwendet",
+      "fmUsedOnPages": "Verwendet auf {count} {count, plural, one {Seite} other {Seiten}}",
       "fmStatusDeleted": "Gelöscht",
       "fmStatusPublished": "Veröffentlicht",
       "fmStatusDraft": "Entwurf",
@@ -3093,6 +3190,33 @@
       "fmCurrentFolder": "Aktueller Ordner",
       "fmChangeFileAndFolder": "Diese Datei + aktuellen Ordner ändern",
       "fmConfirmDeleteTitle": "Löschen bestätigen",
+      "fmConfirmDeleteBody": "Sind Sie sicher, dass Sie <strong>{type} « {name} »</strong> löschen möchten?",
+      "fmTheFolder": "der Ordner",
+      "fmTheFile": "die Datei",
+      "fmFolderMustBeEmpty": "Der Ordner muss leer sein. Leeren Sie den Inhalt, bevor Sie ihn löschen.",
+      "fmConfirmWord": "löschen",
+      "fmDeleting": "Wird gelöscht...",
+      "fmDeletePermanently": "Endgültig löschen",
+      "fmConfirmBatchDeleteTitle": "Mehrfachlöschung bestätigen",
+      "fmConfirmBatchDeleteBody": "Sind Sie sicher, dass Sie <strong>{count, plural, one {# Datei} other {# Dateien}}</strong> löschen möchten?",
+      "fmIrreversible": "Diese Aktion ist unwiderruflich.",
+      "fmNFiles": "{count, plural, one {{count} Datei} other {{count} Dateien}}",
+      "fmChangeVisibilityTitle": "Sichtbarkeit ändern",
+      "fmConfirmBatchPrivacyBody": "Sind Sie sicher, dass Sie <strong>{target}</strong> <strong>{count} Datei(en)</strong> machen möchten?",
+      "fmPrivatePlural": "privat",
+      "fmPublicPlural": "öffentlich",
+      "fmBatchPrivacyPrivateHint": "Die Dateien werden aus dem öffentlichen Tab verschwinden.",
+      "fmBatchPrivacyPublicHint": "Die Dateien werden im öffentlichen Tab sichtbar sein.",
+      "fmConfirm": "Bestätigen",
+      "fmUrlCopied": "URL in die Zwischenablage kopiert",
+      "fmRenamed": "{from} umbenannt in {to}",
+      "fmRenameFailed": "Datei konnte nicht umbenannt werden",
+      "fmFileInUseDesc": "{name} wird auf {count} Seite(n) verwendet",
+      "fmFolderNotEmpty": "Ordner nicht leer",
+      "fmFolderNotEmptyDesc": "Der Ordner muss vor dem Löschen leer sein",
+      "fmDeleteSuccess": "Erfolgreich gelöscht",
+      "fmDeleteSuccessDesc": "{type} „{name}",
+      "fmDeleteError": "Löschfehler",
       "fmDeleteErrorDesc": "Dieses Element kann nicht gelöscht werden",
       "fmVisibilityFailed": "Die Sichtbarkeit kann nicht geändert werden",
       "fmWarning": "Warnung",
@@ -3723,9 +3847,35 @@
       "heroIllustrationGuidedCasesTitle": "Geführte Fälle",
       "heroIllustrationGuidedCasesDescription": "Konkrete Szenarien zum Verständnis jedes Schritts.",
       "scenarios": {
-        "cardAriaLabel": "Praxisfall „{label}"
+        "cardAriaLabel": "Praxisfall „{label}",
+        "viewAll": "Alle Praxisbeispiele anzeigen ({count})"
+      },
+      "experience": {
+        "tabs": {
+          "demo": "Demo",
+          "cas": "Praxisbeispiele",
+          "erreurs": "Fehler, die zu vermeiden sind",
+          "regles": "Wichtige Regeln",
+          "faq": "FAQ",
+          "ressources": "Ressourcen"
+        },
+        "tabPanelAriaLabel": "Registerkarte: {label}",
+        "mandateLink": {
+          "title": "Einer nahestehenden Person Zugang gewähren (Vollmacht)",
+          "body": "Sie können eine nahestehende Person bevollmächtigen, Ihre Karte für vorübergehende Arbeitslosigkeit (C3 / Kontrollkarte) an Ihrer Stelle auszufüllen. Entdecken Sie in der Simulation die Zugriffsverwaltung und die Vollmachtsanfrage.",
+          "cta": "Öffnen"
+        }
+      },
+      "hero": {
+        "trust": {
+          "secureEnv": "Gesicherte Umgebung",
+          "noRealData": "Keine echten Daten",
+          "basedOnOnem": "Basierend auf den ONEM (LfA)-Verfahren"
+        }
       },
       "appHeader": {
+        "title": "eC3.2",
+        "subtitle": "Kontrollkarte vorübergehende Arbeitslosigkeit",
         "navAriaLabel": "Hauptnavigation",
         "homeAriaLabel": "Startseite",
         "more": {
@@ -3926,10 +4076,23 @@
                   "help": "Sie haben eine bezahlte Berufslaufbahn in Belgien (mehrere Monate bis mehrere Jahre).",
                   "refine": {
                     "question": "Ist dies Ihr allererster Antrag auf Arbeitslosengeld?",
-                    "help": "„Zum ersten Mal"
+                    "help": "„Zum ersten Mal",
+                    "opt": {
+                      "premiere": {
+                        "label": "Ja, es ist das erste Mal"
+                      },
+                      "redemande": {
+                        "label": "Nein, ich war schon früher arbeitslos"
+                      }
+                    }
                   }
                 },
+                "sorsEtudes": {
+                  "label": "Ich komme aus dem Studium, ich habe wenig oder gar nicht gearbeitet",
+                  "help": "Sie haben (zu) wenig gearbeitet, um einen klassischen Anspruch zu eröffnen – das ist der Weg der Eingliederung (Allocation d'insertion)."
+                },
                 "travailEtranger": {
+                  "label": "Ich habe im Ausland gearbeitet (EU/EWR)",
                   "help": "Sie haben in einem Land der Europäischen Union / des EWR gearbeitet und kehren nach Belgien zurück.",
                   "refine": {
                     "question": "Haben Sie seit Ihrer Rückkehr wieder in Belgien gearbeitet?",
@@ -4129,12 +4292,86 @@
           },
           "c6Fmm": {
             "title": "C6 – Höhere Gewalt aus medizinischen Gründen"
+          },
+          "c27rFmm": {
+            "title": "C27R — Wiedereingliederungsweg"
+          }
+        },
+        "theory": {
+          "introduction": {
+            "title": "Einleitung",
+            "body": "Die vorübergehende Arbeitslosigkeit (chômage temporaire, CT) ist eine vorübergehende vollständige oder teilweise Aussetzung des Arbeitsvertrags, während der der Arbeitnehmer Leistungen erhalten kann, die vom ONEM (LfA) über seinen Auszahlungsträger (Organisme de paiement) ausgezahlt werden.\n\nIm Gegensatz zur vollständigen Arbeitslosigkeit (chômage complet) wird der Arbeitsvertrag nicht aufgelöst – die Beschäftigung wird wiederaufgenommen, sobald der Aussetzungsgrund weggefallen ist.\n\nEs gibt elf offizielle Gründe, jeder mit eigenen Voraussetzungen, arbeitgeberseitigen Formalitäten und Dokumenten."
+          },
+          "motifs": {
+            "title": "Die elf Gründe",
+            "body": "Die anerkannten Gründe für vorübergehende Arbeitslosigkeit (chômage temporaire) sind:\n\n'{{ motifs }}'\n\nJeder Grund unterliegt eigenen Zulassungsbedingungen und steht nur bestimmten Arbeitnehmerkategorien offen (Arbeiter, Angestellter, Zeitarbeiter)."
+          },
+          "quiEstConcerne": {
+            "title": "Wer kann welchen Grund in Anspruch nehmen",
+            "body": "Nicht alle Gründe stehen allen Beschäftigungsstatus offen. Die nachstehende Matrix gibt einen Überblick über die jeweiligen Zugangsmöglichkeiten.\n\n'{{ qui-est-concerne }}'\n\nEinige Sonderfälle:\n\n- **Wirtschaftliche Gründe**: Der klassische Angestellte hat keinen Zugang — er wechselt zur *Suspension employés* (Aussetzung für Angestellte), die voraussetzt, dass das Unternehmen gegenüber dem ONEM (Landesamt für Arbeitsbeschaffung) nachweist, dass es die Voraussetzungen erfüllt (Unternehmen in Schwierigkeiten).\n- **Medizinische höhere Gewalt**: Gilt nicht für Zeitarbeiter.\n- **Geschützter Arbeitnehmer**: Vorbehalten für Gewerkschaftsdelegierte (Arbeiter oder Angestellte).\n- **Suspension employés** (Aussetzung für Angestellte): Ausschließlich für Angestellte.\n\nFür Zeitarbeiter in wirtschaftlicher vorübergehender Arbeitslosigkeit gelten strenge Rahmenbedingungen (erforderliche Betriebszugehörigkeit, laufendes CT-Verfahren für Festangestellte derselben Abteilung usw.)."
+          },
+          "conditions": {
+            "title": "Zulassungs- und Gewährungsbedingungen",
+            "body": "Es gelten zwei Bedingungsebenen:\n\n1. **Zulässigkeit (Admissibilité)** — Der Arbeitnehmer muss innerhalb eines der Antragstellung vorausgehenden Referenzzeitraums eine ausreichende Anzahl nachgewiesener Arbeitstage aufweisen. Die Anforderungen variieren je nach Alter und Art des Arbeitsvertrags.\n2. **Gewährung (Octroi)** — Zum Zeitpunkt der Auszahlung der Leistung müssen mehrere persönliche Voraussetzungen erfüllt sein: Verfügbarkeit (Disponibilité) für den Arbeitsmarkt, kein anderes Ersatzeinkommen, keine aktive Sanktion usw.\n\nEine aktive Sanktion oder ein Ausschluss aus einem anderen Grund (z. B. vollständige Arbeitslosigkeit / chômage complet) kann sich unmittelbar auf die Entschädigung bei vorübergehender Arbeitslosigkeit auswirken."
+          },
+          "documents": {
+            "title": "Zusammenzustellende Unterlagen",
+            "body": "Die Unterlagen, die **der Arbeitnehmer** im Rahmen eines Antrags auf vorübergehende Arbeitslosigkeit einreicht:\n\n'{{ documents }}'\n\nParallel dazu übermittelt der **Arbeitgeber** dem ONEM (Landesamt für Arbeitsbeschaffung) auf elektronischem Weg seine eigene Erklärung (DRS / WECH) sowie die je nach Grund erforderlichen Meldungen und Mitteilungen. Diese Datenströme laufen nicht über die vorliegende Akte — sie werden vom Arbeitgeber direkt über die Portale des ONSS (Landesamt für soziale Sicherheit) / ONEM übermittelt.\n\nDas C32 des Arbeitnehmers ist in nahezu allen Fällen das zentrale Dokument der Akte. Es kann in bestimmten Sondersituationen, wie z. B. medizinischer höherer Gewalt, durch andere Formulare (C6) ersetzt werden."
+          },
+          "natureDa": {
+            "title": "Art des Leistungsantrags (DA)",
+            "body": "Die \\\"Art des DA\\\" ist ein ONEM-Code (Landesamt für Arbeitsbeschaffung), der den Kontext des Antrags zusammenfasst."
+          },
+          "delais": {
+            "title": "Einreichungsfristen",
+            "body": "Die Frist für die Einreichung eines Antrags hängt von der Art des Antrags und dem Grund ab:\n\n| Art des Antrags | Standardfrist | Wesentliche Ausnahmen |\n| --- | --- | --- |\n| Pflichtantrag | laufender Monat + 2 Monate | Änderung Q/S: + 36 Monate · Streik: + 6 Monate · 66+: keine Frist |\n| Fakultativer Antrag | laufender Monat + 36 Monate | — |\n\nDie internen Tools (AS400) wenden die Ausnahmen nicht immer automatisch an und fallen auf die kürzeste Standardfrist zurück — daher ist es für den Partner wichtig, die genaue Regel des jeweiligen Grundes zu kennen."
+          },
+          "demarchesEmployeur": {
+            "title": "Arbeitgeberpflichten — Überblick",
+            "body": "Auf Arbeitgeberseite hängen die Pflichten vom jeweiligen Grund ab:\n\n- **Benachrichtigung** (vorgelagertes Verfahren): erforderlich bei wirtschaftlichen Gründen, technischen Unfällen und Aussetzung bei Angestellten. Sie erfolgt auf elektronischem Weg vor Beginn der Periode der vorübergehenden Arbeitslosigkeit (chômage temporaire).\n- **Mitteilung des ersten tatsächlichen Tages**: monatlich zu übermitteln bei wirtschaftlichen Gründen, Witterungsbedingungen, technischen Unfällen und Aussetzung bei Angestellten.\n- **DRS / WECH**: elektronische Sozialmeldung (DRS – Déclaration de Risque Social), die der Arbeitgeber über das Portal der ONSS (belgische Sozialversicherungsbehörde) übermittelt. Ein einziges Konzept, zwei Bezeichnungen: *DRS* ist die offizielle Bezeichnung auf Seiten des Affiliierten, *WECH* ist der interne Fachausdruck (z. B. WECH 502 für die Vorkommensmeldung, WECH 505 für den Zahlungsfluss). Für den Affiliierten sind diese Datenflüsse nicht sichtbar – er sieht nur das Ergebnis (ausgezahlte Leistungen).\n\nKeine dieser Arbeitgeberformalitäten gehört zu den PDFs, die der Arbeitnehmer im Dossier ausfüllt; sie werden hier nur zur Information erwähnt."
           }
         },
         "proc": {
           "common": {
             "step": {
+              "s1": {
+                "when": "Antrag erstellen",
+                "title": "Antrag initialisieren",
+                "description": "Erstellen Sie eine neue DA im Zahlungstool mit der entsprechenden Art, dem Datum des ersten betreffenden Tages der vorübergehenden Arbeitslosigkeit (chômage temporaire) und dem Präfix entsprechend der Situation des Arbeitnehmers (Vollzeit, Teilzeit, Rechtserhalt usw.)."
+              },
+              "s2": {
+                "when": "Einstellungen",
+                "title": "Zulassungsartikel bestimmen",
+                "description": "Die CT-Analyse starten, um den anwendbaren Zulassungsartikel zu ermitteln. Das System schlägt den Code vor (42K30, 42K33, 42L36, Übergangsmaßnahme, Art. 42 nach DISPO oder nicht zulässig)."
+              },
+              "s3": {
+                "when": "Externe Dokumente",
+                "title": "ONSS (belgische Sozialversicherungsbehörde) / DRS-Datenströme anfordern",
+                "description": "Das C3.2 EL (DRS-Datenstrom) automatisch anfordern sowie – je nach geltendem Zulassungsartikel – das DMFA und alle weiteren relevanten Datenströme."
+              },
+              "s4": {
+                "when": "Beschäftigung importieren",
+                "title": "Beschäftigung aus dem DRS-Arbeitgeberdatenstrom importieren",
+                "description": "Die Beschäftigung mit dem WECH 502-Datenstrom (Antrag) oder WECH 505-Datenstrom (Zahlung) verknüpfen. Die Konsistenz der importierten Parameter prüfen und die Zähler aktualisieren."
+              },
+              "s5": {
+                "when": "Bauwesen (CP 124 – paritätischer Ausschuss)",
+                "title": "Berechtigungsausweis (CAD) prüfen",
+                "description": "Für einen Bauarbeiter das Vorhandensein eines CAD (Berechtigungsausweis) prüfen. Falls vorhanden, diesen auswählen. Andernfalls gilt die Ersatzentschädigung (2 €)."
+              },
+              "s6": {
+                "when": "Berechnung",
+                "title": "Zifferncode berechnen",
+                "description": "Die Berechnung des Zifferncodes auf Grundlage des neuen Formulars C32 auslösen. Bei Zulassungsdossiers auf Basis einer Beschäftigung (42K30 / 42K33) die TIMELINE validieren, um zu bestätigen, dass die Voraussetzungen erfüllt sind."
+              },
+              "s7": {
+                "when": "Leistungen (Allocations)",
+                "title": "Den Leistungsantrag abschließen",
+                "description": "Den Status des Antrags festlegen (vollständig / unvollständig), die C2-Zone positionieren und das Programm den CAD-Code bzw. die IC-Entschädigung je nach Sektor automatisch berechnen lassen."
+              },
               "s8": {
+                "when": "Kodifizierung",
+                "title": "C2-Kodifizierung validieren",
                 "description": "Berechnungsmethode prüfen (08 — nicht von der Degressivität betroffen) und den Tarif — werden automatisch angezeigt."
               }
             }
@@ -4678,6 +4915,7 @@
           "menage": "Haushalt (75 %)"
         },
         "raisons": {
+          "carriereInsuffisante": "Um mit {ageDepart} Jahren in Rente gehen zu können, müssen Sie eine Karriere von mindestens {conditionCarriere} Jahren (einschließlich Gleichstellungen) nachweisen. Sie weisen insgesamt {carriereTotale} {carriereTotalePlural, plural, one {Jahr} other {Jahre}} auf.",
           "avantSoixante": "Die vorzeitige Rente ist vor dem 60. Lebensjahr nicht zugänglich."
         }
       },
@@ -5446,13 +5684,87 @@
       "controle": {
         "verdict": {
           "ok": "Keine offensichtlichen Unstimmigkeiten festgestellt.",
-          "points_to_check": "Zu prüfende Punkte"
+          "points_to_check": "Zu prüfende Punkte",
+          "insufficient": "Unzureichende Daten für eine vollständige Prüfung."
+        },
+        "finding": {
+          "brut_absent": {
+            "message": "Der monatliche Bruttolohn ist nicht angegeben: Eine zahlenmäßige Konsistenzprüfung ist nicht möglich.",
+            "recommendation": "Geben Sie den auf der Lohnabrechnung ausgewiesenen Bruttolohn an, um eine Größenordnungsprüfung zu ermöglichen."
+          },
+          "cp_absente": {
+            "message": "Keine Paritätische Kommission (Commission paritaire, CP) angegeben: ein Vergleich des Lohns mit dem sektoriellen Mindestlohntarif ist nicht möglich.",
+            "recommendation": "Geben Sie die zutreffende Paritätische Kommission (Commission paritaire, CP) an, um den sektoriellen Mindesttarif zu überprüfen."
+          },
+          "cout_employeur_non_fiable": {
+            "message": "Ohne Paritätische Kommission (Commission paritaire, CP) können die gesamten Arbeitgeberkosten (Arbeitgeberbeiträge, sektorielle Prämien) nicht zuverlässig ermittelt werden.",
+            "recommendation": "Für eine zuverlässige Kostenschätzung geben Sie bitte die Commission paritaire (CP) an: Sie bestimmt die sektoriellen Abgaben und Vorteile."
+          },
+          "regime_absent": {
+            "message": "Das Arbeitszeitregime (Vollzeit / Teilzeit) ist nicht angegeben: Einige Prüfungen bleiben daher unvollständig.",
+            "recommendation": "Bitte geben Sie an, ob der Arbeitnehmer Vollzeit oder Teilzeit beschäftigt ist."
+          },
+          "incoherence_temps_plein": {
+            "message": "Regelung « temps plein » angegeben, aber der eingegebene Stundenplan ({weekly} Std./Woche) liegt deutlich unter der Vollzeitreferenz ({reference} Std./Woche).",
+            "recommendation": "Überprüfen Sie die Regelung: Ein Stundenplan unterhalb der Vollzeitreferenz entspricht in der Regel einer Teilzeitstelle."
+          },
+          "temps_partiel_sans_horaire": {
+            "message": "Regelung « temps partiel », aber kein wöchentlicher Stundenplan angegeben: Der Stundenplan ist eine Pflichtangabe im Teilzeitarbeitsvertrag.",
+            "recommendation": "Geben Sie die Anzahl der Stunden pro Woche an: Der Teilzeitvertrag muss den genauen Arbeitsplan enthalten."
+          },
+          "net_incoherent": {
+            "message": "Der eingegebene Nettobetrag ({net} €) weicht stark von der Docbel-Schätzung ab (~{expected} € bei einem Bruttolohn von {gross} €).",
+            "recommendation": "Überprüfen Sie die Abzüge (ONSS [belgische Sozialversicherungsbeiträge], Berufssteuervorabzug) oder ob nicht erfasste Elemente vorhanden sind (Prämie, Urlaubsgeld, Vorteile, Teilzeit). Die Schätzung ist indikativ."
+          },
+          "etudiant_sans_contrat": {
+            "message": "Studentenarbeiter ohne Vertragsdaten (weder Paritätische Kommission noch Arbeitszeit): Das Kontingent und die Solidaritätsbeiträge können nicht überprüft werden.",
+            "recommendation": "Geben Sie die Arbeitszeit und die Paritätische Kommission (CP) des Studenten an, um das Jahreskontingent und den Solidaritätsbeitrag zu überprüfen."
+          },
+          "flexi_sans_contrat_cadre": {
+            "message": "Flexi-Job-Arbeitnehmer ohne Erwähnung eines Rahmenvertrags: Ein vorheriger schriftlicher Rahmenvertrag ist für das Flexi-Regime erforderlich.",
+            "recommendation": "Bestätigen Sie, dass ein Flexi-Job-Rahmenvertrag vor Beginn der Leistungen unterzeichnet wurde (vermerken Sie dies in der Anmerkung)."
+          },
+          "avantage_non_pris_en_compte": {
+            "message": "Vorteile sind angegeben, aber kein Betrag (Prämie, Urlaubsgeld) wurde erfasst: Sie werden bei der Schätzung des Nettolohns nicht berücksichtigt.",
+            "recommendation": "Erfassen Sie die Beträge der Vorteile/Prämien, um den Nettolohnvergleich zu verfeinern."
+          },
+          "aucune_incoherence": {
+            "message": "Keine offensichtliche Inkohärenz festgestellt.",
+            "recommendation": "Diese Prüfung ist nur ein Anhaltspunkt: Nur ein zugelassenes Sozialsekretariat (secrétariat social agréé) kann die Konformität einer Gehaltsabrechnung bestätigen."
+          }
         }
       }
     },
     "ec32Content": {
       "content": {
+        "seo": {
+          "title": "eC3.2 : interaktive Simulation zum Ausfüllen der Karte für vorübergehende Arbeitslosigkeit (chômage temporaire) | Docbel",
+          "description": "Verstehen Sie, wie die elektronische Kontrollkarte für vorübergehende Arbeitslosigkeit eC3.2 ausgefüllt wird – mithilfe einer inoffiziellen Lernsimulation, praktischer Fallbeispiele und häufiger Fehler, die vermieden werden sollten."
+        },
+        "hero": {
+          "badge": "Inoffizielle Lernsimulation",
+          "title": "eC3.2, einfach erklärt",
+          "subtitle": "Testen Sie Ihre elektronischen Kontrollschritte bei Arbeitslosigkeit in einem übersichtlichen Simulator – ohne Risiko und 100 % vertraulich.",
+          "primaryCta": "Simulation starten",
+          "secondaryCta": "Fallbeispiele ansehen",
+          "disclaimer": "Es werden keine echten Daten abgefragt. Es werden keine Daten an den ONEM (belgische Arbeitsverwaltung) übermittelt."
+        },
+        "disclaimer": {
+          "title": "Inoffizielle Lernsimulation",
+          "points": {
+            "0": "Inoffizielle Lernsimulation",
+            "1": "Es werden keine echten Daten abgefragt",
+            "2": "Es werden keine Daten an den ONEM übermittelt",
+            "3": "Diese Seite ersetzt nicht die offizielle Anwendung eC3.2",
+            "4": "Für einen echten Vorgang verwenden Sie bitte die offizielle Anwendung eC3.2"
+          }
+        },
+        "alert": {
+          "title": "Bevor Sie beginnen",
+          "content": "Die eC3.2-Karte betrifft ausschließlich die vorübergehende Arbeitslosigkeit (chômage temporaire – Reduzierung oder Aussetzung der Tätigkeit bei Ihrem Arbeitgeber) und darf nicht mit der eC3 verwechselt werden, die für vollständige Arbeitslosigkeit (chômage complet) gilt. Alles, was hier angezeigt wird, ist fiktiv und dient ausschließlich zu Lernzwecken: Es gibt keine Verbindung, keine Datenübermittlung und keine echten Daten."
+        },
         "learningModes": {
+          "title": "So lernen Sie",
           "subtitle": "Drei Möglichkeiten, die eC3.2-Karte kennenzulernen – je nachdem, ob Sie lieber geführt werden, sich anhand konkreter Fälle üben oder frei erkunden möchten.",
           "modes": {
             "guided": {
@@ -5667,22 +5979,166 @@
               "2": "Die Karte muss ab dem ersten tatsächlichen Arbeitslosigkeitstag des Monats ausgefüllt werden",
               "3": "Im Bausektor muss sie stets ausgefüllt sein",
               "4": "Die Auszahlung basiert auf der elektronischen Karte"
+            },
+            "employersTitle": "Für Arbeitgeber",
+            "employers": {
+              "0": "Keine Papierformulare mehr ausgeben, außer bei ausdrücklicher Ausnahmegenehmigung",
+              "1": "Das Validierungsheft muss nicht mehr ausgefüllt werden, außer für Arbeitnehmer, die noch eine Papierkarte erhalten",
+              "2": "Arbeitnehmer bei Bedarf begleiten"
             }
+          },
+          "why": {
+            "title": "Warum die eC3.2?",
+            "subtitle": "Die Vorteile des Wechsels von der Papierkarte zur elektronischen Karte.",
+            "items": {
+              "0": "Bekämpfung von Sozialleistungsmissbrauch",
+              "1": "Die ONEM (LfA – belgische Bundesbehörde für Arbeitslosigkeit) wird über das Ausfüllen der Karte informiert",
+              "2": "Bessere Nachverfolgbarkeit dessen, was wann ausgefüllt wird",
+              "3": "Weniger Unklarheiten als bei der Papierkarte",
+              "4": "Korrektere Auszahlung",
+              "5": "Schnellere Bearbeitung",
+              "6": "Digitale Übermittlung an den Organisme de paiement (OP – Auszahlungsstelle)",
+              "7": "Automatisierte Zahlungsprozesse",
+              "8": "Kartenverlust unmöglich",
+              "9": "Ende bestimmter langer Papierverfahren",
+              "10": "Verfügbar auf NL, FR und DE"
+            },
+            "note": "Die eC3.2 zielt darauf ab, eine schnellere Bearbeitung zu ermöglichen. (Docbel garantiert keine schnellere Auszahlung.)"
+          },
+          "help": {
+            "title": "Hilfe benötigt?",
+            "body": {
+              "0": "Bei Verbindungsproblemen in der echten Anwendung verweist das Webinar auf das Kontaktzentrum der Sozialversicherung.",
+              "1": "Bei Problemen mit der Nutzung der Anwendung wenden Sie sich an Ihren Organisme de paiement (OP – Auszahlungsstelle).",
+              "2": "Wenn Sie die Karte nicht rechtzeitig ausfüllen können, informieren Sie die ONEM (LfA – belgische Bundesbehörde für Arbeitslosigkeit), um im Falle einer Kontrolle regelkonform zu sein."
+            },
+            "disclaimer": "Docbel hilft Ihnen, das Verfahren zu verstehen, ersetzt jedoch weder das ONEM (LfA) noch Ihre Auszahlungseinrichtung (Organisme de paiement)."
           }
+        },
+        "legal": {
+          "simulationLabel": "Nicht offizielle Lernsimulation",
+          "noRealData": "Es werden keine echten Daten abgefragt",
+          "noTransmission": "Es werden keine Daten an das ONEM (LfA) übermittelt",
+          "notReplacement": "Diese Seite ersetzt nicht die offizielle Anwendung eC3.2",
+          "useOfficial": "Für einen echten Antrag verwenden Sie bitte die offizielle Anwendung eC3.2"
+        },
+        "builderMetadata": {
+          "lastReviewedNote": "Lehrinhalt basierend auf einem ONEM-Webinar (LfA) — vor der endgültigen Veröffentlichung zu prüfen (insbesondere CP 327 und Ausnahmeregelungen)."
         }
       },
       "scenarios": {
+        "all-month": {
+          "title": "Ich bin den ganzen Monat in vorübergehender Arbeitslosigkeit (chômage temporaire)",
+          "level": "Einsteiger",
+          "duration": "2 Min.",
+          "context": "Ihr Arbeitgeber hat Sie für den gesamten Monat in vorübergehende Arbeitslosigkeit (chômage temporaire) versetzt. Kein Arbeitstag, keine weitere Situation zu melden.",
+          "objective": "Verstehen Sie, dass „Arbeitslosigkeit",
+          "expectedAction": "Für Tage, an denen Sie tatsächlich vorübergehend arbeitslos (chômage temporaire) sind, müssen Sie nichts ändern, es sei denn, eine andere Situation trifft zu.",
+          "feedbackCorrect": "Richtig: Wenn Sie an diesem Tag vorübergehend arbeitslos (chômage temporaire) sind, genügt die Standardsituation.",
+          "feedbackError": "Nicht ganz: Für einen Tag, an dem Sie tatsächlich vorübergehend arbeitslos sind, ist die Standardsituation bereits passend. Es ist nicht nötig, eine andere Situation hinzuzufügen.",
+          "ruleRef": "Standardsituation"
+        },
         "work-own": {
+          "title": "Ich arbeite einen Tag bei meinem Arbeitgeber",
+          "level": "Anfänger",
           "duration": "3 Min",
           "context": "Sie sind mehrere Tage in vorübergehender Arbeitslosigkeit (chômage temporaire), arbeiten aber mittwochs beim Arbeitgeber, der Sie in die vorübergehende Arbeitslosigkeit geschickt hat.",
           "objective": "Wissen, wie man eine gelegentliche Wiederaufnahme der Arbeit beim Arbeitgeber, der die Karte ausfüllt, meldet.",
-          "expectedAction": "Den betreffenden Tag auswählen und „Arbeit beim Arbeitgeber"
+          "expectedAction": "Den betreffenden Tag auswählen und „Arbeit beim Arbeitgeber",
+          "feedbackCorrect": "Richtig: Eine Arbeit beim gewohnten Arbeitgeber muss angegeben werden, bevor Sie beginnen.",
+          "feedbackError": "Nicht ganz: Ein Arbeitstag bei Ihrem Arbeitgeber ist kein Arbeitslosigkeitstag. Wählen Sie den Tag aus und wählen Sie „Arbeit beim Arbeitgeber",
+          "ruleRef": "Arbeit beim Arbeitgeber"
+        },
+        "work-elsewhere-usual": {
+          "title": "Ich mache einen Flexi-Job an einem Tag, an dem ich normalerweise arbeite",
+          "level": "Mittelstufe",
+          "duration": "3 Min.",
+          "context": "Während Ihrer vorübergehenden Arbeitslosigkeit (chômage temporaire) verrichten Sie an einem Tag, an dem Sie normalerweise bei Ihrem gewöhnlichen Arbeitgeber arbeiten, woanders eine Tätigkeit (z. B. einen Flexi-Job).",
+          "objective": "Eine woanders verrichtete Arbeit an einem normalerweise beim gewöhnlichen Arbeitgeber gearbeiteten Tag unterscheiden.",
+          "expectedAction": "„Arbeit woanders – normalerweise beim gewöhnlichen Arbeitgeber gearbeiteter Tag",
+          "feedbackCorrect": "Richtig: eine woanders verrichtete Arbeit an einem normalerweise gearbeiteten Tag muss angegeben werden.",
+          "feedbackError": "Nicht ganz: Da dieser Tag normalerweise beim gewöhnlichen Arbeitgeber gearbeitet wird, wählen Sie bitte „Arbeit woanders – normalerweise beim gewöhnlichen Arbeitgeber gearbeiteter Tag\".",
+          "ruleRef": "Arbeit woanders"
+        },
+        "work-elsewhere-weekend": {
+          "title": "Ich arbeite samstags bei einem anderen Arbeitgeber",
+          "level": "Mittelstufe",
+          "duration": "3 Min.",
+          "context": "Sie arbeiten normalerweise samstags nicht bei Ihrem gewöhnlichen Arbeitgeber, verrichten an diesem Tag jedoch woanders eine gelegentliche Tätigkeit.",
+          "objective": "Verstehen, dass eine woanders verrichtete Arbeit auch an einem normalerweise nicht gearbeiteten Tag – wie dem Wochenende – gemeldet werden muss.",
+          "expectedAction": "„Arbeit woanders – normalerweise nicht gearbeiteter Tag",
+          "feedbackCorrect": "Richtig: Auch am Wochenende muss eine woanders verrichtete Arbeit angegeben werden.",
+          "feedbackError": "Nicht ganz: Eine Arbeit, die an einem normalerweise nicht gearbeiteten Samstag verrichtet wird, muss dennoch gemeldet werden. Wählen Sie „Arbeit woanders – normalerweise nicht gearbeiteter Tag\".",
+          "ruleRef": "Arbeit woanders"
+        },
+        "other-regular": {
+          "title": "Ich habe zwei Teilzeitbeschäftigungen",
+          "level": "Fortgeschritten",
+          "duration": "4 Min.",
+          "context": "Sie kombinieren zwei reguläre Teilzeitbeschäftigungen, und bei einer davon werden Sie vorübergehend arbeitslos (chômage temporaire), während die andere normal weiterläuft.",
+          "objective": "Wissen, wie man die Fortsetzung einer anderen regulären Beschäftigung während der vorübergehenden Arbeitslosigkeit (chômage temporaire) meldet.",
+          "expectedAction": "„Arbeit bei einem anderen regulären Arbeitgeber",
+          "feedbackCorrect": "Richtig: Wenn Sie mehrere reguläre Beschäftigungen kombinieren, muss die andere Tätigkeit der Auszahlungsstelle (organisme de paiement) mitgeteilt werden.",
+          "feedbackError": "Nicht ganz: Ihre zweite reguläre Beschäftigung läuft weiter. Wählen Sie „Arbeit bei einem anderen regulären Arbeitgeber",
+          "ruleRef": "Anderer regulärer Arbeitgeber"
         },
         "sick": {
+          "title": "Ich werde während der vorübergehenden Arbeitslosigkeit krank",
+          "level": "Einsteiger",
+          "duration": "3 Min.",
+          "context": "Während einer Periode vorübergehender Arbeitslosigkeit (chômage temporaire) werden Sie einige Tage krank und sind arbeitsunfähig (incapacité de travail).",
+          "objective": "Wissen, wie man Krankheitstage als Arbeitsunfähigkeit einträgt, und daran denken, die Krankenkasse (Mutualité / Krankenkasse) zu benachrichtigen.",
+          "expectedAction": "Die Krankheitstage auswählen und „Arbeitsunfähigkeit",
           "feedbackCorrect": "Richtig: Krankheit, Arbeitsunfall oder Mutterschaftsruhe müssen als Arbeitsunfähigkeit angegeben werden. Die Krankenkasse (Mutualität) muss innerhalb von 48 Stunden benachrichtigt werden.",
-          "feedbackError": "Nicht ganz richtig: Ein Krankheitstag ist kein Tag der Arbeitslosigkeit. Wählen Sie die betreffenden Tage aus, wählen Sie „Arbeitsunfähigkeit"
+          "feedbackError": "Nicht ganz richtig: Ein Krankheitstag ist kein Tag der Arbeitslosigkeit. Wählen Sie die betreffenden Tage aus, wählen Sie „Arbeitsunfähigkeit",
+          "ruleRef": "Arbeitsunfähigkeit"
+        },
+        "vacation": {
+          "title": "Ich nehme Urlaub",
+          "level": "Einsteiger",
+          "duration": "2 Min.",
+          "context": "Während Ihrer Periode vorübergehender Arbeitslosigkeit (chômage temporaire) nehmen Sie einige Tage Jahresurlaub.",
+          "objective": "Wissen, wie man Urlaubstage von Tagen vorübergehender Arbeitslosigkeit (chômage temporaire) unterscheidet.",
+          "expectedAction": "„Urlaub",
+          "feedbackCorrect": "Richtig: Individuelle oder kollektive Jahresurlaubstage müssen angegeben werden.",
+          "feedbackError": "Nicht ganz: Ein Urlaubstag ist kein Arbeitslosigkeitstag. Wählen Sie für die betreffenden Tage „Urlaub",
+          "ruleRef": "Urlaub"
+        },
+        "other-situation": {
+          "title": "Ich habe einen Feiertag oder eine bezahlte Schulung",
+          "level": "Anfänger",
+          "duration": "3 Min.",
+          "context": "Während Ihrer vorübergehenden Arbeitslosigkeit (tijdelijke werkloosheid) ist ein Tag durch eine andere Situation abgedeckt: zum Beispiel ein Feiertag oder eine bezahlte Schulung.",
+          "objective": "Verstehen, wann „Andere Situation",
+          "expectedAction": "„Andere Situation",
+          "feedbackCorrect": "Richtig: Bestimmte Tage ohne Leistung, die durch eine andere Situation gedeckt sind, müssen als „Andere Situation",
+          "feedbackError": "Nicht ganz: Ein Feiertag oder eine vergütete Schulung ist kein Arbeitslosigkeitstag (zeitweilige Arbeitslosigkeit). Wählen Sie „Andere Situation",
+          "ruleRef": "Andere Situation"
+        },
+        "multiple-employers": {
+          "title": "Ich befinde mich bei zwei Arbeitgebern in zeitweiliger Arbeitslosigkeit (chômage temporaire)",
+          "level": "Fortgeschritten",
+          "duration": "4 Min.",
+          "context": "Zwei Ihrer Arbeitgeber melden Sie im selben Monat zur vorübergehenden Arbeitslosigkeit (chômage temporaire) an. Eine einzige Karte reicht nicht aus.",
+          "objective": "Verstehen, dass für jeden betroffenen Arbeitgeber eine separate Karte ausgefüllt werden muss.",
+          "expectedAction": "Zwei fiktive Karten ausfüllen, eine pro betroffenem Arbeitgeber.",
+          "feedbackCorrect": "Richtig: Wenn bei mehreren Arbeitgebern vorübergehende Arbeitslosigkeit (chômage temporaire) vorliegt, muss für jeden betroffenen Arbeitgeber eine eigene Karte ausgefüllt werden.",
+          "feedbackError": "Nicht ganz: Eine einzige Karte deckt nicht zwei Arbeitgeber ab. Füllen Sie für jeden Arbeitgeber, der Sie in die Arbeitslosigkeit geschickt hat, eine separate Karte aus.",
+          "ruleRef": "Mehrere Arbeitgeber"
+        },
+        "no-payment-org": {
+          "title": "Ich bin noch nicht bei einer Auszahlungsstelle (Organisme de paiement) angemeldet",
+          "level": "Fortgeschritten",
+          "duration": "3 Min.",
+          "context": "Sie füllen Ihre Karte aus, sind aber noch nicht bei einer Auszahlungsstelle (CAPAC, CSC, FGTB oder CGSLB) angemeldet.",
+          "objective": "Verstehen, dass die Karte ohne Anmeldung ausgefüllt, aber nicht gesendet werden kann.",
+          "expectedAction": "Die Karte ausfüllen und feststellen, dass das Senden blockiert ist.",
+          "feedbackCorrect": "Richtig: Ohne Anmeldung bei einer Auszahlungsstelle (Organisme de paiement) kann die Karte zwar ausgefüllt, aber nicht gesendet werden.",
+          "feedbackError": "Nicht ganz: Ohne Auszahlungsstelle (Organisme de paiement) bleibt das Senden blockiert. Sie können die Karte ausfüllen, aber die Anmeldung ist erforderlich, um sie abzuschicken.",
+          "ruleRef": "Auszahlungsstelle (Organisme de paiement)"
         },
         "correction": {
+          "title": "Ich habe vergessen, eine Arbeit anzugeben",
           "level": "Mittelstufe",
           "duration": "4 Min.",
           "context": "Sie stellen fest, dass ein Arbeitstag als Arbeitslosigkeit erfasst wurde. Die Karte wurde noch nicht gesendet: Eine Korrektur ist möglich.",
@@ -5949,11 +6405,92 @@
           "cards": "Für jeden Arbeitgeber sehen Sie die Karte des laufenden Monats, die des nächsten Monats, noch nicht gesendete Karten der Vormonate sowie nicht verwendete Karten für Monate ohne vorübergehende Arbeitslosigkeit."
         },
         "calendar": {
-          "defaultChomage": "Standardmäßig gelten die Felder im Kalender als „Arbeitslosigkeit"
+          "defaultChomage": "Standardmäßig gelten die Felder im Kalender als „Arbeitslosigkeit",
+          "notApplicable": "Die grau hinterlegten Felder („Nicht anwendbar\") betreffen Tage ohne Vertrag mit dem gewählten Arbeitgeber (Vertrag im Laufe des Monats begonnen oder beendet) sowie Tage außerhalb des ausgewählten Monats.",
+          "firstEffectiveDay": "Der erste tatsächliche Arbeitslosigkeitstag des Monats wird automatisch eingetragen (wirtschaftliche Arbeitslosigkeit, Schlechtwetter oder technische Störung). Bei anderen Arten von vorübergehender Arbeitslosigkeit (chômage temporaire) wird kein Symbol angezeigt.",
+          "firstSendNoIcon": "Das Fehlen dieses Symbols während des ersten Nutzungsmonats blockiert den Betrieb der Karte nicht.",
+          "fillUntilEnd": "Die Karte muss ab dem ersten tatsächlichen Arbeitslosigkeitstag bis zum letzten Tag des Monats ausgefüllt werden. Im Baugewerbe muss die Karte stets vollständig ausgefüllt werden."
+        },
+        "save": {
+          "unsaved": "Ihre Änderungen wurden nicht gespeichert. Bitte speichern Sie, bevor Sie fortfahren."
+        },
+        "send": {
+          "firstSendBefore": "Das Einreichen ist noch nicht möglich: Das frühestmögliche Einreichungsdatum wurde noch nicht erreicht. Auch wenn dieses Datum vor dem Monatsende liegt, muss die Karte bis zum letzten Tag des Monats korrekt ausgefüllt werden. (Diese Simulation sendet niemals etwas.)",
+          "noPaymentOrg": "In der echten Anwendung können Sie die Karte ausfüllen, aber Sie müssen bei einer Zahlstelle (CAPAC, CSC, FGTB oder CGSLB) angeschlossen sein, um sie einreichen zu können.",
+          "notNeeded": "Wenn Sie keine Leistungen beantragen, ist das Einreichen nicht notwendig. Wenn Sie Leistungen beantragen möchten, ist die Anmeldung bei einer Zahlstelle erforderlich."
+        },
+        "correction": {
+          "help": "In der echten Anwendung hilft eine klare Erklärung den Inspektoren, die Änderung nachzuvollziehen. Nur noch nicht eingereichte Karten können korrigiert werden; die ONEM (belgische Bundesbehörde für Arbeitslosigkeit) wird über Änderungen informiert.",
+          "locked": "Diese Karte wurde in der Simulation eingereicht und ist gesperrt. Eine eingereichte Karte kann nicht mehr geändert werden."
+        },
+        "work": {
+          "beforeStart": "Jede Arbeit muss eingetragen werden, bevor die Tätigkeit begonnen wird."
         }
       },
       "mistakes": {
+        "confondre-ec32-et-ec3": {
+          "title": "Verwechslung von eC3.2 und eC3",
+          "explanation": "Die eC3.2 betrifft die vorübergehende Arbeitslosigkeit (chômage temporaire), während die eC3 die vollständige Arbeitslosigkeit (chômage complet) betrifft. Die beiden Karten werden nicht in derselben Situation verwendet.",
+          "advice": "Überprüfen Sie Ihre Situation, bevor Sie beginnen: Wenn Sie vorübergehend arbeitslos sind, ist es die eC3.2, die ausgefüllt werden muss."
+        },
+        "croire-simulation-officielle": {
+          "title": "Glauben, dass die Docbel-Simulation ein echtes offizielles Verfahren ist",
+          "explanation": "Der Docbel-Simulator dient ausschließlich dem Verstehen und Üben. Es werden keine Daten gesendet und nichts wird an die ONEM (belgische Bundesbehörde für Arbeitslosigkeit) übermittelt.",
+          "advice": "Für ein echtes Verfahren verwenden Sie bitte die offizielle Anwendung eC3.2. Der Simulator bleibt ein Lernwerkzeug."
+        },
+        "oublier-indiquer-travail-avant": {
+          "title": "Vergessen, die Arbeit vor Beginn einzutragen",
+          "explanation": "Eine Arbeit, die während der vorübergehenden Arbeitslosigkeit (chômage temporaire) geleistet wird, muss vor Beginn der Tätigkeit auf der Karte eingetragen werden, nicht danach.",
+          "advice": "Gewöhnen Sie sich an, den Arbeitstag einzutragen, sobald Sie wissen, dass Sie arbeiten werden – vor der Leistungserbringung."
+        },
+        "attendre-fin-du-mois": {
+          "title": "Warten bis zum Monatsende, um alles auszufüllen",
+          "explanation": "Das Aufschieben des Ausfüllens bis zum Monatsende birgt das Risiko, Tage oder besondere Situationen zu vergessen.",
+          "advice": "Füllen Sie die Karte täglich aus, sobald eine Situation eintritt, damit nichts vergessen wird."
+        },
+        "choisir-mauvais-employeur": {
+          "title": "Den falschen Arbeitgeber auswählen",
+          "explanation": "Die Karte muss für den Arbeitgeber ausgefüllt werden, der Sie tatsächlich in vorübergehende Arbeitslosigkeit versetzt hat.",
+          "advice": "Wählen Sie den betreffenden Arbeitgeber sorgfältig aus; im Zweifelsfall prüfen Sie, welcher Arbeitgeber die vorübergehende Arbeitslosigkeit gemeldet hat."
+        },
+        "ne-pas-mentionner-autre-travail": {
+          "title": "Eine andere Arbeit nicht angeben",
+          "explanation": "Eine während der vorübergehenden Arbeitslosigkeit woanders ausgeübte Arbeit muss immer auf der Karte angegeben werden, auch wenn es sich um einen anderen Arbeitgeber handelt.",
+          "advice": "Tragen Sie jeden Tag, an dem Sie woanders gearbeitet haben, mit der passenden Situation „Arbeit anderswo"
+        },
+        "oublier-de-sauvegarder": {
+          "title": "Vergessen zu speichern",
+          "explanation": "Eine eingegebene, aber nicht gespeicherte Situation wird auf der Karte möglicherweise nicht berücksichtigt.",
+          "advice": "Überprüfen Sie nach jeder Änderung, ob Ihre Änderungen gespeichert wurden, bevor Sie die Seite verlassen."
+        },
+        "croire-carte-envoyee-modifiable": {
+          "title": "Glauben, dass eine gesendete Karte frei geändert werden kann",
+          "explanation": "Sobald die Karte gesendet wurde, ist sie gesperrt: Sie kann nicht mehr frei geändert werden.",
+          "advice": "Überprüfen Sie jeden Tag sorgfältig, bevor Sie die Karte senden; Korrekturen sind nur möglich, solange die Karte noch nicht gesendet wurde."
+        },
+        "corriger-sans-explication": {
+          "title": "Korrigieren ohne Erklärung",
+          "explanation": "Eine Korrektur kann eine Erklärung erfordern. Ohne Begründung kann die Änderung nicht gespeichert werden.",
+          "advice": "Wenn Sie einen Tag korrigieren, nehmen Sie sich die Zeit, eine klare Erklärung der Änderung anzugeben."
+        },
+        "pas-inscrit-organisme-paiement": {
+          "title": "Nicht bei einer Auszahlungsstelle (Organisme de paiement) eingeschrieben sein",
+          "explanation": "Ohne Einschreibung bei einer Auszahlungsstelle (Organisme de paiement – CAPAC, CSC, FGTB oder CGSLB) kann die Karte ausgefüllt, aber nicht gesendet werden.",
+          "advice": "Schreiben Sie sich so bald wie möglich bei einer Auszahlungsstelle (Organisme de paiement) ein, um Ihre Karte senden und Ihre Arbeitslosengeld (allocations de chômage) erhalten zu können."
+        },
+        "oublier-jours-maladie": {
+          "title": "Krankheitstage vergessen",
+          "explanation": "Krankheitstage sind keine Arbeitslosigkeitstage: Sie müssen als Arbeitsunfähigkeit (inaptitude au travail) angegeben werden.",
+          "advice": "Wählen Sie die betreffenden Tage aus, wählen Sie „Arbeitsunfähigkeit"
+        },
+        "oublier-vacances": {
+          "title": "Urlaubstage nicht vergessen",
+          "explanation": "Urlaubstage sind keine Arbeitslosigkeitstage und müssen als solche auf der Karte angegeben werden.",
+          "advice": "Wählen Sie für jeden Urlaubstag die Situation „Urlaub"
+        },
         "ignorer-autre-situation": {
+          "title": "Tage mit \"anderer Situation\" nicht berücksichtigen",
+          "explanation": "Bestimmte Tage ohne Arbeitsleistung (gesetzliche Feiertage, bezahlte Ausbildung usw.) gelten nicht als Arbeitslosigkeit und fallen unter eine andere Situation.",
           "advice": "Wenn ein Tag auf andere Weise als durch Arbeitslosigkeit abgedeckt ist, wählen Sie für diesen Tag „Andere Situation'."
         },
         "pas-remplir-premier-jour-effectif": {
@@ -5989,6 +6526,50 @@
           "q": "Wo befindet sich die echte eC3.2-Anwendung?",
           "a": "Die eigentliche Anwendung ist über das Portal der sozialen Sicherheit oder über die mobile App „eC3.2 Chômage temporaire"
         },
+        "4": {
+          "q": "Wie meldet man sich bei der echten Anwendung an?",
+          "a": "Die Anmeldung erfolgt mit einem sicheren Identifizierungsmittel: eID, itsme (belgische App zur digitalen Identität), Sicherheitscode (per E-Mail oder über die mobile App) oder einem anerkannten europäischen Identifizierungsmittel."
+        },
+        "5": {
+          "q": "Was soll ich tun, wenn ich Grenzgänger bin?",
+          "a": "Mit einer Nationalregisternummer oder einer BIS-Nummer können Sie ein europäisches elektronisches Identifizierungsmittel verwenden. Andernfalls kann ein alternativer digitaler Schlüssel erforderlich sein."
+        },
+        "6": {
+          "q": "Muss ich bei einer Auszahlungsstelle (organisme de paiement) eingeschrieben sein?",
+          "a": "Ja. Um Leistungen zu erhalten und die Karte einzureichen, müssen Sie bei einer Auszahlungsstelle (organisme de paiement) eingeschrieben sein: der CAPAC (öffentliche Auszahlungskasse), der CSC, der FGTB oder der CGSLB (belgische Gewerkschaften, die ebenfalls Leistungen auszahlen)."
+        },
+        "7": {
+          "q": "Kann ich die Karte ohne Auszahlungsstelle (organisme de paiement) ausfüllen?",
+          "a": "Ja, Sie können die Karte ausfüllen, aber sie kann erst gesendet werden, wenn Ihre Anmeldung bei einer Auszahlungsstelle (Organisme de paiement) abgeschlossen ist."
+        },
+        "8": {
+          "q": "Welchen Arbeitgeber soll ich auswählen?",
+          "a": "Wählen Sie den Arbeitgeber aus, der Sie in vorübergehende Arbeitslosigkeit (chômage temporaire) versetzt hat. Wenn mehrere Arbeitgeber Sie in vorübergehende Arbeitslosigkeit versetzt haben, muss für jeden betroffenen Arbeitgeber eine separate Karte ausgefüllt werden."
+        },
+        "9": {
+          "q": "Was soll ich tun, wenn ich mehrere Arbeitgeber habe?",
+          "a": "Sie müssen Ihre Auszahlungsstelle (Organisme de paiement) über alle Ihre Beschäftigungen informieren. Bei vorübergehender Arbeitslosigkeit bei mehreren Arbeitgebern muss für jeden betroffenen Arbeitgeber eine Karte ausgefüllt werden."
+        },
+        "10": {
+          "q": "Was soll ich tun, wenn ich während einer Periode vorübergehender Arbeitslosigkeit (chômage temporaire) arbeite?",
+          "a": "Sie müssen die Arbeit auf der Karte eintragen, bevor Sie mit der Arbeit beginnen, und nicht danach."
+        },
+        "11": {
+          "q": "Was soll ich angeben, wenn ich krank bin?",
+          "a": "Geben Sie „Arbeitsunfähigkeit"
+        },
+        "12": {
+          "q": "Was muss ich angeben, wenn ich Urlaub nehme?",
+          "a": "Geben Sie „Urlaub"
+        },
+        "13": {
+          "q": "Was bedeutet „Andere Situation",
+          "a": "Diese Kategorie umfasst beispielsweise gesetzliche Feiertage, Ausgleichsruhe, bezahlte Weiterbildungen, unbezahlten Urlaub, unentschuldigte Abwesenheiten, Inhaftierung, Vaterschaftsurlaub oder bestimmte außergesetzliche Urlaubsarten."
+        },
+        "14": {
+          "q": "Kann ich einen Fehler korrigieren?",
+          "a": "Ja, solange die Karte noch nicht gesendet wurde. Zur Begründung der Korrektur kann eine Erklärung verlangt werden."
+        },
         "15": {
           "q": "Wählen Sie den Tag aus und wählen Sie dann „Arbeit anderswo – ein normalerweise gearbeiteter Tag",
           "a": "In der echten Anwendung wird das ONEM (belgische Arbeitslosenbehörde) über Änderungen an der Karte informiert."
@@ -6013,12 +6594,53 @@
       "scenarioPresets": {
         "all-month": "Standardmäßig gilt der gesamte Monat bereits als „Arbeitslosigkeit",
         "work-own": "Wählen Sie die gearbeiteten Tage aus und wählen Sie dann „Arbeit beim Arbeitgeber",
-        "work-elsewhere-usual": "Wählen Sie den Tag aus und wählen Sie dann „Arbeit anderswo – ein normalerweise gearbeiteter Tag"
+        "work-elsewhere-usual": "Wählen Sie den Tag aus und wählen Sie dann „Arbeit anderswo – ein normalerweise gearbeiteter Tag",
+        "work-elsewhere-weekend": "Wählen Sie Samstag und Sonntag aus und wählen Sie dann „Arbeit anderswo — ein normalerweise nicht gearbeiteter Tag",
+        "other-regular": "Wählen Sie den Tag aus und wählen Sie dann „Arbeit bei einem anderen gewöhnlichen Arbeitgeber",
+        "sick": "Wählen Sie die Krankheitstage aus und wählen Sie dann „Arbeitsunfähigkeit",
+        "vacation": "Wählen Sie die Urlaubstage aus und wählen Sie dann „Urlaub",
+        "other-situation": "Der 1. Mai ist ein gesetzlicher Feiertag: Wählen Sie ihn aus und wählen Sie dann „Andere Situation",
+        "multiple-employers": "Wenn Sie mehrere Arbeitgeber haben, wählen Sie denjenigen aus, der Sie in vorübergehende Arbeitslosigkeit (chômage temporaire) versetzt hat; Ihre anderen Beschäftigungen werden auf dieser Karte angegeben.",
+        "no-payment-org": "Versuchen Sie, die Karte zu senden: Der Versand ist gesperrt, solange Sie nicht bei einer Auszahlungsstelle (Organisme de paiement) angeschlossen sind.",
+        "correction": "Öffnen Sie bei einer noch nicht gesendeten Karte einen bereits erfassten Tag, um ihn zu korrigieren: Eine Erklärung ist obligatorisch.",
+        "construction-cp124": "Im Baugewerbe (CP 124) muss die Karte stets ausgefüllt werden, auch wenn Sie arbeiten.",
+        "first-effective-day": "Achten Sie auf das automatische Symbol beim ersten tatsächlichen Tag der vorübergehenden Arbeitslosigkeit (5. Mai): Es wird nie manuell eingegeben.",
+        "wrong-month": "Überprüfen Sie den Monat, bevor Sie die Karte ausfüllen: Hier muss die Karte für April 2025 ausgefüllt werden."
       }
     },
     "lookupLib": {
+      "flagAriaLabel": "Flagge {iso2}",
       "modules": {
+        "S01": {
+          "label": "Beschilderung",
+          "description": "Identifikationsdaten des Arbeitslosen (NISS, Name, Vorname, Geburtsdatum …)"
+        },
+        "S02": {
+          "label": "Befreiungen",
+          "description": "Befreiungen (Ausbildung, Stellensuche …)"
+        },
+        "S04": {
+          "label": "Anspruchsvoraussetzungen",
+          "description": "Anspruchsvoraussetzungen für Leistungen"
+        },
+        "S04_S36": {
+          "label": "Anspruchsvoraussetzungen / Ergänzung",
+          "description": "Zulassungs- und Entschädigungsartikel (S04 + S36)"
+        },
+        "S05": {
+          "label": "Einbehalt",
+          "description": "Einbehalte auf Leistungen"
+        },
+        "S07": {
+          "label": "Beschäftigungsdaten",
+          "description": "Beschäftigungsdaten (ONSS [belgische Sozialversicherungsbeiträge], Verträge)"
+        },
+        "S10": {
+          "label": "Sanktion",
+          "description": "Sanktionen (Suspendierungen, Ausschlüsse)"
+        },
         "S11": {
+          "label": "Außerhalb der Arbeitslosigkeit",
           "description": "Zeiten außerhalb der Arbeitslosigkeit (Krankheit, Urlaub …)"
         },
         "S15": {

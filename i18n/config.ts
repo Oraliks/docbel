@@ -32,11 +32,18 @@ export const localeNames: Record<Locale, string> = {
   bg: "Български",
 };
 
-/** Langues réellement proposées au public (UI traduite). Les autres existent en
- *  code mais retombent sur FR → on ne les affiche pas encore dans le sélecteur.
- *  NB : de/it/es/tr/ar sont en cours de traduction (run IA interrompu par
- *  l'épuisement du crédit API) → à ré-ajouter ici une fois à ~100 %. */
-export const publicLocales: readonly Locale[] = ["fr", "nl", "en"];
+/** Langues réellement proposées au public (UI traduite à 100 %). ro/bg existent
+ *  en code mais ne sont pas traduites → retombent sur FR, pas dans le sélecteur. */
+export const publicLocales: readonly Locale[] = [
+  "fr",
+  "nl",
+  "en",
+  "de",
+  "it",
+  "es",
+  "tr",
+  "ar",
+];
 
 /** Nom du cookie qui mémorise la langue choisie par l'utilisateur. */
 export const LOCALE_COOKIE = "BELDOC_LOCALE";

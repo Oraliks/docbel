@@ -13,14 +13,14 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import path from "path";
 import { PrismaClient } from "@prisma/client";
-import { parse as parseICU } from "@formatjs/icu-messageformat-parser";
+import { parse as parseICU, TYPE } from "@formatjs/icu-messageformat-parser";
 
 const MESSAGES = path.join(process.cwd(), "messages");
 // Sonnet 4.6 → supporte les sorties structurées (output_config.format), qui
 // garantissent un JSON valide (fini les échecs de parse sur caractères non
 // échappés). Schéma INDEXÉ fixe → compilé une fois, mis en cache 24 h.
 const MODEL = "claude-sonnet-4-6";
-const BATCH = 20; // lots plus petits → réponses jamais tronquées par max_tokens
+const BATCH = Number(process.env.I18N_BATCH) || 20; // I18N_BATCH=8 pour les valeurs longues (anti-troncature)
 const CONCURRENCY = Number(process.env.I18N_CC) || 4;
 
 const OUTPUT_SCHEMA = {
@@ -93,34 +93,63 @@ function reorderLike(template: Json, data: Json): Json {
   return out;
 }
 
-// --- Validation ICU / balises ---
-function argNames(s: string): string {
-  const set = new Set<string>();
-  for (const m of s.matchAll(/\{\s*([a-zA-Z0-9_]+)\s*[,}]/g)) set.add(m[1]);
-  return [...set].sort().join(",");
-}
-function tags(s: string): string {
-  const set = new Set<string>();
-  for (const m of s.matchAll(/<\/?[a-zA-Z][^>]*>/g)) set.add(m[0]);
-  return [...set].sort().join(",");
-}
-function icuValid(src: string, tr: string): boolean {
-  if (argNames(src) !== argNames(tr)) return false;
-  if (tags(src) !== tags(tr)) return false;
-  let srcParses = true;
-  try {
-    parseICU(src);
-  } catch {
-    srcParses = false;
-  }
-  if (srcParses) {
-    try {
-      parseICU(tr);
-    } catch {
-      return false;
+// --- Validation ICU / balises (via AST @formatjs) ---
+// On extrait les VRAIS noms d'arguments + balises depuis l'arbre ICU. Le texte
+// des branches de pluriel/select (qui change forcément entre langues) est ignoré
+// → pas de faux rejet. La trad doit : mêmes args, mêmes balises, et parser en ICU.
+type IcuEl = {
+  type: number;
+  value?: string;
+  options?: Record<string, { value: IcuEl[] }>;
+  children?: IcuEl[];
+};
+function extractMeta(s: string): { args: string; tags: string } {
+  const args = new Set<string>();
+  const tagSet = new Set<string>();
+  const walk = (els: IcuEl[]): void => {
+    for (const el of els) {
+      switch (el.type) {
+        case TYPE.argument:
+        case TYPE.number:
+        case TYPE.date:
+        case TYPE.time:
+          if (el.value) args.add(el.value);
+          break;
+        case TYPE.select:
+        case TYPE.plural:
+          if (el.value) args.add(el.value);
+          for (const opt of Object.values(el.options ?? {})) walk(opt.value);
+          break;
+        case TYPE.tag:
+          if (el.value) tagSet.add(el.value);
+          walk(el.children ?? []);
+          break;
+      }
     }
+  };
+  walk(parseICU(s) as IcuEl[]);
+  return { args: [...args].sort().join(","), tags: [...tagSet].sort().join(",") };
+}
+// I18N_RELAX=1 : mode souple pour les sources à apostrophes françaises collées
+// aux balises/variables (L'<strong>, l''horaire…) — l'apostrophe = délimiteur
+// de citation ICU corrompt la détection args/balises → on accepte alors toute
+// trad qui PARSE en ICU valide (on garde juste le garde-fou syntaxe).
+const RELAX = process.env.I18N_RELAX === "1";
+function icuValid(src: string, tr: string): boolean {
+  let t: { args: string; tags: string };
+  try {
+    t = extractMeta(tr);
+  } catch {
+    return false; // la trad a cassé l'ICU (garde-fou syntaxe, même en relax)
   }
-  return true;
+  if (RELAX) return true;
+  let s: { args: string; tags: string };
+  try {
+    s = extractMeta(src);
+  } catch {
+    return true; // source non-ICU parsable → on ne sur-valide pas
+  }
+  return s.args === t.args && s.tags === t.tags;
 }
 
 // --- Glossaire depuis la DB ---

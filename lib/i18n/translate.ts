@@ -1,6 +1,5 @@
 import "server-only";
-import { readFileSync } from "fs";
-import path from "path";
+import { prisma } from "@/lib/prisma";
 import { callClaude } from "@/lib/chomage-ia/anthropic";
 import { CLAUDE_MODELS } from "@/lib/chomage-ia/models";
 
@@ -31,18 +30,50 @@ export function isTranslatableLocale(locale: string): boolean {
   return locale !== "fr" && locale in LOCALE_LABELS;
 }
 
-/** Charge le glossaire (markdown) une fois, mis en cache module. Best-effort :
- *  si le fichier n'est pas accessible (prod sans tracing), on traduit sans. */
-let glossaryCache: string | null = null;
-function loadGlossary(): string {
-  if (glossaryCache !== null) return glossaryCache;
+const STRATEGY_LABEL: Record<string, string> = {
+  translate: "traduire",
+  translate_gloss: "traduire + glose belge",
+  keep: "garder le terme FR + glose",
+};
+
+/**
+ * Charge le glossaire depuis la DB (table GlossaryTerm, éditable via l'admin)
+ * et le met en forme pour le system prompt. Remplace l'ancienne lecture `fs`
+ * du .md → robuste en prod serverless, et reflète les éditions admin en direct.
+ * Best-effort : table vide ou erreur DB → "" (la traduction marche sans).
+ */
+async function loadGlossary(): Promise<string> {
+  let terms: Array<{
+    term: string;
+    strategy: string;
+    glossFr: string;
+    note: string | null;
+    category: string;
+  }>;
   try {
-    const p = path.join(process.cwd(), "docs", "i18n-glossaire.md");
-    glossaryCache = readFileSync(p, "utf8");
+    terms = await prisma.glossaryTerm.findMany({ orderBy: { order: "asc" } });
   } catch {
-    glossaryCache = ""; // jamais bloquant : sans glossaire, la trad marche quand même
+    return "";
   }
-  return glossaryCache;
+  if (terms.length === 0) return "";
+
+  const byCat = new Map<string, typeof terms>();
+  for (const t of terms) {
+    const cat = t.category || "Divers";
+    if (!byCat.has(cat)) byCat.set(cat, []);
+    byCat.get(cat)!.push(t);
+  }
+
+  const blocks: string[] = [];
+  for (const [cat, list] of byCat) {
+    const items = list.map((t) => {
+      const strat = STRATEGY_LABEL[t.strategy] ?? t.strategy;
+      const note = t.note ? ` — ${t.note}` : "";
+      return `- ${t.term} [${strat}] : ${t.glossFr}${note}`;
+    });
+    blocks.push(`## ${cat}\n${items.join("\n")}`);
+  }
+  return blocks.join("\n\n");
 }
 
 /** Découpe un tableau en lots de taille max (pour ne pas exploser max_tokens). */
@@ -69,7 +100,7 @@ export async function translateTexts(
   if (texts.length === 0) return [];
 
   const langLabel = LOCALE_LABELS[targetLocale];
-  const glossary = loadGlossary();
+  const glossary = await loadGlossary();
 
   const systemPrompt = [
     `Tu es un traducteur professionnel spécialisé dans l'administration sociale belge`,

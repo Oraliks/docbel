@@ -1,5 +1,11 @@
 # Glossaire terminologique i18n — Beldoc
 
+> ⚠️ **ARCHIVE (2026-06-27).** Ce fichier a servi de **source de seed** initial.
+> Le glossaire vit désormais **en base** (table `GlossaryTerm`) et s'édite via
+> l'admin : **/admin/i18n** → onglet **Glossaire**. C'est cette version DB qui
+> est injectée dans le prompt de traduction IA (`lib/i18n/translate.ts`), plus le
+> `.md`. Pour re-seed depuis ce fichier : `npx tsx scripts/glossary-seed.ts --force`.
+
 > **But :** source de vérité terminologique pour les traducteurs (humains + pipeline IA).
 > Injecté dans le system prompt de Claude pour garantir la **cohérence** et éviter
 > la traduction littérale d'un vocabulaire administratif belge qui n'a souvent

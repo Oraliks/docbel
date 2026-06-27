@@ -2176,6 +2176,29 @@ model ContentTranslation {
   @@index([model, recordId, locale])
 }
 
+/// Glossaire terminologique belge, injecté dans le prompt de traduction IA
+/// (lib/i18n/translate.ts) pour garantir la cohérence (RVA/OCMW/INSZ…).
+/// Édité via l'admin (/admin/i18n/glossaire). Remplace docs/i18n-glossaire.md
+/// (plus de lecture `fs` → robuste en prod serverless). Pas de FK → additif.
+model GlossaryTerm {
+  id        String   @id @default(cuid())
+  /// Terme ou sigle FR ("ONEM", "Organisme de paiement (OP)").
+  term      String
+  /// "translate" (🟢) | "translate_gloss" (🟡) | "keep" (🔴).
+  strategy  String   @default("translate_gloss")
+  /// Glose figée FR (explication courte, reprise dans chaque langue).
+  glossFr   String   @db.Text
+  /// Équivalents officiels NL/DE + marqueurs ("NL: RVA · DE: LfA").
+  note      String?  @db.Text
+  /// Section thématique ("Institutions & organismes").
+  category  String   @default("")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
+
 /// Chaque sauvegarde manuelle ou import CSV crée une entrée d'historique.
 model ContentTranslationHistory {
   id            String             @id @default(cuid())

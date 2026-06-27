@@ -1,6 +1,29 @@
 import { getRequestConfig } from "next-intl/server";
 import { getUserLocale } from "./locale";
-import { defaultLocale } from "./config";
+import { defaultLocale, type Locale } from "./config";
+
+// Catalogues de messages importés STATIQUEMENT (un par locale connue).
+// ⚠️ On évite volontairement `import(`../messages/${x}.json`)` : un import
+// dynamique à chemin variable génère un "context module" qui embarque TOUT
+// `messages/**/*.json` — y compris le dossier de staging `messages/_patch/`.
+// Si un de ces fichiers est invalide (écriture concurrente d'un autre agent
+// pendant un build), le build entier casse. Les imports statiques ne bundlent
+// QUE les 10 fichiers listés ici → build immunisé contre les fichiers parasites.
+import fr from "../messages/fr.json";
+import nl from "../messages/nl.json";
+import de from "../messages/de.json";
+import en from "../messages/en.json";
+import it from "../messages/it.json";
+import es from "../messages/es.json";
+import ar from "../messages/ar.json";
+import tr from "../messages/tr.json";
+import ro from "../messages/ro.json";
+import bg from "../messages/bg.json";
+
+const CATALOGS = { fr, nl, de, en, it, es, ar, tr, ro, bg } as Record<
+  Locale,
+  Record<string, unknown>
+>;
 
 /**
  * Fusion profonde : on charge FR comme base puis on superpose la langue active.
@@ -28,10 +51,8 @@ function deepMerge<T>(base: T, override: unknown): T {
 
 export default getRequestConfig(async () => {
   const locale = await getUserLocale();
-  const base = (await import(`../messages/${defaultLocale}.json`)).default;
-  const messages =
-    locale === defaultLocale
-      ? base
-      : deepMerge(base, (await import(`../messages/${locale}.json`)).default);
+  const base = CATALOGS[defaultLocale];
+  const active = CATALOGS[locale as Locale] ?? base;
+  const messages = locale === defaultLocale ? base : deepMerge(base, active);
   return { locale, messages };
 });

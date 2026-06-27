@@ -1,53 +1,11 @@
-// Configuration i18n centrale (mode cookie, sans routing URL pour l'admin).
-// Les 8 langues sont figées ici ; l'activation/visibilité côté public se
-// gérera plus tard via AppSetting. FR = langue source + fallback universel.
+// Façade de compatibilité. Tout le contenu « langues » vit désormais dans le
+// registre unique `i18n/locales.ts` ; on le ré-exporte ici pour ne pas casser
+// les imports existants `@/i18n/config`. Seul LOCALE_COOKIE reste propre à la
+// config runtime (mode cookie, sans routing URL).
+//
+// Pour ajouter/retirer une langue → éditer `i18n/locales.ts`, jamais ce fichier.
 
-export const locales = ["fr", "nl", "de", "en", "it", "es", "pt", "ru", "ar", "tr", "ro", "bg"] as const;
-export type Locale = (typeof locales)[number];
-
-export const defaultLocale: Locale = "fr";
-
-/** Langues écrites de droite à gauche (audit RTL des composants = phase ultérieure). */
-export const rtlLocales: readonly Locale[] = ["ar"];
-
-export function isRtl(locale: string): boolean {
-  return rtlLocales.includes(locale as Locale);
-}
-
-export function isLocale(value: string | undefined | null): value is Locale {
-  return !!value && (locales as readonly string[]).includes(value);
-}
-
-/** Noms natifs (jamais traduits) — affichés dans le sélecteur de langue. */
-export const localeNames: Record<Locale, string> = {
-  fr: "Français",
-  nl: "Nederlands",
-  de: "Deutsch",
-  en: "English",
-  it: "Italiano",
-  es: "Español",
-  pt: "Português",
-  ru: "Русский",
-  ar: "العربية",
-  tr: "Türkçe",
-  ro: "Română",
-  bg: "Български",
-};
-
-/** Langues réellement proposées au public (UI traduite à 100 %). ro/bg existent
- *  en code mais ne sont pas traduites → retombent sur FR, pas dans le sélecteur. */
-export const publicLocales: readonly Locale[] = [
-  "fr",
-  "nl",
-  "en",
-  "de",
-  "it",
-  "es",
-  "pt",
-  "ru",
-  "tr",
-  "ar",
-];
+export * from "./locales";
 
 /** Nom du cookie qui mémorise la langue choisie par l'utilisateur. */
 export const LOCALE_COOKIE = "BELDOC_LOCALE";

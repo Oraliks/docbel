@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useLocale } from "next-intl";
 import { CheckIcon, GlobeIcon, LoaderCircleIcon } from "lucide-react";
 import { setLocale } from "@/i18n/actions";
-import { locales, localeNames, type Locale } from "@/i18n/config";
+import { locales, localeNames, localeCountryCodes, type Locale } from "@/i18n/locales";
 import {
   Dialog,
   DialogContent,
@@ -13,21 +13,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import "flag-icons/css/flag-icons.min.css";
-
-const localeCountryCodes: Record<Locale, string> = {
-  fr: "fr",
-  nl: "nl",
-  de: "de",
-  en: "gb",
-  it: "it",
-  es: "es",
-  pt: "pt",
-  ru: "ru",
-  ar: "sa",
-  tr: "tr",
-  ro: "ro",
-  bg: "bg",
-};
 
 export function LocaleSwitcher({
   localeList = locales,

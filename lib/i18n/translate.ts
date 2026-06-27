@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { callClaude } from "@/lib/chomage-ia/anthropic";
 import { CLAUDE_MODELS } from "@/lib/chomage-ia/models";
+import { aiLabels, isTranslatableLocale, type Locale } from "@/i18n/locales";
 
 /**
  * Service de traduction par IA (Claude) du contenu DB.
@@ -15,20 +16,10 @@ import { CLAUDE_MODELS } from "@/lib/chomage-ia/models";
  * Bumpable dans lib/chomage-ia/models.ts.
  */
 
-/** Langues cibles supportées → libellé pour le prompt (Belgique quand pertinent). */
-const LOCALE_LABELS: Record<string, string> = {
-  nl: "néerlandais (Belgique / Vlaams)",
-  en: "anglais",
-  de: "allemand (Belgique)",
-  ar: "arabe",
-  tr: "turc",
-  ro: "roumain",
-  bg: "bulgare",
-};
-
-export function isTranslatableLocale(locale: string): boolean {
-  return locale !== "fr" && locale in LOCALE_LABELS;
-}
+// Le libellé des langues et `isTranslatableLocale` sont centralisés dans le
+// registre `i18n/locales.ts`. On ré-exporte `isTranslatableLocale` pour les
+// consommateurs existants (auto-translate, endpoint admin de traduction).
+export { isTranslatableLocale };
 
 const STRATEGY_LABEL: Record<string, string> = {
   translate: "traduire",
@@ -99,7 +90,7 @@ export async function translateTexts(
   }
   if (texts.length === 0) return [];
 
-  const langLabel = LOCALE_LABELS[targetLocale];
+  const langLabel = aiLabels[targetLocale as Locale] ?? targetLocale;
   const glossary = await loadGlossary();
 
   const systemPrompt = [

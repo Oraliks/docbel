@@ -24,31 +24,12 @@
 //
 // Zéro dépendance hors `Intl` natif + `@/i18n/config`.
 
-import { type Locale, isRtl } from "@/i18n/config";
+import { type Locale, isRtl, localeTags } from "@/i18n/locales";
 
-/**
- * Tag BCP-47 à utiliser avec l'API `Intl`, adapté au contexte belge.
- * fr/nl/de → variantes "-BE" (formats locaux belges) ; en → "en-GB" (Europe) ;
- * ar gardé générique ; tr/ro/bg → tags pays standards.
- */
-const LOCALE_TAGS: Record<Locale, string> = {
-  fr: "fr-BE",
-  nl: "nl-BE",
-  de: "de-BE",
-  en: "en-GB",
-  it: "it-IT",
-  es: "es-ES",
-  pt: "pt-PT",
-  ru: "ru-RU",
-  ar: "ar",
-  tr: "tr-TR",
-  ro: "ro-RO",
-  bg: "bg-BG",
-};
-
-/** Map une `Locale` vers son tag BCP-47 belge approprié pour `Intl`. */
+/** Map une `Locale` vers son tag BCP-47 belge approprié pour `Intl`
+ *  (registre `i18n/locales.ts`). */
 export function localeTag(locale: Locale): string {
-  return LOCALE_TAGS[locale] ?? LOCALE_TAGS.fr;
+  return localeTags[locale] ?? localeTags.fr;
 }
 
 /** Indique si la locale s'écrit de droite à gauche (réexport pratique). */

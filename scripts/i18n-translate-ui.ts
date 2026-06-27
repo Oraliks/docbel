@@ -14,6 +14,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import path from "path";
 import { PrismaClient } from "@prisma/client";
 import { parse as parseICU, TYPE } from "@formatjs/icu-messageformat-parser";
+import { aiLabels, type Locale } from "@/i18n/locales";
 
 const MESSAGES = path.join(process.cwd(), "messages");
 // Sonnet 4.6 → supporte les sorties structurées (output_config.format), qui
@@ -39,16 +40,6 @@ const OUTPUT_SCHEMA = {
   required: ["translations"],
   additionalProperties: false,
 } as const;
-
-const LANG_LABEL: Record<string, string> = {
-  de: "allemand",
-  it: "italien",
-  es: "espagnol",
-  pt: "portugais (Portugal, européen)",
-  ru: "russe",
-  tr: "turc",
-  ar: "arabe standard moderne",
-};
 
 // --- Clé API depuis .env.local (Claude Code injecte une clé vide dans l'env) ---
 function readApiKey(): string {
@@ -223,8 +214,8 @@ async function main() {
   const args = process.argv.slice(2);
   const limitArg = args.find((a) => a.startsWith("--limit="));
   const LIMIT = limitArg ? parseInt(limitArg.split("=")[1], 10) : Infinity;
-  const targets = args.filter((a) => a in LANG_LABEL);
-  const LANGS = targets.length ? targets : ["de", "it", "es", "tr", "ar"];
+  const targets = args.filter((a) => a in aiLabels);
+  const LANGS = targets.length ? targets : Object.keys(aiLabels);
 
   const glossary = await loadGlossary(prisma);
   await prisma.$disconnect();
@@ -235,7 +226,7 @@ async function main() {
   const frKeys = Object.keys(frPub);
 
   for (const loc of LANGS) {
-    const label = LANG_LABEL[loc];
+    const label = aiLabels[loc as Locale] ?? loc;
     const fp = path.join(MESSAGES, `${loc}.json`);
     const data: Json = existsSync(fp) ? JSON.parse(readFileSync(fp, "utf8")) : {};
     if (typeof data.public !== "object" || data.public === null) data.public = {};

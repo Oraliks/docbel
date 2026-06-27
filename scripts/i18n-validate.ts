@@ -21,17 +21,14 @@
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { locales as LOCALES, defaultLocale, type Locale } from "@/i18n/locales";
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
 
 /** Locale de référence : catalogue rempli, source de vérité pour la couverture. */
-const SOURCE_LOCALE = "fr";
-
-/** Locales attendues (ordre d'affichage du rapport). */
-const LOCALES = ["fr", "nl", "de", "en", "it", "es", "pt", "ru", "ar", "tr", "ro", "bg"] as const;
-type Locale = (typeof LOCALES)[number];
+const SOURCE_LOCALE = defaultLocale;
 
 /** Dossier des catalogues, relatif à la racine du repo (= cwd de `tsx`). */
 const MESSAGES_DIR = path.resolve(process.cwd(), "messages");

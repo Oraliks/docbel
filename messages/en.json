@@ -6617,83 +6617,119 @@
         }
       },
       "labels": {
-        "nav.next": "Next step",
-        "nav.back": "Previous step",
-        "nav.restart": "Restart the simulation",
-        "nav.toCalendar": "Go to the calendar",
-        "login.title": "Simulated login",
-        "login.intro": "Choose an identification method to understand how the login works. Here, nothing is requested and no real login takes place.",
-        "login.eid": "Understand the eID login",
-        "login.itsme": "Understand itsme",
-        "login.frontalier": "I am a cross-border worker",
-        "login.noMeans": "I have no identification method",
-        "login.continue": "Start the simulation",
-        "declaration.title": "Sworn declaration — simulation",
-        "declaration.intro": "At the first official login, you choose the start month, read the manual and the conditions, then confirm that you are switching to the electronic channel.",
-        "declaration.monthField": "Month from which I use the eC3.2",
-        "declaration.checkbox": "I confirm that I have read the manual and the conditions, and from now on use the electronic channel (fictitious checkbox).",
-        "declaration.continue": "Continue the simulation",
-        "employer.title": "Choose the employer",
-        "employer.intro": "Choose the employer who placed you on temporary unemployment. Your other occupations will be indicated on this card.",
-        "employer.enterprise": "Enterprise number (fictitious)",
-        "employer.continue": "Choose this employer",
-        "month.title": "Choose the month",
-        "month.intro": "Select the card of the month to be filled in. Already-submitted cards are locked.",
-        "month.locked": "Submitted — locked",
-        "month.notYet": "Not yet available",
-        "month.activatePast": "Activate an earlier month",
-        "card.title": "Control card — simulation",
-        "card.employer": "Employer",
-        "card.enterprise": "Enterprise number",
-        "card.lastUpdate": "Last update",
-        "card.corrections": "Corrections",
-        "card.download": "Download preview — simulation",
-        "card.listView": "List view",
-        "card.calendarView": "Calendar view",
-        "card.calendarTab": "Calendar",
-        "card.legendTab": "Legend",
-        "card.adapt": "Adapt the selected days",
-        "card.send": "Send the card — simulation",
-        "card.firstSend": "First possible submission date",
-        "card.affiliation": "I am affiliated with a payment institution",
-        "selector.title": "Which situation for this/these day(s)?",
-        "selector.workElsewhereGroup": "Work elsewhere than at the employer",
-        "selector.save": "Save this day",
-        "selector.saveMulti": "Save these days",
-        "selector.cancel": "Cancel",
-        "selector.selected": "selected",
-        "calendar.selectHint": "Click on a day to select it. Click again to remove it.",
-        "calendar.clear": "Deselect all",
-        "calendar.legend": "Legend of situations",
-        "verify.title": "Verify the card",
-        "verify.intro": "Review your entries before the simulated submission. Check especially the days worked and the incapacity days.",
-        "list.date": "Date",
-        "list.situation": "Situation",
-        "list.correction": "Correction",
-        "list.edit": "Modify",
-        "list.empty": "No days to display for this month."
+        "nav": {
+          "next": "Next step",
+          "back": "Previous step",
+          "restart": "Restart the simulation",
+          "toCalendar": "Go to the calendar"
+        },
+        "login": {
+          "title": "Simulated login",
+          "intro": "Choose an identification method to understand how the login works. Here, nothing is requested and no real login takes place.",
+          "eid": "Understand the eID login",
+          "itsme": "Understand itsme",
+          "frontalier": "I am a cross-border worker",
+          "noMeans": "I have no identification method",
+          "continue": "Start the simulation"
+        },
+        "declaration": {
+          "title": "Sworn declaration — simulation",
+          "intro": "At the first official login, you choose the start month, read the manual and the conditions, then confirm that you are switching to the electronic channel.",
+          "monthField": "Month from which I use the eC3.2",
+          "checkbox": "I confirm that I have read the manual and the conditions, and from now on use the electronic channel (fictitious checkbox).",
+          "continue": "Continue the simulation"
+        },
+        "employer": {
+          "title": "Choose the employer",
+          "intro": "Choose the employer who placed you on temporary unemployment. Your other occupations will be indicated on this card.",
+          "enterprise": "Enterprise number (fictitious)",
+          "continue": "Choose this employer"
+        },
+        "month": {
+          "title": "Choose the month",
+          "intro": "Select the card of the month to be filled in. Already-submitted cards are locked.",
+          "locked": "Submitted — locked",
+          "notYet": "Not yet available",
+          "activatePast": "Activate an earlier month"
+        },
+        "card": {
+          "title": "Control card — simulation",
+          "employer": "Employer",
+          "enterprise": "Enterprise number",
+          "lastUpdate": "Last update",
+          "corrections": "Corrections",
+          "download": "Download preview — simulation",
+          "listView": "List view",
+          "calendarView": "Calendar view",
+          "calendarTab": "Calendar",
+          "legendTab": "Legend",
+          "adapt": "Adapt the selected days",
+          "send": "Send the card — simulation",
+          "firstSend": "First possible submission date",
+          "affiliation": "I am affiliated with a payment institution"
+        },
+        "selector": {
+          "title": "Which situation for this/these day(s)?",
+          "workElsewhereGroup": "Work elsewhere than at the employer",
+          "save": "Save this day",
+          "saveMulti": "Save these days",
+          "cancel": "Cancel",
+          "selected": "selected"
+        },
+        "calendar": {
+          "selectHint": "Click on a day to select it. Click again to remove it.",
+          "clear": "Deselect all",
+          "legend": "Legend of situations"
+        },
+        "verify": {
+          "title": "Verify the card",
+          "intro": "Review your entries before the simulated submission. Check especially the days worked and the incapacity days."
+        },
+        "list": {
+          "date": "Date",
+          "situation": "Situation",
+          "correction": "Correction",
+          "edit": "Modify",
+          "empty": "No days to display for this month."
+        }
       },
       "notices": {
-        "login.eid": "The eID is your electronic identity card. In the real application, you use it with a card reader and your PIN code to identify yourself securely.",
-        "login.itsme": "itsme is a mobile digital identity application. In the real application, you confirm your identity on your smartphone, without a card reader.",
-        "login.frontalier": "Cross-border workers with a national register number or a BIS number can use an electronic identification method recognised at European level (eIDAS). If this is not possible, an alternative digital key can be activated after contact with the NEO.",
-        "login.noMeans": "Without an electronic identification method, you can contact the NEO to activate an alternative digital key. This simulation itself does not request any identification.",
-        "declaration.monthImportance": "In the real application, the choice of month is important: it determines from when you use the eC3.2.",
-        "month.rule": "The eC3.2 card is accessible only for the previous month. In June → only May is available. From 1 July, May disappears and June becomes accessible in turn.",
-        "month.activatePast": "If you activated the eC3.2 from a given month but you were already on temporary unemployment before, you can activate an earlier month. A new sworn declaration is then requested.",
-        "month.cards": "For each employer, you see the card of the current month, that of the next month, the unsubmitted cards of previous months, and the unused cards for months without temporary unemployment.",
-        "calendar.defaultChomage": "By default, the calendar cells are considered as « Unemployment ». You do not need to indicate anything if you are actually on temporary unemployment that day. If you work elsewhere, you must indicate it.",
-        "calendar.notApplicable": "The greyed cells (« Not applicable ») concern days without a contract with the chosen employer (contract started or ended during the month) and days outside the selected month.",
-        "calendar.firstEffectiveDay": "The first effective unemployment day of the month is reported automatically (economic unemployment, bad weather or technical accident). For other types of temporary unemployment, no icon is shown.",
-        "calendar.firstSendNoIcon": "The absence of this icon during the first month of use does not block the operation of the card.",
-        "calendar.fillUntilEnd": "The card must be filled in from the first effective unemployment day to the last day of the month. In construction, the card must always be filled in.",
-        "save.unsaved": "Your changes are not saved. Save before continuing.",
-        "send.firstSendBefore": "Submission is not yet possible: the first possible submission date has not been reached. Even when this date falls before the end of the month, the card must be filled in correctly until the last day of the month. (This simulation never sends anything.)",
-        "send.noPaymentOrg": "In the real application, you can fill in the card, but you must be affiliated with a payment institution (HVW/CAPAC, ACV/CSC, ABVV/FGTB or ACLVB/CGSLB) to be able to send it.",
-        "send.notNeeded": "If you do not request benefits, submission is not necessary. If you wish to request benefits, affiliation with a payment institution is required.",
-        "correction.help": "In the real application, a clear explanation helps inspectors to understand the modification. Only unsubmitted cards can be corrected; the NEO is informed of the modifications.",
-        "correction.locked": "This card has been submitted and is locked in the simulation. A submitted card can no longer be modified.",
-        "work.beforeStart": "All work must be recorded before starting to work."
+        "login": {
+          "eid": "The eID is your electronic identity card. In the real application, you use it with a card reader and your PIN code to identify yourself securely.",
+          "itsme": "itsme is a mobile digital identity application. In the real application, you confirm your identity on your smartphone, without a card reader.",
+          "frontalier": "Cross-border workers with a national register number or a BIS number can use an electronic identification method recognised at European level (eIDAS). If this is not possible, an alternative digital key can be activated after contact with the NEO.",
+          "noMeans": "Without an electronic identification method, you can contact the NEO to activate an alternative digital key. This simulation itself does not request any identification."
+        },
+        "declaration": {
+          "monthImportance": "In the real application, the choice of month is important: it determines from when you use the eC3.2."
+        },
+        "month": {
+          "rule": "The eC3.2 card is accessible only for the previous month. In June → only May is available. From 1 July, May disappears and June becomes accessible in turn.",
+          "activatePast": "If you activated the eC3.2 from a given month but you were already on temporary unemployment before, you can activate an earlier month. A new sworn declaration is then requested.",
+          "cards": "For each employer, you see the card of the current month, that of the next month, the unsubmitted cards of previous months, and the unused cards for months without temporary unemployment."
+        },
+        "calendar": {
+          "defaultChomage": "By default, the calendar cells are considered as « Unemployment ». You do not need to indicate anything if you are actually on temporary unemployment that day. If you work elsewhere, you must indicate it.",
+          "notApplicable": "The greyed cells (« Not applicable ») concern days without a contract with the chosen employer (contract started or ended during the month) and days outside the selected month.",
+          "firstEffectiveDay": "The first effective unemployment day of the month is reported automatically (economic unemployment, bad weather or technical accident). For other types of temporary unemployment, no icon is shown.",
+          "firstSendNoIcon": "The absence of this icon during the first month of use does not block the operation of the card.",
+          "fillUntilEnd": "The card must be filled in from the first effective unemployment day to the last day of the month. In construction, the card must always be filled in."
+        },
+        "save": {
+          "unsaved": "Your changes are not saved. Save before continuing."
+        },
+        "send": {
+          "firstSendBefore": "Submission is not yet possible: the first possible submission date has not been reached. Even when this date falls before the end of the month, the card must be filled in correctly until the last day of the month. (This simulation never sends anything.)",
+          "noPaymentOrg": "In the real application, you can fill in the card, but you must be affiliated with a payment institution (HVW/CAPAC, ACV/CSC, ABVV/FGTB or ACLVB/CGSLB) to be able to send it.",
+          "notNeeded": "If you do not request benefits, submission is not necessary. If you wish to request benefits, affiliation with a payment institution is required."
+        },
+        "correction": {
+          "help": "In the real application, a clear explanation helps inspectors to understand the modification. Only unsubmitted cards can be corrected; the NEO is informed of the modifications.",
+          "locked": "This card has been submitted and is locked in the simulation. A submitted card can no longer be modified."
+        },
+        "work": {
+          "beforeStart": "All work must be recorded before starting to work."
+        }
       },
       "mistakes": {
         "confondre-ec32-et-ec3": {

@@ -9684,83 +9684,119 @@
         }
       },
       "labels": {
-        "nav.next": "Volgende stap",
-        "nav.back": "Vorige stap",
-        "nav.restart": "Simulatie herstarten",
-        "nav.toCalendar": "Naar de kalender",
-        "login.title": "Gesimuleerde aanmelding",
-        "login.intro": "Kies een identificatiemiddel om te zien hoe de aanmelding verloopt. Hier wordt niets gevraagd en vindt geen echte aanmelding plaats.",
-        "login.eid": "Begrijp de eID-aanmelding",
-        "login.itsme": "Begrijp itsme",
-        "login.frontalier": "Ik ben grensarbeider",
-        "login.noMeans": "Ik heb geen identificatiemiddel",
-        "login.continue": "Simulatie starten",
-        "declaration.title": "Verklaring op eer — simulatie",
-        "declaration.intro": "Bij de eerste officiële aanmelding kiest u de startmaand, leest u de handleiding en de voorwaarden en bevestigt u de overstap naar elektronische weg.",
-        "declaration.monthField": "Maand vanaf wanneer ik de eC3.2 gebruik",
-        "declaration.checkbox": "Ik bevestig de handleiding en de voorwaarden te hebben gelezen en voortaan de elektronische weg te gebruiken (fictief vakje).",
-        "declaration.continue": "Simulatie voortzetten",
-        "employer.title": "Werkgever kiezen",
-        "employer.intro": "Kies de werkgever die u tijdelijk werkloos heeft gesteld. Uw andere tewerkstellingen worden op deze kaart vermeld.",
-        "employer.enterprise": "Ondernemingsnummer (fictief)",
-        "employer.continue": "Deze werkgever kiezen",
-        "month.title": "Maand kiezen",
-        "month.intro": "Selecteer de kaart van de maand die u wilt invullen. Reeds verzonden kaarten zijn vergrendeld.",
-        "month.locked": "Verzonden — vergrendeld",
-        "month.notYet": "Nog niet beschikbaar",
-        "month.activatePast": "Een eerdere maand activeren",
-        "card.title": "Controlekaart — simulatie",
-        "card.employer": "Werkgever",
-        "card.enterprise": "Ondernemingsnummer",
-        "card.lastUpdate": "Laatste update",
-        "card.corrections": "Correcties",
-        "card.download": "Voorbeeld downloaden — simulatie",
-        "card.listView": "Lijstweergave",
-        "card.calendarView": "Kalenderweergave",
-        "card.calendarTab": "Kalender",
-        "card.legendTab": "Legende",
-        "card.adapt": "Geselecteerde dagen aanpassen",
-        "card.send": "Kaart verzenden — simulatie",
-        "card.firstSend": "Eerste mogelijke verzenddatum",
-        "card.affiliation": "Ik ben aangesloten bij een uitbetalingsinstelling",
-        "selector.title": "Welke situatie voor deze dag(en)?",
-        "selector.workElsewhereGroup": "Werk elders dan bij de werkgever",
-        "selector.save": "Deze dag opslaan",
-        "selector.saveMulti": "Deze dagen opslaan",
-        "selector.cancel": "Annuleren",
-        "selector.selected": "geselecteerd",
-        "calendar.selectHint": "Klik op een dag om hem te selecteren. Klik nogmaals om hem te verwijderen.",
-        "calendar.clear": "Alles deselecteren",
-        "calendar.legend": "Legende van de situaties",
-        "verify.title": "De kaart controleren",
-        "verify.intro": "Herlees uw invoer vóór de gesimuleerde verzending. Controleer vooral de gewerkte dagen en de arbeidsongeschiktheidsdagen.",
-        "list.date": "Datum",
-        "list.situation": "Situatie",
-        "list.correction": "Correctie",
-        "list.edit": "Wijzigen",
-        "list.empty": "Geen dagen om weer te geven voor deze maand."
+        "nav": {
+          "next": "Volgende stap",
+          "back": "Vorige stap",
+          "restart": "Simulatie herstarten",
+          "toCalendar": "Naar de kalender"
+        },
+        "login": {
+          "title": "Gesimuleerde aanmelding",
+          "intro": "Kies een identificatiemiddel om te zien hoe de aanmelding verloopt. Hier wordt niets gevraagd en vindt geen echte aanmelding plaats.",
+          "eid": "Begrijp de eID-aanmelding",
+          "itsme": "Begrijp itsme",
+          "frontalier": "Ik ben grensarbeider",
+          "noMeans": "Ik heb geen identificatiemiddel",
+          "continue": "Simulatie starten"
+        },
+        "declaration": {
+          "title": "Verklaring op eer — simulatie",
+          "intro": "Bij de eerste officiële aanmelding kiest u de startmaand, leest u de handleiding en de voorwaarden en bevestigt u de overstap naar elektronische weg.",
+          "monthField": "Maand vanaf wanneer ik de eC3.2 gebruik",
+          "checkbox": "Ik bevestig de handleiding en de voorwaarden te hebben gelezen en voortaan de elektronische weg te gebruiken (fictief vakje).",
+          "continue": "Simulatie voortzetten"
+        },
+        "employer": {
+          "title": "Werkgever kiezen",
+          "intro": "Kies de werkgever die u tijdelijk werkloos heeft gesteld. Uw andere tewerkstellingen worden op deze kaart vermeld.",
+          "enterprise": "Ondernemingsnummer (fictief)",
+          "continue": "Deze werkgever kiezen"
+        },
+        "month": {
+          "title": "Maand kiezen",
+          "intro": "Selecteer de kaart van de maand die u wilt invullen. Reeds verzonden kaarten zijn vergrendeld.",
+          "locked": "Verzonden — vergrendeld",
+          "notYet": "Nog niet beschikbaar",
+          "activatePast": "Een eerdere maand activeren"
+        },
+        "card": {
+          "title": "Controlekaart — simulatie",
+          "employer": "Werkgever",
+          "enterprise": "Ondernemingsnummer",
+          "lastUpdate": "Laatste update",
+          "corrections": "Correcties",
+          "download": "Voorbeeld downloaden — simulatie",
+          "listView": "Lijstweergave",
+          "calendarView": "Kalenderweergave",
+          "calendarTab": "Kalender",
+          "legendTab": "Legende",
+          "adapt": "Geselecteerde dagen aanpassen",
+          "send": "Kaart verzenden — simulatie",
+          "firstSend": "Eerste mogelijke verzenddatum",
+          "affiliation": "Ik ben aangesloten bij een uitbetalingsinstelling"
+        },
+        "selector": {
+          "title": "Welke situatie voor deze dag(en)?",
+          "workElsewhereGroup": "Werk elders dan bij de werkgever",
+          "save": "Deze dag opslaan",
+          "saveMulti": "Deze dagen opslaan",
+          "cancel": "Annuleren",
+          "selected": "geselecteerd"
+        },
+        "calendar": {
+          "selectHint": "Klik op een dag om hem te selecteren. Klik nogmaals om hem te verwijderen.",
+          "clear": "Alles deselecteren",
+          "legend": "Legende van de situaties"
+        },
+        "verify": {
+          "title": "De kaart controleren",
+          "intro": "Herlees uw invoer vóór de gesimuleerde verzending. Controleer vooral de gewerkte dagen en de arbeidsongeschiktheidsdagen."
+        },
+        "list": {
+          "date": "Datum",
+          "situation": "Situatie",
+          "correction": "Correctie",
+          "edit": "Wijzigen",
+          "empty": "Geen dagen om weer te geven voor deze maand."
+        }
       },
       "notices": {
-        "login.eid": "De eID is uw elektronische identiteitskaart. In de echte applicatie gebruikt u ze met een kaartlezer en uw pincode om u veilig te identificeren.",
-        "login.itsme": "itsme is een mobiele app voor digitale identiteit. In de echte applicatie bevestigt u uw identiteit op uw smartphone, zonder kaartlezer.",
-        "login.frontalier": "Grensarbeiders met een rijksregisternummer of een BIS-nummer kunnen een elektronisch identificatiemiddel gebruiken dat op Europees niveau erkend is (eIDAS). Is dat niet mogelijk, dan kan na contact met de RVA een alternatieve digitale sleutel worden geactiveerd.",
-        "login.noMeans": "Zonder elektronisch identificatiemiddel kunt u contact opnemen met de RVA om een alternatieve digitale sleutel te activeren. Deze simulatie vraagt zelf geen enkele identificatie.",
-        "declaration.monthImportance": "In de echte applicatie is de keuze van de maand belangrijk: ze bepaalt vanaf wanneer u de eC3.2 gebruikt.",
-        "month.rule": "De eC3.2-kaart is enkel toegankelijk voor de vorige maand. In juni → enkel mei is beschikbaar. Vanaf 1 juli verdwijnt mei en wordt juni op zijn beurt toegankelijk.",
-        "month.activatePast": "Hebt u de eC3.2 vanaf een bepaalde maand geactiveerd maar was u daarvoor al tijdelijk werkloos, dan kunt u een eerdere maand activeren. U krijgt dan een nieuwe verklaring op eer voorgelegd.",
-        "month.cards": "Per werkgever ziet u de kaart van de lopende maand, die van de volgende maand, de niet-verzonden kaarten van vorige maanden, en de niet-gebruikte kaarten voor maanden zonder tijdelijke werkloosheid.",
-        "calendar.defaultChomage": "Standaard worden de kalendervakjes als « Werkloosheid » beschouwd. U hoeft niets aan te geven als u die dag effectief tijdelijk werkloos bent. Werkt u elders, dan moet u dat aangeven.",
-        "calendar.notApplicable": "De grijze vakjes (« Niet van toepassing ») betreffen dagen zonder contract met de gekozen werkgever (begonnen of beëindigd contract in de loop van de maand) en dagen buiten de geselecteerde maand.",
-        "calendar.firstEffectiveDay": "De eerste effectieve werkloosheidsdag van de maand wordt automatisch gemeld (economische werkloosheid, slecht weer of technische storing). Voor de andere types tijdelijke werkloosheid wordt geen pictogram getoond.",
-        "calendar.firstSendNoIcon": "De afwezigheid van dit pictogram tijdens de eerste gebruiksmaand blokkeert de werking van de kaart niet.",
-        "calendar.fillUntilEnd": "De kaart moet worden ingevuld vanaf de eerste effectieve werkloosheidsdag tot de laatste dag van de maand. In de bouw moet de kaart altijd worden ingevuld.",
-        "save.unsaved": "Uw wijzigingen zijn niet opgeslagen. Sla op voor u verdergaat.",
-        "send.firstSendBefore": "Verzenden is nog niet mogelijk: de eerste mogelijke verzenddatum is niet bereikt. Ook al valt deze datum vóór het einde van de maand, de kaart moet correct worden ingevuld tot de laatste dag van de maand. (Deze simulatie verzendt nooit iets.)",
-        "send.noPaymentOrg": "In de echte applicatie kunt u de kaart invullen, maar u moet aangesloten zijn bij een uitbetalingsinstelling (HVW, ACV, ABVV of ACLVB) om ze te kunnen verzenden.",
-        "send.notNeeded": "Vraagt u geen uitkeringen aan, dan is verzenden niet nodig. Wilt u uitkeringen aanvragen, dan is aansluiting bij een uitbetalingsinstelling vereist.",
-        "correction.help": "In de echte applicatie helpt een duidelijke uitleg de inspecteurs de wijziging te begrijpen. Alleen niet-verzonden kaarten kunnen worden gecorrigeerd; de RVA wordt op de hoogte gebracht van de wijzigingen.",
-        "correction.locked": "Deze kaart is verzonden en vergrendeld in de simulatie. Een verzonden kaart kan niet meer worden gewijzigd.",
-        "work.beforeStart": "Elke arbeid moet vóór aanvang worden geregistreerd."
+        "login": {
+          "eid": "De eID is uw elektronische identiteitskaart. In de echte applicatie gebruikt u ze met een kaartlezer en uw pincode om u veilig te identificeren.",
+          "itsme": "itsme is een mobiele app voor digitale identiteit. In de echte applicatie bevestigt u uw identiteit op uw smartphone, zonder kaartlezer.",
+          "frontalier": "Grensarbeiders met een rijksregisternummer of een BIS-nummer kunnen een elektronisch identificatiemiddel gebruiken dat op Europees niveau erkend is (eIDAS). Is dat niet mogelijk, dan kan na contact met de RVA een alternatieve digitale sleutel worden geactiveerd.",
+          "noMeans": "Zonder elektronisch identificatiemiddel kunt u contact opnemen met de RVA om een alternatieve digitale sleutel te activeren. Deze simulatie vraagt zelf geen enkele identificatie."
+        },
+        "declaration": {
+          "monthImportance": "In de echte applicatie is de keuze van de maand belangrijk: ze bepaalt vanaf wanneer u de eC3.2 gebruikt."
+        },
+        "month": {
+          "rule": "De eC3.2-kaart is enkel toegankelijk voor de vorige maand. In juni → enkel mei is beschikbaar. Vanaf 1 juli verdwijnt mei en wordt juni op zijn beurt toegankelijk.",
+          "activatePast": "Hebt u de eC3.2 vanaf een bepaalde maand geactiveerd maar was u daarvoor al tijdelijk werkloos, dan kunt u een eerdere maand activeren. U krijgt dan een nieuwe verklaring op eer voorgelegd.",
+          "cards": "Per werkgever ziet u de kaart van de lopende maand, die van de volgende maand, de niet-verzonden kaarten van vorige maanden, en de niet-gebruikte kaarten voor maanden zonder tijdelijke werkloosheid."
+        },
+        "calendar": {
+          "defaultChomage": "Standaard worden de kalendervakjes als « Werkloosheid » beschouwd. U hoeft niets aan te geven als u die dag effectief tijdelijk werkloos bent. Werkt u elders, dan moet u dat aangeven.",
+          "notApplicable": "De grijze vakjes (« Niet van toepassing ») betreffen dagen zonder contract met de gekozen werkgever (begonnen of beëindigd contract in de loop van de maand) en dagen buiten de geselecteerde maand.",
+          "firstEffectiveDay": "De eerste effectieve werkloosheidsdag van de maand wordt automatisch gemeld (economische werkloosheid, slecht weer of technische storing). Voor de andere types tijdelijke werkloosheid wordt geen pictogram getoond.",
+          "firstSendNoIcon": "De afwezigheid van dit pictogram tijdens de eerste gebruiksmaand blokkeert de werking van de kaart niet.",
+          "fillUntilEnd": "De kaart moet worden ingevuld vanaf de eerste effectieve werkloosheidsdag tot de laatste dag van de maand. In de bouw moet de kaart altijd worden ingevuld."
+        },
+        "save": {
+          "unsaved": "Uw wijzigingen zijn niet opgeslagen. Sla op voor u verdergaat."
+        },
+        "send": {
+          "firstSendBefore": "Verzenden is nog niet mogelijk: de eerste mogelijke verzenddatum is niet bereikt. Ook al valt deze datum vóór het einde van de maand, de kaart moet correct worden ingevuld tot de laatste dag van de maand. (Deze simulatie verzendt nooit iets.)",
+          "noPaymentOrg": "In de echte applicatie kunt u de kaart invullen, maar u moet aangesloten zijn bij een uitbetalingsinstelling (HVW, ACV, ABVV of ACLVB) om ze te kunnen verzenden.",
+          "notNeeded": "Vraagt u geen uitkeringen aan, dan is verzenden niet nodig. Wilt u uitkeringen aanvragen, dan is aansluiting bij een uitbetalingsinstelling vereist."
+        },
+        "correction": {
+          "help": "In de echte applicatie helpt een duidelijke uitleg de inspecteurs de wijziging te begrijpen. Alleen niet-verzonden kaarten kunnen worden gecorrigeerd; de RVA wordt op de hoogte gebracht van de wijzigingen.",
+          "locked": "Deze kaart is verzonden en vergrendeld in de simulatie. Een verzonden kaart kan niet meer worden gewijzigd."
+        },
+        "work": {
+          "beforeStart": "Elke arbeid moet vóór aanvang worden geregistreerd."
+        }
       },
       "mistakes": {
         "confondre-ec32-et-ec3": {

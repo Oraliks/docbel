@@ -1,31 +1,28 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useLocale } from "next-intl";
-import { useRouter } from "next/navigation";
-import { CheckIcon, LoaderCircleIcon } from "lucide-react";
+import { CheckIcon, GlobeIcon, LoaderCircleIcon } from "lucide-react";
 import { setLocale } from "@/i18n/actions";
+import { locales, localeNames, type Locale } from "@/i18n/config";
 import {
-  locales,
-  localeNames,
-  type Locale,
-} from "@/i18n/config";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import "flag-icons/css/flag-icons.min.css";
 
-const localeFlags: Record<Locale, string> = {
-  fr: "\u{1F1EB}\u{1F1F7}",
-  nl: "\u{1F1F3}\u{1F1F1}",
-  de: "\u{1F1E9}\u{1F1EA}",
-  en: "\u{1F1EC}\u{1F1E7}",
-  ar: "\u{1F1F8}\u{1F1E6}",
-  tr: "\u{1F1F9}\u{1F1F7}",
-  ro: "\u{1F1F7}\u{1F1F4}",
-  bg: "\u{1F1E7}\u{1F1EC}",
+const localeCountryCodes: Record<Locale, string> = {
+  fr: "fr",
+  nl: "nl",
+  de: "de",
+  en: "gb",
+  ar: "sa",
+  tr: "tr",
+  ro: "ro",
+  bg: "bg",
 };
 
 export function LocaleSwitcher({
@@ -36,48 +33,78 @@ export function LocaleSwitcher({
   className?: string;
 } = {}) {
   const current = useLocale() as Locale;
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
 
   function switchTo(next: Locale) {
     if (next === current) return;
+    setOpen(false);
     startTransition(async () => {
       await setLocale(next);
-      router.refresh();
+      window.location.reload();
     });
   }
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger
           className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${className}`}
           disabled={pending}
         >
-          <span className="text-base leading-none" aria-hidden>
-            {localeFlags[current]}
-          </span>
-          <span>{localeNames[current]}</span>
+          <span
+            className={`fi fi-${localeCountryCodes[current]} rounded-sm`}
+            style={{ width: "1.25em", height: "0.9375em", display: "inline-block" }}
+          />
           {pending && (
             <LoaderCircleIcon className="size-3.5 animate-spin opacity-60" />
           )}
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" sideOffset={6} className="min-w-[160px]">
-          {localeList.map((l) => (
-            <DropdownMenuItem
-              key={l}
-              className="gap-2.5 px-2.5 py-2"
-              onSelect={() => switchTo(l)}
-            >
-              <span className="text-base leading-none">{localeFlags[l]}</span>
-              <span className="flex-1">{localeNames[l]}</span>
-              {l === current && (
-                <CheckIcon className="size-4 text-primary" />
-              )}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GlobeIcon className="size-5" />
+              {current === "nl"
+                ? "Taal kiezen"
+                : current === "en"
+                  ? "Choose language"
+                  : "Choisir la langue"}
+            </DialogTitle>
+          </DialogHeader>
+          <div
+            className={`grid gap-2 ${
+              localeList.length <= 4
+                ? "grid-cols-1 sm:grid-cols-2"
+                : "grid-cols-2 sm:grid-cols-3"
+            }`}
+          >
+            {localeList.map((l) => {
+              const isActive = l === current;
+              return (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => switchTo(l)}
+                  className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all ${
+                    isActive
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                      : "border-border hover:border-primary/40 hover:bg-accent"
+                  }`}
+                >
+                  <span
+                    className={`fi fi-${localeCountryCodes[l]} shrink-0 rounded-sm shadow-sm`}
+                    style={{ width: "1.5em", height: "1.125em", display: "inline-block" }}
+                  />
+                  <span className="flex-1">{localeNames[l]}</span>
+                  {isActive && (
+                    <CheckIcon className="size-4 shrink-0 text-primary" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {pending && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/60 backdrop-blur-sm transition-opacity">

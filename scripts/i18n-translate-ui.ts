@@ -44,6 +44,8 @@ const LANG_LABEL: Record<string, string> = {
   de: "allemand",
   it: "italien",
   es: "espagnol",
+  pt: "portugais (Portugal, européen)",
+  ru: "russe",
   tr: "turc",
   ar: "arabe standard moderne",
 };

@@ -30,7 +30,7 @@ import path from "node:path";
 const SOURCE_LOCALE = "fr";
 
 /** Locales attendues (ordre d'affichage du rapport). */
-const LOCALES = ["fr", "nl", "de", "en", "it", "es", "ar", "tr", "ro", "bg"] as const;
+const LOCALES = ["fr", "nl", "de", "en", "it", "es", "pt", "ru", "ar", "tr", "ro", "bg"] as const;
 type Locale = (typeof LOCALES)[number];
 
 /** Dossier des catalogues, relatif à la racine du repo (= cwd de `tsx`). */

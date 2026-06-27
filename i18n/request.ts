@@ -15,12 +15,14 @@ import de from "../messages/de.json";
 import en from "../messages/en.json";
 import it from "../messages/it.json";
 import es from "../messages/es.json";
+import pt from "../messages/pt.json";
+import ru from "../messages/ru.json";
 import ar from "../messages/ar.json";
 import tr from "../messages/tr.json";
 import ro from "../messages/ro.json";
 import bg from "../messages/bg.json";
 
-const CATALOGS = { fr, nl, de, en, it, es, ar, tr, ro, bg } as Record<
+const CATALOGS = { fr, nl, de, en, it, es, pt, ru, ar, tr, ro, bg } as Record<
   Locale,
   Record<string, unknown>
 >;

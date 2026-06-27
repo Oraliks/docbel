@@ -38,6 +38,8 @@ const LOCALE_TAGS: Record<Locale, string> = {
   en: "en-GB",
   it: "it-IT",
   es: "es-ES",
+  pt: "pt-PT",
+  ru: "ru-RU",
   ar: "ar",
   tr: "tr-TR",
   ro: "ro-RO",

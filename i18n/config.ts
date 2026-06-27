@@ -2,7 +2,7 @@
 // Les 8 langues sont figées ici ; l'activation/visibilité côté public se
 // gérera plus tard via AppSetting. FR = langue source + fallback universel.
 
-export const locales = ["fr", "nl", "de", "en", "it", "es", "ar", "tr", "ro", "bg"] as const;
+export const locales = ["fr", "nl", "de", "en", "it", "es", "pt", "ru", "ar", "tr", "ro", "bg"] as const;
 export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = "fr";
@@ -26,6 +26,8 @@ export const localeNames: Record<Locale, string> = {
   en: "English",
   it: "Italiano",
   es: "Español",
+  pt: "Português",
+  ru: "Русский",
   ar: "العربية",
   tr: "Türkçe",
   ro: "Română",
@@ -41,6 +43,8 @@ export const publicLocales: readonly Locale[] = [
   "de",
   "it",
   "es",
+  "pt",
+  "ru",
   "tr",
   "ar",
 ];

@@ -7,6 +7,7 @@ import { actorLabel } from "@/lib/news/session";
 import { newsUpdateSchema } from "@/lib/news/validation";
 import { slugify } from "@/lib/news/slug";
 import { HERO_REQUIRED_MESSAGE, hasHeroIllustration } from "@/lib/news/publish-guard";
+import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
 
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8" };
 
@@ -123,6 +124,16 @@ export async function PATCH(
     };
 
     const article = await prisma.news.update({ where: { id }, data });
+
+    // Auto-traduction NL/EN seulement si un champ traduisible a changé.
+    if (
+      body.title !== undefined ||
+      body.excerpt !== undefined ||
+      body.content !== undefined ||
+      body.keyTakeaway !== undefined
+    ) {
+      scheduleAutoTranslate("News", article.id);
+    }
 
     await logActivity(
       actorLabel(authCheck.user),

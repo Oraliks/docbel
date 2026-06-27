@@ -5,6 +5,7 @@ import { OrganismeType } from "@prisma/client";
 import { memoCache, memoCacheInvalidate } from "@/lib/memo-cache";
 import { getUserLocale } from "@/i18n/locale";
 import { localizeRecords } from "@/lib/i18n/content";
+import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
 
 const VALID_TYPES: OrganismeType[] = [
   "federal",
@@ -94,5 +95,7 @@ export async function POST(req: NextRequest) {
   });
 
   memoCacheInvalidate(ORGANISMES_CACHE_KEY);
+  // Auto-traduction NL/EN en arrière-plan (statut "ia", à relire).
+  scheduleAutoTranslate("Organisme", created.id);
   return NextResponse.json(created, { status: 201 });
 }

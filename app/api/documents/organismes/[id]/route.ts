@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { OrganismeType } from "@prisma/client";
 import { memoCacheInvalidate } from "@/lib/memo-cache";
+import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
 
 const ORGANISMES_CACHE_KEY = "documents:organismes:all";
 
@@ -75,6 +76,10 @@ export async function PUT(
 
   const updated = await prisma.organisme.update({ where: { id }, data });
   memoCacheInvalidate(ORGANISMES_CACHE_KEY);
+  // Auto-traduction NL/EN si name/description a changé (statut "ia", à relire).
+  if (body.name !== undefined || body.description !== undefined) {
+    scheduleAutoTranslate("Organisme", updated.id);
+  }
   return NextResponse.json(updated);
 }
 

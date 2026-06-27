@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { logActivity } from "@/lib/activity-logger";
+import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
 import {
   buildLabel,
   buildSearchText,
@@ -80,6 +81,9 @@ export async function PATCH(
         },
       })
     );
+
+    // Auto-traduction NL/EN (nom + label rebâtis à chaque update, statut "ia").
+    scheduleAutoTranslate("CommissionParitaire", updated.id);
 
     await logActivity(
       authCheck.user.name,

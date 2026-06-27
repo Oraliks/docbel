@@ -5,6 +5,7 @@ import { requireAdminAuth } from "@/lib/auth-check";
 import { parseEligibilityQuestions } from "@/lib/bundles/eligibility";
 import { parseVocabularyTags } from "@/lib/bundles/vocabulary";
 import { parseBundleWarnings } from "@/lib/bundles/types";
+import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
 
 export async function GET(
   _req: NextRequest,
@@ -99,6 +100,12 @@ export async function PUT(
       },
     },
   });
+
+  // Auto-traduction NL/EN si name/description a changé (statut "ia", à relire).
+  if (body.name !== undefined || body.description !== undefined) {
+    scheduleAutoTranslate("DocumentBundle", updated.id);
+  }
+
   return NextResponse.json(updated);
 }
 

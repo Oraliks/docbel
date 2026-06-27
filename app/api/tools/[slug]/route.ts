@@ -6,6 +6,7 @@ import { getUserLocale } from '@/i18n/locale'
 import { localizeRecord } from '@/lib/i18n/content'
 import { setToolActive } from '@/lib/tools-active'
 import { PARTNER_TYPES, parseAccessRules } from '@/lib/entitlements'
+import { scheduleAutoTranslate } from '@/lib/i18n/auto-translate'
 import { z } from 'zod'
 
 export async function GET(
@@ -159,6 +160,11 @@ export async function PATCH(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data: data as any,
       })
+    }
+
+    // Auto-traduction NL/EN si name/description a changé (statut "ia", à relire).
+    if (updated && ("name" in rest || "description" in rest)) {
+      scheduleAutoTranslate("Tool", updated.id)
     }
 
     return NextResponse.json({ ok: true, slug, active, ...updated })

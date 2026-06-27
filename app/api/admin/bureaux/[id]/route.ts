@@ -5,6 +5,7 @@ import { requireAdminAuth } from "@/lib/auth-check";
 import { logActivity } from "@/lib/activity-logger";
 import { serializeBureau } from "@/lib/bureaus/types";
 import { validateBureauInput } from "@/lib/bureaus/validation";
+import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
 import { diffBureau, snapshotBureau } from "@/lib/bureaus/diff";
 import { invalidateBureauCaches } from "@/lib/bureaus/cache-invalidation";
 
@@ -117,6 +118,11 @@ export async function PATCH(
           },
         })
         .catch((err) => console.error("[bureaus] revision write failed:", err));
+    }
+
+    // Auto-traduction NL/EN seulement si les notes d'horaires ont changé.
+    if (diff.changed.includes("hoursNotes")) {
+      scheduleAutoTranslate("Bureau", updated.id);
     }
 
     await logActivity(

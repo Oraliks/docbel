@@ -4,6 +4,7 @@ import { del } from "@vercel/blob";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { logActivity } from "@/lib/activity-logger";
+import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
 
 /**
  * /api/admin/calculators/[slug]/assets/[id]
@@ -73,6 +74,11 @@ export async function PATCH(
       data: parsed.data,
     }),
   );
+
+  // Auto-traduction NL/EN si label/description a changé (statut "ia", à relire).
+  if ("label" in parsed.data || "description" in parsed.data) {
+    scheduleAutoTranslate("CalculatorAsset", updated.id);
+  }
 
   await logActivity(
     auth.user.email,

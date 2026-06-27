@@ -9,6 +9,7 @@ import { getCurrentUser, actorLabel } from "@/lib/news/session";
 import { newsCreateSchema, newsListQuerySchema } from "@/lib/news/validation";
 import { slugify } from "@/lib/news/slug";
 import { HERO_REQUIRED_MESSAGE, hasHeroIllustration } from "@/lib/news/publish-guard";
+import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
 
 const PUBLIC_LIST_FIELDS = {
   id: true,
@@ -207,6 +208,9 @@ export async function POST(req: NextRequest) {
         updatedBy: authCheck.user?.id || null,
       },
     });
+
+    // Auto-traduction NL/EN en arrière-plan (statut "ia", à relire).
+    scheduleAutoTranslate("News", article.id);
 
     await logActivity(
       actorLabel(authCheck.user),

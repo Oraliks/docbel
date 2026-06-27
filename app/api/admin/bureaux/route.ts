@@ -5,6 +5,7 @@ import { requireAdminAuth } from "@/lib/auth-check";
 import { logActivity } from "@/lib/activity-logger";
 import { serializeBureau } from "@/lib/bureaus/types";
 import { validateBureauInput } from "@/lib/bureaus/validation";
+import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
 import { memoCache } from "@/lib/memo-cache";
 import {
   BUREAUX_LIST_CACHE_PREFIX,
@@ -179,6 +180,9 @@ export async function POST(req: NextRequest) {
       `Bureau - ${created.name}`,
       created.id
     );
+
+    // Auto-traduction NL/EN des notes d'horaires (statut "ia", à relire).
+    scheduleAutoTranslate("Bureau", created.id);
 
     invalidateBureauCaches();
     return NextResponse.json(serializeBureau(created), {

@@ -4,6 +4,7 @@ import { put } from "@vercel/blob";
 import { prisma, withDbRetry } from "@/lib/prisma";
 import { requireAdminAuth } from "@/lib/auth-check";
 import { logActivity } from "@/lib/activity-logger";
+import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
 
 /**
  * /api/admin/calculators/[slug]/assets
@@ -115,6 +116,9 @@ export async function POST(
         },
       }),
     );
+
+    // Auto-traduction NL/EN (label + description, statut "ia", à relire).
+    scheduleAutoTranslate("CalculatorAsset", created.id);
 
     await logActivity(
       auth.user.email,
@@ -272,6 +276,9 @@ export async function POST(
       },
     }),
   );
+
+  // Auto-traduction NL/EN (label + description, statut "ia", à relire).
+  scheduleAutoTranslate("CalculatorAsset", created.id);
 
   await logActivity(
     auth.user.email,

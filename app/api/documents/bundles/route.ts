@@ -7,6 +7,7 @@ import { parseVocabularyTags } from "@/lib/bundles/vocabulary";
 import { parseBundleWarnings } from "@/lib/bundles/types";
 import { getUserLocale } from "@/i18n/locale";
 import { localizeRecords } from "@/lib/i18n/content";
+import { scheduleAutoTranslate } from "@/lib/i18n/auto-translate";
 
 export async function GET() {
   // Lecture publique des bundles actifs (utilisé pour la page publique aussi)
@@ -84,6 +85,9 @@ export async function POST(req: NextRequest) {
       createdBy: auth.user.id,
     },
   });
+
+  // Auto-traduction NL/EN en arrière-plan (name + description, statut "ia").
+  scheduleAutoTranslate("DocumentBundle", created.id);
 
   return NextResponse.json(created, { status: 201 });
 }

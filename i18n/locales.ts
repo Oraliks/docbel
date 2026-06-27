@@ -78,10 +78,11 @@ export const localeNames: Record<Locale, string> = {
 };
 
 /** Code pays ISO 3166-1 alpha-2 pour les drapeaux `flag-icons` (`fi fi-xx`).
- *  Quelques langues → pays "porteur" : en→gb, ar→sa, sq→al (Albanie). */
+ *  fr/nl/de → drapeau belge (langues officielles belges, ≠ France/Pays-Bas).
+ *  Autres porteurs : en→gb, ar→sa, sq→al (Albanie). */
 export const localeCountryCodes: Record<Locale, string> = {
-  fr: "fr",
-  nl: "nl",
+  fr: "be",
+  nl: "be",
   de: "de",
   en: "gb",
   it: "it",

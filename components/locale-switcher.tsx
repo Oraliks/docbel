@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useLocale } from "next-intl";
-import { CheckIcon, GlobeIcon, LoaderCircleIcon } from "lucide-react";
+import { CheckIcon, GlobeIcon, InfoIcon, LoaderCircleIcon } from "lucide-react";
 import { setLocale } from "@/i18n/actions";
 import { locales, localeNames, localeCountryCodes, type Locale } from "@/i18n/locales";
 import {
@@ -91,6 +91,16 @@ export function LocaleSwitcher({
                 </button>
               );
             })}
+          </div>
+          <div className="mt-1 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
+            <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
+            <p>
+              {current === "nl"
+                ? "Vertalingen zijn AI-gegenereerd en kunnen fouten bevatten. De Franse versie is de enige officiële bron zonder fouten."
+                : current === "en"
+                  ? "Translations are AI-generated and may contain errors. The French version is the only official error-free source."
+                  : "Les traductions sont générées par IA et peuvent contenir des erreurs. La version française est la seule source officielle sans erreur."}
+            </p>
           </div>
         </DialogContent>
       </Dialog>

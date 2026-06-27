@@ -14,6 +14,7 @@
     "start": "next start",
     "lint": "eslint",
     "i18n:check": "tsx scripts/i18n-validate.ts",
+    "i18n:compile": "tsx scripts/i18n-compile.ts",
     "lint:i18n": "eslint -c eslint.i18n.config.mjs app components",
     "postinstall": "prisma generate",
     "db:push": "dotenv -e .env.local -- prisma db push",

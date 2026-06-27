@@ -17,12 +17,14 @@ import it from "../messages/it.json";
 import es from "../messages/es.json";
 import pt from "../messages/pt.json";
 import ru from "../messages/ru.json";
+import sq from "../messages/sq.json";
+import mk from "../messages/mk.json";
 import ar from "../messages/ar.json";
 import tr from "../messages/tr.json";
 import ro from "../messages/ro.json";
 import bg from "../messages/bg.json";
 
-const CATALOGS = { fr, nl, de, en, it, es, pt, ru, ar, tr, ro, bg } as Record<
+const CATALOGS = { fr, nl, de, en, it, es, pt, ru, sq, mk, ar, tr, ro, bg } as Record<
   Locale,
   Record<string, unknown>
 >;
@@ -51,10 +53,23 @@ function deepMerge<T>(base: T, override: unknown): T {
   return out as T;
 }
 
+/**
+ * Pré-fusion UNE SEULE FOIS au chargement du module (et non à chaque requête).
+ * Chaque locale non-FR est mergée sur la base FR ici, puis mémoïsée ; une
+ * requête ne fait plus qu'un lookup O(1). FR = base brute (aucun merge). Le
+ * fallback FR par clé manquante est donc figé à l'init, pas recalculé par hit.
+ * (cf. scripts/i18n-compile.ts pour matérialiser ces catalogues sur disque.)
+ */
+const MERGED = Object.fromEntries(
+  (Object.keys(CATALOGS) as Locale[]).map((loc) => [
+    loc,
+    loc === defaultLocale
+      ? CATALOGS[defaultLocale]
+      : deepMerge(CATALOGS[defaultLocale], CATALOGS[loc]),
+  ])
+) as Record<Locale, Record<string, unknown>>;
+
 export default getRequestConfig(async () => {
   const locale = await getUserLocale();
-  const base = CATALOGS[defaultLocale];
-  const active = CATALOGS[locale as Locale] ?? base;
-  const messages = locale === defaultLocale ? base : deepMerge(base, active);
-  return { locale, messages };
+  return { locale, messages: MERGED[locale as Locale] ?? MERGED[defaultLocale] };
 });

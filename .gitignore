@@ -34,6 +34,10 @@ pnpm-debug.log*
 tsconfig.tsbuildinfo
 next-env.d.ts
 
+# i18n — artefacts compilés (dérivés de messages/*.json via `pnpm i18n:compile`).
+# Le runtime mémoïse la fusion en mémoire ; ces fichiers sont pour inspection.
+messages/_compiled/
+
 # Database
 prisma/**/*.db
 prisma/**/*.db-journal

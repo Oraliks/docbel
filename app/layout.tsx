@@ -61,7 +61,13 @@ export default async function RootLayout({
   // i18n (mode cookie) : locale + messages côté serveur, hydratés au provider
   // racine → couvre tout le front (vitrine glass, espaces pros, admin).
   const locale = await getLocale();
+  // SPLIT admin/public : le provider RACINE ne sert QUE les messages `public.*`
+  // au client (≈348 KB). Le volumineux `admin.*` (≈132 KB, FR) n'est PLUS
+  // embarqué par les visiteurs publics : il est servi par un provider imbriqué
+  // dans app/admin/layout.tsx (tous les consommateurs admin.* vivent sous /admin).
+  // Côté SERVEUR, getTranslations garde l'accès complet (request.ts inchangé).
   const messages = await getMessages();
+  const publicMessages = { public: messages.public };
 
   return (
     <html
@@ -85,7 +91,7 @@ export default async function RootLayout({
             __html: `(function(){try{var t=localStorage.getItem('docbel-theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}else{document.documentElement.style.colorScheme='light';}}catch(e){}})();`,
           }}
         />
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={publicMessages}>
           <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
             <AuthSessionProvider initialSession={initialSession}>
               <ImpersonationBanner />

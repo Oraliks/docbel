@@ -23,6 +23,7 @@ import {
   Loader2,
   Save,
   Search,
+  Sparkles,
   X,
 } from "lucide-react";
 
@@ -113,6 +114,8 @@ export function LocaleTranslationsManager({ locale }: { locale: string }) {
 
   const [drafts, setDrafts] = useState<Record<string, { value: string; status: string }>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
+  const [bulkTranslating, setBulkTranslating] = useState(false);
   const [historyRowId, setHistoryRowId] = useState<string | null>(null);
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -194,6 +197,52 @@ export function LocaleTranslationsManager({ locale }: { locale: string }) {
       setSavingId(null);
     }
   };
+
+  // Traduit par IA une liste de lignes (statut → ia), puis recharge.
+  const translateRows = async (rowIds: string[], bulk = false) => {
+    if (rowIds.length === 0) {
+      toast.info("Aucune ligne à traduire.");
+      return;
+    }
+    if (bulk) setBulkTranslating(true);
+    else setTranslatingIds((s) => new Set([...s, ...rowIds]));
+    const loadingToast = toast.loading(
+      `Traduction IA de ${rowIds.length} ligne(s)…`
+    );
+    try {
+      const res = await fetch("/api/admin/content-translations/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: rowIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Échec de la traduction");
+      toast.success(
+        `${data.translated} traduite(s)` +
+          (data.skipped ? ` · ${data.skipped} protégée(s)` : "") +
+          (data.failed ? ` · ${data.failed} échec(s)` : ""),
+        { id: loadingToast }
+      );
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur de traduction", {
+        id: loadingToast,
+      });
+    } finally {
+      if (bulk) setBulkTranslating(false);
+      else
+        setTranslatingIds((s) => {
+          const n = new Set(s);
+          rowIds.forEach((id) => n.delete(id));
+          return n;
+        });
+    }
+  };
+
+  // Lignes vides de la page courante (traduction de masse "le manquant").
+  const emptyRowIds = rows
+    .filter((r) => !(drafts[r.id]?.value ?? r.value).trim())
+    .map((r) => r.id);
 
   const openHistory = async (id: string) => {
     if (historyRowId === id) { setHistoryRowId(null); return; }
@@ -284,6 +333,23 @@ export function LocaleTranslationsManager({ locale }: { locale: string }) {
               <EyeOff className="size-4" />
               {hideEmpty ? "Sources vides masquées" : "Toutes les lignes"}
             </button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => translateRows(emptyRowIds, true)}
+              disabled={bulkTranslating || emptyRowIds.length === 0}
+              className="h-9 gap-1.5"
+              title="Traduire par IA les lignes sans traduction (page courante)"
+            >
+              {bulkTranslating ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Sparkles className="size-4" />
+              )}
+              Traduire les vides
+              {emptyRowIds.length > 0 && ` (${emptyRowIds.length})`}
+            </Button>
 
             <Button variant="outline" size="sm" onClick={exportCsv} className="h-9 gap-1.5">
               <Download className="size-4" />
@@ -408,6 +474,19 @@ export function LocaleTranslationsManager({ locale }: { locale: string }) {
                   </Select>
 
                   <div className="ml-auto flex items-center gap-2">
+                    <Button
+                      variant="ghost" size="sm"
+                      className="h-7 gap-1 text-xs"
+                      disabled={translatingIds.has(r.id) || !r.sourceText.trim()}
+                      onClick={() => translateRows([r.id])}
+                      title={r.sourceText.trim() ? "Traduire cette ligne par IA" : "Pas de source FR à traduire"}
+                    >
+                      {translatingIds.has(r.id)
+                        ? <Loader2 className="size-3.5 animate-spin" />
+                        : <Sparkles className="size-3.5" />}
+                      Traduire
+                    </Button>
+
                     <Button
                       variant="ghost" size="sm"
                       className={`h-7 gap-1 text-xs ${isHistoryOpen ? "text-primary" : ""}`}

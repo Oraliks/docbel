@@ -13,6 +13,7 @@ import { AcronymHydrator } from "@/components/docbel/acronym-hydrator";
 import { VersionWatcher } from "@/components/version-watcher";
 import { AuthSessionProvider } from "@/components/auth-session-provider";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
+import { WelcomeLocaleModal } from "@/components/welcome-locale-modal";
 import { getServerAuthSession } from "@/lib/auth-session";
 import "./globals.css";
 
@@ -94,6 +95,7 @@ export default async function RootLayout({
             <ConfirmDialog />
             <VersionWatcher />
             <AcronymHydrator />
+            <WelcomeLocaleModal />
             <Analytics />
           </ThemeProvider>
         </NextIntlClientProvider>

@@ -2182,6 +2182,30 @@ model ContentTranslation {
   @@index([model, recordId, locale])
 }
 
+/// File d'attente DURABLE de traduction du contenu DB. Remplace l'auto-trad
+/// fire-and-forget : à chaque save FR on crée un job par champ/locale ;
+/// `after()` déclenche le traitement mais les jobs survivent en DB → reprise
+/// possible en cas d'échec (endpoint admin de relance). Pas de FK → additif.
+model TranslationJob {
+  id         String   @id @default(cuid())
+  model      String // "News" | "Bureau" | … (PascalCase, comme ContentTranslation)
+  recordId   String
+  field      String
+  locale     String
+  /// Hash SHA-256 de la source FR à la création du job. Unicité sur cette clé →
+  /// re-save sans changement = pas de doublon ; FR modifié = nouveau job.
+  sourceHash String
+  /// "pending" | "processing" | "done" | "failed".
+  status     String   @default("pending")
+  attempts   Int      @default(0)
+  lastError  String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([model, recordId, field, locale, sourceHash])
+  @@index([status, createdAt])
+}
+
 /// Glossaire terminologique belge, injecté dans le prompt de traduction IA
 /// (lib/i18n/translate.ts) pour garantir la cohérence (RVA/OCMW/INSZ…).
 /// Édité via l'admin (/admin/i18n/glossaire). Remplace docs/i18n-glossaire.md

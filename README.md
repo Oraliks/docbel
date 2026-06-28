@@ -40,6 +40,11 @@ Renseigne au minimum :
 
 ## Initialisation de la base
 
+> ⚠️ **`db:setup` exécute `prisma db push`.** À n'utiliser que sur une base **locale
+> jetable**. Ne **jamais** pointer `DATABASE_URL` vers la base Neon partagée : `db push`
+> y détruirait l'extension pgvector et des tables (PDF, etc.). Sur une base partagée, faire
+> du SQL **additif** via `prisma db execute` (cf. `AGENTS.md` → règles DB).
+
 ```bash
 pnpm db:setup
 ```

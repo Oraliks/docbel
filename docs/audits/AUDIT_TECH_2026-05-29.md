@@ -1,3 +1,10 @@
+> ⚠️ **PARTIELLEMENT PÉRIMÉ (vérifié 2026-06-28).** Plusieurs items P0/P1 sont déjà
+> résolus : `next@16.2.6`, build découplé de `migrate deploy`, `.env.example` complété,
+> README/AGENTS en better-auth, `@prisma/client` en deps / `shadcn` en devDeps, `.bak`
+> supprimé, `engines` présent. Recouper **toujours** avec
+> [`docs/tasks/CONTRADICTIONS.md`](../tasks/CONTRADICTIONS.md) avant d'agir. Sécurité à
+> jour : [`AUDIT_RGPD_2026-06-06.md`](AUDIT_RGPD_2026-06-06.md) (plus récent).
+
 # Audit complet — DocBel
 
 > Audit en lecture seule du portail Next.js 16 / React 19 / Prisma 5 / better-auth.

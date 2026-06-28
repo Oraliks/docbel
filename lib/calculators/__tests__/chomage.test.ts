@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   calcChomage,
+  phaseFromMonths,
   BAREME_VERSION,
   PHASES_INFO,
   type ChomageInput,
@@ -124,6 +125,31 @@ describe("calcChomage — validation des entrées", () => {
     expect(
       calcChomage(input({ phase: "9Z" as ChomageInput["phase"] })),
     ).toHaveProperty("error");
+  });
+});
+
+describe("phaseFromMonths — déduction de la phase par ancienneté", () => {
+  it("mappe chaque tranche de mois sur la bonne phase", () => {
+    expect(phaseFromMonths(1)).toBe("1A");
+    expect(phaseFromMonths(3)).toBe("1A");
+    expect(phaseFromMonths(4)).toBe("1B");
+    expect(phaseFromMonths(6)).toBe("1B");
+    expect(phaseFromMonths(7)).toBe("2A");
+    expect(phaseFromMonths(12)).toBe("2A");
+    expect(phaseFromMonths(13)).toBe("2B");
+    expect(phaseFromMonths(24)).toBe("2B");
+    expect(phaseFromMonths(25)).toBe("2C");
+    expect(phaseFromMonths(36)).toBe("2C");
+    expect(phaseFromMonths(37)).toBe("3");
+    expect(phaseFromMonths(120)).toBe("3");
+  });
+
+  it("traite un mois ≤ 0, fractionnaire ou non fini comme le mois 1 (1A)", () => {
+    expect(phaseFromMonths(0)).toBe("1A");
+    expect(phaseFromMonths(-5)).toBe("1A");
+    expect(phaseFromMonths(NaN)).toBe("1A");
+    expect(phaseFromMonths(2.9)).toBe("1A"); // plancher → mois 2
+    expect(phaseFromMonths(6.9)).toBe("1B"); // plancher → mois 6
   });
 });
 

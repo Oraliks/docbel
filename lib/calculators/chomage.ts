@@ -159,6 +159,23 @@ export const PHASES_INFO: {
   { id: "3", label: "Après 3 ans", periode_description: "Forfaitaire minimum" },
 ];
 
+/**
+ * Déduit la phase de dégressivité à partir de l'ancienneté de chômage (en
+ * mois). Source de vérité UNIQUE de la correspondance mois → phase, partagée
+ * par le calculateur complet et le simulateur du hero (qui ne couvre que la
+ * 1ʳᵉ période). Bornes ONEM : 1A (mois 1-3), 1B (4-6), 2A (7-12), 2B (13-24),
+ * 2C (25-36), 3 (au-delà). Un mois ≤ 0 ou non fini est traité comme le mois 1.
+ */
+export function phaseFromMonths(mois: number): ChomagePhase {
+  const m = Number.isFinite(mois) ? Math.max(1, Math.floor(mois)) : 1;
+  if (m <= 3) return "1A";
+  if (m <= 6) return "1B";
+  if (m <= 12) return "2A";
+  if (m <= 24) return "2B";
+  if (m <= 36) return "2C";
+  return "3";
+}
+
 /* ------------------------------------------------------------------ */
 /*  Calcul                                                            */
 /* ------------------------------------------------------------------ */

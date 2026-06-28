@@ -18,8 +18,8 @@ import { useState } from "react";
 
 import {
   calcChomage,
+  phaseFromMonths,
   PHASES_INFO,
-  type ChomagePhase,
   type ChomageResult,
   type SituationFamiliale,
 } from "@/lib/calculators/chomage";
@@ -38,18 +38,13 @@ import {
   parseNum,
 } from "./_shared";
 
-const PHASE_OPTIONS: { value: ChomagePhase; label: string }[] = PHASES_INFO.map(
-  (p) => ({
-    value: p.id,
-    label: `${p.label} — ${p.periode_description}`,
-  }),
-);
-
 export function CalcChomage({ accent }: { accent: string }) {
   const t = useTranslations("public.outils");
   const [salaire, setSalaire] = useState("");
   const [situation, setSituation] = useState<SituationFamiliale>("chef_menage");
-  const [phase, setPhase] = useState<ChomagePhase>("1A");
+  // Ancienneté de chômage (mois) — la phase de dégressivité en est DÉDUITE
+  // (plus de sélecteur 1A/1B/… : personne ne connaît sa « phase »).
+  const [mois, setMois] = useState("");
   const [result, setResult] = useState<ChomageResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,12 +54,17 @@ export function CalcChomage({ accent }: { accent: string }) {
     { value: "cohabitant", label: t("choSituationCohabitant") },
   ];
 
+  // Phase déduite, affichée en direct pour la transparence (le montant baisse
+  // par paliers avec le temps). `phaseFromMonths` tolère NaN → mois 1 (1A).
+  const derivedPhase = phaseFromMonths(parseNum(mois));
+  const derivedInfo = PHASES_INFO.find((p) => p.id === derivedPhase);
+
   const submit = () => {
     const salaireBrut = parseNum(salaire);
     const res = calcChomage({
       salaireBrut,
       situationFamiliale: situation,
-      phase,
+      phase: derivedPhase,
     });
     if ("error" in res) {
       setResult(null);
@@ -102,15 +102,30 @@ export function CalcChomage({ accent }: { accent: string }) {
           onChange={setSituation}
           options={SITUATION_OPTIONS}
         />
-        <CalcSelect
-          id="chomage-phase"
-          label={t("choPhaseLabel")}
-          value={phase}
-          onChange={setPhase}
-          options={PHASE_OPTIONS}
-          hint={t("choPhaseHint")}
+        <CalcField
+          id="chomage-mois"
+          label={t("choMoisLabel")}
+          type="number"
+          value={mois}
+          onChange={setMois}
+          placeholder={t("choMoisPlaceholder")}
+          min={0}
+          step={1}
+          hint={t("choMoisHint")}
         />
       </CalcGrid>
+
+      {mois && derivedInfo ? (
+        <p
+          aria-live="polite"
+          className="-mt-1 text-[11.5px] text-[color:var(--glass-ink-soft)]"
+        >
+          {t("choPhaseDeduite", {
+            periode: derivedInfo.label,
+            detail: derivedInfo.periode_description,
+          })}
+        </p>
+      ) : null}
 
       <CalcInfo>
         {t.rich("choInfo", {

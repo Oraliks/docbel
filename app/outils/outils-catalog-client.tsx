@@ -223,10 +223,10 @@ export function OutilsCatalogClient({ tools }: Props) {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 sm:gap-6">
       {/* ───────── HERO + RECHERCHE ───────── */}
       <section
-        className="glass-surface outils-rise grid gap-8 p-7 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:p-9"
+        className="glass-surface outils-rise grid gap-5 p-5 sm:gap-8 sm:p-7 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:p-9"
         style={{ animationDelay: "0ms" }}
       >
         <header className="flex flex-col gap-3">
@@ -269,9 +269,9 @@ export function OutilsCatalogClient({ tools }: Props) {
       </section>
 
       {/* ───────── RANGÉE 1 : Populaire · Nouveau · Récemment ───────── */}
-      <div className="outils-rise grid gap-6 lg:grid-cols-3" style={{ animationDelay: "80ms" }}>
+      <div className="outils-rise grid gap-4 sm:gap-6 lg:grid-cols-3" style={{ animationDelay: "80ms" }}>
         {/* Populaire */}
-        <section className="glass-surface glass-interactive flex flex-col p-6">
+        <section className="glass-surface glass-interactive flex flex-col p-5 sm:p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-[15px] font-bold tracking-tight">
               <SparklesIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
@@ -303,7 +303,7 @@ export function OutilsCatalogClient({ tools }: Props) {
         {/* Nouveau (featured) */}
         {featured ? (
           <section
-            className="group relative flex min-h-[230px] flex-col justify-between overflow-hidden rounded-3xl p-7 text-white transition-transform duration-300 hover:-translate-y-1 motion-reduce:transform-none dark:shadow-[0_0_40px_rgba(124,58,237,0.35)]"
+            className="group relative flex min-h-[200px] flex-col justify-between overflow-hidden rounded-3xl p-5 text-white transition-transform duration-300 hover:-translate-y-1 motion-reduce:transform-none sm:min-h-[230px] sm:p-7 dark:shadow-[0_0_40px_rgba(124,58,237,0.35)]"
             style={{
               backgroundImage:
                 "linear-gradient(135deg, var(--glass-status-from) 0%, var(--glass-status-to) 100%)",
@@ -350,7 +350,7 @@ export function OutilsCatalogClient({ tools }: Props) {
         ) : null}
 
         {/* Récemment ajoutés */}
-        <section className="glass-surface glass-interactive flex flex-col p-6">
+        <section className="glass-surface glass-interactive flex flex-col p-5 sm:p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-[15px] font-bold tracking-tight">
               <SparklesIcon className="size-4 text-[color:var(--glass-accent-deep)]" />
@@ -381,9 +381,9 @@ export function OutilsCatalogClient({ tools }: Props) {
       </div>
 
       {/* ───────── RANGÉE 2 : Catégories · Accès rapide+Aide · Enregistrés ───────── */}
-      <div className="outils-rise grid gap-6 lg:grid-cols-3" style={{ animationDelay: "160ms" }}>
+      <div className="outils-rise grid gap-4 sm:gap-6 lg:grid-cols-3" style={{ animationDelay: "160ms" }}>
         {/* Catégories */}
-        <section className="glass-surface glass-interactive flex flex-col p-6">
+        <section className="glass-surface glass-interactive flex flex-col p-5 sm:p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[15px] font-bold tracking-tight">{t("sectionCategories")}</h2>
             <button
@@ -439,8 +439,8 @@ export function OutilsCatalogClient({ tools }: Props) {
         </section>
 
         {/* Accès rapide + Aide */}
-        <div className="flex flex-col gap-6">
-          <section className="glass-surface glass-interactive flex flex-col p-6">
+        <div className="flex flex-col gap-4 sm:gap-6">
+          <section className="glass-surface glass-interactive flex flex-col p-5 sm:p-6">
             <h2 className="mb-3 text-[15px] font-bold tracking-tight">
               {t("quickAccess")}
             </h2>
@@ -472,7 +472,7 @@ export function OutilsCatalogClient({ tools }: Props) {
           </section>
 
           <section
-            className="group relative flex flex-1 flex-col justify-center overflow-hidden rounded-3xl p-6 text-white transition-transform duration-300 hover:-translate-y-1 motion-reduce:transform-none dark:shadow-[0_0_40px_rgba(124,58,237,0.35)]"
+            className="group relative flex flex-1 flex-col justify-center overflow-hidden rounded-3xl p-5 text-white transition-transform duration-300 hover:-translate-y-1 motion-reduce:transform-none sm:p-6 dark:shadow-[0_0_40px_rgba(124,58,237,0.35)]"
             style={{
               backgroundImage:
                 "linear-gradient(135deg, var(--glass-accent-a) 0%, var(--glass-accent-deep) 100%)",
@@ -505,7 +505,7 @@ export function OutilsCatalogClient({ tools }: Props) {
         </div>
 
         {/* Mes outils enregistrés */}
-        <section className="glass-surface glass-interactive flex flex-col p-6">
+        <section className="glass-surface glass-interactive flex flex-col p-5 sm:p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[15px] font-bold tracking-tight">
               {t("viewFavorites")}
@@ -570,7 +570,7 @@ export function OutilsCatalogClient({ tools }: Props) {
 
       {/* ───────── TABLE : Tous les outils ───────── */}
       <section
-        className="glass-surface outils-rise flex flex-col gap-4 p-6 lg:p-7"
+        className="glass-surface outils-rise flex flex-col gap-4 p-4 sm:p-6 lg:p-7"
         style={{ animationDelay: "240ms" }}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -439,7 +439,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
   }, [trimmed, isSearching, searchResults.length]);
 
   return (
-    <section className="relative isolate flex flex-col gap-7">
+    <section className="relative isolate flex flex-col gap-4 sm:gap-7">
       {/* ───────── HERO ───────── */}
       <header className="relative flex flex-col gap-3 px-1">
         {/* Illustration 3D : dossier + feuilles qui s'y classent (coin haut-droit) */}
@@ -506,7 +506,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
       </header>
 
       {/* ═══════ Parcours (toggle) + panneau actif + aide — pleine largeur ═══════ */}
-      <div className="flex w-full flex-col gap-6">
+      <div className="flex w-full flex-col gap-4 sm:gap-6">
         {/* ── Segmented control : choix RÉEL du parcours (pastille glissante) ── */}
         <div
           role="tablist"
@@ -579,7 +579,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
              Largeurs aside augmentées progressivement (lg → 2xl) : sur très
              large (≥ 1600px) l'aide a plus de présence pour équilibrer le
              panneau qui devient très large. */}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
           {/* ════ Panneau principal — swap selon le parcours ════ */}
           <div className="min-w-0">
             {/* Parcours guidé */}
@@ -817,7 +817,7 @@ export function MonDossierClient({ bundles, catalog, activeRun, situations }: Pr
 
           {/* ════ Aide — sidebar persistante ════ */}
           <aside
-            className="glass-surface outils-rise flex flex-col gap-4 p-6 lg:sticky lg:top-6"
+            className="glass-surface outils-rise flex flex-col gap-4 p-4 sm:p-6 lg:sticky lg:top-6"
             style={{ animationDelay: "120ms" }}
           >
           <div className="flex items-center gap-3">

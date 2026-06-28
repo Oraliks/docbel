@@ -86,7 +86,7 @@ export function ContactPage(_: ContactPageProps) {
     "w-full rounded-2xl border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-4 py-3 text-[14px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]";
 
   return (
-    <section className="flex flex-col gap-6">
+    <section className="flex flex-col gap-4 sm:gap-6">
       <header className="flex flex-col gap-3 px-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
           {t("eyebrow")}
@@ -99,8 +99,8 @@ export function ContactPage(_: ContactPageProps) {
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-        <form onSubmit={handleSubmit} className="glass-surface flex flex-col gap-5 p-7">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.6fr_1fr]">
+        <form onSubmit={handleSubmit} className="glass-surface flex flex-col gap-5 p-5 sm:p-7">
           {submitted ? (
             <div
               className="flex items-start gap-3 rounded-2xl p-4 text-[13.5px]"

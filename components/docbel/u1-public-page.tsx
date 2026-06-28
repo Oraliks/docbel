@@ -144,7 +144,7 @@ function InstitutionDetail({ inst }: { inst: Institution }) {
   const t = useTranslations("public.shared");
   return (
     <Card className={GLASS_CARD}>
-      <CardContent className="space-y-5 p-7 sm:p-8">
+      <CardContent className="space-y-5 p-5 sm:p-8">
         <div className="flex items-start gap-4">
           <CountryFlag
             code={inst.countryCode}
@@ -497,7 +497,7 @@ export function U1PublicPage() {
   );
 
   return (
-    <section className="flex w-full flex-col gap-6">
+    <section className="flex w-full flex-col gap-4 sm:gap-6">
       <header className="flex flex-col gap-3 px-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
           {t("u1Eyebrow")}

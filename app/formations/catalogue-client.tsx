@@ -81,9 +81,9 @@ export function CatalogueClient({ trainings, categories }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 sm:gap-6">
       {/* HERO */}
-      <section className="glass-surface grid gap-8 p-7 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:p-9">
+      <section className="glass-surface grid gap-5 p-5 sm:gap-8 sm:p-7 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:p-9">
         <header className="flex flex-col gap-3">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
             {t("eyebrow")}
@@ -162,7 +162,7 @@ export function CatalogueClient({ trainings, categories }: Props) {
       )}
 
       {/* FILTRES + CATALOGUE */}
-      <section id="catalogue" className="glass-surface flex flex-col gap-5 p-6 lg:p-7">
+      <section id="catalogue" className="glass-surface flex flex-col gap-5 p-4 sm:p-6 lg:p-7">
         <div className="flex flex-col gap-4">
           {/* Catégories */}
           <div className="flex flex-wrap gap-2">

@@ -76,7 +76,7 @@ export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
   const visual = pickToolVisual(tool);
 
   return (
-    <section className="flex flex-col gap-6">
+    <section className="flex flex-col gap-4 sm:gap-6">
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
@@ -105,7 +105,7 @@ export function ToolPage({ tool, accent, onBack, lang }: ToolPageProps) {
         ) : null}
       </div>
 
-      <article className="glass-surface flex flex-col gap-6 p-7 sm:p-9">
+      <article className="glass-surface flex flex-col gap-6 p-5 sm:p-9">
         <header className="flex items-center gap-4">
           <span
             className="flex size-14 shrink-0 items-center justify-center rounded-2xl text-white"

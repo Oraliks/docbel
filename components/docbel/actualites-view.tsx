@@ -75,7 +75,7 @@ export function ActualitesView({
   const rest = filtered.filter((article) => article.id !== featured?.id);
 
   return (
-    <section className="flex flex-col gap-6">
+    <section className="flex flex-col gap-4 sm:gap-6">
       <header className="flex flex-col gap-3 px-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
           {t("pressEyebrow")}
@@ -136,7 +136,7 @@ export function ActualitesView({
               onClick={() =>
                 router.push(`/actualites/${featured.slug ?? featured.id}`)
               }
-              className="glass-surface group grid gap-6 overflow-hidden p-7 text-left lg:grid-cols-[1.4fr_1fr] lg:items-center"
+              className="glass-surface group grid gap-5 overflow-hidden p-5 text-left sm:gap-6 sm:p-7 lg:grid-cols-[1.4fr_1fr] lg:items-center"
             >
               <div className="flex flex-col gap-4">
                 <span
@@ -188,7 +188,7 @@ export function ActualitesView({
             </button>
           ) : null}
 
-          <div className="glass-surface p-7">
+          <div className="glass-surface p-5 sm:p-7">
             <h3 className="glass-display mb-2 text-[22px] font-semibold leading-none">
               {t("allArticlesTitle")}
             </h3>

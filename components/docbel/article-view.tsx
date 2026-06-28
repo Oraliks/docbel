@@ -118,13 +118,13 @@ export function ArticleView({
   const hasRightRail = hasSummary || hasDocs || hasFaqs;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-5 sm:gap-8">
       {/* ── Grille 3 colonnes (desktop ≥ lg). Mobile → 1 colonne empilée.
           Largeur pleine : pas de max-w sur la racine (le shell 1840px borne
           déjà). ─────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         {/* ── COLONNE CENTRALE (contenu principal) ─────────────────────── */}
-        <article className="flex min-w-0 flex-col gap-6">
+        <article className="flex min-w-0 flex-col gap-4 sm:gap-6">
           <div className="glass-surface flex flex-col overflow-hidden">
             {/* ── HERO — image IA en COUCHE DE FOND ─────────────────────────
                 Une seule carte (pas de grille texte/image). L'image IA couvre
@@ -160,7 +160,7 @@ export function ArticleView({
 
               {/* Contenu textuel — par-dessus la couche de fond. Pleine
                   largeur (plus de padding-right réservé). */}
-              <div className="relative z-[1] flex flex-col gap-3 p-6 sm:p-7">
+              <div className="relative z-[1] flex flex-col gap-3 p-4 sm:p-7">
                 <Link
                   href="/actualites"
                   className="inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em] outline-none transition-opacity hover:opacity-75 focus-visible:ring-2 focus-visible:ring-[color:var(--glass-accent-deep)]"
@@ -291,7 +291,7 @@ export function ArticleView({
             </div>
 
             {/* ── Contenu de l'article (filet pleine largeur au-dessus) ──── */}
-            <div className="border-t border-[color:var(--glass-ink-line)] p-6 sm:p-9">
+            <div className="border-t border-[color:var(--glass-ink-line)] p-4 sm:p-9">
               {article.content ? (
                 <div
                   id={CONTENT_ANCHOR}

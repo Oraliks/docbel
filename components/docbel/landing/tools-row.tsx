@@ -35,7 +35,7 @@ export async function LandingToolsRow({
   const visible = tools.slice(0, max);
 
   return (
-    <section className="glass-surface flex flex-col gap-8 p-7 lg:flex-row lg:items-center lg:gap-10 lg:p-9">
+    <section className="glass-surface flex flex-col gap-5 p-5 sm:gap-8 sm:p-7 lg:flex-row lg:items-center lg:gap-10 lg:p-9">
       {/* Titre + accent vertical -------------------------------------- */}
       <div className="flex shrink-0 items-stretch gap-4 lg:max-w-[200px]">
         <div

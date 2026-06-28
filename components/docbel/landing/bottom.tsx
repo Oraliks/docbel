@@ -148,8 +148,8 @@ export function LandingBottom({
   const showBundles = bundleList.length > 0;
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-      <div className="glass-surface p-7">
+    <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.6fr_1fr]">
+      <div className="glass-surface p-5 sm:p-7">
         <div className="mb-4 flex items-baseline justify-between">
           <h2 className="glass-display text-[24px] font-semibold leading-none">
             {t("recentNewsTitle")}
@@ -235,7 +235,7 @@ export function LandingBottom({
         </div>
       </div>
 
-      <div className="glass-surface flex flex-col gap-3.5 p-7">
+      <div className="glass-surface flex flex-col gap-3.5 p-5 sm:p-7">
         <div className="mb-1 flex items-baseline justify-between">
           <h2 className="glass-display text-[24px] font-semibold leading-none">
             {showBundles ? t("popularDossiersTitle") : t("resourcesTitle")}

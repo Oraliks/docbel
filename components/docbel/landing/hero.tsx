@@ -78,7 +78,7 @@ const ASSET_GLOW =
  */
 function FeaturedArtwork() {
   return (
-    <div className="relative flex min-h-[240px] flex-1 items-center justify-center sm:min-h-[280px]">
+    <div className="relative flex min-h-[190px] flex-1 items-center justify-center sm:min-h-[280px]">
       {/* Halo lumineux central (glow) — respire. */}
       <div
         className="hero-breath absolute top-1/2 left-1/2 size-[66%] -translate-x-1/2 -translate-y-1/2 rounded-full"
@@ -180,7 +180,7 @@ function HeroCarousel({ articles }: { articles: NewsItem[] }) {
 
   return (
     <article
-      className="glass-surface relative flex min-h-[340px] flex-col overflow-hidden p-6 sm:p-7"
+      className="glass-surface relative flex min-h-[340px] flex-col overflow-hidden p-4 sm:p-7"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -204,7 +204,7 @@ function HeroCarousel({ articles }: { articles: NewsItem[] }) {
         }}
       />
 
-      <div className="relative grid flex-1 gap-8 lg:grid-cols-[1.02fr_1.18fr_0.95fr] lg:items-stretch">
+      <div className="relative grid flex-1 gap-5 sm:gap-8 lg:grid-cols-[1.02fr_1.18fr_0.95fr] lg:items-stretch">
         {/* ── Colonne texte (gauche) ── */}
         <div className="flex flex-col justify-center py-1 lg:pl-2">
           {/*

@@ -65,7 +65,7 @@ export function WizardTeaser() {
   return (
     <section
       aria-labelledby="wizard-teaser-heading"
-      className="glass-surface flex flex-col gap-6 p-6 lg:p-7"
+      className="glass-surface flex flex-col gap-4 p-4 sm:gap-6 sm:p-6 lg:p-7"
     >
       <header className="flex flex-col gap-2">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">

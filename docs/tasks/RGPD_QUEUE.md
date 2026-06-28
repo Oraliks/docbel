@@ -17,8 +17,11 @@ périmètre code (décision/juridique).
       Nécessaires (verrouillées) + Mesure d'audience (opt-in, OFF par défaut). Front uniquement
       (hors /admin). i18n FR/NL/EN natif (`public.cookieConsent`), autres en fallback FR.
       ⚠️ Textes à faire relire par un juriste IT belge avant publication finale.
-- [ ] Pages `/mentions-legales`, `/politique-confidentialite`, `/politique-cookies`
-      (template `legal` existant `lib/page-builder/page-templates.ts`). **Brouillons**.
+- [~] Pages `/mentions-legales`, `/politique-confidentialite`, `/politique-cookies`
+      (template `legal` existant `lib/page-builder/page-templates.ts`). **Brouillons créés**
+      en base via `scripts/seed-legal-pages.ts` (`status: draft`, donc 404 public tant que
+      non publié). Contenu FR structuré avec placeholders `[À COMPLÉTER : …]`. Reste :
+      🧑‍⚖️ relecture juriste + renseigner les placeholders, puis publier en admin.
 - [ ] Câbler footer `components/docbel/landing/footer.tsx` (3 `href="#"`).
 - [ ] Corriger `lib/app-settings.ts` (« Aucun cookie de pistage tiers » = faux).
 - [ ] Notice contextuelle IA (`intent-search.tsx`) : « requête analysée par Anthropic, USA »

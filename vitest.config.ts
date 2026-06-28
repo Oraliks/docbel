@@ -9,6 +9,11 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // Le secret NRN n'a plus de repli hardcodé (SECURITY_QUEUE S1) : on fournit
+    // un secret factice aux tests purs de crypto-nrn / dedupe.
+    env: {
+      BOOKING_NRN_SECRET: "vitest-nrn-secret-not-for-prod",
+    },
     include: [
       "lib/**/__tests__/**/*.test.ts",
       "lib/**/*.test.ts",

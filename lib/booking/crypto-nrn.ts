@@ -5,21 +5,24 @@
 
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 
-const SECRET =
-  process.env.BOOKING_NRN_SECRET ||
-  process.env.BETTER_AUTH_SECRET ||
-  process.env.AUTH_SECRET ||
-  "docbel-booking-nrn-fallback";
+import { getNrnSecret } from "./nrn-secret";
 
-// Clé 32 octets dérivée du secret (AES-256).
-const KEY = createHash("sha256").update(SECRET).digest();
 const IV_LEN = 12; // GCM standard
 const TAG_LEN = 16;
+
+// Clé 32 octets dérivée du secret (AES-256), résolue paresseusement au premier
+// chiffrement/déchiffrement (= au boot du runtime serverless) afin de ne pas
+// casser le build, tout en levant si aucun secret réel n'est configuré.
+let cachedKey: Buffer | null = null;
+function getKey(): Buffer {
+  if (!cachedKey) cachedKey = createHash("sha256").update(getNrnSecret()).digest();
+  return cachedKey;
+}
 
 /** Chiffre un NRN (chiffres) → base64(iv | tag | ciphertext). */
 export function encryptNrn(nrnDigits: string): string {
   const iv = randomBytes(IV_LEN);
-  const cipher = createCipheriv("aes-256-gcm", KEY, iv);
+  const cipher = createCipheriv("aes-256-gcm", getKey(), iv);
   const enc = Buffer.concat([cipher.update(nrnDigits, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
   return Buffer.concat([iv, tag, enc]).toString("base64");
@@ -33,7 +36,7 @@ export function decryptNrn(payload: string | null | undefined): string | null {
     const iv = buf.subarray(0, IV_LEN);
     const tag = buf.subarray(IV_LEN, IV_LEN + TAG_LEN);
     const enc = buf.subarray(IV_LEN + TAG_LEN);
-    const decipher = createDecipheriv("aes-256-gcm", KEY, iv);
+    const decipher = createDecipheriv("aes-256-gcm", getKey(), iv);
     decipher.setAuthTag(tag);
     return Buffer.concat([decipher.update(enc), decipher.final()]).toString("utf8");
   } catch {

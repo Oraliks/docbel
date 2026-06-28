@@ -5,20 +5,16 @@
 import { createHmac } from "node:crypto";
 import { BookingStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getNrnSecret } from "./nrn-secret";
 import type { CitizenIdentity } from "./types";
 
 export type DedupeField = "email" | "name" | "nrn" | "none";
 
 // HMAC déterministe → le NRN n'est jamais stocké en clair mais reste indexable
-// pour le dedupe. Le secret dérive de la config Better Auth existante.
-const NRN_SECRET =
-  process.env.BOOKING_NRN_SECRET ||
-  process.env.BETTER_AUTH_SECRET ||
-  process.env.AUTH_SECRET ||
-  "docbel-booking-nrn-fallback";
-
+// pour le dedupe. Le secret (BOOKING_NRN_SECRET) est résolu au runtime et lève
+// si absent — aucun repli hardcodé (cf. lib/booking/nrn-secret.ts).
 export function hashNrn(nrnDigits: string): string {
-  return createHmac("sha256", NRN_SECRET).update(nrnDigits).digest("hex");
+  return createHmac("sha256", getNrnSecret()).update(nrnDigits).digest("hex");
 }
 
 export function nrnLast4(nrnDigits: string): string {

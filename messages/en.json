@@ -1,5 +1,20 @@
 {
   "public": {
+    "cookieConsent": {
+      "title": "Your privacy, your choice",
+      "description": "We use strictly necessary cookies to run the site and, with your consent, audience-measurement cookies to improve Docbel. No tracker is activated without your consent.",
+      "learnMore": "Learn more",
+      "accept": "Accept all",
+      "reject": "Reject all",
+      "customize": "Customise",
+      "save": "Save my choices",
+      "prefsTitle": "Cookie preferences",
+      "alwaysOn": "Always on",
+      "necessaryTitle": "Necessary cookies",
+      "necessaryDesc": "Essential to the site: login session, language, theme and remembering your cookie choice. Exempt from consent.",
+      "analyticsTitle": "Audience measurement",
+      "analyticsDesc": "Anonymised traffic statistics to understand site usage and improve it. Off by default."
+    },
     "auth": {
       "title": "Sign in",
       "subtitle": "Get back to your workspace in seconds.",
@@ -140,6 +155,7 @@
       "legalNotice": "Legal notice",
       "privacy": "Privacy",
       "accessibility": "Accessibility",
+      "manageCookies": "Manage cookies",
       "langSwitch": "FR · NL",
       "paletteTitle": "Global search",
       "paletteDescription": "Tools, spaces and shortcuts",

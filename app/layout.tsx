@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
-// RGPD (RGPD_QUEUE §1) : Vercel Analytics dépose des traceurs avant tout
-// consentement → désactivé temporairement en attendant le bandeau cookies (item 6).
-// Réactiver derrière le CMP : décommenter l'import + <Analytics /> ci-dessous.
-// import { Analytics } from "@vercel/analytics/next";
+import { cookies } from "next/headers";
+// RGPD (RGPD_QUEUE §1) : Vercel Analytics (et le beacon page-views) sont montés
+// derrière le consentement « mesure d'audience » via <AnalyticsGate /> — rien
+// ne tourne tant que l'utilisateur n'a pas accepté dans la bannière cookies.
+import { CONSENT_COOKIE, parseConsent } from "@/lib/cookie-consent/consent";
+import { CookieConsentProvider } from "@/components/cookie-consent/consent-provider";
+import { CookieBanner } from "@/components/cookie-consent/cookie-banner";
+import { AnalyticsGate } from "@/components/cookie-consent/analytics-gate";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { isRtl } from "@/i18n/config";
@@ -72,6 +76,10 @@ export default async function RootLayout({
   const messages = await getMessages();
   const publicMessages = { public: messages.public };
 
+  // RGPD : état de consentement lu côté serveur (anti-flash + aucun traceur
+  // monté avant accord). `null` = pas de décision → la bannière s'affichera.
+  const initialConsent = parseConsent((await cookies()).get(CONSENT_COOKIE)?.value);
+
   return (
     <html
       lang={locale}
@@ -96,16 +104,20 @@ export default async function RootLayout({
         />
         <NextIntlClientProvider locale={locale} messages={publicMessages}>
           <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
-            <AuthSessionProvider initialSession={initialSession}>
-              <ImpersonationBanner />
-              <AppLayoutClient>{children}</AppLayoutClient>
-            </AuthSessionProvider>
-            <Toaster richColors position="bottom-right" duration={3500} />
-            <ConfirmDialog />
-            <VersionWatcher />
-            <AcronymHydrator />
-            <WelcomeLocaleModal />
-            {/* <Analytics /> — désactivé tant que le bandeau de consentement n'est pas en place (RGPD_QUEUE §1). */}
+            <CookieConsentProvider initialConsent={initialConsent}>
+              <AuthSessionProvider initialSession={initialSession}>
+                <ImpersonationBanner />
+                <AppLayoutClient>{children}</AppLayoutClient>
+              </AuthSessionProvider>
+              <Toaster richColors position="bottom-right" duration={3500} />
+              <ConfirmDialog />
+              <VersionWatcher />
+              <AcronymHydrator />
+              <WelcomeLocaleModal />
+              <CookieBanner />
+              {/* Traceurs montés UNIQUEMENT avec consentement « mesure d'audience ». */}
+              <AnalyticsGate />
+            </CookieConsentProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

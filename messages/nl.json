@@ -3067,6 +3067,21 @@
     "activity": {}
   },
   "public": {
+    "cookieConsent": {
+      "title": "Uw privacy, uw keuze",
+      "description": "We gebruiken strikt noodzakelijke cookies voor de werking van de site en, met uw toestemming, cookies voor publieksmeting om Docbel te verbeteren. Geen enkele tracker wordt geactiveerd zonder uw toestemming.",
+      "learnMore": "Meer informatie",
+      "accept": "Alles aanvaarden",
+      "reject": "Alles weigeren",
+      "customize": "Aanpassen",
+      "save": "Mijn keuzes bewaren",
+      "prefsTitle": "Cookievoorkeuren",
+      "alwaysOn": "Altijd actief",
+      "necessaryTitle": "Noodzakelijke cookies",
+      "necessaryDesc": "Onmisbaar voor de werking: aanmeldsessie, taal, thema en het onthouden van uw cookiekeuze. Vrijgesteld van toestemming.",
+      "analyticsTitle": "Publieksmeting",
+      "analyticsDesc": "Geanonimiseerde bezoekersstatistieken om het gebruik van de site te begrijpen en te verbeteren. Standaard uitgeschakeld."
+    },
     "auth": {
       "title": "Aanmelden",
       "subtitle": "Vind uw ruimte terug in enkele seconden.",
@@ -3207,6 +3222,7 @@
       "legalNotice": "Wettelijke vermeldingen",
       "privacy": "Privacy",
       "accessibility": "Toegankelijkheid",
+      "manageCookies": "Cookies beheren",
       "langSwitch": "FR · NL",
       "paletteTitle": "Globaal zoeken",
       "paletteDescription": "Tools, ruimtes en sneltoetsen",

@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { publicLocales } from "@/i18n/config";
+import { useConsent } from "@/components/cookie-consent/consent-provider";
 
 export function LandingFooter() {
   const t = useTranslations("public.chrome");
+  const { openPreferences } = useConsent();
   return (
     <footer
       // `mt-auto` plus the parent <main>'s `min-h-svh` flex column pins the
@@ -47,6 +49,13 @@ export function LandingFooter() {
         >
           {t("accessibility")}
         </Link>
+        <button
+          type="button"
+          onClick={openPreferences}
+          className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
+        >
+          {t("manageCookies")}
+        </button>
         <LocaleSwitcher
           localeList={publicLocales}
           compact

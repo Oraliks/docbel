@@ -3067,6 +3067,21 @@
     }
   },
   "public": {
+    "cookieConsent": {
+      "title": "Votre vie privée, votre choix",
+      "description": "Nous utilisons des cookies strictement nécessaires au fonctionnement du site et, avec votre accord, des cookies de mesure d'audience pour améliorer Docbel. Aucun traceur n'est activé sans votre consentement.",
+      "learnMore": "En savoir plus",
+      "accept": "Tout accepter",
+      "reject": "Tout refuser",
+      "customize": "Personnaliser",
+      "save": "Enregistrer mes choix",
+      "prefsTitle": "Préférences cookies",
+      "alwaysOn": "Toujours actifs",
+      "necessaryTitle": "Cookies nécessaires",
+      "necessaryDesc": "Indispensables au fonctionnement : session de connexion, langue, thème et mémorisation de votre choix de cookies. Exemptés de consentement.",
+      "analyticsTitle": "Mesure d'audience",
+      "analyticsDesc": "Statistiques de fréquentation anonymisées pour comprendre l'usage du site et l'améliorer. Désactivées par défaut."
+    },
     "chrome": {
       "navHome": "Accueil",
       "navNews": "Actus",
@@ -3090,6 +3105,7 @@
       "legalNotice": "Mentions légales",
       "privacy": "Confidentialité",
       "accessibility": "Accessibilité",
+      "manageCookies": "Gérer mes cookies",
       "langSwitch": "FR · NL",
       "paletteTitle": "Recherche globale",
       "paletteDescription": "Outils, espaces et raccourcis",

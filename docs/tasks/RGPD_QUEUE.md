@@ -6,11 +6,17 @@ Source : `docs/audits/AUDIT_RGPD_2026-06-06.md` (note 3,5/10). **C'est le bloqua
 périmètre code (décision/juridique).
 
 ## 1) Avant publication (BLOQUANT — faisable en code, faible risque)
-- [ ] Gater `<Analytics/>` (`app/layout.tsx`) + `<PageViewBeacon/>` (`app/[slug]/page.tsx`)
-      derrière consentement, ou désactiver temporairement.
-- [ ] Bannière de consentement : `components/cookie-consent/` (provider + banner + gate),
-      cookie `docbel-consent`, boutons « Tout accepter »/« Tout refuser » au même rang +
-      lien « Gérer mes cookies ».
+- [x] Gater `<Analytics/>` (`app/layout.tsx`) + `<PageViewBeacon/>` (`app/[slug]/page.tsx`)
+      derrière consentement. Fait via `<AnalyticsGate/>` / `<ConsentedPageViewBeacon/>`
+      (`components/cookie-consent/analytics-gate.tsx`) : rien n'est monté sans accord
+      « mesure d'audience ». Retrait → reload pour décharger le script Vercel déjà injecté.
+- [x] Bannière de consentement : `components/cookie-consent/` (provider + banner + gate)
+      + moteur pur `lib/cookie-consent/consent.ts`. Cookie `docbel-consent` (JSON versionné,
+      6 mois, SameSite=Lax, lisible serveur/client), boutons « Tout accepter »/« Tout refuser »
+      au même rang + « Personnaliser » + « Gérer mes cookies » (footer). 2 catégories :
+      Nécessaires (verrouillées) + Mesure d'audience (opt-in, OFF par défaut). Front uniquement
+      (hors /admin). i18n FR/NL/EN natif (`public.cookieConsent`), autres en fallback FR.
+      ⚠️ Textes à faire relire par un juriste IT belge avant publication finale.
 - [ ] Pages `/mentions-legales`, `/politique-confidentialite`, `/politique-cookies`
       (template `legal` existant `lib/page-builder/page-templates.ts`). **Brouillons**.
 - [ ] Câbler footer `components/docbel/landing/footer.tsx` (3 `href="#"`).

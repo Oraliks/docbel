@@ -68,9 +68,18 @@ export function WizardTeaser() {
       className="glass-surface flex flex-col gap-4 p-4 sm:gap-6 sm:p-6 lg:p-7"
     >
       <header className="flex flex-col gap-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
-          {t("wizardEyebrow")}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--glass-ink-faint)]">
+            {t("wizardEyebrow")}
+          </p>
+          <Link
+            href="/chomage"
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--glass-accent-deep)] underline-offset-2 hover:underline"
+          >
+            {t("wizardHubLink")}
+            <ArrowRight className="size-3.5" aria-hidden />
+          </Link>
+        </div>
         <h2
           id="wizard-teaser-heading"
           className="glass-display text-[26px] font-semibold leading-[1.1] sm:text-[30px]"

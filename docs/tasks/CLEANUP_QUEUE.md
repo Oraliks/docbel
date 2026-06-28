@@ -35,6 +35,7 @@ items déjà faits). **Max 3–5 fichiers par lot.** Faire un lot, valider, comm
 - Risque moyen → découper par sous-composants, valider chaque écran.
 
 ## Lot 6 — Tests métier critiques (prioritaire car montants légaux)
-- [ ] `lib/calculators/` : préavis, IPP en premier (0 test aujourd'hui).
+- [x] `lib/calculators/` : préavis (`indemnite-rupture`) + IPP testés
+      (`lib/calculators/__tests__/`, 37 tests). Restants : chomage, brut-net, pension, etc.
 - [ ] `lib/auth*` / `lib/auth-check.ts`, `lib/bundles/` : tests unitaires de base.
 - Validation : `pnpm test`.

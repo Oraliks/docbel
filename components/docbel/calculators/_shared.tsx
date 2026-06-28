@@ -110,6 +110,7 @@ export function CalcField({
           min={min}
           max={max}
           step={step}
+          aria-describedby={hint ? `${id}-hint` : undefined}
           className="h-11 rounded-xl border-[1.5px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 text-[14px] text-[color:var(--glass-ink)] placeholder:text-[color:var(--glass-ink-faint)] focus-visible:border-[color:var(--glass-accent-deep)] focus-visible:ring-0"
           style={suffix ? { paddingRight: 44 } : undefined}
         />
@@ -120,7 +121,7 @@ export function CalcField({
         ) : null}
       </div>
       {hint ? (
-        <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
+        <p id={`${id}-hint`} className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
           {hint}
         </p>
       ) : null}
@@ -161,6 +162,7 @@ export function CalcSelect<T extends string>({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
+        aria-describedby={hint ? `${id}-hint` : undefined}
         className="h-11 w-full rounded-xl border-[1.5px] border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3.5 text-[14px] text-[color:var(--glass-ink)] outline-none focus:border-[color:var(--glass-accent-deep)]"
         style={{ fontFamily: "'Manrope', sans-serif" }}
       >
@@ -171,7 +173,7 @@ export function CalcSelect<T extends string>({
         ))}
       </select>
       {hint ? (
-        <p className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
+        <p id={`${id}-hint`} className="text-[11.5px] text-[color:var(--glass-ink-faint)]">
           {hint}
         </p>
       ) : null}

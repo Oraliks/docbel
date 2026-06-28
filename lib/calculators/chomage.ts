@@ -66,6 +66,14 @@ export interface ChomageResult {
 /* ------------------------------------------------------------------ */
 
 /**
+ * Date d'effet des barèmes ci-dessous (plafonds salariaux + forfaits).
+ * Sert de point de vérité unique pour tracer la fraîcheur des montants.
+ * TODO réviser à la prochaine indexation ONEM (mettre à jour cette date
+ * ET les constantes PLAFOND_* / FORFAIT_* en même temps).
+ */
+export const BAREME_VERSION = "2026-03-01";
+
+/**
  * Plafonds salariaux mensuels (€) — barèmes ONEM au 1er mars 2026.
  * Source : onem.be — "À combien s'élève votre allocation de chômage".
  *
@@ -150,6 +158,23 @@ export const PHASES_INFO: {
   { id: "2C", label: "Année 2-3", periode_description: "Forfaitaire dégressif" },
   { id: "3", label: "Après 3 ans", periode_description: "Forfaitaire minimum" },
 ];
+
+/**
+ * Déduit la phase de dégressivité à partir de l'ancienneté de chômage (en
+ * mois). Source de vérité UNIQUE de la correspondance mois → phase, partagée
+ * par le calculateur complet et le simulateur du hero (qui ne couvre que la
+ * 1ʳᵉ période). Bornes ONEM : 1A (mois 1-3), 1B (4-6), 2A (7-12), 2B (13-24),
+ * 2C (25-36), 3 (au-delà). Un mois ≤ 0 ou non fini est traité comme le mois 1.
+ */
+export function phaseFromMonths(mois: number): ChomagePhase {
+  const m = Number.isFinite(mois) ? Math.max(1, Math.floor(mois)) : 1;
+  if (m <= 3) return "1A";
+  if (m <= 6) return "1B";
+  if (m <= 12) return "2A";
+  if (m <= 24) return "2B";
+  if (m <= 36) return "2C";
+  return "3";
+}
 
 /* ------------------------------------------------------------------ */
 /*  Calcul                                                            */

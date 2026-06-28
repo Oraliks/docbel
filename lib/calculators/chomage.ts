@@ -66,6 +66,14 @@ export interface ChomageResult {
 /* ------------------------------------------------------------------ */
 
 /**
+ * Date d'effet des barèmes ci-dessous (plafonds salariaux + forfaits).
+ * Sert de point de vérité unique pour tracer la fraîcheur des montants.
+ * TODO réviser à la prochaine indexation ONEM (mettre à jour cette date
+ * ET les constantes PLAFOND_* / FORFAIT_* en même temps).
+ */
+export const BAREME_VERSION = "2026-03-01";
+
+/**
  * Plafonds salariaux mensuels (€) — barèmes ONEM au 1er mars 2026.
  * Source : onem.be — "À combien s'élève votre allocation de chômage".
  *

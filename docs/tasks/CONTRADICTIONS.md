@@ -18,13 +18,14 @@ Toujours recouper l'audit tech avec le code avant d'agir.
 **Décision** : marquer ces lignes comme obsolètes dans l'audit (fait en tête de
 `docs/audits/AUDIT_TECH_2026-05-29.md`). Ne pas les remettre dans les queues.
 
-## B. AUDIT_TECH vs AUDIT_RGPD (le RGPD, plus récent, gagne)
-| Sujet | AUDIT_TECH (05-29) | AUDIT_RGPD (06-06) | Décision |
+## B. AUDIT_TECH vs AUDIT_RGPD (le RGPD, plus récent, gagne) — ✅ TRANCHÉ 2026-06-28
+| Sujet | AUDIT_TECH (05-29) | AUDIT_RGPD (06-06) | Décision (vérifiée code) |
 |---|---|---|---|
-| Sanitization HTML | « HTML brut non assaini » (P1 #5) | « sanitization isomorphe sur **tous** les 17 `dangerouslySetInnerHTML` » (Axe 4) | RGPD à jour → **vérifier `lib/sanitize-html.ts` couvre bien article-view + page-blocks** avant toute action |
-| Cookie `beldoc-bundle-session` | `httpOnly:false` (P1 #7) | « httpOnly OK contrairement à AUDIT.md **obsolète** » | Probablement corrigé → vérifier la route `bundles/resume` puis clore |
+| Sanitization HTML | « HTML brut non assaini » (P1 #5) | « sanitization isomorphe sur **tous** les 17 `dangerouslySetInnerHTML` » (Axe 4) | **RGPD a raison → CLOS.** `lib/sanitize-html.ts` couvre `article-view.tsx:73` + tous les blocs page-builder (html-raw/text/card/popover/modal/drawer/magazine-columns → `sanitizeHtml` ; embed → `sanitizeEmbedHtml` ; svg → `sanitizeSvg` ; custom-css = CSS via `sanitizeStyleContent`). P1 #5 **périmé**. |
+| Cookie `beldoc-bundle-session` | `httpOnly:false` (P1 #7) | « httpOnly OK contrairement à AUDIT.md **obsolète** » | **RGPD a raison → CLOS.** `bundles/resume/route.ts:121-127` = `httpOnly:true` + `secure` prod + `sameSite:lax` (idem `documents/bundles/[id]/run:51`). P1 #7 **périmé**. |
 
-→ Ces deux points passent en **« à vérifier »** dans SECURITY_QUEUE, pas en « à corriger ».
+→ Les deux points sont **vérifiés et clos** (cf. SECURITY_QUEUE V1/V2). Aucune correction
+nécessaire. Seul reste ouvert le V3 (`safeEval` calculator.tsx), distinct de la section B.
 
 ## C. Statuts « terminé » trompeurs
 - `.work-plan.md` : « ✅ TERMINÉ » mais section « TODOs non câblés » (pin/archive sessions,

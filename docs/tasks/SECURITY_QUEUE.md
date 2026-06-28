@@ -52,15 +52,23 @@ Voir CONTRADICTIONS.md : certains items de l'audit tech sont déjà résolus.
 - MFA admin absent. Session admin 30 j (longue). Tokens OAuth `Account` en clair.
 - Secret unique `BETTER_AUTH_SECRET` pour 4 usages crypto → découper.
 
-## À VÉRIFIER avant d'agir (contradiction inter-audits)
-- **V1** : sanitization HTML — RGPD dit « tous les 17 `dangerouslySetInnerHTML` assainis »
-  via `lib/sanitize-html.ts`. **Vérifier** `article-view.tsx` + blocs page-builder
-  (`html-raw`, `text`, `card`, `embed`, `svg-illustration`, `custom-css`, `magazine-columns`)
-  avant toute correction. Si déjà couvert → clore, sinon → P1.
-- **V2** : cookie `beldoc-bundle-session` — RGPD dit httpOnly OK. **Vérifier**
-  `app/api/bundles/resume/route.ts` puis clore.
-- **V3** : `new Function()` côté client `calculator.tsx` (`safeEval`) — confirmer la surface
-  (formule éditée par admin uniquement ?) ; sinon durcir/sandbox.
+## VÉRIFIÉ — contradictions inter-audits levées (2026-06-28)
+- **V1 — sanitization HTML : ✅ CLOS (déjà couvert, le RGPD avait raison).**
+  Tous les rendus `dangerouslySetInnerHTML` de contenu passent par `lib/sanitize-html.ts` :
+  `article-view.tsx:73` (`sanitizeHtml` + acronymes) ; blocs page-builder `html-raw`,
+  `text`, `card`, `popover`, `modal`, `drawer`, `magazine-columns` → `sanitizeHtml` ;
+  `embed` → `sanitizeEmbedHtml` (iframe `sandbox` forcé SSR+client) ; `svg-illustration`
+  → `sanitizeSvg`. `custom-css` injecte du CSS (pas du HTML) → `sanitizeStyleContent`
+  neutralise `</style>`. Sanitiseur isomorphe (passe regex SSR + DOMPurify allowlist client).
+  → AUDIT_TECH P1 #5 (« HTML brut non assaini ») est **périmé**, ne pas re-travailler.
+  Reste mineur **hors V1** (déjà tracé en commentaire code) : politique `@import` /
+  `url(javascript:)` du CSS custom = du ressort d'une CSP (cf. S2), pas du sanitiseur.
+- **V2 — cookie `beldoc-bundle-session` : ✅ CLOS (déjà `httpOnly`, le RGPD avait raison).**
+  `app/api/bundles/resume/route.ts:121-127` le pose avec `httpOnly: true`,
+  `secure` en prod, `sameSite: "lax"`. Idem `documents/bundles/[id]/run/route.ts:51`.
+  Aucun `httpOnly: false` sur ce cookie. → AUDIT_TECH P1 #7 est **périmé**.
+- **V3** (toujours ouvert) : `new Function()` côté client `calculator.tsx` (`safeEval`) —
+  confirmer la surface (formule éditée par admin uniquement ?) ; sinon durcir/sandbox.
 
 > Items sécurité **liés au RGPD** (chiffrement NISS, purge NRN, `citizenNrnEnc`, DPA,
 > région Neon) : voir `docs/tasks/RGPD_QUEUE.md`.

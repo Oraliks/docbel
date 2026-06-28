@@ -3,7 +3,10 @@ import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { BlockProps } from "@/lib/page-builder/types";
 import { buildPageJsonLd } from "@/lib/page-builder/schema-org";
-import { PageViewBeacon } from "@/components/page-builder/page-view-beacon";
+// RGPD (RGPD_QUEUE §1) : la mesure d'audience (page-views) ne doit pas tourner
+// avant consentement → désactivée temporairement en attendant le bandeau cookies
+// (item 6). Réactiver derrière le CMP : décommenter l'import + <PageViewBeacon />.
+// import { PageViewBeacon } from "@/components/page-builder/page-view-beacon";
 import { RenderedPage, resolveGlobalBlocks } from "@/lib/page-builder/render-page";
 
 export const dynamicParams = true;
@@ -128,7 +131,7 @@ export default async function PublicPage({
 
   return (
     <>
-      <PageViewBeacon slug={page.slug} />
+      {/* <PageViewBeacon slug={page.slug} /> — désactivé tant que le bandeau de consentement n'est pas en place (RGPD_QUEUE §1). */}
       {jsonLd.map((data, i) => (
         <script
           key={i}

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { publicLocales } from "@/i18n/config";
 
 export function LandingFooter() {
   const t = useTranslations("public.chrome");
@@ -27,30 +29,29 @@ export function LandingFooter() {
         >
           {t("contact")}
         </Link>
-        <a
-          href="#"
+        <Link
+          href="/mentions-legales"
           className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
         >
           {t("legalNotice")}
-        </a>
-        <a
-          href="#"
+        </Link>
+        <Link
+          href="/politique-confidentialite"
           className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
         >
           {t("privacy")}
-        </a>
-        <a
-          href="#"
+        </Link>
+        <Link
+          href="/accessibilite"
           className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
         >
           {t("accessibility")}
-        </a>
-        <a
-          href="#"
-          className="font-semibold text-[color:var(--glass-ink-soft)] transition hover:text-[color:var(--glass-ink)]"
-        >
-          {t("langSwitch")}
-        </a>
+        </Link>
+        <LocaleSwitcher
+          localeList={publicLocales}
+          compact
+          className="text-[color:var(--glass-ink-soft)] hover:bg-white/40 hover:text-[color:var(--glass-ink)] dark:hover:bg-white/10"
+        />
       </nav>
     </footer>
   );

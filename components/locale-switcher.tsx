@@ -49,9 +49,12 @@ function t(key: keyof typeof COPY, locale: string): string {
 export function LocaleSwitcher({
   localeList = locales,
   className = "",
+  compact = false,
 }: {
   localeList?: readonly Locale[];
   className?: string;
+  /** Drapeau + trigger réduits — pour les emplacements discrets (footer). */
+  compact?: boolean;
 } = {}) {
   const current = useLocale() as Locale;
   const [pending, startTransition] = useTransition();
@@ -92,12 +95,19 @@ export function LocaleSwitcher({
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger
-          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${className}`}
+          aria-label={t("title", current)}
+          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${
+            compact ? "px-1.5 py-1 text-xs" : "px-2.5 py-1.5 text-sm"
+          } ${className}`}
           disabled={pending}
         >
           <span
             className={`fi fi-${localeCountryCodes[current]} rounded-sm`}
-            style={{ width: "1.25em", height: "0.9375em", display: "inline-block" }}
+            style={
+              compact
+                ? { width: "1em", height: "0.75em", display: "inline-block" }
+                : { width: "1.25em", height: "0.9375em", display: "inline-block" }
+            }
           />
           {pending && <LoaderCircleIcon className="size-3.5 animate-spin opacity-60" />}
         </DialogTrigger>

@@ -66,7 +66,7 @@ Conformément au Règlement Général sur la Protection des Données (RGPD), vou
 Vos données sont transmises en HTTPS. Les hash de vos saisies sont conservés à des fins d'audit, sans contenu lisible.
 
 5. Cookies et traceurs
-Ce site utilise uniquement des cookies techniques nécessaires au fonctionnement (session de connexion). Aucun cookie de pistage tiers.
+Ce site dépose des cookies strictement nécessaires à son fonctionnement (notamment la session de connexion), qui ne requièrent pas votre consentement. Les éventuels outils de mesure d'audience ne sont activés qu'avec votre accord, via le bandeau cookies. Pour le détail, consultez notre politique de cookies.
 
 6. Responsabilité
 Les documents générés reprennent les valeurs que vous saisissez. Il vous appartient de vérifier leur exactitude avant transmission aux administrations.`,

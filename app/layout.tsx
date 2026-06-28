@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
-import { Analytics } from "@vercel/analytics/next";
+// RGPD (RGPD_QUEUE §1) : Vercel Analytics dépose des traceurs avant tout
+// consentement → désactivé temporairement en attendant le bandeau cookies (item 6).
+// Réactiver derrière le CMP : décommenter l'import + <Analytics /> ci-dessous.
+// import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { isRtl } from "@/i18n/config";
@@ -102,7 +105,7 @@ export default async function RootLayout({
             <VersionWatcher />
             <AcronymHydrator />
             <WelcomeLocaleModal />
-            <Analytics />
+            {/* <Analytics /> — désactivé tant que le bandeau de consentement n'est pas en place (RGPD_QUEUE §1). */}
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

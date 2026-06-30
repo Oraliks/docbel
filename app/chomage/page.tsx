@@ -61,7 +61,7 @@ export default async function ChomageHubPage() {
   );
 
   return (
-    <section className="relative isolate mx-auto flex max-w-5xl flex-col gap-8 py-8">
+    <section className="relative isolate flex flex-col gap-8 py-8">
       <header className="flex flex-col gap-3 px-1">
         <p className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[color:var(--glass-border)] bg-[color:var(--glass-surface)] px-3 py-1 text-[11.5px] font-semibold text-[color:var(--glass-ink-soft)]">
           <CalendarClock className="size-3.5" aria-hidden /> {t("chomageHubBadge")}

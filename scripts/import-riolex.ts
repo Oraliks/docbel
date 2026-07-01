@@ -47,25 +47,11 @@ function riolexUrl(riolexId: string): string {
 }
 
 /**
- * Mappe une `natureJuridique` vers le nom du sous-dossier de classement.
- * Le prompt fixe 4 sous-dossiers : AR 25/11/1991, AM 26/11/1991,
- * Loi-programme 2025, Autres lois. On regroupe les natures moins fréquentes
- * (Loi, Arrete-loi) sous « Autres lois ».
+ * Rangement par TEXTE DE LOI : chaque loi (AR 25/11/1991, AM 26/11/1991,
+ * AR 12/06/2024, AR 26/03/2003, Arrêté-loi 28/12/1944, Loi-programme 18/07/2025…)
+ * devient un sous-dossier sous la racine « Réglementation ONEM (RioLex) ».
+ * Décision Oraliks (2026-07-01) : sous-catégories = textes de loi, pas nature juridique.
  */
-function subFolderForNature(nature: string): string {
-  switch (nature) {
-    case "AR":
-      return "AR 25/11/1991";
-    case "AM":
-      return "AM 26/11/1991";
-    case "Loi-programme":
-      return "Loi-programme 2025";
-    case "Loi":
-    case "Arrete-loi":
-    default:
-      return "Autres lois";
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────
 //  Schéma Zod du staging (tolère les champs manquants)
@@ -381,13 +367,14 @@ async function upsertSource(
 }
 
 /**
- * Assure l'existence des KnowledgeFolder (racine + sous-dossiers).
- * Idempotent : findFirst par name+domain, create sinon. Retourne une map
- * `natureJuridique → folderId`.
+ * Assure l'existence des KnowledgeFolder (racine + un sous-dossier par TEXTE DE LOI).
+ * Idempotent : findFirst par name+domain+parent, create sinon. Retourne une map
+ * `loi → folderId`.
  */
 async function ensureFolders(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   prisma: any,
+  lois: string[],
 ): Promise<Map<string, string>> {
   async function ensureFolder(
     name: string,
@@ -407,25 +394,13 @@ async function ensureFolders(
 
   const rootId = await ensureFolder(ROOT_FOLDER_NAME, null);
 
-  const subNames = [
-    "AR 25/11/1991",
-    "AM 26/11/1991",
-    "Loi-programme 2025",
-    "Autres lois",
-  ];
-  const subIds = new Map<string, string>();
-  for (const name of subNames) {
-    subIds.set(name, await ensureFolder(name, rootId));
+  // Un sous-dossier par texte de loi distinct (= une sous-catégorie).
+  const byLoi = new Map<string, string>();
+  for (const loi of lois) {
+    if (!loi || byLoi.has(loi)) continue;
+    byLoi.set(loi, await ensureFolder(loi, rootId));
   }
-
-  // natureJuridique → folderId via le mapping subFolderForNature.
-  const byNature = new Map<string, string>();
-  for (const nature of ["AR", "AM", "Loi-programme", "Loi", "Arrete-loi"]) {
-    const sub = subFolderForNature(nature);
-    const id = subIds.get(sub);
-    if (id) byNature.set(nature, id);
-  }
-  return byNature;
+  return byLoi;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -461,10 +436,13 @@ async function run(dryRun: boolean): Promise<Report> {
   const { indexKnowledgeSource } = await import("@/lib/chomage-ia/indexer");
 
   try {
-    const foldersByNature = await ensureFolders(prisma);
+    const foldersByLoi = await ensureFolders(
+      prisma,
+      [...new Set(articles.map((a) => a.loi))],
+    );
 
     for (const a of articles) {
-      const folderId = foldersByNature.get(a.natureJuridique) ?? null;
+      const folderId = foldersByLoi.get(a.loi) ?? null;
 
       // 1. Source TEXTE (loi) — visibility partner.
       try {

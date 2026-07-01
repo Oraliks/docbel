@@ -1508,6 +1508,20 @@ model KnowledgeSource {
   lastValidatedAt DateTime?
   validityStatus  String    @default("unknown")
 
+  /// Corpus légal RioLex — visibilité pour le gating d'accès :
+  ///   "public"  (défaut) : citoyens + tout le monde ;
+  ///   "partner" : partenaires + admin uniquement ;
+  ///   "admin"   : admin uniquement (ex. commentaires internes ONEM).
+  /// Défaut "public" → les sources existantes gardent exactement leur comportement.
+  /// Le retrieval (lib/chomage-ia/context.ts) filtre par ce champ selon le viewer.
+  visibility String @default("public")
+
+  /// Métadonnées juridiques des textes RioLex (null hors corpus légal). JSON :
+  /// { riolexId, loi, natureJuridique (AR|AM|Loi-programme|Loi|Arrete-loi),
+  ///   articleNumber, datePublication, dateEntreeVigueur, dateMoniteur, statut,
+  ///   version, abroge, refs[], isOnemCommentary }.
+  legalMeta Json?
+
   /// Chunks RAG (1 source → N chunks). Cascade delete via FK.
   chunks KnowledgeChunk[]
 
@@ -1515,6 +1529,7 @@ model KnowledgeSource {
   @@index([createdAt])
   @@index([domain, folderId])
   @@index([domain, validityStatus])
+  @@index([domain, visibility])
 }
 
 /// Dossier hiérarchique pour ranger les KnowledgeSource (migration 21).

@@ -90,6 +90,21 @@ function extractKeywords(query: string): string[] {
 }
 
 /**
+ * Visibilités qu'un viewer a le droit de voir dans le retrieval (corpus légal RioLex).
+ * - "public"  : citoyens / non authentifiés → sources publiques uniquement ;
+ * - "partner" : partenaires → public + partenaire ;
+ * - "admin"   : admin → tout (dont commentaires internes ONEM).
+ * Défaut sécurisé : `["public"]` (aucune fuite si un appelant ne précise rien).
+ */
+export function allowedVisibilities(
+  role: "public" | "partner" | "admin",
+): string[] {
+  if (role === "admin") return ["public", "partner", "admin"];
+  if (role === "partner") return ["public", "partner"];
+  return ["public"];
+}
+
+/**
  * Construit le contexte sources à envoyer à Claude.
  * Retourne le bloc texte formaté + la liste des IDs effectivement inclus.
  *
@@ -104,11 +119,14 @@ export async function buildKnowledgeContext({
   query,
   budget = KB_CONTEXT_BUDGET_TOKENS,
   scopeFolderIds,
+  visibilities = ["public"],
 }: {
   domain: string;
   query: string;
   budget?: number;
   scopeFolderIds?: string[];
+  /** Visibilités autorisées pour le viewer (défaut sécurisé public). */
+  visibilities?: string[];
 }): Promise<{
   contextText: string;
   includedSourceIds: string[];
@@ -124,6 +142,7 @@ export async function buildKnowledgeContext({
     where: {
       domain,
       enabled: true,
+      visibility: { in: visibilities },
       ...(scoped ? { folderId: { in: scoped } } : {}),
     },
     orderBy: { updatedAt: "desc" },
@@ -286,11 +305,14 @@ export async function buildKnowledgeContextRag({
   query,
   topK = RAG_DEFAULT_TOP_K,
   scopeFolderIds,
+  visibilities = ["public"],
 }: {
   domain: string;
   query: string;
   topK?: number;
   scopeFolderIds?: string[];
+  /** Visibilités autorisées pour le viewer (défaut sécurisé public). */
+  visibilities?: string[];
 }): Promise<BuildKnowledgeContextRagResult> {
   // 1. Pas de provider → fallback immédiat.
   if (!getEmbeddingProvider()) {
@@ -381,6 +403,7 @@ export async function buildKnowledgeContextRag({
          WHERE s."domain" = $2
            AND s."enabled" = true
            AND c."embedding" IS NOT NULL
+           AND s."visibility" = ANY($5::text[])
            AND s."folderId" = ANY($4::text[])
          ORDER BY c."embedding" <=> $1::vector ASC
          LIMIT $3`,
@@ -388,6 +411,7 @@ export async function buildKnowledgeContextRag({
         domain,
         overSampleK,
         scoped,
+        visibilities,
       );
     } else {
       rows = await prisma.$queryRawUnsafe<RagChunkRow[]>(
@@ -405,11 +429,13 @@ export async function buildKnowledgeContextRag({
          WHERE s."domain" = $2
            AND s."enabled" = true
            AND c."embedding" IS NOT NULL
+           AND s."visibility" = ANY($4::text[])
          ORDER BY c."embedding" <=> $1::vector ASC
          LIMIT $3`,
         vecLit,
         domain,
         overSampleK,
+        visibilities,
       );
     }
   } catch (err) {

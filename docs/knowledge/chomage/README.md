@@ -38,6 +38,9 @@ theme: chomage_complet                      # thème (= section du RULES_INDEX)
 effective_from: 2026-03-01                  # date d'entrée en vigueur si connue, sinon TODO_DATE
 source_name: ONEM                           # institution
 source_url: TODO_SOURCE_OFFICIELLE          # URL officielle ou TODO_SOURCE_OFFICIELLE
+base_legale: >                              # OPTIONNEL : référence légale (article AR/AM/loi)
+  AR du 25/11/1991, art. X. Texte consolidé public : ejustice.just.fgov.be. Aussi dans RioLex.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel  # OPTIONNEL
 last_verified: TODO_DATE                     # date de dernière vérification (ISO) ou TODO_DATE
 confidence: official | high | medium | low | to_verify
 status: active | transitional | deprecated | to_verify
@@ -79,6 +82,12 @@ related_topics:
 - Renseigner `source_name` **et** `source_url`. Tenir à jour le
   [`../../agents/chomage/SOURCE_REGISTER.md`](../../agents/chomage/SOURCE_REGISTER.md).
 - Mettre `last_verified` à la date où l'on a réellement consulté la source.
+- **Base légale (`base_legale` / `base_legale_url`, optionnels)** : quand une règle repose sur un
+  article précis (AR du 25/11/1991, AM du 26/11/1991, Loi-programme du 18/07/2025…), citer
+  l'article et la source publique **ejustice.just.fgov.be** (version consolidée Justel). On peut
+  mentionner que le texte est aussi dans le corpus **RioLex** (partenaire), mais la citation
+  publiable = référence légale + ejustice. Ce champ **complète** la page ONEM pédagogique
+  (`source_url`), il ne la remplace pas.
 
 ## Comment marquer une règle incertaine
 

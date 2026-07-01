@@ -44,6 +44,11 @@ theme: reforme_2026
 effective_from: 2026-03-01
 source_name: ONEM — Nouvelle réglementation chômage en vigueur depuis le 1er mars 2026
 source_url: https://www.onem.be/actualites/2026/03/02/nouvelle-reglementation-chomage-en-vigueur-depuis-le-1er-mars-2026
+base_legale: >
+  Loi-programme du 18/07/2025, art. 209-216 (Moniteur belge du 29/07/2025) — base légale de la
+  réforme 2026. Texte consolidé public : ejustice.just.fgov.be (Justel, numac 2025005578).
+  Aussi disponible dans le corpus RioLex (partenaire).
+base_legale_url: https://www.ejustice.just.fgov.be/eli/loi/2025/07/18/2025005578/justel
 last_verified: 2026-06-30
 confidence: official
 status: active
@@ -205,6 +210,11 @@ theme: reforme_2026
 effective_from: unknown
 source_name: ONEM — Quelles sont les 3 exceptions qui permettent de ne pas avoir de dégressivité ?
 source_url: https://www.onem.be/fr/quelles-sont-les-3-exceptions-qui-permettent-de-ne-pas-avoir-de-degressivite
+base_legale: >
+  AR du 25/11/1991, art. 111-119 (montant, salaire, indexation et périodes d'indemnisation),
+  notamment art. 114 (périodes), 115 (montant journalier minimum), 116 (prolongation/retour).
+  Texte consolidé public : ejustice.just.fgov.be (Justel, numac 1991013192). Aussi dans RioLex.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active
@@ -233,8 +243,9 @@ related_topics:
 - **Dates de fin de droit exactes par vague** transitoire (sources ONEM/CAPAC divergentes).
 - **Montants forfaitaires / dégressivité chiffrée** après le 01/03/2026 → feuille info T201 +
   moteur [`lib/calculators/chomage.ts`](../../../lib/calculators/chomage.ts).
-- **Base légale formelle** (arrêté royal modifiant l'AR du 25/11/1991, Moniteur belge) non
-  récupérée.
+- **Base légale formelle** : Loi-programme du 18/07/2025, art. 209-216 (Moniteur belge du
+  29/07/2025 ; texte consolidé Justel, numac 2025005578). Les articles de l'AR du 25/11/1991
+  modifiés en conséquence sont consultables via le texte consolidé (ejustice / RioLex).
 - **Libellé exact de la condition de travail préalable** (« 1 an de travail sur 3 ans ») :
   confirmé côté CAPAC (FAQ), à recouper mot pour mot sur une feuille info ONEM (T199/T200).
   Pour le chômage complet, la condition d'admission précise est documentée séparément
@@ -245,6 +256,10 @@ related_topics:
 - ONEM — Actualité 01/03/2026 : <https://www.onem.be/actualites/2026/03/02/nouvelle-reglementation-chomage-en-vigueur-depuis-le-1er-mars-2026>
 - ONEM — Feuille info T202 (limitation chômage complet) : <https://www.onem.be/page/j-ai-demande-des-allocations-de-chomage-apres-le-28.02.2026.-mes-allocations-vont-elles-etre-limitees-dans-le-temps->
 - CAPAC — FAQ réforme : <https://capac.fgov.be/fr/faq>
+- Base légale — Loi-programme du 18/07/2025, art. 209-216 (M.B. 29/07/2025), texte consolidé
+  Justel : <https://www.ejustice.just.fgov.be/eli/loi/2025/07/18/2025005578/justel>
+- Base légale — AR du 25/11/1991 portant réglementation du chômage (texte consolidé Justel) :
+  <https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel>
 
 > **« Cet outil vous aide à vous orienter. Il ne remplace pas une décision de l'ONEM, de votre
 > organisme de paiement ou d'un conseiller compétent. »**

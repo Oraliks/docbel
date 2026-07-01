@@ -49,6 +49,11 @@ theme: chomage_complet
 effective_from: 2026-03-01
 source_name: ONEM — Feuille info T200 (allocations après une occupation, à partir du 01.03.2026)
 source_url: https://www.onem.be/page/avez-vous-droit-aux-allocations-de-chomage-apres-une-occupation---situation-a-partir-du-01.03.2026-
+base_legale: >
+  AR du 25/11/1991, art. 30 (période de référence), art. 37 (prestations prises en considération),
+  art. 38 (jours assimilés) ; AM du 26/11/1991, art. 7-14 (calcul des journées de travail).
+  Texte consolidé public : ejustice.just.fgov.be (Justel, numac 1991013192 pour l'AR). Aussi dans RioLex.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active
@@ -74,6 +79,11 @@ theme: chomage_complet
 effective_from: 2026-03-01
 source_name: ONEM — Feuille info T200
 source_url: https://www.onem.be/page/avez-vous-droit-aux-allocations-de-chomage-apres-une-occupation---situation-a-partir-du-01.03.2026-
+base_legale: >
+  AR du 25/11/1991, art. 38 (jours assimilés) et art. 37 (prestations prises en considération) ;
+  AM du 26/11/1991, art. 7-14 (calcul des journées). Texte consolidé public : ejustice.just.fgov.be
+  (Justel, numac 1991013192). Aussi dans RioLex.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active
@@ -99,6 +109,11 @@ theme: chomage_complet
 effective_from: 2026-03-01
 source_name: ONEM — Feuille info T200
 source_url: https://www.onem.be/page/avez-vous-droit-aux-allocations-de-chomage-apres-une-occupation---situation-a-partir-du-01.03.2026-
+base_legale: >
+  AR du 25/11/1991, art. 30 (période de référence et cas de prolongation). Texte consolidé
+  public : ejustice.just.fgov.be (Justel, numac 1991013192). Aussi dans RioLex. NB : le barème
+  détaillé par cas de prolongation reste a_verifier (voir TODO ci-dessous).
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active
@@ -125,6 +140,11 @@ theme: chomage_complet
 effective_from: 2026-03-01
 source_name: ONEM — À combien s'élève votre allocation après une occupation (à partir du 01.03.2026) (T201)
 source_url: https://www.onem.be/page/a-combien-s-eleve-votre-allocation-de-chomage-apres-une-occupation---situation-a-partir-du-01.03.2026-
+base_legale: >
+  AR du 25/11/1991, art. 111-119 (montant, salaire de référence, indexation, périodes
+  d'indemnisation), notamment art. 114 (périodes) et 116 (2e période). Texte consolidé public :
+  ejustice.just.fgov.be (Justel, numac 1991013192). Aussi dans RioLex.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active

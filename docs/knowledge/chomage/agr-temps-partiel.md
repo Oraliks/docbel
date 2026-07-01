@@ -43,6 +43,11 @@ theme: agr_temps_partiel
 effective_from: 2026-03-01
 source_name: ONEM — Avez-vous droit à l'allocation de garantie de revenus ?
 source_url: https://www.onem.be/citoyens/travail-a-temps-partiel/avez-vous-droit-a-l-allocation-de-garantie-de-revenus-
+base_legale: >
+  AR du 25/11/1991, art. 131bis (allocation de garantie de revenus). Texte consolidé public :
+  ejustice.just.fgov.be (Justel, numac 1991013192). Aussi dans RioLex. La formule de calcul
+  détaillée reste a_verifier (voir montants_2026 ci-dessous).
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active
@@ -108,6 +113,11 @@ theme: agr_temps_partiel
 effective_from: 2026-03-01
 source_name: ONEM — AGR
 source_url: https://www.onem.be/citoyens/travail-a-temps-partiel/avez-vous-droit-a-l-allocation-de-garantie-de-revenus-
+base_legale: >
+  AR du 25/11/1991, art. 104 et 129bis (travailleur à temps partiel avec maintien des droits /
+  compléments) et art. 131bis (AGR). Texte consolidé public : ejustice.just.fgov.be (Justel,
+  numac 1991013192). Aussi dans RioLex. Conditions fines TPMD (T70/T71) restent a_verifier.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active

@@ -40,6 +40,11 @@ theme: chomage_temporaire
 effective_from: unknown
 source_name: ONEM — Chômage temporaire
 source_url: https://www.onem.be/page/chomage-temporaire
+base_legale: >
+  AR du 25/11/1991, art. 106 (régime d'indemnisation du chômage temporaire) et art. 51-53
+  (privation de travail et de rémunération, caractère involontaire). Texte consolidé public :
+  ejustice.just.fgov.be (Justel, numac 1991013192). Aussi dans RioLex.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active
@@ -62,6 +67,12 @@ theme: chomage_temporaire
 effective_from: unknown
 source_name: ONEM — Formes de chômage temporaire
 source_url: https://www.onem.be/employeurs/chomage-temporaire/plus-d-infos-sur-le-chomage-temporaire
+base_legale: >
+  AR du 25/11/1991, art. 106 (régime d'indemnisation) ; art. 73 (grève / lock-out) ; art. 51-53
+  (privation involontaire de travail). Texte consolidé public : ejustice.just.fgov.be (Justel,
+  numac 1991013192). Aussi dans RioLex. NB : les modalités par forme (crédits, notifications) sont
+  aussi régies par des lois spécifiques (loi du 3/7/1978 sur les contrats de travail) non reprises ici.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active

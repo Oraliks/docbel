@@ -45,6 +45,12 @@ theme: allocations_insertion
 effective_from: 2026-03-01
 source_name: ONEM — Feuille info T199
 source_url: https://www.onem.be/page/avez-vous-droit-aux-allocations-apres-des-etudes-allocations-dinsertion-et-pendant-combien-de-temps
+base_legale: >
+  AR du 25/11/1991, art. 36quater (allocations de stage / d'insertion) et art. 124 (montant). La
+  limitation à 12 mois découle de la réforme 2026 : Loi-programme du 18/07/2025, art. 209-216
+  (M.B. 29/07/2025). Textes consolidés publics : ejustice.just.fgov.be (Justel, numac 1991013192
+  pour l'AR, 2025005578 pour la loi-programme). Aussi dans RioLex.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active
@@ -92,6 +98,10 @@ theme: allocations_insertion
 effective_from: 2026-03-01
 source_name: ONEM — Feuille info T199
 source_url: https://www.onem.be/page/avez-vous-droit-aux-allocations-apres-des-etudes-allocations-dinsertion-et-pendant-combien-de-temps
+base_legale: >
+  AR du 25/11/1991, art. 36 (stage d'insertion professionnelle). Texte consolidé public :
+  ejustice.just.fgov.be (Justel, numac 1991013192). Aussi dans RioLex.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active
@@ -113,6 +123,10 @@ theme: allocations_insertion
 effective_from: 2026-03-01
 source_name: ONEM — Feuille info T199
 source_url: https://www.onem.be/page/avez-vous-droit-aux-allocations-apres-des-etudes-allocations-dinsertion-et-pendant-combien-de-temps
+base_legale: >
+  AR du 25/11/1991, art. 36 (conditions d'octroi des allocations d'insertion, dont la condition
+  d'âge). Texte consolidé public : ejustice.just.fgov.be (Justel, numac 1991013192). Aussi dans RioLex.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active
@@ -134,6 +148,11 @@ theme: allocations_insertion
 effective_from: 2026-03-01
 source_name: ONEM — Feuille info T199
 source_url: https://www.onem.be/page/avez-vous-droit-aux-allocations-apres-des-etudes-allocations-dinsertion-et-pendant-combien-de-temps
+base_legale: >
+  AR du 25/11/1991, art. 36 (conditions d'octroi, dont la condition de diplôme/études). Texte
+  consolidé public : ejustice.just.fgov.be (Justel, numac 1991013192). Aussi dans RioLex. NB : la
+  distinction éventuelle pour les < 21 ans reste non confirmée (voir TODO ci-dessous).
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active

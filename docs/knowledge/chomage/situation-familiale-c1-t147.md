@@ -74,6 +74,11 @@ theme: situation_familiale
 effective_from: 2026-03-01
 source_name: ONEM — À combien s'élève votre allocation après une occupation (T201)
 source_url: https://www.onem.be/page/a-combien-s-eleve-votre-allocation-de-chomage-apres-une-occupation---situation-a-partir-du-01.03.2026-
+base_legale: >
+  AR du 25/11/1991, art. 110 (définitions : travailleur ayant charge de famille, isolé,
+  cohabitant) ; AM du 26/11/1991, art. 59-63 (cohabitation, prise en compte des revenus). Texte
+  consolidé public : ejustice.just.fgov.be (Justel, numac 1991013192 pour l'AR). Aussi dans RioLex.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: high
 status: active
@@ -98,26 +103,34 @@ theme: situation_familiale
 effective_from: unknown
 source_name: ONEM — Quelle est ma catégorie familiale (page en refonte)
 source_url: https://www.onem.be/fr/quelle-est-ma-categorie-familiale
+base_legale: >
+  AR du 25/11/1991, art. 110 (définitions : charge de famille, isolé, cohabitant) ; AM du
+  26/11/1991, art. 59-63 (cohabitation, prise en compte des revenus du cohabitant / du partenaire).
+  Texte consolidé public : ejustice.just.fgov.be (Justel, numac 1991013192 pour l'AR). Aussi dans
+  RioLex. La base légale des DÉFINITIONS est ainsi établie ; les SEUILS de revenus chiffrés (indexés)
+  restent a_verifier auprès de l'ONEM / du texte AM à jour.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: to_verify
 status: to_verify
 summary: >
   Définitions détaillées des catégories (chef de ménage / charge de famille, isolé, cohabitant)
-  avec seuils de revenus et notion de personne à charge. Non confirmées sur une page officielle
-  accessible (page en refonte / 404 lors de la vérification).
+  avec seuils de revenus et notion de personne à charge. Base légale = AR art. 110 + AM art. 59-63 ;
+  la page pédagogique ONEM était en refonte / 404 lors de la vérification, et les seuils chiffrés
+  (indexés) restent à confirmer.
 agent_instruction: >
-  NE PAS trancher la catégorie d'une personne sur la base de définitions non confirmées. Expliquer
-  les grandes catégories, demander la composition du ménage, et renvoyer vers l'organisme de
-  paiement pour la qualification exacte (a_verifier).
+  NE PAS trancher la catégorie d'une personne sur la base des seuils chiffrés non confirmés.
+  Expliquer les grandes catégories (définitions AR art. 110), demander la composition du ménage,
+  et renvoyer vers l'organisme de paiement pour la qualification exacte (a_verifier).
 red_flags:
   - rf_situation_familiale_ambigue
 related_forms:
   - C1
 related_topics:
   - chomage_complet
-# TODO_SOURCE_OFFICIELLE : définitions complètes des catégories familiales + seuils de revenus du
-# cohabitant (pages ONEM /fr/quelle-est-ma-categorie-familiale et /citoyens/... à revérifier après
-# refonte du site).
+# TODO_SOURCE_OFFICIELLE : seuils de revenus chiffrés du cohabitant/partenaire (montants indexés,
+# AM du 26/11/1991 art. 59-63) — définitions légales désormais citées (AR art. 110), mais les
+# valeurs chiffrées restent à revérifier après refonte du site ONEM.
 ```
 
 ```yaml
@@ -126,6 +139,11 @@ theme: situation_familiale
 effective_from: 2026-03-01
 source_name: ONEM — À combien s'élève votre allocation après une occupation (T201)
 source_url: https://www.onem.be/page/a-combien-s-eleve-votre-allocation-de-chomage-apres-une-occupation---situation-a-partir-du-01.03.2026-
+base_legale: >
+  AR du 25/11/1991, art. 110 (catégories familiales) et art. 111-119 (montant selon la période et
+  la catégorie), notamment art. 114 et 116 (2e période forfaitaire). Texte consolidé public :
+  ejustice.just.fgov.be (Justel, numac 1991013192). Aussi dans RioLex.
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active

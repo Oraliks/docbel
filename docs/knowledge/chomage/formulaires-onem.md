@@ -123,6 +123,12 @@ theme: formulaires
 effective_from: unknown
 source_name: ONEM — Comment introduire une demande après une occupation
 source_url: https://www.onem.be/citoyens/chomage-complet/comment-devez-vous-demander-les-allocations-/comment-devez-vous-introduire-une-demande-apres-une-occupation
+base_legale: >
+  AR du 25/11/1991, art. 17-26 (organismes de paiement : CAPAC et organismes agréés). Texte
+  consolidé public : ejustice.just.fgov.be (Justel, numac 1991013192). Aussi dans RioLex. NB : la
+  base légale fixe les catégories d'organismes ; la liste nominative exacte (dont CGSLB) reste
+  a_verifier (voir TODO ci-dessous).
+base_legale_url: https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
 last_verified: 2026-06-30
 confidence: official
 status: active

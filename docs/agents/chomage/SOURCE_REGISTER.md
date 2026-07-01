@@ -78,7 +78,10 @@
 - Institution : ONEM / RVA
 - URL : https://www.onem.be/fr/quelle-est-ma-categorie-familiale
 - Thèmes : catégories A (charge de famille) / N (isolé) / B (cohabitant)
-- Priorité : 1 · Vérifié : 2026-06-30 🟡 · Statut : page en refonte → définitions à vérifier
+- Base légale : AR du 25/11/1991, art. 110 (définitions) ; AM du 26/11/1991, art. 59-63
+  (cohabitation, revenus) — cf. section « Textes légaux » ci-dessous.
+- Priorité : 1 · Vérifié : 2026-06-30 🟡 · Statut : page pédagogique en refonte ; **définitions
+  légales désormais citées** (AR art. 110), seuils de revenus chiffrés (indexés) à revérifier.
 
 ---
 
@@ -195,11 +198,39 @@
 
 ## Textes légaux (priorité 5)
 
-### Moniteur belge / ejustice — base légale de la réforme 2026
-- Institution : SPF Justice · URL : TODO_SOURCE_OFFICIELLE
-- Notes : la réforme a été adoptée à la Chambre le 18/07/2025 et publiée au Moniteur belge le
-  29/07/2025 (entrée en vigueur 01/03/2026) ; l'arrêté royal modifiant l'AR du 25/11/1991 et les
-  articles exacts restent à citer. Priorité : 5 · Statut : à vérifier.
+> Textes de loi belges (domaine public). Citation publiable = référence légale + source publique
+> **ejustice.just.fgov.be** (version consolidée Justel). Les mêmes textes sont aussi disponibles
+> dans le corpus **RioLex** (portail ONEM, partenaire) pour la consultation article par article.
+
+### Moniteur belge / ejustice — Loi-programme du 18/07/2025 (base légale de la réforme 2026)
+- Institution : SPF Justice (Justel) · numac 2025005578
+- URL : https://www.ejustice.just.fgov.be/eli/loi/2025/07/18/2025005578/justel
+- Notes : réforme adoptée à la Chambre le 18/07/2025, publiée au Moniteur belge le 29/07/2025
+  (entrée en vigueur 01/03/2026). Base légale = **art. 209-216**. Priorité : 5 · Vérifié :
+  2026-07-01 ✅ · Statut : confirmé (renvoi ejustice ; texte consolidé public).
+
+### ejustice — AR du 25/11/1991 portant réglementation du chômage (texte de base consolidé)
+- Institution : SPF Justice (Justel) · numac 1991013192
+- URL : https://www.ejustice.just.fgov.be/eli/arrete/1991/11/25/1991013192/justel
+- Thèmes / articles cités par la base de connaissances :
+  - admission (312 j / 36 mois) : art. 30 (période de référence), 37 (prestations), 38 (jours assimilés)
+  - situation familiale : art. 110 ; montant / dégressivité / périodes : art. 111-119 (dont 114, 115, 116)
+  - allocations d'insertion : art. 36 (stage), 36quater (allocations de stage), 124 (montant)
+  - chômage temporaire : art. 106, 73 (grève/lock-out), 51-53 (privation involontaire)
+  - carte de contrôle / eC3.2 : art. 71, 86bis (employeur)
+  - sanctions / exclusions : art. 153-159 ; chômage volontaire : art. 51-53bis
+  - dispenses : art. 89-98 (dont 90 raisons sociales/familiales, 91-92 formation, 93-94 études)
+  - disponibilité : art. 56 à 59decies, art. 58 (inscription) ; activité accessoire : art. 48
+  - temps partiel / AGR : art. 104, 129bis (compléments), 131bis (AGR)
+  - organismes de paiement : art. 17-26
+- Priorité : 5 · Vérifié : 2026-07-01 ✅ · Statut : confirmé (renvoi ejustice ; texte consolidé public).
+
+### ejustice — AM du 26/11/1991 portant les modalités d'application de la réglementation du chômage
+- Institution : SPF Justice (Justel) · numac 1992013272 (dépôt 1991-11-26/30)
+- URL : https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=1991112630&table_name=loi
+- Thèmes / articles cités : calcul des journées (art. 7-14) ; cohabitation / revenus (art. 59-63) ;
+  contenu et transmission de la carte de contrôle (art. 40-41).
+- Priorité : 5 · Vérifié : 2026-07-01 ✅ · Statut : confirmé (renvoi ejustice ; texte consolidé public).
 
 ---
 

@@ -65,6 +65,7 @@ const PARTNER_SPACE: ProSpace = {
       items: [
         { title: "Lookup ONEM", url: "/outils/lookup-onem", icon: "search" },
         { title: "Calcul AGR", url: "/partenaire/outils/calcul-agr", icon: "file" },
+        { title: "Réglementation chômage", url: "/partenaire/reglementation", icon: "book" },
       ],
     },
     {

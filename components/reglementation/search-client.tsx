@@ -157,7 +157,6 @@ export function ReglementationSearchClient() {
             }}
             placeholder={t("reglSearchPlaceholder")}
             className="pl-9"
-            autoFocus
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">

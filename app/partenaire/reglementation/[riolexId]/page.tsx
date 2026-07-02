@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const RIOLEX_ID_RE = /^[a-z0-9_]{5,80}$/i;
+const RIOLEX_ID_RE = /^[a-z0-9_-]{5,80}$/i;
 
 interface LegalMeta {
   riolexId?: string;

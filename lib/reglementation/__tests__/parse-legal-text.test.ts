@@ -39,6 +39,23 @@ describe("parseLegalText", () => {
     expect(blocks.length).toBeGreaterThanOrEqual(1);
     expect(blocks[0].type).toBe("paragraph");
   });
+
+  it("ne jette jamais — lignes vides uniquement", () => {
+    expect(() => parseLegalText("\n\n\n")).not.toThrow();
+    expect(parseLegalText("\n\n\n")).toEqual([]);
+  });
+
+  it("ne jette jamais — ligne unique très longue sans retour → au moins 1 bloc paragraph", () => {
+    const longLine = "A".repeat(5000);
+    const blocks = parseLegalText(longLine);
+    expect(blocks.length).toBeGreaterThanOrEqual(1);
+    expect(blocks[0].type).toBe("paragraph");
+  });
+
+  it("détecte § 1bis comme section", () => {
+    const blocks = parseLegalText("§ 1bis. Texte.");
+    expect(blocks[0]).toMatchObject({ type: "section", marker: "§ 1bis" });
+  });
 });
 
 describe("splitOnemCommentary", () => {
@@ -57,6 +74,8 @@ describe("splitOnemCommentary", () => {
     expect(cs[0].date).toBe("23/04/2018");
     expect(cs[0].institution).toBe("Gouvernement fédéral");
     expect(cs[0].text).toContain("préavis");
+    expect(cs[0].text).not.toContain("23/04/2018");
+    expect(cs[0].text).not.toMatch(/^\(/);
   });
 
   it("aucun marqueur → un seul bloc", () => {
@@ -67,5 +86,9 @@ describe("splitOnemCommentary", () => {
 
   it("vide → []", () => {
     expect(splitOnemCommentary("")).toEqual([]);
+  });
+
+  it("ne jette jamais — entrée sans marqueur ni contenu réel", () => {
+    expect(() => splitOnemCommentary("(x)\n(y)")).not.toThrow();
   });
 });

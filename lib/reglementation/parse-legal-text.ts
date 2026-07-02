@@ -4,7 +4,7 @@ export type LegalBlock = {
   text: string;
 };
 
-const SECTION_RE = /^(§\s*\d+(?:er)?)\s*\.?\s*/;
+const SECTION_RE = /^(§\s*\d+(?:er|bis|ter|quater|quinquies|sexies|septies|octies|nonies|decies)?)\s*\.?\s*/;
 const NUM_ITEM_RE = /^(\d+°(?:\/\d+)?|[a-z]\))\s+/;
 const DASH_ITEM_RE = /^[-–]\s+/;
 
@@ -68,6 +68,13 @@ export function splitOnemCommentary(raw: string): OnemComment[] {
     let g: RegExpExecArray | null;
     while ((g = instM.exec(rest.slice(0, 120)))) {
       if (!/^\d{2}\/\d{2}\/\d{4}$/.test(g[1].trim())) { institution = g[1].trim(); break; }
+    }
+    // Strip the header line "(date) (institution)" from text if present.
+    const lines = rest.split("\n");
+    const firstNonEmpty = lines.findIndex((l) => l.trim() !== "");
+    if (firstNonEmpty !== -1 && /^\s*(?:\([^)]*\)\s*)+$/.test(lines[firstNonEmpty])) {
+      lines.splice(firstNonEmpty, 1);
+      rest = lines.join("\n").trim();
     }
     return { index, date, institution, text: rest };
   });

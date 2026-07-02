@@ -2,33 +2,25 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, Lock } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
 import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
 import { allowedVisibilities } from "@/lib/chomage-ia/context";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+
+import { LegalText } from "@/components/reglementation/legal-text";
+import { OnemCommentary } from "@/components/reglementation/onem-commentary";
+import { ArticleSidebar } from "@/components/reglementation/article-sidebar";
+import { NatureTile } from "@/components/reglementation/nature-badge";
+import { PrintButton } from "@/components/reglementation/print-button";
+import type { LegalMeta, Neighbor } from "@/components/reglementation/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const RIOLEX_ID_RE = /^[a-z0-9_-]{5,80}$/i;
-
-interface LegalMeta {
-  riolexId?: string;
-  loi?: string;
-  natureJuridique?: string;
-  articleNumber?: string;
-  datePublication?: string | null;
-  dateEntreeVigueur?: string | null;
-  dateMoniteur?: string | null;
-  statut?: string | null;
-  abroge?: boolean;
-  isOnemCommentary?: boolean;
-  refs?: string[];
-}
 
 interface PageProps {
   params: Promise<{ riolexId: string }>;
@@ -99,7 +91,7 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
 
   // « Voir aussi » : articles voisins du même texte de loi (même dossier),
   // triés par n° d'article, fenêtre autour de l'article courant.
-  let neighbors: Array<{ riolexId: string; title: string }> = [];
+  let neighbors: Neighbor[] = [];
   if (article.folderId) {
     const siblings = await prisma.knowledgeSource.findMany({
       where: {
@@ -137,156 +129,123 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
 
   return (
     <div className="px-4 py-6 lg:px-6">
-      <div className="mx-auto w-full max-w-4xl space-y-5">
-        <Link
-          href="/partenaire/reglementation"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" aria-hidden />
-          {t("reglBack")}
-        </Link>
-
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{meta.loi ?? ""}</Badge>
-            <Badge variant="secondary">Art. {meta.articleNumber ?? ""}</Badge>
-            {meta.abroge === true && (
-              <Badge variant="destructive">{t("reglAbroge")}</Badge>
+      <div className="w-full space-y-5">
+        {/* Fil d'Ariane + retour — masqués à l'impression */}
+        <div className="flex flex-wrap items-center gap-3 print:hidden">
+          <Link
+            href="/partenaire/reglementation"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+            {t("reglBack")}
+          </Link>
+          <span className="text-muted-foreground/40">·</span>
+          <nav className="text-sm text-muted-foreground" aria-label="Fil d'Ariane">
+            <span>Réglementation</span>
+            {meta.loi && (
+              <>
+                <span className="mx-1.5 text-muted-foreground/40">›</span>
+                <span>{meta.loi}</span>
+              </>
             )}
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {article.title}
-          </h1>
+            {meta.articleNumber && (
+              <>
+                <span className="mx-1.5 text-muted-foreground/40">›</span>
+                <span>Art. {meta.articleNumber}</span>
+              </>
+            )}
+          </nav>
         </div>
 
-        {/* Texte de l'article */}
-        <Card>
-          <CardContent className="py-5">
-            <div className="whitespace-pre-wrap text-[15px] leading-relaxed">
-              {article.content}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Propriétés */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("reglPropsTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
-            {meta.statut && (
-              <div>
-                <div className="text-muted-foreground">{t("reglPropStatut")}</div>
-                <div>{meta.statut}</div>
-              </div>
-            )}
-            {meta.datePublication && (
-              <div>
-                <div className="text-muted-foreground">
-                  {t("reglPropPublication")}
-                </div>
-                <div>{meta.datePublication}</div>
-              </div>
-            )}
-            {meta.dateEntreeVigueur && (
-              <div>
-                <div className="text-muted-foreground">{t("reglPropEv")}</div>
-                <div>{meta.dateEntreeVigueur}</div>
-              </div>
-            )}
-            {meta.dateMoniteur && (
-              <div>
-                <div className="text-muted-foreground">{t("reglPropMb")}</div>
-                <div>{meta.dateMoniteur}</div>
-              </div>
-            )}
+        {/* En-tête : icône nature + titre + badges + actions */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
             {meta.natureJuridique && (
-              <div>
-                <div className="text-muted-foreground">{t("reglPropNature")}</div>
-                <div>{meta.natureJuridique}</div>
+              <NatureTile nature={meta.natureJuridique} />
+            )}
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">{meta.loi ?? ""}</Badge>
+                <Badge variant="secondary">Art. {meta.articleNumber ?? ""}</Badge>
+                {meta.abroge === true && (
+                  <Badge variant="destructive">{t("reglAbroge")}</Badge>
+                )}
+              </div>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                {article.title}
+              </h1>
+            </div>
+          </div>
+
+          {/* Barre d'actions — masquée à l'impression */}
+          <div className="flex shrink-0 items-center gap-2 print:hidden">
+            <PrintButton label={t("reglPrint")} />
+            {article.sourceUrl && (
+              <a
+                href={article.sourceUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <ExternalLink className="size-4" aria-hidden />
+                {t("reglOpenRiolex")}
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/* Grille principale 1 col (mobile) / 2 cols (lg+) — 1 col à l'impression */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] print:block">
+          {/* Colonne principale */}
+          <article className="space-y-6">
+            <LegalText raw={article.content} />
+
+            {/* Références légales inline */}
+            {refs.length > 0 && (
+              <div className="space-y-2">
+                <h2 className="text-sm font-medium text-muted-foreground">
+                  {t("reglRefsTitle")}
+                </h2>
+                <div className="flex flex-wrap gap-1.5">
+                  {refs.map((ref) => (
+                    <Badge key={ref} variant="outline" className="font-normal">
+                      {ref}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             )}
-          </CardContent>
-        </Card>
 
-        {/* Références légales détectées */}
-        {refs.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">{t("reglRefsTitle")}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-1.5">
-              {refs.map((ref) => (
-                <Badge key={ref} variant="outline" className="font-normal">
-                  {ref}
-                </Badge>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+            {/* Commentaire ONEM — admin uniquement */}
+            {commentary && (commentary.content ?? "").trim().length > 0 && (
+              <OnemCommentary raw={commentary.content} />
+            )}
 
-        {/* Commentaire ONEM — admin uniquement */}
-        {commentary && (commentary.content ?? "").trim().length > 0 && (
-          <Card className="border-amber-300/60">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Lock className="size-4 text-amber-600" aria-hidden />
-                {t("reglCommentTitle")}
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                {t("reglCommentNote")}
+            {/* Attribution imprimable — masquée à l'écran, visible à l'impression */}
+            <div className="hidden space-y-1 text-xs text-muted-foreground print:block">
+              <Separator className="mb-3" />
+              <p>
+                {t("reglAttribution", {
+                  loi: meta.loi ?? "",
+                  num: meta.articleNumber ?? "",
+                  date: consultedOn,
+                })}
               </p>
-            </CardHeader>
-            <CardContent className="whitespace-pre-wrap py-3 text-sm leading-relaxed">
-              {commentary.content}
-            </CardContent>
-          </Card>
-        )}
+              {article.sourceUrl && (
+                <p>{article.sourceUrl}</p>
+              )}
+              <p>{t("reglNotice")}</p>
+            </div>
+          </article>
 
-        {/* Voir aussi */}
-        {neighbors.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">{t("reglVoirAussi")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1.5">
-              {neighbors.map((n) => (
-                <div key={n.riolexId}>
-                  <Link
-                    href={`/partenaire/reglementation/${encodeURIComponent(n.riolexId)}`}
-                    className="text-sm underline-offset-2 hover:underline"
-                  >
-                    {n.title}
-                  </Link>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        <Separator />
-
-        {/* Attribution obligatoire (source + date) */}
-        <div className="space-y-1 text-xs text-muted-foreground">
-          <p>
-            {t("reglAttribution", {
-              loi: meta.loi ?? "",
-              num: meta.articleNumber ?? "",
-              date: consultedOn,
-            })}
-          </p>
-          {article.sourceUrl && (
-            <a
-              href={article.sourceUrl}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="inline-flex items-center gap-1 hover:text-foreground"
-            >
-              <ExternalLink className="size-3" aria-hidden />
-              {t("reglOpenRiolex")}
-            </a>
-          )}
-          <p>{t("reglNotice")}</p>
+          {/* Sidebar collante — print:hidden géré dans ArticleSidebar */}
+          <ArticleSidebar
+            meta={meta}
+            refs={refs}
+            sourceUrl={article.sourceUrl ?? null}
+            consultedOn={consultedOn}
+            neighbors={neighbors}
+          />
         </div>
       </div>
     </div>

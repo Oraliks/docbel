@@ -6214,6 +6214,7 @@
       "reglCommentCount": "{count, plural, one {# RVA-commentaar} other {# RVA-commentaren}}",
       "reglCommentAdminOnly": "enkel voor beheerders",
       "reglVoirAussi": "Zie ook",
+      "reglPrint": "Afdrukken",
       "reglAttribution": "Bron: RVA — RioLex, {loi}, art. {num} (wettekst). Geraadpleegd op {date}.",
       "reglOpenRiolex": "Open de RioLex-fiche",
       "reglNotice": "Deze teksten zijn louter documentair en kunnen wijzigen. Ze vervangen geen beslissing van de RVA, uw uitbetalingsinstelling of een bevoegde adviseur.",

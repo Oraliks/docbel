@@ -3147,6 +3147,7 @@
       "reglCommentCount": "{count, plural, one {# NEO comment} other {# NEO comments}}",
       "reglCommentAdminOnly": "admin only",
       "reglVoirAussi": "See also",
+      "reglPrint": "Print",
       "reglAttribution": "Source: NEO — RioLex, {loi}, art. {num} (legal text). Consulted on {date}.",
       "reglOpenRiolex": "Open the RioLex page",
       "reglNotice": "These texts are provided for documentation purposes and may change. They do not replace a decision by the NEO, your payment institution or a qualified adviser.",

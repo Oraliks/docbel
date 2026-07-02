@@ -57,13 +57,15 @@ function riolexUrl(riolexId: string): string {
 //  Schéma Zod du staging (tolère les champs manquants)
 // ─────────────────────────────────────────────────────────────────────
 
-const NatureJuridique = z.enum([
-  "AR",
-  "AM",
-  "Loi-programme",
-  "Loi",
-  "Arrete-loi",
-]);
+const NatureJuridique = z.preprocess(
+  // Normalise les variantes accentuées écrites par les agents d'extraction
+  // (ex. « Arrêté-loi » → « Arrete-loi ») avant validation.
+  (v) =>
+    typeof v === "string"
+      ? v.normalize("NFD").replace(/\p{Diacritic}/gu, "")
+      : v,
+  z.enum(["AR", "AM", "Loi-programme", "Loi", "Arrete-loi"]),
+);
 
 const ArticleSchema = z.object({
   riolexId: z.string().min(1),

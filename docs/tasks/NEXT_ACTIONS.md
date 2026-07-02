@@ -28,6 +28,11 @@ Légende priorité : **P0** critique · **P1** important · **P2** souhaitable �
 | 17 | P3 | Dette | Réduire ESLint (cibler `set-state-in-effect`, unused-vars) sans tout casser | divers | Moyen | `pnpm lint` (delta) | à faire |
 | 18 | P3 | Doc | Désigner DPO + déposer demande NRN au SPF Intérieur (administratif) | hors-code | — | — | bloqué (juriste) |
 
+## Plans en attente de validation
+- **Réglementation V3** (« texte de loi vivant » : abrogé barré, crochets cliquables,
+  hashtags, navigation code annoté, Q&A IA…) → [REGLEMENTATION_V3_PLAN.md](REGLEMENTATION_V3_PLAN.md).
+  Proposition 2026-07-03, ~19 fonctionnalités en 5 vagues, rien codé. Vague 1 = demandes Oraliks.
+
 ## Quick wins déjà faits cette session (cf. rapport)
 - `.env.example` complété (clés réellement utilisées).
 - `CLAUDE.md` créé ; `docs/` réorganisé ; `AGENTS.md` allégé.

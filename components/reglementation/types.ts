@@ -12,3 +12,22 @@ export interface ResultItem {
   sourceUrl: string | null;
   headline: string | null;
 }
+
+export interface LegalMeta {
+  riolexId?: string;
+  loi?: string;
+  natureJuridique?: string;
+  articleNumber?: string;
+  datePublication?: string | null;
+  dateEntreeVigueur?: string | null;
+  dateMoniteur?: string | null;
+  statut?: string | null;
+  abroge?: boolean;
+  isOnemCommentary?: boolean;
+  refs?: string[];
+}
+
+export interface Neighbor {
+  riolexId: string;
+  title: string;
+}

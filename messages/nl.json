@@ -6211,6 +6211,8 @@
       "reglRefsTitle": "In de tekst vermelde verwijzingen",
       "reglCommentTitle": "RVA-commentaar (intern)",
       "reglCommentNote": "Inhoud van de RVA — enkel zichtbaar voor beheerders.",
+      "reglCommentCount": "{count, plural, one {# RVA-commentaar} other {# RVA-commentaren}}",
+      "reglCommentAdminOnly": "enkel voor beheerders",
       "reglVoirAussi": "Zie ook",
       "reglAttribution": "Bron: RVA — RioLex, {loi}, art. {num} (wettekst). Geraadpleegd op {date}.",
       "reglOpenRiolex": "Open de RioLex-fiche",

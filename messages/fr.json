@@ -4105,6 +4105,8 @@
       "reglRefsTitle": "Références citées dans le texte",
       "reglCommentTitle": "Commentaire ONEM (interne)",
       "reglCommentNote": "Contenu produit par l’ONEM — visible uniquement par les administrateurs.",
+      "reglCommentCount": "{count, plural, one {# commentaire ONEM} other {# commentaires ONEM}}",
+      "reglCommentAdminOnly": "réservé admin",
       "reglVoirAussi": "Voir aussi",
       "reglAttribution": "Source : ONEM — RioLex, {loi}, art. {num} (texte légal). Consulté le {date}.",
       "reglOpenRiolex": "Ouvrir la fiche sur RioLex",

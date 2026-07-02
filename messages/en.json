@@ -3144,6 +3144,8 @@
       "reglRefsTitle": "References cited in the text",
       "reglCommentTitle": "NEO commentary (internal)",
       "reglCommentNote": "Content produced by the NEO — visible to administrators only.",
+      "reglCommentCount": "{count, plural, one {# NEO comment} other {# NEO comments}}",
+      "reglCommentAdminOnly": "admin only",
       "reglVoirAussi": "See also",
       "reglAttribution": "Source: NEO — RioLex, {loi}, art. {num} (legal text). Consulted on {date}.",
       "reglOpenRiolex": "Open the RioLex page",

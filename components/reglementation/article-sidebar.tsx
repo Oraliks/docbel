@@ -84,7 +84,7 @@ export async function ArticleSidebar({
             </div>
             {hiddenCount > 0 && (
               <p className="text-xs text-muted-foreground">
-                Voir toutes ({refs.length})
+                {t("reglRefsSeeAll", { count: refs.length })}
               </p>
             )}
           </CardContent>

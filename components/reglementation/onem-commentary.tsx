@@ -33,7 +33,7 @@ export function OnemCommentary({ raw }: { raw: string }) {
           <AccordionItem key={item.index} value={String(item.index)}>
             <AccordionTrigger className="px-4">
               <span className="flex flex-wrap items-center gap-2">
-                <span>Commentaire {item.index}</span>
+                <span>{t("reglCommentLabel", { index: item.index })}</span>
                 {item.date && (
                   <Badge variant="outline" className="font-normal">
                     {item.date}

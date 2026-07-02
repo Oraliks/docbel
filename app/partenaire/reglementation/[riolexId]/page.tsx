@@ -140,7 +140,7 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
             {t("reglBack")}
           </Link>
           <span className="text-muted-foreground/40">·</span>
-          <nav className="text-sm text-muted-foreground" aria-label="Fil d'Ariane">
+          <nav className="text-sm text-muted-foreground" aria-label={t("reglBreadcrumb")}>
             <span>Réglementation</span>
             {meta.loi && (
               <>
@@ -199,22 +199,6 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
           {/* Colonne principale */}
           <article className="space-y-6">
             <LegalText raw={article.content} />
-
-            {/* Références légales inline */}
-            {refs.length > 0 && (
-              <div className="space-y-2">
-                <h2 className="text-sm font-medium text-muted-foreground">
-                  {t("reglRefsTitle")}
-                </h2>
-                <div className="flex flex-wrap gap-1.5">
-                  {refs.map((ref) => (
-                    <Badge key={ref} variant="outline" className="font-normal">
-                      {ref}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Commentaire ONEM — admin uniquement */}
             {commentary && (commentary.content ?? "").trim().length > 0 && (

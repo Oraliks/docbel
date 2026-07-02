@@ -3147,7 +3147,15 @@
       "reglVoirAussi": "See also",
       "reglAttribution": "Source: NEO — RioLex, {loi}, art. {num} (legal text). Consulted on {date}.",
       "reglOpenRiolex": "Open the RioLex page",
-      "reglNotice": "These texts are provided for documentation purposes and may change. They do not replace a decision by the NEO, your payment institution or a qualified adviser."
+      "reglNotice": "These texts are provided for documentation purposes and may change. They do not replace a decision by the NEO, your payment institution or a qualified adviser.",
+      "reglStatsArticles": "articles correspondants",
+      "reglStatsLois": "lois concernées",
+      "reglStatsHybrid": "Recherche full-text + sémantique",
+      "reglStatsHybridHint": "Combinez mots-clés et sens pour des résultats précis.",
+      "reglTri": "Trier par",
+      "reglTriPertinence": "Pertinence",
+      "reglTriArticle": "N° d'article",
+      "reglReset": "Réinitialiser"
     },
     "shared": {
       "verified": "verified",

@@ -6214,7 +6214,15 @@
       "reglVoirAussi": "Zie ook",
       "reglAttribution": "Bron: RVA — RioLex, {loi}, art. {num} (wettekst). Geraadpleegd op {date}.",
       "reglOpenRiolex": "Open de RioLex-fiche",
-      "reglNotice": "Deze teksten zijn louter documentair en kunnen wijzigen. Ze vervangen geen beslissing van de RVA, uw uitbetalingsinstelling of een bevoegde adviseur."
+      "reglNotice": "Deze teksten zijn louter documentair en kunnen wijzigen. Ze vervangen geen beslissing van de RVA, uw uitbetalingsinstelling of een bevoegde adviseur.",
+      "reglStatsArticles": "articles correspondants",
+      "reglStatsLois": "lois concernées",
+      "reglStatsHybrid": "Recherche full-text + sémantique",
+      "reglStatsHybridHint": "Combinez mots-clés et sens pour des résultats précis.",
+      "reglTri": "Trier par",
+      "reglTriPertinence": "Pertinence",
+      "reglTriArticle": "N° d'article",
+      "reglReset": "Réinitialiser"
     },
     "shared": {
       "verified": "geverifieerd",

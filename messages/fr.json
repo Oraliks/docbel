@@ -4108,7 +4108,15 @@
       "reglVoirAussi": "Voir aussi",
       "reglAttribution": "Source : ONEM — RioLex, {loi}, art. {num} (texte légal). Consulté le {date}.",
       "reglOpenRiolex": "Ouvrir la fiche sur RioLex",
-      "reglNotice": "Ces textes sont fournis à titre documentaire et peuvent évoluer. Ils ne remplacent pas une décision de l’ONEM, de votre organisme de paiement ou d’un conseiller compétent."
+      "reglNotice": "Ces textes sont fournis à titre documentaire et peuvent évoluer. Ils ne remplacent pas une décision de l’ONEM, de votre organisme de paiement ou d’un conseiller compétent.",
+      "reglStatsArticles": "articles correspondants",
+      "reglStatsLois": "lois concernées",
+      "reglStatsHybrid": "Recherche full-text + sémantique",
+      "reglStatsHybridHint": "Combinez mots-clés et sens pour des résultats précis.",
+      "reglTri": "Trier par",
+      "reglTriPertinence": "Pertinence",
+      "reglTriArticle": "N° d’article",
+      "reglReset": "Réinitialiser"
     },
     "auth": {
       "title": "Connexion",

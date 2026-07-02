@@ -6,18 +6,16 @@
  * /api/partenaire/reglementation/search : plein texte + sémantique (RRF).
  *
  * Sécurité : le surlignage `ts_headline` arrive avec des balises <mark> ;
- * on les reconstruit en JSX (jamais de dangerouslySetInnerHTML).
+ * on les reconstruit en JSX via renderHeadline (jamais de dangerouslySetInnerHTML).
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BookOpen, ExternalLink, Loader2, Search } from "lucide-react";
+import { BookOpen, Loader2, RotateCcw, Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -28,20 +26,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface ResultItem {
-  id: string;
-  riolexId: string;
-  title: string;
-  loi: string;
-  natureJuridique: string;
-  articleNumber: string;
-  abroge: boolean;
-  statut: string | null;
-  dateEntreeVigueur: string | null;
-  datePublication: string | null;
-  sourceUrl: string | null;
-  headline: string | null;
-}
+import type { ResultItem } from "./types";
+import { ResultCard } from "./result-card";
+import { RegLegend } from "./legend";
 
 interface SearchResponse {
   mode: "liste" | "fts" | "hybride";
@@ -55,21 +42,16 @@ interface SearchResponse {
 const PAGE_SIZE = 20;
 const ALL = "all";
 
-/** Reconstruit les <mark> de ts_headline en JSX sûr (texte pur ailleurs). */
-function renderHeadline(headline: string) {
-  const parts = headline.split(/<\/?mark>/);
-  return parts.map((part, i) =>
-    i % 2 === 1 ? (
-      <mark
-        key={i}
-        className="rounded-sm bg-primary/15 px-0.5 font-medium text-primary"
-      >
-        {part}
-      </mark>
-    ) : (
-      <span key={i}>{part}</span>
-    ),
-  );
+/** Tri côté client : naturalSort sur articleNumber (ex : "79", "79bis", "104"). */
+function naturalSortByArticle(items: ResultItem[]): ResultItem[] {
+  return [...items].sort((a, b) => {
+    const numA = parseInt(a.articleNumber, 10);
+    const numB = parseInt(b.articleNumber, 10);
+    if (!isNaN(numA) && !isNaN(numB) && numA !== numB) return numA - numB;
+    return a.articleNumber.localeCompare(b.articleNumber, "fr", {
+      numeric: true,
+    });
+  });
 }
 
 export function ReglementationSearchClient() {
@@ -81,6 +63,7 @@ export function ReglementationSearchClient() {
   const [nature, setNature] = useState(searchParams.get("nature") ?? ALL);
   const [statut, setStatut] = useState(searchParams.get("statut") ?? ALL);
   const [loi, setLoi] = useState(searchParams.get("loi") ?? ALL);
+  const [tri, setTri] = useState(searchParams.get("tri") ?? "pertinence");
   const [page, setPage] = useState(1);
   const [data, setData] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -127,13 +110,14 @@ export function ReglementationSearchClient() {
       if (nature !== ALL) url.set("nature", nature);
       if (statut !== ALL) url.set("statut", statut);
       if (loi !== ALL) url.set("loi", loi);
+      if (tri !== "pertinence") url.set("tri", tri);
       const qs = url.toString();
       router.replace(`/partenaire/reglementation${qs ? `?${qs}` : ""}`, {
         scroll: false,
       });
     }, 300);
     return () => clearTimeout(handle);
-  }, [q, nature, statut, loi, page, fetchResults, router]);
+  }, [q, nature, statut, loi, tri, page, fetchResults, router]);
 
   const onFilterChange =
     (setter: (v: string) => void) => (v: string | null) => {
@@ -141,10 +125,55 @@ export function ReglementationSearchClient() {
       setPage(1);
     };
 
+  const handleReset = () => {
+    setQ("");
+    setNature(ALL);
+    setStatut(ALL);
+    setLoi(ALL);
+    setTri("pertinence");
+    setPage(1);
+  };
+
   const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
+
+  // Tri côté client
+  const displayResults =
+    tri === "article" && data ? naturalSortByArticle(data.results) : data?.results ?? [];
 
   return (
     <div className="space-y-4">
+      {/* Bandeau stats */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Card>
+          <CardContent className="py-3">
+            <p className="text-2xl font-bold tabular-nums">
+              {loading && !data ? "…" : (data?.total ?? "…")}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {t("reglStatsArticles")}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-3">
+            <p className="text-2xl font-bold tabular-nums">
+              {loading && !data ? "…" : (data?.lois.length ?? "…")}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {t("reglStatsLois")}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-3">
+            <p className="text-sm font-semibold">{t("reglStatsHybrid")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("reglStatsHybridHint")}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Barre de recherche + filtres */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1">
@@ -196,6 +225,19 @@ export function ReglementationSearchClient() {
               <SelectItem value="abroge">{t("reglStatutAbroge")}</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={tri} onValueChange={(v) => { setTri(v ?? "pertinence"); setPage(1); }}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pertinence">{t("reglTriPertinence")}</SelectItem>
+              <SelectItem value="article">{t("reglTriArticle")}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1.5">
+            <RotateCcw className="size-3.5" aria-hidden />
+            {t("reglReset")}
+          </Button>
         </div>
       </div>
 
@@ -233,47 +275,8 @@ export function ReglementationSearchClient() {
         </Card>
       ) : (
         <div className="space-y-2">
-          {(data?.results ?? []).map((item) => (
-            <Card key={item.id} className="transition-colors hover:bg-accent/40">
-              <CardContent className="space-y-1.5 py-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Link
-                    href={`/partenaire/reglementation/${encodeURIComponent(item.riolexId)}`}
-                    className="font-medium underline-offset-2 hover:underline"
-                  >
-                    {item.title}
-                  </Link>
-                  {item.abroge && (
-                    <Badge variant="destructive">{t("reglAbroge")}</Badge>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <Badge variant="outline">{item.loi}</Badge>
-                  <Badge variant="secondary">
-                    Art. {item.articleNumber}
-                  </Badge>
-                  {item.dateEntreeVigueur && (
-                    <span>EV {item.dateEntreeVigueur}</span>
-                  )}
-                  {item.sourceUrl && (
-                    <a
-                      href={item.sourceUrl}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="inline-flex items-center gap-1 hover:text-foreground"
-                    >
-                      <ExternalLink className="size-3" aria-hidden />
-                      RioLex
-                    </a>
-                  )}
-                </div>
-                {item.headline && (
-                  <p className="line-clamp-3 text-sm text-muted-foreground">
-                    {renderHeadline(item.headline)}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+          {displayResults.map((item) => (
+            <ResultCard key={item.id} item={item} />
           ))}
         </div>
       )}
@@ -302,6 +305,9 @@ export function ReglementationSearchClient() {
           </Button>
         </div>
       )}
+
+      {/* Légende natures juridiques */}
+      <RegLegend />
 
       <p className="text-xs text-muted-foreground">{t("reglNotice")}</p>
     </div>

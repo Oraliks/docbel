@@ -67,21 +67,28 @@ const NatureJuridique = z.preprocess(
   z.enum(["AR", "AM", "Loi-programme", "Loi", "Arrete-loi"]),
 );
 
+/** Chaîne optionnelle tolérante : absent OU null → "" (les agents d'extraction
+ *  écrivent tantôt des champs manquants, tantôt des `null` explicites). */
+const optStr = z
+  .string()
+  .nullish()
+  .transform((v) => v ?? "");
+
 const ArticleSchema = z.object({
   riolexId: z.string().min(1),
-  url: z.string().optional(),
+  url: z.string().nullish().transform((v) => v ?? undefined),
   loi: z.string().min(1),
   natureJuridique: NatureJuridique,
   articleNumber: z.string().min(1),
-  titre: z.string().optional().default(""),
-  texte: z.string().optional().default(""),
-  commentaireOnem: z.string().optional().default(""),
-  datePublication: z.string().optional().default(""),
-  dateEntreeVigueur: z.string().optional().default(""),
-  dateMoniteur: z.string().optional().default(""),
-  statut: z.string().optional().default(""),
-  version: z.string().optional().default(""),
-  abroge: z.boolean().optional().default(false),
+  titre: optStr,
+  texte: optStr,
+  commentaireOnem: optStr,
+  datePublication: optStr,
+  dateEntreeVigueur: optStr,
+  dateMoniteur: optStr,
+  statut: optStr,
+  version: optStr,
+  abroge: z.boolean().nullish().transform((v) => v ?? false),
 });
 
 type Article = z.infer<typeof ArticleSchema>;

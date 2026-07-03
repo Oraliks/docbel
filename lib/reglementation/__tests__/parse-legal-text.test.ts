@@ -56,6 +56,24 @@ describe("parseLegalText", () => {
     const blocks = parseLegalText("§ 1bis. Texte.");
     expect(blocks[0]).toMatchObject({ type: "section", marker: "§ 1bis" });
   });
+
+  it("attribue un niveau d'indentation : 1° = niveau 1, a) = niveau 2", () => {
+    const blocks = parseLegalText("1° premier ;\na) sous-point ;\n- tiret");
+    const items = blocks.filter((b) => b.type === "list-item");
+    expect(items.find((b) => b.marker === "1°")?.level).toBe(1);
+    expect(items.find((b) => b.marker === "a)")?.level).toBe(2);
+    expect(items.find((b) => b.marker === "–")?.level).toBe(1);
+  });
+
+  it("marque en barré un alinéa abrogé non encadré (« 9°: abrogé (…) »)", () => {
+    const blocks = parseLegalText("9°: abrogé (AM 30.11.1995);");
+    expect(blocks[0].struck).toBe(true);
+  });
+
+  it("ne barre pas un alinéa normal", () => {
+    const blocks = parseLegalText("1° le chômeur complet ;");
+    expect(blocks[0].struck).toBeFalsy();
+  });
 });
 
 describe("splitOnemCommentary", () => {

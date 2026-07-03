@@ -71,13 +71,16 @@ interface ResultItem {
   headline: string | null;
 }
 
-function toItem(row: {
-  id: string;
-  title: string;
-  sourceUrl: string | null;
-  legalMeta: unknown;
-  headline?: string | null;
-}): ResultItem {
+function toItem(
+  row: {
+    id: string;
+    title: string;
+    sourceUrl: string | null;
+    legalMeta: unknown;
+    headline?: string | null;
+  },
+  exposeSource: boolean,
+): ResultItem {
   const meta = (row.legalMeta ?? {}) as LegalMetaLite;
   return {
     id: row.id,
@@ -90,7 +93,8 @@ function toItem(row: {
     statut: meta.statut ?? null,
     dateEntreeVigueur: meta.dateEntreeVigueur ?? null,
     datePublication: meta.datePublication ?? null,
-    sourceUrl: row.sourceUrl,
+    // Lien RioLex réservé aux admins (source interne, cf. demande Oraliks).
+    sourceUrl: exposeSource ? row.sourceUrl : null,
     headline: row.headline ?? null,
   };
 }
@@ -98,9 +102,8 @@ function toItem(row: {
 export async function GET(req: NextRequest) {
   const auth = await requirePartnerOrAdminAuth();
   if (!auth.isAuthorized) return auth.error;
-  const visibilities = allowedVisibilities(
-    auth.user.isAdmin ? "admin" : "partner",
-  );
+  const isAdmin = auth.user.isAdmin === true;
+  const visibilities = allowedVisibilities(isAdmin ? "admin" : "partner");
 
   const sp = req.nextUrl.searchParams;
   const q = (sp.get("q") ?? "").trim().slice(0, 300);
@@ -178,7 +181,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         {
           mode: "liste",
-          results: rows.map((r) => toItem(r)),
+          results: rows.map((r) => toItem(r, isAdmin)),
           total,
           page,
           pageSize,
@@ -287,12 +290,12 @@ export async function GET(req: NextRequest) {
     for (const id of fusedIds) {
       const fts = ftsById.get(id);
       if (fts) {
-        fusedItems.push(toItem(fts));
+        fusedItems.push(toItem(fts, isAdmin));
         continue;
       }
       const row = extraById.get(id);
       if (row) {
-        fusedItems.push(toItem({ ...row, headline: row.summary ?? null }));
+        fusedItems.push(toItem({ ...row, headline: row.summary ?? null }, isAdmin));
       }
     }
 

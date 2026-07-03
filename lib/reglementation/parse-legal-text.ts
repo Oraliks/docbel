@@ -2,11 +2,22 @@ export type LegalBlock = {
   type: "section" | "paragraph" | "list-item" | "abroge";
   marker?: string;
   text: string;
+  /** Profondeur d'indentation d'un list-item : 1 (« 1° », tiret) ou 2 (« a) »). */
+  level?: number;
+  /** Alinéa abrogé « en ligne » (ex. « 9°: abrogé (AM …) ») → barré mais lisible. */
+  struck?: boolean;
 };
 
 const SECTION_RE = /^(§\s*\d+(?:er|bis|ter|quater|quinquies|sexies|septies|octies|nonies|decies)?)\s*\.?\s*/;
 const NUM_ITEM_RE = /^(\d+°(?:\/\d+)?|[a-z]\))\s+/;
 const DASH_ITEM_RE = /^[-–]\s+/;
+/** Détecte un alinéa abrogé non encadré par des crochets (« 9°: abrogé (…) »). */
+const INLINE_ABROGE_RE = /^\s*(?:\d+°(?:\/\d+)?[:.)]?\s*|[a-z]\)\s*)?abrog[ée]/i;
+
+/** Niveau d'indentation déduit du marqueur (source plate → heuristique simple). */
+function levelFor(marker: string): number {
+  return /^[a-z]\)$/.test(marker) ? 2 : 1;
+}
 
 export function parseLegalText(raw: string): LegalBlock[] {
   const src = (raw ?? "").replace(/\r\n/g, "\n").trim();
@@ -19,6 +30,7 @@ export function parseLegalText(raw: string): LegalBlock[] {
       blocks.push({ type: "abroge", text: line });
       continue;
     }
+    const struck = INLINE_ABROGE_RE.test(line);
     const sec = SECTION_RE.exec(line);
     if (sec) {
       blocks.push({ type: "section", marker: sec[1].replace(/\s+/g, " ").trim(), text: line.slice(sec[0].length).trim() });
@@ -26,14 +38,14 @@ export function parseLegalText(raw: string): LegalBlock[] {
     }
     const num = NUM_ITEM_RE.exec(line);
     if (num) {
-      blocks.push({ type: "list-item", marker: num[1], text: line.slice(num[0].length).trim() });
+      blocks.push({ type: "list-item", marker: num[1], text: line.slice(num[0].length).trim(), level: levelFor(num[1]), struck });
       continue;
     }
     if (DASH_ITEM_RE.test(line)) {
-      blocks.push({ type: "list-item", marker: "–", text: line.replace(DASH_ITEM_RE, "").trim() });
+      blocks.push({ type: "list-item", marker: "–", text: line.replace(DASH_ITEM_RE, "").trim(), level: 1, struck });
       continue;
     }
-    blocks.push({ type: "paragraph", text: line });
+    blocks.push({ type: "paragraph", text: line, struck });
   }
   return blocks;
 }

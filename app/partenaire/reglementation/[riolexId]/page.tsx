@@ -2,15 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Ban } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
 import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
 import { allowedVisibilities } from "@/lib/chomage-ia/context";
+import {
+  extractAmendments,
+  sortAmendmentsByEV,
+  latestEV,
+} from "@/lib/reglementation/parse-amendments";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
 import { LegalText } from "@/components/reglementation/legal-text";
+import { TextSettings } from "@/components/reglementation/text-settings";
 import { OnemCommentary } from "@/components/reglementation/onem-commentary";
 import { ArticleSidebar } from "@/components/reglementation/article-sidebar";
 import { NatureTile } from "@/components/reglementation/nature-badge";
@@ -127,6 +133,15 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
     dateStyle: "short",
   }).format(article.updatedAt);
 
+  // Historique des modifications dérivé des crochets d'amendement du texte.
+  // `latestEV` = vraie dernière entrée en vigueur (la dateEntreeVigueur de
+  // legalMeta est constante par loi → trompeuse ; on la corrige ici).
+  const amendments = sortAmendmentsByEV(extractAmendments(article.content));
+  const realEV = latestEV(amendments);
+
+  // Le lien RioLex (source interne) n'est exposé qu'aux admins (demande Oraliks).
+  const riolexUrl = isAdmin ? article.sourceUrl : null;
+
   return (
     <div className="px-4 py-6 lg:px-6">
       <div className="w-full space-y-5">
@@ -180,9 +195,9 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
           {/* Barre d'actions — masquée à l'impression */}
           <div className="flex shrink-0 items-center gap-2 print:hidden">
             <PrintButton label={t("reglPrint")} />
-            {article.sourceUrl && (
+            {riolexUrl && (
               <a
-                href={article.sourceUrl}
+                href={riolexUrl}
                 target="_blank"
                 rel="noreferrer noopener"
                 className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -194,11 +209,21 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
           </div>
         </div>
 
+        {/* Bandeau « article abrogé » — visible aussi à l'impression */}
+        {meta.abroge === true && (
+          <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            <Ban className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <p>{t("reglAbrogeBanner")}</p>
+          </div>
+        )}
+
         {/* Grille principale 1 col (mobile) / 2 cols (lg+) — 1 col à l'impression */}
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] print:block">
           {/* Colonne principale */}
           <article className="space-y-6">
-            <LegalText raw={article.content} />
+            <TextSettings>
+              <LegalText raw={article.content} />
+            </TextSettings>
 
             {/* Commentaire ONEM — admin uniquement */}
             {commentary && (commentary.content ?? "").trim().length > 0 && (
@@ -215,8 +240,8 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
                   date: consultedOn,
                 })}
               </p>
-              {article.sourceUrl && (
-                <p>{article.sourceUrl}</p>
+              {riolexUrl && (
+                <p>{riolexUrl}</p>
               )}
               <p>{t("reglNotice")}</p>
             </div>
@@ -226,9 +251,11 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
           <ArticleSidebar
             meta={meta}
             refs={refs}
-            sourceUrl={article.sourceUrl ?? null}
+            sourceUrl={riolexUrl}
             consultedOn={consultedOn}
             neighbors={neighbors}
+            amendments={amendments}
+            realEV={realEV}
           />
         </div>
       </div>

@@ -31,3 +31,16 @@ export function natureMeta(raw: string | null | undefined): NatureMeta {
   if (raw && raw in MAP) return MAP[raw as NatureKey];
   return FALLBACK;
 }
+
+/** Libellé long avec article défini, pour phrases (« Modifié par {…} du … »). */
+const NATURE_PHRASE: Record<string, string> = {
+  AR: "l’arrêté royal",
+  AM: "l’arrêté ministériel",
+  Loi: "la loi",
+  "Loi-programme": "la loi-programme",
+  "Arrete-loi": "l’arrêté-loi",
+};
+
+export function naturePhrase(raw: string | null | undefined): string {
+  return (raw && NATURE_PHRASE[raw]) || "le texte";
+}

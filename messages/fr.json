@@ -4122,7 +4122,12 @@
       "reglTri": "Trier par",
       "reglTriPertinence": "Pertinence",
       "reglTriArticle": "N° d’article",
-      "reglReset": "Réinitialiser"
+      "reglReset": "Réinitialiser",
+      "reglAbrogeBanner": "Cet article est abrogé. Il est conservé à titre documentaire et ne s’applique plus dans sa forme ci-dessous.",
+      "reglPropLastEv": "Dernière version en vigueur",
+      "reglTimelineTitle": "Historique des modifications",
+      "reglTimelineEv": "EV",
+      "reglTimelineMb": "MB"
     },
     "auth": {
       "title": "Connexion",

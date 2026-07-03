@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
-import { natureMeta } from "@/lib/reglementation/nature";
+import { natureMeta, naturePhrase } from "@/lib/reglementation/nature";
+import type { AmendmentRef } from "@/lib/reglementation/parse-amendments";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { LegalMeta, Neighbor } from "./types";
@@ -13,6 +14,8 @@ interface ArticleSidebarProps {
   sourceUrl: string | null;
   consultedOn: string;
   neighbors: Neighbor[];
+  amendments?: AmendmentRef[];
+  realEV?: string | null;
 }
 
 export async function ArticleSidebar({
@@ -21,11 +24,15 @@ export async function ArticleSidebar({
   sourceUrl,
   consultedOn,
   neighbors,
+  amendments = [],
+  realEV = null,
 }: ArticleSidebarProps) {
   const t = await getTranslations("public.pro");
   const nature = meta.natureJuridique ? natureMeta(meta.natureJuridique) : null;
   const visibleRefs = refs.slice(0, 7);
   const hiddenCount = refs.length - visibleRefs.length;
+  // Timeline la plus récente en tête.
+  const timeline = [...amendments].reverse();
 
   return (
     <aside className="space-y-4 lg:sticky lg:top-20 print:hidden">
@@ -65,8 +72,49 @@ export async function ArticleSidebar({
               <span className="text-right">{nature.label}</span>
             </div>
           )}
+          {realEV && (
+            <div className="flex justify-between gap-2 border-t pt-2">
+              <span className="text-muted-foreground">{t("reglPropLastEv")}</span>
+              <span className="text-right font-medium">{realEV}</span>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Historique des modifications (dérivé des crochets d'amendement) */}
+      {timeline.length > 0 && (
+        <Card size="sm">
+          <CardHeader className="pb-2">
+            <CardTitle>{t("reglTimelineTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="space-y-3">
+              {timeline.map((a, i) => {
+                const m = a.nature ? natureMeta(a.nature) : null;
+                return (
+                  <li key={`${a.raw}-${i}`} className="flex gap-2.5">
+                    <span
+                      className={`mt-1.5 size-2 shrink-0 rounded-full ${m?.accent ?? "bg-muted-foreground"}`}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 text-sm">
+                      <p className="font-medium capitalize">
+                        {naturePhrase(a.nature)}
+                        {a.dateActe ? ` du ${a.dateActe}` : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {a.dateEV ? `${t("reglTimelineEv")} ${a.dateEV}` : null}
+                        {a.dateEV && a.dateMB ? " · " : null}
+                        {a.dateMB ? `${t("reglTimelineMb")} ${a.dateMB}` : null}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Références */}
       {refs.length > 0 && (

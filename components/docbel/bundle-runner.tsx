@@ -35,6 +35,7 @@ import { parseBundleWarnings, type BundleWarning } from "@/lib/bundles/types";
 import { EligibilityPrequalifier } from "./onboarding/eligibility-prequalifier";
 import { BundleWarnings } from "./onboarding/bundle-warnings";
 import { ResumeCodeBanner } from "./onboarding/resume-code-banner";
+import { BundleRoadmap, type RoadmapDocument } from "./bundle-roadmap";
 import {
   computeItemStatuses,
   itemDescription,
@@ -371,13 +372,24 @@ export function BundleRunner({
             </Alert>
           )}
 
+          {/* Feuille de route — l'écran de sortie, dès que tout l'obligatoire est complété */}
           {allRequiredDone && requiredVisible.length > 0 && (
-            <Alert className="bg-emerald-500/10 border-emerald-500/20">
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              <AlertDescription className="text-sm text-green-700 dark:text-green-400">
-                {t("runnerAllRequiredDone")}
-              </AlertDescription>
-            </Alert>
+            <BundleRoadmap
+              documents={visibleItems.flatMap(
+                ({ item, completed }): RoadmapDocument[] =>
+                  completed && item.pdfForm
+                    ? [
+                        {
+                          slug: item.pdfForm.slug,
+                          title: itemTitle(item),
+                          href: `/document/${item.pdfForm.slug}?bundleRun=${encodeURIComponent(runId ?? "")}&bundleSlug=${encodeURIComponent(bundle.slug)}`,
+                        },
+                      ]
+                    : []
+              )}
+              externalDocuments={externalDocuments}
+              resumeCode={resumeCode}
+            />
           )}
 
           <Card>

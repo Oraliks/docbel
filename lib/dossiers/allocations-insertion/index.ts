@@ -283,5 +283,42 @@ export const allocationsInsertion: DossierDefinition = {
     // -----------------------------------------------------------------
   ],
 
+  journeyCtaLabel: "Créer ma demande sur base des études",
+  journeyCtaLabelKey: "insertion.journeyCtaLabel",
+  journey: [
+    {
+      order: 1,
+      icon: "user-check",
+      title: "Après les études",
+      titleKey: "insertion.journey.step1.title",
+      body: "Inscris-toi comme demandeur d'emploi auprès du service régional compétent : Actiris, Forem, VDAB ou ADG.",
+      bodyKey: "insertion.journey.step1.body",
+    },
+    {
+      order: 2,
+      icon: "calendar",
+      title: "Pendant 156 jours",
+      titleKey: "insertion.journey.step2.title",
+      body: "Le stage d'insertion démarre : cherche activement du travail et garde tes preuves. Tu es suivi par le service régional de l'emploi.",
+      bodyKey: "insertion.journey.step2.body",
+    },
+    {
+      order: 3,
+      icon: "file-check",
+      title: "À la fin du stage",
+      titleKey: "insertion.journey.step3.title",
+      body: "Confirme ton inscription comme demandeur d'emploi et introduis ta demande d'allocations d'insertion.",
+      bodyKey: "insertion.journey.step3.body",
+    },
+    {
+      order: 4,
+      icon: "wallet",
+      title: "Après l'acceptation",
+      titleKey: "insertion.journey.step4.title",
+      body: "Le paiement passe par ton organisme de paiement (CAPAC ou syndicat) et tu remplis chaque mois ta carte de contrôle.",
+      bodyKey: "insertion.journey.step4.body",
+    },
+  ],
+
   theory: THEORY,
 };

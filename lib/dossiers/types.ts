@@ -134,6 +134,25 @@ export type TheoryBinding =
   | "delais"           // tableau des délais (si défini)
   | "nature-da";       // règles de calcul de la nature de DA
 
+/// Identifiant d'icône pour une étape de parcours public. Jeu volontairement
+/// restreint ; résolu vers un composant Lucide dans le composant de rendu
+/// (pas de référence de composant directe → reste sérialisable server→client).
+export type JourneyStepIcon = "user-check" | "calendar" | "file-check" | "wallet";
+
+/// Une étape du parcours public, affichée en écran d'explication AVANT le
+/// questionnaire. Contenu grand public (contrairement à `theory`/`procedures`
+/// réservés admin/partenaires) : 1-2 phrases courtes, pas de Markdown long.
+export interface DossierJourneyStep {
+  order: number;
+  icon: JourneyStepIcon;
+  title: string;
+  /// Clé i18n (préférée si fournie). Namespace : `public.dossierContent.*`.
+  titleKey?: string;
+  body: string;
+  /// Clé i18n (préférée si fournie). Namespace : `public.dossierContent.*`.
+  bodyKey?: string;
+}
+
 /// Une section de l'espace théorique d'un dossier.
 /// Visible côté admin/partenaires. Sert à expliquer la sémantique du dossier
 /// sans dupliquer la structure (laquelle vit en code, source de vérité).
@@ -301,6 +320,17 @@ export interface DossierDefinition {
   whoConcerned?: WhoConcernedMatrix;
   /// Calcul de la nature de DA (code ONEM).
   natureDA?: NatureDAResolver;
+  /// Écran d'explication en étapes, affiché avant le questionnaire pour un
+  /// NOUVEAU visiteur (pas de run en cours). Optionnel : absent = comportement
+  /// actuel inchangé (questionnaire affiché directement). Réutilisable par
+  /// n'importe quel dossier.
+  journey?: DossierJourneyStep[];
+  /// Libellé du bouton qui démarre le questionnaire depuis l'écran
+  /// d'explication. Requis (avec `journey`) pour activer l'écran : texte
+  /// spécifique au dossier, non codable en dur dans la page partagée.
+  journeyCtaLabel?: string;
+  /// Clé i18n du libellé CTA (préférée si fournie).
+  journeyCtaLabelKey?: string;
   /// Espace théorique pédagogique (admin / partenaires).
   theory?: DossierTheorySection[];
   /// Procédures opérationnelles d'introduction de la demande (admin / partenaires).

@@ -196,3 +196,30 @@ describe("espace théorique", () => {
     expect(rendered).toContain("**C1 — Demande d'allocations**");
   });
 });
+
+describe("allocations-insertion — parcours (journey)", () => {
+  const dossier = getDossier("allocations-insertion");
+
+  it("expose un journey de 4 étapes avec un CTA", () => {
+    expect(dossier).not.toBeNull();
+    expect(dossier?.journeyCtaLabel).toBeTruthy();
+    expect(dossier?.journey).toHaveLength(4);
+  });
+
+  it("chaque étape a un order 1..4 unique, une icône connue, titre et corps non vides", () => {
+    const allowedIcons = ["user-check", "calendar", "file-check", "wallet"];
+    const orders = (dossier?.journey ?? []).map((s) => s.order).sort();
+    expect(orders).toEqual([1, 2, 3, 4]);
+    for (const step of dossier?.journey ?? []) {
+      expect(allowedIcons).toContain(step.icon);
+      expect(step.title.length).toBeGreaterThan(0);
+      expect(step.body.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("ne réintroduit pas l'ancienne durée de stage (310 jours)", () => {
+    const blob = JSON.stringify(dossier?.journey ?? []);
+    expect(blob).not.toContain("310");
+    expect(blob).toContain("156");
+  });
+});

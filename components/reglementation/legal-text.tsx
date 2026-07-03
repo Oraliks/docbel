@@ -31,7 +31,7 @@ function renderInline(seg: Inline, i: number) {
     case "text":
       return seg.text;
     case "amendment":
-      return <AmendmentChip ref={seg.ref} />;
+      return <AmendmentChip amendment={seg.ref} />;
     case "ref":
       return (
         <Link

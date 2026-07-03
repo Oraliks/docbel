@@ -61,8 +61,10 @@ export function ResultCard({ item }: { item: ResultItem }) {
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <Badge variant="outline">{item.loi}</Badge>
             <Badge variant="secondary">Art. {item.articleNumber}</Badge>
-            {item.dateEntreeVigueur && (
-              <span>EV {item.dateEntreeVigueur}</span>
+            {item.lastEV && (
+              <span title="Dernière modification (entrée en vigueur)">
+                {t("reglModifiedOn", { date: item.lastEV })}
+              </span>
             )}
             {item.sourceUrl && (
               <a

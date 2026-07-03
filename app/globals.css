@@ -1182,3 +1182,12 @@ body {
   text-decoration-color: var(--primary);
   background-color: color-mix(in oklab, var(--primary) 10%, transparent);
 }
+
+/* Recherche dans l'article (composant InArticleFind, API CSS Custom Highlight). */
+::highlight(regl-find) {
+  background-color: color-mix(in oklab, var(--primary) 22%, transparent);
+}
+::highlight(regl-find-current) {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}

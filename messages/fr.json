@@ -4152,7 +4152,13 @@
       "reglDefsTitle": "Définitions utiles",
       "reglDefsSource": "Voir la définition complète",
       "reglArAmTitle": "Article lié (AR ↔ AM)",
-      "reglGraphLabel": "Carte des liens (renvois & AR/AM)"
+      "reglGraphLabel": "Carte des liens (renvois & AR/AM)",
+      "reglModifiedOn": "modifié le {date}",
+      "reglSinceAll": "Toute date de modif.",
+      "reglSinceYear": "Modifiés depuis {year}",
+      "reglTriRecent": "Récemment modifiés",
+      "reglTipsTitle": "Astuces de recherche",
+      "reglFindInArticle": "Rechercher dans l’article"
     },
     "auth": {
       "title": "Connexion",

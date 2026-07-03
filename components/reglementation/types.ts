@@ -12,6 +12,7 @@ export interface ResultItem {
   sourceUrl: string | null;
   headline: string | null;
   reforme2026?: boolean;
+  lastEV?: string | null;
 }
 
 export interface LegalMeta {

@@ -26,6 +26,7 @@ import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
 import { allowedVisibilities } from "@/lib/chomage-ia/context";
 import { parseQueryIntent } from "@/lib/reglementation/query-intent";
 import { themeByKey } from "@/lib/reglementation/themes";
+import { getLastEvMap } from "@/lib/reglementation/last-ev";
 import {
   embedTexts,
   getEmbeddingProvider,
@@ -79,6 +80,7 @@ interface ResultItem {
   sourceUrl: string | null;
   headline: string | null;
   reforme2026: boolean;
+  lastEV?: string | null;
 }
 
 function toItem(
@@ -125,6 +127,8 @@ export async function GET(req: NextRequest) {
   const loi = (sp.get("loi") ?? "").trim().slice(0, 200) || null;
   const reforme = sp.get("reforme") === "1" || sp.get("reforme") === "true";
   const themeKey = (sp.get("theme") ?? "").trim().slice(0, 40) || null;
+  const tri = sp.get("tri"); // "recent" = tri par dernière modification (EV)
+  const since = parseInt(sp.get("since") ?? "", 10) || null; // année min de modif
   const page = Math.max(1, parseInt(sp.get("page") ?? "1", 10) || 1);
   const pageSize = Math.min(
     50,
@@ -168,6 +172,17 @@ export async function GET(req: NextRequest) {
   }
   const whereSql = conds.join("\n  AND ");
 
+  // Dernière EV réelle (dérivée des amendements) : affichage + tri/filtre.
+  const lastEvMap = await getLastEvMap();
+  const attachEv = (items: ResultItem[]): ResultItem[] => {
+    for (const it of items) it.lastEV = lastEvMap.get(it.riolexId)?.display ?? null;
+    return items;
+  };
+  const passSince = (it: ResultItem): boolean =>
+    since === null || (lastEvMap.get(it.riolexId)?.year ?? 0) >= since;
+  const byRecent = (a: ResultItem, b: ResultItem): number =>
+    (lastEvMap.get(b.riolexId)?.sortKey ?? 0) - (lastEvMap.get(a.riolexId)?.sortKey ?? 0);
+
   try {
     // Facettes "lois" (pour le Select du front) — petite requête distincte.
     const loiRows = await prisma.$queryRawUnsafe<Array<{ loi: string | null }>>(
@@ -184,6 +199,33 @@ export async function GET(req: NextRequest) {
 
     // ── Mode liste (pas de requête) : tri naturel loi → n° d'article. ──
     if (q.length === 0) {
+      // Tri/filtre par dernière EV → traitement en mémoire (443 articles).
+      if (tri === "recent" || since !== null) {
+        const allRows = await prisma.$queryRawUnsafe<
+          Array<{
+            id: string;
+            title: string;
+            sourceUrl: string | null;
+            legalMeta: unknown;
+            reforme2026: boolean;
+          }>
+        >(
+          `SELECT s."id", s."title", s."sourceUrl", s."legalMeta",
+                  (${REFORME_SQL}) AS reforme2026
+           FROM "KnowledgeSource" s
+           WHERE ${whereSql}`,
+          ...params,
+        );
+        let items = attachEv(allRows.map((r) => toItem(r, isAdmin))).filter(passSince);
+        items = tri === "recent" ? items.sort(byRecent) : items;
+        const total = items.length;
+        const start = (page - 1) * pageSize;
+        return NextResponse.json(
+          { mode: "liste", results: items.slice(start, start + pageSize), total, page, pageSize, lois },
+          { headers: jsonHeaders },
+        );
+      }
+
       params.push(pageSize, (page - 1) * pageSize);
       const rows = await prisma.$queryRawUnsafe<
         Array<{
@@ -210,7 +252,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         {
           mode: "liste",
-          results: rows.map((r) => toItem(r, isAdmin)),
+          results: attachEv(rows.map((r) => toItem(r, isAdmin))),
           total,
           page,
           pageSize,
@@ -375,12 +417,14 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    let ranked = attachEv(fusedItems).filter(passSince);
+    if (tri === "recent") ranked = ranked.sort(byRecent);
     const start = (page - 1) * pageSize;
     return NextResponse.json(
       {
         mode: semRanked.length > 0 ? "hybride" : "fts",
-        results: fusedItems.slice(start, start + pageSize),
-        total: fusedItems.length,
+        results: ranked.slice(start, start + pageSize),
+        total: ranked.length,
         page,
         pageSize,
         lois,

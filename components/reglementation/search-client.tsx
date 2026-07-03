@@ -12,12 +12,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BookOpen, Loader2, RotateCcw, Search, Sparkles } from "lucide-react";
+import { BookOpen, Loader2, RotateCcw, Search, Sparkles, Info } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -68,6 +69,7 @@ export function ReglementationSearchClient() {
   const [loi, setLoi] = useState(searchParams.get("loi") ?? ALL);
   const [reforme, setReforme] = useState(searchParams.get("reforme") === "1");
   const [theme, setTheme] = useState(searchParams.get("theme") ?? "");
+  const [since, setSince] = useState(searchParams.get("since") ?? ALL);
   const [tri, setTri] = useState(searchParams.get("tri") ?? "pertinence");
   const [page, setPage] = useState(1);
   const [data, setData] = useState<SearchResponse | null>(null);
@@ -84,6 +86,8 @@ export function ReglementationSearchClient() {
       p: number,
       r: boolean,
       th: string,
+      sn: string,
+      tr: string,
     ) => {
       abortRef.current?.abort();
       const controller = new AbortController();
@@ -97,6 +101,8 @@ export function ReglementationSearchClient() {
       if (l !== ALL) params.set("loi", l);
       if (r) params.set("reforme", "1");
       if (th) params.set("theme", th);
+      if (sn !== ALL) params.set("since", sn);
+      if (tr === "recent") params.set("tri", "recent");
       params.set("page", String(p));
       params.set("pageSize", String(PAGE_SIZE));
       try {
@@ -118,7 +124,7 @@ export function ReglementationSearchClient() {
   // Débounce sur la saisie ; fetch immédiat sur filtres/page.
   useEffect(() => {
     const handle = setTimeout(() => {
-      fetchResults(q.trim(), nature, statut, loi, page, reforme, theme);
+      fetchResults(q.trim(), nature, statut, loi, page, reforme, theme, since, tri);
       // Reflète l'état dans l'URL (partage / retour arrière), sans navigation.
       const url = new URLSearchParams();
       if (q.trim()) url.set("q", q.trim());
@@ -127,6 +133,7 @@ export function ReglementationSearchClient() {
       if (loi !== ALL) url.set("loi", loi);
       if (reforme) url.set("reforme", "1");
       if (theme) url.set("theme", theme);
+      if (since !== ALL) url.set("since", since);
       if (tri !== "pertinence") url.set("tri", tri);
       const qs = url.toString();
       router.replace(`/partenaire/reglementation${qs ? `?${qs}` : ""}`, {
@@ -134,7 +141,7 @@ export function ReglementationSearchClient() {
       });
     }, 300);
     return () => clearTimeout(handle);
-  }, [q, nature, statut, loi, reforme, theme, tri, page, fetchResults, router]);
+  }, [q, nature, statut, loi, reforme, theme, since, tri, page, fetchResults, router]);
 
   const onFilterChange =
     (setter: (v: string) => void) => (v: string | null) => {
@@ -149,6 +156,7 @@ export function ReglementationSearchClient() {
     setLoi(ALL);
     setReforme(false);
     setTheme("");
+    setSince(ALL);
     setTri("pertinence");
     setPage(1);
   };
@@ -256,13 +264,26 @@ export function ReglementationSearchClient() {
               <SelectItem value="abroge">{t("reglStatutAbroge")}</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={since} onValueChange={onFilterChange(setSince)}>
+            <SelectTrigger className="w-[170px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>{t("reglSinceAll")}</SelectItem>
+              <SelectItem value="2026">{t("reglSinceYear", { year: 2026 })}</SelectItem>
+              <SelectItem value="2024">{t("reglSinceYear", { year: 2024 })}</SelectItem>
+              <SelectItem value="2022">{t("reglSinceYear", { year: 2022 })}</SelectItem>
+              <SelectItem value="2020">{t("reglSinceYear", { year: 2020 })}</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={tri} onValueChange={(v) => { setTri(v ?? "pertinence"); setPage(1); }}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-[170px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="pertinence">{t("reglTriPertinence")}</SelectItem>
               <SelectItem value="article">{t("reglTriArticle")}</SelectItem>
+              <SelectItem value="recent">{t("reglTriRecent")}</SelectItem>
             </SelectContent>
           </Select>
           <Button
@@ -276,6 +297,32 @@ export function ReglementationSearchClient() {
             <Sparkles className="size-3.5" aria-hidden />
             {t("reglReforme2026")}
           </Button>
+          <Popover>
+            <PopoverTrigger
+              className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              title={t("reglTipsTitle")}
+              aria-label={t("reglTipsTitle")}
+            >
+              <Info className="size-4" aria-hidden />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="max-w-xs space-y-1.5 text-sm">
+              <p className="font-medium">{t("reglTipsTitle")}</p>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>
+                  <code className="rounded bg-muted px-1">&quot;phrase exacte&quot;</code> — l’expression exacte
+                </li>
+                <li>
+                  <code className="rounded bg-muted px-1">-mot</code> — exclut un mot
+                </li>
+                <li>
+                  <code className="rounded bg-muted px-1">motA OR motB</code> — l’un ou l’autre
+                </li>
+                <li>
+                  <code className="rounded bg-muted px-1">131bis</code> — saut direct à l’article
+                </li>
+              </ul>
+            </PopoverContent>
+          </Popover>
           <Button variant="ghost" size="sm" onClick={handleReset} className="gap-1.5">
             <RotateCcw className="size-3.5" aria-hidden />
             {t("reglReset")}

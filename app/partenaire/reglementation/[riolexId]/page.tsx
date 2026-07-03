@@ -22,6 +22,7 @@ import { getGlossary, termsInText } from "@/lib/reglementation/glossary";
 import { sectionAnchor } from "@/components/reglementation/legal-text";
 import { ConventionsLegend } from "@/components/reglementation/conventions-legend";
 import { CitationGraph, type GraphNode } from "@/components/reglementation/citation-graph";
+import { InArticleFind } from "@/components/reglementation/in-article-find";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
@@ -346,6 +347,10 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
               labelPrev={t("reglPrev")}
               labelNext={t("reglNext")}
             />
+
+            <div className="flex justify-end">
+              <InArticleFind label={t("reglFindInArticle")} />
+            </div>
 
             <TextSettings>
               <ReadingMode title={article.title} label={t("reglReadingMode")}>

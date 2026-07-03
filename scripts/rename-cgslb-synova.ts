@@ -99,6 +99,34 @@ async function main() {
     console.log('  ✓ mis à jour')
   }
 
+  // 6) News.title/excerpt/content/keyTakeaway (texte éditorial, CGSLB mentionné en prose)
+  const news = await prisma.news.findMany({
+    where: {
+      OR: [
+        { title: { contains: 'CGSLB' } },
+        { excerpt: { contains: 'CGSLB' } },
+        { content: { contains: 'CGSLB' } },
+        { keyTakeaway: { contains: 'CGSLB' } },
+      ],
+    },
+    select: { id: true, title: true, excerpt: true, content: true, keyTakeaway: true },
+  })
+  console.log(`\n${news.length} News avec "CGSLB" en prose`)
+  if (APPLY && news.length > 0) {
+    for (const n of news) {
+      await prisma.news.update({
+        where: { id: n.id },
+        data: {
+          title: n.title?.replaceAll('CGSLB', 'SYNOVA'),
+          excerpt: n.excerpt?.replaceAll('CGSLB', 'SYNOVA') ?? n.excerpt,
+          content: n.content?.replaceAll('CGSLB', 'SYNOVA') ?? n.content,
+          keyTakeaway: n.keyTakeaway?.replaceAll('CGSLB', 'SYNOVA') ?? n.keyTakeaway,
+        },
+      })
+    }
+    console.log('  ✓ mis à jour')
+  }
+
   if (!APPLY) {
     console.log('\nDry-run. Passe --yes pour appliquer.')
   } else {

@@ -1,5 +1,15 @@
 [
   {
+    "id": "cmoytbmrm00axyous8eyig4up",
+    "field": "name",
+    "value": "SYNOVA"
+  },
+  {
+    "id": "cmoytbmrm00axyous8eyig4up",
+    "field": "description",
+    "value": "Syndicat — organisme de paiement chômage."
+  },
+  {
     "id": "cmoysben80006pwn25w7coj8y",
     "field": "name",
     "value": "Office National de l'Emploi"
@@ -106,16 +116,6 @@
   },
   {
     "id": "cmoytbmqc00awyousr7p69woz",
-    "field": "description",
-    "value": "Syndicat — organisme de paiement chômage."
-  },
-  {
-    "id": "cmoytbmrm00axyous8eyig4up",
-    "field": "name",
-    "value": "CGSLB (Centrale Générale des Syndicats Libéraux de Belgique)"
-  },
-  {
-    "id": "cmoytbmrm00axyous8eyig4up",
     "field": "description",
     "value": "Syndicat — organisme de paiement chômage."
   },

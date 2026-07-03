@@ -1,5 +1,20 @@
 [
   {
+    "id": "cmqo9vf8w0000pvmbcrrjhyos",
+    "field": "name",
+    "value": "Allocations d’insertion (après études)"
+  },
+  {
+    "id": "cmqo9vf8w0000pvmbcrrjhyos",
+    "field": "description",
+    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
+  },
+  {
+    "id": "cmqo9vf8w0000pvmbcrrjhyos",
+    "field": "organism",
+    "value": "ONEM"
+  },
+  {
     "id": "cmq85uca9000077el7haollv2",
     "field": "name",
     "value": "Chômage complet"
@@ -23,21 +38,6 @@
     "id": "cmpx8evw3000013pl48vhe115",
     "field": "description",
     "value": "Le chômage temporaire est une forme de chômage où, contrairement au chômage complet, le travailleur reste lié par un contrat de travail tandis que l'exécution de son contrat de travail est temporairement suspendue."
-  },
-  {
-    "id": "cmqo9vf8w0000pvmbcrrjhyos",
-    "field": "name",
-    "value": "Allocations d’insertion (après études)"
-  },
-  {
-    "id": "cmqo9vf8w0000pvmbcrrjhyos",
-    "field": "description",
-    "value": "Dossier en préparation — orientation disponible, formulaires à venir."
-  },
-  {
-    "id": "cmqo9vf8w0000pvmbcrrjhyos",
-    "field": "organism",
-    "value": "ONEM"
   },
   {
     "id": "cmqo9vfbe0001pvmb8r7b8z4j",

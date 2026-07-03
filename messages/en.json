@@ -4294,7 +4294,7 @@
           },
           "insertion": {
             "title": "Integration benefits (young people)",
-            "rationale": "You are leaving school without having worked (enough): this is the integration benefits path, after a 310-day vocational integration period."
+            "rationale": "You are leaving school without having worked (enough): this is the integration benefits path, after a 156-day vocational integration period."
           },
           "frontalier": {
             "title": "Cross-border unemployment",
@@ -4679,8 +4679,8 @@
             "message": "The claim must in principle be filed BEFORE your 25th birthday. Past that age, the right to integration benefits is generally no longer open (except in special cases)."
           },
           "stageInsertion310j": {
-            "title": "310-day vocational integration period",
-            "message": "You must first complete a 310-day vocational integration period (about 1 year) after the end of your studies before you can receive benefits."
+            "title": "156-day vocational integration period",
+            "message": "You must first complete a 156-day vocational integration period (about 6 months) after the end of your studies before you can receive benefits."
           }
         },
         "doc": {
@@ -4694,12 +4694,12 @@
             "body": "The integration benefit is an unemployment benefit for the young person who is leaving school and who, for the **first time**, claims compensation based on those studies — and not on prior salaried work.\n\nIt differs from classic full unemployment: there is no number of workdays to prove. The right rests on the school path and on completing a vocational integration period after the end of studies.\n\nPublic reference: www.onem.be."
           },
           "conditions": {
-            "title": "The conditions (age, studies, 310-day period)",
-            "body": "Main conditions, paraphrased:\n\n- **Nationality / residence**: be Belgian, or a national of a country that allows access (EU/EEA), or in good standing for residence and work in other situations.\n- **End of compulsory schooling**: no longer subject to it (in practice: at least 18, or having passed the 30 June of the year of one's 18th).\n- **Studies giving right to unemployment in Belgium**: completing a recognised study path. For young people **under 21**, a **diploma or qualification** is required (just attending classes is not enough) and the list of admitted studies is more restrictive.\n- **Vocational integration period**: completing a **310-day** period (about a year) after the end of school activities.\n- **Age limit**: the claim must in principle be filed **before 25** (exceptions exist, for example for a long study path).\n\nPublic reference: www.onem.be."
+            "title": "The conditions (age, studies, 156-day period)",
+            "body": "Main conditions, paraphrased:\n\n- **Nationality / residence**: be Belgian, or a national of a country that allows access (EU/EEA), or in good standing for residence and work in other situations.\n- **End of compulsory schooling**: no longer subject to it (in practice: at least 18, or having passed the 30 June of the year of one's 18th).\n- **Studies giving right to unemployment in Belgium**: completing a recognised study path. For young people **under 21**, a **diploma or qualification** is required (just attending classes is not enough) and the list of admitted studies is more restrictive.\n- **Vocational integration period**: completing a **156-day** period (about 6 months) after the end of school activities.\n- **Age limit**: the claim must in principle be filed **before 25** (exceptions exist, for example for a long study path).\n\nPublic reference: www.onem.be."
           },
           "dureeEtMontant": {
-            "title": "How long / how much? (flat rate, limited to 3 years)",
-            "body": "The amount of the integration benefit is **flat-rate**: it does not depend on a previous salary but on the young person's family situation (single, cohabitant, head of household) and, in some cases, on their age. There is no evolution by compensation periods like in classic unemployment.\n\nThe right is **time-limited**: in principle 3 years. Special rules may extend or adjust this duration depending on the situation.\n\nPublic reference: www.onem.be."
+            "title": "How long / how much? (flat rate, limited to 1 year)",
+            "body": "The amount of the integration benefit is **flat-rate**: it does not depend on a previous salary but on the young person's family situation (single, cohabitant, head of household) and, in some cases, on their age. There is no evolution by compensation periods like in classic unemployment.\n\nThe right is **time-limited**: since the reform effective 1 March 2026, 1 year (12 months) maximum (previously: 3 years). This duration may be extended by a period equal to any work periods or equivalent events during the benefit period.\n\nPublic reference: www.onem.be."
           }
         }
       }

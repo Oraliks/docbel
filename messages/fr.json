@@ -7425,7 +7425,7 @@
           },
           "insertion": {
             "title": "Allocations d'insertion (jeunes)",
-            "rationale": "Vous sortez des études sans avoir (assez) travaillé : c'est la voie des allocations d'insertion, après un stage d'insertion de 310 jours."
+            "rationale": "Vous sortez des études sans avoir (assez) travaillé : c'est la voie des allocations d'insertion, après un stage d'insertion de 156 jours."
           },
           "frontalier": {
             "title": "Chômage frontalier",
@@ -7810,8 +7810,8 @@
             "message": "La demande doit en principe être introduite AVANT tes 25 ans. Passé cet âge, le droit aux allocations d'insertion n'est généralement plus ouvert (sauf exceptions)."
           },
           "stageInsertion310j": {
-            "title": "Stage d'insertion de 310 jours",
-            "message": "Tu dois d'abord accomplir un stage d'insertion professionnelle de 310 jours (environ 1 an) après la fin de tes études avant de pouvoir toucher les allocations."
+            "title": "Stage d'insertion de 156 jours",
+            "message": "Tu dois d'abord accomplir un stage d'insertion professionnelle de 156 jours (environ 6 mois) après la fin de tes études avant de pouvoir toucher les allocations."
           }
         },
         "doc": {
@@ -7825,12 +7825,12 @@
             "body": "L'allocation d'insertion est une allocation de chômage destinée au jeune qui sort des études et qui demande pour la **première fois** une indemnisation sur base de ces études — et non sur base d'un travail salarié déjà accompli.\n\nElle se distingue du chômage complet classique : il n'y a pas de nombre de jours de travail à prouver. Le droit repose sur le parcours scolaire et sur l'accomplissement d'un stage d'insertion professionnelle après la fin des études.\n\nSource publique de référence : www.onem.be."
           },
           "conditions": {
-            "title": "Les conditions (âge, études, stage de 310 jours)",
-            "body": "Les principales conditions paraphrasées :\n\n- **Nationalité / séjour** : être belge, ou ressortissant d'un pays qui permet l'accès (UE/EEE), ou en règle de séjour et de travail pour les autres situations.\n- **Obligation scolaire terminée** : ne plus y être soumis (en pratique, avoir au moins 18 ans, ou avoir dépassé le 30 juin de l'année des 18 ans).\n- **Études donnant droit au chômage en Belgique** : avoir terminé un parcours d'études reconnu. Pour les jeunes de **moins de 21 ans**, il faut un **diplôme ou titre** (avoir seulement suivi les cours ne suffit pas) et la liste des études admises est plus restrictive.\n- **Stage d'insertion professionnelle** : accomplir un stage de **310 jours** (environ un an) après la fin des activités scolaires.\n- **Limite d'âge** : la demande doit en principe être introduite **avant 25 ans** (des exceptions existent, par exemple pour un parcours scolaire long).\n\nSource publique de référence : www.onem.be."
+            "title": "Les conditions (âge, études, stage de 156 jours)",
+            "body": "Les principales conditions paraphrasées :\n\n- **Nationalité / séjour** : être belge, ou ressortissant d'un pays qui permet l'accès (UE/EEE), ou en règle de séjour et de travail pour les autres situations.\n- **Obligation scolaire terminée** : ne plus y être soumis (en pratique, avoir au moins 18 ans, ou avoir dépassé le 30 juin de l'année des 18 ans).\n- **Études donnant droit au chômage en Belgique** : avoir terminé un parcours d'études reconnu. Pour les jeunes de **moins de 21 ans**, il faut un **diplôme ou titre** (avoir seulement suivi les cours ne suffit pas) et la liste des études admises est plus restrictive.\n- **Stage d'insertion professionnelle** : accomplir un stage de **156 jours** (environ 6 mois) après la fin des activités scolaires.\n- **Limite d'âge** : la demande doit en principe être introduite **avant 25 ans** (des exceptions existent, par exemple pour un parcours scolaire long).\n\nSource publique de référence : www.onem.be."
           },
           "dureeEtMontant": {
-            "title": "Combien de temps / combien ? (forfait, limité à 3 ans)",
-            "body": "Le montant de l'allocation d'insertion est **forfaitaire** : il ne dépend pas d'un salaire antérieur mais de la situation familiale du jeune (isolé, cohabitant, chef de ménage) et, dans certains cas, de son âge. Il n'y a pas d'évolution par périodes d'indemnisation comme dans le chômage classique.\n\nLe droit est **limité dans le temps** : en principe 3 ans. Des règles particulières peuvent prolonger ou aménager cette durée selon la situation.\n\nSource publique de référence : www.onem.be."
+            "title": "Combien de temps / combien ? (forfait, limité à 1 an)",
+            "body": "Le montant de l'allocation d'insertion est **forfaitaire** : il ne dépend pas d'un salaire antérieur mais de la situation familiale du jeune (isolé, cohabitant, chef de ménage) et, dans certains cas, de son âge. Il n'y a pas d'évolution par périodes d'indemnisation comme dans le chômage classique.\n\nLe droit est **limité dans le temps** : depuis la réforme entrée en vigueur le 1er mars 2026, 1 an (12 mois) maximum (avant cette date : 3 ans). Cette durée peut être prolongée d'une durée égale aux périodes de travail ou événements assimilés survenus pendant l'indemnisation.\n\nSource publique de référence : www.onem.be."
           }
         }
       }

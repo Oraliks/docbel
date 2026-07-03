@@ -7361,7 +7361,7 @@
           },
           "insertion": {
             "title": "Inschakelingsuitkeringen (jongeren)",
-            "rationale": "U komt van school zonder (genoeg) gewerkt te hebben: dat is de weg van de inschakelingsuitkeringen, na een beroepsinschakelingstijd van 310 dagen."
+            "rationale": "U komt van school zonder (genoeg) gewerkt te hebben: dat is de weg van de inschakelingsuitkeringen, na een beroepsinschakelingstijd van 156 dagen."
           },
           "frontalier": {
             "title": "Werkloosheid voor grensarbeiders",
@@ -7746,8 +7746,8 @@
             "message": "De aanvraag moet in principe vóór je 25ste verjaardag ingediend worden. Daarna staat het recht op inschakelingsuitkeringen meestal niet meer open (behoudens uitzonderingen)."
           },
           "stageInsertion310j": {
-            "title": "Beroepsinschakelingstijd van 310 dagen",
-            "message": "Je moet eerst een beroepsinschakelingstijd van 310 dagen (ongeveer 1 jaar) na het einde van je studies doorlopen voor je uitkeringen kunt ontvangen."
+            "title": "Beroepsinschakelingstijd van 156 dagen",
+            "message": "Je moet eerst een beroepsinschakelingstijd van 156 dagen (ongeveer 6 maanden) na het einde van je studies doorlopen voor je uitkeringen kunt ontvangen."
           }
         },
         "doc": {
@@ -7761,12 +7761,12 @@
             "body": "De inschakelingsuitkering is een werkloosheidsuitkering voor de jongere die van school komt en die voor de **eerste keer** een vergoeding aanvraagt op basis van die studies — en niet op basis van een reeds verricht werknemerswerk.\n\nZe onderscheidt zich van de klassieke volledige werkloosheid: er moeten geen werkdagen bewezen worden. Het recht steunt op het schooltraject en op het voltooien van een beroepsinschakelingstijd na het einde van de studies.\n\nPublieke bron: www.rva.be."
           },
           "conditions": {
-            "title": "De voorwaarden (leeftijd, studies, 310 dagen stage)",
-            "body": "De belangrijkste voorwaarden in eigen bewoordingen:\n\n- **Nationaliteit / verblijf**: Belg zijn, of onderdaan van een land dat toegang geeft (EU/EER), of in orde zijn met verblijf en werk voor andere situaties.\n- **Leerplicht beëindigd**: er niet meer aan onderworpen zijn (in de praktijk: minstens 18 jaar, of de 30ste juni van het jaar van je 18de overschreden).\n- **Studies die recht geven op werkloosheid in België**: een erkende studieloopbaan afgerond hebben. Voor jongeren **jonger dan 21 jaar** is een **diploma of getuigschrift** vereist (alleen de lessen volgen volstaat niet) en de lijst van toegelaten studies is restrictiever.\n- **Beroepsinschakelingstijd**: een stage van **310 dagen** (ongeveer een jaar) doorlopen na het einde van de schoolactiviteiten.\n- **Leeftijdsgrens**: de aanvraag moet in principe **vóór 25 jaar** ingediend worden (er bestaan uitzonderingen, bv. voor een lange studieloopbaan).\n\nPublieke bron: www.rva.be."
+            "title": "De voorwaarden (leeftijd, studies, 156 dagen stage)",
+            "body": "De belangrijkste voorwaarden in eigen bewoordingen:\n\n- **Nationaliteit / verblijf**: Belg zijn, of onderdaan van een land dat toegang geeft (EU/EER), of in orde zijn met verblijf en werk voor andere situaties.\n- **Leerplicht beëindigd**: er niet meer aan onderworpen zijn (in de praktijk: minstens 18 jaar, of de 30ste juni van het jaar van je 18de overschreden).\n- **Studies die recht geven op werkloosheid in België**: een erkende studieloopbaan afgerond hebben. Voor jongeren **jonger dan 21 jaar** is een **diploma of getuigschrift** vereist (alleen de lessen volgen volstaat niet) en de lijst van toegelaten studies is restrictiever.\n- **Beroepsinschakelingstijd**: een stage van **156 dagen** (ongeveer 6 maanden) doorlopen na het einde van de schoolactiviteiten.\n- **Leeftijdsgrens**: de aanvraag moet in principe **vóór 25 jaar** ingediend worden (er bestaan uitzonderingen, bv. voor een lange studieloopbaan).\n\nPublieke bron: www.rva.be."
           },
           "dureeEtMontant": {
-            "title": "Hoe lang / hoeveel? (forfait, beperkt tot 3 jaar)",
-            "body": "Het bedrag van de inschakelingsuitkering is **forfaitair**: het hangt niet af van een vorig loon maar van de gezinstoestand van de jongere (alleenstaande, samenwonende, gezinshoofd) en, in bepaalde gevallen, van zijn leeftijd. Er is geen evolutie per vergoedingsperiode zoals in de klassieke werkloosheid.\n\nHet recht is **in de tijd beperkt**: in principe 3 jaar. Bijzondere regels kunnen deze duur verlengen of aanpassen naargelang de situatie.\n\nPublieke bron: www.rva.be."
+            "title": "Hoe lang / hoeveel? (forfait, beperkt tot 1 jaar)",
+            "body": "Het bedrag van de inschakelingsuitkering is **forfaitair**: het hangt niet af van een vorig loon maar van de gezinstoestand van de jongere (alleenstaande, samenwonende, gezinshoofd) en, in bepaalde gevallen, van zijn leeftijd. Er is geen evolutie per vergoedingsperiode zoals in de klassieke werkloosheid.\n\nHet recht is **in de tijd beperkt**: sinds de hervorming die op 1 maart 2026 in werking is getreden, maximaal 1 jaar (12 maanden) (voordien: 3 jaar). Deze duur kan verlengd worden met een periode gelijk aan de periodes van werk of gelijkgestelde gebeurtenissen tijdens de uitkeringsperiode.\n\nPublieke bron: www.rva.be."
           }
         }
       }

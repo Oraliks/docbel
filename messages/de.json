@@ -4218,7 +4218,7 @@
           },
           "insertion": {
             "title": "Eingliederungsbeihilfen (Jugendliche)",
-            "rationale": "Sie verlassen die Ausbildung, ohne (ausreichend) gearbeitet zu haben: Dies ist der Weg zu den Eingliederungsbeihilfen (allocation d'insertion), nach einer Eingliederungszeit (stage d'insertion) von 310 Tagen."
+            "rationale": "Sie verlassen die Ausbildung, ohne (ausreichend) gearbeitet zu haben: Dies ist der Weg zu den Eingliederungsbeihilfen (allocation d'insertion), nach einer Eingliederungszeit (stage d'insertion) von 156 Tagen."
           },
           "frontalier": {
             "title": "Grenzgänger-Arbeitslosigkeit",
@@ -4603,8 +4603,8 @@
             "message": "Der Antrag muss grundsätzlich VOR dem 25. Geburtstag gestellt werden. Nach diesem Alter wird das Recht auf Eingliederungsleistungen in der Regel nicht mehr eröffnet (außer in Ausnahmefällen)."
           },
           "stageInsertion310j": {
-            "title": "Eingliederungspraktikum von 310 Tagen",
-            "message": "Du musst zunächst ein berufliches Eingliederungspraktikum von 310 Tagen (etwa 1 Jahr) nach dem Ende deiner Ausbildung absolvieren, bevor du Leistungen erhalten kannst."
+            "title": "Eingliederungspraktikum von 156 Tagen",
+            "message": "Du musst zunächst ein berufliches Eingliederungspraktikum von 156 Tagen (etwa 6 Monate) nach dem Ende deiner Ausbildung absolvieren, bevor du Leistungen erhalten kannst."
           }
         },
         "doc": {
@@ -4618,12 +4618,12 @@
             "body": "Die Eingliederungsleistung (Allocation d'insertion) ist ein Arbeitslosengeld für Jugendliche, die die Schule verlassen und zum **ersten Mal** eine Entschädigung auf der Grundlage ihrer Ausbildung beantragen — und nicht auf der Grundlage einer bereits ausgeübten Lohnarbeit.\n\nSie unterscheidet sich vom klassischen Vollarbeitslosengeld: Es müssen keine Arbeitstage nachgewiesen werden. Das Recht basiert auf dem Schulweg und der Absolvierung eines beruflichen Eingliederungspraktikums nach dem Ende der Ausbildung.\n\nÖffentliche Referenzquelle: www.onem.be."
           },
           "conditions": {
-            "title": "Die Voraussetzungen (Alter, Ausbildung, Praktikum von 310 Tagen)",
-            "body": "Die wichtigsten Voraussetzungen in vereinfachter Form:\n\n- **Staatsangehörigkeit / Aufenthalt**: belgisch sein, oder Angehöriger eines Landes, das den Zugang erlaubt (EU/EWR), oder sich in einer geregelten Aufenthalts- und Arbeitssituation befinden für andere Konstellationen.\n- **Schulpflicht beendet**: nicht mehr schulpflichtig sein (in der Praxis mindestens 18 Jahre alt sein, oder den 30. Juni des Jahres des 18. Geburtstags überschritten haben).\n- **In Belgien anerkannte Ausbildung**: eine anerkannte Ausbildung abgeschlossen haben. Für Jugendliche **unter 21 Jahren** ist ein **Diplom oder Titel** erforderlich (das bloße Absolvieren des Unterrichts reicht nicht aus) und die Liste der zugelassenen Ausbildungen ist restriktiver.\n- **Berufliches Eingliederungspraktikum**: ein Praktikum von **310 Tagen** (etwa ein Jahr) nach dem Ende der schulischen Aktivitäten absolvieren.\n- **Altersgrenze**: der Antrag muss grundsätzlich **vor dem 25. Lebensjahr** gestellt werden (Ausnahmen bestehen, z. B. bei einem langen Schulweg).\n\nÖffentliche Referenzquelle: www.onem.be."
+            "title": "Die Voraussetzungen (Alter, Ausbildung, Praktikum von 156 Tagen)",
+            "body": "Die wichtigsten Voraussetzungen in vereinfachter Form:\n\n- **Staatsangehörigkeit / Aufenthalt**: belgisch sein, oder Angehöriger eines Landes, das den Zugang erlaubt (EU/EWR), oder sich in einer geregelten Aufenthalts- und Arbeitssituation befinden für andere Konstellationen.\n- **Schulpflicht beendet**: nicht mehr schulpflichtig sein (in der Praxis mindestens 18 Jahre alt sein, oder den 30. Juni des Jahres des 18. Geburtstags überschritten haben).\n- **In Belgien anerkannte Ausbildung**: eine anerkannte Ausbildung abgeschlossen haben. Für Jugendliche **unter 21 Jahren** ist ein **Diplom oder Titel** erforderlich (das bloße Absolvieren des Unterrichts reicht nicht aus) und die Liste der zugelassenen Ausbildungen ist restriktiver.\n- **Berufliches Eingliederungspraktikum**: ein Praktikum von **156 Tagen** (etwa 6 Monate) nach dem Ende der schulischen Aktivitäten absolvieren.\n- **Altersgrenze**: der Antrag muss grundsätzlich **vor dem 25. Lebensjahr** gestellt werden (Ausnahmen bestehen, z. B. bei einem langen Schulweg).\n\nÖffentliche Referenzquelle: www.onem.be."
           },
           "dureeEtMontant": {
-            "title": "Wie lange / wie viel? (Pauschalbetrag, begrenzt auf 3 Jahre)",
-            "body": "Der Betrag der Eingliederungsleistung ist **pauschal**: Er hängt nicht von einem früheren Gehalt ab, sondern von der familiären Situation des Jugendlichen (Alleinstehende/r, Zusammenwohnende/r, Haushaltsvorstand) und in bestimmten Fällen vom Alter. Es gibt keine Entwicklung nach Entschädigungsperioden wie beim klassischen Arbeitslosengeld.\n\nDas Recht ist **zeitlich begrenzt**: grundsätzlich 3 Jahre. Besondere Regeln können diese Dauer je nach Situation verlängern oder anpassen.\n\nÖffentliche Referenzquelle: www.onem.be."
+            "title": "Wie lange / wie viel? (Pauschalbetrag, begrenzt auf 1 Jahr)",
+            "body": "Der Betrag der Eingliederungsleistung ist **pauschal**: Er hängt nicht von einem früheren Gehalt ab, sondern von der familiären Situation des Jugendlichen (Alleinstehende/r, Zusammenwohnende/r, Haushaltsvorstand) und in bestimmten Fällen vom Alter. Es gibt keine Entwicklung nach Entschädigungsperioden wie beim klassischen Arbeitslosengeld.\n\nDas Recht ist **zeitlich begrenzt**: seit der am 1. März 2026 in Kraft getretenen Reform grundsätzlich 1 Jahr (12 Monate) (davor: 3 Jahre). Diese Dauer kann um einen Zeitraum verlängert werden, der den während der Entschädigungsperiode absolvierten Arbeitsperioden oder gleichgestellten Ereignissen entspricht.\n\nÖffentliche Referenzquelle: www.onem.be."
           }
         }
       }

@@ -4218,7 +4218,7 @@
           },
           "insertion": {
             "title": "Asignaciones de inserción (jóvenes)",
-            "rationale": "Sale de los estudios sin haber trabajado (suficientemente): esta es la vía de las asignaciones de inserción, tras un período de inserción de 310 días."
+            "rationale": "Sale de los estudios sin haber trabajado (suficientemente): esta es la vía de las asignaciones de inserción, tras un período de inserción de 156 días."
           },
           "frontalier": {
             "title": "Desempleo fronterizo",
@@ -4603,8 +4603,8 @@
             "message": "La solicitud debe presentarse en principio ANTES de cumplir 25 años. Superada esa edad, el derecho a los subsidios de inserción generalmente ya no está abierto (salvo excepciones)."
           },
           "stageInsertion310j": {
-            "title": "Período de inserción de 310 días",
-            "message": "Primero debes completar un período de inserción profesional de 310 días (aproximadamente 1 año) tras el fin de tus estudios antes de poder percibir los subsidios."
+            "title": "Período de inserción de 156 días",
+            "message": "Primero debes completar un período de inserción profesional de 156 días (aproximadamente 6 meses) tras el fin de tus estudios antes de poder percibir los subsidios."
           }
         },
         "doc": {
@@ -4618,12 +4618,12 @@
             "body": "El subsidio de inserción es una prestación de desempleo destinada al joven que termina sus estudios y solicita por **primera vez** una indemnización basada en dichos estudios — y no en un trabajo asalariado ya realizado.\n\nSe distingue del desempleo completo clásico: no hay que demostrar un número de días trabajados. El derecho se basa en el recorrido escolar y en la realización de un período de inserción profesional tras el fin de los estudios.\n\nFuente pública de referencia: www.onem.be."
           },
           "conditions": {
-            "title": "Las condiciones (edad, estudios, período de 310 días)",
-            "body": "Las principales condiciones resumidas:\n\n- **Nacionalidad / residencia**: ser belga, o nacional de un país que permita el acceso (UE/EEE), o estar en regla de residencia y de trabajo en los demás casos.\n- **Obligación escolar finalizada**: ya no estar sujeto a ella (en la práctica, tener al menos 18 años, o haber superado el 30 de junio del año en que se cumplen los 18).\n- **Estudios que dan derecho al desempleo en Bélgica**: haber finalizado un recorrido de estudios reconocido. Para los jóvenes **menores de 21 años**, se exige un **diploma o título** (haber asistido únicamente a clases no es suficiente) y la lista de estudios admitidos es más restrictiva.\n- **Período de inserción profesional**: completar un período de **310 días** (aproximadamente un año) tras el fin de las actividades escolares.\n- **Límite de edad**: la solicitud debe presentarse en principio **antes de los 25 años** (existen excepciones, por ejemplo para un recorrido escolar largo).\n\nFuente pública de referencia: www.onem.be."
+            "title": "Las condiciones (edad, estudios, período de 156 días)",
+            "body": "Las principales condiciones resumidas:\n\n- **Nacionalidad / residencia**: ser belga, o nacional de un país que permita el acceso (UE/EEE), o estar en regla de residencia y de trabajo en los demás casos.\n- **Obligación escolar finalizada**: ya no estar sujeto a ella (en la práctica, tener al menos 18 años, o haber superado el 30 de junio del año en que se cumplen los 18).\n- **Estudios que dan derecho al desempleo en Bélgica**: haber finalizado un recorrido de estudios reconocido. Para los jóvenes **menores de 21 años**, se exige un **diploma o título** (haber asistido únicamente a clases no es suficiente) y la lista de estudios admitidos es más restrictiva.\n- **Período de inserción profesional**: completar un período de **156 días** (aproximadamente 6 meses) tras el fin de las actividades escolares.\n- **Límite de edad**: la solicitud debe presentarse en principio **antes de los 25 años** (existen excepciones, por ejemplo para un recorrido escolar largo).\n\nFuente pública de referencia: www.onem.be."
           },
           "dureeEtMontant": {
-            "title": "¿Cuánto tiempo / cuánto? (importe fijo, limitado a 3 años)",
-            "body": "El importe del subsidio de inserción es **fijo**: no depende de un salario anterior, sino de la situación familiar del joven (persona que vive sola, conviviente, cabeza de familia) y, en ciertos casos, de su edad. No hay evolución por períodos de indemnización como en el desempleo clásico.\n\nEl derecho está **limitado en el tiempo**: en principio 3 años. Normas particulares pueden prolongar o adaptar esta duración según la situación.\n\nFuente pública de referencia: www.onem.be."
+            "title": "¿Cuánto tiempo / cuánto? (importe fijo, limitado a 1 año)",
+            "body": "El importe del subsidio de inserción es **fijo**: no depende de un salario anterior, sino de la situación familiar del joven (persona que vive sola, conviviente, cabeza de familia) y, en ciertos casos, de su edad. No hay evolución por períodos de indemnización como en el desempleo clásico.\n\nEl derecho está **limitado en el tiempo**: desde la reforma que entró en vigor el 1 de marzo de 2026, 1 año (12 meses) como máximo (antes: 3 años). Esta duración puede prorrogarse por un período igual a los períodos de trabajo o eventos asimilados ocurridos durante la indemnización.\n\nFuente pública de referencia: www.onem.be."
           }
         }
       }

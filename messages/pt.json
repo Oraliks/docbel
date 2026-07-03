@@ -4218,7 +4218,7 @@
           },
           "insertion": {
             "title": "Subsídios de inserção — alocations d'insertion (jovens)",
-            "rationale": "Terminou os estudos sem ter trabalhado (o suficiente): este é o percurso dos subsídios de inserção, após um estágio de inserção (stage d'insertion) de 310 dias."
+            "rationale": "Terminou os estudos sem ter trabalhado (o suficiente): este é o percurso dos subsídios de inserção, após um estágio de inserção (stage d'insertion) de 156 dias."
           },
           "frontalier": {
             "title": "Desemprego fronteiriço",
@@ -4603,8 +4603,8 @@
             "message": "O pedido deve, em princípio, ser apresentado ANTES de completares 25 anos. Após essa idade, o direito às prestações de inserção geralmente já não pode ser aberto (salvo exceções)."
           },
           "stageInsertion310j": {
-            "title": "Período de inserção de 310 dias",
-            "message": "Primeiro tens de cumprir um estágio de inserção profissional de 310 dias (cerca de 1 ano) após o fim dos teus estudos antes de poderes receber as prestações."
+            "title": "Período de inserção de 156 dias",
+            "message": "Primeiro tens de cumprir um estágio de inserção profissional de 156 dias (cerca de 6 meses) após o fim dos teus estudos antes de poderes receber as prestações."
           }
         },
         "doc": {
@@ -4618,12 +4618,12 @@
             "body": "A prestação de inserção (allocation d'insertion) é uma prestação de desemprego destinada ao jovem que termina os estudos e que solicita pela **primeira vez** uma indemnização com base nesses estudos — e não com base num trabalho assalariado já realizado.\n\nDistingue-se do desemprego completo clássico: não é necessário comprovar um número de dias de trabalho. O direito assenta no percurso escolar e no cumprimento de um estágio de inserção profissional após o fim dos estudos.\n\nFonte pública de referência: www.onem.be."
           },
           "conditions": {
-            "title": "As condições (idade, estudos, estágio de 310 dias)",
-            "body": "As principais condições resumidas:\n\n- **Nacionalidade / residência**: ser belga, ou nacional de um país que permite o acesso (UE/EEE), ou em situação regular de residência e de trabalho para os outros casos.\n- **Escolaridade obrigatória concluída**: já não estar sujeito à mesma (na prática, ter pelo menos 18 anos, ou ter ultrapassado o 30 de junho do ano em que completou os 18 anos).\n- **Estudos que conferem direito ao desemprego na Bélgica**: ter concluído um percurso de estudos reconhecido. Para jovens com **menos de 21 anos**, é necessário um **diploma ou título** (ter simplesmente frequentado as aulas não é suficiente) e a lista de estudos admitidos é mais restritiva.\n- **Estágio de inserção profissional**: cumprir um estágio de **310 dias** (cerca de um ano) após o fim das atividades escolares.\n- **Limite de idade**: o pedido deve, em princípio, ser apresentado **antes dos 25 anos** (existem exceções, por exemplo para um percurso escolar longo).\n\nFonte pública de referência: www.onem.be."
+            "title": "As condições (idade, estudos, estágio de 156 dias)",
+            "body": "As principais condições resumidas:\n\n- **Nacionalidade / residência**: ser belga, ou nacional de um país que permite o acesso (UE/EEE), ou em situação regular de residência e de trabalho para os outros casos.\n- **Escolaridade obrigatória concluída**: já não estar sujeito à mesma (na prática, ter pelo menos 18 anos, ou ter ultrapassado o 30 de junho do ano em que completou os 18 anos).\n- **Estudos que conferem direito ao desemprego na Bélgica**: ter concluído um percurso de estudos reconhecido. Para jovens com **menos de 21 anos**, é necessário um **diploma ou título** (ter simplesmente frequentado as aulas não é suficiente) e a lista de estudos admitidos é mais restritiva.\n- **Estágio de inserção profissional**: cumprir um estágio de **156 dias** (cerca de 6 meses) após o fim das atividades escolares.\n- **Limite de idade**: o pedido deve, em princípio, ser apresentado **antes dos 25 anos** (existem exceções, por exemplo para um percurso escolar longo).\n\nFonte pública de referência: www.onem.be."
           },
           "dureeEtMontant": {
-            "title": "Durante quanto tempo / qual o montante? (valor fixo, limitado a 3 anos)",
-            "body": "O montante da prestação de inserção (allocation d'insertion) é **fixo**: não depende de um salário anterior, mas da situação familiar do jovem (pessoa isolada, coabitante, chefe de família) e, em certos casos, da sua idade. Não existe evolução por períodos de indemnização como no desemprego clássico.\n\nO direito é **limitado no tempo**: em princípio 3 anos. Regras específicas podem prolongar ou adaptar essa duração consoante a situação.\n\nFonte pública de referência: www.onem.be."
+            "title": "Durante quanto tempo / qual o montante? (valor fixo, limitado a 1 ano)",
+            "body": "O montante da prestação de inserção (allocation d'insertion) é **fixo**: não depende de um salário anterior, mas da situação familiar do jovem (pessoa isolada, coabitante, chefe de família) e, em certos casos, da sua idade. Não existe evolução por períodos de indemnização como no desemprego clássico.\n\nO direito é **limitado no tempo**: desde a reforma que entrou em vigor em 1 de março de 2026, 1 ano (12 meses) no máximo (antes: 3 anos). Esta duração pode ser prorrogada por um período igual aos períodos de trabalho ou eventos equiparados ocorridos durante a indemnização.\n\nFonte pública de referência: www.onem.be."
           }
         }
       }

@@ -4218,7 +4218,7 @@
           },
           "insertion": {
             "title": "Përfitime integrimi (të rinjtë) — allocation d'insertion",
-            "rationale": "Keni mbaruar studimet pa punuar (mjaftueshëm): ky është rruga e përfitimeve të integrimit, pas një periudhe pritjeje prej 310 ditësh (stage d'insertion)."
+            "rationale": "Keni mbaruar studimet pa punuar (mjaftueshëm): ky është rruga e përfitimeve të integrimit, pas një periudhe pritjeje prej 156 ditësh (stage d'insertion)."
           },
           "frontalier": {
             "title": "Papunësi kufitare (chômage frontalier)",
@@ -4603,8 +4603,8 @@
             "message": "Kërkesa duhet në parim të paraqitet PARA moshës 25 vjeç. Pas kësaj moshe, e drejta për shpërblimet e integrimit (allocation d'insertion) zakonisht nuk hapet më (me përjashtim të rasteve të veçanta)."
           },
           "stageInsertion310j": {
-            "title": "Periudha e pritjes (stage d'insertion) prej 310 ditësh",
-            "message": "Duhet të kryesh fillimisht një stage d'insertion professionnelle (periudhë pritjeje para ndihmës së integrimit) prej 310 ditësh (rreth 1 vit) pas përfundimit të studimeve para se të mund të marrësh ndihmat."
+            "title": "Periudha e pritjes (stage d'insertion) prej 156 ditësh",
+            "message": "Duhet të kryesh fillimisht një stage d'insertion professionnelle (periudhë pritjeje para ndihmës së integrimit) prej 156 ditësh (rreth 6 muaj) pas përfundimit të studimeve para se të mund të marrësh ndihmat."
           }
         },
         "doc": {
@@ -4618,12 +4618,12 @@
             "body": "Allocation d'insertion (ndihma e integrimit) është një ndihmë papunësie e destinuar për të rinjtë që sapo kanë mbaruar studimet dhe që kërkojnë për **herë të parë** një kompensim bazuar në studimet e tyre — dhe jo bazuar në një punë me pagë të kryer më parë.\n\nAjo dallohet nga papunësia e plotë klasike: nuk ka nevojë të provohet një numër i caktuar ditësh pune. E drejta bazohet në rrugëtimin shkollor dhe në kryerjen e një stage d'insertion professionnelle (periudhë pritjeje para ndihmës) pas përfundimit të studimeve.\n\nBurimi publik i referencës: www.onem.be."
           },
           "conditions": {
-            "title": "Kushtet (mosha, studimet, stage-u prej 310 ditësh)",
-            "body": "Kushtet kryesore të parafrازuara:\n\n- **Kombësia / qëndrimi**: të jesh belg, ose shtetas i një vendi që lejon aksesin (BE/EEE), ose në rregull me qëndrimin dhe punën për situatat e tjera.\n- **Detyrimi shkollor i përfunduar**: të mos jesh më subjekt i tij (në praktikë, të kesh të paktën 18 vjeç, ose të kesh kaluar 30 qershorin e vitit kur ke mbushur 18 vjeç).\n- **Studime që japin të drejtë të papunësisë në Belgjikë**: të kesh përfunduar një rrugëtim studimesh të njohur. Për të rinjtë **nën 21 vjeç**, kërkohet një **diplomë ose titull** (ndjekja e vetëm kurseve nuk mjafton) dhe lista e studimeve të pranuara është më kufizuese.\n- **Stage d'insertion professionnelle (periudhë pritjeje para ndihmës)**: të kryesh një stage prej **310 ditësh** (rreth një vit) pas përfundimit të aktiviteteve shkollore.\n- **Kufiri i moshës**: kërkesa duhet në parim të paraqitet **para moshës 25 vjeç** (ekzistojnë përjashtime, për shembull për një rrugëtim shkollor të gjatë).\n\nBurimi publik i referencës: www.onem.be."
+            "title": "Kushtet (mosha, studimet, stage-u prej 156 ditësh)",
+            "body": "Kushtet kryesore të parafrazuara:\n\n- **Kombësia / qëndrimi**: të jesh belg, ose shtetas i një vendi që lejon aksesin (BE/EEE), ose në rregull me qëndrimin dhe punën për situatat e tjera.\n- **Detyrimi shkollor i përfunduar**: të mos jesh më subjekt i tij (në praktikë, të kesh të paktën 18 vjeç, ose të kesh kaluar 30 qershorin e vitit kur ke mbushur 18 vjeç).\n- **Studime që japin të drejtë të papunësisë në Belgjikë**: të kesh përfunduar një rrugëtim studimesh të njohur. Për të rinjtë **nën 21 vjeç**, kërkohet një **diplomë ose titull** (ndjekja e vetëm kurseve nuk mjafton) dhe lista e studimeve të pranuara është më kufizuese.\n- **Stage d'insertion professionnelle (periudhë pritjeje para ndihmës)**: të kryesh një stage prej **156 ditësh** (rreth 6 muaj) pas përfundimit të aktiviteteve shkollore.\n- **Kufiri i moshës**: kërkesa duhet në parim të paraqitet **para moshës 25 vjeç** (ekzistojnë përjashtime, për shembull për një rrugëtim shkollor të gjatë).\n\nBurimi publik i referencës: www.onem.be."
           },
           "dureeEtMontant": {
-            "title": "Sa kohë / sa shumë? (shumë fikse, e kufizuar në 3 vjet)",
-            "body": "Shuma e allocation d'insertion (ndihmës së integrimit) është **fikse**: nuk varet nga një pagë e mëparshme, por nga situata familjare e të riut (i vetmuar — isolé, bashkëbanues — cohabitant, kryetar familjeje — chef de ménage) dhe, në disa raste, nga mosha e tij. Nuk ka një evolucion sipas periudhave të kompensimit si në papunësinë klasike.\n\nE drejta është **e kufizuar në kohë**: në parim 3 vjet. Rregulla të veçanta mund të zgjatin ose të rregullojnë këtë afat sipas situatës.\n\nBurimi publik i referencës: www.onem.be."
+            "title": "Sa kohë / sa shumë? (shumë fikse, e kufizuar në 1 vit)",
+            "body": "Shuma e allocation d'insertion (ndihmës së integrimit) është **fikse**: nuk varet nga një pagë e mëparshme, por nga situata familjare e të riut (i vetmuar — isolé, bashkëbanues — cohabitant, kryetar familjeje — chef de ménage) dhe, në disa raste, nga mosha e tij. Nuk ka një evolucion sipas periudhave të kompensimit si në papunësinë klasike.\n\nE drejta është **e kufizuar në kohë**: që nga reforma që hyri në fuqi më 1 mars 2026, maksimumi 1 vit (12 muaj) (më parë: 3 vjet). Ky afat mund të zgjatet me një periudhë të barabartë me periudhat e punës ose ngjarjet e barasvlershme gjatë periudhës së kompensimit.\n\nBurimi publik i referencës: www.onem.be."
           }
         }
       }

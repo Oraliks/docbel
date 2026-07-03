@@ -4218,7 +4218,7 @@
           },
           "insertion": {
             "title": "Allocazioni d'inserimento (allocations d'insertion) per i giovani",
-            "rationale": "Esci dagli studi senza aver lavorato (abbastanza): è la via delle allocazioni d'inserimento, dopo uno stage d'inserimento (stage d'insertion) di 310 giorni."
+            "rationale": "Esci dagli studi senza aver lavorato (abbastanza): è la via delle allocazioni d'inserimento, dopo uno stage d'inserimento (stage d'insertion) di 156 giorni."
           },
           "frontalier": {
             "title": "Disoccupazione frontaliera",
@@ -4603,8 +4603,8 @@
             "message": "La domanda deve in linea di principio essere presentata PRIMA dei 25 anni. Superata questa età, il diritto alle indennità di inserimento non è generalmente più aperto (salvo eccezioni)."
           },
           "stageInsertion310j": {
-            "title": "Stage d'inserimento di 310 giorni",
-            "message": "Devi prima completare uno stage d'inserimento professionale di 310 giorni (circa 1 anno) dopo la fine degli studi, prima di poter percepire le indennità."
+            "title": "Stage d'inserimento di 156 giorni",
+            "message": "Devi prima completare uno stage d'inserimento professionale di 156 giorni (circa 6 mesi) dopo la fine degli studi, prima di poter percepire le indennità."
           }
         },
         "doc": {
@@ -4618,12 +4618,12 @@
             "body": "L'indennità di inserimento è un'indennità di disoccupazione destinata al giovane che esce dagli studi e che chiede per la **prima volta** un'indennizzazione sulla base di tali studi — e non sulla base di un lavoro dipendente già svolto.\n\nSi distingue dalla disoccupazione completa ordinaria: non è richiesto un numero di giorni di lavoro da dimostrare. Il diritto si fonda sul percorso scolastico e sul completamento di uno stage d'inserimento professionale dopo la fine degli studi.\n\nFonte pubblica di riferimento: www.onem.be."
           },
           "conditions": {
-            "title": "Le condizioni (età, studi, stage di 310 giorni)",
-            "body": "Le principali condizioni in sintesi:\n\n- **Nazionalità / soggiorno**: essere belga, o cittadino di un paese che consente l'accesso (UE/SEE), oppure in regola con il soggiorno e il lavoro per le altre situazioni.\n- **Obbligo scolastico terminato**: non essere più soggetto all'obbligo scolastico (in pratica, avere almeno 18 anni, o aver superato il 30 giugno dell'anno del compimento dei 18 anni).\n- **Studi che danno diritto alla disoccupazione in Belgio**: aver completato un percorso di studi riconosciuto. Per i giovani di **meno di 21 anni**, è richiesto un **diploma o titolo** (aver semplicemente frequentato i corsi non è sufficiente) e l'elenco degli studi ammessi è più restrittivo.\n- **Stage d'inserimento professionale**: completare uno stage di **310 giorni** (circa un anno) dopo la fine delle attività scolastiche.\n- **Limite di età**: la domanda deve in linea di principio essere presentata **prima dei 25 anni** (esistono eccezioni, ad esempio per un percorso scolastico lungo).\n\nFonte pubblica di riferimento: www.onem.be."
+            "title": "Le condizioni (età, studi, stage di 156 giorni)",
+            "body": "Le principali condizioni in sintesi:\n\n- **Nazionalità / soggiorno**: essere belga, o cittadino di un paese che consente l'accesso (UE/SEE), oppure in regola con il soggiorno e il lavoro per le altre situazioni.\n- **Obbligo scolastico terminato**: non essere più soggetto all'obbligo scolastico (in pratica, avere almeno 18 anni, o aver superato il 30 giugno dell'anno del compimento dei 18 anni).\n- **Studi che danno diritto alla disoccupazione in Belgio**: aver completato un percorso di studi riconosciuto. Per i giovani di **meno di 21 anni**, è richiesto un **diploma o titolo** (aver semplicemente frequentato i corsi non è sufficiente) e l'elenco degli studi ammessi è più restrittivo.\n- **Stage d'inserimento professionale**: completare uno stage di **156 giorni** (circa 6 mesi) dopo la fine delle attività scolastiche.\n- **Limite di età**: la domanda deve in linea di principio essere presentata **prima dei 25 anni** (esistono eccezioni, ad esempio per un percorso scolastico lungo).\n\nFonte pubblica di riferimento: www.onem.be."
           },
           "dureeEtMontant": {
-            "title": "Per quanto tempo / quanto si riceve? (importo forfettario, limitato a 3 anni)",
-            "body": "L'importo dell'indennità di inserimento è **forfettario**: non dipende da una retribuzione precedente, ma dalla situazione familiare del giovane (persona che vive sola, coabitante, capofamiglia) e, in alcuni casi, dalla sua età. Non vi è alcuna evoluzione per periodi di indennizzazione come nella disoccupazione ordinaria.\n\nIl diritto è **limitato nel tempo**: in linea di principio 3 anni. Norme particolari possono prolungare o adeguare questa durata in base alla situazione.\n\nFonte pubblica di riferimento: www.onem.be."
+            "title": "Per quanto tempo / quanto si riceve? (importo forfettario, limitato a 1 anno)",
+            "body": "L'importo dell'indennità di inserimento è **forfettario**: non dipende da una retribuzione precedente, ma dalla situazione familiare del giovane (persona che vive sola, coabitante, capofamiglia) e, in alcuni casi, dalla sua età. Non vi è alcuna evoluzione per periodi di indennizzazione come nella disoccupazione ordinaria.\n\nIl diritto è **limitato nel tempo**: dalla riforma entrata in vigore il 1° marzo 2026, 1 anno (12 mesi) al massimo (prima: 3 anni). Questa durata può essere prorogata per un periodo pari ai periodi di lavoro o eventi assimilati verificatisi durante l'indennizzo.\n\nFonte pubblica di riferimento: www.onem.be."
           }
         }
       }

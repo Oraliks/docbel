@@ -6,7 +6,8 @@
 // "classique", il n'y a pas d'historique de travail à prouver : le droit
 // s'ouvre après un stage d'insertion professionnelle accompli à la fin des
 // études. Le montant est forfaitaire (selon la situation familiale, parfois
-// l'âge) et le droit est limité dans le temps (3 ans en principe).
+// l'âge) et le droit est limité dans le temps (1 an depuis la réforme entrée
+// en vigueur le 01/03/2026 ; 3 ans auparavant).
 //
 // Ce module est un SQUELETTE : il met en place le questionnaire d'orientation
 // et le C1 (déclaration de situation personnelle). Les pièces spécifiques
@@ -15,7 +16,9 @@
 //
 // Sources publiques de référence (paraphrasées, jamais citées verbatim) :
 // www.onem.be — allocations d'insertion ; règles relatives au stage
-// d'insertion professionnelle après les études.
+// d'insertion professionnelle après les études. Régime en vigueur depuis le
+// 01/03/2026 : stage de 156 jours (au lieu de 310), allocations limitées à
+// 1 an / 12 mois (au lieu de 3 ans) — cf. Loi-programme du 18/07/2025.
 
 import type { DossierDefinition, DossierTheorySection } from "../types";
 
@@ -26,7 +29,7 @@ import type { DossierDefinition, DossierTheorySection } from "../types";
 //     confirme la fin des études (et le diplôme/titre pour les < 21 ans).
 //     Slug provisoire : "attestation-etudes".
 //   - Formulaire de stage d'insertion professionnelle : suivi du stage de
-//     310 jours auprès du service régional de l'emploi.
+//     156 jours auprès du service régional de l'emploi.
 //     Slug provisoire : "stage-insertion".
 // -------------------------------------------------------------------
 
@@ -56,7 +59,7 @@ Source publique de référence : www.onem.be.
   },
   {
     id: "conditions",
-    title: "Les conditions (âge, études, stage de 310 jours)",
+    title: "Les conditions (âge, études, stage de 156 jours)",
     titleKey: "insertion.theory.conditions.title",
     body: `
 Les principales conditions paraphrasées :
@@ -70,8 +73,9 @@ Les principales conditions paraphrasées :
   parcours d'études reconnu. Pour les jeunes de **moins de 21 ans**, il
   faut un **diplôme ou titre** (avoir seulement suivi les cours ne suffit
   pas) et la liste des études admises est plus restrictive.
-- **Stage d'insertion professionnelle** : accomplir un stage de **310 jours**
-  (environ un an) après la fin des activités scolaires.
+- **Stage d'insertion professionnelle** : accomplir un stage de **156 jours**
+  (environ 6 mois) après la fin des activités scolaires, avec inscription
+  comme demandeur d'emploi auprès du service régional de l'emploi.
 - **Limite d'âge** : la demande doit en principe être introduite **avant
   25 ans** (des exceptions existent, par exemple pour un parcours scolaire
   long).
@@ -80,11 +84,11 @@ Source publique de référence : www.onem.be.
     `.trim(),
     bodyKey: "insertion.theory.conditions.body",
     audience: ["admin", "partner"],
-    lastReviewedAt: "2026-06-10",
+    lastReviewedAt: "2026-07-03",
   },
   {
     id: "duree-et-montant",
-    title: "Combien de temps / combien ? (forfait, limité à 3 ans)",
+    title: "Combien de temps / combien ? (forfait, limité à 1 an)",
     titleKey: "insertion.theory.dureeEtMontant.title",
     body: `
 Le montant de l'allocation d'insertion est **forfaitaire** : il ne dépend
@@ -93,15 +97,17 @@ cohabitant, chef de ménage) et, dans certains cas, de son âge. Il n'y a
 pas d'évolution par périodes d'indemnisation comme dans le chômage
 classique.
 
-Le droit est **limité dans le temps** : en principe 3 ans. Des règles
-particulières peuvent prolonger ou aménager cette durée selon la
-situation.
+Le droit est **limité dans le temps** : depuis la réforme entrée en
+vigueur le 1ᵉʳ mars 2026, 1 an (12 mois) maximum (avant cette date :
+3 ans). Cette durée peut être prolongée d'une durée égale aux périodes de
+travail ou événements assimilés (maladie, accident, maternité...)
+survenus pendant l'indemnisation.
 
 Source publique de référence : www.onem.be.
     `.trim(),
     bodyKey: "insertion.theory.dureeEtMontant.body",
     audience: ["admin", "partner"],
-    lastReviewedAt: "2026-06-10",
+    lastReviewedAt: "2026-07-03",
   },
 ];
 
@@ -121,7 +127,7 @@ export const allocationsInsertion: DossierDefinition = {
     "fin études",
     "stage insertion",
     "SIP",
-    "310 jours",
+    "156 jours",
     "premier emploi",
     "diplôme",
   ],
@@ -171,20 +177,20 @@ export const allocationsInsertion: DossierDefinition = {
       visibleIf: { fieldId: "age", op: "in", value: ["moins-18", "18-20"] },
     },
 
-    // ------- Stage d'insertion professionnelle (310 jours) -------
+    // ------- Stage d'insertion professionnelle (156 jours) -------
     {
       id: "stageInsertion",
       label: {
-        fr: "Où en es-tu de ton stage d'insertion professionnelle (310 jours = environ 1 an après la fin des études) ?",
+        fr: "Où en es-tu de ton stage d'insertion professionnelle (156 jours = environ 6 mois après la fin des études) ?",
       },
       helpText: {
-        fr: "Le stage d'insertion est une période d'environ un an après la fin des études, pendant laquelle tu cherches du travail. Tu ne peux toucher les allocations qu'une fois ce stage terminé.",
+        fr: "Le stage d'insertion est une période d'environ 6 mois après la fin des études, pendant laquelle tu cherches du travail. Tu ne peux toucher les allocations qu'une fois ce stage terminé (et après 2 évaluations positives du service régional de l'emploi).",
       },
       type: "select",
       options: [
         { value: "pas-commence", label: { fr: "Pas encore commencé" } },
         { value: "en-cours", label: { fr: "En cours" } },
-        { value: "termine-310j", label: { fr: "Terminé (310 jours atteints)" } },
+        { value: "termine-156j", label: { fr: "Terminé (156 jours atteints)" } },
       ],
     },
 
@@ -239,10 +245,10 @@ export const allocationsInsertion: DossierDefinition = {
       severity: "critical",
     },
     {
-      title: "Stage d'insertion de 310 jours",
+      title: "Stage d'insertion de 156 jours",
       titleKey: "insertion.warning.stageInsertion310j.title",
       message:
-        "Tu dois d'abord accomplir un stage d'insertion professionnelle de 310 jours (environ 1 an) après la fin de tes études avant de pouvoir toucher les allocations.",
+        "Tu dois d'abord accomplir un stage d'insertion professionnelle de 156 jours (environ 6 mois) après la fin de tes études avant de pouvoir toucher les allocations.",
       messageKey: "insertion.warning.stageInsertion310j.message",
       severity: "info",
     },
@@ -272,7 +278,7 @@ export const allocationsInsertion: DossierDefinition = {
     //     délivrée par l'établissement, confirme la fin des études et, pour
     //     les < 21 ans, le diplôme/titre obtenu.
     //   - Formulaire de stage d'insertion professionnelle (slug provisoire
-    //     "stage-insertion") : suivi des 310 jours auprès du service régional
+    //     "stage-insertion") : suivi des 156 jours auprès du service régional
     //     de l'emploi.
     // -----------------------------------------------------------------
   ],

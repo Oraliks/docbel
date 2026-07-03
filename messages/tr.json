@@ -4218,7 +4218,7 @@
           },
           "insertion": {
             "title": "Uyum yardımları (allocation d'insertion – gençler)",
-            "rationale": "Yeterince çalışmadan okulu bitirdiyseniz: 310 günlük uyum stajından (stage d'insertion) sonra uyum yardımı (allocation d'insertion) yolundasınız."
+            "rationale": "Yeterince çalışmadan okulu bitirdiyseniz: 156 günlük uyum stajından (stage d'insertion) sonra uyum yardımı (allocation d'insertion) yolundasınız."
           },
           "frontalier": {
             "title": "Sınır ötesi işsizlik (chômage frontalier)",
@@ -4603,8 +4603,8 @@
             "message": "Başvurunun prensip olarak 25 yaşından ÖNCE yapılması gerekmektedir. Bu yaşı geçtikten sonra, entegrasyon ödeneği (allocation d'insertion) hakkı genellikle artık açılmaz (istisnalar saklı kalmak kaydıyla)."
           },
           "stageInsertion310j": {
-            "title": "310 günlük entegrasyon stajı (stage d'insertion)",
-            "message": "Ödeneklere hak kazanmadan önce, okul bitiminin ardından 310 günlük (yaklaşık 1 yıl) mesleki entegrasyon stajını (stage d'insertion professionnelle) tamamlaman gerekmektedir."
+            "title": "156 günlük entegrasyon stajı (stage d'insertion)",
+            "message": "Ödeneklere hak kazanmadan önce, okul bitiminin ardından 156 günlük (yaklaşık 6 ay) mesleki entegrasyon stajını (stage d'insertion professionnelle) tamamlaman gerekmektedir."
           }
         },
         "doc": {
@@ -4618,12 +4618,12 @@
             "body": "Entegrasyon ödeneği (allocation d'insertion), okulu bitiren ve daha önce ücretli bir işte çalışmış olmaksızın, yalnızca öğrenim geçmişine dayanarak **ilk kez** tazminat talep eden gençlere yönelik bir işsizlik ödeneğidir.\n\nKlasik tam işsizlikten (chômage complet) farklıdır: kanıtlanması gereken belirli sayıda çalışma günü yoktur. Hak, okul geçmişine ve okul bitiminin ardından tamamlanan mesleki entegrasyon stajına (stage d'insertion professionnelle) dayanmaktadır.\n\nKamuya açık referans kaynak: www.onem.be."
           },
           "conditions": {
-            "title": "Koşullar (yaş, öğrenim, 310 günlük staj)",
-            "body": "Başlıca koşulların özeti:\n\n- **Vatandaşlık / ikamet**: Belçika vatandaşı olmak ya da erişime izin veren bir ülkenin (AB/AEA) vatandaşı olmak veya diğer durumlar için geçerli ikamet ve çalışma iznine sahip olmak.\n- **Zorunlu öğrenim tamamlanmış olmak**: Zorunlu öğrenim yükümlülüğünün sona ermiş olması (pratikte en az 18 yaşında olmak ya da 18 yaşın dolduğu yılın 30 Haziran'ını geçmiş olmak).\n- **Belçika'da işsizlik hakkı tanınan öğrenim**: Tanınan bir öğrenim programını tamamlamış olmak. **21 yaşından küçük** gençler için bir **diploma veya unvan** gerekmektedir (yalnızca derslere katılmış olmak yeterli değildir) ve kabul edilen öğrenim listesi daha kısıtlıdır.\n- **Mesleki entegrasyon stajı (stage d'insertion professionnelle)**: Okul faaliyetlerinin sona ermesinin ardından **310 günlük** stajı tamamlamak.\n- **Yaş sınırı**: Başvurunun prensip olarak **25 yaşından önce** yapılması gerekmektedir (uzun öğrenim süreci gibi durumlarda istisnalar mevcuttur).\n\nKamuya açık referans kaynak: www.onem.be."
+            "title": "Koşullar (yaş, öğrenim, 156 günlük staj)",
+            "body": "Başlıca koşulların özeti:\n\n- **Vatandaşlık / ikamet**: Belçika vatandaşı olmak ya da erişime izin veren bir ülkenin (AB/AEA) vatandaşı olmak veya diğer durumlar için geçerli ikamet ve çalışma iznine sahip olmak.\n- **Zorunlu öğrenim tamamlanmış olmak**: Zorunlu öğrenim yükümlülüğünün sona ermiş olması (pratikte en az 18 yaşında olmak ya da 18 yaşın dolduğu yılın 30 Haziran'ını geçmiş olmak).\n- **Belçika'da işsizlik hakkı tanınan öğrenim**: Tanınan bir öğrenim programını tamamlamış olmak. **21 yaşından küçük** gençler için bir **diploma veya unvan** gerekmektedir (yalnızca derslere katılmış olmak yeterli değildir) ve kabul edilen öğrenim listesi daha kısıtlıdır.\n- **Mesleki entegrasyon stajı (stage d'insertion professionnelle)**: Okul faaliyetlerinin sona ermesinin ardından **156 günlük** stajı tamamlamak.\n- **Yaş sınırı**: Başvurunun prensip olarak **25 yaşından önce** yapılması gerekmektedir (uzun öğrenim süreci gibi durumlarda istisnalar mevcuttur).\n\nKamuya açık referans kaynak: www.onem.be."
           },
           "dureeEtMontant": {
-            "title": "Ne kadar süre / ne kadar? (sabit tutar, 3 yıl ile sınırlı)",
-            "body": "Entegrasyon ödeneğinin (allocation d'insertion) miktarı **sabittir**: önceki maaşa değil, gencin aile durumuna (yalnız yaşayan/isolé, birlikte yaşayan/cohabitant, hane reisi/chef de ménage) ve bazı durumlarda yaşına göre belirlenir. Klasik işsizlikte olduğu gibi tazminat dönemlerine göre değişen bir ilerleme söz konusu değildir.\n\nHak **süre bakımından sınırlıdır**: prensip olarak 3 yıl. Duruma göre bu süreyi uzatabilecek veya düzenleyebilecek özel kurallar uygulanabilir.\n\nKamuya açık referans kaynak: www.onem.be."
+            "title": "Ne kadar süre / ne kadar? (sabit tutar, 1 yıl ile sınırlı)",
+            "body": "Entegrasyon ödeneğinin (allocation d'insertion) miktarı **sabittir**: önceki maaşa değil, gencin aile durumuna (yalnız yaşayan/isolé, birlikte yaşayan/cohabitant, hane reisi/chef de ménage) ve bazı durumlarda yaşına göre belirlenir. Klasik işsizlikte olduğu gibi tazminat dönemlerine göre değişen bir ilerleme söz konusu değildir.\n\nHak **süre bakımından sınırlıdır**: 1 Mart 2026'da yürürlüğe giren reform uyarınca, en fazla 1 yıl (12 ay) (öncesinde: 3 yıl). Bu süre, tazminat döneminde geçen çalışma dönemleri veya eşdeğer olaylarla eşit bir süre kadar uzatılabilir.\n\nKamuya açık referans kaynak: www.onem.be."
           }
         }
       }

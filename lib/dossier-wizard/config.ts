@@ -164,7 +164,7 @@ const R_INSERTION: WizardResult = {
   dossierTitle: "Allocations d'insertion (jeunes)",
   dossierTitleKey: "wizard.result.insertion.title",
   rationale:
-    "Vous sortez des études sans avoir (assez) travaillé : c'est la voie des allocations d'insertion, après un stage d'insertion de 310 jours.",
+    "Vous sortez des études sans avoir (assez) travaillé : c'est la voie des allocations d'insertion, après un stage d'insertion de 156 jours.",
   rationaleKey: "wizard.result.insertion.rationale",
 };
 

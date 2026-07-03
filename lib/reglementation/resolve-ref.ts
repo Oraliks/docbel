@@ -100,6 +100,31 @@ export function linkifyRefs(segments: Inline[], ctx: RefContext): Inline[] {
 }
 
 /**
+ * Linkifie les renvois croisés du format « VOIR AUSSI » des commentaires ONEM
+ * (« AR art. 74bis », « AM art. 1 »). AR → AR 25/11/1991, AM → AM 26/11/1991.
+ * Ne relie que ce qui existe ; le reste (ranges, sous-items) reste du texte.
+ */
+export function linkifyCrossRefs(
+  text: string,
+  exists: (id: string) => boolean,
+): Inline[] {
+  const re = new RegExp(`\\b(AR|AM)\\s+art\\.?\\s*(${ARTICLE_NUM})`, "gi");
+  const out: Inline[] = [];
+  let cursor = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text ?? ""))) {
+    const prefix = /^ar$/i.test(m[1]) ? AR_MAIN : AM_MAIN;
+    const rid = articleToRiolexId(prefix, m[2]);
+    if (!exists(rid)) continue;
+    if (m.index > cursor) out.push({ t: "text", text: text.slice(cursor, m.index) });
+    out.push({ t: "ref", text: m[0], riolexId: rid });
+    cursor = m.index + m[0].length;
+  }
+  if (cursor < (text ?? "").length) out.push({ t: "text", text: text.slice(cursor) });
+  return out;
+}
+
+/**
  * Ensemble des riolexId d'articles réellement cités par un texte (liens
  * sortants résolus). Utilisé pour construire le graphe « cité par ».
  */

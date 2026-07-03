@@ -324,7 +324,7 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
 
             {/* Commentaire ONEM — admin uniquement */}
             {commentary && (commentary.content ?? "").trim().length > 0 && (
-              <OnemCommentary raw={commentary.content} />
+              <OnemCommentary raw={commentary.content} corpusIds={[...corpusIds]} />
             )}
 
             <ArticlePager

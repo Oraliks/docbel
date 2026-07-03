@@ -4,6 +4,7 @@ import {
   loiToPrefix,
   articleToRiolexId,
   linkifyRefs,
+  linkifyCrossRefs,
   collectRefTargets,
   type RefContext,
 } from "../resolve-ref";
@@ -66,6 +67,16 @@ describe("linkifyRefs", () => {
     const segs = link("l'article 36 (AR 30.7.2022 - MB 23.8 - EV 1.10)");
     expect(segs.some((s) => s.t === "ref")).toBe(true);
     expect(segs.some((s) => s.t === "amendment")).toBe(true);
+  });
+
+  it("linkifyCrossRefs relie « AR art. N » / « AM art. N » du VOIR AUSSI", () => {
+    const exists = (id: string) =>
+      id === "25_11_1991-1-art_71" || id === "26_11_1991-1-art_15";
+    const segs = linkifyCrossRefs("Voir AR art. 71 et AM art. 15", exists);
+    const refs = segs.filter((s) => s.t === "ref");
+    expect(refs).toHaveLength(2);
+    expect(refs[0]).toMatchObject({ riolexId: "25_11_1991-1-art_71" });
+    expect(refs[1]).toMatchObject({ riolexId: "26_11_1991-1-art_15" });
   });
 
   it("collectRefTargets retourne les cibles uniques résolues", () => {

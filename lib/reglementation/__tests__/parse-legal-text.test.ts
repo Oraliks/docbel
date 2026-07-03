@@ -100,6 +100,27 @@ describe("splitOnemCommentary", () => {
     const cs = splitOnemCommentary("Simple note sans marqueur.");
     expect(cs).toHaveLength(1);
     expect(cs[0].index).toBe(1);
+    expect(cs[0].kind).toBe("commentaire");
+  });
+
+  it("distingue les sections Schéma et Références", () => {
+    const raw = [
+      "Commentaire 1",
+      "(09/06/2008) (Gouvernement fédéral)",
+      "Texte du commentaire.",
+      "Schéma 1",
+      "Fixation du facteur R : colonne A | colonne B",
+      "Références 0",
+      "VOIR AUSSI",
+      "AR art. 74bis",
+    ].join("\n");
+    const cs = splitOnemCommentary(raw);
+    const kinds = cs.map((c) => c.kind);
+    expect(kinds).toContain("commentaire");
+    expect(kinds).toContain("schema");
+    expect(kinds).toContain("references");
+    const refs = cs.find((c) => c.kind === "references");
+    expect(refs?.text).toContain("74bis");
   });
 
   it("vide → []", () => {

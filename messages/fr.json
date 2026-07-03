@@ -4143,7 +4143,11 @@
       "reglCompare": "Comparer",
       "reglCompareTitle": "Comparer deux articles",
       "reglComparePick": "Choisir un article (n° ou titre)…",
-      "reglCompareEmpty": "Choisissez un article à comparer."
+      "reglCompareEmpty": "Choisissez un article à comparer.",
+      "reglCommentSchema": "Schéma {index}",
+      "reglCommentRefs": "Références croisées",
+      "reglCommentSchemaTag": "schéma",
+      "reglCommentRefsTag": "voir aussi"
     },
     "auth": {
       "title": "Connexion",

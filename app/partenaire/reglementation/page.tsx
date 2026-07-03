@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { Stethoscope } from "lucide-react";
 
 import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
 import { ReglementationSearchClient } from "@/components/reglementation/search-client";
@@ -28,18 +30,30 @@ export default async function ReglementationPage() {
   if (!auth.isAuthorized) {
     notFound();
   }
+  const isAdmin = auth.user.isAdmin === true;
   const t = await getTranslations("public.pro");
 
   return (
     <div className="px-4 py-6 lg:px-6">
       <div className="w-full space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {t("reglTitle")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("reglSubtitle")}
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {t("reglTitle")}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t("reglSubtitle")}
+            </p>
+          </div>
+          {isAdmin && (
+            <Link
+              href="/partenaire/reglementation/qualite"
+              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <Stethoscope className="size-4" aria-hidden />
+              Santé du corpus
+            </Link>
+          )}
         </div>
         <Suspense fallback={<Skeleton className="h-40 w-full rounded-xl" />}>
           <ReglementationSearchClient />

@@ -50,27 +50,43 @@ export function parseLegalText(raw: string): LegalBlock[] {
   return blocks;
 }
 
+/** Type de section d'un commentaire ONEM. */
+export type OnemSectionKind = "commentaire" | "schema" | "references";
+
 export type OnemComment = {
+  kind: OnemSectionKind;
   index: number;
   date: string | null;
   institution: string | null;
   text: string;
 };
 
-const COMMENT_SPLIT_RE = /^Commentaire\s+(\d+)\s*$/im;
+/** Entête de section : « Commentaire N », « Schéma N », « Références N ». */
+const HEADER_RE =
+  /^\s*(Commentaires?|Sch[ée]mas?|R[ée]f[ée]rences?)\s+(\d+)\b[ \t]*/i;
+const SPLIT_RE =
+  /(?=^\s*(?:Commentaires?|Sch[ée]mas?|R[ée]f[ée]rences?)\s+\d+\b)/im;
+
+function kindOf(headerWord: string): OnemSectionKind {
+  const w = headerWord.toLowerCase();
+  if (w.startsWith("sch")) return "schema";
+  if (w.startsWith("réf") || w.startsWith("ref")) return "references";
+  return "commentaire";
+}
 
 export function splitOnemCommentary(raw: string): OnemComment[] {
   const src = (raw ?? "").replace(/\r\n/g, "\n").trim();
   if (!src) return [];
-  // Découpe en gardant les entêtes "Commentaire N".
-  const parts = src.split(/(?=^Commentaire\s+\d+\s*$)/im).map((p) => p.trim()).filter(Boolean);
+  // Découpe en gardant les entêtes (Commentaire / Schéma / Références N).
+  const parts = src.split(SPLIT_RE).map((p) => p.trim()).filter(Boolean);
   if (parts.length === 0) return [];
-  if (parts.length === 1 && !COMMENT_SPLIT_RE.test(parts[0])) {
-    return [{ index: 1, date: null, institution: null, text: parts[0] }];
+  if (parts.length === 1 && !HEADER_RE.test(parts[0])) {
+    return [{ kind: "commentaire", index: 1, date: null, institution: null, text: parts[0] }];
   }
   return parts.map((part, i) => {
-    const m = /^Commentaire\s+(\d+)\s*/i.exec(part);
-    const index = m ? parseInt(m[1], 10) : i + 1;
+    const m = HEADER_RE.exec(part);
+    const kind = m ? kindOf(m[1]) : "commentaire";
+    const index = m ? parseInt(m[2], 10) : i + 1;
     let rest = m ? part.slice(m[0].length).trim() : part;
     const dateM = /\((\d{2}\/\d{2}\/\d{4})\)/.exec(rest);
     const date = dateM ? dateM[1] : null;
@@ -88,6 +104,6 @@ export function splitOnemCommentary(raw: string): OnemComment[] {
       lines.splice(firstNonEmpty, 1);
       rest = lines.join("\n").trim();
     }
-    return { index, date, institution, text: rest };
+    return { kind, index, date, institution, text: rest };
   });
 }

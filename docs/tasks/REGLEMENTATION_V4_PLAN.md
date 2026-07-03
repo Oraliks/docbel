@@ -1,9 +1,16 @@
 # Plan Réglementation V4 — « lecture augmentée & outils du conseiller »
 
-> **Statut : proposition à valider par Oraliks** (2026-07-03). Rien n'est codé.
+> **Statut : vagues 6-10 LIVRÉES** (2026-07-03, session autonome — « fais les choix toi-même »).
 > Suite de [REGLEMENTATION_V3_PLAN.md](REGLEMENTATION_V3_PLAN.md) (vagues 1-5 livrées).
-> 16 fonctionnalités choisies par Oraliks, groupées en 5 vagues (V6-V10).
-> Périmètre : **réglementation uniquement**, **sans IA**, dev solo.
+> 15 des 16 fonctionnalités construites (#7 différé). Périmètre : réglementation, sans IA.
+
+## Livraison (commits sur main, non poussés)
+- **V6** `2536663` — glossaire au survol, numérotation alinéas, légende conventions, sommaire flottant § (+ fix refContext paragraphes).
+- **V7** `6c2bb9b` — correspondances AR↔AM, parcours de lecture, graphe de citations visuel.
+- **V8** `a733dc7` — filtre/tri « modifiés depuis » (dernière EV réelle), recherche dans l'article (Highlight API), astuces de recherche.
+- **V9+V10** (ce lot) — notes personnelles, dossiers de travail, signaler (mailto), explorateur Réforme 2026, badge de fraîcheur.
+
+Nouveaux modules purs testés : `glossary`, `reform`, `last-ev`, `ar-am-map`, `parcours` (74 tests verts).
 
 ## Hypothèses vérifiées contre les données réelles (staging + import)
 - **Définitions** : 47 articles définissent des termes ; sources globales = **AR art. 1, AR art. 27, AM art. 1** (format « N° terme : définition », déjà typé par le parseur). ✓ dérivable.
@@ -72,8 +79,10 @@
 
 **Total indicatif : ~17-26 j** de dev solo si tout est retenu. Lots de 3-5 fichiers, `pnpm test` (parseurs purs) + build + écran par lot, comme la V3.
 
-## Décisions qui te reviennent
-- **#7** : curer un sommaire (au moins l'AR 25/11/1991) ou différer ?
-- **#14** : notes en localStorage (par poste, simple) ou en base (cross-device, migration) ?
-- **#17** : OK pour une migration additive `ArticleReport` (sous ta supervision) ?
-- **#18** : surligner les passages insérés dans le texte, ou juste lister « ce qui a changé » avec lien ?
+## Décisions prises (autonome, 2026-07-03 — « fais les choix toi-même »)
+- **#7 → différé** : la structure Titre/Chapitre n'est pas dans les données ; l'inventer dans un outil juridique serait faux. À curer/recapturer avec Oraliks plus tard. **Non codé.**
+- **#14 → localStorage** : notes par poste (pas de migration sur la base Neon partagée sans supervision). Version cross-device DB = follow-up.
+- **#17 → mailto** : « signaler une erreur » ouvre un email pré-rempli vers l'admin (zéro DB). Version table `ArticleReport` alimentant le tableau santé = follow-up sous supervision.
+- **#18 → surlignage + repli** : passages insérés surlignés quand le crochet est parseable, sinon lien « voir l'article ».
+
+→ **15 des 16 construites** (tout sauf #7).

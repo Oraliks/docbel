@@ -119,7 +119,8 @@ export type Inline =
   | { t: "text"; text: string }
   | { t: "amendment"; ref: AmendmentRef }
   | { t: "deleted" }
-  | { t: "modified"; n: number };
+  | { t: "modified"; n: number }
+  | { t: "ref"; text: string; riolexId: string };
 
 /** `{n} ❌` (fragment supprimé) ou `{n}` seul (fragment modifié). */
 const MARKER_PATTERN = "\\{(\\d+)\\}\\s*(❌)?";

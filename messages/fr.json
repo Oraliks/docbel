@@ -4127,7 +4127,12 @@
       "reglPropLastEv": "Dernière version en vigueur",
       "reglTimelineTitle": "Historique des modifications",
       "reglTimelineEv": "EV",
-      "reglTimelineMb": "MB"
+      "reglTimelineMb": "MB",
+      "reglCopyRef": "Copier la référence",
+      "reglCopied": "Copié",
+      "reglCitation": "{loi}, art. {num} — {title} (source : ONEM / RioLex, consulté le {date})",
+      "reglCitedBy": "{count, plural, one {Cité par # article} other {Cité par # articles}}",
+      "reglCitedByMore": "+ {count} autres"
     },
     "auth": {
       "title": "Connexion",

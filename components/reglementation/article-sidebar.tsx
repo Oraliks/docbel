@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 
 import { natureMeta, naturePhrase } from "@/lib/reglementation/nature";
 import type { AmendmentRef } from "@/lib/reglementation/parse-amendments";
+import type { Citation } from "@/lib/reglementation/backlinks";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { LegalMeta, Neighbor } from "./types";
@@ -16,6 +17,7 @@ interface ArticleSidebarProps {
   neighbors: Neighbor[];
   amendments?: AmendmentRef[];
   realEV?: string | null;
+  citedBy?: Citation[];
 }
 
 export async function ArticleSidebar({
@@ -26,6 +28,7 @@ export async function ArticleSidebar({
   neighbors,
   amendments = [],
   realEV = null,
+  citedBy = [],
 }: ArticleSidebarProps) {
   const t = await getTranslations("public.pro");
   const nature = meta.natureJuridique ? natureMeta(meta.natureJuridique) : null;
@@ -133,6 +136,33 @@ export async function ArticleSidebar({
             {hiddenCount > 0 && (
               <p className="text-xs text-muted-foreground">
                 {t("reglRefsSeeAll", { count: refs.length })}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cité par (backlinks dérivés des renvois internes du corpus) */}
+      {citedBy.length > 0 && (
+        <Card size="sm">
+          <CardHeader className="pb-2">
+            <CardTitle>{t("reglCitedBy", { count: citedBy.length })}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            {citedBy.slice(0, 12).map((c) => (
+              <div key={c.riolexId}>
+                <Link
+                  href={`/partenaire/reglementation/${encodeURIComponent(c.riolexId)}`}
+                  className="text-sm underline-offset-2 hover:underline"
+                >
+                  <span className="font-medium">Art. {c.articleNumber}</span>
+                  <span className="text-muted-foreground"> — {c.loi}</span>
+                </Link>
+              </div>
+            ))}
+            {citedBy.length > 12 && (
+              <p className="text-xs text-muted-foreground">
+                {t("reglCitedByMore", { count: citedBy.length - 12 })}
               </p>
             )}
           </CardContent>

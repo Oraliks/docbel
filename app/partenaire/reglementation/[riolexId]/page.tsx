@@ -12,13 +12,18 @@ import {
   sortAmendmentsByEV,
   latestEV,
 } from "@/lib/reglementation/parse-amendments";
+import { loiToPrefix, type RefContext } from "@/lib/reglementation/resolve-ref";
+import { getCitedBy } from "@/lib/reglementation/backlinks";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
+import { slugifyLoi } from "@/lib/reglementation/loi";
 import { LegalText } from "@/components/reglementation/legal-text";
 import { TextSettings } from "@/components/reglementation/text-settings";
 import { OnemCommentary } from "@/components/reglementation/onem-commentary";
 import { ArticleSidebar } from "@/components/reglementation/article-sidebar";
+import { ArticlePager, type PagerLink } from "@/components/reglementation/article-pager";
+import { CopyButton } from "@/components/reglementation/copy-button";
 import { NatureTile } from "@/components/reglementation/nature-badge";
 import { PrintButton } from "@/components/reglementation/print-button";
 import type { LegalMeta, Neighbor } from "@/components/reglementation/types";
@@ -95,9 +100,11 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
       )
     : undefined;
 
-  // « Voir aussi » : articles voisins du même texte de loi (même dossier),
-  // triés par n° d'article, fenêtre autour de l'article courant.
+  // « Voir aussi » + pagination : articles voisins du même texte de loi
+  // (même dossier), triés par n° d'article.
   let neighbors: Neighbor[] = [];
+  let prev: PagerLink | null = null;
+  let next: PagerLink | null = null;
   if (article.folderId) {
     const siblings = await prisma.knowledgeSource.findMany({
       where: {
@@ -115,6 +122,7 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
         return {
           riolexId: m.riolexId ?? "",
           title: s.title,
+          articleNumber: m.articleNumber ?? "",
           num: numericPrefix(m.articleNumber ?? ""),
           isComment: m.isOnemCommentary === true,
         };
@@ -122,6 +130,9 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
       .filter((s) => s.riolexId && !s.isComment)
       .sort((a, b) => a.num - b.num || a.riolexId.localeCompare(b.riolexId));
     const idx = sorted.findIndex((s) => s.riolexId === riolexId);
+    if (idx > 0) prev = { riolexId: sorted[idx - 1].riolexId, articleNumber: sorted[idx - 1].articleNumber };
+    if (idx >= 0 && idx < sorted.length - 1)
+      next = { riolexId: sorted[idx + 1].riolexId, articleNumber: sorted[idx + 1].articleNumber };
     neighbors = sorted
       .slice(Math.max(0, idx - 3), idx + 4)
       .filter((s) => s.riolexId !== riolexId)
@@ -142,6 +153,28 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
   // Le lien RioLex (source interne) n'est exposé qu'aux admins (demande Oraliks).
   const riolexUrl = isAdmin ? article.sourceUrl : null;
 
+  // Ensemble des riolexId visibles → on ne relie un renvoi qu'à une fiche
+  // existante (renvoi vers une loi hors corpus reste du texte brut).
+  const idRows = await prisma.$queryRawUnsafe<Array<{ rid: string | null }>>(
+    `SELECT DISTINCT s."legalMeta"->>'riolexId' AS rid
+     FROM "KnowledgeSource" s
+     WHERE s."domain" = 'chomage' AND s."enabled" = true
+       AND s."visibility" = ANY($1::text[])
+       AND s."legalMeta" IS NOT NULL
+       AND COALESCE(s."legalMeta"->>'isOnemCommentary', '') <> 'true'`,
+    visibilities,
+  );
+  const corpusIds = new Set(
+    idRows.map((r) => r.rid).filter((v): v is string => !!v),
+  );
+  const refContext: RefContext = {
+    currentPrefix: loiToPrefix(meta.loi),
+    exists: (id) => corpusIds.has(id),
+  };
+
+  // Backlinks « cité par » (graphe dérivé des renvois, mémoïsé en mémoire).
+  const citedBy = await getCitedBy(riolexId);
+
   return (
     <div className="px-4 py-6 lg:px-6">
       <div className="w-full space-y-5">
@@ -156,11 +189,18 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
           </Link>
           <span className="text-muted-foreground/40">·</span>
           <nav className="text-sm text-muted-foreground" aria-label={t("reglBreadcrumb")}>
-            <span>Réglementation</span>
+            <Link href="/partenaire/reglementation" className="hover:text-foreground">
+              Réglementation
+            </Link>
             {meta.loi && (
               <>
                 <span className="mx-1.5 text-muted-foreground/40">›</span>
-                <span>{meta.loi}</span>
+                <Link
+                  href={`/partenaire/reglementation/loi/${slugifyLoi(meta.loi)}`}
+                  className="hover:text-foreground"
+                >
+                  {meta.loi}
+                </Link>
               </>
             )}
             {meta.articleNumber && (
@@ -194,6 +234,16 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
 
           {/* Barre d'actions — masquée à l'impression */}
           <div className="flex shrink-0 items-center gap-2 print:hidden">
+            <CopyButton
+              value={t("reglCitation", {
+                loi: meta.loi ?? "",
+                num: meta.articleNumber ?? "",
+                title: article.title,
+                date: consultedOn,
+              })}
+              label={t("reglCopyRef")}
+              copiedLabel={t("reglCopied")}
+            />
             <PrintButton label={t("reglPrint")} />
             {riolexUrl && (
               <a
@@ -221,14 +271,28 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] print:block">
           {/* Colonne principale */}
           <article className="space-y-6">
+            <ArticlePager
+              prev={prev}
+              next={next}
+              labelPrev={t("reglPrev")}
+              labelNext={t("reglNext")}
+            />
+
             <TextSettings>
-              <LegalText raw={article.content} />
+              <LegalText raw={article.content} refContext={refContext} />
             </TextSettings>
 
             {/* Commentaire ONEM — admin uniquement */}
             {commentary && (commentary.content ?? "").trim().length > 0 && (
               <OnemCommentary raw={commentary.content} />
             )}
+
+            <ArticlePager
+              prev={prev}
+              next={next}
+              labelPrev={t("reglPrev")}
+              labelNext={t("reglNext")}
+            />
 
             {/* Attribution imprimable — masquée à l'écran, visible à l'impression */}
             <div className="hidden space-y-1 text-xs text-muted-foreground print:block">
@@ -256,6 +320,7 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
             neighbors={neighbors}
             amendments={amendments}
             realEV={realEV}
+            citedBy={citedBy}
           />
         </div>
       </div>

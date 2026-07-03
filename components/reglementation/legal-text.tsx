@@ -1,12 +1,22 @@
 import { Fragment } from "react";
+import Link from "next/link";
 
 import { parseLegalText, type LegalBlock } from "@/lib/reglementation/parse-legal-text";
 import { parseInline, type Inline } from "@/lib/reglementation/parse-amendments";
+import { linkifyRefs, type RefContext } from "@/lib/reglementation/resolve-ref";
 import { AmendmentChip } from "./amendment-chip";
+import { CopyButton } from "./copy-button";
 
-/** Rend une suite de segments inline (texte / amendement / {n} / {n}❌). */
-function Inlines({ text }: { text: string }) {
-  const segments = parseInline(text);
+/** Ancre stable d'un § dérivée de son marqueur (« § 1er » → « par-1er »). */
+function sectionAnchor(marker: string | undefined): string {
+  const m = (marker ?? "").replace(/§\s*/, "").trim().toLowerCase();
+  return `par-${m.replace(/[^a-z0-9]+/g, "") || "0"}`;
+}
+
+/** Rend une suite de segments inline (texte / amendement / renvoi / {n} / {n}❌). */
+function Inlines({ text, refContext }: { text: string; refContext?: RefContext }) {
+  let segments = parseInline(text);
+  if (refContext) segments = linkifyRefs(segments, refContext);
   return (
     <>
       {segments.map((seg, i) => (
@@ -22,6 +32,15 @@ function renderInline(seg: Inline, i: number) {
       return seg.text;
     case "amendment":
       return <AmendmentChip ref={seg.ref} />;
+    case "ref":
+      return (
+        <Link
+          href={`/partenaire/reglementation/${encodeURIComponent(seg.riolexId)}`}
+          className="font-medium text-primary underline decoration-primary/30 underline-offset-2 hover:decoration-primary"
+        >
+          {seg.text}
+        </Link>
+      );
     case "deleted":
       return (
         <span
@@ -52,7 +71,13 @@ function blockClass(block: LegalBlock): string {
     : "";
 }
 
-export function LegalText({ raw }: { raw: string }) {
+export function LegalText({
+  raw,
+  refContext,
+}: {
+  raw: string;
+  refContext?: RefContext;
+}) {
   const blocks = parseLegalText(raw);
 
   if (blocks.length === 0) {
@@ -66,12 +91,20 @@ export function LegalText({ raw }: { raw: string }) {
     >
       {blocks.map((block, i) => {
         if (block.type === "section") {
+          const anchor = sectionAnchor(block.marker);
           return (
-            <p key={i} className="pt-1 first:pt-0">
+            <p
+              key={i}
+              id={anchor}
+              className="group scroll-mt-24 rounded-md pt-1 transition-colors target:bg-primary/5 target:ring-1 target:ring-primary/15 first:pt-0"
+            >
               <strong className="mr-1 font-semibold text-primary">
                 {block.marker}.
               </strong>
-              <Inlines text={block.text} />
+              <Inlines text={block.text} refContext={refContext} />
+              <span className="ml-1 inline-flex align-middle">
+                <CopyButton anchor={anchor} iconOnly />
+              </span>
             </p>
           );
         }
@@ -89,7 +122,7 @@ export function LegalText({ raw }: { raw: string }) {
                 {block.marker}
               </span>
               <span className="min-w-0">
-                <Inlines text={block.text} />
+                <Inlines text={block.text} refContext={refContext} />
               </span>
             </div>
           );

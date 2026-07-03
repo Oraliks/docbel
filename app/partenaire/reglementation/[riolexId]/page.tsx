@@ -15,11 +15,13 @@ import {
 import { parseLegalText } from "@/lib/reglementation/parse-legal-text";
 import { loiToPrefix, type RefContext } from "@/lib/reglementation/resolve-ref";
 import { getCitedBy } from "@/lib/reglementation/backlinks";
+import { getCorrespondences } from "@/lib/reglementation/ar-am-map";
 import { getCorpusRiolexIds } from "@/lib/reglementation/get-article";
 import { deriveThemes } from "@/lib/reglementation/themes";
 import { getGlossary, termsInText } from "@/lib/reglementation/glossary";
 import { sectionAnchor } from "@/components/reglementation/legal-text";
 import { ConventionsLegend } from "@/components/reglementation/conventions-legend";
+import { CitationGraph, type GraphNode } from "@/components/reglementation/citation-graph";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
@@ -173,6 +175,24 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
 
   // Backlinks « cité par » (graphe dérivé des renvois, mémoïsé en mémoire).
   const citedBy = await getCitedBy(riolexId);
+  // Correspondances AR ↔ AM (règle / exécution).
+  const correspondences = await getCorrespondences(riolexId);
+
+  // Nœuds du graphe de liens (correspondances + cité par, dédupliqués).
+  const graphNodes: GraphNode[] = [
+    ...correspondences.map((c) => ({
+      riolexId: c.riolexId,
+      articleNumber: c.articleNumber,
+      loi: c.loi,
+      kind: "corr" as const,
+    })),
+    ...citedBy.map((c) => ({
+      riolexId: c.riolexId,
+      articleNumber: c.articleNumber,
+      loi: c.loi,
+      kind: "cite" as const,
+    })),
+  ].filter((n, i, arr) => arr.findIndex((x) => x.riolexId === n.riolexId) === i);
 
   // Sommaire des § + définitions présentes dans l'article.
   const sections = parseLegalText(article.content)
@@ -335,6 +355,12 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
 
             <ConventionsLegend />
 
+            <CitationGraph
+              center={meta.articleNumber ?? "?"}
+              nodes={graphNodes}
+              label={t("reglGraphLabel")}
+            />
+
             {/* Commentaire ONEM — admin uniquement */}
             {commentary && (commentary.content ?? "").trim().length > 0 && (
               <OnemCommentary raw={commentary.content} corpusIds={[...corpusIds]} />
@@ -374,6 +400,7 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
             amendments={amendments}
             realEV={realEV}
             citedBy={citedBy}
+            correspondences={correspondences}
             sections={sections}
             definitions={definitions}
           />

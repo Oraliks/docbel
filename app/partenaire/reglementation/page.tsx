@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { Stethoscope } from "lucide-react";
+import { Stethoscope, Route } from "lucide-react";
 
 import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
 import { ReglementationSearchClient } from "@/components/reglementation/search-client";
@@ -45,15 +45,24 @@ export default async function ReglementationPage() {
               {t("reglSubtitle")}
             </p>
           </div>
-          {isAdmin && (
+          <div className="flex items-center gap-2">
             <Link
-              href="/partenaire/reglementation/qualite"
+              href="/partenaire/reglementation/parcours"
               className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
-              <Stethoscope className="size-4" aria-hidden />
-              Santé du corpus
+              <Route className="size-4" aria-hidden />
+              Parcours
             </Link>
-          )}
+            {isAdmin && (
+              <Link
+                href="/partenaire/reglementation/qualite"
+                className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Stethoscope className="size-4" aria-hidden />
+                Santé du corpus
+              </Link>
+            )}
+          </div>
         </div>
         <Suspense fallback={<Skeleton className="h-40 w-full rounded-xl" />}>
           <ReglementationSearchClient />

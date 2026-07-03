@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { natureMeta, naturePhrase } from "@/lib/reglementation/nature";
 import type { AmendmentRef } from "@/lib/reglementation/parse-amendments";
 import type { Citation } from "@/lib/reglementation/backlinks";
+import type { Correspondence } from "@/lib/reglementation/ar-am-map";
 import type { GlossaryEntry } from "@/lib/reglementation/glossary";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ interface ArticleSidebarProps {
   amendments?: AmendmentRef[];
   realEV?: string | null;
   citedBy?: Citation[];
+  correspondences?: Correspondence[];
   sections?: TocSection[];
   definitions?: GlossaryEntry[];
 }
@@ -33,6 +35,7 @@ export async function ArticleSidebar({
   amendments = [],
   realEV = null,
   citedBy = [],
+  correspondences = [],
   sections = [],
   definitions = [],
 }: ArticleSidebarProps) {
@@ -149,6 +152,28 @@ export async function ArticleSidebar({
                 );
               })}
             </ol>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Articles liés dans l'autre texte (AR ↔ AM) */}
+      {correspondences.length > 0 && (
+        <Card size="sm">
+          <CardHeader className="pb-2">
+            <CardTitle>{t("reglArAmTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            {correspondences.slice(0, 8).map((c) => (
+              <div key={c.riolexId}>
+                <Link
+                  href={`/partenaire/reglementation/${encodeURIComponent(c.riolexId)}`}
+                  className="text-sm underline-offset-2 hover:underline"
+                >
+                  <span className="font-medium">Art. {c.articleNumber}</span>
+                  <span className="text-muted-foreground"> — {c.loi}</span>
+                </Link>
+              </div>
+            ))}
           </CardContent>
         </Card>
       )}

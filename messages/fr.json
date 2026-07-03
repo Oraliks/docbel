@@ -4150,7 +4150,9 @@
       "reglCommentRefsTag": "voir aussi",
       "reglTocTitle": "Sommaire",
       "reglDefsTitle": "Définitions utiles",
-      "reglDefsSource": "Voir la définition complète"
+      "reglDefsSource": "Voir la définition complète",
+      "reglArAmTitle": "Article lié (AR ↔ AM)",
+      "reglGraphLabel": "Carte des liens (renvois & AR/AM)"
     },
     "auth": {
       "title": "Connexion",

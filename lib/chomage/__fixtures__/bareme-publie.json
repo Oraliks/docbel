@@ -1,0 +1,632 @@
+{
+  "exportedAt": "2026-07-03T22:54:15.923Z",
+  "file": {
+    "id": "cmqc7xfzn00012vh5iiaiwd22",
+    "name": "barema-new-01042026.xlsx",
+    "validFrom": "2026-04-01T00:00:00.000Z",
+    "publishedAt": "2026-06-13T10:34:30.278Z",
+    "multiplicateur": 1.7758
+  },
+  "plafondsArt111Monthly": [
+    {
+      "comparisonKey": "other_unemployment_amount:art_111_al_2:monthly",
+      "labelNl": "Loongrens A1 - Plafond salarial A1",
+      "amount": 4265.98
+    },
+    {
+      "comparisonKey": "other_unemployment_amount:art_111_al_2:monthly@2",
+      "labelNl": "Loongrens A2 - Plafond salarial A1",
+      "amount": 4010.98
+    },
+    {
+      "comparisonKey": "other_unemployment_amount:art_111_al_2:monthly@3",
+      "labelNl": "Loongrens B - Plafond salarial B",
+      "amount": 3262.99
+    },
+    {
+      "comparisonKey": "other_unemployment_amount:art_111_al_2:monthly@4",
+      "labelNl": "Loongrens C - Plafond salarial C",
+      "amount": 3500.99
+    },
+    {
+      "comparisonKey": "other_unemployment_amount:art_111_al_2:monthly@5",
+      "labelNl": "Loongrens AX - Plafond salarial AX",
+      "amount": 3011.55
+    },
+    {
+      "comparisonKey": "other_unemployment_amount:art_111_al_2:monthly@6",
+      "labelNl": "Loongrens AZ - Plafond salarial AZ",
+      "amount": 2934.98
+    }
+  ],
+  "allocationW": [
+    {
+      "comparisonKey": "allocation_w:DA1:full",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DA1)",
+      "labelNl": "gezinslast (incl. zeevissers) / charge de famille (pêcheurs inclus) M 6 ->",
+      "amount": 69.26,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DA1:half",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DA1)",
+      "labelNl": "gezinslast (incl. zeevissers) / charge de famille (pêcheurs inclus) M 6 ->",
+      "amount": 34.63,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DA2:full",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DA2)",
+      "labelNl": "gezinslast (incl. zeevissers) / charge de famille (pêcheurs inclus) M 6 ->",
+      "amount": 69.26,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DA2:half",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DA2)",
+      "labelNl": "gezinslast (incl. zeevissers) / charge de famille (pêcheurs inclus) M 6 ->",
+      "amount": 34.63,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DB1:full:gt18",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DB1)",
+      "labelNl": "niet-bevoorrecht samenwonende",
+      "amount": 24.88,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DB1:half:gt18",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DB1)",
+      "labelNl": "niet-bevoorrecht samenwonende",
+      "amount": 12.44,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DB2:full:gt18",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DB2)",
+      "labelNl": "niet-bevoorrecht samenwonende",
+      "amount": 24.88,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DB2:half:gt18",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DB2)",
+      "labelNl": "niet-bevoorrecht samenwonende",
+      "amount": 12.44,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DN1:full:gt18_lt21",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DN1)",
+      "labelNl": "alleenwonende / isolé",
+      "amount": 29.76,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DN1:full:gt21",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DN1)",
+      "labelNl": null,
+      "amount": 51.56,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DN1:half:gt18_lt21",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DN1)",
+      "labelNl": "alleenwonende / isolé",
+      "amount": 14.88,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DN1:half:gt21",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DN1)",
+      "labelNl": null,
+      "amount": 25.78,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DN2:full:gt18_lt21",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DN2)",
+      "labelNl": "alleenwonende / isolé",
+      "amount": 29.76,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DN2:full:gt21",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DN2)",
+      "labelNl": null,
+      "amount": 51.56,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DN2:half:gt18_lt21",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DN2)",
+      "labelNl": "alleenwonende / isolé",
+      "amount": 14.88,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DN2:half:gt21",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DN2)",
+      "labelNl": null,
+      "amount": 25.78,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DP1:full:gt18",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DP1)",
+      "labelNl": "bevoorrecht samenwonende",
+      "amount": 28.38,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DP1:half:gt18",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DP1)",
+      "labelNl": "bevoorrecht samenwonende",
+      "amount": 14.19,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DP2:full:gt18",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DP2)",
+      "labelNl": "bevoorrecht samenwonende",
+      "amount": 28.38,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:DP2:half:gt18",
+      "labelFr": "Allocation de sauvegarde (beschermingsuitkering) (variante DP2)",
+      "labelNl": "bevoorrecht samenwonende",
+      "amount": 14.19,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:I:full:gt18",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering)",
+      "labelNl": null,
+      "amount": 24.88,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:I:full:lt18",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering)",
+      "labelNl": null,
+      "amount": 15.61,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:I:half:gt18",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering)",
+      "labelNl": null,
+      "amount": 12.44,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:I:half:lt18",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering)",
+      "labelNl": null,
+      "amount": 7.81,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:IA:full",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering) (variante IA)",
+      "labelNl": null,
+      "amount": 69.26,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:IA:half",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering) (variante IA)",
+      "labelNl": null,
+      "amount": 34.63,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:IN:full:gt18_lt21",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering) (variante IN)",
+      "labelNl": null,
+      "amount": 29.76,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:IN:full:gt21",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering) (variante IN)",
+      "labelNl": null,
+      "amount": 51.56,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:IN:full:lt18",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering) (variante IN)",
+      "labelNl": null,
+      "amount": 18.93,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:IN:half:gt18_lt21",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering) (variante IN)",
+      "labelNl": null,
+      "amount": 14.88,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:IN:half:gt21",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering) (variante IN)",
+      "labelNl": null,
+      "amount": 25.78,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:IN:half:lt18",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering) (variante IN)",
+      "labelNl": null,
+      "amount": 9.47,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:IP:full:gt18",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering) (variante IP)",
+      "labelNl": null,
+      "amount": 28.38,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:IP:full:lt18",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering) (variante IP)",
+      "labelNl": null,
+      "amount": 17.67,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:IP:half:gt18",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering) (variante IP)",
+      "labelNl": null,
+      "amount": 14.19,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:IP:half:lt18",
+      "labelFr": "Allocation d'insertion « allocation de formation » (opleidingsuitkering) (variante IP)",
+      "labelNl": null,
+      "amount": 8.84,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:S:full",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage »)",
+      "labelNl": null,
+      "amount": 26.82,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SA3:full",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SA3)",
+      "labelNl": null,
+      "amount": 69.26,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SA3F:full",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SA3F)",
+      "labelNl": null,
+      "amount": 71.97,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SA63:full",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SA63)",
+      "labelNl": null,
+      "amount": 83.11,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SA6F:full",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SA6F)",
+      "labelNl": null,
+      "amount": 86.36,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SA73:full",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SA73)",
+      "labelNl": null,
+      "amount": 69.26,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SA7F:full",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SA7F)",
+      "labelNl": null,
+      "amount": 71.97,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SB3:full:gt18",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SB3)",
+      "labelNl": null,
+      "amount": 26.82,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SB3:full:lt18",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SB3)",
+      "labelNl": null,
+      "amount": 26.82,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SN3:full:gt18_lt21",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SN3)",
+      "labelNl": null,
+      "amount": 29.76,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SN3:full:gt21",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SN3)",
+      "labelNl": null,
+      "amount": 51.56,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SN3:full:lt18",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SN3)",
+      "labelNl": null,
+      "amount": 26.82,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SP3:full:gt18",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SP3)",
+      "labelNl": null,
+      "amount": 28.38,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:SP3:full:lt18",
+      "labelFr": "Allocation de stage « stage de transition » 2013 (stageuitkering « instapstage ») (variante SP3)",
+      "labelNl": null,
+      "amount": 26.82,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:T:full:lt18",
+      "labelFr": "Allocation de transition — chômeur temporaire (overbruggingsuitkering)",
+      "labelNl": null,
+      "amount": 15.61,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:T:half:lt18",
+      "labelFr": "Allocation de transition — chômeur temporaire (overbruggingsuitkering)",
+      "labelNl": null,
+      "amount": 7.81,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:TA:full",
+      "labelFr": "Allocation de transition — chômeur temporaire (overbruggingsuitkering) (variante TA)",
+      "labelNl": null,
+      "amount": 69.26,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:TA:half",
+      "labelFr": "Allocation de transition — chômeur temporaire (overbruggingsuitkering) (variante TA)",
+      "labelNl": null,
+      "amount": 34.63,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:TN:full:lt18",
+      "labelFr": "Allocation de transition — chômeur temporaire (overbruggingsuitkering) (variante TN)",
+      "labelNl": null,
+      "amount": 18.93,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:TN:half:lt18",
+      "labelFr": "Allocation de transition — chômeur temporaire (overbruggingsuitkering) (variante TN)",
+      "labelNl": null,
+      "amount": 9.47,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:TP:full:lt18",
+      "labelFr": "Allocation de transition — chômeur temporaire (overbruggingsuitkering) (variante TP)",
+      "labelNl": null,
+      "amount": 17.67,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:TP:half:lt18",
+      "labelFr": "Allocation de transition — chômeur temporaire (overbruggingsuitkering) (variante TP)",
+      "labelNl": null,
+      "amount": 8.84,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WA2:full",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WA2)",
+      "labelNl": "gezinslast (incl. zeevissers) / charge de famille (pêcheurs inclus) M 6 ->",
+      "amount": 69.26,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WA2:half",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WA2)",
+      "labelNl": "gezinslast (incl. zeevissers) / charge de famille (pêcheurs inclus) M 6 ->",
+      "amount": 34.63,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WA2V:full",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WA2V)",
+      "labelNl": "gezinslast (incl. zeevissers) / charge de famille (pêcheurs inclus) M 1 -> 5",
+      "amount": 71.97,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WA2V:half",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WA2V)",
+      "labelNl": "gezinslast (incl. zeevissers) / charge de famille (pêcheurs inclus) M 1 -> 5",
+      "amount": 35.99,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WA62:full",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WA62)",
+      "labelNl": "havenarbeiders / travailleurs de port M 6 ->",
+      "amount": 83.11,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WA62:half",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WA62)",
+      "labelNl": "havenarbeiders / travailleurs de port M 6 ->",
+      "amount": 41.56,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WA6V:full",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WA6V)",
+      "labelNl": "havenarbeiders / travailleurs de port M 1 -> 5",
+      "amount": 86.36,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WA6V:half",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WA6V)",
+      "labelNl": "havenarbeiders / travailleurs de port M 1 -> 5",
+      "amount": 43.18,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WA72:full",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WA72)",
+      "labelNl": "gezinslast (incl. zeevissers) / charge de famille (pêcheurs inclus) M 6 ->",
+      "amount": 69.26,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WA72:half",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WA72)",
+      "labelNl": "gezinslast (incl. zeevissers) / charge de famille (pêcheurs inclus) M 6 ->",
+      "amount": 34.63,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WA7V:full",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WA7V)",
+      "labelNl": "gezinslast (incl. zeevissers) / charge de famille (pêcheurs inclus) M 1 -> 5",
+      "amount": 71.97,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WA7V:half",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WA7V)",
+      "labelNl": "gezinslast (incl. zeevissers) / charge de famille (pêcheurs inclus) M 1 -> 5",
+      "amount": 35.99,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WB2:full:gt18",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WB2)",
+      "labelNl": "niet-bevoorrecht samenwonende",
+      "amount": 24.88,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WB2:full:lt18",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WB2)",
+      "labelNl": "cohabitant non privilégié",
+      "amount": 15.61,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WB2:half:gt18",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WB2)",
+      "labelNl": "niet-bevoorrecht samenwonende",
+      "amount": 12.44,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WB2:half:lt18",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WB2)",
+      "labelNl": "cohabitant non privilégié",
+      "amount": 7.81,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WN2:full:gt18_lt21",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WN2)",
+      "labelNl": "alleenwonende / isolé",
+      "amount": 29.76,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WN2:full:gt21",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WN2)",
+      "labelNl": null,
+      "amount": 51.56,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WN2:full:lt18",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WN2)",
+      "labelNl": null,
+      "amount": 18.93,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WN2:half:gt18_lt21",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WN2)",
+      "labelNl": "alleenwonende / isolé",
+      "amount": 14.88,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WN2:half:gt21",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WN2)",
+      "labelNl": null,
+      "amount": 25.78,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WN2:half:lt18",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WN2)",
+      "labelNl": null,
+      "amount": 9.47,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WP2:full:gt18",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WP2)",
+      "labelNl": "bevoorrecht samenwonende",
+      "amount": 28.38,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WP2:full:lt18",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WP2)",
+      "labelNl": "cohabitant privilégié",
+      "amount": 17.67,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WP2:half:gt18",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WP2)",
+      "labelNl": "bevoorrecht samenwonende",
+      "amount": 14.19,
+      "unit": "daily"
+    },
+    {
+      "comparisonKey": "allocation_w:WP2:half:lt18",
+      "labelFr": "Allocation d'insertion (inschakelingsuitkering) (variante WP2)",
+      "labelNl": "cohabitant privilégié",
+      "amount": 8.84,
+      "unit": "daily"
+    }
+  ]
+}

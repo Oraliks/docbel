@@ -12,10 +12,14 @@ import {
   sortAmendmentsByEV,
   latestEV,
 } from "@/lib/reglementation/parse-amendments";
+import { parseLegalText } from "@/lib/reglementation/parse-legal-text";
 import { loiToPrefix, type RefContext } from "@/lib/reglementation/resolve-ref";
 import { getCitedBy } from "@/lib/reglementation/backlinks";
 import { getCorpusRiolexIds } from "@/lib/reglementation/get-article";
 import { deriveThemes } from "@/lib/reglementation/themes";
+import { getGlossary, termsInText } from "@/lib/reglementation/glossary";
+import { sectionAnchor } from "@/components/reglementation/legal-text";
+import { ConventionsLegend } from "@/components/reglementation/conventions-legend";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
@@ -170,6 +174,13 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
   // Backlinks « cité par » (graphe dérivé des renvois, mémoïsé en mémoire).
   const citedBy = await getCitedBy(riolexId);
 
+  // Sommaire des § + définitions présentes dans l'article.
+  const sections = parseLegalText(article.content)
+    .filter((b) => b.type === "section" && b.marker)
+    .map((b) => ({ marker: b.marker as string, anchor: sectionAnchor(b.marker) }));
+  const glossary = await getGlossary();
+  const definitions = termsInText(glossary, article.content);
+
   return (
     <div className="px-4 py-6 lg:px-6">
       <div className="w-full space-y-5">
@@ -322,6 +333,8 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
               </ReadingMode>
             </TextSettings>
 
+            <ConventionsLegend />
+
             {/* Commentaire ONEM — admin uniquement */}
             {commentary && (commentary.content ?? "").trim().length > 0 && (
               <OnemCommentary raw={commentary.content} corpusIds={[...corpusIds]} />
@@ -361,6 +374,8 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
             amendments={amendments}
             realEV={realEV}
             citedBy={citedBy}
+            sections={sections}
+            definitions={definitions}
           />
         </div>
       </div>

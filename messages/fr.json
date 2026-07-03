@@ -4147,7 +4147,10 @@
       "reglCommentSchema": "Schéma {index}",
       "reglCommentRefs": "Références croisées",
       "reglCommentSchemaTag": "schéma",
-      "reglCommentRefsTag": "voir aussi"
+      "reglCommentRefsTag": "voir aussi",
+      "reglTocTitle": "Sommaire",
+      "reglDefsTitle": "Définitions utiles",
+      "reglDefsSource": "Voir la définition complète"
     },
     "auth": {
       "title": "Connexion",

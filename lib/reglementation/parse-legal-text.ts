@@ -6,6 +6,12 @@ export type LegalBlock = {
   level?: number;
   /** Alinéa abrogé « en ligne » (ex. « 9°: abrogé (AM …) ») → barré mais lisible. */
   struck?: boolean;
+  /**
+   * N° d'alinéa (indicatif) dans la portée du § courant (réinitialisé à chaque §).
+   * Compte les blocs paragraphe/§ ; les énumérations (1°, a)) appartiennent à
+   * l'alinéa qui les introduit et ne sont pas comptées.
+   */
+  alinea?: number;
 };
 
 const SECTION_RE = /^(§\s*\d+(?:er|bis|ter|quater|quinquies|sexies|septies|octies|nonies|decies)?)\s*\.?\s*/;
@@ -47,7 +53,22 @@ export function parseLegalText(raw: string): LegalBlock[] {
     }
     blocks.push({ type: "paragraph", text: line, struck });
   }
+  numberAlineas(blocks);
   return blocks;
+}
+
+/** Numérote les alinéas (§ + paragraphes) dans la portée de chaque §. */
+function numberAlineas(blocks: LegalBlock[]): void {
+  let ali = 0;
+  for (const b of blocks) {
+    if (b.type === "section") {
+      ali = 1;
+      b.alinea = 1;
+    } else if (b.type === "paragraph") {
+      ali += 1;
+      b.alinea = ali;
+    }
+  }
 }
 
 /** Type de section d'un commentaire ONEM. */

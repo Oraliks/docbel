@@ -74,6 +74,26 @@ describe("parseLegalText", () => {
     const blocks = parseLegalText("1° le chômeur complet ;");
     expect(blocks[0].struck).toBeFalsy();
   });
+
+  it("numérote les alinéas par § (les énumérations ne comptent pas)", () => {
+    const raw = [
+      "Premier alinéa.",
+      "Deuxième alinéa.",
+      "§ 2. Alinéa d'un nouveau paragraphe.",
+      "1° une énumération ;",
+      "Alinéa suivant dans le § 2.",
+    ].join("\n");
+    const blocks = parseLegalText(raw);
+    const paras = blocks.filter((b) => b.type === "paragraph");
+    expect(paras[0].alinea).toBe(1); // premier alinéa de l'article
+    expect(paras[1].alinea).toBe(2);
+    const sec = blocks.find((b) => b.type === "section");
+    expect(sec?.alinea).toBe(1); // le § redémarre à 1
+    // l'énumération 1° ne reçoit pas d'alinéa
+    expect(blocks.find((b) => b.type === "list-item")?.alinea).toBeUndefined();
+    // l'alinéa après l'énumération = 2 dans le § 2
+    expect(paras[paras.length - 1].alinea).toBe(2);
+  });
 });
 
 describe("splitOnemCommentary", () => {

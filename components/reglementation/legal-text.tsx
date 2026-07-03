@@ -8,7 +8,7 @@ import { AmendmentChip } from "./amendment-chip";
 import { CopyButton } from "./copy-button";
 
 /** Ancre stable d'un § dérivée de son marqueur (« § 1er » → « par-1er »). */
-function sectionAnchor(marker: string | undefined): string {
+export function sectionAnchor(marker: string | undefined): string {
   const m = (marker ?? "").replace(/§\s*/, "").trim().toLowerCase();
   return `par-${m.replace(/[^a-z0-9]+/g, "") || "0"}`;
 }
@@ -84,6 +84,10 @@ export function LegalText({
     return <p className="text-muted-foreground">{/* rien à afficher */}</p>;
   }
 
+  // Numérotation des alinéas visible seulement si l'article en compte plusieurs.
+  const showAlineas = blocks.filter((b) => b.alinea).length > 1;
+  let curSec = "";
+
   return (
     <div
       className="legal-text max-w-[var(--legal-measure,72ch)] space-y-3.5 text-[length:var(--legal-fs,15px)] leading-[var(--legal-lh,1.7)] print:max-w-none print:text-[12pt]"
@@ -92,6 +96,7 @@ export function LegalText({
       {blocks.map((block, i) => {
         if (block.type === "section") {
           const anchor = sectionAnchor(block.marker);
+          curSec = anchor;
           return (
             <p
               key={i}
@@ -142,10 +147,31 @@ export function LegalText({
           );
         }
 
-        // paragraph (défaut)
+        // paragraph (défaut) — avec numéro d'alinéa + permalien si pertinent
+        if (showAlineas && block.alinea) {
+          const aid = curSec ? `${curSec}-al-${block.alinea}` : `al-${block.alinea}`;
+          return (
+            <p
+              key={i}
+              id={aid}
+              className={`group scroll-mt-24 rounded-md transition-colors target:bg-primary/5 target:ring-1 target:ring-primary/15 ${blockClass(block)}`}
+            >
+              <span
+                className="mr-1.5 select-none align-baseline text-[0.68em] font-medium tabular-nums text-muted-foreground/40"
+                title="Alinéa (indicatif)"
+              >
+                al.{block.alinea}
+              </span>
+              <Inlines text={block.text} refContext={refContext} />
+              <span className="ml-1 inline-flex align-middle">
+                <CopyButton anchor={aid} iconOnly />
+              </span>
+            </p>
+          );
+        }
         return (
           <p key={i} className={blockClass(block)}>
-            <Inlines text={block.text} />
+            <Inlines text={block.text} refContext={refContext} />
           </p>
         );
       })}

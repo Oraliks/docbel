@@ -5,8 +5,10 @@ import { getTranslations } from "next-intl/server";
 import { natureMeta, naturePhrase } from "@/lib/reglementation/nature";
 import type { AmendmentRef } from "@/lib/reglementation/parse-amendments";
 import type { Citation } from "@/lib/reglementation/backlinks";
+import type { GlossaryEntry } from "@/lib/reglementation/glossary";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionToc, type TocSection } from "./section-toc";
 import type { LegalMeta, Neighbor } from "./types";
 
 interface ArticleSidebarProps {
@@ -18,6 +20,8 @@ interface ArticleSidebarProps {
   amendments?: AmendmentRef[];
   realEV?: string | null;
   citedBy?: Citation[];
+  sections?: TocSection[];
+  definitions?: GlossaryEntry[];
 }
 
 export async function ArticleSidebar({
@@ -29,6 +33,8 @@ export async function ArticleSidebar({
   amendments = [],
   realEV = null,
   citedBy = [],
+  sections = [],
+  definitions = [],
 }: ArticleSidebarProps) {
   const t = await getTranslations("public.pro");
   const nature = meta.natureJuridique ? natureMeta(meta.natureJuridique) : null;
@@ -39,6 +45,34 @@ export async function ArticleSidebar({
 
   return (
     <aside className="space-y-4 lg:sticky lg:top-20 print:hidden">
+      {/* Sommaire des § (articles longs) */}
+      <SectionToc sections={sections} title={t("reglTocTitle")} />
+
+      {/* Définitions utiles présentes dans l'article */}
+      {definitions.length > 0 && (
+        <Card size="sm">
+          <CardHeader className="pb-2">
+            <CardTitle>{t("reglDefsTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            {definitions.map((d) => (
+              <details key={d.term} className="text-sm">
+                <summary className="cursor-pointer font-medium hover:text-primary">
+                  {d.term}
+                </summary>
+                <p className="mt-1 text-muted-foreground">{d.definition}</p>
+                <Link
+                  href={`/partenaire/reglementation/${encodeURIComponent(d.sourceRiolexId)}`}
+                  className="text-xs text-primary hover:underline"
+                >
+                  {t("reglDefsSource")}
+                </Link>
+              </details>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Informations */}
       <Card size="sm">
         <CardHeader className="pb-2">

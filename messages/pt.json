@@ -4597,6 +4597,25 @@
       "insertion": {
         "title": "Prestações de inserção (jovens)",
         "description": "Para os jovens que terminam os estudos e não trabalharam (suficientemente) para abrir um direito ao desemprego clássico.",
+        "journeyCtaLabel": "Criar o meu pedido com base nos estudos",
+        "journey": {
+          "step1": {
+            "title": "Após os estudos",
+            "body": "Inscreve-te como candidato a emprego junto do serviço regional competente: Actiris, Forem, VDAB ou ADG."
+          },
+          "step2": {
+            "title": "Durante 156 dias",
+            "body": "O estágio de inserção começa: procura ativamente trabalho e guarda as tuas provas. És acompanhado pelo serviço regional de emprego."
+          },
+          "step3": {
+            "title": "No final do estágio",
+            "body": "Confirma a tua inscrição como candidato a emprego e apresenta o teu pedido de prestações de inserção."
+          },
+          "step4": {
+            "title": "Após a aceitação",
+            "body": "O pagamento passa pelo teu organismo de pagamento (CAPAC ou sindicato) e preenches todos os meses o teu cartão de controlo."
+          }
+        },
         "warning": {
           "demandeAvant25": {
             "title": "Pedido antes dos 25 anos",

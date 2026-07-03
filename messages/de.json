@@ -4597,6 +4597,25 @@
       "insertion": {
         "title": "Eingliederungsleistungen (Jugendliche)",
         "description": "Für Jugendliche, die die Schule verlassen und nicht (ausreichend) gearbeitet haben, um einen Anspruch auf klassisches Arbeitslosengeld zu eröffnen.",
+        "journeyCtaLabel": "Meinen Antrag auf Grundlage der Ausbildung erstellen",
+        "journey": {
+          "step1": {
+            "title": "Nach der Ausbildung",
+            "body": "Melde dich als Arbeitsuchende/r beim zuständigen regionalen Dienst an: Actiris, Forem, VDAB oder ADG."
+          },
+          "step2": {
+            "title": "Während 156 Tagen",
+            "body": "Das Eingliederungspraktikum beginnt: Suche aktiv nach Arbeit und bewahre deine Nachweise auf. Du wirst vom regionalen Arbeitsamt begleitet."
+          },
+          "step3": {
+            "title": "Am Ende des Praktikums",
+            "body": "Bestätige deine Anmeldung als Arbeitsuchende/r und stelle deinen Antrag auf Eingliederungsleistungen (Allocation d'insertion)."
+          },
+          "step4": {
+            "title": "Nach der Bewilligung",
+            "body": "Die Auszahlung erfolgt über deine Auszahlungsstelle (Organisme de paiement) (CAPAC oder Gewerkschaft), und du füllst jeden Monat deine Kontrollkarte aus."
+          }
+        },
         "warning": {
           "demandeAvant25": {
             "title": "Antrag vor dem 25. Lebensjahr",

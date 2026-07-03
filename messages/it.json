@@ -4597,6 +4597,25 @@
       "insertion": {
         "title": "Indennità di inserimento (giovani)",
         "description": "Per i giovani che escono dagli studi e non hanno lavorato (o non abbastanza) per aprire un diritto alla disoccupazione ordinaria.",
+        "journeyCtaLabel": "Creare la mia domanda sulla base degli studi",
+        "journey": {
+          "step1": {
+            "title": "Dopo gli studi",
+            "body": "Iscriviti come persona in cerca di lavoro presso il servizio regionale competente: Actiris, Forem, VDAB o ADG."
+          },
+          "step2": {
+            "title": "Durante 156 giorni",
+            "body": "Inizia lo stage d'inserimento (stage d'insertion): cerca attivamente un lavoro e conserva le tue prove. Sei seguito dal servizio regionale per l'occupazione."
+          },
+          "step3": {
+            "title": "Alla fine dello stage",
+            "body": "Conferma la tua iscrizione come persona in cerca di lavoro e presenta la tua domanda di indennità di inserimento."
+          },
+          "step4": {
+            "title": "Dopo l'accettazione",
+            "body": "Il pagamento avviene tramite il tuo organismo di pagamento (CAPAC o sindacato) e ogni mese compili la tua carta di controllo."
+          }
+        },
         "warning": {
           "demandeAvant25": {
             "title": "Domanda prima dei 25 anni",

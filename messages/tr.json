@@ -4597,6 +4597,25 @@
       "insertion": {
         "title": "İşe giriş ödeneği (allocations d'insertion) — gençler",
         "description": "Okulu bitiren ve klasik işsizlik hakkı açmak için (yeterince) çalışmamış gençler için.",
+        "journeyCtaLabel": "Öğrenim geçmişime dayanarak başvurumu oluştur",
+        "journey": {
+          "step1": {
+            "title": "Okul sonrası",
+            "body": "Yetkili bölgesel hizmete iş arayan olarak kaydolun: Actiris, Forem, VDAB veya ADG."
+          },
+          "step2": {
+            "title": "156 gün boyunca",
+            "body": "Entegrasyon stajı (stage d'insertion) başlar: aktif olarak iş arayın ve kanıtlarınızı saklayın. Bölgesel istihdam hizmeti tarafından takip edilirsiniz."
+          },
+          "step3": {
+            "title": "Stajın sonunda",
+            "body": "İş arayan kaydınızı onaylayın ve entegrasyon ödeneği (allocations d'insertion) başvurunuzu yapın."
+          },
+          "step4": {
+            "title": "Kabulün ardından",
+            "body": "Ödeme, ödeme kurumunuz (organisme de paiement) (CAPAC veya sendika) aracılığıyla yapılır ve her ay kontrol kartınızı doldurursunuz."
+          }
+        },
         "warning": {
           "demandeAvant25": {
             "title": "25 yaşından önce başvuru",

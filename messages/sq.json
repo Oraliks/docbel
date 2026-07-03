@@ -4597,6 +4597,25 @@
       "insertion": {
         "title": "Shpërblimet e integrimit (allocation d'insertion) — të rinjtë",
         "description": "Për të rinjtë që mbarojnë studimet dhe nuk kanë punuar (mjaftueshëm) për të hapur të drejtën për shpërblimet klasike të papunësisë.",
+        "journeyCtaLabel": "Krijo kërkesën time bazuar në studime",
+        "journey": {
+          "step1": {
+            "title": "Pas studimeve",
+            "body": "Regjistrohu si kërkues i punës pranë shërbimit rajonal kompetent: Actiris, Forem, VDAB ose ADG."
+          },
+          "step2": {
+            "title": "Gjatë 156 ditëve",
+            "body": "Fillon stage d'insertion (periudha e pritjes para ndihmës): kërko në mënyrë aktive punë dhe ruaj provat e tua. Je i ndjekur nga shërbimi rajonal i punësimit."
+          },
+          "step3": {
+            "title": "Në fund të stage-it",
+            "body": "Konfirmo regjistrimin tënd si kërkues i punës dhe paraqit kërkesën tënde për shpërblimet e integrimit (allocations d'insertion)."
+          },
+          "step4": {
+            "title": "Pas pranimit",
+            "body": "Pagesa kalon nëpërmjet organizmit tënd të pagesës (organisme de paiement — CAPAC ose sindikata) dhe ti plotëson çdo muaj kartën tënde të kontrollit (carte de contrôle)."
+          }
+        },
         "warning": {
           "demandeAvant25": {
             "title": "Kërkesa para moshës 25 vjeç",

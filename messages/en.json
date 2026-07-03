@@ -4673,6 +4673,25 @@
       "insertion": {
         "title": "Integration benefits (young people)",
         "description": "For young people leaving school who have not worked (enough) to open a right to classic unemployment benefits.",
+        "journeyCtaLabel": "Create my claim based on my studies",
+        "journey": {
+          "step1": {
+            "title": "After your studies",
+            "body": "Register as a jobseeker with the competent regional service: Actiris, Forem, VDAB or ADG."
+          },
+          "step2": {
+            "title": "During the 156-day period",
+            "body": "The vocational integration period starts: actively look for work and keep your proof of it. You are followed up by the regional employment service."
+          },
+          "step3": {
+            "title": "At the end of the period",
+            "body": "Confirm your registration as a jobseeker and file your claim for integration benefits."
+          },
+          "step4": {
+            "title": "After acceptance",
+            "body": "Payment goes through your payment organisation (CAPAC or union) and you fill in your control card every month."
+          }
+        },
         "warning": {
           "demandeAvant25": {
             "title": "Claim before 25",

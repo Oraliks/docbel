@@ -7740,6 +7740,25 @@
       "insertion": {
         "title": "Inschakelingsuitkeringen (jongeren)",
         "description": "Voor jongeren die van school komen en niet (genoeg) gewerkt hebben om een recht op klassieke werkloosheid te openen.",
+        "journeyCtaLabel": "Mijn aanvraag opstellen op basis van mijn studies",
+        "journey": {
+          "step1": {
+            "title": "Na de studies",
+            "body": "Schrijf je in als werkzoekende bij de bevoegde gewestelijke dienst: Actiris, Forem, VDAB of ADG."
+          },
+          "step2": {
+            "title": "Tijdens 156 dagen",
+            "body": "De beroepsinschakelingstijd start: zoek actief naar werk en bewaar je bewijsstukken. Je wordt opgevolgd door de gewestelijke dienst voor arbeidsbemiddeling."
+          },
+          "step3": {
+            "title": "Aan het einde van de stage",
+            "body": "Bevestig je inschrijving als werkzoekende en dien je aanvraag tot inschakelingsuitkeringen in."
+          },
+          "step4": {
+            "title": "Na aanvaarding",
+            "body": "De uitbetaling verloopt via je uitbetalingsinstelling (CAPAC of vakbond) en je vult elke maand je controlekaart in."
+          }
+        },
         "warning": {
           "demandeAvant25": {
             "title": "Aanvraag vóór 25 jaar",

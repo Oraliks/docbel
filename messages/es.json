@@ -4597,6 +4597,25 @@
       "insertion": {
         "title": "Subsidios de inserción (jóvenes)",
         "description": "Para los jóvenes que terminan sus estudios y no han trabajado (suficiente) como para tener derecho al desempleo clásico.",
+        "journeyCtaLabel": "Crear mi solicitud a partir de mis estudios",
+        "journey": {
+          "step1": {
+            "title": "Después de los estudios",
+            "body": "Inscríbete como demandante de empleo ante el servicio regional competente: Actiris, Forem, VDAB o ADG."
+          },
+          "step2": {
+            "title": "Durante 156 días",
+            "body": "Comienza el período de inserción profesional: busca activamente trabajo y conserva tus pruebas. El servicio regional de empleo te hace seguimiento."
+          },
+          "step3": {
+            "title": "Al final del período",
+            "body": "Confirma tu inscripción como demandante de empleo y presenta tu solicitud de subsidios de inserción."
+          },
+          "step4": {
+            "title": "Tras la aceptación",
+            "body": "El pago se realiza a través de tu organismo de pago (CAPAC o sindicato) y cumplimentas cada mes tu tarjeta de control."
+          }
+        },
         "warning": {
           "demandeAvant25": {
             "title": "Solicitud antes de los 25 años",

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { Stethoscope, Route } from "lucide-react";
+import { Stethoscope, Route, FolderOpen, Sparkles } from "lucide-react";
 
 import { requirePartnerOrAdminAuth } from "@/lib/auth-check";
 import { ReglementationSearchClient } from "@/components/reglementation/search-client";
@@ -45,13 +45,27 @@ export default async function ReglementationPage() {
               {t("reglSubtitle")}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/partenaire/reglementation/parcours"
               className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <Route className="size-4" aria-hidden />
               Parcours
+            </Link>
+            <Link
+              href="/partenaire/reglementation/dossiers"
+              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <FolderOpen className="size-4" aria-hidden />
+              Dossiers
+            </Link>
+            <Link
+              href="/partenaire/reglementation/reforme-2026"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-sm text-orange-700 transition-colors hover:bg-orange-100"
+            >
+              <Sparkles className="size-4" aria-hidden />
+              Réforme 2026
             </Link>
             {isAdmin && (
               <Link

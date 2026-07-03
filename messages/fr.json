@@ -4158,7 +4158,12 @@
       "reglSinceYear": "Modifiés depuis {year}",
       "reglTriRecent": "Récemment modifiés",
       "reglTipsTitle": "Astuces de recherche",
-      "reglFindInArticle": "Rechercher dans l’article"
+      "reglFindInArticle": "Rechercher dans l’article",
+      "reglAddToDossier": "Ajouter à un dossier",
+      "reglReport": "Signaler une erreur",
+      "reglNoteLabel": "Ma note",
+      "reglNotePlaceholder": "Remarque personnelle sur cet article (visible uniquement sur ce poste)…",
+      "reglFreshness": "à jour au {date}"
     },
     "auth": {
       "title": "Connexion",

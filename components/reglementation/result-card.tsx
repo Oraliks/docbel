@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, StickyNote } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,19 +10,27 @@ import { natureMeta } from "@/lib/reglementation/nature";
 import { NatureTile } from "./nature-badge";
 import { renderHeadline } from "./highlight";
 import { PinButton } from "./pins-recents";
+import { useNotes } from "./notes-store";
 import type { ResultItem } from "./types";
 
 export function ResultCard({ item }: { item: ResultItem }) {
   const t = useTranslations("public.pro");
   const m = natureMeta(item.natureJuridique);
+  const hasNote = Boolean(useNotes()[item.riolexId]);
 
   return (
     <Card className="relative overflow-hidden transition-colors hover:bg-accent/40">
       {/* Liseré gauche coloré selon la nature juridique */}
       <span className={`absolute inset-y-0 left-0 w-1 ${m.accent}`} />
 
-      {/* Épingle */}
-      <div className="absolute right-2 top-2">
+      {/* Note + épingle */}
+      <div className="absolute right-2 top-2 flex items-center gap-1">
+        {hasNote && (
+          <StickyNote
+            className="size-3.5 text-amber-500"
+            aria-label="Note personnelle"
+          />
+        )}
         <PinButton
           item={{
             riolexId: item.riolexId,

@@ -35,6 +35,9 @@ import { ArticleSidebar } from "@/components/reglementation/article-sidebar";
 import { ArticlePager, type PagerLink } from "@/components/reglementation/article-pager";
 import { CopyButton } from "@/components/reglementation/copy-button";
 import { PinButton, RecordVisit } from "@/components/reglementation/pins-recents";
+import { NoteEditor } from "@/components/reglementation/note-editor";
+import { DossierPicker } from "@/components/reglementation/dossier-picker";
+import { ReportButton } from "@/components/reglementation/report-button";
 import { NatureTile } from "@/components/reglementation/nature-badge";
 import { PrintButton } from "@/components/reglementation/print-button";
 import type { LegalMeta, Neighbor } from "@/components/reglementation/types";
@@ -163,6 +166,15 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
   const isReforme = /Loi-programme 18\.7\.2025/i.test(article.content ?? "");
   const themes = deriveThemes(article.content);
 
+  // Item dénormalisé (épingle / dossier / note) + adresse admin pour signalement.
+  const regItem = {
+    riolexId,
+    loi: meta.loi ?? "",
+    articleNumber: meta.articleNumber ?? "",
+    title: article.title,
+  };
+  const adminEmail = process.env.CONTACT_EMAIL_FROM ?? "";
+
   // Le lien RioLex (source interne) n'est exposé qu'aux admins (demande Oraliks).
   const riolexUrl = isAdmin ? article.sourceUrl : null;
 
@@ -206,14 +218,7 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
     <div className="px-4 py-6 lg:px-6">
       <div className="w-full space-y-5">
         {/* Enregistre la visite pour l'historique « Consultés récemment » */}
-        <RecordVisit
-          item={{
-            riolexId,
-            loi: meta.loi ?? "",
-            articleNumber: meta.articleNumber ?? "",
-            title: article.title,
-          }}
-        />
+        <RecordVisit item={regItem} />
 
         {/* Fil d'Ariane + retour — masqués à l'impression */}
         <div className="flex flex-wrap items-center gap-3 print:hidden">
@@ -267,6 +272,11 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
                     {t("reglReforme2026")}
                   </Badge>
                 )}
+                {realEV && !meta.abroge && (
+                  <Badge variant="outline" className="font-normal text-muted-foreground">
+                    {t("reglFreshness", { date: realEV })}
+                  </Badge>
+                )}
               </div>
               <h1 className="text-2xl font-semibold tracking-tight">
                 {article.title}
@@ -288,15 +298,9 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
           </div>
 
           {/* Barre d'actions — masquée à l'impression */}
-          <div className="flex shrink-0 items-center gap-2 print:hidden">
-            <PinButton
-              item={{
-                riolexId,
-                loi: meta.loi ?? "",
-                articleNumber: meta.articleNumber ?? "",
-                title: article.title,
-              }}
-            />
+          <div className="flex shrink-0 flex-wrap items-center gap-2 print:hidden">
+            <PinButton item={regItem} />
+            <DossierPicker item={regItem} label={t("reglAddToDossier")} />
             <CopyButton
               value={t("reglCitation", {
                 loi: meta.loi ?? "",
@@ -315,6 +319,12 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
               {t("reglCompare")}
             </Link>
             <PrintButton label={t("reglPrint")} />
+            <ReportButton
+              adminEmail={adminEmail}
+              loi={meta.loi ?? ""}
+              articleNumber={meta.articleNumber ?? ""}
+              label={t("reglReport")}
+            />
             {riolexUrl && (
               <a
                 href={riolexUrl}
@@ -359,6 +369,12 @@ export default async function ReglementationArticlePage({ params }: PageProps) {
             </TextSettings>
 
             <ConventionsLegend />
+
+            <NoteEditor
+              riolexId={riolexId}
+              label={t("reglNoteLabel")}
+              placeholder={t("reglNotePlaceholder")}
+            />
 
             <CitationGraph
               center={meta.articleNumber ?? "?"}
